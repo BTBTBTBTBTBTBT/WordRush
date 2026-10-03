@@ -57,11 +57,12 @@ struct NotificationPrefsToggles: View {
 
     var body: some View {
         let prefs = auth.profile?.notificationPrefs ?? [:]
-        VStack(alignment: .leading, spacing: 8) {
+        // BJ7: 6 between toggles, 7 vertical padding, the hint 4 under the label.
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(PushCategories.all) { c in
                 let on = prefs[c.key] != false
                 Toggle(isOn: Binding(get: { on }, set: { _ in toggle(c.key, prefs: prefs) })) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(c.label).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
                         Text(c.hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1)
                     }
@@ -69,7 +70,7 @@ struct NotificationPrefsToggles: View {
                 .tint(Color(hex: 0x7C3AED))
                 .disabled(saving != nil)
                 .opacity(saving == c.key ? 0.5 : 1)
-                .padding(.horizontal, 12).padding(.vertical, 9)
+                .padding(.horizontal, 12).padding(.vertical, 7)
                 .tintedPill(Color(hex: 0x7C3AED), radius: 14)
             }
         }
@@ -93,14 +94,14 @@ struct NotificationPrefsToggles: View {
 /// The prefs sheet: the label, the four toggles and the friend-request note.
 struct NotificationPrefsSheet: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             FinishLabel("Friends notifications")
             NotificationPrefsToggles()
             Text("Friend requests always come through.")
                 .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
             Spacer(minLength: 0)
         }
-        .padding(20)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .pageBackground(.home)
     }

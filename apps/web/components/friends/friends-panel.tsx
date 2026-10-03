@@ -420,7 +420,8 @@ export function FriendsPanel() {
     // Desktop website (≥ 1024 px, lib/desktop-layout.ts; globals.css .fr-desk):
     // three columns under the headline — the banner (kept in view), then the
     // two AG columns.
-    <div className="fr-desk space-y-3.5">
+    // BJ7: 12 between sections (was 14).
+    <div className="fr-desk space-y-3">
       {/* 1. FRIENDS headline (FINISH_SPEC A6 + C4b): the whole-cast title art full
           width, edge to edge, right on the wallpaper — nothing beside it. The bell
           (notification prefs) moved into Settings → Notifications; "Add a friend" is
@@ -449,8 +450,8 @@ export function FriendsPanel() {
       {/* FINISH_SPEC AG (desktop web ≥ 900 px; nothing changes below): two
           columns — your turn, play with friends and the race on the left; your
           friends, invites, moments and add a friend on the right. */}
-      <div className="page-grid-2 space-y-3.5">
-      <div className="space-y-3.5">
+      <div className="page-grid-2 space-y-3">
+      <div className="space-y-3">
       {/* 4. YOUR TURN (only with active games) */}
       {sortedGames.length > 0 && (
         <>
@@ -459,7 +460,7 @@ export function FriendsPanel() {
             {/* M: the same candy badge as the Friends tab, so the waiting games are easy to find. */}
             <CandyBadge count={myTurnCount} size={16} label={`${myTurnCount} waiting`} />
           </SectionLabel>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {sortedGames.map((g) => {
               const accent = KIND_COLOR[g.kind];
               return (
@@ -467,17 +468,18 @@ export function FriendsPanel() {
                   key={g.id}
                   type="button"
                   onClick={() => router.push(`/friends/games/${g.id}`)}
-                  className="relative overflow-hidden w-full flex items-center gap-3 text-left"
-                  style={{ ...frSurface(accent, { radius: 16 }), padding: '14px 12px 10px' }}
+                  // BJ7: one top line — icon, title and the action top-aligned; detail 4 under.
+                  className="relative overflow-hidden w-full flex items-start gap-2.5 text-left"
+                  style={{ ...frSurface(accent, { radius: 16 }), padding: '13px 12px 10px' }}
                 >
                   <span aria-hidden="true" className="absolute top-0 left-0 right-0" style={frBar(accent, 5)} />
                   <span className="relative shrink-0">
-                    <GameIconSquare kind={g.kind} size={36} />
+                    <GameIconSquare kind={g.kind} size={40} />
                     {g.yourTurn && <CandyBadge count={1} size={16} style={{ position: 'absolute', top: -6, right: -6 }} />}
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>{g.title} vs @{g.opponent.username}</span>
-                    <span className="block text-[11.5px] font-extrabold truncate" style={{ color: FR_LOOK.bannerClock }}>{g.line}</span>
+                    <span className="block text-[11.5px] font-extrabold truncate mt-1" style={{ color: FR_LOOK.bannerClock }}>{g.line}</span>
                   </span>
                   {g.yourTurn ? (
                     <span className={candyClass({ color: 'pink', size: 'sm', extra: 'shrink-0' })}>
@@ -487,7 +489,7 @@ export function FriendsPanel() {
                   ) : (
                     <span
                       className="shrink-0 px-3 flex items-center text-[11px] font-black rounded-full"
-                      style={{ height: 28, background: softMix(FR_LOOK.lavender, 0.12), border: `1.5px solid ${softMix(FR_LOOK.lavender, 0.32)}`, color: '#5b3c96' }}
+                      style={{ height: 28, background: softMix(FR_LOOK.lavender, 0.18), color: '#5b3c96' }}
                     >
                       WAITING
                     </span>
@@ -524,7 +526,7 @@ export function FriendsPanel() {
       {/* 6. THIS WEEK'S RACE (§212) — the podium on a warm gold card (C4). */}
       {podium.length > 0 && (
         <FrCard accent={FR_LOOK.gold} bar={FR_LOOK.goldBar}>
-          <div className="flex flex-col gap-2" style={{ padding: '12px 14px' }}>
+          <div className="flex flex-col gap-1.5" style={{ padding: '10px 12px' }}>
             <div className="flex items-center justify-between gap-2">
               <h2 className="m-0 text-[11px] font-black uppercase" style={{ letterSpacing: 1.3, color: FR_LOOK.goldInk }}>This week&apos;s race</h2>
               <span className="flex items-center gap-1 text-[10px] font-black uppercase" style={{ color: FR_LOOK.goldInk, letterSpacing: 0.6 }}>
@@ -643,11 +645,11 @@ export function FriendsPanel() {
       )}
       </div>
 
-      <div className="space-y-3.5">
+      <div className="space-y-3">
       {/* 7. YOUR FRIENDS — a lavender card with soft striped rows and chunky candy
           Play / Challenge / Nudge buttons (C4); "Add a friend" lives in its header (C4b). */}
       <FrCard accent={FR_LOOK.lavender} bar={FR_LOOK.lavenderBar}>
-        <div className="flex items-center justify-between gap-2" style={{ padding: '10px 12px 8px 14px' }}>
+        <div className="flex items-center justify-between gap-2" style={{ padding: '8px 10px 6px 12px' }}>
           <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: '#5b3c96' }}>
             Your friends{friends.length > 0 ? ` · ${friends.length}` : ''}
           </h2>
@@ -669,15 +671,17 @@ export function FriendsPanel() {
               return (
                 <div
                   key={f.id}
-                  className="relative flex items-center gap-2.5 px-3 py-2.5 cursor-pointer"
+                  // BJ7: one top line — avatar, name + chips and the streak / actions
+                  // top-aligned; the presence line 4 under the name.
+                  className="relative flex items-start gap-2.5 px-3 py-[7px] cursor-pointer"
                   style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.1)}` }}
                   onClick={(e) => {
                     if ((e.target as HTMLElement).closest('a,button')) return;
                     router.push(`/profile/${f.id}`);
                   }}
                 >
-                  <Link href={`/profile/${f.id}`} className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={38} online={line.online} />
+                  <Link href={`/profile/${f.id}`} className="flex items-start gap-2.5 flex-1 min-w-0">
+                    <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={36} online={line.online} />
                     <span className="flex-1 min-w-0">
                       <span className="flex items-center gap-1 text-[14px] font-black truncate" style={{ color: FR_LOOK.ink }}>
                         <span className="truncate">@{f.username}</span>
@@ -690,7 +694,7 @@ export function FriendsPanel() {
                           <span className="text-[8.5px] font-black px-1 py-0.5 rounded shrink-0" style={{ background: FR.soft, color: FR.solid }}>{friendversary(f)} DAYS</span>
                         )}
                       </span>
-                      <span className="block text-[11px] font-bold truncate" style={{ color: line.online ? '#047857' : FR_LOOK.rowSub }}>{line.text}</span>
+                      <span className="block text-[11px] font-bold truncate mt-1" style={{ color: line.online ? '#047857' : FR_LOOK.rowSub }}>{line.text}</span>
                     </span>
                   </Link>
                   <FlameCount days={f.friendStreak ?? 0} />

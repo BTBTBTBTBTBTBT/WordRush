@@ -119,7 +119,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const keyboardLayouts: { value: KeyboardLayout; label: string; description: string }[] = [
     { value: 'standard', label: 'Standard', description: 'Enter left, delete right' },
     { value: 'flipped', label: 'Flipped', description: 'Delete left, enter right' },
-    { value: 'michael', label: 'Michael Keyboard', description: '4 rows like your phone — delete and enter on both sides' },
+    { value: 'michael', label: 'Michael Keyboard', description: '4 rows, delete + enter on both sides' },
   ];
 
   const themes: { value: Theme; label: string; description: string }[] = [

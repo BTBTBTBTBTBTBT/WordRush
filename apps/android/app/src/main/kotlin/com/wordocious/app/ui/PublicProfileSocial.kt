@@ -120,9 +120,10 @@ private fun SocialCard(
     TintedCard(
         accent,
         Modifier.fillMaxWidth().then(if (onClick != null) Modifier.squishClickable(label = null, onClick = onClick) else Modifier),
-        corner = 18.dp, barHeight = 8.dp,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
-        verticalArrangement = Arrangement.spacedBy(9.dp),
+        // BJ7: 12 padding / 8 spacing (was 14 / 9), a slimmer bar.
+        corner = 18.dp, barHeight = 5.dp,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 12.dp, end = 12.dp, top = 11.dp, bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         content = content,
     )
 }
@@ -196,7 +197,7 @@ fun TodayRingAvatar(
     val ringColor = WTheme.primary
     val track = WTheme.border
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(bottom = 6.dp)) {
-        Canvas(Modifier.size(112.dp)) {
+        Canvas(Modifier.size(avatarSize + 16.dp)) {   // BJ7: the ring follows the avatar (112 at 96)
             val stroke = 5.dp.toPx()
             val arcSize = Size(size.width - stroke, size.height - stroke)
             val topLeft = Offset(stroke / 2f, stroke / 2f)
@@ -374,8 +375,8 @@ fun ArchetypeDialog(targetName: String, targetArchetype: String, onDismiss: () -
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(accentWash(BrandPurpleDeep, if (isTarget) 0.2f else 0.08f))
-                            .border(1.5.dp, if (isTarget) BrandPurpleDeep else accentLine(BrandPurpleDeep), RoundedCornerShape(12.dp))
+                            // BJ7: no outlined boxes — the target reads by its deeper wash.
+                            .background(accentWash(BrandPurpleDeep, if (isTarget) 0.24f else 0.10f))
                             .padding(10.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
@@ -430,7 +431,7 @@ fun YouVsThemCard(
                     .fillMaxWidth()
                     .clickableNoRipple { onTodayTap(todayShared) }
                     .tintedPill(SOCIAL_PURPLE, 12.dp)
-                    .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 8.dp),
+                    .padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -486,8 +487,7 @@ fun H2HDetailDialog(targetName: String, h2h: ProfileService.H2HSummary, onDismis
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
-                            .background(accentWash(SOCIAL_PURPLE, 0.06f))
-                            .border(1.dp, accentLine(SOCIAL_PURPLE, 0.24f), RoundedCornerShape(10.dp))
+                            .background(accentWash(SOCIAL_PURPLE, 0.10f))
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -652,7 +652,7 @@ fun TrophyCaseCard(
                 Modifier
                     .fillMaxWidth()
                     .tintedPill(SOCIAL_PURPLE, 12.dp)
-                    .padding(start = 11.dp, end = 11.dp, top = 10.dp, bottom = 8.dp),
+                    .padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -671,7 +671,7 @@ private fun TrophyShelf(art: GlyphArt, count: Int, cap: String, medal: Color, mo
     Column(
         modifier
             .tintedPill(medal, 13.dp)
-            .padding(top = 10.dp, bottom = 8.dp),
+            .padding(top = 8.dp, bottom = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
@@ -814,10 +814,10 @@ fun HighlightsCard(highlights: List<ProfileHighlight>) {
             highlights.forEach { h ->
                 Column(
                     Modifier
-                        .widthIn(min = 118.dp)
+                        .widthIn(min = 108.dp)
                         .then(if (h.onTap != null) Modifier.clickableNoRipple(h.onTap) else Modifier)
                         .tintedPill(SOCIAL_PINK, 13.dp)
-                        .padding(start = 11.dp, end = 11.dp, top = 12.dp, bottom = 10.dp),
+                        .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     GlyphArtImage(h.art, 22.dp)

@@ -135,11 +135,12 @@ internal fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, oppo
     val date = remember(m.createdAt) { fmtMatchDate(m.createdAt) }
     val dark = WTheme.isDark
     Row(
-        Modifier.fillMaxWidth().stripedRow(index, StatsInk.accent).padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+        // BJ7: one top line — icon, title row and the W / L top-aligned; detail 4 under.
+        Modifier.fillMaxWidth().stripedRow(index, StatsInk.accent).padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         MatchIcon(card, mode, accent)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     modeLabel(m.gameMode), fontSize = 13.sp, fontWeight = FontWeight.Black,

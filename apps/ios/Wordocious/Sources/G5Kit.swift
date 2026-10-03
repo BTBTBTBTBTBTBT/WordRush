@@ -35,8 +35,9 @@ struct G5Card<Content: View>: View {
     var spacing: CGFloat
     @ViewBuilder var content: () -> Content
 
-    init(_ title: String? = nil, accent: Color = G5Accent.purple, bar: [Color]? = nil, padding: CGFloat = 14,
-         spacing: CGFloat = 10, @ViewBuilder content: @escaping () -> Content) {
+    // BJ7: 12 padding / 8 spacing (was 14 / 10) and a 6-pt bar — crisp, never bloated.
+    init(_ title: String? = nil, accent: Color = G5Accent.purple, bar: [Color]? = nil, padding: CGFloat = 12,
+         spacing: CGFloat = 8, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.accent = accent
         self.bar = bar
@@ -52,7 +53,7 @@ struct G5Card<Content: View>: View {
         }
         .padding(padding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .tintedCard(accent: accent, bar: bar ?? G5Accent.bar(accent), radius: 20, barHeight: 8)
+        .tintedCard(accent: accent, bar: bar ?? G5Accent.bar(accent), radius: 20, barHeight: 6)
     }
 }
 

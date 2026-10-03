@@ -117,26 +117,27 @@ fun FriendsBannerView(
         ) {
             Column(Modifier.fillMaxWidth()) {
                 // The pink → gold top bar.
-                Box(Modifier.fillMaxWidth().height(10.dp).background(Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFFF59E0B)))))
+                Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFEC4899), Color(0xFFF59E0B)))))
+                // BJ7: the banner hugs its rows (8 between, 10 / 12 padding, a smaller host).
                 Column(
-                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         // AR: the live lettering (pink → orange, names in the accent, gold numbers).
                         com.wordocious.app.ui.LiveHeadline(
                             headline, com.wordocious.app.ui.HeadlinePalette.FRIENDS,
-                            Modifier.fillMaxWidth().heightIn(min = 24.dp).padding(end = 80.dp),
+                            Modifier.fillMaxWidth().heightIn(min = 24.dp).padding(end = 68.dp),
                             names = friends.map { it.username },
                             maxSize = 20.sp, minSize = 13.sp, align = androidx.compose.ui.text.style.TextAlign.Start,
                         )
                         Text(
                             clockLine.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.06.em,
-                            color = BANNER_INK, modifier = Modifier.padding(end = 80.dp),
+                            color = BANNER_INK, modifier = Modifier.padding(end = 64.dp),
                         )
                     }
                     // ON NOW
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             FriendsLabel("ON NOW", color = BANNER_INK)
                             Spacer(Modifier.weight(1f))
@@ -168,7 +169,7 @@ fun FriendsBannerView(
                     // TODAY'S RACE (the whole row opens the full race)
                     Column(
                         Modifier.fillMaxWidth().squishClickable(label = "Today's race, see everyone", onClick = onRace),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             FriendsLabel("TODAY’S RACE", color = BANNER_INK)
@@ -190,7 +191,7 @@ fun FriendsBannerView(
                 }
             }
             // The host: O1, the cheerleader, cheering on the right (decorative).
-            CastPose(MascotId.O1, "cheer", 78.dp, Modifier.align(Alignment.TopEnd).padding(top = 14.dp, end = 8.dp))
+            CastPose(MascotId.O1, "cheer", 66.dp, Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp))
         }
     }
 }

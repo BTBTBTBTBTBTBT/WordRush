@@ -56,7 +56,7 @@ struct RecordsTab: View {
             .sheet(isPresented: $showAuth) { AuthView() }
         } else {
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     switch tab {
                     case .daily:   DailyRecordsView(tab: $tab, mode: $dailyMode, isSweep: $dailySweep)
                     case .allTime: AllTimeRecordsView(tab: $tab, mode: $allTimeMode, isSweep: $allTimeSweep)
@@ -71,7 +71,7 @@ struct RecordsTab: View {
                     }
                     .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: false))
                     .accessibilityLabel("Your personal records in Stats")
-                    .padding(.top, 8)
+                    .padding(.top, 4)
                 }
                 .padding(.horizontal, 16).padding(.top, 8)
                 // Nav clearance + the ad banner's height when it's mounted
@@ -116,20 +116,21 @@ struct AllTimeRecordsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // BJ7: 10 between blocks, record cards that hug their content.
+        VStack(alignment: .leading, spacing: 10) {
             RecordsBannerView(tab: $tab, selected: modeSelection, isSweep: sweepSelection,
                               recordsCount: loading ? nil : records.count)
             if loading { CardsSkeleton().padding(.horizontal, 12).lbCard() } else {   // web parity: AllTimeSkeleton card blocks
                 // Hall of Fame — each record a soft card.
-                LbSectionLabel("HALL OF FAME").padding(.top, 4)
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                LbSectionLabel("HALL OF FAME").padding(.top, 2)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     ForEach(RecordCatalog.global, id: \.self) { rt in
                         RecordStatCell(type: rt, record: globalRecord(rt), accent: Color(hex: 0xD97706), isMe: globalRecord(rt)?.holderId == myId)
                     }
                 }
 
                 // By Game Mode — only the game picked in the banner.
-                LbSectionLabel("BY GAME MODE").padding(.top, 8)
+                LbSectionLabel("BY GAME MODE").padding(.top, 4)
                 if isSweep {
                     sweepSection
                 } else {
@@ -140,7 +141,7 @@ struct AllTimeRecordsView: View {
                                      right: { EmptyView() }, extra: { EmptyView() })
                         .id(mode)
                     if RecordCatalog.perMode.contains(where: { modeRecord($0) != nil }) {
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                             ForEach(RecordCatalog.perMode, id: \.self) { rt in
                                 RecordStatCell(type: rt, record: modeRecord(rt), accent: accent, isMe: modeRecord(rt)?.holderId == myId, gameMode: mode.rawValue)
                             }
@@ -166,8 +167,8 @@ struct AllTimeRecordsView: View {
     private func emptyCard(_ title: String, _ text: String) -> some View {
         // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1); BI24: brand
         // headline over the voice line.
-        BrandEmptyState(title: title, line: text, scene: .asleep, artHeight: 100)
-        .frame(maxWidth: .infinity).padding(.vertical, 4)
+        BrandEmptyState(title: title, line: text, scene: .asleep, artHeight: 76)
+        .frame(maxWidth: .infinity)
         .lbCard()
     }
 
@@ -280,8 +281,10 @@ struct RecordStatCell: View {
         let meta = RecordCatalog.labels[type]
         let has = record != nil
         let mine = isMe && has
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
+        // BJ7: one top line (chip + name + crown, top-aligned), the value 4 under it,
+        // the card hugs its content (no 110 floor; rows of the grid match by content).
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top, spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8).fill(accent.opacity(Theme.isDark ? 0.18 : 0.14))
                     SymbolGlyph(meta?.symbol ?? "rosette", size: 13, weight: .semibold)
@@ -290,8 +293,7 @@ struct RecordStatCell: View {
                 .frame(width: 28, height: 28)
                 Text(RecordCatalog.label(type, gameMode: record?.gameMode ?? gameMode).uppercased())
                     .font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(FinishInk.secondary)
-                    .lineLimit(2).minimumScaleFactor(0.8)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.8)
                 Spacer(minLength: mine ? 16 : 0)
             }
             // §254: hints on the record, same wording as the leaderboard rows, set small.
@@ -299,7 +301,7 @@ struct RecordStatCell: View {
             (Text(record?.valueText ?? "—").font(Brand.font(22, .black)).foregroundColor(has ? FinishInk.number : Theme.textMuted)
              + Text(record?.hintsSuffix ?? "").font(Brand.font(12, .bold)).foregroundColor(Theme.textMuted))
                 .softNumber(22)
-                .lineLimit(2).minimumScaleFactor(0.7)
+                .lineLimit(1).minimumScaleFactor(0.6)
             if let record {
                 NavigationLink(value: record.holderId) {
                     HStack(spacing: 6) {
@@ -309,19 +311,18 @@ struct RecordStatCell: View {
                     }
                 }.buttonStyle(.squish)
             }
-            Spacer(minLength: 0)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         // §A1: a tinted card in the record's color with its top bar; a record you hold
         // is gold with a stronger tint.
         .tintedCard(accent: mine ? Color(hex: 0xF59E0B) : accent,
                     bar: mine ? [Color(hex: 0xF5A524), Color(hex: 0xFFD166)] : [accent, accent.wash(0.55)],
-                    radius: 16, barHeight: 6, tint: mine ? 0.16 : 0.08, line: mine ? 0.45 : 0.24)
+                    radius: 16, barHeight: 5, tint: mine ? 0.16 : 0.08, line: mine ? 0.45 : 0.24)
         .overlay(alignment: .topTrailing) {
             if mine {
                 Icon3D(.crown, size: 16, label: "Your record")
-                    .padding(.top, 14).padding(.trailing, 10)
+                    .padding(.top, 11).padding(.trailing, 10)
             }
         }
     }
@@ -607,8 +608,8 @@ struct DailyRecordsView: View {
     private func emptyCard(_ title: String, _ text: String) -> some View {
         // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1); BI24: brand
         // headline over the voice line.
-        BrandEmptyState(title: title, line: text, scene: .asleep, artHeight: 100)
-        .frame(maxWidth: .infinity).padding(.vertical, 4)
+        BrandEmptyState(title: title, line: text, scene: .asleep, artHeight: 76)
+        .frame(maxWidth: .infinity)
         .lbCard()
     }
 

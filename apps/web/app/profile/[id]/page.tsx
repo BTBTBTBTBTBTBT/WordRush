@@ -562,11 +562,12 @@ export default function PublicProfilePage() {
 
   return (
     <PageBackground tint="home" className="min-h-screen p-4 pb-24">
-      <div className="max-w-6xl mx-auto space-y-6">
+      {/* BJ7: 12 between sections (was 24). */}
+      <div className="max-w-6xl mx-auto space-y-3">
         {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
         <PageHeader title="Profile" titleTag="div" back={{ href: '/' }} />
         {/* Header Section */}
-        <div className="flex flex-col items-center gap-4 animate-fade-in-up">
+        <div className="flex flex-col items-center gap-2.5 animate-fade-in-up">
           {/* Avatar with today-progress ring + "N/total today" pill */}
           <div className="relative" style={{ width: 128, height: 128 }}>
             {todayRing && profile.avatar_url && (
@@ -899,23 +900,24 @@ export default function PublicProfilePage() {
 
         {/* Recent Matches Section */}
         <div
-          className="rounded-2xl p-6 animate-fade-in-up"
+          className="rounded-2xl p-3 animate-fade-in-up"
           style={{ ...softCard('#2563eb', { radius: 20 }), animationDelay: '0.6s', animationFillMode: 'both' }}
         >
-          <h2 className="text-2xl font-black mb-6 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-            <Clock className="w-6 h-6" style={{ color: '#2563eb' }} />
+          {/* BJ7: a 25% smaller header with 8 under it; rows hug their content. */}
+          <h2 className="text-[15px] font-black mb-2 flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}>
+            <Clock className="w-3.5 h-3.5" style={{ color: '#2563eb' }} />
             Recent Matches
           </h2>
 
           {matches.length === 0 ? (
             <BrandEmptyState
               scene={PAGE_SCENES.empty}
-              artHeight={96}
+              artHeight={72}
               title="NO MATCHES YET"
               line="Games show up here once the first one is played."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {(showAllRecent ? matches : matches.slice(0, 5)).map((match, index) => {
                 const isSolo = !match.player2_id;
                 const isWinner = match.winner_id === profile.id;
@@ -926,15 +928,14 @@ export default function PublicProfilePage() {
                 return (
                   <div
                     key={match.id}
-                    className="rounded-xl p-4 flex items-center justify-between gap-4 animate-fade-in-up"
-                    style={{ background: alphaHex(getMode(match.game_mode)?.accentColor ?? '#2563eb', index % 2 === 0 ? 0.1 : 0.05), border: softBorder(getMode(match.game_mode)?.accentColor ?? '#2563eb', 0.08, 1), animationDelay: `${0.7 + index * 0.05}s`, animationFillMode: 'both' }}
+                    className="rounded-xl px-3 py-2 flex items-start justify-between gap-2.5 animate-fade-in-up"
+                    style={{ background: alphaHex(getMode(match.game_mode)?.accentColor ?? '#2563eb', index % 2 === 0 ? 0.12 : 0.07), animationDelay: `${0.7 + index * 0.05}s`, animationFillMode: 'both' }}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-start gap-2.5 min-w-0">
                       <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
                           background: isWinner ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
-                          border: isWinner ? '1px solid var(--color-win-text)' : '1px solid var(--color-loss-text)',
                           opacity: 0.9,
                         }}
                       >
@@ -948,25 +949,15 @@ export default function PublicProfilePage() {
                         <div className="font-bold truncate" style={{ color: 'var(--color-text)' }}>
                           {getMode(match.game_mode)?.title || match.game_mode}
                         </div>
-                        <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                          {isSolo ? 'Solo' : 'VS Match'}
+                        {/* BJ7: ONE detail line (play type · time · when), 4 under the title. */}
+                        <div className="text-xs mt-1 truncate" style={{ color: 'var(--color-text-muted)' }}>
+                          {isSolo ? 'Solo' : 'VS'} · {playerTime > 0 ? `${playerTime}s` : '-'} · {matchDate.toLocaleDateString([], { month: 'short', day: 'numeric' })} {matchDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 flex-shrink-0 text-right">
-                      <div>
-                        {/* §13: the W / L badge art in place of the Win / Loss text. */}
-                        <WinLossBadge won={isWinner} className="ml-auto" />
-                        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                          {playerTime > 0 ? `${playerTime}s` : '-'}
-                        </div>
-                      </div>
-                      <div className="text-xs text-right" style={{ color: 'var(--color-text-muted)' }}>
-                        <div>{matchDate.toLocaleDateString()}</div>
-                        <div>{matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                      </div>
-                    </div>
+                    {/* §13: the W / L badge art in place of the Win / Loss text. */}
+                    <WinLossBadge won={isWinner} className="flex-shrink-0" />
                   </div>
                 );
               })}

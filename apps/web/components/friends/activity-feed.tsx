@@ -243,7 +243,7 @@ export function ActivityFeed({ onRematch }: Props) {
           </div>
         </FrCard>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {shown.map((e, idx) => {
             const { text, icon } = describe(e);
             const chips = reactionChips(reactions[e.id]);
@@ -277,7 +277,7 @@ export function ActivityFeed({ onRematch }: Props) {
               >
                 <div aria-hidden="true" style={{ ...frBar(accent, 5), borderRadius: '16px 16px 0 0' }} />
                 <div className="flex items-start gap-2.5" style={{ padding: '8px 10px 9px' }}>
-                  <FriendAvatar name={e.username} url={e.avatar_url} emoji={e.avatar_emoji} size={34} />
+                  <FriendAvatar name={e.username} url={e.avatar_url} emoji={e.avatar_emoji} size={36} />
                   <div className="flex-1 min-w-0">
                     <span className="flex items-start gap-1.5">
                       <span className="shrink-0 pt-px">{icon}</span>
@@ -285,7 +285,7 @@ export function ActivityFeed({ onRematch }: Props) {
                         {numberRuns(text).map((r, i) => (r.num ? <SoftNum key={i} size={13}>{r.text}</SoftNum> : <span key={i}>{r.text}</span>))}
                       </span>
                     </span>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
                       {chips.map((c) => {
                         const popped = burst?.id === e.id && burst.key === c.key;
                         return (
@@ -299,8 +299,8 @@ export function ActivityFeed({ onRematch }: Props) {
                             style={{
                               height: 26,
                               background: `linear-gradient(180deg, ${softMix(accent, c.mine ? 0.2 : 0.08)}, ${softMix(accent, c.mine ? 0.32 : 0.16)})`,
-                              border: c.mine ? `1.5px solid ${accent}` : `1.5px solid ${softMix(accent, 0.3)}`,
-                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+                              // BJ7: no outlined chips — mine reads by its deeper wash.
+                              boxShadow: c.mine ? `inset 0 1px 0 rgba(255,255,255,0.7), 0 0 0 2px ${softMix(accent, 0.45)}` : 'inset 0 1px 0 rgba(255,255,255,0.7)',
                               color: FR_LOOK.ink,
                             }}
                           >
@@ -322,7 +322,7 @@ export function ActivityFeed({ onRematch }: Props) {
                   </div>
                   {e.type === 'gift' ? (
                     // T4: gift-shield moments wear the shield-guard art, small.
-                    <SceneArt name="art-scene-shield-guard" height={40} className="shrink-0" style={{ marginTop: -2 }} />
+                    <SceneArt name="art-scene-shield-guard" height={36} className="shrink-0" style={{ marginTop: -2 }} />
                   ) : pose && (
                     <Image
                       src={artSrc(pose)}
@@ -333,7 +333,7 @@ export function ActivityFeed({ onRematch }: Props) {
                       loading="lazy"
                       draggable={false}
                       className="shrink-0 pointer-events-none select-none"
-                      style={{ width: 40, height: 40, objectFit: 'contain', marginTop: -2 }}
+                      style={{ width: 36, height: 36, objectFit: 'contain', marginTop: -2 }}
                     />
                   )}
                 </div>

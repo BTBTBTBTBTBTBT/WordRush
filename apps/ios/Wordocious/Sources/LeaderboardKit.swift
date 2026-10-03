@@ -67,12 +67,12 @@ extension View {
     /// result card (`lbCardEmbedded`) it draws nothing.
     func lbCard() -> some View { modifier(LbCardChrome()) }
 
-    /// Your own row: a stronger gold tint with a 1.5 pt amber ring, inset inside the card.
+    /// Your own row: a stronger gold tint, inset inside the card (BJ7: no ring — no
+    /// outlined boxes; the deeper wash + "(you)" carry it).
     @ViewBuilder func youRow(_ isMe: Bool) -> some View {
         if isMe {
             background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Theme.isDark ? Theme.highlightGold : LbStyle.gold.wash(0.24)))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(LbStyle.gold, lineWidth: 1.5))
+                .fill(Theme.isDark ? Theme.highlightGold : LbStyle.gold.wash(0.32)))
                 .padding(.horizontal, 4).padding(.vertical, 2)
         } else {
             padding(.horizontal, 4).padding(.vertical, 2)
@@ -197,20 +197,22 @@ struct LbResultCard<Delta: View, Footer: View>: View {
         let ink = dark ? Theme.textSecondary : LbStyle.goldInk
         return VStack(spacing: 0) {
             if let headline {
-                LiveHeadline(text: headline, palette: .leaderboard, size: 20, maxLines: 1, minimumScale: 0.6)
-                    .padding(.horizontal, 14).padding(.top, 10)
+                LiveHeadline(text: headline, palette: .leaderboard, size: 18, maxLines: 1, minimumScale: 0.6)
+                    .padding(.horizontal, 12).padding(.top, 8)
             }
-            HStack(alignment: .center, spacing: 12) {
+            // BJ7: one top line — crown + rank, the "of" line and the points top-aligned;
+            // the solve line ONE line 4 under it.
+            HStack(alignment: .top, spacing: 10) {
                 VStack(spacing: 0) {
-                    Icon3D(.crown, size: 30)
+                    Icon3D(.crown, size: 24)
                     Text(rank.map { "#\($0)" } ?? "#–")
-                        .softNumber(26)
+                        .softNumber(22)
                         .lineLimit(1).minimumScaleFactor(0.5)
                 }
                 .frame(minWidth: 48)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(rank.map { "Rank \($0)" } ?? "Not ranked yet")
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
                         Text(ofLine)
                             .font(Brand.font(13, .black)).tracking(1)
@@ -222,14 +224,13 @@ struct LbResultCard<Delta: View, Footer: View>: View {
                         Text(line)
                             .font(Brand.font(13, .heavy))
                             .foregroundStyle(FinishInk.secondary)
-                            .lineLimit(2).minimumScaleFactor(0.8)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(1).minimumScaleFactor(0.75)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if let points {
                     VStack(alignment: .trailing, spacing: 1) {
-                        Text(points).softNumber(26)
+                        Text(points).softNumber(22)
                             .lineLimit(1).minimumScaleFactor(0.6)
                         Text(pointsLabel)
                             .font(Brand.font(11, .black)).tracking(1.3)
@@ -238,13 +239,13 @@ struct LbResultCard<Delta: View, Footer: View>: View {
                     .accessibilityElement(children: .combine)
                 }
             }
-            .padding(.horizontal, 14).padding(.vertical, 12)
+            .padding(.horizontal, 12).padding(.vertical, 10)
             .accessibilityElement(children: .combine)
             footer()
                 .environment(\.lbCardEmbedded, true)
         }
         .tintedCard(accent: Color(hex: 0xF5A524), bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)],
-                    tint: 0.12, line: 0.30)
+                    barHeight: 6, tint: 0.12, line: 0.30)
     }
 }
 
@@ -366,7 +367,8 @@ struct LbBoardRow<Info: View, Trailing: View>: View {
             }
             trailing()
         }
-        .padding(.horizontal, 10).padding(.vertical, 9)
+        // BJ7: 7 vertical (was 9) — the 36-pt avatar row still clears 44.
+        .padding(.horizontal, 10).padding(.vertical, 7)
     }
 }
 
@@ -422,8 +424,9 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
 
     var body: some View {
         let titleArt = mode.flatMap(GameTitleArt.forMode)
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
+        // BJ7: one top line (art / icon + title + controls top-aligned), the sub 4 under it.
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
                 if titleArt == nil {
                     if let art, ArtAsset.exists(art) {
                         GameArtImage(asset: art, size: 40)
@@ -433,9 +436,9 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
                         ModeIconView(icon: icon, accent: accent, box: 32)
                     }
                 }
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     if let titleArt {
-                        GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 56, alignment: .leading)
+                        GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 44, alignment: .leading)
                     } else {
                         Text(title).font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
                             .lineLimit(1).minimumScaleFactor(0.7)
@@ -444,7 +447,7 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
                     if let sub {
                         HStack(spacing: 4) {
                             if let subSymbol { Image(systemName: subSymbol).font(.system(size: 11, weight: .bold)) }
-                            Text(sub).font(Brand.font(12, .heavy)).lineLimit(2).minimumScaleFactor(0.8)
+                            Text(sub).font(Brand.font(12, .heavy)).lineLimit(1).minimumScaleFactor(0.75)
                         }
                         .foregroundStyle(FinishInk.secondary)
                     }
@@ -456,9 +459,9 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
             }
             extra()
         }
-        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 12)
+        .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)])
+        .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)], barHeight: 6)
     }
 }
 

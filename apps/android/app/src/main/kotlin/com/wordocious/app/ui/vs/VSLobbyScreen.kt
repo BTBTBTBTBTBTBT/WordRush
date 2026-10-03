@@ -8,7 +8,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -279,7 +281,8 @@ private fun LobbyMain(
                         ) { Box(Modifier.padding(top = 3.dp)) { ModeGlyph(m, accent, 30.dp) } }
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // BJ7: the three tiles hug the longest one (equal heights, no 112 floor).
+                Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (free) {
                         PlayTile(
                             "DAILY", if (dailyUsed) "Played today. Pro plays live any time." else "Today’s battle. A bot steps in if nobody is on.",
@@ -331,10 +334,11 @@ private fun LobbyMain(
                         rivals.take(3).forEachIndexed { i, r ->
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).stripedRow(i, VS_ACCENT).padding(horizontal = 6.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                // BJ7: top-aligned row, detail 4 under the name.
+                                verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                VsAvatar(r.username, null, size = 32.dp, borderColor = Color.Transparent, userId = r.opponentId)
-                                Column(Modifier.weight(1f)) {
+                                VsAvatar(r.username, null, size = 36.dp, borderColor = Color.Transparent, userId = r.opponentId)
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text("@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsTeal.deep, maxLines = 1)
                                     Text(
                                         vsRivalLine(r.wins, r.losses, r.lastMode), fontSize = 11.sp, fontWeight = FontWeight.Bold,
@@ -457,9 +461,9 @@ private fun IncomingCard(c: VsChallengeService.ChallengeView, onRace: () -> Unit
 private fun PlayTile(title: String, sub: String, modifier: Modifier, locked: Boolean = false, icon: @Composable () -> Unit, onClick: () -> Unit) {
     // A1: a tinted card with the game-card top bar; A9: the whole tile squishes.
     VsTintedCard(
-        modifier.heightIn(min = 112.dp).squishClickable("$title. $sub" + if (locked) " Pro." else "", onClick = onClick),
-        corner = 16.dp, barHeight = 6.dp,
-        contentPadding = PaddingValues(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier.fillMaxHeight().squishClickable("$title. $sub" + if (locked) " Pro." else "", onClick = onClick),
+        corner = 16.dp, barHeight = 5.dp,
+        contentPadding = PaddingValues(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             VsIconSquare(content = icon)
@@ -475,9 +479,9 @@ private fun PlayTile(title: String, sub: String, modifier: Modifier, locked: Boo
 private fun GoProCard(onGoPro: () -> Unit) {
     // G1 family: the gold-tinted card with its gold top bar, W crowned (A7: not the
     // banner's S), and the amber candy CTA.
-    VsTintedCard(Modifier.fillMaxWidth(), accent = VS_GOLD_ACCENT, corner = 18.dp, contentPadding = PaddingValues(14.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    VsTintedCard(Modifier.fillMaxWidth(), accent = VS_GOLD_ACCENT, corner = 18.dp, contentPadding = PaddingValues(12.dp)) {
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("GO PRO FOR ALL OF VS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF78350F))
                 Text(
                     "All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.",
@@ -486,7 +490,7 @@ private fun GoProCard(onGoPro: () -> Unit) {
             }
             androidx.compose.foundation.Image(
                 painterResource(R.drawable.art_scene_pro_crown), contentDescription = null,
-                modifier = Modifier.size(84.dp).clearAndSetSemantics { },
+                modifier = Modifier.size(60.dp).clearAndSetSemantics { },
             )
         }
         VsTealButton("SEE PRO", color = com.wordocious.app.ui.CandyColor.AMBER, onClick = onGoPro)
@@ -513,8 +517,8 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
             cursorBrush = SolidColor(VsTeal.ink),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false),
             // A1: the input takes the teal wash too (no plain white).
-            modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(vsWash(VS_ACCENT, 0.07f))
-                .border(1.5.dp, vsLine(VS_ACCENT), RoundedCornerShape(10.dp)).padding(10.dp),
+            // BI23 / BJ7: a soft filled field, no outline.
+            modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(vsWash(VS_ACCENT, 0.14f)).padding(10.dp),
             decorationBox = { inner ->
                 if (code.isEmpty()) Text("CODE", fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = VsTeal.grey)
                 inner()
@@ -542,10 +546,10 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
 /** Guest sign-in prompt — VS is account-based (iOS VSLobbyView.guestPrompt). */
 @Composable
 private fun GuestPrompt(onSignIn: () -> Unit) {
-    VsTintedCard(Modifier.fillMaxWidth(), corner = 18.dp, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    VsTintedCard(Modifier.fillMaxWidth(), corner = 18.dp, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             // A7: a waiting character that isn't the page host (S).
-            VsCastPose(MascotId.O1, "waiting", 110.dp)
+            VsCastPose(MascotId.O1, "waiting", 84.dp)
             Text("Sign in to play VS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinishInk.heading)
             Text(
                 "VS Battle pits you against a live opponent and records your results — it needs an account.",

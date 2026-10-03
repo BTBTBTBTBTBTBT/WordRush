@@ -788,14 +788,17 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             // §2.2 Your board for this mode (the replay, collapsible), tinted, under the result.
             if (!isSweep) {
                 item(key = "completed-$selectedMode") {
-                    com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
+                    // BJ7: under the rank row the card reads YOUR BOARD (no duplicate solve line).
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.wordocious.app.ui.game.LocalCompletedUnderRank provides (userRank != null),
+                    ) { com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode) }
                 }
             }
             // §2.5 YESTERDAY'S WINNERS (collapsible) — per-mode top 3, or yesterday's
             // top sweepers when the Sweep tile is selected. One cream card: the caps
             // header (chevron + bare share) and, open, the striped rows under it.
             item(key = "yesterday") {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(LB_CARD_GAP))
                 Column(Modifier.lbBoardCard()) {
                     Row(
                         Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp),
@@ -1039,27 +1042,23 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
 @Composable
 private fun SweepInfoCard(sweepers: Int) {
     LbTintedCard(LB_SWEEP_GOLD) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // BJ7: top-aligned, ONE detail line 4 under the name.
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             androidx.compose.foundation.Image(
                 androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.game_sweep), null,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(40.dp),
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    "Daily Sweep", fontSize = 18.sp, fontWeight = FontWeight.Black, color = lbNameInk(), maxLines = 1,
+                    "Daily Sweep", fontSize = 17.sp, fontWeight = FontWeight.Black, color = lbNameInk(), maxLines = 1,
                     modifier = Modifier.semantics { heading() },
                 )
                 // §223 microcopy: pre-answers "why is 9/9 below 8/9" — the board ranks by points, not wins.
                 Text(
-                    "Ranked by total points across all modes",
+                    "Ranked by total points across all modes" + if (sweepers > 0) " · $sweepers today" else "",
                     fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = lbSubInk(),
+                    maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
-                if (sweepers > 0) {
-                    Text(
-                        "$sweepers sweeper${if (sweepers == 1) "" else "s"} today",
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = lbSubInk(), maxLines = 1,
-                    )
-                }
             }
         }
     }

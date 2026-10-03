@@ -91,8 +91,9 @@ fun InfoPage(
     Column(
         modifier.fillMaxSize().pageBackground(PageTint.HOME)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = INFO_PAGE_PAD).padding(bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = INFO_PAGE_PAD).padding(bottom = 24.dp),
+        // BJ7: 8 between cards (was 10).
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
             SoftControl(Icon3DName.BACK, backLabel, onBack)
@@ -159,7 +160,7 @@ fun InfoSectionCard(
 ) {
     TintedCard(
         accent, modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp),
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (title != null) {
@@ -195,11 +196,12 @@ fun InfoGuideCard(
         modifier.fillMaxWidth().squishClickable(
             listOfNotNull(kicker, title, subtitle).joinToString(", "), onClick = onClick,
         ),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Box(Modifier.size(44.dp), contentAlignment = Alignment.Center, content = icon)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        // BJ7: icon + title top-aligned, the subtitle 4 under the title.
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center, content = icon)
+            Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (kicker != null) {
                     Text(kicker, fontSize = 9.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.08.em, color = darkenInk(accent))
                 }

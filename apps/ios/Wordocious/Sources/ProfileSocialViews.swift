@@ -85,9 +85,10 @@ private struct SocialCard: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .padding(14)
+            // BJ7: 12 padding (was 14), a slimmer bar.
+            .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .tintedCard(accent: accent, bar: [accent, accent.mixed(over: .white, 0.65)], barHeight: 6)
+            .tintedCard(accent: accent, bar: [accent, accent.mixed(over: .white, 0.65)], barHeight: 5)
     }
 }
 
@@ -95,12 +96,11 @@ private extension View {
     func socialCard(_ accent: Color = Color(hex: 0x7C3AED)) -> some View { modifier(SocialCard(accent: accent)) }
 
     /// A small tinted inner tile / row (§A1) — dark keeps the dark surface.
+    /// BJ7 / BI23: a soft fill only, no outline (strong = a deeper wash).
     func socialTile(_ accent: Color, radius: CGFloat = 12, strong: Bool = false) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         let dark = Theme.isDark
-        return background(shape.fill(dark ? accent.opacity(strong ? 0.22 : 0.10) : accent.wash(strong ? 0.20 : 0.10)))
-            .overlay(shape.stroke(dark ? accent.opacity(strong ? 0.6 : 0.3) : (strong ? accent.wash(0.6) : accent.wash(0.30)),
-                                  lineWidth: 1.5))
+        return background(shape.fill(dark ? accent.opacity(strong ? 0.28 : 0.14) : accent.wash(strong ? 0.26 : 0.13)))
     }
 }
 
@@ -121,15 +121,15 @@ struct TodayRingAvatar: View {
         let tile = AvatarView.showsTile(profile.avatarUrl, username: profile.username)
         ZStack {
             AvatarOutline(tile: tile).stroke(Color(hex: 0x7C3AED).opacity(Theme.isDark ? 0.25 : 0.14), lineWidth: 5)
-                .frame(width: 114, height: 114)
+                .frame(width: 100, height: 100)
             AvatarOutline(tile: tile).trim(from: 0, to: fraction)
                 .stroke(
                     LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                    startPoint: .topLeading, endPoint: .bottomTrailing),
                     style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .frame(width: 114, height: 114)
-            AvatarView(url: profile.avatarUrl, username: profile.username, size: 96,
+                .frame(width: 100, height: 100)
+            AvatarView(url: profile.avatarUrl, username: profile.username, size: 84,
                        accentHex: profile.accentColor, emoji: profile.avatarEmoji, pro: Wordocious.isProActive(profile))
         }
         .overlay(alignment: .bottom) {
@@ -350,7 +350,7 @@ struct YouVsThemCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 socialCaption("YOU vs \(target.username.uppercased())")
                 Spacer()
@@ -392,7 +392,7 @@ struct YouVsThemCard: View {
                             .lineLimit(1).minimumScaleFactor(0.7)
                         Spacer()
                     }
-                    .padding(.horizontal, 10).padding(.vertical, 9)
+                    .padding(.horizontal, 10).padding(.vertical, 7)
                     .socialTile(Color(hex: 0x7C3AED))
                     .contentShape(Rectangle())
                 }.buttonStyle(.squish)
@@ -623,7 +623,7 @@ struct TrophyCaseCard: View {
     var body: some View {
         // FINISH_SPEC §AK: the tappable card squishes (a Button, not a tap gesture).
         Button { showHistory = true } label: {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 socialCaption("TROPHY CASE")
                 Spacer()
@@ -647,7 +647,7 @@ struct TrophyCaseCard: View {
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                 }
-                .padding(.horizontal, 11).padding(.vertical, 8)
+                .padding(.horizontal, 10).padding(.vertical, 6)
                 .socialTile(Color(hex: 0x7C3AED))
             }
         }
@@ -666,7 +666,7 @@ struct TrophyCaseCard: View {
             Text("\(count)").softNumber(22)
             Text(label).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 9)
+        .frame(maxWidth: .infinity).padding(.vertical, 7)
         // §A1: each shelf a tinted tile in its medal color (gold stronger when won).
         .socialTile(color, radius: 13, strong: highlight && count > 0)
     }
@@ -860,7 +860,7 @@ struct HighlightsReel: View {
     var body: some View {
         let items = self.items
         if !items.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 socialCaption("HIGHLIGHTS")
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 9) {
@@ -891,8 +891,8 @@ struct HighlightsReel: View {
             Text(item.caption).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)
                 .lineLimit(2).multilineTextAlignment(.leading)
         }
-        .frame(minWidth: 108, alignment: .leading)
-        .padding(11)
+        .frame(minWidth: 104, alignment: .leading)
+        .padding(10)
         .socialTile(item.color, radius: 13)
     }
 }
@@ -1010,12 +1010,12 @@ struct LatelyCard: View {
                                 .lineLimit(1).minimumScaleFactor(0.7)
                             Spacer()
                         }
-                        .padding(.horizontal, 11).padding(.vertical, 9)
+                        .padding(.horizontal, 10).padding(.vertical, 7)
                         .socialTile(Color(hex: 0xEC4899))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.squish)
-                    .padding(.top, 9)
+                    .padding(.top, 6)
                 }
             }
             .socialCard(Color(hex: 0xF97316))
@@ -1033,12 +1033,12 @@ struct LatelyCard: View {
             SymbolGlyph(icon, size: 14, color: color)
                 .frame(width: 28, height: 28)
                 .background(RoundedRectangle(cornerRadius: 9).fill(color.opacity(0.08)))
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(text).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
                 Text(when).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 7)
+        .padding(.vertical, 5)
     }
 }

@@ -22,6 +22,13 @@ class HeadlineSizeTest {
     }
 
     @Test
+    fun page_titles_cap_at_52_under_the_section_rule() {
+        // BJ7: PageHeadline caps a page's top title at 52 (the Home section titles keep 64).
+        assertEquals(52f, HeadlineSize.PAGE_TITLE_H, 0.01f)
+        assertTrue(HeadlineSize.PAGE_TITLE_H < HeadlineSize.PAGE_MAX_H)
+    }
+
+    @Test
     fun tablets_cap_at_300_wide() {
         val (w, _) = HeadlineSize.fit(900f, 6f)
         assertEquals(300f, w, 0.01f)

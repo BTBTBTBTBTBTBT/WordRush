@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -285,6 +286,13 @@ private val COMPLETED_SLATE = Color(0xFF6B7891)
 private fun completedInk(): Color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading
 
 /**
+ * BJ7: true under the Leaderboard's rank row, whose line already says how it went
+ * ("#2 of 3 · 2,323 pts · Solved in 3 guesses · 23s") — the card's header then reads
+ * YOUR BOARD alone (no duplicate "COMPLETED TODAY · 3/6 · 23s" on the screen).
+ */
+val LocalCompletedUnderRank = androidx.compose.runtime.compositionLocalOf { false }
+
+/**
  * The "your board" card (FINISH_SPEC A1 / C2, Leaderboard + Records): a tinted card —
  * purple when won, slate when missed — with its top bar; the header row (the W / L
  * badge, COMPLETED / ATTEMPTED TODAY, the summary, the chevron) toggles the replay
@@ -301,13 +309,14 @@ private fun CompletedCard(
     val accent = if (won) COMPLETED_PURPLE else COMPLETED_SLATE
     com.wordocious.app.ui.TintedCard(
         accent,
-        Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        Modifier.fillMaxWidth().padding(bottom = 10.dp),
         bar = Brush.horizontalGradient(listOf(accent, com.wordocious.app.ui.Wash.mix(accent, 0.55f))),
-        barHeight = 6.dp,
+        barHeight = 5.dp,
         contentPadding = PaddingValues(0.dp),
         verticalArrangement = Arrangement.Top,
     ) {
-        val label = if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY"
+        val underRank = LocalCompletedUnderRank.current
+        val label = if (underRank) "YOUR BOARD" else if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY"
         Row(
             Modifier.fillMaxWidth()
                 .then(
@@ -316,7 +325,8 @@ private fun CompletedCard(
                         onClick = onToggle,
                     ) else Modifier.semantics(mergeDescendants = true) { },
                 )
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .heightIn(min = 44.dp)
+                .padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             com.wordocious.app.ui.ResultBadge(won, size = 20.dp)
@@ -327,7 +337,7 @@ private fun CompletedCard(
                 maxLines = 1,
             )
             Spacer(Modifier.weight(1f))
-            Text(
+            if (!underRank) Text(
                 summary, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
                 color = if (WTheme.isDark) WTheme.textMuted else com.wordocious.app.ui.FinishInk.muted, maxLines = 1,
             )

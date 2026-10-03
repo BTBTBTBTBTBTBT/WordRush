@@ -123,7 +123,7 @@ internal fun LeaderboardPicker(
 }
 
 /** AU2 the Leaderboard day title's height cap. */
-private val LB_TITLE_MAX = 90.dp // BB3 (was 110)
+private val LB_TITLE_MAX = 78.dp // BJ7 (BB3 was 90, before that 110)
 
 /** "OCT 2 · RESETS IN 12:41:17" — reads the ticking clock in its own scope so only it recomposes. */
 @Composable

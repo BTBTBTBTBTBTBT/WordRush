@@ -36,12 +36,13 @@ struct FriendsBannerView: View {
         let input = Self.input(friendCount: friends.count, online: online.map(\.username), rows: rows)
         // FINISH_SPEC §C4 (mockup `.banner`): the race banner is a pink tinted card
         // with a pink → gold top bar and O1 cheering at the top right.
-        return VStack(alignment: .leading, spacing: 10) {
+        // BJ7: the banner hugs its rows (8 between, 10 / 12 padding, a smaller host).
+        return VStack(alignment: .leading, spacing: 8) {
             strip(input)
             onNowRow(online, now: now)
             raceRow(rows)
         }
-        .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 14)
+        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             // Shimmers while anyone is on (behind the content, inside the card).
@@ -49,7 +50,7 @@ struct FriendsBannerView: View {
         }
         .overlay(alignment: .topTrailing) {
             // The cast (docs/MASCOT_SPEC.md §1): O1, the four-armed cheerleader, hosts Friends.
-            PoseImage(Mascots.friends, "cheer", height: 80)
+            PoseImage(Mascots.friends, "cheer", height: 68)
                 .padding(.trailing, 8).padding(.top, 2)
         }
         .friendsCard(accent: FriendsInk.pink, bar: [FriendsInk.pink, FriendsInk.amber])
@@ -81,12 +82,12 @@ struct FriendsBannerView: View {
                 LiveHeadline(text: FriendlyGames.friendsBannerHeadline(input), palette: .friends, size: 20,
                              names: [input.leaderName], alignment: .leading, maxLines: 2, minimumScale: 0.8)
                     .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-                    .padding(.trailing, 84)
+                    .padding(.trailing, 72)
                 Text(FriendlyGames.friendsBannerClockLine(input, clock: clock))
                     .font(Brand.font(11, .black)).tracking(0.6).monospacedDigit()
                     .foregroundStyle(FriendsInk.bannerLabel)
                     .lineLimit(1).minimumScaleFactor(0.7)
-                    .padding(.trailing, 72)
+                    .padding(.trailing, 64)
             }
         }
     }
@@ -94,7 +95,7 @@ struct FriendsBannerView: View {
     // MARK: ON NOW
 
     private func onNowRow(_ online: [FriendsService.FriendProfile], now: Date) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 FriendsLabel("On now", color: FriendsInk.bannerLabel)
                 if !online.isEmpty {
@@ -165,7 +166,7 @@ struct FriendsBannerView: View {
             chips[2] = mine
         }
         return Button(action: onRace) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     FriendsLabel("Today's race", color: FriendsInk.bannerLabel)
                     Spacer(minLength: 4)

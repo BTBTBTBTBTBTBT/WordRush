@@ -68,8 +68,7 @@ internal fun Modifier.lbBoardCard(): Modifier = composed {
     this.fillMaxWidth()
         .shadow(6.dp, shape, clip = false, ambientColor = Color(0x1F78350F), spotColor = Color(0x1F78350F))
         .clip(shape)
-        .background(if (dark) WTheme.surface else LB_BOARD_TINT)
-        .border(1.5.dp, if (dark) WTheme.border else LB_BOARD_LINE, shape)
+        .background(if (dark) WTheme.surface else LB_BOARD_TINT)   // BJ7: wash + lift, no outline
 }
 
 /**
@@ -88,7 +87,7 @@ internal fun Modifier.lbStripedRow(index: Int, isCurrentUser: Boolean, topRule: 
         }
     } else {
         base.stripedRow(index, LB_GOLD, first = !topRule)
-    }.padding(horizontal = 14.dp, vertical = 10.dp)
+    }.padding(horizontal = 12.dp, vertical = 8.dp)   // BJ7: was 14 / 10
 }
 
 /** The board's caps section label (mockup `.bhead .t`: 12 / 900 / .14em). */
@@ -111,8 +110,7 @@ internal fun <T> SoftSegment(options: List<Pair<T, String>>, selected: T, onChan
     val dark = WTheme.isDark
     val track = if (dark) Color.White.copy(alpha = 0.08f) else Color(0xE6FFF0DE)
     Row(
-        Modifier.clip(RoundedCornerShape(50)).background(track)
-            .then(if (dark) Modifier else Modifier.border(1.dp, LB_BOARD_LINE, RoundedCornerShape(50)))
+        Modifier.clip(RoundedCornerShape(50)).background(track)   // BJ7: no outline
             .padding(3.dp),
     ) {
         options.forEach { (value, label) ->
@@ -210,14 +208,16 @@ internal fun LbResultCard(
         bar = Brush.horizontalGradient(listOf(Color(0xFFF5A524), Color(0xFFFFD166))),
         tint = if (dark) WTheme.surface else LB_RESULT_TINT,
         line = if (dark) WTheme.border else LB_RESULT_LINE,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // BJ7: one top line — crown + rank, the caps line and the points top-aligned;
+        // the solve line ONE line 4 under it.
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon3D(Icon3DName.CROWN, 30.dp)
-                SoftNumber("#$rank", if (rank >= 1000) 20.sp else 26.sp)
+                Icon3D(Icon3DName.CROWN, 24.dp)
+                SoftNumber("#$rank", if (rank >= 1000) 18.sp else 22.sp)
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         ofLine, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.08.em,
@@ -229,13 +229,14 @@ internal fun LbResultCard(
                 if (solvedLine != null) {
                     Text(
                         solvedLine, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-                        color = if (dark) WTheme.textMuted else FinishInk.muted, maxLines = 2,
+                        color = if (dark) WTheme.textMuted else FinishInk.muted, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
             if (points != null) {
                 Column(horizontalAlignment = Alignment.End) {
-                    SoftNumber(points, if (points.length > 7) 20.sp else 26.sp)
+                    SoftNumber(points, if (points.length > 7) 18.sp else 22.sp)
                     Text(
                         pointsLabel, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.12.em,
                         color = if (dark) WTheme.textSecondary else LB_LABEL, maxLines = 1,
@@ -247,4 +248,4 @@ internal fun LbResultCard(
 }
 
 /** The gap between the page's cards (mockup `.scroll { gap: 12px }`). */
-internal val LB_CARD_GAP: Dp = 12.dp
+internal val LB_CARD_GAP: Dp = 10.dp   // BJ7: was 12

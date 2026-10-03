@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -85,7 +86,7 @@ private fun themeAccent(key: String): Color = when (key) {
 private val KEYBOARD_LAYOUTS = listOf(
     Triple("standard", "Standard", "Enter left, delete right"),
     Triple("flipped", "Flipped", "Delete left, enter right"),
-    Triple("michael", "Michael Keyboard", "4 rows like your phone — delete and enter on both sides"),
+    Triple("michael", "Michael Keyboard", "4 rows, delete + enter on both sides"),
 )
 
 /** The Settings sections' accents (A1: each card its own color; the page accent is purple). */
@@ -153,7 +154,8 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            // BJ7: 12 between sections (was 18).
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // A6 / N1: the SETTINGS lettering as a calm centered headline (PageHeadline sizes it).
             PageHeadline(TitleArt.SETTINGS, Modifier.fillMaxWidth())
@@ -163,7 +165,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // THEME
             Section("THEME", SettingsAccent.theme) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     THEMES.forEach { (key, label, desc) ->
                         ChoiceTile(label, desc, SettingsAccent.theme, active = theme == key, preview = { ThemeTilesPreview(key) }) { ThemePref.set(key); theme = key }
                     }
@@ -172,7 +174,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // KEYBOARD (§213) — layout radio cards, THEME-card twins.
             Section("KEYBOARD", SettingsAccent.keyboard) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     KEYBOARD_LAYOUTS.forEach { (key, label, desc) ->
                         val active = com.wordocious.app.ui.game.KeyboardLayoutPref.value == key
                         ChoiceTile(label, desc, SettingsAccent.keyboard, active = active, preview = { KeyRowPreview(key) }) { com.wordocious.app.ui.game.KeyboardLayoutPref.value = key }
@@ -325,7 +327,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // The footer: U with a cup of tea (A7: the page host is R), then the version.
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                CastPose(MascotId.U, "tea", 84.dp)
+                CastPose(MascotId.U, "tea", 68.dp)
                 Text(
                     "Wordocious · v1.0.0",
                     fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
@@ -523,12 +525,12 @@ private fun LinkedSignIns() {
  */
 @Composable
 private fun Section(title: String, accent: Color, padded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         FinishLabel(title, Modifier.padding(start = 4.dp), color = darkenInk(accent))
         TintedCard(
-            accent, Modifier.fillMaxWidth(), corner = 18.dp, barHeight = 8.dp,
+            accent, Modifier.fillMaxWidth(), corner = 18.dp, barHeight = 6.dp,
             contentPadding = if (padded) PaddingValues(12.dp) else PaddingValues(0.dp),
-            verticalArrangement = Arrangement.spacedBy(if (padded) 10.dp else 0.dp),
+            verticalArrangement = Arrangement.spacedBy(if (padded) 8.dp else 0.dp),
             content = content,
         )
     }
@@ -558,13 +560,13 @@ private fun ChoiceTile(
         Box(Modifier.matchParentSize().clip(shape).background(if (WTheme.isDark) accent.copy(alpha = 0.16f) else Wash.mix(accent, 0.11f)))
         Box(Modifier.matchParentSize().alpha(face).clip(shape).background(glossy).background(sheen))
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 11.dp),
+            Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(label, fontSize = 14.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = if (active) Color.White else WTheme.text)
-                Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) Color.White.copy(alpha = 0.88f) else WTheme.textMuted)
+                Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) Color.White.copy(alpha = 0.88f) else WTheme.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             preview()
             Box(Modifier.size(20.dp).alpha(face).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
@@ -655,10 +657,11 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, dimmed: Bool
                 onValueChange = onChange,
             )
             .alpha(if (dimmed) 0.5f else 1f)
-            .padding(12.dp),
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             Text(sub, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
         }
@@ -670,7 +673,7 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, dimmed: Bool
 @Composable
 private fun LinkRow(title: String, onClick: () -> Unit = {}) {
     Row(
-        modifier = Modifier.fillMaxWidth().squishClickable(label = title, role = Role.Button, onClick = onClick).padding(12.dp),
+        modifier = Modifier.fillMaxWidth().squishClickable(label = title, role = Role.Button, onClick = onClick).heightIn(min = 44.dp).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -109,7 +110,8 @@ fun VsBannerView(
                 androidx.compose.foundation.Image(
                     com.wordocious.app.ui.artPainter(heroArt, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp), contentDescription = null,
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1200f / 638f).clearAndSetSemantics { },
+                    // BJ7: the faceoff capped at 124 tall (was the full-width aspect, ~190).
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).height(116.dp).clearAndSetSemantics { },
                 )
             }
             Column(
@@ -129,7 +131,7 @@ fun VsBannerView(
                 Text(clockLine, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = subInk, modifier = Modifier.padding(end = 4.dp))
             }
             // TODAY
-            Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     VsCapsLabel("TODAY", color = subInk)
                     VsNumber(vsTodayStatus(input.battle, input.botOfDay), 11.sp)
@@ -145,7 +147,7 @@ fun VsBannerView(
             }
             // RECORD (A2: the numbers soft)
             Row(
-                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 12.dp)
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 10.dp)
                     .semantics(mergeDescendants = true) { contentDescription = "Record: " + recordLine.lowercase() },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -191,12 +193,13 @@ private fun TodayTile(title: String, tile: VsTodayTile, modifier: Modifier, onCl
             Modifier.fillMaxWidth()
                 .squishClickable("$title, ${tile.line}", enabled = open) { if (open) onClick() }
                 .miniGameCard(accent, 12.dp, selected = won)
-                .padding(start = 8.dp, end = 8.dp, top = 9.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 6.dp),
+            // BJ7: icon + title top-aligned, the line 4 under the title.
+            verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             if (art) Box(Modifier.size(40.dp), Alignment.Center) { icon() }
             else VsIconSquare(accent) { icon() }
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 VsCapsLabel(title, color = vsInk(accent), fontSize = 9.5.sp)
                 Text(tile.line, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }

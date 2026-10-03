@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -239,8 +240,9 @@ fun FriendsScreen(
     Column(
         Modifier.fillMaxSize().pageBackground(PageTint.FRIENDS, alwaysLight = true)
             .verticalScroll(friendsScroll)
-            .padding(horizontal = 16.dp, vertical = 12.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
+        // BJ7: 12 between sections (was 16).
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // 1. The FRIENDS headline (FINISH_SPEC A6 / C4b / N1): the FRIENDS lettering as a
         // calm centered headline (PageHeadline sizes it), nothing beside it. The bell moved into Settings ›
@@ -258,7 +260,7 @@ fun FriendsScreen(
 
         // 4. YOUR TURN
         if (games.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FriendsLabel("YOUR TURN", Modifier.padding(start = 4.dp))
                     val mine = games.count { it.yourTurn }
@@ -271,12 +273,13 @@ fun FriendsScreen(
                     Row(
                         Modifier.fillMaxWidth()
                             .squishClickable(label = null) { onOpenGame(g.id) }
-                            .friendsCard(16.dp, accent = g.kind.color, bar = g.kind.color, barHeight = 6.dp)
-                            .padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            .friendsCard(16.dp, accent = g.kind.color, bar = g.kind.color, barHeight = 5.dp)
+                            .padding(start = 12.dp, end = 10.dp, top = 13.dp, bottom = 10.dp),
+                        // BJ7: one top line — icon, title and the action top-aligned; detail 4 under.
+                        verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        FriendlyGameIcon(g.kind, 34.dp)
-                        Column(Modifier.weight(1f)) {
+                        FriendlyGameIcon(g.kind, 40.dp)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
                                 "${g.title} vs @${g.opponent.username}", fontSize = 13.sp, fontWeight = FontWeight.Black,
                                 color = FriendsPink.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -294,7 +297,7 @@ fun FriendsScreen(
         }
 
         // 5. PLAY WITH FRIENDS
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 FriendsLabel("PLAY WITH FRIENDS")
                 Spacer(Modifier.weight(1f))
@@ -378,7 +381,7 @@ fun FriendsScreen(
         ) { note = it }
         InvitePanel()
         // The tab sits under the BottomNav — clear it so the last card's tail is reachable.
-        Spacer(Modifier.height(96.dp))
+        Spacer(Modifier.height(84.dp))
     }
 
     // The quick-play sheet (§3).
@@ -402,7 +405,7 @@ fun FriendsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 PageTitleText("TODAY’S RACE", accent = PageAccent.friends, fontSize = 17.sp)
-                Column(Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT).padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 12.dp)) {
+                Column(Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT).padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 10.dp)) {
                     TodaysRaceCard(
                         friends = friends,
                         meDigest = FriendsService.meDigest,
@@ -455,7 +458,7 @@ private fun InvitesSection(
     val scope = rememberCoroutineScope()
     var inviteNote by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(inviteNote) { if (inviteNote != null) { delay(2_500); inviteNote = null } }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             FriendsLabel("INVITES")
             // M: requests waiting on you wear the tab's candy count badge; sent ones the soft count.
@@ -479,18 +482,18 @@ private fun InvitesSection(
         }
         if (outgoing.isNotEmpty()) {
             Column(
-                Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT).padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT).padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FriendsLabel("SENT — WAITING")
                 outgoing.forEach { r ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(
                             Modifier.weight(1f).squishClickable(label = "@${r.username}, pending, sent ${agoShort(r.requestedAt)}, open profile") { onOpenProfile(r.id) },
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             FriendAvatar(r)
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
                                     "@${r.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -583,7 +586,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
         bar = Brush.horizontalGradient(listOf(Color(0xFFF5A524), Color(0xFFFFD166))),
         tint = if (dark) WTheme.surface else Color(0xFFFFF7EC),
         line = if (dark) WTheme.border else Color(0xFFF8E2C4),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             FriendsLabel("THIS WEEK’S RACE", Modifier.weight(1f, fill = false), color = ink)
@@ -619,7 +622,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
                     .tintedPill(if (win) RACE_GOLD else FRIENDS_CARD_ACCENT)
-                    .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 8.dp),
+                    .padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 6.dp),
             ) {
                 if (win) Icon3D(Icon3DName.CROWN, 22.dp) else GlyphArtImage(GlyphArt.medal(r.rank) ?: GlyphArt.MEDAL, 22.dp)
                 Text(
@@ -770,7 +773,7 @@ private fun YourFriendsSection(
             .clip(shape).background(LIST_TINT), // BI23: no outline
     ) {
         Row(
-            Modifier.fillMaxWidth().padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 10.dp, top = 10.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -798,7 +801,7 @@ private fun YourFriendsSection(
             CandyButton("Add a friend", onClick = onAdd, color = CandyColor.PINK, size = CandySize.SMALL)
         }
         if (friends.isEmpty()) {
-            Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // No friends yet: I's invite scene above the line (ART_SPEC §7).
                 BrandEmptyState(
                     title = "NO FRIENDS YET", line = Mascots.addFriendLine, scene = SceneArt.INVITE,
@@ -821,16 +824,18 @@ private fun YourFriendsSection(
                 val on = f.isOnline(nowMs)
                 val played = f.playedToday ?: 0
                 Box {
+                    // BJ7: one top line — avatar, name + chips and the streak / action
+                    // top-aligned; the presence line 4 under the name.
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxWidth()
                             .combinedClickableNoRipple(onLongClick = { menuTarget = f }, onClick = { onOpenProfile(f.id) })
                             .stripedRow(idx, Color(0xFF7C3AED), first = false)
-                            .padding(horizontal = 12.dp, vertical = 9.dp),
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
                     ) {
-                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 38.dp, online = on, userId = f.id)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 36.dp, online = on, userId = f.id)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
                                     buildAnnotatedString {
@@ -852,7 +857,7 @@ private fun YourFriendsSection(
                                 color = if (on) FriendsPink.green else Color(0xFF7A6A95), maxLines = 1, overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        (f.friendStreak ?: 0).takeIf { it > 0 }?.let { FlameCount("$it") }
+                        (f.friendStreak ?: 0).takeIf { it > 0 }?.let { Box(Modifier.heightIn(min = 34.dp), contentAlignment = Alignment.Center) { FlameCount("$it") } }
                         // C4: chunky candy actions — Play / Challenge purple, Nudge amber.
                         when {
                             on -> CandyButton("Play", onClick = { onPlay(f) }, color = CandyColor.PURPLE, size = CandySize.SMALL, contentDescription = "Play with ${f.username}")
@@ -892,7 +897,7 @@ private fun YourFriendsSection(
                     }
                 }
             }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(2.dp))
     }
 }
 
@@ -943,22 +948,23 @@ private fun PocketGameCard(kind: com.wordocious.core.FriendlyKind, modifier: Mod
                 .squishClickable(label = "${kind.title}, ${kind.sub}. Pick a friend to play") { onClick() }
                 .shadow(5.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
                 .clip(shape)
-                .background(friendsWash(kind.color, 0.12f))
-                .border(1.5.dp, friendsLine(kind.color, 0.32f), shape),
+                // BI23 / BJ7: wash only, no outline.
+                .background(friendsWash(kind.color, 0.14f)),
         ) {
-            Box(Modifier.fillMaxWidth().height(7.dp).background(kind.color))
+            Box(Modifier.fillMaxWidth().height(5.dp).background(kind.color))
+            // BJ7: the card hugs its content — icon, a one-line name, the detail (2 lines
+            // reserved so the row's cards match).
             Column(
-                Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                Modifier.fillMaxWidth().padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                FriendlyGameGlyph(kind, 34.dp)
-                Text(
-                    kind.title, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis,
+                FriendlyGameGlyph(kind, 32.dp)
+                FitText(
+                    kind.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
                 )
                 Text(
                     kind.sub, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    maxLines = 2, minLines = 2, overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -1033,7 +1039,7 @@ private fun AddFriendSection(
             } finally { sharingInvite = false }
         }
     }
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         FriendsLabel("ADD A FRIEND", Modifier.padding(start = 4.dp))
         // T1: the request went out — I tossing the envelope, INVITE SENT!, the friend on a
         // glossy pill, "Send another" (back to the field) and "Done".
@@ -1051,8 +1057,8 @@ private fun AddFriendSection(
         Box(Modifier.fillMaxWidth()) {
             Column(
                 Modifier.fillMaxWidth().friendsCard(16.dp, bar = FRIENDS_CARD_ACCENT)
-                    .padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                    .padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     "Find them by username, or send your link.", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
@@ -1093,7 +1099,7 @@ private fun AddFriendSection(
                                 }
                             }
                             .lightTintedPill(Color(0xFF7C3AED), 12.dp) // AD: inside the fixed-light card
-                            .padding(start = 10.dp, end = 10.dp, top = 9.dp, bottom = 7.dp),
+                            .padding(start = 10.dp, end = 10.dp, top = 7.dp, bottom = 6.dp),
                     ) {
                         FriendAvatar(u)
                         Text(u.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.heading, maxLines = 1, modifier = Modifier.weight(1f))
@@ -1104,12 +1110,12 @@ private fun AddFriendSection(
                 // §225/§289: the share link covers the "get them on the app" direction.
                 CandyButton(
                     "Share invite link", onClick = { shareInvite() },
-                    color = CandyColor.PURPLE, size = CandySize.MEDIUM, icon = CandyIcon.SHARE,
-                    enabled = !sharingInvite, modifier = Modifier.fillMaxWidth(), fill = true,
+                    color = CandyColor.PURPLE, size = CandySize.SMALL, icon = CandyIcon.SHARE,
+                    enabled = !sharingInvite,
                 )
             }
             // A7: W waving hello beside the line (the banner host is O1).
-            CastPose(MascotId.W, "wave", 56.dp, Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 8.dp))
+            CastPose(MascotId.W, "wave", 48.dp, Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp))
         }
     }
 }
@@ -1256,10 +1262,10 @@ fun FriendsRowLink(onOpen: () -> Unit) {
             .fillMaxWidth()
             .squishClickable(label = null, onClick = onOpen)
             .then(
-                if (WTheme.isDark) Modifier.clip(RoundedCornerShape(20.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(20.dp))
+                if (WTheme.isDark) Modifier.clip(RoundedCornerShape(20.dp)).background(WTheme.surface)
                 else Modifier.friendsCard(20.dp, accent = PURPLE, bar = PURPLE, barHeight = 6.dp)
             )
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp),
+            .padding(start = 14.dp, end = 14.dp, top = 16.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -1302,7 +1308,7 @@ private fun friendversary(f: FriendsService.FriendProfile): Int? {
 internal fun FriendAvatar(f: FriendsService.FriendProfile, accentHex: String? = null) {
     // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded), a rounded square.
     PlayerAvatar(
-        f.username, 32.dp, userId = f.id, avatarUrl = f.avatarUrl, config = f.avatarConfig,
+        f.username, 36.dp, userId = f.id, avatarUrl = f.avatarUrl, config = f.avatarConfig,   // BJ7: 36 in lists
         castId = f.avatarCastId, frame = f.avatarFrame, accentHex = accentHex, contentDescription = f.username,
     )
 }

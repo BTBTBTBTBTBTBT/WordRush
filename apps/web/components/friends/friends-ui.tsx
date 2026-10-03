@@ -212,11 +212,13 @@ export function PocketGameCard({ kind, title, sub, onClick }: { kind: FriendlyKi
       className="relative overflow-hidden flex flex-col text-left"
       style={{ ...frSurface(color, { radius: 16, shadow: false }), boxShadow: '0 6px 14px rgba(60, 30, 110, 0.08)' }}
     >
-      <span aria-hidden="true" className="block w-full" style={frBar(color, 7)} />
-      <span className="flex flex-col gap-1" style={{ padding: '8px 8px 10px' }}>
-        <PocketArt kind={kind} size={34} fallback={<OutlineGlyph kind={kind} size={26} color={color} stroke={2.2} />} />
-        <span className="text-[12px] font-black leading-tight" style={{ color: FR_LOOK.ink }}>{title}</span>
-        <span className="text-[10px] font-bold leading-tight" style={{ color: FR_LOOK.sub }}>{sub}</span>
+      <span aria-hidden="true" className="block w-full" style={frBar(color, 5)} />
+      {/* BJ7: the card hugs its content — icon, a one-line name, the detail (2 lines
+          reserved so a row's cards match). */}
+      <span className="flex flex-col gap-[3px]" style={{ padding: 8 }}>
+        <PocketArt kind={kind} size={32} fallback={<OutlineGlyph kind={kind} size={24} color={color} stroke={2.2} />} />
+        <span className="text-[12px] font-black leading-tight truncate" style={{ color: FR_LOOK.ink }}>{title}</span>
+        <span className="text-[10px] font-bold leading-tight line-clamp-2" style={{ color: FR_LOOK.sub, minHeight: '2.5em' }}>{sub}</span>
       </span>
     </button>
   );

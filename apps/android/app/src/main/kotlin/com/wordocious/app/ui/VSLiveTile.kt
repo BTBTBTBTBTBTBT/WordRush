@@ -94,8 +94,9 @@ fun VSLiveTile(
     // §21.1), the Bot of the day line, then PLAY (teal candy) and INVITE (peach, Pro).
     GameCardFrame(accent, done = done) {
         Row(
+            // BJ7: the text column top-aligned beside the faceoff (no centered dead space).
             Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Image(
                 painterResource(R.drawable.art_scene_vs_faceoff),
@@ -104,7 +105,7 @@ fun VSLiveTile(
                 modifier = Modifier.fillMaxWidth(0.4f).widthIn(max = 170.dp).aspectRatio(FACEOFF_ASPECT)
                     .squishClickable(onClick = onOpen).clearAndSetSemantics { },
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 // A9: the info block opens the lobby and squishes; TalkBack reads it as one button.
                 Column(
                     Modifier.fillMaxWidth().squishClickable("${card.title}, $countText, $subtitle, Bot of the day: ${bot.name}", card = true, onClick = onOpen),

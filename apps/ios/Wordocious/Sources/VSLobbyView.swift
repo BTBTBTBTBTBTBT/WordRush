@@ -94,9 +94,10 @@ struct VSLobbyView: View {
         VStack(spacing: 0) {
             nav
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                // BJ7: 12 between sections, a shorter title art.
+                VStack(alignment: .leading, spacing: 12) {
                     // FINISH_SPEC §A6: the VS title art as the page headline, edge to edge.
-                    PageHeadline(.vs, label: "VS Battle", bleed: 16, maxHeight: 120)
+                    PageHeadline(.vs, label: "VS Battle", bleed: 16, maxHeight: 96)
                     if !auth.isAuthenticated {
                         guestPrompt
                     } else {
@@ -167,8 +168,7 @@ struct VSLobbyView: View {
                         .font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Capsule().fill(VsLobbyKit.ink.wash(0.12)))
-                .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.3), lineWidth: 1))
+                .background(Capsule().fill(VsLobbyKit.ink.wash(0.16)))
                 .accessibilityElement(children: .combine)
                 .padding(.trailing, 8)
             }
@@ -203,7 +203,7 @@ struct VSLobbyView: View {
     // MARK: - Incoming challenges
 
     private var incomingSection: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             ForEach(model.incoming.prefix(3)) { c in
                 NavigationLink { VSChallengeRaceView(code: c.code) } label: { incomingCard(c) }
                     .buttonStyle(.squish)
@@ -215,9 +215,10 @@ struct VSLobbyView: View {
         let line = c.run.solved
             ? "\(VsLobbyKit.modeName(c.mode)) · solved in \(c.run.guesses) · \(VsLobby.vsClock(c.run.timeMs)) · \(c.hoursLeft)h left"
             : "\(VsLobbyKit.modeName(c.mode)) · not solved · \(c.hoursLeft)h left"
-        return HStack(spacing: 12) {
-            VSInitialAvatar(name: c.challenger.username, size: 38)
-            VStack(alignment: .leading, spacing: 2) {
+        // BJ7: one top line — avatar, title and the Race tag top-aligned; detail 4 under.
+        return HStack(alignment: .top, spacing: 10) {
+            VSInitialAvatar(name: c.challenger.username, size: 36)
+            VStack(alignment: .leading, spacing: 4) {
                 Text("CHALLENGE FROM @\(c.challenger.username.uppercased())")
                     .font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
                 Text(line).font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk).lineLimit(1).minimumScaleFactor(0.8)
@@ -225,14 +226,14 @@ struct VSLobbyView: View {
             Spacer(minLength: 4)
             VSCandyTag(title: "Race", symbol: "play.fill", variant: .pink)
         }
-        .padding(12)
-        .vsTinted(Color(hex: 0xEC4899), bar: [Color(hex: 0xF472B6), Color(hex: 0xA21CAF)], radius: 18, barHeight: 6, tint: 0.09)
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .vsTinted(Color(hex: 0xEC4899), bar: [Color(hex: 0xF472B6), Color(hex: 0xA21CAF)], radius: 18, barHeight: 5, tint: 0.09)
     }
 
     // MARK: - PLAY
 
     private var playSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VSSectionLabel(text: "PLAY")
                 Spacer()
@@ -240,11 +241,13 @@ struct VSLobbyView: View {
                     .foregroundStyle(VsLobbyKit.accent(mode))
             }
             modeStrip
+            // BJ7: the three tiles hug the longest one (equal heights, no 112 floor).
             HStack(alignment: .top, spacing: 8) {
                 if isPro { liveTile } else { dailyTile }
                 friendTile
                 botsTile
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -275,15 +278,14 @@ struct VSLobbyView: View {
     /// `art` tiles (the BOTS character) draw their icon without the chip behind.
     private func playTile(icon: some View, title: String, sub: String, accent: Color,
                           locked: Bool = false, art: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .top) {
                 if art {
-                    icon.frame(height: 40)
+                    icon.frame(height: 36)
                 } else {
                     icon
                         .frame(width: 30, height: 30)
-                        .background(RoundedRectangle(cornerRadius: 9).fill(accent.wash(0.2)))
-                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(accent.wash(0.4), lineWidth: 1))
+                        .background(RoundedRectangle(cornerRadius: 9).fill(accent.wash(0.24)))
                 }
                 Spacer(minLength: 0)
                 if locked { VSLockBadge() }
@@ -294,8 +296,8 @@ struct VSLobbyView: View {
             Spacer(minLength: 0)
         }
         .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
-        .vsTinted(accent, bar: [accent.wash(0.7), accent], radius: 16, barHeight: 6, tint: 0.10, line: 0.32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .vsTinted(accent, bar: [accent.wash(0.7), accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.32)
     }
 
     private var liveTile: some View {
@@ -365,7 +367,7 @@ struct VSLobbyView: View {
 
     @ViewBuilder private var rivalsSection: some View {
         if !model.rivals.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     VSSectionLabel(text: "RIVALS")
                     Spacer()
@@ -381,15 +383,16 @@ struct VSLobbyView: View {
                         rivalRow(r).vsStripedRow(i)
                     }
                 }
-                .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar, radius: 18, barHeight: 6)
+                .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar, radius: 18, barHeight: 5)
             }
         }
     }
 
     private func rivalRow(_ r: StatsDeepService.Rivalry) -> some View {
-        HStack(spacing: 12) {
-            VSInitialAvatar(name: r.username, size: 34)
-            VStack(alignment: .leading, spacing: 2) {
+        // BJ7: top-aligned row, detail 4 under the name.
+        HStack(alignment: .top, spacing: 10) {
+            VSInitialAvatar(name: r.username, size: 36)
+            VStack(alignment: .leading, spacing: 4) {
                 Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
                 Text(VsLobbyKit.rivalLine(wins: r.wins, losses: r.losses, lastMode: r.lastMode))
                     .font(Brand.font(11, .heavy))
@@ -402,13 +405,13 @@ struct VSLobbyView: View {
             }
             .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.vertical, 7)
     }
 
     /// Go Pro (free): the gold card family (§G1) with the trophy and an amber candy CTA.
     private var proCard: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Icon3D(.crown, size: 20)
                     Text("GO PRO FOR ALL OF VS").font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
@@ -422,11 +425,11 @@ struct VSLobbyView: View {
                 .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium, fullWidth: false))
             }
             if ArtAsset.exists("art-medal-trophy") {
-                VSArt("art-medal-trophy", height: 76).frame(width: 70)
+                VSArt("art-medal-trophy", height: 60).frame(width: 56)
             }
         }
-        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
-        .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, radius: 18, barHeight: 8, tint: 0.12, line: 0.34)
+        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+        .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, radius: 18, barHeight: 6, tint: 0.12, line: 0.34)
     }
 
     // MARK: - YOUR CHALLENGES (sent in the last 24 h)
@@ -434,7 +437,7 @@ struct VSLobbyView: View {
     @ViewBuilder private var yourChallenges: some View {
         let recent = model.sent.filter { ($0.createdDate ?? .distantPast) > Date().addingTimeInterval(-24 * 3600) }
         if !recent.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 VSSectionLabel(text: "YOUR CHALLENGES")
                 VStack(spacing: 0) {
                     ForEach(Array(recent.prefix(3).enumerated()), id: \.element.id) { i, c in
@@ -442,7 +445,7 @@ struct VSLobbyView: View {
                             .buttonStyle(.squish)
                     }
                 }
-                .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar, radius: 18, barHeight: 6)
+                .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar, radius: 18, barHeight: 5)
             }
         }
     }
@@ -464,14 +467,15 @@ struct VSLobbyView: View {
             Text(status).font(Brand.font(11, .heavy))
                 .foregroundStyle(status == "waiting" ? VsLobbyKit.mutedInk : VsLobbyKit.purpleSub).lineLimit(1)
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .frame(minHeight: 44)
         .contentShape(Rectangle())
     }
 
     // MARK: - HAVE A CODE?
 
     private var codeSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             VSSectionLabel(text: "HAVE A CODE?")
             HStack(spacing: 8) {
                 TextField("CODE", text: $joinCode)
@@ -483,8 +487,8 @@ struct VSLobbyView: View {
                     }
                     .foregroundStyle(VsLobbyKit.numberInk)
                     .padding(.horizontal, 12).frame(height: 42)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(VsLobbyKit.ink.wash(0.10)))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(VsLobbyKit.ink.wash(0.34), lineWidth: 1.5))
+                    // BI23 / BJ7: a soft filled field, no outline.
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(VsLobbyKit.ink.wash(0.16)))
                 Button { joinWithCode() } label: {
                     CandyLabel(title: "Join") {
                         if joining { ProgressView().controlSize(.small).tint(.white) }
@@ -519,9 +523,9 @@ struct VSLobbyView: View {
 
     // VS is account-based (live opponents, recorded results) — guests sign in first.
     private var guestPrompt: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             // §A7: S hosts VS — the guest card shows him ready in his own pose.
-            PoseImage(.s, "ready", height: 96)
+            PoseImage(.s, "ready", height: 80)
             Text("Sign in to play VS")
                 .font(Brand.font(16, .black)).foregroundStyle(VsLobbyKit.titleInk)
             Text("VS Battle pits you against a live opponent and records your results — it needs an account.")
@@ -530,9 +534,9 @@ struct VSLobbyView: View {
             Button { showAuth = true } label: { CandyLabel(title: "Sign in") }
                 .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
         }
-        .padding(20)
+        .padding(16)
         .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
-        .padding(.top, 12)
+        .padding(.top, 4)
     }
 
     // MARK: - Daily VS limit modal (ports vs-limit-modal.tsx)

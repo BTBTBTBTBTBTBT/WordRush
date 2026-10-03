@@ -637,7 +637,7 @@ private fun AllTimeTab(
         }
         // HALL OF FAME — each global record its own tinted gold card, two across.
         item {
-            LbSectionLabel("HALL OF FAME", Modifier.padding(start = 4.dp, bottom = 8.dp).semantics { heading() })
+            LbSectionLabel("HALL OF FAME", Modifier.padding(start = 4.dp, bottom = 6.dp).semantics { heading() })
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 GLOBAL_RECORD_TYPES.chunked(2).forEach { rowTypes ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -656,8 +656,8 @@ private fun AllTimeTab(
         // BY GAME MODE — only the game picked in the picker: the play-card family header,
         // then its records (or the all-time sweep ranking) in striped rows.
         item {
-            Spacer(Modifier.height(20.dp))
-            LbSectionLabel(if (isSweep) "SWEEP RANKING" else "BY GAME MODE", Modifier.padding(start = 4.dp, bottom = 8.dp).semantics { heading() })
+            Spacer(Modifier.height(12.dp))   // BJ7: was 20
+            LbSectionLabel(if (isSweep) "SWEEP RANKING" else "BY GAME MODE", Modifier.padding(start = 4.dp, bottom = 6.dp).semantics { heading() })
             LbTintedCard(accent) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (isSweep) ModeIconBox(SWEEP_ID, accent, box = 44.dp)
@@ -776,17 +776,21 @@ private fun HallOfFameCard(
         accent, modifier,
         corner = 16.dp,
         bar = androidx.compose.ui.graphics.SolidColor(accent),
-        barHeight = 6.dp,
+        barHeight = 5.dp,
         tint = accentWash(accent, if (mine) 0.22f else Wash.CARD),
         line = if (mine && !WTheme.isDark) accent else accentLine(accent),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        RecordChip(cfg, accent, record != null)
-        Text(
-            cfg.label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.08.em,
-            color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 2, lineHeight = 12.sp,
-        )
+        // BJ7: one top line — the chip and the record name top-aligned (2 lines reserved
+        // so the pair of cards match), the value 4 under it.
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RecordChip(cfg, accent, record != null)
+            Text(
+                cfg.label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.08.em,
+                color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 2, minLines = 2, lineHeight = 12.sp,
+            )
+        }
         RecordValue(record?.let { cfg.format(it.recordValue.toInt()) + recordHintSuffix(it) }, 20.sp)
         if (record != null) RecordHolder(record, isCurrentUser, onOpenProfile)
     }

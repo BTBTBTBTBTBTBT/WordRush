@@ -76,7 +76,8 @@ struct FriendsPanelView: View {
         let incoming = FriendsService.incoming
         let outgoing = FriendsService.outgoingProfiles
 
-        VStack(alignment: .leading, spacing: 18) {
+        // BJ7: crisp page rhythm — 14 between sections (was 18).
+        VStack(alignment: .leading, spacing: 14) {
             if let p = AuthService.shared.profile {
                 FriendsBannerView(friends: friends, me: p, meDigest: FriendsService.meDigest,
                                   onFace: { quickPlay = QuickPlay(friend: $0, kind: .rps) },
@@ -244,7 +245,7 @@ struct FriendsPanelView: View {
     private var yourTurnSection: some View {
         let games = FriendlyGamesService.active
         let mine = games.filter(\.yourTurn).count
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "YOUR TURN") {
                 // §M: the same candy badge as the Friends tab — games waiting on you.
                 if mine > 0 {
@@ -252,18 +253,20 @@ struct FriendsPanelView: View {
                         .accessibilityElement().accessibilityLabel("\(mine) waiting on you")
                 }
             }
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 ForEach(games) { g in
                     let accent = FriendsKit.tileAccent(g.kind)
                     // §C4: each game in play on a small card in ITS color with its top bar.
                     Button { openGame = OpenGame(id: g.id, initial: g) } label: {
-                        HStack(spacing: 12) {
+                        // BJ7: one top line — icon, title and the action top-aligned; the
+                        // detail sits 4 under the title.
+                        HStack(alignment: .top, spacing: 10) {
                             pocketIcon(g.kind, size: 40)
                                 // §M: a waiting game wears the small candy badge.
                                 .overlay(alignment: .topTrailing) {
                                     if g.yourTurn { CandyCountBadge(count: 1, size: 16).offset(x: 6, y: -6) }
                                 }
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text("\(g.title) vs @\(g.opponent.username)").font(Brand.font(13, .black))
                                     .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.8)
                                 Text(g.line).font(Brand.font(11, .heavy))
@@ -281,8 +284,8 @@ struct FriendsPanelView: View {
                                 FriendsStatusChip(title: "Waiting", accent: accent)
                             }
                         }
-                        .padding(12)
-                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 6, tint: 0.10, line: 0.28)
+                        .padding(.horizontal, 12).padding(.vertical, 10)
+                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.28)
                     }
                     .buttonStyle(.squish)
                 }
@@ -293,7 +296,7 @@ struct FriendsPanelView: View {
     // MARK: PLAY WITH FRIENDS (§2.5)
 
     private var playWithFriendsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "PLAY WITH FRIENDS") {
                 Text("TAP A GAME, PICK A FRIEND").font(Brand.font(9.5, .black)).tracking(0.8)
                     .foregroundStyle(FriendsInk.section).lineLimit(1).minimumScaleFactor(0.7)
@@ -304,19 +307,19 @@ struct FriendsPanelView: View {
                 ForEach(FriendlyKind.allCases) { k in
                     let accent = FriendsKit.tileAccent(k)
                     Button { quickPlay = QuickPlay(friend: nil, kind: k) } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            pocketIcon(k, size: 34)
+                        // BJ7: the card hugs its content (no 116 floor): icon, a one-line
+                        // name (scales down, never wraps), the detail held to two lines so
+                        // every card in the grid stays the same height.
+                        VStack(alignment: .leading, spacing: 3) {
+                            pocketIcon(k, size: 32)
                             Text(k.title).font(Brand.font(12, .black)).foregroundStyle(FriendsInk.heading)
-                                .lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .lineLimit(1).minimumScaleFactor(0.7)
                             Text(FriendsKit.sub(k)).font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
-                                .lineLimit(2).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer(minLength: 0)
+                                .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
                         }
-                        .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 10)
-                        .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
-                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 7, tint: 0.10, line: 0.28)
+                        .padding(.horizontal, 8).padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.28)
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.squish)
@@ -363,8 +366,8 @@ struct FriendsPanelView: View {
                     .accessibilityLabel("Share weekly race")
                 }
             }
-            .padding(.horizontal, 14).padding(.top, 10)
-            VStack(spacing: 6) {
+            .padding(.horizontal, 12).padding(.top, 8)
+            VStack(spacing: 4) {
                 // D3.3 (§294) — the Sunday finish, settled server-side.
                 if let r = FriendsService.lastWeek {
                     lastWeekBanner(r)
@@ -409,7 +412,7 @@ struct FriendsPanelView: View {
                     }
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
             // The podium (shared with the Leaderboard): gold / silver / bronze steps;
             // §225: podium columns open profiles too.
             // BJ4: the free places as open spots once anyone is on it (ties keep plain order).
@@ -434,7 +437,7 @@ struct FriendsPanelView: View {
                                     .fixedSize()
                                 Text("pts").font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
                             }
-                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .padding(.horizontal, 12).padding(.vertical, 7)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.squish)
@@ -446,9 +449,9 @@ struct FriendsPanelView: View {
                 Text("Race resets Mondays — first daily takes the lead.")
                     .font(Brand.font(10, .bold)).foregroundStyle(weekInk)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
             }
-            Color.clear.frame(height: 4)
+            Color.clear.frame(height: 2)
         }
         .friendsCard(accent: FriendsInk.goldAccent, bar: [FriendsInk.goldAccent, Color(hex: 0xFFD166)],
                      tint: 0.09, line: 0.28)
@@ -485,7 +488,7 @@ struct FriendsPanelView: View {
         // §216: one-tap nudge for everyone who hasn't played today
         // (server still enforces 1 taunt per friend per day).
         let slackers = friends.filter { $0.playedToday == 0 && !isNewFriend($0) }
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             // §C4b: "Add a friend" lives here now — a small candy button in the
             // section header (the old circle beside the FRIENDS title is gone).
             FriendsSectionHeader(title: friends.isEmpty ? "YOUR FRIENDS" : "YOUR FRIENDS · \(friends.count)") {
@@ -503,7 +506,7 @@ struct FriendsPanelView: View {
                         if !FriendsService.loaded {
                             // Roster not fetched yet (cold launch): hold the rows' place instead of
                             // flashing the no-friends teaching copy (founder, 2026-09-29).
-                            VStack(spacing: 10) {
+                            VStack(spacing: 8) {
                                 ForEach(0..<3, id: \.self) { _ in SkeletonBlock(height: 30, cornerRadius: 10) }
                             }
                         } else if incoming.isEmpty && outgoing.isEmpty {
@@ -511,9 +514,9 @@ struct FriendsPanelView: View {
                             // under I's invite scene and its one line (MASCOT_SPEC §6, ART_SPEC §7;
                             // §A7: I, not the page host O1).
                             VStack(alignment: .leading, spacing: 5) {
-                                MascotMessage(scene: .invite, line: Mascots.addFriendLine, size: 72,
+                                MascotMessage(scene: .invite, line: Mascots.addFriendLine, size: 60,
                                               font: Brand.font(13, .black), color: FriendsInk.heading)
-                                    .frame(maxWidth: .infinity).padding(.bottom, 6)
+                                    .frame(maxWidth: .infinity).padding(.bottom, 4)
                                 Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")
                                 Text("2. Requests you send and receive land in INVITES.")
                                 Text("3. Once a friend accepts, race them today, play pocket games and trade streaks.")
@@ -524,7 +527,7 @@ struct FriendsPanelView: View {
                                 .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
                         }
                     }
-                    .padding(14)
+                    .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     if !slackers.isEmpty {
@@ -550,7 +553,7 @@ struct FriendsPanelView: View {
                             .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
                             .accessibilityLabel("Nudge all who haven't played")
                         }
-                        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 6)
+                        .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
                     }
                     // On now first, then by the most recent presence.
                     let sorted = friends.sorted { a, b in
@@ -578,9 +581,11 @@ struct FriendsPanelView: View {
         // §225: the WHOLE row is the door to the profile; the candy Button nests
         // inside the label and its tap wins over the link.
         return NavigationLink(value: f.id) {
-            HStack(spacing: 10) {
-                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 38, online: online, ring: false)
-                VStack(alignment: .leading, spacing: 2) {
+            // BJ7: one top line — avatar, name + badges and the streak / action all
+            // top-aligned; the presence line 4 under the name.
+            HStack(alignment: .top, spacing: 10) {
+                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 36, online: online, ring: false)
+                VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
                         Text("@\(f.username)").font(Brand.font(14, .black))
                             .foregroundStyle(FriendsInk.heading).lineLimit(1)
@@ -618,12 +623,13 @@ struct FriendsPanelView: View {
                         FlameMark(size: 12)
                         Text("\(n)").softNumber(14, color: Color(hex: 0xC2410C))
                     }
+                    .frame(minHeight: 34)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(n)-day friend streak")
                 }
                 actionPill(f, online: online)
             }
-            .padding(.horizontal, 12).padding(.vertical, 9)
+            .padding(.horizontal, 12).padding(.vertical, 7)
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
@@ -681,9 +687,9 @@ struct FriendsPanelView: View {
     // MARK: Add by username (§2.9)
 
     private var addFriendSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "ADD A FRIEND")
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     TextField("Add by username", text: $username)
                         .font(Brand.font(13, .bold))
@@ -759,7 +765,7 @@ struct FriendsPanelView: View {
                         onDone: { sentRequestTo = nil })
                 }
             }
-            .padding(14)
+            .padding(12)
             .friendsCard(accent: Self.lavender, tint: 0.075, line: 0.21)
         }
     }
@@ -771,7 +777,7 @@ struct FriendsPanelView: View {
     @ViewBuilder private var invitesCard: some View {
         let incoming = FriendsService.incoming
         let outgoing = FriendsService.outgoingProfiles
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "INVITES") {
                 // §M: incoming requests are what's waiting on you — the candy badge;
                 // with only sent requests, a quiet count.
@@ -787,10 +793,10 @@ struct FriendsPanelView: View {
                 // Incoming requests first — they're the actionable part.
                 if !incoming.isEmpty {
                     FriendsLabel("Friend requests", color: FriendsInk.lavender)
-                        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 6)
+                        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 4)
                     ForEach(Array(incoming.enumerated()), id: \.element.id) { i, r in
                         HStack(spacing: 10) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 34, emoji: r.avatar_emoji)
+                            AvatarView(url: r.avatar_url, username: r.username, size: 36, emoji: r.avatar_emoji)
                                 // §M: each waiting request wears the small candy badge.
                                 .overlay(alignment: .topTrailing) { CandyCountBadge(count: 1, size: 16).offset(x: 6, y: -6) }
                             NavigationLink(value: r.id) {
@@ -816,7 +822,7 @@ struct FriendsPanelView: View {
                             .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false, circle: true))
                             .accessibilityLabel("Decline \(r.username)")
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
                         .friendsStripe(i, accent: Self.lavender)
                     }
                 }
@@ -824,12 +830,12 @@ struct FriendsPanelView: View {
                 // Sent requests — the loop's missing feedback (Tier 1, Aug 11).
                 if !outgoing.isEmpty {
                     FriendsLabel("Sent — waiting", color: FriendsInk.lavender)
-                        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 6)
+                        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 4)
                     ForEach(Array(outgoing.enumerated()), id: \.element.id) { i, r in
-                        HStack(spacing: 8) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 34, emoji: r.avatar_emoji)
+                        HStack(alignment: .top, spacing: 8) {
+                            AvatarView(url: r.avatar_url, username: r.username, size: 36, emoji: r.avatar_emoji)
                             NavigationLink(value: r.id) {
-                                VStack(alignment: .leading, spacing: 3) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     (Text("@\(r.username)").font(Brand.font(14, .black)).foregroundColor(FriendsInk.heading)
                                         + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(FriendsInk.rowSub))
                                         .lineLimit(1).minimumScaleFactor(0.8)
@@ -857,7 +863,7 @@ struct FriendsPanelView: View {
                             }
                             .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                         }
-                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
                         .friendsStripe(i, accent: Self.lavender)
                     }
                 }
@@ -872,7 +878,7 @@ struct FriendsPanelView: View {
                             if !Task.isCancelled { self.inviteNote = nil }
                         }
                 }
-                Color.clear.frame(height: 6)
+                Color.clear.frame(height: 4)
             }
             .friendsCard(accent: Self.lavender, tint: 0.075, line: 0.21)
         }
@@ -1269,7 +1275,7 @@ struct FriendsScreenView: View {
 
     private func scroll(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: 14) {
                 // §A6 / §C4b: the whole-cast FRIENDS title art as a centered headline.
                 PageHeadline(.friends, bleed: Self.sidePadding)
                 FriendsPanelView(focusAdd: focusAdd, onAddFriend: { addFriend(proxy) })
@@ -1324,7 +1330,7 @@ struct FriendsRowLink: View {
                 }
                 Spacer()
             }
-            .padding(16)
+            .padding(.horizontal, 14).padding(.vertical, 12)
             .contentShape(Rectangle())
             // §A1: a tinted lavender card, never plain white.
             .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], barHeight: 6)

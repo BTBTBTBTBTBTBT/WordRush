@@ -570,10 +570,15 @@ fun GiftProCard(
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {},
     footer: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {},
 ) {
-    InviteCard(modifier, accent = GIFT_GOLD, bar = MomentInk.proBar, light = light) {
+    // BJ7: the gift card hugs its content — 12 padding, a smaller scene top-aligned
+    // with the one-line headline.
+    InviteCard(
+        modifier, accent = GIFT_GOLD, bar = MomentInk.proBar, light = light,
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
+    ) {
         Row(verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                InviteLettering("Gift a week of Pro", 21.sp, light = light, textAlign = TextAlign.Start)
+            Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                InviteLettering("Gift a week of Pro", 18.sp, light = light, textAlign = TextAlign.Start)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     SevenDaysBadge(light = light)
                     if (giftsLeft != null) GiftsLeftBadge(giftsLeft, slots = slots, light = light)
@@ -581,7 +586,7 @@ fun GiftProCard(
             }
             Image(
                 painterResource(R.drawable.art_scene_gift_pro), contentDescription = null, contentScale = ContentScale.Fit,
-                modifier = Modifier.height(92.dp).widthIn(max = 110.dp).offset(x = 4.dp, y = (-2).dp).clearAndSetSemantics { },
+                modifier = Modifier.height(72.dp).widthIn(max = 84.dp).offset(x = 4.dp).clearAndSetSemantics { },
             )
         }
         content()

@@ -89,8 +89,9 @@ internal val WOTD_CARD_ACCENT = Color(0xFF4CC77A)
 
 @Composable
 internal fun WordOfTheDayCard(onPastWords: () -> Unit) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitleArt(TitleArt.WOTD, below = { PastWordsLink(onPastWords) })
+    // BJ7: the compact section title (DAILIES / PUZZLES size), 6 under it.
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        SectionTitleArt(TitleArt.WOTD, below = { PastWordsLink(onPastWords) }, scale = HomeCardSpec.SECTION_TITLE_SCALE)
         WordOfTheDayCardBody(onPastWords)
     }
 }
@@ -114,9 +115,9 @@ internal fun WotdCardFrame(onClick: (() -> Unit)? = null, content: @Composable C
     GuideHeroCard(
         WOTD_CARD_ACCENT,
         if (onClick != null) Modifier.squishClickable(card = true, onClick = onClick) else Modifier,
-        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 16.dp),
-        spacing = 10.dp,
-        radius = 24.dp,
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+        spacing = 8.dp,
+        radius = 20.dp,
         horizontalAlignment = Alignment.Start,
         content = content,
     )
@@ -125,13 +126,13 @@ internal fun WotdCardFrame(onClick: (() -> Unit)? = null, content: @Composable C
 /** I's ready pose (~52) on a small soft glow (decorative). */
 @Composable
 private fun WotdHostGlow() {
-    Box(Modifier.size(60.dp).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
+    Box(Modifier.size(44.dp).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
         val glow = WOTD_CARD_ACCENT.copy(alpha = if (WTheme.isDark) 0.42f else 0.32f)
-        Canvas(Modifier.size(60.dp)) {
+        Canvas(Modifier.size(44.dp)) {
             val r = size.minDimension / 2f
             drawCircle(Brush.radialGradient(0f to glow, 1f to glow.copy(alpha = 0f), center = center, radius = r), radius = r)
         }
-        CastPose(MascotId.I, "ready", 52.dp)
+        CastPose(MascotId.I, "ready", 42.dp)
     }
 }
 
@@ -141,7 +142,7 @@ private fun WotdWordColumn(word: String, phonetic: String, partOfSpeech: String,
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         LiveHeadline(
             word, HeadlinePalette.HOME, Modifier.fillMaxWidth(),
-            maxSize = 26.sp, minSize = 14.sp, align = TextAlign.Start, maxLines = 1, sound = false,
+            maxSize = 22.sp, minSize = 14.sp, align = TextAlign.Start, maxLines = 1, sound = false,
         )
         if (phonetic.isNotBlank() || partOfSpeech.isNotBlank()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -220,7 +221,8 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
     WotdCardFrame(onClick = if (settled && !revealing) onPastWords else null) {
         CappedFontScale {
             // The WORD OF THE DAY title + "Past words" are the section header above (§12).
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // BJ7: one top line — I, the word and the streak top-aligned.
+            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 WotdHostGlow()
                 WotdWordColumn(info.word, info.phonetic, partOfSpeech, Modifier.weight(1f))
                 if (showFlame) StreakFlame(streak, flame = 15.dp, fontSize = 16)
@@ -229,10 +231,10 @@ private fun QuizCard(info: HomeStreaksService.WotdInfo, day: String, onPastWords
 
         val a = answer
         if (asking || (revealing && a != null)) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (asking) {
                     Text(
-                        "WHICH ONE IS IT?", fontFamily = Nunito, fontSize = 11.sp, fontWeight = FontWeight.Black,
+                        "WHICH ONE IS IT?", fontFamily = Nunito, fontSize = 10.sp, fontWeight = FontWeight.Black,
                         letterSpacing = 1.2.sp, color = guideAccentInk(GUIDE_BRAND),
                     )
                 }
@@ -319,7 +321,7 @@ private fun CandyChoice(letter: String, text: String, look: ChoiceLook, onClick:
                 if (onClick != null) Modifier.squishClickable(label, onClick = onClick)
                 else Modifier.semantics(mergeDescendants = true) { contentDescription = label },
             )
-            .heightIn(min = 48.dp)
+            .heightIn(min = 44.dp)
             .shadow(5.dp, shape, clip = false, ambientColor = shadowTint.copy(alpha = 0.25f), spotColor = shadowTint.copy(alpha = 0.30f))
             .clip(shape)
             .background(Brush.verticalGradient(listOf(top, bottom)))

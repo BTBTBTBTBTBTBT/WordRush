@@ -81,6 +81,9 @@ object HeadlineSize {
     const val PAGE_FRACTION = 0.62f
     const val PAGE_MAX_W = 300f
     const val PAGE_MAX_H = 64f
+    /** BJ7: a page's top title (PageHeadline) caps at 52 tall — crisper headers (the Home
+     *  section titles keep PAGE_MAX_H through PageTitleArt). */
+    const val PAGE_TITLE_H = 52f
     const val DAY_FRACTION = 0.58f
     const val DAY_MAX_H = 150f
 
@@ -121,7 +124,7 @@ fun PageHeadline(
     val aspect = if (intrinsic.height > 0f && intrinsic.width > 0f) intrinsic.width / intrinsic.height else 4f
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         val (w0, h0) = HeadlineSize.fit(maxWidth.value, aspect, day)
-        val cap = maxHeight?.value
+        val cap = maxHeight?.value ?: if (day) null else HeadlineSize.PAGE_TITLE_H
         val (w, h) = if (cap != null && h0 > cap) (cap * aspect) to cap else w0 to h0
         Image(
             painter,

@@ -21,7 +21,7 @@ struct LeaderboardBannerView: View {
         // FINISH_SPEC §AU2 / BB3: a compact top so the podium shows on arrival — the
         // day title ≤ 90 pt and the compact two-row picker grid.
         VStack(spacing: 6) {
-            LeaderboardHeadline(bleed: bleed, maxHeight: 90)
+            LeaderboardHeadline(bleed: bleed, maxHeight: 78)   // BJ7: was 90
             GamePickerCard(selection: isSweep ? GamePicker.sweep : selected.rawValue,
                            accent: LbStyle.gold, ink: Self.ink, compact: true,
                            onSelect: select) {
@@ -132,7 +132,7 @@ struct RecordsBannerView: View {
     private static let ink = Color(hex: 0x8A4A12)
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             PageHeadline(.records, bleed: bleed)
             GamePickerCard(selection: isSweep ? GamePicker.sweep : selected.rawValue,
                            accent: LbStyle.gold, ink: Self.ink,

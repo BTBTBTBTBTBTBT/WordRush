@@ -29,6 +29,8 @@ struct VSLiveTile<Destination: View>: View {
     }
 
     private static var heroAsset: String { "art-scene-vs-faceoff" }
+    /// BJ7: the card's content height (was 126 with the lines centered in dead space).
+    static var height: CGFloat { 104 }
 
     var body: some View {
         let accent = mode.accent
@@ -45,7 +47,9 @@ struct VSLiveTile<Destination: View>: View {
 
         GeometryReader { geo in
             let heroW = geo.size.width * 0.40
-            HStack(spacing: 10) {
+            // BJ7: the text column top-aligned beside the hero; the card hugs its four
+            // lines (104, was 126).
+            HStack(alignment: .top, spacing: 10) {
                 // The faceoff hero (W vs S), cropped to the two characters + the bolt.
                 // Tapping it (or the text) opens VS, like the whole card did before.
                 NavigationLink(destination: destination) {
@@ -54,7 +58,7 @@ struct VSLiveTile<Destination: View>: View {
                 .buttonStyle(.squish)
                 .accessibilityLabel("VS Battle, \(countText)")
 
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         LivePulseDot()
                         Text("LIVE").font(Brand.font(10, .black)).foregroundStyle(Theme.textPrimary)
@@ -101,13 +105,13 @@ struct VSLiveTile<Destination: View>: View {
                             .accessibilityLabel("Invite")
                         }
                     }
-                    .padding(.top, 1)
+                    .padding(.top, 2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(width: geo.size.width, height: geo.size.height)
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
-        .frame(height: 126)
+        .frame(height: Self.height)
         .padding(GameCardChrome.inner)
         // ART_SPEC §21.5 / §O2: the Home game-card chrome (tinted surface, radius,
         // border, lift, the colored top band in the VS teal). A completed daily wears
@@ -118,19 +122,19 @@ struct VSLiveTile<Destination: View>: View {
     /// The W-vs-S faceoff at ~40% of the card width, cropped to the characters and
     /// the bolt; the VS icon on a soft wash when the art is missing.
     @ViewBuilder private func hero(width: CGFloat, accent: Color) -> some View {
-        let h: CGFloat = min(118, width * 0.66)
+        let h: CGFloat = min(Self.height - 4, width * 0.66)
         if ArtAsset.exists(Self.heroAsset) {
             Image(Self.heroAsset)
                 .resizable().interpolation(.high)
                 .scaledToFill()
                 .frame(width: width, height: h)
                 .clipped()
-                .frame(width: width, height: 126)
+                .frame(width: width, height: Self.height)
                 .contentShape(Rectangle())
                 .accessibilityHidden(true)
         } else {
-            ModeIconView(icon: mode.icon, accent: accent, box: 44)
-                .frame(width: width, height: 126)
+            ModeIconView(icon: mode.icon, accent: accent, box: 40)
+                .frame(width: width, height: Self.height)
                 .background(RoundedRectangle(cornerRadius: 14).fill(accent.opacity(0.10)))
                 .contentShape(Rectangle())
         }

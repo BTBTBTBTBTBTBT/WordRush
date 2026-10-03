@@ -1436,3 +1436,22 @@ down at most ~16 pt; the card grows ~30 pt to fit the host over centered text (t
 component (iOS HomeHostMascot, Android HomeHost, web Home host) keeps option B (the player at the end of the WORDOCIOUS
 cast row) a placement change. Home shows each fact once (one resets countdown — the banner's). Photo rule everywhere (the
 BJ5 resolver): photo → framed portrait, mascot → full mascot; no renderer composites a photo onto a mascot body (audited ×3).
+BJ7. App-wide density pass: cards hug content, top-aligned title rows, one-line details (founder 10-03, after BH's compact
+Home cards: "Any areas across the app that you can do that exercise would be amazing"; "I don't like any of the bloating if it
+is unnecessary, I like the crisp look"). The BH pattern everywhere else: no fixed min heights or vertically centered content
+leaving dead space, no chip floating at a card's bottom; ONE top line (leading icon / avatar, title, trailing badge / action
+all top-aligned) with the detail 4 under the title on one line; padding 10–12, gaps 6–10, section gaps 12 (was 16–18),
+section labels and title art smaller with less air (page title art 52 tall, was 64; the Leaderboard day title 78, was 90;
+WORD OF THE DAY / VS BATTLE take the compact DAILIES / PUZZLES title); leading icons ~40, list avatars 36; card top bars
+5–6 (were 8–10). No outlined boxes (the last strokes go: social tiles, recent-match rows, VS code field / pills / day
+tiles, bot-ladder ring, Leaderboard your-row ring and board-card / segment lines on Android, reaction chips, pocket cards).
+Tap targets stay ≥ 44 (rows / toggles / links keep a 44 floor). Surfaces: Friends (banner, your turn, pocket games — 116
+floor gone, friend rows, weekly race, invites, Moments, add a friend, Gift a week of Pro), public profile (header, social
+cards, medal shelf, head-to-head, recent-match rows on one line), Records (hall-of-fame cards — 110 floor gone), VS (lobby
+tiles — 112 floor gone, incoming / rival / challenge rows, bot of the day, ladder rows one detail line, challenge cards,
+the VS banner), Home (WORD OF THE DAY card, VS BATTLE card 104 tall, was 126), Settings (sections, option tiles, toggles,
+links; Michael Keyboard reads "4 rows, delete + enter on both sides"), the info pages (menu, guides, words rows, strategy
+tiles — 170 floor gone, tip card), notification prefs, and the Leaderboard (result card, rows 7 vertical, headers, sweep
+card one line). No duplicate facts: under the Leaderboard result / rank row the completed-board toggle reads YOUR BOARD
+(the solve line above already says "Solved in 3 guesses · 23s"). The podium, Stats, in-game boards and finish screens are
+untouched.

@@ -377,13 +377,14 @@ fun VsNoticeCard(
                 if (onClick != null) Modifier.squishClickable(label, onClick = onClick)
                 else Modifier.semantics(mergeDescendants = true) { contentDescription = label },
             ),
-        accent = accent, corner = 16.dp, barHeight = 6.dp,
-        contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 10.dp),
+        accent = accent, corner = 16.dp, barHeight = 5.dp,
+        contentPadding = PaddingValues(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // BJ7: one top line — avatar, title and the action top-aligned; detail 4 under.
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (avatar != null) avatar()
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp), content = content)
-            if (pose != null) VsCastPose(pose.first, pose.second, 44.dp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp), content = content)
+            if (pose != null) VsCastPose(pose.first, pose.second, 40.dp)
             if (action != null) action()
         }
     }

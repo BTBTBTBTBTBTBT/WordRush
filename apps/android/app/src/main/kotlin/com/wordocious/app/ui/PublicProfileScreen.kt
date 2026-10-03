@@ -440,10 +440,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             val proAvatar = isOwnProAvatar(p.username)
             // AN6: photo and mascot are both rounded squares (the ring follows).
             // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded; own = local look).
-            TodayRingAvatar(completed = todayCount, square = true, avatarSize = 96.dp) {
+            TodayRingAvatar(completed = todayCount, square = true, avatarSize = 84.dp) {
                 val f = p.avatarFields()
                 PlayerAvatar(
-                    p.username ?: "P", 96.dp, userId = f.userId, avatarUrl = avatarUrl, config = f.config,
+                    p.username ?: "P", 84.dp, userId = f.userId, avatarUrl = avatarUrl, config = f.config,
                     castId = f.castId, frame = f.frame, accentHex = f.accentHex, pro = proAvatar, contentDescription = "Avatar",
                 )
             }
@@ -623,7 +623,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             val accent = modeAccent(selectedMode)
             // A1: the mode's tinted card with its top bar.
             TintedCard(accent, Modifier.fillMaxWidth(), corner = 16.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         modeCardFor(selectedMode)?.let { ModeIconBox(it, 28.dp) }
                         Text(modeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -654,7 +654,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         if (topWords.isNotEmpty()) {
             TintedCard(
                 PROFILE_PURPLE, Modifier.fillMaxWidth(), corner = 16.dp,
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 FinishLabel("TOP WORDS")
@@ -670,12 +670,13 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         // ── Recent matches — iOS renders this as a titled surface card ───────────
         TintedCard(
             Color(0xFF2563EB), Modifier.fillMaxWidth(), corner = 16.dp,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            // BJ7: 12 padding, a 25% smaller header, 6 between rows.
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Filled.Schedule, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
-                Text("Recent Matches", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Icon(Icons.Filled.Schedule, null, tint = Color(0xFF2563EB), modifier = Modifier.size(12.dp))
+                Text("Recent Matches", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             }
             if (matches.isEmpty()) {
                 BrandEmptyState(
@@ -998,10 +999,10 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
     Row(
         Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(accentWash(rowAccent, 0.10f))
-            .border(1.5.dp, accentLine(rowAccent, 0.28f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            // BJ7: no outline; one top line (icon, title, W / L top-aligned).
+            .background(accentWash(rowAccent, 0.12f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         // iOS RecentMatchRow leads with the mode's own glyph, not a win/loss tick.
@@ -1013,7 +1014,7 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.Bolt, null, tint = Color(0xFFD97706), modifier = Modifier.size(15.dp)) }
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(card?.title ?: m.gameMode, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
                 Text(if (isVs) "VS" else "Solo", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)

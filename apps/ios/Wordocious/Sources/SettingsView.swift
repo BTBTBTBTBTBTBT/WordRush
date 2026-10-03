@@ -47,19 +47,20 @@ struct SettingsView: View {
             ZStack {
                 PageBackground(tint: .home)
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    // BJ7: 12 between sections (was 16).
+                    VStack(alignment: .leading, spacing: 12) {
                         // FINISH_SPEC §AA3: the WORDOCIOUS PRO member card leads Settings
                         // (free players see the Go Pro upsell in the same slot).
                         SettingsProCard()
                         // FINISH_SPEC §G5: every section is a tinted card with its own
                         // top bar (§A1); rows squish (§A9); toggles take the accent.
                         section("THEME", accent: G5Accent.lilac) {
-                            VStack(spacing: 8) {
+                            VStack(spacing: 6) {
                                 ForEach(themes, id: \.value) { t in themeRow(t) }
                             }
                         }
                         section("KEYBOARD", accent: G5Accent.blue) {
-                            VStack(spacing: 8) {
+                            VStack(spacing: 6) {
                                 ForEach(keyboardLayouts, id: \.value) { k in keyboardRow(k) }
                             }
                         }
@@ -158,7 +159,7 @@ struct SettingsView: View {
                             // §A8 / §G5: the account actions are candy buttons — Sign
                             // Out the quiet peach, Delete the pink (its confirmation
                             // alert is unchanged).
-                            VStack(spacing: 10) {
+                            VStack(spacing: 8) {
                                 Button { Task { await auth.signOut(); dismiss() } } label: {
                                     CandyLabel(title: "Sign Out", symbol: "rectangle.portrait.and.arrow.right")
                                 }
@@ -177,14 +178,13 @@ struct SettingsView: View {
                         // §G5 / §A7: a cast pose in the footer — U with her tea (the
                         // Settings host is R, so not R).
                         VStack(spacing: 4) {
-                            PoseImage(.u, "tea", height: 86)
+                            PoseImage(.u, "tea", height: 68)
                             Text("Wordocious · v1.0.0").font(Brand.font(11, .bold))
                                 .foregroundStyle(FinishInk.secondary)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.top, 4)
                     }
-                    .padding(16)
+                    .padding(.horizontal, 16).padding(.vertical, 12)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -256,7 +256,7 @@ struct SettingsView: View {
     private let keyboardLayouts: [(value: String, label: String, desc: String)] = [
         ("standard", "Standard", "Enter left, delete right"),
         ("flipped", "Flipped", "Delete left, enter right"),
-        ("michael", "Michael Keyboard", "4 rows like your phone — delete and enter on both sides"),
+        ("michael", "Michael Keyboard", "4 rows, delete + enter on both sides"),
     ]
 
     private func keyboardRow(_ k: (value: String, label: String, desc: String)) -> some View {
@@ -277,13 +277,14 @@ struct SettingsView: View {
 
     private func toggleRow(_ title: String, _ sub: String, _ binding: Binding<Bool>, accent: Color) -> some View {
         Toggle(isOn: binding) {
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                 Text(sub).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                    .lineLimit(1).minimumScaleFactor(0.8)
             }
         }
         // The candy on/off switch (night art 10-03 sprites, proposal 3); still a Toggle for VoiceOver.
-        .toggleStyle(.candy).padding(.vertical, 6)
+        .toggleStyle(.candy).padding(.vertical, 4)
     }
 
     private func linkRow(_ title: String, accent: Color = G5Accent.purple) -> some View {
@@ -293,7 +294,8 @@ struct SettingsView: View {
             Image(systemName: "chevron.right").font(.system(size: 12, weight: .heavy))
                 .foregroundStyle(accent.opacity(0.7)).accessibilityHidden(true)
         }
-        .padding(.vertical, 11)
+        .padding(.vertical, 10)
+        .frame(minHeight: 44)
         .contentShape(Rectangle())
     }
 }
@@ -317,12 +319,12 @@ struct SettingsOptionTile<Preview: View>: View {
         let dark = Theme.isDark
         Button(action: action) {
             HStack(spacing: 10) {
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(label).font(Brand.font(14, .black))
                         .foregroundStyle(active ? Color.white : FinishInk.heading)
                     Text(desc).font(Brand.font(10, .bold))
                         .foregroundStyle(active ? Color.white.opacity(0.88) : FinishInk.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1).minimumScaleFactor(0.75)
                 }
                 Spacer(minLength: 6)
                 preview()
@@ -335,7 +337,8 @@ struct SettingsOptionTile<Preview: View>: View {
                 .opacity(active ? 1 : 0)
                 .accessibilityHidden(true)
             }
-            .padding(.horizontal, 12).padding(.vertical, 11)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .frame(minHeight: 44)
             .background {
                 ZStack {
                     shape.fill(dark ? accent.opacity(0.16) : accent.wash(0.11))

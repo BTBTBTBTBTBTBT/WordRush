@@ -199,7 +199,7 @@ fun ActivityFeed(
     }
 
     val pink = com.wordocious.app.ui.friends.FriendsPink
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             com.wordocious.app.ui.friends.FriendsLabel("MOMENTS")
             Spacer(Modifier.weight(1f))
@@ -239,7 +239,7 @@ fun ActivityFeed(
                     fontSize = 12.sp, fontWeight = FontWeight.Bold, color = pink.sub, fontFamily = Nunito,
                 )
             }
-            else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            else -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 val shown = if (expanded) list else list.take(8)
                 // A7: each pose at most once down the list.
                 val poses = momentPoses(shown, userId)
@@ -367,12 +367,14 @@ private fun MomentRow(
                         bar = true
                     },
                 )
-                .padding(start = 10.dp, end = 8.dp, top = 11.dp, bottom = 8.dp),
+                .padding(start = 10.dp, end = 8.dp, top = 10.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            // BJ7: one top line — avatar, headline and the small pose top-aligned; the
+            // day line 4 under the headline.
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 FriendAvatar(
@@ -381,7 +383,7 @@ private fun MomentRow(
                         avatarUrl = e.avatarUrl, avatarEmoji = e.avatarEmoji,
                     ),
                 )
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (isGame) {
                         val (head, score) = gameMomentParts(e)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -410,7 +412,7 @@ private fun MomentRow(
                 }
                 // T4: a shield gift wears the shield-guard art small (once down the list, like the poses).
                 if (pose != null) {
-                    if (e.type == "gift") ShieldGuardArt(40.dp) else CastPose(pose.first, pose.second, 40.dp)
+                    if (e.type == "gift") ShieldGuardArt(36.dp) else CastPose(pose.first, pose.second, 36.dp)
                 }
             }
             // Reaction chips only when the moment has reactions (mine ringed), and the candy action.
@@ -422,7 +424,7 @@ private fun MomentRow(
             }
             if (counted.isNotEmpty() || action != null) {
                 Row(
-                    Modifier.fillMaxWidth().padding(start = 40.dp),
+                    Modifier.fillMaxWidth().padding(start = 46.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     counted.forEach { key ->

@@ -111,17 +111,18 @@ struct InvitePanelView: View {
     }
 
     private var panel: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // BJ7: the gift card hugs its content — a smaller scene top-aligned with the
+        // one-line headline, 10 between blocks, 12 padding, a medium candy.
+        VStack(alignment: .leading, spacing: 10) {
             // FINISH_SPEC §T4: O3 with the crowned gift box, the headline, the
             // soft-number 7 DAYS badge and the gifts-left counter.
-            HStack(alignment: .center, spacing: 10) {
-                FriendsSceneArt(asset: "art-scene-gift-pro", height: 104, maxWidth: 110)
+            HStack(alignment: .top, spacing: 10) {
+                FriendsSceneArt(asset: "art-scene-gift-pro", height: 72, maxWidth: 80)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("GIFT A WEEK OF PRO")
-                        .font(Brand.font(19, .black)).tracking(0.3)
+                        .font(Brand.font(17, .black)).tracking(0.3)
                         .foregroundStyle(Theme.isDark ? Color(hex: 0xFCD34D) : Color(hex: 0x8A4A12))
-                        .lineLimit(2).minimumScaleFactor(0.8)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1).minimumScaleFactor(0.7)
                         .accessibilityAddTraits(.isHeader)
                     HStack(spacing: 8) {
                         HStack(spacing: 4) {
@@ -158,7 +159,7 @@ struct InvitePanelView: View {
                     if creating { ProgressView().tint(.white).controlSize(.small) }
                 }
             }
-            .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+            .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium))
             .disabled(creating || slotsLeft == 0)
             if slotsLeft == 0 && !creating {
                 Text("Slots free up when friends join.")
@@ -170,7 +171,6 @@ struct InvitePanelView: View {
                 G5Notice(error, tone: .error)
             }
 
-            ForEach(visibleInvites.prefix(6)) { inv in
             if ReferralCredits.showClearAll(visibleInvites.map(\.status)) {
                 // Founder 10-03: a quiet Clear all once there are 2+ credit notices.
                 Button("Clear all") {
@@ -180,6 +180,7 @@ struct InvitePanelView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .frame(minHeight: 32)
             }
+            ForEach(visibleInvites.prefix(6)) { inv in
                 // §251: settled rows lead with WHO — the code is noise once spent.
                 let name = inv.invitee_id.flatMap { inviteeNames[$0] } ?? "A friend"
                 HStack(spacing: 8) {
@@ -217,7 +218,6 @@ struct InvitePanelView: View {
                     if inv.status == "converted" {
                         Icon3D(.crown, size: 15)
                     }
-                }
                     if ReferralCredits.isCredit(inv.status) {
                         // Founder 10-03: X a credit notice away (soft circle, no outline, 44 pt tap area).
                         Button { dismissCredits([inv.id]) } label: {
@@ -232,13 +232,14 @@ struct InvitePanelView: View {
                         .padding(.vertical, -10).padding(.trailing, -8)
                         .accessibilityLabel("Dismiss")
                     }
+                }
                 // §A1: each invite is a mini tinted row in its status color.
-                .padding(.horizontal, 10).padding(.vertical, 7)
+                .padding(.horizontal, 10).padding(.vertical, 6)
                 .tintedPill(inv.status == "redeemed" ? G5Accent.green
                             : inv.status == "converted" ? G5Accent.gold : G5Accent.purple, radius: 12)
-            }
                 // A dismissed notice fades out while the rows below close the gap.
                 .transition(.opacity)
+            }
 
             if !leaders.isEmpty {
                 G5Divider(accent: G5Accent.gold)
@@ -261,14 +262,14 @@ struct InvitePanelView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
         }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         // §T4: the gold-tinted gift card with its gold top bar.
         .tintedCard(accent: G5Accent.gold, bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)],
-                    radius: 20, barHeight: 8, tint: 0.09, line: 0.28)
+                    radius: 20, barHeight: 6, tint: 0.09, line: 0.28)
         .task { await load() }
-        .sheet(item: Binding(get: { shareURL.map { ShareURLItem(url: $0) } }, set: { _ in shareURL = nil })) { item in
         .task(id: auth.profile?.id) { await loadDismissed() }
+        .sheet(item: Binding(get: { shareURL.map { ShareURLItem(url: $0) } }, set: { _ in shareURL = nil })) { item in
             ActivityShareSheet(text: ShareCopy.invite(url: "").trimmingCharacters(in: .whitespaces), url: item.url)
                 .presentationDetents([.medium])
         }

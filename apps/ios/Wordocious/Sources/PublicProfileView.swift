@@ -349,7 +349,8 @@ struct PublicProfileView: View {
 
     private func content(_ p: Profile) -> some View {
         ScrollView {
-            VStack(spacing: 16) {
+            // BJ7: 12 between sections (was 16).
+            VStack(spacing: 12) {
                 header(p)
                 socialSections(p)
                 overallCards(p)
@@ -371,7 +372,7 @@ struct PublicProfileView: View {
     private func header(_ p: Profile) -> some View {
         let progress = Double(p.xp % 1000) / 10.0
         let toNext = 1000 - (p.xp % 1000)
-        return VStack(spacing: 10) {
+        return VStack(spacing: 8) {
             HStack {
                 HeaderCircleButton(.symbol("chevron.left"), label: "Back") { dismiss() }
                 Spacer()
@@ -495,14 +496,14 @@ struct PublicProfileView: View {
             Text(sub).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1)
             .minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 10).padding(.horizontal, 2)
+        .frame(maxWidth: .infinity).padding(.vertical, 8).padding(.horizontal, 2)
         .tintedCard(accent: color, bar: [color], radius: 14, barHeight: 4, tint: 0.10, line: 0.28)
     }
 
     // MARK: Mode section (Solo/VS toggle + picker + stats card)
 
     private var modeSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             FinishLabel("Game mode statistics")
             // The Solo | VS toggle — the shared soft segmented control (§A9 squish).
             // The candy Solo | VS toggle (night art 10-03 sprites).
@@ -510,7 +511,7 @@ struct PublicProfileView: View {
                            selection: tab, accessibilityLabel: "Play type", height: 36) { tab = $0 }
                 .frame(width: 160)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) { ForEach(pickerModes) { m in modeChip(m) } }.padding(.horizontal, 4).padding(.vertical, 6)
+                HStack(spacing: 8) { ForEach(pickerModes) { m in modeChip(m) } }.padding(.horizontal, 4).padding(.vertical, 4)
             }
             modeStatsCard
         }
@@ -535,7 +536,7 @@ struct PublicProfileView: View {
                 Text(ModeStyle.title(selectedMode)).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                 Spacer()
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
+            .padding(.horizontal, 12).padding(.vertical, 8)
             .overlay(Rectangle().fill(accent.opacity(0.16)).frame(height: 1), alignment: .bottom)
             if let s = stat {
                 let cells: [(String, String, Color)] = [
@@ -551,21 +552,21 @@ struct PublicProfileView: View {
                             Text(c.0.uppercased()).font(Brand.font(9, .black)).tracking(0.4).foregroundStyle(FinishInk.secondary)
                         }.frame(maxWidth: .infinity)
                     }
-                }.padding(16)
+                }.padding(.horizontal, 12).padding(.vertical, 10)
             } else {
                 // BI24: a host + brand headline, not a plain grey line.
                 BrandEmptyState(title: "No \(tab) games yet", line: "Nothing played in this mode yet. Check back after a few rounds.",
-                                scene: .noStats, artHeight: 90)
+                                scene: .noStats, artHeight: 72)
             }
         }
         // §A1: tinted in the mode's accent with its top bar.
-        .tintedCard(accent: accent, bar: [accent], barHeight: 6)
+        .tintedCard(accent: accent, bar: [accent], barHeight: 5)
     }
 
     // MARK: Top words
 
     private var topWordsCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             FinishLabel("Top words")
             VStack(spacing: 0) {
                 ForEach(Array(topWords.enumerated()), id: \.element.id) { i, w in
@@ -575,31 +576,32 @@ struct PublicProfileView: View {
                         Text("\(w.count)").softNumber(14)
                         Text("×").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .padding(.horizontal, 12).padding(.vertical, 7)
                     .stripedRow(i, accent: Color(hex: 0x7C3AED))
                 }
             }
-            .padding(.vertical, 6)
-            .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED)], barHeight: 6)
+            .padding(.vertical, 4)
+            .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED)], barHeight: 5)
         }
     }
 
     // MARK: Recent matches
 
     private func recentMatches(_ p: Profile) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        // BJ7: a 25% smaller header, 8 under it, 6 between rows, 12 padding.
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "clock").font(.system(size: 14, weight: .bold)).foregroundStyle(Color(hex: 0x2563EB))
-                Text("Recent Matches").font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
+                Image(systemName: "clock").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: 0x2563EB))
+                Text("Recent Matches").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
             }
             if matches.isEmpty {
                 // BI24: R asleep + brand headline, not a plain grey line.
                 BrandEmptyState(title: "No matches yet", line: "Once games are played, the latest show up right here.",
-                                scene: .asleep, artHeight: 90)
+                                scene: .asleep, artHeight: 72)
             } else {
                 // Show 5 collapsed; the toggle expands the rest in place (no
                 // inner ScrollView — the rows render straight into the VStack).
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     ForEach(showAllRecent ? matches : Array(matches.prefix(5))) { m in
                         RecentMatchRow(match: m, profileId: p.id)
                     }
@@ -613,9 +615,9 @@ struct PublicProfileView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(12)
         // §A1: the blue card with its top bar.
-        .tintedCard(accent: Color(hex: 0x2563EB), bar: [Color(hex: 0x2563EB), Color(hex: 0x60A5FA)], barHeight: 6, tint: 0.06)
+        .tintedCard(accent: Color(hex: 0x2563EB), bar: [Color(hex: 0x2563EB), Color(hex: 0x60A5FA)], barHeight: 5, tint: 0.06)
     }
 
     private func fmtTime(_ s: Int) -> String {
@@ -640,7 +642,9 @@ struct RecentMatchRow: View {
         let won = match.isWinner(profileId)
         let guesses = match.guesses(profileId)
         let secs = match.playerTime(profileId)
-        return HStack(spacing: 12) {
+        // BJ7: one top line — the icon, the title row and the W / L badge top-aligned;
+        // the detail 4 under the title. No outline (BI23).
+        return HStack(alignment: .top, spacing: 10) {
             // Mode icon in its accent-tinted box (matches web gameModeIcons).
             if let m = mode {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 36)
@@ -650,7 +654,7 @@ struct RecentMatchRow: View {
                     Image(systemName: "bolt.fill").font(.system(size: 15)).foregroundStyle(Color(hex: 0xD97706))
                 }
             }
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(mode?.title ?? match.game_mode)
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
@@ -676,9 +680,9 @@ struct RecentMatchRow: View {
                 }
                 // Through the mode's guess semantics (More Games §11): Sudoku reads "0 mistakes".
                 Text("\(formatGuessStat(semantics: mode?.guessSemantics ?? "guesses", guessBase: mode?.guessBase ?? 1, guessCount: guesses)) · \(secs > 0 ? durationStr(secs) : "—")")
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
             }
-            Spacer()
+            Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 2) {
                 // ART_SPEC §4: the 3D W / L badge.
                 ResultBadge(won: won, size: 24)
@@ -687,12 +691,10 @@ struct RecentMatchRow: View {
                 }
             }
         }
-        .padding(12)
-        // §A1: a soft wash of the mode's accent, never plain white.
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        // §A1: a soft wash of the mode's accent, never plain white (BJ7: no outline).
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(Theme.isDark ? Theme.surface : (mode?.accent ?? Color(hex: 0x7C3AED)).wash(0.08)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .stroke(Theme.isDark ? Theme.border : (mode?.accent ?? Color(hex: 0x7C3AED)).wash(0.28), lineWidth: 1.5))
+            .fill(Theme.isDark ? Theme.surface : (mode?.accent ?? Color(hex: 0x7C3AED)).wash(0.10)))
     }
 
     private func durationStr(_ s: Int) -> String {

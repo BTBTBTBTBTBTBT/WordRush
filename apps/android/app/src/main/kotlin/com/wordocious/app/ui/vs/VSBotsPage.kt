@@ -119,7 +119,7 @@ fun VsBotsPage(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         androidx.compose.foundation.Image(
                             androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.art_scene_ladder_cleared), contentDescription = null,
-                            modifier = Modifier.size(112.dp).clearAndSetSemantics { },
+                            modifier = Modifier.size(84.dp).clearAndSetSemantics { },
                         )
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -152,11 +152,11 @@ fun VsBotsPage(
                 Row(
                     Modifier.fillMaxWidth()
                         .squishClickable("Beat your best. Your best ${vsModeName(playMode)}: $g guesses, ${vsClock(t.toLong())}" + if (isPro) "" else ". Pro", onClick = race)
-                        .vsRow(VsPurple.ink, 16.dp).padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        .vsRow(VsPurple.ink, 16.dp).padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    VsGhostTile(44.dp)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    VsGhostTile(40.dp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Your Ghost · Beat your best", fontSize = 14.sp, fontWeight = FontWeight.Black, color = FinishInk.heading)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("Best ${vsModeName(playMode)}:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
@@ -198,7 +198,7 @@ private fun BotOfTheDayCard(botId: String, today: VsDayResult, streak: Int, onPl
             Modifier.fillMaxWidth().padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (mascot != null) VsCastPose(mascot, "ready", 84.dp) else BotAvatar(botId, 56.dp)
+            if (mascot != null) VsCastPose(mascot, "ready", 72.dp) else BotAvatar(botId, 52.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(BotPersonas.tierLine(botId), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep)
                 if (streak > 0) {
@@ -250,20 +250,21 @@ private fun LadderRow(rung: Int, id: String, state: RungState, line: String, loc
             .alpha(if (isLocked) 0.6f else 1f)
             .vsRow(if (isLocked) Color(0xFF94A3B8) else accent, 16.dp, selected = next, amount = if (cleared) 0.16f else Wash.CARD)
             .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+        // BJ7: one top line — the bot (40), name and the state top-aligned; ONE detail line 4 under.
+        verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(Modifier.size(52.dp), Alignment.Center) {
-            BotAvatar(id, 46.dp, bg = vsWash(vsBotColor(id), if (next) 0.30f else 0.18f), modifier = Modifier.padding(top = if (boss) 6.dp else 0.dp))
+        Box(Modifier.size(44.dp), Alignment.Center) {
+            BotAvatar(id, 40.dp, bg = vsWash(vsBotColor(id), if (next) 0.30f else 0.18f), modifier = Modifier.padding(top = if (boss) 6.dp else 0.dp))
             if (boss) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.CROWN, 22.dp, Modifier.align(Alignment.TopCenter).offset(y = (-6).dp))
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 VsNumber("$rung", 12.sp, color = vsInk(accent))
                 Text("$name · $tier", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                 // The boss rung holds the ladder trophy.
                 if (boss) LadderTrophy(18.dp)
             }
-            Text(line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 2)
+            Text(line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         if (locked || isLocked) VsLock(14.dp)
         val (tag, color) = when (state) {

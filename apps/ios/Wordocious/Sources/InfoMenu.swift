@@ -87,7 +87,7 @@ func infoMenuDestinationView(_ dest: InfoMenuDestination) -> some View {
 /// with top bars.
 enum InfoPageStyle {
     /// §C6: the seven footer titles share one height (each fits the width up to it).
-    static let titleHeight: CGFloat = 64
+    static let titleHeight: CGFloat = 52   // BJ7: was 64 (crisper headers)
     static let purple = Color(hex: 0x7C3AED)
     static let pink = Color(hex: 0xEC4899)
     static let gold = Color(hex: 0xF59E0B)
@@ -143,7 +143,7 @@ struct MenuScaffold<Content: View>: View {
             .padding(.horizontal, 6).padding(.top, 6)
             if let art, ArtAsset.exists(art.assetName) || art != .menu {
                 PageHeadline(art, bleed: 0, maxHeight: InfoPageStyle.titleHeight)
-                    .padding(.bottom, 8)
+                    .padding(.bottom, 6)
             } else if art == .menu {
                 // FINISH_SPEC §AS1: never a plain-text MENU — the live lettering until
                 // art-title-menu ships (then the art above takes over automatically).
@@ -182,16 +182,16 @@ struct InfoIntroCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
+        .padding(.horizontal, 12).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .tintedCard(accent: InfoPageStyle.purple, bar: [InfoPageStyle.purple, InfoPageStyle.pink])
+        .tintedCard(accent: InfoPageStyle.purple, bar: [InfoPageStyle.purple, InfoPageStyle.pink], barHeight: 6)
     }
 }
 
 extension View {
     /// §C6 a footer-page card: the accent's soft wash, its border and a solid top bar.
     func infoCard(_ accent: Color = InfoPageStyle.purple) -> some View {
-        tintedCard(accent: accent, bar: [accent])
+        tintedCard(accent: accent, bar: [accent], barHeight: 6)   // BJ7: a slimmer bar (was 10)
     }
 }
 
@@ -206,7 +206,7 @@ struct MenuSheet: View {
     var body: some View {
         MenuScaffold("Menu", host: Mascots.help, art: .menu) {
             ScrollView {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     ForEach(InfoMenuDestination.allCases) { d in
                         Button { selection = d; dismiss() } label: { row(d) }.buttonStyle(.squish)
                     }
@@ -217,17 +217,20 @@ struct MenuSheet: View {
     }
 
     private func row(_ d: InfoMenuDestination) -> some View {
-        HStack(spacing: 12) {
+        // BJ7: icon + title top-aligned, the subtitle 4 under the title, one line.
+        HStack(alignment: .top, spacing: 10) {
             SymbolGlyph(d.icon, size: 16, weight: .bold, color: d.accent)
                 .frame(width: 40, height: 40)
                 .background(RoundedRectangle(cornerRadius: 11).fill(d.accent.opacity(0.14)))
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(d.title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(FinishInk.heading)
                 Text(d.subtitle).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                    .lineLimit(1).minimumScaleFactor(0.8)
             }
+            .padding(.top, 2)
             Spacer()
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading).infoCard(d.accent)
+        .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading).infoCard(d.accent)
     }
 }
 
@@ -252,7 +255,7 @@ struct GuidesIndexView: View {
         // FINISH_SPEC §C6: Guides wears its OWN title (no longer the How to Play art).
         MenuScaffold("Guides", host: Mascots.help, art: .guides, help: .howToPlay) {
             ScrollView {
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     InfoIntroCard(heading: "How every game works",
                                   line: "Pick a game for its rules, tips and a worked example.")
                     ForEach(modes, id: \.self) { mode in
@@ -269,7 +272,8 @@ struct GuidesIndexView: View {
     private func row(_ mode: GameMode) -> some View {
         let g = service.guide(for: mode)
         let accent = ModeStyle.accent(mode)
-        return HStack(spacing: 12) {
+        // BJ7: icon + title top-aligned, the tagline 4 under the title.
+        return HStack(alignment: .top, spacing: 10) {
             if let h = (homeModes + moreModes).first(where: { $0.dbKey == mode.rawValue }) {
                 // ART_SPEC §3: the game's own icon on its guide row.
                 ModeIconView(icon: h.icon, accent: accent, box: 40)
@@ -277,7 +281,7 @@ struct GuidesIndexView: View {
                 Image(systemName: "book.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
                     .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(accent.opacity(0.12)))
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(g?.title ?? GuideService.slug(for: mode).capitalized).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
                 if let tagline = g?.tagline {
                     Text(tagline).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(2).multilineTextAlignment(.leading)
@@ -285,7 +289,7 @@ struct GuidesIndexView: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12).padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading)
         // §C6: each game guide is a tinted card in that game's own color with its top bar.
         .infoCard(accent)
     }
@@ -460,7 +464,7 @@ struct WordsView: View {
 
     private var list: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 // BI17: the intro as plain type (no bordered card).
                 VStack(alignment: .leading, spacing: 4) {
                     Text("EVERY WORD OF THE DAY").font(Brand.font(13, .black)).tracking(1.2)
@@ -469,7 +473,7 @@ struct WordsView: View {
                         .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.horizontal, 4).padding(.bottom, 6)
+                .padding(.horizontal, 4).padding(.bottom, 4)
                 if service.words.isEmpty && service.failed {
                     // BI24: never a spinner forever — R unplugged + Try again.
                     BrandEmptyState(title: "Can't reach the word vault", line: "Check your connection and I'll bring every word back.",
@@ -489,16 +493,18 @@ struct WordsView: View {
     }
 
     private func row(_ w: WordArchiveEntry) -> some View {
-        HStack(spacing: 12) {
+        // BJ7: tile + word top-aligned, the date 4 under the word.
+        HStack(alignment: .top, spacing: 10) {
             GlossyTile(face: .correct, letter: String(w.word.prefix(1)).uppercased(), width: 40)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(w.word.uppercased()).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
                 Text(prettyDate(w.date)).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
+            .padding(.top, 2)
             Spacer()
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12).padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading)
         // BI17: a borderless soft field (no outlined row cards).
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
             .fill(GuideFamily.washFill(InfoPageStyle.pink, 0.10)))

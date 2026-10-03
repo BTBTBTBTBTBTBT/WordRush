@@ -378,8 +378,9 @@ fun HomeScreen(
             // its own VS BATTLE section title above the card, the same size + spacing as
             // DAILIES / PUZZLES / WORD OF THE DAY (Home reads … → WORD OF THE DAY → VS BATTLE).
             visibleCards.firstOrNull { it.id == "vs" }?.let { vs ->
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionTitleArt(TitleArt.VSBATTLE)
+                // BJ7: the compact section title (DAILIES / PUZZLES size), less space under it.
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SectionTitleArt(TitleArt.VSBATTLE, scale = HomeCardSpec.SECTION_TITLE_SCALE)
                     VSLiveTile(
                         card = vs, vsDailyWon = vsDailyWon, unlimitedMode = unlimitedMode, isPro = isPro,
                         // VS overhaul (2026-10-01): the tile always opens the VS lobby; a used

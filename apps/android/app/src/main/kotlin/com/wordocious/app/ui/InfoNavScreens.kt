@@ -381,12 +381,13 @@ private fun WordRow(w: WordsService.Entry, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().squishClickable("${w.word.uppercase()}, $date", card = true, onClick = onClick)
             .clip(RoundedCornerShape(16.dp)).background(guideField(WORDS_ACCENT, 0.12f, 0.24f))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        // BJ7: tile + word top-aligned, the date 4 under the word.
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LetterCandyTile(w.word.take(1).uppercase(), 40.dp, 18.sp)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(w.word.uppercase(), fontFamily = Nunito, fontSize = 15.sp, fontWeight = FontWeight.Black, color = InfoInk.heading)
             Text(date, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InfoInk.muted)
         }

@@ -225,24 +225,25 @@ struct LeaderboardTab: View {
     /// name and its existing explanation instead of Play.
     private var sweepCtaCard: some View {
         let accent = GamePicker.sweepAccent
-        return HStack(spacing: 12) {
+        // BJ7: top-aligned, the explanation ONE line 4 under the name.
+        return HStack(alignment: .top, spacing: 10) {
             if ArtAsset.exists("game-sweep") {
-                GameArtImage(asset: "game-sweep", size: 44)
+                GameArtImage(asset: "game-sweep", size: 40)
             } else {
                 ModeIconView(icon: .asset("broom"), accent: accent, box: 32)
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Daily Sweep").font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
                     .accessibilityAddTraits(.isHeader)
                 // §223 microcopy: the sweep board pre-answers "why is 9/9 below
                 // 8/9" — it ranks by points, not wins.
                 Text("Ranked by total points across all modes").font(Brand.font(12, .heavy))
-                    .foregroundStyle(FinishInk.secondary).lineLimit(2).minimumScaleFactor(0.8)
+                    .foregroundStyle(FinishInk.secondary).lineLimit(1).minimumScaleFactor(0.75)
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 12)
-        .tintedCard(accent: accent, bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)])
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .tintedCard(accent: accent, bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)], barHeight: 6)
     }
 
     /// The bare share icon used by every board header.
@@ -261,7 +262,7 @@ struct LeaderboardTab: View {
                     .font(.system(size: 10, weight: .black))
                     .foregroundStyle(Theme.isDark ? Theme.textMuted : Color(hex: 0x8A6A55))
             }
-            .padding(.horizontal, 14).frame(height: 34)
+            .padding(.horizontal, 12).frame(height: 34)
             .frame(maxWidth: .infinity)
             .tintedPill(LbStyle.gold, radius: 14)
             .contentShape(Rectangle())
@@ -283,7 +284,8 @@ struct LeaderboardTab: View {
 
     private var content: some View {
         ScrollView {
-            VStack(spacing: 12) {
+            // BJ7: 10 between blocks (was 12).
+            VStack(spacing: 10) {
                 // §A6 / §C2: the day title as the headline, then the shared game picker
                 // window (date + reset clock + ALL-TIME on its header strip; the Sweep
                 // is the 9th WORDOCIOUS tile).

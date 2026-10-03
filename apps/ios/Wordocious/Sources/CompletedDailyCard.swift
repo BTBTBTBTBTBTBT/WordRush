@@ -16,6 +16,10 @@ struct CompletedDailyCard: View {
     @State private var gauntlet: GauntletProgress?
     @State private var elapsedMs = 0
     @State private var reloadToken = 0
+    /// BJ7: inside the Leaderboard result card, whose one line already says how it
+    /// went ("Solved in 3 guesses · 23s") — the toggle then reads YOUR BOARD alone
+    /// (no duplicate "COMPLETED TODAY · 3/6 · 23s" on the same card).
+    @Environment(\.lbCardEmbedded) private var embedded
 
     /// Paint from the day's disk copy in the FIRST frame (founder, 2026-09-29: switching modes on
     /// the leaderboard showed the card missing for a frame, the rank banner and board jumping up,
@@ -74,11 +78,11 @@ struct CompletedDailyCard: View {
                     Button { withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { expanded.toggle() } } label: {
                         HStack(spacing: 7) {
                             Icon3D(won ? .badgeCheck : .badgeL, size: 16)
-                            Text(won ? "COMPLETED TODAY" : "ATTEMPTED TODAY")
+                            Text(embedded ? "YOUR BOARD" : won ? "COMPLETED TODAY" : "ATTEMPTED TODAY")
                                 .font(Brand.font(10, .black)).tracking(0.6)
                                 .foregroundStyle(won ? Color(hex: 0x7C3AED) : FinishInk.secondary)
                             Spacer()
-                            Text(summaryLabel(d)).softNumber(11)
+                            if !embedded { Text(summaryLabel(d)).softNumber(11) }
                             Image(systemName: "chevron.down").font(.system(size: 10, weight: .heavy))
                                 .foregroundStyle(FinishInk.secondary).rotationEffect(.degrees(expanded ? 180 : 0))
                         }

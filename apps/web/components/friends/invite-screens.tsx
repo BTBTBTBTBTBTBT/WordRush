@@ -500,10 +500,11 @@ export function GiftProCard({ giftsLeft, slots = GIFT_SLOTS, onSend, sendHref, s
   const label = sendLabel ?? (sending ? 'Sending…' : 'Send a gift');
   return (
     <InviteCard accent={GIFT_GOLD} bar={GIFT_BAR} className={className}>
-      <div className="p-4 space-y-3">
+      {/* BJ7: the gift card hugs its content — 12 padding, a smaller scene. */}
+      <div className="p-3 space-y-2.5">
         <div className="flex items-start gap-2">
-          <div className="flex-1 min-w-0 space-y-2">
-            <Lettering as="h2" size={21}>Gift a week of Pro</Lettering>
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <Lettering as="h2" size={18}>Gift a week of Pro</Lettering>
             <div className="flex flex-wrap items-center gap-2">
               <SevenDaysBadge />
               {giftsLeft != null && (
@@ -516,7 +517,7 @@ export function GiftProCard({ giftsLeft, slots = GIFT_SLOTS, onSend, sendHref, s
               )}
             </div>
           </div>
-          <SceneArt name="art-scene-gift-pro" height={92} className="shrink-0" style={{ marginTop: -4, marginRight: -4 }} />
+          <SceneArt name="art-scene-gift-pro" height={72} className="shrink-0" style={{ marginTop: -2, marginRight: -4 }} />
         </div>
         {children}
         {(onSend || sendHref) && (

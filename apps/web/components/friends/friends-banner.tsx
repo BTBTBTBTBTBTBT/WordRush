@@ -24,9 +24,9 @@ import { FlameCount, FrCard, FriendAvatar } from './friends-ui';
 // full race in a sheet). Shimmers when anyone is on.
 
 const HOST_POSE = poseArt(PAGE_HOSTS.friends, 'cheer');
-const HOST_H = 78;
+const HOST_H = 66; // BJ7: was 78
 /** Room the headline leaves for the host on the right. */
-const HOST_CLEARANCE = 84;
+const HOST_CLEARANCE = 72; // BJ7: was 84
 
 interface Props {
   input: FriendsBannerInput;
@@ -69,24 +69,24 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
         priority
         draggable={false}
         className="absolute pointer-events-none select-none"
-        style={{ right: 8, top: 14, width: Math.round((HOST_H * hw) / hh), height: HOST_H, filter: 'drop-shadow(0 4px 6px rgba(122,31,85,0.18))' }}
+        style={{ right: 8, top: 8, width: Math.round((HOST_H * hw) / hh), height: HOST_H, filter: 'drop-shadow(0 4px 6px rgba(122,31,85,0.18))' }}
       />
 
-      <div className="relative flex flex-col gap-1" style={{ padding: `12px ${HOST_CLEARANCE}px 2px 14px`, minHeight: 64 }}>
+      <div className="relative flex flex-col gap-1" style={{ padding: `10px ${HOST_CLEARANCE}px 2px 12px`, minHeight: 56 }}>
         {/* FINISH_SPEC AR: live lettering (pink → orange; names in the accent, numbers gold). */}
         <LiveHeadline text={headline} palette="friends" names={[input.leaderName, ...input.online, ...chips.map((c) => c.username)]} size={20} align="left" />
         <span className="font-black uppercase" style={{ fontSize: 11, letterSpacing: 0.6, color: FR_LOOK.bannerClock }}>{clockLine}</span>
       </div>
 
       {none ? (
-        <div className="relative" style={{ padding: '10px 14px 12px' }}>
+        <div className="relative" style={{ padding: '8px 12px 12px' }}>
           <CandyButton color="pink" size="md" block icon={<Icon3D name="add-friend" size={20} />} onClick={onAddFriend}>
             Add a friend
           </CandyButton>
         </div>
       ) : (
         <>
-          <div className="relative flex flex-col gap-2" style={{ padding: '10px 14px 6px' }}>
+          <div className="relative flex flex-col gap-1.5" style={{ padding: '8px 12px 4px' }}>
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black" style={{ letterSpacing: 1.3, color: FR_LOOK.bannerClock }}>ON NOW</span>
               {online.length > 0 && <SoftNum size={13} style={{ color: FR.online }}>{online.length}</SoftNum>}
@@ -102,7 +102,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
                     className="flex flex-col items-center gap-1"
                     style={{ width: 58 }}
                   >
-                    <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={40} online pulse />
+                    <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={36} online pulse />
                     <span className="w-full text-center text-[10.5px] font-black truncate" style={{ color: FR_LOOK.bannerInk }}>{f.username}</span>
                     <span className="w-full text-center text-[9.5px] font-extrabold truncate -mt-0.5" style={{ color: FR_LOOK.bannerSub }}>{doingLine(f.activity)}</span>
                   </button>
@@ -113,7 +113,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
             )}
           </div>
 
-          <button type="button" onClick={onRace} className="relative w-full flex flex-col gap-2 text-left" style={{ padding: '8px 14px 12px' }} aria-label="Open today's race">
+          <button type="button" onClick={onRace} className="relative w-full flex flex-col gap-1.5 text-left" style={{ padding: '6px 12px 12px' }} aria-label="Open today's race">
             <span className="w-full flex items-center gap-1.5">
               <span className="text-[11px] font-black" style={{ letterSpacing: 1.3, color: FR_LOOK.bannerClock }}>TODAY&apos;S RACE</span>
               <span className="flex-1" />

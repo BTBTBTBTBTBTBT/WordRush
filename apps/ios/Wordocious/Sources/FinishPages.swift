@@ -29,14 +29,14 @@ import WordociousCore
 /// `PageTitle` when the art is missing.
 struct PageHeadline: View {
     enum Style {
-        /// Page titles: ≈62% width, ≤ 300 pt wide, ≤ 64 pt tall.
+        /// Page titles: ≈62% width, ≤ 300 pt wide, ≤ 52 pt tall (BJ7: was 64 — crisper headers).
         case page
         /// The Leaderboard day title: ≈58% width, ≤ 150 pt tall.
         case day
 
         var fraction: CGFloat { self == .day ? 0.58 : 0.62 }
         var maxWidth: CGFloat { self == .day ? 300 : 300 }
-        var maxHeight: CGFloat { self == .day ? 150 : 64 }
+        var maxHeight: CGFloat { self == .day ? 150 : 52 }
     }
 
     let asset: String

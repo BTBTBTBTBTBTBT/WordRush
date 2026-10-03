@@ -156,7 +156,8 @@ fun friendsLine(accent: Color, amount: Float = Wash.LINE): Color = Wash.mix(acce
  * A1 a Friends card: the page's pink wash (or [accent]'s) with a 1.5 dp line, radius
  * [radius], a soft violet lift and, when [bar] is set, the game-card top bar.
  */
-fun Modifier.friendsCard(radius: Dp = 14.dp, accent: Color = FRIENDS_CARD_ACCENT, bar: Color? = null, barHeight: Dp = 10.dp): Modifier =
+// BJ7: a 6-dp bar by default (was 10) — crisp, the content sits closer under it.
+fun Modifier.friendsCard(radius: Dp = 14.dp, accent: Color = FRIENDS_CARD_ACCENT, bar: Color? = null, barHeight: Dp = 6.dp): Modifier =
     this.pageCardShadow(radius) { shadow(4.dp, RoundedCornerShape(radius), ambientColor = Color(0x124C1D95), spotColor = Color(0x124C1D95)) }
         .clip(RoundedCornerShape(radius))
         // FINISH_SPEC A1: the accent's wash + a faint line instead of white (fixed light, like the page).

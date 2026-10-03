@@ -360,7 +360,8 @@ private fun EntryTitleArt(e: StrategyEntry, maxHeight: Dp) {
 /** The Strategy index body: the hero with the tip of the day, then the grouped tile grid. */
 @Composable
 fun StrategyIndexBody(entries: List<StrategyEntry>, onOpen: (StrategyEntry) -> Unit) {
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    // BJ7: 10 between blocks (was 14), tiles that hug their content.
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(
             Modifier.fillMaxWidth().padding(top = 2.dp).semantics(mergeDescendants = true) { },
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -385,10 +386,10 @@ fun StrategyIndexBody(entries: List<StrategyEntry>, onOpen: (StrategyEntry) -> U
         StrategyGroup.entries.forEach { g ->
             val list = entries.filter { it.slot.group == g }
             if (list.isEmpty()) return@forEach
-            SectionLabel(g.label, Modifier.padding(top = 8.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionLabel(g.label, Modifier.padding(top = 4.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 list.chunked(2).forEach { row ->
-                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { e -> StrategyTile(e, Modifier.weight(1f).fillMaxHeight()) { onOpen(e) } }
                         if (row.size == 1) Spacer(Modifier.weight(1f))
                     }
@@ -401,7 +402,7 @@ fun StrategyIndexBody(entries: List<StrategyEntry>, onOpen: (StrategyEntry) -> U
 @Composable
 private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
-        text, fontFamily = Nunito, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
+        text, fontFamily = Nunito, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
         color = InfoInk.heading, modifier = modifier.padding(horizontal = 4.dp).semantics { heading() },
     )
 }
@@ -413,14 +414,14 @@ private fun TipCard(e: StrategyEntry, onClick: () -> Unit) {
     FamilyCard(
         e.accent,
         Modifier.squishClickable("Tip of the day: ${a.title}, ${a.minutes} minute read", card = true, onClick = onClick),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 16.dp),
-        spacing = 8.dp,
+        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 12.dp),
+        spacing = 6.dp,
     ) {
-        HostReadyPose(e.host, e.accent, 90.dp)
+        HostReadyPose(e.host, e.accent, 64.dp)
         EntryTitleArt(e, 40.dp)
         Text(
-            a.title, fontFamily = Nunito, fontSize = 18.sp, fontWeight = FontWeight.Black, color = InfoInk.heading,
-            textAlign = TextAlign.Center, lineHeight = 22.sp,
+            a.title, fontFamily = Nunito, fontSize = 17.sp, fontWeight = FontWeight.Black, color = InfoInk.heading,
+            textAlign = TextAlign.Center, lineHeight = 21.sp,
         )
         if (a.dek.isNotBlank()) {
             Text(
@@ -449,10 +450,12 @@ private fun StrategyTile(e: StrategyEntry, modifier: Modifier, onClick: () -> Un
             .clip(shape)
             .background(Brush.verticalGradient(listOf(top, bottom))),
     ) {
-        Box(Modifier.fillMaxWidth().height(6.dp).background(accent))
+        Box(Modifier.fillMaxWidth().height(5.dp).background(accent))
+        // BJ7: art, the title (3 lines reserved so the pair match) and the minutes chip
+        // right under it — no chip floating at the bottom.
         Column(
-            Modifier.fillMaxWidth().weight(1f).padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.fillMaxWidth().weight(1f).padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             val art = e.titleArt
             when {
@@ -464,13 +467,12 @@ private fun StrategyTile(e: StrategyEntry, modifier: Modifier, onClick: () -> Un
                 e.gameId == "vs" -> Box(Modifier.height(30.dp), contentAlignment = Alignment.CenterStart) {
                     TitleLettering("VS", accent, 24f)
                 }
-                else -> CastPose(e.host, "ready", 44.dp)
+                else -> CastPose(e.host, "ready", 36.dp)
             }
             Text(
                 a.title, fontFamily = Nunito, fontSize = 14.sp, fontWeight = FontWeight.Black, color = InfoInk.heading,
-                maxLines = 4, overflow = TextOverflow.Ellipsis, lineHeight = 18.sp,
+                maxLines = 3, minLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 18.sp,
             )
-            Spacer(Modifier.weight(1f))
             MinChip("${a.minutes} MIN", accent)
         }
     }

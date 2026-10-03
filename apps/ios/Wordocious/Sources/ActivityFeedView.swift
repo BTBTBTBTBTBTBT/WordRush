@@ -40,7 +40,7 @@ struct ActivityFeedView: View {
     static let reactionKeys: [(key: String, label: String)] = ["clap", "fire", "wow", "grr", "rematch"].map { ($0, Reaction.word($0)) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "MOMENTS") {
                 Text("LAST 7 DAYS · DOUBLE-TAP OR HOLD TO REACT").font(Brand.font(8.5, .black)).tracking(0.6)
                     .foregroundStyle(FriendsInk.section).lineLimit(1).minimumScaleFactor(0.7)
@@ -51,7 +51,7 @@ struct ActivityFeedView: View {
                     // BI24: brand headline over R's voice line.
                     BrandEmptyState(title: "Quiet week so far",
                                     line: "Sweeps, medals, records and wins from your circle show up here.",
-                                    scene: .asleep, artHeight: 100, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
+                                    scene: .asleep, artHeight: 80, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
                                     lineColor: FriendsInk.muted)
                         .frame(maxWidth: .infinity)
                         .friendsCard(accent: FriendsInk.pink)
@@ -61,7 +61,7 @@ struct ActivityFeedView: View {
                     let poses = Self.assignPoses(shownEvents)
                     // FINISH_SPEC §K1: every moment is its own notice card in the
                     // event's color.
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         ForEach(shownEvents) { e in
                             moment(e, today: today, pose: poses[e.id])
                                 .zIndex(picking == e.id ? 1 : 0)
@@ -177,9 +177,11 @@ struct ActivityFeedView: View {
         let d = Self.describe(e)
         let score = Self.scoreText(e)
         let headline = score.map { d.text.replacingOccurrences(of: " (\($0))", with: "") } ?? d.text
-        return HStack(alignment: .center, spacing: 10) {
+        // BJ7: one top line — avatar, headline and the small pose top-aligned; the
+        // score + day 4 under the headline.
+        return HStack(alignment: .top, spacing: 10) {
             // The sender's letter tile (§20; an uploaded photo stays a circle).
-            AvatarView(url: e.avatar_url, username: e.username, size: 34, emoji: e.avatar_emoji)
+            AvatarView(url: e.avatar_url, username: e.username, size: 36, emoji: e.avatar_emoji)
                 .overlay(alignment: .bottomTrailing) {
                     Group {
                         if e.type == "game", let k = e.friendlyKind {
@@ -193,7 +195,7 @@ struct ActivityFeedView: View {
                     }
                     .offset(x: 5, y: 4)
                 }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(headline).font(Brand.font(13, .black)).foregroundStyle(FriendsInk.heading)
                     .lineLimit(2).multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -207,10 +209,10 @@ struct ActivityFeedView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             if e.type == "gift" {
                 // §T4: a shield gift wears the small shield-guard art (U guarding the flame).
-                FriendsSceneArt(asset: "art-scene-shield-guard", height: 44, maxWidth: 56, spring: false)
+                FriendsSceneArt(asset: "art-scene-shield-guard", height: 38, maxWidth: 48, spring: false)
             } else if let pose {
                 // §K1: a small cast pose that fits the event (decorative, §A7 variety).
-                PoseImage(pose.id, pose.pose, height: 44)
+                PoseImage(pose.id, pose.pose, height: 38)
             }
         }
     }
@@ -323,7 +325,7 @@ struct ActivityFeedView: View {
                          poppedAt: poppedAt["\(e.id):\(o.key)"] ?? 0) { toggle(e, o.key) }
                 }
             }
-            .padding(.leading, 44)
+            .padding(.leading, 46)
         }
     }
 

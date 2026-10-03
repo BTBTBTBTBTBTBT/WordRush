@@ -73,7 +73,7 @@ struct WordOfTheDayView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             header
             // Tappable → the full Word of the Day archive (web parity: the card links
             // to /words). While the quiz is asking, only "Past words" opens it, so a
@@ -170,17 +170,19 @@ struct WordOfTheDayView: View {
         // FINISH_SPEC BI17: the guide-page family — I's ready pose on a glow beside the
         // word in the brand caps, the part of speech as a chip, glossy candy choices with
         // clear right / wrong states, all on the borderless hero card.
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
+        // BJ7: one top line — I (44), the word and the streak top-aligned; the
+        // phonetic + part of speech 4 under the word; 12 padding, 8 between blocks.
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
                 ZStack {
                     RadialGradient(colors: [Self.barColor.opacity(Theme.isDark ? 0.42 : 0.32), Self.barColor.opacity(0)],
-                                   center: .center, startRadius: 2, endRadius: 34)
-                    PoseImage(.i, "ready", height: 52)
+                                   center: .center, startRadius: 2, endRadius: 28)
+                    PoseImage(.i, "ready", height: 42)
                 }
-                .frame(width: 60, height: 60)
+                .frame(width: 44, height: 44)
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    LiveHeadline(text: info.word, palette: .home, size: 26, alignment: .leading, maxLines: 1)
+                    LiveHeadline(text: info.word, palette: .home, size: 22, alignment: .leading, maxLines: 1)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityLabel(info.word)
                     HStack(spacing: 8) {
@@ -201,8 +203,8 @@ struct WordOfTheDayView: View {
                 }
             }
             if let q, asking || revealing {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("WHICH ONE IS IT?").font(Brand.font(11, .black)).tracking(1.2)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("WHICH ONE IS IT?").font(Brand.font(10, .black)).tracking(1.2)
                         .foregroundStyle(GuideFamily.ink(GuideFamily.brand))
                     ForEach(0..<3, id: \.self) { i in
                         if asking {
@@ -219,14 +221,14 @@ struct WordOfTheDayView: View {
                     .transition(.opacity)
             }
             if settled && !revealing, let def = definition, !def.isEmpty {
-                Text(def).font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
-                    .lineSpacing(3)
+                Text(def).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 16)
+        .padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .guideHeroCard(Self.barColor, radius: 22)
+        .guideHeroCard(Self.barColor, radius: 20)
     }
 
     private enum ChoiceState { case idle, right, wrong, faded }
@@ -244,8 +246,9 @@ struct WordOfTheDayView: View {
     /// ABOVE the card, centered on the DAILIES / PUZZLES width rule, with a small
     /// centered "Past words" link under it.
     private var header: some View {
-        VStack(spacing: 4) {
-            SectionTitleArt(.wotd)
+        // BJ7: the compact section title (DAILIES / PUZZLES size), less space around it.
+        VStack(spacing: 2) {
+            SectionTitleArt(.wotd, compact: true)
             // §A8: a small quiet candy instead of a text link.
             Button { showWords = true } label: {
                 CandyLabel(title: "Past words", symbol: "book.fill")
@@ -254,7 +257,6 @@ struct WordOfTheDayView: View {
             .fixedSize()
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 2)
     }
 
     /// A glossy candy choice (no stroke): lilac candy while asking; on the reveal the
@@ -280,8 +282,8 @@ struct WordOfTheDayView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10).padding(.vertical, 8)
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .background {
             ZStack(alignment: .top) {
                 if dark { shape.fill(Theme.surface) }
@@ -334,9 +336,9 @@ struct WordOfTheDayView: View {
             SkeletonBlock(height: 16, width: 70, cornerRadius: 6)
             SkeletonBlock(height: 10, cornerRadius: 5)
         }
-        .padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 16)
-        .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-        .guideHeroCard(Self.barColor, radius: 22)
+        .padding(.horizontal, 12).padding(.top, 14).padding(.bottom, 12)
+        .frame(maxWidth: .infinity, minHeight: 70, alignment: .leading)
+        .guideHeroCard(Self.barColor, radius: 20)
     }
 
     // MARK: - Day-keyed UserDefaults cache (one fetch per day)

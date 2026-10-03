@@ -337,8 +337,8 @@ struct HomeView: View {
                             if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {
                                 // FINISH_SPEC §O1: VS BATTLE gets its own section title
                                 // (same rule + spacing as DAILIES / PUZZLES / WORD OF THE DAY).
-                                SectionTitleArt(.vsbattle)
-                                    .padding(.top, 2)
+                                // BJ7: the compact section title, like DAILIES / PUZZLES.
+                                SectionTitleArt(.vsbattle, compact: true)
                                 VSLiveTile(mode: vs, vsDailyWon: vsDailyWon, playMode: effectiveMode,
                                            isPro: auth.isProActive, onInvite: { showInvite = true }) {
                                     // The VS lobby hosts today's Daily Battle (VS overhaul, 2026-10-01).

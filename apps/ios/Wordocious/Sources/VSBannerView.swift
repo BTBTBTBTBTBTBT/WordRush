@@ -41,8 +41,9 @@ struct VSBannerView: View {
         VStack(spacing: 0) {
             if hasHero { hero }
             strip
-            todayRow.padding(.top, 10).padding(.horizontal, 12)
-            recordRow.padding(.top, 10).padding(.horizontal, 12).padding(.bottom, 12)
+            // BJ7: 8 between blocks, 10 at the bottom.
+            todayRow.padding(.top, 6).padding(.horizontal, 12)
+            recordRow.padding(.top, 8).padding(.horizontal, 12).padding(.bottom, 10)
         }
         .frame(maxWidth: .infinity)
         // §A1: a tinted banner card with its top bar (gold on a VS sweep).
@@ -65,8 +66,8 @@ struct VSBannerView: View {
     private var hero: some View {
         Image("art-scene-vs-faceoff")
             .resizable().interpolation(.high).scaledToFit()
-            .frame(maxWidth: .infinity, maxHeight: 150)
-            .padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 2)
+            .frame(maxWidth: .infinity, maxHeight: 124)
+            .padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 0)
             .frame(maxWidth: .infinity)
             .background(
                 RadialGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0)],
@@ -111,7 +112,7 @@ struct VSBannerView: View {
                     .lineLimit(1).minimumScaleFactor(0.7)
             }
         }
-        .padding(.top, hasHero ? 4 : 12).padding(.trailing, 8).padding(.bottom, 10).padding(.leading, 12)
+        .padding(.top, hasHero ? 2 : 10).padding(.trailing, 8).padding(.bottom, 6).padding(.leading, 12)
     }
 
     private var shareText: String {
@@ -123,7 +124,7 @@ struct VSBannerView: View {
     private var todayRow: some View {
         let host = BotPersonas.botOfDay
         let bot = host.name
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text("TODAY").font(Brand.font(10, .black)).tracking(1).foregroundStyle(subInk)
                 Text(VsLobby.vsTodayStatus(battle: battle, botOfDay: botOfDay))
@@ -158,9 +159,9 @@ struct VSBannerView: View {
                 .accessibilityLabel("\(streak) bot wins in a row")
             }
         }
-        .padding(.horizontal, 10).padding(.vertical, 7)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(accent.wash(0.12)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(accent.wash(0.28), lineWidth: 1))
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        // BI23 / BJ7: a soft fill, no outline.
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(accent.wash(0.16)))
     }
 }
 
@@ -190,9 +191,10 @@ struct VSDayTile: View {
         let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
         let tone: Color = result == .won ? VsLobbyKit.purple : (result == .open ? accent : VsLobbyKit.slate)
         Button(action: action) {
-            HStack(spacing: 8) {
+            // BJ7: icon + title top-aligned, the line 4 under the title; no outline.
+            HStack(alignment: .top, spacing: 8) {
                 iconView
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title).font(Brand.font(10, .black)).tracking(0.6)
                         .foregroundStyle(VsLobbyKit.titleInk).lineLimit(1).minimumScaleFactor(0.8)
                     Text(line).font(Brand.font(11, .heavy))
@@ -200,16 +202,15 @@ struct VSDayTile: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 9).padding(.top, 12).padding(.bottom, 9)
+            .padding(.horizontal, 9).padding(.top, 10).padding(.bottom, 8)
             .frame(maxWidth: .infinity)
             .background {
                 ZStack(alignment: .top) {
-                    shape.fill(tone.wash(result == .open ? 0.13 : 0.18))
+                    shape.fill(tone.wash(result == .open ? 0.16 : 0.22))
                     tone.frame(height: 4)
                 }
                 .clipShape(shape)
             }
-            .overlay(shape.stroke(tone.wash(0.36), lineWidth: 1.5))
             .overlay(alignment: .topTrailing) {
                 if result == .won || result == .lost {
                     RowResultBadge(won: result == .won, size: 20).offset(x: 5, y: -6)

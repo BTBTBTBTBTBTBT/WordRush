@@ -607,6 +607,8 @@ struct CustomCompletedDailyCard: View {
     @State private var progress: CompletedCustomBoard.Progress?
     @State private var expanded = false
     @State private var reloadToken = 0
+    /// BJ7: inside the Leaderboard result card the toggle reads YOUR BOARD alone (no duplicate line).
+    @Environment(\.lbCardEmbedded) private var embedded
 
     /// The header paints from the day's disk copy in the first frame (founder, 2026-09-29).
     init(mode: GameMode) {
@@ -627,16 +629,18 @@ struct CustomCompletedDailyCard: View {
                             Text(won ? "✓" : "✗").font(Brand.font(9, .black)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626))
                                 .frame(width: 16, height: 16)
                                 .background(Circle().fill(won ? Color(hex: 0xF5F3FF) : Color(hex: 0xFEE2E2)))
-                            Text(won ? "COMPLETED TODAY" : "ATTEMPTED TODAY")
+                            Text(embedded ? "YOUR BOARD" : won ? "COMPLETED TODAY" : "ATTEMPTED TODAY")
                                 .font(Brand.font(10, .heavy)).tracking(0.6)
                                 .foregroundStyle(won ? Color(hex: 0x7C3AED) : Theme.textMuted)
                             Spacer()
-                            Text("\(formatGuessStat(semantics: g?.guessSemantics ?? "guesses", guessBase: g?.guessBase ?? 1, guessCount: d.guessCount)) · \(formatShortTime(d.timeSeconds))")
-                                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            if !embedded {
+                                Text("\(formatGuessStat(semantics: g?.guessSemantics ?? "guesses", guessBase: g?.guessBase ?? 1, guessCount: d.guessCount)) · \(formatShortTime(d.timeSeconds))")
+                                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            }
                             Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Theme.textMuted).rotationEffect(.degrees(expanded ? 180 : 0))
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
                         .contentShape(Rectangle())
                     }.buttonStyle(.squish)
                     if expanded {

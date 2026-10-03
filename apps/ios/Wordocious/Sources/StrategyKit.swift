@@ -242,7 +242,8 @@ struct StrategyIndexBody: View {
         let games = StrategyGame.resolve(articles)
         let ordered = StrategyGame.ordered(articles, games)
         let featured = ordered.isEmpty ? nil : ordered[StrategyPlan.tipIndex(count: ordered.count)]
-        return VStack(alignment: .leading, spacing: 22) {
+        // BJ7: 14 between groups (was 22), tiles that hug their content.
+        return VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("SOLVE SMARTER").font(Brand.font(13, .black)).tracking(1.2).foregroundStyle(GuideFamily.ink(GuideFamily.brand))
                 Text("Original strategy for every Wordocious game.")
@@ -257,11 +258,11 @@ struct StrategyIndexBody: View {
             ForEach(StrategyGame.Shelf.allCases, id: \.rawValue) { group in
                 let items = ordered.filter { games[$0.slug]?.group == group }
                 if !items.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(group.title).font(Brand.font(13, .black)).tracking(1.2).foregroundStyle(FinishInk.heading)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(group.title).font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(FinishInk.heading)
                             .padding(.horizontal, 4)
                             .accessibilityAddTraits(.isHeader)
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                             ForEach(items) { a in
                                 if let g = games[a.slug] {
                                     Button { open(a) } label: { tile(a, g) }.buttonStyle(.squish)
@@ -275,20 +276,20 @@ struct StrategyIndexBody: View {
     }
 
     private func featuredCard(_ a: StrategyArticleModel, _ g: StrategyGame) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Text("TIP OF THE DAY").font(Brand.font(11, .black)).tracking(1.4).foregroundStyle(GuideFamily.ink(g.accent))
-            GuideHostHero(host: g.host, accent: g.accent, height: 84)
+            GuideHostHero(host: g.host, accent: g.accent, height: 64)
             if let art = g.titleArt {
                 GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 40, alignment: .center)
                     .frame(maxWidth: .infinity)
             }
-            Text(a.title).font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
+            Text(a.title).font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             Text(a.dek).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center).lineLimit(2)
             GuideChip(text: "\(a.minutes) min read", accent: g.accent)
         }
-        .padding(.horizontal, 18).padding(.top, 18).padding(.bottom, 16)
+        .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 12)
         .frame(maxWidth: .infinity)
         .guideHeroCard(g.accent)
         .accessibilityElement(children: .combine)
@@ -296,7 +297,10 @@ struct StrategyIndexBody: View {
     }
 
     private func tile(_ a: StrategyArticleModel, _ g: StrategyGame) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        // BJ7: the title art, the article title (3 lines reserved so every tile in the
+        // grid matches) and the minutes chip right under it — no 170 floor, no chip
+        // floating at the bottom.
+        VStack(alignment: .leading, spacing: 6) {
             Group {
                 if let art = g.titleArt {
                     GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 30, alignment: .leading)
@@ -304,19 +308,17 @@ struct StrategyIndexBody: View {
                     // VS has no title art: its short name lettered in the accent.
                     Text(gen.shortTitle.uppercased()).font(Brand.font(24, .black)).foregroundStyle(g.accent)
                 } else {
-                    PoseImage(g.host, "ready", height: 44)
+                    PoseImage(g.host, "ready", height: 36)
                 }
             }
-            .frame(height: 44, alignment: .leading)
+            .frame(height: 36, alignment: .leading)
             .accessibilityHidden(true)
             Text(a.title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
-                .multilineTextAlignment(.leading).lineLimit(4)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
+                .multilineTextAlignment(.leading).lineLimit(3, reservesSpace: true).minimumScaleFactor(0.85)
             GuideChip(text: "\(a.minutes) min", accent: g.accent, size: 9)
         }
-        .padding(.horizontal, 12).padding(.top, 16).padding(.bottom, 12)
-        .frame(maxWidth: .infinity, minHeight: 170, alignment: .topLeading)
+        .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 10)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .guideTile(g.accent)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(g.gen?.title ?? "Every game"). \(a.title). \(a.minutes) minute read")
