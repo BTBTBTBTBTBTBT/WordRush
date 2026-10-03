@@ -12,6 +12,15 @@ import WordociousCore
 /// presented full-screen from the app root (`HeaderPopupHost`), never inside the
 /// header's own container.
 struct AppHeaderView: View {
+    /// FINISH_SPEC BJ6 (founder 10-03: symmetric Home card): Home's "share today's
+    /// progress" lives here as a matching circle left of help + settings. `visible` false
+    /// keeps the slot (no jump) but hides and disables it. nil = no share slot (other tabs).
+    struct Share {
+        var visible: Bool
+        var action: () -> Void
+    }
+    var share: Share? = nil
+
     @ObservedObject private var auth = AuthService.shared
     @State private var showMenu = false
     @State private var menuSelection: InfoMenuDestination?
@@ -67,6 +76,12 @@ struct AppHeaderView: View {
                 // BI25: single-fire — a double tap (or a tap while a sheet is on its
                 // way) can't open and then close it; the sheet builds light and
                 // presents on the tap frame (heavy pieces load after it lands).
+                if let share {
+                    iconControl(.share, label: "Share today's progress", action: share.action)
+                        .opacity(share.visible ? 1 : 0)
+                        .allowsHitTesting(share.visible)
+                        .accessibilityHidden(!share.visible)
+                }
                 iconControl(.help, label: "Help") { openSheet { showMenu = true } }
                 iconControl(.gear, label: "Settings") { openSheet { showSettings = true } }
             }

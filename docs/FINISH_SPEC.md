@@ -1370,16 +1370,21 @@ always comes from their live profile (photo, mascot, cast, frame, accent, Pro) w
 BI19 optimistic own row included — so an edit shows at once with no refetch. Board queries return avatar_config /
 avatar_cast_id / avatar_frame / accent_color on every row (retried without them if the select fails); RPC payloads (Sweep,
 VS, challenges) and name-only avatars are filled by a batched profiles lookup. No SQL needed.
-BJ6. Your mascot hosts the Good Morning card (founder 10-03: "swap the purple main character on the main page next to 'warming
-up' for your own created guy so mine would be sitting there", then "the created mascot can be a little more prominent on the
-main menu bar instead of the little version floating in the corner" and "my profile pic is an actual version I created on
-chat, so I don't just want the profile pics tacked on to a body as if it were a face"). ×3, plan A: the host stands INSIDE
-the card on the LEFT of the headline strip at ~84 pt (≈2× the old corner host) on a soft floor shadow; the headline /
-DAILY | UNLIMITED switch / resets column centers in the remaining width and the share button moves to the strip's top-right
-corner (nothing peeks above the card). Who stands there: a signed-in player whose avatar shows their uploaded photo → the
-photo whole as a framed portrait (their chosen frame, else their level tier's art-frame-<tier>); else a player with a custom
-mascot (saved avatar_config or a worn cast hero) → the full mascot; else (guests, no custom look) → W in its wave pose. It
-waves once per launch when Home appears (a small hop + wag, transform only, none under calm motion), then rests. During the
-celebration art a W host steps aside. One component (iOS HomeHostMascot, Android HomeHost, web Home host) so option B (the
-player at the end of the WORDOCIOUS cast row with a small "YOU" tag) is a placement change. Photo rule everywhere (the BJ5
-resolver): photo → framed portrait, mascot → full mascot; no renderer composites a photo onto a mascot body (audited ×3).
+BJ6. Your mascot hosts the Good Morning card, centered (founder 10-03: "swap the purple main character on the main page
+next to 'warming up' for your own created guy so mine would be sitting there"; "a little more prominent … instead of the
+little version floating in the corner"; "my profile pic is an actual version I created on chat, so I don't just want the
+profile pics tacked on to a body as if it were a face"; "I like to keep things looking fairly even and symmetrical instead
+of duplicate items not lined up"). ×3, symmetric hero: the host stands CENTERED on the card's top edge — a 72 pt box whose
+top rises 28 pt above the card (into the gap under the header, never over it) and whose lower 44 pt overlaps the frosted
+strip, on a soft floor shadow; the one-line headline (28 pt row), the DAILY | UNLIMITED switch (6 under it) and the single
+resets line (3 under that) center beneath it, so the card mirrors on its center line. Who stands there: a signed-in player
+whose avatar shows their uploaded photo → the photo whole as a framed portrait (chosen frame → Pro gold → their level
+tier's art-frame-<tier>); else a player with a custom mascot (saved avatar_config or a worn cast hero) → the full mascot;
+else (guests, no custom look) → W in its wave pose. It waves once per launch when Home appears (a small hop + wag,
+transform only, none under calm motion), then rests; during the celebration art a W host steps aside. The share-today
+button left the card: it is a matching circle in the app header's right controls (left of help + settings, Home only, its
+slot kept so the header never jumps; shown in Daily once a daily is finished; label "Share today's progress"). Home moves
+down at most ~16 pt; the card grows ~30 pt to fit the host over centered text (the trade-off of a centered hero). One
+component (iOS HomeHostMascot, Android HomeHost, web Home host) keeps option B (the player at the end of the WORDOCIOUS
+cast row) a placement change. Home shows each fact once (one resets countdown — the banner's). Photo rule everywhere (the
+BJ5 resolver): photo → framed portrait, mascot → full mascot; no renderer composites a photo onto a mascot body (audited ×3).

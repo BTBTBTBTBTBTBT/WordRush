@@ -159,10 +159,19 @@ struct HomeBannerView: View {
         }
         .shadow(color: double ? Color(hex: 0xF59E0B).opacity(0.8) : Color(hex: 0x4C1D95).opacity(0.08),
                 radius: double ? 13 : 7, x: 0, y: double ? 0 : 4)
-        // FINISH_SPEC BJ6 plan A (founder 10-03: "the created mascot can be a little more
-        // prominent"): the host stands INSIDE the card on the strip's left (HomeHostMascot),
-        // so nothing peeks above the card any more.
+        // FINISH_SPEC BJ6 (founder 10-03: "keep things looking fairly even and symmetrical"):
+        // the host (the player's framed photo / their mascot / W) stands CENTERED on the card's
+        // top edge — its head rises into the gap above, its lower part overlaps the strip —
+        // and the headline / switch / resets line center under it. The share button lives in
+        // the app header now (AppHeaderView `share`), so the card mirrors on its center line.
         card
+            .overlay(alignment: .top) {
+                HomeHostMascot(size: Self.hostSize)
+                    .offset(y: -Self.hostRise)
+                    // §A7: during the celebration art (which carries W) a W host steps aside.
+                    .opacity(slots.showsMomentArt && AvatarDirectory.shared.ownHostChoice() == .w ? 0 : 1)
+            }
+            .padding(.top, Self.hostRise - Self.scrollTopGap)
     }
 
     // MARK: Background
@@ -201,26 +210,19 @@ struct HomeBannerView: View {
             // even"): headline centered on the card's center line, then a centered wide
             // DAILY | UNLIMITED switch, then the centered meta line.
             // BH3: one headline line, 8 above the slim switch, the meta line 4 under it.
-            // BJ6 plan A: the host (the player's portrait / mascot, else W) stands on the left
-            // on a soft floor shadow; the headline / switch / resets column centers in the rest.
-            HStack(alignment: .center, spacing: 2) {
-                HomeHostMascot(size: Self.hostSize)
-                    // §A7: during the celebration art (which carries W) a W host steps aside.
-                    .opacity(slots.showsMomentArt && AvatarDirectory.shared.ownHostChoice() == .w ? 0 : 1)
+            // BJ6: everything centered under the host (which overlaps the strip's top).
             VStack(spacing: 0) {
-                // §Z: both modes' headlines share one slot and crossfade; symmetric room for
-                // the share button (top-right corner) keeps it centered in the column.
+                // §Z: both modes' headlines share one slot and crossfade.
                 ZStack {
                     headlineSlot(dailyHeadline, trophy: dailyDouble)
                         .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
                     headlineSlot(unlimitedHeadline, trophy: false)
                         .opacity(unlimited ? 1 : 0).accessibilityHidden(!unlimited)
                 }
-                .padding(.horizontal, slots.hasShare ? 28 : 0)
                 modeSwitch
                     .frame(maxWidth: Self.switchMaxWidth)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
+                    .padding(.top, 6)
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     Text(HomeBanner.bannerClockLine(word.progress, puzzles.progress, clock: Self.countdown(), unlimited: unlimited))
                         .font(Brand.font(11, .heavy).smallCaps()).tracking(0.4).monospacedDigit()
@@ -229,28 +231,12 @@ struct HomeBannerView: View {
                         .lineLimit(1).minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .padding(.top, 4)
+                .padding(.top, 3)
             }
             .frame(maxWidth: .infinity)
-            }
         }
-        .padding(.top, 4).padding(.leading, 6).padding(.trailing, 12).padding(.bottom, 4)
-        // BJ6 plan A: the share button moves to the strip's top-right corner. §Z: the slot
-        // stays in Unlimited (empty there).
-        .overlay(alignment: .topTrailing) {
-            if slots.hasShare {
-                Button(action: onShare) {
-                    Icon3D(.share, size: 22)
-                        .frame(width: 34, height: 34).contentShape(Rectangle())
-                }
-                .buttonStyle(.squish)
-                .accessibilityLabel("Share today's progress")
-                .opacity(slots.showsShare ? 1 : 0)
-                .allowsHitTesting(slots.showsShare)
-                .accessibilityHidden(!slots.showsShare)
-                .padding(.top, 2).padding(.trailing, 4)
-            }
-        }
+        // BJ6: the strip starts under the host's overlapping lower part.
+        .padding(.top, Self.hostSize - Self.hostRise).padding(.horizontal, 12).padding(.bottom, 4)
         // §18.4: frosted over a background blur (solid under Reduce Transparency) —
         // FINISH_SPEC §A1: a lavender frost instead of plain white.
         // §AQ2: a flat frost — the live material blur re-sampled the page under it on
@@ -263,8 +249,12 @@ struct HomeBannerView: View {
     /// BI21: the headline's room on EACH side (kept for callers; BJ6 plan A moved the host
     /// into the strip's left column).
     static let headlineSideClear: CGFloat = Mascots.bannerClearance
-    /// BJ6 plan A: the host's box — ~2× the old 52 pt corner host, the strip's full height.
-    static let hostSize: CGFloat = 84
+    /// BJ6 (symmetric hero): the host's box, centered on the card's top edge; it rises
+    /// `hostRise` above the card (into the gap under the header) and overlaps the rest.
+    static let hostSize: CGFloat = 72
+    static let hostRise: CGFloat = 28
+    /// The Home scroll content's own space above the banner (HomeView: top 4 + spacing 8).
+    static let scrollTopGap: CGFloat = 12
     /// BI21 / BH3: the centered switch spans ~64% of a phone-wide card, equal halves.
     static let switchMaxWidth: CGFloat = 230
 
@@ -288,7 +278,7 @@ struct HomeBannerView: View {
                          maxLines: 1, minimumScale: 0.55)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, minHeight: 32, alignment: .center)
+        .frame(maxWidth: .infinity, minHeight: 28, alignment: .center)
     }
 
     private static func countdown() -> String {

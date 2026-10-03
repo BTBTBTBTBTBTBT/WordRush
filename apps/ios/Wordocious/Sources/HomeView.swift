@@ -236,12 +236,23 @@ struct HomeView: View {
             onModeChange: { m in withAnimation(Theme.animation(.easeInOut(duration: 0.15))) { playMode = m } },
             name: bannerName,
             onOpen: { open($0) },
-            onShare: {
-                let headline = HomeBanner.bannerHeadline(progress(w), progress(p), hour: Calendar.current.component(.hour, from: Date()),
-                                                         name: bannerName)
-                ShareEvents.log(kind: "image", gameMode: "", surface: "home_banner")
-                ShareService.shareTodayProgress(byMode: completions.byMode, headline: headline)
-            })
+            onShare: shareToday)
+    }
+
+    /// FINISH_SPEC BJ6: today's progress share — the header's share circle on Home (it left
+    /// the banner so the card mirrors on its center line). Same rule as the old banner slot:
+    /// shown in Daily once a daily is finished.
+    private func shareToday() {
+        let w = wordModes, p = puzzleModes
+        let headline = HomeBanner.bannerHeadline(progress(w), progress(p), hour: Calendar.current.component(.hour, from: Date()),
+                                                 name: bannerName)
+        ShareEvents.log(kind: "image", gameMode: "", surface: "home_banner")
+        ShareService.shareTodayProgress(byMode: completions.byMode, headline: headline)
+    }
+
+    private var headerShare: AppHeaderView.Share {
+        let played = progress(wordModes).played + progress(puzzleModes).played > 0
+        return .init(visible: played && effectiveMode == .daily, action: shareToday)
     }
 
     /// Row streaks (signed in only). Wordocious: the Daily Sweep stats' current
@@ -296,7 +307,7 @@ struct HomeView: View {
                 PageBackground(tint: .home)
 
                 VStack(spacing: 0) {
-                    AppHeaderView()
+                    AppHeaderView(share: headerShare)
                     ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 8) {
