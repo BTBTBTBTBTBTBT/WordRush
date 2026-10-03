@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WordociousCore
 
 // The finishing build, phase 2 (docs/FINISH_SPEC.md §A6, §C2–C4, §C6): the shared
@@ -168,20 +169,22 @@ struct SoftSegmented<Key: Hashable>: View {
     }
 }
 
-/// FINISH_SPEC BB2: a real candy segmented control — a tinted track, a filled thumb
-/// in `accent` that slides between the options (white bold label on it), the other
-/// labels in a legible dark ink, 38 pt tall, squishing on press. `selection` matching
-/// no option shows no thumb (e.g. Stats with a game picked).
+/// FINISH_SPEC BB2 + the candy toggle sprites (night art 10-03, "Small menus with flair"
+/// proposal 1): the glossy candy track (art-toggle-*-track) with a glossy purple thumb
+/// (art-toggle-*-thumb-on), both three-sliced, the thumb sliding (matched geometry: a position
+/// change only) under the chosen option — white bold label on it, the deep purple ink off it.
+/// `selection` matching no option shows no thumb. `accent` is kept for callers.
 struct CandySegmented<Key: Hashable>: View {
     let options: [(key: Key, label: String)]
     let selection: Key?
     var accent: Color = Color(hex: 0x2563EB)
     var accessibilityLabel: String = ""
+    var height: CGFloat = 38
     let onSelect: (Key) -> Void
     @Namespace private var ns
 
     var body: some View {
-        let dark = Theme.isDark
+        let pad = CandySprite.pad(height)
         HStack(spacing: 0) {
             ForEach(options, id: \.key) { opt in
                 let on = opt.key == selection
@@ -192,21 +195,13 @@ struct CandySegmented<Key: Hashable>: View {
                 } label: {
                     Text(opt.label)
                         .font(Brand.font(13, .black)).tracking(0.3)
-                        // Off: dark ink on the light track (≥ 4.5:1).
-                        .foregroundStyle(on ? Color.white : (dark ? Theme.textPrimary : FinishInk.heading))
-                        .shadow(color: on ? .black.opacity(0.25) : .clear, radius: 0, x: 0, y: 1)
+                        .foregroundStyle(on ? CandyToggleInk.on : CandyToggleInk.off)
+                        .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.45) : .clear, radius: 0, x: 0, y: 1)
                         .lineLimit(1).minimumScaleFactor(0.8)
-                        .padding(.horizontal, 16)
-                        .frame(maxWidth: .infinity, minHeight: 32)
+                        .padding(.horizontal, 14)
+                        .frame(maxWidth: .infinity, minHeight: height - pad * 2)
                         .background {
-                            if on {
-                                ZStack {
-                                    Capsule().fill(Color.black.mixed(over: accent, 0.28)).offset(y: 2)
-                                    Capsule().fill(LinearGradient(colors: [Color.white.mixed(over: accent, 0.22), accent],
-                                                                  startPoint: .top, endPoint: .bottom))
-                                }
-                                .matchedGeometryEffect(id: "thumb", in: ns)
-                            }
+                            if on { CandyPill(sprite: .thumbOn).matchedGeometryEffect(id: "thumb", in: ns) }
                         }
                         .contentShape(Capsule())
                 }
@@ -214,9 +209,9 @@ struct CandySegmented<Key: Hashable>: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
-        .padding(3)
-        .frame(height: 38)
-        .background(Capsule().fill(dark ? Color.white.opacity(0.10) : accent.wash(0.16)))
+        .padding(pad)
+        .frame(height: height)
+        .background(CandyPill(sprite: .track))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabel)
     }
@@ -534,4 +529,115 @@ extension View {
                 }
             }
     }
+}
+
+// MARK: - Candy toggles (night art 10-03 sprites)
+
+/// The candy toggles (night art 10-03 sprites; "Small menus with flair" proposals 1 + 3, founder
+/// 10-03): `art-toggle-{light,dark}-{track,thumb-on,switch,switch-on,knob}`. Pills are THREE-SLICED
+/// (the round end caps keep their shape, only the middle stretches) into one cached bitmap per
+/// size, so a toggle is a couple of plain images and only the thumb / knob moves (transform).
+/// Mirrors web lib/candy-toggle.ts + Android CandyToggle.kt.
+enum CandySprite: String {
+    case track, thumbOn = "thumb-on", switchOff = "switch", switchOn = "switch-on", knob
+
+    func assetName(dark: Bool) -> String { "art-toggle-\(dark ? "dark" : "light")-\(rawValue)" }
+
+    private static var cache: [String: UIImage] = [:]
+
+    /// The sprite three-sliced to `size` (points) at the screen scale; cached per name + size.
+    static func pill(_ sprite: CandySprite, dark: Bool, size: CGSize) -> UIImage? {
+        guard size.width >= 1, size.height >= 1 else { return nil }
+        let name = sprite.assetName(dark: dark)
+        let key = "\(name)@\(Int(size.width * 2))x\(Int(size.height * 2))"
+        if let hit = cache[key] { return hit }
+        guard let cg = UIImage(named: name)?.cgImage else { return nil }
+        let sw = CGFloat(cg.width), sh = CGFloat(cg.height)
+        let cap = min(sh / 2, sw / 2)
+        let end = min(size.height / 2, size.width / 2)
+        let fmt = UIGraphicsImageRendererFormat.preferred()
+        fmt.opaque = false
+        let img = UIGraphicsImageRenderer(size: size, format: fmt).image { ctx in
+            let c = ctx.cgContext
+            // UIKit's context is flipped relative to CGImage drawing: draw through UIImage instead.
+            func draw(_ src: CGRect, _ dst: CGRect) {
+                guard dst.width > 0, let part = cg.cropping(to: src) else { return }
+                UIImage(cgImage: part).draw(in: dst)
+            }
+            c.interpolationQuality = .high
+            draw(CGRect(x: 0, y: 0, width: cap, height: sh), CGRect(x: 0, y: 0, width: end, height: size.height))
+            draw(CGRect(x: cap, y: 0, width: max(1, sw - 2 * cap), height: sh),
+                 CGRect(x: end, y: 0, width: size.width - 2 * end, height: size.height))
+            draw(CGRect(x: sw - cap, y: 0, width: cap, height: sh), CGRect(x: size.width - end, y: 0, width: end, height: size.height))
+        }
+        if cache.count > 64 { cache.removeAll() }
+        cache[key] = img
+        return img
+    }
+
+    /// The groove inset of the track sprite: the thumb sits this far inside the track's rim.
+    static func pad(_ height: CGFloat) -> CGFloat { max(2, (height * 0.12).rounded()) }
+}
+
+/// A three-sliced candy pill that fills its frame.
+struct CandyPill: View {
+    let sprite: CandySprite
+    var body: some View {
+        GeometryReader { g in
+            if let img = CandySprite.pill(sprite, dark: Theme.isDark, size: g.size) {
+                Image(uiImage: img).resizable()
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The candy label inks: white on the glossy purple thumb, the deep purple (light) / lilac (dark) off it.
+enum CandyToggleInk {
+    static let on = Color.white
+    static var off: Color { Theme.isDark ? Color(hex: 0xC4B5FD) : Color(hex: 0x6D28D9) }
+}
+
+/// The candy on/off switch (proposal 3): a short frosted-lilac track that turns glossy purple
+/// (a crossfade) while a pearl knob springs across. Keeps `Toggle`'s switch semantics (VoiceOver
+/// announces on/off); the row the Toggle sits in stays the hit area.
+struct CandySwitchStyle: ToggleStyle {
+    static let size = CGSize(width: 52, height: 30)
+
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            HStack(spacing: 12) {
+                configuration.label
+                Spacer(minLength: 0)
+                CandySwitchKnob(isOn: configuration.isOn)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.squish) // A9: the whole settings row squishes
+        // VoiceOver hears a real switch (label + on / off), not a button.
+        .accessibilityRepresentation { Toggle(isOn: configuration.$isOn) { configuration.label } }
+    }
+}
+
+struct CandySwitchKnob: View {
+    let isOn: Bool
+    var body: some View {
+        let s = CandySwitchStyle.size
+        let knob = s.height - 4
+        ZStack(alignment: .leading) {
+            CandyPill(sprite: .switchOff)
+            CandyPill(sprite: .switchOn).opacity(isOn ? 1 : 0)
+            Image(Theme.isDark ? "art-toggle-dark-knob" : "art-toggle-light-knob").resizable()
+                .frame(width: knob, height: knob)
+                .offset(x: isOn ? s.width - knob - 2 : 2)
+        }
+        .frame(width: s.width, height: s.height)
+        .animation(Theme.animation(.spring(response: 0.28, dampingFraction: 0.6)), value: isOn)
+        .accessibilityHidden(true)
+    }
+}
+
+extension ToggleStyle where Self == CandySwitchStyle {
+    static var candy: CandySwitchStyle { CandySwitchStyle() }
 }

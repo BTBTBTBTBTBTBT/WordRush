@@ -156,12 +156,18 @@ struct SectionTitleArt: View {
     static let maxWidth: CGFloat = 300
     static let maxHeight: CGFloat = 64
 
-    init(_ name: ArtTitleName) { self.name = name }
+    /// FINISH_SPEC BH2: DAILIES / PUZZLES over the compact game cards, ~25% smaller.
+    var scale: CGFloat = 1
+
+    init(_ name: ArtTitleName, compact: Bool = false) {
+        self.name = name
+        self.scale = compact ? HomeCardSpec.sectionTitleScale : 1
+    }
 
     var body: some View {
-        CenteredFractionLayout(fraction: Self.fraction, maxWidth: Self.maxWidth) {
-            ArtTitle(name, maxWidth: Self.maxWidth)
-                .frame(maxHeight: Self.maxHeight)
+        CenteredFractionLayout(fraction: Self.fraction * scale, maxWidth: Self.maxWidth * scale) {
+            ArtTitle(name, maxWidth: Self.maxWidth * scale)
+                .frame(maxHeight: Self.maxHeight * scale)
         }
     }
 }

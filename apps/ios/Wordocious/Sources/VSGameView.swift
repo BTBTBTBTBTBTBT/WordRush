@@ -1287,28 +1287,19 @@ struct VSMatchHeader: View {
         }
     }
 
-    // Gauntlet — the solo stage stepper · colored stage-name title · stats.
+    // Gauntlet — the solo art header (stage medallions) · stage name + VS tag + stats.
     private var gauntletHeader: some View {
-        VStack(spacing: 3) {
-            HStack(spacing: 0) {
-                ForEach(0..<max(game.gauntletStageCount, 1), id: \.self) { i in
-                    if i > 0 {
-                        Rectangle().fill(connector(i)).frame(width: 16, height: 2).padding(.horizontal, 2)
-                    }
-                    node(i)
-                }
-            }
-            .padding(.top, 2)
-            HStack(spacing: 8) {
+        VStack(spacing: 2) {
+            GauntletArtHeader(stageCount: max(game.gauntletStageCount, 1), current: game.gauntletCurrentIndex,
+                              cleared: Set(game.gauntletCompletedIndices), stageName: game.gauntletStageName)
+            HStack(spacing: 10) {
                 Text(game.gauntletStageName)
-                    .font(Brand.font(18, .black))
+                    .font(Brand.font(13, .black))
                     .foregroundStyle(LinearGradient(colors: GameScreen.gauntletStageGradient(game.gauntletStageName),
                                                     startPoint: .leading, endPoint: .trailing))
                     .lineLimit(1).minimumScaleFactor(0.7)
                 VSTagPill(size: 10)
-            }
-            if !game.stageCleared {
-                HStack(spacing: 12) {
+                if !game.stageCleared {
                     if game.boardCount > 1 {
                         HStack(spacing: 3) {
                             Icon3D(.trophy, size: 12)
@@ -1342,30 +1333,6 @@ struct VSMatchHeader: View {
         return "\(game.rowsUsed)/\(game.maxGuesses) guesses"
     }
 
-    private func connector(_ i: Int) -> Color {
-        if game.gauntletCompletedIndices.contains(i) { return Color(hex: 0x8B5CF6) }
-        if i == game.gauntletCurrentIndex { return Color(hex: 0xD8B4FE) }
-        return Color(hex: 0xE5E7EB)
-    }
-
-    @ViewBuilder private func node(_ i: Int) -> some View {
-        let completed = game.gauntletCompletedIndices.contains(i)
-        let active = i == game.gauntletCurrentIndex
-        let bg = completed ? Color(hex: 0xEDE9FE) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF9FAFB)
-        let border = completed ? Color(hex: 0x8B5CF6) : active ? Color(hex: 0xC084FC) : Color(hex: 0xE5E7EB)
-        let fg = completed ? Color(hex: 0x6D28D9) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
-        ZStack {
-            Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
-                .shadow(color: active ? Color(hex: 0xA855F7).opacity(0.35) : .clear, radius: active ? 4 : 0)
-            if completed {
-                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(fg)
-            } else if active {
-                Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(fg).offset(x: 1)
-            } else {
-                Text("\(i + 1)").font(.system(size: 10, weight: .bold)).foregroundStyle(fg)
-            }
-        }
-    }
 }
 
 /// The solo games' corner Home button (44 pt, mode-accent ring) — reused by

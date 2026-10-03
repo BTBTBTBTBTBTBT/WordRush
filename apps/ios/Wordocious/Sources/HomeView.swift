@@ -283,7 +283,7 @@ struct HomeView: View {
         unlimitedCounts = await HomeStreaksService.unlimitedCountsToday()
     }
 
-    private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    private let columns = [GridItem(.flexible(), spacing: HomeCardSpec.gap), GridItem(.flexible(), spacing: HomeCardSpec.gap)]
 
     /// §AJ: the footer Home tab pops this stack (token) and scrolls to the top.
     @ObservedObject private var tabRouter = TabRouterModel.shared
@@ -309,18 +309,16 @@ struct HomeView: View {
                             if showFirstGameCard { firstGameCard }
                             // ART_SPEC §12 / §19.2: the whole-cast DAILIES art, centered on the
                             // same width rule as PUZZLES and WORD OF THE DAY below.
-                            SectionTitleArt(.dailies)
-                                .padding(.top, 2)
-                            LazyVGrid(columns: columns, spacing: 8) {
+                            SectionTitleArt(.dailies, compact: true)
+                            LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
                                 ForEach(wordModes) { mode in card(mode) }
                             }
                             // The More Games dailies as plain cards (the band and its sheet are gone).
                             if !puzzleModes.isEmpty {
                                 // ART_SPEC §2 / §19.2: the whole-cast PUZZLES art, centered.
-                                SectionTitleArt(.puzzles)
-                                    .padding(.top, 2)
+                                SectionTitleArt(.puzzles, compact: true)
                                     .id(Self.puzzlesAnchor)
-                                LazyVGrid(columns: columns, spacing: 8) {
+                                LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
                                     ForEach(puzzleModes) { mode in card(mode) }
                                 }
                             }

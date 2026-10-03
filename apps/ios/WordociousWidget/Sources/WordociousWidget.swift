@@ -571,7 +571,9 @@ private func statTexts(_ snap: WSnapshot, _ date: Date, _ dark: Bool, nextFirst:
         Text("NEXT ").foregroundColor(muted)
             + Text(WidgetStats.nextName(key: $0.key, title: $0.title).uppercased()).foregroundColor(WInk.accent(dark))
     } ?? (Text("ALL DONE").foregroundColor(WInk.gold(dark)))
-    let left = Text(resetLabel(date)).foregroundColor(WInk.number(dark)) + Text(" LEFT").foregroundColor(muted)
+    // The gold clock sprite (night art 10-03), inline at the caps size, leads the countdown.
+    let left = Text(Image("art-badge-icon-clock-inline")).baselineOffset(-1.5) + Text(" ")
+        + Text(resetLabel(date)).foregroundColor(WInk.number(dark)) + Text(" LEFT").foregroundColor(muted)
     let pts = Text(WidgetStats.pointsText(stats.points)).foregroundColor(WInk.number(dark))
         + Text(" PTS TODAY").foregroundColor(muted)
     return nextFirst ? [next, left, pts] : [pts, left, next]
@@ -610,7 +612,12 @@ struct SmallView: View {
                     FlameStreak(streak: snap.streak, size: 34)
                     VStack(alignment: .leading, spacing: 3) {
                         Caps(text: "DAY STREAK", color: WInk.number(dark))
-                        Caps(text: "RESETS IN \(resetLabel(date))", color: WInk.label(dark).opacity(0.75))
+                        // The gold clock sprite (night art 10-03) leads the countdown.
+                        HStack(spacing: 3) {
+                            Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
+                                .frame(width: 11, height: 11).accessibilityHidden(true)
+                            Caps(text: "RESETS IN \(resetLabel(date))", color: WInk.label(dark).opacity(0.75))
+                        }
                     }
                 }
             }

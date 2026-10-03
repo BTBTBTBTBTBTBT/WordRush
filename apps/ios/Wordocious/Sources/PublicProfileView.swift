@@ -505,8 +505,10 @@ struct PublicProfileView: View {
         VStack(alignment: .leading, spacing: 10) {
             FinishLabel("Game mode statistics")
             // The Solo | VS toggle — the shared soft segmented control (§A9 squish).
-            SoftSegmented(options: [(key: "solo", label: "Solo"), (key: "vs", label: "VS")],
-                          selection: $tab, accessibilityLabel: "Play type")
+            // The candy Solo | VS toggle (night art 10-03 sprites).
+            CandySegmented(options: [(key: "solo", label: "Solo"), (key: "vs", label: "VS")],
+                           selection: tab, accessibilityLabel: "Play type", height: 36) { tab = $0 }
+                .frame(width: 160)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) { ForEach(pickerModes) { m in modeChip(m) } }.padding(.horizontal, 4).padding(.vertical, 6)
             }

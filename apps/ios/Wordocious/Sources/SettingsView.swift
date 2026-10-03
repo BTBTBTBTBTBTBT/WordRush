@@ -282,7 +282,8 @@ struct SettingsView: View {
                 Text(sub).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
             }
         }
-        .tint(accent).padding(.vertical, 6)
+        // The candy on/off switch (night art 10-03 sprites, proposal 3); still a Toggle for VoiceOver.
+        .toggleStyle(.candy).padding(.vertical, 6)
     }
 
     private func linkRow(_ title: String, accent: Color = G5Accent.purple) -> some View {

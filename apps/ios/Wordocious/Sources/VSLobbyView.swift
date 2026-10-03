@@ -564,12 +564,14 @@ struct VSLobbyView: View {
                         .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                         .multilineTextAlignment(.center)
                     HStack(spacing: 6) {
+                        // The gold clock sprite (night art 10-03); no outline on the pill.
+                        Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
+                            .frame(width: 18, height: 18).accessibilityHidden(true)
                         Text("Resets in").font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
                         Text(countdown).vsNumber(16)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 7)
                     .background(Capsule().fill(VsLobbyKit.purple.wash(0.12)))
-                    .overlay(Capsule().stroke(VsLobbyKit.purple.wash(0.3), lineWidth: 1.5))
                     .accessibilityElement(children: .combine)
                     NavigationLink { ProView() } label: {
                         CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 20) }

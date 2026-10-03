@@ -314,18 +314,19 @@ struct GameScreen: View {
     }
 
     // MARK: Gauntlet header — 1:1 with web GauntletProgress + GauntletStageHeader
-    // (stage stepper · colored stage-name title · boards/guesses/time subtitle).
+    // (the art header with its stage medallions · one status line led by the stage name).
 
     private var gauntletHeader: some View {
-        VStack(spacing: 3) {
-            gauntletStepper
-            Text(vm.gauntletStageName)
-                .font(Brand.font(18, .black))
-                .foregroundStyle(LinearGradient(colors: Self.gauntletStageGradient(vm.gauntletStageName),
-                                                startPoint: .leading, endPoint: .trailing))
-                .gameHost(mode, size: 24)
-            if !vm.stageCleared {
-                HStack(spacing: 12) {
+        VStack(spacing: 2) {
+            GauntletArtHeader(stageCount: vm.gauntletStageCount, current: vm.gauntletCurrentIndex,
+                              cleared: Set(vm.gauntletCompletedIndices), stageName: vm.gauntletStageName)
+            HStack(spacing: 12) {
+                Text(vm.gauntletStageName)
+                    .font(Brand.font(13, .black))
+                    .foregroundStyle(LinearGradient(colors: Self.gauntletStageGradient(vm.gauntletStageName),
+                                                    startPoint: .leading, endPoint: .trailing))
+                    .lineLimit(1)
+                if !vm.stageCleared {
                     if vm.boardCount > 1 {
                         let solved = vm.boards.filter { $0.status == .won }.count
                         HStack(spacing: 3) {
@@ -344,64 +345,6 @@ struct GameScreen: View {
             }
         }
         .padding(.top, 4)
-    }
-
-    private var gauntletStepper: some View {
-        HStack(spacing: 0) {
-            ForEach(0..<vm.gauntletStageCount, id: \.self) { i in
-                if i > 0 {
-                    Rectangle().fill(gauntletConnectorColor(i))
-                        .frame(width: 16, height: 2).padding(.horizontal, 2)
-                }
-                gauntletStageNode(i)
-            }
-        }
-        .padding(.top, 2)
-    }
-
-    @ViewBuilder
-    private func gauntletStageNode(_ i: Int) -> some View {
-        let completed = vm.gauntletCompletedIndices.contains(i)
-        let active = i == vm.gauntletCurrentIndex
-        // §A1: upcoming stages are a faint lilac wash, never grey / white.
-        let bg = completed ? Color(hex: 0xEDE9FE) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF6F2FF)
-        let border = completed ? Color(hex: 0x8B5CF6) : active ? Color(hex: 0xC084FC) : Color(hex: 0xDDD0F7)
-        let fg = completed ? Color(hex: 0x6D28D9) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9A88BF)
-        ZStack {
-            Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
-                .modifier(StageGlow(active: active))
-            if completed {
-                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(fg)
-            } else if active {
-                Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(fg).offset(x: 1)
-            } else {
-                Text("\(i + 1)").font(.system(size: 10, weight: .bold)).foregroundStyle(fg)
-            }
-        }
-    }
-
-    /// A soft purple halo on the active gauntlet stage node (web `gauntlet-glow`'s
-    /// color, held still on iOS — see below).
-    private struct StageGlow: ViewModifier {
-        let active: Bool
-        private let glow = Color(hex: 0xA855F7)
-        func body(content: Content) -> some View {
-            // Perf audit: a STILL halo. The old forever-animated shadow radius re-rendered
-            // two blurred shadows every frame of the whole Gauntlet run (main thread +
-            // offscreen GPU passes under the board and keyboard).
-            content
-                .background {
-                    if active {
-                        Circle().fill(glow.opacity(0.32)).padding(-4)
-                    }
-                }
-        }
-    }
-
-    private func gauntletConnectorColor(_ i: Int) -> Color {
-        if vm.gauntletCompletedIndices.contains(i) { return Color(hex: 0x8B5CF6) }
-        if i == vm.gauntletCurrentIndex { return Color(hex: 0xD8B4FE) }
-        return Color(hex: 0xDDD0F7)
     }
 
     /// Per-stage title gradient — mirrors web STAGE_GRADIENTS.
@@ -735,5 +678,69 @@ struct StageTransitionOverlay: View {
             }
         }
         .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Gauntlet art header (night art 10-03), shared by solo + VS Gauntlet
+
+/// The Gauntlet header (night art 10-03; was a row of code-drawn 20 pt dots + an 18 pt stage
+/// title): `art-gauntlet-header` — the GAUNTLET lettering over its gold track — with a medallion
+/// in each socket: cleared (gold + star), current (orange, white stage numeral with a soft orange
+/// shadow) and locked (silver, slate numeral), so "stage 3 of 5" reads at a glance. 52 pt tall:
+/// it takes the old stepper + title rows, so the boards don't move. The current medallion scales
+/// in once when its stage starts (transform only); nothing loops. Shared by solo + VS Gauntlet.
+/// Geometry: WordociousCore.GauntletHeaderSpec (web lib/gauntlet-header.ts, Android parity).
+struct GauntletArtHeader: View {
+    let stageCount: Int
+    let current: Int
+    let cleared: Set<Int>
+    let stageName: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let h = GauntletHeaderSpec.height
+        let w = (h * GauntletHeaderSpec.aspect).rounded()
+        let medals = GauntletHeaderSpec.medals(stageCount: stageCount, current: current, cleared: cleared)
+        ZStack(alignment: .topLeading) {
+            Image("art-gauntlet-header").resizable().interpolation(.high).frame(width: w, height: h)
+            ForEach(Array(medals.prefix(GauntletHeaderSpec.slots.count).enumerated()), id: \.offset) { i, medal in
+                let f = GauntletHeaderSpec.medalFrame(i, width: w)
+                MedalView(index: i, medal: medal, side: f.side, animate: !reduceMotion)
+                    .id("\(i)-\(medal.rawValue)")
+                    .position(f.center)
+            }
+        }
+        .frame(width: w, height: h)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(GauntletHeaderSpec.label(current: current, stageCount: stageCount, stageName: stageName))
+    }
+
+    private struct MedalView: View {
+        let index: Int
+        let medal: GauntletHeaderSpec.Medal
+        let side: CGFloat
+        let animate: Bool
+        @State private var shown = false
+
+        var body: some View {
+            ZStack {
+                Image("art-gauntlet-medal-\(medal.rawValue)").resizable().interpolation(.high)
+                if medal != .cleared {
+                    Text("\(index + 1)")
+                        .font(Brand.font(side * GauntletHeaderSpec.numeralScale, .black))
+                        .monospacedDigit()
+                        .foregroundStyle(medal == .current ? Color.white : Color(hex: 0x64748B))
+                        .shadow(color: medal == .current ? Color(hex: 0xC2410C).opacity(0.75) : .white.opacity(0.6),
+                                radius: medal == .current ? 1.5 : 0, y: 1)
+                }
+            }
+            .frame(width: side, height: side)
+            .scaleEffect(medal == .current && animate && !shown ? 0.55 : 1)
+            .onAppear {
+                guard medal == .current, animate else { return }
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.55)) { shown = true }
+            }
+        }
     }
 }

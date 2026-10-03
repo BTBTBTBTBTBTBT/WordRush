@@ -523,10 +523,12 @@ struct DailyRecordsView: View {
                 // The soft segmented toggles (Solo | VS, Everyone | Friends); each paints its
                 // cached board in the same transaction as the selection.
                 HStack(spacing: 8) {
-                    SoftSegmented(options: [(key: "solo", label: "Solo"), (key: "vs", label: "VS")],
-                                  selection: Binding(get: { playType },
-                                                     set: { t in instantly { playType = t; paintCached() } }),
-                                  accent: accent, accessibilityLabel: "Solo or VS")
+                    // The candy toggle (night art 10-03 sprites).
+                    CandySegmented(options: [(key: "solo", label: "Solo"), (key: "vs", label: "VS")],
+                                   selection: playType, accessibilityLabel: "Solo or VS", height: 34) { t in
+                        instantly { playType = t; paintCached() }
+                    }
+                    .frame(width: 140)
                     if auth.isAuthenticated {
                         SoftSegmented(options: [(key: false, label: "Everyone"), (key: true, label: "Friends")],
                                       selection: Binding(get: { friendsOnly },

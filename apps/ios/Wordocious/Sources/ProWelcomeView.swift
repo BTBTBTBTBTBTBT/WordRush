@@ -130,13 +130,35 @@ final class ProWelcomeCenter: ObservableObject {
             present(Presentation(kind: Self.giftWindow(new) ? .gift : .purchase,
                                  name: new.username, shieldBaseline: old.streakShields))
         } else {
-            // First look at this account this session: only a new account whose Pro
-            // is a ~7-day gifted window (redeemed on the web before signing in here).
-            guard Self.giftWindow(new),
-                  let c = new.createdAt.flatMap(parseTimestamp),
-                  Date().timeIntervalSince(c) < 8 * 86_400 else { return }
-            present(Presentation(kind: .gift, name: new.username, shieldBaseline: nil))
+            // First look at this account this session with Pro in the shape of a gifted
+            // week (redeemed on the web / another device): the SERVER marker decides —
+            // GET /api/pro/gift (the caller's redeemed referral), welcomed only inside the
+            // gift week. (Was a guess from the account's age, which missed older accounts.)
+            guard Self.giftWindow(new) else { return }
+            let uid = new.id, name = new.username
+            Task { @MainActor in
+                guard await Self.serverGiftDue() else { return }
+                guard AuthService.shared.profile?.id == uid, !Self.welcomed(uid),
+                      self.current == nil, self.pending == nil, !self.purchaseInFlight, !self.armed else { return }
+                self.present(Presentation(kind: .gift, name: name, shieldBaseline: nil))
+            }
         }
+    }
+
+    /// The gifted week's server marker: the caller's referral redeemed within the gift week
+    /// (web lib/pro-welcome giftWelcomeDue: 8 days). False on any failure (a nicety, never a block).
+    private static func serverGiftDue() async -> Bool {
+        guard let token = try? await AuthService.shared.client.auth.session.accessToken,
+              let url = URL(string: "https://wordocious.com/api/pro/gift") else { return false }
+        var req = URLRequest(url: url, timeoutInterval: 10)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let gift = json["gift"] as? [String: Any],
+              let at = (gift["redeemedAt"] as? String).flatMap(parseTimestamp) else { return false }
+        let age = Date().timeIntervalSince(at)
+        return age > -60 && age < 8 * 86_400
     }
 
     /// Pro that ends 1.5–7.2 days from now: the shape of a gifted week.

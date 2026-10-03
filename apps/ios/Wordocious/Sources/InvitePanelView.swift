@@ -40,6 +40,8 @@ struct InvitePanelView: View {
     @State private var error: String?
     @State private var shareURL: URL?
     @State private var cancelTarget: ReferralRow?
+    /// Founder 10-03: credit notices the player X'd (the local list + the server flag).
+    @State private var dismissed: Set<String> = []
 
     private static let iso: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
@@ -57,7 +59,41 @@ struct InvitePanelView: View {
     /// expiry has passed, so a join is news for a week, not a permanent line
     /// (founder, 2026-09-26: "Lord_Matthew joined! has been showing for a while").
     private var visibleInvites: [ReferralRow] {
-        invites.filter { $0.status != "revoked" && expiry($0) > Date() }
+        invites.filter { $0.status != "revoked" && expiry($0) > Date()
+            && !(ReferralCredits.isCredit($0.status) && dismissed.contains($0.id)) }
+    }
+
+    /// X a credit notice (or Clear all): gone for good — the local list now, the server flag
+    /// for the player's other devices (POST /api/referrals/dismiss; a no-op until its column ships).
+    private func dismissCredits(_ ids: [String]) {
+        guard let uid = auth.profile?.id, !ids.isEmpty else { return }
+        withAnimation(Theme.animation(.easeOut(duration: 0.22))) {
+            dismissed = ReferralCredits.write(uid, ids)
+        }
+        Task {
+            guard let token = try? await auth.client.auth.session.accessToken,
+                  let url = URL(string: "https://wordocious.com/api/referrals/dismiss") else { return }
+            var req = URLRequest(url: url, timeoutInterval: 10)
+            req.httpMethod = "POST"
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = try? JSONSerialization.data(withJSONObject: ["ids": ids])
+            _ = try? await URLSession.shared.data(for: req)
+        }
+    }
+
+    /// The local dismissed list, then the other devices' (GET /api/referrals/dismiss).
+    private func loadDismissed() async {
+        guard let uid = auth.profile?.id else { return }
+        dismissed = ReferralCredits.read(uid)
+        guard let token = try? await auth.client.auth.session.accessToken,
+              let url = URL(string: "https://wordocious.com/api/referrals/dismiss") else { return }
+        var req = URLRequest(url: url, timeoutInterval: 10)
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let ids = json["ids"] as? [String], !ids.isEmpty else { return }
+        dismissed = ReferralCredits.write(uid, ids)
     }
     private var openCount: Int {
         invites.filter { $0.status == "pending" && expiry($0) > Date() }.count
@@ -135,6 +171,15 @@ struct InvitePanelView: View {
             }
 
             ForEach(visibleInvites.prefix(6)) { inv in
+            if ReferralCredits.showClearAll(visibleInvites.map(\.status)) {
+                // Founder 10-03: a quiet Clear all once there are 2+ credit notices.
+                Button("Clear all") {
+                    dismissCredits(visibleInvites.filter { ReferralCredits.isCredit($0.status) }.map(\.id))
+                }
+                .font(Brand.font(11, .heavy)).foregroundStyle(FinishInk.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .frame(minHeight: 32)
+            }
                 // §251: settled rows lead with WHO — the code is noise once spent.
                 let name = inv.invitee_id.flatMap { inviteeNames[$0] } ?? "A friend"
                 HStack(spacing: 8) {
@@ -173,11 +218,27 @@ struct InvitePanelView: View {
                         Icon3D(.crown, size: 15)
                     }
                 }
+                    if ReferralCredits.isCredit(inv.status) {
+                        // Founder 10-03: X a credit notice away (soft circle, no outline, 44 pt tap area).
+                        Button { dismissCredits([inv.id]) } label: {
+                            Image(systemName: "xmark").font(.system(size: 10, weight: .heavy))
+                                .foregroundStyle(Color(hex: 0x92400E))
+                                .frame(width: 24, height: 24)
+                                .background(Circle().fill(G5Accent.gold.wash(0.22)))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.squishIcon)
+                        .padding(.vertical, -10).padding(.trailing, -8)
+                        .accessibilityLabel("Dismiss")
+                    }
                 // §A1: each invite is a mini tinted row in its status color.
                 .padding(.horizontal, 10).padding(.vertical, 7)
                 .tintedPill(inv.status == "redeemed" ? G5Accent.green
                             : inv.status == "converted" ? G5Accent.gold : G5Accent.purple, radius: 12)
             }
+                // A dismissed notice fades out while the rows below close the gap.
+                .transition(.opacity)
 
             if !leaders.isEmpty {
                 G5Divider(accent: G5Accent.gold)
@@ -207,6 +268,7 @@ struct InvitePanelView: View {
                     radius: 20, barHeight: 8, tint: 0.09, line: 0.28)
         .task { await load() }
         .sheet(item: Binding(get: { shareURL.map { ShareURLItem(url: $0) } }, set: { _ in shareURL = nil })) { item in
+        .task(id: auth.profile?.id) { await loadDismissed() }
             ActivityShareSheet(text: ShareCopy.invite(url: "").trimmingCharacters(in: .whitespaces), url: item.url)
                 .presentationDetents([.medium])
         }

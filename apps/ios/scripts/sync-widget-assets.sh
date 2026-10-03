@@ -36,4 +36,18 @@ for pose in r-wake r-cocoa o1-ready c-telescope d-eureka i-reach o2-ready o3-rea
   sips -Z 192 "$DST/art-pose-$pose.imageset/art-pose-$pose.png" >/dev/null
   copied=$((copied + 1))
 done
+# The gold clock sprite as an INLINE glyph for the countdown text ("4H LEFT", "RESETS IN …"):
+# Text(Image(...)) draws an image at its point size, so this copy is 11 pt (33 px @3x).
+CLK=$DST/art-badge-icon-clock-inline.imageset
+mkdir -p "$CLK"
+sips -Z 33 "$SRC/art-badge-icon-clock-sprite.imageset/art-badge-icon-clock-sprite.png" --out "$CLK/clock-inline@3x.png" >/dev/null
+cat > "$CLK/Contents.json" <<'JSON'
+{
+  "images" : [
+    { "filename" : "clock-inline@3x.png", "idiom" : "universal", "scale" : "3x" }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 }
+}
+JSON
+copied=$((copied + 1))
 echo "widget catalog: $copied image sets, $(du -sh $DST | cut -f1)"
