@@ -1586,3 +1586,27 @@ ArtAsset.exists, Android getIdentifier (+ res/raw/keep_pocket_titles.xml), web l
 a file drop (+ its ART_SIZE line on web, which art.test.ts enforces). Helpers + tests: web friends-play.ts kindRules /
 pickerStatus / pickerGrid / pocketTitleArt (vitest), iOS FriendsKit.rules / pickerStatus / PickerGrid, Android FriendsKit
 friendlyRules / pickerStatus / PickerGrid.
+BJ14. Game open/close long frame (perf harness 10-03: every game open had ONE main-thread frame of 300–490 ms a few frames
+after the tap; closes 64–219 ms). Cause, measured: (b) building the game hierarchy, not (a) the BJ9 transition. A/B with
+`--flag noXition` (DEBUG: present the cover with no overlay and no custom dismissal) still stalls — Classic open 381 → 283
+ms, OctoWord 574 → 413 — so the transition adds ~100 ms on top but is not the stall. A Time Profiler trace of the tour,
+samples cut to each "hitch" signpost, puts the whole long frame inside ONE SwiftUI update (graph instantiation of the new
+cover: GameScreen, BoardLayout / BoardView / GlossyTile bodies, KeyboardView / KeyCap, header); app-side setup
+(GameViewModel.init, seed / solution pool, persistence) is ~1% of it. The close stall is the cover's teardown in
+`completeTransition` at the END of the shrink (GameCoverDismissal finish closure), not the animation. Fix 1 (shipped iOS):
+multi-board games build their mini boards two per run-loop turn under the overlay (BoardLayout.builtBoards; a pending slot
+holds its exact cell size, so nothing shifts) — OctoWord open worst 574 / 491 → 212–223 ms, hitch 259 → 135–162 ms/s.
+Owed: Classic-family opens (the single board + keyboard + header still build on one frame: stage the keyboard / header art a
+turn later, or pre-instantiate a hidden GameScreen on Home idle), the close teardown (drop the game hierarchy a turn after
+the shell lands, or in pieces), and the ~100 ms the overlay adds (window snapshot + flush). Target stays < 50 ms open and
+close on Classic, OctoWord, Sudocious, Muddle, Crossword and a VS bot start.
+BJ14 round 2: unplayed filler rows are ONE Canvas each (BoardView EmptyTileRow: the exact GlossyTile(.empty) geometry —
+edge lip, face, ring, gloss — no letter), not N GlossyTile trees; real tiles stay for typed / revealed / masked rows, the
+active row, and the zoomed OctoWord copy (it is scaled up, and a Canvas would blur). Classic empty rows at 3x match the old
+pixels (mean diff 0.19/255, 0.13% of pixels > 8: antialiasing only). A/B in one build (`--flag noCanvas`): OctoWord open
+328 → 165 ms cold / 202 → 204 warm, QuadWord 239 → 162 / 187 → 121. The first game opened in a launch carries a cold
+~150–250 ms extra (first instantiation of the game view types); warm Classic open is 107–166 ms. The perf tour now zooms an
+OctoWord mini board (octo.zoomIn / zoomType / zoomOut; `--flag slowZoom` for screenshots): worst 33–48 ms, none over 50; a
+board still staging has no tap target, so it can't be zoomed into empty. Still owed: the warm ~110–330 ms open floor
+(header / keyboard / page built on the presenting frame), closes (game teardown in completeTransition; an intermittent
+~460–660 ms frame on Home re-entry after a finished game), and the overlay's ~100 ms.
