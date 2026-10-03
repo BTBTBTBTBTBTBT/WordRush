@@ -29,32 +29,12 @@ def title(name, w, h):
 
 
 def button(color, label, h=132, w=520, state='', dark=False):
-    """Three-slice: caps = h/2 from the skin, the middle column stretched to width w."""
-    sk = Image.open(os.path.join(BTN, f'{color}-l{state}{"-dark" if dark else ""}.png')).convert('RGBA')
-    sk = sk.resize((int(sk.width * h / sk.height), h), Image.LANCZOS)
-    cap = h // 2
-    out = Image.new('RGBA', (w, h))
-    out.alpha_composite(sk.crop((0, 0, cap, h)), (0, 0))
-    out.alpha_composite(sk.crop((sk.width // 2, 0, sk.width // 2 + 1, h)).resize((w - 2 * cap, h)), (cap, 0))
-    out.alpha_composite(sk.crop((sk.width - cap, 0, sk.width, h)), (w - cap, 0))
-    # the label always fits INSIDE the caps (the app shrinks it the same way); colors from labels.json
-    import json
-    from PIL import ImageFilter
-    lab = json.load(open(os.path.join(BTN, '..', 'labels.json')))['labels'][color]
-    pt = h / 44                                           # board px per pt (a 44 pt regular button)
-    d = ImageDraw.Draw(out)
-    fs = int(h * 0.3)
-    while fs > 8 and d.textlength(label, font=FB(fs)) > w - h * 0.9:
-        fs -= 1
-    f = FB(fs)
-    cx, cy = w / 2, h * 0.45 + (3 if state else 0)
-    sh = Image.new('RGBA', out.size)
-    sc = tuple(int(lab['shadow'][i:i + 2], 16) for i in (1, 3, 5)) + (int(255 * lab['shadowAlpha']),)
-    ImageDraw.Draw(sh).text((cx, cy + lab['shadowYPt'] * pt), label, font=f, fill=sc, anchor='mm',
-                            stroke_width=int(lab['strokePt'] * pt), stroke_fill=sc)
-    out.alpha_composite(sh.filter(ImageFilter.GaussianBlur(lab['shadowBlurPt'] * pt)))
-    d.text((cx, cy), label, font=f, fill=lab['fill'], anchor='mm', stroke_width=max(1, int(lab['strokePt'] * pt)), stroke_fill=lab['stroke'])
-    return out
+    """The finished button per the wiring spec (buttons/cast/labels.json + button_render.py), h px tall."""
+    import sys
+    sys.path.insert(0, BTN + '/..')
+    from button_render import button as render
+    scale = h / 44
+    return render(color, label, 44, w / scale, scale, state, dark)
 
 
 def screen(wall, titles, buttons, W=390 * 2, H=760):
@@ -100,7 +80,7 @@ def main():
         strip = Image.new('RGBA', (W - 80, 2 * (132 + 30)), (30, 22, 50, 255) if dark else (246, 242, 255, 255))
         for j, (c, label) in enumerate(BTNS):
             for k, st in enumerate(['', '-pressed']):
-                b = button(c, label, h=110, w=(W - 80) // len(BTNS) - 20, state=st, dark=dark)
+                b = button(c, label, h=84, w=(W - 80) // len(BTNS) - 24, state=st, dark=dark)
                 strip.alpha_composite(b, (10 + j * ((W - 80) // len(BTNS)), 20 + k * 150))
         board.paste(strip.convert('RGB'), (40, y)); y += strip.height + 30
     d.text((40, y), 'On real screens (mocked on the shipped wallpapers): Home · Leaderboard · Friends · Stats', font=F(22), fill=INK)

@@ -1,77 +1,60 @@
 {
-  "note": "Button label colors (cast skins): white text, stroke + soft shadow in a deeper shade of the button color. The label always fits INSIDE the caps (cap = height / 2): shrink the font to fit.",
+  "note": "Cast-color button labels \u2014 the wiring spec for iOS / Android / web (see README.md).",
+  "rules": {
+    "font": "Nunito Black (the Brand font)",
+    "fontOfHeight": 0.39,
+    "minFontPt": 11,
+    "capInsetOfHeight": 0.6,
+    "minPadPt": 14,
+    "labelCenterOfHeight": 0.47,
+    "pressedDropPt": 1,
+    "strokePt": 1.1,
+    "shadowYPt": 1,
+    "shadowBlurPt": 2,
+    "shadowAlpha": 0.35,
+    "fit": "Label area = the flat middle only, inset from each end by max(capInset \u00d7 height, minPad). Shrink the font from fontOfHeight \u00d7 height down to minFontPt; if it still does not fit, the button grows wider. Text never touches the caps.",
+    "strokeAndShadow": "Stroke = the deeper SAME-hue color below (one outline, drawn under the white fill; no grey, no white edge, no second offset outline). Shadow = the same color, soft drop."
+  },
   "labels": {
     "purple": {
       "fill": "#ffffff",
-      "stroke": "#600bba",
-      "strokePt": 1.75,
-      "shadow": "#600bba",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#4f0192",
+      "shadow": "#4f0192"
     },
     "gold": {
       "fill": "#ffffff",
-      "stroke": "#b77202",
-      "strokePt": 1.75,
-      "shadow": "#b77202",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#936801",
+      "shadow": "#936801"
     },
     "slate": {
       "fill": "#ffffff",
-      "stroke": "#364458",
-      "strokePt": 1.75,
-      "shadow": "#364458",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#3b3f51",
+      "shadow": "#3b3f51"
     },
     "orange": {
       "fill": "#ffffff",
-      "stroke": "#cc5c02",
-      "strokePt": 1.75,
-      "shadow": "#cc5c02",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#934400",
+      "shadow": "#934400"
     },
     "pink": {
       "fill": "#ffffff",
-      "stroke": "#c01b61",
-      "strokePt": 1.75,
-      "shadow": "#c01b61",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#931048",
+      "shadow": "#931048"
     },
     "teal": {
       "fill": "#ffffff",
-      "stroke": "#13889f",
-      "strokePt": 1.75,
-      "shadow": "#13889f",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#016774",
+      "shadow": "#016774"
     },
     "green": {
       "fill": "#ffffff",
-      "stroke": "#279b4f",
-      "strokePt": 1.75,
-      "shadow": "#279b4f",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#1a7724",
+      "shadow": "#1a7724"
     },
     "blue": {
       "fill": "#ffffff",
-      "stroke": "#174ed3",
-      "strokePt": 1.75,
-      "shadow": "#174ed3",
-      "shadowAlpha": 0.45,
-      "shadowYPt": 1.5,
-      "shadowBlurPt": 1.5
+      "stroke": "#003091",
+      "shadow": "#003091"
     }
   }
 }
