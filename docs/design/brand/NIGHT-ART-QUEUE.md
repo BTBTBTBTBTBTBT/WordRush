@@ -20,3 +20,8 @@ Founder rules: on brand (purple/gold/grey glossy, soft 3D, Nunito-heavy letterin
 Then: docs/design/brand/NIGHT-ART-2026-10-03.md (what shipped where) + a bible entry. No builds or pushes overnight.
 
 Status 10-03 ~4:30 AM: 1–7, 9, 10, 11 done and shipped ×3 (see NIGHT-ART-2026-10-03.md); 8 skipped (no spec BH).
+
+## Queued build work (not art) — 10-03 afternoon
+- BJ9 Game open/close: "grow + soft rise" combo (founder approved the demo) — tapped card lifts (scale 1.03, −4) then a light card-colored shell grows to full screen on a soft spring (~0.44 s, ease-out-expo) while the pre-built game fades in over the last ~60%; close reverses back into the card (~0.38 s). Animate a cheap shell, never the live game view; game prebuilt under it. iOS 16+ custom overlay (iOS 18 zoom transition optional), Android shared-element/SharedTransitionLayout or the same shell, web View Transitions with fallback. Measured: 0 hitches >25 ms during open/close.
+- BJ10 Menus/sheets "soft pop": dim + gentle spring scale (0.94→1) from the bottom-center instead of the system slide.
+- FINAL GATE (founder 10-03): after the LAST feature lands (incl. widget-you, logo sweep, subscribe screens, avatar round 2, transitions), run one final full fluidity audit with the perf harness over EVERY surface — first-appearance frame (no placeholder/pop-in), scroll/typing/transition hitches (>25 ms), main-thread %, AttributeGraph cycles = 0 — on iOS (Release sim) + Android (gfxinfo, one emulator) + web (trace). Fix regressions, re-run, publish before/after table. Only then cut 242/198.

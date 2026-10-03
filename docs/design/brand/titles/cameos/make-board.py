@@ -12,6 +12,11 @@ CAMEOS = [  # cutout, title, side, height × title height, dx, dy (fractions of 
     ('dailies-w', 'dailies', 'right', 1.45, -0.42, -0.72, 'W sits on the final S with a tiny calendar'),
     ('puzzles-c', 'puzzles', 'left', 1.45, 0.38, -0.28, 'C pushes a puzzle piece into the first P'),
     ('wotd-i', 'wotd', 'right', 1.6, -0.62, -0.84, 'I sits on DAY reading a book'),
+    ('vsbattle-s', 'vsbattle', 'left', 1.5, 0.10, -0.18, 'S (sweatband) braces against the V like a wrestler'),
+    ('leaderboard-o3', 'leaderboard', 'right', 1.5, -0.45, -0.72, 'O (amber cyclops) stands on the D with a trophy'),
+    ('stats-d', 'stats', 'right', 1.45, -0.10, -0.30, 'D (glasses) with a clipboard chart beside STATS'),
+    ('friends-o2i', 'friends', 'right', 1.5, -0.12, -0.32, 'O (pink) and I high-five at the end of FRIENDS'),
+    ('settings-r', 'settings', 'left', 1.45, 0.08, -0.28, 'R (nightcap) tightens a bolt with a little wrench'),
 ]
 
 
@@ -30,7 +35,7 @@ def compose(cut, title, side, k, dx, dy, W=1200, H=420):
     else:
         cx = tx - c.width + int(dx * c.width)
     cy = ty + int(dy * c.height)
-    sitting = dy < -0.6                      # sits on top of the letters → drawn over the title
+    sitting = cut != 'puzzles-c'             # in front of the lettering, except C's puzzle piece slots in BEHIND the P
     if not sitting:
         row.alpha_composite(c, (cx, cy))
     row.alpha_composite(t, (tx, ty))
@@ -45,7 +50,7 @@ def main():
     H = 110 + sum(r.height + 60 for r in rows)
     b = Image.new('RGB', (W, H), (250, 247, 255))
     d = ImageDraw.Draw(b)
-    d.text((40, 24), 'Cast cameos (2026-10-03) — %d of 8; the rest after the ChatGPT limit resets' % len(rows), font=F(28), fill=(60, 40, 95))
+    d.text((40, 24), 'Cast cameos on the cast-color titles (2026-10-03) — %d of 8 · one per title, at one end' % len(rows), font=F(28), fill=(60, 40, 95))
     y = 90
     for r, c in zip(rows, CAMEOS):
         d.text((40, y), c[6], font=F(22), fill=(90, 70, 130)); y += 34
