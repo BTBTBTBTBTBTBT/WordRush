@@ -225,7 +225,9 @@ internal fun ModeCardView(
     Box(
         // A9: the whole card squishes (the press leads the chain).
         modifier = modifier
-            .squishClickable(card = true, onClick = onClick)
+            // BJ9: the game grows from this card (bounds read on demand) after it lifts.
+            .gameLaunchSource("home:${card.id}", cardBg, MODE_CARD_CORNER)
+            .squishClickable(card = true, onClick = { GameMotion.arm("home:${card.id}"); onClick() })
             .heightIn(min = MODE_CARD_MIN_HEIGHT)
             .gameCardSurface(cardBg)
             .then(if (isLocked) Modifier.alpha(0.6f) else Modifier),

@@ -386,7 +386,7 @@ struct MuddleView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
-                .sheet(isPresented: $showGuide) { GuideSheet(mode: .scramble) }
+                .softSheet(isPresented: $showGuide) { GuideSheet(mode: .scramble) }
         }
         .navigationBarTitleDisplayMode(.inline)
         // No bar items live up there (the corner buttons are overlays); hiding the

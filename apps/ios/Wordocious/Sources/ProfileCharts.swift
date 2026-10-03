@@ -1018,7 +1018,7 @@ struct ProStatsCard: View {
                 }
             }
         }
-        .sheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView() }
     }
 
     private var locked: some View {

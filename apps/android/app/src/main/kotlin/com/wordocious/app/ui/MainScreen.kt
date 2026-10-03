@@ -305,10 +305,12 @@ suspend fun androidx.compose.runtime.State<Boolean>.awaitShown() {
  * recorded content, so dismissing a game reveals the tabs AND the footer in the same frame,
  * with no re-layout (nothing about the layout ever changed).
  */
-private fun Modifier.hiddenTab(): Modifier = this
+private fun Modifier.hiddenTab(showing: () -> Boolean = { false }): Modifier = this
     .zIndex(0f)
     .clearAndSetSemantics {} // off screen = out of the accessibility tree too (TalkBack read hidden tabs)
-    .graphicsLayer { alpha = 0f }
+    // BJ9: Home keeps drawing under the shell while a game grows open / shrinks closed
+    // (read in the layer: no recomposition).
+    .graphicsLayer { alpha = if (showing()) 1f else 0f }
     .pointerInput(Unit) {
         awaitPointerEventScope {
             while (true) {
@@ -327,7 +329,8 @@ fun MainScreen() {
     // Home redesign (founder, 2026-10-01): the More Games sheet is gone (its games are
     // Home's PUZZLES section). Home stays composed under a game (2026-09-29), so leaving
     // a Puzzles game lands back at the same scroll position, where the sheet used to reopen.
-    val exitGame: () -> Unit = { activeGame = null; activeSeed = null }
+    // BJ9: the game fades (its layer), then the shell shrinks back into its card.
+    val exitGame: () -> Unit = { GameMotion.close { activeGame = null; activeSeed = null } }
     var showSettings by remember { mutableStateOf(false) }
     var showSignIn by remember { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
@@ -566,7 +569,7 @@ fun MainScreen() {
     Box(Modifier.fillMaxSize().dockedTabBarExtension(!covered, selectedTab)) {
       // The page background reaches behind the status bar and the shared header; each tab
       // and pushed page repaints the same window-anchored pixels behind its own content.
-      Box(Modifier.fillMaxSize().then(if (covered) Modifier.hiddenTab() else Modifier).pageBackground(headerTint)) {
+      Box(Modifier.fillMaxSize().then(if (covered) Modifier.hiddenTab(GameMotion::homeShows) else Modifier).pageBackground(headerTint)) {
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides (if (covered || realBackOwner == null) inertBackOwner else realBackOwner),
             // Perf (2026-10-02 measured audit): the shared header and the tab bar sit OUTSIDE
@@ -785,8 +788,10 @@ fun MainScreen() {
       // AY: every non-VS layer's top-left home button lands on the Home root (single-fire).
       // A live VS match keeps its own home (its leave-the-match confirm / the lobby).
       val goHome: (() -> Unit)? = if (vsActive == null && vsInvite == null) {
-          { if (HomeNav.tryGoHome(android.os.SystemClock.uptimeMillis())) goToRoot(TabNav.HOME, scrollToTop = false) }
+          { if (HomeNav.tryGoHome(android.os.SystemClock.uptimeMillis())) GameMotion.close { goToRoot(TabNav.HOME, scrollToTop = false) } }
       } else null
+      // BJ9: the shell (one rounded rect) between the tabs and the game layer.
+      GameMotionShell(Modifier.zIndex(2.5f))
       if (covered) androidx.compose.runtime.CompositionLocalProvider(
         LocalGoHome provides goHome,
         LocalPageTint provides when {
@@ -801,6 +806,7 @@ fun MainScreen() {
         // FINISH_SPEC AG: a solo game on a tablet sits in a centered ~560 dp column; its
         // window-anchored wallpaper also fills the sides (the game repaints the same pixels).
         Modifier.fillMaxSize().zIndex(3f)
+            .gameMotionLayer()   // BJ9: the game is revealed / faded by its layer's alpha only
             .then(
                 if (soloGame != null && WideLayout.isWide(androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.toFloat()))
                     Modifier.gameBackground { this }.gameColumn() else Modifier,
@@ -811,6 +817,8 @@ fun MainScreen() {
         val active = vsActive
         val route = infoRoute
         val friendly = friendlyGameId
+        // BJ9: a game (solo, VS, pocket) is up — it grows open on enter, shrinks closed on leave.
+        if (friendly != null || invite != null || active != null || card?.engineMode != null) GameMotionMarker()
         if (friendly != null) {
             // The game screen owns Back (it confirms leaving an active game).
             com.wordocious.app.ui.friends.FriendlyGameScreen(

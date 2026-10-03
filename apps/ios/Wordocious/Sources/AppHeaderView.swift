@@ -97,12 +97,12 @@ struct AppHeaderView: View {
         }
         .padding(.bottom, 2)
         .streakBumpFeedback(auth.headerStreak)                      // §U: streak +1
-        .sheet(isPresented: $showMenu, onDismiss: { if let s = menuSelection { menuDest = s; menuSelection = nil } }) {
+        .softSheet(isPresented: $showMenu, onDismiss: { if let s = menuSelection { menuDest = s; menuSelection = nil } }) {
             MenuSheet(selection: $menuSelection).presentationDetents([.large])
         }
-        .sheet(item: $menuDest) { infoMenuDestinationView($0).presentationDetents([.large]) }
-        .sheet(isPresented: $showSettings) { SettingsView() }
-        .sheet(isPresented: $showAuth) { AuthView() }
+        .softSheet(item: $menuDest) { infoMenuDestinationView($0).presentationDetents([.large]) }
+        .softSheet(isPresented: $showSettings) { SettingsView() }
+        .softSheet(isPresented: $showAuth) { AuthView() }
     }
 
     /// BI25: the help / gear taps fire once (SettingsPreviews.sheetTapFires, unit tested).
@@ -307,7 +307,7 @@ struct LivingCastHeader: View {
         .accessibilityLabel(pro ? "Wordocious Pro" : "Wordocious")
         .accessibilityAddTraits(.isHeader)
         .modifier(ProCrownAccessibility(pro: pro) { showProSheet = true })
-        .sheet(isPresented: $showProSheet) { ProMemberSheet() }
+        .softSheet(isPresented: $showProSheet) { ProMemberSheet() }
         .onChange(of: debugSeason) { _ in CastSkin.invalidate() }
         .onAppear { onScreen = true }
         .onDisappear { onScreen = false }

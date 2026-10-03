@@ -574,8 +574,9 @@ fun AchievementDetailSheet(
     val dark = WTheme.isDark
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val close: () -> Unit = { scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() } }
-    ModalBottomSheet(
+    // BJ10: the soft sheet plays its own exit on scrim / back / swipe; a button closes it directly.
+    val close: () -> Unit = onDismiss
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = sheetState,
         containerColor = accentWash(accent, 0.10f), dragHandle = null,
     ) {

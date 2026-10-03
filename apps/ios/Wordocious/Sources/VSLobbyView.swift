@@ -125,10 +125,10 @@ struct VSLobbyView: View {
         .pageBackground(.vs, lightOnly: true)
         .toolbar(.hidden, for: .navigationBar)
         .swipeToGoBack { dismiss() }
-        .sheet(isPresented: $showAuth) { AuthView() }
-        .sheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showAuth) { AuthView() }
+        .softSheet(isPresented: $showPro) { ProView() }
         // Launch a private match once a live code resolves.
-        .fullScreenCover(item: $pendingInvite) { inv in
+        .gameCover(item: $pendingInvite) { inv in
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
         }
         .navigationDestination(isPresented: Binding(get: { raceCode != nil }, set: { if !$0 { raceCode = nil } })) {

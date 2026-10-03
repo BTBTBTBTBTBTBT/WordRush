@@ -174,7 +174,8 @@ private fun GuideCard(
     LaunchedEffect(Unit) { shown = true }
     val dur = if (still) 0 else 260
     // AZ: the help popup springs in with the shared family.
-    val scale by animateFloatAsState(if (shown) 1f else 0.86f, if (dur == 0) tween(0) else com.wordocious.app.ui.Motion.springIn(), label = "guideScale")
+    // BJ10: the soft pop — 0.94 → 1 from the bottom center on the soft spring.
+    val scale by animateFloatAsState(if (shown) 1f else com.wordocious.core.MotionSpec.POP_SCALE, if (dur == 0) tween(0) else com.wordocious.app.ui.softPopSpring(), label = "guideScale")
     val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(dur, easing = EaseOut), label = "guideAlpha")
     var full by remember(mode) { mutableStateOf(false) }
     val host = remember(mode) { Mascots.hostFor(mode.name) }

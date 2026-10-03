@@ -158,7 +158,7 @@ struct MenuScaffold<Content: View>: View {
             content()
         }
         .pageBackground(.home)
-        .sheet(isPresented: $helpOpen) {
+        .softSheet(isPresented: $helpOpen) {
             Group {
                 if help == .faq { HelpView(initialTab: .faq, showTabs: false) } else { HowToPlayView() }
             }
@@ -266,7 +266,7 @@ struct GuidesIndexView: View {
             }
         }
         .task { await service.load() }
-        .sheet(item: $selected) { box in GuideSheet(mode: box.mode, startExpanded: true).presentationDetents([.large]) }
+        .softSheet(item: $selected) { box in GuideSheet(mode: box.mode, startExpanded: true).presentationDetents([.large]) }
     }
 
     private func row(_ mode: GameMode) -> some View {
@@ -627,7 +627,7 @@ struct InfoFooterLinks: View {
             line(Array(order.suffix(order.count - half)))
         }
         .padding(.vertical, 12)
-        .sheet(item: $dest) { infoMenuDestinationView($0).presentationDetents([.large]) }
+        .softSheet(item: $dest) { infoMenuDestinationView($0).presentationDetents([.large]) }
     }
 
     private func line(_ row: [InfoMenuDestination]) -> some View {

@@ -301,7 +301,7 @@ private fun HeaderPopup(
         }
         val appear = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
         // AZ: the shared spring in, and a matching quick exit (never an instant pop out).
-        LaunchedEffect(Unit) { appear.animateTo(1f, Motion.springIn()) }
+        LaunchedEffect(Unit) { appear.animateTo(1f, softPopSpring()) }   // BJ10: the soft-pop spring
         val scope = androidx.compose.runtime.rememberCoroutineScope()
         var closing by remember { mutableStateOf(false) }
         val close: () -> Unit = {
@@ -323,10 +323,8 @@ private fun HeaderPopup(
         ) {
             Column(
                 Modifier.widthIn(max = 440.dp).fillMaxWidth()
-                    .graphicsLayer {
-                        val s = 0.92f + 0.08f * appear.value
-                        scaleX = s; scaleY = s
-                    }
+                    // BJ10: the soft pop from the bottom center (0.94 → 1).
+                    .softPopScale { appear.value }
                     // The card's lift (0 18 40 rgba(40,15,80,.35)).
                     .shadow(16.dp, shape, clip = false, ambientColor = Color(0x59280F50), spotColor = Color(0x59280F50))
                     .clip(shape)

@@ -265,7 +265,7 @@ struct ProLockOverlay<Content: View>: View {
             .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
             .accessibilityLabel(label)
         }
-        .sheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView() }
     }
 }
 

@@ -11,9 +11,13 @@
  */
 
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import { notifyRoute } from '@/lib/game-transition';
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  // BJ9: the new route has committed — a game transition's update callback can capture it.
+  useEffect(() => { if (pathname) notifyRoute(pathname); }, [pathname]);
 
   return (
     <div

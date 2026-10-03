@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC BJ10: the soft pop. The window springs up from its bottom center
+     (scale 0.94 -> 1, a whisper of overshoot) while it fades in; the dim behind it
+     fades with the window. Played by the system compositor, off the UI thread.
+     Numbers: core MotionSpec (POP_SCALE, POP_MS). -->
+<set xmlns:android="http://schemas.android.com/apk/res/android" android:shareInterpolator="false">
+    <scale
+        android:fromXScale="0.94" android:toXScale="1.0"
+        android:fromYScale="0.94" android:toYScale="1.0"
+        android:pivotX="50%" android:pivotY="100%"
+        android:duration="420"
+        android:interpolator="@anim/soft_pop_spring" />
+    <alpha
+        android:fromAlpha="0.0" android:toAlpha="1.0"
+        android:duration="230"
+        android:interpolator="@android:interpolator/decelerate_cubic" />
+</set>

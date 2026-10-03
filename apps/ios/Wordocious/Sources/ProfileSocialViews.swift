@@ -218,7 +218,7 @@ struct ProfileIdentityChips: View {
         }
         // Sheet host — attached to an always-present, layout-free anchor.
         Color.clear.frame(width: 0, height: 0)
-            .sheet(isPresented: $showArchetype) {
+            .softSheet(isPresented: $showArchetype) {
                 ArchetypeSheet(targetName: profile.username,
                                targetArchetype: persona?.archetype ?? "")
             }
@@ -418,7 +418,7 @@ struct YouVsThemCard: View {
         .fullScreenCover(isPresented: $showDetail) {
             H2HDetailScreen(target: target, h2h: h2h)
         }
-        .sheet(item: $boardRequest) { GuardedBoardSheet(request: $0) }
+        .softSheet(item: $boardRequest) { GuardedBoardSheet(request: $0) }
     }
 
     private func statColumn(_ label: String, them: String?, you: String?) -> some View {
@@ -655,7 +655,7 @@ struct TrophyCaseCard: View {
         .contentShape(RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(.squishCard)
-        .sheet(isPresented: $showHistory) {
+        .softSheet(isPresented: $showHistory) {
             MedalHistorySheet(username: profile.username, medals: medals)
         }
     }
@@ -877,7 +877,7 @@ struct HighlightsReel: View {
                 }
             }
             .socialCard(Color(hex: 0x7C3AED))
-            .sheet(isPresented: $showCalendar) {
+            .softSheet(isPresented: $showCalendar) {
                 StreakCalendarSheet(username: profile.username, calendar: calendar)
             }
         }

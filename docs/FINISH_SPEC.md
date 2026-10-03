@@ -1469,6 +1469,42 @@ card one line). No duplicate facts: under the Leaderboard result / rank row the 
 (the solve line above already says "Solved in 3 guesses · 23s"). The podium, Stats, in-game boards and finish screens are
 untouched.
 
+BJ9. Games grow + soft rise from the tapped card and shrink back (founder 10-03 approved the demo: "grows and shrinks as a
+user expects"; "making sure it isn't choppy at all"). Open: the tapped card lifts (scale 1.03, up 4, 0.12 s), then a light
+shell in the card's color with its rounded corners grows from the card's exact frame to full screen on a soft settling spring
+(0.44 s, ease-out-expo-like) while the real game — built under the shell the moment the card is tapped — fades in over the last
+60% of the grow (it never shows before its first frame is committed). Close reverses: the game fades (0.18 s), the shell
+shrinks back into the SAME card's current frame (0.38 s) and fades away. Every launch with a source card: Home dailies, Puzzles
+and the first-game card, the Leaderboard play card, Strategy's PLAY (frame only: its sheet closes as the game opens, so it
+closes as a soft rise); no source (widget / deep links, Next daily, Keep playing, pocket games, VS covers): a centered soft rise
+(scale 0.96 → 1, up 14, fade) and its reverse. Reduce Motion: a cross-fade. Smoothness rules: only the shell (one plain
+rounded shape) and snapshots move — never the live game; transform / opacity / one shape's frame only, one driver, no blur.
+iOS (16+): `.gameCover` replaces `.fullScreenCover` for every game — the cover presents with no system slide in the next run-loop
+turn under a root overlay window (Home snapshot + card snapshot + shell, all Core Animation committed and flushed at the tap,
+so the render server plays them while the main thread builds the game), and the dismissal is the cover's own UIKit animator
+(every close path — the Home button, dismiss(), BI10's binding clears, dismissAllOverlays — goes through it; HomeButtonRules /
+TabRouting and the Next-daily hand-off are untouched). Cards carry a zero-cost probe view read on demand (live frame at close).
+Android: one elapsed-time driver read only in draw / graphicsLayer lambdas (no recomposition per frame): the shell is drawn
+between the tabs and the game layer, the game layer's alpha reveals / fades it, Home keeps drawing under the shell until the
+reveal ends, the tapped card's own layer lifts. Web: one View Transition (`game-shell` group: the card → a solid shell; the
+new route fades in over the last 60%), a single WAAPI shell as the fallback. Geometry / timing: core MotionSpec ×3 (iOS
+MotionSpecTests, Android MotionSpecTest, web motion-spec.test.ts). Measured 10-03 (iOS Perf build, iPhone 17 Pro sim, DEBUG harness `-bj9Measure`: Home card → grow → Home button → shrink, 3× each, CADisplayLink main-thread monitor): Classic open 1/2/1 frames > 25 ms (worst 281/172/137), close 4/2/2 (worst 58/62/60); OctoWord open 1–4 (worst 406–463), close 2–4 (worst 117–128). Every long frame is the game's own first build (open) or Home's re-entry + the game's teardown (close) — the same frames the system slide had (BJ3 baseline: classic.open worst 340, octo.open 499, octo.close 122); the transition itself adds no main-thread work (all Core Animation, flushed at the tap, so the lift / grow / shrink keep playing through those stalls). Target 0 > 25 ms still OPEN: needs the game builds split (perf harness owner). Mid-transition frames: `-bj9Slow`.
+
+BJ10. App menus / sheets soft pop, system sheets excepted (founder 10-03). The background dims and the sheet / menu springs up
+gently from the bottom center (scale 0.94 → 1 + fade, a light spring ~0.42 s, damping 0.82) instead of the system slide;
+dismiss reverses quickly (0.2 s). Everything the app presents: the ? menu, Settings, streak / shield / flawless popups, guides,
+Strategy / Word of the Day, profile / records, leaderboard board sheets, VS sheets, the mascot maker, the Pro page, friend
+sheets, pocket games, achievement lists. Exceptions keep their native motion (core SoftPopPolicy): share, purchase (StoreKit /
+Play Billing / Stripe), Sign in with Apple / Google, the photo picker, mail, Safari — and full-screen games (BJ9). Swipe-to-
+dismiss keeps working: the sheet follows the finger, then dismisses. iOS: `.softSheet` replaces `.sheet` for every app-owned
+sheet (a source-scan test fails on any other `.sheet`): presented without the slide (built in that frame), then a pure Core
+Animation pop on the sheet's container + its dim, and a reverse animator for programmatic closes (a live swipe keeps UIKit's
+interactive dismissal); the header popups use the same pop as a SwiftUI transition. Android: every app Dialog / AlertDialog
+window pops via the theme's dialog window animation (system compositor, off the UI thread); bottom sheets are SoftModalSheet
+(replaces ModalBottomSheet; own scrim, pop, finger-following drag, nested-scroll pull-down); the full-screen popups (streak /
+shield, guides) pop from the bottom center. Web: the shared dialog / alert / bottom sheet and the modal / popup animations
+pop from the bottom center (transform-origin 50% 100%).
+
 BJ11. Old logo retired everywhere in-repo; subscribe menus in the new aesthetic (founder 10-03: "When I clicked check
 subscription somewhere the Apple menu popped up with the old logo showing"; "Anywhere that would have the old W icon should
 be looked at"). Logo sweep (contact sheet of every logo-like asset vs the pre-B icon): the app icons, launch, splash, adaptive

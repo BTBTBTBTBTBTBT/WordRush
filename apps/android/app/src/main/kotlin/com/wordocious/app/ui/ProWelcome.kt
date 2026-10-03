@@ -532,7 +532,7 @@ private fun GiftLinkChip(onClick: () -> Unit) {
 @Composable
 private fun GiftWeekSheet(onDismiss: () -> Unit) {
     val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = state,
         containerColor = if (WTheme.isDark) WTheme.bg else Wash.mix(WELCOME_GOLD, 0.08f),
     ) {

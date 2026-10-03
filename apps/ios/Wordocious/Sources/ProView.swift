@@ -69,7 +69,7 @@ struct ProView: View {
             } message: {
                 Text(store.lastError ?? "")
             }
-            .sheet(isPresented: $showAuth) { AuthView() }
+            .softSheet(isPresented: $showAuth) { AuthView() }
             .proManageHandoff($showManage)
         }
         // FINISH_SPEC §AP: LET'S PLAY on Welcome to Pro takes the player back to where

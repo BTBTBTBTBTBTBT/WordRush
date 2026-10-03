@@ -219,7 +219,7 @@ struct FinishedShareCTA: View {
             }
         }
         .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
-        .sheet(isPresented: $showShareOptions,
+        .softSheet(isPresented: $showShareOptions,
                onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
             ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
         }
@@ -331,7 +331,7 @@ struct UnlimitedKeepPlayingCard: View {
         .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
         .overlay(alignment: .topTrailing) { if locked { proPill.offset(x: 6, y: -8) } }
         .accessibilityLabel(locked ? "Keep playing: Unlimited \(game). Pro" : "Keep playing: Unlimited \(game)")
-        .sheet(isPresented: $showPro, onDismiss: {
+        .softSheet(isPresented: $showPro, onDismiss: {
             if startAfterPurchase && auth.isProActive { ProWelcomeCenter.shared.afterWelcome { action() } }
             startAfterPurchase = false
         }) { ProView() }
@@ -393,7 +393,7 @@ struct UnlimitedKeepPlayingCard: View {
         .tintedCard(accent: Self.peach, bar: [Color(hex: 0xFFD6C2), Self.peach], radius: 18, barHeight: 6, tint: 0.10, line: 0.30)
         // The G1 Go Pro paywall (guests sign in inside it first). A purchase closes it
         // and starts the Unlimited game directly.
-        .sheet(isPresented: $showPro, onDismiss: {
+        .softSheet(isPresented: $showPro, onDismiss: {
             // FINISH_SPEC §AP: a first purchase opens Welcome to Pro on top — the
             // Unlimited game starts once LET'S PLAY closes it (immediately otherwise).
             if startAfterPurchase && auth.isProActive { ProWelcomeCenter.shared.afterWelcome { action() } }

@@ -53,7 +53,7 @@ struct RecordsTab: View {
                 .buttonStyle(CandyButtonStyle(variant: .purple, size: .large, fullWidth: false))
             }
             .padding(.top, 24)
-            .sheet(isPresented: $showAuth) { AuthView() }
+            .softSheet(isPresented: $showAuth) { AuthView() }
         } else {
             ScrollView {
                 VStack(spacing: 10) {

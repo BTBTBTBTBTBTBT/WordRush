@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.friends
 
+import com.wordocious.app.ui.SoftModalSheet
 import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.Icon3DName
 import androidx.compose.foundation.background
@@ -92,7 +93,7 @@ fun QuickPlaySheet(
     val showPicker = remember { request.friendId == null || friends.none { it.id == request.friendId } }
 
     // A1: a pink-tinted sheet (no white).
-    ModalBottomSheet(
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = sheetState, containerColor = SHEET_TINT,
         dragHandle = {
             Box(Modifier.padding(top = 10.dp, bottom = 4.dp).size(width = 40.dp, height = 5.dp).clip(RoundedCornerShape(50)).background(friendsLine(FRIENDS_CARD_ACCENT, 0.5f)))

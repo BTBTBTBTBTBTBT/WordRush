@@ -76,7 +76,7 @@ fun JoinLandingHost() {
     }
     val close = { DeepLinkRouter.referralCode.value = null }
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
+    SoftModalSheet(
         onDismissRequest = close, sheetState = sheet, dragHandle = null,
         containerColor = accentWash(GIFT_GOLD, 0.08f),
     ) {

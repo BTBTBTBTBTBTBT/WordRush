@@ -159,7 +159,7 @@ struct FinishedShareButton: View {
         }
         .buttonStyle(.squishIcon)
         .accessibilityLabel("Share")
-        .sheet(isPresented: $showShareOptions,
+        .softSheet(isPresented: $showShareOptions,
                onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
             ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
         }

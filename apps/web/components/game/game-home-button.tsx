@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { Icon3D } from '@/components/ui/icon3d';
+import { useRouter } from 'next/navigation';
 import { claimHomeTap, closeAllOverlays, homeTarget } from '@/lib/nav-home';
+import { closeGame } from '@/lib/game-transition';
 import { GAME_HEADER_GLYPH } from '@/components/ui/page-header';
 
 interface GameHomeButtonProps {
@@ -44,6 +46,7 @@ export function GameHomeButton({
   positionClass = 'absolute top-[var(--game-corner-top,0.5rem)] left-2 z-10',
   href = '/',
 }: GameHomeButtonProps) {
+  const router = useRouter();
   const className = `${positionClass} hdr-glyph w-11 h-11 flex items-center justify-center`;
   const style = undefined;
 
@@ -67,7 +70,15 @@ export function GameHomeButton({
       // AY: always the Home root (a push to "/", never history-back), overlays
       // closed, one navigation per tap (a double tap is dropped).
       href={homeTarget(href)}
-      onClick={(e) => { if (!claimHomeTap()) { e.preventDefault(); return; } closeAllOverlays(); }}
+      onClick={(e) => {
+        if (!claimHomeTap()) { e.preventDefault(); return; }
+        closeAllOverlays();
+        // BJ9: the game fades, then its shell shrinks back into the card it grew from.
+        if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          closeGame(router, homeTarget(href));
+        }
+      }}
       aria-label="Back to Home"
       className={className}
       style={style}

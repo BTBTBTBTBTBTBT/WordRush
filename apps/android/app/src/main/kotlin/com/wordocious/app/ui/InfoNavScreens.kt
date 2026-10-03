@@ -98,7 +98,7 @@ val INFO_NAV = listOf(
 @Composable
 fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = sheetState,
         containerColor = accentWash(Color(0xFF7C3AED), 0.08f), dragHandle = null,
     ) {
@@ -130,7 +130,7 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
 @Composable
 fun ShareVariantSheet(onPick: (Boolean) -> Unit, onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = sheetState,
         containerColor = accentWash(Color(0xFF7C3AED), 0.08f), dragHandle = null,
     ) {

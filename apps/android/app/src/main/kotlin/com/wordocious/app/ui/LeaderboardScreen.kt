@@ -1013,7 +1013,8 @@ private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) =
 private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: (com.wordocious.core.GameMode) -> Unit) {
     val card = modeCardForKey(modeId)
     val accent = card?.accent ?: Color(0xFF7C3AED)
-    LbTintedCard(accent, bar = false, contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 10.dp, end = 8.dp, top = 6.dp, bottom = 6.dp)) {
+    // BJ9: the game grows from this card.
+    LbTintedCard(accent, modifier = Modifier.gameLaunchSource("lb:play", Wash.mix(accent, Wash.CARD), GAME_SOURCE_RADIUS), bar = false, contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 10.dp, end = 8.dp, top = 6.dp, bottom = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             gameArtRes(card?.id ?: modeId)?.let { art ->
                 androidx.compose.foundation.Image(artPainter(art, 30.dp), null, Modifier.size(30.dp))
@@ -1027,7 +1028,7 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
             card?.engineMode?.let { gm ->
                 CandyButton(
                     text = if (played) "VIEW" else "PLAY",
-                    onClick = { onPlay(gm) },
+                    onClick = { GameMotion.arm("lb:play"); onPlay(gm) },
                     color = CandyColor.PURPLE,
                     size = CandySize.SMALL,
                     icon = if (played) CandyIcon.EYE else CandyIcon.PLAY,

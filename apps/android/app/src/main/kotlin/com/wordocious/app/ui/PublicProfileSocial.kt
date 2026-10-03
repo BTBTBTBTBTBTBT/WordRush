@@ -709,7 +709,7 @@ fun MedalHistorySheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = accentWash(SOCIAL_GOLD, 0.08f), dragHandle = null) {
+    SoftModalSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = accentWash(SOCIAL_GOLD, 0.08f), dragHandle = null) {
         Column(
             Modifier.padding(horizontal = 16.dp, vertical = 18.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),

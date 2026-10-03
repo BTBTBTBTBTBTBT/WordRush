@@ -159,7 +159,7 @@ struct GameScreen: View {
             GameCornerButton(kind: .help) { showGuide = true }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
-            .sheet(isPresented: $showGuide) { GuideSheet(mode: mode) }
+            .softSheet(isPresented: $showGuide) { GuideSheet(mode: mode) }
 
             // XP toast (after recording) + one-time victory/game-over celebration.
             if let xp = vm.xpResult {

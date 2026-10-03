@@ -69,7 +69,7 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        className="page-pop relative w-full max-w-sm overflow-y-auto animate-fade-in-scale outline-none"
+        className="page-pop relative w-full max-w-sm overflow-y-auto soft-pop outline-none"
         style={{ maxHeight: '100%', borderRadius: 24, boxShadow: '0 18px 40px rgba(40, 15, 80, 0.35)', background: softBackground(accent, 0.08) }}
       >
         <div className="relative flex items-center gap-3" style={{ padding: '14px 16px 12px', paddingRight: 92, background: header }}>

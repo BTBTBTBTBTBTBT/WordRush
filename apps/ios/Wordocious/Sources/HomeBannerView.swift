@@ -408,7 +408,7 @@ struct HomeBannerView: View {
         .buttonStyle(.squish)
         .accessibilityLabel(locked ? "\(label), Pro" : label)
         .accessibilityAddTraits(on ? .isSelected : [])
-        .sheet(isPresented: m == .unlimited ? $showPro : .constant(false), onDismiss: {
+        .softSheet(isPresented: m == .unlimited ? $showPro : .constant(false), onDismiss: {
             if unlimitedAfterPurchase && auth.isProActive { onModeChange(.unlimited) }
             unlimitedAfterPurchase = false
         }) { ProView() }

@@ -373,7 +373,7 @@ struct ProWelcomeView: View {
         .animation(still ? nil : .spring(response: 0.4, dampingFraction: 0.7), value: shieldsCredited)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
-        .sheet(isPresented: $showGift) { ProWelcomeGiftSheet() }
+        .softSheet(isPresented: $showGift) { ProWelcomeGiftSheet() }
         .onAppear(perform: start)
         .task {
             // The ASSN webhook credits the +4 shields a beat after the purchase:

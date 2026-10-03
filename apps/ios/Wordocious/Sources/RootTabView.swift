@@ -252,7 +252,7 @@ struct RootTabView: View {
             guard let key = note.object as? String, HomeNav.handoffAllowed(note) else { return }
             presentAfterCoverClears { nextDaily = (homeModes + moreModes).first { $0.dbKey == key } }
         }
-        .fullScreenCover(item: $nextDaily) { m in
+        .gameCover(item: $nextDaily) { m in
             NavigationStack {
                 if let gm = m.mode {
                     GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title)
@@ -306,7 +306,7 @@ struct RootTabView: View {
             pendingRootPresent = nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { present() }
         }
-        .fullScreenCover(item: $unlimitedGame) { g in
+        .gameCover(item: $unlimitedGame) { g in
             NavigationStack {
                 if let gm = g.mode.mode {
                     GameScreen(seed: g.seed, mode: gm, title: g.mode.title, onPlayAgain: {
@@ -388,27 +388,27 @@ struct RootTabView: View {
         // A Friends push (/friends) lands on the Friends tab.
         .onReceive(deepLink.$friendsRequest) { req in if req != nil { tab = .friends } }
         // A pocket-game push (/friends/games/<id>) → that game's screen.
-        .fullScreenCover(item: $deepLink.friendlyGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { link in
+        .gameCover(item: $deepLink.friendlyGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { link in
             FriendlyGameScreen(gameId: link.id)
         }
         // Universal-link VS invite → straight into the private match, exactly
         // like accepting a pending-invite banner (VSGameView handles the rest).
-        .fullScreenCover(item: $deepLink.vsInvite) { inv in
+        .gameCover(item: $deepLink.vsInvite) { inv in
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
         }
         // A challenge link or push (/vs/challenge/<code>) → the race flow; its
         // VS HOME closes the cover.
-        .fullScreenCover(item: $deepLink.vsChallenge) { link in
+        .gameCover(item: $deepLink.vsChallenge) { link in
             NavigationStack { VSChallengeRaceView(code: link.code) }
         }
         // "Someone's looking" push (/vs/live/<MODE>) → that mode's live search,
         // same as LIVE in the lobby (Pro); without Pro, the Pro page.
-        .fullScreenCover(item: $deepLink.vsLive) { link in
+        .gameCover(item: $deepLink.vsLive) { link in
             VSLiveLaunch(mode: link.mode)
         }
         // Password-recovery universal link → native set-new-password sheet
         // (session already established by DeepLink's code exchange).
-        .sheet(isPresented: $deepLink.showNewPasswordSheet) { NewPasswordSheet() }
+        .softSheet(isPresented: $deepLink.showNewPasswordSheet) { NewPasswordSheet() }
         // Cross-device auth links can't exchange in-app (PKCE verifier lives
         // on the requesting client) → finish on the web page in-app.
         .sheet(item: Binding(

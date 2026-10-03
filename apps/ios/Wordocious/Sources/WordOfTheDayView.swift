@@ -130,7 +130,7 @@ struct WordOfTheDayView: View {
             if !revealing { answer = state.today; streak = state.streak }
             answerLoaded = true
         }
-        .sheet(isPresented: $showWords) { WordsView(navTitle: "Word of the Day").presentationDetents([.large]) }
+        .softSheet(isPresented: $showWords) { WordsView(navTitle: "Word of the Day").presentationDetents([.large]) }
     }
 
     private var isAsking: Bool {

@@ -408,11 +408,11 @@ struct HomeView: View {
             }
             .animation(Theme.animation(.easeInOut(duration: 0.15)), value: limitModal != nil)
             .animation(Theme.animation(.easeInOut(duration: 0.2)), value: showProPrompt)
-            .sheet(isPresented: $showProSheet) { ProView() }
+            .softSheet(isPresented: $showProSheet) { ProView() }
             // Games present full-screen OVER the tab bar (like the web's
             // full-screen game route) so the bottom nav is never behind them —
             // not on the board and not on the results/victory screen.
-            .fullScreenCover(item: $pendingGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $pendingGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     GameScreen(seed: g.seed, mode: g.mode, title: g.title, onPlayAgain: {
                         // Mint a fresh Unlimited seed for the same mode and swap it in
@@ -428,69 +428,69 @@ struct HomeView: View {
                     .id(g.seed)
                 }
             }
-            .fullScreenCover(item: $pnGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $pnGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     ProperNoundleView(seed: g.seed, onPlayAgain: { pnGame = PNGame(seed: freshPNSeed()) })
                 }
             }
-            .fullScreenCover(isPresented: $pnDaily, onDismiss: { onGameCoverDismissed() }) {
+            .gameCover(isPresented: $pnDaily, onDismiss: { onGameCoverDismissed() }) {
                 NavigationStack { ProperNoundleView() }
             }
-            .fullScreenCover(item: $sudokuGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $sudokuGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     SudokuView(seed: g.seed, onPlayAgain: { d in sudokuGame = SudokuGame(seed: freshSudokuSeed(d)) })
                         .id(g.id)   // a new seed = a new view + view model
                 }
             }
-            .fullScreenCover(item: $regionsGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $regionsGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     RegionsView(seed: g.seed, onPlayAgain: { n in regionsGame = RegionsGame(seed: freshRegionsSeed(n)) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $ladderGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $ladderGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     LadderView(seed: g.seed, onPlayAgain: { ladderGame = LadderGame(seed: freshLadderSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $spyglassGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $spyglassGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     SpyglassView(seed: g.seed, onPlayAgain: { spyglassGame = SpyglassGame(seed: freshSpyglassSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $hubGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $hubGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     HubView(seed: g.seed, onPlayAgain: { hubGame = HubGame(seed: freshHubSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $codebreakerGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $codebreakerGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     CodebreakerView(seed: g.seed, onPlayAgain: { codebreakerGame = CodebreakerGame(seed: freshCodebreakerSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $kindredGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $kindredGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     KindredView(seed: g.seed, onPlayAgain: { kindredGame = KindredGame(seed: freshKindredSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $crosswordGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $crosswordGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     CrosswordView(seed: g.seed, onPlayAgain: { crosswordGame = CrosswordGame(seed: freshCrosswordSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $muddleGame, onDismiss: { onGameCoverDismissed() }) { g in
+            .gameCover(item: $muddleGame, onDismiss: { onGameCoverDismissed() }) { g in
                 NavigationStack {
                     MuddleView(seed: g.seed, onPlayAgain: { muddleGame = MuddleGame(seed: freshMuddleSeed()) })
                         .id(g.id)
                 }
             }
-            .fullScreenCover(item: $solvedMode, onDismiss: { onGameCoverDismissed() }) { m in
+            .gameCover(item: $solvedMode, onDismiss: { onGameCoverDismissed() }) { m in
                 NavigationStack {
                     // Word engines only: reconstruct the solved board from the matches
                     // row (works cross-device, unlike the local-only GameScreen state).
@@ -506,7 +506,7 @@ struct HomeView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(isPresented: $showInvite) { InviteSheet() }
+            .softSheet(isPresented: $showInvite) { InviteSheet() }
             .navigationDestination(isPresented: Binding(
                 get: { playInvite != nil },
                 set: { if !$0 { playInvite = nil } })) {
@@ -622,7 +622,7 @@ struct HomeView: View {
                 }
             }
             // BI24: an in-app sheet with a host + brand headline, not a system alert.
-            .sheet(isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
+            .softSheet(isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
                 ZStack {
                     PageBackground(tint: .home)
                     BrandEmptyState(title: "Coming soon",
@@ -672,6 +672,7 @@ struct HomeView: View {
                     Button {
                         // Same route as the Classic mode card's daily launch.
                         if let gm = classic?.mode {
+                            GameTransition.shared.arm("home:first")   // BJ9: grows from this card
                             pendingGame = ActiveGame(seed: DailySeed.today(mode: gm), mode: gm, title: classic?.title ?? "Classic")
                         }
                     } label: {
@@ -695,6 +696,7 @@ struct HomeView: View {
         }
         .padding(12)
         .tintedCard(accent: accent, bar: G5Accent.bar(accent), radius: 18, barHeight: 6)
+        .gameLaunchSource("home:first", color: accent.wash(0.10), radius: 18)
     }
 
     // MARK: - Pro prompt (ports pro-prompt-modal)
@@ -878,9 +880,13 @@ struct HomeView: View {
     /// redundant, all platforms). Every tap routes through `open`, the same path
     /// the banner tiles and the widget's deep links take.
     private func card(_ mode: HomeMode) -> some View {
-        Button { open(mode) } label: { cardBody(mode, locked: isLocked(mode)) }
+        // BJ9: the tap arms this card as the game's source (the shell grows from it
+        // and the close shrinks back into it); the probe reads its frame on demand.
+        Button { GameTransition.shared.arm("home:\(mode.id)"); open(mode) } label: { cardBody(mode, locked: isLocked(mode)) }
             // FINISH_SPEC §AK: the card squish (0.95 → spring back past 1).
             .buttonStyle(.squishCard)
+            .gameLaunchSource("home:\(mode.id)", color: Theme.isDark ? Theme.surface : mode.accent.wash(0.10),
+                              radius: GameCardChrome.radius)
     }
 
     /// A daily this user has already finished (in Daily mode). Revisiting it

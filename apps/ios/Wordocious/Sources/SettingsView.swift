@@ -248,7 +248,7 @@ struct SettingsView: View {
             } message: {
                 Text("Please try again or contact support@wordocious.com.")
             }
-            .sheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]) }
+            .softSheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]) }
         }
         .task {
             // BI25: after the slide-up (~0.35 s), never on the tap frame.

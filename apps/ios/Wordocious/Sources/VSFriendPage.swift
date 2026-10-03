@@ -56,7 +56,7 @@ struct VSFriendPage: View {
         .pageBackground(.vs, lightOnly: true)
         .toolbar(.hidden, for: .navigationBar)
         .swipeToGoBack { dismiss() }
-        .sheet(isPresented: $showInvite) { InviteSheet(mode: mode) }
+        .softSheet(isPresented: $showInvite) { InviteSheet(mode: mode) }
         .task {
             await FriendsService.load()
             friends = FriendsService.friends.sorted { $0.username.localizedCaseInsensitiveCompare($1.username) == .orderedAscending }

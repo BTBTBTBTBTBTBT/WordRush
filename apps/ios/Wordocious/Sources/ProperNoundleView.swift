@@ -383,7 +383,7 @@ struct ProperNoundleView: View {
                                     onOtherGames: { dismiss() },
                                     showNextDaily: !vm.isVersus,
                                     onShare: { _ in showShareOptions = true })
-                        .sheet(isPresented: $showShareOptions,
+                        .softSheet(isPresented: $showShareOptions,
                                onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
                             ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
                         }
@@ -440,7 +440,7 @@ struct ProperNoundleView: View {
             GameCornerButton(kind: .help) { showGuide = true }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
-            .sheet(isPresented: $showGuide) { GuideSheet(mode: .propernoundle) }
+            .softSheet(isPresented: $showGuide) { GuideSheet(mode: .propernoundle) }
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }

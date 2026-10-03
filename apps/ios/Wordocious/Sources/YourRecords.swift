@@ -443,7 +443,7 @@ struct RecordsHeldRow: View {
             .buttonStyle(.squish)
         }
         .fixedSize(horizontal: false, vertical: true)
-        .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
+        .softSheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
     }
 
     /// One medal count: the glossy medal art + a soft number.

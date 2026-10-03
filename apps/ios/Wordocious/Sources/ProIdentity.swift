@@ -320,7 +320,7 @@ struct SettingsProCard: View {
         Group {
             if auth.isProActive { member } else { upsell }
         }
-        .sheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView() }
     }
 
     private var member: some View {

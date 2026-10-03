@@ -263,25 +263,25 @@ struct ProfileTab: View {
             .onReceive(NotificationCenter.default.publisher(for: StatsJump.openAchievements)) { _ in
                 if StatsJump.consumeAchievements() { apply(.initial) }
             }
-            .fullScreenCover(item: $badgeGame) { g in
+            .gameCover(item: $badgeGame) { g in
                 NavigationStack {
                     if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
                     else { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
                 }
             }
-            .fullScreenCover(item: $badgeSolved) { g in
+            .gameCover(item: $badgeSolved) { g in
                 NavigationStack {
                     if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
                     else { SolvedPuzzleView(mode: g.mode, title: g.title) }
                 }
             }
-            .fullScreenCover(isPresented: $badgePN) {
+            .gameCover(isPresented: $badgePN) {
                 NavigationStack { ProperNoundleView() }
             }
             // Own-engine More Games dailies (nil seed = today's; each view
             // restores its finished board when already played) — the same
             // switch RootTabView's Next Daily hand-off and Home use.
-            .fullScreenCover(item: $badgeMore) { m in
+            .gameCover(item: $badgeMore) { m in
                 NavigationStack { CustomDailyView(id: m.id) }
             }
             .onDailyRecorded { reloadToken += 1 }
@@ -453,7 +453,7 @@ struct ProfileTab: View {
                    subtitle: "Sign in to track your stats, streaks and every game's history.",
                    colors: [Color(hex: 0x2563EB), Color(hex: 0x8B5CF6)],
                    preview: .chips(GuestPitch.statsChips), onSignIn: { showAuth = true })
-            .sheet(isPresented: $showAuth) { AuthView() }
+            .softSheet(isPresented: $showAuth) { AuthView() }
     }
 
     /// The scroll's top anchor (a pick scrolls back here).
@@ -512,7 +512,7 @@ struct ProfileTab: View {
         .onChange(of: scrollTopToken) { _ in proxy.scrollTo(topAnchorId, anchor: .top) }
         }
         // §V1: tap a badge = the detail sheet with the big badge (lifted off the lazy grid rows).
-        .sheet(item: $achievementDetail) { a in
+        .softSheet(item: $achievementDetail) { a in
             let on = unlockedAchievements.contains(a.key)
             AchievementDetailSheet(def: a, unlocked: on, unlockedAt: achievementDates[a.key],
                                    progress: on ? nil : achievementProgressMap()[a.key],
@@ -1045,7 +1045,7 @@ struct ProfileTab: View {
                     .buttonStyle(.squishIcon)
                     .accessibilityLabel("Share profile card")
                 }
-                .sheet(isPresented: $showEditProfile) { EditProfileView() }
+                .softSheet(isPresented: $showEditProfile) { EditProfileView() }
             }
             // Featured title, favorite game and bio (whatever the player set).
             ProfilePersonalizationRow(profile: p, leading: true)
@@ -1094,7 +1094,7 @@ struct ProfileTab: View {
                             CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 16) }
                         }
                         .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
-                        .sheet(isPresented: $showPro) { ProView() }
+                        .softSheet(isPresented: $showPro) { ProView() }
                     }
                     // DEV-ONLY (profiles.is_admin): the Simulate Pro toggle as a
                     // quiet gray dashed tool pill with a status dot — flips is_pro

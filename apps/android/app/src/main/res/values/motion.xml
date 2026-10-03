@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FINISH_SPEC BJ10: every app-owned Compose Dialog / AlertDialog window soft-pops
+         (Theme.Wordocious points android:dialogTheme here). System sheets — share,
+         Play Billing, Google sign-in, the photo picker, mail — are other apps' / the
+         system's windows and keep their own motion. -->
+    <style name="WordociousSoftPopAnimation">
+        <item name="android:windowEnterAnimation">@anim/soft_pop_enter</item>
+        <item name="android:windowExitAnimation">@anim/soft_pop_exit</item>
+    </style>
+
+    <style name="WordociousSoftPopDialog" parent="android:ThemeOverlay.Material.Dialog">
+        <item name="android:windowAnimationStyle">@style/WordociousSoftPopAnimation</item>
+    </style>
+</resources>

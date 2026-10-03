@@ -38,7 +38,7 @@ struct NotificationPrefsButton: View {
             }
             .buttonStyle(.squishIcon)
             .accessibilityLabel("Friends notification settings")
-            .sheet(isPresented: $open) {
+            .softSheet(isPresented: $open) {
                 NotificationPrefsSheet().presentationDetents([.medium])
             }
         }

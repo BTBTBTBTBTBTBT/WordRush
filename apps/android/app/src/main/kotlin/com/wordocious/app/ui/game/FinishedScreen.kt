@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.SoftModalSheet
 import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -791,7 +792,7 @@ fun MoreChip(accent: Color, content: @Composable ColumnScope.() -> Unit) {
 @Composable
 fun FinishedSheet(title: String, accent: Color, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = sheetState,
         containerColor = if (WTheme.isDark) WTheme.bg else Wash.mix(accent, 0.07f),
     ) {

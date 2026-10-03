@@ -524,9 +524,12 @@ fun StrategyArticleBody(
         }
         if (onPlay != null) {
             val name = e.game?.title?.uppercase().orEmpty()
+            // BJ9: the game grows from this button's frame (the page closes as it opens).
             CandyButton(
-                "PLAY $name", onClick = onPlay, color = CandyColor.PURPLE, size = CandySize.LARGE,
+                "PLAY $name", onClick = { GameMotion.arm("strategy:play", frameOnly = true); onPlay() },
+                color = CandyColor.PURPLE, size = CandySize.LARGE,
                 icon = CandyIcon.PLAY, fill = true, contentDescription = "Play today's ${e.game?.title.orEmpty()}",
+                modifier = Modifier.gameLaunchSource("strategy:play", Wash.mix(accent, Wash.CARD), 22.dp),
             )
         }
         if (prev != null || next != null) {

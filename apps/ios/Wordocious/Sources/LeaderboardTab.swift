@@ -117,14 +117,14 @@ struct LeaderboardTab: View {
             .environment(\.pageTint, .leaderboard)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
-            .fullScreenCover(item: $lbGame) { g in
+            .gameCover(item: $lbGame) { g in
                 NavigationStack {
                     // A More Games title opens ITS view (which starts or restores today's daily).
                     if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }
                     else { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
                 }
             }
-            .fullScreenCover(item: $lbSolved) { g in
+            .gameCover(item: $lbSolved) { g in
                 // Read-only reconstruction (matches the home "View Solved Puzzle"),
                 // so a finished daily never reopens as a fresh playable board.
                 // Custom engines show their own finished screen instead (founder, 2026-09-27).
@@ -133,14 +133,14 @@ struct LeaderboardTab: View {
                     else { SolvedPuzzleView(mode: g.mode, title: g.title) }
                 }
             }
-            .fullScreenCover(isPresented: $showPNDaily) {
+            .gameCover(isPresented: $showPNDaily) {
                 NavigationStack { ProperNoundleView() }
             }
             // §225: this sheet's OWN NavigationStack never registered a String
             // destination, so friend rows animated on tap but navigated
             // nowhere (the pushed path resolves via line above; sheets don't
             // inherit the outer stack's destinations).
-            .sheet(isPresented: $showFriendsSheet) {
+            .softSheet(isPresented: $showFriendsSheet) {
                 NavigationStack {
                     FriendsScreenView()
                         .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
@@ -206,6 +206,7 @@ struct LeaderboardTab: View {
             let played = completions.byMode[mode.rawValue] != nil || userRank != nil
             Button {
                 let title = m?.title ?? mode.rawValue
+                GameTransition.shared.arm("lb:play")   // BJ9: the game grows from this card
                 if played { lbSolved = LbGame(mode: mode, title: title) }
                 else if mode == .propernoundle { showPNDaily = true }
                 else { lbGame = LbGame(mode: mode, title: title) }
@@ -219,6 +220,7 @@ struct LeaderboardTab: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)], radius: 16, barHeight: 4)
+        .gameLaunchSource("lb:play", color: accent.wash(0.10), radius: 16)
     }
 
     /// The Sweep board's play card in the same family (gold): the glossy broom, the
@@ -279,7 +281,7 @@ struct LeaderboardTab: View {
                    subtitle: "Sign in to see today's rankings and earn medals.",
                    colors: [Color(hex: 0xF59E0B), Color(hex: 0xEA580C)],
                    preview: .podium, onSignIn: { showAuth = true })
-            .sheet(isPresented: $showAuth) { AuthView() }
+            .softSheet(isPresented: $showAuth) { AuthView() }
     }
 
     private var content: some View {
@@ -306,7 +308,7 @@ struct LeaderboardTab: View {
             .padding(.bottom, 16 + max(56, chrome.bottomInset))   // §AS3: + 16 pt breathing room
         }
         .reportsScrollMotion()   // §AQ2
-        .sheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
+        .softSheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
         // Before the first frame: the selected board from the cache with the player's own row
         // (load() repeats this, but only after the render).
         .onAppear { if isSweep { paintCachedSweep() } else { paintCachedBoard() } }
@@ -328,7 +330,7 @@ struct LeaderboardTab: View {
         .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
             friendsVersion = FriendsService.version
         }
-        .sheet(item: $tauntTarget) { target in tauntSheet(target) }
+        .softSheet(item: $tauntTarget) { target in tauntSheet(target) }
         .task { await completions.load() }
         .onDailyCompletion { Task { await completions.load() } }
         .onDailyRecorded { reloadToken += 1 }

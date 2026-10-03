@@ -8,7 +8,8 @@ import { LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { CandyButton } from '@/components/ui/candy-button';
 import { MODE_CARDS, MORE_CARDS, type HomeCard } from '@/components/home/mode-chrome';
-import { ModeCard, modeCardState } from '@/components/home/mode-card';
+import { ModeCard, modeCardState, modeCardSurface } from '@/components/home/mode-card';
+import { openGame } from '@/lib/game-transition';
 import { HomeBanner, type BannerRow } from '@/components/home/home-banner';
 import { WordOfTheDay } from '@/components/home/word-of-the-day';
 import { HomeTodayCard } from '@/components/home/today-card';
@@ -375,11 +376,17 @@ export default function HomePage() {
             key={card.id}
             href={href}
             className="block"
+            // BJ9: the game grows from this card (and shrinks back into it).
+            data-game-source={`home:${card.id}`}
             onClick={(e) => {
               if (state.isLocked) {
                 e.preventDefault();
                 router.prefetch(href);
                 setLimitModal({ open: true, modeName: card.title, modeHref: href });
+              } else if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                const surface = modeCardSurface(card.accentColor);
+                openGame(router, href, e.currentTarget, { key: `home:${card.id}`, color: String(surface.background), radius: Number(surface.borderRadius) || 16 });
               }
             }}
           >

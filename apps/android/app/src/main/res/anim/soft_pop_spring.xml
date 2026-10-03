@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A soft settling spring as a curve: fast out, ~1% overshoot, settle (damping ~0.82). -->
+<pathInterpolator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:controlX1="0.2" android:controlY1="1.12"
+    android:controlX2="0.36" android:controlY2="1.0" />

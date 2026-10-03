@@ -399,7 +399,7 @@ fun FriendsScreen(
     if (showRace) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         // A1: a pink-tinted sheet (no white).
-        ModalBottomSheet(onDismissRequest = { showRace = false }, sheetState = sheetState, containerColor = FRIENDS_SHEET) {
+        SoftModalSheet(onDismissRequest = { showRace = false }, sheetState = sheetState, containerColor = FRIENDS_SHEET) {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),

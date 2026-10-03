@@ -388,7 +388,7 @@ struct VSChallengeRaceView: View {
             }
         }
         .task { if case .loading = phase { await load() } }
-        .sheet(isPresented: $showAuth) { AuthView() }
+        .softSheet(isPresented: $showAuth) { AuthView() }
     }
 
     @ViewBuilder private var content: some View {

@@ -631,12 +631,14 @@
   to { opacity: 1; }
 }
 @keyframes modal-content-in {
-  from { opacity: 0; transform: scale(0.95); }
+  /* BJ10: the soft pop — from the bottom center (transform-origin below). */
+  from { opacity: 0; transform: scale(0.94); }
   to { opacity: 1; transform: scale(1); }
 }
 @keyframes slide-up-in {
-  from { opacity: 0; transform: translateY(100px); }
-  to { opacity: 1; transform: translateY(0); }
+  /* BJ10: bottom sheets soft-pop too (was a 100 px slide). */
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
 }
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(8px); }
@@ -652,7 +654,9 @@
 }
 .animate-modal-overlay { animation: modal-overlay-in var(--m-fade-ms) var(--m-ease-out) both; }
 .animate-modal-content { animation: modal-content-in var(--m-spring-ms) var(--m-spring) both; }
-.animate-slide-up { animation: slide-up-in 300ms ease-out both; }
+/* BJ10: the soft pop rises from the bottom center. */
+.animate-modal-content { transform-origin: 50% 100%; }
+.animate-slide-up { animation: slide-up-in 420ms cubic-bezier(0.2, 1.12, 0.36, 1) both; transform-origin: 50% 100%; }
 .animate-fade-in-up { animation: fade-in-up 300ms ease-out both; }
 .animate-fade-in-scale { animation: fade-in-scale var(--m-spring-ms) var(--m-spring) both; }
 .animate-fade-in { animation: fade-in var(--m-fade-ms) var(--m-ease-out) both; }
@@ -2114,3 +2118,62 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
   margin-right: -16px;
   margin-bottom: -28px !important;
 }
+
+/* ── FINISH_SPEC BJ9: games grow + soft rise from the tapped card, shrink back ──
+   lib/game-transition.ts drives ONE view transition; these rules choreograph its
+   snapshots (numbers: lib/motion-spec.ts). Only snapshots and a solid shell move. */
+.vt-game .animate-page-fade-in { animation: none !important; }
+@keyframes vt-card-out { 0% { opacity: 1; } 23% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes vt-shell-open { 0% { opacity: 0; } 23% { opacity: 1; } 40% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes vt-shell-rise {
+  0% { opacity: 0; transform: translateY(14px) scale(0.96); }
+  40% { opacity: 1; }
+  60% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: none; }
+}
+@keyframes vt-reveal-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vt-reveal-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes vt-hold { from { opacity: 1; } to { opacity: 1; } }
+@keyframes vt-shell-close { 0% { opacity: 0; } 32% { opacity: 1; } 79% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes vt-card-in { 0% { opacity: 0; } 79% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes vt-shell-close-rise {
+  0% { opacity: 0; transform: none; }
+  43% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(14px) scale(0.96); }
+}
+
+/* Open from a card: the group morphs card → screen on the expo curve. */
+.vt-game-open::view-transition-group(game-shell) { animation-duration: 440ms; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); border-radius: var(--shell-radius); overflow: hidden; }
+.vt-game-open::view-transition-old(game-shell) { animation: vt-card-out 440ms linear both; }
+.vt-game-open::view-transition-new(game-shell) { animation: vt-shell-open 440ms linear both; }
+/* The game (new root) fades in over the LAST 60% of the grow; Home holds until then. */
+.vt-game-open::view-transition-new(root) { animation: vt-reveal-in 264ms ease-in-out 176ms both; }
+.vt-game-open::view-transition-old(root) { animation: vt-reveal-out 264ms ease-in-out 176ms both; }
+
+/* No source (widget / deep link): the centered soft rise. */
+.vt-game-rise::view-transition-new(game-shell) { animation: vt-shell-rise 340ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.vt-game-rise::view-transition-new(root) { animation: vt-reveal-in 204ms ease-in-out 136ms both; }
+.vt-game-rise::view-transition-old(root) { animation: vt-reveal-out 204ms ease-in-out 136ms both; }
+
+/* Close: the game fades under the shell (0.18 s), the shell shrinks into the card (0.38 s). */
+.vt-game-close::view-transition-group(game-shell) { animation-delay: 180ms; animation-duration: 380ms; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); animation-fill-mode: both; overflow: hidden; }
+.vt-game-close::view-transition-old(game-shell) { animation: vt-shell-close 560ms linear both; }
+.vt-game-close::view-transition-new(game-shell) { animation: vt-card-in 560ms linear both; }
+.vt-game-close::view-transition-old(root),
+.vt-game-close-rise::view-transition-old(root) { opacity: 0; animation: vt-hold 180ms linear backwards; }
+.vt-game-close::view-transition-new(root),
+.vt-game-close-rise::view-transition-new(root) { animation: none; }
+.vt-game-close-rise::view-transition-old(game-shell) { animation: vt-shell-close-rise 418ms cubic-bezier(0.4, 0, 1, 1) both; }
+
+/* Reduce Motion: a plain cross-fade. */
+.vt-game-fade::view-transition-old(root),
+.vt-game-fade::view-transition-new(root) { animation-duration: 220ms; }
+
+/* ── FINISH_SPEC BJ10: app menus / sheets soft pop ──
+   The dim fades in; the window springs up from its bottom center (0.94 → 1 + fade);
+   dismiss reverses quickly. Native share / purchase / OAuth / pickers / mail keep
+   their own motion (they aren't ours). */
+@keyframes soft-pop-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+@keyframes soft-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94); } }
+.soft-pop { animation: soft-pop-in 420ms cubic-bezier(0.2, 1.12, 0.36, 1) both; transform-origin: 50% 100%; }
+.soft-pop-out { animation: soft-pop-out 200ms cubic-bezier(0.4, 0, 1, 1) both; transform-origin: 50% 100%; }

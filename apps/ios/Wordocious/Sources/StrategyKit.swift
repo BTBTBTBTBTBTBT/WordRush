@@ -345,8 +345,12 @@ struct StrategyReaderBody: View {
                 section(s + 1, article.sections[s], accent: g.accent)
             }
             if let key = g.playKey, let gen = g.gen {
-                Button { StrategyGame.play(key) } label: { CandyLabel(title: "Play \(gen.title)".uppercased(), symbol: "play.fill") }
+                // BJ9: the game grows from this button's frame (its sheet closes first).
+                Button { GameTransition.shared.arm("strategy:play", frameOnly: true); StrategyGame.play(key) } label: {
+                    CandyLabel(title: "Play \(gen.title)".uppercased(), symbol: "play.fill")
+                }
                     .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                    .gameLaunchSource("strategy:play", color: g.accent.wash(0.10), radius: 22)
             }
             if prev != nil || next != nil {
                 HStack(alignment: .top, spacing: 12) {

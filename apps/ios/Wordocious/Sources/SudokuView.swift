@@ -233,7 +233,7 @@ struct SudokuView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
-                .sheet(isPresented: $showGuide) { GuideSheet(mode: .sudoku) }
+                .softSheet(isPresented: $showGuide) { GuideSheet(mode: .sudoku) }
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }

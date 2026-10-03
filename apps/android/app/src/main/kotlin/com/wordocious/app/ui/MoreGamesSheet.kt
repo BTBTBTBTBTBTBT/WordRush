@@ -123,7 +123,7 @@ fun MoreModePickerSheet(onPick: (String) -> Unit, onDismiss: () -> Unit) {
     // FINISH_SPEC G5: the More Games sheet in the finishing look — a soft lilac sheet,
     // the MORE GAMES title as its headline, each game a tinted card in its own color
     // (top bar + the 3D game icon) that squishes.
-    ModalBottomSheet(
+    SoftModalSheet(
         onDismissRequest = onDismiss, sheetState = sheetState,
         containerColor = accentWash(Color(0xFF7C3AED), 0.08f),
     ) {

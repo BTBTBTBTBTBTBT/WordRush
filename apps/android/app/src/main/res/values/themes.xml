@@ -8,5 +8,7 @@
         <item name="android:windowBackground">@color/splash_lilac</item>
         <item name="android:statusBarColor">@color/brand_bg</item>
         <item name="android:windowLightStatusBar">true</item>
+        <!-- BJ10: app dialogs soft-pop (values/motion.xml). -->
+        <item name="android:dialogTheme">@style/WordociousSoftPopDialog</item>
     </style>
 </resources>

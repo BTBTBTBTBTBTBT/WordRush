@@ -86,7 +86,7 @@ export function GameHelpCard({ slug, accent, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative max-w-sm w-full animate-fade-in-scale"
+        className="relative max-w-sm w-full soft-pop"
         style={{ marginTop: 64 }}
         onClick={(e) => e.stopPropagation()}
       >

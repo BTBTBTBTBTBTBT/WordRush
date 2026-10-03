@@ -104,11 +104,11 @@ struct HeaderPopupHost: View {
                     }
                     .scrollBounceBehaviorBasedOnSize()
                 }
-                .transition(.scale(scale: 0.92).combined(with: .opacity))
+                .transition(SoftPop.transition)   // BJ10: the soft pop from the bottom center
                 .accessibilityAddTraits(.isModal)
             }
         }
-        .animation(Theme.animation(Motion.spring), value: popups.shown)   // §AZ: the shared spring
+        .animation(Theme.animation(SoftPop.animation), value: popups.shown)   // BJ10: the soft-pop spring
         .onChange(of: popups.shown) { shown in
             guard shown != nil else { return }
             Feedback.whoosh()   // §U: popup open

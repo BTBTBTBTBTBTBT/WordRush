@@ -133,24 +133,24 @@ struct FriendsPanelView: View {
             gamesVersion += 1
         }
         .onChange(of: focusAdd) { _ in fieldFocused = true }
-        .sheet(item: $tauntTarget) { target in tauntSheet(target) }
+        .softSheet(item: $tauntTarget) { target in tauntSheet(target) }
         .sheet(item: $shareInvite) { item in ActivityShareSheet(text: item.text, url: item.url) }
-        .sheet(item: $quickPlay) { q in
+        .softSheet(item: $quickPlay) { q in
             FriendsQuickPlaySheet(
                 friend: q.friend, kind: q.kind,
                 onStarted: { g in after { openGame = OpenGame(id: g.id, initial: g) } },
                 onVSBattle: { f in after { challenge(f) } },
                 onRaceMyRun: { f in after { if AuthService.shared.isProActive { raceRunFriend = f.id } else { showPro = true } } })
         }
-        .sheet(isPresented: $showRace) { todaysRaceSheet }
-        .sheet(isPresented: $showPro) { ProView() }
-        .fullScreenCover(item: $openGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { g in
+        .softSheet(isPresented: $showRace) { todaysRaceSheet }
+        .softSheet(isPresented: $showPro) { ProView() }
+        .gameCover(item: $openGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { g in
             FriendlyGameScreen(gameId: g.id, initial: g.initial)
         }
         // §289: the challenger lands in the private lobby with the code —
         // the same VSGameView(mode:inviteCode:) cover a pending-invite accept
         // and the /vs/join universal link use (RootTabView, VSLobbyView).
-        .fullScreenCover(item: $challengeMatch) { m in
+        .gameCover(item: $challengeMatch) { m in
             NavigationStack { VSGameView(mode: m.mode, inviteCode: m.code) }
         }
         // §225: Unfriend confirmation — the mutation was only reachable from a
@@ -1245,7 +1245,7 @@ struct FriendsScreenView: View {
                                    subtitle: "Sign in to add friends, race them every day and play pocket games together.",
                                    colors: [Color(hex: 0xDB2777), Color(hex: 0xF97316)],
                                    preview: .none, onSignIn: { showAuth = true })
-                            .sheet(isPresented: $showAuth) { AuthView() }
+                            .softSheet(isPresented: $showAuth) { AuthView() }
                     }
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
