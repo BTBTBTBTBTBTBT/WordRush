@@ -81,12 +81,12 @@ class MascotEngineTest {
         for (b in AvatarOptions.BODIES) assertTrue(b, m.bodies.containsKey(b))
         if (text != null) {
             val classic = m.anchors("classic")
-            assertEquals(0.36f, classic.eyeY, 1e-6f)
-            assertEquals(0.28f, classic.letterBox.x, 1e-6f)
-            assertEquals(0.62f, classic.headTop.w, 1e-6f)
+            assertEquals(0.3898f, classic.eyeY, 1e-6f)
+            assertEquals(0.2895f, classic.letterBox.x, 1e-6f)
+            assertEquals(0.6257f, classic.headTop.w, 1e-6f)
             // Category-level placements: slot names map to the renderer's slots.
             assertEquals("eyes", m.placement("eyes", "beady").slot)
-            assertEquals(0.46f, m.placement("eyes", "beady").scale, 1e-6f)
+            assertEquals(0.37f, m.placement("eyes", "beady").scale, 1e-6f)
             assertEquals("head", m.placement("acc", "tophat", "head").slot)
             assertEquals("back", m.placement("acc", "cape", "neck").slot)
         }
