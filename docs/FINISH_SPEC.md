@@ -1567,11 +1567,12 @@ look of the new game, can we make this a little more finished looking? I don't l
 be any plain text menus looking like this"; "as long as it fills out the space as it should, the icons look a bit spaced
 apart"; built toward ChatGPT mockup docs/design/brand/menus/pick-friend-1.png, option 1). The quick-play sheet opened from a
 game tile (no friend yet) ×3, on a calm lavender sheet (#f4f0ff; the play state keeps the Friends wash): the game's title art
-spanning the sheet (art-titlecast-pocket-<kind> from titles/cast-colors/pocket-<kind>.png — rps, ttt, coin, pass shipped;
-ghost / chain draw the name in the live title lettering, Friends palette, until theirs land), ONE rules line in dark ink from
+spanning the sheet (art-titlecast-pocket-<kind> from titles/cast-colors/pocket-<kind>.png, all six shipped; a kind without
+art would draw its name in the live title lettering, Friends palette), ONE rules line in dark ink from
 core FRIENDLY_TARGET ("Best of 3 · first to 2", Call It "Best of 5 · first to 3", Word Chain "First to 30 points", Pass the
-Puzzle "Six guesses, shared board"), then WHO ARE YOU PLAYING? in muted letter-spaced caps (art-titlecast-pick-friend once it
-ships). Under it the friends as a grid that fills the sheet — no list rows, chevrons, stripes or bordered card: 3 across on
+Puzzle "Six guesses, shared board"), then WHO ARE YOU PLAYING? in muted letter-spaced caps (per the mockup; the code would
+take art-titlecast-pick-friend if shipped, but cast-colors/pick-friend.png reads PICK A FRIEND in big pink and would compete
+with the game title, so it is not shipped). Under it the friends as a grid that fills the sheet — no list rows, chevrons, stripes or bordered card: 3 across on
 phones, a 4th column once cells would pass 96 (wide web), gap 8, each friend's REAL avatar (the shared resolver + avatar
 component: their mascot, photo or cast pick, never mockup art) as a tile filling its cell (≤ 124), the name (no @, one line,
 dark ink) and one short status centered under it — "On now" in green with a soft green glow around the tile (no outline), else

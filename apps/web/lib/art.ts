@@ -821,6 +821,8 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-titlecast-pocket-ttt': [986, 270],
   'art-titlecast-pocket-coin': [738, 270],
   'art-titlecast-pocket-pass': [991, 231],
+  'art-titlecast-pocket-ghost': [954, 264],
+  'art-titlecast-pocket-chain': [1716, 227],
   'art-badge-icon-clock-sprite': [256, 256],
   'art-frame-bronze': [256, 256],
   'art-frame-diamond': [256, 256],

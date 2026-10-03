@@ -265,9 +265,8 @@ describe('BJ13 pocket-game friend picker', () => {
     expect(pickerGrid(416)).toEqual({ cols: 4, avatar: 98 });
     expect(pickerGrid(900).avatar).toBeLessThanOrEqual(124);
   });
-  it('picks the pocket title art up by name (the four shipped, the rest fall back)', () => {
+  it('picks the pocket title art up by name (all six shipped)', () => {
     expect(pocketTitleArt('rps')).toEqual([993, 229]);
-    expect(pocketTitleArt('coin')).not.toBeNull();
-    expect(pocketTitleArt('ghost')).toBeNull();
+    for (const k of FRIENDLY_KINDS) expect(pocketTitleArt(k), k).not.toBeNull();
   });
 });
