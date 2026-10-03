@@ -5,7 +5,7 @@ model's list prices); the cap is checked against that log BEFORE each call. Bill
 The key is read from ~/.wordocious-openai-key and never printed.
 
   python3 openai-image.py gen  out.png "prompt" [--size 1536x1024] [--quality medium]
-  python3 openai-image.py edit out.png "prompt" ref1.png [ref2.png ...] [--size ...] [--quality ...]
+  python3 openai-image.py edit out.png "prompt" ref1.png [ref2.png ...] [--size ...] [--quality ...] [--fidelity high]
 """
 import base64, datetime, os, re, sys
 import requests
@@ -39,7 +39,7 @@ def log(kind, out, size, quality, usage, cost, note=''):
 
 def main():
     args = sys.argv[1:]
-    opts = {'--size': '1536x1024', '--quality': 'medium'}
+    opts = {'--size': '1536x1024', '--quality': 'medium', '--fidelity': ''}
     for k in list(opts):
         if k in args:
             i = args.index(k); opts[k] = args[i + 1]; del args[i:i + 2]
@@ -54,6 +54,8 @@ def main():
     if kind == 'gen':
         r = requests.post('https://api.openai.com/v1/images/generations', headers=h, json=common, timeout=300)
     else:
+        if opts['--fidelity']:
+            common['input_fidelity'] = opts['--fidelity']
         files = [('image[]', (os.path.basename(p), open(p, 'rb'), 'image/png')) for p in refs]
         r = requests.post('https://api.openai.com/v1/images/edits', headers=h, data={k: str(v) for k, v in common.items()},
                           files=files, timeout=300)

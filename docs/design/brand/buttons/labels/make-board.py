@@ -26,24 +26,37 @@ def skin(color, h, w, state='', dark=False):
     return out
 
 
-def button(color, slug, height_pt=44, width_pt=150, scale=3, state='', dark=False):
-    h, w = round(height_pt * scale), round(width_pt * scale)
-    b = skin(color, h, w, state, dark)
-    lab = Image.open(os.path.join(HERE, slug + '.png')).convert('RGBA')
-    inset = max(SPEC['capInsetOfHeight'] * h, SPEC['minPadPt'] * scale * height_pt / 44)
-    lh = 0.40 * h                                        # cap-height-ish of the lettering
-    s = min(lh / lab.height, (w - 2 * inset) / lab.width)
-    lab = lab.resize((max(1, round(lab.width * s)), max(1, round(lab.height * s))), Image.LANCZOS)
-    cy = h * SPEC['labelCenterOfHeight'] + (SPEC['pressedDropPt'] * scale if state else 0)
-    # the same soft same-hue drop as the live-text fallback (labels.json): a blurred tint of the label's
-    # alpha in the button's deeper color, 1 pt down, under the art — it lifts cream off the light skins (gold)
+def button(color, slug, height_pt=44, width_pt=None, scale=3, state='', dark=False):
+    """Label art at the SAME cap height (artLabelCapOfHeight × height); the button widens to fit (README)."""
     from PIL import ImageFilter
-    hexc = json.load(open(os.path.join(CAST, 'labels.json')))['labels'][color]['shadow']
-    sh = Image.new('RGBA', b.size)
-    tint = Image.new('RGBA', lab.size, tuple(int(hexc[i:i + 2], 16) for i in (1, 3, 5)) + (255,))
-    tint.putalpha(lab.getchannel('A').point(lambda v: int(v * SPEC['shadowAlpha'] * 1.6)))
+    labels = json.load(open(os.path.join(CAST, 'labels.json')))['labels']
+    h = round(height_pt * scale)
+    lab = Image.open(os.path.join(HERE, slug + '.png')).convert('RGBA')
+    lh = round(SPEC['artLabelCapOfHeight'] * h)
+    lab = lab.resize((max(1, round(lab.width * lh / lab.height)), lh), Image.LANCZOS)
+    inset = max(SPEC['capInsetOfHeight'] * h, SPEC['minPadPt'] * scale * height_pt / 44)
+    need = lab.width + 2 * inset
+    w = max(round((width_pt or 0) * scale), round(need))
+    b = skin(color, h, w, state, dark)
+    cy = h * SPEC['labelCenterOfHeight'] + (SPEC['pressedDropPt'] * scale if state else 0)
     pos = (round((w - lab.width) / 2), round(cy - lab.height / 2))
-    sh.alpha_composite(tint, (pos[0], pos[1] + round(SPEC['shadowYPt'] * scale)))
+    a = lab.getchannel('A')
+
+    def tinted(hexc, alpha):
+        t = Image.new('RGBA', lab.size, tuple(int(hexc[i:i + 2], 16) for i in (1, 3, 5)) + (255,))
+        t.putalpha(a.point(lambda v: int(v * alpha)))
+        return t
+    halo = labels[color].get('artHalo')
+    if halo:
+        layer = Image.new('RGBA', b.size)
+        t = tinted(halo['color'], halo['alpha'])
+        pad = round(halo['spreadPt'] * scale) * 2 + 1
+        ta = t.getchannel('A').filter(ImageFilter.MaxFilter(pad if pad % 2 else pad + 1))
+        t.putalpha(ta)
+        layer.alpha_composite(t, pos)
+        b.alpha_composite(layer.filter(ImageFilter.GaussianBlur(halo['blurPt'] * scale)))
+    sh = Image.new('RGBA', b.size)
+    sh.alpha_composite(tinted(labels[color]['shadow'], min(1, SPEC['shadowAlpha'] * 1.6)), (pos[0], pos[1] + round(SPEC['shadowYPt'] * scale)))
     b.alpha_composite(sh.filter(ImageFilter.GaussianBlur(SPEC['shadowBlurPt'] * scale / 1.5)))
     b.alpha_composite(lab, pos)
     return b
@@ -66,22 +79,27 @@ def board(scale, out):
         for i, (c, slug) in enumerate(BTNS):
             x = (12 + (i % 4) * (cellw + gap)) * scale
             yy = y + (i // 4) * 60 * scale
-            img.alpha_composite(button(c, slug, 44, cellw, scale, state, dark), (round(x), round(yy)))
+            bt = button(c, slug, 44, None, scale, state, dark)
+            img.alpha_composite(bt, (round(x + (cellw * scale - bt.width) / 2), round(yy)))
         y += 120 * scale
     img.convert('RGB').save(out, optimize=True)
     print('wrote', out, img.size)
 
 
-def all_labels(out):
+def all_labels(out, scale=2):
+    """Every label as the app draws it: 44 pt purple button, same cap height, the button widened to fit."""
     slugs = sorted(f[:-4] for f in os.listdir(HERE) if f.endswith('.png') and not f.startswith(('board', 'all-')))
-    cols, cw, ch = 4, 360, 110
-    img = Image.new('RGBA', (cols * cw + 20, ((len(slugs) + cols - 1) // cols) * (ch + 26) + 20), (250, 247, 255, 255))
+    btns = [(s, button('purple', s, 44, None, scale)) for s in slugs]
+    W, x, y, rowh = 1500, 20, 20, round(44 * scale) + 34
+    img = Image.new('RGBA', (W, 2000), (250, 247, 255, 255))
     d = ImageDraw.Draw(img)
-    for i, s in enumerate(slugs):
-        x, y = 10 + (i % cols) * cw, 10 + (i // cols) * (ch + 26)
-        b = button('purple', s, 44, 115, 3 * 110 / 132)
-        img.alpha_composite(b.resize((cw - 20, ch)), (x, y))
-        d.text((x + 4, y + ch + 4), s, font=F(16), fill=(60, 40, 95))
+    for s, b in btns:
+        if x + b.width > W - 20:
+            x, y = 20, y + rowh
+        img.alpha_composite(b, (x, y))
+        d.text((x + 6, y + b.height + 4), s, font=F(15), fill=(60, 40, 95))
+        x += b.width + 18
+    img = img.crop((0, 0, W, y + rowh + 10))
     img.convert('RGB').save(out, optimize=True)
     print('wrote', out, len(slugs), 'labels')
 

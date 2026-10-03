@@ -18,3 +18,12 @@ Heights: s = 32 pt, m = 44 pt, l = 56 pt (images are @3x). Text-free.
 - Shadow: same color, **35%**, 1 pt down, 2 pt blur.
 
 Reference renderer: `button_render.py` (`preview-1x.png`, `preview-3x.png`).
+
+## Label ART (preferred) — buttons/labels/<slug>.png
+- The cream soft-bubble labels (no rim) are drawn on the skin instead of live text wherever the label is fixed.
+- **Same cap height everywhere:** the label image is drawn at **0.42 × button height** (image height = cap height).
+  The button **widens** to fit: width = label width + 2 × max(0.6 × height, 14 pt @ 44). Only in a fixed-width slot
+  does the label shrink (keeping the inset). Never scale a label up to fill the button.
+- Shadow: the label's alpha tinted in the color's `shadow`, 1 pt down, blurred 2 pt, 35% × 1.6.
+- **Gold only:** an extra deeper-amber halo (`labels.gold.artHalo`: #9a5a00, 55%, 0.75 pt spread, 1.75 pt blur) behind the label.
+- Dynamic labels (names, counts, prices, loading states) use the live-text fallback above.

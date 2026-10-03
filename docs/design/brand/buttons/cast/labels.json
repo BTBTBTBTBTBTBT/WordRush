@@ -13,7 +13,10 @@
     "shadowBlurPt": 2,
     "shadowAlpha": 0.35,
     "fit": "Label area = the flat middle only, inset from each end by max(capInset \u00d7 height, minPad). Shrink the font from fontOfHeight \u00d7 height down to minFontPt; if it still does not fit, the button grows wider. Text never touches the caps.",
-    "strokeAndShadow": "Stroke = the deeper SAME-hue color below (one outline, drawn under the white fill; no grey, no white edge, no second offset outline). Shadow = the same color, soft drop."
+    "strokeAndShadow": "Stroke = the deeper SAME-hue color below (one outline, drawn under the white fill; no grey, no white edge, no second offset outline). Shadow = the same color, soft drop.",
+    "artLabelCapOfHeight": 0.42,
+    "artLabelSizing": "Label ART (buttons/labels/<slug>.png) renders at the SAME cap height on every button: 0.42 x the button height (the image height is the cap height). The button widens to fit (label width + 2 x max(0.6 x height, 14 pt @44)). Only if the button cannot widen (a fixed-width slot) does the label shrink, keeping the 0.6 x height inset. Never scale a label up to fill.",
+    "artLabelShadow": "Under the label art: its alpha tinted in the color's shadow, 1 pt down, blurred, at shadowAlpha x 1.6 (all colors)."
   },
   "labels": {
     "purple": {
@@ -24,7 +27,14 @@
     "gold": {
       "fill": "#ffffff",
       "stroke": "#936801",
-      "shadow": "#936801"
+      "shadow": "#936801",
+      "artHalo": {
+        "color": "#9a5a00",
+        "alpha": 0.55,
+        "spreadPt": 0.75,
+        "blurPt": 1.75,
+        "note": "gold only: a deeper amber halo behind the cream label (cream on gold is the faintest pair)"
+      }
     },
     "slate": {
       "fill": "#ffffff",
