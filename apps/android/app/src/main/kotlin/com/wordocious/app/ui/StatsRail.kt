@@ -58,3 +58,55 @@ fun statsSegmentFor(selected: String): String? = when (selected) {
 
 /** Whether [selected] renders the Today page (Today itself, or the Sweep tile). */
 fun statsShowsToday(selected: String): Boolean = selected == RAIL_TODAY || selected == RAIL_SWEEP
+
+// ── FINISH_SPEC BG: SCOPE × GAME ────────────────────────────────────────────
+
+/** BG the Stats scope (the Today | All-time toggle — always shows its selection). */
+enum class StatsScope(val key: String) { TODAY(RAIL_TODAY), ALL_TIME(RAIL_ALL) }
+
+/** BG the four content cells. */
+enum class StatsCell { TODAY_OVERVIEW, TODAY_GAME, ALL_TIME_OVERVIEW, ALL_TIME_GAME }
+
+/** BG what Stats shows: a [scope] and a [game] (null = Overview; the Sweep tile reads as Overview). */
+data class StatsView(val scope: StatsScope, val game: String?)
+
+/**
+ * BG (founder 10-02: "the today and all time toggle is very confusing") — two independent
+ * selections, always both visible: the toggle sets the SCOPE and keeps the game; the picker
+ * sets the GAME and keeps the scope (re-tapping the picked game returns to Overview); a swipe
+ * moves the GAME along the picker order within the scope. Pure (unit tested).
+ */
+object StatsNav {
+    val DEFAULT = StatsView(StatsScope.TODAY, null)
+
+    /** Which content [v] shows. The Sweep tile is the overview of its scope (it holds the sweep). */
+    fun cell(v: StatsView): StatsCell {
+        val overview = v.game == null || v.game == RAIL_SWEEP
+        return when (v.scope) {
+            StatsScope.TODAY -> if (overview) StatsCell.TODAY_OVERVIEW else StatsCell.TODAY_GAME
+            StatsScope.ALL_TIME -> if (overview) StatsCell.ALL_TIME_OVERVIEW else StatsCell.ALL_TIME_GAME
+        }
+    }
+
+    /** The toggle: [scope], same game. */
+    fun toggle(v: StatsView, scope: StatsScope): StatsView = v.copy(scope = scope)
+
+    /** The picker: [key], same scope; the picked game again → Overview. */
+    fun pick(v: StatsView, key: String): StatsView = if (v.game == key) v.copy(game = null) else v.copy(game = key)
+
+    /** A swipe: the next / previous game along [games] (Overview first), same scope; null at either end. */
+    fun swipe(v: StatsView, games: List<String>, forward: Boolean): StatsView? {
+        val order = listOf<String?>(null) + games
+        val i = order.indexOf(v.game).let { if (it < 0) 0 else it }
+        val j = i + if (forward) 1 else -1
+        if (j !in order.indices) return null
+        return v.copy(game = order[j])
+    }
+
+    /** A legacy page key from a Today-card jump / deep link: Today / All-time set the scope, a game sets the game. */
+    fun jump(v: StatsView, key: String): StatsView = when (key) {
+        RAIL_TODAY -> StatsView(StatsScope.TODAY, null)
+        RAIL_ALL -> StatsView(StatsScope.ALL_TIME, null)
+        else -> v.copy(game = key)
+    }
+}

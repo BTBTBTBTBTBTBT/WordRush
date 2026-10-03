@@ -23,7 +23,12 @@ struct ProfileTab: View {
     @State private var showPro = false
     @State private var statRows: [UserStatRow] = []
     /// Which page the rail shows: StatsRailKey.today | .all | a mode dbKey (.vs maps to .all).
-    @State private var selected: String = StatsRailKey.today
+    /// FINISH_SPEC BG: two independent selections — scope (Today | All-time) × game
+    /// (nil = Overview). Core `StatsSelection` resolves what shows.
+    @State private var sel = StatsSelection.initial
+    /// The picker's key for the current game, or the scope's own key on Overview
+    /// (no tile selected) — the page id and the lookups below.
+    private var selected: String { sel.game ?? (sel.scope == .today ? StatsRailKey.today : StatsRailKey.all) }
     /// Bumped by select(.vs): content() scrolls All-time to its VS section.
     @State private var vsScrollToken = 0
     /// A drag started in a horizontal-scrolling row — it never pages the game.
@@ -133,11 +138,11 @@ struct ProfileTab: View {
     private var todayResults: [String: Bool] { completions.byMode.mapValues { $0.completed } }
     /// The picker header's label: what the page below shows.
     private var pickerTitle: String {
-        switch selected {
-        case StatsRailKey.today: return "Today"
-        case StatsRailKey.all: return "All-time"
-        case GamePicker.sweep: return "Daily Sweep"
-        default: return selectedMeta?.title ?? "Today"
+        // BG: the header names the GAME (or Overview); the scope rides its chip.
+        switch sel.game {
+        case nil: return "Overview"
+        case GamePicker.sweep?: return "Daily Sweep"
+        default: return selectedMeta?.title ?? "Overview"
         }
     }
     /// Word-engine games and ProperNoundle have live VS boards; the More Games titles do not.
@@ -164,16 +169,34 @@ struct ProfileTab: View {
         // the page magnified and stuck — never reintroduce it.)
         var t = Transaction(); t.disablesAnimations = true
         if key == StatsRailKey.vs {
-            withTransaction(t) { selected = StatsRailKey.all }
+            withTransaction(t) { sel = StatsSelection(scope: .allTime, game: nil) }
             vsScrollToken += 1
             return
         }
-        withTransaction(t) {
-            selected = key
-            if key != StatsRailKey.all && key != StatsRailKey.today && key != GamePicker.sweep && !hasVs(key) {
-                activeTab = "solo"
-            }
+        // BG: the toggle changes the SCOPE only (the game stays); a picker tap changes
+        // the GAME only (the scope stays; the picked game again → Overview).
+        let next: StatsSelection
+        switch key {
+        case StatsRailKey.today: next = sel.withScope(.today)
+        case StatsRailKey.all: next = sel.withScope(.allTime)
+        default: next = sel.picking(key)
         }
+        apply(next)
+    }
+
+    /// Show `next` (one quick crossfade; VS-less games drop the scope to Solo).
+    private func apply(_ next: StatsSelection) {
+        guard next != sel else { return }
+        withAnimation(Theme.animation(.easeInOut(duration: 0.15))) {
+            sel = next
+            if let g = next.game, g != GamePicker.sweep, !hasVs(g) { activeTab = "solo" }
+        }
+    }
+
+    /// A Today-card row → that game, keeping the scope (never toggles it off).
+    private func jump(to key: String) {
+        if key == StatsRailKey.vs || key == StatsRailKey.today || key == StatsRailKey.all { select(key); return }
+        apply(StatsSelection(scope: sel.scope, game: key))
     }
 
     /// Solo | VS and People | Bots — the same un-animated swap as the rail.
@@ -191,12 +214,12 @@ struct ProfileTab: View {
     /// Swipe on the page moves one step through the picker (founder: no 19-page
     /// swipe — but a swipe between neighbors is the natural gesture).
     private func step(_ delta: Int) {
-        let items = pickerOrder
-        guard let i = items.firstIndex(of: selected) else { return }
-        let j = i + delta
-        guard items.indices.contains(j) else { return }
+        // BG: the swipe walks the GAME only (Overview first), within the current scope.
+        let games = pickerOrder.filter { $0 != StatsRailKey.today && $0 != StatsRailKey.all }
+        let next = sel.swiped(delta, order: games)
+        guard next != sel else { return }
         Haptics.tap()
-        select(items[j])
+        apply(next)
     }
 
     var body: some View {
@@ -228,11 +251,11 @@ struct ProfileTab: View {
             }
             .onAppear {
                 if StatsJump.consumeVS() { select(StatsRailKey.vs) }
-                if StatsJump.consumeAchievements() { select(StatsRailKey.all) }
+                if StatsJump.consumeAchievements() { apply(StatsSelection(scope: .allTime, game: nil)) }
             }
             // BF2 "See all" from an unlock popup: All-time holds the achievements grid.
             .onReceive(NotificationCenter.default.publisher(for: StatsJump.openAchievements)) { _ in
-                if StatsJump.consumeAchievements() { select(StatsRailKey.all) }
+                if StatsJump.consumeAchievements() { apply(StatsSelection(scope: .allTime, game: nil)) }
             }
             .fullScreenCover(item: $badgeGame) { g in
                 NavigationStack {
@@ -406,20 +429,29 @@ struct ProfileTab: View {
                 statsTitle
                 header(p)
                 gamePicker
-                Group {
-                    if selected == StatsRailKey.today {
+                // BG: one quick crossfade between pages — the old and new page OVERLAP in
+                // the ZStack (never stacked one under the other, which jumped the page).
+                ZStack(alignment: .top) {
+                VStack(spacing: 16) {
+                    // BG: content = scope × game (core StatsSelection.view).
+                    switch sel.view {
+                    case .todayOverview:
                         todayPage
-                    } else if selected == StatsRailKey.all {
+                    case .allTimeOverview:
                         allTimePage(p)
-                    } else if selected == GamePicker.sweep {
-                        sweepPage
-                    } else if let m = selectedMeta, let gm = GameMode(rawValue: selected) {
-                        gamePage(p, meta: m, mode: gm)
-                    } else {
-                        todayPage
+                    case .todayGame(let g):
+                        if g == GamePicker.sweep { sweepPage }
+                        else if let m = selectedMeta, let gm = GameMode(rawValue: g) { gameTodayPage(m, mode: gm) }
+                        else { todayPage }
+                    case .allTimeGame(let g):
+                        if g == GamePicker.sweep { sweepPage }
+                        else if let m = selectedMeta, let gm = GameMode(rawValue: g) { gamePage(p, meta: m, mode: gm) }
+                        else { allTimePage(p) }
                     }
                 }
-                .id("page-\(selected)-\(activeTab)")
+                .id("page-\(sel.scope.rawValue)-\(selected)-\(activeTab)")
+                .transition(.opacity)
+                }
                 // Scroll-jump fix (founder, build 237): the swipe is measured in SCREEN
                 // space (in the scrolling content's own space a vertical scroll's travel
                 // cancels out, so a slightly diagonal scroll past Achievements read as a
@@ -464,7 +496,7 @@ struct ProfileTab: View {
             vsDailyWon: vsDailyWon, standing: standing,
             sweepStreak: sweepStats.currentSweepStreak, flawlessStreak: sweepStats.currentFlawlessStreak,
             puzzleStreaks: puzzleStreaks,
-            onJump: { key in Haptics.tap(); select(key) },
+            onJump: { key in Haptics.tap(); jump(to: key) },
             onOpenDaily: openDaily)
         if let p = auth.profile {
             // Founder, 2026-09-27: every game played TODAY, no cap, no "See all" link — the
@@ -524,7 +556,7 @@ struct ProfileTab: View {
     @ViewBuilder private func gamePage(_ p: Profile, meta m: HomeMode, mode gm: GameMode) -> some View {
         let tab = gamePageTab
         if hasVs(gm.rawValue) { soloVsToggle(accent: m.accent) }
-        todayLine(m)
+        // BG: All-time + Game — that game's all-time stats (today lives on Today + Game).
         // Your records in this game (the old Records → You "bests by mode" card).
         if tab == "solo" {
             GameRecordsCard(dbKey: gm.rawValue,
@@ -536,6 +568,30 @@ struct ProfileTab: View {
         hintsLine(mode: gm, tab: tab, accent: m.accent)
         ProfileDashboard(mode: gm, playType: tab)
         ProDeepModeCard(gameMode: gm.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(gm), playType: tab)
+    }
+
+    /// FINISH_SPEC BG: Today + Game — THAT game today: its result (or "Not played yet —
+    /// Play"), today's rank, and today's rows for it (Unlimited folded in).
+    @ViewBuilder private func gameTodayPage(_ m: HomeMode, mode gm: GameMode) -> some View {
+        todayLine(m)
+        if m.dbKey.flatMap({ completions.byMode[$0] }) != nil {
+            DailyRankBadge(gameMode: gm)
+        }
+        if let p = auth.profile {
+            let key = m.dbKey ?? gm.rawValue
+            let mine = todayEntries.filter { e in
+                switch e {
+                case .single(let r): return r.game_mode == key
+                case .group(let mode, _): return mode == key
+                }
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                SectionHeader("Today's \(m.title) games", accent: m.accent)
+                TodayGamesList(entries: mine, profileId: p.id, opponentNames: opponentNames,
+                               loading: recentLoading && recentMatches.isEmpty,
+                               emptyText: "No \(m.title) games yet today.", emptyHost: Mascots.stats, emptyScene: .noStats)
+            }
+        }
     }
 
     /// Hints line under the grid (founder, 2026-10-01 stats audit): every Puzzles game
@@ -833,7 +889,7 @@ struct ProfileTab: View {
     /// row; today's W / L on each tile). Its header row carries the Today | All-time
     /// toggle; while a game (or the Sweep tile) is picked neither segment is lit.
     private var gamePicker: some View {
-        GamePickerCard(selection: selected, accent: Self.pickerAccent, ink: Self.pickerInk,
+        GamePickerCard(selection: sel.game ?? "", accent: Self.pickerAccent, ink: Self.pickerInk,
                        results: todayResults,
                        sweepResult: completions.allDone ? true : nil,
                        onSelect: { select($0) }) {
@@ -841,11 +897,18 @@ struct ProfileTab: View {
                 // FINISH_SPEC BB1: the selected game's own title art as the header
                 // (LiveHeadline in its accent when there's no art); pops on change.
                 pickerHeadline
-                    .id(selected)
+                    .id(sel.game ?? "overview")
                     .frame(maxWidth: .infinity)
-                // BB2: the candy Today | All-time control (no thumb while a game is picked).
+                // BG: the header always says what's shown — the scope chip under the title.
+                Text(sel.scope == .today ? "TODAY" : "ALL-TIME")
+                    .font(Brand.font(11, .black)).tracking(1.2)
+                    .foregroundStyle(Theme.isDark ? Theme.textPrimary : FinishInk.heading)
+                    .padding(.horizontal, 12).padding(.top, 5).padding(.bottom, 3)
+                    .tintedPill(pickerHeadAccent)
+                    .accessibilityLabel(sel.scope == .today ? "Showing today" : "Showing all-time")
+                // BB2 / BG: the candy Today | All-time control — ALWAYS shows its selected half.
                 CandySegmented(options: [(key: StatsRailKey.today, label: "Today"), (key: StatsRailKey.all, label: "All-time")],
-                               selection: selected == StatsRailKey.today || selected == StatsRailKey.all ? selected : nil,
+                               selection: sel.scope == .today ? StatsRailKey.today : StatsRailKey.all,
                                accent: pickerHeadAccent,
                                accessibilityLabel: "Today or all-time") { select($0) }
                     .frame(maxWidth: 280)
@@ -855,7 +918,7 @@ struct ProfileTab: View {
 
     /// BB1/BB2: the selected game's accent (the page blue on Today / All-time).
     private var pickerHeadAccent: Color {
-        if selected == GamePicker.sweep { return GamePicker.sweepAccent }
+        if sel.game == GamePicker.sweep { return GamePicker.sweepAccent }
         return selectedMeta?.accent ?? Self.pickerAccent
     }
 
@@ -867,7 +930,7 @@ struct ProfileTab: View {
                 .padding(.horizontal, 8)
         } else {
             LiveHeadline(text: pickerTitle.uppercased(),
-                         palette: selectedMeta == nil && selected != GamePicker.sweep ? .stats : .accent(pickerHeadAccent),
+                         palette: sel.game == nil ? .stats : .accent(pickerHeadAccent),
                          size: 24, maxLines: 1, minimumScale: 0.6)
         }
     }

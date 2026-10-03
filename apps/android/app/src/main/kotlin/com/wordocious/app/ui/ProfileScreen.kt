@@ -1,5 +1,6 @@
 package com.wordocious.app.ui
 
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.heightIn
@@ -171,10 +172,15 @@ fun ProfileScreen(
     var vsDailyWon by remember { mutableStateOf(mainSeed?.vsDailyWon) }
     var standing by remember { mutableStateOf(mainSeed?.standing) }
     var sweepStats by remember { mutableStateOf(mainSeed?.sweepStats ?: MatchStatsService.DailySweepStats()) }
-    // Which page shows: RAIL_TODAY | RAIL_ALL | a daily mode dbKey | RAIL_SWEEP (the Today page).
-    var selected by remember { mutableStateOf(RAIL_TODAY) }
+    // BG: what shows = SCOPE (Today | All-time) × GAME (Overview or one game) — see StatsNav.
+    var view by remember { mutableStateOf(StatsNav.DEFAULT) }
+    val cell = StatsNav.cell(view)
+    // The legacy page key the per-page data reads: a game's db key, else Today / All-time.
+    val selected: String = view.game?.takeIf { it != RAIL_SWEEP } ?: view.scope.key
     // A game page's Solo | VS toggle (only where the game has a live VS board).
     var gameTab by remember { mutableStateOf("solo") }
+    // BG audit: a newly picked game starts on Solo (its VS tab never carries over from the last game).
+    LaunchedEffect(view.game) { gameTab = "solo" }
     // All-time's VS section: which word game's board, People ("vs") or Bots ("vs_cpu").
     var vsMode by remember { mutableStateOf("DUEL") }
     var vsTab by remember { mutableStateOf("vs") }
@@ -379,7 +385,7 @@ fun ProfileScreen(
     var vsSectionY by remember { mutableStateOf(-1) }
     var vsJump by remember { mutableStateOf(0) }
     fun go(key: String) {
-        if (key == RAIL_VS) { selected = RAIL_ALL; vsJump++ } else selected = key
+        if (key == RAIL_VS) { view = StatsView(StatsScope.ALL_TIME, null); vsJump++ } else view = StatsNav.jump(view, key)
     }
     LaunchedEffect(vsJumpRequest) { if (vsJumpRequest > 0) go(RAIL_VS) }
     LaunchedEffect(vsJump) {
@@ -390,10 +396,11 @@ fun ProfileScreen(
         listState.animateScrollToItem(PAGE_ITEM_INDEX, y)
     }
     // A picker / toggle tap: the light tick the old rail gave (none under Reduce Motion).
-    fun pick(key: String) {
-        if (!WTheme.reducedMotion) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-        go(key)
-    }
+    fun tick() { if (!WTheme.reducedMotion) haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove) }
+    /** BG the picker: sets the GAME, keeps the scope (the picked game again → Overview). */
+    fun pick(key: String) { tick(); view = StatsNav.pick(view, key) }
+    /** BG the toggle: sets the SCOPE, keeps the game. */
+    fun pickScope(key: String) { tick(); view = StatsNav.toggle(view, if (key == RAIL_ALL) StatsScope.ALL_TIME else StatsScope.TODAY) }
     // Swipe on the page moves one item along the picker order (founder: no 19-page
     // swipe — but a swipe between neighbors is the natural gesture).
     // Founder 10-02 (the Stats "jumps back to the picker" bug — web found the cause): a slightly
@@ -401,7 +408,7 @@ fun ProfileScreen(
     // view up. Now the page only changes on a CLEARLY horizontal swipe (≥ 70 dp and at least twice
     // as wide as tall, decided on release); nothing is consumed, so the vertical scroll always
     // wins; a gesture a child consumed (a horizontally scrolling row) never switches.
-    val swipeModifier = Modifier.pointerInput(pageOrder, selected) {
+    val swipeModifier = Modifier.pointerInput(pageOrder, view) {
         val threshold = 70.dp.toPx()
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
@@ -418,7 +425,8 @@ fun ProfileScreen(
             }
             if (!childTook) {
                 statsSwipeForward(dx, dy, threshold)?.let { fwd ->
-                    statsSwipeTarget(pageOrder, selected, forward = fwd)?.let { selected = it }
+                    // BG: a swipe changes the GAME only, within the current scope.
+                    StatsNav.swipe(view, pageOrder.filter { it != RAIL_TODAY && it != RAIL_ALL }, forward = fwd)?.let { view = it }
                 }
             }
         }
@@ -508,7 +516,7 @@ fun ProfileScreen(
         item {
             GamePickerCard(
                 sweepLabel = "Daily Sweep",
-                selected = selected.takeIf { it != RAIL_TODAY && it != RAIL_ALL },
+                selected = view.game,
                 onSelect = { pick(it) },
                 accent = StatsInk.accent,
                 labelColor = StatsInk.pickerLabel,
@@ -516,12 +524,13 @@ fun ProfileScreen(
                 sweepKey = RAIL_SWEEP,
                 badge = { key -> todayDailies[key]?.completed },
                 // BB1: the picked game's title art as the card's header (none on Today / All-time).
-                title = if (statsSegmentFor(selected) == null) ({ StatsPickerTitle(selected) }) else null,
+                // BG: the header always says what's shown — the game's title art (or OVERVIEW) + the scope chip.
+                title = { StatsPickerTitle(view.game, view.scope) },
                 header = {
                     StatsSegmented(
                         options = listOf(RAIL_TODAY to "Today", RAIL_ALL to "All-time"),
-                        selected = statsSegmentFor(selected),
-                        onSelect = { pick(it) },
+                        selected = view.scope.key, // BG: always shows its selection
+                        onSelect = { pickScope(it) },
                         modifier = Modifier.weight(1f),
                         fontSize = 13.sp,
                     )
@@ -536,16 +545,19 @@ fun ProfileScreen(
         //    page cross-faded underneath, and AnimatedContent's size transform slid everything
         //    below. key() keeps the old per-page state reset. The 5th item: PAGE_ITEM_INDEX. ──
         item {
-            val page = selected; val tab = pageTab; val mode = pageMode
-            androidx.compose.runtime.key(page, tab, mode) {
+            val page = selected; val tab = pageTab
+            androidx.compose.runtime.key(view, tab) {
+                // BG: a quick crossfade on each switch (opacity only — no layout jump).
+                val fadeIn = remember { androidx.compose.animation.core.Animatable(if (WTheme.reducedMotion) 1f else 0.4f) }
+                LaunchedEffect(Unit) { fadeIn.animateTo(1f, androidx.compose.animation.core.tween(160)) }
                 Column(
-                    Modifier.fillMaxWidth().then(swipeModifier),
+                    Modifier.fillMaxWidth().graphicsLayer { this.alpha = fadeIn.value }.then(swipeModifier),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     when {
                         // ── Today: your day in one card (TodayCard.kt). ──
                         // The Sweep tile shows the Today page (it holds the sweep), tile highlighted.
-                        statsShowsToday(page) -> {
+                        cell == StatsCell.TODAY_OVERVIEW -> {
                         TodayCard(
                             sweepModes = DAILY_MODES,
                             moreModes = visibleMore,
@@ -576,7 +588,7 @@ fun ProfileScreen(
 
                         // ── All-time: the snapshot hero, YOUR RECORDS, every chart the old
                         //    "All" dashboard drew, then Progression, VS and Recent Matches. ──
-                        page == RAIL_ALL -> {
+                        cell == StatsCell.ALL_TIME_OVERVIEW -> {
                             SnapshotHero(
                                 totalWins = profile?.totalWins ?: 0,
                                 totalLosses = profile?.totalLosses ?: 0,
@@ -698,11 +710,29 @@ fun ProfileScreen(
 
                         // ── A game page: Solo | VS (only with a live VS board), today's
                         //    line, your records in it, then the registry-driven per-mode stats. ──
+                        // ── BG Today + a game: THAT game today — its line (result / "Play"), the
+                        //    finished board, today's rank, and today's games of it. ──
+                        cell == StatsCell.TODAY_GAME -> {
+                            val gm = runCatching { GameMode.valueOf(page) }.getOrNull()
+                            val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
+                            TodayLineCard(dbKey = page, completion = todayDailies[page], accent = accent) { gm?.let(onPlayDaily) }
+                            if (todayDailies[page] != null) {
+                                com.wordocious.app.ui.game.CompletedDailyBoard(page)
+                                gm?.let { com.wordocious.app.ui.game.DailyRankBadge(it) }
+                            }
+                            SectionHeader("Today's Games", accent = accent)
+                            TodayGamesList(
+                                matches = recentMatches.filter { it.gameMode == page }, opponentNames = opponentNames, userId = userId,
+                                loading = loading && recentMatches.isEmpty(), showUnlimited = isProActive,
+                                emptyScene = SceneArt.NO_STATS, emptyText = "No ${gameTitleLabelForKey(page)} games yet today.",
+                            )
+                        }
+
+                        // ── BG All-time + a game: THAT game's all-time stats. ──
                         else -> {
                             val gm = runCatching { GameMode.valueOf(page) }.getOrNull()
                             val accent = gm?.let { modeAccent(it) } ?: WTheme.primary
                             if (hasVs(page)) GameSoloVsToggle(active = gameTab, accent = accent) { gameTab = it }
-                            TodayLineCard(dbKey = page, completion = todayDailies[page], accent = accent) { gm?.let(onPlayDaily) }
                             // Your records in this game (the old Records → You "bests by mode" card) — Solo only.
                             if (tab == "solo") {
                                 GameRecordsCard(

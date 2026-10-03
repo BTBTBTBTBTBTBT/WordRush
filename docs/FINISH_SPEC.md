@@ -1107,3 +1107,25 @@ BF2. The popup (one shared component per platform, R1 card language): a celebrat
      one after another (with a "2 more" chip), never stacked. Shown AFTER the win popup closes (never on top of it),
      and not during a live VS match. Reduce Motion: no rays/confetti.
 BF3. Tests: unseen-diff logic (new key → queued once; already-seen → no popup; first-launch seeding), queue order.
+
+## BG. Stats: Today | All-time and the game picker work TOGETHER (founder 10-02: "the today and all time toggle is very
+confusing on what it populates below … selecting all time from the individual puzzle screen should immediately load
+the all time records for that same game … the stats don't reflect what I'm toggling")
+Two independent selections, always both visible:
+- SCOPE: Today | All-time (the BB2 candy toggle) — ALWAYS shows its selected half; never hidden or cleared when a game
+  is picked.
+- GAME: none (= Overview) or one game from the picker. Tapping the selected game again returns to Overview.
+Content = scope × game:
+- Today + Overview: today's summary — dailies solved N/18, points today, today's rank(s), the Sweep/Flawless status,
+  today's results list (tap a row → that game, keeping Today).
+- Today + Game: THAT game today — its board/result, guesses, time, points, today's rank; "Not played yet — Play" if
+  unplayed.
+- All-time + Overview: the all-time profile — totals, win %, streaks, records, achievements, level.
+- All-time + Game: THAT game's all-time stats — played, win %, guess distribution, best/avg time, best score, records,
+  streaks for that game.
+Switching the toggle KEEPS the picked game (Today/QuadWord → All-time/QuadWord immediately). Picking a game KEEPS the
+scope. Open default: Today + Overview. The header always says what's shown: the game's title art (or "OVERVIEW"
+lettering) + a small "TODAY" / "ALL-TIME" chip under it. Content swaps with a quick crossfade (no jump; the Stats
+swipe still changes the GAME only, within the current scope). Put the scope×game resolution in a small pure function
+with tests (each of the 4 cells, toggle keeps game, pick keeps scope, re-tap clears game). Also audit the Stats page for
+any other stale/ mismatched data (e.g. a section still showing the previous game after a switch).

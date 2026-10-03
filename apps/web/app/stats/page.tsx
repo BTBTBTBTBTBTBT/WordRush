@@ -65,7 +65,12 @@ import { StatsPicker } from '@/components/stats/stats-picker';
 import { TintSegment } from '@/components/stats/tint-segment';
 import { TodayCard } from '@/components/stats/today-card';
 import { pickerRows, SWEEP_KEY } from '@/lib/game-picker';
-import { VIEW_TODAY, VIEW_ALL, VIEW_SWEEP, VIEW_VS, VIEW_PARAM, parseViewParam, viewUrl, swipeOrder, swipeNeighbor, isPageSwipe, todayBadges } from '@/lib/stats-view';
+import {
+  VIEW_TODAY, VIEW_SWEEP, VIEW_VS, VIEW_PARAM, SCOPE_PARAM, DEFAULT_STATS, isPageSwipe, todayBadges, gameSwipeOrder, gameSwipeNeighbor,
+  openStatsGame, parseStatsParams, pickStatsGame, setStatsScope, statsCell, statsUrl, type StatsScope, type StatsState,
+} from '@/lib/stats-view';
+import { DailyRankBadge } from '@/components/game/daily-rank-badge';
+import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 import { useFlags } from '@/hooks/use-flags';
 import type { Database } from '@/lib/database.types';
 
@@ -135,15 +140,16 @@ function formatDuration(seconds: number): string {
   return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 }
 
-/** `?view=all-time` (the /records redirect), `?view=sweep`, `?view=<dbKey>`; 'vs' → All-time; anything else → Today. */
-function readViewParam(): string {
+/** FINISH_SPEC BG: read ?scope= + ?view= (the legacy ?view=all-time / vs / today links still land right). */
+function readStatsState(): StatsState {
   try {
-    return parseViewParam(new URLSearchParams(window.location.search).get(VIEW_PARAM), (k) => !!MODE_BY_DBKEY[k]);
-  } catch { return VIEW_TODAY; }
+    const q = new URLSearchParams(window.location.search);
+    return parseStatsParams(q.get(SCOPE_PARAM), q.get(VIEW_PARAM), (k) => !!MODE_BY_DBKEY[k]);
+  } catch { return DEFAULT_STATS; }
 }
-function writeViewParam(key: string) {
+function writeStatsState(s: StatsState) {
   try {
-    window.history.replaceState(window.history.state, '', viewUrl(key));
+    window.history.replaceState(window.history.state, '', statsUrl(s));
   } catch {}
 }
 
@@ -158,24 +164,38 @@ export default function StatsPage() {
   // Solo/VS toggle on a game page — scopes user_stats AND every per-game
   // chart (restat B1). The VS page pins it to 'vs' (or 'vs_cpu' for practice).
   const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
-  // Which page the picker shows. Starts on Today on both server and client (a
-  // lazy window read would mismatch hydration); the mount effect applies ?view=
-  // before the first paint — a ?view=all-time landing no longer shows Today for
-  // a frame first (founder, 2026-09-29).
-  const [selected, setSelectedState] = useState<string>(VIEW_TODAY);
-  useIsomorphicLayoutEffect(() => { setSelectedState(readViewParam()); }, []);
-  const setSelected = useCallback((key: string) => {
-    // The Today card's VS pill still says 'vs': that is All-time's VS section now.
+  // FINISH_SPEC BG: SCOPE (Today | All-time) × GAME (null = Overview, the
+  // Sweep, or one game) — lib/stats-view.ts. Starts on Today + Overview on both
+  // server and client (a lazy window read would mismatch hydration); the mount
+  // effect applies ?scope= / ?view= before the first paint.
+  const [st, setSt] = useState<StatsState>(DEFAULT_STATS);
+  useIsomorphicLayoutEffect(() => { setSt(readStatsState()); }, []);
+  const updateStats = useCallback((fn: (s: StatsState) => StatsState) => {
+    setSt((prev) => {
+      const next = fn(prev);
+      if (next !== prev) {
+        writeStatsState(next);
+        // Stale-data fix (BG audit): a game's Solo | VS choice never leaks into
+        // another page — All-time's charts read activeTab with no toggle there.
+        if (next.game !== prev.game) setActiveTab('solo');
+      }
+      return next;
+    });
+  }, []);
+  const setScope = useCallback((scope: StatsScope) => updateStats((s) => setStatsScope(s, scope)), [updateStats]);
+  const pickGame = useCallback((game: string) => updateStats((s) => pickStatsGame(s, game)), [updateStats]);
+  /** A Today-card jump: a game keeps the scope; the VS pill opens All-time's VS section. */
+  const jump = useCallback((key: string) => {
     if (key === VIEW_VS) {
-      setSelectedState(VIEW_ALL);
-      writeViewParam(VIEW_ALL);
+      updateStats(() => ({ scope: 'all', game: null }));
       setTimeout(() => document.getElementById('vs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
       return;
     }
-    setSelectedState(key);
-    writeViewParam(key);
-    if (key !== VIEW_ALL && key !== VIEW_TODAY && !hasVs(key)) setActiveTab('solo');
-  }, []);
+    if (key === VIEW_TODAY || key === 'today') { updateStats((s) => openStatsGame(s, null)); return; }
+    updateStats((s) => openStatsGame(s, key));
+  }, [updateStats]);
+  const game = st.game;
+  const cell = statsCell(st);
 
   // P5 split: static-per-user data fetches once; only trends/openers/weekday
   // re-fetch on a Solo/VS toggle, and keepPreviousData keeps the old charts
@@ -318,7 +338,7 @@ export default function StatsPage() {
   // the swipe order (Today · All-time · WORDOCIOUS incl. Sweep · PUZZLES).
   const rows = useMemo(() => pickerRows(flagOn), [flagOn]);
   const badges = useMemo(() => todayBadges(rows, todayDailies, DAILY_MODES.map((m) => m.id)), [rows, todayDailies]);
-  const order = useMemo(() => swipeOrder(rows), [rows]);
+  const order = useMemo(() => gameSwipeOrder(rows), [rows]);
 
   // Swipe on the page moves one step through the picker (founder: no 19-page
   // swipe — but a swipe between neighbors is the natural gesture).
@@ -340,8 +360,9 @@ export default function StatsPage() {
     const dx = t.clientX - s.x, dy = t.clientY - s.y;
     // Founder 10-02: a diagonal scroll no longer flips the page (which snapped the view back to the picker).
     if (!isPageSwipe(dx, dy)) return;
-    const next = swipeNeighbor(order, selected, dx < 0 ? 1 : -1);
-    if (next) setSelected(next);
+    // BG: the swipe changes the GAME only, within the current scope.
+    const next = gameSwipeNeighbor(order, game, dx < 0 ? 1 : -1);
+    if (next !== undefined) updateStats((s) => openStatsGame(s, next));
   };
 
   // Stats filtered to the active Solo/VS tab.
@@ -455,7 +476,7 @@ export default function StatsPage() {
   })();
 
   const accentHex = resolveAccent((profile as any).accent_color);
-  const selectedMeta = MODE_BY_DBKEY[selected];
+  const selectedMeta = game ? MODE_BY_DBKEY[game] : undefined;
   const isGamePage = !!selectedMeta;
 
   return (
@@ -607,8 +628,9 @@ export default function StatsPage() {
 
         {/* ── The game picker (C3): the Leaderboard's window in the Stats blue. ── */}
         <StatsPicker
-          view={selected}
-          onSelect={setSelected}
+          state={st}
+          onScope={setScope}
+          onPick={pickGame}
           badges={badges}
           wordociousExtra={(() => {
             const done = DAILY_MODES.filter((m) => todayDailies.has(m.id)).length;
@@ -621,12 +643,12 @@ export default function StatsPage() {
             more (was F1): the new page is simply there in the tap's frame (founder,
             2026-09-29 — Android dropped its page-swap fade, iOS likewise). ── */}
         <div
-          key={`${selected}-${activeTab}`}
-          className="space-y-4"
+          key={`${st.scope}-${game ?? 'overview'}-${activeTab}`}
+          className="space-y-4 animate-fade-in"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {selected === VIEW_TODAY && (
+          {st.scope === 'today' && (game === null || game === VIEW_SWEEP) && (
             <TodayCard
               sweepModes={DAILY_MODES}
               moreModes={visibleMore}
@@ -637,10 +659,10 @@ export default function StatsPage() {
               flawlessStreak={sweepStats?.currentFlawlessStreak ?? 0}
               puzzleStreaks={puzzleRec ? { sweep: puzzleRec.sweep, flawless: puzzleRec.flawless } : undefined}
               flawlessFooter={<FlawlessBannerFooter total={DAILY_MODES.length} />}
-              onJump={setSelected}
+              onJump={jump}
             />
           )}
-          {selected === VIEW_TODAY && (
+          {cell === 'today-overview' && (
             <>
               {/* Founder (2026-09-26): the most recent games — daily AND unlimited — right on Today;
                   the full history stays on All-time. Same rows, same stats. */}
@@ -651,10 +673,40 @@ export default function StatsPage() {
           )}
 
           {isGamePage && (() => {
+            const selected = game!;
             const meta = selectedMeta!;
             const accentColor = meta.accentHex;
             const today = todayDailies.get(selected);
             const href = dailyHref(selected) ?? '/';
+            const todayPill = (
+                <div
+                  className="flex items-center gap-3 pl-4 pr-2.5 py-2"
+                  style={{ ...softPill(accentColor, { radius: 16 }), paddingTop: 10 }}
+                >
+                  <span className="text-[10px] font-black uppercase tracking-wider shrink-0 tint-ink" style={{ color: accentColor }}>Today</span>
+                  <span className="text-xs font-extrabold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
+                    {today
+                      ? `${today.won ? 'Won' : 'Lost'} · ${matchStat(selected, today.guesses)}${today.timeSeconds > 0 ? ` · ${formatDuration(today.timeSeconds)}` : ''} · ${today.score.toLocaleString()} pts`
+                      : `Not played yet — play today's ${meta.title}`}
+                  </span>
+                  <CandyLink href={href} color={today ? 'peach' : 'purple'} size="sm" icon={today ? 'eye' : 'play'} className="shrink-0" aria-label={today ? `Open today's ${meta.title}` : `Play today's ${meta.title}`}>
+                    {today ? 'Open' : 'Play'}
+                  </CandyLink>
+                </div>
+            );
+            // BG: Today + Game — THAT game today: its result, rank and board, and today's games in it.
+            if (st.scope === 'today') {
+              return (
+                <>
+                  {todayPill}
+                  {today && <div className="flex justify-center"><DailyRankBadge gameMode={selected} /></div>}
+                  {today && <CompletedDailyBoard modeId={selected} />}
+                  <SectionHeader label={`Today's ${meta.shortTitle ?? meta.title}`} accent={accentColor} />
+                  <RecentMatchesList matches={todaysMatches.filter((m) => m.game_mode === selected)} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={Number.MAX_SAFE_INTEGER} groupUnlimited emptyText={`No ${meta.title} games yet today.`} emptyScene={PAGE_SCENES.stats} />
+                </>
+              );
+            }
+            // BG: All-time + Game — THAT game's all-time stats.
             return (
               <>
                 {/* Solo | VS toggle — only where the game has a live VS board (tinted segments). */}
@@ -671,21 +723,6 @@ export default function StatsPage() {
                     label="Solo or VS"
                   />
                 )}
-                {/* Today's result for this game on its own tint, with the candy door to play / open it. */}
-                <div
-                  className="flex items-center gap-3 pl-4 pr-2.5 py-2"
-                  style={{ ...softPill(accentColor, { radius: 16 }), paddingTop: 10 }}
-                >
-                  <span className="text-[10px] font-black uppercase tracking-wider shrink-0 tint-ink" style={{ color: accentColor }}>Today</span>
-                  <span className="text-xs font-extrabold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
-                    {today
-                      ? `${today.won ? 'Won' : 'Lost'} · ${matchStat(selected, today.guesses)}${today.timeSeconds > 0 ? ` · ${formatDuration(today.timeSeconds)}` : ''} · ${today.score.toLocaleString()} pts`
-                      : `Not played yet — play today's ${meta.title}`}
-                  </span>
-                  <CandyLink href={href} color={today ? 'peach' : 'purple'} size="sm" icon={today ? 'eye' : 'play'} className="shrink-0" aria-label={today ? `Open today's ${meta.title}` : `Play today's ${meta.title}`}>
-                    {today ? 'Open' : 'Play'}
-                  </CandyLink>
-                </div>
                 {/* Your records in this game (the old Records → You "bests by mode" card). */}
                 {activeTab === 'solo' && (
                   <GameRecordsCard
@@ -710,7 +747,7 @@ export default function StatsPage() {
           {/* The Daily Sweep page (the picker's broom tile, C2b / C3): the sweep stats the
               page already had — today's run, the Daily Sweeps + Puzzles Sweeps records and the
               daily points trend with its sweep / flawless marks — plus the door to the Sweep board. */}
-          {selected === VIEW_SWEEP && (
+          {st.scope === 'all' && game === VIEW_SWEEP && (
             <>
               <div className="grid grid-cols-2 gap-2.5">
                 <TintTile
@@ -744,7 +781,7 @@ export default function StatsPage() {
             </>
           )}
 
-          {selected === VIEW_ALL && (
+          {cell === 'all-overview' && (
             <>
               {/* Lifetime headline stats (four colored tiles) + this-week strip */}
               <SectionHeader label="All-time" accent="#7c3aed" />

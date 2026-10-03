@@ -85,3 +85,71 @@ export function todayBadges(
 export function isPageSwipe(dx: number, dy: number): boolean {
   return Math.abs(dx) >= 70 && Math.abs(dx) >= 2 * Math.abs(dy);
 }
+
+// ── FINISH_SPEC BG: SCOPE × GAME ────────────────────────────────────────────
+// Two independent selections, always both visible: SCOPE (Today | All-time,
+// the candy toggle — never cleared) and GAME (null = Overview, the Sweep, or
+// one game from the picker). Content = scope × game. Toggling keeps the game;
+// picking keeps the scope; re-tapping the picked game returns to Overview.
+// URL: ?scope=all-time (Today is the default) & ?view=<game key | sweep>.
+
+export type StatsScope = 'today' | 'all';
+export interface StatsState { scope: StatsScope; game: string | null }
+export type StatsCell = 'today-overview' | 'today-game' | 'all-overview' | 'all-game';
+
+export const DEFAULT_STATS: StatsState = { scope: 'today', game: null };
+export const SCOPE_PARAM = 'scope';
+
+/** Which of the four content cells a state shows. */
+export function statsCell(s: StatsState): StatsCell {
+  return `${s.scope}-${s.game ? 'game' : 'overview'}` as StatsCell;
+}
+
+/** The toggle: switch scope, KEEP the game. */
+export function setStatsScope(s: StatsState, scope: StatsScope): StatsState {
+  return s.scope === scope ? s : { ...s, scope };
+}
+
+/** A picker tap (a view key: a game db key or VIEW_SWEEP): KEEP the scope; tapping the picked game again → Overview. */
+export function pickStatsGame(s: StatsState, game: string): StatsState {
+  return { ...s, game: s.game === game ? null : game };
+}
+
+/** Jump straight to a game (a Today row, a link), keeping the scope — never toggles off. */
+export function openStatsGame(s: StatsState, game: string | null): StatsState {
+  return s.game === game ? s : { ...s, game };
+}
+
+/**
+ * Read the URL: ?scope= (all-time | today) and ?view= (a game key, sweep, or
+ * the legacy all-time / vs / today). A legacy ?view=all-time with no scope means
+ * All-time + Overview; an unknown game is Overview.
+ */
+export function parseStatsParams(scope: string | null | undefined, view: string | null | undefined, isGameKey: (k: string) => boolean): StatsState {
+  const v = parseViewParam(view, isGameKey);
+  const legacyAll = v === VIEW_ALL;
+  const sc: StatsScope = scope === 'all-time' || scope === VIEW_ALL ? 'all' : scope === 'today' ? 'today' : legacyAll ? 'all' : 'today';
+  const game = v === VIEW_TODAY || v === VIEW_ALL ? null : v;
+  return { scope: sc, game };
+}
+
+/** The URL for a state (Today + Overview is the bare page). */
+export function statsUrl(s: StatsState): string {
+  const q: string[] = [];
+  if (s.scope === 'all') q.push(`${SCOPE_PARAM}=all-time`);
+  if (s.game) q.push(`${VIEW_PARAM}=${s.game}`);
+  return q.length ? `/stats?${q.join('&')}` : '/stats';
+}
+
+/** Swipe order for the GAME only (within the current scope): Overview, the WORDOCIOUS row (Sweep last), the PUZZLES row. */
+export function gameSwipeOrder(rows: PickerRows): Array<string | null> {
+  return [null, ...rows.wordocious.map((t) => viewForPickerKey(t.key)), ...rows.puzzles.map((t) => viewForPickerKey(t.key))];
+}
+
+/** The game one swipe away (dir +1 next, −1 previous); undefined at either end. */
+export function gameSwipeNeighbor(order: Array<string | null>, game: string | null, dir: 1 | -1): string | null | undefined {
+  const i = order.indexOf(game);
+  if (i < 0) return undefined;
+  const j = i + dir;
+  return j >= 0 && j < order.length ? order[j] : undefined;
+}

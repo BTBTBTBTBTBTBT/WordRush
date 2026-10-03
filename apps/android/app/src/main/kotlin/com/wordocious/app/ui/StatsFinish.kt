@@ -220,31 +220,44 @@ fun StatsSegmented(
 }
 
 /**
- * BB1 the Stats picker card's header when a game (or the Sweep) is picked: that game's own
- * title art ~48 dp tall, centered; no art (the Sweep, puzzles without art) = the name in the
- * live lettering. Pops in on each new pick.
+ * BB1 / BG the Stats picker card's header — it always says what's shown: the picked game's
+ * own title art ~48 dp tall (no art — the Sweep, puzzles without art — the name in the live
+ * lettering), or "OVERVIEW" with no game picked, and a small TODAY / ALL-TIME chip under it.
+ * Pops in on each change.
  */
 @Composable
-fun StatsPickerTitle(key: String) {
-    androidx.compose.runtime.key(key) {
+fun StatsPickerTitle(key: String?, scope: StatsScope) {
+    androidx.compose.runtime.key(key, scope) {
         val still = WTheme.reducedMotion
-        val pop = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(if (still) 1f else 0.82f) }
+        val pop = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(if (still) 1f else 0.85f) }
         androidx.compose.runtime.LaunchedEffect(Unit) { if (!still) pop.animateTo(1f, Motion.springIn()) }
-        val label = if (key == RAIL_SWEEP) "Daily Sweep" else gameTitleLabelForKey(key)
-        val art = if (key == RAIL_SWEEP) null else gameTitleArtResForKey(key)
-        Box(
-            Modifier.fillMaxWidth().height(48.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value },
-            contentAlignment = Alignment.Center,
+        val label = when (key) { null -> "Overview"; RAIL_SWEEP -> "Daily Sweep"; else -> gameTitleLabelForKey(key) }
+        val art = if (key == null || key == RAIL_SWEEP) null else gameTitleArtResForKey(key)
+        Column(
+            Modifier.fillMaxWidth().graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+                .semantics(mergeDescendants = true) { heading() },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-            if (art != null) {
-                androidx.compose.foundation.Image(
-                    artPainter(art, 260.dp), contentDescription = label,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                    modifier = Modifier.fillMaxHeight().semantics { heading() },
-                )
-            } else {
-                LiveHeadline(label.uppercase(), HeadlinePalette.STATS, Modifier.fillMaxWidth(), maxSize = 24.sp, minSize = 14.sp, maxLines = 1)
+            Box(Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
+                if (art != null) {
+                    androidx.compose.foundation.Image(
+                        artPainter(art, 260.dp), contentDescription = label,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                        modifier = Modifier.fillMaxHeight(),
+                    )
+                } else {
+                    LiveHeadline(label.uppercase(), HeadlinePalette.STATS, Modifier.fillMaxWidth(), maxSize = 24.sp, minSize = 14.sp, maxLines = 1)
+                }
             }
+            val chipInk = if (scope == StatsScope.TODAY) Color(0xFF2563EB) else Color(0xFFB45309)
+            Text(
+                if (scope == StatsScope.TODAY) "TODAY" else "ALL-TIME",
+                fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+                color = if (WTheme.isDark) WTheme.textSecondary else chipInk,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(Wash.mix(chipInk, 0.12f))
+                    .padding(horizontal = 9.dp, vertical = 2.dp),
+            )
         }
     }
 }
