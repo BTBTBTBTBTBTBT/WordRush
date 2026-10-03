@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LOG = os.path.join(HERE, 'API-SPEND-2026-10-03.md')
 MODEL = 'gpt-image-1'
 CAP_USD = 10.0
-STOP_AT = 9.0
+STOP_AT = 8.9
 # gpt-image-1 list prices, USD per 1M tokens
 PRICE = {'text_in': 5.0, 'image_in': 10.0, 'image_out': 40.0}
 

@@ -1,5 +1,5 @@
 {
- "note": "Button label lettering queue (founder 10-03): ChatGPT-made cream/white soft bubble labels, no rim, for the cast buttons. Ranked by use across iOS / Android / web button call sites. Sheets of 8 (1024x1536, stacked); split with ../../titles/cast-colors/split-sheet.py into this folder as <slug>.png. CLOSE / CANCEL stay icon/text buttons (coordinator 10-03).",
+ "note": "Button label lettering queue (founder 10-03): ChatGPT-made cream/white soft bubble labels, no rim, for the cast buttons. Ranked by use across iOS / Android / web button call sites. Sheets of 6 (1024x1536, stacked; gen-labels.sh); split with ../../titles/cast-colors/split-sheet.py into this folder as <slug>.png. CLOSE / CANCEL stay icon/text buttons (coordinator 10-03).",
  "sheets": [
   [
    [
@@ -21,7 +21,9 @@
    [
     "rematch",
     "REMATCH"
-   ],
+   ]
+  ],
+  [
    [
     "hint",
     "HINT"
@@ -33,9 +35,7 @@
    [
     "tour",
     "TAKE THE TOUR"
-   ]
-  ],
-  [
+   ],
    [
     "seeall",
     "SEE ALL"
@@ -43,7 +43,9 @@
    [
     "shareresults",
     "SHARE RESULTS"
-   ],
+   ]
+  ],
+  [
    [
     "share",
     "SHARE"
@@ -63,13 +65,13 @@
    [
     "tryagain",
     "TRY AGAIN"
-   ],
-   [
-    "decline",
-    "DECLINE"
    ]
   ],
   [
+   [
+    "decline",
+    "DECLINE"
+   ],
    [
     "sendgift",
     "SEND A GIFT"
@@ -85,7 +87,9 @@
    [
     "seepro",
     "SEE PRO"
-   ],
+   ]
+  ],
+  [
    [
     "letsplay",
     "LET'S PLAY"
@@ -101,13 +105,13 @@
    [
     "startplaying",
     "START PLAYING"
-   ]
-  ],
-  [
+   ],
    [
     "undo",
     "UNDO"
-   ],
+   ]
+  ],
+  [
    [
     "continue",
     "CONTINUE"
@@ -127,7 +131,9 @@
    [
     "erase",
     "ERASE"
-   ],
+   ]
+  ],
+  [
    [
     "keepplaying",
     "KEEP PLAYING"
@@ -135,9 +141,7 @@
    [
     "save",
     "SAVE"
-   ]
-  ],
-  [
+   ],
    [
     "notnow",
     "NOT NOW"
@@ -149,7 +153,9 @@
    [
     "signup",
     "SIGN UP"
-   ],
+   ]
+  ],
+  [
    [
     "invite",
     "INVITE"
@@ -185,5 +191,12 @@
    "claimwin",
    "CLAIM YOUR WIN"
   ]
+ ],
+ "done": [
+  "play",
+  "signin",
+  "done",
+  "gopro",
+  "rematch"
  ]
 }

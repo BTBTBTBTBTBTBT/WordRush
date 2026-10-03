@@ -26,6 +26,6 @@ if len(bands) != len(slugs):
     sys.exit(f'{src}: found {len(bands)} bands for {len(slugs)} slugs')
 for slug, b in zip(slugs, bands):
     t = im.crop((0, b.start, im.width, b.stop))
-    t = t.crop(t.getbbox())
+    t = t.crop(t.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox())
     t.save(os.path.join(OUT, slug + '.png'))
     print(slug, t.size)
