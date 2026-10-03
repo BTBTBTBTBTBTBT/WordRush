@@ -117,7 +117,7 @@ struct LiveHeadline: View {
     private var calm: Bool { Motion.calm(envReduceMotion) }
     /// Before the first entrance runs: hidden, so the first frame never flashes
     /// the whole line ahead of its pop.
-    private var pending: Bool { animated && !calm && shownText == nil }
+    private var pending: Bool { animated && !calm && shownText == nil && !Self.played.contains(text) }
     private var tokens: [HeadlineToken] { HeadlineTokens.split(text.uppercased(), names: names) }
 
     /// The tracked caps font (numbers ride 12% bigger).
@@ -228,7 +228,10 @@ struct LiveHeadline: View {
     private func entrance() {
         guard shownText != text else { return }
         shownText = text
-        guard animated, !calm else { reveal = 1; pop = 1; return }
+        // Perf audit: each headline pops in on its FIRST appearance per launch only —
+        // returning to a tab rebuilt every headline and replayed 16 entrances at once.
+        guard animated, !calm, !Self.played.contains(text) else { reveal = 1; pop = 1; return }
+        Self.played.insert(text)
         let letters = max(1, text.count)
         let dur = min(0.9, Double(letters) * 0.025)
         var t = Transaction()
@@ -239,12 +242,11 @@ struct LiveHeadline: View {
             withAnimation(.linear(duration: dur)) { reveal = 1 }
             withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) { pop = 1 }
         }
-        // The tiny tick — throttled app-wide so rotating headlines never chatter.
-        let now = Date()
-        if now.timeIntervalSince(Self.lastTick) > 4 { Self.lastTick = now; Feedback.tick() }
+        // BI7: rotating headlines are silent — they change on their own, not on a tap.
     }
 
-    private static var lastTick = Date.distantPast
+    /// Headline texts that already played their entrance this launch.
+    private static var played: Set<String> = []
 
     private func idleSweep() async {
         while !Task.isCancelled {

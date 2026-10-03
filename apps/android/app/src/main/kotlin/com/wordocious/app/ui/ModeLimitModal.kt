@@ -184,7 +184,8 @@ fun ModeLimitModal(
     }
 }
 
-private fun secondsUntilLocalMidnightLimit(): Long {
+/** Seconds until the next local midnight (the daily reset). Shared with the finished screens' "Next {Game} in …" line. */
+internal fun secondsUntilLocalMidnightLimit(): Long {
     val cal = java.util.Calendar.getInstance()
     val now = cal.timeInMillis
     cal.add(java.util.Calendar.DAY_OF_YEAR, 1)

@@ -205,7 +205,7 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2 pt-1">
-        <Keyboard onKey={handleKeyPress} letterStates={letterStates} revealWord={latestGuess(state.boards)} />
+        <Keyboard onKey={handleKeyPress} letterStates={letterStates} revealWord={latestGuess(state.boards)} revealMini />
       </div>
     </div>
   );

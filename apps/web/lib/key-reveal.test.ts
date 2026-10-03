@@ -8,7 +8,7 @@ describe('keyColorDelays', () => {
   it('times each letter to its first tile landing', () => {
     const d = keyColorDelays('crane');
     expect(d).toEqual({ C: REVEAL.landMs(0), R: REVEAL.landMs(1), A: REVEAL.landMs(2), N: REVEAL.landMs(3), E: REVEAL.landMs(4) });
-    expect(d.C).toBe(220);
+    expect(d.C).toBe(500);
     expect(d.E).toBe(REVEAL.end(5));
   });
 
@@ -16,6 +16,9 @@ describe('keyColorDelays', () => {
     expect(keyColorDelays('EERIE').E).toBe(REVEAL.landMs(0));
     expect(keyColorDelays('NEW YORK').Y).toBe(REVEAL.landMs(4));
     expect(keyColorDelays('NEW YORK')[' ']).toBeUndefined();
+    // BI5: a multi-board reveal runs on the mini clock (300 ms flips, 80 ms apart).
+    expect(keyColorDelays('crane', true)).toEqual({ C: REVEAL.landMs(0, true), R: REVEAL.landMs(1, true), A: REVEAL.landMs(2, true), N: REVEAL.landMs(3, true), E: REVEAL.landMs(4, true) });
+    expect(keyColorDelays('crane', true).E).toBe(REVEAL.end(5, true));
   });
 });
 

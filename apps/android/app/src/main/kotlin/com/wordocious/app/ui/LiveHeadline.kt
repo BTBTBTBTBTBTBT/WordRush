@@ -2,10 +2,7 @@ package com.wordocious.app.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -15,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -168,16 +164,26 @@ fun LiveHeadline(
         LaunchedEffect(text) {
             if (still || n == 0) { pop.snapTo(Float.MAX_VALUE); return@LaunchedEffect }
             pop.snapTo(0f)
-            if (sound) com.wordocious.app.data.SoundManager.playTick()
+            // BI7: rotating headlines are silent — they change on their own, not on a tap.
             pop.animateTo(total.toFloat(), tween(total, easing = LinearEasing))
             pop.snapTo(Float.MAX_VALUE)
         }
-        val sweep: State<Float> = if (!still && !paused) {
-            rememberInfiniteTransition(label = "headlineGloss").animateFloat(
-                0f, SWEEP_PERIOD_MS.toFloat(),
-                infiniteRepeatable(tween(SWEEP_PERIOD_MS, easing = LinearEasing), RepeatMode.Restart), label = "t",
-            )
-        } else remember { mutableFloatStateOf(-1f) }
+        // Perf (2026-10-02 measured audit): the band is visible for SWEEP_MS of every
+        // SWEEP_PERIOD_MS, but an infinite transition over the whole period asked for a frame
+        // (and redrew this offscreen layer) on every vsync of the idle 5.1 s too. Animate only
+        // the visible pass, then wait — identical timing, ~85% fewer idle frames.
+        val sweepAnim = remember { Animatable(-1f) }
+        LaunchedEffect(still, paused) {
+            sweepAnim.snapTo(-1f)
+            if (still || paused) return@LaunchedEffect
+            while (true) {
+                sweepAnim.snapTo(0f)
+                sweepAnim.animateTo(SWEEP_MS.toFloat(), tween(SWEEP_MS, easing = LinearEasing))
+                sweepAnim.snapTo(-1f)
+                kotlinx.coroutines.delay((SWEEP_PERIOD_MS - SWEEP_MS).toLong())
+            }
+        }
+        val sweep: State<Float> = sweepAnim.asState()
         val wDp = with(density) { art.bitmap.width.toDp() }
         val hDp = with(density) { art.bitmap.height.toDp() }
         Box(Modifier.size(wDp, hDp).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {

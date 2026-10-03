@@ -21,17 +21,27 @@ export function tileLook(state: string | null | undefined, letter?: string | nul
 }
 
 /**
- * B3 timings (ms), tightened by FINISH_SPEC AQ1 (founder 10-02: "feels a little
- * slow … when I am trying to go through it fast"): flip ≤ 220, stagger ≤ 70,
- * a shorter win hop, and a not-a-word reject that never blocks typing (a key
- * pressed during it cuts it short — hooks/use-reject-row.ts). The keyframes in
- * globals.css `.gt-*` use the same numbers (tile-motion.test.ts keeps them in step).
+ * B3 timings (ms). FINISH_SPEC AQ1 shortened the win hop and made the not-a-word
+ * reject never block typing (a key pressed during it cuts it short —
+ * hooks/use-reject-row.ts). FINISH_SPEC BI5 (founder 10-02 on 2.7: "it seemed
+ * really rushed … way too zippy"; "the older builds before the aesthetic updates
+ * had much better flow"): the pre-overhaul reveal pacing is back — a single board
+ * 500 ms flips, 150 ms apart (a 5-letter row ≈ 1.1 s); a multi-board ("mini")
+ * board 300 ms, 80 ms apart (the old tile-flip / tile-flip-mini). (B3 was
+ * 720 / 300; AQ1 220 / 70.) The keyframes in globals.css `.gt-*` use the same
+ * numbers (tile-motion.test.ts keeps them in step).
  */
 export const REVEAL = {
-  /** Each tile turns over in 220 ms… */
-  flipMs: 220,
-  /** …70 ms after the one before it (every board of a multi-board reveal at once). */
-  stagger: 70,
+  /** Each tile turns over in 500 ms (single board)… */
+  flipMs: 500,
+  /** …150 ms after the one before it. */
+  stagger: 150,
+  /** A multi-board ("mini") tile turns over in 300 ms… */
+  miniFlipMs: 300,
+  /** …80 ms after the one before it (every board of a multi-board reveal at once). */
+  miniStagger: 80,
+  /** The pre-overhaul beat between the board settling and the result popup. */
+  finishBeatMs: 200,
   /** The glow after a tile lands. */
   bloomMs: 600,
   /** Win: the hop wave, 400 ms each, 60 ms apart. */
@@ -54,13 +64,33 @@ export const REVEAL = {
   rejectMs(tiles: number): number {
     return this.outStart + Math.max(0, tiles - 1) * this.outStagger + this.outMs;
   },
+  /** One tile's turn-over: single board or mini (multi-board). */
+  flipFor(mini = false): number {
+    return mini ? this.miniFlipMs : this.flipMs;
+  },
+  /** The gap between neighboring tiles: single board or mini (multi-board). */
+  staggerFor(mini = false): number {
+    return mini ? this.miniStagger : this.stagger;
+  },
   /** When tile `index` of a revealing row has landed (its keyboard key takes its color then). */
-  landMs(index: number): number {
-    return Math.max(0, index) * this.stagger + this.flipMs;
+  landMs(index: number, mini = false): number {
+    return Math.max(0, index) * this.staggerFor(mini) + this.flipFor(mini);
   },
   /** When a row's reveal has finished: the last tile lands. */
-  end(tiles: number): number {
-    return Math.max(0, tiles - 1) * this.stagger + this.flipMs;
+  end(tiles: number, mini = false): number {
+    return Math.max(0, tiles - 1) * this.staggerFor(mini) + this.flipFor(mini);
+  },
+  /** The win hop wave over a row of `tiles`. */
+  hopWaveMs(tiles: number): number {
+    return Math.max(0, tiles - 1) * this.hopStagger + this.hopMs;
+  },
+  /**
+   * BI5: how long a finished board holds before the result popup — the final
+   * row's whole reveal, then (a win) its hop wave, then the 200 ms beat. Never cut
+   * short: the popup always waits for the row to finish.
+   */
+  finishHoldMs(tiles: number, win: boolean, mini = false): number {
+    return this.end(tiles, mini) + (win ? this.hopWaveMs(tiles) : 0) + this.finishBeatMs;
   },
 } as const;
 

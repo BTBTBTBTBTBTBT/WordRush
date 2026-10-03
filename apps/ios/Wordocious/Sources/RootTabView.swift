@@ -519,7 +519,7 @@ private struct BottomNav: View {
 
     /// §M: a new item springs the badge in and wiggles the Friends icon (Reduce Motion: none).
     private func celebrateArrival() {
-        Feedback.notify()   // §U: notify · light (sound plays under Reduce Motion too)
+        // BI7: silent — a background arrival is not something the player did (the badge still springs).
         guard !(envReduce || Theme.reduceMotion) else { return }
         badgeScale = 0
         withAnimation(.spring(response: 0.38, dampingFraction: 0.45)) { badgeScale = 1 }

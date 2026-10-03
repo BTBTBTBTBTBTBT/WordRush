@@ -69,6 +69,26 @@ describe('one-screen finished audit', () => {
     }
   });
 
+  // Founder 10-02 follow-up ("we can't give up board room"): the share CTA lives IN the dock's
+  // one 40 px action row and the countdown rides inside it — no row of its own, dropped under 700 tall.
+  it('10-02: Share results sits in the action row, ≤ 40 px, the countdown inside it (hidden under 700 tall)', async () => {
+    const fs = await import('fs');
+    const src = fs.readFileSync(require('path').join(__dirname, '..', 'components', 'game', 'finished-kit.tsx'), 'utf8');
+    const share = src.slice(src.indexOf('export function ShareResultsCandy'), src.indexOf('// ── R2: the action dock'));
+    // The md candy (40 px, globals.css .candy-md) with the countdown as its second line, gone on compact heights.
+    expect(share).toContain('size="md"');
+    expect(share).toMatch(/text-\[10px\][^\n]*\[@media\(max-height:699\.98px\)\]:hidden/);
+    expect(share).toContain('Next </span>');
+    // No separate countdown row, no share row: the dock renders the candy inside its one action row.
+    const dock = src.slice(src.indexOf('export function FinishedDock'));
+    expect(dock).not.toContain('NextDailyCountdown');
+    const row = dock.slice(dock.indexOf('{(share || primary) && ('), dock.indexOf('{/* BA1: under 700 px tall'));
+    expect(row).toContain('{share}');
+    expect(row).toContain('{primary}');
+    const css = fs.readFileSync(require('path').join(__dirname, '..', 'app', 'globals.css'), 'utf8');
+    expect(css).toContain('.candy-md { --candy-h: 40px;');
+  });
+
   it('BA1 shows the Unlimited chip on its own line, only under 700 tall, with the PRO pill for free players', async () => {
     const fs = await import('fs');
     const src = fs.readFileSync(require('path').join(__dirname, '..', 'components', 'game', 'finished-kit.tsx'), 'utf8');

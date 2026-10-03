@@ -28,7 +28,8 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { keyDuringReject } from '@/lib/tile-motion';
+import { REVEAL, keyDuringReject } from '@/lib/tile-motion';
+import { useFinishHold } from '@/hooks/use-finish-hold';
 import { useRejectRow } from '@/hooks/use-reject-row';
 import { latestGuess } from '@/lib/key-reveal';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
@@ -190,13 +191,15 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
     isRestoredCompleted.current = false;
   };
 
+  // FINISH_SPEC BI5: the result popup waits for the final row's reveal (and a win's hop wave).
+  const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(5, showVictory, true));
   return (
     <GameBackground
       mode="OCTORDLE"
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? FINISHED_NAV_CLEAR : ''}`}
     >
-      {showVictory && <VictoryAnimation mode="OCTORDLE" onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', true, totalGuesses, elapsedTime, 8, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', false, totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
+      {showVictory && popupReady && <VictoryAnimation mode="OCTORDLE" onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', true, totalGuesses, elapsedTime, 8, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
+      {showGameOver && popupReady && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={8} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('OCTORDLE', false, totalGuesses, elapsedTime, state.boards.filter(b => b.status === 'WON').length, 8).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}

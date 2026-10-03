@@ -63,7 +63,6 @@ import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.Icon3DName
 import com.wordocious.app.ui.PopupConfetti
 import com.wordocious.app.ui.SceneArtPop
-import com.wordocious.app.ui.SoftControl
 import com.wordocious.app.ui.SoftNumber
 import com.wordocious.app.ui.TintedCard
 import com.wordocious.app.ui.accentWash
@@ -82,8 +81,8 @@ import kotlinx.coroutines.launch
 // and all its data: an amber hero card on top (WON: the champion scene springs in,
 // then bobs, with one confetti burst; LOST: R with cocoa + I's good game, kind,
 // never sad, and the failed stage's answer on glossy tiles), the headline in the
-// soft-number ink, the 5-star row, three soft-number stat pills and the B6 actions
-// (3D share icon + a large amber candy). Then the score breakdown, the next-daily
+// soft-number ink, the 5-star row, three soft-number stat pills and (Unlimited) a large
+// amber "Play again"; the dock leads with "Share results" + "Next Gauntlet in …". Then the score breakdown, the next-daily
 // handoff and the per-stage rows on the shared game tray (L), each with its W / L
 // badge. Reduce Motion: no bob, no confetti, the stars at once. Mirrors web
 // components/gauntlet/gauntlet-results.tsx.
@@ -133,15 +132,20 @@ internal fun GauntletFinishScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Founder 10-02: the hero art is capped (~280 dp, at most 45% of the page) so the
+            // title, stars, stats, dock and More all fit one balanced screen.
+            val artMax = if (isShortScreen()) 110.dp else minOf(280.dp, viewport * 0.45f)
             GauntletHeroCard(
                 g = g, won = won, cleared = cleared, totalGuesses = totalGuesses, totalTimeMs = totalTimeMs,
-                isDaily = isDaily, onHome = onHome, onShare = onShare, onPlayAgain = onPlayAgain,
+                isDaily = isDaily, onPlayAgain = onPlayAgain, artMax = artMax,
                 modifier = Modifier.riseIn(appeared, 0),
             )
             Box(Modifier.riseIn(appeared, 400)) {
                 FinishedDock(
                     mode = GameMode.GAUNTLET, isDaily = isDaily && onOpenDaily != null, accent = GAUNTLET_ACCENT,
-                    onShare = null, // the hero card carries share
+                    // Founder 10-02: "Share results" leads the dock (+ "Next Gauntlet in …" on a daily);
+                    // it replaces the hero card's floating share and "Play again tomorrow".
+                    onShare = onShare,
                     onOpenDaily = onOpenDaily, onOpenLeaderboard = onOpenLeaderboard, onOpenUnlimited = onOpenUnlimited,
                     more = {
                         ScoreBreakdownCard(
@@ -171,7 +175,7 @@ internal fun GauntletFinishScreen(
 @Composable
 private fun GauntletHeroCard(
     g: GauntletProgress, won: Boolean, cleared: Int, totalGuesses: Int, totalTimeMs: Int,
-    isDaily: Boolean, onHome: () -> Unit, onShare: () -> Unit, onPlayAgain: (() -> Unit)?,
+    isDaily: Boolean, onPlayAgain: (() -> Unit)?, artMax: Dp,
     modifier: Modifier = Modifier,
 ) {
     val accent = GAUNTLET_ACCENT
@@ -184,12 +188,12 @@ private fun GauntletHeroCard(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (won) {
-            ChampionScene()
+            ChampionScene(artMax)
         } else {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
                 GauntletLook.LOST_POSES.forEachIndexed { i, p ->
                     SceneArtPop(
-                        CastPoses.res(p.mascot, p.pose) ?: p.mascot.res, height = if (isShortScreen()) 92.dp else 124.dp,
+                        CastPoses.res(p.mascot, p.pose) ?: p.mascot.res, height = minOf(if (isShortScreen()) 92.dp else 124.dp, artMax),
                         modifier = Modifier.weight(1f), delayMs = i * 120L,
                     )
                 }
@@ -213,19 +217,14 @@ private fun GauntletHeroCard(
             }
         }
         if (!won) FailedAnswers(GauntletLook.failedAnswers(g))
-        // B6 actions: the 3D share icon + the large amber candy (the house in the
-        // controls row goes home; a finished daily's primary is "Play again tomorrow").
-        // AT1: the primary centers on the screen; share is the trailing overlay.
-        CenteredWithTrailingShare(onShare, spacing = 12.dp) {
-            if (onPlayAgain != null) {
+        // B6: an Unlimited (Pro) run's "Play again", centered. Founder 10-02: share and the
+        // daily "Play again tomorrow" moved to the dock ("Share results" + "Next Gauntlet in …");
+        // the corner Home button still goes home.
+        if (onPlayAgain != null) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CandyButton(
                     "Play again", onClick = onPlayAgain, color = CandyColor.AMBER, size = CandySize.LARGE,
                     icon = CandyIcon.PLAY,
-                )
-            } else if (isDaily) {
-                CandyButton(
-                    "Play again tomorrow", onClick = onHome, color = CandyColor.AMBER, size = CandySize.LARGE,
-                    icon = CandyIcon.ARROW, fontSize = 16.sp,
                 )
             }
         }
@@ -235,7 +234,7 @@ private fun GauntletHeroCard(
 
 /** Q WON: the champion scene, full card width, springing in then bobbing gently. Decorative. */
 @Composable
-private fun ChampionScene() {
+private fun ChampionScene(maxHeight: Dp) {
     val still = WTheme.reducedMotion
     val scale = remember { Animatable(if (still) 1f else 0.4f) }
     val alpha = remember { Animatable(if (still) 1f else 0f) }
@@ -260,8 +259,9 @@ private fun ChampionScene() {
         painterResource(R.drawable.art_scene_gauntlet_champion),
         contentDescription = null,
         contentScale = ContentScale.Fit,
-        // BA2: capped on a short screen so the whole result fits.
-        modifier = Modifier.fillMaxWidth().heightIn(max = if (isShortScreen()) 110.dp else 1000.dp).aspectRatio(CHAMPION_ASPECT).clearAndSetSemantics { }.graphicsLayer {
+        // BA2 + founder 10-02: capped (110 dp on a short screen, else ~280 dp / 45% of the page)
+        // so the whole result fits one screen.
+        modifier = Modifier.fillMaxWidth().heightIn(max = maxHeight).aspectRatio(CHAMPION_ASPECT).clearAndSetSemantics { }.graphicsLayer {
             scaleX = scale.value; scaleY = scale.value; this.alpha = alpha.value
             transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.9f)
             translationY = -5.dp.toPx() * bob

@@ -326,7 +326,7 @@ struct CrosswordView: View {
                         .frame(maxHeight: .infinity)
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "CROSSWORD", game: "Crosswordocious", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     VStack(spacing: 12) {
                         CrosswordClueColumns(vm: vm, finished: true)
@@ -472,7 +472,7 @@ struct CrosswordView: View {
         let won = vm.state.status == .won
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? (vm.state.checks == 0 ? "Grid finished clean" : "Grid finished") : "Puzzle revealed", won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
+            PuzResultLine(won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
                                                   (puzClock(vm.elapsed), "time")],
                                 points: vm.points)
         }

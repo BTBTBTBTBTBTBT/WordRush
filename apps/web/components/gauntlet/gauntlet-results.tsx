@@ -171,7 +171,9 @@ export function GauntletResults({
   // Q's hero scene fills the card's width at most; on a short phone it gives
   // up height first (flex-shrink), so the card + dock fit one screen (R2).
   const [cw, ch] = ART_SIZE[CHAMPION];
-  const sceneMax = `calc((min(100vw - 24px, 512px) - 32px) * ${(ch / cw).toFixed(4)})`;
+  // Founder 10-02: capped at 280 px and 45% of the viewport height, so the
+  // hero, stars, pills and the dock fit one screen, balanced.
+  const sceneMax = `min(280px, 45vh, calc((min(100vw - 24px, 512px) - 32px) * ${(ch / cw).toFixed(4)}))`;
 
   return (
     <div
@@ -185,7 +187,7 @@ export function GauntletResults({
     >
       {won && <Confetti />}
       {/* FINISH_SPEC R2: one screen — Q's amber hero card sized to the room
-          left, the daily rank, then the dock (share · Next daily /
+          left, the daily rank, then the dock (Share results · Next daily /
           Leaderboard · the Unlimited card; Pro unlimited runs get NEW PUZZLE).
           The score breakdown + the per-stage rows sit under "More". */}
       <FinishedScreen
@@ -269,7 +271,7 @@ export function GauntletResults({
           </div>
         }
         dock={
-          // Actions (B6 + R2: the 3D share icon, the primary candy, the Unlimited card).
+          // Actions (founder 10-02: the Share results candy + countdown, then the primary candy, the Unlimited card).
           <FinishedDock
             currentMode="GAUNTLET"
             isDaily={!!isDaily}

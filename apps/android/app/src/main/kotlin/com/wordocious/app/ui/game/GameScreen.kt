@@ -230,7 +230,10 @@ internal fun PnCategoryPill(category: String) {
 @Composable
 fun GauntletStepper(current: Int, total: Int, modifier: Modifier = Modifier) {
     val glow = Color(0xFFA855F7)
-    val pulse = if (WTheme.reducedMotion) 0f else {
+    // Perf (2026-10-02 measured audit): the pulse is a State read ONLY in the halo's
+    // graphicsLayer block below — reading .value here recomposed the whole stepper (and
+    // its BoxWithConstraints subcomposition) on every frame of every Gauntlet stage.
+    val pulse: androidx.compose.runtime.State<Float> = if (WTheme.reducedMotion) remember { mutableStateOf(0f) } else {
         val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "stageGlow")
         transition.animateFloat(
             initialValue = 0f,
@@ -240,7 +243,7 @@ fun GauntletStepper(current: Int, total: Int, modifier: Modifier = Modifier) {
                 androidx.compose.animation.core.RepeatMode.Reverse,
             ),
             label = "stageGlowRadius",
-        ).value
+        )
     }
     // iOS uses fixed 16pt connectors, but that only *just* fits between the
     // corner buttons on a ≥390pt iPhone — on a 360dp phone (most Samsungs)
@@ -277,12 +280,13 @@ fun GauntletStepper(current: Int, total: Int, modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .size(20.dp)
                     .then(
-                        if (active) Modifier.shadow(
-                            elevation = (3f + 5f * pulse).dp,
-                            shape = androidx.compose.foundation.shape.CircleShape,
-                            clip = false,
-                            ambientColor = glow, spotColor = glow,
-                        ) else Modifier,
+                        // Same as Modifier.shadow(…), with the elevation read in the layer block.
+                        if (active) Modifier.graphicsLayer {
+                            shadowElevation = (3f + 5f * pulse.value).dp.toPx()
+                            shape = androidx.compose.foundation.shape.CircleShape
+                            clip = false
+                            ambientShadowColor = glow; spotShadowColor = glow
+                        } else Modifier,
                     )
                     .clip(androidx.compose.foundation.shape.CircleShape)
                     .background(bg)
@@ -332,6 +336,25 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         onDispose { vm.onScreenExit() }
     }
 
+    // Perf (2026-10-02 measured audit): the stage card's big cast pose (StageTransitionOverlay →
+    // SceneArtPop, 132 dp) was decoded on the main thread in the card's first frame, right as it
+    // springs in. Decode the run's poses into the shared art cache off the main thread while
+    // stage 1 is played, so every card's first frame is ready.
+    if (mode == GameMode.GAUNTLET) {
+        val poseCtx = androidx.compose.ui.platform.LocalContext.current
+        val posePx = with(androidx.compose.ui.platform.LocalDensity.current) { (132.dp * 1.6f).roundToPx() }
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val bucket = com.wordocious.app.ui.ArtBitmaps.bucketPx(posePx.coerceAtLeast(1))
+                listOf(2, 3, 4, 5, null).forEach { n ->
+                    val pose = GauntletLook.stagePose(n)
+                    val res = com.wordocious.app.ui.CastPoses.res(pose.mascot, pose.pose) ?: pose.mascot.res
+                    runCatching { com.wordocious.app.ui.ArtBitmaps.get(poseCtx, res, bucket) }
+                }
+            }
+        }
+    }
+
     val multiBoard = state.boards.size > 1
     // ProperNoundle row split ("Taylor Swift") — computed once, not on every keystroke recomposition.
     val pnWordGroups = remember(vm) { if (mode == GameMode.PROPERNOUNDLE) vm.pnPuzzle?.let { com.wordocious.core.ProperNoundle.wordGroups(it.display) } else null }
@@ -362,7 +385,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     val revealKey = remember(state) { state.boards.sumOf { it.guesses.size } }
     val newestRows = remember(state) { KeyReveal.newestRows(state.boards, isSequential) }
     val revealWidth = newestRows.maxOfOrNull { it.size } ?: 0
-    val keyLetterStates = rememberTileByTile(letterStates, revealWidth, revealKey, reducedKeys) { base, n ->
+    val keyLetterStates = rememberTileByTile(letterStates, revealWidth, revealKey, reducedKeys, mini = multiBoard) { base, n ->
         KeyReveal.during(base, letterStates, newestRows, n)
     }
     val perBoardStates = perBoardStatesNow?.let { now ->
@@ -370,7 +393,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             val newest = state.boards.maxOfOrNull { it.guesses.size } ?: 0
             state.boards.map { b -> if (newest > 0 && b.guesses.size == newest) KeyReveal.newestRows(listOf(b), false) else emptyList() }
         }
-        rememberTileByTile(now, revealWidth, revealKey, reducedKeys) { base, n ->
+        rememberTileByTile(now, revealWidth, revealKey, reducedKeys, mini = multiBoard) { base, n ->
             now.mapIndexed { i, target -> KeyReveal.during(base.getOrElse(i) { emptyMap() }, target, boardRows.getOrElse(i) { emptyList() }, n) }
         }
     }

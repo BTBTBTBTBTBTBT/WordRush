@@ -8,7 +8,6 @@ import { CandyBadge } from '@/components/ui/candy-badge';
 import { candyClass } from '@/components/ui/candy-button';
 import { useAuth } from '@/lib/auth-context';
 import { friendsTabLabel } from '@/lib/friends-badge';
-import { feedback } from '@/lib/sound-events';
 import { useFriendsBadge } from '@/hooks/use-friends-badge';
 import { NAV_ITEMS, useTabTap } from '@/components/ui/tab-nav';
 
@@ -35,7 +34,7 @@ export function DesktopTabs() {
     if (badge > prevBadge.current) {
       setPop((n) => n + 1);
       // FINISH_SPEC U: `notify` once, from the tab row that is on screen.
-      if (navRef.current && navRef.current.getClientRects().length > 0) feedback('notify');
+      // BI7: silent — a background arrival is not something the player did.
     }
     prevBadge.current = badge;
   }, [badge]);

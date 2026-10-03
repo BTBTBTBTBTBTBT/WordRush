@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { FinishedDock, FitBox, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
+import { FinishedDock, FitBox, MoreDisclosure, ResultStrip, useBlockCentering } from '@/components/game/finished-kit';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -40,15 +40,18 @@ export function PuzzleFinished({ strip, board, dock, beforeDock, more }: {
   /** <MoreDisclosure …/> with the extras, below the dock. */
   more?: ReactNode;
 }) {
+  // Founder 10-02: the block sits vertically centered — the room the board
+  // leaves in its FitBox is split above the strip and below the dock + More.
+  const { onSlack, down, up } = useBlockCentering();
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
       <div className="flex flex-col px-3 pt-0.5" style={{ height: more ? `calc(100% - ${MORE_PEEK}px)` : '100%' }}>
-        <div className="shrink-0 pb-1.5">{strip}</div>
-        <FitBox>{board}</FitBox>
-        {beforeDock && <div className="shrink-0 flex justify-center pt-1.5">{beforeDock}</div>}
-        {dock}
+        <div className="shrink-0 pb-1.5" style={down}>{strip}</div>
+        <FitBox onSlack={onSlack}>{board}</FitBox>
+        {beforeDock && <div className="shrink-0 flex justify-center pt-1.5" style={up}>{beforeDock}</div>}
+        <div className="shrink-0" style={up}>{dock}</div>
       </div>
-      {more && <div className="px-3 pb-3">{more}</div>}
+      {more && <div className="px-3 pb-3" style={up}>{more}</div>}
     </div>
   );
 }

@@ -18,6 +18,8 @@ export interface LetterTileProps {
   look: TileLook;
   /** Reveal this tile: it turns over (REVEAL.flipMs) after `index × REVEAL.stagger`, its color swaps at the half, then a glow blooms. */
   flipIndex?: number;
+  /** BI5: a multi-board ("mini") board's tile — the faster mini pacing (REVEAL.miniFlipMs, REVEAL.miniStagger apart). */
+  mini?: boolean;
   /** Swell in (type a letter / place a number). Defaults to on for typed tiles. */
   pop?: boolean;
   /** Not a word: red letters with a red glow, then the letter clears (right to left through `outIndex`). */
@@ -44,15 +46,16 @@ export interface LetterTileProps {
 }
 
 export const LetterTile = memo(function LetterTile({
-  letter = '', look, flipIndex, pop, bad = false, outIndex = 0, hopIndex, rowLength = 5, sink = false, hint = false, invalid = false,
+  letter = '', look, flipIndex, mini = false, pop, bad = false, outIndex = 0, hopIndex, rowLength = 5, sink = false, hint = false, invalid = false,
   className = '', style, role, flipSound = true, ...aria
 }: LetterTileProps) {
   const flip = flipIndex != null;
   const popOn = pop ?? (look === 'typed' && !flip);
   const vars: Record<string, string> = {};
-  if (flip) vars['--gt-d'] = `${flipIndex * REVEAL.stagger}ms`;
-  if (hopIndex != null) vars['--gt-hop-d'] = `${REVEAL.end(rowLength) + hopIndex * REVEAL.hopStagger}ms`;
-  if (sink) vars['--gt-sink-d'] = `${REVEAL.end(rowLength)}ms`;
+  if (flip) vars['--gt-d'] = `${flipIndex * REVEAL.staggerFor(mini)}ms`;
+  if (flip && mini) vars['--gt-flip-ms'] = `${REVEAL.miniFlipMs}ms`;
+  if (hopIndex != null) vars['--gt-hop-d'] = `${REVEAL.end(rowLength, mini) + hopIndex * REVEAL.hopStagger}ms`;
+  if (sink) vars['--gt-sink-d'] = `${REVEAL.end(rowLength, mini)}ms`;
   if (bad) {
     vars['--gt-bad-ms'] = `${REVEAL.badMs}ms`;
     vars['--gt-out-d'] = `${REVEAL.outStart + outIndex * REVEAL.outStagger}ms`;
@@ -86,7 +89,7 @@ export const LetterTile = memo(function LetterTile({
         </>
       )}
       {flip && flipSound && look !== 'typed' && look !== 'empty' && (
-        <RevealFeedback index={flipIndex} landAfterTiles={hopIndex === 0 ? rowLength : undefined} />
+        <RevealFeedback index={flipIndex} landAfterTiles={hopIndex === 0 ? rowLength : undefined} mini={mini} />
       )}
     </div>
   );

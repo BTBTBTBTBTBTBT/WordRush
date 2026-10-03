@@ -13,10 +13,47 @@ export function popupFormatTime(s: number): string {
  */
 export function answerTileSize(words: string[]): number {
   const n = words.length;
-  const longest = words.reduce((m, w) => Math.max(m, w.length), 0);
+  // A phrase answer (ProperNoundle) is drawn one word per row: its longest word counts.
+  const longest = words.reduce((m, w) => Math.max(m, ...answerRows(w).map((r) => r.length), 0), 0);
   let s = n <= 1 ? 30 : n <= 4 ? 24 : n <= 8 ? 20 : 15;
   if (longest > 6) s = Math.round(s * (n <= 1 ? 0.85 : 0.8));
   return s;
+}
+
+/** An answer's tile rows (founder 10-02): one row per word, split at spaces — no space tiles. */
+export function answerRows(answer: string): string[] {
+  return answer.toUpperCase().split(/\s+/).filter(Boolean);
+}
+
+/** The gap between answer tiles (px). */
+export function answerTileGap(tile: number): number {
+  return Math.max(2, Math.round(tile / 10));
+}
+
+/** The gap between the answer columns (multi-board), px. */
+export const ANSWER_COLUMN_GAP = 12;
+
+/** The smallest answer tile (px) the popup will draw. */
+export const ANSWER_TILE_MIN = 12;
+
+/**
+ * Founder 10-02 (ProperNoundle's "HUBBLE SPACE TELESCOPE" ran off the card):
+ * the answer tile side that fits every row inside the tray's measured inner
+ * `width` — per column on the multi-board layouts, leaving room for the check
+ * badge — capped at answerTileSize, never under ANSWER_TILE_MIN. Unmeasured
+ * (null) → the cap.
+ */
+export function fitAnswerTile(words: string[], width: number | null, cols: number, badge: boolean): number {
+  const cap = answerTileSize(words);
+  if (!width || width <= 0) return cap;
+  const longest = words.reduce((m, w) => Math.max(m, ...answerRows(w).map((r) => r.length), 0), 0);
+  if (!longest) return cap;
+  const colWidth = (width - (Math.max(1, cols) - 1) * ANSWER_COLUMN_GAP) / Math.max(1, cols);
+  for (let t = cap; t > ANSWER_TILE_MIN; t--) {
+    const badgeRoom = badge ? Math.max(12, Math.round(t * 0.6)) + 4 : 0;
+    if (longest * t + (longest - 1) * answerTileGap(t) + badgeRoom <= colWidth) return t;
+  }
+  return ANSWER_TILE_MIN;
 }
 
 /** The points count-up: ease-out from 0 to `target` over t ∈ [0, 1]. */

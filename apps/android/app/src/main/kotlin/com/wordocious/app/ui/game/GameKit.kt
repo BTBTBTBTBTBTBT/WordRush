@@ -42,16 +42,24 @@ import com.wordocious.core.TileState
 /**
  * B3 the motion kit's timings (ms). Reduce Motion: flips become a quick crossfade, the rest is off.
  * FINISH_SPEC AQ1 (founder 10-02: "feels a little slow … when I am trying to go through it fast"):
- * flips ≤ 220 ms, ≤ 70 ms apart (every board of a multi-board reveal at once), a shorter hop,
- * the popup within 1.2 s, and a not-a-word reject that never blocks typing (web REVEAL parity: flip 220 / 70, glow 600, hop 400 / 60, wobble 500, nudge 360, reject 700 / 60 / 160).
+ * a shorter hop and a not-a-word reject that never blocks typing (web REVEAL parity: glow 600,
+ * hop 400 / 60, wobble 500, nudge 360, reject 700 / 60 / 160).
+ * FINISH_SPEC BI5 (founder 10-02 on 2.7: "it seemed really rushed … way too zippy"): the
+ * pre-overhaul reveal pacing is back — single board 500 ms flips, 150 ms apart (a 5-letter row
+ * ≈ 1.1 s); multi-board mini boards 300 ms, 80 ms apart. (B3 was 720 / 300; AQ1 220 / 70.)
+ * The finish hold waits out the whole row (and a win's hop wave) plus the old 200 ms beat.
  */
 object TileMotion {
     /** Type a letter / place a number: soft spring swell. */
     const val TYPE_MS = 220
-    /** Reveal: each tile turns over in this long… */
-    const val FLIP_MS = 220
+    /** Reveal (single board): each tile turns over in this long… */
+    const val FLIP_MS = 500
     /** …this far apart. */
-    const val FLIP_STAGGER_MS = 70
+    const val FLIP_STAGGER_MS = 150
+    /** Reveal (multi-board mini boards): each tile turns over in this long… */
+    const val MINI_FLIP_MS = 300
+    /** …this far apart. */
+    const val MINI_FLIP_STAGGER_MS = 80
     /** The soft color glow each revealed tile lands with. */
     const val BLOOM_MS = 600
     /** Not a word: the row nudge. */
@@ -71,20 +79,26 @@ object TileMotion {
     const val HINT_PULSE_MS = 900
     /** Reduce Motion: the flip's crossfade. */
     const val REDUCED_FLIP_MS = 160
-    /** AQ1 the longest a finished board holds before the result popup springs in. */
-    const val FINISH_HOLD_MAX_MS = 1200
+    /** BI5 the pre-overhaul beat between the board settling and the result popup. */
+    const val FINISH_BEAT_MS = 200
+
+    /** BI5 one tile's turn-over: single board or [mini] (multi-board). */
+    fun flipMs(mini: Boolean = false): Int = if (mini) MINI_FLIP_MS else FLIP_MS
+
+    /** BI5 the gap between neighboring tiles: single board or [mini] (multi-board). */
+    fun staggerMs(mini: Boolean = false): Int = if (mini) MINI_FLIP_STAGGER_MS else FLIP_STAGGER_MS
 
     /** AQ1 when tile [column] of a revealing row lands (its flip ends) — its keyboard key takes its color then. */
-    fun tileLandsMs(column: Int): Int = column.coerceAtLeast(0) * FLIP_STAGGER_MS + FLIP_MS
+    fun tileLandsMs(column: Int, mini: Boolean = false): Int = column.coerceAtLeast(0) * staggerMs(mini) + flipMs(mini)
 
     /** AQ1 how many of a [tiles]-wide row's tiles have landed [elapsedMs] after it committed. */
-    fun tilesLanded(elapsedMs: Int, tiles: Int): Int {
-        if (tiles <= 0 || elapsedMs < FLIP_MS) return 0
-        return ((elapsedMs - FLIP_MS) / FLIP_STAGGER_MS + 1).coerceIn(0, tiles)
+    fun tilesLanded(elapsedMs: Int, tiles: Int, mini: Boolean = false): Int {
+        if (tiles <= 0 || elapsedMs < flipMs(mini)) return 0
+        return ((elapsedMs - flipMs(mini)) / staggerMs(mini) + 1).coerceIn(0, tiles)
     }
 
     /** How long a row of [tiles] takes to reveal (the last tile lands). */
-    fun revealMs(tiles: Int): Int = if (tiles <= 0) 0 else tileLandsMs(tiles - 1)
+    fun revealMs(tiles: Int, mini: Boolean = false): Int = if (tiles <= 0) 0 else tileLandsMs(tiles - 1, mini)
 
     /** How long the win hop wave over [tiles] takes. */
     fun hopWaveMs(tiles: Int): Int = if (tiles <= 0) 0 else (tiles - 1) * HOP_STAGGER_MS + HOP_MS
@@ -94,14 +108,15 @@ object TileMotion {
 
     /**
      * How long a live finish holds the board on screen before the result screen: the
-     * final row's reveal, then (a single-board win) the hop wave, then a beat — never
-     * more than [FINISH_HOLD_MAX_MS] (AQ1; was ~2.4 s). Reduce Motion: a short beat only.
+     * final row's whole reveal at the board's own pacing (mini on multi-board), then (a
+     * win) the hop wave, then the 200 ms beat — never cut short (BI5: the popup waits
+     * for the slower row). Reduce Motion: a short beat only.
      */
     fun finishHoldMs(tiles: Int, won: Boolean, multiBoard: Boolean, reduced: Boolean): Int = when {
         reduced -> 350
-        won && !multiBoard -> revealMs(tiles) + hopWaveMs(tiles) + 50
-        else -> revealMs(tiles) + 50
-    }.coerceAtMost(FINISH_HOLD_MAX_MS)
+        won -> revealMs(tiles, multiBoard) + hopWaveMs(tiles) + FINISH_BEAT_MS
+        else -> revealMs(tiles, multiBoard) + FINISH_BEAT_MS
+    }
 }
 
 /** B1 one tile's paint: the lip ([edge]), the face gradient, the inner ring, the gloss and the glyph. */

@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { MIN_PHONE_HEIGHT, fitScale, unlimitedHref } from './finished-layout';
+import { MIN_PHONE_HEIGHT, fitScale, formatNextDailyIn, unlimitedHref } from './finished-layout';
+
+describe('share CTA countdown (founder 10-02)', () => {
+  it('reads "Xh Ym" from an hour, "Ym" under it, never under 1m', () => {
+    expect(formatNextDailyIn(3 * 3600 + 12 * 60 + 40)).toBe('3h 12m');
+    expect(formatNextDailyIn(3600)).toBe('1h 0m');
+    expect(formatNextDailyIn(23 * 3600 + 59 * 60 + 59)).toBe('23h 59m');
+    expect(formatNextDailyIn(3599)).toBe('59m');
+    expect(formatNextDailyIn(12 * 60 + 5)).toBe('12m');
+    expect(formatNextDailyIn(59)).toBe('1m');
+    expect(formatNextDailyIn(0)).toBe('1m');
+    expect(formatNextDailyIn(-5)).toBe('1m');
+  });
+});
 
 describe('one-screen finished screen (FINISH_SPEC R2/R3)', () => {
   it('shrinks the board to the room left, never grows it', () => {

@@ -82,7 +82,7 @@ fun TileView(
     // Sequence locked-board mask: a frosted tile with a "•".
     masked: Boolean = false,
     // Mini (multi-board) tile — same colors (the colorblind swap included).
-    @Suppress("UNUSED_PARAMETER") mini: Boolean = false,
+    mini: Boolean = false,
     modifier: Modifier = Modifier,
     celebrate: TileCelebration? = null,
     celebrateDelay: Int = 0,
@@ -115,6 +115,11 @@ fun TileView(
         flip.animateTo(0.5f, tween(flipDuration / 2, easing = FLIP_EASE))
         showFinal = true
         flip.animateTo(1f, tween(flipDuration / 2, easing = FLIP_EASE))
+        // Perf (founder 10-02: smooth over pretty): a multi-board reveal turns 20–40 mini
+        // tiles at once, and the landing glow re-records every one of them (5 halo rects)
+        // on every frame for 600 ms. Mini tiles land without the glow; the turn (a
+        // graphicsLayer property, no redraw) stays.
+        if (mini) return@LaunchedEffect
         bloom.animateTo(1f, tween((TileMotion.BLOOM_MS * 0.35f).toInt(), easing = EaseOut))
         bloom.animateTo(0f, tween((TileMotion.BLOOM_MS * 0.65f).toInt(), easing = EaseOut))
     }

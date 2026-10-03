@@ -35,9 +35,10 @@ struct GameScreen: View {
     /// stagger), matching BoardView's mini/full timing — used to delay the
     /// finished screen so the winning word animates first.
     private var revealDuration: Double {
-        // FINISH_SPEC §AQ1: the final row's reveal (+ a single-board win's hop
-        // wave), capped so the popup always springs in within 1.2 s.
-        RevealTiming.finishHold(columns: vm.wordLength, winHop: vm.status == .won && !vm.isMultiBoard)
+        // FINISH_SPEC §BI5: the final row's whole reveal at the board's own pacing
+        // (mini on multi-board), then a win's hop wave, then the 0.2 s beat — the
+        // popup always waits for the row to finish.
+        RevealTiming.finishHold(columns: vm.wordLength, winHop: vm.status == .won, mini: vm.isMultiBoard)
     }
 
     var body: some View {
@@ -67,8 +68,7 @@ struct GameScreen: View {
                             guessCount: vm.rowsUsed, maxGuesses: vm.maxGuesses,
                             timeSeconds: vm.elapsedSeconds,
                             boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                            totalBoards: vm.boardCount, points: scorePoints,
-                            onShare: { reveal in share(reveal: reveal) })
+                            totalBoards: vm.boardCount, points: scorePoints)
                     }, board: { size in
                         if vm.boardCount > 1 {
                             // The compact mini grid (2×2 / 4 across), scaled to fit.
@@ -226,7 +226,7 @@ struct GameScreen: View {
         .animation(Theme.animation(.easeInOut(duration: 0.3)), value: stageCardUp)
         .onChange(of: vm.stageCleared) { cleared in
             guard cleared else { stageCardUp = false; return }
-            let wait = Theme.reduceMotion ? 0 : RevealTiming.finishHold(columns: vm.wordLength, winHop: false)
+            let wait = Theme.reduceMotion ? 0 : RevealTiming.finishHold(columns: vm.wordLength, winHop: false, mini: vm.isMultiBoard)
             DispatchQueue.main.asyncAfter(deadline: .now() + wait) {
                 if vm.stageCleared { stageCardUp = true }
             }
@@ -385,21 +385,20 @@ struct GameScreen: View {
         }
     }
 
-    /// Pulsing purple halo on the active gauntlet stage node — mirrors web's
-    /// `gauntlet-glow` (box-shadow 3px ↔ 8px+14px, #A855F7, 2.5s ease-in-out loop).
+    /// A soft purple halo on the active gauntlet stage node (web `gauntlet-glow`'s
+    /// color, held still on iOS — see below).
     private struct StageGlow: ViewModifier {
         let active: Bool
-        @State private var on = false
         private let glow = Color(hex: 0xA855F7)
         func body(content: Content) -> some View {
+            // Perf audit: a STILL halo. The old forever-animated shadow radius re-rendered
+            // two blurred shadows every frame of the whole Gauntlet run (main thread +
+            // offscreen GPU passes under the board and keyboard).
             content
-                .shadow(color: active ? glow.opacity(on ? 0.6 : 0.3) : .clear, radius: active ? (on ? 7 : 3) : 0)
-                .shadow(color: active && on ? glow.opacity(0.25) : .clear, radius: active && on ? 12 : 0)
-                .onAppear {
-                    // Theme.reduceMotion covers BOTH the in-app toggle and the OS
-                    // setting (the old env-only check ignored the in-app pref).
-                    guard !Theme.reduceMotion else { return }
-                    withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) { on = true }
+                .background {
+                    if active {
+                        Circle().fill(glow.opacity(0.32)).padding(-4)
+                    }
                 }
         }
     }
@@ -479,16 +478,21 @@ struct GameScreen: View {
     /// UNLIMITED game (Pro): the KEEP PLAYING card is the primary action — NEW
     /// PUZZLE = the existing Play again, "Other games" = back Home to the picker.
     @ViewBuilder private var finishedDock: some View {
-        // §AT1: the share icon rides the result strip (pinned trailing), so the dock's
-        // candies span and center on the full width.
+        // Founder 10-02: the SHARE RESULTS candy (the share icon no longer floats beside
+        // the strip) rides IN the dock's action row — beside Next daily / Leaderboard, or
+        // in the Unlimited card's row — with "Next <Game> in …" inside it on a daily.
+        let shareCTA = AnyView(FinishedShareCTA(nextGame: vm.isDaily ? FinishedShareCTA.gameName(mode) : nil,
+                                                onShare: { reveal in share(reveal: reveal) }))
         if vm.isDaily {
-            NextDailyCTA(currentMode: mode.rawValue, compact: true)
+            NextDailyCTA(currentMode: mode.rawValue, compact: true, share: shareCTA)
                 .padding(.bottom, 6)
         } else if let again = onPlayAgain {
             // §R3: the card shows for everyone (it gates free players itself).
             UnlimitedKeepPlayingCard(game: ModeGen.byDbKey(mode.rawValue)?.title ?? ModeStyle.title(mode).capitalized,
-                                     afterUnlimited: true, action: again, onOtherGames: { dismiss() })
+                                     afterUnlimited: true, action: again, onOtherGames: { dismiss() }, share: shareCTA)
                 .padding(.bottom, 6)
+        } else {
+            shareCTA.padding(.bottom, 6)
         }
     }
 

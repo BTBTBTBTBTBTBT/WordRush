@@ -34,18 +34,18 @@ private struct FlipFaces: View {
         ZStack {
             GlossyTile(face: .typed, letter: letter, width: width, height: height)
                 .rotation3DEffect(.degrees(front), axis: (x: 1, y: 0, z: 0), perspective: 0.45)
-                .opacity(front >= 90 ? 0 : 1)
+                .opacity(front >= 89.5 ? 0 : 1)
             GlossyTile(face: face, letter: letter, width: width, height: height,
                        glow: glow, glowAmount: glowAmount, goldRing: goldRing)
                 .rotation3DEffect(.degrees(back), axis: (x: 1, y: 0, z: 0), perspective: 0.45)
-                .opacity(back <= -90 ? 0 : 1)
+                .opacity(back <= -89.5 ? 0 : 1)
         }
         .frame(width: width, height: height)
     }
 }
 
-/// A just-committed tile that flips open on reveal (FINISH_SPEC §B3, §AQ1): 220 ms
-/// each, 70 ms apart, the color swapping at the half, then a soft color glow (bloom,
+/// A just-committed tile that flips open on reveal (FINISH_SPEC §B3, §BI5): 0.5 s
+/// each, 150 ms apart (mini boards 0.3 s / 80 ms), the color swapping at the half, then a soft color glow (bloom,
 /// 600 ms). A hint tile pulses a gold glow twice instead; the winning row hops in
 /// a wave (`hopAt`); a lost board's last row wobbles and sinks (`sinkAt`).
 /// Reduce Motion: the final face, no motion.
@@ -62,6 +62,8 @@ struct FlipRevealTile: View {
     var sinkAt: Double? = nil
     /// A hint reveal: the gold glow ×2 instead of the color bloom.
     var hint: Bool = false
+    /// The soft color bloom after landing (off on multi-board grids).
+    var bloom: Bool = true
 
     @State private var front: Double = 0
     @State private var back: Double = -90
@@ -74,7 +76,7 @@ struct FlipRevealTile: View {
         let face = GlossyFace(revealed: state)
         let box = CGSize(width: size, height: h)
         FlipFaces(letter: letter, face: face, width: size, height: h,
-                  glow: hint ? Color(hex: 0xF5C542).opacity(0.7) : GlossyTile.bloom(face),
+                  glow: hint ? Color(hex: 0xF5C542).opacity(0.7) : (bloom ? GlossyTile.bloom(face) : .clear),
                   glowAmount: glow, goldRing: hint, front: front, back: back)
             .modifier(KeyframeEffect(progress: hop, frames: TileMotion.hopFrames, easing: TileMotion.hopEasing, size: box))
             .modifier(KeyframeEffect(progress: sink, frames: TileMotion.sinkFrames, easing: .easeOut, size: box,
@@ -92,10 +94,10 @@ struct FlipRevealTile: View {
             if let hopAt, delay == 0 { DispatchQueue.main.asyncAfter(deadline: .now() + hopAt) { Feedback.rowLand() } }
         }
         // Theme.reduceMotion = in-app toggle OR OS setting: the final face, no motion.
-        guard !Theme.reduceMotion else { front = 90; back = 0; return }
+        guard !Theme.reduceMotion else { front = 89.5; back = 0; return }
         guard fresh else { return }
         // §AU4: two transform-only halves (ease in to edge-on, ease out to flat).
-        withAnimation(.easeIn(duration: duration / 2).delay(delay)) { front = 90 }
+        withAnimation(.easeIn(duration: duration / 2).delay(delay)) { front = 89.5 }
         withAnimation(.easeOut(duration: duration / 2).delay(delay + duration / 2)) { back = 0 }
         let land = delay + duration
         if hint {
@@ -307,12 +309,19 @@ struct BoardView: View {
     }
 
     private func revealedRow(_ eval: GuessResult, animate: Bool = false) -> some View {
-        // FINISH_SPEC §B3 / §AQ1: one motion kit for every board — each tile turns over
-        // in 220 ms, 70 ms apart (every board of a multi-board game at once); the winning row hops in a wave once it has landed; a
-        // lost board's last row wobbles and sinks; a hint row pulses gold.
+        // FINISH_SPEC §B3 / §BI5: one motion kit for every board — each tile turns over
+        // in 0.5 s, 150 ms apart on a single board; a multi-board game uses the "mini"
+        // pacing (0.3 s, 80 ms apart; every board at once); the winning row hops in a wave
+        // once it has landed; a lost board's last row wobbles and sinks; a hint row pulses gold.
         let n = eval.tiles.count
-        let landed = TileMotion.rowReveal(columns: n)
+        let mini = vm.isMultiBoard
+        let landed = TileMotion.rowReveal(columns: n, mini: mini)
         let isHint = eval.tiles.contains { $0.state == .hintUsed }
+        // Perf audit (founder: smooth over flashy): 5+ boards (OctoWord, its Gauntlet
+        // stage) turn colors at once — 40 simultaneous flips cost frames; 2–4 boards
+        // flip without the per-tile bloom glow (a blurred shadow per tile).
+        let animate = animate && vm.boardCount <= 4
+        let bloom = vm.boardCount <= 1
         let wins = animate && eval.isCorrect
         let sinks = animate && !eval.isCorrect && board.status == .lost
         return HStack(spacing: spacing) {
@@ -320,10 +329,11 @@ struct BoardView: View {
                 if animate {
                     FlipRevealTile(letter: eval.tiles[col].letter, state: eval.tiles[col].state,
                                    size: tileSize, height: tileHeight,
-                                   delay: Double(col) * TileMotion.flipStagger,
+                                   delay: Double(col) * TileMotion.stagger(mini: mini),
+                                   duration: TileMotion.flipDuration(mini: mini),
                                    hopAt: wins ? landed + Double(col) * TileMotion.hopStagger : nil,
                                    sinkAt: sinks ? landed + Double(col) * TileMotion.sinkStagger : nil,
-                                   hint: isHint && eval.tiles[col].state == .correct)
+                                   hint: isHint && eval.tiles[col].state == .correct, bloom: bloom)
                 } else {
                     TileView(letter: eval.tiles[col].letter, state: eval.tiles[col].state, revealed: true, size: tileSize, height: tileHeight)
                 }

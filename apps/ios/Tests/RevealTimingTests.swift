@@ -1,32 +1,51 @@
 import XCTest
 @testable import WordociousCore
 
-/// FINISH_SPEC §AQ1: fast play — the reveal clock and the key-color-per-tile rule.
+/// FINISH_SPEC §AQ1 / §BI5: the reveal clock (the pre-overhaul pacing) and the
+/// key-color-per-tile rule.
 final class RevealTimingTests: XCTestCase {
-    func testSpecBounds() {
-        XCTAssertLessThanOrEqual(RevealTiming.flip, 0.22)
-        XCTAssertLessThanOrEqual(RevealTiming.flipStagger, 0.07)
-        XCTAssertLessThanOrEqual(RevealTiming.finishHoldMax, 1.2)
-        // Every word length's finish hold (win or loss) stays within 1.2 s.
+    func testRestoredPacing() {
+        // §BI5: single board 0.5 s / 150 ms; multi-board (mini) 0.3 s / 80 ms.
+        XCTAssertEqual(RevealTiming.flip, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.flipStagger, 0.15, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.miniFlip, 0.3, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.miniFlipStagger, 0.08, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.flipDuration(mini: false), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.flipDuration(mini: true), 0.3, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.stagger(mini: false), 0.15, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.stagger(mini: true), 0.08, accuracy: 1e-9)
+    }
+
+    func testFinishHoldWaitsForTheRow() {
+        // The popup never springs in before the final row (and a win's hop wave) is done.
         for cols in 1...8 {
-            XCTAssertLessThanOrEqual(RevealTiming.finishHold(columns: cols, winHop: true), 1.2 + 1e-9)
-            XCTAssertLessThanOrEqual(RevealTiming.finishHold(columns: cols, winHop: false), 1.2 + 1e-9)
-            XCTAssertGreaterThanOrEqual(RevealTiming.finishHold(columns: cols, winHop: false),
-                                        RevealTiming.rowReveal(columns: cols) - 1e-9)
+            for mini in [false, true] {
+                let row = RevealTiming.rowReveal(columns: cols, mini: mini)
+                let loss = RevealTiming.finishHold(columns: cols, winHop: false, mini: mini)
+                let win = RevealTiming.finishHold(columns: cols, winHop: true, mini: mini)
+                XCTAssertEqual(loss, row + 0.2, accuracy: 1e-9)
+                XCTAssertEqual(win, row + RevealTiming.hopWave(columns: cols) + 0.2, accuracy: 1e-9)
+            }
         }
+        // Classic (5 letters) win: 1.1 s row + 0.64 s hop wave + 0.2 s beat.
+        XCTAssertEqual(RevealTiming.finishHold(columns: 5, winHop: true), 1.94, accuracy: 1e-9)
     }
 
     func testRowReveal() {
-        XCTAssertEqual(RevealTiming.rowReveal(columns: 5), 0.22 + 4 * 0.07, accuracy: 1e-9)
-        XCTAssertEqual(RevealTiming.rowReveal(columns: 1), 0.22, accuracy: 1e-9)
-        XCTAssertEqual(RevealTiming.tileLands(column: 2), 0.22 + 2 * 0.07, accuracy: 1e-9)
-        // The old row took 1.92 s at 5 columns; the new one is well under a third of that.
-        XCTAssertLessThan(RevealTiming.rowReveal(columns: 5), 0.64)
+        // A 5-letter row ≈ 1.1 s on a single board (the pre-overhaul feel), 0.62 s mini.
+        XCTAssertEqual(RevealTiming.rowReveal(columns: 5), 0.5 + 4 * 0.15, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.rowReveal(columns: 5), 1.1, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.rowReveal(columns: 5, mini: true), 0.3 + 4 * 0.08, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.rowReveal(columns: 1), 0.5, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.tileLands(column: 2), 0.5 + 2 * 0.15, accuracy: 1e-9)
+        XCTAssertEqual(RevealTiming.tileLands(column: 2, mini: true), 0.3 + 2 * 0.08, accuracy: 1e-9)
     }
 
     func testTilesLanded() {
         XCTAssertEqual(RevealTiming.tilesLanded(elapsed: 0, columns: 5), 0)
-        XCTAssertEqual(RevealTiming.tilesLanded(elapsed: 0.21, columns: 5), 0)
+        XCTAssertEqual(RevealTiming.tilesLanded(elapsed: 0.49, columns: 5), 0)
+        XCTAssertEqual(RevealTiming.tilesLanded(elapsed: 0.29, columns: 5, mini: true), 0)
+        XCTAssertEqual(RevealTiming.tilesLanded(elapsed: RevealTiming.tileLands(column: 3, mini: true), columns: 5, mini: true), 4)
         XCTAssertEqual(RevealTiming.tilesLanded(elapsed: RevealTiming.tileLands(column: 0), columns: 5), 1)
         XCTAssertEqual(RevealTiming.tilesLanded(elapsed: RevealTiming.tileLands(column: 2), columns: 5), 3)
         XCTAssertEqual(RevealTiming.tilesLanded(elapsed: RevealTiming.rowReveal(columns: 5), columns: 5), 5)

@@ -530,6 +530,11 @@ fun CandyButton(
     enabled: Boolean = true,
     contentDescription: String = text,
     fontSize: TextUnit? = null,
+    /**
+     * Founder 10-02: an optional small second line under the label (the share candy's
+     * "Next Classic in 3h 12m"), inside the same [size] height — never a taller button.
+     */
+    subtitle: String? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -597,7 +602,16 @@ fun CandyButton(
             ) {
                 if (icon != null) CandyGlyph(icon, size.icon, color.ink, color.outlined)
                 leading?.invoke()
-                Box(Modifier.weight(1f, fill = false)) { CandyLabel(text, fontSize ?: size.fontSize, color.ink, color.outlined) }
+                if (subtitle == null) {
+                    Box(Modifier.weight(1f, fill = false)) { CandyLabel(text, fontSize ?: size.fontSize, color.ink, color.outlined) }
+                } else {
+                    // Two lines in the one-line height: the label a step smaller, the subtitle ~70% of it.
+                    val main = fontSize ?: (size.fontSize.value - 1f).sp
+                    Column(Modifier.weight(1f, fill = false), horizontalAlignment = Alignment.CenterHorizontally) {
+                        CandyLabel(text, main, color.ink, color.outlined)
+                        CandyLabel(subtitle, (main.value * 0.72f).sp, color.ink, color.outlined)
+                    }
+                }
                 if (trailing != null) CandyLabel(trailing, fontSize ?: size.fontSize, color.ink, color.outlined)
             }
         }

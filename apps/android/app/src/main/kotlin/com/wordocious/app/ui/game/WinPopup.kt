@@ -200,6 +200,24 @@ object WinPopupMath {
         return s
     }
 
+    /** Founder 10-02: an answer's words (split at spaces, the spaces dropped): one tile row per word. */
+    fun answerLines(answer: String): List<String> =
+        answer.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.ifEmpty { listOf(answer.trim()) }
+
+    /** The smallest answer tile (dp) — only undercut when even that would not fit the card. */
+    const val MIN_ANSWER_TILE = 12f
+
+    /**
+     * Founder 10-02 (HUBBLE SPACE TELESCOPE ran off the card): the tile side that fits a
+     * [longest]-letter row (+ a [badge] slot) in [availW] dp with [gap] between tiles —
+     * min(base, fit), floored at [MIN_ANSWER_TILE] unless only a smaller tile fits.
+     */
+    fun answerTileFit(base: Float, availW: Float, longest: Int, gap: Float, badge: Float = 0f): Float {
+        val n = longest.coerceAtLeast(1)
+        val fit = (availW - badge - gap * (n - 1)) / n
+        return min(base, fit).coerceAtLeast(min(MIN_ANSWER_TILE, fit)).coerceAtLeast(4f)
+    }
+
     /** Multi-board keeps the 2-column grid (3 past eight boards); one word = one column. */
     fun answerColumns(n: Int): Int = when {
         n > 8 -> 3
@@ -581,6 +599,9 @@ fun WinLettering(moment: MomentArt) {
 fun WinAnswerTray(answers: WinAnswers, won: Boolean, accent: Color) {
     val words = answers.words.map { it.uppercase() }
     val multi = words.size > 1 && answers.solved.size > 1
+    // Founder 10-02: every answer splits at its spaces — one tile row per word, never one
+    // long row that runs off the card ("HUBBLE SPACE TELESCOPE").
+    val lines = words.map { WinPopupMath.answerLines(it) }
     val cols = if (multi) WinPopupMath.answerColumns(words.size) else 1
     val still = WTheme.reducedMotion
     val total = WinPopupMath.trayDurationMs(words)
@@ -608,31 +629,37 @@ fun WinAnswerTray(answers: WinAnswers, won: Boolean, accent: Color) {
             )
         }
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            val base = WinPopupMath.answerTileSize(words)
-            val longest = (words.maxOfOrNull { it.length } ?: 1).coerceAtLeast(1)
+            val base = WinPopupMath.answerTileSize(lines.flatten())
+            val longest = (lines.flatten().maxOfOrNull { it.length } ?: 1).coerceAtLeast(1)
             val colGap = 12f
             val colW = (maxWidth.value - colGap * (cols - 1)) / cols
             val badge = if (multi) (base * 0.6f).coerceAtLeast(12f) + 4f else 0f
             val gap = max(2f, base / 10f)
-            val fit = (colW - badge - gap * (longest - 1)) / longest
-            val tile = min(base, fit).coerceAtLeast(10f)
+            val tile = WinPopupMath.answerTileFit(base, colW, longest, gap, badge)
             Column(verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 words.indices.chunked(cols).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(colGap.dp), verticalAlignment = Alignment.CenterVertically) {
                         row.forEach { wi ->
                             val solved = answers.isSolved(wi, won)
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(gap.dp)) {
-                                    words[wi].forEachIndexed { li, ch ->
-                                        val f = WinPopupMath.flipProgress(clock.value, WinPopupMath.tileDelayMs(wi, li))
-                                        GameTileFace(
-                                            ch.toString(), if (solved) TileFace.CORRECT else TileFace.ABSENT,
-                                            Modifier.size(tile.dp).graphicsLayer {
-                                                rotationX = 90f * (1f - f)
-                                                alpha = if (f <= 0f) 0f else 1f
-                                                cameraDistance = 12f * density
-                                            },
-                                        )
+                                Column(verticalArrangement = Arrangement.spacedBy(gap.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    var offset = 0
+                                    lines[wi].forEach { line ->
+                                        val start = offset
+                                        offset += line.length
+                                        Row(horizontalArrangement = Arrangement.spacedBy(gap.dp)) {
+                                            line.forEachIndexed { li, ch ->
+                                                val f = WinPopupMath.flipProgress(clock.value, WinPopupMath.tileDelayMs(wi, start + li))
+                                                GameTileFace(
+                                                    ch.toString(), if (solved) TileFace.CORRECT else TileFace.ABSENT,
+                                                    Modifier.size(tile.dp).graphicsLayer {
+                                                        rotationX = 90f * (1f - f)
+                                                        alpha = if (f <= 0f) 0f else 1f
+                                                        cameraDistance = 12f * density
+                                                    },
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                                 if (multi) {

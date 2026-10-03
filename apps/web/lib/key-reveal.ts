@@ -2,6 +2,7 @@ import { REVEAL } from './tile-motion';
 
 // FINISH_SPEC AQ1: the keyboard keys take their colors AS EACH TILE FLIPS — the
 // key for tile i colors when tile i lands — instead of after the whole row.
+// BI5: on the board's own clock (`mini` = the multi-board pacing).
 // Pure, so components/game/keyboard.tsx and the tests share it.
 
 export type KeyLetterState = 'correct' | 'present' | 'absent';
@@ -13,12 +14,12 @@ export type KeyStatesLike = KeyStates | KeyStates[] | undefined;
 export interface KeyRevealStep { at: number; letters: string[] }
 
 /** Each letter of `word` → when its first tile lands (ms from the reveal start). */
-export function keyColorDelays(word: string): Record<string, number> {
+export function keyColorDelays(word: string, mini = false): Record<string, number> {
   const out: Record<string, number> = {};
   const w = word.toUpperCase();
   for (let i = 0; i < w.length; i++) {
     const ch = w[i];
-    if (/[A-Z]/.test(ch) && out[ch] == null) out[ch] = REVEAL.landMs(i);
+    if (/[A-Z]/.test(ch) && out[ch] == null) out[ch] = REVEAL.landMs(i, mini);
   }
   return out;
 }
@@ -52,13 +53,13 @@ export function changedKeyLetters(prev: KeyStatesLike, next: KeyStatesLike): str
  * once (a single step at 0) when there's no word, Reduce Motion is on, the
  * board count changed, or it's a reset (fewer colored keys than before).
  */
-export function keyRevealSchedule(prev: KeyStatesLike, next: KeyStatesLike, word: string | undefined, instant = false): KeyRevealStep[] {
+export function keyRevealSchedule(prev: KeyStatesLike, next: KeyStatesLike, word: string | undefined, instant = false, mini = false): KeyRevealStep[] {
   const letters = changedKeyLetters(prev, next);
   if (letters.length === 0) return [];
   const resized = Array.isArray(prev) !== Array.isArray(next) || asList(prev).length !== asList(next).length;
   if (instant || !word || resized || coloredCount(next) < coloredCount(prev)) return [{ at: 0, letters }];
-  const delays = keyColorDelays(word);
-  const rowEnd = REVEAL.end(word.length);
+  const delays = keyColorDelays(word, mini);
+  const rowEnd = REVEAL.end(word.length, mini);
   const byAt = new Map<number, string[]>();
   for (const l of letters) {
     const at = delays[l] ?? rowEnd;

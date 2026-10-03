@@ -10,17 +10,15 @@ import { trayStateFor } from '@/lib/tray-fit';
 // nine 3×3 boxes on the shared game tray (FINISH_SPEC L), split by soft seams,
 // holding the shared glossy tiles. A given is a plain light tile with a dark purple digit;
 // the player's digits are purple tiles, hint digits gold, a wrong digit the
-// red conflict tile; an empty cell is frosted glass. The selected cell takes a
-// purple ring with its row, column and box washed lilac; every cell holding
-// the selected digit gets a gold ring. Pencil marks stay the standard 3×3
-// mini-grid (1 top-left … 9 bottom-right) so each digit always sits in the
-// same spot. A newly placed digit swells in (B3: same as typing).
+// red conflict tile; an empty cell is frosted glass. Selection (BI6, globals.css
+// `.sdk-cell[data-sdk]`): the selected cell is the solid purple tile with a deep
+// ring; every other cell holding its digit a medium lavender tile with a deep
+// purple digit; its row, column and box pale lavender. Pencil marks stay the
+// standard 3×3 mini-grid (1 top-left … 9 bottom-right) so each digit always
+// sits in the same spot; the selected digit's mark goes bold purple. A newly
+// placed digit swells in (B3: same as typing).
 
 export const SUDOKU_ACCENT = '#1e40af';
-/** Washes for the selection (row / column / box) and the selected cell. */
-const WASH_FACE = 'rgba(221, 214, 254, 0.85)';
-const SELECTED_RING = 'inset 0 0 0 3px #7c3aed';
-const SAME_RING = 'inset 0 0 0 2.5px #f5a524';
 
 interface SudokuBoardProps {
   state: SudokuState;
@@ -54,19 +52,20 @@ export const SudokuBoard = memo(function SudokuBoard({ state, selected, onSelect
     const inWash = r === selRow || c === selCol || boxOf(i) === selBox;
     const sameDigit = selDigit != null && value === selDigit && !isSelected;
     const notes = state.notes[i];
-    const look = isRevealed ? 'gap' : !value ? 'empty' : given ? 'given' : wrong ? 'conflict' : hinted ? 'present' : 'correct';
+    const baseLook = isRevealed ? 'gap' : !value ? 'empty' : given ? 'given' : wrong ? 'conflict' : hinted ? 'present' : 'correct';
+    // BI6: the selected cell becomes the solid purple tile (a wrong one stays red).
+    const look = isSelected && baseLook !== 'conflict' && !isRevealed ? 'correct' : baseLook;
+    const hl = isSelected ? 'sel' : sameDigit && !wrong ? 'same' : inWash ? 'wash' : undefined;
     const vars: Record<string, string> = {};
-    if (isSelected) vars['--gt-ring'] = SELECTED_RING;
-    else if (sameDigit) vars['--gt-ring'] = SAME_RING;
-    if (inWash && (look === 'empty' || look === 'given')) vars['--gt-face'] = WASH_FACE;
     if (isRevealed) vars['--gt-glyph'] = '#9ca3af';
     return (
       <button
         key={i}
         type="button"
         onClick={() => onSelect(i)}
-        className={`gtile ${value && !given && !isRevealed ? 'gt-pop' : ''}`}
+        className={`gtile sdk-cell ${value && !given && !isRevealed ? 'gt-pop' : ''}`}
         data-s={look}
+        data-sdk={hl}
         style={{ ...(vars as React.CSSProperties), padding: 0, border: 0, fontWeight: given ? 900 : 800 }}
         role="gridcell"
         aria-selected={isSelected}
@@ -76,14 +75,22 @@ export const SudokuBoard = memo(function SudokuBoard({ state, selected, onSelect
         {!value && notes ? (
           <span
             className="absolute grid p-[9%]"
-            style={{ inset: '0 0 7% 0', zIndex: 2, gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', color: '#8a78ad' }}
+            style={{ inset: '0 0 7% 0', zIndex: 2, gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', color: isSelected ? '#ffffff' : '#8a78ad' }}
             aria-label={`Notes ${Array.from({ length: 9 }, (_, d) => (notes & (1 << d) ? d + 1 : null)).filter(Boolean).join(' ')}`}
           >
-            {Array.from({ length: 9 }, (_, d) => (
-              <span key={d} className="flex items-center justify-center font-bold" style={{ fontSize: 'clamp(8px, 1.9vw, 10px)' }}>
-                {notes & (1 << d) ? d + 1 : ''}
-              </span>
-            ))}
+            {Array.from({ length: 9 }, (_, d) => {
+              // BI6: the selected digit's pencil mark goes bold purple.
+              const match = selDigit === String(d + 1) && (notes & (1 << d)) !== 0;
+              return (
+                <span
+                  key={d}
+                  className="flex items-center justify-center font-bold"
+                  style={match ? { fontSize: 'clamp(9px, 2.1vw, 11px)', fontWeight: 900, color: '#6d28d9' } : { fontSize: 'clamp(8px, 1.9vw, 10px)' }}
+                >
+                  {notes & (1 << d) ? d + 1 : ''}
+                </span>
+              );
+            })}
           </span>
         ) : null}
       </button>

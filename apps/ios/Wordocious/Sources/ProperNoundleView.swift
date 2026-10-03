@@ -376,7 +376,7 @@ struct ProperNoundleView: View {
                 // board scaled to the height left, the dock; the photo, the full clue
                 // and the breakdown sit below the dock.
                 FinishedScreenLayout {
-                    VStack(spacing: 4) { header; resultHeadline }
+                    VStack(spacing: 4) { finishedHeader; resultHeadline }
                 } board: { size in
                     NoundleBoard(vm: vm, width: size.width, height: size.height, tray: true)
                 } dock: {
@@ -384,7 +384,8 @@ struct ProperNoundleView: View {
                                     onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && !vm.isVersus && AuthService.shared.isProActive)
                                         ? { onPlayAgain?() } : nil,
                                     onOtherGames: { dismiss() },
-                                    showNextDaily: !vm.isVersus)
+                                    showNextDaily: !vm.isVersus,
+                                    onShare: { _ in showShareOptions = true })
                         .sheet(isPresented: $showShareOptions,
                                onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
                             ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
@@ -513,6 +514,39 @@ struct ProperNoundleView: View {
 
     private var hints: some View { NoundleHints(vm: vm) }
 
+    /// Founder 10-02: the FINISHED screen's compact header. The solo header's title
+    /// art (120 pt) plus the clue overflowed the finished page and collided with the
+    /// "+N XP" toast; here the art takes the same cap as every other finished screen
+    /// (68 pt, 52 on short phones) between the corner controls, with the category /
+    /// number line. The full clue sits below the dock (`result`).
+    private var finishedHeader: some View {
+        VStack(spacing: 4) {
+            Group {
+                if let art = GameTitleArt.forMode(.propernoundle) {
+                    GameTitleArtView(asset: art.asset, label: art.label,
+                                     maxHeight: UIScreen.main.bounds.height < 700 ? 52 : 68, minHeight: 36)
+                } else {
+                    Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                }
+            }
+            .padding(.horizontal, 54)
+            .padding(.top, 4)
+            HStack(spacing: 8) {
+                if let p = vm.puzzle {
+                    Text(categoryLabel(p.themeCategory))
+                        .font(Brand.caption(11)).foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(categoryColors[p.themeCategory ?? ""] ?? Color(hex: 0x7C3AED)))
+                }
+                if vm.isDaily {
+                    Text("#\(ProperNoundle.dailyPuzzleNumber())").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                }
+                Text("\(vm.answerLen) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            }
+        }
+    }
+
     /// §R2: the answer + the compact one-line result strip.
     private var resultHeadline: some View {
         let won = vm.status == .won
@@ -521,7 +555,7 @@ struct ProperNoundleView: View {
             if let p = vm.puzzle {
                 PuzFinishedHeadline(text: won ? p.display : "The answer was: \(p.display)", won: won)
             }
-            PuzResultLine(onShare: { showShareOptions = true }, won: won, items: [("\(vm.guesses.count)/\(vm.maxGuesses)", "guesses"), (puzClock(secs), "time")],
+            PuzResultLine(won: won, items: [("\(vm.guesses.count)/\(vm.maxGuesses)", "guesses"), (puzClock(secs), "time")],
                                 points: points)
         }
     }

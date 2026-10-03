@@ -1129,3 +1129,28 @@ lettering) + a small "TODAY" / "ALL-TIME" chip under it. Content swaps with a qu
 swipe still changes the GAME only, within the current scope). Put the scope×game resolution in a small pure function
 with tests (each of the 4 cells, toggle keeps game, pick keeps scope, re-tap clears game). Also audit the Stats page for
 any other stale/ mismatched data (e.g. a section still showing the previous game after a switch).
+
+## BI. Smooth as glass + finish-screen fixes (founder 10-02 late: 2.7 (239) pulled from review — "Gauntlet … plays
+really sluggish, the rest of them too … The load in intro graphic is not smooth"; "run a serious audit to make this seem
+smooth as glass and as fast as possible in all areas. that's your main priority"; then "The cleared screens need to be
+centered vertically and horizontally … this play again tomorrow is odd at the close screen … formatting issues on the
+propernoundle.")
+1. MEASURED perf pass ×3 (xctrace Time Profiler/Hitches on iOS; gfxinfo framestats + Perfetto on Android): fix the
+   proven hotspots in Gauntlet, boards/keyboard flips, intro/cold start and scrolling; report before/after numbers.
+2. Completed-game screens (every game): the column is centered vertically in the space between header and safe area and
+   on the screen's center line; art card sized so everything fits one screen.
+3. "PLAY AGAIN TOMORROW" → a centered SHARE RESULTS primary button (no side-floating share icon) + a small live
+   "Next {Game} in 3h 12m" line.
+4. Win popups: answer tiles always fit inside the card — one line per word for phrases, tiles scale down to fit
+   (ProperNoundle "HUBBLE SPACE TELESCOPE" overflowed). Game title art never collides with the +XP toast.
+Then: iOS 2.7 (240) TestFlight + resubmit 2.7 to App Review (auto-release); Android internal.
+BI5. Reveal pacing restored to the pre-overhaul feel (single 0.5 s/150 ms, mini 0.3 s/80 ms); the popup waits for the final row + a win's hop wave + a 0.2 s beat (no 1.2 s cap).
+BI6. Sudocious: same-digit cells clearly highlighted; row/col/box soft tint
+BI3 follow-up (founder 10-02: "we can't give up board room"): SHARE RESULTS sits IN the dock's existing action row
+(beside Next daily / Leaderboard; in the Unlimited card's row after an Unlimited game) at that row's height (web 40 px,
+Android 40 dp, iOS 42 pt) — no row of its own. The "Next {Game} in 3h 12m" countdown is the candy's small second line
+(the share glyph steps aside for it) and is dropped under 700 tall. Board room back to the BA1 floors (OctoWord 11 px on
+390×844, 8 px on the SE; single boards ≥ 22).
+BI7. No sound the player didn't cause (founder 10-02: "random sound effects playing while I was playing sudocious and I
+wasn't even hitting anything"): the header cast's idle hop, rotating-headline ticks and the Friends badge arrival chime
+are silent ×3 (the visuals stay). In-app notice banners keep their chime (a visible banner explains it).

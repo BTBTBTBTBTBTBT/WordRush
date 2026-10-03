@@ -971,7 +971,7 @@
   border-radius: 22%;
   background: #c9b2f2;
   pointer-events: none;
-  animation: gt-cover 220ms linear var(--gt-d, 0ms) both;
+  animation: gt-cover var(--gt-flip-ms, 500ms) linear var(--gt-d, 0ms) both;
 }
 .gt-cover::before {
   content: '';
@@ -1000,8 +1000,8 @@
 /* type / place a number: 300 ms soft spring, fade in + swell 1.07 */
 .gt-pop { animation: gt-pop 300ms cubic-bezier(0.34, 1.45, 0.64, 1); }
 @keyframes gt-pop { 0% { transform: scale(0.9); opacity: 0.6; } 55% { transform: scale(1.07); opacity: 1; } 100% { transform: scale(1); } }
-/* reveal (AQ1): each tile turns over in 220 ms (70 ms apart through --gt-d), the color swaps at the half, then a soft glow blooms (600 ms) */
-.gt-flip { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both; }
+/* reveal (BI5, the pre-overhaul pacing): each tile turns over in 500 ms (150 ms apart through --gt-d); a multi-board mini tile sets --gt-flip-ms: 300ms (80 ms apart); the color swaps at the half, then a soft glow blooms (600 ms) */
+.gt-flip { animation: gt-flip var(--gt-flip-ms, 500ms) cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both; }
 /* AU4: GPU-only — the flip animates only transform (no layout or paint
    properties); the glow is a pre-drawn shadow layer whose OPACITY blooms (was
    an animated box-shadow, a repaint per frame per tile). Smoothness pass: NO
@@ -1014,7 +1014,7 @@
   position: absolute; inset: 0 0 7% 0; z-index: 0; border-radius: 22%; pointer-events: none;
   box-shadow: 0 0 16px 3px var(--gt-glow, rgba(124, 58, 237, 0.55));
   opacity: 0;
-  animation: gt-glow 600ms ease-out calc(var(--gt-d, 0ms) + 220ms) both;
+  animation: gt-glow 600ms ease-out calc(var(--gt-d, 0ms) + var(--gt-flip-ms, 500ms)) both;
 }
 @keyframes gt-flip { 0% { transform: perspective(420px) rotateX(0) scale(1); } 50% { transform: perspective(420px) rotateX(-90deg) scale(1.05); } 100% { transform: perspective(420px) rotateX(0) scale(1); } }
 @keyframes gt-glow { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
@@ -1037,11 +1037,11 @@
 @keyframes gt-outb { to { transform: scale(0.4); opacity: 0; } }
 /* win: a hop wave (400 ms each, 60 ms apart through --gt-hop-d) after the reveal */
 .gt-hop { animation: gt-hop 400ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
-.gt-flip.gt-hop { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-hop 400ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
+.gt-flip.gt-hop { animation: gt-flip var(--gt-flip-ms, 500ms) cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-hop 400ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--gt-hop-d, 0ms); }
 @keyframes gt-hop { 0% { transform: translateY(0); } 35% { transform: translateY(-34%) scale(1.06, 0.96); } 60% { transform: translateY(4%) scale(0.97, 1.04); } 100% { transform: translateY(0); } }
 /* lose: a wobble, then the row settles a little lower */
 .gt-sink { animation: gt-sink 500ms ease-out var(--gt-sink-d, 0ms) forwards; }
-.gt-flip.gt-sink { animation: gt-flip 220ms cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-sink 500ms ease-out var(--gt-sink-d, 0ms) forwards; }
+.gt-flip.gt-sink { animation: gt-flip var(--gt-flip-ms, 500ms) cubic-bezier(0.37, 0, 0.63, 1) var(--gt-d, 0ms) both, gt-sink 500ms ease-out var(--gt-sink-d, 0ms) forwards; }
 @keyframes gt-sink { 40% { transform: rotate(-4deg); } 70% { transform: rotate(3deg) translateY(3%); } 100% { transform: rotate(0) translateY(2%); filter: saturate(0.7); } }
 /* hint: flips in purple with a gold glow, twice — a pre-drawn gold ring + glow
    layer (.gt-glow-hint, letter-tile.tsx) whose opacity pulses (was an animated
@@ -1447,6 +1447,15 @@
 [data-theme="dark"] .gtile.pz-cell[data-sel="true"] { box-shadow: 0 0 0 2.5px #e9ddff, 0 0 12px rgba(233, 221, 255, 0.35); }
 .gtile.pz-cell[data-wrong="true"] { --gt-glyph: #c2183a; --gt-ring: inset 0 0 0 2.5px #f0435f; }
 [data-theme="dark"] .gtile.pz-cell[data-wrong="true"] { --gt-glyph: #ff8a9b; --gt-ring: inset 0 0 0 2.5px #f0435f; }
+/* FINISH_SPEC BI6 Sudocious selection (iOS/Android parity): the selected cell is the
+   solid purple tile with a deep ring; every other cell with its digit a medium lavender
+   tile with a deep purple digit; its row, column and box pale lavender. Plain fills
+   only; a wrong digit keeps the red conflict tile (the board never marks it "same"). */
+.gtile.sdk-cell[data-sdk="sel"] { --gt-ring: inset 0 0 0 3px #2e1065; }
+.gtile.sdk-cell[data-sdk="same"] { --gt-edge: #9f7aea; --gt-face: #c4a6f7; --gt-ring: inset 0 0 0 2px rgba(124, 58, 237, 0.55); --gt-glyph: #3b0f8c; --gt-shadow: transparent; --gt-gloss: 0.4; }
+.gtile.sdk-cell[data-sdk="wash"][data-s="empty"],
+.gtile.sdk-cell[data-sdk="wash"][data-s="given"] { --gt-face: #eadfff; --gt-edge: #c9b0f3; }
+[data-theme="dark"] .gtile.sdk-cell[data-sdk="wash"][data-s="empty"] { --gt-face: rgba(167, 139, 250, 0.3); --gt-edge: rgba(167, 139, 250, 0.5); --gt-ring: inset 0 0 0 2px rgba(167, 139, 250, 0.4); }
 .pz-num {
   position: absolute;
   z-index: 4;

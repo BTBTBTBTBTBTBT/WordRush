@@ -180,12 +180,13 @@ fun MiniBoardView(
                         colorRow != null -> colorRow.getOrNull(col) ?: TileState.EMPTY
                         else -> eval?.tiles?.getOrNull(col)?.state ?: TileState.EMPTY
                     }
-                        // B3: 720 ms turns, 300 ms apart (the same reveal as the big board).
-                        val flipDelay = if (isLastSubmitted && !locked) col * TileMotion.FLIP_STAGGER_MS else null
+                        // BI5: the pre-overhaul mini pacing — 300 ms turns, 80 ms apart.
+                        val flipDelay = if (isLastSubmitted && !locked) col * TileMotion.MINI_FLIP_STAGGER_MS else null
                         TileView(
                             letter = letter,
                             state = state,
                             flipDelay = flipDelay,
+                            flipDuration = TileMotion.MINI_FLIP_MS,
                             isInvalid = (isInvalid || clearing) && isCurrentRow && letter.isNotEmpty(),
                             square = false,      // the fitted grid sizes the cells
                             masked = masked,
@@ -193,7 +194,7 @@ fun MiniBoardView(
                             modifier = Modifier.weight(1f),
                             // B3: a board solved by this guess hops its row once it lands.
                             celebrate = if (isLastSubmitted && isWon && stateRows == null) TileCelebration.HOP else null,
-                            celebrateDelay = TileMotion.revealMs(wordLen) + col * TileMotion.HOP_STAGGER_MS,
+                            celebrateDelay = TileMotion.revealMs(wordLen, mini = true) + col * TileMotion.HOP_STAGGER_MS,
                             clearProgress = if (isCurrentRow) clearOf(col) else 0f,
                         )
                     }

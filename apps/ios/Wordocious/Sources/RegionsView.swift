@@ -205,7 +205,7 @@ struct RegionsView: View {
                     board.padding(.horizontal, 6)
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "REGIONS", game: "Starsweep", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?(vm.n) } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     VStack(spacing: 10) {
                         if vm.isDaily { DailyRankBadge(gameMode: .regions) }
@@ -375,7 +375,7 @@ struct RegionsView: View {
             : "\(remaining) star\(remaining == 1 ? "" : "s") left · \(timeText(secs))"
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? "Board cleared" : "Out of mistakes", won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.mistakes)", vm.mistakes == 1 ? "mistake" : "mistakes"),
+            PuzResultLine(won: won, items: [("\(vm.mistakes)", vm.mistakes == 1 ? "mistake" : "mistakes"),
                                                   (puzClock(secs), "time")],
                                 points: points)
                 .accessibilityElement(children: .ignore)

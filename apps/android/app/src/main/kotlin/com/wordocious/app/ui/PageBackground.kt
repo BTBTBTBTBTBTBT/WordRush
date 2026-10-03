@@ -150,6 +150,15 @@ private object Wallpapers {
 }
 
 /**
+ * Perf (2026-10-02 measured audit): decode [res]'s wallpaper into the shared cache off the
+ * main thread (a cold start decoded the 1179 × 2556 Home wallpaper inside the first frame's
+ * composition — the single biggest main-thread slice of the launch).
+ */
+fun preloadWallpaper(context: android.content.Context, @DrawableRes res: Int) {
+    Wallpapers.get(context, res)
+}
+
+/**
  * Android's contrast settings (the reduce-transparency / increase-contrast fallback,
  * §11: gradient only): "High contrast text" and, on Android 14+, a raised system
  * contrast level. Sampled once per composition of the page.

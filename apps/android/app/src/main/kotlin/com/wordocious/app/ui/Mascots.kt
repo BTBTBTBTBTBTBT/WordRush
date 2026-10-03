@@ -253,13 +253,18 @@ private fun Modifier.mascotPop(): Modifier {
 @Composable
 private fun Modifier.mascotWave(): Modifier {
     // A hello sway (−9° … +8°, easing out) for ~1.1 s, then a rest, every 2.4 s.
-    val t = rememberInfiniteTransition(label = "mascotWave")
-    val ms by t.animateFloat(
-        initialValue = 0f, targetValue = 2400f,
-        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
-        label = "t",
-    )
+    // Perf (2026-10-02): animate the 1.1 s sway, then rest WITHOUT frames (the 2.4 s
+    // infinite transition kept asking for a frame through the 1.3 s rest). Same motion.
+    val anim = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            anim.snapTo(0f)
+            anim.animateTo(1100f, tween(1100, easing = LinearEasing))
+            kotlinx.coroutines.delay(1300)
+        }
+    }
     return graphicsLayer {
+        val ms = anim.value
         val sway = if (ms < 1100f) (1f - ms / 1100f) else 0f
         rotationZ = -9f * sway * sin(2.0 * PI * ms / 440.0).toFloat()
         transformOrigin = TransformOrigin(0.5f, 0.95f)

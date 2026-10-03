@@ -217,7 +217,9 @@ internal val GAUNTLET_BAR = Brush.horizontalGradient(listOf(Color(0xFFFFC56B), C
 private fun StageDotsRow(dots: List<GauntletLook.Dot>, done: Int, total: Int) {
     val accent = GAUNTLET_ACCENT
     val still = WTheme.reducedMotion
-    val pulse = if (still) 1f else {
+    // Perf (2026-10-02): a State read only in the dot's graphicsLayer — reading .value here
+    // recomposed the whole dots row every frame the stage card was up.
+    val pulse: androidx.compose.runtime.State<Float> = if (still) remember { androidx.compose.runtime.mutableStateOf(1f) } else {
         val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "stageDot")
         t.animateFloat(
             1f, 1.18f,
@@ -226,7 +228,7 @@ private fun StageDotsRow(dots: List<GauntletLook.Dot>, done: Int, total: Int) {
                 androidx.compose.animation.core.RepeatMode.Reverse,
             ),
             label = "stageDotPulse",
-        ).value
+        )
     }
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
@@ -240,7 +242,7 @@ private fun StageDotsRow(dots: List<GauntletLook.Dot>, done: Int, total: Int) {
                     contentAlignment = Alignment.Center,
                 ) { com.wordocious.app.ui.ResultBadge(true, size = 16.dp) }
                 GauntletLook.Dot.CURRENT -> Box(
-                    Modifier.size(24.dp).graphicsLayer { scaleX = pulse; scaleY = pulse }
+                    Modifier.size(24.dp).graphicsLayer { val p = pulse.value; scaleX = p; scaleY = p }
                         .clip(CircleShape).background(accent.copy(alpha = 0.35f)).border(1.5.dp, accent.copy(alpha = 0.6f), CircleShape),
                 )
                 GauntletLook.Dot.TODO -> Box(

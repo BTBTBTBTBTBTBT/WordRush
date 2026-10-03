@@ -1,10 +1,6 @@
 package com.wordocious.app.ui
 
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -505,15 +501,20 @@ private fun Modifier.bannerGlow(double: Boolean): Modifier = drawBehind {
 internal fun Modifier.bannerShimmer(): Modifier {
     // AQ2: also off while the page scrolls.
     if (ambientMotionPaused()) return this
-    val transition = rememberInfiniteTransition(label = "bannerShimmer")
-    val t by transition.animateFloat(
-        initialValue = 0f, targetValue = 4000f,
-        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Restart),
-        label = "t",
-    )
+    // Perf (2026-10-02 measured audit): animate only the 2.2 s pass, then rest without
+    // frames — the old 4 s infinite transition asked for a frame on every vsync of the
+    // 1.8 s rest too. Same timing on screen.
+    val anim = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            anim.snapTo(0f)
+            anim.animateTo(2200f, tween(2200, easing = LinearEasing))
+            kotlinx.coroutines.delay(1800)
+        }
+    }
     return drawWithContent {
         drawContent()
-        val pass = t / 2200f
+        val pass = anim.value / 2200f
         if (pass >= 1f) return@drawWithContent
         val w = size.width; val h = size.height
         val band = w * 0.38f

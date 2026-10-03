@@ -4,8 +4,6 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties }
 import { headlineTokens, type HeadlineToken } from '@wordle-duel/core';
 import { badgeSrc } from '@/lib/art';
 import { darken, softMix } from '@/lib/soft-surface';
-import { feedback } from '@/lib/sound-events';
-import { prefersReducedMotion } from '@/lib/motion';
 import { HEADLINE_NUMBER, HEADLINE_OUTLINE, HEADLINE_PALETTES, headlineFit, type HeadlinePalette } from '@/lib/live-headline';
 import { scheduleGlossSweep } from '@/lib/gloss-sweep';
 
@@ -64,13 +62,8 @@ export const LiveHeadline = memo(function LiveHeadline({
   const nameKey = (names ?? []).join('\u0001');
   const tokens = useMemo(() => headlineTokens(shown, names ?? []), [shown, nameKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const rootRef = useRef<HTMLSpanElement>(null);
-  const first = useRef(true);
 
-  // A tiny tick when the headline changes (not on first show).
-  useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    if (!calm && !prefersReducedMotion()) feedback('tick');
-  }, [shown, calm]);
+  // BI7: rotating headlines are silent — they change on their own, not on a tap.
 
   // The idle gloss sweep: one short run every ~6 s while on screen (lib/gloss-sweep.ts).
   useEffect(() => {

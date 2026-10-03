@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { LayoutGrid, Target } from 'lucide-react';
 import { Confetti } from './confetti';
 import { Mascot } from '@/components/ui/mascot';
@@ -16,7 +16,7 @@ import { feedback, scheduleFeedback } from '@/lib/sound-events';
 import type { MascotId } from '@/lib/mascots';
 import type { MomentName } from '@/lib/art';
 import { SOFT_INK, alphaHex, darken, softMix } from '@/lib/soft-surface';
-import { answerTileSize, countUpValue, popupFormatTime } from '@/lib/result-popup';
+import { ANSWER_COLUMN_GAP, answerRows, answerTileGap, countUpValue, fitAnswerTile, popupFormatTime } from '@/lib/result-popup';
 import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
 
 // The win / lose popup (docs/FINISH_SPEC.md R1) — ONE component for every
@@ -145,9 +145,24 @@ export function ResultPopup(p: ResultPopupProps) {
   // AZ: the host + lettering are decoded before the spring-in starts.
   const { ref: entranceRef, waiting } = useDecodedEntrance<HTMLDivElement>();
   const words = p.solution ? [p.solution] : p.solutions ?? [];
-  const tile = answerTileSize(words);
   const multi = words.length > 1;
   const cols = words.length > 8 ? 3 : multi ? 2 : 1;
+  // Founder 10-02: the tiles fit the tray's measured width (one row per word
+  // of a phrase answer, per column on the multi-board layouts).
+  const answersRef = useRef<HTMLDivElement>(null);
+  const [answersWidth, setAnswersWidth] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = answersRef.current;
+    if (!el) return;
+    const measure = () => setAnswersWidth((prev) => (prev === el.clientWidth ? prev : el.clientWidth));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const tile = fitAnswerTile(words, answersWidth, cols, multi);
+  const tileGap = answerTileGap(tile);
   const time = p.timeSeconds != null ? popupFormatTime(p.timeSeconds) : null;
   const deep = darken(accent, 0.35);
   // CONTINUE in the game accent (A8 recipe recolored).
@@ -209,22 +224,31 @@ export function ResultPopup(p: ResultPopupProps) {
                     {words.length === 1 ? 'The answer' : 'The answers'}
                   </div>
                 )}
-                <div className="grid justify-center" style={{ gridTemplateColumns: `repeat(${cols}, auto)`, columnGap: 12, rowGap: 6 }} role="list" aria-label={words.map((w) => w.toUpperCase()).join(', ')}>
+                <div ref={answersRef} className="grid justify-center" style={{ gridTemplateColumns: `repeat(${cols}, auto)`, columnGap: ANSWER_COLUMN_GAP, rowGap: 6 }} role="list" aria-label={words.map((w) => w.toUpperCase()).join(', ')}>
                   {words.map((w, wi) => {
                     const solved = win || !!p.solvedMask?.[wi];
+                    // One row per word (no space tiles); the flip runs on across the rows.
+                    let at = 0;
                     return (
                       <div key={wi} className="flex items-center justify-center gap-1" role="listitem" aria-label={w.toUpperCase()}>
-                        <div className="flex" style={{ gap: Math.max(2, Math.round(tile / 10)), ['--gt-font' as string]: `${Math.round(tile * 0.56)}px` } as React.CSSProperties} aria-hidden="true">
-                          {w.toUpperCase().split('').map((ch, i) => (
-                            <LetterTile
-                              key={i}
-                              letter={ch}
-                              look={solved ? 'correct' : 'absent'}
-                              flipIndex={0}
-                              flipSound={false}
-                              pop={false}
-                              style={{ width: tile, height: tile, ['--gt-d' as string]: `${200 + wi * 120 + i * 40}ms` } as React.CSSProperties}
-                            />
+                        <div className="flex flex-col items-center" style={{ rowGap: tileGap, ['--gt-font' as string]: `${Math.round(tile * 0.56)}px` } as React.CSSProperties} aria-hidden="true">
+                          {answerRows(w).map((row, ri) => (
+                            <div key={ri} className="flex" style={{ gap: tileGap }}>
+                              {row.split('').map((ch) => {
+                                const i = at++;
+                                return (
+                                  <LetterTile
+                                    key={i}
+                                    letter={ch}
+                                    look={solved ? 'correct' : 'absent'}
+                                    flipIndex={0}
+                                    flipSound={false}
+                                    pop={false}
+                                    style={{ width: tile, height: tile, flex: 'none', ['--gt-d' as string]: `${200 + wi * 120 + i * 40}ms` } as React.CSSProperties}
+                                  />
+                                );
+                              })}
+                            </div>
                           ))}
                         </div>
                         {multi && solved && <Icon3D name="badge-check" size={Math.max(12, Math.round(tile * 0.6))} />}

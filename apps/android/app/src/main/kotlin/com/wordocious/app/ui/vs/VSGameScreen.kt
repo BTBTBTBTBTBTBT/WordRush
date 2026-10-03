@@ -487,7 +487,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     val revealKey = remember(state) { state.boards.sumOf { it.guesses.size } }
     val newestRows = remember(state) { com.wordocious.app.ui.game.KeyReveal.newestRows(state.boards, isSequential) }
     val revealWidth = newestRows.maxOfOrNull { it.size } ?: 0
-    val letterStates = com.wordocious.app.ui.game.rememberTileByTile(letterStatesNow, revealWidth, revealKey, reducedKeys) { base, n ->
+    val letterStates = com.wordocious.app.ui.game.rememberTileByTile(letterStatesNow, revealWidth, revealKey, reducedKeys, mini = multiBoard) { base, n ->
         com.wordocious.app.ui.game.KeyReveal.during(base, letterStatesNow, newestRows, n)
     }
     val perBoardStates = perBoardNow?.let { now ->
@@ -495,7 +495,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             val newest = state.boards.maxOfOrNull { it.guesses.size } ?: 0
             state.boards.map { b -> if (newest > 0 && b.guesses.size == newest) com.wordocious.app.ui.game.KeyReveal.newestRows(listOf(b), false) else emptyList() }
         }
-        com.wordocious.app.ui.game.rememberTileByTile(now, revealWidth, revealKey, reducedKeys) { base, n ->
+        com.wordocious.app.ui.game.rememberTileByTile(now, revealWidth, revealKey, reducedKeys, mini = multiBoard) { base, n ->
             now.mapIndexed { i, target -> com.wordocious.app.ui.game.KeyReveal.during(base.getOrElse(i) { emptyMap() }, target, boardRows.getOrElse(i) { emptyList() }, n) }
         }
     }

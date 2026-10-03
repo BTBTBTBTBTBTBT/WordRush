@@ -274,7 +274,7 @@ struct CodebreakerView: View {
                     }
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "CRYPTOGRAM", game: "Codebreaker", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     VStack(spacing: 10) {
                         // §A1: the decoded saying on a tinted card.
@@ -434,7 +434,7 @@ struct CodebreakerView: View {
         let won = vm.state.status == .won
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? (vm.state.checks == 0 ? "Code cracked clean" : "Code cracked") : "Answer revealed", won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
+            PuzResultLine(won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
                                                   (puzClock(vm.elapsed), "time")],
                                 points: vm.points)
         }

@@ -224,6 +224,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                     letter={letter.toUpperCase()}
                     look={tileLook(tileState, letter)}
                     flipIndex={isLastSubmitted ? letterIndex : undefined}
+                    mini
                     hopIndex={winRow ? letterIndex : undefined}
                     bad={shakeRow && letter !== ''}
                     outIndex={4 - letterIndex}

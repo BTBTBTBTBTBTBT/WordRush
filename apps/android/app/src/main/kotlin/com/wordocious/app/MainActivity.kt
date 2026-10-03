@@ -103,6 +103,14 @@ class MainActivity : ComponentActivity() {
                 runCatching { com.wordocious.app.ui.ColdStart.preload(applicationContext) }
                 ready.set(true)
             }
+            // Perf (2026-10-02 measured audit): the Home wallpaper (1179 × 2556) was decoded
+            // inside the first frame's composition on the main thread; decode it in parallel
+            // with the intro figures so composition finds it cached.
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                runCatching {
+                    com.wordocious.app.ui.preloadWallpaper(applicationContext, com.wordocious.app.R.drawable.art_wall_home)
+                }
+            }
             // The decor view (never null; the content frame can be on some devices — see below).
             val content: android.view.View = window.decorView
             content.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {

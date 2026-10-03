@@ -271,7 +271,7 @@ struct KindredView: View {
                     }
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "GROUPS", game: "Kindred", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     result
                 }
@@ -422,7 +422,7 @@ struct KindredView: View {
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? (vm.state.mistakes == 0 ? "Flawless — all four groups" : "All four groups found") : "Out of mistakes",
                                 won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.mistakes)", vm.state.mistakes == 1 ? "mistake" : "mistakes"),
+            PuzResultLine(won: won, items: [("\(vm.state.mistakes)", vm.state.mistakes == 1 ? "mistake" : "mistakes"),
                                                   (puzClock(vm.elapsed), "time")],
                                 points: vm.points)
         }

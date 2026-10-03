@@ -490,7 +490,7 @@ struct HubView: View {
             VStack(spacing: 6) {
                 header
                 PuzFinishedHeadline(text: won ? (s.rank == 9 ? "Pandemonium — every word" : s.rankName) : "\(s.rankName) — below Hubbub", won: won)
-                PuzResultLine(onShare: { share() }, won: won, items: [("\(s.found.count)/\(s.words.count)", "words"), (puzClock(secs), "time")],
+                PuzResultLine(won: won, items: [("\(s.found.count)/\(s.words.count)", "words"), (puzClock(secs), "time")],
                                     points: vm.points)
                 rankBar
             }
@@ -514,7 +514,7 @@ struct HubView: View {
         } dock: {
             PuzFinishedDock(isDaily: vm.isDaily, currentMode: "HUB", game: "Hubbub", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
                             onOtherGames: { dismiss() },
-                            keepGoing: s.ended ? nil : { vm.setResults(false) })
+                            keepGoing: s.ended ? nil : { vm.setResults(false) }, onShare: { _ in share() })
         } extras: {
             VStack(spacing: 10) {
                 Text("\(s.points)/\(s.max) pts · \(s.found.count)/\(s.words.count) words · \(vm.pangramsFound)/\(s.pangrams.count) pangram\(s.pangrams.count == 1 ? "" : "s") · \(timeText(secs))\(s.hintsUsed > 0 ? " · \(s.hintsUsed) hint\(s.hintsUsed == 1 ? "" : "s")" : "")")

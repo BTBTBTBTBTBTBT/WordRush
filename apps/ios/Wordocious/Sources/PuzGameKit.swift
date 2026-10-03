@@ -256,8 +256,8 @@ struct PuzPaletteTile: View {
 /// `FinishedScreenLayout`): an optional "Keep going" (Hubbub before the end), the
 /// daily CTAs (`NextDailyCTA`: Next daily + Leaderboard + the §R3 Unlimited card),
 /// and — after a Pro UNLIMITED game — the §R3 Unlimited card with NEW PUZZLE as the
-/// primary action. The share icon rides the result line (`PuzResultLine`) so the
-/// dock's candies keep the full width.
+/// primary action. Founder 10-02: the centered SHARE RESULTS candy (+ the daily
+/// "Next <Game> in …" line) leads the dock.
 struct PuzFinishedDock: View {
     let isDaily: Bool
     /// The game's dbKey (NextDailyCTA's `currentMode`).
@@ -270,8 +270,19 @@ struct PuzFinishedDock: View {
     var keepGoing: (() -> Void)? = nil
     /// ProperNoundle in VS never shows the daily CTAs.
     var showNextDaily: Bool = true
+    /// Founder 10-02: the game's share — the dock's centered SHARE RESULTS candy
+    /// (it used to float as an icon beside the result line). Bool = full results.
+    var onShare: ((Bool) -> Void)? = nil
+    /// The share has a spoiler-free / full-results chooser.
+    var hasSpoilers: Bool = false
 
     var body: some View {
+        // Founder 10-02 follow-up: the SHARE RESULTS candy (+ "Next <Game> in 3h 12m" inside
+        // it on a daily, not in VS) rides an existing action row — never a row of its own
+        // when the dock has one.
+        let shareCTA = onShare.map { AnyView(FinishedShareCTA(hasSpoilers: hasSpoilers, nextGame: isDaily && showNextDaily ? game : nil, onShare: $0)) }
+        let daily = isDaily && showNextDaily
+        let card = !isDaily ? onNewPuzzle : nil
         VStack(spacing: 8) {
             if let keepGoing {
                 Button(action: keepGoing) { CandyLabel(title: "Keep going", symbol: "arrow.uturn.left") }
@@ -279,36 +290,28 @@ struct PuzFinishedDock: View {
             }
             // Dailies: Next daily + Leaderboard + the §R3 Unlimited card (NextDailyCTA
             // renders the card for every signed-in player; free ones get the paywall).
-            if isDaily && showNextDaily { NextDailyCTA(currentMode: currentMode, compact: true) }
-            if !isDaily, let onNewPuzzle {
-                UnlimitedKeepPlayingCard(game: game, afterUnlimited: true, action: onNewPuzzle, onOtherGames: onOtherGames)
+            if daily { NextDailyCTA(currentMode: currentMode, compact: true, share: shareCTA) }
+            if let card {
+                UnlimitedKeepPlayingCard(game: game, afterUnlimited: true, action: card, onOtherGames: onOtherGames, share: shareCTA)
             }
+            if !daily && card == nil, let shareCTA { shareCTA }
         }
         .padding(.bottom, 6)
     }
 }
 
-/// §R2: the compact one-line result strip with the bare 3D share icon at its end.
+/// §R2: the compact one-line result strip, centered on the screen. Founder 10-02:
+/// the share icon that floated at its end moved into the dock (`PuzFinishedDock`'s
+/// SHARE RESULTS candy), so nothing pulls the strip off-center.
 struct PuzResultLine: View {
-    let onShare: () -> Void
     let won: Bool
     let items: [(value: String, label: String)]
     var points: Int? = nil
 
     var body: some View {
-        // §AT1: the strip centered on the screen; share pinned to the trailing edge.
-        CenteredWithTrailing {
-            FinishedResultStrip(won: won, items: items, points: points)
-        } trailing: {
-            Button(action: onShare) {
-                Icon3D(.share, size: 28)
-                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.2), radius: 2.5, x: 0, y: 3)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.squishIcon)
-            .accessibilityLabel("Share")
-        }
+        FinishedResultStrip(won: won, items: items, points: points)
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity)
     }
 }
 

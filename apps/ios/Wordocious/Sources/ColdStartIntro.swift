@@ -58,7 +58,8 @@ enum LaunchGate {
         if isOpen { return }
         if !armed {
             armed = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { open() }
+            // The intro can hold up to 1.5 s on the launch color before its 1.55 s run.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) { open() }
         }
         await withCheckedContinuation { waiters.append($0) }
     }
@@ -99,6 +100,46 @@ enum IntroArt {
     }
 }
 
+/// Perf audit (founder: "the load in intro graphic is not smooth"): waits until the
+/// main thread is steady — 8 frames in a row on time, i.e. the page under the intro
+/// has finished its first build and render — or `cap` seconds, whichever is first.
+@MainActor
+final class IntroSettle: NSObject {
+    private var cont: CheckedContinuation<Void, Never>?
+    private var link: CADisplayLink?
+    private var last: CFTimeInterval = 0
+    private var run = 0
+    private var deadline: CFTimeInterval = 0
+
+    static func wait(cap: Double) async {
+        let settle = IntroSettle()
+        await withCheckedContinuation { c in settle.start(c, cap: cap) }
+    }
+
+    private func start(_ c: CheckedContinuation<Void, Never>, cap: Double) {
+        cont = c
+        deadline = CACurrentMediaTime() + cap
+        let l = CADisplayLink(target: self, selector: #selector(tick(_:)))
+        l.add(to: .main, forMode: .common)
+        link = l
+    }
+
+    @objc private func tick(_ l: CADisplayLink) {
+        let t = l.timestamp
+        let frame = max(1.0 / 120, l.targetTimestamp - l.timestamp)
+        if last > 0 { run = (t - last) <= frame * 1.5 ? run + 1 : 0 }
+        last = t
+        if run >= 8 || CACurrentMediaTime() >= deadline { finish() }
+    }
+
+    private func finish() {
+        link?.invalidate()
+        link = nil
+        cont?.resume()
+        cont = nil
+    }
+}
+
 /// FINISH_SPEC §F2 fix (founder, iOS 234: "there are two of them and the one that
 /// animates whips off the screen while the duplicate stays in place"): the hand-off
 /// between the cold-start intro and the REAL Home header cast row.
@@ -124,7 +165,7 @@ final class CastHandoff: ObservableObject {
 
     private init() {
         // Fail-safe: never leave the real row hidden (the intro is ≤ 1.6 s).
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
             guard let self, self.introRunning else { return }
             self.introRunning = false
         }
@@ -205,6 +246,10 @@ private struct ColdStartIntro: View {
             // §AU5: decode first (≤ 300 ms on the launch color); §AQ3: the clock
             // starts on the first intro frame, so a busy launch never skips ahead.
             await IntroArt.prepare(timeout: 0.3)
+            // Perf audit: hold the opening pose (the launch color) until the page
+            // underneath has built and frames are steady, so Home's first build never
+            // lands mid-animation (it caused 400-600 ms stalls inside the intro).
+            await IntroSettle.wait(cap: 1.2)
             start = Date()
             ready = true
             if still {
@@ -312,7 +357,8 @@ private struct ColdStartIntro: View {
             // The other nine pop in, 60 ms apart, with a spring.
             let start = 0.42 + Double(i - 1) * 0.06
             let p = (t - start) / 0.3
-            let pop = p <= 0 ? CastPose(sx: 0, sy: 0)
+            // Perf audit: never a zero (singular) scale — SwiftUI logs a warning per frame per figure.
+            let pop = p <= 0 ? CastPose(sx: 0.2, sy: 0.2)
                 : Keyframes.sample([(0, CastPose(sx: 0.2, sy: 0.2)), (0.6, CastPose(sx: 1.12, sy: 1.12)), (1, .identity)],
                                    at: min(1, p), easing: CubicBezier(0.3, 1.4, 0.5, 1))
             // §AU5: transforms + opacity only — a fixed frame, scaled and moved.

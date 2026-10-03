@@ -213,7 +213,7 @@ struct LadderView: View {
                     finishedLadder(size)
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "LADDER", game: "Letter Ladder", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     result
                 }
@@ -317,7 +317,7 @@ struct LadderView: View {
         let gc = vm.state.guessCount
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? (gc == 1 ? "Ladder climbed on par" : "Ladder climbed") : "Out of moves", won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.moves)", vm.state.moves == 1 ? "move" : "moves"),
+            PuzResultLine(won: won, items: [("\(vm.state.moves)", vm.state.moves == 1 ? "move" : "moves"),
                                                   (puzClock(vm.elapsed), "time")],
                                 points: vm.points)
         }

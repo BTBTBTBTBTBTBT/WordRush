@@ -198,7 +198,7 @@ struct SpyglassView: View {
                     SpyglassGridView(vm: vm, revealMissing: vm.state.status == .lost, tray: true).padding(.horizontal, 6)
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "WORDSEARCH", game: "Spyglass", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     VStack(spacing: 10) { wordChips; result }.padding(.top, 8)
                 }
@@ -344,7 +344,7 @@ struct SpyglassView: View {
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? (s.guessCount == 10 ? "Clean clear" : (s.wordsShown ? "Cleared with the list" : "Grid cleared")) : "Revealed",
                                 won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(s.found.count)/\(s.words.count)", "found"),
+            PuzResultLine(won: won, items: [("\(s.found.count)/\(s.words.count)", "found"),
                                                   (puzClock(vm.elapsed), "time")],
                                 points: vm.points)
         }

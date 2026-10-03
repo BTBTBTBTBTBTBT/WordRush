@@ -450,7 +450,7 @@ final class GameViewModel: ObservableObject {
             // §U: a board solved mid-game (multi-board, not the finish) — notify @0.7 ·
             // light once its row has flipped. The finish plays `win` at the popup.
             if isMultiBoard, state.status == .playing, state.boards.filter({ $0.status == .won }).count > wonBefore {
-                let wait = Theme.reduceMotion ? 0 : TileMotion.rowReveal(columns: wordLength)
+                let wait = Theme.reduceMotion ? 0 : TileMotion.rowReveal(columns: wordLength, mini: true)
                 DispatchQueue.main.asyncAfter(deadline: .now() + wait) { Feedback.found() }
             }
             if !isVersus { persistence.save(state) }

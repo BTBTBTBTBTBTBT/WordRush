@@ -116,4 +116,22 @@ class WinPopupTest {
         assertTrue(top != 0xFFFFFFFF.toInt())
         assertTrue(((top shr 16) and 0xFF) < 0xFF)
     }
+
+    @Test fun multiWordAnswersSplitIntoOneRowPerWord() {
+        assertEquals(listOf("HUBBLE", "SPACE", "TELESCOPE"), WinPopupMath.answerLines("HUBBLE SPACE  TELESCOPE"))
+        assertEquals(listOf("CRANE"), WinPopupMath.answerLines("CRANE"))
+    }
+
+    @Test fun answerTilesAlwaysFitTheCardWidth() {
+        // A roomy card keeps the default size.
+        assertEquals(22f, WinPopupMath.answerTileFit(22f, 300f, 9, 2f), 0.001f)
+        // A narrow card shrinks the tiles so the longest row fits exactly.
+        val t = WinPopupMath.answerTileFit(26f, 200f, 9, 2f)
+        assertTrue(t * 9 + 2f * 8 <= 200f + 0.001f)
+        // Never below the 12 dp floor while the floor fits …
+        assertEquals(12f, WinPopupMath.answerTileFit(26f, 158f, 10, 2f, badge = 20f), 0.001f)
+        // … and below it only when even 12 dp would overflow.
+        val tiny = WinPopupMath.answerTileFit(26f, 150f, 20, 2f)
+        assertTrue(tiny * 20 + 2f * 19 <= 150f + 0.001f)
+    }
 }

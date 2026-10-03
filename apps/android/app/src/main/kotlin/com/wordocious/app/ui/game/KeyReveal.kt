@@ -73,6 +73,7 @@ object KeyReveal {
  * AQ1 shows [target] tile by tile: when [revealKey] changes (a row committed), the value
  * steps through [partial] (base, n landed) as each of the row's [width] tiles lands, then
  * settles on [target]. Any other change of [target] (or Reduce Motion) shows at once.
+ * BI5: [mini] = the multi-board pacing (the keys follow the board's own clock).
  */
 @Composable
 internal fun <T> rememberTileByTile(
@@ -80,6 +81,7 @@ internal fun <T> rememberTileByTile(
     width: Int,
     revealKey: Int,
     reduced: Boolean,
+    mini: Boolean = false,
     partial: (base: T, landed: Int) -> T,
 ): T {
     var shown by remember { mutableStateOf(target) }
@@ -94,7 +96,7 @@ internal fun <T> rememberTileByTile(
         if (!fresh || reduced || width <= 0) { shown = target; return@LaunchedEffect }
         shown = base // a reveal cut short by this one has already snapped into `base`
         for (i in 0 until width) {
-            delay((if (i == 0) TileMotion.tileLandsMs(0) else TileMotion.FLIP_STAGGER_MS).toLong())
+            delay((if (i == 0) TileMotion.tileLandsMs(0, mini) else TileMotion.staggerMs(mini)).toLong())
             shown = partial(base, i + 1)
         }
         shown = target

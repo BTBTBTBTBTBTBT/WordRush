@@ -237,7 +237,9 @@ struct GauntletResultsView: View {
         // answer) scaled to the height left; then the dock (share + the amber
         // candy + Next daily / Unlimited). Rank, breakdown and the stage list
         // sit below the dock.
-        FinishedScreenLayout(minBoardHeight: 110, header: {
+        // Founder 10-02: the hero is capped so the whole block (title → More) sits
+        // centered on one screen instead of the art eating the page.
+        FinishedScreenLayout(minBoardHeight: 110, maxBoardHeight: FinishLayoutMetrics.isShort ? 190 : 260, header: {
             VStack(spacing: 8) {
                 title
                 FinishedResultStrip(won: won, items: [("\(cleared)/\(progress.totalStages)", "stages"),
@@ -307,28 +309,24 @@ struct GauntletResultsView: View {
                     tint: won ? 0.14 : 0.08, line: won ? 0.34 : 0.26)
     }
 
-    /// B6: the 3D share icon + the large amber candy ("Play again tomorrow" / Home);
-    /// on the live daily finish, Next daily / Leaderboard (+ the Pro Unlimited card)
-    /// below; after an Unlimited run (Pro), the KEEP PLAYING card.
+    /// Founder 10-02: the centered SHARE RESULTS candy (it replaced the dead-end
+    /// "Play again tomorrow" + the side-floating share icon) with, on a daily, the
+    /// live "Next Gauntlet in 3h 12m" line; on the live daily finish, Next daily /
+    /// Leaderboard (+ the Pro Unlimited card) below; after an Unlimited run (Pro),
+    /// the KEEP PLAYING card. The corner Home control is the way home.
     private var dock: some View {
         let nextDaily = isDaily && showNextDaily
+        // Founder 10-02 follow-up: share rides the Next daily / Unlimited card row.
+        let shareCTA = AnyView(FinishedShareCTA(hasSpoilers: false, nextGame: isDaily ? "Gauntlet" : nil, onShare: { _ in onShare() }))
         return VStack(spacing: 6) {
-            // §AT1: the candy centered on the screen; share pinned trailing.
-            CenteredWithTrailing {
-                Button(action: onHome) {
-                    CandyLabel(title: isDaily ? "Play again tomorrow" : "Home") { Icon3D(.tabHome, size: 20) }
-                }
-                .buttonStyle(CandyButtonStyle(variant: nextDaily ? .peach : .amber, size: nextDaily ? .medium : .large))
-                .accessibilityLabel(isDaily ? "Play again tomorrow. Home" : "Home")
-            } trailing: {
-                FinishedShareButton(hasSpoilers: false, size: 30, onShare: { _ in onShare() })
-            }
             if nextDaily {
-                NextDailyCTA(currentMode: "GAUNTLET", compact: true)
+                NextDailyCTA(currentMode: "GAUNTLET", compact: true, share: shareCTA)
             }
             if let onPlayAgain {
-                UnlimitedKeepPlayingCard(game: "Gauntlet", afterUnlimited: true, action: onPlayAgain, onOtherGames: onHome)
+                UnlimitedKeepPlayingCard(game: "Gauntlet", afterUnlimited: true, action: onPlayAgain, onOtherGames: onHome,
+                                         share: nextDaily ? nil : shareCTA)
             }
+            if !nextDaily && onPlayAgain == nil { shareCTA }
         }
         .padding(.bottom, 6)
     }

@@ -350,10 +350,45 @@ struct OutlinedSymbol: View {
 struct CandyLabel<Icon: View>: View {
     let title: String
     var symbol: String? = nil
+    /// Founder 10-02: an optional small second line under the title (the share candy's
+    /// "Next Classic in 3h 12m"), inside the button's own height — never a taller button.
+    var subtitle: String? = nil
     @ViewBuilder var icon: () -> Icon
     @Environment(\.candyInk) private var ink
 
     var body: some View {
+        if let subtitle {
+            HStack(spacing: 6) {
+                icon()
+                VStack(spacing: 1) {
+                    titleText(size: ink.size - 2)
+                    if ink.quiet {
+                        Text(subtitle).font(Brand.font(10, .heavy)).foregroundStyle(FinishInk.softNumber)
+                            .lineLimit(1).minimumScaleFactor(0.75)
+                    } else {
+                        OutlinedText(text: subtitle, size: 10, width: 1)
+                            .minimumScaleFactor(0.75)
+                    }
+                }
+            }
+        } else {
+            oneLine
+        }
+    }
+
+    @ViewBuilder private func titleText(size: CGFloat) -> some View {
+        if ink.quiet {
+            Text(title.uppercased()).font(Brand.font(size, .black)).foregroundStyle(FinishInk.softNumber)
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .accessibilityLabel(title)
+        } else {
+            OutlinedText(text: title.uppercased(), size: size, width: size < 14 ? 1.25 : 1.75)
+                .minimumScaleFactor(0.7)
+                .accessibilityLabel(title)
+        }
+    }
+
+    private var oneLine: some View {
         HStack(spacing: 8) {
             if let symbol {
                 if ink.quiet {
@@ -533,6 +568,12 @@ enum GlossyFace: Equatable {
     case hintUsed
     /// Not a word: the typed tile with a red ring and red letters.
     case bad
+    /// FINISH_SPEC BI6 Sudocious: every other cell holding the selected digit — a
+    /// medium lavender face with a deep purple digit (secondary to the selected cell).
+    case sudokuSame
+    /// BI6: a given / an empty cell in the selected cell's row, column or box — a pale
+    /// lavender tint, lighter than `sudokuSame`.
+    case sudokuWashGiven, sudokuWashEmpty
 }
 
 /// The palette for one colored state: light (gradient top), base (70%), bottom,
@@ -679,6 +720,19 @@ struct GlossyTile: View {
         case .given:
             return Style(edge: AnyShapeStyle(Color(hex: 0xD8C8F3)), face: AnyShapeStyle(Color(hex: 0xFBF8FF)),
                          ring: Color(hex: 0x7C3AED).opacity(0.14), ringWidth: 0.025, ink: FinishInk.title, letterShadow: .clear)
+        case .sudokuSame:
+            return Style(edge: AnyShapeStyle(Color(hex: 0x9F7AEA)), face: AnyShapeStyle(Color(hex: 0xC4A6F7)),
+                         ring: Color(hex: 0x7C3AED).opacity(0.55), ringWidth: 0.04, gloss: 0.4,
+                         ink: Color(hex: 0x3B0F8C), letterShadow: .clear)
+        case .sudokuWashGiven:
+            return Style(edge: AnyShapeStyle(Color(hex: 0xC9B0F3)), face: AnyShapeStyle(Color(hex: 0xEADFFF)),
+                         ring: Color(hex: 0x7C3AED).opacity(0.18), ringWidth: 0.025, gloss: 0.4, ink: FinishInk.title, letterShadow: .clear)
+        case .sudokuWashEmpty:
+            return dark
+                ? Style(edge: AnyShapeStyle(Color(hex: 0xA78BFA).opacity(0.5)), face: AnyShapeStyle(Color(hex: 0xA78BFA).opacity(0.30)),
+                        ring: Color(hex: 0xA78BFA).opacity(0.4), gloss: 0.12, ink: Theme.textMuted, letterShadow: .clear)
+                : Style(edge: AnyShapeStyle(Color(hex: 0xC9B0F3)), face: AnyShapeStyle(Color(hex: 0xEADFFF)),
+                        ring: Color(hex: 0x7C3AED).opacity(0.18), gloss: 0.35, ink: Color(hex: 0x8A78AD), letterShadow: .clear)
         }
     }
 
@@ -713,14 +767,21 @@ extension GlossyFace {
 // MARK: - §B3 The motion kit
 
 /// The game kit's timings (game-kit.html motion table), shared by every board.
-/// FINISH_SPEC §AQ1: the reveal clock lives in core `RevealTiming` (unit tested) —
-/// ≤ 220 ms flips, ≤ 70 ms apart, a shorter hop, the popup within 1.2 s.
+/// FINISH_SPEC §AQ1 / §BI5: the reveal clock lives in core `RevealTiming` (unit
+/// tested) — the pre-overhaul pacing: 0.5 s flips, 150 ms apart on a single board;
+/// 0.3 s, 80 ms apart on a multi-board (mini) board.
 enum TileMotion {
     /// Type a letter / place a number: a quick soft spring (never blocks typing).
     static let pop: Double = 0.22
-    /// Reveal: each tile turns over in 220 ms, 70 ms apart, color swaps at the half.
+    /// Reveal (single board): each tile turns over in 0.5 s, 150 ms apart, color
+    /// swaps at the half.
     static let flip: Double = RevealTiming.flip
     static let flipStagger: Double = RevealTiming.flipStagger
+    /// Reveal (multi-board mini boards): 0.3 s, 80 ms apart.
+    static let miniFlip: Double = RevealTiming.miniFlip
+    static let miniFlipStagger: Double = RevealTiming.miniFlipStagger
+    static func flipDuration(mini: Bool) -> Double { RevealTiming.flipDuration(mini: mini) }
+    static func stagger(mini: Bool) -> Double { RevealTiming.stagger(mini: mini) }
     /// The soft color glow after landing.
     static let bloom: Double = RevealTiming.bloom
     /// Not a word (web REVEAL parity): the 360 ms row nudge, the 700 ms red hold,
@@ -739,8 +800,8 @@ enum TileMotion {
     static let hintPulse: Double = 0.9
 
     /// How long a `columns`-wide row takes to finish revealing.
-    static func rowReveal(columns: Int) -> Double {
-        RevealTiming.rowReveal(columns: columns)
+    static func rowReveal(columns: Int, mini: Bool = false) -> Double {
+        RevealTiming.rowReveal(columns: columns, mini: mini)
     }
 
     static let popFrames: [(Double, CastPose)] = [

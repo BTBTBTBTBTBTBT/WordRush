@@ -52,13 +52,15 @@ struct SolvedPuzzleView: View {
                         guessCount: d.guessCount, maxGuesses: maxGuesses,
                         timeSeconds: d.timeSeconds,
                         boardsSolved: d.won ? d.solutions.count : solvedCount(d),
-                        totalBoards: d.solutions.count, points: points(d),
-                        onShare: { reveal in share(reveal: reveal) })
+                        totalBoards: d.solutions.count, points: points(d))
                 }, board: { size in
                     boards(d, size: size)
                 }, dock: {
-                    // §AT1: share rides the strip; the dock centers on the full width.
-                    NextDailyCTA(currentMode: mode.rawValue, compact: true)
+                    // Founder 10-02: the SHARE RESULTS candy (+ "Next <Game> in …" inside it)
+                    // rides the dock's action row (no share icon floating beside the strip).
+                    NextDailyCTA(currentMode: mode.rawValue, compact: true,
+                                 share: AnyView(FinishedShareCTA(nextGame: FinishedShareCTA.gameName(mode),
+                                                                 onShare: { reveal in share(reveal: reveal) })))
                         .padding(.bottom, 6)
                 }, extras: {
                     VStack(spacing: 10) {

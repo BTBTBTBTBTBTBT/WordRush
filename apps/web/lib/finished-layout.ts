@@ -19,6 +19,18 @@ export function unlimitedHref(dbKey: string, routes: Record<string, string>): st
   return r ? r.split('?')[0] : null;
 }
 
+/**
+ * The share CTA's countdown line (founder 10-02): the time until the next
+ * daily as "3h 12m" (≥ 1 h) or "12m" (< 1 h), never under "1m".
+ */
+export function formatNextDailyIn(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h >= 1) return `${h}h ${m}m`;
+  return `${Math.max(1, m)}m`;
+}
+
 /** The smallest phone the finished screen must fit without scrolling (iPhone SE, CSS px). */
 export const MIN_PHONE_HEIGHT = 667;
 
@@ -45,7 +57,11 @@ export const FINISHED_CHROME = {
   /** The daily rank badge line under the strip. */
   sub: 26,
   boardTop: 6,
-  /** The dock: pt-2 + candy row 40 + gap 8 + the Unlimited card (82 from 740 tall / a 48 row from 700 / BA1: a 38 px chip line under 700) + pb 6. */
+  /**
+   * The dock: pt-2 + the ONE 40 px candy row + gap 8 + the Unlimited card (82 from 740 tall / a 48 row from 700 /
+   * BA1: a 38 px chip line under 700) + pb 6. Founder 10-02: "Share results" sits IN that row (beside Next daily /
+   * Leaderboard) and the "Next <Game> in …" countdown rides inside it, so neither costs board room.
+   */
   dockFixed: 62, unlimitedTall: 82, unlimitedShort: 48, unlimitedFrom: 740, unlimitedChipBelow: 700, unlimitedChip: 38,
   morePeek: 42,
   sidePad: 24,

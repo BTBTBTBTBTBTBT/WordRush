@@ -265,14 +265,9 @@ fun PostGameScreen(
                                 color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                             )
                         }
-                        pnRevealedClue?.let {
-                            Text(
-                                it, color = WTheme.textSecondary, fontSize = 12.sp,
-                                fontStyle = FontStyle.Italic, fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center, maxLines = 3,
-                                modifier = Modifier.padding(horizontal = 20.dp),
-                            )
-                        }
+                        // Founder 10-02: the redacted clue no longer repeats in the FINISHED
+                        // header (it collided with the XP toast); the full clue is in "More"
+                        // (PnMoreDetails). [pnRevealedClue] stays for the caller's signature.
                     }
                 } else {
                     // B6 / B4: the game's title art under the controls row.

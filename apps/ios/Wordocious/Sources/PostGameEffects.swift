@@ -166,7 +166,9 @@ struct VictoryOverlay: View {
                 VStack(spacing: 12) {
                     hostStage
                     lettering
-                    if !answers.isEmpty { answerTray }
+                    // The tray's inner width: the card (≤ 400 less its 22-pt margins)
+                    // less the card's 20-pt and the tray's 10-pt padding each side.
+                    if !answers.isEmpty { answerTray(width: min(geo.size.width, 400) - 104) }
                     if let sol = solution, showDefinition { DefinitionCard(solution: sol, showWord: false) }
                     statChips
                     if let onPlayAgain {
@@ -317,13 +319,27 @@ struct VictoryOverlay: View {
     /// §R1: the answers on small glossy tiles in a tinted inner tray (no border),
     /// one word per row (multi-board: two columns, each with a check badge),
     /// flipping in left → right 40 ms apart. A loss shows them on slate with a label.
-    private var answerTray: some View {
+    /// Founder 10-02: a phrase answer ("HUBBLE SPACE TELESCOPE") breaks into one row
+    /// per word, and the tiles shrink (to a 12-pt floor) so the longest word always
+    /// fits the tray — they used to run off both edges of the card.
+    private func answerTray(width: CGFloat) -> some View {
         let multi = answers.count > 1
-        let tile: CGFloat = answers.count > 4 ? 17 : (multi ? 22 : 28)
+        let base: CGFloat = answers.count > 4 ? 17 : (multi ? 22 : 28)
+        let rows = answers.map { FinishCloseScreen.answerRows($0.uppercased()) }
+        let longest = rows.flatMap { $0 }.map(\.count).max() ?? 1
+        let colWidth = multi ? (width - 8) / 2 : width
+        let badge: CGFloat = multi && won ? base * 0.8 + 3 : 0
+        let tile = CGFloat(FinishCloseScreen.fitTile(letters: longest, width: Double(max(0, colWidth)), gap: 3,
+                                                     extra: Double(badge), maxTile: Double(base)))
         let face: GlossyFace = won ? .correct : .absent
-        var offsets: [Int] = []
+        // Each word row's first letter index across all the answers (the flip stagger).
+        var starts: [[Int]] = []
         var acc = 0
-        for w in answers { offsets.append(acc); acc += w.count }
+        for words in rows {
+            var row: [Int] = []
+            for w in words { row.append(acc); acc += w.count }
+            starts.append(row)
+        }
         return VStack(spacing: 6) {
             if !won {
                 Text(answers.count > 1 ? "THE ANSWERS" : "THE ANSWER")
@@ -332,10 +348,16 @@ struct VictoryOverlay: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: multi ? 2 : 1), spacing: 6) {
                 ForEach(answers.indices, id: \.self) { i in
                     HStack(spacing: 3) {
-                        ForEach(Array(answers[i].uppercased().enumerated()), id: \.offset) { j, ch in
-                            GlossyTile(face: face, letter: String(ch), width: tile)
-                                .rotation3DEffect(.degrees(tilesIn ? 0 : 90), axis: (x: 1, y: 0, z: 0))
-                                .animation(still ? nil : .easeOut(duration: 0.3).delay(Double(offsets[i] + j) * 0.04), value: tilesIn)
+                        VStack(spacing: 4) {
+                            ForEach(rows[i].indices, id: \.self) { r in
+                                HStack(spacing: 3) {
+                                    ForEach(Array(rows[i][r].enumerated()), id: \.offset) { j, ch in
+                                        GlossyTile(face: face, letter: String(ch), width: tile)
+                                            .rotation3DEffect(.degrees(tilesIn ? 0 : 90), axis: (x: 1, y: 0, z: 0))
+                                            .animation(still ? nil : .easeOut(duration: 0.3).delay(Double(starts[i][r] + j) * 0.04), value: tilesIn)
+                                    }
+                                }
+                            }
                         }
                         if multi && won { Icon3D(.badgeCheck, size: tile * 0.8, label: "Solved") }
                     }

@@ -186,6 +186,9 @@ struct LivingCastHeader: View {
     @AppStorage(CastSkin.debugKey) private var debugSeason = ""
     /// FINISH_SPEC §AA1: the crown's "You're Pro" sheet.
     @State private var showProSheet = false
+    /// Perf audit: the row is on screen (its tab is selected). Off-screen tabs and the
+    /// pages under a game cover rest their personality moves (60 fps row redraws).
+    @State private var onScreen = false
 
     private struct ActiveMove: Equatable {
         let id: MascotID
@@ -229,6 +232,9 @@ struct LivingCastHeader: View {
         let s = Self.figure
         TimelineView(.animation(minimumInterval: 1 / 60, paused: (active == nil && handoff.flourishStart == nil) || still)) { ctx in
             row(s, now: ctx.date)
+                // Perf audit: ONE soft shadow pass for the row (was one offscreen pass per figure).
+                .compositingGroup()
+                .shadow(color: Color(hex: 0x3C1E6E).opacity(0.18), radius: 2, x: 0, y: 3)
         }
         // §F2 fix step 1: hidden (still laid out) while the intro runs; shown in the
         // same frame the intro row is removed.
@@ -259,6 +265,8 @@ struct LivingCastHeader: View {
         .modifier(ProCrownAccessibility(pro: pro) { showProSheet = true })
         .sheet(isPresented: $showProSheet) { ProMemberSheet() }
         .onChange(of: debugSeason) { _ in CastSkin.invalidate() }
+        .onAppear { onScreen = true }
+        .onDisappear { onScreen = false }
         .task { await runMoves() }
     }
 
@@ -280,7 +288,8 @@ struct LivingCastHeader: View {
         let anchor = UnitPoint(x: spec?.anchor.x ?? 0.5, y: spec?.anchor.y ?? 0.85)
         let skew = CGFloat(tan(pose.skewX * .pi / 180))
         // §X: the season's skin (Halloween) when one is active, else the hero image.
-        return Image(CastSkin.assetName(for: m)).resizable().interpolation(.high).scaledToFit()
+        // Perf audit: the display-size bitmap (the 512 px hero was scaled every frame).
+        return ArtThumbs.image(CastSkin.assetName(for: m), points: s).resizable().interpolation(.high).scaledToFit()
             .frame(width: s, height: s)
             // §F2 fix step 2: the figure's square on screen, for the intro to land on.
             .background(GeometryReader { g in
@@ -301,7 +310,6 @@ struct LivingCastHeader: View {
             .rotationEffect(.degrees(pose.rotation), anchor: anchor)
             .transformEffect(CGAffineTransform(a: 1, b: 0, c: skew, d: 1, tx: -skew * s * anchor.y, ty: 0))
             .offset(x: CGFloat(pose.tx) * s * vis, y: CGFloat(pose.ty) * s)
-            .shadow(color: Color(hex: 0x3C1E6E).opacity(0.18), radius: 2, x: 0, y: 3)
             .padding(.bottom, i % 2 == 1 ? Self.stagger : 0)
             .zIndex(moving ? 20 : Double(Mascots.cast.count - i))
     }
@@ -314,7 +322,8 @@ struct LivingCastHeader: View {
         while !Task.isCancelled {
             // No personality moves under the intro or its landing flourish.
             // §AD: Low Power Mode also rests the idle moves (checked each round, so it's live).
-            if still || Motion.lowPower || handoff.introRunning || handoff.flourishStart != nil {
+            if still || Motion.lowPower || handoff.introRunning || handoff.flourishStart != nil
+                || !onScreen || ChromeVisibility.shared.bottomNavHidden {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 continue
             }
@@ -323,7 +332,7 @@ struct LivingCastHeader: View {
             let duration = CastMoves.duration(id)
             let gap = CastMoves.interval(unit: Double.random(in: 0...1))
             if let m = MascotID(rawValue: id) { active = ActiveMove(id: m, start: Date()) }
-            if ["w", "d", "o3"].contains(id) { Feedback.hop(volume: 0.6) }   // §U: the hop / jump moves
+            // BI7: idle moves are silent — no sound the player didn't cause (founder 10-02).
             try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
             active = nil
             try? await Task.sleep(nanoseconds: UInt64(max(0.2, gap - duration) * 1_000_000_000))

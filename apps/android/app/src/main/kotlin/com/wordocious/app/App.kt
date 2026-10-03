@@ -10,7 +10,12 @@ class App : Application() {
         instance = this
         // FINISH_SPEC U: preload the 16-sound pack once + track the resumed activity for haptics.
         com.wordocious.app.data.Haptics.install(this)
-        com.wordocious.app.data.SoundManager.preload()
+        // Perf (2026-10-02): the SoundPool build + 16 file opens ran on the main thread
+        // before the first frame; preload() is @Synchronized and idempotent, so a sound
+        // played mid-load simply waits for it (nothing plays before the intro anyway).
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            com.wordocious.app.data.SoundManager.preload()
+        }
         // Storage hygiene + cross-midnight grace (iOS launch-sweep parity):
         // Android previously never swept per-seed daily saves, so they
         // accumulated forever.

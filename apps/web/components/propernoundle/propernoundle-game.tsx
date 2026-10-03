@@ -53,6 +53,7 @@ import { gameHeaderStyle, gameToastTop } from '@/lib/art';
 import { ResultCard } from '@/components/game/result-line';
 import { CandyButton } from '@/components/ui/candy-button';
 import { REVEAL } from '@/lib/tile-motion';
+import { useFinishHold } from '@/hooks/use-finish-hold';
 
 type GameMode = 'daily' | 'practice';
 
@@ -744,17 +745,27 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
     </div>
   );
 
+  // FINISH_SPEC BI5: the result popup waits for the final row's reveal (no hop on this board).
+  const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(answerLength, false));
   return (
     <GameBackground
       mode="PROPERNOUNDLE"
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' || completion ? FINISHED_NAV_CLEAR : ''}`}
     >
-      {showVictory && <VictoryAnimation mode="PROPERNOUNDLE" onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
+      {showVictory && popupReady && <VictoryAnimation mode="PROPERNOUNDLE" onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', true, guesses.length, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
+      {showGameOver && popupReady && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} points={computeScoreBreakdown('PROPERNOUNDLE', false, guesses.length, elapsedTime, 0, 1, hintsUsed, undefined, guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)).total} onPlayAgain={mode !== 'daily' && isPro ? handlePlayAgain : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header — compact, matching other modes */}
-      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('PROPERNOUNDLE')}>
+      {/* Founder 10-02: on the finished screen the title art is capped at the
+          compact 68 px (still 56 under 700 tall, the step clamp mirrors the
+          globals.css short-phone cap), so it never crowds the XP toast. */}
+      <div
+        className="game-art-header text-center px-2 shrink-0 relative"
+        style={gameStatus !== 'playing' || completion
+          ? { ...gameHeaderStyle('PROPERNOUNDLE'), ['--game-title-cap' as string]: 'clamp(56px, (100vh - 699.98px) * 1000, 68px)' }
+          : gameHeaderStyle('PROPERNOUNDLE')}
+      >
         <GameHomeButton accentColor="#dc2626"  href={MORE_HOME_HREF} />
         <GameGuideButton slug="propernoundle" accentColor="#dc2626" />
         <SoundToggle accentColor="#dc2626" />

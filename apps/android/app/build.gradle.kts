@@ -28,7 +28,7 @@ android {
         // on a real device.
         targetSdk = 36
 
-        versionCode = 194
+        versionCode = 195
         versionName = "2.7"
         vectorDrawables { useSupportLibrary = true }
     }
@@ -79,7 +79,10 @@ android {
 dependencies {
     implementation(project(":core"))
     // Installs the bundled Baseline Profile on sideloads/older Play installs too.
-    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+    // 1.4.1 (perf audit 2026-10-02): 1.3.1 logs RESULT_UNSUPPORTED_ART_VERSION on Android 15+
+    // (measured on the API 35 emulator) and installs nothing, so sideloaded / internal builds
+    // there ran the hot paths interpreted.
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
     baselineProfile(project(":baselineprofile"))
 
     // Supabase Kotlin client (same project as iOS — eniiqqsxpmuyrspvepiw)

@@ -3,10 +3,10 @@
 import { LiveHeadline } from '@/components/ui/live-headline';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
-import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CandyButton, CandyIcon, CandyLink } from '@/components/ui/candy-button';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -14,16 +14,18 @@ import { SWEEP_MODES } from '@/lib/modes.generated';
 import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { SOFT_INK, darken, softBackground, softBorder, softPill, softShadow } from '@/lib/soft-surface';
-import { ClockGlyph, ShareGlyph } from './result-line';
-import { fitScale, unlimitedHref } from '@/lib/finished-layout';
+import { ClockGlyph } from './result-line';
+import { fitScale, formatNextDailyIn, unlimitedHref } from '@/lib/finished-layout';
+import { getSecondsUntilMidnightLocal } from '@/lib/play-limit-service';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 
 // The one-screen finished screen (docs/FINISH_SPEC.md R2) and the Unlimited
 // card (R3). Every game's finished screen reads, top → bottom: its header, a
 // compact one-line ResultStrip (badge · guesses · time · points), the board(s)
 // in a FitBox that scales them to whatever height is left, then the
-// FinishedDock pinned above the tab bar — the 3D share icon + the primary
-// candy (Next daily / Leaderboard) + the Unlimited card for Pro. Extras
+// FinishedDock — the "Share results" candy (+ the next-daily countdown) + the
+// primary candy (Next daily / Leaderboard) + the Unlimited card for Pro. The
+// whole block sits vertically centered in the room (useBlockCentering). Extras
 // (definitions, score breakdowns) go in a MoreDisclosure, never above the
 // buttons. Measured, not guessed: the FitBox gets the height the dock leaves.
 
@@ -74,6 +76,8 @@ export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points
       {guesses != null && <StripChip accent="#7c3aed" icon={<Icon3D name="badge-check" size={18} />} value={guesses} label={guessLabel} />}
       {time && <StripChip accent="#2563eb" icon={<ClockGlyph size={17} />} value={time} label="time" />}
       {points != null && <StripChip accent="#f5a524" icon={<Icon3D name="trophy" size={17} />} value={Math.round(points).toLocaleString()} label="pts" />}
+      {/* Founder 10-02: an invisible twin of the leading W / L badge, so the chips sit on the screen's center line. */}
+      <span aria-hidden="true" className="shrink-0" style={{ width: 24, height: 24 }} />
     </div>
     </div>
   );
@@ -87,17 +91,26 @@ export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points
  * is `flex-1 min-h-0` inside the finished screen's flex column, so it gets
  * exactly what the header, strip and dock leave.
  */
-export function FitBox({ children, className = '', style, minScale = 0.4 }: { children: ReactNode; className?: string; style?: React.CSSProperties; minScale?: number }) {
+export function FitBox({ children, className = '', style, minScale = 0.4, onSlack }: {
+  children: ReactNode; className?: string; style?: React.CSSProperties; minScale?: number;
+  /** Founder 10-02 (centered finished screens): the board sits vertically centered in the box and this gets the unused height (px). */
+  onSlack?: (px: number) => void;
+}) {
   const boxRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const slackRef = useRef(onSlack);
+  slackRef.current = onSlack;
+  const centered = !!onSlack;
   useLayoutEffect(() => {
     const box = boxRef.current;
     const inner = innerRef.current;
     if (!box || !inner || typeof ResizeObserver === 'undefined') return;
     const measure = () => {
       // The natural size: scrollWidth/Height are unaffected by the transform.
-      setScale(fitScale({ width: box.clientWidth, height: box.clientHeight }, { width: inner.scrollWidth, height: inner.scrollHeight }, minScale));
+      const s = fitScale({ width: box.clientWidth, height: box.clientHeight }, { width: inner.scrollWidth, height: inner.scrollHeight }, minScale);
+      setScale(s);
+      slackRef.current?.(Math.max(0, box.clientHeight - inner.scrollHeight * Math.min(1, s)));
     };
     const ro = new ResizeObserver(measure);
     ro.observe(box);
@@ -106,8 +119,8 @@ export function FitBox({ children, className = '', style, minScale = 0.4 }: { ch
     return () => ro.disconnect();
   }, [minScale]);
   return (
-    <div ref={boxRef} className={`relative flex-1 min-h-0 w-full flex justify-center overflow-hidden ${className}`} style={style}>
-      <div ref={innerRef} style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: 'top center', width: '100%' }}>
+    <div ref={boxRef} className={`relative flex-1 min-h-0 w-full flex justify-center overflow-hidden ${centered ? 'items-center' : ''} ${className}`} style={style}>
+      <div ref={innerRef} className={centered ? 'shrink-0' : undefined} style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: centered ? 'center center' : 'top center', width: '100%' }}>
         {children}
       </div>
     </div>
@@ -272,6 +285,85 @@ export function UnlimitedChip({ currentMode, onNewPuzzle }: { currentMode: strin
   );
 }
 
+// ── Founder 10-02: the centered block, the share CTA + next-daily countdown ─
+
+/**
+ * Centers a finished screen's block (strip + board + dock + More) in its
+ * column: the board box is the flex-1 room, the board sits centered in it, and
+ * the unused height (`onSlack`) is taken back by shifting the strip down and
+ * the dock + More up by half — so the extra room splits equally above and
+ * below. Transforms only (no layout change), so the board's own measuring
+ * never feeds back.
+ */
+export function useBlockCentering() {
+  const [shift, setShift] = useState(0);
+  const onSlack = useCallback((slack: number) => {
+    const s = Math.max(0, Math.floor(slack / 2));
+    setShift((prev) => (prev === s ? prev : s));
+  }, []);
+  const down: React.CSSProperties | undefined = shift ? { transform: `translateY(${shift}px)` } : undefined;
+  const up: React.CSSProperties | undefined = shift ? { transform: `translateY(${-shift}px)` } : undefined;
+  return { onSlack, down, up };
+}
+
+/** "3h 12m" until the next daily (local midnight), refreshed every 30 s; null until mounted, so the server HTML never disagrees with the client clock. */
+function useNextDailyIn(on: boolean): string | null {
+  const [left, setLeft] = useState<string | null>(null);
+  useEffect(() => {
+    if (!on) return;
+    const update = () => setLeft(formatNextDailyIn(getSecondsUntilMidnightLocal()));
+    update();
+    const id = setInterval(update, 30_000);
+    return () => clearInterval(id);
+  }, [on]);
+  return on ? left : null;
+}
+
+/** The dock's action-row candies: 13 px labels (12 px under 700 tall) and 10 px side padding, so Share + Next + the trophy share one 40 px row. */
+const ROW_CANDY = 'min-w-0 !px-2.5 !text-[13px] [@media(max-height:699.98px)]:!text-[12px]';
+
+/**
+ * The finished screen's share CTA (founder 10-02, every game): a pink "Share
+ * results" candy IN the dock's action row (beside Next daily / Leaderboard) —
+ * no row of its own and no taller than the row's other 40 px candies — doing
+ * exactly what the old 3D share icon did (the game's own handler, chooser
+ * included). On a DAILY the "Next <Game> in 3h 12m" countdown rides inside it
+ * as a small second line (the glyph steps aside for it); under 700 px tall the
+ * countdown is dropped and the label sits alone with its glyph.
+ */
+export function ShareResultsCandy({ onShare, copied = false, countdownFor, className = '' }: {
+  onShare: () => void; copied?: boolean;
+  /** The game's title for the countdown line (dailies only); undefined = no line. */
+  countdownFor?: string;
+  className?: string;
+}) {
+  const left = useNextDailyIn(!!countdownFor);
+  const line = countdownFor && left && !copied ? { game: countdownFor, left } : null;
+  const glyph = <CandyIcon name={copied ? 'check' : 'share'} size={16} />;
+  return (
+    <CandyButton
+      color="pink" size="md" block className={`${ROW_CANDY} ${className}`}
+      // Under 700 tall the line is hidden, so the glyph comes back.
+      icon={line ? <span className="hidden [@media(max-height:699.98px)]:inline-flex">{glyph}</span> : glyph}
+      onClick={onShare}
+      aria-label={copied ? 'Copied' : line ? `Share results. Next ${line.game} in ${line.left}` : 'Share results'}
+    >
+      <span className="flex flex-col items-center min-w-0 max-w-full">
+        <span className="block max-w-full truncate leading-[15px]">{copied ? 'Copied!' : 'Share results'}</span>
+        {line && (
+          // The game name gives way first, so the time always shows.
+          <span className="flex max-w-full min-w-0 normal-case tracking-normal text-[10px] leading-[12px] font-extrabold [@media(max-height:699.98px)]:hidden"
+            style={{ textShadow: '1px 0 0 #3b1a78, -1px 0 0 #3b1a78, 0 1px 0 #3b1a78, 0 -1px 0 #3b1a78' }}>
+            <span className="shrink-0 whitespace-pre">Next </span>
+            <span className="min-w-0 truncate">{line.game}</span>
+            <span className="shrink-0 whitespace-pre"> in {line.left}</span>
+          </span>
+        )}
+      </span>
+    </CandyButton>
+  );
+}
+
 // ── R2: the action dock ───────────────────────────────────────────────────
 
 const DAILY_ORDER: Array<{ id: string; href: string }> = SWEEP_MODES
@@ -279,11 +371,13 @@ const DAILY_ORDER: Array<{ id: string; href: string }> = SWEEP_MODES
 
 /**
  * R2: the action dock, the last thing in the finished screen's flex column
- * (so it sits just above the tab bar, never scrolled away): the 3D share icon
- * + the primary candy (daily: the next unplayed daily, else this game's
- * Leaderboard; unlimited: none — the Unlimited card's NEW PUZZLE is the
- * primary) + the Unlimited card (Pro). `extra` (a rank badge, Play again for
- * games that keep it) rides beside the share icon.
+ * (so it sits just above the tab bar, never scrolled away): ONE 40 px action
+ * row — the "Share results" candy (founder 10-02; on a daily the next-daily
+ * countdown rides inside it) + the primary candy (daily: the next unplayed
+ * daily, else this game's Leaderboard; unlimited: none — the Unlimited card's
+ * NEW PUZZLE is the primary) + the round Leaderboard — then the Unlimited card
+ * (Pro). The row spans the dock, so it is centered on the screen. `extra` (a
+ * rank badge) rides on a slim centered line above it.
  */
 export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzle, extra, className = '', compactUnlimited = false }: {
   currentMode: string;
@@ -301,40 +395,33 @@ export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzl
   const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
   const next = isDaily ? DAILY_ORDER.find((m) => m.id !== currentMode && !todayDailies.has(m.id)) : undefined;
   const nextMode = next ? PROFILE_MODES.find((m) => m.dbKey === next.id) : undefined;
+  const primary = isDaily && (nextMode && next ? (
+    <CandyLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`Next Daily: ${nextMode.title}`}>
+      Next: {nextMode.shortTitle ?? nextMode.title}
+    </CandyLink>
+  ) : mode ? (
+    <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={18} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`View ${mode.title} Leaderboard`}>
+      Leaderboard
+    </CandyLink>
+  ) : null);
+  const share = onShare ? (
+    <ShareResultsCandy onShare={onShare} copied={copied} countdownFor={isDaily ? mode?.title : undefined}
+      // Alone (an Unlimited result) it hugs its label; beside Next / Leaderboard the two split the row.
+      className={primary ? 'flex-1' : '!w-auto max-w-full'} />
+  ) : null;
   return (
     <div className={`shrink-0 w-full max-w-[400px] mx-auto flex flex-col gap-2 pt-2 ${className}`} style={{ paddingBottom: 6 }}>
-      {/* AT1: the primary buttons sit centered on the SCREEN; the share icon is
-          pinned to the trailing edge and the rank badge (extra) to the leading
-          one, in equal side columns, so neither pushes the row sideways. */}
-      {(() => {
-        const hasCenter = isDaily && (!!(nextMode && next) || !!mode);
-        const share = onShare ? <ShareGlyph onShare={onShare} copied={copied} /> : null;
-        if (!hasCenter) {
-          return (share || extra) ? <div className="flex items-center justify-center gap-2">{extra}{share}</div> : null;
-        }
-        return (
-          <div className="grid items-center gap-2" style={{ gridTemplateColumns: share || extra ? 'minmax(44px, 1fr) minmax(0, 3.4fr) minmax(44px, 1fr)' : 'minmax(0, 1fr)' }}>
-            {(share || extra) && <div className="flex items-center justify-start min-w-0">{extra}</div>}
-            <div className="flex items-center gap-2 min-w-0">
-              {isDaily && (
-                nextMode && next ? (
-                  <CandyLink href={next.href} color="amber" size="md" block icon="arrow" className="flex-1 min-w-0" aria-label={`Next Daily: ${nextMode.title}`}>
-                    Next: {nextMode.shortTitle ?? nextMode.title}
-                  </CandyLink>
-                ) : mode ? (
-                  <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={20} />} className="flex-1 min-w-0" aria-label={`View ${mode.title} Leaderboard`}>
-                    Leaderboard
-                  </CandyLink>
-                ) : null
-              )}
-              {isDaily && nextMode && mode && (
-                <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="round" icon={<Icon3D name="trophy" size={20} />} aria-label={`View ${mode.title} Leaderboard`} />
-              )}
-            </div>
-            {(share || extra) && <div className="flex items-center justify-end">{share}</div>}
-          </div>
-        );
-      })()}
+      {extra && <div className="flex items-center justify-center min-w-0">{extra}</div>}
+      {/* AT1 + founder 10-02: one row, spanning the dock, so the group is centered on the SCREEN. */}
+      {(share || primary) && (
+        <div className="flex items-center justify-center gap-2 w-full">
+          {share}
+          {primary}
+          {isDaily && nextMode && mode && (
+            <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="round" icon={<Icon3D name="trophy" size={20} />} aria-label={`View ${mode.title} Leaderboard`} />
+          )}
+        </div>
+      )}
       {/* BA1: under 700 px tall, the Unlimited card's place is this one slim line. */}
       <div className="hidden [@media(max-height:699.98px)]:flex justify-center">
         <UnlimitedChip currentMode={currentMode} onNewPuzzle={isDaily ? undefined : onNewPuzzle} />

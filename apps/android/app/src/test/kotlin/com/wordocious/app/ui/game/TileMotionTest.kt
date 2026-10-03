@@ -6,23 +6,35 @@ import org.junit.Test
 
 /** FINISH_SPEC B1 / B3: the tile faces and the motion kit's timings. */
 class TileMotionTest {
-    @Test fun revealIs220msTurnsSeventyApart() {
-        // AQ1: flips ≤ 220 ms, ≤ 70 ms apart.
-        assertEquals(true, TileMotion.FLIP_MS <= 220)
-        assertEquals(true, TileMotion.FLIP_STAGGER_MS <= 70)
+    @Test fun revealIsThePreOverhaulPacing() {
+        // BI5: single board 500 ms turns, 150 ms apart (a 5-letter row ≈ 1.1 s);
+        // multi-board mini boards 300 ms, 80 ms apart.
+        assertEquals(500, TileMotion.FLIP_MS)
+        assertEquals(150, TileMotion.FLIP_STAGGER_MS)
+        assertEquals(300, TileMotion.MINI_FLIP_MS)
+        assertEquals(80, TileMotion.MINI_FLIP_STAGGER_MS)
+        assertEquals(500, TileMotion.flipMs())
+        assertEquals(300, TileMotion.flipMs(mini = true))
+        assertEquals(150, TileMotion.staggerMs())
+        assertEquals(80, TileMotion.staggerMs(mini = true))
         assertEquals(0, TileMotion.revealMs(0))
-        assertEquals(220, TileMotion.revealMs(1))
-        assertEquals(4 * 70 + 220, TileMotion.revealMs(5))
+        assertEquals(500, TileMotion.revealMs(1))
+        assertEquals(1100, TileMotion.revealMs(5))
+        assertEquals(4 * 80 + 300, TileMotion.revealMs(5, mini = true))
     }
 
     @Test fun tileLandsAtItsStaggerPlusOneFlip() {
-        assertEquals(220, TileMotion.tileLandsMs(0))
-        assertEquals(220 + 3 * 70, TileMotion.tileLandsMs(3))
-        assertEquals(0, TileMotion.tilesLanded(219, 5))
-        assertEquals(1, TileMotion.tilesLanded(220, 5))
-        assertEquals(2, TileMotion.tilesLanded(290, 5))
+        assertEquals(500, TileMotion.tileLandsMs(0))
+        assertEquals(500 + 3 * 150, TileMotion.tileLandsMs(3))
+        assertEquals(300 + 3 * 80, TileMotion.tileLandsMs(3, mini = true))
+        assertEquals(0, TileMotion.tilesLanded(499, 5))
+        assertEquals(1, TileMotion.tilesLanded(500, 5))
+        assertEquals(2, TileMotion.tilesLanded(650, 5))
         assertEquals(5, TileMotion.tilesLanded(TileMotion.revealMs(5), 5))
         assertEquals(5, TileMotion.tilesLanded(10_000, 5))
+        assertEquals(0, TileMotion.tilesLanded(299, 5, mini = true))
+        assertEquals(2, TileMotion.tilesLanded(380, 5, mini = true))
+        assertEquals(5, TileMotion.tilesLanded(TileMotion.revealMs(5, mini = true), 5, mini = true))
     }
 
     @Test fun hopWaveAndClearStagger() {
@@ -30,13 +42,15 @@ class TileMotionTest {
         assertEquals(4 * 60 + 160, TileMotion.clearMs(5))
     }
 
-    @Test fun finishHoldIsTheRevealPlusTheHopNeverOverOnePointTwoSeconds() {
-        assertEquals(TileMotion.revealMs(5) + TileMotion.hopWaveMs(5) + 50, TileMotion.finishHoldMs(5, won = true, multiBoard = false, reduced = false))
-        assertEquals(TileMotion.revealMs(5) + 50, TileMotion.finishHoldMs(5, won = false, multiBoard = false, reduced = false))
-        assertEquals(TileMotion.revealMs(5) + 50, TileMotion.finishHoldMs(5, won = true, multiBoard = true, reduced = false))
+    @Test fun finishHoldWaitsForTheWholeRowThenTheHopThenABeat() {
+        // BI5: never cut short — the popup waits for the slower row (and a win's hop wave).
+        assertEquals(1100 + TileMotion.hopWaveMs(5) + 200, TileMotion.finishHoldMs(5, won = true, multiBoard = false, reduced = false))
+        assertEquals(1100 + 200, TileMotion.finishHoldMs(5, won = false, multiBoard = false, reduced = false))
+        assertEquals(TileMotion.revealMs(5, mini = true) + TileMotion.hopWaveMs(5) + 200, TileMotion.finishHoldMs(5, won = true, multiBoard = true, reduced = false))
+        assertEquals(TileMotion.revealMs(5, mini = true) + 200, TileMotion.finishHoldMs(5, won = false, multiBoard = true, reduced = false))
         assertEquals(350, TileMotion.finishHoldMs(5, won = true, multiBoard = false, reduced = true))
-        for (tiles in 1..8) for (won in listOf(true, false)) {
-            assertEquals(true, TileMotion.finishHoldMs(tiles, won, multiBoard = false, reduced = false) <= 1200)
+        for (tiles in 1..8) for (won in listOf(true, false)) for (multi in listOf(true, false)) {
+            assertEquals(true, TileMotion.finishHoldMs(tiles, won, multiBoard = multi, reduced = false) >= TileMotion.revealMs(tiles, multi))
         }
     }
 

@@ -100,6 +100,7 @@ export function GauntletSequenceMiniBoard({
                     letter={shown}
                     look={look}
                     flipIndex={isLastSubmitted ? letterIndex : undefined}
+                    mini
                     bad={!!isShaking && isCurrentRow && !!letter}
                     outIndex={4 - letterIndex}
                     invalid={isCurrentRow && !!isInvalidWord && !!letter}

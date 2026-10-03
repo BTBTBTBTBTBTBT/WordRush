@@ -38,11 +38,12 @@ struct KeyboardView: View {
     private func refreshKeys() {
         let now = Date()
         let cols = vm.wordLength
-        let open = flipping.filter { RevealTiming.tilesLanded(elapsed: now.timeIntervalSince($0.value), columns: cols) < cols }
+        let mini = vm.isMultiBoard   // §BI5: the board's own pacing (mini on multi-board)
+        let open = flipping.filter { RevealTiming.tilesLanded(elapsed: now.timeIntervalSince($0.value), columns: cols, mini: mini) < cols }
         if open.count != flipping.count { flipping = open }
         let visible: (Int, Int) -> Int = { b, r in
             guard let at = open["\(b):\(r)"] else { return Int.max }
-            return RevealTiming.tilesLanded(elapsed: now.timeIntervalSince(at), columns: cols)
+            return RevealTiming.tilesLanded(elapsed: now.timeIntervalSince(at), columns: cols, mini: mini)
         }
         if vm.useQuadrantKeyboard {
             shownBoards = vm.boardKeyStates(visible: visible)
@@ -64,7 +65,7 @@ struct KeyboardView: View {
         seenCounts = counts
         refreshKeys()
         for i in 0..<vm.wordLength {
-            DispatchQueue.main.asyncAfter(deadline: .now() + RevealTiming.tileLands(column: i) + 0.005) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + RevealTiming.tileLands(column: i, mini: vm.isMultiBoard) + 0.005) {
                 refreshKeys()
             }
         }
@@ -114,7 +115,7 @@ struct KeyboardView: View {
         .onAppear { resetKeys() }
         .onChange(of: guessSignature) { [old = guessSignature] new in
             // A new stage / board reset (fewer guesses) or Reduce Motion: instant colors.
-            if new < old || Theme.reduceMotion { resetKeys(); return }
+            if new < old || Theme.reduceMotion || vm.boardCount > 4 { resetKeys(); return }   // perf audit: 5+ boards reveal at once
             rowsCommitted()
         }
         // Physical keyboard (founder, 2026-09-30) — web parity with every word

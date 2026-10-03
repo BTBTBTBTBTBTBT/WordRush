@@ -95,9 +95,11 @@ object ArtBitmaps {
         return sample
     }
 
-    @Synchronized
+    // Not @Synchronized (perf, 2026-10-02): a background prewarm decoding a big pose must
+    // never make a main-thread cache hit wait on the lock. LruCache is thread-safe on its
+    // own; two threads missing the same key at once just decode it twice (same pixels).
     fun get(context: Context, @DrawableRes res: Int, targetPx: Int): ImageBitmap? {
-        if (res in notBitmaps) return null
+        if (synchronized(notBitmaps) { res in notBitmaps }) return null
         val key = (res.toLong() shl 20) or targetPx.toLong()
         cache.get(key)?.let { return it }
         val bmp = runCatching {
@@ -109,11 +111,11 @@ object ArtBitmaps {
                 BitmapFactory.Options().apply { inScaled = false; inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight, targetPx) },
             )
         }.getOrNull()
-        if (bmp == null) { notBitmaps.add(res); return null }
+        if (bmp == null) { synchronized(notBitmaps) { notBitmaps.add(res) }; return null }
         return bmp.asImageBitmap().also { cache.put(key, it) }
     }
 
-    fun clear() { synchronized(this) { cache.evictAll() } }
+    fun clear() { cache.evictAll() }
 }
 
 /**

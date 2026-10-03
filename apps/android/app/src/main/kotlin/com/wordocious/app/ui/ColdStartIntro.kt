@@ -140,6 +140,11 @@ fun ColdStartIntro(onDone: () -> Unit) {
         if (reduced) {
             skip.animateTo(0f, tween(IntroT.REDUCED_MS))
         } else {
+            // Perf (2026-10-02 measured audit): the launch's first frames are the long ones
+            // (the whole tree composing, the window's focus / relayout pass, Home's first
+            // effects). Hold the opening pose — identical to the launch screen — through
+            // them, so the bounce starts on steady frames instead of jumping mid-move.
+            repeat(3) { androidx.compose.runtime.withFrameNanos { } }
             // Glide to exactly the measured header frame (no overshoot), then land.
             clock.animateTo(IntroT.TO_HEADER_END, tween(IntroT.TO_HEADER_END.toInt(), easing = LinearEasing))
         }

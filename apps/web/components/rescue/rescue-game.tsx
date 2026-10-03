@@ -32,7 +32,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
 import { FinishedScreen, FINISHED_NAV_CLEAR } from '@/components/game/finished-screen';
 import { FittedBoardsRecap } from '@/components/game/fitted-recap';
-import { keyDuringReject } from '@/lib/tile-motion';
+import { REVEAL, keyDuringReject } from '@/lib/tile-motion';
+import { useFinishHold } from '@/hooks/use-finish-hold';
 import { useRejectRow } from '@/hooks/use-reject-row';
 import { latestGuess } from '@/lib/key-reveal';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
@@ -196,13 +197,15 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
     isRestoredCompleted.current = false;
   };
 
+  // FINISH_SPEC BI5: the result popup waits for the final row's reveal (and a win's hop wave).
+  const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(5, showVictory, true));
   return (
     <GameBackground
       mode="RESCUE"
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? FINISHED_NAV_CLEAR : ''}`}
     >
-      {showVictory && <VictoryAnimation mode="RESCUE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('RESCUE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, 4, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('RESCUE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === 'WON').length, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
+      {showVictory && popupReady && <VictoryAnimation mode="RESCUE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('RESCUE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, 4, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
+      {showGameOver && popupReady && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('RESCUE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === 'WON').length, 4).total} onPlayAgain={!isDaily && isPro ? handleRestart : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}

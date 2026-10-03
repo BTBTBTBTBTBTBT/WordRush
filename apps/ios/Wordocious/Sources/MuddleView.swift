@@ -334,7 +334,7 @@ struct MuddleView: View {
                     finishedBoard(size)
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "SCRAMBLE", game: "Muddle", onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?() } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     result
                 }
@@ -501,7 +501,7 @@ struct MuddleView: View {
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? (vm.state.checks == 5 && vm.state.hintsUsed == 0 ? "Muddle solved clean" : "Muddle solved") : "Out of checks",
                                 won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
+            PuzResultLine(won: won, items: [("\(vm.state.checks)", vm.state.checks == 1 ? "check" : "checks"),
                                                   (puzClock(vm.elapsed), "time")],
                                 points: vm.points)
         }

@@ -31,7 +31,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
 import { FinishedScreen, FINISHED_NAV_CLEAR } from '@/components/game/finished-screen';
 import { FittedBoardsRecap } from '@/components/game/fitted-recap';
-import { keyDuringReject } from '@/lib/tile-motion';
+import { REVEAL, keyDuringReject } from '@/lib/tile-motion';
+import { useFinishHold } from '@/hooks/use-finish-hold';
 import { useRejectRow } from '@/hooks/use-reject-row';
 import { latestGuess } from '@/lib/key-reveal';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
@@ -272,13 +273,15 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, guessesUsed, maxGuesses, elapsedTime, solvedCount]);
 
+  // FINISH_SPEC BI5: the result popup waits for the final row's reveal (Succession boards don't hop).
+  const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(5, false, true));
   return (
     <GameBackground
       mode="SEQUENCE"
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? FINISHED_NAV_CLEAR : ''}`}
     >
-      {showVictory && <VictoryAnimation mode="SEQUENCE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
+      {showVictory && popupReady && <VictoryAnimation mode="SEQUENCE" onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', true, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
+      {showGameOver && popupReady && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} points={computeScoreBreakdown('SEQUENCE', false, state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0), elapsedTime, state.boards.filter(b => b.status === GameStatus.WON).length, 4).total} onPlayAgain={!isDaily && isPro ? handleNextPuzzle : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
@@ -379,7 +382,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       {/* Keyboard — hidden when game is complete */}
       {state.status === 'PLAYING' && (
         <div className="shrink-0 pb-2 px-2 pt-1">
-          <Keyboard onKey={handleKeyPress} letterStates={letterStates} revealWord={latestGuess(state.boards)} />
+          <Keyboard onKey={handleKeyPress} letterStates={letterStates} revealWord={latestGuess(state.boards)} revealMini />
         </div>
       )}
 

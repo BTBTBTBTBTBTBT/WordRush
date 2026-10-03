@@ -84,4 +84,36 @@ class FinishedSizingTest {
         assertEquals("Won, 4 guesses, 1:23 time, 1,250 points", s)
         assertEquals("45s", stripTime(45).value)
     }
+
+    @Test
+    fun a_capped_board_leaves_equal_room_above_and_below_the_block() {
+        assertEquals(344f, FinishedSizing.cappedBoard(344f, null), eps)
+        assertEquals(280f, FinishedSizing.cappedBoard(344f, 280f), eps)
+        assertEquals(200f, FinishedSizing.cappedBoard(200f, 280f), eps)
+        // 700 tall page, 600 tall block → 50 above (and 50 below).
+        assertEquals(50f, FinishedSizing.centeredTop(700f, 600f), eps)
+        assertEquals(0f, FinishedSizing.centeredTop(700f, 700f), eps)
+        assertEquals(0f, FinishedSizing.centeredTop(700f, 900f), eps)
+    }
+
+    @Test
+    fun next_daily_countdown_reads_hours_and_minutes() {
+        assertEquals("3h 12m", FinishedCountdown.format(3 * 3600L + 12 * 60L + 40L))
+        assertEquals("1h 0m", FinishedCountdown.format(3600L))
+        assertEquals("47m", FinishedCountdown.format(47 * 60L + 5L))
+        assertEquals("1m", FinishedCountdown.format(59L))
+        assertEquals("1m", FinishedCountdown.format(0L))
+        assertEquals("Next Gauntlet in 3h 12m", FinishedCountdown.line("Gauntlet", 3 * 3600L + 12 * 60L))
+        assertEquals("Next Classic in 47m", FinishedCountdown.line("Classic", 47 * 60L))
+    }
+
+    @Test
+    fun the_countdown_rides_inside_the_share_candy_and_drops_on_a_short_screen() {
+        // Founder 10-02 follow-up: the line is the share candy's second line (no row of its own).
+        assertEquals("Next OctoWord in 3h 12m", FinishedCountdown.shareSubtitle("OctoWord", 3 * 3600L + 12 * 60L, short = false))
+        assertNull(FinishedCountdown.shareSubtitle("OctoWord", 3 * 3600L, short = true))
+        assertNull(FinishedCountdown.shareSubtitle(null, 3 * 3600L, short = false))
+        // The candy stays the dock row's MEDIUM height (no taller than the dock buttons were).
+        assertEquals(40f, com.wordocious.app.ui.CandySize.MEDIUM.height.value, eps)
+    }
 }

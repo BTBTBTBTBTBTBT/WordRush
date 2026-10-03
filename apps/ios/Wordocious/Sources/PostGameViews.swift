@@ -479,6 +479,11 @@ struct NextDailyCTA: View {
     var currentMode: String? = nil
     /// §R2: inside the finished screen's dock — medium candies, tighter spacing.
     var compact: Bool = false
+    /// Founder 10-02 follow-up ("we can't give up board room"): the SHARE RESULTS candy
+    /// (`FinishedShareCTA`) rides IN the first action row — beside Next daily, or beside
+    /// the Leaderboard once the sweep is done — so it costs no row of its own. The two
+    /// candies split the row and the labels shorten ("Next: Quad", "Leaderboard").
+    var share: AnyView? = nil
 
     /// Seeds instantly from the day-keyed cache (which already includes the
     /// just-finished game via completionPosted); load() confirms from the server.
@@ -513,20 +518,23 @@ struct NextDailyCTA: View {
             if AuthService.shared.profile != nil {
                 VStack(spacing: compact ? 6 : 10) {
                     if let next = nextMode, let key = next.dbKey {
-                        Button {
-                            dismiss()
-                            // Let the dismiss animation finish before the root
-                            // presents the next cover (competing presentations drop).
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                NotificationCenter.default.post(name: Self.playNextDaily, object: key)
+                        HStack(spacing: 8) {
+                            if let share { share }
+                            Button {
+                                dismiss()
+                                // Let the dismiss animation finish before the root
+                                // presents the next cover (competing presentations drop).
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                    NotificationCenter.default.post(name: Self.playNextDaily, object: key)
+                                }
+                            } label: {
+                                // FINISH_SPEC §B6 / §A8: the gold (amber) candy button
+                                // with the next game's icon.
+                                CandyLabel(title: share == nil ? "Next daily: \(next.title)" : "Next: \(next.title)") { gameIcon(next) }
                             }
-                        } label: {
-                            // FINISH_SPEC §B6 / §A8: the gold (amber) candy button
-                            // with the next game's icon.
-                            CandyLabel(title: "Next daily: \(next.title)") { gameIcon(next) }
+                            .buttonStyle(CandyButtonStyle(variant: .amber, size: compact ? .medium : .large))
+                            .accessibilityLabel("Next daily: \(next.title)")
                         }
-                        .buttonStyle(CandyButtonStyle(variant: .amber, size: compact ? .medium : .large))
-                        .accessibilityLabel("Next daily: \(next.title)")
                     } else if nextMode == nil {
                         // §AM3: the 3D trophy, not the emoji.
                         HStack(spacing: 6) {
@@ -536,14 +544,19 @@ struct NextDailyCTA: View {
                         }
                         .padding(.vertical, 4)
                     }
+                    // Sweep done: share rides the Leaderboard row instead.
+                    let leaderboardRow = HStack(spacing: 8) {
+                        if nextMode == nil, let share { share }
+                        viewLeaderboard
+                    }
                     if compact && FinishLayoutMetrics.isShort {
                         // FINISH_SPEC BA1 (parity with Android at 360 wide): short screens —
                         // the action row, then the one-button Unlimited on its own slim line
                         // right below it (free / guest keep the PRO pill → Go Pro).
-                        viewLeaderboard
+                        leaderboardRow
                         keepPlayingUnlimited(mini: true)
                     } else {
-                        viewLeaderboard
+                        leaderboardRow
                         keepPlayingUnlimited()
                     }
                 }
@@ -551,9 +564,13 @@ struct NextDailyCTA: View {
                 .padding(.top, compact ? 0 : 4)
             } else {
                 // FINISH_SPEC §R3 (founder 10-02): guests see the Unlimited card too —
-                // it opens the Go Pro paywall, which signs them in first.
-                keepPlayingUnlimited(mini: compact && FinishLayoutMetrics.isShort)
-                    .frame(maxWidth: 400)
+                // it opens the Go Pro paywall, which signs them in first. (Guests: share
+                // sits on its own line above it — no daily row to ride.)
+                VStack(spacing: compact ? 6 : 10) {
+                    if let share { share }
+                    keepPlayingUnlimited(mini: compact && FinishLayoutMetrics.isShort)
+                }
+                .frame(maxWidth: 400)
             }
         }
         .task { await completions.load() }
@@ -574,7 +591,7 @@ struct NextDailyCTA: View {
                 }
             } label: {
                 // §B6 / §A8: the purple candy button with the 3D trophy.
-                CandyLabel(title: "\(mode.title) Leaderboard") { Icon3D(.trophy, size: 26) }
+                CandyLabel(title: share != nil && nextMode == nil ? "Leaderboard" : "\(mode.title) Leaderboard") { Icon3D(.trophy, size: 26) }
             }
             .buttonStyle(CandyButtonStyle(variant: .purple, size: compact ? .medium : .large))
             .accessibilityLabel("View \(mode.title) Leaderboard")

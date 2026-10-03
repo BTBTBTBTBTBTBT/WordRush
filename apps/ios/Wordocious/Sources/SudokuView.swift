@@ -187,7 +187,7 @@ struct SudokuView: View {
                     board.padding(.horizontal, 6)
                 } dock: {
                     PuzFinishedDock(isDaily: vm.isDaily, currentMode: "SUDOKU", game: sudokuTitle, onNewPuzzle: (onPlayAgain != nil && !vm.isDaily && isPro) ? { onPlayAgain?(vm.state.difficulty) } : nil,
-                                    onOtherGames: { dismiss() })
+                                    onOtherGames: { dismiss() }, onShare: { _ in share() })
                 } extras: {
                     result
                 }
@@ -322,7 +322,7 @@ struct SudokuView: View {
         let won = vm.state.status == .won
         return VStack(spacing: 6) {
             PuzFinishedHeadline(text: won ? "\(sudokuTitle) solved" : "Out of mistakes", won: won)
-            PuzResultLine(onShare: { share() }, won: won, items: [("\(vm.mistakes)", vm.mistakes == 1 ? "mistake" : "mistakes"),
+            PuzResultLine(won: won, items: [("\(vm.mistakes)", vm.mistakes == 1 ? "mistake" : "mistakes"),
                                                   (puzClock(vm.elapsed), "time")],
                                 points: points)
         }
@@ -378,9 +378,10 @@ struct SudokuView: View {
 /// ONE continuous ruled grid (§8, founder round 5): hairline lilac rules
 /// between cells, heavy rules around each 3 × 3 box and the edge, no per-cell
 /// radius. Givens dark and heaviest, the player's digits purple, hint digits
-/// violet, a wrong digit red; the selected cell in the stronger lilac fill
-/// with its row, column and box washed; every cell holding the selected digit
-/// emphasized. Pencil marks: the standard 3 × 3 mini-grid.
+/// violet, a wrong digit red; the selected cell the solid purple tile with a
+/// deep ring, every other cell holding its digit the medium lavender tile, its
+/// row, column and box pale lavender (FINISH_SPEC BI6). Pencil marks: the
+/// standard 3 × 3 mini-grid, the selected digit's mark bold purple.
 struct SudokuBoardView: View {
     let state: SudokuState
     let selected: Int?
@@ -462,8 +463,19 @@ struct SudokuBoardView: View {
         // FINISH_SPEC §B1: digits ride the game-kit tiles — a given clue is a plain
         // light tile with a dark purple digit; your numbers are purple tiles (a hint
         // too), a wrong entry the red conflict tile; empty cells are frosted glass.
-        let face: GlossyFace = revealed ? .hintUsed : (value == nil ? .empty
-            : (given ? .given : (isWrong ? .conflict : .correct)))
+        // FINISH_SPEC BI6: selection reads at a glance on the tile faces themselves
+        // (the old fill behind the tile hid under it). The selected cell is the solid
+        // purple tile with a deep ring; every other cell with its digit the medium
+        // lavender tile; its row, column and box a pale lavender. Red stays on top.
+        let face: GlossyFace = {
+            if revealed { return .hintUsed }
+            if isWrong && value != nil { return .conflict }
+            if isSelected { return .correct }
+            if sameDigit { return .sudokuSame }
+            if value == nil { return inWash ? .sudokuWashEmpty : .empty }
+            if given { return inWash ? .sudokuWashGiven : .given }
+            return .correct
+        }()
         let tileSide = cell * 0.9
         let digit = value.map(String.init) ?? ""
         Button { onSelect(i) } label: {
@@ -476,6 +488,10 @@ struct SudokuBoardView: View {
                         if revealed {
                             Text(digit).font(Brand.fixedFont(tileSide * 0.5, .heavy)).foregroundStyle(color)
                         }
+                        if isSelected {
+                            RoundedRectangle(cornerRadius: tileSide * 0.22, style: .continuous)
+                                .strokeBorder(Color(hex: 0x2E1065), lineWidth: max(2, tileSide * 0.075))
+                        }
                     }
                 if value == nil && state.notes[i] != 0 {
                     let m = state.notes[i]
@@ -484,8 +500,11 @@ struct SudokuBoardView: View {
                             HStack(spacing: 0) {
                                 ForEach(0..<3, id: \.self) { cc in
                                     let d = rr * 3 + cc
+                                    // BI6: the selected digit's pencil mark goes bold purple.
+                                    let match = selDigit == Character("\(d + 1)") && (m & (1 << d)) != 0
                                     Text((m & (1 << d)) != 0 ? "\(d + 1)" : " ")
-                                        .font(Brand.font(max(9, cell * 0.24), .bold)).foregroundStyle(Color(hex: 0x8A78AD))
+                                        .font(Brand.font(max(9, cell * (match ? 0.27 : 0.24)), match ? .black : .bold))
+                                        .foregroundStyle(isSelected ? Color.white : match ? Color(hex: 0x6D28D9) : Color(hex: 0x8A78AD))
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 }
                             }

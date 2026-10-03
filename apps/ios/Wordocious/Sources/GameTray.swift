@@ -74,6 +74,9 @@ struct GameTrayChrome: ViewModifier {
                     // The darker lip showing under the face.
                     shape.fill(dark ? Color.black.opacity(0.35) : ink.wash(0.34))
                         .offset(y: GameTray.lip)
+                        // Perf audit: the tray's lift from ONE shape (was a shadow over the
+                        // whole layered group — an offscreen pass per board every frame).
+                        .shadow(color: ink.opacity(dark ? 0.0 : 0.16), radius: 9, x: 0, y: 6)
                     shape.fill(dark ? Theme.surface : Color.white)
                     shape.fill(GameTray.face(accent, state, lightOnly: lightOnly))
                     // The faint inner top gloss.
@@ -84,7 +87,6 @@ struct GameTrayChrome: ViewModifier {
                     shape.strokeBorder(dark ? ink.opacity(state == .normal ? 0.35 : 0.6) : ink.wash(state == .normal ? 0.30 : 0.55),
                                        lineWidth: 1.5)
                 }
-                .shadow(color: ink.opacity(dark ? 0.0 : 0.16), radius: 9, x: 0, y: 6)
             }
             .overlay {
                 if state == .active {

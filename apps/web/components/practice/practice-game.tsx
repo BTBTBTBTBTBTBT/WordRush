@@ -11,7 +11,8 @@ import { Clock } from 'lucide-react';
 import { CandyButton } from '@/components/ui/candy-button';
 import { UiIcon } from '@/components/ui/ui-icon';
 import { useBoardFit } from '@/hooks/use-board-fit';
-import { keyDuringReject } from '@/lib/tile-motion';
+import { REVEAL, keyDuringReject } from '@/lib/tile-motion';
+import { useFinishHold } from '@/hooks/use-finish-hold';
 import { useRejectRow } from '@/hooks/use-reject-row';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
@@ -392,13 +393,15 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     ? computeScoreBreakdown(mode, state.status === GameStatus.WON, guessesUsed, elapsedTime, state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed, undefined, state.status === GameStatus.WON ? undefined : bestCorrectLetters, isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined).total
     : null;
 
+  // FINISH_SPEC BI5: the result popup waits for the final row's reveal (and a win's hop wave).
+  const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(currentBoard.solution.length, showVictory));
   return (
     <GameBackground
       mode={mode}
       className={`h-screen-stable flex flex-col relative ${gameComplete ? FINISHED_NAV_CLEAR : ''}`}
     >
-      {showVictory && <VictoryAnimation mode={mode} onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, true, guessesUsed, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
-      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, false, guessesUsed, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
+      {showVictory && popupReady && <VictoryAnimation mode={mode} onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, true, guessesUsed, elapsedTime, 1, 1, hintsUsed).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
+      {showGameOver && popupReady && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} points={computeScoreBreakdown(mode, false, guessesUsed, elapsedTime, 0, 1, hintsUsed, undefined, evaluations.reduce((best, e, i) => currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)).total} onPlayAgain={!isDaily && isPro ? handleReset : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}

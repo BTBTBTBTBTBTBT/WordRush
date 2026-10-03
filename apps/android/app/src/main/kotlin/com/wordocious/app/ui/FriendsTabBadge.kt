@@ -91,19 +91,20 @@ fun FriendsCountBadge(count: Int, arrivals: Int, pulsing: Boolean, modifier: Mod
     val still = WTheme.reducedMotion
     val pop = remember { Animatable(if (still) 1f else 0f) }
     val glow = remember { Animatable(0f) }
-    val feedbackView = androidx.compose.ui.platform.LocalView.current
     LaunchedEffect(arrivals) {
         // Spec U: a new Friends item = notify · light (once per arrival, not on re-entry).
         if (arrivals > 0 && arrivals != BadgeNotify.lastArrival) {
             BadgeNotify.lastArrival = arrivals
-            com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.NOTIFY, feedbackView)
+            // BI7: silent — a background arrival is not something the player did (the badge still pops).
         }
         if (still) { pop.snapTo(1f); return@LaunchedEffect }
         pop.snapTo(0f)
         pop.animateTo(1f, keyframes { durationMillis = 420; 1.15f at 260 })
     }
-    LaunchedEffect(pulsing, still) {
-        if (!pulsing || still) { glow.snapTo(0f); return@LaunchedEffect }
+    // Perf: the pulse waits while the tab bar is covered by a game / layer.
+    val hidden = LocalTabHidden.current.value
+    LaunchedEffect(pulsing, still, hidden) {
+        if (!pulsing || still || hidden) { glow.snapTo(0f); return@LaunchedEffect }
         while (true) {
             delay(4000)
             glow.animateTo(1f, tween(600))

@@ -69,16 +69,19 @@ interface KeyboardProps {
    *  lands (lib/key-reveal.ts), not after the whole row. Omit = at once. A
    *  reset (fewer colored keys than shown) always applies at once. */
   revealWord?: string;
+  /** BI5: the reveal runs on the multi-board ("mini") clock. Defaults to on when
+   *  per-board states are given for 2+ boards (QuadWord / OctoWord / Deliverance). */
+  revealMini?: boolean;
 }
 
 /** The letter states the keys show: each new color lands with its tile (AQ1). */
-function useRevealed<T extends KeyStatesLike>(states: T, word: string | undefined): T {
+function useRevealed<T extends KeyStatesLike>(states: T, word: string | undefined, mini = false): T {
   const [shown, setShown] = useState(states);
   const targetRef = useRef(states);
   useEffect(() => {
     const prev = targetRef.current;
     targetRef.current = states;
-    const steps = keyRevealSchedule(prev, states, word, prefersReducedMotion());
+    const steps = keyRevealSchedule(prev, states, word, prefersReducedMotion(), mini);
     if (steps.length === 0 || steps[steps.length - 1].at === 0) { setShown(states); return; }
     // A reveal still landing from the row before finishes at once (typing fast).
     setShown(prev);
@@ -89,7 +92,7 @@ function useRevealed<T extends KeyStatesLike>(states: T, word: string | undefine
       return setTimeout(() => setShown(value), step.at);
     });
     return () => timers.forEach(clearTimeout);
-  }, [states, word]);
+  }, [states, word, mini]);
   return word ? shown : states;
 }
 
@@ -155,9 +158,10 @@ function QuadrantKey({
 // Memoized (founder, 2026-09-29): the game screens pass stable props (useCallback
 // handlers, memoized letter states), so a tick or a message elsewhere on the
 // screen no longer re-renders every key.
-export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterStates = EMPTY_STATES, boardLetterStates: rawBoardStates, blackedOutLetters, keyFills, revealWord }: KeyboardProps) {
-  const letterStates = useRevealed(rawLetterStates, revealWord);
-  const boardLetterStates = useRevealed(rawBoardStates, revealWord);
+export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterStates = EMPTY_STATES, boardLetterStates: rawBoardStates, blackedOutLetters, keyFills, revealWord, revealMini }: KeyboardProps) {
+  const mini = revealMini ?? (rawBoardStates != null && rawBoardStates.length > 1);
+  const letterStates = useRevealed(rawLetterStates, revealWord, mini);
+  const boardLetterStates = useRevealed(rawBoardStates, revealWord, mini);
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
   const [layout, setLayout] = useState<KeyboardLayout>('standard');
   useEffect(() => {

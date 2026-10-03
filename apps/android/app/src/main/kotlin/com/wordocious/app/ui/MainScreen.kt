@@ -562,6 +562,12 @@ fun MainScreen() {
       Box(Modifier.fillMaxSize().then(if (covered) Modifier.hiddenTab() else Modifier).pageBackground(headerTint)) {
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides (if (covered || realBackOwner == null) inertBackOwner else realBackOwner),
+            // Perf (2026-10-02 measured audit): the shared header and the tab bar sit OUTSIDE
+            // the per-tab LocalTabHidden below, so the header's living cast kept playing its
+            // idle moves under every game / VS / settings layer (inside an invisible
+            // zero-alpha layer) — a steady stream of frames competing with the board. While a
+            // layer covers the tabs they count as hidden (each tab still provides its own).
+            LocalTabHidden provides coveredState,
         ) {
             Scaffold(
                 // Transparent: the page background (§11) shows through; the tab bar keeps its surface.

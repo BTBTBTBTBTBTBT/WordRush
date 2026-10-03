@@ -9,11 +9,11 @@ import { REVEAL } from '@/lib/tile-motion';
 // the winning row the light "land" haptic once the last tile has landed.
 // Rendered by LetterTile only while it flips (so it plays once per reveal);
 // renders nothing. Simultaneous flips on several boards collapse into one.
-export function RevealFeedback({ index, landAfterTiles }: { index: number; landAfterTiles?: number }) {
+export function RevealFeedback({ index, landAfterTiles, mini = false }: { index: number; landAfterTiles?: number; mini?: boolean }) {
   useEffect(() => {
-    const cancelFlip = scheduleFeedback('flip', index * REVEAL.stagger);
-    const cancelLand = landAfterTiles != null ? scheduleFeedback('rowLand', REVEAL.end(landAfterTiles)) : null;
+    const cancelFlip = scheduleFeedback('flip', index * REVEAL.staggerFor(mini));
+    const cancelLand = landAfterTiles != null ? scheduleFeedback('rowLand', REVEAL.end(landAfterTiles, mini)) : null;
     return () => { cancelFlip(); cancelLand?.(); };
-  }, [index, landAfterTiles]);
+  }, [index, landAfterTiles, mini]);
   return null;
 }

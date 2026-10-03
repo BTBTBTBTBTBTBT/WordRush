@@ -8,7 +8,6 @@ import { useAuth } from '@/lib/auth-context';
 import { friendsTabLabel } from '@/lib/friends-badge';
 import { prefersReducedMotion } from '@/lib/motion';
 import { CandyBadge } from '@/components/ui/candy-badge';
-import { feedback } from '@/lib/sound-events';
 import { useFriendsBadge } from '@/hooks/use-friends-badge';
 import { NAV_ITEMS, tabTint, useTabTap } from '@/components/ui/tab-nav';
 
@@ -52,7 +51,7 @@ export function BottomNav() {
       setPop((n) => n + 1);
       // FINISH_SPEC U: the Friends badge pops = `notify` + light haptic — once,
       // from the row the player can see (the desktop top bar plays it there).
-      if (ref.current && ref.current.getClientRects().length > 0) feedback('notify');
+      // BI7: silent — a background arrival is not something the player did.
       const icon = friendsIconRef.current;
       if (icon && !prefersReducedMotion()) {
         icon.classList.remove('tab-wiggle');

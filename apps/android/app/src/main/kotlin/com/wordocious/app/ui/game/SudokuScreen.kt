@@ -427,8 +427,9 @@ private fun DifficultyPicker(current: SudokuDifficulty, onPick: (SudokuDifficult
  * frosted panel (boxes set apart by a wider gap). Givens = the plain light tile with a
  * dark purple digit; the player's digits = the purple tile (a hint the same, a wrong
  * digit the red conflict tile); empty = frosted glass with the pencil marks. The
- * selected cell wears the typed ring; its row, column and box a soft lilac frost; every
- * cell holding the selected digit a ring. Placing a number swells in like typing (B3).
+ * selected cell is the solid purple tile with a deep ring; every other cell holding its
+ * digit the medium lavender tile; its row, column and box pale lavender (BI6). Placing a
+ * number swells in like typing (B3).
  */
 @Composable
 fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, digitSize: Dp = 22.dp, onSelect: (Int) -> Unit) {
@@ -492,6 +493,8 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, dig
                                 sameDigit = selDigit != null && value == selDigit && i != selected,
                                 mutedDigit = revealed,
                                 notes = if (value == null) state.notes[i] else 0,
+                                // BI6: only cells with pencil marks care which digit is selected.
+                                noteMatch = if (value == null && state.notes[i] != 0) (selDigit?.minus('0') ?: 0) else 0,
                                 digitSp = with(density) { digitSize.toSp() },
                                 noteSp = with(density) { (digitSize * 0.39f).toSp() },
                                 modifier = Modifier.weight(1f).fillMaxSize(),
@@ -505,12 +508,29 @@ fun SudokuBoard(state: SudokuState, selected: Int?, revealSolution: Boolean, dig
     }
 }
 
+/** FINISH_SPEC BI6: every other cell holding the selected digit — a medium lavender tile
+ *  with a deep purple digit (secondary to the selected cell's solid purple). */
+private val SUDOKU_SAME = TileLook(
+    edge = Color(0xFF9F7AEA), faceTop = Color(0xFFC4A6F7), faceMid = Color(0xFFC4A6F7), faceBottom = Color(0xFFC4A6F7),
+    ring = Color(0x8C7C3AED), ringFrac = 0.04f, gloss = 0.4f, glyph = Color(0xFF3B0F8C), glyphShadow = Color.Transparent, glow = Color.Transparent,
+)
+/** BI6: a given / empty cell in the selected cell's row, column or box — pale lavender, lighter than [SUDOKU_SAME]. */
+private val SUDOKU_WASH = TileLook(
+    edge = Color(0xFFC9B0F3), faceTop = Color(0xFFEADFFF), faceMid = Color(0xFFEADFFF), faceBottom = Color(0xFFEADFFF),
+    ring = Color(0x2E7C3AED), ringFrac = 0.025f, gloss = 0.4f, glyph = Color(0xFF2A1650), glyphShadow = Color.Transparent, glow = Color.Transparent,
+)
+/** BI6: dark mode's washed empty cell (the frosted glass tinted lavender). */
+private val SUDOKU_WASH_EMPTY_DARK = TileLook(
+    edge = Color(0x80A78BFA), faceTop = Color(0x4DA78BFA), faceMid = Color(0x4DA78BFA), faceBottom = Color(0x4DA78BFA),
+    ring = Color(0x66A78BFA), ringFrac = 0.033f, gloss = 0.12f, glyph = Color(0xFFF1EAFF), glyphShadow = Color.Transparent, glow = Color.Transparent,
+)
+
 /** One Sudocious cell as a game tile (B1), swelling in when a number is placed (B3). */
 @Composable
 private fun SudokuCell(
     value: Char?, face: TileFace, selected: Boolean, washed: Boolean, sameDigit: Boolean, mutedDigit: Boolean,
     notes: Int, digitSp: androidx.compose.ui.unit.TextUnit, noteSp: androidx.compose.ui.unit.TextUnit,
-    modifier: Modifier, onClick: () -> Unit,
+    modifier: Modifier, noteMatch: Int = 0, onClick: () -> Unit,
 ) {
     var last by remember { mutableStateOf(value) }
     val pop = remember { androidx.compose.animation.core.Animatable(1f) }
@@ -526,24 +546,26 @@ private fun SudokuCell(
             })
         }
     }
+    // FINISH_SPEC BI6: the selected cell is the solid purple tile with a deep ring; every
+    // other cell with its digit the medium lavender tile; its row, column and box pale
+    // lavender. A wrong digit stays the red conflict tile on top of all of it.
     val base = TileLooks.of(face, WTheme.colorblind, WTheme.isDark)
     val look = when {
-        selected && face == TileFace.EMPTY -> TileLooks.TYPED
-        washed && face == TileFace.EMPTY && !WTheme.isDark -> base.copy(faceTop = Color(0xFFF3ECFF), faceMid = Color(0xFFF3ECFF), faceBottom = Color(0xFFEFE6FF))
+        face == TileFace.CONFLICT -> base
+        selected -> TileLooks.of(TileFace.CORRECT, WTheme.colorblind, WTheme.isDark)
+        sameDigit -> SUDOKU_SAME
+        washed && face == TileFace.EMPTY -> if (WTheme.isDark) SUDOKU_WASH_EMPTY_DARK else SUDOKU_WASH
+        washed && face == TileFace.GIVEN && !mutedDigit -> SUDOKU_WASH
         else -> base
     }
-    val ring = when {
-        selected && face != TileFace.EMPTY -> Color(0xFF8B5CF6)
-        sameDigit -> Color(0xFFF5C542)
-        else -> null
-    }
+    val ring = if (selected) Color(0xFF2E1065) else null
     Box(
         modifier
             .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
             .drawBehind {
                 drawGameTile(look)
                 if (ring != null) {
-                    val sw = 2.5.dp.toPx()
+                    val sw = 3.dp.toPx()
                     drawRoundRect(
                         ring, topLeft = Offset(-sw / 2, -sw / 2), size = Size(size.width + sw, size.height + sw),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(minOf(size.width, size.height) * TILE_CORNER + sw / 2),
@@ -569,7 +591,15 @@ private fun SudokuCell(
                     for (cc in 0 until 3) {
                         val d = rr * 3 + cc
                         Box(Modifier.weight(1f).fillMaxSize(), contentAlignment = Alignment.Center) {
-                            if ((notes and (1 shl d)) != 0) Text("${d + 1}", fontSize = noteSp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF8A78AD), fontFamily = Nunito)
+                            if ((notes and (1 shl d)) != 0) {
+                                // BI6: the selected digit's pencil mark goes bold purple.
+                                val match = noteMatch == d + 1
+                                Text(
+                                    "${d + 1}", fontSize = if (match) noteSp * 1.12f else noteSp,
+                                    fontWeight = if (match) FontWeight.Black else FontWeight.ExtraBold,
+                                    color = if (selected) Color.White else if (match) Color(0xFF6D28D9) else Color(0xFF8A78AD), fontFamily = Nunito,
+                                )
+                            }
                         }
                     }
                 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 // FINISH_SPEC §R2 / §R3 (founder 10-02): the shared pieces every game's finished
 // screen uses so the buttons never need a scroll, and the Unlimited card.
@@ -17,6 +18,11 @@ struct FinishedScreenLayout<Header: View, Board: View, Dock: View, Extras: View>
     /// The smallest board area before the page is allowed to grow taller than the
     /// screen (a tiny phone with a huge dock): keeps boards legible.
     var minBoardHeight: CGFloat = 120
+    /// Founder 10-02: the tallest the board area may grow (nil = take all the
+    /// height left). When capped (Gauntlet's hero art), the leftover height splits
+    /// evenly above and below, so the whole block sits centered on the page
+    /// instead of the art eating the screen.
+    var maxBoardHeight: CGFloat? = nil
     /// Whether `extras` has content (the More chip shows only then).
     var hasExtras: Bool = true
     @ViewBuilder var header: () -> Header
@@ -40,11 +46,14 @@ struct FinishedScreenLayout<Header: View, Board: View, Dock: View, Extras: View>
                             board(area.size)
                                 .frame(width: area.size.width, height: area.size.height)
                         }
-                        .frame(minHeight: minBoardHeight)
+                        .frame(minHeight: minBoardHeight, maxHeight: max(minBoardHeight, maxBoardHeight ?? .infinity))
                         dock()
                         if hasExtras { moreChip(proxy) }
                     }
-                    .frame(height: max(page.size.height, minBoardHeight + 220))
+                    // The block is centered in the page: uncapped it fills the height
+                    // exactly (the board takes all that is left); capped, it is shorter
+                    // and the leftover splits evenly above and below.
+                    .frame(height: max(page.size.height, minBoardHeight + 220), alignment: .center)
                     if showMore {
                         extras().id("finished-more")
                     }
@@ -123,6 +132,54 @@ struct CenteredWithTrailing<Content: View, Trailing: View>: View {
     }
 }
 
+/// Founder 10-02 (2.7 close screen): the finished screen's SHARE RESULTS candy. It
+/// replaces the side-floating share icon (which pulled the column off-center) and
+/// Gauntlet's dead-end "Play again tomorrow"; same share behavior (and spoiler chooser)
+/// as before. Founder 10-02 follow-up ("we can't give up board room"): it sits IN the
+/// dock's action row beside Next daily / Leaderboard (`NextDailyCTA(share:)`) at the
+/// row's medium (42 pt) height — no row of its own — and on a daily the "Next <Game> in
+/// 3h 12m" countdown rides inside it as a small second line (dropped on short screens).
+struct FinishedShareCTA: View {
+    /// False for shares with no tiles to spoil — skips the variant chooser.
+    var hasSpoilers: Bool = true
+    /// The game's name for the countdown line (dailies only); nil = no line.
+    var nextGame: String? = nil
+    /// Bool = "Full results" (letters revealed); false = spoiler-free card.
+    let onShare: (Bool) -> Void
+
+    @State private var showShareOptions = false
+    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
+    @State private var shareReveal: Bool?
+
+    var body: some View {
+        Button {
+            if hasSpoilers { showShareOptions = true } else { onShare(false) }
+        } label: {
+            if let nextGame, !FinishLayoutMetrics.isShort {
+                // Refreshed on each minute boundary; the glyph steps aside for the two lines.
+                TimelineView(.everyMinute) { _ in
+                    let line = FinishCloseScreen.countdownLine(game: nextGame, seconds: secondsUntilLocalMidnight())
+                    CandyLabel(title: "Share results", subtitle: line) { EmptyView() }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Share results. \(line)")
+                }
+            } else {
+                CandyLabel(title: "Share results") { Icon3D(.share, size: 20) }
+            }
+        }
+        .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
+        .sheet(isPresented: $showShareOptions,
+               onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
+            ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
+        }
+    }
+
+    /// The game's display name for the countdown line ("Classic", "Gauntlet").
+    static func gameName(_ mode: GameMode) -> String {
+        ModeGen.byDbKey(mode.rawValue)?.title ?? ModeStyle.title(mode).capitalized
+    }
+}
+
 struct FinishedResultStrip: View {
     let won: Bool
     /// ("4/6", "guesses"), ("0:48", "time")… in order.
@@ -138,6 +195,9 @@ struct FinishedResultStrip: View {
             if let points {
                 chip(points.formatted(.number.grouping(.automatic)), "pts", Color(hex: 0xF5A524))
             }
+            // Founder 10-02: an invisible twin of the badge balances the row, so the
+            // chips sit on the screen's center line (the leading badge pulled them right).
+            ResultBadge(won: won, size: 24).hidden().accessibilityHidden(true)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
@@ -175,6 +235,9 @@ struct UnlimitedKeepPlayingCard: View {
     var mini: Bool = false
     let action: () -> Void
     var onOtherGames: (() -> Void)? = nil
+    /// Founder 10-02: after an Unlimited game the SHARE RESULTS candy (`FinishedShareCTA`)
+    /// leads the card's action row — no row of its own.
+    var share: AnyView? = nil
 
     @Environment(\.accessibilityReduceMotion) private var envReduce
     @ObservedObject private var auth = AuthService.shared
@@ -260,6 +323,7 @@ struct UnlimitedKeepPlayingCard: View {
             }
             if afterUnlimited {
                 HStack(spacing: 8) {
+                    if let share { share }
                     Button(action: tap) { CandyLabel(title: "New puzzle") }
                         .buttonStyle(CandyButtonStyle(variant: .peach, size: .large))
                         .overlay(alignment: .topTrailing) { if locked { proPill.offset(x: -6, y: -8) } }

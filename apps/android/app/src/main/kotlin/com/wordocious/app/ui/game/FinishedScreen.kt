@@ -80,7 +80,6 @@ import com.wordocious.app.ui.FinishInk
 import com.wordocious.app.ui.Icon3D
 import com.wordocious.app.ui.Icon3DName
 import com.wordocious.app.ui.ModeCard
-import com.wordocious.app.ui.SoftControl
 import com.wordocious.app.ui.SoftNumber
 import com.wordocious.app.ui.Wash
 import com.wordocious.app.ui.accentLine
@@ -127,6 +126,17 @@ object FinishedSizing {
         val left = viewport - header - strip - dock - gaps
         return if (left >= minBoard) Budget(left, scrolls = false) else Budget(minBoard.coerceAtLeast(0f), scrolls = true)
     }
+
+    /** The board slot's height: the [budget] board, never above an optional [maxBoard] cap (null = no cap). */
+    fun cappedBoard(budget: Float, maxBoard: Float?): Float =
+        (if (maxBoard != null) minOf(budget, maxBoard) else budget).coerceAtLeast(0f)
+
+    /**
+     * Founder 10-02 (finished screens centered): the block's top offset — the leftover
+     * [viewport] height above a [content]-tall block splits equally above and below it
+     * (0 when the block fills or overflows the page).
+     */
+    fun centeredTop(viewport: Float, content: Float): Float = ((viewport - content) / 2f).coerceAtLeast(0f)
 
     /** A square board's side in a [availW] × [availH] slot, never above [maxSide]. */
     fun squareSide(availW: Float, availH: Float, maxSide: Float): Float =
@@ -177,13 +187,18 @@ private enum class FinishedSlot { HEADER, STRIP, DOCK, BOARD }
 /**
  * R2 the finished screen: [header] (the game's own header), [strip] ([ResultStrip]),
  * [board] — called with the width and the height LEFT after the header, strip and
- * [dock] were measured — and the [dock] pinned at the bottom ([FinishedDock]).
+ * [dock] were measured (never above [maxBoardHeight] when set) — and the [dock]
+ * ([FinishedDock]). Founder 10-02: the whole block (header → dock) sits vertically
+ * centered in the page — the board stays the flexible part, and whatever height it
+ * does not use (a capped or smaller board) splits equally above and below the block.
  */
 @Composable
 fun FinishedScreen(
     modifier: Modifier = Modifier,
     horizontalPadding: Dp = 10.dp,
     gap: Dp = 8.dp,
+    /** Optional cap on the board slot (null = the board takes all the height left). */
+    maxBoardHeight: Dp? = null,
     header: @Composable () -> Unit,
     strip: @Composable () -> Unit,
     dock: @Composable () -> Unit,
@@ -208,21 +223,25 @@ fun FinishedScreen(
                 viewport.toFloat(), headerH.toFloat(), stripH.toFloat(), dockH.toFloat(), gapPx * 3f,
                 FinishedSizing.MIN_BOARD.dp.toPx(),
             )
-            val boardMax = budget.board.roundToInt().coerceAtLeast(0)
+            val boardMax = FinishedSizing.cappedBoard(budget.board, maxBoardHeight?.toPx()).roundToInt().coerceAtLeast(0)
             val boardP = subcompose(FinishedSlot.BOARD) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { board(w.toDp(), boardMax.toDp()) }
             }.map { it.measure(Constraints(minWidth = 0, maxWidth = w, minHeight = 0, maxHeight = boardMax)) }
-            val content = headerH + stripH + boardMax + dockH + gapPx * 3
-            val total = maxOf(viewport, content)
+            // The board's real height (≤ its slot): the block packs header → strip → board →
+            // dock and centers as a whole; unused height splits equally above and below.
+            val boardH = (boardP.maxOfOrNull { it.height } ?: 0).coerceAtMost(boardMax)
+            val block = headerH + stripH + boardH + dockH + gapPx * 3
+            val total = maxOf(viewport, block)
+            val top = FinishedSizing.centeredTop(total.toFloat(), block.toFloat()).roundToInt()
             layout(w, total) {
-                var y = 0
+                var y = top
                 headerP.forEach { it.place(0, y) }
                 y += headerH + gapPx
                 stripP.forEach { it.place(0, y) }
                 y += stripH + gapPx
-                boardP.forEach { it.place(0, y + (boardMax - it.height) / 2) }
-                val dockY = total - dockH
-                dockP.forEach { it.place(0, dockY) }
+                boardP.forEach { it.place(0, y + (boardH - it.height) / 2) }
+                y += boardH + gapPx
+                dockP.forEach { it.place(0, y) }
             }
         }
     }
@@ -295,6 +314,9 @@ fun ResultStrip(
         ) {
             com.wordocious.app.ui.ResultBadge(won, size = 26.dp)
             items.forEach { StripChip(it) }
+            // Founder 10-02: an invisible badge-sized twin on the trailing end, so the chips
+            // (not the badge + chips) center on the screen's center line.
+            Spacer(Modifier.size(26.dp))
         }
     }
     }
@@ -377,10 +399,12 @@ internal fun finishedModeTitle(mode: GameMode): String =
     com.wordocious.app.ModeGen.byDbKey(mode.name)?.title ?: com.wordocious.app.ui.modeCardFor(mode)?.title ?: mode.name
 
 /**
- * R2 the action dock, pinned at the bottom of [FinishedScreen]: the 3D share icon,
- * the primary candy — on a DAILY game the next unplayed daily (amber, with a round
- * purple Leaderboard beside it) or, once the sweep is done, this game's Leaderboard —
- * any [extra] actions, and the "More" chip ([more] opens in a sheet). Under it, on a
+ * R2 the action dock, at the bottom of the [FinishedScreen] block: ONE 40 dp action row —
+ * the "Share results" candy (founder 10-02, [ShareResultsCandy]: on a daily the "Next {Game}
+ * in 3h 12m" countdown rides inside it as a second line, no row of its own), the primary
+ * candy — on a DAILY game the next unplayed daily (amber, with a round purple Leaderboard
+ * beside it) or, once the sweep is done, this game's Leaderboard — any [extra] actions, and
+ * the "More" chip ([more] opens in a sheet). Under it, on a
  * daily result, the peach Unlimited card (R3) — for everyone since the founder's 10-02
  * call: free players and guests see it with a gold PRO pill and their tap opens the Go
  * Pro paywall ([ProPaywallDialog]; a purchase plays straight through). After an
@@ -413,8 +437,9 @@ fun FinishedDock(
     ) {
         if (newPuzzle != null) {
             UnlimitedCard(mode, onPlay = newPuzzle, newPuzzle = true, onOtherGames = onOtherGames) {
-                // The card's action row: share · NEW PUZZLE · More.
-                onShare?.let { SoftControl(Icon3DName.SHARE, "Share", onClick = it, iconSize = 30.dp) }
+                // The card's action row: Share results · NEW PUZZLE · More (founder 10-02: the
+                // share candy takes the old share icon's place — no row of its own, no countdown).
+                onShare?.let { ShareResultsCandy(it, countdownFor = null) }
                 CandyButton(
                     "New puzzle", onClick = newPuzzle, modifier = Modifier.weight(1f),
                     color = CandyColor.PEACH, size = CandySize.LARGE, fill = true,
@@ -436,11 +461,24 @@ fun FinishedDock(
                 )
             }
         }
-        // AT1: the actions center on the SCREEN; share is a trailing overlay (balanced slots).
-        CenteredWithTrailingShare(onShare) {
+        // AT1: the actions center on the SCREEN — one row spanning the dock. Founder 10-02:
+        // "Share results" leads it (beside Next / Leaderboard, the two split the row), with
+        // the daily countdown inside the candy; nothing floats beside the row.
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        ) {
             val lbTitle = finishedModeTitle(mode)
             val next = nd?.next
             val nextMode = next?.engineMode
+            val hasPrimary = nd != null && (onOpenLeaderboard != null || (nextMode != null && onOpenDaily != null))
+            onShare?.let {
+                ShareResultsCandy(
+                    it, countdownFor = if (isDaily) lbTitle else null,
+                    modifier = if (hasPrimary) Modifier.weight(1f) else Modifier, fill = hasPrimary,
+                )
+            }
             if (nd != null && nextMode != null && onOpenDaily != null) {
                 CandyButton(
                     "Next: ${next.title}", onClick = { onOpenDaily(nextMode) },
@@ -460,8 +498,6 @@ fun FinishedDock(
                     leading = { Icon3D(Icon3DName.TROPHY, 22.dp) }, trailing = "›",
                     contentDescription = "$lbTitle Leaderboard",
                 )
-            } else {
-                Spacer(Modifier.weight(1f))
             }
             extra?.invoke(this)
             if (more != null) MoreChip(accent, more)
@@ -479,36 +515,53 @@ fun FinishedDock(
     }
 }
 
-/**
- * AT1 (founder 10-02: finished screens looked off-center): [content] centered on the full
- * width with equal [ShareSlot]-wide gutters on both sides, and the 3D share icon pinned in
- * the trailing gutter as an overlay — so share never pushes the centered content sideways.
- */
-@Composable
-fun CenteredWithTrailingShare(
-    onShare: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-    iconSize: Dp = 32.dp,
-    spacing: Dp = 8.dp,
-    content: @Composable RowScope.() -> Unit,
-) {
-    val slot = ShareSlot.width(iconSize, onShare != null)
-    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = slot),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally),
-            content = content,
-        )
-        if (onShare != null) {
-            SoftControl(Icon3DName.SHARE, "Share", onClick = onShare, iconSize = iconSize, modifier = Modifier.align(Alignment.CenterEnd))
-        }
+/** Founder 10-02: the finished dock's "Next {Game} in 3h 12m" countdown text (pure; unit-tested). */
+object FinishedCountdown {
+    /** "Xh Ym" from one hour up, else "Ym" (never below "1m"). */
+    fun format(secondsLeft: Long): String {
+        val mins = (secondsLeft.coerceAtLeast(0L) / 60L)
+        val h = mins / 60L
+        val m = mins % 60L
+        return if (h >= 1L) "${h}h ${m}m" else "${m.coerceAtLeast(1L)}m"
     }
+
+    /** "Next Gauntlet in 3h 12m". */
+    fun line(gameName: String, secondsLeft: Long): String = "Next $gameName in ${format(secondsLeft)}"
+
+    /**
+     * The share candy's second line: [line] on a daily ([gameName] non-null), none after an
+     * Unlimited game or on a [short] screen (< 700 dp: the board needs the room).
+     */
+    fun shareSubtitle(gameName: String?, secondsLeft: Long, short: Boolean): String? =
+        if (gameName == null || short) null else line(gameName, secondsLeft)
 }
 
-/** AT1 the share overlay's gutter (the same on the leading side, so the content stays centered). */
-object ShareSlot {
-    fun width(iconSize: Dp, hasShare: Boolean): Dp = if (!hasShare) 0.dp else maxOf(iconSize, com.wordocious.app.ui.SOFT_CONTROL_TAP) + 4.dp
+/**
+ * Founder 10-02: the finished dock's pink "Share results" candy — the game's own share flow
+ * (chooser included: [onShare]) — sitting IN the dock's action row at the row's 40 dp
+ * MEDIUM height. On a DAILY result ([countdownFor] = the game's name) a small live "Next
+ * {Game} in 3h 12m" second line rides inside it, counting down to the local-midnight daily
+ * reset (re-reads every 30 s); on a short screen (< 700 dp) the line is dropped. Replaces
+ * the side-floating share icon and Gauntlet's "Play again tomorrow".
+ */
+@Composable
+fun ShareResultsCandy(onShare: () -> Unit, countdownFor: String?, modifier: Modifier = Modifier, fill: Boolean = false) {
+    val short = isShortScreen()
+    val secs by produceState(initialValue = com.wordocious.app.ui.secondsUntilLocalMidnightLimit(), countdownFor) {
+        if (countdownFor == null) return@produceState
+        while (true) {
+            kotlinx.coroutines.delay(30_000L)
+            value = com.wordocious.app.ui.secondsUntilLocalMidnightLimit()
+        }
+    }
+    val sub = FinishedCountdown.shareSubtitle(countdownFor, secs, short)
+    CandyButton(
+        "Share results", onClick = onShare, modifier = modifier, color = CandyColor.PINK, size = CandySize.MEDIUM,
+        // The two-line label needs the glyph's room; it comes back when the line is dropped.
+        icon = if (sub == null) com.wordocious.app.ui.CandyIcon.SHARE else null,
+        fill = fill, subtitle = sub,
+        contentDescription = if (sub != null) "Share results. $sub" else "Share results",
+    )
 }
 
 /** A CTA's leading game icon (the glossy 3D game art), decorative. */
