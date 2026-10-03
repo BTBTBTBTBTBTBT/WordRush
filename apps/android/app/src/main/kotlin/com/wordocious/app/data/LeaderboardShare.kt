@@ -54,9 +54,9 @@ object LeaderboardShare {
     /** §17 The card's header art: the page the board lives on. */
     private fun headerArt(v: Variant): Int = when (v) {
         Variant.VS -> R.drawable.art_title_vs
-        Variant.FRIENDS, Variant.FRIENDS_PODIUM, Variant.WEEKLY_RACE -> R.drawable.art_title_friends
-        Variant.TROPHY_CASE -> R.drawable.art_title_records
-        else -> R.drawable.art_title_leaderboard
+        Variant.FRIENDS, Variant.FRIENDS_PODIUM, Variant.WEEKLY_RACE -> R.drawable.art_titlecast_friends
+        Variant.TROPHY_CASE -> R.drawable.art_titlecast_records
+        else -> R.drawable.art_titlecast_leaderboard
     }
 
     private fun label(v: Variant): String = when (v) {

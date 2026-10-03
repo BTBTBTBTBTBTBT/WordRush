@@ -129,11 +129,11 @@ export function Landing() {
           <CastRow size={34} gap={0} />
         </div>
         <ArtTitle
-          name="art-title-welcome"
+          name="art-titlecast-welcome"
           label="Welcome"
           as="div"
           widthPct={HEADLINE.widthPct}
-          maxWidth={headlineMaxWidth(...ART_SIZE['art-title-welcome'])}
+          maxWidth={headlineMaxWidth(...ART_SIZE['art-titlecast-welcome'])}
           className="mb-3"
         />
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={wordmarkStyle}>WORDOCIOUS</h1>

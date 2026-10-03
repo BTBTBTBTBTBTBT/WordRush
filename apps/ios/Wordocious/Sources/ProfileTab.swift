@@ -973,7 +973,7 @@ struct ProfileTab: View {
     }
 
     /// FINISH_SPEC §A6: the STATS title is a headline — the whole-cast art
-    /// (`art-title-stats`) full width, edge to edge (bleeds past the page's 12-pt
+    /// (`art-titlecast-stats`) full width, edge to edge (bleeds past the page's 12-pt
     /// padding), right on the wallpaper: no box, no float.
     private var statsTitle: some View {
         PageHeadline(.stats, bleed: 12)

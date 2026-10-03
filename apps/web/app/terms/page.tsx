@@ -4,7 +4,7 @@ import { InfoPageLayout, IntroCard, SectionCard } from '@/components/ui/info-pag
 
 export default function TermsPage() {
   return (
-    <InfoPageLayout title="Terms of Service" art="art-title-terms">
+    <InfoPageLayout title="Terms of Service" art="art-titlecast-terms">
       <IntroCard titleAs="h2" title="Agreement to Terms">
         <p className="m-0 text-[13px] font-semibold leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           By accessing or using Wordocious (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service. We reserve the right to update these terms at any time, and continued use of Wordocious constitutes acceptance of any changes.

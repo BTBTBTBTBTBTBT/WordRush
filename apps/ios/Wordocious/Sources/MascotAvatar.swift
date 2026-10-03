@@ -102,6 +102,8 @@ struct MascotAvatar: View {
     var cached: Bool = true
     /// Share images are always light (ShareKit).
     var alwaysLight: Bool = false
+    /// false = no thin body-color edge on an unframed tile (the Pick a Friend grid; no bordered boxes).
+    var stroke: Bool = true
 
     @Environment(\.displayScale) private var displayScale
     #if canImport(UIKit)
@@ -111,12 +113,13 @@ struct MascotAvatar: View {
     @State private var rendered: (key: String, image: UIImage)?
     #endif
 
-    init(config: AvatarConfig, initial: String, size: CGFloat = 40, cached: Bool = true, alwaysLight: Bool = false) {
+    init(config: AvatarConfig, initial: String, size: CGFloat = 40, cached: Bool = true, alwaysLight: Bool = false, stroke: Bool = true) {
         self.config = config
         self.initial = initial
         self.size = size
         self.cached = cached
         self.alwaysLight = alwaysLight
+        self.stroke = stroke
     }
 
     var body: some View {
@@ -125,20 +128,20 @@ struct MascotAvatar: View {
         Group {
             #if canImport(UIKit)
             let useCache = cached && s <= 96
-            let key = "\(config.cacheKey)|\(initial)|\(Int(s * 4))|\(dark ? 1 : 0)|\(Int(displayScale))"
+            let key = "\(config.cacheKey)|\(initial)|\(Int(s * 4))|\(dark ? 1 : 0)|\(Int(displayScale))\(stroke ? "" : "|ns")"
             if useCache, let img = rendered?.key == key ? rendered?.image : MascotImageCache.image(key) {
                 Image(uiImage: img).resizable().interpolation(.high).frame(width: s, height: s)
             } else {
-                MascotComposition(config: config, initial: initial, size: s, dark: dark)
+                MascotComposition(config: config, initial: initial, size: s, dark: dark, stroke: stroke)
                     .onAppear {
                         guard useCache else { return }
                         MascotImageCache.store(key, scale: displayScale, done: { img in rendered = (key, img) }) {
-                            MascotComposition(config: config, initial: initial, size: s, dark: dark)
+                            MascotComposition(config: config, initial: initial, size: s, dark: dark, stroke: stroke)
                         }
                     }
             }
             #else
-            MascotComposition(config: config, initial: initial, size: s, dark: dark)
+            MascotComposition(config: config, initial: initial, size: s, dark: dark, stroke: stroke)
             #endif
         }
         .frame(width: size, height: size)
@@ -213,10 +216,12 @@ struct MascotComposition: View {
     let initial: String
     let size: CGFloat
     let dark: Bool
+    /// false = no body-color edge on the unframed tile (MascotAvatar.stroke).
+    var stroke: Bool = true
 
     var body: some View {
         if let fit = MascotParts.fit, MascotParts.art("body", config.body) != nil {
-            MascotArtComposition(config: config, initial: initial, size: size, dark: dark, fit: fit)
+            MascotArtComposition(config: config, initial: initial, size: size, dark: dark, fit: fit, stroke: stroke)
         } else {
             placeholder
         }
@@ -242,7 +247,7 @@ struct MascotComposition: View {
             }
             .frame(width: inner, height: inner)
             .clipShape(shape)
-            .overlay(framed ? nil : shape.strokeBorder(base.opacity(dark ? 0.55 : 0.32), lineWidth: max(1, size * 0.03)))
+            .overlay(framed || !stroke ? nil : shape.strokeBorder(base.opacity(dark ? 0.55 : 0.32), lineWidth: max(1, size * 0.03)))
             if framed { MascotFrame(frame: config.frame, size: size) }
         }
         .frame(width: size, height: size)
@@ -259,6 +264,7 @@ struct MascotArtComposition: View {
     let size: CGFloat
     let dark: Bool
     let fit: AvatarManifest
+    var stroke: Bool = true
 
     var body: some View {
         let framed = config.frame != "none"
@@ -277,7 +283,7 @@ struct MascotArtComposition: View {
             }
             .frame(width: inner, height: inner)
             .clipShape(shape)
-            .overlay(framed ? nil : shape.strokeBorder(base.opacity(dark ? 0.55 : 0.32), lineWidth: max(1, size * 0.03)))
+            .overlay(framed || !stroke ? nil : shape.strokeBorder(base.opacity(dark ? 0.55 : 0.32), lineWidth: max(1, size * 0.03)))
             if framed { MascotFrame(frame: config.frame, size: size) }
         }
         .frame(width: size, height: size)

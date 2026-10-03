@@ -81,7 +81,7 @@ struct DailySweepCardView: View {
         return DailySweepCatalog.moreModes.contains { $0.dbKey == first }
     }
 
-    private var titleArt: String { isPuzzles ? "art-title-puzzles" : "art-title-dailies" }
+    private var titleArt: String { isPuzzles ? "art-titlecast-puzzles" : "art-titlecast-dailies" }
 
     /// Title art at ~70% of the width (height from its aspect, capped).
     private var titleH: CGFloat {
@@ -328,7 +328,7 @@ struct ProfileShareCardView: View {
         ]
     }
 
-    private let titleArt = "art-title-stats"
+    private let titleArt = "art-titlecast-stats"
 
     var body: some View {
         ZStack {

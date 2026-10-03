@@ -105,7 +105,7 @@ object DailySweepShare {
         }
         return ShareCard.render(context, ShareCard.Spec(
             wallpaper = R.drawable.art_wall_home,
-            title = if (puzzles) R.drawable.art_title_puzzles else R.drawable.art_title_dailies,
+            title = if (puzzles) R.drawable.art_titlecast_puzzles else R.drawable.art_titlecast_dailies,
             titleFallback = if (puzzles) "PUZZLES" else "DAILIES",
             info = listOfNotNull(ShareFinish.dayCaps(today), puzzleNo).joinToString(" · "),
             body = body,
@@ -265,7 +265,7 @@ object ProfileShare {
         }
         return ShareCard.render(context, ShareCard.Spec(
             wallpaper = R.drawable.art_wall_home,
-            title = R.drawable.art_title_stats,
+            title = R.drawable.art_titlecast_stats,
             titleFallback = "STATS",
             // V3: the level now rides on the tier badge row in the body; the info line dates the card.
             info = ShareFinish.dayCaps(null),

@@ -32,7 +32,7 @@ export function HomeSectionTitle({ name, label, id, below, compact = false }: Ho
   return (
     <div id={id} className={`${compact ? 'mt-0 -mb-0.5' : 'mt-1 mb-0.5'} flex flex-col items-center`} style={{ scrollMarginTop: 12 }}>
       <div className="min-w-0" style={{ width: `${rule.widthPct}%`, maxWidth: headlineMaxWidth(ART_SIZE[name][0], ART_SIZE[name][1], rule) }}>
-        <ArtTitle name={name} label={label} as="h2" maxWidth={rule.maxWidth} maxHeight={rule.maxHeight} align="center" priority={name === 'art-title-dailies'} />
+        <ArtTitle name={name} label={label} as="h2" maxWidth={rule.maxWidth} maxHeight={rule.maxHeight} align="center" priority={name === 'art-titlecast-dailies'} />
       </div>
       {below && <div className="mt-0.5 mb-1 text-center">{below}</div>}
     </div>

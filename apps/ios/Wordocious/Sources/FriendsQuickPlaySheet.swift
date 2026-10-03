@@ -171,7 +171,7 @@ struct FriendsQuickPlaySheet: View {
         } label: {
             VStack(spacing: 1) {
                 AvatarView(url: f.avatar_url, username: f.username, size: avatar, emoji: f.avatar_emoji,
-                           castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id)
+                           castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id, stroke: false)
                     .shadow(color: st.online ? FriendsKit.green.opacity(0.55) : .clear, radius: 10)
                     .shadow(color: st.online ? FriendsKit.green.opacity(0.35) : .clear, radius: 4)
                     .padding(.bottom, 5)

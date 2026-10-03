@@ -117,7 +117,7 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
         )
       ) : holiday ? (
         <h1 className="relative m-0 mb-3 flex flex-col items-center gap-1">
-          <PageHeadline name="art-title-leaderboard" label="Leaderboard" as="div" />
+          <PageHeadline name="art-titlecast-leaderboard" label="Leaderboard" as="div" />
           {/* FINISH_SPEC AR: the holiday title in live lettering (gold → amber). */}
           <LiveHeadline text={title} palette="leaderboard" size={18} level={2} />
           {season === 'halloween' && <HalloweenDayProps />}

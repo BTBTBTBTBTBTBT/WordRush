@@ -147,7 +147,7 @@ export default function ProPage() {
         <PageHeader
           className="mb-4"
           title="GO PRO"
-          art="art-title-gopro"
+          art="art-titlecast-gopro"
           artLabel="Go Pro"
           sub={(
             <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>

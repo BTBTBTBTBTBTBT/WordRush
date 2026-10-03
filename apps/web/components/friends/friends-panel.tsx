@@ -427,7 +427,7 @@ export function FriendsPanel() {
           width, edge to edge, right on the wallpaper — nothing beside it. The bell
           (notification prefs) moved into Settings → Notifications; "Add a friend" is
           the candy button in the YOUR FRIENDS header. */}
-      <PageHeadline name="art-title-friends" label="Friends" />
+      <PageHeadline name="art-titlecast-friends" label="Friends" />
 
       {/* 2. Friends banner (FINISH_SPEC AG: the 560 column on desktop web) */}
       <div className="page-col">

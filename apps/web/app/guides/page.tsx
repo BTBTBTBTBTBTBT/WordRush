@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function GuidesIndexPage() {
   return (
-    <InfoPageLayout title="Mode Guides" art="art-title-guides" artLabel="Mode Guides">
+    <InfoPageLayout title="Mode Guides" art="art-titlecast-guides" artLabel="Mode Guides">
       <IntroCard title="How every game works">
         <IntroText>
           Every Wordocious mode, explained properly — exact rules, the real scoring math, and the strategy that separates the leaderboard from the middle of the pack.

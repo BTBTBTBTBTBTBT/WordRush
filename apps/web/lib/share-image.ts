@@ -1891,7 +1891,7 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     fallbackColor = input.flawless ? SWEEP_GOLD : SWEEP_VIOLET;
   } else if (input.layout === 'profile') {
     wall = pageWall('stats');
-    title = 'art-title-stats';
+    title = 'art-titlecast-stats';
     tint = PAGE_TINTS.stats.light;
     fallbackTitle = 'STATS';
     fallbackColor = input.accentHex;

@@ -21,7 +21,7 @@ describe('night art 10-03 wiring', () => {
 
   it('the MENU sheet shows the MENU title art (iOS parity)', () => {
     const s = read('components/modals/menu-modal.tsx');
-    expect(s).toContain('name="art-title-menu"');
+    expect(s).toContain('name="art-titlecast-menu"');
     expect(s).not.toContain('<LiveHeadline');
   });
 

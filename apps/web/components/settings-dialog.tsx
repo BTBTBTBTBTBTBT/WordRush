@@ -148,12 +148,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <div className="relative flex items-center justify-center px-10">
             <DialogTitle className="w-full">
               <ArtTitle
-                name="art-title-settings"
+                name="art-titlecast-settings"
                 label="Settings"
                 as="div"
                 align="center"
                 widthPct={HEADLINE.widthPct}
-                maxWidth={headlineMaxWidth(...ART_SIZE['art-title-settings'])}
+                maxWidth={headlineMaxWidth(...ART_SIZE['art-titlecast-settings'])}
               />
             </DialogTitle>
             <HeaderBack kind="close" onClick={() => onOpenChange(false)} size={32} className="absolute right-0 top-1/2 -translate-y-1/2" />

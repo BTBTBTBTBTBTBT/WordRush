@@ -87,7 +87,7 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
         <PageHeader
           className="px-5 pt-3 pb-2 flex-shrink-0"
           // The MENU lettering art (night art 10-03; was LiveHeadline until it shipped), iOS parity.
-          title={<PageHeadline name="art-title-menu" label="Menu" as="div" level={2} maxHeight={40} style={{ justifyContent: 'flex-start' }} />}
+          title={<PageHeadline name="art-titlecast-menu" label="Menu" as="div" level={2} maxHeight={40} style={{ justifyContent: 'flex-start' }} />}
           titleTag="h2"
           titleSize={20}
           host={PAGE_HOSTS.guides}

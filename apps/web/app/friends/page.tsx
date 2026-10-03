@@ -36,7 +36,7 @@ export default function FriendsPage() {
           // FINISH_SPEC BI23: a finished signed-out state under the FRIENDS title art — O1 + I
           // as a duo, the headline, one line, the candy SIGN IN (no empty list, no add field).
           <>
-            <PageHeadline name="art-title-friends" label="Friends" />
+            <PageHeadline name="art-titlecast-friends" label="Friends" />
             <GuestPitch
               hosts={[PAGE_HOSTS.friends, PAGE_HOSTS.addFriend]}
               title="Play with friends"

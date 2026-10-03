@@ -302,16 +302,16 @@ export function gameShareArt(mode: ShareMode): { wall: WallArtName; title: GameT
  * (never a WORDOCIOUS wordmark: the cast row at the bottom is the only one, S3).
  */
 export const LEADERBOARD_SHARE_ART: Record<ShareLeaderboardInput['variant'], { wall: PageTint; title: TitleArtName; host: MascotId; label: string }> = {
-  solo: { wall: 'leaderboard', title: 'art-title-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
-  podium: { wall: 'leaderboard', title: 'art-title-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
-  sweep: { wall: 'leaderboard', title: 'art-title-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
-  sweepPodium: { wall: 'leaderboard', title: 'art-title-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
+  solo: { wall: 'leaderboard', title: 'art-titlecast-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
+  podium: { wall: 'leaderboard', title: 'art-titlecast-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
+  sweep: { wall: 'leaderboard', title: 'art-titlecast-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
+  sweepPodium: { wall: 'leaderboard', title: 'art-titlecast-leaderboard', host: PAGE_HOSTS.leaderboard, label: 'LEADERBOARD' },
   vs: { wall: 'vs', title: 'art-title-vs', host: PAGE_HOSTS.vs, label: 'VS BATTLE' },
-  friends: { wall: 'friends', title: 'art-title-friends', host: PAGE_HOSTS.friends, label: 'FRIENDS' },
-  friendsPodium: { wall: 'friends', title: 'art-title-friends', host: PAGE_HOSTS.friends, label: 'FRIENDS' },
-  weeklyRace: { wall: 'friends', title: 'art-title-friends', host: PAGE_HOSTS.friends, label: 'FRIENDS' },
-  flawlessStreak: { wall: 'leaderboard', title: 'art-title-records', host: PAGE_HOSTS.records, label: 'RECORDS' },
-  trophyCase: { wall: 'leaderboard', title: 'art-title-records', host: PAGE_HOSTS.records, label: 'RECORDS' },
+  friends: { wall: 'friends', title: 'art-titlecast-friends', host: PAGE_HOSTS.friends, label: 'FRIENDS' },
+  friendsPodium: { wall: 'friends', title: 'art-titlecast-friends', host: PAGE_HOSTS.friends, label: 'FRIENDS' },
+  weeklyRace: { wall: 'friends', title: 'art-titlecast-friends', host: PAGE_HOSTS.friends, label: 'FRIENDS' },
+  flawlessStreak: { wall: 'leaderboard', title: 'art-titlecast-records', host: PAGE_HOSTS.records, label: 'RECORDS' },
+  trophyCase: { wall: 'leaderboard', title: 'art-titlecast-records', host: PAGE_HOSTS.records, label: 'RECORDS' },
 };
 
 // ── The cast wordmark's line (S3) ───────────────────────────────────────────

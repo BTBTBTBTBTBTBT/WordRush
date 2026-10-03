@@ -4,7 +4,7 @@ import { InfoPageLayout, IntroCard, SectionCard } from '@/components/ui/info-pag
 
 export default function PrivacyPage() {
   return (
-    <InfoPageLayout title="Privacy Policy" art="art-title-privacy">
+    <InfoPageLayout title="Privacy Policy" art="art-titlecast-privacy">
       <IntroCard titleAs="h2" title="Introduction">
         <p className="m-0 text-[13px] font-semibold leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           Wordocious (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is a word puzzle game. We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains what information we collect, how we use it, and your rights regarding that information.

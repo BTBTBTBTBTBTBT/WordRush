@@ -89,7 +89,8 @@ struct DayTitleArtView: View {
 
 // MARK: - §2 Whole-cast page titles
 
-/// `art-title-<page>`: page lettering with the whole cast perched on it.
+/// `art-titlecast-<page>`: the founder-approved cast-color lettering (10-03; one cast
+/// body color per page). `vs` keeps `art-title-vs` (the VS share title; no cast-color twin).
 enum ArtTitleName: String, CaseIterable {
     case friends, stats, records, vs, puzzles, wotd, settings, howto, gopro, moregames
     /// §8: the whole cast around WELCOME! (sign-in / onboarding) and LEADERBOARD
@@ -101,10 +102,10 @@ enum ArtTitleName: String, CaseIterable {
     case guides, strategy, words, faq, privacy, terms
     /// FINISH_SPEC §O1: the lettering-only VS BATTLE Home section title.
     case vsbattle
-    /// FINISH_SPEC §AS1: the MENU sheet title (art-title-menu; LiveHeadline until it ships).
+    /// FINISH_SPEC §AS1: the MENU sheet title (art-titlecast-menu; LiveHeadline until it ships).
     case menu
 
-    var assetName: String { "art-title-\(rawValue)" }
+    var assetName: String { self == .vs ? "art-title-vs" : "art-titlecast-\(rawValue)" }
 
     /// The title text the art carries (its accessibility label, and the text
     /// fallback when the art is missing) — §AB: from the Core registry (unit tested).

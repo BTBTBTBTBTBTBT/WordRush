@@ -34,6 +34,6 @@ describe('art labels (FINISH_SPEC AB)', () => {
   it('moment and game labels read as words', () => {
     expect(artLabel('art-moment-victory')).toBe('Victory!');
     expect(artLabel('art-game-six')).toBe('Classic Six');
-    expect(artLabel('art-title-records')).toBe('All-Time Records');
+    expect(artLabel('art-titlecast-records')).toBe('All-Time Records');
   });
 });

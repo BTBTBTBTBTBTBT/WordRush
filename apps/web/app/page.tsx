@@ -456,12 +456,12 @@ export default function HomePage() {
             §12, §19.2), one header style, ~78% width, centered. */}
         <div className="home-games page-grid-2 flex flex-col gap-2">
         <div className="flex flex-col gap-2">
-        <HomeSectionTitle name="art-title-dailies" label="Dailies" compact />
+        <HomeSectionTitle name="art-titlecast-dailies" label="Dailies" compact />
         {grid(wordCards)}
         </div>
 
         <div className="flex flex-col gap-2">
-        <HomeSectionTitle id="puzzles" name="art-title-puzzles" label="Puzzles" compact />
+        <HomeSectionTitle id="puzzles" name="art-titlecast-puzzles" label="Puzzles" compact />
         {grid(puzzleCards)}
         </div>
         </div>
@@ -483,7 +483,7 @@ export default function HomePage() {
           return (
             <div className="flex flex-col gap-1.5">
             {/* FINISH_SPEC O1: VS BATTLE gets its own section title; BJ7: the compact DAILIES / PUZZLES size. */}
-            <HomeSectionTitle name="art-title-vsbattle" label="VS Battle" compact />
+            <HomeSectionTitle name="art-titlecast-vsbattle" label="VS Battle" compact />
             <VSLiveTile
               card={vs}
               livePlayerCount={livePlayerCount}

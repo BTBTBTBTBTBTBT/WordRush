@@ -19,34 +19,34 @@ export const DAY_ART = [
 ] as const;
 export type DayArtName = (typeof DAY_ART)[number];
 
-/** Whole-cast page titles (§2). */
+/** Page titles (§2): the founder-approved cast-color lettering (art-titlecast-*, 10-03), plus the VS share title. */
 export type TitleArtName =
-  | 'art-title-friends'
-  | 'art-title-stats'
-  | 'art-title-records'
+  | 'art-titlecast-friends'
+  | 'art-titlecast-stats'
+  | 'art-titlecast-records'
   | 'art-title-vs'
-  | 'art-title-puzzles'
-  | 'art-title-wotd'
-  | 'art-title-settings'
-  | 'art-title-howto'
-  | 'art-title-guides'
-  | 'art-title-strategy'
-  | 'art-title-words'
-  | 'art-title-faq'
-  | 'art-title-privacy'
-  | 'art-title-terms'
-  | 'art-title-gopro'
-  | 'art-title-moregames'
+  | 'art-titlecast-puzzles'
+  | 'art-titlecast-wotd'
+  | 'art-titlecast-settings'
+  | 'art-titlecast-howto'
+  | 'art-titlecast-guides'
+  | 'art-titlecast-strategy'
+  | 'art-titlecast-words'
+  | 'art-titlecast-faq'
+  | 'art-titlecast-privacy'
+  | 'art-titlecast-terms'
+  | 'art-titlecast-gopro'
+  | 'art-titlecast-moregames'
   // Second pass (§8): WELCOME! on the sign-in / signed-out landing, and the
   // LEADERBOARD title holidays show over their HEROES text.
-  | 'art-title-welcome'
-  | 'art-title-leaderboard'
+  | 'art-titlecast-welcome'
+  | 'art-titlecast-leaderboard'
   // §12: the Home section header above the daily games (§19.2: reads just DAILIES).
-  | 'art-title-dailies'
+  | 'art-titlecast-dailies'
   // FINISH_SPEC O1: the Home VS BATTLE section title (lettering only).
-  | 'art-title-vsbattle'
+  | 'art-titlecast-vsbattle'
   // FINISH_SPEC AS1 (night art 10-03): the ? menu sheet's MENU title.
-  | 'art-title-menu';
+  | 'art-titlecast-menu';
 
 /**
  * The seamless letter-tile page pattern (§11; v2 §18): 720 px square of big
@@ -311,26 +311,7 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-day-thursday': [879, 482],
   'art-day-friday': [853, 591],
   'art-day-saturday': [898, 502],
-  'art-title-friends': [900, 238],
-  'art-title-stats': [900, 312],
-  'art-title-records': [899, 85],
   'art-title-vs': [572, 95],
-  'art-title-puzzles': [607, 124],
-  'art-title-wotd': [899, 96],
-  'art-title-settings': [662, 123],
-  'art-title-howto': [900, 122],
-  'art-title-guides': [648, 166],
-  'art-title-strategy': [899, 167],
-  'art-title-words': [900, 227],
-  'art-title-faq': [539, 242],
-  'art-title-privacy': [899, 201],
-  'art-title-terms': [737, 209],
-  'art-title-gopro': [620, 141],
-  'art-title-moregames': [899, 129],
-  'art-title-welcome': [805, 153],
-  'art-title-leaderboard': [900, 135],
-  'art-title-vsbattle': [1080, 262],
-  'art-title-dailies': [900, 244],
   'art-bg-tiles': [720, 720],
   'art-moment-victory': [880, 180],
   'art-moment-soclose': [899, 179],
@@ -847,7 +828,6 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-scene-all-set': [1200, 381],
   'art-scene-banner-halloween': [905, 570],
   'art-scene-welcome-cast': [1200, 402],
-  'art-title-menu': [1080, 300],
   'art-toggle-dark-knob': [243, 245],
   'art-toggle-dark-switch': [340, 200],
   'art-toggle-dark-switch-on': [438, 202],
@@ -882,27 +862,27 @@ export function gameTitleArtLabel(name: GameTitleArtName): string {
  * accessible name. Lettering images don't scale with Larger Text; their labels do.
  */
 export const TITLE_ART_LABEL: Record<TitleArtName, string> = {
-  'art-title-friends': 'Friends',
-  'art-title-stats': 'Stats',
-  'art-title-records': 'All-Time Records',
+  'art-titlecast-friends': 'Friends',
+  'art-titlecast-stats': 'Stats',
+  'art-titlecast-records': 'All-Time Records',
   'art-title-vs': 'VS Battle',
-  'art-title-puzzles': 'Puzzles',
-  'art-title-wotd': 'Word of the Day',
-  'art-title-settings': 'Settings',
-  'art-title-howto': 'How to Play',
-  'art-title-guides': 'Guides',
-  'art-title-strategy': 'Strategy',
-  'art-title-words': 'Words',
-  'art-title-faq': 'FAQ',
-  'art-title-privacy': 'Privacy',
-  'art-title-terms': 'Terms',
-  'art-title-gopro': 'Go Pro',
-  'art-title-moregames': 'More Games',
-  'art-title-welcome': 'Welcome!',
-  'art-title-leaderboard': 'Leaderboard',
-  'art-title-dailies': 'Dailies',
-  'art-title-vsbattle': 'VS Battle',
-  'art-title-menu': 'Menu',
+  'art-titlecast-puzzles': 'Puzzles',
+  'art-titlecast-wotd': 'Word of the Day',
+  'art-titlecast-settings': 'Settings',
+  'art-titlecast-howto': 'How to Play',
+  'art-titlecast-guides': 'Guides',
+  'art-titlecast-strategy': 'Strategy',
+  'art-titlecast-words': 'Words',
+  'art-titlecast-faq': 'FAQ',
+  'art-titlecast-privacy': 'Privacy',
+  'art-titlecast-terms': 'Terms',
+  'art-titlecast-gopro': 'Go Pro',
+  'art-titlecast-moregames': 'More Games',
+  'art-titlecast-welcome': 'Welcome!',
+  'art-titlecast-leaderboard': 'Leaderboard',
+  'art-titlecast-dailies': 'Dailies',
+  'art-titlecast-vsbattle': 'VS Battle',
+  'art-titlecast-menu': 'Menu',
 };
 
 /** The Leaderboard day titles' words (core leaderboardTitle's weekday names), Sunday first. */
@@ -921,7 +901,7 @@ export type LetteringArtName = TitleArtName | DayArtName | GameTitleArtName | Mo
 
 /** True for lettering art (it needs a label and the heading trait); everything else is decorative. */
 export function isLetteringArt(name: string): name is LetteringArtName {
-  return /^art-(title|day|game|moment)-/.test(name) && !name.endsWith('-wide');
+  return (/^art-(title|day|game|moment)-/.test(name) || name in TITLE_ART_LABEL) && !name.endsWith('-wide');
 }
 
 /**
@@ -1207,7 +1187,7 @@ export type ArtMotion = 'float' | 'pop' | 'none';
 export function artMotion(name: string): ArtMotion {
   // FINISH_SPEC A6: page and day titles are headlines on the wallpaper — they
   // pop in once and no longer float.
-  if (name.startsWith('art-title-') || name.startsWith('art-day-')) return 'pop';
+  if (name.startsWith('art-title-') || name.startsWith('art-titlecast-') || name.startsWith('art-day-')) return 'pop';
   if (name.startsWith('art-game-')) return 'pop';
   return 'none';
 }

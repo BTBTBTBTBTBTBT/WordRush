@@ -79,7 +79,7 @@ internal fun LeaderboardHeadline(bleed: Dp) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            PageHeadline(com.wordocious.app.R.drawable.art_title_leaderboard, "Leaderboard", bleed = bleed, maxHeight = LB_TITLE_MAX - 18.dp)
+            PageHeadline(com.wordocious.app.R.drawable.art_titlecast_leaderboard, "Leaderboard", bleed = bleed, maxHeight = LB_TITLE_MAX - 18.dp)
             Text(
                 title.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.14.em,
                 color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1, textAlign = TextAlign.Center,

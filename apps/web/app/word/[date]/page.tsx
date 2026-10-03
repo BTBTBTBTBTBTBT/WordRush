@@ -108,7 +108,7 @@ export default async function WordOfDayPage({ params }: Props) {
         <PageHeader
           className="mb-6"
           title="Word of the Day"
-          art="art-title-wotd"
+          art="art-titlecast-wotd"
           titleTag="div"
           back={{ href: '/words', label: 'All words' }}
           close={{ href: '/', label: 'Close and return home' }}

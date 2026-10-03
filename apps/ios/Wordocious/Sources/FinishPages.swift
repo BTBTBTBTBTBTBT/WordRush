@@ -53,7 +53,7 @@ struct PageHeadline: View {
         self.maxHeight = maxHeight
     }
 
-    /// A page title (`art-title-<page>`).
+    /// A page title (`art-titlecast-<page>`).
     init(_ name: ArtTitleName, label: String? = nil, style: Style = .page, bleed: CGFloat = 0, maxHeight: CGFloat? = nil) {
         self.init(asset: name.assetName, label: label ?? name.label, style: style, bleed: bleed, maxHeight: maxHeight)
     }

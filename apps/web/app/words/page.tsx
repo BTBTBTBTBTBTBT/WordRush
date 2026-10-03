@@ -47,7 +47,7 @@ export default async function WordsArchivePage() {
   }
 
   return (
-    <InfoPageLayout title="Word of the Day" art="art-title-words" artLabel="Word of the Day Archive">
+    <InfoPageLayout title="Word of the Day" art="art-titlecast-words" artLabel="Word of the Day Archive">
       <div className="flex flex-col gap-2 px-1">
         <IntroText>
           Every day Wordocious surfaces a Word of the Day — a hand-curated five-letter word from the same answer bank the

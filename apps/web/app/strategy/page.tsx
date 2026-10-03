@@ -31,7 +31,7 @@ export default function StrategyIndexPage() {
   }));
 
   return (
-    <InfoPageLayout title="Word Puzzle Strategy" art="art-title-strategy" artLabel="Word Puzzle Strategy">
+    <InfoPageLayout title="Word Puzzle Strategy" art="art-titlecast-strategy" artLabel="Word Puzzle Strategy">
       {/* BJ7: 14 between groups (was 24), smaller group labels, 10 grid gaps. */}
       <div className="flex flex-col gap-3.5">
         <div className="text-center px-2">

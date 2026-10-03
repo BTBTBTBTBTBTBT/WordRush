@@ -672,8 +672,8 @@ struct LeaderboardShareCardView: View {
     private var titleArt: String? {
         let name: String
         switch input.variant {
-        case .weeklyRace: name = "art-title-friends"
-        case .trophyCase: name = "art-title-records"
+        case .weeklyRace: name = "art-titlecast-friends"
+        case .trophyCase: name = "art-titlecast-records"
         default:
             guard let w = weekday, w >= 0, w < Self.dayNames.count else { return nil }
             name = "art-day-\(Self.dayNames[w])"

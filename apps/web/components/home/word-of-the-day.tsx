@@ -90,7 +90,7 @@ function WotdSection({ children }: { children: React.ReactNode }) {
     <section aria-label="Word of the Day">
       <HomeSectionTitle
         compact
-        name="art-title-wotd"
+        name="art-titlecast-wotd"
         label="Word of the Day"
         below={(
           <Link href="/words" className={`text-[10px] font-bold hover:underline ${LINK_INK.className}`} style={LINK_INK.style}>

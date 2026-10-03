@@ -40,7 +40,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   return (
     // C6: the Strategy title art is the section headline (a div); the article
     // title stays this page's h1, in the hero card.
-    <InfoPageLayout title="Strategy" art="art-title-strategy" titleTag="div" backHref="/strategy">
+    <InfoPageLayout title="Strategy" art="art-titlecast-strategy" titleTag="div" backHref="/strategy">
       <article className="flex flex-col gap-6">
         <GuideHeroCard accent={accent} host={look.host} priority className="px-5 pt-3 pb-5 gap-2.5">
           {look.titleArt && (

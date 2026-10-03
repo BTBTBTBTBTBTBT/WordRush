@@ -113,11 +113,11 @@ export function LoginScreen() {
         <div className="text-center space-y-2">
           <PoseArt pose="art-pose-w-wave" size={96} priority className="mx-auto art-pop" />
           <ArtTitle
-            name="art-title-welcome"
+            name="art-titlecast-welcome"
             label="Welcome"
             as="div"
             widthPct={HEADLINE.widthPct}
-            maxWidth={headlineMaxWidth(...ART_SIZE['art-title-welcome'])}
+            maxWidth={headlineMaxWidth(...ART_SIZE['art-titlecast-welcome'])}
           />
           <h1
             className="text-3xl font-black tracking-tight"

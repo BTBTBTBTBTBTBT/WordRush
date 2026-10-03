@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function FaqPage() {
   return (
-    <InfoPageLayout title="FAQ & Strategy" art="art-title-faq">
+    <InfoPageLayout title="FAQ & Strategy" art="art-titlecast-faq">
       <IntroCard title="Everything you need to start winning at Wordocious">
         <IntroText>Common questions first, then strategy for every mode.</IntroText>
       </IntroCard>

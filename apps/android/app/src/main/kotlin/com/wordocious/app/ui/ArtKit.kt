@@ -61,33 +61,33 @@ import com.wordocious.app.R
 
 /** §2 page titles: lettering with the whole cast perched on it (≈1080 wide). */
 enum class TitleArt(@DrawableRes val res: Int, val label: String) {
-    FRIENDS(R.drawable.art_title_friends, "Friends"),
-    STATS(R.drawable.art_title_stats, "Stats"),
-    RECORDS(R.drawable.art_title_records, "All-Time Records"),
+    FRIENDS(R.drawable.art_titlecast_friends, "Friends"),
+    STATS(R.drawable.art_titlecast_stats, "Stats"),
+    RECORDS(R.drawable.art_titlecast_records, "All-Time Records"),
     VS(R.drawable.art_title_vs, "VS Battle"),
-    PUZZLES(R.drawable.art_title_puzzles, "Puzzles"),
-    WOTD(R.drawable.art_title_wotd, "Word of the Day"),
-    SETTINGS(R.drawable.art_title_settings, "Settings"),
-    HOWTO(R.drawable.art_title_howto, "How to Play"),
+    PUZZLES(R.drawable.art_titlecast_puzzles, "Puzzles"),
+    WOTD(R.drawable.art_titlecast_wotd, "Word of the Day"),
+    SETTINGS(R.drawable.art_titlecast_settings, "Settings"),
+    HOWTO(R.drawable.art_titlecast_howto, "How to Play"),
     // FINISH_SPEC C6: each footer / info page shows its OWN title (same height, FooterHeadline).
-    GUIDES(R.drawable.art_title_guides, "Guides"),
-    STRATEGY(R.drawable.art_title_strategy, "Strategy"),
-    WORDS(R.drawable.art_title_words, "Words"),
-    FAQ(R.drawable.art_title_faq, "FAQ"),
-    PRIVACY(R.drawable.art_title_privacy, "Privacy"),
-    TERMS(R.drawable.art_title_terms, "Terms"),
-    GOPRO(R.drawable.art_title_gopro, "Go Pro"),
-    MOREGAMES(R.drawable.art_title_moregames, "More Games"),
+    GUIDES(R.drawable.art_titlecast_guides, "Guides"),
+    STRATEGY(R.drawable.art_titlecast_strategy, "Strategy"),
+    WORDS(R.drawable.art_titlecast_words, "Words"),
+    FAQ(R.drawable.art_titlecast_faq, "FAQ"),
+    PRIVACY(R.drawable.art_titlecast_privacy, "Privacy"),
+    TERMS(R.drawable.art_titlecast_terms, "Terms"),
+    GOPRO(R.drawable.art_titlecast_gopro, "Go Pro"),
+    MOREGAMES(R.drawable.art_titlecast_moregames, "More Games"),
     /** §8 the whole cast around WELCOME! at the top of sign-in / onboarding. */
-    WELCOME(R.drawable.art_title_welcome, "Welcome"),
+    WELCOME(R.drawable.art_titlecast_welcome, "Welcome"),
     /** §8 the whole cast around LEADERBOARD (holiday banner title slot). */
-    LEADERBOARD(R.drawable.art_title_leaderboard, "Leaderboard"),
+    LEADERBOARD(R.drawable.art_titlecast_leaderboard, "Leaderboard"),
     /** §12 / §19.2 the whole cast around DAILIES (Home's daily games section). */
-    DAILIES(R.drawable.art_title_dailies, "Dailies"),
+    DAILIES(R.drawable.art_titlecast_dailies, "Dailies"),
     /** FINISH_SPEC O1 the VS BATTLE Home section title (lettering only). */
-    VSBATTLE(R.drawable.art_title_vsbattle, "VS Battle"),
+    VSBATTLE(R.drawable.art_titlecast_vsbattle, "VS Battle"),
     /** Night art 10-03: the MENU lettering (the ? menu sheet; iOS InfoMenu parity). */
-    MENU(R.drawable.art_title_menu, "Menu"),
+    MENU(R.drawable.art_titlecast_menu, "Menu"),
 }
 
 /**
@@ -361,7 +361,7 @@ fun HolidayLeaderboardTitle(holidayTitle: String, modifier: Modifier = Modifier,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Image(
-            painterResource(R.drawable.art_title_leaderboard),
+            painterResource(R.drawable.art_titlecast_leaderboard),
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier.widthIn(max = TITLE_ART_MAX_WIDTH).fillMaxWidth().heightIn(max = artHeight).titleArtMotion(float = true),

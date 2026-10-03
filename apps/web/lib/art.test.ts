@@ -118,8 +118,8 @@ describe('second pass (§6–§9)', () => {
   });
 
   it('ships the WELCOME! and LEADERBOARD titles (§8)', () => {
-    expect(ART_SIZE['art-title-welcome']).toBeDefined();
-    expect(ART_SIZE['art-title-leaderboard']).toBeDefined();
+    expect(ART_SIZE['art-titlecast-welcome']).toBeDefined();
+    expect(ART_SIZE['art-titlecast-leaderboard']).toBeDefined();
   });
 
   it('has a pocket game icon for every friendly kind (§9), 256 px square', () => {
@@ -295,7 +295,7 @@ describe('game screen tints (§15)', () => {
 describe('title art motion (§16)', () => {
   it('pops page, day and game titles in (no float, FINISH_SPEC A6), leaves moments and scenes alone', () => {
     // FINISH_SPEC A6: page / day titles no longer float, they only pop in.
-    expect(artMotion('art-title-friends')).toBe('pop');
+    expect(artMotion('art-titlecast-friends')).toBe('pop');
     expect(artMotion('art-day-friday')).toBe('pop');
     expect(artMotion('art-game-quordle')).toBe('pop');
     expect(artMotion('art-moment-victory')).toBe('none');

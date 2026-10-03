@@ -41,7 +41,7 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
     // height); a game without title art shows the Guides title art and a text h1.
     <InfoPageLayout
       title={titleArt ? gameTitleArtLabel(titleArt) : 'Guides'}
-      art={titleArt ?? 'art-title-guides'}
+      art={titleArt ?? 'art-titlecast-guides'}
       artLabel={titleArt ? gameTitleArtLabel(titleArt) : 'Guides'}
       titleTag={titleArt ? 'h1' : 'div'}
       backHref="/guides"

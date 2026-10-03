@@ -36,6 +36,8 @@ struct AvatarView: View {
     var userId: String? = nil
     /// Share images are always light (ShareKit).
     var alwaysLight: Bool = false
+    /// false = no thin body-color edge on an unframed mascot tile (the Pick a Friend grid only).
+    var stroke: Bool = true
 
     @ObservedObject private var directory = AvatarDirectory.shared
     @ObservedObject private var looks = CastAvatars.shared
@@ -87,7 +89,7 @@ struct AvatarView: View {
                 .frame(width: size, height: size)
                 .proAvatarMark(wearsPro && ring != "pro", size: size, tile: true)
             } else {
-                MascotAvatar(config: r.config, initial: look.initial, size: size, alwaysLight: alwaysLight)
+                MascotAvatar(config: r.config, initial: look.initial, size: size, alwaysLight: alwaysLight, stroke: stroke)
                     .frame(width: size, height: size)
                     // §AN6: the Pro gold frame + crown follows the rounded square (a "pro" frame already wears it).
                     .proAvatarMark(wearsPro && r.config.frame != "pro", size: size, tile: true)
@@ -99,7 +101,7 @@ struct AvatarView: View {
     private func fallback(_ config: AvatarConfig, _ initial: String) -> some View {
         var bare = config
         bare.frame = "none"
-        return MascotAvatar(config: bare, initial: initial, size: size, alwaysLight: alwaysLight)
+        return MascotAvatar(config: bare, initial: initial, size: size, alwaysLight: alwaysLight, stroke: stroke)
     }
 }
 

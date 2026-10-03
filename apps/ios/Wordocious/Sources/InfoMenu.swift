@@ -146,7 +146,7 @@ struct MenuScaffold<Content: View>: View {
                     .padding(.bottom, 6)
             } else if art == .menu {
                 // FINISH_SPEC §AS1: never a plain-text MENU — the live lettering until
-                // art-title-menu ships (then the art above takes over automatically).
+                // art-titlecast-menu ships (then the art above takes over automatically).
                 LiveHeadline(text: "MENU", palette: .home, size: 34, maxLines: 1)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16).padding(.bottom, 10)

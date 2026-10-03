@@ -31,7 +31,7 @@ export default function HowToPlayPage() {
   // The guide page family (parity spec): a no-stroke hero card, then numbered
   // sections on the page (no cards, no borders), separated by space.
   return (
-    <InfoPageLayout title="How to Play" art="art-title-howto">
+    <InfoPageLayout title="How to Play" art="art-titlecast-howto">
       <div className="flex flex-col gap-6">
         <GuideHeroCard accent={HERO_ACCENT} host="w" priority className="px-5 pt-3 pb-5 gap-2">
           <h2 className="m-0 font-black leading-tight" style={{ fontSize: 20, color: 'var(--color-text)' }}>How Wordocious works</h2>
