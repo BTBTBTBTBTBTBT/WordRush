@@ -68,20 +68,21 @@ export default async function WordsArchivePage() {
       {months.map(({ label, rows: monthRows }, mi) => {
         const accent = ROW_ACCENTS[mi % ROW_ACCENTS.length];
         return (
-          <section key={label} className="flex flex-col gap-2.5 mt-3">
-            <h2 className="m-0 px-1 font-black uppercase" style={{ fontSize: 13, letterSpacing: '1.2px', color: 'var(--color-text)' }}>{label}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <section key={label} className="flex flex-col gap-1.5 mt-2">
+            <h2 className="m-0 px-1 font-black uppercase" style={{ fontSize: 11, letterSpacing: '1.2px', color: 'var(--color-text)' }}>{label}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {monthRows.map(({ key, date, entry }) => (
                 <Link
                   key={key}
                   href={`/word/${key}`}
-                  className="flex items-center gap-3 p-2.5"
+                  // BJ7: tile + word top-aligned, the date line 4 under the word.
+                  className="flex items-start gap-2.5 px-3 py-2"
                   style={{ background: softBackground(accent, 0.1), borderRadius: 16, boxShadow: softShadow(accent, 0.1, 12, 4) }}
                 >
                   <LetterTile letter={entry.word.charAt(0).toUpperCase()} look="correct" aria-hidden className="shrink-0" style={{ width: 40, ['--gt-font' as string]: '18px' }} />
                   <div className="min-w-0">
                     <div className="font-black truncate" style={{ color: 'var(--color-text)' }}>{entry.word.toUpperCase()}</div>
-                    <div className="text-xs font-bold truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                    <div className="text-xs font-bold truncate mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                       {pretty(date)}
                       {entry.partOfSpeech ? ` · ${entry.partOfSpeech}` : ''}
                     </div>

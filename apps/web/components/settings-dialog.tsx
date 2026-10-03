@@ -162,7 +162,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        {/* BJ7: 12 between sections (was 16). */}
+        <div className="space-y-3">
           {/* FINISH_SPEC AA3: the Pro member card (free players: the Go Pro upsell in the same slot).
               Manage = the Subscription path below: the Stripe portal for a web purchase, else the store links.
               Go Pro closes this dialog first so the Go Pro popup is on top and clickable. */}
@@ -330,7 +331,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           </SettingsSection>
 
           <div className="flex justify-center pt-1">
-            <PoseArt pose="art-pose-r-cocoa" size={84} />
+            <PoseArt pose="art-pose-r-cocoa" size={68} />
           </div>
         </div>
       </DialogContent>

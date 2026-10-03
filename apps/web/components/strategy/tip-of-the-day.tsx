@@ -34,11 +34,12 @@ export function TipOfTheDay({ items }: { items: TipItem[] }) {
   if (!tip) return null;
   return (
     <Link href={`/strategy/${tip.slug}`} className="block" aria-label={`Tip of the day: ${tip.title}`}>
-      <GuideHeroCard key={tip.slug} accent={tip.accent} host={tip.host} poseSize={90} priority className="px-5 pt-3 pb-5 gap-2">
+      {/* BJ7: a smaller host, 14 / 12 padding. */}
+      <GuideHeroCard key={tip.slug} accent={tip.accent} host={tip.host} poseSize={64} priority className="px-4 pt-2.5 pb-3 gap-1.5">
         <div className="flex items-center justify-center w-full" style={{ height: 40 }}>
           <GuideTitleArt art={tip.art} height={40} fallback={tip.artText} accent={tip.accent} />
         </div>
-        <h3 className="m-0 font-black leading-tight line-clamp-2" style={{ fontSize: 18, color: 'var(--color-text)', minHeight: '2.5em' }}>
+        <h3 className="m-0 font-black leading-tight line-clamp-2" style={{ fontSize: 17, color: 'var(--color-text)', minHeight: '2.5em' }}>
           {tip.title}
         </h3>
         <p className="m-0 font-bold leading-snug line-clamp-2" style={{ fontSize: 13, color: 'var(--color-text-secondary)', minHeight: '2.75em' }}>

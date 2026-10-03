@@ -70,7 +70,8 @@ export function VsBots() {
 
   return (
     <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
-      <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
+      {/* BJ7: 12 between sections. */}
+      <div className="max-w-md mx-auto px-4 pt-2 space-y-3">
         <VsNav title="BOTS" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />
 
         {loading ? (
@@ -86,19 +87,20 @@ export function VsBots() {
           <>
             {/* BOT OF THE DAY — today's day-host character (D2), in its own color. */}
             <VsCard accent={bodPersona.color}>
-              <div className="flex items-center justify-between gap-2" style={{ padding: '10px 14px 0' }}>
+              <div className="flex items-center justify-between gap-2" style={{ padding: '8px 12px 0' }}>
                 <span className="text-[10.5px] font-black uppercase" style={{ color: darken(bodPersona.color, 0.35), letterSpacing: 1.2 }}>Bot of the Day</span>
                 <span className="text-[10px] font-extrabold uppercase" style={{ color: VS.label, letterSpacing: 0.6 }}>Same bot, same puzzle for everyone</span>
               </div>
-              <div className="flex items-center gap-2" style={{ padding: '4px 12px 12px 6px' }}>
-                <BotFigure id={bodPersona.id} pose={botOfDayPose(bodResult)} size={104} />
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="font-black leading-tight" style={{ fontSize: 22, color: VS.deep }}>{bod.name}</div>
+              {/* BJ7: a smaller host, the text column top-aligned beside it. */}
+              <div className="flex items-start gap-2" style={{ padding: '4px 12px 8px 6px' }}>
+                <BotFigure id={bodPersona.id} pose={botOfDayPose(bodResult)} size={80} />
+                <div className="flex-1 min-w-0 space-y-1 pt-1">
+                  <div className="font-black leading-tight" style={{ fontSize: 20, color: VS.deep }}>{bod.name}</div>
                   <div className="text-[11.5px] font-extrabold" style={{ color: '#4b5563' }}>{bod.tier} · {bod.line}</div>
                   {bodLine && <BotSpeech text={bodLine} accent={bodPersona.color} />}
                 </div>
               </div>
-              <div className="flex items-center gap-3" style={{ padding: '0 14px 14px' }}>
+              <div className="flex items-center gap-3" style={{ padding: '0 12px 10px' }}>
                 {p.botOfDayStreak > 0 ? (
                   <span className="flex items-center gap-1" aria-label={`${p.botOfDayStreak} ${p.botOfDayStreak === 1 ? 'day' : 'days'} in a row`}>
                     <Icon3D name="flame" size={20} />
@@ -127,7 +129,7 @@ export function VsBots() {
               // The whole ladder cleared: the celebration + the ladder trophy.
               <VsCard accent="#7c3aed">
                 <div className="flex flex-col items-center gap-1 px-3 pb-3 pt-1">
-                  <ArtScene scene="ladder-cleared" height={170} maxWidthPct={70} />
+                  <ArtScene scene="ladder-cleared" height={140} maxWidthPct={70} />
                   <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.5 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={30} height={30} loading="lazy" style={{ width: 30, height: 30 }} /> Ladder cleared
@@ -146,7 +148,7 @@ export function VsBots() {
                 <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={28} height={28} loading="lazy" style={{ width: 28, height: 28, opacity: 0.85 }} />
               </div>
             )}
-            <ol className="space-y-2" aria-label="The ladder">
+            <ol className="space-y-1.5" aria-label="The ladder">
               {rungs.map((r) => {
                 const bot = botRosterEntry(r.id);
                 const persona = botPersona(r.id);
@@ -164,11 +166,13 @@ export function VsBots() {
                       className="relative w-full flex flex-col text-left overflow-hidden"
                       style={{ ...vsCard(locked ? '#94a3b8' : persona.color, { selected: isNext, radius: 16 }), cursor: canPlay || !isPro ? 'pointer' : 'default' }}
                     >
-                      <CardBar accent={locked ? '#94a3b8' : persona.color} height={isNext ? 10 : 6} />
-                      <span className="flex items-center gap-3 px-3 py-2.5" style={{ opacity: locked ? 0.55 : 1 }}>
-                        <SoftNum size={15} style={{ width: 20, textAlign: 'center' }}>{persona.rung}</SoftNum>
+                      <CardBar accent={locked ? '#94a3b8' : persona.color} height={isNext ? 6 : 4} />
+                      {/* BJ7: one top line — rung, bot (40), name and the state top-aligned;
+                          ONE detail line (tier line · progress) 4 under the name. */}
+                      <span className="flex items-start gap-2.5 px-3 py-2" style={{ opacity: locked ? 0.55 : 1 }}>
+                        <SoftNum size={15} style={{ width: 20, textAlign: 'center', paddingTop: 10 }}>{persona.rung}</SoftNum>
                         <span className="relative shrink-0">
-                          <BotPoseAvatar id={r.id} pose="ready" accent={persona.color} size={isNext ? 52 : 44} faded={locked} />
+                          <BotPoseAvatar id={r.id} pose="ready" accent={persona.color} size={40} faded={locked} />
                           {isCleared && (
                             <span className="absolute -right-1 -bottom-1"><Icon3D name="badge-check" size={20} /></span>
                           )}
@@ -180,8 +184,9 @@ export function VsBots() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             {persona.rung === LADDER_BOTS.length && <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={18} height={18} loading="lazy" style={{ width: 18, height: 18 }} />}
                           </span>
-                          <span className="block text-[11px] font-extrabold truncate" style={{ color: '#4b5563' }}>{bot.line} · {persona.tagline}</span>
-                          <span className="block text-[11px] font-bold truncate" style={{ color: isNext ? darken(persona.color, 0.35) : VS.label }}>{r.line}</span>
+                          <span className="block text-[11px] font-extrabold truncate mt-1" style={{ color: '#4b5563' }}>
+                            {bot.line} · <span style={{ color: isNext ? darken(persona.color, 0.35) : VS.label }}>{r.line}</span>
+                          </span>
                           {isNext && (
                             // The 3-in-a-row progress toward clearing this rung.
                             <span className="flex items-center gap-1 mt-1" aria-hidden="true">
@@ -210,11 +215,11 @@ export function VsBots() {
             {/* YOUR GHOST — your best run, as a faded version of your own letter tile. */}
             {(!isPro || ghost) && (
               <VsCard accent="#64748b">
-                <div className="flex items-center gap-3 p-3">
-                  <GhostAvatar name={me?.username ?? 'You'} emoji={me?.avatar_emoji} accent={me?.accent_color} size={44} />
+                <div className="flex items-start gap-2.5 px-3 py-2.5">
+                  <GhostAvatar name={me?.username ?? 'You'} emoji={me?.avatar_emoji} accent={me?.accent_color} size={40} />
                   <span className="flex-1 min-w-0">
                     <span className="block text-[14px] font-black" style={{ color: VS.deep }}>Your Ghost</span>
-                    <span className="block text-[11px] font-bold truncate" style={{ color: '#4b5563' }}>
+                    <span className="block text-[11px] font-bold truncate mt-1" style={{ color: '#4b5563' }}>
                       {ghost ? `Your best ${modeTitle(mode)}: ${ghost.guessCount} guesses · ${vsClock(ghost.timeMs)}` : 'Race a replay of your best run'}
                     </span>
                   </span>

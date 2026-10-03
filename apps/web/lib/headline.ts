@@ -16,9 +16,16 @@ export interface HeadlineRule {
 
 /** Page / section titles. */
 export const HEADLINE: HeadlineRule = { widthPct: 62, maxWidth: 300, maxHeight: 64 };
+/**
+ * BJ7 (founder 10-03: "I like the crisp look"): a page's TOP title (PageHeadline,
+ * the art page headers, the footer pages) caps at 52 tall. The Home section titles
+ * (DAILIES / PUZZLES / WORD OF THE DAY / VS BATTLE) keep HEADLINE. iOS PageHeadline
+ * .page / Android HeadlineSize.PAGE_TITLE_H carry the same 52.
+ */
+export const PAGE_HEADLINE: HeadlineRule = { ...HEADLINE, maxHeight: 52 };
 /** The Leaderboard day title (one host drawn in). */
-/** AU2 + BB3: ≤ 90 tall (was 150) so the podium shows on arrival under the two-row picker. */
-export const DAY_HEADLINE: HeadlineRule = { widthPct: 58, maxWidth: 360, maxHeight: 90 };
+/** AU2 + BB3: ≤ 90 tall (was 150) so the podium shows on arrival under the two-row picker; BJ7: ≤ 78. */
+export const DAY_HEADLINE: HeadlineRule = { widthPct: 58, maxWidth: 360, maxHeight: 78 };
 
 /** The widest an art of `w`×`h` may draw under a rule: the width cap, or the width at which it hits the height cap. */
 export function headlineMaxWidth(w: number, h: number, rule: HeadlineRule = HEADLINE): number {

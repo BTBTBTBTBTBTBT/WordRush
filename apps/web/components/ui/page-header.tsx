@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ArtTitle } from '@/components/ui/art-title';
 import { ART_SIZE, type TitleArtName } from '@/lib/art';
-import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
+import { HEADLINE, PAGE_HEADLINE, headlineMaxWidth } from '@/lib/headline';
 import { Mascot, type MascotMotion } from '@/components/ui/mascot';
 import type { MascotId } from '@/lib/mascots';
 
@@ -157,7 +157,7 @@ export function PageHeader({
             name={art}
             label={artLabel ?? (typeof title === 'string' ? title : '')}
             as={titleTag}
-            maxWidth={Math.min(artMaxWidth, headlineMaxWidth(ART_SIZE[art][0], ART_SIZE[art][1]))}
+            maxWidth={Math.min(artMaxWidth, headlineMaxWidth(ART_SIZE[art][0], ART_SIZE[art][1], PAGE_HEADLINE))}
             widthPct={HEADLINE.widthPct}
             align="center"
           />

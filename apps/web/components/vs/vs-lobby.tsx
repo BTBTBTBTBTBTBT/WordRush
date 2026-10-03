@@ -110,7 +110,8 @@ export function VsLobby() {
 
   return (
     <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
-      <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
+      {/* BJ7: 12 between sections (was 14). */}
+      <div className="max-w-md mx-auto px-4 pt-2 space-y-3">
         <VsNav
           title="VS BATTLE"
           // The whole-cast VS BATTLE title art (docs/ART_SPEC.md §2) replaces the text title and its host.
@@ -246,11 +247,12 @@ export function VsLobby() {
                     {rivals.map((r, i) => {
                       const line = h2hLine(r.wins, r.losses, r.lastMode);
                       return (
-                        <div key={r.opponentId} className="flex items-center gap-3 px-3 py-2.5" style={{ borderTop: i === 0 ? undefined : `1px solid ${alphaHex(VS_ACCENT, 0.18)}` }}>
-                          <InitialAvatar name={r.username} url={r.avatarUrl} size={34} />
+                        // BJ7: top-aligned row, detail 4 under the name.
+                        <div key={r.opponentId} className="flex items-start gap-2.5 px-3 py-2" style={{ borderTop: i === 0 ? undefined : `1px solid ${alphaHex(VS_ACCENT, 0.18)}` }}>
+                          <InitialAvatar name={r.username} url={r.avatarUrl} size={36} />
                           <span className="flex-1 min-w-0">
                             <span className="block text-[13px] font-black truncate" style={{ color: '#1f2937' }}>@{r.username}</span>
-                            <span className="block text-[11px] font-bold truncate" style={{ color: line.ahead ? VS.ink : VS.label }}>{line.text}</span>
+                            <span className="block text-[11px] font-bold truncate mt-1" style={{ color: line.ahead ? VS.ink : VS.label }}>{line.text}</span>
                           </span>
                           <SoftPill onClick={() => router.push(`/vs/friend?mode=${mode}&friend=${r.opponentId}`)}>Challenge</SoftPill>
                         </div>
@@ -261,13 +263,13 @@ export function VsLobby() {
               )
             ) : (
               <VsCard accent="#7c3aed">
-              <div className="p-4">
+              <div className="p-3">
                 <div className="flex items-center gap-1.5 text-[15px] font-black" style={{ color: '#4c1d95' }}><Icon3D name="crown" size={20} /> GO PRO FOR ALL OF VS</div>
                 <p className="text-[12px] font-bold mt-1" style={{ color: '#4b5563' }}>
                   {/* The VS mode count comes from the catalog, never a literal (sweep-copy guard). */}
                   All {MODES.length} modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.
                 </p>
-                <CandyButton color="purple" size="md" className="mt-3" onClick={() => router.push('/pro')}>SEE PRO</CandyButton>
+                <CandyButton color="purple" size="md" className="mt-2" onClick={() => router.push('/pro')}>SEE PRO</CandyButton>
               </div>
               </VsCard>
             )}
@@ -276,7 +278,7 @@ export function VsLobby() {
             {sent.length > 0 && (
               <>
                 <SectionLabel>Your challenges</SectionLabel>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {sent.map((s, i) => {
                     const status = sentStatus(s);
                     const first = s.results[0];
@@ -325,7 +327,8 @@ export function VsLobby() {
                   maxLength={8}
                   className="flex-1 min-w-0 px-3 py-2 text-[15px] font-black outline-none"
                   // A1: the input takes the teal wash too.
-                  style={{ letterSpacing: 3, background: `linear-gradient(${alphaHex(VS_ACCENT, 0.08)}, ${alphaHex(VS_ACCENT, 0.08)}), #ffffff`, border: `1.5px solid ${alphaHex(VS_ACCENT, 0.32)}`, borderRadius: 12, color: VS.deep }}
+                  // BJ7: a soft filled field, no outline.
+                  style={{ letterSpacing: 3, background: `linear-gradient(${alphaHex(VS_ACCENT, 0.16)}, ${alphaHex(VS_ACCENT, 0.16)}), #ffffff`, borderRadius: 12, color: VS.deep }}
                 />
                 <TealButton onClick={handleJoin} disabled={code.trim().length < 4 || joining}>
                   {joining ? <Loader2 className="w-4 h-4 animate-spin" aria-label="Joining" /> : 'JOIN'}
@@ -351,13 +354,14 @@ function PlayTile({ art, accent = VS_ACCENT, title, sub, locked, onClick }: {
       type="button"
       onClick={onClick}
       className="relative flex flex-col text-left overflow-hidden"
-      style={{ ...vsCard(accent, { radius: 16 }), minHeight: 124 }}
+      // BJ7: the tile hugs its content (no 124 floor); the grid row keeps the three equal.
+      style={vsCard(accent, { radius: 16 })}
     >
       <CardBar accent={accent} />
       {locked && <Icon3D name="lock" size={16} className="absolute top-3.5 right-2" />}
       <span className="flex flex-col items-start gap-1 p-2.5 pt-1.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={art} alt="" aria-hidden="true" width={46} height={46} loading="lazy" draggable={false} style={{ width: 46, height: 46, objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(59,26,120,0.18))' }} />
+        <img src={art} alt="" aria-hidden="true" width={40} height={40} loading="lazy" draggable={false} style={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 3px 5px rgba(59,26,120,0.18))' }} />
         <span className="text-[12px] font-black" style={{ color: accent === VS_ACCENT ? VS.deep : darken(accent, 0.45), letterSpacing: 0.5 }}>{title}</span>
         <span className="font-bold" style={{ fontSize: 10.5, lineHeight: 1.3, color: '#4b5563' }}>{sub}</span>
       </span>

@@ -21,7 +21,8 @@ export function InfoPageLayout({ children, className = '', ...header }: InfoPage
   return (
     <PageBackground tint="home" className="min-h-screen pb-16">
       <InfoPageHeader {...header} />
-      <div className={`info-page max-w-2xl mx-auto px-4 pt-2 pb-6 flex flex-col gap-3 ${className}`}>{children}</div>
+      {/* BJ7: 8 between cards (was 12). */}
+      <div className={`info-page max-w-2xl mx-auto px-4 pt-2 pb-6 flex flex-col gap-2 ${className}`}>{children}</div>
     </PageBackground>
   );
 }
@@ -132,15 +133,16 @@ export function LinkCard({ href, accent = BRAND_ACCENT, icon, title, sub, eyebro
   return (
     <Link href={href} className="block" style={{ ...softCard(accent), overflow: 'hidden' }}>
       <div aria-hidden="true" style={cardBarStyle(accent)} />
-      <div className="grid items-center gap-2.5 px-3 py-2.5" style={{ gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)' }}>
-        {icon && <span className="flex items-center justify-center" style={{ width: 42, height: 42 }}>{icon}</span>}
+      {/* BJ7: icon + title top-aligned, the sub 4 under the title. */}
+      <div className="grid items-start gap-2.5 px-3 py-2" style={{ gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)' }}>
+        {icon && <span className="flex items-center justify-center" style={{ width: 40, height: 40 }}>{icon}</span>}
         <div className="min-w-0">
           {eyebrow != null && (
             <div className="text-[11px] font-black uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{eyebrow}</div>
           )}
           <T className="block m-0 font-black leading-snug" style={{ fontSize: 15, color: 'var(--color-text)' }}>{title}</T>
           {sub != null && (
-            <small className={`block text-xs font-bold leading-snug ${subLines === 1 ? 'truncate' : ''}`} style={{ color: 'var(--color-text-secondary)' }}>{sub}</small>
+            <small className={`block text-xs font-bold leading-snug mt-1 ${subLines === 1 ? 'truncate' : ''}`} style={{ color: 'var(--color-text-secondary)' }}>{sub}</small>
           )}
         </div>
       </div>

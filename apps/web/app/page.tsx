@@ -474,9 +474,9 @@ export default function HomePage() {
           // Daily Battle and Bot of the Day now live in its banner.
           const href = '/vs';
           return (
-            <div className="flex flex-col gap-2">
-            {/* FINISH_SPEC O1: VS BATTLE gets its own section title (lettering only, the N1 size rule). */}
-            <HomeSectionTitle name="art-title-vsbattle" label="VS Battle" />
+            <div className="flex flex-col gap-1.5">
+            {/* FINISH_SPEC O1: VS BATTLE gets its own section title; BJ7: the compact DAILIES / PUZZLES size. */}
+            <HomeSectionTitle name="art-title-vsbattle" label="VS Battle" compact />
             <VSLiveTile
               card={vs}
               livePlayerCount={livePlayerCount}

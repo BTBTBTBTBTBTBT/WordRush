@@ -3,7 +3,7 @@
 import { Switch } from '@/components/ui/switch';
 import { CandySwitch } from '@/components/ui/candy-switch';
 import { SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
-import { alphaHex, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
+import { alphaHex, cardBarStyle, softBackground } from '@/lib/soft-surface';
 import { KEY_DELETE, KEY_ENTER, KEY_SPACE, keyRows, themePreview } from '@/lib/settings-previews';
 
 // The Settings + Edit profile kit (docs/FINISH_SPEC.md C4b / G5; A1 no plain
@@ -34,10 +34,11 @@ export function SettingsSection({ title, accent, children, className = '' }: {
   return (
     <section
       className={`overflow-hidden ${className}`}
-      style={{ background: softBackground(accent, 0.1), border: softBorder(accent, 0.1), borderRadius: 18 }}
+      // BJ7: wash + bar, no outline; 8 under the label.
+      style={{ background: softBackground(accent, 0.1), borderRadius: 18 }}
     >
       <div aria-hidden="true" style={cardBarStyle(accent, 6)} />
-      <div className="p-3 space-y-2">
+      <div className="p-3 space-y-1.5">
         <SoftSectionLabel ink={accent} className="px-1">{title}</SoftSectionLabel>
         {children}
       </div>
@@ -62,9 +63,9 @@ export function SettingsOption({ selected, accent, label, description, onClick, 
     <button
       type="button"
       aria-pressed={selected}
-      className="relative w-full text-left px-3 py-2.5 flex items-center gap-2.5 overflow-hidden"
+      className="relative w-full text-left px-3 py-2 flex items-center gap-2.5 overflow-hidden"
       onClick={onClick}
-      style={{ background: softBackground(accent, 0.11), borderRadius: 16, border: 'none' }}
+      style={{ background: softBackground(accent, 0.11), borderRadius: 16, border: 'none', minHeight: 44 }}
     >
       <span
         aria-hidden="true"
@@ -79,7 +80,7 @@ export function SettingsOption({ selected, accent, label, description, onClick, 
       />
       <span className="relative flex-1 min-w-0">
         <span className="block font-black text-sm" style={{ color: selected ? '#ffffff' : 'var(--color-text)' }}>{label}</span>
-        <span className="block text-[10px] font-bold" style={{ color: selected ? 'rgba(255,255,255,0.88)' : 'var(--color-text-muted)' }}>{description}</span>
+        <span className="block text-[10px] font-bold truncate" style={{ color: selected ? 'rgba(255,255,255,0.88)' : 'var(--color-text-muted)' }}>{description}</span>
       </span>
       {preview && <span className="relative shrink-0">{preview}</span>}
       <span
@@ -171,7 +172,7 @@ export function SettingsToggle({ label, description, checked, onCheckedChange, a
 }) {
   return (
     // FINISH_SPEC AK: the whole row squishes (a <label> without `for` isn't otherwise tappable to the SquishHost).
-    <label data-squish="" className="flex items-center justify-between gap-3 p-3 cursor-pointer" style={{ ...softRow(accent, { radius: 14 }), opacity: dim ? 0.55 : 1 }}>
+    <label data-squish="" className="flex items-center justify-between gap-3 px-3 py-2 cursor-pointer" style={{ ...softRow(accent, { radius: 14 }), opacity: dim ? 0.55 : 1, minHeight: 44 }}>
       <span className="min-w-0">
         <span className="block text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>{label}</span>
         <span className="block text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{description}</span>

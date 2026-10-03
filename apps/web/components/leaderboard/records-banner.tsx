@@ -28,7 +28,7 @@ interface Props {
 export function RecordsBanner({ tab, onTab, today, recordsCount, selectedMode, onSelect }: Props) {
   return (
     <>
-      <PageHeadline name="art-title-records" label="All-Time Records" className="mb-3" />
+      <PageHeadline name="art-title-records" label="All-Time Records" className="mb-2" />
       <GamePicker
         selected={selectedMode}
         onSelect={onSelect}

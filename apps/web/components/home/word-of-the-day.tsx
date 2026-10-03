@@ -75,10 +75,11 @@ function WotdCard({ children, className = '' }: { children: React.ReactNode; cla
     <div
       data-squish="card"
       className="sg-card relative"
-      style={guideCardStyle(WOTD_ACCENT, { radius: 24, hi: 0.16, lo: 0.05, hiDark: 0.24, loDark: 0.08, shadow: 0.18 })}
+      style={guideCardStyle(WOTD_ACCENT, { radius: 20, hi: 0.16, lo: 0.05, hiDark: 0.24, loDark: 0.08, shadow: 0.18 })}
     >
-      <div aria-hidden="true" style={{ height: 8, background: GUIDE_BAR }} />
-      <div className={className} style={{ padding: '12px 14px 14px' }}>{children}</div>
+      <div aria-hidden="true" style={{ height: 6, background: GUIDE_BAR }} />
+      {/* BJ7: 12 padding (was 12 / 14 / 14). */}
+      <div className={className} style={{ padding: 12 }}>{children}</div>
     </div>
   );
 }
@@ -88,6 +89,7 @@ function WotdSection({ children }: { children: React.ReactNode }) {
   return (
     <section aria-label="Word of the Day">
       <HomeSectionTitle
+        compact
         name="art-title-wotd"
         label="Word of the Day"
         below={(
@@ -235,12 +237,13 @@ export function WordOfTheDay() {
   return (
     <WotdSection>
       <WotdCard>
-        <div className="flex items-center gap-2.5">
-          <div className="shrink-0" style={{ marginLeft: -8, marginRight: -6 }}>
-            <GuideStage host="i" accent={WOTD_ACCENT} size={52} />
+        {/* BJ7: one top line — I (44), the word and the streak top-aligned. */}
+        <div className="flex items-start gap-2.5">
+          <div className="shrink-0" style={{ marginLeft: -6, marginRight: -4 }}>
+            <GuideStage host="i" accent={WOTD_ACCENT} size={44} />
           </div>
           <div className="flex-1 min-w-0">
-            <LiveHeadline text={info.word} palette="home" size={28} align="left" level={3} />
+            <LiveHeadline text={info.word} palette="home" size={22} align="left" level={3} />
             {(info.phonetic || partOfSpeech) && (
               <div className="mt-1 flex items-center gap-2 min-w-0">
                 {info.phonetic && (

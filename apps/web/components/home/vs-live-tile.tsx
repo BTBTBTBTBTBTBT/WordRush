@@ -61,7 +61,8 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
       aria-label="VS Battle"
     >
       <ModeCardBand accent={accent} />
-      <div className="flex items-center gap-3" style={{ padding: `${MODE_CARD.padY}px ${MODE_CARD.padX}px` }}>
+      {/* BJ7: the text column top-aligned beside the faceoff. */}
+      <div className="flex items-start gap-2.5" style={{ padding: `${MODE_CARD.padY}px ${MODE_CARD.padX}px` }}>
         <button type="button" onClick={onOpen} className="shrink-0 block" style={{ width: '40%', maxWidth: 170 }} aria-label="Open VS Battle">
           <Image
             src={artSrc(FACEOFF)}

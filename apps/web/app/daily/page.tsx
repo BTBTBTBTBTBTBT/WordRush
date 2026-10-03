@@ -949,7 +949,7 @@ export default function DailyPage() {
         {/* Your finished board (§254), collapsible under the result — per-mode
             only; Sweep has no board. */}
         {!isSweep && (
-          <SoftCompletedCards>
+          <SoftCompletedCards underRank={showResult}>
             <CompletedDailyBoard modeId={selectedMode} />
           </SoftCompletedCards>
         )}

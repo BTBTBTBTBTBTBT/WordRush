@@ -162,19 +162,21 @@ export function StrategyTile({ href, accent, art, host, isVs, title, minutes }: 
       className="sg-card flex flex-col h-full"
       style={guideCardStyle(accent, { radius: 22, hi: 0.16, lo: 0.06, hiDark: 0.26, loDark: 0.1, shadow: 0.16 })}
     >
-      <div aria-hidden="true" style={{ height: 6, background: accent, flex: 'none' }} />
-      <div className="flex flex-col flex-1 gap-2 px-3 pt-3 pb-3">
-        <div className="flex items-center" style={{ minHeight: 44 }}>
+      <div aria-hidden="true" style={{ height: 5, background: accent, flex: 'none' }} />
+      {/* BJ7: art, the title (3 lines reserved so a row's tiles match) and the minutes
+          chip right under it — no chip floating at the bottom. */}
+      <div className="flex flex-col flex-1 gap-1.5 px-3 pt-2.5 pb-2.5">
+        <div className="flex items-center" style={{ minHeight: 36 }}>
           {art ? (
             <GuideTitleArt art={art} height={30} accent={accent} align="left" />
           ) : isVs ? (
             <span aria-hidden="true" className={`font-black italic leading-none ${ink.className}`} style={{ ...ink.style, fontSize: 30, letterSpacing: '0.02em' }}>VS</span>
           ) : (
-            <Image src={poseSrc(host, 'ready')} alt="" aria-hidden width={POSE_SIZE} height={POSE_SIZE} sizes="44px" loading="lazy" draggable={false} style={{ width: 44, height: 44 }} />
+            <Image src={poseSrc(host, 'ready')} alt="" aria-hidden width={POSE_SIZE} height={POSE_SIZE} sizes="36px" loading="lazy" draggable={false} style={{ width: 36, height: 36 }} />
           )}
         </div>
-        <h3 className="m-0 font-black leading-snug line-clamp-4" style={{ fontSize: 14, color: 'var(--color-text)' }}>{title}</h3>
-        <div className="mt-auto pt-1">
+        <h3 className="m-0 font-black leading-snug line-clamp-3" style={{ fontSize: 14, color: 'var(--color-text)', minHeight: '4.125em' }}>{title}</h3>
+        <div>
           <ReadChip accent={accent} size={10}>{minutes} min</ReadChip>
         </div>
       </div>

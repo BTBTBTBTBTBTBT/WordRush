@@ -113,10 +113,11 @@ function TappableCard({
       aria-label={ariaLabel}
       onClick={onClick}
       onKeyDown={tappable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } } : undefined}
-      className={`relative rounded-2xl p-4 animate-fade-in-up ${tappable ? 'cursor-pointer transition-all active:scale-[0.98] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
+      // BJ7: 12 padding (was 16), 8 under the title.
+      className={`relative rounded-2xl p-3 animate-fade-in-up ${tappable ? 'cursor-pointer transition-all active:scale-[0.98] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
       style={{ ...softCard(accent, { radius: 18 }), ...(gradient ? { background: softBackground(accent, 0.18) } : null) }}
     >
-      <div className="flex items-center justify-between mb-2.5">
+      <div className="flex items-center justify-between mb-2">
         <CardTitle>{title}</CardTitle>
       </div>
       {children}
@@ -362,8 +363,8 @@ export function ArchetypeModal({
               key={a.key}
               className="rounded-xl p-2.5"
               style={{
-                background: isTheirs ? alphaHex('#7c3aed', 0.14) : alphaHex('#7c3aed', 0.04),
-                border: isTheirs ? '2px solid #7c3aed' : softBorder('#7c3aed', 0.04),
+                // BJ7: no outlined boxes — the target reads by its deeper wash.
+                background: isTheirs ? alphaHex('#7c3aed', 0.22) : alphaHex('#7c3aed', 0.07),
               }}
             >
               <div className="flex items-center gap-2">
@@ -589,7 +590,7 @@ export function TrophyCaseCard({
           ].map((t) => (
             <div
               key={t.medal}
-              className="flex-1 text-center rounded-xl py-2.5"
+              className="flex-1 text-center rounded-xl py-2"
               style={softPill(MEDAL_TINT[t.medal], { radius: 12 })}
             >
               <div className="flex justify-center"><MedalGlyph medal={t.medal} size={28} /></div>
@@ -655,7 +656,7 @@ export function TrophyCaseCard({
                   <Link
                     key={p.userId}
                     href={`/profile/${p.userId}`}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-transform active:scale-[0.98]"
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-transform active:scale-[0.98]"
                     style={softPill(MEDAL_TINT[p.medal] ?? BRAND_ACCENT, { radius: 12, bar: false })}
                   >
                     <MedalGlyph medal={p.medal} size={24} />
@@ -744,10 +745,10 @@ export function HighlightsReel({
   return (
     <>
       <div
-        className="rounded-2xl p-4 animate-fade-in-up"
+        className="rounded-2xl p-3 animate-fade-in-up"
         style={softCard('#ec4899', { radius: 18 })}
       >
-        <div className="mb-2.5"><CardTitle>HIGHLIGHTS</CardTitle></div>
+        <div className="mb-2"><CardTitle>HIGHLIGHTS</CardTitle></div>
         <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {items.map((h) => {
             const tappable = Boolean(h.onClick);
@@ -758,7 +759,7 @@ export function HighlightsReel({
                 tabIndex={tappable ? 0 : undefined}
                 onClick={h.onClick}
                 onKeyDown={tappable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.onClick?.(); } } : undefined}
-                className={`relative min-w-[122px] rounded-xl px-3 py-2.5 shrink-0 ${tappable ? 'cursor-pointer transition-transform active:scale-[0.97] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
+                className={`relative min-w-[108px] rounded-xl px-2.5 py-2 shrink-0 ${tappable ? 'cursor-pointer transition-transform active:scale-[0.97] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
                 style={softPill('#ec4899', { radius: 12 })}
               >
                 <div className="leading-none"><UiIcon name={h.icon} size={18} /></div>
@@ -833,7 +834,7 @@ export function LatelyCard({
   return (
     <>
       <div
-        className="rounded-2xl p-4 animate-fade-in-up"
+        className="rounded-2xl p-3 animate-fade-in-up"
         style={softCard('#0d9488', { radius: 18 })}
       >
         <div className="mb-1.5"><CardTitle>LATELY</CardTitle></div>
@@ -846,7 +847,7 @@ export function LatelyCard({
               tabIndex={tappable ? 0 : undefined}
               onClick={tappable ? () => setPodiumFor(e.podium!) : undefined}
               onKeyDown={tappable ? (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setPodiumFor(e.podium!); } } : undefined}
-              className={`flex items-start gap-2.5 py-2 ${tappable ? 'cursor-pointer rounded-lg -mx-1 px-1 active:scale-[0.99] transition-transform' : ''}`}
+              className={`flex items-start gap-2.5 py-1.5 ${tappable ? 'cursor-pointer rounded-lg -mx-1 px-1 active:scale-[0.99] transition-transform' : ''}`}
               style={{ borderTop: i > 0 ? '1px solid var(--color-border)' : undefined }}
             >
               <div
@@ -857,7 +858,7 @@ export function LatelyCard({
               </div>
               <div className="text-xs font-bold leading-snug" style={{ color: 'var(--color-text)' }}>
                 {e.text}
-                <span className="block text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{e.when}</span>
+                <span className="block text-[10px] font-extrabold mt-1" style={{ color: 'var(--color-text-muted)' }}>{e.when}</span>
               </div>
             </div>
           );
@@ -868,8 +869,8 @@ export function LatelyCard({
         {nemesis && (
           <Link
             href={`/profile/${nemesis.userId}`}
-            className="flex items-center gap-2 mt-2 rounded-xl px-3 py-2 text-[11.5px] font-bold transition-transform active:scale-[0.98]"
-            style={{ background: 'rgba(236,72,153,0.06)', border: '1.5px solid #f9a8d4', color: 'var(--color-text)' }}
+            className="flex items-center gap-2 mt-1.5 rounded-xl px-3 py-2 text-[11.5px] font-bold transition-transform active:scale-[0.98]"
+            style={{ background: 'rgba(236,72,153,0.12)', color: 'var(--color-text)' }}
           >
             <UiIcon name="swords" size={16} />
             <span>Most frequent rival: <b style={{ color: '#ec4899' }}>{nemesis.username}</b> — {nemesis.sharedBoards} shared boards</span>
@@ -889,7 +890,7 @@ export function LatelyCard({
                   <Link
                     key={p.userId}
                     href={`/profile/${p.userId}`}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 transition-transform active:scale-[0.98]"
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-transform active:scale-[0.98]"
                     style={softPill(MEDAL_TINT[p.medal] ?? BRAND_ACCENT, { radius: 12, bar: false })}
                   >
                     <MedalGlyph medal={p.medal} size={24} />

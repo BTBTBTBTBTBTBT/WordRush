@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { PlayerAvatar } from '@/components/avatar/player-avatar';
 import { Icon3D, WinLossBadge, ROW_BADGE_SIZE } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
-import { SOFT, alphaHex, cardBarStyle, softBackground, softBorder, softCard, softPill } from '@/lib/soft-surface';
+import { SOFT, alphaHex, cardBarStyle, softBackground, softCard, softPill } from '@/lib/soft-surface';
 import type { RowBadgeKind } from '@/lib/leaderboard-podium';
 import { LevelBadge } from '@/components/badges/badge-art';
 
@@ -27,7 +27,8 @@ export const SECTION_LABEL: CSSProperties = { fontSize: 11, fontWeight: 900, let
 /** A tinted board card (A1): the page's warm-gold wash, its soft border, rounded. */
 export const SOFT_CARD: CSSProperties = softCard(LB_GOLD, { radius: 18 });
 /** Your row: soft gold (the token is #fef3c7 in light) with a 1.5 px amber ring. */
-export const YOUR_ROW: CSSProperties = { background: 'var(--color-gold-border-light)', boxShadow: 'inset 0 0 0 1.5px #f59e0b', borderRadius: 10 };
+// BJ7: your row reads by its deeper gold wash — no ring (no outlined boxes).
+export const YOUR_ROW: CSSProperties = { background: 'color-mix(in srgb, #f59e0b 26%, var(--color-gold-border-light))', borderRadius: 10 };
 
 /** C2a: the badge column's width on daily rows (the W / L art + air). */
 export const BADGE_COL = ROW_BADGE_SIZE + 4;
@@ -183,7 +184,7 @@ export function BoardRow({ rank, userId, username, avatarUrl, avatar, isMe, leve
         opacity: dim ? 0.55 : undefined,
       };
   return (
-    <div className="cv-row flex items-center gap-2.5 px-3 py-2.5" style={style}>
+    <div className="cv-row flex items-center gap-2.5 px-3 py-2" style={style}>
       <RankIcon rank={rank} />
       <BoardAvatar url={avatarUrl} name={username} userId={userId} level={level} {...avatar} />
       <div className="flex-1 min-w-0">
@@ -232,7 +233,7 @@ export function SegmentedPill<T extends string | boolean>({ options, value, onCh
       role="group"
       aria-label={label}
       className="flex shrink-0"
-      style={{ padding: 3, borderRadius: 999, background: softBackground(accent, 0.16), border: softBorder(accent, 0.16, 1) }}
+      style={{ padding: 3, borderRadius: 999, background: softBackground(accent, 0.18) }}
     >
       {options.map(([v, text]) => {
         const on = value === v;
@@ -274,12 +275,14 @@ export function ResultCard({ rank, ofLine, solved, points, delta }: {
   delta?: ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden mb-4" style={softCard(LB_GOLD, { radius: 18 })}>
+    <div className="relative overflow-hidden mb-3" style={softCard(LB_GOLD, { radius: 18 })}>
       <div aria-hidden="true" style={{ ...cardBarStyle(LB_GOLD, SOFT.bar), background: 'linear-gradient(90deg, #f5a524, #ffd166)' }} />
-      <div className="flex items-center gap-3" style={{ padding: '12px 14px' }}>
-        <div className="flex flex-col items-center shrink-0" style={{ minWidth: 44 }}>
-          <Icon3D name="crown" size={32} />
-          {rank != null && <SoftNum size={26} style={{ marginTop: -2 }}>#{rank}</SoftNum>}
+      {/* BJ7: one top line — crown + rank, the rank line and the points top-aligned;
+          the solve line ONE line 4 under it. */}
+      <div className="flex items-start gap-2.5" style={{ padding: '10px 12px' }}>
+        <div className="flex flex-col items-center shrink-0" style={{ minWidth: 40 }}>
+          <Icon3D name="crown" size={24} />
+          {rank != null && <SoftNum size={22} style={{ marginTop: -2 }}>#{rank}</SoftNum>}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
@@ -288,12 +291,12 @@ export function ResultCard({ rank, ofLine, solved, points, delta }: {
             {delta}
           </div>
           {solved && (
-            <div className="text-[13px] font-extrabold leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{solved}</div>
+            <div className="text-[13px] font-extrabold leading-snug truncate mt-1" style={{ color: 'var(--color-text-secondary)' }}>{solved}</div>
           )}
         </div>
         {points != null && (
           <div className="text-right shrink-0">
-            <SoftNum size={26} as="div">{points}</SoftNum>
+            <SoftNum size={22} as="div">{points}</SoftNum>
             <div className="text-[11px] font-black lb-gold-ink" style={{ letterSpacing: 1.4, marginTop: 3 }}>POINTS</div>
           </div>
         )}

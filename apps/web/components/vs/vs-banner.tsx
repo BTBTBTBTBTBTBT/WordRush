@@ -48,7 +48,8 @@ function TodayTile({ label, icon, result, line, onOpen }: {
   const won = result === 'won';
   // A1: the open tile takes the VS teal wash (never plain white); won = solid teal, else slate.
   const style: React.CSSProperties = open
-    ? { background: `linear-gradient(${alphaHex(VS_ACCENT, 0.12)}, ${alphaHex(VS_ACCENT, 0.12)}), #ffffff`, border: `1.5px dashed ${alphaHex(VS_ACCENT, 0.5)}`, boxShadow: `inset 0 4px 0 ${VS_ACCENT}` }
+    // BJ7: no outline — the wash + top bar carry it.
+    ? { background: `linear-gradient(${alphaHex(VS_ACCENT, 0.16)}, ${alphaHex(VS_ACCENT, 0.16)}), #ffffff`, boxShadow: `inset 0 4px 0 ${VS_ACCENT}` }
     : won
     ? { background: VS.ink, boxShadow: '0 0 10px rgba(15,118,110,0.55)' }
     : { background: '#94a3b8' };
@@ -58,13 +59,14 @@ function TodayTile({ label, icon, result, line, onOpen }: {
       type="button"
       onClick={open ? onOpen : undefined}
       aria-disabled={!open}
-      className={`flex-1 min-w-0 flex items-center gap-2 text-left ${open ? '' : 'cursor-default'}`}
-      style={{ borderRadius: 12, padding: '8px 9px', ...style }}
+      // BJ7: icon + label top-aligned, the line 4 under the label.
+      className={`flex-1 min-w-0 flex items-start gap-2 text-left ${open ? '' : 'cursor-default'}`}
+      style={{ borderRadius: 12, padding: '9px 9px 7px', ...style }}
     >
       {icon}
       <span className="min-w-0">
         <span className="block text-[10px] font-black" style={{ letterSpacing: 0.8, color: ink }}>{label}</span>
-        <span className="block text-[11px] font-extrabold truncate" style={{ color: open ? VS.ink : '#ffffff' }}>{line}</span>
+        <span className="block text-[11px] font-extrabold truncate mt-1" style={{ color: open ? VS.ink : '#ffffff' }}>{line}</span>
       </span>
     </button>
   );
@@ -123,8 +125,9 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         priority
         draggable={false}
         sizes="(max-width: 448px) 100vw, 448px"
-        className="relative block w-full h-auto select-none"
-        style={{ aspectRatio: `${heroW} / ${heroH}` }}
+        // BJ7: the faceoff capped at ~120 tall (was the full-width aspect, ~190).
+        className="relative block mx-auto h-auto select-none"
+        style={{ aspectRatio: `${heroW} / ${heroH}`, width: '100%', maxWidth: Math.round((120 * heroW) / heroH), marginTop: 8 }}
       />
       <div className="relative flex flex-col gap-1" style={{ padding: '10px 12px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
         <div className="flex items-center gap-1.5" style={{ minHeight: 24 }}>
@@ -135,7 +138,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         <div className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: subInk }}>{clockLine}</div>
       </div>
 
-      <div className="relative flex flex-col gap-2" style={{ padding: '10px 12px 6px' }}>
+      <div className="relative flex flex-col gap-1.5" style={{ padding: '8px 12px 6px' }}>
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-black" style={{ letterSpacing: 1, color: subInk }}>TODAY</span>
           <span className="text-[10px] font-black" style={{ letterSpacing: 0.5, color: subInk }}>{vsTodayStatus(input)}</span>
@@ -166,7 +169,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
       </div>
 
       {/* RECORD — the core words (vsRecordLine, read aloud) as soft numbers. */}
-      <div className="relative flex items-center gap-2" style={{ padding: '6px 12px 12px' }} role="group" aria-label={`Record: ${vsRecordLine(people, bots, ladder)}${streak > 0 ? `, ${streak} bot wins in a row` : ''}`}>
+      <div className="relative flex items-center gap-2" style={{ padding: '4px 12px 10px' }} role="group" aria-label={`Record: ${vsRecordLine(people, bots, ladder)}${streak > 0 ? `, ${streak} bot wins in a row` : ''}`}>
         <span className="text-[10px] font-black shrink-0" style={{ letterSpacing: 1, color: subInk }} aria-hidden="true">RECORD</span>
         <span className="flex-1 min-w-0 flex items-center justify-around" aria-hidden="true">
           <RecordFigure label="PEOPLE" value={`${people.wins}–${people.losses}`} />

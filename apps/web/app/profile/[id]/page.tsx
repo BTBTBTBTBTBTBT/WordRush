@@ -22,7 +22,7 @@ import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import { PageHeader } from '@/components/ui/page-header';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { SoftNum } from '@/components/ui/soft-number';
-import { alphaHex, cardBarStyle, softBorder, softCard, softIconTile, softPill } from '@/lib/soft-surface';
+import { alphaHex, cardBarStyle, softCard, softIconTile, softPill } from '@/lib/soft-surface';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { BottomNav } from '@/components/ui/bottom-nav';

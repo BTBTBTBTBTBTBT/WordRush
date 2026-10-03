@@ -96,7 +96,7 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
         />
 
         {/* Menu rows */}
-        <div className="px-4 pb-5 overflow-y-auto flex-1 min-h-0 space-y-2">
+        <div className="px-4 pb-5 overflow-y-auto flex-1 min-h-0 space-y-1.5">
           {MENU_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
@@ -104,7 +104,8 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center gap-3 p-3"
+                // BJ7: icon + title top-aligned, the subtitle 4 under the title, one line.
+                className="flex items-start gap-2.5 px-3 py-2.5"
                 style={softRow(item.accent, { radius: 18 })}
               >
                 <span
@@ -113,11 +114,11 @@ export function MenuModal({ open, onClose }: MenuModalProps) {
                 >
                   <Icon className="w-4 h-4" style={{ color: item.accent }} />
                 </span>
-                <span className="min-w-0 flex-1 flex flex-col">
+                <span className="min-w-0 flex-1 flex flex-col pt-0.5">
                   <span className="text-[15px] font-black uppercase leading-tight" style={{ color: 'var(--color-text)' }}>
                     {item.title}
                   </span>
-                  <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  <span className="text-[11px] font-bold truncate mt-1" style={{ color: 'var(--color-text-muted)' }}>
                     {item.subtitle}
                   </span>
                 </span>

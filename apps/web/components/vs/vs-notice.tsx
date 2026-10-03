@@ -48,14 +48,15 @@ export function VsNotice({ accent, avatar, pose, headline, detail, action, actio
         @media (prefers-reduced-motion: reduce) { .vs-notice { animation: none; } }
       `}</style>
       <CardBar accent={accent} />
-      <span className="w-full flex items-center gap-2.5 py-2.5 pl-3 pr-2.5">
+      {/* BJ7: one top line — avatar, headline, pose and action top-aligned; detail 4 under. */}
+      <span className="w-full flex items-start gap-2.5 py-2 pl-3 pr-2.5">
         {avatar}
         <span className="flex-1 min-w-0">
           <span className="block text-[12.5px] font-black uppercase truncate" style={{ color: darken(accent, 0.4), letterSpacing: 0.4 }}>{headline}</span>
-          {detail && <span className="flex flex-wrap items-baseline gap-x-1 text-[11.5px] font-bold" style={{ color: '#4b5563' }}>{detail}</span>}
+          {detail && <span className="flex flex-wrap items-baseline gap-x-1 text-[11.5px] font-bold mt-1" style={{ color: '#4b5563' }}>{detail}</span>}
         </span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={artSrc(pose)} alt="" aria-hidden="true" width={44} height={44} draggable={false} className="shrink-0" style={{ width: 44, height: 44, objectFit: 'contain', marginTop: -6, marginBottom: -6 }} />
+        <img src={artSrc(pose)} alt="" aria-hidden="true" width={40} height={40} draggable={false} className="shrink-0" style={{ width: 40, height: 40, objectFit: 'contain', marginTop: -4, marginBottom: -4 }} />
         {/* The card is the button; this is its candy face (A8). */}
         <span className={candyClass({ color: actionColor, size: 'sm', extra: 'shrink-0' })} aria-hidden="true">
           <span className="candy-label">{action}</span>

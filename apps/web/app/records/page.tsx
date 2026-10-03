@@ -125,15 +125,16 @@ function RecordCard({
   const hasRecord = !!record;
 
   return (
-    <div className="relative flex flex-col gap-1.5 p-3" style={isCurrentUser && hasRecord ? { ...softCard(accentColor), ...YOUR_ROW, borderRadius: 18 } : softCard(accentColor)}>
+    // BJ7: one top line (chip + name top-aligned), the value 4 under it; hugs its content.
+    <div className="relative flex flex-col gap-1 px-3 py-2.5" style={isCurrentUser && hasRecord ? { ...softCard(accentColor), ...YOUR_ROW, borderRadius: 18 } : softCard(accentColor)}>
       {isCurrentUser && hasRecord && (
         <Icon3D name="crown" size={14} label="Your record" className="absolute top-2.5 right-2.5" />
       )}
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-start gap-2 min-w-0">
         <GameTileChip accent={accentColor} width={28}>
           <Icon className="w-3.5 h-3.5" style={{ color: hasRecord ? accentColor : 'var(--color-text-muted)' }} />
         </GameTileChip>
-        <span className="text-[10px] font-black uppercase leading-tight min-w-0 pr-4" style={{ color: 'var(--color-text-secondary)', letterSpacing: 0.6 }}>
+        <span className="text-[10px] font-black uppercase leading-tight min-w-0 pr-4 line-clamp-2" style={{ color: 'var(--color-text-secondary)', letterSpacing: 0.6, minHeight: '2.5em' }}>
           {config.label}
         </span>
       </div>
@@ -857,9 +858,9 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
   return (
     <div>
       {/* Hall of Fame — each record a tinted card (records-redesign §2, A1). */}
-      <div className="mb-5">
-        <div className="mb-2 px-1" style={CAPS_LABEL}>Hall of Fame</div>
-        <div className="grid grid-cols-2 gap-3">
+      <div className="mb-3">
+        <div className="mb-1.5 px-1" style={CAPS_LABEL}>Hall of Fame</div>
+        <div className="grid grid-cols-2 gap-2.5">
           {GLOBAL_RECORD_TYPES.map((rt) => {
             const record = globalRecords.find((r) => r.record_type === rt);
             return (
@@ -932,7 +933,7 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
             line="Play this game and the first records are up for grabs."
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {PER_MODE_RECORD_TYPES.map((rt) => {
               // A mode can have both a solo and a VS record per type; the
               // per-mode card represents solo play, so prefer the solo row

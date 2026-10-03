@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { ART_SIZE, artLabel, artSrc, type ArtName } from '@/lib/art';
-import { HEADLINE, headlineMaxWidth, type HeadlineRule } from '@/lib/headline';
+import { PAGE_HEADLINE, headlineMaxWidth, type HeadlineRule } from '@/lib/headline';
 
 // Page titles are headlines (docs/FINISH_SPEC.md A6, N1): the page / day
 // title art right on the wallpaper — no box, stage or border, no float — and,
@@ -10,10 +10,11 @@ import { HEADLINE, headlineMaxWidth, type HeadlineRule } from '@/lib/headline';
 // above is the only whole-cast art on the screen. The image carries the title
 // text as its accessible name inside the heading element. No hooks: server-safe.
 
-/** The shared footer-page title height cap (C6: all seven the same height; N1: ≤ 64). */
-export const FOOTER_TITLE_HEIGHT = HEADLINE.maxHeight;
+/** The shared footer-page title height cap (C6: all seven the same height; BJ7: ≤ 52). */
+export const FOOTER_TITLE_HEIGHT = PAGE_HEADLINE.maxHeight;
 
-export function PageHeadline({ name, label, as: Tag = 'h1', level, rule = HEADLINE, maxHeight, className = '', style }: {
+// BJ7: page top titles take PAGE_HEADLINE (≤ 52 tall) unless a rule is passed.
+export function PageHeadline({ name, label, as: Tag = 'h1', level, rule = PAGE_HEADLINE, maxHeight, className = '', style }: {
   name: ArtName;
   /** The title text (accessible name); empty or omitted falls back to the art's words (lib/art.ts artLabel). */
   label?: string;

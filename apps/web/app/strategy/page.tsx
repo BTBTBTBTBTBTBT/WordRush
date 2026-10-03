@@ -32,26 +32,27 @@ export default function StrategyIndexPage() {
 
   return (
     <InfoPageLayout title="Word Puzzle Strategy" art="art-title-strategy" artLabel="Word Puzzle Strategy">
-      <div className="flex flex-col gap-6">
+      {/* BJ7: 14 between groups (was 24), smaller group labels, 10 grid gaps. */}
+      <div className="flex flex-col gap-3.5">
         <div className="text-center px-2">
           <p className="m-0 font-black uppercase" style={{ fontSize: 12, letterSpacing: '0.14em', color: '#7c3aed' }}>Solve smarter</p>
           <p className="m-0 mt-1 font-extrabold" style={{ fontSize: 16, color: 'var(--color-text)' }}>Original strategy for every Wordocious game.</p>
         </div>
 
-        <section className="flex flex-col gap-3" aria-labelledby="tip-of-the-day">
-          <h2 id="tip-of-the-day" className="m-0 font-black uppercase" style={{ fontSize: 13, letterSpacing: '0.09em', color: 'var(--color-text)' }}>
+        <section className="flex flex-col gap-2" aria-labelledby="tip-of-the-day">
+          <h2 id="tip-of-the-day" className="m-0 font-black uppercase" style={{ fontSize: 11, letterSpacing: '0.09em', color: 'var(--color-text)' }}>
             Tip of the day
           </h2>
           <TipOfTheDay items={tips} />
         </section>
 
         {sections.map((s) => (
-          <section key={s.group} className="flex flex-col gap-3" aria-labelledby={`group-${s.group}`}>
-            <h2 id={`group-${s.group}`} className="m-0 font-black uppercase" style={{ fontSize: 13, letterSpacing: '0.09em', color: 'var(--color-text)' }}>
+          <section key={s.group} className="flex flex-col gap-2" aria-labelledby={`group-${s.group}`}>
+            <h2 id={`group-${s.group}`} className="m-0 font-black uppercase" style={{ fontSize: 11, letterSpacing: '0.09em', color: 'var(--color-text)' }}>
               {s.label}
             </h2>
             {/* Grid rows stretch, so the two tiles in a row share a height. */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               {s.items.map(({ article: a, look }) => (
                 <StrategyTile
                   key={a.slug}
