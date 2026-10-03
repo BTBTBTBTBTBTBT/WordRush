@@ -12,7 +12,7 @@ CAMEOS = [  # cutout, title, side, height × title height, dx, dy (fractions of 
     ('dailies-w', 'dailies', 'right', 1.45, -0.42, -0.72, 'W sits on the final S with a tiny calendar'),
     ('puzzles-c', 'puzzles', 'left', 1.45, 0.38, -0.28, 'C pushes a puzzle piece into the first P'),
     ('wotd-i', 'wotd', 'right', 1.6, -0.62, -0.84, 'I sits on DAY reading a book'),
-    ('vsbattle-s', 'vsbattle', 'left', 1.5, 0.10, -0.18, 'S (sweatband) braces against the V like a wrestler'),
+    ('vsbattle-s', 'vsbattle', 'left', 1.45, 0.12, -0.20, 'S ready to charge at the V (canonical pose poses/s-ready.png — the generated S was off-model)'),
     ('leaderboard-o3', 'leaderboard', 'right', 1.5, -0.45, -0.72, 'O (amber cyclops) stands on the D with a trophy'),
     ('stats-d', 'stats', 'right', 1.45, -0.10, -0.30, 'D (glasses) with a clipboard chart beside STATS'),
     ('friends-o2i', 'friends', 'right', 1.5, -0.12, -0.32, 'O (pink) and I high-five at the end of FRIENDS'),
