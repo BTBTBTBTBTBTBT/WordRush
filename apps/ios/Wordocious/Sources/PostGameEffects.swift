@@ -1,6 +1,45 @@
 import SwiftUI
 import WordociousCore
 
+// MARK: - BJ2 finish choreography
+
+/// FINISH_SPEC BJ2 (founder 10-03 on 2.7 (241): "make the completion screens less
+/// choppy"): one big thing animates at a time. The win card springs in, its tiles,
+/// count-up, gloss and bob follow in turn; CONTINUE builds the finished screen under
+/// the card and fades the card; the strip's headline pops once the card has left;
+/// then the XP toast; then any achievement / level-up popup. The reveal + finish
+/// hold (BI5) are unchanged — nothing here is faster than before, only ordered.
+enum FinishMotion {
+    /// The finished strip's headline waits for the win card's 0.25 s fade-out.
+    static let afterCard: Double = 0.3
+    /// The XP toast rises this long after the popups' hold lifts (the card is gone).
+    static let xpAfterHold: Double = 0.45
+    /// Achievement / level-up popups this long after the hold lifts.
+    static let achievementsAfterHold: Double = 0.85
+    /// Win card internals, from its spring-in: the answer tiles flip, the points
+    /// count up, one gloss sweep, the sparkle, then the idle bob.
+    static let tilesStart: Double = 0.25
+    static let countStart: Double = 0.45
+    static let sweepStart: Double = 0.9
+    static let sparkleStart: Double = 1.15
+    static let bobStart: Double = 1.2
+    /// The finished screen starts building, hidden under the settled card (iOS only:
+    /// SwiftUI builds a big recap on the main thread; Compose / the DOM don't need it).
+    static let prebuildFinished: Double = 2.0
+}
+
+/// BJ2: the win / lose card's art (both moment letterings, every cast host at the
+/// card's size) decoded into the display-size cache on a utility thread at launch,
+/// so the card's first frame never decodes a 900-px image on the main thread.
+enum FinishArt {
+    static func prewarm() {
+        var items: [(String, CGFloat)] = [(MomentArt.victory.assetName, 250), (MomentArt.soclose.assetName, 250)]
+        for m in MascotID.allCases { items.append((m.assetName, 92)) }
+        items.append((Mascots.loss.assetName, 84))
+        ArtThumbs.prewarm(items)
+    }
+}
+
 // MARK: - XP toast
 
 /// Animated XP-earned toast shown after a game (ports effects/xp-toast.tsx):
@@ -10,6 +49,9 @@ struct XpToastView: View {
     let result: GameResultsService.XpResult
     var onDismiss: () -> Void
     @State private var shown = false
+    @State private var scheduled = false
+    /// BJ2: the toast waits while the win card holds the popups.
+    @ObservedObject private var celebrations = AchievementUnlockCenter.shared
 
     var body: some View {
         VStack {
@@ -49,7 +91,11 @@ struct XpToastView: View {
             }
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 10)
             .tintedPill(Color(hex: 0x7C3AED), radius: 18)
-            .shadow(color: Color(hex: 0x7C3AED).opacity(0.25), radius: 12, x: 0, y: 6)
+            // BJ2: the glow is the pill SHAPE's shadow (an opaque shape behind the pill),
+            // not a shadow of the whole composited toast re-blurred every frame it moves.
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(hex: 0x7C3AED).wash(0.12))
+                .shadow(color: Color(hex: 0x7C3AED).opacity(0.25), radius: 12, x: 0, y: 6))
             // Web parity: fade-in-up — rise 8px with a 300ms ease-out fade
             // (xp-toast.tsx), not a springy drop from above.
             .offset(y: shown ? 0 : 8)
@@ -60,12 +106,25 @@ struct XpToastView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .allowsHitTesting(false)
         .onAppear {
-            withAnimation(Theme.animation(.easeOut(duration: 0.3))) { shown = true }
+            // BJ2: never under the win card — show now if nothing holds the popups,
+            // else a beat after the card has gone (see FinishMotion).
+            if !celebrations.isHeld { present(after: 0) }
             // §V3: crossing into a new tier gets the small level-up popup.
             if result.leveledUp, LevelTier.forLevel(result.newLevel) != LevelTier.forLevel(max(1, result.newLevel - 1)) {
                 let level = result.newLevel
                 Task { @MainActor in AchievementUnlockCenter.shared.enqueueLevelUp(newLevel: level) }
             }
+        }
+        .onChange(of: celebrations.isHeld) { held in
+            if !held { present(after: FinishMotion.xpAfterHold) }
+        }
+    }
+
+    private func present(after delay: Double) {
+        guard !scheduled else { return }
+        scheduled = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            withAnimation(Theme.animation(.easeOut(duration: 0.3))) { shown = true }
             // Web parity: stretch 3s → 5s when a sweep/flawless bonus fired so the
             // bigger payout is actually readable.
             let dwell: Double = (result.sweepBonus + result.flawlessBonus) > 0 ? 5 : 3
@@ -137,8 +196,6 @@ struct VictoryOverlay: View {
 
     @Environment(\.accessibilityReduceMotion) private var envReduce
     @State private var hostIn = false
-    @State private var bob = false
-    @State private var raysTurn = false
     @State private var sweep: CGFloat = -1
     @State private var tilesIn = false
     @State private var shownPoints: Double = 0
@@ -209,9 +266,13 @@ struct VictoryOverlay: View {
                             .frame(height: 8)
                     }
                     .clipShape(shape)
+                    // BJ2: the glow is the card SHAPE's shadow, drawn behind it — not a
+                    // shadow of the whole composited card (host, tiles, chips), which
+                    // re-blurred every frame of the spring-in and the tile flips.
+                    .background(shape.fill(dark ? Theme.surface : Color(hex: 0xFFF8F1))
+                        .shadow(color: accent.opacity(0.35), radius: 26, x: 0, y: 12))
                 }
                 .overlay(shape.stroke(dark ? accent.opacity(0.35) : accent.wash(0.28), lineWidth: 1.5))
-                .shadow(color: accent.opacity(0.35), radius: 26, x: 0, y: 12)
                 .padding(.horizontal, 22)
                 .frame(maxWidth: 400)
                 .padding(.vertical, 30)
@@ -237,27 +298,23 @@ struct VictoryOverlay: View {
             return
         }
         withAnimation(Motion.spring) { hostIn = true }   // §AQ1 / §AZ: the shared spring
-        if !calm {
-            withAnimation(.linear(duration: 24).repeatForever(autoreverses: false)) { raysTurn = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { bob = true }
-            }
-        }
-        // The lettering lands, then one gloss sweep 0.4 s later.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        // BJ2: the rays' turn and the host's bob are Core Animation loops (LoopArt).
+        // BJ2: one beat at a time — the card lands, the tiles flip, the points count
+        // up, then ONE gloss sweep across the lettering.
+        DispatchQueue.main.asyncAfter(deadline: .now() + FinishMotion.sweepStart) {
             withAnimation(.easeInOut(duration: 0.8)) { sweep = 1.4 }
         }
         withAnimation(.easeOut(duration: 0.01)) { tilesIn = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + FinishMotion.countStart) {
             withAnimation(.easeOut(duration: 0.7)) { shownPoints = target }
         }
         // §U: the count-up ticks (≤ 12/s) while the points climb.
         if target > 0 {
             for k in 0..<8 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3 + Double(k) / 12) { Feedback.tick() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + FinishMotion.countStart + Double(k) / 12) { Feedback.tick() }
             }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + FinishMotion.sparkleStart) {
             guard points != nil else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { sparkle = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { withAnimation(.easeOut(duration: 0.3)) { sparkle = false } }
@@ -273,22 +330,25 @@ struct VictoryOverlay: View {
             RadialGradient(colors: [accent.opacity(0.30), accent.opacity(0)], center: .center, startRadius: 4, endRadius: 80)
                 .frame(width: 170, height: 150)
             if !calm {
-                // §AZ: the masked rays rasterized once, then only rotated (a GPU transform).
-                LightRays(color: accent.opacity(0.12))
+                // BJ2: the masked rays drawn once into an image and turned by Core
+                // Animation (24 s a turn) — a SwiftUI repeatForever re-rendered the whole
+                // screen's display list every frame (the 8-board OctoWord recap included).
+                LoopArt(image: LightRaysArt.image(color: UIColor(accent), alpha: 0.12, side: 170),
+                        spinPeriod: 24)
                     .frame(width: 170, height: 170)
-                    .mask(RadialGradient(colors: [.black, .clear], center: .center, startRadius: 10, endRadius: 85))
-                    .drawingGroup()
-                    .rotationEffect(.degrees(raysTurn ? 360 : 0))
             }
             // §AZ: a soft gradient ground shadow — no live blur under the moving card.
             Ellipse().fill(RadialGradient(colors: [Color(hex: 0x3C1E6E).opacity(0.18), Color(hex: 0x3C1E6E).opacity(0)],
                                           center: .center, startRadius: 0, endRadius: size * 0.42))
                 .frame(width: size * 0.9, height: size * 0.2)
                 .offset(y: size * 0.5)
-            MascotView(host, size: size)
+            // BJ2: the spring-in stays SwiftUI (one shot); the idle bob (4 pt, 1.6 s each
+            // way, after the entrance beats) runs on Core Animation.
+            LoopArt(image: ArtThumbs.uiImage(host.assetName, points: size) ?? UIImage(named: host.assetName),
+                    bob: won && !calm ? 4 : 0, bobPeriod: 1.6, startDelay: FinishMotion.bobStart)
+                .frame(width: size, height: size)
                 .scaleEffect(hostIn ? 1 : 0.4)
                 .opacity(hostIn ? 1 : 0)
-                .offset(y: bob && !calm ? -4 : 0)
         }
         .frame(height: 130)
         .accessibilityHidden(true)
@@ -352,9 +412,12 @@ struct VictoryOverlay: View {
                             ForEach(rows[i].indices, id: \.self) { r in
                                 HStack(spacing: 3) {
                                     ForEach(Array(rows[i][r].enumerated()), id: \.offset) { j, ch in
+                                        // BJ2: one word flips in tile by tile; a multi-board tray
+                                        // (up to 8 words, 40+ tiles) fades in as ONE layer instead
+                                        // of 40 separate 3D flips (smooth over ornament).
                                         GlossyTile(face: face, letter: String(ch), width: tile)
-                                            .rotation3DEffect(.degrees(tilesIn ? 0 : 90), axis: (x: 1, y: 0, z: 0))
-                                            .animation(still ? nil : .easeOut(duration: 0.3).delay(Double(starts[i][r] + j) * 0.04), value: tilesIn)
+                                            .rotation3DEffect(.degrees(tilesIn || multi ? 0 : 90), axis: (x: 1, y: 0, z: 0))
+                                            .animation(still || multi ? nil : .easeOut(duration: 0.3).delay(FinishMotion.tilesStart + Double(starts[i][r] + j) * 0.04), value: tilesIn)
                                     }
                                 }
                             }
@@ -370,6 +433,8 @@ struct VictoryOverlay: View {
         .frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
             .fill(Theme.isDark ? accent.opacity(0.14) : accent.wash(0.08)))
+        // BJ2: the multi-board tray is static once in — rendered as one layer.
+        .modifier(MultiTrayEntrance(multi: multi, shown: tilesIn, still: still))
     }
 
     /// §R1: stat chips — each a tinted pill with a small glyph, the value in soft
@@ -417,6 +482,25 @@ struct VictoryOverlay: View {
     }
 }
 
+/// BJ2: a multi-board answer tray flattened to one raster that fades + settles in once
+/// (opacity / scale only); a single answer keeps its per-tile flips.
+private struct MultiTrayEntrance: ViewModifier {
+    let multi: Bool
+    let shown: Bool
+    let still: Bool
+    func body(content: Content) -> some View {
+        if multi {
+            content
+                .drawingGroup()
+                .opacity(shown ? 1 : 0)
+                .scaleEffect(shown || still ? 1 : 0.96)
+                .animation(still ? nil : .easeOut(duration: 0.3).delay(FinishMotion.tilesStart), value: shown)
+        } else {
+            content
+        }
+    }
+}
+
 /// The POINTS count-up: re-renders the number as `value` animates (§R1).
 private struct CountUpText: AnimatableModifier {
     var value: Double
@@ -429,62 +513,238 @@ private struct CountUpText: AnimatableModifier {
     }
 }
 
-/// Twelve soft light rays from the center (the host's stage).
-private struct LightRays: View {
-    let color: Color
-    var body: some View {
-        Canvas { ctx, size in
-            let c = CGPoint(x: size.width / 2, y: size.height / 2)
-            let r = max(size.width, size.height) / 2
+/// Twelve soft light rays from the center (the host's stage), faded out from the
+/// center (radial mask 10 → half the side), drawn once per color into an image.
+enum LightRaysArt {
+    private static var cache: [String: UIImage] = [:]
+
+    static func image(color: UIColor, alpha: CGFloat, side: CGFloat) -> UIImage {
+        let key = "\(color.description)|\(alpha)|\(side)"
+        if let hit = cache[key] { return hit }
+        let img = UIGraphicsImageRenderer(size: CGSize(width: side, height: side)).image { r in
+            let ctx = r.cgContext
+            let c = CGPoint(x: side / 2, y: side / 2)
+            let rad = side / 2
+            ctx.setFillColor(color.withAlphaComponent(alpha).cgColor)
             for k in 0..<12 {
                 let a = Double(k) / 12 * 2 * .pi
-                var p = Path()
-                p.move(to: c)
-                p.addLine(to: CGPoint(x: c.x + r * cos(a - 0.09), y: c.y + r * sin(a - 0.09)))
-                p.addLine(to: CGPoint(x: c.x + r * cos(a + 0.09), y: c.y + r * sin(a + 0.09)))
-                p.closeSubpath()
-                ctx.fill(p, with: .color(color))
+                ctx.move(to: c)
+                ctx.addLine(to: CGPoint(x: c.x + rad * cos(a - 0.09), y: c.y + rad * sin(a - 0.09)))
+                ctx.addLine(to: CGPoint(x: c.x + rad * cos(a + 0.09), y: c.y + rad * sin(a + 0.09)))
+                ctx.closePath()
+            }
+            ctx.fillPath()
+            // The radial fade (SwiftUI's mask: black → clear from 10 pt to the edge).
+            let space = CGColorSpaceCreateDeviceRGB()
+            if let g = CGGradient(colorsSpace: space, colors: [UIColor.black.cgColor, UIColor.black.withAlphaComponent(0).cgColor] as CFArray,
+                                  locations: [0, 1]) {
+                ctx.setBlendMode(.destinationIn)
+                ctx.drawRadialGradient(g, startCenter: c, startRadius: 10, endCenter: c, endRadius: rad,
+                                       options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+            }
+        }
+        cache[key] = img
+        return img
+    }
+}
+
+/// FINISH_SPEC BJ2: an image whose idle loop — a spin, a bob, or a wobble — runs on
+/// Core Animation in the render server. Measured: a SwiftUI `repeatForever` made
+/// SwiftUI rebuild the whole screen's display list every frame (40–75% main thread
+/// under / on the OctoWord finished screen); these loops cost the main thread nothing.
+/// Nothing loops when the game is calm (Reduce Motion / Low Power, §AD) — pass 0s.
+struct LoopArt: UIViewRepresentable {
+    let image: UIImage?
+    /// Seconds per full turn (0 = no spin).
+    var spinPeriod: Double = 0
+    /// Points the image rises at the top of its bob (0 = none), each way over `bobPeriod`.
+    var bob: CGFloat = 0
+    var bobPeriod: Double = 1.6
+    /// ± degrees of the wobble (0 = none) with ± `wobbleShift` pt of vertical drift.
+    var wobble: Double = 0
+    var wobbleShift: CGFloat = 0
+    var wobblePeriod: Double = 2.6
+    var startDelay: Double = 0
+
+    func makeUIView(context: Context) -> LoopArtView {
+        let v = LoopArtView()
+        v.isUserInteractionEnabled = false
+        return v
+    }
+
+    func updateUIView(_ v: LoopArtView, context: Context) {
+        v.imageView.image = image
+        v.apply(self)
+    }
+}
+
+final class LoopArtView: UIView {
+    /// The drift (translation) host; the image inside it turns.
+    private let drift = UIView()
+    let imageView = UIImageView()
+    private var applied: String?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        imageView.contentMode = .scaleAspectFit
+        drift.addSubview(imageView)
+        addSubview(drift)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        drift.bounds = bounds
+        drift.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        imageView.bounds = bounds
+        imageView.center = CGPoint(x: bounds.midX, y: bounds.midY)
+    }
+
+    func apply(_ c: LoopArt) {
+        let key = "\(c.spinPeriod)|\(c.bob)|\(c.bobPeriod)|\(c.wobble)|\(c.wobbleShift)|\(c.wobblePeriod)"
+        guard key != applied else { return }
+        applied = key
+        drift.layer.removeAllAnimations()
+        imageView.layer.removeAllAnimations()
+        let begin = CACurrentMediaTime() + c.startDelay
+        func loop(_ path: String, _ from: Double, _ to: Double, _ dur: Double, reverse: Bool, ease: Bool) -> CABasicAnimation {
+            let a = CABasicAnimation(keyPath: path)
+            a.fromValue = from
+            a.toValue = to
+            a.duration = dur
+            a.autoreverses = reverse
+            a.repeatCount = .infinity
+            a.beginTime = begin
+            a.fillMode = .backwards
+            a.timingFunction = CAMediaTimingFunction(name: ease ? .easeInEaseOut : .linear)
+            a.isRemovedOnCompletion = false
+            return a
+        }
+        if c.spinPeriod > 0 {
+            imageView.layer.add(loop("transform.rotation.z", 0, 2 * .pi, c.spinPeriod, reverse: false, ease: false), forKey: "spin")
+        }
+        if c.bob != 0 {
+            drift.layer.add(loop("transform.translation.y", 0, -Double(c.bob), c.bobPeriod, reverse: true, ease: true), forKey: "bob")
+        }
+        if c.wobble != 0 {
+            let r = c.wobble * .pi / 180
+            imageView.layer.add(loop("transform.rotation.z", -r, r, c.wobblePeriod, reverse: true, ease: true), forKey: "wobble")
+            if c.wobbleShift != 0 {
+                drift.layer.add(loop("transform.translation.y", Double(c.wobbleShift), -Double(c.wobbleShift), c.wobblePeriod,
+                                     reverse: true, ease: true), forKey: "drift")
             }
         }
     }
 }
 
-/// Lightweight confetti — pure SwiftUI port of web effects/confetti.tsx:
-/// 50 pieces, 12×12 rounded squares, 8-color palette, random 0–0.5s delay,
-/// 2–4s LINEAR fall with 720° spin, fading out over the full height.
+/// The confetti burst — port of web effects/confetti.tsx: 36 pieces (§AZ cap; halved
+/// when calm), 12×12 rounded squares, 8-color palette, 0–0.5 s delays, 2–4 s LINEAR
+/// falls with a 720° spin, fading out over the full height.
+///
+/// FINISH_SPEC BJ2 (measured): the pieces are Core Animation layers, each with ONE
+/// animation group (fall + spin + fade) that runs in the render server. The old
+/// SwiftUI version (36 animated views in a drawingGroup) re-rendered on the main
+/// thread every frame — 86–95% main-thread time and ~12 fps under the win popup
+/// for the whole 4.5 s burst. Same pieces, palette, spread and timing; zero
+/// per-frame main-thread work.
 struct ConfettiView: View {
-    private static let colors = [Color(hex: 0xFFD700), Color(hex: 0xFF6B9D), Color(hex: 0xC084FC),
-                                 Color(hex: 0x60A5FA), Color(hex: 0x34D399), Color(hex: 0xFBBF24),
-                                 Color(hex: 0xF97316), Color(hex: 0xEC4899)]
-    @State private var animate = false
     /// §AD: Low Power Mode (or Reduce Motion) halves the pieces.
-    /// §AZ: capped at 36 (was 50).
     private let count = Motion.particles(36, calm: Motion.calm())
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                ForEach(0..<count, id: \.self) { i in
-                    // Deterministic pseudo-random spread per piece (matches the
-                    // web's Math.random() ranges without per-render churn).
-                    let startX = geo.size.width * CGFloat((i * 37 + 11) % 100) / 100
-                    let delay = Double((i * 13) % 100) / 100 * 0.5
-                    let duration = 2.0 + Double((i * 29) % 100) / 100 * 2.0
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Self.colors[(i * 7) % Self.colors.count])
-                        .frame(width: 12, height: 12)
-                        .rotationEffect(.degrees(animate ? 720 : 0))
-                        // §AZ: placed once, then moved by a transform (no per-frame layout).
-                        .position(x: startX, y: -20)
-                        .offset(y: animate ? geo.size.height + 40 : 0)
-                        .opacity(animate ? 0 : 1)
-                        .animation(Theme.animation(.linear(duration: duration).delay(delay)), value: animate)
-                }
-            }
-            // §AZ: every piece composited into one layer.
-            .drawingGroup()
+        ConfettiLayerView(count: count, still: Theme.reduceMotion)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// One burst, started the first time the view has a size.
+private struct ConfettiLayerView: UIViewRepresentable {
+    let count: Int
+    let still: Bool
+
+    func makeUIView(context: Context) -> ConfettiBurstView {
+        let v = ConfettiBurstView()
+        v.count = still ? 0 : count
+        v.isUserInteractionEnabled = false
+        v.backgroundColor = .clear
+        return v
+    }
+
+    func updateUIView(_ uiView: ConfettiBurstView, context: Context) {}
+}
+
+final class ConfettiBurstView: UIView {
+    var count = 36
+    private var started = false
+
+    private static func rgb(_ hex: Int) -> UIColor {
+        let r = CGFloat((hex >> 16) & 0xFF) / 255
+        let g = CGFloat((hex >> 8) & 0xFF) / 255
+        let b = CGFloat(hex & 0xFF) / 255
+        return UIColor(red: r, green: g, blue: b, alpha: 1)
+    }
+    private static let palette: [Int] = [0xFFD700, 0xFF6B9D, 0xC084FC, 0x60A5FA, 0x34D399, 0xFBBF24, 0xF97316, 0xEC4899]
+    private static let colors: [UIColor] = palette.map(rgb)
+
+    /// Deterministic spread per piece (the web's Math.random() ranges, no churn).
+    static func piece(_ i: Int) -> (x: CGFloat, delay: Double, duration: Double, color: Int) {
+        (CGFloat((i * 37 + 11) % 100) / 100,
+         Double((i * 13) % 100) / 100 * 0.5,
+         2.0 + Double((i * 29) % 100) / 100 * 2.0,
+         (i * 7) % colors.count)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard !started, bounds.width > 0, bounds.height > 0, count > 0 else { return }
+        started = true
+        burst()
+    }
+
+    private func burst() {
+        let w = bounds.width, h = bounds.height
+        let now = CACurrentMediaTime()
+        var longest = 0.0
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for i in 0..<count {
+            let p = Self.piece(i)
+            let layer = CALayer()
+            layer.bounds = CGRect(x: 0, y: 0, width: 12, height: 12)
+            layer.cornerRadius = 2
+            layer.backgroundColor = Self.colors[p.color].cgColor
+            layer.position = CGPoint(x: w * p.x, y: -20)
+            // The model ends where the burst ends (off the bottom, clear).
+            layer.opacity = 0
+
+            let fall = CABasicAnimation(keyPath: "position.y")
+            fall.fromValue = -20
+            fall.toValue = h + 20
+            let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+            spin.fromValue = 0
+            spin.toValue = 4 * Double.pi
+            let fade = CABasicAnimation(keyPath: "opacity")
+            fade.fromValue = 1
+            fade.toValue = 0
+            let group = CAAnimationGroup()
+            group.animations = [fall, spin, fade]
+            group.duration = p.duration
+            group.beginTime = now + p.delay
+            group.timingFunction = CAMediaTimingFunction(name: .linear)
+            group.fillMode = .both
+            group.isRemovedOnCompletion = false
+            layer.position.y = h + 20
+            layer.add(group, forKey: "fall")
+            self.layer.addSublayer(layer)
+            longest = max(longest, p.delay + p.duration)
         }
-        .allowsHitTesting(false)
-        .onAppear { animate = true }
+        CATransaction.commit()
+        // Drop the spent pieces once the last one has landed.
+        DispatchQueue.main.asyncAfter(deadline: .now() + longest + 0.1) { [weak self] in
+            self?.layer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        }
     }
 }

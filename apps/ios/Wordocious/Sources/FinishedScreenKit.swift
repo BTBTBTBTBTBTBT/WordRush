@@ -34,6 +34,13 @@ struct FinishedScreenLayout<Header: View, Board: View, Dock: View, Extras: View>
     /// rank / breakdown / definition / stage list sit behind a small "More" chip
     /// (tap → they expand below and scroll into view).
     @State private var showMore = false
+    /// FINISH_SPEC BJ2: the extras are built once the screen has settled (hidden below
+    /// the fold), so "More" only fades them in and scrolls — tapping it used to build
+    /// the breakdown / rank / definition in the same frames as the expand animation.
+    @State private var extrasBuilt = false
+    @State private var settled = false
+    @ObservedObject private var celebrations = AchievementUnlockCenter.shared
+    @Environment(\.finishPrebuilding) private var prebuilding
 
     var body: some View {
         GeometryReader { page in
@@ -54,26 +61,61 @@ struct FinishedScreenLayout<Header: View, Board: View, Dock: View, Extras: View>
                     // exactly (the board takes all that is left); capped, it is shorter
                     // and the leftover splits evenly above and below.
                     .frame(height: max(page.size.height, minBoardHeight + 220), alignment: .center)
-                    if showMore {
+                    .id("finished-top")
+                    if showMore || (extrasBuilt && fitsOneScreen(page.size.height)) {
                         extras().id("finished-more")
+                            .opacity(showMore ? 1 : 0)
+                            .allowsHitTesting(showMore)
+                            .accessibilityHidden(!showMore)
                     }
                 }
             }
-            .scrollDisabled(!showMore && page.size.height >= minBoardHeight + 220)
+            .scrollDisabled(!showMore && fitsOneScreen(page.size.height))
             }
         }
+        .task(id: prebuilding) {
+            // BJ2: build the extras only after the finish choreography (card out, strip,
+            // XP toast, achievement popups) — one big thing at a time.
+            guard !prebuilding else { return }
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            settled = true
+            scheduleExtras()
+        }
+        .onChange(of: celebrations.queue.isEmpty) { _ in scheduleExtras() }
         // BA1: on short screens every title art in the finished header caps at ~56 pt.
         .environment(\.finishedTitleCap, FinishLayoutMetrics.isShort ? 56 : nil)
+    }
+
+    /// The page has room for the whole block (the extras then wait below the fold).
+    private func fitsOneScreen(_ height: CGFloat) -> Bool { height >= minBoardHeight + 220 }
+
+    private func scheduleExtras() {
+        guard hasExtras, settled, !extrasBuilt, celebrations.queue.isEmpty else { return }
+        // Half a second after any popup has left, never under its exit.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if celebrations.queue.isEmpty { extrasBuilt = true }
+        }
+    }
+
+    private func toggleMore(_ proxy: ScrollViewProxy) {
+        if showMore {
+            withAnimation(Theme.animation(Motion.spring)) {
+                showMore = false
+                if extrasBuilt { proxy.scrollTo("finished-top", anchor: .top) }
+            }
+            return
+        }
+        // Built already: a fade (opacity only); else the original spring-in.
+        withAnimation(Theme.animation(extrasBuilt ? .easeOut(duration: 0.25) : Motion.spring)) { showMore = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            withAnimation(Theme.animation(.easeInOut(duration: 0.35))) { proxy.scrollTo("finished-more", anchor: .top) }
+        }
     }
 
     private func moreChip(_ proxy: ScrollViewProxy) -> some View {
         Button {
             Haptics.tap()
-            withAnimation(Theme.animation(Motion.spring)) { showMore.toggle() }
-            if !showMore { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                withAnimation(Theme.animation(.easeInOut(duration: 0.35))) { proxy.scrollTo("finished-more", anchor: .top) }
-            }
+            toggleMore(proxy)
         } label: {
             HStack(spacing: 4) {
                 Text(showMore ? "Less" : "More").font(Brand.font(12, .black)).tracking(0.6)
@@ -97,6 +139,15 @@ enum FinishLayoutMetrics {
 }
 
 private struct FinishedTitleCapKey: EnvironmentKey { static let defaultValue: CGFloat? = nil }
+private struct FinishPrebuildingKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    /// FINISH_SPEC BJ2: this finished screen is being built hidden under the win card
+    /// (its entrances and deferred work wait until it is revealed).
+    var finishPrebuilding: Bool {
+        get { self[FinishPrebuildingKey.self] }
+        set { self[FinishPrebuildingKey.self] = newValue }
+    }
+}
 extension EnvironmentValues {
     /// BA1: the finished screen's title-art height cap on short screens (nil = none).
     var finishedTitleCap: CGFloat? {
@@ -241,7 +292,6 @@ struct UnlimitedKeepPlayingCard: View {
 
     @Environment(\.accessibilityReduceMotion) private var envReduce
     @ObservedObject private var auth = AuthService.shared
-    @State private var wobble = false
     @State private var showPro = false
     /// Set when the paywall opened from this card, so a purchase starts the game.
     @State private var startAfterPurchase = false
@@ -290,21 +340,25 @@ struct UnlimitedKeepPlayingCard: View {
         }
     }
 
+    /// §AD: no idle wobble with Reduce Motion or in Low Power Mode.
+    private var wobbling: Bool { !(envReduce || Theme.reduceMotion) && !Motion.calm() }
+
     private var card: some View {
-        let still = envReduce || Theme.reduceMotion
-        return VStack(spacing: 10) {
+        VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Group {
                     if ArtAsset.exists("art-scene-unlimited-loop") {
-                        ArtThumbs.image("art-scene-unlimited-loop", points: 96)   // §AQ2: slot-sized
-                            .resizable().interpolation(.high).scaledToFit()
+                        // BJ2: the slow orbit wobble (±4°, ±2 pt, 2.6 s each way) on Core
+                        // Animation — the SwiftUI repeatForever rebuilt the whole finished
+                        // screen every frame (40–75% main thread under an 8-board recap).
+                        LoopArt(image: ArtThumbs.uiImage("art-scene-unlimited-loop", points: 96)
+                                    ?? UIImage(named: "art-scene-unlimited-loop"),
+                                wobble: wobbling ? 4 : 0, wobbleShift: 2, wobblePeriod: 2.6)
                     } else {
                         MascotView(.u, size: 56)
                     }
                 }
                 .frame(width: 64, height: 64)
-                .rotationEffect(.degrees(wobble ? 4 : -4))
-                .offset(y: wobble ? -2 : 2)
                 .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("KEEP PLAYING")
@@ -337,10 +391,6 @@ struct UnlimitedKeepPlayingCard: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .tintedCard(accent: Self.peach, bar: [Color(hex: 0xFFD6C2), Self.peach], radius: 18, barHeight: 6, tint: 0.10, line: 0.30)
-        .onAppear {
-            guard !still, !Motion.calm() else { return }   // §AD: no idle wobble in Low Power Mode
-            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { wobble = true }
-        }
         // The G1 Go Pro paywall (guests sign in inside it first). A purchase closes it
         // and starts the Unlimited game directly.
         .sheet(isPresented: $showPro, onDismiss: {

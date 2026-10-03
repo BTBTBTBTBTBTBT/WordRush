@@ -7,6 +7,7 @@ import { softBackground, softBorder, softPill } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
 import { AchievementUnlockHost } from '@/components/badges/achievement-unlock-host';
 import { celebrateLevelUp } from '@/lib/badges';
+import { FINISH_MOTION, HOLD_POLL_MS, resultPopupOpen } from '@/lib/finish-motion';
 
 interface XpToastProps {
   xp: number;
@@ -28,14 +29,29 @@ interface XpToastProps {
 export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, flawlessBonus = 0, flawlessStreak = 0, leveledUp, newLevel }: XpToastProps) {
   const [visible, setVisible] = useState(true);
   const [exiting, setExiting] = useState(false);
+  // FINISH_SPEC BJ2: never animates in under the win / lose card (one big thing
+  // at a time) — it waits for the card to close, then a short beat.
+  const [held, setHeld] = useState(true);
   const hasSweepBonus = sweepBonus > 0 || flawlessBonus > 0;
 
   useEffect(() => {
+    if (!resultPopupOpen()) { setHeld(false); return; }
+    let beat: ReturnType<typeof setTimeout> | null = null;
+    const id = setInterval(() => {
+      if (resultPopupOpen() || beat != null) return;
+      clearInterval(id);
+      beat = setTimeout(() => setHeld(false), FINISH_MOTION.xpAfterHoldMs);
+    }, HOLD_POLL_MS);
+    return () => { clearInterval(id); if (beat != null) clearTimeout(beat); };
+  }, []);
+
+  useEffect(() => {
+    if (held) return;
     const dismissDelay = hasSweepBonus ? 5000 : 3000;
     const exitTimer = setTimeout(() => setExiting(true), dismissDelay - 300);
     const hideTimer = setTimeout(() => setVisible(false), dismissDelay);
     return () => { clearTimeout(exitTimer); clearTimeout(hideTimer); };
-  }, [hasSweepBonus]);
+  }, [hasSweepBonus, held]);
 
   // V3: a level-up into a new tier gets the tier popup (queued behind the
   // win popup and any achievement unlocks).
@@ -50,7 +66,7 @@ export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, f
   return (
     <>
     <AchievementUnlockHost />
-    {visible && (
+    {visible && !held && (
     <div
       className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] pointer-events-none"
       style={{

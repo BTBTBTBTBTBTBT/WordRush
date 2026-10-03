@@ -340,6 +340,11 @@ fun HubScreen(
         else { adGateDone = true; session.beginTimer() }
     }
     PauseClockInBackground(session, session::enterBackground, session::leaveBackground)
+    // FINISH_SPEC BJ2: Hubbub's card opens the moment the hunt is won (no finish hold), so its
+    // art is decoded off main while the board is played.
+    val warmDensity = androidx.compose.ui.platform.LocalDensity.current.density
+    val warmWidth = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
+    LaunchedEffect(Unit) { FinishMotion.prewarm(context, warmDensity, warmWidth) }
     LaunchedEffect(session.toast, session.toastSeq) { if (session.toast != null) { kotlinx.coroutines.delay(1400); session.toast = null } }
     // The clock runs only while the board itself is on screen (founder, 2026-09-28).
     LaunchedEffect(showOverlay, session.showResults) {

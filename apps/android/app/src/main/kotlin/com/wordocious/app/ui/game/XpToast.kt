@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.GameResultsService
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 /**
  * Post-game XP toast — ports the web effects/xp-toast.tsx and iOS XpToastView:
@@ -60,6 +61,12 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
             // A late result's tier popup waits for a calm moment (CelebrationGate, 2026-10-03).
             com.wordocious.app.ui.BadgeMoments.levelUp(result.newLevel, late = result.late)
         }
+        // FINISH_SPEC BJ2: never animates in under the win / lose card (one big thing at a
+        // time) — wait for the card to close, then a short beat after it.
+        androidx.compose.runtime.snapshotFlow { com.wordocious.app.ui.BadgeMoments.holds > 0 }.first { !it }
+        val wait = com.wordocious.app.ui.BadgeMoments.lastHoldReleaseMs + FinishMotion.XP_AFTER_HOLD_MS -
+            android.os.SystemClock.uptimeMillis()
+        if (wait > 0) delay(wait)
         visible = true
         // Web: 3s dwell, extended to 5s when sweep/flawless chips need reading.
         delay(if (result.sweepBonus + result.flawlessBonus > 0) 5000L else 3000L)

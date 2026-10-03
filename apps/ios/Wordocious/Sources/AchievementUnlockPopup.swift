@@ -50,6 +50,11 @@ final class AchievementUnlockCenter: ObservableObject {
     private var latePending: [Moment] = []
     private var lateWaiter: Task<Void, Never>?
 
+    /// FINISH_SPEC BJ2: something holds the popups right now (the win card is up, the
+    /// finish is playing). The XP toast waits on this too, so it never animates in
+    /// under the win card.
+    @Published private(set) var isHeld = false
+
     /// A popup is up (or about to be) — other celebrations wait on this.
     var isShowing: Bool { window != nil || !queue.isEmpty }
 
@@ -63,12 +68,18 @@ final class AchievementUnlockCenter: ObservableObject {
 
     // MARK: BF2 gating
 
-    func block(_ reason: String) { blocks.insert(reason) }
+    func block(_ reason: String) {
+        blocks.insert(reason)
+        if !isHeld { isHeld = true }
+    }
 
     func unblock(_ reason: String) {
         guard blocks.remove(reason) != nil, blocks.isEmpty else { return }
-        // A beat after the win card leaves, never on top of it.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in self?.flush() }
+        if isHeld { isHeld = false }
+        // A beat after the win card leaves, never on top of it. BJ2: after the finished
+        // screen has built and its strip + the XP toast have landed (one big thing at a
+        // time), not 0.35 s in, right on top of them.
+        DispatchQueue.main.asyncAfter(deadline: .now() + FinishMotion.achievementsAfterHold) { [weak self] in self?.flush() }
     }
 
     private func flush() {
@@ -182,6 +193,9 @@ final class AchievementUnlockCenter: ObservableObject {
     private func add(_ moments: [Moment]) {
         let fresh = moments.filter { !seen.contains($0.id) }
         guard !fresh.isEmpty else { return }
+        // BJ2: decode the badge art off main while the moment waits for its turn.
+        ArtThumbs.prewarm(fresh.map { (AchievementUnlockPopup.badgeAsset(for: $0), 150) }
+                          + [("art-scene-achievement", 190 * max(1, ArtAsset.aspect("art-scene-achievement") ?? 1))])
         guard attached, blocks.isEmpty else { pending.append(contentsOf: fresh.filter { m in !pending.contains(m) }); return }
         fresh.forEach { seen.insert($0.id) }
         queue.append(contentsOf: fresh)
@@ -301,7 +315,9 @@ struct AchievementUnlockPopup: View {
         }
     }
 
-    private var badgeAsset: String {
+    private var badgeAsset: String { Self.badgeAsset(for: moment) }
+
+    static func badgeAsset(for moment: AchievementUnlockCenter.Moment) -> String {
         switch moment {
         case .achievement(let key, _, _, let icon, let category, _, _, _):
             return BadgeArt.achievementAsset(key: key, icon: icon, category: category)
@@ -370,7 +386,8 @@ struct AchievementUnlockPopup: View {
                     // stage when it ships (badge composited on its glowing frame), else
                     // two cast poses beside it.
                     if !isLevel && ArtAsset.exists("art-scene-achievement") {
-                        Image("art-scene-achievement").resizable().interpolation(.high).scaledToFit()
+                        ArtThumbs.image("art-scene-achievement", points: 190 * max(1, ArtAsset.aspect("art-scene-achievement") ?? 1))   // BJ2: pre-decoded
+                            .resizable().interpolation(.high).scaledToFit()
                             .frame(height: 190)
                             .opacity(badgeIn ? 1 : 0)
                     } else if !isLevel {
@@ -382,7 +399,7 @@ struct AchievementUnlockPopup: View {
                         .offset(y: 26)
                         .opacity(badgeIn ? 1 : 0)
                     }
-                    Image(badgeAsset)
+                    ArtThumbs.image(badgeAsset, points: 150)   // BJ2: pre-decoded off main
                         .resizable().interpolation(.high).scaledToFit()
                         .frame(width: isLevel ? badgeSize : badgeSize * 0.78, height: isLevel ? badgeSize : badgeSize * 0.78)
                         .shadow(color: accent.opacity(0.45), radius: 16, x: 0, y: 6)

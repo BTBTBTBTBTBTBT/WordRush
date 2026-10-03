@@ -1340,6 +1340,54 @@ badge, and count-ups that play once per session (never replayed mid-scroll). And
 every card — now every card is its own keyed lazy item, one draw-phase alpha for the fade, the swipe on the list. Web: no
 scroll listener writes React state and nothing scrolling uses backdrop-filter; the below-the-fold All-time groups use
 content-visibility: auto (.stats-cv) so the browser skips their layout and paint until they near the viewport.
+BJ2. Completion screens fluid: measured; one animation at a time; leaf timers; pre-decoded art (founder on iOS 2.7 (241): "If
+there is a way to try and make the completion screens less choppy too it all feels like it can use some fluidity"). Measured
+on an iOS Release build (iPhone 17 Pro simulator, 60 Hz): a temporary debug hook played Classic / OctoWord / Gauntlet / Hubbub
+dailies to the finish (an XP result with a tier level-up injected during the finish hold) and drove popup in → CONTINUE →
+finished screen → More → scroll, with a CADisplayLink frame monitor + a run-loop main-thread meter; then removed. Then
+toggled each suspect off one at a time to attribute the cost. Before → after (frames rendered / hitches / main thread busy):
+- Win popup spring-in (1.3 s): Classic 19–21 fr, 16 hitches, 88–90% → 70–74 fr, 1–3 hitches, 18–20%; Hubbub/Gauntlet
+  11–23 fr, 92–94% → 57–100 fr, 25–46%; OctoWord 13 fr, 95% → 58–67 fr, 86–91%.
+- Win popup idle (1.8 s, confetti falling): 17–28 fr (≈ 12 fps), 15–26 hitches, 86–95% → Classic/Hubbub/Gauntlet 99–109 fr
+  (≈ 58 fps), 0–2 hitches, 2–17%; OctoWord 59–64 fr (it now builds the finished screen hidden here; the rays, bob and
+  confetti run on Core Animation, so they keep moving through it).
+- CONTINUE → finished screen (0.6 s): Classic 6–11 fr, worst frame 200–330 ms, 82–94% → 30–34 fr, worst 50–94 ms, 16–23%;
+  OctoWord 1 fr, worst 696 ms, 100% → 29 fr, worst 124–135 ms, 29%; Gauntlet 14 fr → 36 fr, 14%.
+- Finished screen idle: OctoWord 76% busy → 2–3% (Classic/Hubbub/Gauntlet 7–12% → 1–9%).
+- More expand: 9–15 hitches, 360–425 ms of hitch time → 3–4 hitches, 135–245 ms. Scroll (OctoWord): 15 hitches, 83%
+  busy → 0 hitches, 6–7%.
+Causes found → fixes (×3 where the platform had the cause):
+1. Confetti was 36 SwiftUI views in a drawingGroup, re-rendered on the main thread every frame for the 4.5 s burst (the
+   biggest single cost: confetti off alone took popup-idle from 89% to 14% busy). iOS ConfettiView is now CALayers with one
+   fall + spin + fade animation group each, run by the render server — same pieces, palette, spread and timing. (Android
+   was already one draw-phase Canvas; web already transform-only CSS keyframes.)
+2. Any SwiftUI repeatForever (the popup's turning rays and host bob, the Unlimited card's wobble) made SwiftUI rebuild the
+   whole screen's display list every frame — with OctoWord's 8-board recap that was 40–76% of the main thread forever. iOS
+   LoopArt (PostGameEffects.swift) runs those loops on Core Animation (rays drawn once into an image, LightRaysArt). Android
+   (graphicsLayer lambdas) and web (CSS transforms) already loop off the main thread / in the draw phase.
+3. The 8-board recap (~500 glossy tiles) built in the frame CONTINUE was tapped, then cost every later frame. iOS: the
+   finished screen is built hidden under the win card once its entrance beats are done (FinishMotion.prebuildFinished =
+   2.0 s; CONTINUE then only cross-fades) and the multi-board recap is drawn ONCE into an image (FlattenedStatic, via
+   ImageRenderer), so the page holds one image instead of ~500 views. The multi-board answer tray on the card fades in as one
+   flattened layer instead of 40 separate 3D tile flips (a single answer keeps its flips).
+4. Shadows of whole composited views re-blurred every frame they moved: the win card's glow and the XP toast's glow are now
+   the SHAPE's shadow behind them; the live-lettering headline's drop shadow is part of its one raster, and its left → right
+   reveal is a transform on the mask (it animated a mask width).
+5. Big art decoded on the main thread at presentation: the VICTORY / SO CLOSE lettering, every cast host at the card's size
+   and the achievement badges / scene are decoded into the display-size cache off main (iOS ArtThumbs.prewarm at launch, the
+   finish and when an unlock queues; Android FinishMotion.prewarm into ArtBitmaps when the game ends / Hubbub opens; web
+   already holds the card until its art is decoded).
+6. Everything animated at the same moment: the XP toast slid in under the win card, achievement / level-up popups landed
+   0.35 s after CONTINUE on top of the finished screen's build, and the extras behind "More" (rank, breakdown, definition)
+   were built in the same frames as the expand. Now ONE big thing at a time, the same beats ×3 (iOS FinishMotion,
+   Android FinishMotion, web lib/finish-motion.ts FINISH_MOTION, unit tested ×3): card spring-in → tiles flip (0.25 s) →
+   points count up (0.45 s) → one gloss sweep (0.9 s) → sparkle (1.15 s) → idle bob (1.2 s); CONTINUE → the finished strip's
+   headline pops once the card has gone (0.3 s) → the XP toast (0.45 s after the card closes; it waits while the card is up)
+   → achievement / level-up popups (0.85 s after). iOS builds the More extras hidden below the fold once the screen has
+   settled, so More only fades + scrolls. The countdown in SHARE RESULTS was already a leaf (TimelineView inside the label,
+   every minute; Android/web 30 s); the finished screen's GeometryReader centering only re-lays out on size changes.
+The reveal pacing and finish hold (BI5) are unchanged — nothing is faster, only ordered. Android was not re-measured on the
+emulator this round (the machine was at its load limit); its changes mirror the measured iOS causes where Compose had them.
 BJ4. Podium on every board with a finished stage backdrop (founder 10-03 on iOS 2.7 (241): "The podium only appears on classic
 right now" + "can we make the podium have a subtle background … it could use some finish"). ×3, every board — each game's
 daily board (Everyone AND Friends), the Sweep board (today + yesterday), Puzzles / More Games boards, Yesterday's Winners,

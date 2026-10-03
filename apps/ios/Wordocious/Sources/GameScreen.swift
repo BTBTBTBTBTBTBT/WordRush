@@ -16,6 +16,8 @@ struct GameScreen: View {
     @State private var revealComplete = false
     /// §AU3: the Gauntlet stage card is up (set one reveal after the stage clears).
     @State private var stageCardUp = false
+    /// BJ2: the finished screen is built (hidden) under the settled win card.
+    @State private var finishPrebuilt = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let mode: GameMode
 
@@ -56,79 +58,93 @@ struct GameScreen: View {
                                         onHome: { dismiss() }, onShare: { share() },
                                         onPlayAgain: playAgainAction)
                 // Other modes hold the in-play board until the winning row's flip completes.
-                } else if vm.isFinished && revealComplete {
-                    // FINISH_SPEC §R2: the finished screen fits ONE screen — the
-                    // compact header + result strip, the board scaled to exactly the
-                    // height left, then the dock (share + Next daily / Leaderboard +
-                    // the Unlimited card). The breakdown, rank and definition sit
-                    // below the dock, never above the buttons.
-                    FinishedScreenLayout(header: {
-                        FinishedCompactHeader(
-                            mode: mode, won: vm.status == .won,
-                            guessCount: vm.rowsUsed, maxGuesses: vm.maxGuesses,
-                            timeSeconds: vm.elapsedSeconds,
-                            boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                            totalBoards: vm.boardCount, points: scorePoints)
-                    }, board: { size in
-                        if vm.boardCount > 1 {
-                            // The compact mini grid (2×2 / 4 across), scaled to fit.
-                            FinishedMiniGrid(boards: vm.boards,
-                                             rowCount: vm.boards.map(\.maxGuesses).max() ?? vm.maxGuesses,
-                                             size: size, revealMissed: vm.status != .won)
-                        } else {
-                            // §L: the single board on the shared tray, fit to the area.
-                            BoardLayout(vm: vm, availableWidth: size.width * 0.94, fitHeight: size.height, tray: true)
-                        }
-                    }, dock: {
-                        finishedDock
-                    }, extras: {
-                        VStack(spacing: 8) {
-                            if vm.isDaily { DailyRankBadge(gameMode: mode) }
-                            ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
-                                               guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
-                                               boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                                               totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
-                                               stagesCompleted: vm.stagesCompletedForScore,
-                                               bestCorrectLetters: vm.bestCorrectLettersForScore,
-                                               day: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil)
-                            // §B6: today's word (purple tiles on a soft green card).
-                            if vm.boardCount == 1 {
-                                DefinitionCard(solution: vm.boards[0].solution, showWord: true,
-                                               label: vm.isDaily ? "TODAY'S WORD" : "THE WORD")
+                } else {
+                    // BJ2: the in-play board and (once the win card has settled) the finished
+                    // screen, built hidden UNDER the card — CONTINUE then only cross-fades,
+                    // instead of building 8 boards' recap in the frame the player taps.
+                    ZStack {
+                        if !(vm.isFinished && revealComplete) {
+                            VStack(spacing: 0) {
+                                header
+                                // Greedy area between header and keyboard: size tiles to fit.
+                                GeometryReader { geo in
+                                    BoardLayout(vm: vm, availableWidth: geo.size.width, fitHeight: geo.size.height)
+                            }
+                            .padding(.vertical, 6)
+                            // Keep the hint bar's SLOT after the win/loss (the in-play
+                            // board stays on screen until the final row's flip ends):
+                            // removing it grew the greedy board area, so the centered
+                            // board visibly jumped down at the finish moment — right as
+                            // the "Solved!" toast appeared — then back up when the
+                            // finished layout arrived. Fade it instead: same look, no
+                            // reflow, the board never moves.
+                            if vm.hasHints {
+                                classicHintButtons
+                                    .opacity(vm.status == .playing ? 1 : 0)
+                                    .allowsHitTesting(vm.status == .playing)
+                            }
+                            // Stage-cleared shows the full-screen StageTransition overlay
+                            // (below). §AU3: the keyboard keeps its slot (faded, inert) so the
+                            // board never jumps while the winning row lands and the card fades in.
+                            KeyboardView(vm: vm).padding(.bottom, 6)
+                                .opacity(vm.stageCleared ? 0 : 1)
+                                .allowsHitTesting(!vm.stageCleared)
+                                .accessibilityHidden(vm.stageCleared)
+                                // §BI9: "Not in word list" / "Solved!" hang from the keyboard's
+                                // top edge, under the board — never over the title art or the board.
+                                .gameFeedbackToast(vm.toast, alignment: .top, pose: toastPose)
                             }
                         }
-                        .padding(.horizontal, 2)
-                        .padding(.top, 14).padding(.bottom, 16)
-                    })
-                } else {
-                    header
-                    // Greedy area between header and keyboard: size tiles to fit.
-                    GeometryReader { geo in
-                        BoardLayout(vm: vm, availableWidth: geo.size.width, fitHeight: geo.size.height)
+                        if vm.isFinished && (revealComplete || finishPrebuilt) {
+                            // FINISH_SPEC §R2: the finished screen fits ONE screen — the
+                            // compact header + result strip, the board scaled to exactly the
+                            // height left, then the dock (share + Next daily / Leaderboard +
+                            // the Unlimited card). The breakdown, rank and definition sit
+                            // below the dock, never above the buttons.
+                            FinishedScreenLayout(header: {
+                                FinishedCompactHeader(
+                                    mode: mode, won: vm.status == .won,
+                                    guessCount: vm.rowsUsed, maxGuesses: vm.maxGuesses,
+                                    timeSeconds: vm.elapsedSeconds,
+                                    boardsSolved: vm.boards.filter { $0.status == .won }.count,
+                                    totalBoards: vm.boardCount, points: scorePoints)
+                            }, board: { size in
+                                if vm.boardCount > 1 {
+                                    // The compact mini grid (2×2 / 4 across), scaled to fit.
+                                    FinishedMiniGrid(boards: vm.boards,
+                                                     rowCount: vm.boards.map(\.maxGuesses).max() ?? vm.maxGuesses,
+                                                     size: size, revealMissed: vm.status != .won)
+                                } else {
+                                    // §L: the single board on the shared tray, fit to the area.
+                                    BoardLayout(vm: vm, availableWidth: size.width * 0.94, fitHeight: size.height, tray: true)
+                                }
+                            }, dock: {
+                                finishedDock
+                            }, extras: {
+                                VStack(spacing: 8) {
+                                    if vm.isDaily { DailyRankBadge(gameMode: mode) }
+                                    ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
+                                                       guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
+                                                       boardsSolved: vm.boards.filter { $0.status == .won }.count,
+                                                       totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
+                                                       stagesCompleted: vm.stagesCompletedForScore,
+                                                       bestCorrectLetters: vm.bestCorrectLettersForScore,
+                                                       day: vm.isDaily ? getDailySeedDate(vm.state.seed) : nil)
+                                    // §B6: today's word (purple tiles on a soft green card).
+                                    if vm.boardCount == 1 {
+                                        DefinitionCard(solution: vm.boards[0].solution, showWord: true,
+                                                       label: vm.isDaily ? "TODAY'S WORD" : "THE WORD")
+                                    }
+                                }
+                                .padding(.horizontal, 2)
+                                .padding(.top, 14).padding(.bottom, 16)
+                            })
+                            .opacity(revealComplete ? 1 : 0)
+                            .allowsHitTesting(revealComplete)
+                            .accessibilityHidden(!revealComplete)
+                            .environment(\.finishPrebuilding, !revealComplete)
+                        }
                     }
-                    .padding(.vertical, 6)
-                    // Keep the hint bar's SLOT after the win/loss (the in-play
-                    // board stays on screen until the final row's flip ends):
-                    // removing it grew the greedy board area, so the centered
-                    // board visibly jumped down at the finish moment — right as
-                    // the "Solved!" toast appeared — then back up when the
-                    // finished layout arrived. Fade it instead: same look, no
-                    // reflow, the board never moves.
-                    if vm.hasHints {
-                        classicHintButtons
-                            .opacity(vm.status == .playing ? 1 : 0)
-                            .allowsHitTesting(vm.status == .playing)
-                    }
-                    // Stage-cleared shows the full-screen StageTransition overlay
-                    // (below). §AU3: the keyboard keeps its slot (faded, inert) so the
-                    // board never jumps while the winning row lands and the card fades in.
-                    KeyboardView(vm: vm).padding(.bottom, 6)
-                        .opacity(vm.stageCleared ? 0 : 1)
-                        .allowsHitTesting(!vm.stageCleared)
-                        .accessibilityHidden(vm.stageCleared)
-                        // §BI9: "Not in word list" / "Solved!" hang from the keyboard's
-                        // top edge, under the board — never over the title art or the board.
-                        .gameFeedbackToast(vm.toast, alignment: .top, pose: toastPose)
                 }
             }
             .padding(.horizontal, 10)
@@ -227,6 +243,8 @@ struct GameScreen: View {
             }
         }
         .onChange(of: vm.status) { newValue in
+            // BJ2: the card's art is (re)decoded off main during the finish hold.
+            if newValue != .playing { FinishArt.prewarm() }
             // Haptics fire instantly; the jingle waits for the overlay (below).
             if newValue == .won { Haptics.success() }
             else if newValue == .lost { Haptics.soft() }   // §U: lose · soft
@@ -249,6 +267,11 @@ struct GameScreen: View {
                     // §AQ1: the popup springs in faster.
                     withAnimation(Theme.animation(Motion.spring)) {   // §AZ: the shared spring
                         showVictory = true
+                    }
+                    // BJ2: once the card's entrance beats are done, build the finished
+                    // screen hidden under it (CONTINUE then only cross-fades).
+                    DispatchQueue.main.asyncAfter(deadline: .now() + FinishMotion.prebuildFinished) {
+                        if showVictory && vm.isFinished { finishPrebuilt = true }
                     }
                     // High-point review ask: WIN path only (never a loss) —
                     // count the win, then maybe prompt (>=5 lifetime wins,

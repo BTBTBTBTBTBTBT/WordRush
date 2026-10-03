@@ -39,9 +39,9 @@ enum ArtThumbs {
 
     /// A downsampled copy of asset `name` whose longest side fits `points`, or nil
     /// when the asset is already about that size (draw it as is) or doesn't ship.
-    static func uiImage(_ name: String, points: CGFloat) -> UIImage? {
+    static func uiImage(_ name: String, points: CGFloat, scale: CGFloat? = nil) -> UIImage? {
         guard points > 0 else { return nil }
-        let target = bucket(points: points, scale: screenScale)
+        let target = bucket(points: points, scale: scale ?? screenScale)
         let key = "\(name)|\(target)"
         lock.lock()
         if let hit = cache.object(forKey: key as NSString) { lock.unlock(); return hit }
@@ -70,6 +70,16 @@ enum ArtThumbs {
         guard let thumb = full.preparingThumbnail(of: size) else { return nil }
         lock.lock(); cache.setObject(thumb, forKey: key as NSString); lock.unlock()
         return thumb
+    }
+
+    /// FINISH_SPEC BJ2: decode `items` (asset, display points) into the cache on a
+    /// utility thread, so the first frame that shows them never decodes on main.
+    /// Call on the main thread (it reads the screen scale there).
+    static func prewarm(_ items: [(String, CGFloat)]) {
+        let scale = screenScale
+        DispatchQueue.global(qos: .utility).async {
+            for (name, points) in items { _ = uiImage(name, points: points, scale: scale) }
+        }
     }
 
     /// The SwiftUI image for asset `name` shown with its longest side ≈ `points`.

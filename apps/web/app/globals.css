@@ -1607,7 +1607,8 @@
 @keyframes rp-rays { to { transform: rotate(360deg); } }
 .rp-spring { animation: rp-spring 460ms var(--m-spring) both; transform-origin: 50% 100%; }
 @keyframes rp-spring { 0% { opacity: 0; transform: scale(0.3) translateY(30%); } 60% { opacity: 1; transform: scale(1.06); } 100% { opacity: 1; transform: none; } }
-.rp-bob { animation: rp-bob 2.6s ease-in-out 700ms infinite; }
+/* BJ2: the idle bob starts after the card's entrance beats (FINISH_MOTION.bobStartMs). */
+.rp-bob { animation: rp-bob 2.6s ease-in-out 1200ms infinite; }
 @keyframes rp-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 .rp-gloss { overflow: hidden; }
 /* The band travels by transform (−40% → 120% of the lettering = 160 / 30 ≈ 533% of its own width); was an animated `left` (layout per frame). */

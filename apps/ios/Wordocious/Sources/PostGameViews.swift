@@ -182,6 +182,7 @@ struct FinishedCompactHeader: View {
     var onShare: ((Bool) -> Void)? = nil
 
     private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
+    @Environment(\.finishPrebuilding) private var prebuilding
 
     private var items: [(value: String, label: String)] {
         var out: [(value: String, label: String)] = []
@@ -217,7 +218,10 @@ struct FinishedCompactHeader: View {
             .padding(.horizontal, 54)
             .padding(.top, 4)
             // FINISH_SPEC §AR: the result strip's headline in live lettering.
-            LiveHeadline(text: stripHeadline, palette: .home, size: 20, maxLines: 1, minimumScale: 0.6)
+            LiveHeadline(text: stripHeadline, palette: .home, size: 20, maxLines: 1, minimumScale: 0.6, animated: !prebuilding,
+                         entranceDelay: FinishMotion.afterCard)
+                // BJ2: built hidden under the win card, it pops in once revealed.
+                .id(prebuilding)
                 .padding(.horizontal, 12)
             // §AT1: the strip centered on the screen; share pinned trailing.
             if let onShare {
@@ -253,21 +257,75 @@ struct FinishedMiniGrid: View {
         let rowCount = CompletedMiniBoardView.sharedRows(boards, floor: self.rowCount)
         let tile = Self.tile(boardCount: n, wordLen: boards.first?.solution.count ?? 5, rowCount: rowCount,
                              size: size, revealMissed: revealMissed)
-        VStack(spacing: Self.gap) {
-            ForEach(0..<rows, id: \.self) { r in
-                HStack(spacing: Self.gap) {
-                    ForEach(0..<cols, id: \.self) { c in
-                        let i = r * cols + c
-                        if i < n {
-                            CompletedMiniBoardView(board: boards[i], tileSize: tile, rowCount: rowCount,
-                                                   revealMissed: revealMissed)
+        // FINISH_SPEC BJ2: the recap is static — rendered once into an image, so the
+        // screen's view graph holds one image instead of up to ~500 glossy tile views.
+        FlattenedStatic(size: size, pad: 12, label: accessibilitySummary) {
+            VStack(spacing: Self.gap) {
+                ForEach(0..<rows, id: \.self) { r in
+                    HStack(spacing: Self.gap) {
+                        ForEach(0..<cols, id: \.self) { c in
+                            let i = r * cols + c
+                            if i < n {
+                                CompletedMiniBoardView(board: boards[i], tileSize: tile, rowCount: rowCount,
+                                                       revealMissed: revealMissed)
+                            }
                         }
                     }
                 }
             }
+            .frame(width: size.width, height: size.height)
         }
-        .frame(width: size.width, height: size.height)
     }
+
+    /// VoiceOver: the boards in order, solved or not.
+    private var accessibilitySummary: String {
+        boards.enumerated().map { i, b in "Board \(i + 1), \(b.solution.uppercased()), \(b.status == .won ? "solved" : "missed")" }
+            .joined(separator: ". ")
+    }
+}
+
+/// FINISH_SPEC BJ2: static content drawn live for its first frame, then rendered ONCE
+/// (ImageRenderer, at the screen's scale) and shown as that image. A finished screen's
+/// recap (up to 8 boards × 13 rows of glossy, shadowed tiles) otherwise kept ~500 views
+/// in the screen's graph, so every animation elsewhere on the page and every scroll
+/// frame paid for them (measured on the OctoWord finished screen). `pad` is room
+/// around `size` for badges / shadows that overhang it.
+struct FlattenedStatic<Content: View>: View {
+    let size: CGSize
+    var pad: CGFloat = 0
+    var label: String? = nil
+    @ViewBuilder var content: () -> Content
+    @State private var snapshot: UIImage?
+    @State private var snapshotSize: CGSize = .zero
+
+    var body: some View {
+        if let snapshot, snapshotSize == size {
+            Image(uiImage: snapshot)
+                .resizable()
+                .frame(width: size.width + 2 * pad, height: size.height + 2 * pad)
+                .padding(-pad)
+                .accessibilityElement()
+                .accessibilityLabel(label ?? "")
+                .accessibilityHidden(label == nil)
+        } else {
+            content()
+                .task(id: "\(size.width)x\(size.height)") { render() }
+        }
+    }
+
+    @MainActor private func render() {
+        guard size.width > 0, size.height > 0 else { return }
+        let r = ImageRenderer(content: content()
+            .frame(width: size.width, height: size.height)
+            .padding(pad))
+        r.scale = UIScreen.main.scale
+        guard let img = r.uiImage else { return }
+        snapshot = img
+        snapshotSize = size
+    }
+}
+
+extension FinishedMiniGrid {
 
     /// The largest tile that fits every board in its cell (mini tray padding + lip +
     /// the ✓ badge's float + the missed-answer line), capped at a comfortable 30 pt.

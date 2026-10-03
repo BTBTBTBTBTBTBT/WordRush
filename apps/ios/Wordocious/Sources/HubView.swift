@@ -287,6 +287,7 @@ struct HubView: View {
         .swipeToGoBack { dismiss() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.state.status) { s in
+            if s != .playing { FinishArt.prewarm() }   // BJ2: the card's art, off main
             if s != .playing, !vm.restoredFinished { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showOverlay = true } }
             if s == .won { RatingsPrompt.recordWin(); RatingsPrompt.maybeAsk() }
         }

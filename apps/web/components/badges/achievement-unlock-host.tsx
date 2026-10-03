@@ -7,6 +7,7 @@ import { isCalm, readCalmInputs, CALM_POLL_MS, CALM_SETTLE_MS } from '@/lib/cele
 import { playSound } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { leaveGuard } from '@/lib/nav-home';
+import { FINISH_MOTION } from '@/lib/finish-motion';
 
 // Plays the badge celebrations (docs/FINISH_SPEC.md V2 / V3) one after
 // another: achievement unlocks announced by lib/achievement-service.ts and a
@@ -72,7 +73,16 @@ export function AchievementUnlockHost() {
         if (settle != null) { window.clearTimeout(settle); settle = null; }
         return;
       }
-      if (!late) { setClear(true); window.clearInterval(id); return; }
+      // BJ2: a live item that waited for the win card shows a beat after it closes
+      // (after the finished screen, its headline and the XP toast have landed).
+      if (!late) {
+        if (settle != null) return;
+        settle = window.setTimeout(() => {
+          settle = null;
+          if (ready()) { setClear(true); window.clearInterval(id); }
+        }, FINISH_MOTION.achievementsAfterHoldMs);
+        return;
+      }
       if (settle != null) return;
       settle = window.setTimeout(() => {
         settle = null;

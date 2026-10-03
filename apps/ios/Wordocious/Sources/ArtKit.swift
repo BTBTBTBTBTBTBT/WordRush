@@ -274,7 +274,8 @@ struct MomentLettering<Fallback: View>: View {
 
     var body: some View {
         if moment.isAvailable {
-            Image(moment.assetName)
+            // BJ2: drawn from the display-size cache (pre-decoded off main by FinishArt).
+            ArtThumbs.image(moment.assetName, points: maxWidth)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()

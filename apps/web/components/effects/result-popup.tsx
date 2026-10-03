@@ -1,5 +1,6 @@
 'use client';
 
+import { FINISH_MOTION } from '@/lib/finish-motion';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { LayoutGrid, Target } from 'lucide-react';
 import { Confetti } from './confetti';
@@ -75,13 +76,14 @@ export interface ResultPopupProps {
   actions?: { label: string; onClick: () => void; primary?: boolean }[];
 }
 
-function useCountUp(target: number | undefined, ms = 700): { value: number; done: boolean } {
+function useCountUp(target: number | undefined, ms = 700, delayMs = FINISH_MOTION.countStartMs): { value: number; done: boolean } {
   const [state, setState] = useState<{ value: number; done: boolean }>({ value: target ?? 0, done: true });
   useEffect(() => {
     if (target == null) return;
     if (prefersReducedMotion() || target <= 0) { setState({ value: target, done: true }); return; }
     let raf = 0;
-    const start = performance.now();
+    // BJ2: the count-up starts once the card has landed and its tiles flipped in.
+    let start = 0;
     let shown = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / ms);
@@ -92,9 +94,9 @@ function useCountUp(target: number | undefined, ms = 700): { value: number; done
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     setState({ value: 0, done: false });
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, ms]);
+    const wait = setTimeout(() => { start = performance.now(); raf = requestAnimationFrame(tick); }, delayMs);
+    return () => { clearTimeout(wait); cancelAnimationFrame(raf); };
+  }, [target, ms, delayMs]);
   return state;
 }
 
@@ -244,7 +246,7 @@ export function ResultPopup(p: ResultPopupProps) {
                                     flipIndex={0}
                                     flipSound={false}
                                     pop={false}
-                                    style={{ width: tile, height: tile, flex: 'none', ['--gt-d' as string]: `${200 + wi * 120 + i * 40}ms` } as React.CSSProperties}
+                                    style={{ width: tile, height: tile, flex: 'none', ['--gt-d' as string]: `${FINISH_MOTION.tilesStartMs + wi * 120 + i * 40}ms` } as React.CSSProperties}
                                   />
                                 );
                               })}

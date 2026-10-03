@@ -448,6 +448,13 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     // past board 1 ("Not in word list" on every guess after the first solve).
     val isApplyToAll = multiBoard
     val isFinished = state.status != GameStatus.PLAYING
+    // FINISH_SPEC BJ2: the win / lose card's art is decoded off main during the finish hold.
+    if (isFinished) {
+        val warmCtx = androidx.compose.ui.platform.LocalContext.current
+        val warmDensity = androidx.compose.ui.platform.LocalDensity.current.density
+        val warmWidth = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp
+        LaunchedEffect(Unit) { FinishMotion.prewarm(warmCtx, warmDensity, warmWidth) }
+    }
 
     // Two-phase finish (spec hot-spot #4): a game that finishes LIVE this session
     // shows the VictoryOverlay first, then taps through to the stats screen.

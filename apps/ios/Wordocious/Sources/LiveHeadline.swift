@@ -106,6 +106,9 @@ struct LiveHeadline: View {
     var minimumScale: CGFloat = 0.6
     /// Pop in on first show / text change.
     var animated: Bool = true
+    /// FINISH_SPEC BJ2: hold the entrance this long (the finished screen's strip waits
+    /// for the win card to leave, so only one big thing animates at a time).
+    var entranceDelay: Double = 0
 
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
     @ObservedObject private var scroll = ScrollMotion.shared
@@ -185,7 +188,13 @@ struct LiveHeadline: View {
         }
         .padding(o + 1)
         .padding(.bottom, size * 0.14)
+        // BJ2: the drop shadow is part of the one raster (it used to be applied over
+        // the masked, scaling composite — a fresh offscreen blur pass every frame of
+        // the pop-in). The raster gets room for the blur; the layout stays the same.
+        .shadow(color: palette.deep.opacity(0.28), radius: size * 0.12, x: 0, y: size * 0.08)
+        .padding(.horizontal, size * 0.14).padding(.vertical, size * 0.1).padding(.bottom, size * 0.1)
         .drawingGroup()
+        .padding(.horizontal, -size * 0.14).padding(.vertical, -size * 0.1).padding(.bottom, -size * 0.1)
     }
 
     /// The glyphs alone (same layout + padding as `lettering`), for the sweep's mask.
@@ -211,12 +220,14 @@ struct LiveHeadline: View {
                 }
             }
             .mask(alignment: .leading) {
-                GeometryReader { g in
-                    Rectangle().frame(width: g.size.width * (pending ? 0 : reveal))
-                }
+                // BJ2: the left → right reveal is a transform on the mask (it was an
+                // animated width — a layout pass every frame); the mask reaches past the
+                // frame so the rastered shadow is never clipped.
+                Rectangle()
+                    .padding(-size * 0.25)
+                    .scaleEffect(x: pending ? 0.001 : max(0.001, reveal), y: 1, anchor: .leading)
             }
             .scaleEffect(pending ? 0.6 : pop, anchor: .center)
-            .shadow(color: palette.deep.opacity(0.28), radius: size * 0.12, x: 0, y: size * 0.08)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(text.capitalized)
             .accessibilityAddTraits(.isHeader)
@@ -238,7 +249,7 @@ struct LiveHeadline: View {
         t.disablesAnimations = true
         withTransaction(t) { reveal = 0; pop = 0.6 }
         // Next turn, so the reset lands before the animation starts from it.
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + entranceDelay) {
             withAnimation(.linear(duration: dur)) { reveal = 1 }
             withAnimation(.spring(response: 0.28, dampingFraction: 0.55)) { pop = 1 }
         }

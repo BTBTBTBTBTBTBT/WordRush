@@ -321,7 +321,17 @@ object BadgeMoments {
     var unlockedCount by mutableStateOf<Int?>(null)
 
     /** BF2: >0 while something must not be covered (the win popup, a live VS match) — popups wait. */
-    var holds by androidx.compose.runtime.mutableIntStateOf(0)
+    private var holdCount by androidx.compose.runtime.mutableIntStateOf(0)
+    var holds: Int
+        get() = holdCount
+        set(value) {
+            if (holdCount > 0 && value <= 0) lastHoldReleaseMs = android.os.SystemClock.uptimeMillis()
+            holdCount = value
+        }
+
+    /** FINISH_SPEC BJ2: when the last hold lifted (uptime ms) — the XP toast waits a beat after it. */
+    var lastHoldReleaseMs = 0L
+        private set
 
     /** BF2: bumped by "See all" — MainScreen opens Stats on its achievements. */
     var seeAllRequests by androidx.compose.runtime.mutableIntStateOf(0)
@@ -726,7 +736,8 @@ fun AchievementUnlockHost() {
     val held = BadgeMoments.holds > 0
     LaunchedEffect(moment == null, held) {
         if (moment == null || held) ready = false
-        else { delay(900); ready = true }
+        // BJ2: after the finished screen and the XP toast have landed (one big thing at a time).
+        else { delay(com.wordocious.app.ui.game.FinishMotion.ACHIEVEMENTS_AFTER_HOLD_MS); ready = true }
     }
     if (moment == null || !ready || held) return
     androidx.activity.compose.BackHandler { BadgeMoments.dismiss() }

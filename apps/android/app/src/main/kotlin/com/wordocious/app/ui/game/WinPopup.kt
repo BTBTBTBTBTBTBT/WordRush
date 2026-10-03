@@ -137,7 +137,8 @@ object WinPopupMath {
     const val FLIP_MS = 300
     const val TILE_STAGGER_MS = 40
     const val WORD_STAGGER_MS = 120
-    const val TRAY_DELAY_MS = 200
+    /** BJ2: the tiles flip once the card has landed ([FinishMotion.TILES_START_MS]). */
+    const val TRAY_DELAY_MS = FinishMotion.TILES_START_MS
 
     /** The points count-up: ease-out (cubic) from 0 to [target] at [t] ∈ [0, 1] (web countUpValue). */
     fun countUpValue(target: Int, t: Float): Int {
@@ -520,8 +521,11 @@ private fun StageFront(host: MascotId, won: Boolean, accent: Color, modifier: Mo
         })
         landed = true
     }
+    // BJ2: the idle bob waits for the card's entrance beats (tiles, count-up, gloss).
+    var bobReady by remember { mutableStateOf(still) }
+    LaunchedEffect(Unit) { if (!still) { delay(FinishMotion.BOB_START_MS); bobReady = true } }
     // FINISH_SPEC AD: the spring-in stays; the idle bob stops under Battery Saver too.
-    val bobbing = won && landed && !still && !WTheme.calmMotion
+    val bobbing = won && landed && bobReady && !still && !WTheme.calmMotion
     val bob = if (bobbing) rememberInfiniteTransition(label = "winBob").animateFloat(
         initialValue = 0f, targetValue = -4f,
         animationSpec = infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
@@ -584,7 +588,7 @@ fun Modifier.glossSweep(band: Dp? = null, delayMs: Long = 700L): Modifier = comp
 /** R1 the moment lettering with its one gloss sweep. */
 @Composable
 fun WinLettering(moment: MomentArt) {
-    MomentTitle(moment, Modifier.glossSweep())
+    MomentTitle(moment, Modifier.glossSweep(delayMs = FinishMotion.SWEEP_START_MS))
 }
 
 // ── Answers ────────────────────────────────────────────────────────────────
@@ -702,7 +706,7 @@ fun WinStatChip(stat: WinStat, accent: Color, modifier: Modifier = Modifier) {
     val sparkle = remember(stat.value) { Animatable(0f) }
     LaunchedEffect(stat.value, counting) {
         if (!counting) return@LaunchedEffect
-        delay(200)
+        delay(FinishMotion.COUNT_START_MS)   // BJ2: after the card lands and its tiles flip
         // Spec U: the points count-up ticks as the number climbs (throttled to ≤ 12/s).
         val ticks = launch {
             androidx.compose.runtime.snapshotFlow { WinPopupMath.countUpAt(target ?: 0, elapsed.value.toLong()) }

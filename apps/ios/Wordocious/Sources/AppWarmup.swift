@@ -27,6 +27,8 @@ enum AppWarmup {
     /// Every store is a `static let` (thread-safe lazy init) that reads the
     /// bundle and runs JSONDecoder only — no UIKit, no main-actor state.
     static func start() {
+        // FINISH_SPEC BJ2: the win / lose card's art, decoded off main ahead of time.
+        FinishArt.prewarm()
         Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             GamePersistence.shared.sweepStalePracticeSaves()
