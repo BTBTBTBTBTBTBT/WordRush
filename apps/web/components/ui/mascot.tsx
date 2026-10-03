@@ -116,7 +116,9 @@ export function CastRow({
 // components/ui/art-scene.tsx SceneEmptyState.
 
 /** Right padding a banner's headline keeps so the host never covers it. */
-export const BANNER_HOST_CLEARANCE = 68;
+/** BH3: the banner host's size (was 60) and the headline room it needs on each side. */
+export const BANNER_HOST_SIZE = 52;
+export const BANNER_HOST_CLEARANCE = 58;
 
 /**
  * §2 banner host: wraps a one-window banner and stands its host at the right
@@ -124,7 +126,7 @@ export const BANNER_HOST_CLEARANCE = 68;
  * with the idle bob. The wrapper adds the headroom so a scroll container never
  * clips the peek; the banner keeps BANNER_HOST_CLEARANCE on its headline.
  */
-export function BannerHost({ id, crown = false, pose, children }: {
+export function BannerHost({ id, crown = false, pose, custom, children }: {
   id: MascotId;
   crown?: boolean;
   /**
@@ -133,20 +135,29 @@ export function BannerHost({ id, crown = false, pose, children }: {
    * never appears in the same image twice.
    */
   pose?: PoseArtName;
+  /** FINISH_SPEC BJ6: draw this instead (the player's own mascot), same 60 px spot + bob. */
+  custom?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const headroom = crown ? 26 : 16;
-  const place: React.CSSProperties = { position: 'absolute', top: headroom - 12, right: 10, zIndex: 1 };
+  // BH3: the host (52) stands centered on the one-line headline row; the card keeps 6 of headroom
+  // (16 when Flawless crowns him).
+  const headroom = crown ? 16 : 6;
+  const place: React.CSSProperties = { position: 'absolute', top: headroom + 4 + 16 - BANNER_HOST_SIZE / 2, right: 10, zIndex: 1 };
   return (
     <div className="relative shrink-0" style={{ paddingTop: headroom }}>
       {children}
-      {pose ? (
-        <span aria-hidden="true" className="mascot mascot-bob pointer-events-none select-none" style={{ ...place, width: 60, height: 60, lineHeight: 0 }}>
-          <Image src={artSrc(pose)} alt="" width={ART_SIZE[pose][0]} height={ART_SIZE[pose][1]} priority draggable={false} style={{ width: 60, height: 60, objectFit: 'contain' }} />
-          {crown && <MascotCrown size={60} />}
+      {custom ? (
+        <span aria-hidden="true" className="mascot mascot-bob pointer-events-none select-none" style={{ ...place, width: BANNER_HOST_SIZE, height: BANNER_HOST_SIZE, lineHeight: 0 }}>
+          {custom}
+          {crown && <MascotCrown size={BANNER_HOST_SIZE} />}
+        </span>
+      ) : pose ? (
+        <span aria-hidden="true" className="mascot mascot-bob pointer-events-none select-none" style={{ ...place, width: BANNER_HOST_SIZE, height: BANNER_HOST_SIZE, lineHeight: 0 }}>
+          <Image src={artSrc(pose)} alt="" width={ART_SIZE[pose][0]} height={ART_SIZE[pose][1]} priority draggable={false} style={{ width: BANNER_HOST_SIZE, height: BANNER_HOST_SIZE, objectFit: 'contain' }} />
+          {crown && <MascotCrown size={BANNER_HOST_SIZE} />}
         </span>
       ) : (
-        <Mascot id={id} size={56} motion="bob" priority crown={crown} style={place} />
+        <Mascot id={id} size={BANNER_HOST_SIZE - 4} motion="bob" priority crown={crown} style={place} />
       )}
     </div>
   );

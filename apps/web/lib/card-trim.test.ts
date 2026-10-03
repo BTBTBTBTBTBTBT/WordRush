@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TRIM, trimPath, trimStops } from './card-trim';
+import { TRIM, compactCardLine, trimPath, trimStops } from './card-trim';
 
 describe('card trim (FINISH_SPEC BH1)', () => {
   it('is one closed path: the band plus one drip per bump', () => {
@@ -23,5 +23,11 @@ describe('card trim (FINISH_SPEC BH1)', () => {
     expect(s.map(([o]) => o)).toEqual([0, 0.42, 1]);
     expect(s[1][1]).toBe('#7c3aed');
     expect(trimStops('#7c3aed', true).every(([, c]) => !c.includes('7c3aed'))).toBe(true);
+  });
+
+  it('keeps a long result on one line with the short form (founder 10-03)', () => {
+    expect(compactCardLine('3 guesses · 23s')).toBe('3 guesses · 23s');
+    expect(compactCardLine('38 guesses · 10m 46s')).toBe('38g · 10m 46s');
+    expect(compactCardLine('12 mistakes · 10m 46s')).toBe('12 miss · 10m 46s');
   });
 });

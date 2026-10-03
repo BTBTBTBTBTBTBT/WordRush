@@ -21,9 +21,9 @@ import com.wordocious.core.groupTier
 /** Fixed slot sizes (dp) shared by both modes. */
 internal object BannerSlotSpec {
     /** The share control's square slot at the headline's end (kept even when empty). */
-    const val SHARE = 36f
+    const val SHARE = 34f
     /** The switch's segment height; the track adds [SWITCH_PAD] all round. */
-    const val SWITCH_SEGMENT_H = 26f
+    const val SWITCH_SEGMENT_H = 24f // BH3: a 28 dp track
     const val SWITCH_PAD = 2f
     /** Horizontal padding inside each switch segment, around its label. */
     const val SWITCH_LABEL_PAD = 10f

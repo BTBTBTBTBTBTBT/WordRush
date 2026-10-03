@@ -3,7 +3,7 @@
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LiveHeadline } from '@/components/ui/live-headline';
 import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
 import { SeasonArt } from '@/components/ui/season-art';
@@ -156,7 +156,8 @@ function RowHeader({ label, status, ink, streak, height }: { label: string; stat
   );
 }
 
-const HEAD_SIZE = 22;
+/** BH3: the one-line headline's lettering (~30 px line), shrinking to fit. */
+const HEAD_SIZE = 20;
 /** BI21: the headline's room on EACH side (the W host's clearance, mirrored). */
 const HEADLINE_SIDE_CLEAR = BANNER_HOST_CLEARANCE - 8;
 
@@ -284,22 +285,25 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         {/* BI21: the W host's clearance on BOTH sides keeps the headline centered; the
             share button sits at the strip's LEFT end, mirroring W at the right. */}
         <div className="relative flex items-start" style={{ paddingLeft: tierArt || seasonArt ? slots.shareWidth + 6 : HEADLINE_SIDE_CLEAR, paddingRight: tierArt || seasonArt ? 0 : HEADLINE_SIDE_CLEAR }}>
-          {/* Z: the headline box is always two lines tall (one-line headlines center in it). */}
+          {/* Z + BH3: the headline box is one line tall in both modes (the lettering scales to fit). */}
           <div className="flex-1 min-w-0 flex items-center justify-center text-center gap-1.5" style={{ height: slots.headline }}>
             {content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
             {/* The old WORDOCIOUS wordmark style (Nunito Black, violet→pink) with a soft pink glow;
                 the double-flawless gold day keeps its tier ink. */}
             {/* FINISH_SPEC AR: the live lettering (purple → magenta, gold numbers; the
                 double-flawless gold day celebrates). Shrinks, then wraps to two lines. */}
-            <LiveHeadline
-              key={playMode}
-              text={headline}
-              names={name ? [name] : undefined}
-              palette={double ? 'celebrate' : 'home'}
-              size={HEAD_SIZE}
-              level={2}
-              className="mode-xfade"
-            />
+            {/* BH3: ONE line, auto-fit (scaled down to the row, never wraps). */}
+            <FitOneLine key={playMode}>
+              <LiveHeadline
+                text={headline}
+                names={name ? [name] : undefined}
+                palette={double ? 'celebrate' : 'home'}
+                size={HEAD_SIZE}
+                level={2}
+                className="mode-xfade"
+                style={{ whiteSpace: 'nowrap' }}
+              />
+            </FitOneLine>
           </div>
           {/* Nothing to share before the first finished game (iOS/Android parity).
               Z: the share box stays reserved (empty) when there is nothing to share. */}
@@ -361,7 +365,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
             role="group"
             aria-label="Daily or Unlimited"
             className="relative flex"
-            style={{ padding: MODE_SWITCH.pad, width: '76%', maxWidth: 280, height: BANNER_SLOT.switchRow }}
+            style={{ padding: MODE_SWITCH.pad, width: '64%', maxWidth: 260, height: BANNER_SLOT.switchRow }}
           >
             {/* The candy toggle sprites (night art 10-03): the glossy track + a sliding glossy thumb, three-sliced. */}
             <span aria-hidden="true" className="absolute inset-0 pointer-events-none" style={threeSlice('track', BANNER_SLOT.switchRow, '--candy-track')} />
@@ -380,7 +384,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           <div
             key={playMode}
             className="mode-xfade w-full text-center font-extrabold truncate"
-            style={{ fontSize: 10.5, letterSpacing: 0.4, lineHeight: `${BANNER_SLOT.metaLine}px`, height: BANNER_SLOT.metaLine, color: subInk, fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontSize: 11, fontVariant: 'small-caps', letterSpacing: 0.4, lineHeight: `${BANNER_SLOT.metaLine}px`, height: BANNER_SLOT.metaLine, color: subInk, fontVariantNumeric: 'tabular-nums' }}
           >
             {/* The live clock is a leaf (components/home/home-clock.tsx): only this line re-renders each second. */}
             <HomeClock render={(clock) => bannerClockLine(word.progress, puzzles.progress, clock, unlimited)} />
@@ -401,8 +405,46 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // G4: a swept / flawless banner carries the cast in its art instead.
   if (tierArt || seasonArt) return <div className="relative shrink-0" style={{ paddingTop: 16 }}>{card}</div>;
   return (
-    <BannerHost id={PAGE_HOSTS.home} pose="art-pose-w-wave" crown={wTier === 'flawless'}>
+    // BJ6: a signed-in player with a custom mascot hosts their own banner (mascot only, never the photo).
+    <BannerHost
+      id={PAGE_HOSTS.home}
+      pose="art-pose-w-wave"
+      crown={wTier === 'flawless'}
+    >
       {card}
     </BannerHost>
+  );
+}
+
+/**
+ * BH3: fits one line of lettering to its row — measured once per size change and scaled down
+ * (transform only) so it never wraps; centered. Cheap: one ResizeObserver, no per-frame work.
+ */
+function FitOneLine({ children }: { children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const b = box.current;
+    const i = inner.current;
+    if (!b || !i) return;
+    const fit = () => {
+      const need = i.scrollWidth;
+      const have = b.clientWidth;
+      setScale(need > have && need > 0 ? Math.max(0.55, have / need) : 1);
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(fit);
+    ro.observe(b);
+    ro.observe(i);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={box} className="min-w-0 flex-1 flex justify-center" style={{ overflow: 'visible' }}>
+      <div ref={inner} style={{ whiteSpace: 'nowrap', transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: 'center' }}>
+        {children}
+      </div>
+    </div>
   );
 }

@@ -7,11 +7,19 @@ import org.junit.Test
 /** FINISH_SPEC BH: the compact Home game card + its candy cap trim (parity with web/iOS). */
 class HomeCardTrimTest {
     @Test fun compactCardMeasures() {
-        assertTrue(HomeCardSpec.HEIGHT in 72f..76f)
-        assertTrue(HomeCardSpec.ICON in 40f..44f)
+        // Founder 10-03: ~64–70 tall, icon 40, the card hugging one top-aligned row.
+        assertTrue(HomeCardSpec.HEIGHT in 64f..70f)
+        assertEquals(40f, HomeCardSpec.ICON)
         assertEquals(17f, HomeCardSpec.NAME)
         assertEquals(13f, HomeCardSpec.DESC)
-        assertTrue(CardTrimGeometry.BAND + HomeCardSpec.ICON + 16f <= HomeCardSpec.HEIGHT)
+        val content = maxOf(HomeCardSpec.ICON, 21f + HomeCardSpec.DESC_GAP + 16f)
+        assertTrue(CardTrimGeometry.BAND + HomeCardSpec.PAD_TOP + content + HomeCardSpec.PAD_BOTTOM <= HomeCardSpec.HEIGHT + 1f)
+    }
+
+    @Test fun longResultStaysOneLine() {
+        assertEquals("3 guesses · 23s", HomeCardSpec.compactLine("3 guesses · 23s"))
+        assertEquals("38g · 10m 46s", HomeCardSpec.compactLine("38 guesses · 10m 46s"))
+        assertEquals("12 miss · 10m 46s", HomeCardSpec.compactLine("12 mistakes · 10m 46s"))
     }
 
     @Test fun trimIsOneRowOfDrips() {
@@ -23,5 +31,15 @@ class HomeCardTrimTest {
         // Control 2·drip below the band → the curve peaks exactly `drip` below it.
         assertEquals(CardTrimGeometry.BAND + 2 * CardTrimGeometry.DRIP, segs[0][1], 0.001f)
         assertTrue(CardTrimGeometry.BAND + CardTrimGeometry.DRIP <= HomeCardSpec.HEIGHT / 5f)
+    }
+
+    @Test fun compactBanner() {
+        // BH3: the 52 dp host centered on the one-line headline row; the slimmer banner pieces.
+        assertEquals(52f, HOME_HOST_SIZE.value)
+        assertEquals(6f, HOME_HOST_PEEK.value)
+        assertEquals(34f, BannerSlotSpec.SHARE)
+        val src = java.io.File("src/main/kotlin/com/wordocious/app/ui/HomeBannerView.kt").readText()
+        assertTrue(src.contains("maxLines = 1, sound = active"))
+        assertTrue(src.contains("(maxWidth * 0.64f).coerceAtMost(230.dp)"))
     }
 }

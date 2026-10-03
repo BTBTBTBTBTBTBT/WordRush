@@ -43,9 +43,13 @@ import com.wordocious.app.ui.theme.WTheme
  * HomeCardSpec / CardTrimGeometry (keep the three in step).
  */
 internal object HomeCardSpec {
-    const val HEIGHT = 74f
+    /** Founder 10-03 ("align at the tops"): band 9 + 7 + max(icon 40, 21 + 4 + 16) + 9. */
+    const val HEIGHT = 66f
     const val RADIUS = 16f
-    const val ICON = 42f
+    const val ICON = 40f
+    const val PAD_TOP = 7f
+    const val PAD_BOTTOM = 9f
+    const val DESC_GAP = 4f
     const val NAME = 17f
     const val DESC = 13f
     const val PAD_X = 10f
@@ -53,6 +57,18 @@ internal object HomeCardSpec {
     const val BADGE = 22f
     /** DAILIES / PUZZLES title art over the compact grid (~25% smaller). */
     const val SECTION_TITLE_SCALE = 0.75f
+
+    /** A card's subtitle stays ONE line: a long result takes the short form (web compactCardLine). */
+    const val LINE_MAX = 16
+
+    fun compactLine(line: String, max: Int = LINE_MAX): String {
+        if (line.length <= max) return line
+        return line
+            .replace(Regex("(\\d+) guess(es)?\\b"), "$1g")
+            .replace(Regex("(\\d+) mistakes?\\b"), "$1 miss")
+            .replace(Regex("(\\d+) checks?\\b"), "$1 chk")
+            .replace(Regex("(\\d+) miss(es)?\\b"), "$1 miss")
+    }
 }
 
 /**
@@ -216,50 +232,53 @@ internal fun ModeCardView(
     ) {
         Column {
             CardTrim(if (isLocked) Color(0xFFD1D5DB) else card.accent, locked = isLocked)
+            // Founder 10-03 ("align at the tops"): icon, name and badge share ONE top line; the
+            // subtitle sits 4 under the name, beside the icon. The card hugs it (66 dp with the trim).
             Row(
                 Modifier.fillMaxWidth().heightIn(min = MODE_CARD_MIN_HEIGHT - MODE_CARD_BAND)
-                    .padding(horizontal = HomeCardSpec.PAD_X.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(start = HomeCardSpec.PAD_X.dp, end = HomeCardSpec.PAD_X.dp, top = HomeCardSpec.PAD_TOP.dp, bottom = HomeCardSpec.PAD_BOTTOM.dp),
+                verticalAlignment = Alignment.Top,
             ) {
                 // The glossy 3D game icon (ART_SPEC §3) on its own; the old glyph only as a fallback.
-                Box(Modifier.size(MODE_CARD_ICON)) {
-                    val art = gameArtRes(card.id)
-                    if (art != null) {
-                        androidx.compose.foundation.Image(
-                            androidx.compose.ui.res.painterResource(art), contentDescription = null,
-                            modifier = Modifier.size(MODE_CARD_ICON),
-                        )
-                    } else {
-                        Box(Modifier.size(MODE_CARD_ICON), contentAlignment = Alignment.Center) {
-                            ModeGlyph(card, card.accent, box = 36.dp)
-                        }
-                    }
-                    // BH2: today's W / L badge rides the icon's corner, so the name gets the full width.
-                    if (isDone && !unlimited) {
-                        ResultBadge(
-                            won = doneWon, size = HomeCardSpec.BADGE.dp,
-                            modifier = Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 5.dp)
-                                .requiredSize(HomeCardSpec.BADGE.dp),
-                        )
+                val art = gameArtRes(card.id)
+                if (art != null) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(art), contentDescription = null,
+                        modifier = Modifier.size(MODE_CARD_ICON),
+                    )
+                } else {
+                    Box(Modifier.size(MODE_CARD_ICON), contentAlignment = Alignment.Center) {
+                        ModeGlyph(card, card.accent, box = 34.dp)
                     }
                 }
                 Spacer(Modifier.width(8.dp))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    // One line, shrink-to-fit (Crosswordocious, ProperNoundle), never wraps.
-                    FitText(
-                        card.title, fontSize = HomeCardSpec.NAME.sp, fontWeight = FontWeight.Black,
-                        color = if (isLocked) WTheme.textMuted else card.accent, minScale = 0.6f,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.DESC_GAP.dp)) {
+                    // The name's cap height on the icon's top edge; the badge top-aligned at the row's end
+                    // (its slot always reserved so solved and unsolved names line up).
+                    Row(Modifier.offset(y = (-3).dp), verticalAlignment = Alignment.Top) {
+                        // One line, shrink-to-fit (Crosswordocious, ProperNoundle), never wraps.
+                        FitText(
+                            card.title, fontSize = HomeCardSpec.NAME.sp, fontWeight = FontWeight.Black,
+                            color = if (isLocked) WTheme.textMuted else card.accent, minScale = 0.6f,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Box(Modifier.padding(top = 2.dp).size(HomeCardSpec.BADGE.dp), contentAlignment = Alignment.TopCenter) {
+                            if (isDone && !unlimited) {
+                                ResultBadge(won = doneWon, size = HomeCardSpec.BADGE.dp, modifier = Modifier.requiredSize(HomeCardSpec.BADGE.dp))
+                            }
+                        }
+                    }
                     // Completed daily shows guesses · time; else the mode description (web parity).
                     Text(
                         subtitleOverride ?: if (completion != null) {
                             // Through the mode's guess semantics (Sudoku reads "0 mistakes",
-                            // Letter Ladder "Par") — the shared cross-platform formatter.
-                            "${formatGuessStat(card.guessSemantics, card.guessBase, completion.guessCount)} · ${formatShortTime(completion.timeSeconds)}"
+                            // Letter Ladder "Par") — the shared cross-platform formatter; one line.
+                            HomeCardSpec.compactLine("${formatGuessStat(card.guessSemantics, card.guessBase, completion.guessCount)} · ${formatShortTime(completion.timeSeconds)}")
                         } else if (vsDone) "Played today" else card.desc,
                         fontSize = HomeCardSpec.DESC.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, color = WTheme.textMuted,
                         maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.offset(y = (-3).dp),
                     )
                 }
                 // ART_SPEC §21.4: no trailing ">" chevron — the whole card is the tap target.

@@ -71,6 +71,6 @@ describe('mode card slots', () => {
   it('are identical in Daily and Unlimited', () => {
     expect(modeCardSlots('unlimited')).toEqual(modeCardSlots('daily'));
     expect(modeCardSlots('daily').descHeight).toBe(16); // BH2: one subtitle line
-    expect(modeCardSlots('daily').textHeight).toBeLessThanOrEqual(42); // fits beside the icon
+    expect(modeCardSlots('daily').textHeight).toBeLessThanOrEqual(42); // hugs the 40 icon (name + 4 + one line)
   });
 });

@@ -47,41 +47,45 @@ export function modeSwitchLayout(mode: PlayMode, { locked = false }: { locked?: 
 
 /** Slot sizes (px). */
 export const BANNER_SLOT = {
-  /** Room above the card for the host / the art's overhang. */
-  headroom: 16,
+  /**
+   * Room above the card for the host's overhang. FINISH_SPEC BH3 (founder 10-03: the banner is
+   * "bloated"): the host is 52 now and centered on the headline row, so 8 (was 16).
+   */
+  headroom: 6,
   /** The swept / flawless top bar (kept in Unlimited on that day, recolored). */
   topBar: 10,
   /** The card border on an art-frame day (softBorder's 1.5 px). */
   border: 1.5,
   /** The strip's top padding: art frame / host frame. */
-  stripTopArt: 8,
-  stripTopHost: 12,
-  stripBottom: 8,
-  /** Gap between the headline row and the controls block. */
-  stripGap: 6,
-  /** The headline box: always two 22 px × 1.15 lines (one-line headlines center in it). */
-  headline: 51,
+  stripTopArt: 4,
+  stripTopHost: 4,
+  stripBottom: 4,
+  /** Gap between the headline row and the controls block (8 above the switch). */
+  stripGap: 8,
+  /** BH3: ONE headline line (auto-fit, never wraps; was a two-line 51 box). */
+  headline: 32,
   /** The share button's box, reserved even when there is nothing to share. */
-  share: 36,
+  share: 34,
   /** The celebration art beside the headline (and Unlimited's U loop in the same box). */
   art: 100,
   /**
-   * FINISH_SPEC BI21: the controls block under the headline — the centered DAILY |
-   * UNLIMITED switch (30), a 6 px gap, then the centered one-line meta line (14).
+   * BH3: the controls block under the headline — the centered DAILY | UNLIMITED switch (28,
+   * ~64% wide), a 4 px gap, then the centered one-line meta line (12, 11 px small caps).
    */
-  controls: 50,
-  switchRow: 30,
-  metaLine: 14,
+  controls: 44,
+  switchRow: 28,
+  metaLine: 12,
   /** A row's label · status · streak line. */
-  rowHeader: 16,
-  rowGap: 6,
-  wordPadTop: 8,
-  wordPadBottom: 3,
-  puzzlePadTop: 5,
-  puzzlePadBottom: 12,
-  /** BI21: one tile size for both rows (at most 32, sized so 10 fit with 5 px gaps). */
-  tileLg: 32,
-  tileSm: 32,
+  rowHeader: 12,
+  /** BH3: label → icons 4; the two rows 8 apart (wordPadBottom + puzzlePadTop). */
+  rowGap: 4,
+  wordPadTop: 4,
+  wordPadBottom: 4,
+  puzzlePadTop: 4,
+  puzzlePadBottom: 6,
+  /** BI21 / BH3: one tile size for both rows (up to 36, sized so 10 fit with 5 px gaps). */
+  tileLg: 36,
+  tileSm: 36,
   tileGapMin: 5,
   tileSlots: 10,
 } as const;
@@ -170,14 +174,15 @@ export function homeBannerContent(mode: PlayMode, input: BannerInput): BannerCon
 
 /**
  * Card measures shared with components/home/mode-card.tsx MODE_CARD (FINISH_SPEC BH2: the compact
- * card): a one-line name (21 line box), ONE subtitle line (16), the 42 icon, and the W / L / ✓
- * badge pinned to the icon's corner (22) so the name gets the column's full width.
+ * card, founder 10-03 "align at the tops"): one top row — the 40 icon, the one-line name (21 line
+ * box) and the W / L / ✓ badge (22) at the row's end, all top-aligned — then ONE subtitle line
+ * (16) 4 under the name.
  */
-export const CARD_SLOT = { titleLine: 21, iconBadge: 22, descLine: 16, descLines: 1, icon: 42 } as const;
+export const CARD_SLOT = { titleLine: 21, titleSlot: 22, descGap: 4, descLine: 16, descLines: 1, icon: 40 } as const;
 
 export interface CardSlots {
-  /** The badge on the icon's bottom-right corner (badge / lock), the same box in both modes. */
-  iconBadge: number;
+  /** The title row's right-end slot (badge / lock), reserved even when empty. */
+  titleSlotWidth: number;
   /** The subtitle box: one line, always reserved (a result or the description fills it). */
   descHeight: number;
   /** The text column's height for a one-line title. */
@@ -189,8 +194,8 @@ export function modeCardSlots(mode: PlayMode): CardSlots {
   void mode;
   const descHeight = CARD_SLOT.descLine * CARD_SLOT.descLines;
   return {
-    iconBadge: CARD_SLOT.iconBadge,
+    titleSlotWidth: CARD_SLOT.titleSlot,
     descHeight,
-    textHeight: CARD_SLOT.titleLine + descHeight,
+    textHeight: CARD_SLOT.titleLine + CARD_SLOT.descGap + descHeight,
   };
 }

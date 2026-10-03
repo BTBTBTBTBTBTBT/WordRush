@@ -25,3 +25,18 @@ export function trimStops(accent: string, locked = false): [number, string][] {
   if (locked) return [[0, '#e5e7eb'], [1, '#c9ced6']];
   return [[0, softMix(accent, 0.45)], [0.42, accent], [1, darken(accent, 0.14)]];
 }
+
+/**
+ * BH2 (founder 10-03): a card's subtitle stays ONE line. A result line that runs long
+ * ("38 guesses · 10m 46s", Gauntlet) takes the short form ("38g · 10m 46s") instead of wrapping.
+ */
+export const CARD_LINE_MAX = 16;
+
+export function compactCardLine(line: string, max: number = CARD_LINE_MAX): string {
+  if (line.length <= max) return line;
+  return line
+    .replace(/(\d+) guess(es)?\b/g, '$1g')
+    .replace(/(\d+) mistakes?\b/g, '$1 miss')
+    .replace(/(\d+) checks?\b/g, '$1 chk')
+    .replace(/(\d+) miss(es)?\b/g, '$1 miss');
+}

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -163,7 +164,7 @@ fun HomeBannerView(
     CappedFontScale {
         // The host (W, MASCOT_SPEC §1–§2) peeks 12 dp over the strip's top edge, so the
         // card sits 12 dp down inside this box and the headline row keeps clear of it.
-        Box(Modifier.fillMaxWidth().padding(top = BANNER_HOST_PEEK)) {
+        Box(Modifier.fillMaxWidth().padding(top = HOME_HOST_PEEK)) {
         Column(
             Modifier.fillMaxWidth()
                 .bannerGlow(double)
@@ -189,8 +190,9 @@ fun HomeBannerView(
             Column(
                 // FINISH_SPEC A1: the frosted strip is a lilac frost, not white.
                 Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f))
-                    .padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                    .padding(start = 12.dp, top = 4.dp, end = 12.dp, bottom = 4.dp),
+                // BH3: one headline line, 8 above the slim switch, the meta line 4 under it.
+                verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look
@@ -214,22 +216,24 @@ fun HomeBannerView(
                         contentAlignment = Alignment.Center,
                     ) {
                         if (word.progress.played + puzzles.progress.played > 0) {
-                            Icon3D(Icon3DName.SHARE, 23.dp, contentDescription = null, modifier = Modifier)
+                            Icon3D(Icon3DName.SHARE, 22.dp, contentDescription = null, modifier = Modifier)
                         }
                     }
                 }
                 // R3 (founder 10-02): everyone sees the switch; BI21: the PRO chip sits inside
                 // the UNLIMITED half for free players and guests, whose tap opens Go Pro.
+                Spacer(Modifier.height(8.dp))
                 DailyUnlimitedSwitch(
                     if (unlimited) PlayMode.UNLIMITED else PlayMode.DAILY,
                     locked = !isPro,
                     onChange = { m -> if (m == PlayMode.UNLIMITED && !isPro) paywall = true else onModeChange(m) },
                 )
                 // Z: both meta lines laid out on top of each other (the slot is the taller).
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                // BH3: 4 under the switch, 11 sp small caps.
+                Box(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
                     val metaStyle = TextStyle(
-                        fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
-                        fontFeatureSettings = "tnum", textAlign = TextAlign.Center,
+                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, lineHeight = 12.sp,
+                        fontFeatureSettings = "tnum, smcp", textAlign = TextAlign.Center,
                     )
                     Text(
                         dailyClock, style = metaStyle, color = subInk, maxLines = 1,
@@ -246,14 +250,14 @@ fun HomeBannerView(
             // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
             val tileSlots = maxOf(10, word.cards.size, puzzles.cards.size)
             BannerGroupRow(word, wTier, "WORDOCIOUS", tileSlots, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 3.dp),
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
                 flameSlot = slots.wordFlameSlot, dailyTier = dailyWTier)
             BannerGroupRow(puzzles, pTier, "PUZZLES", tileSlots, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 12.dp),
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 6.dp),
                 flameSlot = slots.puzzlesFlameSlot, dailyTier = dailyPTier)
         }
         // The scene art carries the cast on a swept day (A7: no second W host beside it).
-        if (slots.hostShown) BannerHost(Mascots.home, Modifier.align(Alignment.TopEnd))
+        if (slots.hostShown) BannerHost(Mascots.home, Modifier.align(Alignment.TopEnd), size = HOME_HOST_SIZE, peek = HOME_HOST_PEEK)
         }
     }
 }
@@ -339,6 +343,14 @@ internal fun bannerArtTier(word: BannerTier, puzzles: BannerTier, unlimited: Boo
 /** How far a banner host peeks over the card's top edge (MASCOT_SPEC §2). */
 internal val BANNER_HOST_PEEK = 12.dp
 
+/**
+ * FINISH_SPEC BH3 (founder 10-03: the Home banner is "bloated"): the Home host is 52 dp, centered
+ * on the one-line headline row (strip top 4 + half the 32 row = 20 into the card), so the card
+ * only needs 6 dp of room above it.
+ */
+internal val HOME_HOST_SIZE = 52.dp
+internal val HOME_HOST_PEEK = 6.dp
+
 /** Right padding a banner headline keeps so the 56 dp host never covers it. */
 internal val BANNER_HOST_CLEAR = 50.dp
 
@@ -348,9 +360,9 @@ internal val BANNER_HOST_CLEAR = 50.dp
  * Box that has [BANNER_HOST_PEEK] top padding around the (clipped) card.
  */
 @Composable
-internal fun BannerHost(id: MascotId, modifier: Modifier = Modifier) {
+internal fun BannerHost(id: MascotId, modifier: Modifier = Modifier, size: Dp = 56.dp, peek: Dp = BANNER_HOST_PEEK) {
     // FINISH_SPEC AD: the idle bob stops under Battery Saver too.
-    Mascot(id, 56.dp, modifier.offset(x = (-2).dp, y = -BANNER_HOST_PEEK), motion = if (WTheme.calmMotion) MascotMotion.NONE else MascotMotion.BOB)
+    Mascot(id, size, modifier.offset(x = (-2).dp, y = -peek), motion = if (WTheme.calmMotion) MascotMotion.NONE else MascotMotion.BOB)
 }
 
 @Composable
@@ -370,7 +382,8 @@ private fun BannerGroupRow(
     dailyTier: BannerTier = tier,
 ) {
     val ink = tierInk(tier)
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    // BH3: label → icons 4.
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = ink)
             Text(
@@ -387,7 +400,7 @@ private fun BannerGroupRow(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val n = tileSlots.coerceAtLeast(1)
             val fit = (maxWidth - 5.dp * (n - 1)) / n
-            val size = if (fit < 32.dp) fit else 32.dp
+            val size = if (fit < 36.dp) fit else 36.dp // BH3: up to 36
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 row.cards.forEach { card ->
                     BannerTile(
@@ -577,7 +590,7 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
     val trackImg = candyBitmap(CandySprite.TRACK)
     val thumbImg = candyBitmap(CandySprite.THUMB_ON)
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val track = (maxWidth * 0.76f).coerceAtMost(280.dp)
+        val track = (maxWidth * 0.64f).coerceAtMost(230.dp) // BH3: slimmer, ~64% wide
         val half = (track - pad * 2) / 2
         Box(Modifier.width(track).height(trackH.dp).candyPill(trackImg).padding(pad)) {
             Box(
@@ -624,7 +637,7 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
 @Composable
 private fun BannerHeadlineLayer(headline: String, double: Boolean, @Suppress("UNUSED_PARAMETER") headInk: Color, alpha: Float, active: Boolean, name: String? = null) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 30.dp)
+        Modifier.fillMaxWidth().heightIn(min = 32.dp)
             .graphicsLayer { this.alpha = alpha }
             .then(if (active) Modifier else Modifier.clearAndSetSemantics { }),
         verticalAlignment = Alignment.CenterVertically,
@@ -638,7 +651,8 @@ private fun BannerHeadlineLayer(headline: String, double: Boolean, @Suppress("UN
             if (double) HeadlinePalette.CELEBRATION else HeadlinePalette.HOME,
             Modifier.weight(1f),
             names = listOfNotNull(name?.takeIf { it.isNotBlank() }),
-            maxSize = 22.sp, minSize = 15.sp, sound = active,
+            // BH3: ONE line, auto-fit (never wraps).
+            maxSize = 20.sp, minSize = 11.sp, maxLines = 1, sound = active,
         )
     }
 }

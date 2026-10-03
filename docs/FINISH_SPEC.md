@@ -1141,18 +1141,29 @@ BH1. Trim = ONE shape per card: a slim glossy band across the card's top in the 
      the 4-unit drips (8 across a card); the icon + text row is centered in the rest of the card, the icon just
      under the drip line (drawn in front of it). Shared geometry: web lib/card-trim.ts, iOS Core HomeCardLayout.swift,
      Android ModeCardView.kt (CardTrimGeometry). VS Battle's window wears the same trim (the shared chrome).
-BH2. Compact card: height ~72–76 (was ~100–110); icon 40–44, vertically centered on the left; name 17 heavy, one line,
-     scales down for long names (Crosswordocious) and never wraps; subtitle ONE line, 13 medium, muted, ellipsis if
-     needed (long subtitles shortened in packages/core/modes.json, e.g. "4 words, one by one" → "4 words in a row");
-     the W / L / ✓ badge (22) rides the icon's bottom-right corner so the name gets the full width; inner padding
-     10–12; grid gaps 10; tap target ≥ 44. Section titles (DAILIES, PUZZLES) ~25% smaller with less space above/below.
-     The Good Morning card is unchanged.
+BH2. Compact card (founder 10-03: "make the Classic text, the icon, and the W all align at the tops"): ONE top row —
+     [icon 40][name 17 heavy, one line, scales down for long names (Crosswordocious), never wraps][W / L / ✓ badge 22]
+     — all top-aligned (the icon's top edge, the name's cap height and the badge's top share one line); the subtitle
+     (13 medium, muted, one line, ellipsis) 4 under the name, left-aligned with it. The card hugs it: trim band 9 +
+     7 + max(icon 40, 21 + 4 + 16) + 9 = 66 (was ~104). Long subtitles are shortened in packages/core/modes.json
+     ("4 words, one by one" → "4 words in a row"); a long result takes the short form ("38 guesses · 10m 46s" →
+     "38g · 10m 46s"; web compactCardLine / iOS CardLine / Android HomeCardSpec.compactLine). Inner padding 10;
+     grid gaps 10; tap target ≥ 44. Section titles (DAILIES, PUZZLES) ~25% smaller with less space above/below.
+     The Good Morning card's content is unchanged (but see BH5).
 BH3. States keep working: played/completed (check / W / L / score chips) stay legible on the compact card; a completed
      card's trim keeps its color (the card's existing done treatment stays as it is).
 BH4. Rules: no strokes or outlines around cards, no emoji, every card in a grid the same size, the existing squish
      (AK) is the only motion (transform/opacity), and it stays cheap — one path per trim, no per-card blur/animated
      shadow; Home scrolling must stay smooth. Layout tests updated (web `lib/home-card-layout.test.ts` and the
      native equivalents).
+
+BH5. The Home banner, tighter (founder 10-03: "from the headline to the WORDOCIOUS 4/8 row is almost a quarter of
+     the screen"): ONE headline line, auto-fit (≈20 lettering, shrinking, never wrapping: "WARMING UP · 4 DOWN");
+     the share button (34) at the left and the host (52; the player's own mascot when BJ6 applies) at the right, both
+     centered on the headline row; 8 above a slimmer switch (28 tall, ~64% wide) with the PRO crown inside
+     Unlimited; the meta line 4 under it (11 small caps); rows: label → icons 4, rows 8 apart, icons up to 36 (10
+     across still fit, so ~29 on a 6.1" phone). Card ≈ 273 → ≈ 208 (−24%) on a 390-wide phone; the full 40% would
+     need dropping the meta line or a row label (not done; founder call).
 
 ## BI. Smooth as glass + finish-screen fixes (founder 10-02 late: 2.7 (239) pulled from review — "Gauntlet … plays
 really sluggish, the rest of them too … The load in intro graphic is not smooth"; "run a serious audit to make this seem

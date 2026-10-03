@@ -11,24 +11,26 @@ const root = path.join(__dirname, '..');
 const src = (file: string) => fs.readFileSync(path.join(root, file), 'utf8');
 
 describe('Home game card (§21)', () => {
-  it('is the compact card (FINISH_SPEC BH2): 74 tall, 42 icon, 17 name, ONE 13 subtitle line', () => {
-    expect(MODE_CARD.height).toBeGreaterThanOrEqual(72);
-    expect(MODE_CARD.height).toBeLessThanOrEqual(76);
-    expect(MODE_CARD.icon).toBeGreaterThanOrEqual(40);
-    expect(MODE_CARD.icon).toBeLessThanOrEqual(44);
+  it('is the compact card (FINISH_SPEC BH2): ~68 tall, 40 icon, 17 name, ONE 13 subtitle line', () => {
+    expect(MODE_CARD.height).toBeGreaterThanOrEqual(64);
+    expect(MODE_CARD.height).toBeLessThanOrEqual(70);
+    expect(MODE_CARD.icon).toBe(40);
     expect(MODE_CARD.name).toBe(17);
     expect(MODE_CARD.desc).toBe(13);
-    // The name line + one subtitle line fit beside the icon, under the trim.
-    expect(MODE_CARD.titleLine + MODE_CARD.descLine).toBeLessThanOrEqual(MODE_CARD.icon);
-    expect(MODE_CARD.band + MODE_CARD.icon + 2 * 8).toBeLessThanOrEqual(MODE_CARD.height);
+    // The card hugs the top row: trim band + top pad + max(icon, name + 4 + one line) + bottom pad.
+    const content = Math.max(MODE_CARD.icon, MODE_CARD.titleLine + MODE_CARD.descGap + MODE_CARD.descLine);
+    expect(MODE_CARD.band + MODE_CARD.padTop + content + MODE_CARD.padY).toBeLessThanOrEqual(MODE_CARD.height + 1);
   });
 
-  it('pins the badge to the icon, keeps the name on one line, no stroke and no chevron (BH)', () => {
+  it('top-aligns icon, name and badge on one row; subtitle right under the name; no stroke, no chevron (BH)', () => {
     const card = src('components/home/mode-card.tsx');
-    expect(card).toContain('slots.iconBadge');
+    expect(card).toContain('flex items-start gap-2');
+    expect(card).toContain('slots.titleSlotWidth');
+    expect(card).toContain('marginTop: MODE_CARD.descGap');
     expect(card).toContain('whitespace-nowrap');
     expect(card).toContain('truncate');
-    expect(card).not.toMatch(/WebkitLineClamp|overflowWrap = 'anywhere'/);
+    expect(card).toContain('compactCardLine(');
+    expect(card).not.toMatch(/WebkitLineClamp|overflowWrap = 'anywhere'|justify-between/);
     expect(card).not.toMatch(/border:\s*`/);
     expect(card).not.toContain('ChevronRight');
   });
@@ -72,8 +74,8 @@ describe('Home game card (§21)', () => {
     // Centered headline with the host clearance mirrored on both sides.
     expect(s).toContain('paddingLeft: tierArt || seasonArt ? slots.shareWidth + 6 : HEADLINE_SIDE_CLEAR');
     expect(s).toContain('justify-center text-center');
-    // Centered wide switch, equal halves, the PRO chip inside the Unlimited half.
-    expect(s).toContain("width: '76%', maxWidth: 280");
+    // BH3: a slimmer centered switch (~64% wide), equal halves, the PRO crown inside the Unlimited half.
+    expect(s).toContain("width: '64%', maxWidth: 260");
     expect(s).toContain("flex: '1 1 0'");
     expect(s).not.toMatch(/translateX\(\$\{switchBox/);
     // Centered meta line with tabular digits.
@@ -82,6 +84,19 @@ describe('Home game card (§21)', () => {
     expect(s).toContain('flex justify-between w-full');
     expect(s).toContain('const TILE_SIZE =');
     expect(s).not.toMatch(/softIconTile|dashed|strokeDasharray/);
+  });
+
+  it('compresses the Home banner ~25% (FINISH_SPEC BH3): one-line headline, slim switch, tight rows', async () => {
+    const { BANNER_SLOT, homeBannerSlots } = await import('./stationary-layout');
+    const s = src('components/home/home-banner.tsx');
+    expect(s).toContain('<FitOneLine');
+    expect(BANNER_SLOT.headline).toBeLessThanOrEqual(34);
+    expect(BANNER_SLOT.rowGap).toBe(4);
+    expect(BANNER_SLOT.wordPadBottom + BANNER_SLOT.puzzlePadTop).toBe(8);
+    // At a phone's ~29 px tiles: was 273 (headroom 16 + strip 127 + rows 130); now 208 (−24%).
+    const h = homeBannerSlots('daily', { dailyTier: 'none', puzzleTier: 'none', playedAny: true }).height;
+    expect(h - 2 * (BANNER_SLOT.tileLg - 29)).toBeLessThanOrEqual(208);
+    expect(src('components/ui/mascot.tsx')).toContain('export const BANNER_HOST_SIZE = 52');
   });
 
   it('has no ">" disclosure chevrons on menu cards or rows (§21.4)', () => {
