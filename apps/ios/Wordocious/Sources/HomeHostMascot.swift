@@ -59,19 +59,31 @@ struct HomeHostMascot: View {
             // The framed portrait: the photo whole, never on a body (AvatarView's photo branch
             // wears the chosen frame, else the player's tier art frame).
             if let p = AuthService.shared.profile {
-                AvatarView(url: p.avatarUrl, username: p.username, size: size * 0.86, userId: p.id)
+                AvatarView(url: p.avatarUrl, username: p.username, size: size * 0.92, userId: p.id)
                     .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 4, x: 0, y: 3)
-                    .padding(.bottom, size * 0.04)
+                    .padding(.bottom, size * 0.02)
             }
         case .mascot(let config):
             MascotAvatar(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username),
-                         size: size * 0.86)
+                         size: size * 0.92)
                 .shadow(color: Color(hex: 0x4C1D95).opacity(0.14), radius: 3, x: 0, y: 2)
-                .padding(.bottom, size * 0.04)
+                .padding(.bottom, size * 0.02)
         case .w:
-            PoseImage(.w, "wave", height: size)
+            // Decoded ahead of Home's first frame (prewarm), drawn at its display size.
+            if ArtAsset.exists(Self.wPose) {
+                ArtThumbs.image(Self.wPose, points: size).resizable().interpolation(.high).scaledToFit()
+                    .frame(height: size)
+            } else {
+                PoseImage(.w, "wave", height: size)
+            }
         }
     }
+
+    static let wPose = "art-pose-w-wave"
+
+    /// FINISH_SPEC BJ6 (founder: "loads instantly"): decode W's wave pose off main at launch so
+    /// the host never pops in (the cap, sparkles and confetti are code-drawn shapes).
+    static func prewarm() { ArtThumbs.prewarm([(wPose, HomeBannerView.hostSize)]) }
 
     private func waveOnce() {
         guard !Self.wavedThisLaunch else { return }

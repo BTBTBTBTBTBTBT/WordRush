@@ -61,6 +61,8 @@ class MainActivity : ComponentActivity() {
         // call in GameViewModel stays as a no-op safety fallback. The More Games
         // banks follow shortly after the first frame (Prewarm, founder 2026-09-29).
         com.wordocious.app.data.Prewarm.dictionary()
+        // BJ6: the Good Morning host's art (W's wave pose / the player's mascot) decoded before Home's first frame.
+        com.wordocious.app.ui.HomeHostPrewarm.start(this)
         AuthService.initialize()
         // BI19: warm today's Leaderboard + Stats caches once launch settles.
         com.wordocious.app.data.TodayPrefetch.afterLaunch()

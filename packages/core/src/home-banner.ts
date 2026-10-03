@@ -78,6 +78,8 @@ export function bannerHeadline(word: GroupProgress, puzzles: GroupProgress, opts
   if (b !== 'none') return news('PUZZLES', b);
   if (played === 0) {
     const name = opts.name.trim().toUpperCase();
+    // BJ6 (founder 10-03): the greeting is personal for signed-in players; 0–4 h is "UP LATE?".
+    if (opts.hour >= 0 && opts.hour < 5) return name ? `UP LATE, ${name}?` : 'UP LATE?';
     return name ? `GOOD ${greetingWord(opts.hour)}, ${name}!` : `GOOD ${greetingWord(opts.hour)}!`;
   }
   if (played <= 5) return `WARMING UP · ${played} DOWN`;

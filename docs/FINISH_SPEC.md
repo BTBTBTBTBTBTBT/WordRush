@@ -1418,24 +1418,37 @@ always comes from their live profile (photo, mascot, cast, frame, accent, Pro) w
 BI19 optimistic own row included — so an edit shows at once with no refetch. Board queries return avatar_config /
 avatar_cast_id / avatar_frame / accent_color on every row (retried without them if the select fails); RPC payloads (Sweep,
 VS, challenges) and name-only avatars are filled by a batched profiles lookup. No SQL needed.
-BJ6. Your mascot hosts the Good Morning card, centered (founder 10-03: "swap the purple main character on the main page
-next to 'warming up' for your own created guy so mine would be sitting there"; "a little more prominent … instead of the
-little version floating in the corner"; "my profile pic is an actual version I created on chat, so I don't just want the
-profile pics tacked on to a body as if it were a face"; "I like to keep things looking fairly even and symmetrical instead
-of duplicate items not lined up"). ×3, symmetric hero: the host stands CENTERED on the card's top edge — a 72 pt box whose
-top rises 28 pt above the card (into the gap under the header, never over it) and whose lower 44 pt overlaps the frosted
-strip, on a soft floor shadow; the one-line headline (28 pt row), the DAILY | UNLIMITED switch (6 under it) and the single
-resets line (3 under that) center beneath it, so the card mirrors on its center line. Who stands there: a signed-in player
-whose avatar shows their uploaded photo → the photo whole as a framed portrait (chosen frame → Pro gold → their level
-tier's art-frame-<tier>); else a player with a custom mascot (saved avatar_config or a worn cast hero) → the full mascot;
-else (guests, no custom look) → W in its wave pose. It waves once per launch when Home appears (a small hop + wag,
-transform only, none under calm motion), then rests; during the celebration art a W host steps aside. The share-today
-button left the card: it is a matching circle in the app header's right controls (left of help + settings, Home only, its
-slot kept so the header never jumps; shown in Daily once a daily is finished; label "Share today's progress"). Home moves
-down at most ~16 pt; the card grows ~30 pt to fit the host over centered text (the trade-off of a centered hero). One
-component (iOS HomeHostMascot, Android HomeHost, web Home host) keeps option B (the player at the end of the WORDOCIOUS
-cast row) a placement change. Home shows each fact once (one resets countdown — the banner's). Photo rule everywhere (the
-BJ5 resolver): photo → framed portrait, mascot → full mascot; no renderer composites a photo onto a mascot body (audited ×3).
+BJ6. Your mascot hosts a finished, personal Good Morning card (founder 10-03: "swap the purple main character … for your
+own created guy"; "a little more prominent"; "I don't just want the profile pics tacked on to a body as if it were a face";
+"even and symmetrical"; "looked small and there was a lot of empty space"; "that window needs flair … it looks unfinished";
+"the main titles a snag bigger" = the progress icons; "sign in at the top should be closer to the question mark"; "a clever
+way to populate longer usernames without shrinking anything down or scrolling off screen"). ×3:
+Host — an 88 pt box CENTERED on the card's top edge: it rises 28 above the card (iOS: into the scroll's existing 12 pt +
+16; Android / web: 22 of headroom + 6 overhanging the header's empty bottom edge through an extended scroll viewport) and
+overlaps 60 into the card; the headline's caps start ~4 under its feet. Who stands there: a signed-in player whose avatar
+shows their uploaded photo → the photo whole as a framed portrait (chosen frame → Pro gold → level tier art frame); else a
+custom mascot (saved avatar_config or worn cast hero) → the full mascot; else W in its wave pose. It renders in every state
+(fix: iOS hid W on every Daily day because the "W steps aside for the celebration art" rule read `showsMomentArt`, which
+is true all Daily day — it now needs real moment art; web's host span had no block box and was clipped). Waves once per
+launch (transform only); the pose is decoded at launch (no pop-in).
+Greeting — personal for signed-in players: "GOOD MORNING / AFTERNOON / EVENING, NAME!" and 0–4 h "UP LATE, NAME?" (guests:
+the plain greeting). Core headline-tokens `headlineLayout` (+ Swift / Kotlin ports, fixtures) decides identically ×3 from
+Nunito Black advance widths: the device's full lettering size is the largest (≤ 38) at which "GOOD AFTERNOON," fits the
+slot; the headline is one line when it fits at that size, else the words before the name on line 1 and the NAME + "!"/"?"
+on the gold hero line(s) at the SAME size — a long name breaks at natural boundaries (space, _ . -, letter↔digit,
+camelCase), then by characters. Never shrunk, truncated, scrolled or clipped (every length 3–20 is tested on a 375 pt
+phone). On phones a signed-in greeting therefore stacks (the card grows by exactly one line); lines without a name stay one
+line. The line box's empty ascent / descent is trimmed so there's no dead space.
+Flair (static, no blur / outline / loops) — a candy frosting cap across the top edge (the game cards' trim shape, brand
+purple → pink; the moment's gold / pink on swept / flawless days), a soft diagonal sheen in the strip, a few tiny mirrored
+confetti dots + faint sparkles in the top corners, small gold four-point sparkles flanking the headline, and the two
+progress rows in a soft lavender band (two zones). Progress icons: both rows one size, edge to edge, 4 pt minimum gap, the
+rows' side inset trimmed, the glyph ~56% of its tile (~32 pt tiles on a 402 pt phone; 34–36 can't fit 10 across).
+Header — one right-aligned control group with even gaps: [SIGN IN] [?] [gear] for guests, [Share] [?] [gear] on Home once
+something's finished (Daily); no reserved invisible slots; the share-today button left the card for the header. Home shows
+each fact once (one resets countdown; web dropped the locked cards' "Back in" clocks and the desktop Today card's clock /
+share / streak duplicates). Photo rule everywhere (BJ5 resolver): photo → framed portrait, mascot → full mascot; nothing
+composites a photo onto a body (audited ×3).
 BJ7. App-wide density pass: cards hug content, top-aligned title rows, one-line details (founder 10-03, after BH's compact
 Home cards: "Any areas across the app that you can do that exercise would be amazing"; "I don't like any of the bloating if it
 is unnecessary, I like the crisp look"). The BH pattern everywhere else: no fixed min heights or vertically centered content

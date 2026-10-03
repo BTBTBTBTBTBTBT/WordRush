@@ -135,6 +135,12 @@ private fun CastTitle(pro: Boolean) {
     }
 }
 
+/** BJ6 round 3: the gap between the header's right-hand controls' visual edges. */
+internal val HEADER_CONTROL_GAP = 8.dp
+
+/** BJ6 round 3: an icon control's width in that group (icon + half the gap a side → even 8 dp gaps). */
+internal val HEADER_CONTROL_W = SOFT_CONTROL_ICON + HEADER_CONTROL_GAP
+
 /** Which header popup is open (C5). */
 private enum class HeaderPop { STREAK, FLAWLESS, SHIELD }
 
@@ -197,28 +203,35 @@ private fun HeaderControlsRow(
             }
         }
 
-        // Guest — the Sign In entry, a small candy pill (A8). Opens sign-in as a
-        // DISMISSIBLE overlay, matching iOS: guest state is untouched, so backing out
-        // returns you to the exact tab you were on.
-        if (isGuest) {
-            CandyButton("Sign In", onClick = onSignIn, size = CandySize.SMALL)
-            Spacer(Modifier.width(2.dp))
+        // BJ6 round 3 (founder 10-03: "sign in … closer to the question mark"): the right-hand
+        // controls are ONE right-aligned group, evenly spaced [HEADER_CONTROL_GAP] between visual
+        // edges — guests [SIGN IN] [?] [gear], Home with Share [share] [?] [gear]. An absent
+        // control just drops out (no reserved slots). Each icon control is [HEADER_CONTROL_W]
+        // wide (its 23 dp icon + 4 dp a side) and the full 44 dp tall.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Guest — the Sign In entry, a small candy pill (A8). Opens sign-in as a
+            // DISMISSIBLE overlay, matching iOS: guest state is untouched, so backing out
+            // returns you to the exact tab you were on.
+            if (isGuest) {
+                CandyButton("Sign In", onClick = onSignIn, size = CandySize.SMALL)
+                Spacer(Modifier.width(HEADER_CONTROL_GAP - (HEADER_CONTROL_W - SOFT_CONTROL_ICON) / 2))
+            }
+            // BJ6: Home's share control (Home only, once there is something to share).
+            if (homeShare) HomeShareControl(Modifier.width(HEADER_CONTROL_W))
+            // BI25: help / gear are single-fire (a double tap can't open and then close).
+            SoftControl(Icon3DName.HELP, "Help", onClick = {
+                val now = android.os.SystemClock.uptimeMillis()
+                if (com.wordocious.app.data.SettingsPreviews.sheetTapFires(now, lastSheetTap, presenting = menuOpen)) { lastSheetTap = now; menuOpen = true }
+            }, modifier = Modifier.width(HEADER_CONTROL_W))
+            if (menuOpen) {
+                InfoMenuSheet(onNav = { menuOpen = false; onNav(it) }, onDismiss = { menuOpen = false })
+                ReportPresented() // CelebrationGate: late celebrations wait for the sheet
+            }
+            SoftControl(Icon3DName.GEAR, "Settings", onClick = {
+                val now = android.os.SystemClock.uptimeMillis()
+                if (com.wordocious.app.data.SettingsPreviews.sheetTapFires(now, lastSheetTap, presenting = menuOpen)) { lastSheetTap = now; onSettings() }
+            }, modifier = Modifier.width(HEADER_CONTROL_W))
         }
-        // BJ6: Home's share control, same size + spacing as ? and the gear (slot kept while hidden).
-        if (homeShare) HomeShareControl()
-        // BI25: help / gear are single-fire (a double tap can't open and then close).
-        SoftControl(Icon3DName.HELP, "Help", onClick = {
-            val now = android.os.SystemClock.uptimeMillis()
-            if (com.wordocious.app.data.SettingsPreviews.sheetTapFires(now, lastSheetTap, presenting = menuOpen)) { lastSheetTap = now; menuOpen = true }
-        })
-        if (menuOpen) {
-            InfoMenuSheet(onNav = { menuOpen = false; onNav(it) }, onDismiss = { menuOpen = false })
-            ReportPresented() // CelebrationGate: late celebrations wait for the sheet
-        }
-        SoftControl(Icon3DName.GEAR, "Settings", onClick = {
-            val now = android.os.SystemClock.uptimeMillis()
-            if (com.wordocious.app.data.SettingsPreviews.sheetTapFires(now, lastSheetTap, presenting = menuOpen)) { lastSheetTap = now; onSettings() }
-        })
     }
     // C5 the popups, anchored just under this controls row (this zero-height strip sits
     // right below it, so the popup's anchor bottom is the row's bottom edge).

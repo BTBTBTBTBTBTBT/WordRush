@@ -43,16 +43,16 @@ describe('BJ6 Home host choice', () => {
     expect(homeHostHidden({ kind: 'photo', photoUrl: UPLOADED, config: defaultAvatar('x') }, true)).toBe(false);
   });
 
-  it('is the 72 px symmetric hero (iOS parity); the portrait is ~86% of the box', () => {
-    expect(HOME_HOST_SIZE).toBe(72);
-    expect(HOME_HOST_PORTRAIT).toBe(62);
+  it('is the 88 px symmetric hero (round 3, iOS parity); the portrait is ~86% of the box', () => {
+    expect(HOME_HOST_SIZE).toBe(88);
+    expect(HOME_HOST_PORTRAIT).toBe(76);
     expect(HOME_HOST_SIZE).toBe(BANNER_SLOT.hostSize);
-    // Its top 28 above the card's top edge, 44 inside it — the strip's top padding.
+    // Its top 28 above the card's top edge, 60 inside it; the headline starts 4 under its feet.
     expect(BANNER_SLOT.hostRise + BANNER_SLOT.hostInset).toBe(BANNER_SLOT.hostSize);
     // Home moves down only 16 over BH3's 6 headroom; the rest overhangs the header's bottom edge.
     expect(BANNER_SLOT.headroom).toBe(6 + 16);
     expect(BANNER_SLOT.headroom + BANNER_SLOT.hostOverhang).toBe(BANNER_SLOT.hostRise);
-    expect(BANNER_SLOT.stripTopHost).toBe(BANNER_SLOT.hostInset);
+    expect(BANNER_SLOT.cap + BANNER_SLOT.stripTopHost).toBe(BANNER_SLOT.hostInset + BANNER_SLOT.hostToHeadline);
   });
 
   describe('wave once per launch', () => {
@@ -85,5 +85,21 @@ describe('BJ6 photo rule: portrait frame fallback', () => {
   it('a chosen tier frame above the level steps down (same clamp as every avatar)', () => {
     expect(portraitFrame('diamond', { pro: true, level: 1 })).toBe('diamond');
     expect(portraitFrame('platinum', { level: 1 })).toBe(levelTier(1));
+  });
+});
+
+describe('BJ6 round 3: the host always has a box (the missing-host fix)', () => {
+  it('renders as a block box so the banner’s absolute (non-flex) slot can size it', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const src = fs.readFileSync(path.join(__dirname, '../components/home/home-host.tsx'), 'utf8');
+    expect(src).toContain('className="relative block shrink-0');
+    // Never an empty host: W's art failing falls back to the code-drawn W mascot.
+    expect(src).toContain('onError={() => setWArtFailed(true)}');
+    expect(src).toContain("castPreset('w')");
+  });
+
+  it('W hides only on a day that HAS celebration art', () => {
+    expect(homeHostHidden({ kind: 'w' }, false)).toBe(false);
   });
 });

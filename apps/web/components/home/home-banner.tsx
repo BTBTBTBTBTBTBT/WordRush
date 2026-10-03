@@ -3,7 +3,7 @@
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { LiveHeadline } from '@/components/ui/live-headline';
 import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
 import { SeasonArt } from '@/components/ui/season-art';
@@ -24,6 +24,8 @@ import { HomeHost } from '@/components/home/home-host';
 import { homeHostHidden } from '@/lib/home-host';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
 import { HomeClock } from '@/components/home/home-clock';
+import { trimPath } from '@/lib/card-trim';
+import { headlineRowHeight, homeHeadlineLayout } from '@/lib/home-headline';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
 // docs/HOME_REDESIGN_SPEC.md). One window: a frosted headline strip over a
@@ -80,7 +82,9 @@ interface Props {
  * and each row spreads edge to edge (justify-between), so the 8- and 10-tile rows end flush.
  */
 const TILE_SIZE = `min(${BANNER_SLOT.tileLg}px, calc((100% - ${BANNER_SLOT.tileGapMin * (BANNER_SLOT.tileSlots - 1)}px) / ${BANNER_SLOT.tileSlots}))`;
-const TILE_ICON = 15;
+/** BJ6 round 3: the game art inside a tile — drawn from a 26 px slot (crisp), clamped to TILE_ICON_SHARE of the tile. */
+const TILE_ICON = 26;
+const TILE_ICON_SHARE = '70%';
 const GLOSS = 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0) 55%)';
 
 function Tile({ card, result, unlimited, onOpen }: {
@@ -117,7 +121,7 @@ function Tile({ card, result, unlimited, onOpen }: {
       className="relative flex items-center justify-center shrink-0"
       style={{ width: TILE_SIZE, aspectRatio: '1 / 1', borderRadius: 8, ...style }}
     >
-      <span className="flex items-center justify-center" style={{ opacity: dim }}>
+      <span className="flex items-center justify-center" style={{ opacity: dim, width: TILE_ICON_SHARE, height: TILE_ICON_SHARE }}>
       {Icon && isGameArtIcon(Icon)
         // The 3D game art fills the tile (docs/ART_SPEC.md §3); a soft white
         // halo keeps it readable on a won tile's solid accent.
@@ -125,8 +129,8 @@ function Tile({ card, result, unlimited, onOpen }: {
         : card.romanNumeral
         ? <span className="font-black leading-none" style={{ color: ink, fontSize: card.romanNumeral.length > 2 ? 8 : 11 }}>{card.romanNumeral}</span>
         : Icon
-        ? <Icon style={{ width: iconPx, height: iconPx, color: ink }} />
-        : <Check style={{ width: iconPx, height: iconPx, color: ink }} />}
+        ? <Icon style={{ width: iconPx, height: iconPx, maxWidth: '100%', maxHeight: '100%', color: ink }} />
+        : <Check style={{ width: iconPx, height: iconPx, maxWidth: '100%', maxHeight: '100%', color: ink }} />}
       </span>
       {won && (
         <Check
@@ -156,8 +160,29 @@ function RowHeader({ label, status, ink, streak, height }: { label: string; stat
   );
 }
 
-/** BH3: the one-line headline's lettering (~30 px line), shrinking to fit. */
-const HEAD_SIZE = 20;
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+/**
+ * BJ6 round 4: the headline slot's width, measured before paint and again only when it changes
+ * (one ResizeObserver; whole px, so sub-pixel jitter never re-lays the headline out).
+ */
+function useSlotWidth(ref: React.RefObject<HTMLElement>): number {
+  const [width, setWidth] = useState(0);
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const read = () => {
+      const w = Math.round(el.clientWidth);
+      setWidth((prev) => (prev === w ? prev : w));
+    };
+    read();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return width;
+}
 
 export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen }: Props) {
   const unlimited = playMode === 'unlimited';
@@ -165,18 +190,34 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // come from today's DAILY state only, so the switch never moves the tiles or
   // the grids below; the content filling them follows the mode.
   const dailyTier = groupTier(word.progress);
-  const layoutInput = { dailyTier, puzzleTier: groupTier(puzzles.progress), playedAny: word.progress.played + puzzles.progress.played > 0 };
+  // BJ6 round 4: the personal greeting laid out for the slot — one size for the device, the
+  // name on its own gold line(s) when it doesn't fit on one (never shrunk, scrolled or clipped).
+  // Laid out once per width / text change; the row is as tall as the taller mode's headline.
+  const hour = new Date().getHours();
+  const dailyHeadline = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: false });
+  const unlimitedHeadline = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: true });
+  const headSlot = useRef<HTMLDivElement>(null);
+  const slotWidth = useSlotWidth(headSlot);
+  const headLayouts = useMemo(
+    () => ({ daily: homeHeadlineLayout(slotWidth, dailyHeadline, name), unlimited: homeHeadlineLayout(slotWidth, unlimitedHeadline, name) }),
+    [slotWidth, dailyHeadline, unlimitedHeadline, name],
+  );
+  const headLayout = unlimited ? headLayouts.unlimited : headLayouts.daily;
+  const layoutInput = {
+    dailyTier, puzzleTier: groupTier(puzzles.progress), playedAny: word.progress.played + puzzles.progress.played > 0,
+    headlineHeight: headlineRowHeight([headLayouts.daily, headLayouts.unlimited]),
+  };
   const slots = homeBannerSlots(playMode, layoutInput);
   const content = homeBannerContent(playMode, layoutInput);
   const wTier = content.wordTier;
   const pTier = content.puzzleTier;
   const double = wTier === 'flawless' && pTier === 'flawless';
-  const headline = bannerHeadline(word.progress, puzzles.progress, { hour: new Date().getHours(), name, unlimited });
   const topColor = wTier === 'none' ? '#ece8ff' : TIER_COLOR[wTier];
   const bottomColor = pTier === 'none' ? '#e2e6ff' : TIER_COLOR[pTier];
+  // BJ6 round 3 flair: a very soft diagonal sheen over the fill (static).
   const background = unlimited
-    ? 'linear-gradient(135deg, #fce7f3, #ede9fe)'
-    : `linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, ${topColor} 0%, ${topColor} 52%, ${bottomColor} 72%, ${bottomColor} 100%)`;
+    ? `${CARD_SHEEN}, linear-gradient(135deg, #fce7f3, #ede9fe)`
+    : `${CARD_SHEEN}, linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, ${topColor} 0%, ${topColor} 52%, ${bottomColor} 72%, ${bottomColor} 100%)`;
   const subInk = double ? '#92400e' : '#6d28d9';
   const shimmer = !unlimited && (wTier !== 'none' || pTier !== 'none');
   // The art frame belongs to the day (a swept / flawless Daily), not to the mode.
@@ -262,8 +303,13 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : onPageShadow('0 4px 14px rgba(76,29,149,0.08)'),
       }}
     >
-      {/* G4: the swept / flawless banner's own top bar (gold / pink). */}
-      {tierArt && <div aria-hidden="true" className="relative" style={{ height: slots.topBar, background: unlimited ? UNLIMITED_BAR : tierArt.bar, transition: 'background 160ms ease-out' }} />}
+      {/* G4: the swept / flawless banner's own top bar (gold / pink). BJ6 round 3: a host day
+          wears the brand candy frosting cap instead (the game cards' trim, purple → pink). */}
+      {tierArt
+        ? <div aria-hidden="true" className="relative" style={{ height: slots.topBar, background: unlimited ? UNLIMITED_BAR : tierArt.bar, transition: 'background 160ms ease-out' }} />
+        : <BrandCap height={slots.topBar} />}
+      {/* BJ6 round 3 flair: a few tiny cast-color confetti dots in the empty top corners, mirrored. */}
+      <CornerConfetti top={slots.topBar} />
       {shimmer && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <div
@@ -285,25 +331,37 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
         <div className="relative flex items-start">
-          {/* Z + BH3: the headline box is one line tall in both modes (the lettering scales to fit). */}
-          <div className="flex-1 min-w-0 flex items-center justify-center text-center gap-1.5" style={{ height: slots.headline }}>
-            {content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
-            {/* The old WORDOCIOUS wordmark style (Nunito Black, violet→pink) with a soft pink glow;
-                the double-flawless gold day keeps its tier ink. */}
-            {/* FINISH_SPEC AR: the live lettering (purple → magenta, gold numbers; the
-                double-flawless gold day celebrates). Shrinks, then wraps to two lines. */}
-            {/* BH3: ONE line, auto-fit (scaled down to the row, never wraps). */}
-            <FitOneLine key={playMode}>
-              <LiveHeadline
-                text={headline}
-                names={name ? [name] : undefined}
-                palette={double ? 'celebrate' : 'home'}
-                size={HEAD_SIZE}
-                level={2}
-                className="mode-xfade"
-                style={{ whiteSpace: 'nowrap' }}
-              />
-            </FitOneLine>
+          {/* Z + BJ6 round 4: the headline box is as tall as the taller mode's laid-out lines. */}
+          <div ref={headSlot} className="flex-1 min-w-0 flex flex-col justify-center" style={{ height: slots.headline }}>
+            <span className="sr-only" role="heading" aria-level={2}>{headLayout.lines.join(' ')}</span>
+            {/* FINISH_SPEC AR: the live lettering (purple → magenta, gold numbers; the double-flawless
+                gold day celebrates). BJ6 round 4: every line at the device's ONE size; a stacked name
+                is the gold hero line(s); line 1 wears the gold sparkles. FitOneLine is only a
+                safety net (it shrinks a line that truly doesn't fit, e.g. a nameless long status). */}
+            <div key={playMode} className="mode-xfade flex flex-col items-stretch" aria-hidden="true">
+              {headLayout.lines.map((line, i) => {
+                const gold = headLayout.nameLines.includes(i);
+                return (
+                  <div key={`${i}-${line}`} className="flex items-center justify-center" style={{ height: headLayout.lineHeight }}>
+                    <FitOneLine>
+                      <span className="inline-flex items-center" style={{ gap: 6 }}>
+                        {i === 0 && content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
+                        {i === 0 && <GoldSparkle />}
+                        <LiveHeadline
+                          text={line}
+                          names={headLayout.lines.length === 1 && name ? [name] : undefined}
+                          palette={gold ? 'leaderboard' : double ? 'celebrate' : 'home'}
+                          size={headLayout.size}
+                          level={2}
+                          style={{ whiteSpace: 'nowrap', display: 'inline-block', width: 'auto' }}
+                        />
+                        {i === 0 && <GoldSparkle mirror />}
+                      </span>
+                    </FitOneLine>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -379,17 +437,21 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         </div>
       </div>
 
-      <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px 12px ${BANNER_SLOT.wordPadBottom}px` }}>
+      {/* BJ6 round 3 flair: the two progress rows sit in one soft lavender band — the card reads as two zones. */}
+      <div className="relative" style={{ background: ROWS_BAND }}>
+      <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px ${BANNER_SLOT.rowPadX}px ${BANNER_SLOT.wordPadBottom}px` }}>
         {row(word, wTier, 'WORDOCIOUS')}
       </div>
-      <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.puzzlePadTop}px 12px ${BANNER_SLOT.puzzlePadBottom}px` }}>
+      <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.puzzlePadTop}px ${BANNER_SLOT.rowPadX}px ${BANNER_SLOT.puzzlePadBottom}px` }}>
         {row(puzzles, pTier, 'PUZZLES')}
+      </div>
       </div>
     </div>
   );
 
   // BJ6 symmetric hero: the host centered on the card's top edge — its top 28 above the card
-  // (the headroom), 44 inside (over the strip's top padding). The share button is in the app header.
+  // (22 of headroom + 6 over the header's empty edge), 60 inside (over the strip's top padding).
+  // The share button is in the app header.
   return (
     <div className="relative shrink-0" style={{ paddingTop: slots.headroom }}>
       {card}
@@ -408,6 +470,71 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         />
       </span>
     </div>
+  );
+}
+
+// ── BJ6 round 3 flair (founder 10-03: "that window needs flair … it looks unfinished") ──
+// Static and cheap: no animation, no blur, no outline; symmetric about the card's center line.
+
+/** A very soft diagonal sheen over the card fill. */
+const CARD_SHEEN = 'linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.22) 46%, rgba(255,255,255,0) 62%)';
+/** The progress rows' band (lavender ~10%). */
+const ROWS_BAND = 'rgba(167, 139, 250, 0.10)';
+const BRAND_FROM = '#7C3AED';
+const BRAND_TO = '#EC4899';
+const CAP_TRIM = { viewW: 360, drip: 4, bumps: 16 } as const;
+
+/** The brand candy frosting cap (the game cards' trim shape, purple → pink, with a glossy lip). */
+function BrandCap({ height }: { height: number }) {
+  const gid = `bcap${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  return (
+    <div aria-hidden="true" className="relative pointer-events-none" style={{ height, zIndex: 1 }}>
+      <svg className="absolute inset-x-0 top-0 block" width="100%" height={height + CAP_TRIM.drip} viewBox={`0 0 ${CAP_TRIM.viewW} ${height + CAP_TRIM.drip}`} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`${gid}h`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor={BRAND_FROM} />
+            <stop offset="1" stopColor={BRAND_TO} />
+          </linearGradient>
+          <linearGradient id={`${gid}g`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#ffffff" stopOpacity={0.4} />
+            <stop offset="0.45" stopColor="#ffffff" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <path d={trimPath(CAP_TRIM.viewW, height, CAP_TRIM.drip, CAP_TRIM.bumps)} fill={`url(#${gid}h)`} />
+        <path d={trimPath(CAP_TRIM.viewW, height, CAP_TRIM.drip, CAP_TRIM.bumps)} fill={`url(#${gid}g)`} />
+      </svg>
+    </div>
+  );
+}
+
+/** Tiny cast-color dots (2–4 px, ~30%) in the top corners — the right side mirrors the left. */
+const CONFETTI_DOTS: ReadonlyArray<{ x: number; y: number; d: number; c: string }> = [
+  { x: 14, y: 14, d: 4, c: '#7c3aed' },
+  { x: 34, y: 30, d: 3, c: '#ec4899' },
+  { x: 22, y: 46, d: 2, c: '#f5a524' },
+  { x: 54, y: 18, d: 2, c: '#14b8a6' },
+  { x: 70, y: 40, d: 3, c: '#3b82f6' },
+];
+
+function CornerConfetti({ top }: { top: number }) {
+  return (
+    <div aria-hidden="true" className="absolute inset-x-0 pointer-events-none" style={{ top, height: 60, zIndex: 1 }}>
+      {CONFETTI_DOTS.flatMap((p, i) => [
+        <span key={`l${i}`} className="absolute rounded-full" style={{ left: p.x, top: p.y, width: p.d, height: p.d, background: p.c, opacity: 0.3 }} />,
+        <span key={`r${i}`} className="absolute rounded-full" style={{ right: p.x, top: p.y, width: p.d, height: p.d, background: p.c, opacity: 0.3 }} />,
+      ])}
+    </div>
+  );
+}
+
+/** A small gold four-point star (SVG), mirrored on the right of the headline. */
+function GoldSparkle({ mirror = false }: { mirror?: boolean }) {
+  return (
+    <svg aria-hidden="true" width={14} height={14} viewBox="0 0 20 20" className="shrink-0" style={mirror ? { transform: 'scaleX(-1)' } : undefined}>
+      <path d="M10 0 C11 6 14 9 20 10 C14 11 11 14 10 20 C9 14 6 11 0 10 C6 9 9 6 10 0 Z" fill="#f5a524" />
+      <path d="M10 4 C10.6 7.4 12.6 9.4 16 10 C12.6 10.6 10.6 12.6 10 16 C9.4 12.6 7.4 10.6 4 10 C7.4 9.4 9.4 7.4 10 4 Z" fill="#ffe7a3" />
+      <circle cx={15.5} cy={4.5} r={1.4} fill="#fcd34d" />
+    </svg>
   );
 }
 

@@ -65,25 +65,30 @@ struct AppHeaderView: View {
 
                 Spacer(minLength: 6)
 
-                // Guest — prominent Sign In entry (account tabs also prompt, but the
-                // Home header had no entry). Presents the sign-in sheet.
-                if auth.isGuest {
-                    Button { showAuth = true } label: { CandyLabel(title: "Sign In") }
-                        .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
-                        .padding(.top, 4)
+                // BJ6 (founder 10-03: "sign in at the top should be closer to the question mark"):
+                // the right-hand controls are ONE right-aligned group with the same visual gap
+                // between every control — [SIGN IN] [?] [gear] for guests, [Share] [?] [gear] on
+                // Home once there's something to share. No reserved invisible slots: an absent
+                // control simply drops out. Each icon keeps its 44-pt tap area (it overhangs its
+                // hugging layout box); the gear stays where it was.
+                HStack(spacing: Self.groupGap) {
+                    // Guest — prominent Sign In entry (account tabs also prompt, but the
+                    // Home header had no entry). Presents the sign-in sheet.
+                    if auth.isGuest {
+                        Button { showAuth = true } label: { CandyLabel(title: "Sign In") }
+                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    }
+                    if let share, share.visible {
+                        groupIcon(.share, label: "Share today's progress", action: share.action)
+                    }
+                    // BI25: single-fire — a double tap (or a tap while a sheet is on its
+                    // way) can't open and then close it; the sheet builds light and
+                    // presents on the tap frame (heavy pieces load after it lands).
+                    groupIcon(.help, label: "Help") { openSheet { showMenu = true } }
+                    groupIcon(.gear, label: "Settings") { openSheet { showSettings = true } }
                 }
-
-                // BI25: single-fire — a double tap (or a tap while a sheet is on its
-                // way) can't open and then close it; the sheet builds light and
-                // presents on the tap frame (heavy pieces load after it lands).
-                if let share {
-                    iconControl(.share, label: "Share today's progress", action: share.action)
-                        .opacity(share.visible ? 1 : 0)
-                        .allowsHitTesting(share.visible)
-                        .accessibilityHidden(!share.visible)
-                }
-                iconControl(.help, label: "Help") { openSheet { showMenu = true } }
-                iconControl(.gear, label: "Settings") { openSheet { showSettings = true } }
+                .padding(.trailing, (HeaderControl.tap - HeaderControl.icon) / 2)
+                .frame(minHeight: HeaderControl.tap)
             }
             .padding(.horizontal, 8)
             .padding(.top, 2)
@@ -132,6 +137,16 @@ struct AppHeaderView: View {
         }
         .buttonStyle(.squishIcon)
         .accessibilityLabel(label)
+    }
+
+    /// BJ6: the right group's gap between visual edges.
+    static let groupGap: CGFloat = 10
+
+    /// A right-group icon: laid out at its visual width (so the group's gaps are even) with
+    /// its full 44-pt tap area overhanging the layout box.
+    private func groupIcon(_ icon: Icon3DName, label: String, action: @escaping () -> Void) -> some View {
+        iconControl(icon, label: label, action: action)
+            .frame(width: HeaderControl.icon, height: HeaderControl.tap)
     }
 
     /// A bare 3D icon (23 pt) in a 44-pt tap area.

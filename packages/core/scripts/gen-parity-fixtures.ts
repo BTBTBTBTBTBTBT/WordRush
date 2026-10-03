@@ -37,7 +37,7 @@ import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber,
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
-import { headlineTokens } from '../src/headline-tokens';
+import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEADLINE_SIZING_LINE } from '../src/headline-tokens';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
 import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
@@ -874,7 +874,20 @@ export function renderHeadlineTokenFixtures() {
     ['COVID19 X2Y', []],
     ['', []],
   ];
-  return { cases: cases.map(([text, names]) => ({ text, names, tokens: headlineTokens(text, names) })) };
+  // BJ6: the Home greeting layout (widths, the device size, one line vs a stacked full-size name).
+  const widths = ['GOOD AFTERNOON,', 'GOOD MORNING, BMT!', 'UP LATE, BMT?', 'WWWWWWWWWWWWWWWWWWWW', 'HOME STRETCH \u00b7 12 LEFT', 'é'].map((text) => ({ text, em: headlineWidthEm(text) }));
+  const sizes = [0, 200, 285, 312, 346, 500].map((width) => ({ width, size: headlineFontSize(width) }));
+  const layoutNames = ['BMT', 'doug', 'Ukrainian Cyclone', 'Maximillian_The_Great', 'oliver_22', 'JohnnyAuer', 'x.y.z-1234567890', 'WWWWWWWWWWWWWWWWWWWW'];
+  const layouts = [9.5, 12, 18, 40].flatMap((maxEm) => layoutNames.flatMap((name) => ['GOOD AFTERNOON', 'UP LATE'].map((greet) => {
+    const text = `${greet}, ${name.toUpperCase()}${greet === 'UP LATE' ? '?' : '!'}`;
+    return { text, name, maxEm, layout: headlineLayout(text, name, maxEm) };
+  })));
+  layouts.push({ text: 'OLIVER_22 LEADS TODAY\'S RACE', name: 'oliver_22', maxEm: 9.5, layout: headlineLayout("OLIVER_22 LEADS TODAY'S RACE", 'oliver_22', 9.5) });
+  layouts.push({ text: 'WARMING UP \u00b7 3 DOWN', name: 'BMT', maxEm: 6, layout: headlineLayout('WARMING UP \u00b7 3 DOWN', 'BMT', 6) });
+  return {
+    cases: cases.map(([text, names]) => ({ text, names, tokens: headlineTokens(text, names) })),
+    sizingLine: HEADLINE_SIZING_LINE, widths, sizes, layouts,
+  };
 }
 
 // FINISH_SPEC BE: the new achievements' catalog + rules.

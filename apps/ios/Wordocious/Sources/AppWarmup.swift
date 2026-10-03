@@ -32,6 +32,7 @@ enum AppWarmup {
         // Avatar parts + the podium pedestals, decoded off main before Home / the Leaderboard paint them.
         MascotArtCache.prewarm()
         PodiumView.prewarm()
+        HomeHostMascot.prewarm()   // BJ6: the Good Morning host's pose, before Home paints
         Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             GamePersistence.shared.sweepStalePracticeSaves()

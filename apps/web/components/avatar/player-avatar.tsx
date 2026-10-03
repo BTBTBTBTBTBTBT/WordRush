@@ -11,7 +11,7 @@ import {
 } from '@/lib/avatar-cast';
 import { useAvatarLookup } from '@/lib/avatar-directory';
 import { homeHostChoice, type HomeHostChoice } from '@/lib/home-host';
-import { MascotAvatar } from './mascot-avatar';
+import { MascotAvatar, warmAvatarArt } from './mascot-avatar';
 
 /**
  * FINISH_SPEC AN3 / AN5 / BJ5: the avatar for ANY player, through the ONE
@@ -158,6 +158,8 @@ export function useHomeHost(): { choice: HomeHostChoice; initial: string; level:
     )
     : null;
   const next = homeHostChoice(resolved);
+  // BJ6 round 4: warm the host's art parts during this first render (before Home's first paint).
+  if (next.kind !== 'w') warmAvatarArt(next.config);
   const key = next.kind === 'w' ? 'w' : `${next.kind}|${next.kind === 'photo' ? next.photoUrl : ''}|${avatarConfigKey(next.config)}`;
   // Keep the object stable across renders (MascotAvatar is memoized).
   // eslint-disable-next-line react-hooks/exhaustive-deps

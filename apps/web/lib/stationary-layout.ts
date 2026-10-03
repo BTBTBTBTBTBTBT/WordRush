@@ -57,25 +57,34 @@ export const BANNER_SLOT = {
    */
   headroom: 22,
   hostOverhang: 6,
-  /** BJ6: the host box, how far it rises above the card, and how far it reaches into the card. */
-  hostSize: 72,
+  /**
+   * BJ6: the host box, how far it rises above the card, and how far it reaches into the card.
+   * Round 3 (founder 10-03: "looked small … I thought that would be way more prominent"): 88,
+   * still rising 28 (headroom 22 + overhang 6), so 60 of it stands in the card.
+   */
+  hostSize: 88,
   hostRise: 28,
-  hostInset: 44,
+  hostInset: 60,
+  /** BJ6 round 3: the host's feet → the headline's top. */
+  hostToHeadline: 4,
   /** The swept / flawless top bar (kept in Unlimited on that day, recolored). */
   topBar: 10,
+  /** BJ6 round 3 flair: the brand candy frosting cap across the card's top on a host day (8 + its drips). */
+  cap: 8,
   /** The card border on an art-frame day (softBorder's 1.5 px). */
   border: 1.5,
   /**
-   * The strip's top padding: BJ6 — the host's lower 44 px sits in it, so the headline starts
-   * under the host (art frame: 44 minus the 10 top bar and its border).
+   * The strip's top padding: BJ6 — the host's lower 60 px sit in it, so the headline starts 4
+   * under the host's feet: 60 + 4 minus the cap (8) on a host day, minus the top bar (10) and
+   * its border (1.5) on an art day.
    */
-  stripTopArt: 33,
-  stripTopHost: 44,
+  stripTopArt: 53,
+  stripTopHost: 56,
   stripBottom: 4,
   /** Gap between the headline row and the controls block (BJ6: 6 above the switch). */
   stripGap: 6,
-  /** BH3 / BJ6: ONE headline line (auto-fit, never wraps), 28 tall. */
-  headline: 28,
+  /** BH3 / BJ6: ONE headline line (auto-fit, never wraps). Round 3: big brand lettering, 38 tall. */
+  headline: 38,
   /** The share button's box. BJ6: it lives in the app header now (not part of the banner's rows). */
   share: 34,
   /** The celebration art beside the headline (and Unlimited's U loop in the same box). */
@@ -98,7 +107,13 @@ export const BANNER_SLOT = {
   /** BI21 / BH3: one tile size for both rows (up to 36, sized so 10 fit with 5 px gaps). */
   tileLg: 36,
   tileSm: 36,
-  tileGapMin: 5,
+  /**
+   * BJ6 round 3 (founder 10-03: bigger progress icons): rows 8 from the card's sides (was 12) with
+   * a 4 gap minimum (was 5), so the 10-tile Puzzles row sets ONE size for both rows: ~31 on a
+   * 390 phone (358 card), was ~29.
+   */
+  rowPadX: 8,
+  tileGapMin: 4,
   tileSlots: 10,
 } as const;
 
@@ -109,6 +124,11 @@ export interface BannerInput {
   puzzleTier: FrameTier;
   /** Any daily finished today (there is something to share). */
   playedAny: boolean;
+  /**
+   * BJ6 round 4: the headline row's measured height (lines × line height, the taller of the two
+   * modes — lib/home-headline.ts). Omitted = the one-line BANNER_SLOT.headline.
+   */
+  headlineHeight?: number;
 }
 
 export interface BannerSlots {
@@ -151,19 +171,22 @@ export function homeBannerSlots(mode: PlayMode, input: BannerInput): BannerSlots
   const S = BANNER_SLOT;
   const frame: BannerSlots['frame'] = input.dailyTier === 'none' ? 'host' : 'art';
   const art = frame === 'art';
-  const topBar = art ? S.topBar : 0;
+  // BJ6 round 3: a host day wears the brand candy cap where an art day wears its top bar.
+  const topBar = art ? S.topBar : S.cap;
   const border = art ? S.border : 0;
   const stripTop = art ? S.stripTopArt : S.stripTopHost;
   const artHeight = art ? S.art : 0;
   // BJ6: the share button moved to the app header, so the row is the headline (or the art).
-  const headerRow = Math.max(S.headline, artHeight);
+  // Round 4: the headline is as tall as its laid-out lines (one line = BANNER_SLOT.headline).
+  const headline = input.headlineHeight != null && input.headlineHeight > 0 ? input.headlineHeight : S.headline;
+  const headerRow = Math.max(headline, artHeight);
   const stripHeight = stripTop + headerRow + S.stripGap + S.controls + S.stripBottom;
   const wordTilesTop = S.headroom + border + topBar + stripHeight + S.wordPadTop + S.rowHeader + S.rowGap;
   const wordSection = S.wordPadTop + S.rowHeader + S.rowGap + S.tileLg + S.wordPadBottom;
   const puzzleTilesTop = S.headroom + border + topBar + stripHeight + wordSection + S.puzzlePadTop + S.rowHeader + S.rowGap;
   const height = puzzleTilesTop + S.tileSm + S.puzzlePadBottom + border;
   return {
-    frame, headroom: S.headroom, topBar, border, stripTop, headline: S.headline, shareWidth: S.share,
+    frame, headroom: S.headroom, topBar, border, stripTop, headline, shareWidth: S.share,
     artHeight, headerRow, controls: S.controls, rowHeader: S.rowHeader, wordTilesTop, puzzleTilesTop, height,
   };
 }

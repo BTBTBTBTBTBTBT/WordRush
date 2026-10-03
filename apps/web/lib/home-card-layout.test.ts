@@ -79,7 +79,9 @@ describe('Home game card (§21)', () => {
     expect(s).not.toMatch(/HEADLINE_SIDE_CLEAR|paddingLeft:/);
     expect(s).not.toContain("aria-label=\"Share today's progress\"");
     expect(src('components/ui/app-header.tsx')).toContain('label="Share today\'s progress"');
-    expect(s).toContain('justify-center text-center');
+    // BJ6 round 4: each laid-out headline line is centered (lib/home-headline.ts homeHeadlineLayout).
+    expect(s).toContain('homeHeadlineLayout(slotWidth');
+    expect(s).toContain('className="flex items-center justify-center" style={{ height: headLayout.lineHeight }}');
     // The centered switch fills its (narrower) column up to 260, equal halves, the PRO crown inside the Unlimited half.
     expect(s).toContain("width: '100%', maxWidth: 260");
     expect(s).toContain("flex: '1 1 0'");
@@ -96,15 +98,21 @@ describe('Home game card (§21)', () => {
     const { BANNER_SLOT, homeBannerSlots } = await import('./stationary-layout');
     const s = src('components/home/home-banner.tsx');
     expect(s).toContain('<FitOneLine');
-    expect(BANNER_SLOT.headline).toBeLessThanOrEqual(34);
+    // BJ6 round 3: the headline is the big one-line brand lettering again (38 line).
+    expect(BANNER_SLOT.headline).toBeLessThanOrEqual(38);
     expect(BANNER_SLOT.rowGap).toBe(4);
     expect(BANNER_SLOT.wordPadBottom + BANNER_SLOT.puzzlePadTop).toBe(8);
     // At a phone's ~29 px tiles: was 273 (headroom 16 + strip 127 + rows 130); BH3 208 (−24%).
     // BJ6 symmetric hero (founder 10-03): the 72 px host rises 28 above the card (headroom 6 → 22,
     // the other 6 over the header's bottom edge) and reaches 44 into it (strip top 4 → 44;
     // headline 28, gaps 6 / 3) — measured 255.
+    // BJ6 round 3 (founder 10-03: "more prominent … more compact"): an 88 host (60 in the card),
+    // the 8 brand cap, the 38 headline, and bigger progress tiles (~31 on a 390 phone: rows 8
+    // from the sides, 4 gaps) — measured 289 at 31 px tiles (285 at the old 29).
     const h = homeBannerSlots('daily', { dailyTier: 'none', puzzleTier: 'none', playedAny: true }).height;
-    expect(h - 2 * (BANNER_SLOT.tileLg - 29)).toBeLessThanOrEqual(255);
+    expect(h - 2 * (BANNER_SLOT.tileLg - 31)).toBeLessThanOrEqual(289);
+    expect(BANNER_SLOT.rowPadX).toBe(8);
+    expect(BANNER_SLOT.tileGapMin).toBe(4);
     expect(src('components/ui/mascot.tsx')).toContain('export const BANNER_HOST_SIZE = 52');
   });
 

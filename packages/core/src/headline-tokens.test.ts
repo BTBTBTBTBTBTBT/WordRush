@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { headlineTokens } from './headline-tokens';
+import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEADLINE_SIZING_LINE } from './headline-tokens';
 
 describe('headlineTokens (FINISH_SPEC AR)', () => {
   it('splits numbers, names and the star separator', () => {
@@ -46,6 +46,43 @@ describe('headlineTokens (FINISH_SPEC AR)', () => {
   it('never drops a character', () => {
     for (const s of ['', '·', 'A · B · C', 'DOUBLE SWEEP!', "BMT'S 48-DAY RUN"]) {
       expect(headlineTokens(s, ['bmt']).map((t) => t.text).join('')).toBe(s);
+    }
+  });
+});
+
+
+describe('BJ6 greeting layout (one line, else a stacked full-size name)', () => {
+  // The narrowest supported phone (SE, 375 pt): card 343 − strip padding 24 − sparkles 34.
+  const SE_WIDTH = 285;
+  const size = headlineFontSize(SE_WIDTH);
+  const maxEm = SE_WIDTH / size;
+
+  it('fits the sizing line at the device size', () => {
+    expect(headlineWidthEm(HEADLINE_SIZING_LINE) * size).toBeLessThanOrEqual(SE_WIDTH);
+  });
+  it('a short name stays on one line when it fits', () => {
+    expect(headlineLayout('GOOD MORNING, BMT!', 'BMT', 40)).toEqual({ lines: ['GOOD MORNING, BMT!'], nameLines: [] });
+  });
+  it('a name that does not fit stacks under the greeting', () => {
+    expect(headlineLayout('GOOD AFTERNOON, BMT!', 'BMT', maxEm)).toEqual({ lines: ['GOOD AFTERNOON,', 'BMT!'], nameLines: [1] });
+  });
+  it('breaks a long name at natural boundaries, never shrinking or truncating', () => {
+    const l = headlineLayout('GOOD EVENING, MAXIMILLIAN_THE_GREAT!', 'Maximillian_The_Great', maxEm);
+    expect(l.lines[0]).toBe('GOOD EVENING,');
+    expect(l.lines.slice(1).join('')).toBe('MAXIMILLIAN_THE_GREAT!');
+    for (const line of l.lines) expect(headlineWidthEm(line)).toBeLessThanOrEqual(maxEm);
+  });
+  it('walks every allowed length (3–20) of the widest letter on the narrowest phone', () => {
+    for (let n = 3; n <= 20; n++) {
+      for (const name of ['W'.repeat(n), 'M'.repeat(n), 'Ab1_'.repeat(5).slice(0, n), 'x '.repeat(10).slice(0, n).trim() || 'xyz']) {
+        for (const greet of ['GOOD MORNING', 'GOOD AFTERNOON', 'GOOD EVENING', 'UP LATE']) {
+          const text = `${greet}, ${name.toUpperCase()}${greet === 'UP LATE' ? '?' : '!'}`;
+          const l = headlineLayout(text, name, maxEm);
+          for (const line of l.lines) expect(headlineWidthEm(line)).toBeLessThanOrEqual(maxEm + 1e-9);
+          // Nothing dropped: the lines rebuild the headline (spaces aside).
+          expect(l.lines.join('').replace(/ /g, '')).toBe(text.replace(/ /g, ''));
+        }
+      }
     }
   });
 });

@@ -36,8 +36,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** BJ6 symmetric hero (iOS parity pin): the Good Morning host's box. */
-internal val HOME_HOST_BOX = 72.dp
+/** BJ6 round 3 (founder: "way more prominent"): the Good Morning host's box (was 72). */
+internal val HOME_HOST_BOX = 88.dp
 
 /** BJ6: how far the host's head rises above the card's top edge (the rest overlaps the card). */
 internal val HOME_HOST_RISE = 28.dp
@@ -51,15 +51,33 @@ internal val HOME_HOST_RISE = 28.dp
 internal val HOME_BANNER_TOP = 22.dp
 internal val HOME_HOST_OVERHANG = HOME_HOST_RISE - HOME_BANNER_TOP
 
-/**
- * BJ6: the frosted strip's top padding (dp) — it clears the host's lower part (box − rise),
- * or a plain 4 when the scene band sits on top (the host then stands on the band). Decided by
- * today's dailies only, so the Daily ⇄ Unlimited switch never moves anything.
- */
-internal fun homeStripTop(sceneBand: Boolean): Float =
-    if (sceneBand) 4f else HOME_HOST_BOX.value - HOME_HOST_RISE.value
+/** BJ6 round 3: the gap from the host's feet to the headline's top. */
+internal const val HOME_HOST_TO_HEADLINE = 4f
 
-/** BJ6: the header's share control shows (slot kept either way) only in Daily once a game is finished. */
+/**
+ * BJ6: the frosted strip's top padding (dp) — it clears the host's lower part (box − rise) + 4
+ * to the headline, or a plain 4 when the scene band sits on top (the host then stands on the
+ * band) or no host shows. Decided by today's dailies only, so Daily ⇄ Unlimited never moves it.
+ */
+internal fun homeStripTop(sceneBand: Boolean, hostShown: Boolean = true): Float =
+    if (sceneBand || !hostShown) 4f else HOME_HOST_BOX.value - HOME_HOST_RISE.value + HOME_HOST_TO_HEADLINE
+
+/**
+ * BJ6 round 3 ("never an empty host slot"): whether the host draws — always, except a W host
+ * while the celebration art carries the cast (then its headroom collapses instead).
+ */
+internal fun homeHostShows(pick: HomeHostPick, wVisible: Boolean): Boolean = pick !is HomeHostPick.W || wVisible
+
+/** The host for the signed-in player (photo portrait / their mascot), else W. Recomposes on an edit. */
+@Composable
+internal fun rememberHomeHostPick(): HomeHostPick {
+    val profile by AuthService.profile.collectAsState()
+    val p = profile ?: return HomeHostPick.W
+    // ownFields() reads the directory's own patch (snapshot state): an edit swaps the host at once.
+    return AvatarDirectoryRules.hostPick(PlayerAvatars.ownFields(), level = p.level, pro = AuthService.isProActive)
+}
+
+/** BJ6: the header's share control shows only in Daily once a game is finished (absent otherwise). */
 internal fun homeShareVisible(unlimited: Boolean, playedToday: Int): Boolean = !unlimited && playedToday > 0
 
 /** BJ6: the host waves once per app launch (process-level). */
@@ -77,17 +95,13 @@ internal object HomeHostWave {
  *  • guests and seeded players → W in its wave pose, full box height.
  * Waves ONCE per launch when Home appears (a −6 dp hop with a +10° / −8° / +8° wag around the
  * feet, ~220 ms beats, ~350 ms in, then springs to rest; skipped under Reduce / calm motion),
- * then rests — no idle bob. [wVisible] false (the celebration art is up) hides a W host
- * (alpha 0, slot kept); the player's own host stays. Transform / opacity only.
+ * then rests — no idle bob. The caller omits a W host while the celebration art is up
+ * ([homeHostShows]); the player's own host stays. Never drawn at alpha 0. Transform only.
  */
 @Composable
-internal fun HomeHost(size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier, wVisible: Boolean = true) {
+internal fun HomeHost(pick: HomeHostPick, size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier) {
     val profile by AuthService.profile.collectAsState()
     val p = profile
-    // ownFields() reads the directory's own patch (snapshot state): an edit swaps the host at once.
-    val pick = if (p != null) {
-        AvatarDirectoryRules.hostPick(PlayerAvatars.ownFields(), level = p.level, pro = AuthService.isProActive)
-    } else HomeHostPick.W
     val still = WTheme.reducedMotion || WTheme.calmMotion
     val hop = remember { Animatable(0f) }
     val wag = remember { Animatable(0f) }
@@ -109,10 +123,8 @@ internal fun HomeHost(size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier, w
             }
         }
     }
-    val hidden = pick is HomeHostPick.W && !wVisible
     Box(
         modifier.size(size).clearAndSetSemantics { }
-            .graphicsLayer { alpha = if (hidden) 0f else 1f }
             .drawBehind {
                 // The soft floor shadow under its feet (on the strip): radial purple-black ~20% →
                 // clear, 78% × 13%, centered on the box's bottom edge.
@@ -149,6 +161,39 @@ internal fun HomeHost(size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier, w
                 artPainter(com.wordocious.app.R.drawable.art_pose_w_wave, size), contentDescription = null,
                 contentScale = ContentScale.Fit, modifier = motion.fillMaxHeight(),
             )
+        }
+    }
+}
+
+/**
+ * BJ6 round 4 (founder: "no choppiness, loads instantly"): decode the Good Morning host's art
+ * before Home's first frame — W's wave pose at the host's size bucket, and (once the profile
+ * lands, and again on every profile change) the player's own host mascot, composed in both
+ * themes — off the main thread, into the same caches [HomeHost] reads, so nothing pops in.
+ */
+object HomeHostPrewarm {
+    private val started = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
+
+    fun start(context: android.content.Context) {
+        if (!started.compareAndSet(false, true)) return
+        val app = context.applicationContext
+        val px = Math.round(HOME_HOST_BOX.value * app.resources.displayMetrics.density).coerceAtLeast(1)
+        scope.launch {
+            runCatching { ArtBitmaps.get(app, com.wordocious.app.R.drawable.art_pose_w_wave, ArtBitmaps.bucketPx(px)) }
+            AuthService.profile.collect { p ->
+                if (p == null) return@collect
+                runCatching {
+                    val pick = AvatarDirectoryRules.hostPick(PlayerAvatars.ownFields(), level = p.level)
+                    if (pick is HomeHostPick.Mascot) {
+                        val drawn = pick.config.copy(frame = "none")
+                        val initial = MascotConfigRules.initialOf(p.username)
+                        for (dark in listOf(false, true)) {
+                            MascotComposer.image(app, MascotKey.of(drawn, initial, HOME_HOST_BOX.value, px, dark))
+                        }
+                    }
+                }
+            }
         }
     }
 }

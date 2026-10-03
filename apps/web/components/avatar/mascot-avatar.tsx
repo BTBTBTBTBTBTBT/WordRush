@@ -71,6 +71,19 @@ function probeArt(name: string): Promise<boolean> {
 const NO_ART: ReadonlySet<string> = new Set();
 
 /**
+ * BJ6 round 4: start fetching + decoding a mascot's art parts (and its frame art) ahead of its
+ * first draw, so a hero avatar (the Home host) paints with its art instead of swapping in.
+ * Idempotent (probeArt is memoized); a no-op on the server or while the parts manifest is pending.
+ */
+export function warmAvatarArt(config: AvatarConfig, frame?: AvatarFrame): void {
+  if (typeof Image === 'undefined' || avatarArtPending()) return;
+  const shipped = AVATAR_PARTS.art;
+  for (const n of avatarArtNames(config)) if (!shipped || shipped.includes(n)) void probeArt(n);
+  const f = frame ?? config.frame;
+  if (isAvatarFrame(f)) void probeArt(frameArtName(f));
+}
+
+/**
  * Warm the mascot art the first screens show (every body + the default / cast-preset parts) into
  * the image cache, decoded off the main thread — called when Home / the Leaderboard mount, so
  * their avatars compose at once instead of waiting on the network.

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { CastHeader, CAST_ROW } from '@/components/ui/cast-header';
-import { HeaderGlyph, TAP } from '@/components/ui/header-glyph';
+import { GLYPH_SIZE, HeaderGlyph, TAP } from '@/components/ui/header-glyph';
 import { CandyButton } from '@/components/ui/candy-button';
 import { MenuModal } from '@/components/modals/menu-modal';
 import { SettingsDialog } from '@/components/settings-dialog';
@@ -38,7 +38,11 @@ import { DESKTOP_MIN, minWidthQuery } from '@/lib/desktop-layout';
 // pages), the counters + help + settings on the right. Below 1024 px the extra
 // tabs are hidden and the header is exactly the phone header.
 
-/** FINISH_SPEC BJ6: Home's share-today control (Home only): its slot stays even while hidden. */
+/** BJ6 round 3: the right group's gap between visual edges, and the glyph box hugging its icon. */
+const RIGHT_GAP = 8;
+const HUG = { minWidth: GLYPH_SIZE } as const;
+
+/** FINISH_SPEC BJ6: Home's share-today control (Home only); absent when not shown (no reserved slot). */
 export interface HeaderShare {
   visible: boolean;
   onShare: () => void;
@@ -186,11 +190,6 @@ export function AppHeader({ share }: { share?: HeaderShare } = {}) {
         {/* AS2 Row 1: the controls — the bare 3D counters left, help + settings right. */}
         <div className="hdr-row relative flex items-center justify-between gap-2 px-3">
           <div className="flex items-center gap-1 min-w-0">
-            {/* Guest — prominent Sign In entry (returns to the landing/login). */}
-            {isGuest && !profile && (
-              <CandyButton size="sm" color="purple" onClick={exitGuest}>Sign In</CandyButton>
-            )}
-
             {profile && (
               <>
                 {streak > 0 && (
@@ -205,16 +204,23 @@ export function AppHeader({ share }: { share?: HeaderShare } = {}) {
             )}
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {/* BJ6: Home's share button beside "?" and the gear (same size / spacing). Hidden in
-                Unlimited and before the first finished game; the slot stays so the row never jumps. */}
-            {share && (share.visible
-              ? <HeaderGlyph icon="share" onClick={share.onShare} label="Share today's progress" />
-              : <span aria-hidden="true" className="shrink-0" style={{ width: TAP, height: TAP }} />)}
+          {/* BJ6 round 3 (founder 10-03): ONE right-aligned, evenly spaced group — guests
+              [SIGN IN] [?] [gear]; Home once there is something to share [Share] [?] [gear]. Every
+              control is 8 apart edge to edge (the glyph boxes hug their icons; .hdr-glyph::after keeps
+              the 44 px tap target), and an absent control just drops out — no reserved slots. The
+              group keeps the gear where it was (the old 44 box's inset on the right). */}
+          <div className="flex items-center shrink-0" style={{ gap: RIGHT_GAP, paddingRight: (TAP - GLYPH_SIZE) / 2 }}>
+            {/* Guest — prominent Sign In entry (returns to the landing/login). */}
+            {isGuest && !profile && (
+              <CandyButton size="sm" color="purple" onClick={exitGuest}>Sign In</CandyButton>
+            )}
+            {share?.visible && (
+              <HeaderGlyph icon="share" onClick={share.onShare} label="Share today's progress" style={HUG} />
+            )}
             {/* "?" menu — opens the site-nav menu (native MenuSheet parity) */}
-            <HeaderGlyph icon="help" onClick={() => openSheetOnce(() => setHelpOpen(true))} label="Menu" />
+            <HeaderGlyph icon="help" onClick={() => openSheetOnce(() => setHelpOpen(true))} label="Menu" style={HUG} />
             {/* Settings button — always visible (theme, sound, accessibility). BI25: single-fire. */}
-            <HeaderGlyph icon="gear" onClick={() => openSheetOnce(() => setSettingsOpen(true))} label="Settings" />
+            <HeaderGlyph icon="gear" onClick={() => openSheetOnce(() => setSettingsOpen(true))} label="Settings" style={HUG} />
           </div>
 
           {profile && (

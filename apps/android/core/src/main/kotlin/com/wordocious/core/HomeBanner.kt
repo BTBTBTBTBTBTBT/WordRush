@@ -73,6 +73,8 @@ fun bannerHeadline(word: GroupProgress, puzzles: GroupProgress, hour: Int, name:
     if (b != BannerTier.NONE) return news("PUZZLES", b)
     if (played == 0) {
         val n = name.trim().uppercase()
+        // BJ6 (founder 10-03): the greeting is personal for signed-in players; 0–4 h is "UP LATE?".
+        if (hour in 0..4) return if (n.isNotEmpty()) "UP LATE, $n?" else "UP LATE?"
         return if (n.isNotEmpty()) "GOOD ${greetingWord(hour)}, $n!" else "GOOD ${greetingWord(hour)}!"
     }
     if (played <= 5) return "WARMING UP · $played DOWN"

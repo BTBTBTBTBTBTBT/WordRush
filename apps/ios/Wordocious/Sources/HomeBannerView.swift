@@ -33,6 +33,8 @@ struct HomeBannerView: View {
     /// FINISH_SPEC §R3 (founder 10-02): free players see the switch too; UNLIMITED
     /// wears a PRO pill and opens the G1 Go Pro paywall, then switches once Pro.
     @State private var showPro = false
+    /// BJ6: the headline slot's measured width (the lettering is sized to fit it).
+    @State private var headWidth: CGFloat = 0
     @State private var unlimitedAfterPurchase = false
     @ObservedObject private var auth = AuthService.shared
 
@@ -108,10 +110,10 @@ struct HomeBannerView: View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         let hasPuzzles = !puzzles.modes.isEmpty
         let card = VStack(spacing: 0) {
-            if let bar = momentBar {
-                LinearGradient(colors: bar, startPoint: .leading, endPoint: .trailing).frame(height: 8)
-                    .opacity(slots.showsMomentArt ? 1 : 0)
-            }
+            // BJ6 flair (founder 10-03: "that window needs flair … it looks unfinished"): the candy
+            // frosting cap across the top edge, like the game cards' trim — brand purple → pink,
+            // the moment's gold / pink on a swept / flawless day. Static, one shape.
+            BannerCap(colors: slots.showsMomentArt ? (momentBar ?? Self.brandCap) : Self.brandCap)
             strip
             // §G4: the wide sweep / flawless art across the banner under the headline,
             // the whole cast in it fully visible (never cropped).
@@ -131,13 +133,19 @@ struct HomeBannerView: View {
                     .accessibilityHidden(true)
             }
             // BI21: both rows share one tile size (sized so 10 fit) and spread edge to edge.
-            rowView(word, tier: wTier, label: "WORDOCIOUS")
-                .padding(.top, 4).padding(.horizontal, 12).padding(.bottom, hasPuzzles ? 4 : 8)
-            // Remote flags can switch the Puzzles off entirely; then the row goes too.
-            if hasPuzzles {
-                rowView(puzzles, tier: pTier, label: "PUZZLES")
-                    .padding(.top, 4).padding(.horizontal, 12).padding(.bottom, 6)
+            // BJ6 (founder 10-03: the progress icons "a snag bigger"): the rows zone trims its side
+            // padding to 6 and the tiles' minimum gap to 4 so the shared tile is as large as fits,
+            // and it sits in a soft tint band — the card reads as two zones.
+            VStack(spacing: 0) {
+                rowView(word, tier: wTier, label: "WORDOCIOUS")
+                    .padding(.top, 6).padding(.horizontal, Self.rowsInset).padding(.bottom, hasPuzzles ? 4 : 8)
+                // Remote flags can switch the Puzzles off entirely; then the row goes too.
+                if hasPuzzles {
+                    rowView(puzzles, tier: pTier, label: "PUZZLES")
+                        .padding(.top, 4).padding(.horizontal, Self.rowsInset).padding(.bottom, 8)
+                }
             }
+            .background(Color(hex: 0x7C3AED).opacity(unlimited ? 0.05 : 0.07))
         }
         .frame(maxWidth: .infinity)
         .background {
@@ -168,8 +176,11 @@ struct HomeBannerView: View {
             .overlay(alignment: .top) {
                 HomeHostMascot(size: Self.hostSize)
                     .offset(y: -Self.hostRise)
-                    // §A7: during the celebration art (which carries W) a W host steps aside.
-                    .opacity(slots.showsMomentArt && AvatarDirectory.shared.ownHostChoice() == .w ? 0 : 1)
+                    // §A7: during the celebration art (which carries W) a W host steps aside. BJ6 fix:
+                    // only when there IS art showing — `showsMomentArt` alone is true on every Daily
+                    // day, which hid the guest's W all day.
+                    .opacity(momentArt != nil && slots.showsMomentArt
+                             && AvatarDirectory.shared.ownHostChoice() == .w ? 0 : 1)
             }
             .padding(.top, Self.hostRise - Self.scrollTopGap)
     }
@@ -212,12 +223,23 @@ struct HomeBannerView: View {
             // BH3: one headline line, 8 above the slim switch, the meta line 4 under it.
             // BJ6: everything centered under the host (which overlaps the strip's top).
             VStack(spacing: 0) {
-                // §Z: both modes' headlines share one slot and crossfade.
-                ZStack {
-                    headlineSlot(dailyHeadline, trophy: dailyDouble)
-                        .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
-                    headlineSlot(unlimitedHeadline, trophy: false)
-                        .opacity(unlimited ? 1 : 0).accessibilityHidden(!unlimited)
+                // §Z: both modes' headlines share one slot and crossfade. BJ6: small gold
+                // sparkles flank it, mirrored.
+                HStack(alignment: .top, spacing: 6) {
+                    GoldSparkle(size: 11).padding(.top, Self.sparkleTop(headWidth))
+                    ZStack(alignment: .top) {
+                        headlineSlot(dailyHeadline, trophy: dailyDouble)
+                            .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
+                        headlineSlot(unlimitedHeadline, trophy: false)
+                            .opacity(unlimited ? 1 : 0).accessibilityHidden(!unlimited)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .background(GeometryReader { g in
+                        Color.clear
+                            .onAppear { headWidth = g.size.width }
+                            .onChange(of: g.size.width) { headWidth = $0 }
+                    })
+                    GoldSparkle(size: 11).padding(.top, Self.sparkleTop(headWidth))
                 }
                 modeSwitch
                     .frame(maxWidth: Self.switchMaxWidth)
@@ -235,28 +257,45 @@ struct HomeBannerView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        // BJ6: the strip starts under the host's overlapping lower part.
-        .padding(.top, Self.hostSize - Self.hostRise).padding(.horizontal, 12).padding(.bottom, 4)
+        // BJ6: the strip starts 4 under the host's overlapping lower part.
+        .padding(.top, Self.hostSize - Self.hostRise - CardTrimGeometry.band + Self.hostToHeadline)
+        .padding(.horizontal, 12).padding(.bottom, 6)
         // §18.4: frosted over a background blur (solid under Reduce Transparency) —
         // FINISH_SPEC §A1: a lavender frost instead of plain white.
         // §AQ2: a flat frost — the live material blur re-sampled the page under it on
         // every frame of a Home scroll for a barely visible difference at 74% lavender.
+        // BJ6 flair: a very soft diagonal sheen instead of the flat frost, and a few tiny
+        // confetti dots in the empty top corners (mirrored). Static, drawn once.
         .background {
-            Color(hex: 0xF5EEFF).opacity(reduceTransparency ? 0.94 : 0.88)
+            ZStack {
+                LinearGradient(colors: [Color(hex: 0xF7F0FF), Color(hex: 0xFDF2FA), Color(hex: 0xF3ECFF)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .opacity(reduceTransparency ? 0.97 : 0.92)
+                BannerCornerConfetti()
+            }
         }
     }
 
     /// BI21: the headline's room on EACH side (kept for callers; BJ6 plan A moved the host
     /// into the strip's left column).
     static let headlineSideClear: CGFloat = Mascots.bannerClearance
-    /// BJ6 (symmetric hero): the host's box, centered on the card's top edge; it rises
-    /// `hostRise` above the card (into the gap under the header) and overlaps the rest.
-    static let hostSize: CGFloat = 72
+    /// BJ6 (symmetric hero, founder 10-03 "way more prominent"): the host's box, centered on the
+    /// card's top edge; it rises `hostRise` above the card (into the gap under the header) and
+    /// overlaps the rest; the headline starts `hostToHeadline` under its feet.
+    static let hostSize: CGFloat = 88
     static let hostRise: CGFloat = 28
+    static let hostToHeadline: CGFloat = 4
+    /// BJ6: the progress rows' side inset (was 12) — the shared tiles grow to fit.
+    static let rowsInset: CGFloat = 6
+    /// BJ6 flair: the brand candy cap (purple → pink).
+    static let brandCap: [Color] = [Color(hex: 0x7C3AED), Color(hex: 0xA855F7), Color(hex: 0xEC4899)]
     /// The Home scroll content's own space above the banner (HomeView: top 4 + spacing 8).
     static let scrollTopGap: CGFloat = 12
     /// BI21 / BH3: the centered switch spans ~64% of a phone-wide card, equal halves.
     static let switchMaxWidth: CGFloat = 230
+    /// BJ6: the headline's lettering size.
+    static let headlineSize: CGFloat = 38
+
 
     /// One mode's headline: BH3 (founder 10-03) ONE line, auto-fit (shrinks, never wraps), centered.
     private func headlineSlot(_ headline: String, trophy: Bool) -> some View {
@@ -264,21 +303,57 @@ struct HomeBannerView: View {
     }
 
     /// The headline (+ the double-flawless trophy; FINISH_SPEC §Y: Unlimited has no
-    /// infinity glyph any more): one line centered, or up to two lines left-aligned.
+    /// infinity glyph any more). FINISH_SPEC BJ6 (founder 10-03: "a clever way to populate
+    /// longer usernames without shrinking anything down or scrolling off screen"): the core
+    /// HeadlineLayout decides — one line at the device's full size when it fits, else the
+    /// greeting on line 1 and the player's NAME + "!" as the gold hero line(s) at the SAME size
+    /// (a long name breaks at natural boundaries). Never shrunk, truncated or clipped.
     private func headlineRow(_ headline: String, oneLine: Bool, trophy: Bool) -> some View {
-        HStack(spacing: 6) {
+        let fit = Self.headlineFit(headline, name: name, width: headWidth - (trophy ? 26 : 0))
+        return HStack(spacing: 6) {
             if trophy {
                 Icon3D(.trophy, size: 20)
             }
             // FINISH_SPEC §AR: the live lettering (purple → magenta, gold numbers, the
             // player's name in the accent, "·" as the star); the double-flawless gold
-            // day takes the celebration palette.
-            LiveHeadline(text: headline, palette: trophy ? .celebration : .home, size: 20,
-                         names: [name], alignment: .center,
-                         maxLines: 1, minimumScale: 0.55)
-                .fixedSize(horizontal: false, vertical: true)
+            // day takes the celebration palette; a stacked name line is gold.
+            VStack(spacing: -fit.size * 0.42) {
+                ForEach(Array(fit.layout.lines.enumerated()), id: \.offset) { i, line in
+                    let hero = fit.layout.nameLines.contains(i)
+                    LiveHeadline(text: line, palette: hero ? .leaderboard : (trophy ? .celebration : .home),
+                                 size: fit.size, names: hero ? [] : [name], alignment: .center,
+                                 maxLines: 1, minimumScale: fit.layout.lines.count > 1 ? 1 : 0.75)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            // The lettering's line box carries ~0.3 em above the caps and ~0.35 em under the
+            // baseline: trimmed, so the host / switch sit right against the words.
+            .padding(.top, -fit.size * 0.24).padding(.bottom, -fit.size * 0.28)
         }
-        .frame(maxWidth: .infinity, minHeight: 28, alignment: .center)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    /// BJ6: the lettering size + line layout for a headline at the slot's width — computed when
+    /// the inputs change (cached), never per frame. Brand fonts follow Dynamic Type, so the size
+    /// handed to LiveHeadline is the measured size divided by that scale.
+    private static var fitCache: [String: (size: CGFloat, layout: HeadlineLayout.Layout)] = [:]
+    static func headlineFit(_ text: String, name: String, width: CGFloat) -> (size: CGFloat, layout: HeadlineLayout.Layout) {
+        let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
+        let key = "\(text)|\(name)|\(Int(width))|\(dyn)"
+        if let hit = fitCache[key] { return hit }
+        let w = max(1, Double(width))
+        let rendered = HeadlineLayout.fontSize(availableWidth: w)
+        let layout = HeadlineLayout.layout(text, name: name, maxEm: w / rendered)
+        let out = (size: CGFloat(rendered) / dyn, layout: layout)
+        if fitCache.count > 64 { fitCache.removeAll() }
+        fitCache[key] = out
+        return out
+    }
+
+    /// BJ6: the flanking sparkles sit on line 1's cap height.
+    static func sparkleTop(_ width: CGFloat) -> CGFloat {
+        let size = HeadlineLayout.fontSize(availableWidth: max(1, Double(width)))
+        return max(0, CGFloat(size) * 0.42 - 5.5 - CGFloat(size) * 0.24)
     }
 
     private static func countdown() -> String {
@@ -358,10 +433,10 @@ struct HomeBannerView: View {
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 4)
             }
-            BannerSpreadRow(slots: tileSlots) {
+            BannerSpreadRow(slots: tileSlots, maxTile: 40, minGap: 4) {
                 ForEach(r.modes) { m in
                     BannerTile(mode: m, result: unlimited ? nil : m.dbKey.flatMap { byMode[$0] },
-                               unlimited: unlimited, radius: 8, iconSize: 15) { onOpen(m) }
+                               unlimited: unlimited, radius: 8, iconSize: 0) { onOpen(m) }
                 }
             }
             .frame(maxWidth: .infinity)
@@ -410,8 +485,13 @@ private struct BannerTile: View {
                 } else {
                     shape.fill(accent.wash(0.12))
                 }
-                BannerGlyph(icon: mode.icon, ink: solid ? .white : accent, accent: accent, solid: solid, size: iconSize)
-                    .opacity(!unlimited && result == nil ? 0.45 : 1)
+                // BJ6: the icon scales with its tile (iconSize 0 = 56% of the tile's side).
+                GeometryReader { g in
+                    BannerGlyph(icon: mode.icon, ink: solid ? .white : accent, accent: accent, solid: solid,
+                                size: iconSize > 0 ? iconSize : floor(min(g.size.width, g.size.height) * 0.56))
+                        .frame(width: g.size.width, height: g.size.height)
+                }
+                .opacity(!unlimited && result == nil ? 0.45 : 1)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay(alignment: .bottomTrailing) {
@@ -549,5 +629,78 @@ struct BannerSweep: View {
                 try? await Task.sleep(nanoseconds: 3_940_000_000)
             }
         }
+    }
+}
+
+// MARK: - BJ6 flair (static, cheap)
+
+/// The banner's candy frosting cap: the game cards' trim shape (band + shallow drips) in a
+/// horizontal gradient with a baked-in top sheen. One shape, two fills, no blur / animation.
+private struct BannerCap: View {
+    let colors: [Color]
+    var body: some View {
+        ZStack {
+            CardTrimShape().fill(LinearGradient(colors: colors.count > 1 ? colors : colors + colors,
+                                                startPoint: .leading, endPoint: .trailing))
+            CardTrimShape().fill(LinearGradient(stops: [.init(color: .white.opacity(0.42), location: 0),
+                                                        .init(color: .white.opacity(0), location: 0.6)],
+                                                startPoint: .top, endPoint: .bottom))
+        }
+        .frame(height: CardTrimGeometry.band + CardTrimGeometry.drip)
+        .padding(.bottom, -CardTrimGeometry.drip)   // the drips hang over the strip
+        .zIndex(1)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// A small four-point gold sparkle (code-drawn, never an emoji).
+struct GoldSparkle: View {
+    var size: CGFloat = 10
+    var body: some View {
+        SparkleShape()
+            .fill(LinearGradient(colors: [Color(hex: 0xFFE08A), Color(hex: 0xF5A524)], startPoint: .top, endPoint: .bottom))
+            .frame(width: size, height: size)
+            .shadow(color: Color(hex: 0xF59E0B).opacity(0.35), radius: 1.5, x: 0, y: 1)
+            .accessibilityHidden(true)
+    }
+}
+
+struct SparkleShape: Shape {
+    func path(in r: CGRect) -> Path {
+        let c = CGPoint(x: r.midX, y: r.midY), k = min(r.width, r.height) * 0.16
+        var p = Path()
+        p.move(to: CGPoint(x: c.x, y: r.minY))
+        p.addQuadCurve(to: CGPoint(x: r.maxX, y: c.y), control: CGPoint(x: c.x + k, y: c.y - k))
+        p.addQuadCurve(to: CGPoint(x: c.x, y: r.maxY), control: CGPoint(x: c.x + k, y: c.y + k))
+        p.addQuadCurve(to: CGPoint(x: r.minX, y: c.y), control: CGPoint(x: c.x - k, y: c.y + k))
+        p.addQuadCurve(to: CGPoint(x: c.x, y: r.minY), control: CGPoint(x: c.x - k, y: c.y - k))
+        p.closeSubpath()
+        return p
+    }
+}
+
+/// A few tiny confetti dots + two faint sparkles in the strip's empty top corners, mirrored
+/// left / right. One static Canvas.
+private struct BannerCornerConfetti: View {
+    private static let dots: [(x: CGFloat, y: CGFloat, r: CGFloat, hex: UInt)] = [
+        (0.05, 0.18, 2.0, 0xEC4899), (0.12, 0.34, 1.5, 0x22C55E), (0.20, 0.14, 1.8, 0x2563EB), (0.09, 0.52, 1.4, 0xF5A524),
+    ]
+    var body: some View {
+        Canvas { ctx, size in
+            for d in Self.dots {
+                for x in [d.x, 1 - d.x] {
+                    ctx.fill(Path(ellipseIn: CGRect(x: x * size.width - d.r, y: d.y * size.height - d.r, width: d.r * 2, height: d.r * 2)),
+                             with: .color(Color(hex: d.hex).opacity(0.32)))
+                }
+            }
+            for x in [0.15, 0.85] as [CGFloat] {
+                let s: CGFloat = 7
+                ctx.fill(SparkleShape().path(in: CGRect(x: x * size.width - s / 2, y: size.height * 0.26 - s / 2, width: s, height: s)),
+                         with: .color(Color(hex: 0xA855F7).opacity(0.28)))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

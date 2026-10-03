@@ -109,6 +109,8 @@ public enum HomeBanner {
         if b != .none { return news("PUZZLES", b) }
         if played == 0 {
             let n = name.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            // BJ6 (founder 10-03): personal for signed-in players; 0–4 h is "UP LATE?".
+            if hour >= 0 && hour < 5 { return n.isEmpty ? "UP LATE?" : "UP LATE, \(n)?" }
             return n.isEmpty ? "GOOD \(greetingWord(hour))!" : "GOOD \(greetingWord(hour)), \(n)!"
         }
         if played <= 5 { return "WARMING UP · \(played) DOWN" }

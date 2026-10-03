@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -167,7 +168,11 @@ fun HomeBannerView(
         // of this box's top padding + [HOME_HOST_OVERHANG] over the header's bottom edge, inside
         // Home's extended scroll viewport), its lower part overlaps the frosted strip.
         // The share control lives in the app header (HomeShareControl), not on the card.
-        Box(Modifier.fillMaxWidth().padding(top = HOME_BANNER_TOP)) {
+        // BJ6 round 3: the host renders in every state; a W host that steps aside for the
+        // celebration art takes its headroom with it (never an empty slot).
+        val hostPick = rememberHomeHostPick()
+        val hostShows = homeHostShows(hostPick, slots.hostShown)
+        Box(Modifier.fillMaxWidth().padding(top = if (hostShows) HOME_BANNER_TOP else 0.dp)) {
         Column(
             Modifier.fillMaxWidth()
                 .bannerGlow(double)
@@ -193,9 +198,11 @@ fun HomeBannerView(
             // BJ6: the card mirrors on its center line — the strip clears the host's lower part
             // (no clearance when the scene band sits on top: the host then stands on the band).
             Column(
-                // FINISH_SPEC A1: the frosted strip is a lilac frost, not white.
-                Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f))
-                    .padding(start = 12.dp, top = homeStripTop(bandTier != BannerTier.NONE).dp, end = 12.dp, bottom = 4.dp),
+                // FINISH_SPEC A1: the frosted strip is a lilac frost, not white. BJ6 round 3 flair
+                // (static, symmetric): a soft diagonal sheen in the frost, the brand candy cap across
+                // the card's top edge, tiny confetti dots mirrored in the empty top corners.
+                Modifier.fillMaxWidth().homeStripFlair(cap = bandTier == BannerTier.NONE)
+                    .padding(start = 12.dp, top = homeStripTop(bandTier != BannerTier.NONE, hostShows).dp, end = 12.dp, bottom = 4.dp),
                 // BH3: one headline line, then the slim switch, the meta line under it (BJ6: 6 / 3).
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -204,11 +211,19 @@ fun HomeBannerView(
                 // even"): the headline centered on the card's center line (the W host's
                 // clearance reserved on BOTH sides), then a centered wide DAILY | UNLIMITED
                 // switch, then the centered meta line.
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                // BJ6 round 4 (founder: long usernames never shrink, scroll or clip): the slot's
+                // width is read once per layout (BoxWithConstraints, not per frame); the full size
+                // comes from core headlineFontSize, the lines from core headlineLayout — both
+                // remembered by (headline, name, width). Gold sparkles flank line 1, mirrored.
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val lineW = maxWidth - HOME_HEADLINE_SIDES
+                    val fit = remember(lineW) { homeHeadlineFit(lineW.value) }
+                    val dailyLayout = remember(dailyHeadline, name, fit) { com.wordocious.core.headlineLayout(dailyHeadline, name, fit.maxEm) }
+                    val unlimitedLayout = remember(unlimitedHeadline, name, fit) { com.wordocious.core.headlineLayout(unlimitedHeadline, name, fit.maxEm) }
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
                     Box(Modifier.fillMaxWidth()) {
-                        BannerHeadlineLayer(dailyHeadline, dailyDouble, headInk = Color(0xFF78350F), alpha = 1f - modeFade, active = !unlimited, name = name)
-                        BannerHeadlineLayer(unlimitedHeadline, false, headInk = headInk, alpha = modeFade, active = unlimited, name = name)
+                        BannerHeadlineLayer(dailyHeadline, dailyLayout, fit.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
+                        BannerHeadlineLayer(unlimitedHeadline, unlimitedLayout, fit.size, false, alpha = modeFade, active = unlimited, name = name)
                     }
                 }
                 // R3 (founder 10-02): everyone sees the switch; BI21: the PRO chip sits inside
@@ -239,17 +254,20 @@ fun HomeBannerView(
                 }
             }
             // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
+            // BJ6 round 3: the two progress rows sit in one subtle lavender tint band (two zones).
             val tileSlots = maxOf(10, word.cards.size, puzzles.cards.size)
+            Column(Modifier.fillMaxWidth().background(HOME_ROWS_TINT)) {
             BannerGroupRow(word, wTier, "WORDOCIOUS", tileSlots, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+                Modifier.padding(start = HOME_ROW_PAD_X.dp, end = HOME_ROW_PAD_X.dp, top = 4.dp, bottom = 4.dp),
                 flameSlot = slots.wordFlameSlot, dailyTier = dailyWTier)
             BannerGroupRow(puzzles, pTier, "PUZZLES", tileSlots, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 6.dp),
+                Modifier.padding(start = HOME_ROW_PAD_X.dp, end = HOME_ROW_PAD_X.dp, top = 4.dp, bottom = 6.dp),
                 flameSlot = slots.puzzlesFlameSlot, dailyTier = dailyPTier)
+            }
         }
         // BJ6: the host, centered on the card's top edge (drawn over the card). On a swept day the
         // celebration art carries the cast: a W host then hides (alpha 0, keeps its place).
-        HomeHost(HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE), wVisible = slots.hostShown)
+        if (hostShows) HomeHost(hostPick, HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE))
         }
     }
     // BJ6: the share control moved to the app header (Home only): publish its state + action.
@@ -397,9 +415,8 @@ private fun BannerGroupRow(
         // with 5 dp gaps — and the row spreads edge to edge (first flush left, last flush
         // right, equal gaps), so the 8- and 10-tile rows end flush.
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val n = tileSlots.coerceAtLeast(1)
-            val fit = (maxWidth - 5.dp * (n - 1)) / n
-            val size = if (fit < 36.dp) fit else 36.dp // BH3: up to 36
+            // BJ6 round 3: as large as fits — both rows the same size, ≥ 4 dp gaps, up to 36.
+            val size = homeTileSize(maxWidth.value, tileSlots).dp
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 row.cards.forEach { card ->
                     BannerTile(
@@ -627,31 +644,65 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
 
 
 /**
- * Z one mode's headline in the shared headline slot: the old WORDOCIOUS wordmark style
- * (Nunito Black, violet→pink, soft pink glow; the double-flawless gold day keeps its
- * tier ink and the trophy). Two lines, then it steps down (to 70%) rather than
- * truncating. Both modes' layers are always laid out; [alpha] crossfades them and the
- * hidden one ([active] = false) is silent to screen readers.
+ * Z one mode's headline in the shared headline slot: the brand lettering (Nunito Black,
+ * violet→pink; the double-flawless gold day keeps the celebration palette + trophy). BJ6
+ * round 4: [layout]'s lines each at exactly [size] dp, centered — never shrunk, clipped or
+ * scrolled; the name lines ([HeadlineLayout.nameLines], when stacked) in the gold lettering.
+ * A headline without the name stays one line and may shrink to fit (core parity). Both modes'
+ * layers are laid out; [alpha] crossfades them and the hidden one is silent to screen readers.
  */
 @Composable
-private fun BannerHeadlineLayer(headline: String, double: Boolean, @Suppress("UNUSED_PARAMETER") headInk: Color, alpha: Float, active: Boolean, name: String? = null) {
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 28.dp) // BJ6: 28 (was 32)
+private fun BannerHeadlineLayer(
+    headline: String, layout: com.wordocious.core.HeadlineLayout, size: Int, double: Boolean,
+    alpha: Float, active: Boolean, name: String? = null,
+) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    // Exactly [size] dp whatever the (capped) font scale: the fit was decided in dp.
+    val sizeSp = with(density) { size.dp.toSp() }
+    val stacked = layout.lines.size > 1
+    val nameList = listOfNotNull(name?.takeIf { it.isNotBlank() })
+    val fixedSize = homeHeadlineFixedSize(headline, name, stacked)
+    Column(
+        Modifier.fillMaxWidth()
             .graphicsLayer { this.alpha = alpha }
-            .then(if (active) Modifier else Modifier.clearAndSetSemantics { }),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .then(
+                if (active) Modifier.clearAndSetSemantics { contentDescription = headline; heading() }
+                else Modifier.clearAndSetSemantics { },
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (double) Icon3D(Icon3DName.TROPHY, 22.dp)
-        // AR: the live lettering (purple → magenta, gold numbers, the star separator); the
-        // double-flawless gold day takes the celebration palette.
-        LiveHeadline(
-            headline,
-            if (double) HeadlinePalette.CELEBRATION else HeadlinePalette.HOME,
-            Modifier.weight(1f),
-            names = listOfNotNull(name?.takeIf { it.isNotBlank() }),
-            // BH3: ONE line, auto-fit (never wraps).
-            maxSize = 20.sp, minSize = 11.sp, maxLines = 1, sound = active,
-        )
+        layout.lines.forEachIndexed { i, line ->
+            val gold = stacked && i in layout.nameLines
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 28.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Line 1 carries the mirrored sparkles; the other lines keep the same side room.
+                if (i == 0) GoldSparkle(HOME_SPARKLE) else Spacer(Modifier.width(HOME_SPARKLE))
+                Row(
+                    Modifier.weight(1f).padding(horizontal = HOME_SPARKLE_GAP),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                ) {
+                    if (double && i == 0) Icon3D(Icon3DName.TROPHY, 22.dp)
+                    // AR: the live lettering (purple → magenta, gold numbers, the star separator).
+                    LiveHeadline(
+                        line,
+                        when {
+                            gold -> HeadlinePalette.LEADERBOARD
+                            double -> HeadlinePalette.CELEBRATION
+                            else -> HeadlinePalette.HOME
+                        },
+                        Modifier.weight(1f),
+                        // A gold name line is the name itself (no second accent inside it).
+                        names = if (gold) emptyList() else nameList,
+                        // Name headlines never shrink; a nameless one-liner may (core parity).
+                        maxSize = sizeSp, minSize = if (fixedSize) sizeSp else 11.sp,
+                        maxLines = 1, sound = active && i == 0,
+                    )
+                }
+                if (i == 0) GoldSparkle(HOME_SPARKLE) else Spacer(Modifier.width(HOME_SPARKLE))
+            }
+        }
     }
 }

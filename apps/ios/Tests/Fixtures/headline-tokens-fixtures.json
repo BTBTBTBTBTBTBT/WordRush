@@ -259,5 +259,934 @@
       "names": [],
       "tokens": []
     }
+  ],
+  "sizingLine": "GOOD AFTERNOON,",
+  "widths": [
+    {
+      "text": "GOOD AFTERNOON,",
+      "em": 10.531
+    },
+    {
+      "text": "GOOD MORNING, BMT!",
+      "em": 11.885
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "em": 7.952
+    },
+    {
+      "text": "WWWWWWWWWWWWWWWWWWWW",
+      "em": 23
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "em": 13.322
+    },
+    {
+      "text": "é",
+      "em": 1.378
+    }
+  ],
+  "sizes": [
+    {
+      "width": 0,
+      "size": 38
+    },
+    {
+      "width": 200,
+      "size": 18
+    },
+    {
+      "width": 285,
+      "size": 27
+    },
+    {
+      "width": 312,
+      "size": 29
+    },
+    {
+      "width": 346,
+      "size": 32
+    },
+    {
+      "width": 500,
+      "size": 38
+    }
+  ],
+  "layouts": [
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "BMT!"
+        ],
+        "nameLines": [
+          2
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, DOUG!",
+      "name": "doug",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "DOUG!"
+        ],
+        "nameLines": [
+          2
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, DOUG?",
+      "name": "doug",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE, DOUG?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, UKRAINIAN CYCLONE!",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "UKRAINIAN",
+          "CYCLONE!"
+        ],
+        "nameLines": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, UKRAINIAN CYCLONE?",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "UKRAINIAN",
+          "CYCLONE?"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "MAXIMILLIAN_",
+          "THE_GREAT!"
+        ],
+        "nameLines": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, MAXIMILLIAN_THE_GREAT?",
+      "name": "Maximillian_The_Great",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "MAXIMILLIAN_",
+          "THE_GREAT?"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, OLIVER_22!",
+      "name": "oliver_22",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "OLIVER_22!"
+        ],
+        "nameLines": [
+          2
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, OLIVER_22?",
+      "name": "oliver_22",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "OLIVER_22?"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, JOHNNYAUER!",
+      "name": "JohnnyAuer",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "JOHNNYAUER!"
+        ],
+        "nameLines": [
+          2
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, JOHNNYAUER?",
+      "name": "JohnnyAuer",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "JOHNNYAUER?"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, X.Y.Z-1234567890!",
+      "name": "x.y.z-1234567890",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "X.Y.Z-",
+          "1234567890!"
+        ],
+        "nameLines": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, X.Y.Z-1234567890?",
+      "name": "x.y.z-1234567890",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "X.Y.Z-",
+          "1234567890?"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, WWWWWWWWWWWWWWWWWWWW!",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "WWWWWWWW",
+          "WWWWWWWW",
+          "WWWW!"
+        ],
+        "nameLines": [
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, WWWWWWWWWWWWWWWWWWWW?",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "WWWWWWWW",
+          "WWWWWWWW",
+          "WWWW?"
+        ],
+        "nameLines": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "BMT!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, DOUG!",
+      "name": "doug",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "DOUG!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, DOUG?",
+      "name": "doug",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE, DOUG?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, UKRAINIAN CYCLONE!",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "UKRAINIAN CYCLONE!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, UKRAINIAN CYCLONE?",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "UKRAINIAN CYCLONE?"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "MAXIMILLIAN_THE_",
+          "GREAT!"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, MAXIMILLIAN_THE_GREAT?",
+      "name": "Maximillian_The_Great",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "MAXIMILLIAN_THE_",
+          "GREAT?"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, OLIVER_22!",
+      "name": "oliver_22",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "OLIVER_22!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, OLIVER_22?",
+      "name": "oliver_22",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE, OLIVER_22?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, JOHNNYAUER!",
+      "name": "JohnnyAuer",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "JOHNNYAUER!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, JOHNNYAUER?",
+      "name": "JohnnyAuer",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "JOHNNYAUER?"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, X.Y.Z-1234567890!",
+      "name": "x.y.z-1234567890",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "X.Y.Z-1234567890!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, X.Y.Z-1234567890?",
+      "name": "x.y.z-1234567890",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "X.Y.Z-1234567890?"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, WWWWWWWWWWWWWWWWWWWW!",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "WWWWWWWWWW",
+          "WWWWWWWWWW!"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, WWWWWWWWWWWWWWWWWWWW?",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 12,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "WWWWWWWWWW",
+          "WWWWWWWWWW",
+          "?"
+        ],
+        "nameLines": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, BMT!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, DOUG!",
+      "name": "doug",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, DOUG!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, DOUG?",
+      "name": "doug",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE, DOUG?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, UKRAINIAN CYCLONE!",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "UKRAINIAN CYCLONE!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, UKRAINIAN CYCLONE?",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE, UKRAINIAN CYCLONE?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "MAXIMILLIAN_THE_GREAT!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, MAXIMILLIAN_THE_GREAT?",
+      "name": "Maximillian_The_Great",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "MAXIMILLIAN_THE_GREAT?"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, OLIVER_22!",
+      "name": "oliver_22",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, OLIVER_22!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, OLIVER_22?",
+      "name": "oliver_22",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE, OLIVER_22?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, JOHNNYAUER!",
+      "name": "JohnnyAuer",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "JOHNNYAUER!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, JOHNNYAUER?",
+      "name": "JohnnyAuer",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE, JOHNNYAUER?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, X.Y.Z-1234567890!",
+      "name": "x.y.z-1234567890",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "X.Y.Z-1234567890!"
+        ],
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, X.Y.Z-1234567890?",
+      "name": "x.y.z-1234567890",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE, X.Y.Z-1234567890?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, WWWWWWWWWWWWWWWWWWWW!",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "WWWWWWWWWWWWWWW",
+          "WWWWW!"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "UP LATE, WWWWWWWWWWWWWWWWWWWW?",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 18,
+      "layout": {
+        "lines": [
+          "UP LATE,",
+          "WWWWWWWWWWWWWWW",
+          "WWWWW?"
+        ],
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, BMT!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, DOUG!",
+      "name": "doug",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, DOUG!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, DOUG?",
+      "name": "doug",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, DOUG?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, UKRAINIAN CYCLONE!",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, UKRAINIAN CYCLONE!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, UKRAINIAN CYCLONE?",
+      "name": "Ukrainian Cyclone",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, UKRAINIAN CYCLONE?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, MAXIMILLIAN_THE_GREAT?",
+      "name": "Maximillian_The_Great",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, MAXIMILLIAN_THE_GREAT?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, OLIVER_22!",
+      "name": "oliver_22",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, OLIVER_22!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, OLIVER_22?",
+      "name": "oliver_22",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, OLIVER_22?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, JOHNNYAUER!",
+      "name": "JohnnyAuer",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, JOHNNYAUER!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, JOHNNYAUER?",
+      "name": "JohnnyAuer",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, JOHNNYAUER?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, X.Y.Z-1234567890!",
+      "name": "x.y.z-1234567890",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, X.Y.Z-1234567890!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, X.Y.Z-1234567890?",
+      "name": "x.y.z-1234567890",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, X.Y.Z-1234567890?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, WWWWWWWWWWWWWWWWWWWW!",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "GOOD AFTERNOON, WWWWWWWWWWWWWWWWWWWW!"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, WWWWWWWWWWWWWWWWWWWW?",
+      "name": "WWWWWWWWWWWWWWWWWWWW",
+      "maxEm": 40,
+      "layout": {
+        "lines": [
+          "UP LATE, WWWWWWWWWWWWWWWWWWWW?"
+        ],
+        "nameLines": []
+      }
+    },
+    {
+      "text": "OLIVER_22 LEADS TODAY'S RACE",
+      "name": "oliver_22",
+      "maxEm": 9.5,
+      "layout": {
+        "lines": [
+          "OLIVER_22",
+          "LEADS TODAY'S",
+          "RACE"
+        ],
+        "nameLines": [
+          0
+        ]
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "name": "BMT",
+      "maxEm": 6,
+      "layout": {
+        "lines": [
+          "WARMING UP · 3 DOWN"
+        ],
+        "nameLines": []
+      }
+    }
   ]
 }
