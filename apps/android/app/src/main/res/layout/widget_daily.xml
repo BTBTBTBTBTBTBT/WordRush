@@ -107,6 +107,16 @@
                     android:translationY="-18dp"
                     android:importantForAccessibility="no"
                     android:contentDescription="@null" />
+                <!-- BI13c: the player's own cutout peeks higher (to the cheeks: it carries hat headroom). -->
+                <ImageView
+                    android:id="@+id/w_peek_own"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitCenter"
+                    android:translationY="-24dp"
+                    android:visibility="gone"
+                    android:importantForAccessibility="no"
+                    android:contentDescription="@null" />
                 <ImageView
                     android:id="@+id/w_t3"
                     android:layout_width="match_parent"

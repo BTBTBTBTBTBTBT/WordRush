@@ -366,8 +366,9 @@ class DailyWidgetProvider : AppWidgetProvider() {
             return peekBitmap(context, art, res)
         }
 
-        /** [peekBitmap] from already-decoded [art] (BI13c: the player's own cutout), cached by [key]. */
-        private fun peekBitmap(context: Context, art: Bitmap, key: Any): Bitmap {
+        /** [peekBitmap] from already-decoded [art] (BI13c: the player's own cutout), cached by [key];
+         *  [show] = the share of the chip square left visible above its top edge. */
+        private fun peekBitmap(context: Context, art: Bitmap, key: Any, show: Float = 0.42f): Bitmap {
             peekCache[key]?.let { return it }
             val px = chipPx(context)
             val s = px.toFloat()
@@ -375,7 +376,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val c = Canvas(bmp)
             val w = s * 0.8f
             val h = w * art.height / art.width
-            c.clipRect(0f, 0f, s, s * 0.42f)
+            c.clipRect(0f, 0f, s, s * show)
             c.drawBitmap(art, null, RectF((s - w) / 2f, 0f, (s + w) / 2f, h), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
             if (peekCache.size > 4) peekCache.clear()
             peekCache[key] = bmp
@@ -392,7 +393,15 @@ class DailyWidgetProvider : AppWidgetProvider() {
          */
         private fun applyPeek(context: Context, views: RemoteViews, snap: WidgetBridge.Snapshot, own: Pair<Bitmap, Boolean>? = null) {
             val mine = own?.takeIf { !it.second && ownPeek(snap) }?.first
-            val bmp = if (mine != null) peekBitmap(context, mine, "own:${mine.generationId}") else peekBitmap(context, peekRes(snap))
+            if (mine != null) {
+                // Medium only (the large never passes [own]): the raised own-peek view, cut lower.
+                views.setImageViewBitmap(R.id.w_peek_own, peekBitmap(context, mine, "own:${mine.generationId}", show = 0.56f))
+                views.setViewVisibility(R.id.w_peek_own, View.VISIBLE)
+                views.setViewVisibility(R.id.w_peek, View.GONE)
+                return
+            }
+            if (own != null) views.setViewVisibility(R.id.w_peek_own, View.GONE)
+            val bmp = peekBitmap(context, peekRes(snap))
             if (bmp != null) views.setImageViewBitmap(R.id.w_peek, bmp)
             views.setViewVisibility(R.id.w_peek, if (bmp != null) View.VISIBLE else View.GONE)
         }

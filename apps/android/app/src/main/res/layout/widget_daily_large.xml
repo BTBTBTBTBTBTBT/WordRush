@@ -22,11 +22,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:clipChildren="false">
+            <!-- BI13c: ~1.5× (60dp), standing just over the header baseline like the Home host; the
+                 negative margins keep the row 40dp tall (the figure rises into the top padding). -->
             <ImageView
                 android:id="@+id/w_mascot"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="-14dp"
+                android:layout_marginBottom="-6dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/mascot_w"
                 android:importantForAccessibility="no"

@@ -381,7 +381,9 @@ private struct ChipGrid: View {
             if let peek, peek.index < min(cols, modes.count) {
                 // Head and shoulders only, cut exactly at the chip's top edge, so it reads as
                 // standing behind the chip; it lives in the empty band above the grid.
-                let fig = side * 0.8, show = fig * 0.52
+                // BI13c: the player's own cutout carries more headroom (hat) — show it to the cheeks.
+                let own: Bool = { if case .own = peek.art { return true } else { return false } }()
+                let fig = side * 0.8, show = fig * (own ? 0.66 : 0.52)
                 CastPeek(art: peek.art)
                     .frame(width: fig, height: fig)
                     .frame(width: fig, height: show, alignment: .top)
@@ -727,7 +729,12 @@ struct LargeView: View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 // BI13c: the player's own look heads the large widget (W for guests / no look).
-                HeaderHost(date: date, own: OwnLook.load()).frame(width: 42, height: 42)
+                // ~1.5× the old 42 pt, standing just over the header baseline like the Home host:
+                // the figure overflows upward into the top margin, so the layout keeps its 42 pt row.
+                HeaderHost(date: date, own: OwnLook.load())
+                    .frame(width: 60, height: 60, alignment: .bottom)
+                    .offset(y: 5)
+                    .frame(width: 60, height: 42, alignment: .bottom)
                 VStack(alignment: .leading, spacing: 3) {
                     Caps(text: "WORDOCIOUS", color: WInk.accent(dark), tracking: 1.6)
                     Caps(text: "TODAY'S DAILIES", color: muted)
