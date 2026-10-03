@@ -528,7 +528,7 @@ object LeaderboardShare {
             else labels[type] ?: type
         fun fmt(type: String, v: Int, gm: String? = null): String = when (type) {
             "fastest_win" -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
-            "fewest_guesses" -> fewestMeta(gm)?.let { com.wordocious.app.ui.formatGuessStat(it.guessSemantics, it.guessBase, v) } ?: "$v guesses"
+            "fewest_guesses" -> fewestMeta(gm)?.let { com.wordocious.app.ui.formatGuessStat(it.guessSemantics, it.guessBase, v) } ?: com.wordocious.app.ui.formatGuessStat("guesses", 1, v)
             "most_games_played" -> "$v games"
             "longest_streak" -> "$v wins"
             "most_gold_medals" -> "$v golds"

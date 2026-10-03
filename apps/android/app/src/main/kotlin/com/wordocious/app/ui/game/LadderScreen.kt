@@ -245,7 +245,7 @@ class LadderSession(val seed: String, val isDaily: Boolean) {
             solutions = solutions, guesses = guesses, hintsUsed = state.hintsUsed,
         )
         xpResult = xp
-        if (isDaily) DailyCompletionsService.noteCompletion(GameMode.LADDER.name, won, gc, elapsed)
+        if (isDaily) DailyCompletionsService.notePuzzleFinish(seed, GameMode.LADDER.name, won, gc, elapsed)
     }
 
     private fun flash(m: String) { toast = m }

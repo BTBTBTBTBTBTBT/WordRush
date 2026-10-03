@@ -283,7 +283,7 @@ class RegionsSession(val seed: String, val isDaily: Boolean) {
             solutions = solutions, guesses = guesses, hintsUsed = state.hintsUsed,
         )
         xpResult = xp
-        if (isDaily) DailyCompletionsService.noteCompletion(GameMode.REGIONS.name, won, gc, elapsed)
+        if (isDaily) DailyCompletionsService.notePuzzleFinish(seed, GameMode.REGIONS.name, won, gc, elapsed)
     }
 }
 

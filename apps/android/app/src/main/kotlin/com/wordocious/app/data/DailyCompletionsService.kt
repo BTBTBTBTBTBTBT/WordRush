@@ -184,6 +184,21 @@ object DailyCompletionsService {
         com.wordocious.app.widget.WidgetBridge.update(current)
     }
 
+    /**
+     * BJ12: a More Games puzzle screen's own Home flip after `record()` (it also covers a
+     * guest, whom record() skips). Two fixes over calling [noteCompletion] directly:
+     * only TODAY's puzzle flips (a puzzle dealt yesterday and finished after midnight
+     * used to mark today's done — the Doug's-Deliverance gate record() already applies),
+     * and the composite score record() just wrote is kept (this used to overwrite it
+     * with 0, so Stats' "· N pts", the widget and Home's puzzle total read 0).
+     */
+    fun notePuzzleFinish(seed: String, gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Int) {
+        if (com.wordocious.core.getDailySeedDate(seed) != todayLocalDate()) return
+        val existing = readCache()[gameMode]
+        val score = if (existing != null && existing.completed == completed) existing.score else 0.0
+        noteCompletion(gameMode, completed, guessCount, timeSeconds, score)
+    }
+
     /** BI19: today's optimistic results for [userId] (persisted until the server confirms). */
     private fun localResults(userId: String): Map<String, Completion> = runCatching {
         val today = todayLocalDate()

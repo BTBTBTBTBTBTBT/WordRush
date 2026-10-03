@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.ModeGen
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FriendsService
-import com.wordocious.app.data.ModeStats
+import com.wordocious.app.data.ModeCoverage
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
@@ -75,54 +75,37 @@ private data class FeedLine(
     val icon3d: Icon3DName? = null,
 )
 
-// Mirrors web RECORD_LABELS label + format (RecordsScreen's copy is private).
-private val RECORD_LABEL: Map<String, Pair<String, (Int) -> String>> = mapOf(
-    "fastest_win" to ("Fastest Win" to { v -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s" }),
-    "fewest_guesses" to ("Fewest Guesses" to { v -> "$v guesses" }),
-    "most_games_played" to ("Most Games Played" to { v -> "$v games" }),
-    "longest_streak" to ("Longest Streak" to { v -> "$v wins" }),
-    "most_gold_medals" to ("Most Gold Medals" to { v -> "$v golds" }),
-    "highest_level" to ("Highest Level" to { v -> "Level $v" }),
-    "most_daily_completions" to ("Most Dailies Completed" to { v -> "$v dailies" }),
-)
-
-/** The record's title and value read through the mode's guess semantics (More Games §11). */
-private fun recordLabelAndValue(kind: String, value: Int?, gameMode: String?): Pair<String, String> {
-    val base = RECORD_LABEL[kind]
-    val meta = gameMode?.let { ModeGen.byDbKey(it) }
-    if (kind == "fewest_guesses" && meta != null && meta.guessSemantics != "guesses") {
-        return ModeStats.fewestRecordLabel(meta.guessSemantics) to
-            (value?.let { formatGuessStat(meta.guessSemantics, meta.guessBase, it) } ?: "")
-    }
-    return (base?.first ?: kind) to (value?.let { v -> base?.second?.invoke(v) ?: v.toString() } ?: "")
-}
-
 /** The sentence exactly as web describe() writes it. */
 private fun describe(e: FriendsService.FeedEvent): FeedLine {
     val who = if (e.me) "You" else e.username
-    val game = e.gameTitle ?: e.gameMode ?: ""
     return when (e.type) {
         "flawless" -> FeedLine("$who won every daily — Flawless Victory", null, false, Color(0xFFB45309), Icon3DName.TROPHY)
         "sweep" -> FeedLine("$who swept the dailies", Icons.Filled.AutoAwesome, false, PURPLE)
-        "more_flawless" -> FeedLine("$who — Flawless More Games, all ten won", Icons.Filled.GridView, false, Color(0xFFB45309))
-        "more_sweep" -> FeedLine("$who — More Games Sweep, all ten played", Icons.Filled.GridView, false, Color(0xFF4F46E5))
+        // BJ12: the count comes from the catalog (the feed route counts the same set).
+        "more_flawless" -> FeedLine(ModeCoverage.moreSweepMomentText(who, true, ModeCoverage.moreSweepKeys.size), Icons.Filled.GridView, false, Color(0xFFB45309))
+        "more_sweep" -> FeedLine(ModeCoverage.moreSweepMomentText(who, false, ModeCoverage.moreSweepKeys.size), Icons.Filled.GridView, false, Color(0xFF4F46E5))
         // §294 (D3.4): a streak shield sent to a friend.
         "gift" -> FeedLine("$who sent ${e.otherName ?: "a friend"} a streak shield", null, false, Color(0xFF0D9488), Icon3DName.SHIELD)
         "record" -> {
-            val (label, value) = e.kind?.let { recordLabelAndValue(it, e.value, e.gameMode) } ?: ("record" to "")
-            val title = e.gameTitle?.let { "$it " } ?: ""
-            val tail = if (value.isNotEmpty()) " · $value" else ""
-            FeedLine("$who set the all-time $title$label$tail", Icons.Filled.Star, false, Color(0xFFD97706))
+            // BJ12: the shared headline — "Fewest Mistakes · 0 mistakes" for Sudocious, "1 guess" for Classic.
+            val meta = e.gameMode?.let { ModeGen.byDbKey(it) }
+            val value = if (e.kind != null && e.value != null) ModeCoverage.recordValueText(e.kind, e.value, meta?.guessSemantics, meta?.guessBase ?: 1) else null
+            FeedLine(
+                ModeCoverage.modeMomentHeadline("record", e.me, e.username, e.kind, e.gameMode, e.gameTitle, meta?.guessSemantics, value),
+                Icons.Filled.Star, false, Color(0xFFD97706),
+            )
         }
         else -> {
+            // BJ12: the shared medal headline (ModeCoverage) — every game, every platform.
             val k = e.kind ?: ""
+            val text = ModeCoverage.modeMomentHeadline(e.type, e.me, e.username, e.kind, e.gameMode, e.gameTitle, null, null)
             when {
-                k == "gold" -> FeedLine("$who took gold in $game", null, true, Color(0xFFD97706))
-                k == "silver" -> FeedLine("$who took silver in $game", Icons.Filled.MilitaryTech, false, Color(0xFF9CA3AF))
-                k == "bronze" -> FeedLine("$who took bronze in $game", Icons.Filled.MilitaryTech, false, Color(0xFFB45309))
-                k == "perfect" -> FeedLine("$who played a perfect $game", Icons.Filled.Star, false, PURPLE)
-                k.startsWith("streak_") -> FeedLine("$who hit a ${k.removePrefix("streak_")}-day streak", null, false, Color(0xFFF97316), Icon3DName.FLAME)
-                else -> FeedLine("$who earned a medal in $game", Icons.Filled.MilitaryTech, false, Color(0xFF9CA3AF))
+                k == "gold" -> FeedLine(text, null, true, Color(0xFFD97706))
+                k == "silver" -> FeedLine(text, Icons.Filled.MilitaryTech, false, Color(0xFF9CA3AF))
+                k == "bronze" -> FeedLine(text, Icons.Filled.MilitaryTech, false, Color(0xFFB45309))
+                k == "perfect" -> FeedLine(text, Icons.Filled.Star, false, PURPLE)
+                k.startsWith("streak_") -> FeedLine(text, null, false, Color(0xFFF97316), Icon3DName.FLAME)
+                else -> FeedLine(text, Icons.Filled.MilitaryTech, false, Color(0xFF9CA3AF))
             }
         }
     }

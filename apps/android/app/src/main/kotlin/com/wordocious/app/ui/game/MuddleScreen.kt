@@ -423,7 +423,7 @@ class MuddleSession(val seed: String, val isDaily: Boolean) {
             solutions = solutions, guesses = guesses, hintsUsed = state.hintsUsed,
         )
         xpResult = xp
-        if (isDaily) DailyCompletionsService.noteCompletion(GameMode.SCRAMBLE.name, won, scrambleGuessCount(state), elapsed)
+        if (isDaily) DailyCompletionsService.notePuzzleFinish(seed, GameMode.SCRAMBLE.name, won, scrambleGuessCount(state), elapsed)
     }
 
     private fun flash(m: String) { toast = m }

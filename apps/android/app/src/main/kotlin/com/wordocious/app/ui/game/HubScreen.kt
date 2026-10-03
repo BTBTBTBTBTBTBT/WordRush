@@ -303,7 +303,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
                 solutions = solutions, guesses = guesses, hintsUsed = s.hintsUsed,
             )
             xpResult = xp
-            if (isDaily) DailyCompletionsService.noteCompletion(GameMode.HUB.name, won, s.guessCount, secs)
+            if (isDaily) DailyCompletionsService.notePuzzleFinish(seed, GameMode.HUB.name, won, s.guessCount, secs)
         }
     }
     private fun improve() {

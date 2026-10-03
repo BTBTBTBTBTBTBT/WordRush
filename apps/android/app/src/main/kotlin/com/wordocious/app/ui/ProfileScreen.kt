@@ -699,7 +699,8 @@ fun ProfileScreen(
                 page("cpu-record") { CpuRecordCard(stats) }
                 page("vs-picker") {
                     VsBoardPicker(
-                        modes = DAILY_MODES.filter(::hasVs), selectedMode = vsMode, tab = vsTab,
+                        // BJ12: every game with live VS boards — ProperNoundle too (it was missing).
+                        modes = PICKER_MODES.filter(::hasVs), selectedMode = vsMode, tab = vsTab,
                         onMode = { vsMode = it }, onTab = { vsTab = it },
                     )
                 }

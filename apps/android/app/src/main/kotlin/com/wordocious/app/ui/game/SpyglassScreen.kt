@@ -255,7 +255,7 @@ class SpyglassSession(val seed: String, val isDaily: Boolean) {
             solutions = solutions, guesses = guesses, hintsUsed = state.hintsUsed,
         )
         xpResult = xp
-        if (isDaily) DailyCompletionsService.noteCompletion(GameMode.WORDSEARCH.name, won, gc, elapsed)
+        if (isDaily) DailyCompletionsService.notePuzzleFinish(seed, GameMode.WORDSEARCH.name, won, gc, elapsed)
     }
 }
 

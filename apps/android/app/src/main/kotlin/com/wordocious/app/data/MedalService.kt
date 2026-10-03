@@ -74,16 +74,10 @@ object MedalService {
         guessCount: Int, boardsSolved: Int, totalBoards: Int, completed: Boolean,
     ) {
         if (!completed) return
-        val perfect = when (gameMode) {
-            "DUEL", "PROPERNOUNDLE", "DUEL_6", "DUEL_7" -> guessCount == 1
-            "QUORDLE" -> boardsSolved == 4 && guessCount <= 4
-            "OCTORDLE" -> boardsSolved == 8 && guessCount <= 8
-            "SEQUENCE" -> boardsSolved == 4 && guessCount <= 4
-            "RESCUE" -> boardsSolved == 4 && guessCount <= 4
-            "GAUNTLET" -> boardsSolved == 21
-            else -> false
-        }
-        if (!perfect) return
+        // BJ12: the shared rule (ModeCoverage = packages/core mode-coverage). This was a
+        // hand-typed `when` of the nine word modes, so no More Games puzzle ever earned
+        // Perfect (or its Moment) from Android.
+        if (!ModeCoverage.isPerfectDailyResult(gameMode, guessCount, boardsSolved, totalBoards, completed)) return
         runCatching {
             val existing = client.postgrest["medals"]
                 .select(Columns.raw("id")) {

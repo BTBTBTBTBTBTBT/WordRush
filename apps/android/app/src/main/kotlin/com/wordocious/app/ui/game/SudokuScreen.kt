@@ -255,7 +255,7 @@ class SudokuSession(val seed: String, val isDaily: Boolean) {
             solutions = solutions, guesses = guesses, hintsUsed = state.hintsUsed,
         )
         xpResult = xp
-        if (isDaily) DailyCompletionsService.noteCompletion(GameMode.SUDOKU.name, won, gc, elapsed)
+        if (isDaily) DailyCompletionsService.notePuzzleFinish(seed, GameMode.SUDOKU.name, won, gc, elapsed)
     }
 
     private fun flash(m: String) {

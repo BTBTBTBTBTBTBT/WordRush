@@ -87,7 +87,8 @@ internal data class RecordCfg(
 
 internal val RECORD_CFG: Map<String, RecordCfg> = mapOf(
     "fastest_win" to RecordCfg("Fastest Win", Icons.Filled.Schedule, false) { v -> if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s" },
-    "fewest_guesses" to RecordCfg("Fewest Guesses", Icons.Filled.TrackChanges, false) { v -> "$v guesses" },
+    // BJ12: "1 guess", never "1 guesses" (web recordValue / iOS fewestValue).
+    "fewest_guesses" to RecordCfg("Fewest Guesses", Icons.Filled.TrackChanges, false) { v -> formatGuessStat("guesses", 1, v) },
     "most_games_played" to RecordCfg("Most Games Played", Icons.Filled.Bolt, false) { v -> "$v games" },
     "longest_streak" to RecordCfg("Longest Win Streak", null, false, Icon3DName.FLAME) { v -> "$v wins" },
     "most_gold_medals" to RecordCfg("Most Gold Medals", null, true) { v -> "$v golds" },
