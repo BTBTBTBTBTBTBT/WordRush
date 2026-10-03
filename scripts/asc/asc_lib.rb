@@ -1,3 +1,4 @@
+# encoding: utf-8
 # App Store Connect helper (rebuilt 2026-10-03 after the scratchpad was wiped).
 # Same API key as apps/ios/ship.sh; the .p8 is read from disk and never printed.
 #

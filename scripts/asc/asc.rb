@@ -44,7 +44,7 @@ when "submit"
   puts "attached build #{build_no}"
 
   if notes_file
-    notes = File.read(notes_file).strip
+    notes = File.read(notes_file, encoding: "UTF-8").strip
     loc = call("GET", "/v1/appStoreVersions/#{vid}/appStoreVersionLocalizations")["data"]
             .find { |l| l["attributes"]["locale"] == "en-US" } or abort("no en-US localization")
     call("PATCH", "/v1/appStoreVersionLocalizations/#{loc["id"]}",
