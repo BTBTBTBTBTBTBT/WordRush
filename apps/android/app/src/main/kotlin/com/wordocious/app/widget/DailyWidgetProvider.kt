@@ -39,7 +39,9 @@ import java.util.Calendar
  * - The dailies as glossy brand tiles (ART_SPEC §20, no rim) in each game's color with a white
  *   check when done; a pale wash of the color holding the game's 3D icon when not. Each chip
  *   deep-links into its daily (wordocious://daily/<MODE>).
- * - At most one mascot (the friendly W) in its own space. Two type sizes (Nunito Black hero +
+ * - BI13b: one small cast member peeking in (the small's mascot corner; up from behind the
+ *   top-right daily chip on the medium; behind the middle Puzzle chip on the large, beside the W
+ *   header) — mood by state, pose by day (WidgetCast.peekPose). Two type sizes (Nunito Black hero +
  *   tracked caps), brand purple accent, gold only for the streak and a sweep. No boxes,
  *   outlines or frames around anything.
  *
@@ -326,6 +328,60 @@ class DailyWidgetProvider : AppWidgetProvider() {
             }
         }
 
+        // ── BI13b: the one cast member peeking in (WidgetCast.peekPose) ─────────
+
+        /** Explicit pose table (no getIdentifier: resource shrinking must see every id). */
+        private val POSE_RES = mapOf(
+            "r-wake" to R.drawable.art_pose_r_wake, "r-cocoa" to R.drawable.art_pose_r_cocoa,
+            "o1-ready" to R.drawable.art_pose_o1_ready, "c-telescope" to R.drawable.art_pose_c_telescope,
+            "d-eureka" to R.drawable.art_pose_d_eureka, "i-reach" to R.drawable.art_pose_i_reach,
+            "o2-ready" to R.drawable.art_pose_o2_ready, "o3-ready" to R.drawable.art_pose_o3_ready,
+            "s-trophy" to R.drawable.art_pose_s_trophy, "s-victory" to R.drawable.art_pose_s_victory,
+            "d-cheer" to R.drawable.art_pose_d_cheer, "o1-cheer" to R.drawable.art_pose_o1_cheer,
+            "o2-cheer" to R.drawable.art_pose_o2_cheer, "i-cheer" to R.drawable.art_pose_i_cheer,
+        )
+
+        /** The drawable for today's peeker: its pose, or that character's costume in season. */
+        private fun peekRes(snap: WidgetBridge.Snapshot): Int {
+            val pose = WidgetCast.peekPose(snap.modes.count { it.played }, snap.modes.size, snap.streak,
+                java.time.LocalDate.now().toEpochDay())
+            val season = com.wordocious.app.ui.SeasonSkins.current()
+            if (season != null) {
+                val id = runCatching { MascotId.valueOf(pose.substringBefore('-').uppercase()) }.getOrNull()
+                if (id != null) return com.wordocious.app.ui.SeasonSkins.fullRes(id, season)
+            }
+            return POSE_RES[pose] ?: R.drawable.art_pose_r_wake
+        }
+
+        private val peekCache = HashMap<Int, Bitmap>()
+
+        /**
+         * The peek for a chip-sized square (w_peek sits under the chip, nudged up 18dp): the figure
+         * at 80% of the chip's width, top-aligned, cut at 42% of the square so only its head and
+         * shoulders clear the chip's top edge (iOS ChipGrid peek: 0.8 × side, 52% shown).
+         */
+        private fun peekBitmap(context: Context, res: Int): Bitmap? {
+            peekCache[res]?.let { return it }
+            val art = com.wordocious.app.data.ShareFinish.decode(context, res) ?: return null
+            val px = chipPx(context)
+            val s = px.toFloat()
+            val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            val w = s * 0.8f
+            val h = w * art.height / art.width
+            c.clipRect(0f, 0f, s, s * 0.42f)
+            c.drawBitmap(art, null, RectF((s - w) / 2f, 0f, (s + w) / 2f, h), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+            if (peekCache.size > 4) peekCache.clear()
+            peekCache[res] = bmp
+            return bmp
+        }
+
+        private fun applyPeek(context: Context, views: RemoteViews, snap: WidgetBridge.Snapshot) {
+            val bmp = peekBitmap(context, peekRes(snap))
+            if (bmp != null) views.setImageViewBitmap(R.id.w_peek, bmp)
+            views.setViewVisibility(R.id.w_peek, if (bmp != null) View.VISIBLE else View.GONE)
+        }
+
         private fun applyMascot(views: RemoteViews) {
             val season = com.wordocious.app.ui.SeasonSkins.current()
             views.setImageViewResource(R.id.w_mascot, com.wordocious.app.ui.SeasonSkins.fullRes(MascotId.W, season))
@@ -339,7 +395,9 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_daily_small)
             applyRing(context, views, snap, 78f)
             applyStreak(views, snap)
-            applyMascot(views)
+            // BI13b: the day's cast member in the mascot corner (sleepy R before the first
+            // daily, a cheer on a sweep, S with a trophy on a milestone).
+            views.setImageViewResource(R.id.w_mascot, peekRes(snap))
             views.setTextViewText(R.id.w_reset, "RESETS IN ${resetLabel(now)}")
             views.setContentDescription(R.id.w_reset, WidgetStats.countdownPhraseFor(now))
             views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))
@@ -351,6 +409,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             applyRing(context, views, snap, 72f)
             applyStreak(views, snap)
             renderChips(context, views, DAILY_CHIPS, snap.modes, requestBase = 1)
+            applyPeek(context, views, snap)
             applyFooter(context, views, snap, now)
             views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))
             return views
@@ -369,6 +428,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             } else {
                 views.setTextViewText(R.id.w_puzzles_count, "${puzzles.count { it.played }}/${puzzles.size}")
                 renderChips(context, views, PUZZLE_CHIPS, puzzles, requestBase = 20)
+                applyPeek(context, views, snap)
             }
             applyFooter(context, views, snap, now)
             views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))

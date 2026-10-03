@@ -13,8 +13,10 @@ import UIKit
 // a ring built from the eight game colors whose segments light up as each daily is
 // done (gold + "SWEPT" when all eight are) — the streak set right into the 3D flame,
 // the dailies as glossy brand tiles in each game's color (done = glossy tile + white
-// check, to play = a pale wash of the color with the game's 3D icon), at most ONE
-// mascot (the friendly W) in its own space. Two type sizes in Nunito Black (hero +
+// check, to play = a pale wash of the color with the game's 3D icon). BI13b (founder
+// 10-03: "a little personality"): one small cast member peeking in — the small's mascot
+// corner, up from behind the top-right daily chip (medium) or the middle Puzzle chip (large,
+// beside the W header) — mood by state, pose by day (WidgetCast.peekPose). Two type sizes in Nunito Black (hero +
 // small tracked caps), brand purple as the one accent, gold only for the streak and a
 // sweep. No boxes, outlines or frames around anything; system content margins.
 // Every game chip deep-links (wordocious://daily/<MODE>).
@@ -356,6 +358,8 @@ private struct ChipGrid: View {
     let dark: Bool
     var linked = true
     var maxChip: CGFloat = 64
+    /// BI13b: a cast member peeking up from behind the first-row chip at `index`.
+    var peek: (asset: String, index: Int)? = nil
 
     var body: some View {
         GeometryReader { g in
@@ -369,6 +373,20 @@ private struct ChipGrid: View {
             let hGap = min(spreadX, max(minGap, side * 0.3))
             let spreadY = rows > 1 ? (g.size.height - side * CGFloat(rows)) / CGFloat(rows - 1) : 0
             let vGap = max(minGap * 0.5, min(hGap, spreadY))
+            let gridW = side * CGFloat(cols) + hGap * CGFloat(cols - 1)
+            let gridH = side * CGFloat(rows) + vGap * CGFloat(rows - 1)
+            ZStack(alignment: .topLeading) {
+            if let peek, peek.index < min(cols, modes.count) {
+                // Head and shoulders only, cut exactly at the chip's top edge, so it reads as
+                // standing behind the chip; it lives in the empty band above the grid.
+                let fig = side * 0.8, show = fig * 0.52
+                CastPeek(asset: peek.asset)
+                    .frame(width: fig, height: fig)
+                    .frame(width: fig, height: show, alignment: .top)
+                    .clipped()
+                    .position(x: (g.size.width - gridW) / 2 + CGFloat(peek.index) * (side + hGap) + side / 2,
+                              y: (g.size.height - gridH) / 2 - show / 2)
+            }
             VStack(spacing: vGap) {
                 ForEach(0..<rows, id: \.self) { r in
                     HStack(spacing: hGap) {
@@ -384,6 +402,7 @@ private struct ChipGrid: View {
                 }
             }
             .frame(width: g.size.width, height: g.size.height)
+            }
         }
     }
 
@@ -493,6 +512,16 @@ private struct MascotW: View {
     }
 }
 
+/// BI13b: the one cast member peeking in (WidgetCast.peekPose — mood by state, pose by day).
+private struct CastPeek: View {
+    let asset: String
+    var body: some View {
+        Image(UIImage(named: asset) != nil ? asset : "mascot-r")
+            .resizable().interpolation(.high).scaledToFit()
+            .accessibilityHidden(true)
+    }
+}
+
 /// A row of short stats spread evenly across the width, separated by small dots.
 private struct StatLine: View {
     let items: [Text]
@@ -515,6 +544,12 @@ private struct StatLine: View {
 }
 
 extension WSnapshot {
+    /// BI13b: the peeking cast member's image set at `date` (by the dailies' state + the day).
+    func peekAsset(at date: Date) -> String {
+        let day = localDay(date)
+        return WidgetCast.peekAsset(WidgetCast.peekPose(played: word.played, total: modes.count, streak: streak, day: day), day: day)
+    }
+
     /// The first unplayed daily (Wordocious first, then Puzzles).
     var nextUp: Mode? { (modes + puzzleModes).first(where: { !$0.played }) }
 
@@ -565,7 +600,9 @@ struct SmallView: View {
                     DailyRing(modes: snap.modes, dark: dark)
                         .frame(width: ring, height: ring)
                     Spacer(minLength: 2)
-                    MascotW(date: date)
+                    // BI13b: the day's cast member in the mascot corner (sleepy R before the
+                    // first daily, a cheer on a sweep, S with a trophy on a milestone).
+                    CastPeek(asset: snap.peekAsset(at: date))
                         .frame(width: min(46, g.size.width - ring - 2), height: min(46, g.size.width - ring - 2))
                 }
                 Spacer(minLength: 4)
@@ -610,7 +647,7 @@ struct MediumView: View {
                         }
                     }
                     .frame(width: left)
-                    ChipGrid(modes: snap.modes, columns: 4, dark: dark)
+                    ChipGrid(modes: snap.modes, columns: 4, dark: dark, peek: (snap.peekAsset(at: date), 3))
                 }
             }
             StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
@@ -661,7 +698,7 @@ struct LargeView: View {
                     Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: muted)
                 }
                 Spacer(minLength: 6).frame(maxHeight: 8)
-                ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark)
+                ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, peek: (snap.peekAsset(at: date), 2))
                     .frame(minHeight: 90, maxHeight: 116)
             }
             Spacer(minLength: 8)

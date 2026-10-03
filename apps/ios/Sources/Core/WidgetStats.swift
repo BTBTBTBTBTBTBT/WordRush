@@ -126,4 +126,44 @@ public enum WidgetCast {
         let halloween = p.count == 3 && ((p[1] == 10 && p[2] >= 24) || (p[1] == 11 && p[2] <= 1))
         return halloween ? "art-halloween-\(id)" : "mascot-\(id)"
     }
+
+    /// BI13b (founder 10-03: "sprinkle a mascot or two … just a little personality"): the
+    /// mood of the one cast member peeking into the widget.
+    public enum PeekMood: String, CaseIterable { case fresh, playing, milestone, swept }
+
+    /// Friendly poses only, never W (W hosts the large header; never w-cheer / w-lean).
+    /// Pose ids are `art-pose-<id>` image sets (bundled via scripts/sync-widget-assets.sh).
+    public static let peekPoses: [PeekMood: [String]] = [
+        .fresh: ["r-wake", "r-cocoa"],                                   // sleepy R, the morning
+        .playing: ["o1-ready", "c-telescope", "d-eureka", "i-reach", "o2-ready", "o3-ready"],
+        .milestone: ["s-trophy", "s-victory"],                           // S on a streak milestone
+        .swept: ["d-cheer", "o1-cheer", "o2-cheer", "i-cheer"],          // the cheer squad
+    ]
+
+    /// A streak worth a trophy: every 7th day and every 50th.
+    public static func isMilestone(_ streak: Int) -> Bool {
+        streak >= 7 && (streak % 7 == 0 || streak % 50 == 0)
+    }
+
+    /// Swept beats everything, then nothing-played-yet, then a milestone streak.
+    public static func peekMood(played: Int, total: Int, streak: Int) -> PeekMood {
+        if total > 0 && played >= total { return .swept }
+        if played == 0 { return .fresh }
+        if isMilestone(streak) { return .milestone }
+        return .playing
+    }
+
+    /// The pose id for this moment, picked deterministically by the local day.
+    public static func peekPose(played: Int, total: Int, streak: Int, day: String) -> String {
+        let pool = peekPoses[peekMood(played: played, total: total, streak: streak)] ?? ["r-wake"]
+        let i = ((dayNumber(day) % pool.count) + pool.count) % pool.count
+        return pool[i]
+    }
+
+    /// The image set: the pose, or in Halloween season that character's costume.
+    public static func peekAsset(_ pose: String, day: String) -> String {
+        let id = String(pose.split(separator: "-").first ?? "r")
+        let costume = asset(id, day: day)
+        return costume.hasPrefix("art-halloween-") ? costume : "art-pose-\(pose)"
+    }
 }

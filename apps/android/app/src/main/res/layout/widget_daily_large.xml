@@ -8,12 +8,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:clipChildren="false">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -194,12 +197,14 @@
             android:layout_height="0dp"
             android:layout_weight="2.6"
             android:layout_marginTop="6dp"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:clipChildren="false">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:clipChildren="false">
             <ImageView
                 android:id="@+id/w_p0"
                 android:layout_width="0dp"
@@ -219,16 +224,31 @@
                 android:src="@drawable/game_practice"
                 android:padding="4dp"
                 android:contentDescription="@null" />
-            <ImageView
-                android:id="@+id/w_p2"
+            <!-- BI13b: the day's cast member peeking up from behind this chip (the peek is the
+                 chip-sized square nudged up; the chip covers the rest). -->
+            <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/game_practice"
-                android:padding="4dp"
-                android:contentDescription="@null" />
+                android:clipChildren="false">
+                <ImageView
+                    android:id="@+id/w_peek"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitCenter"
+                    android:translationY="-18dp"
+                    android:importantForAccessibility="no"
+                    android:contentDescription="@null" />
+                <ImageView
+                    android:id="@+id/w_p2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/game_practice"
+                    android:padding="4dp"
+                    android:contentDescription="@null" />
+            </FrameLayout>
             <ImageView
                 android:id="@+id/w_p3"
                 android:layout_width="0dp"

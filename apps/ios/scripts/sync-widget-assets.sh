@@ -27,4 +27,13 @@ for pattern in 'mascot-*' 'game-*' 'icon3d-*' 'art-bg-tiles' 'art-badge-icon-*' 
     copied=$((copied + 1))
   done
 done
+# BI13b: the one peeking cast member's poses (WidgetCast.peekPoses — keep in sync), downscaled
+# to 192 px (drawn at <= 46 pt) so the extension stays slim.
+for pose in r-wake r-cocoa o1-ready c-telescope d-eureka i-reach o2-ready o3-ready \
+            s-trophy s-victory d-cheer o1-cheer o2-cheer i-cheer; do
+  d=$SRC/art-pose-$pose.imageset
+  cp -R "$d" "$DST/"
+  sips -Z 192 "$DST/art-pose-$pose.imageset/art-pose-$pose.png" >/dev/null
+  copied=$((copied + 1))
+done
 echo "widget catalog: $copied image sets, $(du -sh $DST | cut -f1)"

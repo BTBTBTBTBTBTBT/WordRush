@@ -72,6 +72,28 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-11-01"), "art-halloween-w")
     }
 
+    /// BI13b: the one peeking cast member — mood by state, pose by day (Kotlin WidgetCastTest twin).
+    func testPeekPose() {
+        XCTAssertEqual(WidgetCast.peekMood(played: 0, total: 8, streak: 14), .fresh)
+        XCTAssertEqual(WidgetCast.peekMood(played: 8, total: 8, streak: 14), .swept)
+        XCTAssertEqual(WidgetCast.peekMood(played: 5, total: 8, streak: 14), .milestone)
+        XCTAssertEqual(WidgetCast.peekMood(played: 5, total: 8, streak: 12), .playing)
+        XCTAssertEqual(WidgetCast.peekMood(played: 5, total: 8, streak: 0), .playing)
+        XCTAssertTrue(WidgetCast.isMilestone(7)); XCTAssertTrue(WidgetCast.isMilestone(50))
+        XCTAssertFalse(WidgetCast.isMilestone(0)); XCTAssertFalse(WidgetCast.isMilestone(13))
+        XCTAssertEqual(WidgetCast.peekPose(played: 0, total: 8, streak: 12, day: "2026-10-03"), "r-cocoa")
+        XCTAssertEqual(WidgetCast.peekPose(played: 0, total: 8, streak: 12, day: "2026-10-04"), "r-wake")
+        XCTAssertEqual(WidgetCast.peekPose(played: 5, total: 8, streak: 12, day: "2026-10-03"), "o3-ready")
+        XCTAssertEqual(WidgetCast.peekPose(played: 5, total: 8, streak: 12, day: "2026-10-04"), "o1-ready")
+        XCTAssertEqual(WidgetCast.peekPose(played: 5, total: 8, streak: 14, day: "2026-10-03"), "s-victory")
+        XCTAssertEqual(WidgetCast.peekPose(played: 8, total: 8, streak: 14, day: "2026-10-03"), "o1-cheer")
+        XCTAssertEqual(WidgetCast.peekPose(played: 8, total: 8, streak: 14, day: "2026-10-05"), "i-cheer")
+        // Never W, so the large header's W is never doubled.
+        for pool in WidgetCast.peekPoses.values { XCTAssertFalse(pool.contains { $0.hasPrefix("w-") }) }
+        XCTAssertEqual(WidgetCast.peekAsset("d-cheer", day: "2026-10-02"), "art-pose-d-cheer")
+        XCTAssertEqual(WidgetCast.peekAsset("o1-cheer", day: "2026-10-30"), "art-halloween-o1")
+    }
+
     /// FINISH_SPEC BC: the short points form is a last resort only.
     func testPointsCompact() {
         XCTAssertEqual(WidgetStats.pointsCompact(10_779), "10.8K")

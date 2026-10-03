@@ -27,6 +27,35 @@ class WidgetCastTest {
     }
 }
 
+/** BI13b: the one peeking cast member — mood by state, pose by day (iOS testPeekPose twin). */
+class WidgetPeekTest {
+    private fun day(s: String) = java.time.LocalDate.parse(s).toEpochDay()
+
+    @Test fun moodByState() {
+        assertEquals(WidgetCast.PeekMood.FRESH, WidgetCast.peekMood(0, 8, 14))
+        assertEquals(WidgetCast.PeekMood.SWEPT, WidgetCast.peekMood(8, 8, 14))
+        assertEquals(WidgetCast.PeekMood.MILESTONE, WidgetCast.peekMood(5, 8, 14))
+        assertEquals(WidgetCast.PeekMood.PLAYING, WidgetCast.peekMood(5, 8, 12))
+        assertEquals(WidgetCast.PeekMood.PLAYING, WidgetCast.peekMood(5, 8, 0))
+        assertEquals(true, WidgetCast.isMilestone(7)); assertEquals(true, WidgetCast.isMilestone(50))
+        assertFalse(WidgetCast.isMilestone(0)); assertFalse(WidgetCast.isMilestone(13))
+    }
+
+    @Test fun poseByDayMatchesIos() {
+        assertEquals("r-cocoa", WidgetCast.peekPose(0, 8, 12, day("2026-10-03")))
+        assertEquals("r-wake", WidgetCast.peekPose(0, 8, 12, day("2026-10-04")))
+        assertEquals("o3-ready", WidgetCast.peekPose(5, 8, 12, day("2026-10-03")))
+        assertEquals("o1-ready", WidgetCast.peekPose(5, 8, 12, day("2026-10-04")))
+        assertEquals("s-victory", WidgetCast.peekPose(5, 8, 14, day("2026-10-03")))
+        assertEquals("o1-cheer", WidgetCast.peekPose(8, 8, 14, day("2026-10-03")))
+        assertEquals("i-cheer", WidgetCast.peekPose(8, 8, 14, day("2026-10-05")))
+    }
+
+    @Test fun neverW() {
+        for (pool in WidgetCast.PEEK_POSES.values) assertFalse(pool.any { it.startsWith("w-") })
+    }
+}
+
 /** FINISH_SPEC BC: the points never truncate — full number first, compact only as a last resort. */
 class WidgetPointsFitTest {
     @Test fun fullNumberWheneverItFits() {
