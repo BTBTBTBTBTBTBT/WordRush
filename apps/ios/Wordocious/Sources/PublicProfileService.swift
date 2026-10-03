@@ -7,7 +7,7 @@ import WordociousCore
 /// session-scoped MatchStatsService.
 enum PublicProfileService {
     /// One recent match as shown in the "Recent Matches" list.
-    struct RecentMatch: Identifiable, Decodable, Equatable {
+    struct RecentMatch: Identifiable, Codable, Equatable {
         let id: String
         let game_mode: String
         let player1_id: String

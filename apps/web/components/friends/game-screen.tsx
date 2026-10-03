@@ -12,7 +12,8 @@ import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib
 import { FR, KIND_COLOR, KIND_GRADIENT, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
 import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
 import { FriendAvatar, GameGlyph, Sheet } from './friends-ui';
-import { ArtScene } from '@/components/ui/art-scene';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
+import { CastLoader } from '@/components/ui/cast-loader';
 import { PAGE_SCENES } from '@/lib/art';
 import { ResultHost } from '@/components/ui/mascot';
 import { pocketResultHost } from '@/lib/mascots';
@@ -165,11 +166,17 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     return (
       <Shell>
         {topBar}
-        <div className="text-center py-10 space-y-3">
-          <ArtScene scene={PAGE_SCENES.notFound} />
-          <p className="text-sm font-bold" style={{ color: FR.label }}>This game isn&apos;t here anymore.</p>
-          <CandyButton size="md" color="peach" onClick={() => router.push('/friends')}>Friends</CandyButton>
-        </div>
+        <BrandEmptyState
+          scene={PAGE_SCENES.notFound}
+          accent="friends"
+          className="py-10"
+          title="GAME NOT FOUND"
+          line="This game isn't here anymore."
+          actionLabel="Back to Friends"
+          actionColor="peach"
+          actionIcon="arrow"
+          onAction={() => router.push('/friends')}
+        />
       </Shell>
     );
   }
@@ -177,7 +184,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     return (
       <Shell>
         {topBar}
-        <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin" style={{ color: FR.solid }} /></div>
+        <div className="flex items-center justify-center py-16" role="status" aria-label="Loading game"><CastLoader /></div>
       </Shell>
     );
   }

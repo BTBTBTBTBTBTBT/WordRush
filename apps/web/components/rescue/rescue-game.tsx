@@ -39,7 +39,8 @@ import { latestGuess } from '@/lib/key-reveal';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { GameBackground } from '@/components/ui/page-background';
 import { modeTrayAccent } from '@/lib/tray-fit';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 
 interface RescueGameProps {
   initialSeed?: string;
@@ -218,12 +219,15 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
             DELIVERANCE
           </h1>
         </GameHostTitle>
-        {state.status === 'PLAYING' && <div className="flex justify-center gap-3 mt-1">
+        {/* The feedback popup sits over the meta row under the title (never the title art or boards). */}
+        <div className="relative">
+          {state.status === 'PLAYING' && <div className="flex justify-center gap-3 mt-1">
           <span className="text-gray-400 text-xs font-bold"><Icon3D name="trophy" size={14} inline className="mr-1" />{completedBoards}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>}
-        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
+          <FeedbackToast message={error} />
+        </div>
       </div>
 
       {state.status === 'PLAYING' ? (

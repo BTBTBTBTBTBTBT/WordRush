@@ -28,6 +28,22 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertEqual(WidgetStats.forDay(snapshotDay: "d", today: "d", played: 20, total: 18, points: 5).played, 18)
     }
 
+    func testResetText() {
+        XCTAssertEqual(WidgetStats.resetText(seconds: 4 * 3600), "4h")
+        XCTAssertEqual(WidgetStats.resetText(seconds: 3 * 3600 + 1), "4h")
+        XCTAssertEqual(WidgetStats.resetText(seconds: 3600), "1h")
+        XCTAssertEqual(WidgetStats.resetText(seconds: 45 * 60), "45m")
+        XCTAssertEqual(WidgetStats.resetText(seconds: 10), "1m")
+        XCTAssertEqual(WidgetStats.resetText(seconds: -5), "1m")
+    }
+
+    func testNextName() {
+        XCTAssertEqual(WidgetStats.nextName(key: "RESCUE", title: "Deliv."), "Deliverance")
+        XCTAssertEqual(WidgetStats.nextName(key: "SEQUENCE", title: "Succ."), "Succession")
+        XCTAssertEqual(WidgetStats.nextName(key: "DUEL", title: "Classic"), "Classic")
+        XCTAssertEqual(WidgetStats.nextName(key: "X", title: "Abc."), "Abc")
+    }
+
     func testCountdownPhrase() {
         XCTAssertEqual(WidgetStats.countdownPhrase(seconds: 7 * 3600 + 42 * 60 + 10), "new puzzles in 7 hours 42 minutes")
         XCTAssertEqual(WidgetStats.countdownPhrase(seconds: 3600), "new puzzles in 1 hour")

@@ -241,8 +241,8 @@ fun InfoLinkChip(label: String, accent: Color, modifier: Modifier = Modifier, on
     Box(
         modifier.squishClickable(label, role = Role.Button, onClick = onClick)
             .heightIn(min = 32.dp)
-            .background(accentWash(accent, 0.12f), shape)
-            .border(1.5.dp, accentLine(accent, 0.30f), shape)
+            // Founder rule: no outlined boxes — a soft filled chip only.
+            .background(accentWash(accent, 0.16f), shape)
             .padding(horizontal = 12.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {

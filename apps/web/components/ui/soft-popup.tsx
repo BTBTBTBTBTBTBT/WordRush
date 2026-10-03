@@ -51,17 +51,19 @@ export function softRow(accent: string, { selected = false, radius = 16 }: { sel
   const share = selected ? SOFT.strong : 0.09;
   return {
     background: softBackground(accent, share),
-    border: selected ? `2px solid ${accent}` : softBorder(accent, share),
+    // BI25: soft filled, never outlined — selected is the deeper wash + a soft glow.
+    border: 'none',
     borderRadius: radius,
-    boxShadow: selected ? `0 0 0 3px ${alphaHex(accent, 0.18)}` : `0 2px 8px ${alphaHex(accent, 0.08)}`,
+    boxShadow: selected ? `0 4px 12px ${alphaHex(accent, 0.28)}` : `0 2px 8px ${alphaHex(accent, 0.08)}`,
   };
 }
 
 /** A tinted text field (A1: inputs take the wash too). `invalid` draws the red edge. */
 export function softInput(accent: string = POPUP_ACCENT.brand, { invalid = false }: { invalid?: boolean } = {}): CSSProperties {
   return {
-    background: softBackground(accent, 0.07),
-    border: invalid ? '1.5px solid #f87171' : softBorder(accent, 0.07),
+    // BI25: a soft filled field (no outline); invalid tints the fill rose.
+    background: invalid ? softBackground('#f87171', 0.16) : softBackground(accent, 0.11),
+    border: 'none',
     borderRadius: 14,
     color: 'var(--color-text)',
   };

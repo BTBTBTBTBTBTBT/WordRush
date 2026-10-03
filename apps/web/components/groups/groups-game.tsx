@@ -40,9 +40,12 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass, candyVars } from '@/components/ui/candy-button';
+import { HintCountBadge } from '@/components/ui/hint-kit';
+import { KINDRED_LABEL_SLOT_PX } from '@/lib/hint-layout';
 import { GameTray } from '@/components/ui/game-tray';
 
 // Kindred (More Games §14): sixteen words, four groups of four, four mistakes.
@@ -299,18 +302,14 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
         <GameHostTitle mode="GROUPS" label="Kindred">
           <h1 className="text-2xl font-black" style={{ color: GROUPS_ACCENT }}>KINDRED</h1>
         </GameHostTitle>
-        <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="relative flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{groupsDailyNumber(getTodayLocal())}</span>}
           {holiday && <span style={{ color: GROUPS_ACCENT }}>{holiday}</span>}
           <span>{state.solved.length}/{GROUPS_TOTAL_BOARDS} groups</span>
           <span>{mistakesLabel}</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {completion ? (
@@ -335,15 +334,18 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
               UNDER the grid so the tiles never get pushed down as you solve; nothing is moved up and
               no filler is added. Every direct child except the grid is subtracted by the band fit. */}
           <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-2 px-3 pb-1 pt-1">
-            {revealedLabels.length > 0 && (
-              <div className="w-full max-w-md flex flex-wrap justify-center gap-1.5 shrink-0">
+            {/* The named-category slot is ALWAYS here at one fixed line (empty until "Name a
+                category"): appearing in the flow, the chips were subtracted by the band fit and the
+                tiles shrank on the hint. Several chips scroll sideways instead of wrapping. */}
+            <div className="w-full max-w-md shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ height: KINDRED_LABEL_SLOT_PX }} aria-live="polite">
+              <div className="flex w-max min-w-full justify-center gap-1.5">
                 {revealedLabels.map((g) => (
-                  <span key={g.tier} className="text-[11px] font-black px-2.5 py-1 rounded-full" style={{ background: TIER_STYLE[g.tier].bg, color: TIER_STYLE[g.tier].fg }}>
+                  <span key={g.tier} className="shrink-0 whitespace-nowrap text-[11px] leading-4 font-black px-2.5 py-1 rounded-full" style={{ background: TIER_STYLE[g.tier].bg, color: TIER_STYLE[g.tier].fg }}>
                     <span className="text-[7px] tracking-[2px] mr-1.5" aria-hidden>{'●'.repeat(g.tier)}</span>{g.label}
                   </span>
                 ))}
               </div>
-            )}
+            </div>
             <TileGrid state={state} onToggle={toggle} shaking={shaking} fit={tileFit} />
             <ProgressRail solvedTiers={state.solved.map((g) => g.tier)} total={GROUPS_TOTAL_BOARDS} mistakes={state.mistakes} maxMistakes={GROUPS_MAX_MISTAKES} />
             {state.solved.length > 0 && (
@@ -368,8 +370,9 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
               <button type="button" onClick={hintLabel} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: name a category">
                 <Tag className="w-3.5 h-3.5" /> Name a category
               </button>
-              <button type="button" onClick={hintPair} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: show a pair">
-                <Link2 className="w-3.5 h-3.5" /> Show a pair{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
+              {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
+              <button type="button" onClick={hintPair} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: show a pair (${state.hintsUsed} hints used)` : 'Hint: show a pair'}>
+                <Link2 className="w-3.5 h-3.5" /> Show a pair<HintCountBadge count={state.hintsUsed} />
               </button>
             </div>
           </div>

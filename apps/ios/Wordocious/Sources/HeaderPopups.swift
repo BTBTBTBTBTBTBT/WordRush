@@ -85,11 +85,22 @@ struct HeaderPopupHost: View {
                     .transition(.opacity)
                 GeometryReader { g in
                     ScrollView(showsIndicators: false) {
+                        // BI12: the full-height scroll content sat over the scrim and ate its
+                        // taps (no way out but relaunching). The card keeps its own taps; the
+                        // space around it closes; a close circle sits on the card's corner.
                         card(kind)
+                            .contentShape(Rectangle())
+                            .onTapGesture {}
+                            .overlay(alignment: .topTrailing) {
+                                HeaderCircleButton(.symbol("xmark"), size: 32, tint: .white, label: "Close") { popups.close() }
+                                    .padding(6)
+                            }
                             .frame(width: min(420, g.size.width - 28))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 24)
                             .frame(minHeight: g.size.height)
+                            .contentShape(Rectangle())
+                            .onTapGesture { popups.close() }
                     }
                     .scrollBounceBehaviorBasedOnSize()
                 }

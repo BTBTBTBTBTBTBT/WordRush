@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { X, Download } from 'lucide-react';
+import { X } from 'lucide-react';
 import { CandyButton } from '@/components/ui/candy-button';
+import { HeaderCircle } from '@/components/ui/page-header';
+import { alphaHex, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -44,31 +46,35 @@ export function PwaProvider() {
 
   if (!showBanner) return null;
 
+  // K1 / G5: the same tinted notice card as the Play Store banner and
+  // AnnouncementsBanner (brand wash, top bar, app icon, candy Install, the bare
+  // close X); slides up with a spring. Sits above the bottom nav.
+  const accent = '#7c3aed';
   return (
-    <div
-      className="fixed bottom-20 left-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg"
-      style={{
-        background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-        boxShadow: '0 8px 24px rgba(124,58,237,0.3)',
-      }}
-      role="alert"
-    >
-      <Download className="w-5 h-5 text-white shrink-0" aria-hidden="true" />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-black text-white">Install Wordocious</p>
-        <p className="text-[10px] font-bold text-white/70">Add to home screen for the best experience</p>
-      </div>
-      <CandyButton size="sm" color="amber" onClick={handleInstall} className="shrink-0" aria-label="Install Wordocious app">
-        Install
-      </CandyButton>
-      <button
-        onClick={handleDismiss}
-        className="shrink-0 p-1 rounded-full"
-        style={{ background: 'rgba(255,255,255,0.2)' }}
-        aria-label="Dismiss install prompt"
+    <div className="fixed bottom-20 inset-x-0 z-50 px-3 pointer-events-none" role="alert">
+      <div
+        className="relative max-w-md mx-auto flex items-center gap-2.5 p-2.5 pt-3.5 pr-10 pointer-events-auto overflow-hidden notice-in-bottom"
+        style={{
+          background: softBackground(accent, 0.14),
+          border: softBorder(accent, 0.14),
+          borderRadius: 20,
+          boxShadow: `0 10px 28px ${alphaHex(accent, 0.24)}`,
+        }}
       >
-        <X className="w-3.5 h-3.5 text-white" />
-      </button>
+        <div aria-hidden="true" className="absolute left-0 right-0 top-0" style={cardBarStyle(accent, 6)} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icon-192.png" alt="" width={36} height={36} style={{ borderRadius: '9px' }} className="shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-black leading-tight" style={{ color: 'var(--color-text)' }}>Install Wordocious</p>
+          <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Add it to your home screen for the best experience</p>
+        </div>
+        <CandyButton size="sm" color="purple" onClick={handleInstall} className="shrink-0" aria-label="Install Wordocious app">
+          Install
+        </CandyButton>
+        <HeaderCircle label="Dismiss install prompt" onClick={handleDismiss} size={32} className="absolute top-2 right-1">
+          <X aria-hidden="true" style={{ width: 18, height: 18, color: 'var(--color-win-text, #7c3aed)' }} strokeWidth={3.2} />
+        </HeaderCircle>
+      </div>
     </div>
   );
 }

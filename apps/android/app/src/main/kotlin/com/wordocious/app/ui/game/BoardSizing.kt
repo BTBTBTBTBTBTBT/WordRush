@@ -81,4 +81,34 @@ object BoardSizing {
         val cellH = ((height / boardRows - boardChrome - tileGap * (tileRows - 1)) / tileRows).coerceAtLeast(0f)
         return Fit(width = width, height = height, cellW = cellW, cellH = cellH)
     }
+
+    /** BI18 Crosswordocious: the play floor and cap (dp); letters and numbers scale with the cell. */
+    const val CROSSWORD_MIN_CELL = 14f
+    const val CROSSWORD_MAX_CELL = 42f
+
+    /**
+     * FINISH_SPEC BI18 (founder 10-03: "the daily today required you to scroll"): in play
+     * the crossword grid owns the band between the compact header and the pinned clue bar /
+     * controls / keyboard, its cell sized from [availW] AND [availH] (null = width only) for
+     * the puzzle's real [cols] × [rows] once [chromeX] / [chromeY] (tray padding, the
+     * selection ring's room) come off. Floored to whole dp, clamped to [minCell, maxCell] —
+     * the same numbers as iOS CrosswordFit and web crosswordCell.
+     */
+    fun crosswordCell(
+        availW: Float,
+        availH: Float?,
+        cols: Int,
+        rows: Int,
+        gap: Float,
+        chromeX: Float = 0f,
+        chromeY: Float = 0f,
+        maxCell: Float = CROSSWORD_MAX_CELL,
+        minCell: Float = CROSSWORD_MIN_CELL,
+    ): Float {
+        val c = cols.coerceAtLeast(1)
+        val r = rows.coerceAtLeast(1)
+        var t = (availW - chromeX - gap * (c - 1)) / c
+        if (availH != null && availH.isFinite() && availH > 0f) t = minOf(t, (availH - chromeY - gap * (r - 1)) / r)
+        return kotlin.math.floor(minOf(t, maxCell)).coerceAtLeast(minCell)
+    }
 }

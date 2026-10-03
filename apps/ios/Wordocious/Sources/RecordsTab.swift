@@ -95,7 +95,11 @@ struct AllTimeRecordsView: View {
     @Binding var isSweep: Bool
     /// Session copy of the last fetch: re-opening All-Time paints it in the first frame and
     /// revalidates underneath (founder, 2026-09-29: the card skeleton showed on every open).
-    private static var cachedRecords: [AllTimeRecord]?
+    /// BI19: persisted through StatsMemo, so a cold launch paints the Hall of Fame too.
+    private static var cachedRecords: [AllTimeRecord]? {
+        get { StatsMemo.shared.get("allTimeRecords") }
+        set { if let newValue, !newValue.isEmpty { StatsMemo.shared.set("allTimeRecords", newValue) } }
+    }
     @State private var records: [AllTimeRecord] = Self.cachedRecords ?? []
     @State private var loading = Self.cachedRecords == nil
     @State private var sweepEntries: [AllTimeSweepEntry] = []
@@ -143,7 +147,7 @@ struct AllTimeRecordsView: View {
                         }
                     } else {
                         // Web parity (records page): a host + "No records yet" instead of a dash grid.
-                        emptyCard("No records yet")
+                        emptyCard("No records yet", "Every daily you finish can set one. The board starts with you.")
                     }
                 }
             }
@@ -159,10 +163,11 @@ struct AllTimeRecordsView: View {
         .task(id: "sweep-\(isSweep)") { if isSweep { await loadSweep() } }
     }
 
-    private func emptyCard(_ text: String) -> some View {
-        // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1).
-        MascotMessage(scene: .asleep, line: text)
-        .frame(maxWidth: .infinity).padding(.vertical, 20)
+    private func emptyCard(_ title: String, _ text: String) -> some View {
+        // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1); BI24: brand
+        // headline over the voice line.
+        BrandEmptyState(title: title, line: text, scene: .asleep, artHeight: 100)
+        .frame(maxWidth: .infinity).padding(.vertical, 4)
         .lbCard()
     }
 
@@ -202,7 +207,7 @@ struct AllTimeRecordsView: View {
         if sweepLoading {
             LeaderboardSkeleton().lbCard()
         } else if sweepEntries.isEmpty {
-            emptyCard("No sweeps yet. Be the first!")
+            emptyCard("No sweeps yet", "Finish every daily in one day and you top this board. Be the first!")
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
@@ -564,7 +569,7 @@ struct DailyRecordsView: View {
         if loading {
             LeaderboardSkeleton().lbCard()   // web parity: animate-pulse rows
         } else if entries.isEmpty {
-            emptyCard(friends ? "None of your friends have played yet today" : "No results yet today. Be the first!")
+            emptyCard(friends ? "Friends are still asleep" : "No results yet", friends ? "None of your friends have played yet today." : "Nobody has finished today. Be the first!")
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
@@ -597,10 +602,11 @@ struct DailyRecordsView: View {
                         score: lbScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore))
     }
 
-    private func emptyCard(_ text: String) -> some View {
-        // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1).
-        MascotMessage(scene: .asleep, line: text)
-        .frame(maxWidth: .infinity).padding(.vertical, 20).padding(.horizontal, 16)
+    private func emptyCard(_ title: String, _ text: String) -> some View {
+        // R, sleepy in the nightcap: "quiet in here" (MASCOT_SPEC §1); BI24: brand
+        // headline over the voice line.
+        BrandEmptyState(title: title, line: text, scene: .asleep, artHeight: 100)
+        .frame(maxWidth: .infinity).padding(.vertical, 4)
         .lbCard()
     }
 
@@ -627,7 +633,7 @@ struct DailyRecordsView: View {
         if sweepLoading {
             LeaderboardSkeleton().lbCard()
         } else if sweepEntries.isEmpty {
-            emptyCard("No sweeps yet today. Be the first!")
+            emptyCard("No sweeps yet", "Nobody has swept today. Be the first!")
         } else {
             VStack(spacing: 0) {
                 ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in

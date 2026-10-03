@@ -162,7 +162,7 @@ fun Modifier.friendsCard(radius: Dp = 14.dp, accent: Color = FRIENDS_CARD_ACCENT
         // FINISH_SPEC A1: the accent's wash + a faint line instead of white (fixed light, like the page).
         .background(friendsWash(accent))
         .then(if (bar != null) Modifier.drawBehind { drawRect(bar, Offset.Zero, Size(size.width, barHeight.toPx())) } else Modifier)
-        .border(1.5.dp, friendsLine(accent), RoundedCornerShape(radius))
+        // BI23 (founder: no outlined boxes anywhere): wash + soft lift, no line.
 
 /** A1 the Friends page accent the cards wash with (#ec4899). */
 val FRIENDS_CARD_ACCENT = Color(0xFFEC4899)

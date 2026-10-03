@@ -7,6 +7,16 @@ import type { Database } from './database.types';
 import { isProActive } from './pro';
 import { reportRejectedWrite } from './supabase-error-handler';
 import { migrateLegacyStorageKeys } from './storage-migration';
+import { clearPageCacheForUser, setCacheUser } from './page-cache';
+import { updateResultStore } from './optimistic-results';
+import {
+  classifyAuthError,
+  isSupabaseSessionKey,
+  keepsUserSignedIn,
+  parseStoredSession,
+  sessionRetryDelay,
+  type StoredSession,
+} from './auth-session-policy';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -62,6 +72,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // One presence stamp per page load (see stampPresence in AuthProvider).
 let presenceStamped = false;
 
+/** The session supabase-js still has on disk (null when none / unreadable). */
+function readStoredSession(): StoredSession | null {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && isSupabaseSessionKey(k)) {
+        const s = parseStoredSession(localStorage.getItem(k));
+        if (s) return s;
+      }
+    }
+  } catch {}
+  return null;
+}
+
+/** An explicit sign-out the auth server couldn't confirm (outage) still signs out on this device. */
+function clearStoredSupabaseSession(): void {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && /^sb-.+-auth-token/.test(k)) localStorage.removeItem(k);
+    }
+  } catch {}
+  try { document.cookie = 'wr-auth-token=; path=/; max-age=0; secure; samesite=lax'; } catch {}
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -70,6 +105,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isGuest, setIsGuest] = useState(false);
   const [profileError, setProfileError] = useState(false);
   const profileRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Outage hold (lib/auth-session-policy.ts): while auth is unreachable the
+  // player stays signed in from the stored session and we retry on a backoff
+  // (5 s, 15 s, 30 s, 60 s, then every 60 s) plus on 'online' / tab visible.
+  const sessionRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionRetryAttempt = useRef(0);
+  const holdingStoredSession = useRef(false);
+  const stopSessionRetry = () => {
+    holdingStoredSession.current = false;
+    sessionRetryAttempt.current = 0;
+    if (sessionRetry.current) { clearTimeout(sessionRetry.current); sessionRetry.current = null; }
+  };
 
   const enterGuest = () => {
     try { localStorage.setItem('wordocious-guest', '1'); } catch {}
@@ -136,7 +182,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (profile.is_banned) {
         // Banned users get signed out immediately
         clearCachedProfile();
-        await supabase.auth.signOut();
+        stopSessionRetry();
+        let failed = false;
+        try { failed = !!(await supabase.auth.signOut()).error; } catch { failed = true; }
+        if (failed) clearStoredSupabaseSession();
         setUser(null);
         setProfile(null);
         setSession(null);
@@ -209,6 +258,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // BI19: whose persisted caches pages read (lib/page-cache.ts). Until auth
+  // resolves, page-cache falls back to the stored session's user.
+  useEffect(() => {
+    if (!loading) setCacheUser(user?.id ?? null);
+  }, [user?.id, loading]);
+
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user.id, user);
@@ -264,8 +319,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // ── Outage hold ────────────────────────────────────────────────────────
+    // auth-js reports `session: null` from getSession() / INITIAL_SESSION when
+    // the access token has expired and the refresh call FAILED — it keeps the
+    // stored session on disk for a retryable failure (and, with the fetch
+    // wrapper in lib/supabase-client.ts, every non-revocation is retryable).
+    // That null used to land below as "signed out" and AuthGate showed the
+    // sign-in landing mid-outage. Now: a stored session + a transient failure
+    // keeps the player signed in from the stored session and retries.
+    const holdStoredSession = (stored: StoredSession) => {
+      const s = stored as unknown as Session;
+      // Same account → keep the existing objects (no churn for `user` effects).
+      setSession((prev) => (prev?.user?.id === s.user.id ? prev : s));
+      setUser((prev) => (prev?.id === s.user.id ? prev : s.user));
+      setProfile((prev) => (prev?.id === s.user.id ? prev : readCachedProfile(s.user.id) ?? prev));
+      setIsGuest(false);
+      setLoading(false);
+      if (!holdingStoredSession.current) {
+        holdingStoredSession.current = true;
+        sessionRetryAttempt.current = 0;
+      }
+      // getSession() and INITIAL_SESSION both land here at startup: one timer.
+      if (!sessionRetry.current && !recovering) scheduleRecovery();
+    };
+
+    let recovering = false;
+    const scheduleRecovery = () => {
+      if (sessionRetry.current) clearTimeout(sessionRetry.current);
+      const delay = sessionRetryDelay(sessionRetryAttempt.current);
+      sessionRetryAttempt.current += 1;
+      sessionRetry.current = setTimeout(() => { sessionRetry.current = null; void recoverSession(); }, delay);
+    };
+
+    const recoverSession = async () => {
+      if (!holdingStoredSession.current || recovering) return;
+      recovering = true;
+      try {
+        // Refreshes the expired token when auth is reachable again; success
+        // also fires TOKEN_REFRESHED, which the listener below applies.
+        const { data, error } = await supabase.auth.getSession();
+        if (data.session) { stopSessionRetry(); return; }
+        if (keepsUserSignedIn(classifyAuthError(error), !!readStoredSession())) { scheduleRecovery(); return; }
+        // Revoked / gone: auth-js removed the stored session and fired
+        // SIGNED_OUT (or there is nothing left to restore) — sign out here too.
+        stopSessionRetry();
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setProfileError(false);
+      } catch {
+        if (readStoredSession()) scheduleRecovery(); else stopSessionRetry();
+      } finally {
+        recovering = false;
+      }
+    };
+
+    const onWake = () => {
+      if (holdingStoredSession.current && document.visibilityState === 'visible') void recoverSession();
+    };
+    const onOnline = () => { if (holdingStoredSession.current) void recoverSession(); };
+    document.addEventListener('visibilitychange', onWake);
+    window.addEventListener('online', onOnline);
+
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       (async () => {
+        if (!session && error) {
+          const stored = readStoredSession();
+          if (stored && keepsUserSignedIn(classifyAuthError(error), true)) {
+            holdStoredSession(stored);
+            return;
+          }
+        }
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -288,12 +412,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setLoading(false);
       })();
+    }, (err) => {
+      // getSession() itself threw (not an AuthError): never strand the gate on
+      // the skeleton, and never read an outage as a sign-out.
+      const stored = readStoredSession();
+      if (stored && keepsUserSignedIn(classifyAuthError(err), true)) { holdStoredSession(stored); return; }
+      setLoading(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
+        if (!session) {
+          // A null session while one is still stored is auth-js failing to
+          // refresh it (INITIAL_SESSION during an outage), not a sign-out:
+          // auth-js deletes the stored session BEFORE it reports a real
+          // SIGNED_OUT (revoked token, explicit sign-out, another tab).
+          const stored = readStoredSession();
+          if (stored) { holdStoredSession(stored); return; }
+          stopSessionRetry();
+        } else if (holdingStoredSession.current) {
+          stopSessionRetry();   // auth is back (TOKEN_REFRESHED / SIGNED_IN)
+        }
         // Mirror the access token into a cookie for the /admin middleware and
         // the verifyAdmin cookie fallback. supabase-js keeps the session in
         // localStorage, which the server can never see — this cookie is the
@@ -331,6 +472,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
       if (profileRetry.current) clearTimeout(profileRetry.current);
+      document.removeEventListener('visibilitychange', onWake);
+      window.removeEventListener('online', onOnline);
+      stopSessionRetry();
     };
   }, []);
 
@@ -454,7 +598,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    stopSessionRetry();
+    // BI19: this account's persisted page caches and optimistic results never
+    // outlive its session on this device.
+    const signingOutId = user?.id ?? session?.user?.id ?? null;
+    if (signingOutId) {
+      clearPageCacheForUser(signingOutId);
+      updateResultStore((st) => Object.fromEntries(Object.entries(st).filter(([, r]) => r.userId !== signingOutId)));
+    }
+    setCacheUser(null);
+    // During an outage auth-js can't reach /logout (or refresh the session
+    // first) and returns an error WITHOUT clearing the stored session — the
+    // player asked to sign out, so clear it on this device regardless.
+    let failed = false;
+    try { failed = !!(await supabase.auth.signOut()).error; } catch { failed = true; }
+    if (failed) clearStoredSupabaseSession();
     try { localStorage.removeItem('wordocious-guest'); } catch {}
     // Purge per-account game state so the next session (a guest, or a different
     // account) never inherits this user's daily results. Without this, the

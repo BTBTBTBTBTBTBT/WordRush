@@ -59,6 +59,25 @@ public enum WidgetStats {
         "\(pointsText(s.points)) \(s.points == 1 ? "point" : "points") today"
     }
 
+    /// BI13: the widget's short reset label — "4h" (whole hours, rounded up) while an hour
+    /// or more is left, then "45m" (minutes, rounded up). The widget timeline refreshes on
+    /// the hour and every 15 minutes in the last hour, so it never runs stale-low.
+    public static func resetText(seconds: Int) -> String {
+        let s = max(0, seconds)
+        if s >= 3600 { return "\((s + 3599) / 3600)h" }
+        return "\(max(1, (s + 59) / 60))m"
+    }
+
+    /// BI13: the name the widget's "NEXT …" line shows — the snapshot's short title, except
+    /// the two clipped ones ("Succ.", "Deliv."), which read better in full.
+    public static func nextName(key: String, title: String) -> String {
+        switch key {
+        case "SEQUENCE": return "Succession"
+        case "RESCUE": return "Deliverance"
+        default: return title.hasSuffix(".") ? String(title.dropLast()) : title
+        }
+    }
+
     /// VoiceOver: "new puzzles in 7 hours 42 minutes".
     public static func countdownPhrase(seconds: Int) -> String {
         let s = max(0, seconds)

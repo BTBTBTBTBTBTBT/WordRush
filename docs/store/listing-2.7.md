@@ -82,10 +82,10 @@ Wordocious 2.7 is our biggest update yet: a whole new look starring the WORDOCIO
 • Build your own mascot with hats, extras and backdrops. It shows up on every leaderboard.
 • A brand new welcome that walks you through everything.
 • Battle the cast: ten bots to beat, from sleepy R all the way up to W.
-• Sounds and haptics on every tap, flip and win.
-• 3D achievement badges and level badges.
-• Faster play: keys color as each tile flips, and you can keep typing through a reveal.
-• Polished finished screens, picture shares, and widgets with your streak, solved puzzles and points.
+• Smoother play everywhere, with keys that color as each tile flips.
+• Your wins and scores show up on Home and the leaderboard the moment you finish.
+• Brand new widgets, Strategy guides and Word of the Day.
+• Sounds, haptics, 3D achievement badges and level badges.
 • Halloween costumes for the whole cast, Oct 24 to Nov 1.
 
 ## Keywords (iOS, ≤100, comma-separated, no spaces after commas)

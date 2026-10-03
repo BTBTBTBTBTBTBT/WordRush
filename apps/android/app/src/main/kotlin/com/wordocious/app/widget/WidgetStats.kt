@@ -91,6 +91,46 @@ object WidgetStats {
             set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
+    /**
+     * BI13: the widget's short reset label — "4h" (whole hours, rounded up) while an hour or
+     * more is left, then "45m" (minutes, rounded up). iOS WidgetStats.resetText twin.
+     */
+    fun resetText(seconds: Long): String {
+        val s = seconds.coerceAtLeast(0)
+        if (s >= 3600) return "${(s + 3599) / 3600}h"
+        return "${((s + 59) / 60).coerceAtLeast(1)}m"
+    }
+
+    /**
+     * BI13: the name the widget's "NEXT …" line shows — the snapshot's short title, except the
+     * two clipped ones ("Succ.", "Deliv."), which read better in full. iOS twin.
+     */
+    fun nextName(key: String, title: String): String = when (key) {
+        "SEQUENCE" -> "Succession"
+        "RESCUE" -> "Deliverance"
+        else -> title.removeSuffix(".")
+    }
+
+    /** TalkBack: "new puzzles in 7 hours 42 minutes" (the iOS countdownPhrase twin). */
+    fun countdownPhraseFor(now: Calendar): String {
+        val s = (msToMidnight(now) / 1000).coerceAtLeast(0)
+        val h = s / 3600; val m = (s % 3600) / 60
+        val parts = mutableListOf<String>()
+        if (h > 0) parts += "$h ${if (h == 1L) "hour" else "hours"}"
+        if (m > 0 || h == 0L) parts += "$m ${if (m == 1L) "minute" else "minutes"}"
+        return "new puzzles in " + parts.joinToString(" ")
+    }
+
+    /** BI13: the next re-render — the next whole hour, or the next quarter hour inside the last hour. */
+    fun nextLabelFlipMillis(now: Calendar): Long {
+        val midnight = nextLocalMidnightMillis(now)
+        val left = midnight - now.timeInMillis
+        val step = if (left <= 3_600_000L) 15 * 60_000L else 3_600_000L
+        val sinceMidnightEdge = left % step
+        val next = now.timeInMillis + (if (sinceMidnightEdge == 0L) step else sinceMidnightEdge)
+        return minOf(next, midnight + 2_000)
+    }
+
     /** Millis from [now] to the next local midnight (always > 0). */
     fun msToMidnight(now: Calendar): Long = nextLocalMidnightMillis(now) - now.timeInMillis
 }

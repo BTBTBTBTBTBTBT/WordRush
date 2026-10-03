@@ -48,11 +48,12 @@ struct ActivityFeedView: View {
             if let events {
                 if events.isEmpty {
                     // R asleep over the quiet feed (ART_SPEC §7).
-                    MascotMessage(scene: .asleep,
-                                  line: "Quiet week so far — a sweep, a medal, a record or a game won from anyone in your circle shows up here.",
-                                  color: FriendsInk.muted)
+                    // BI24: brand headline over R's voice line.
+                    BrandEmptyState(title: "Quiet week so far",
+                                    line: "Sweeps, medals, records and wins from your circle show up here.",
+                                    scene: .asleep, artHeight: 100, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
+                                    lineColor: FriendsInk.muted)
                         .frame(maxWidth: .infinity)
-                        .padding(14)
                         .friendsCard(accent: FriendsInk.pink)
                 } else {
                     let today = FriendsService.localDay()

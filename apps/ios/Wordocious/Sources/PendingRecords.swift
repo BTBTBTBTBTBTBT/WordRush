@@ -1,4 +1,5 @@
 import Foundation
+import Network
 import Supabase
 import WordociousCore
 
@@ -16,90 +17,32 @@ import WordociousCore
 ///   history row (`soloMatch`, recordSoloMatch), and — for daily seeds — the
 ///   daily_results leaderboard row (`dailyDone`, written inside record() but
 ///   tracked separately because it can fail on its own). Each marks itself
-///   done on success; the key is removed when all registered parts are done.
-/// - drain() re-runs leftovers once per launch after auth is ready, driven by
-///   the per-part done-flags. It also checks the server for a `matches` row for
-///   that seed+mode, but that row settles ONLY the `soloMatch` part (it stops
-///   match history duplicating); it is not evidence about the progression part,
-///   and treating it as such threw away XP, levels and streaks that had never
-///   been written.
+///   done on a CONFIRMED success only; an error, a timeout or a kill leaves it
+///   outstanding. The key is removed when all registered parts are done.
+/// - drain() re-runs leftovers after auth is ready: at launch, on every
+///   foreground and whenever the network comes back (BI15 — it used to run
+///   once per launch, so a write lost to the 2026-10-02 outage sat unretried
+///   for the rest of the session). It never replays a game whose live record
+///   call is still in flight (that would double-count stats when both land).
+///   The `matches` row for the seed settles ONLY the `soloMatch` part.
 /// - Solo only. VS results are server-coordinated (designated writer) and are
 ///   never retried from here; CPU games are pure practice and not tracked.
 /// - Payloads older than 7 days, or belonging to a different signed-in user,
 ///   are dropped / left alone respectively (web parity).
+/// The bookkeeping itself lives in WordociousCore (PendingLedger.swift) so it
+/// is unit-tested; this file is the network side.
 enum PendingRecords {
-    private static let keyPrefix = "wordocious.pending-record."
-    private static let maxAgeMs: Double = 7 * 24 * 60 * 60 * 1000
+    typealias GameResultArgs = PendingGameResultArgs
+    typealias SoloMatchArgs = PendingSoloMatchArgs
+    typealias Payload = PendingPayload
+    typealias Part = PendingPart
 
-    struct GameResultArgs: Codable {
-        var won: Bool
-        var guessCount: Int
-        var timeSeconds: Int
-        var boardsSolved: Int
-        var totalBoards: Int
-        var hintsUsed: Int
-        var stagesCompleted: Int?
-        var bestCorrectLetters: Int?
-    }
-
-    struct SoloMatchArgs: Codable {
-        var won: Bool
-        var score: Int
-        var timeSeconds: Int
-        var solutions: [String]
-        var guesses: [String]
-        var hintsUsed: Int
-    }
-
-    struct Payload: Codable {
-        var userId: String
-        var gameMode: String
-        var seed: String
-        var savedAt: Double // ms since epoch
-        var gameResult: GameResultArgs?
-        var gameResultDone: Bool?
-        var soloMatch: SoloMatchArgs?
-        var soloMatchDone: Bool?
-        /// daily_results row landed (daily seeds only — the leaderboard row).
-        /// This was the UNTRACKED third write: record() fires it AFTER the
-        /// progression lands and used `xp != nil` as the whole-part success
-        /// proxy, so a daily write cut on its own (nav-away blip, offline tail)
-        /// was released with the row still unwritten and nothing left to retry
-        /// (the Android incident's hole #3, ported). Old payloads decode as nil
-        /// (= outstanding) and simply replay the idempotent best-score upsert.
-        var dailyDone: Bool?
-    }
-
-    enum Part { case gameResult, soloMatch, daily }
-
-    /// Every tracked write landed. The daily leg only applies to daily seeds
-    /// whose progression part is registered — an unlimited game writes no
-    /// daily_results row and must not be held hostage by a flag nothing sets.
-    private static func allDone(_ p: Payload) -> Bool {
-        (p.gameResult == nil || p.gameResultDone == true)
-            && (p.soloMatch == nil || p.soloMatchDone == true)
-            && (p.gameResult == nil || p.dailyDone == true || !p.seed.hasPrefix("daily-"))
-    }
+    static let store = PendingRecordStore()
 
     /// Whether a payload exists for this game — the launch sweep skips seeds
     /// the queue already owns (drain() replays those, not the sweep).
     static func hasPayload(gameMode: String, seed: String) -> Bool {
-        read(key(gameMode, seed)) != nil
-    }
-
-    private static func key(_ gameMode: String, _ seed: String) -> String {
-        keyPrefix + gameMode + "-" + seed
-    }
-
-    private static func read(_ key: String) -> Payload? {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
-        return try? JSONDecoder().decode(Payload.self, from: data)
-    }
-
-    private static func write(_ key: String, _ payload: Payload) {
-        if let data = try? JSONEncoder().encode(payload) {
-            UserDefaults.standard.set(data, forKey: key)
-        }
+        store.hasPayload(gameMode: gameMode, seed: seed)
     }
 
     /// Merge one part's args into the payload for this game (creating it if
@@ -107,35 +50,77 @@ enum PendingRecords {
     static func register(userId: String, gameMode: String, seed: String,
                          gameResult: GameResultArgs? = nil,
                          soloMatch: SoloMatchArgs? = nil) {
-        let k = key(gameMode, seed)
-        var p = read(k) ?? Payload(userId: userId, gameMode: gameMode, seed: seed,
-                                   savedAt: Date().timeIntervalSince1970 * 1000)
-        p.userId = userId
-        if let g = gameResult { p.gameResult = g; p.gameResultDone = false }
-        if let s = soloMatch { p.soloMatch = s; p.soloMatchDone = false }
-        write(k, p)
+        store.register(userId: userId, gameMode: gameMode, seed: seed,
+                       gameResult: gameResult, soloMatch: soloMatch)
     }
 
     /// Mark one part complete; remove the key when all registered parts are done.
     static func markDone(gameMode: String, seed: String, part: Part) {
-        let k = key(gameMode, seed)
-        guard var p = read(k) else { return }
-        switch part {
-        case .gameResult: p.gameResultDone = true
-        case .soloMatch: p.soloMatchDone = true
-        case .daily: p.dailyDone = true
-        }
-        if allDone(p) { UserDefaults.standard.removeObject(forKey: k) } else { write(k, p) }
+        store.markDone(gameMode: gameMode, seed: seed, part: part)
     }
 
-    /// Guard against re-entrant registration while drain() itself re-runs the
-    /// record functions (they call register() again, which is fine, but drain
-    /// must not pick up keys it is currently replaying on a later iteration).
-    private static var draining = false
+    /// A live record call for this game started / finished (drain skips it meanwhile).
+    static func beginFlight(gameMode: String, seed: String) { store.beginFlight(gameMode: gameMode, seed: seed) }
+    static func endFlight(gameMode: String, seed: String) { store.endFlight(gameMode: gameMode, seed: seed) }
+
+    /// BI15: today's finished dailies whose daily_results row is still queued,
+    /// as completions — merged into Home's completed state so a result the
+    /// server hasn't taken yet (outage, offline finish, killed mid-write) still
+    /// shows its W/L on the card, across relaunches, until the retry lands.
+    static func pendingTodayCompletions(day: String) -> [DailyCompletion] {
+        guard let userId = localUserId() else { return [] }
+        return store.outstandingDailies(userId: userId, day: day).compactMap { p in
+            guard let g = p.gameResult, DailyResultsService.owesDailyRow(
+                gameMode: p.gameMode, completed: g.won, guessCount: g.guessCount,
+                timeSeconds: g.timeSeconds, totalBoards: g.totalBoards) else { return nil }
+            let score = DailyScoring.compositeScore(
+                gameMode: p.gameMode, completed: g.won, guessCount: g.guessCount,
+                timeSeconds: g.timeSeconds, boardsSolved: g.boardsSolved, totalBoards: g.totalBoards,
+                hintsUsed: g.hintsUsed, stagesCompleted: g.stagesCompleted,
+                bestCorrectLetters: g.bestCorrectLetters, dateKey: getDailySeedDate(p.seed))
+            var c = DailyCompletion(gameMode: p.gameMode, completed: g.won, guessCount: g.guessCount,
+                                    timeSeconds: Double(g.timeSeconds), score: score)
+            c.boardsSolved = g.boardsSolved; c.totalBoards = g.totalBoards; c.hintsUsed = g.hintsUsed
+            return c
+        }
+    }
+
+    // MARK: - Retry triggers (BI15)
+
+    private static var monitor: NWPathMonitor?
+    private static var lastPathSatisfied = true
+
+    /// Drain on every foreground and whenever connectivity returns. Call once
+    /// after the launch drain. Idempotent.
+    @MainActor
+    static func startAutoRetry() {
+        guard monitor == nil else { return }
+        let m = NWPathMonitor()
+        m.pathUpdateHandler = { path in
+            let ok = path.status == .satisfied
+            Task { @MainActor in
+                // Only the offline → online edge; the first callback reports the current state.
+                if ok && !lastPathSatisfied {
+                    // BI16: a session refresh the outage failed retries first (its
+                    // success drains too); then the queue.
+                    await AuthService.shared.retrySessionIfNeeded()
+                    await drain()
+                }
+                lastPathSatisfied = ok
+            }
+        }
+        m.start(queue: DispatchQueue(label: "wordocious.pending-records.path"))
+        monitor = m
+    }
+
+    /// Guard against overlapping drains (launch + foreground + network-back can
+    /// all fire together). Main-actor isolated so the flag check is race-free.
+    @MainActor private static var draining = false
 
     /// Re-fire any solo results whose record calls were cut off (app killed
-    /// mid-flight, network drop at the final guess). Call once per launch
-    /// after auth bootstrap. Safe to call repeatedly; no-ops when signed out.
+    /// mid-flight, network drop or timeout at the final guess). Safe to call
+    /// repeatedly; no-ops when signed out.
+    @MainActor
     static func drain() async {
         if draining { return }
         draining = true
@@ -145,34 +130,30 @@ enum PendingRecords {
         guard let session = try? await client.auth.session else { return }
         let userId = session.user.id.uuidString
 
-        let keys = UserDefaults.standard.dictionaryRepresentation().keys
-            .filter { $0.hasPrefix(keyPrefix) }
-        for k in keys {
-            guard var p = read(k), !p.userId.isEmpty, !p.gameMode.isEmpty, !p.seed.isEmpty else {
-                UserDefaults.standard.removeObject(forKey: k)
+        for k in store.keys() {
+            guard var p = store.read(k), !p.userId.isEmpty, !p.gameMode.isEmpty, !p.seed.isEmpty else {
+                store.remove(k)
                 continue
             }
             // Too stale to be meaningful — drop regardless of owner.
-            if Date().timeIntervalSince1970 * 1000 - p.savedAt > maxAgeMs {
-                UserDefaults.standard.removeObject(forKey: k)
+            if Date().timeIntervalSince1970 * 1000 - p.savedAt > PendingRecordStore.maxAgeMs {
+                store.remove(k)
                 continue
             }
             // Another account's pending result — leave it for that account.
             if p.userId.lowercased() != userId.lowercased() { continue }
+            // Its live record call is still running (a hung write mid-outage) —
+            // replaying now would double stats/XP when both land.
+            if store.isInFlight(k) { continue }
             guard let mode = GameMode(rawValue: p.gameMode) else {
-                UserDefaults.standard.removeObject(forKey: k)
+                store.remove(k)
                 continue
             }
 
             // Dedupe, per PART. A matches row for this seed+mode proves the
             // `soloMatch` half landed and nothing more — the progression half
-            // (user_stats, XP, level, win streak, daily-login streak) is a
-            // separate call that fails on its own all the time. Clearing the
-            // key on row presence alone deleted work that had never run: the
-            // game appeared in match history while its XP, level and both
-            // streaks were gone permanently. So the row only settles the match
-            // half — which is what stops history duplicating — and the
-            // done-flags decide what actually gets replayed.
+            // is a separate call that fails on its own. So the row only settles
+            // the match half, and the done-flags decide what gets replayed.
             struct IdRow: Decodable { let id: String }
             do {
                 let rows: [IdRow] = try await client.from("matches")
@@ -189,35 +170,45 @@ enum PendingRecords {
                 continue // can't verify (offline?) — retry on a later drain
             }
 
-            // Everything registered has landed (incl. the daily row for daily
-            // seeds) — nothing left to replay. The old two-part check here is
-            // what released payloads with the daily_results row still unwritten.
-            if allDone(p) {
-                UserDefaults.standard.removeObject(forKey: k)
+            // Everything registered has landed (incl. the daily row for daily seeds).
+            if p.allDone {
+                store.remove(k)
                 continue
             }
 
             // Re-run the missing parts. Each re-registers against the same key
             // and clears it on success, so a failure here simply leaves the
-            // payload in place for the next launch.
+            // payload in place for the next drain.
             if let g = p.gameResult, p.gameResultDone != true {
-                _ = await GameResultsService.record(
+                let xp = await GameResultsService.record(
                     gameMode: mode, playType: "solo", won: g.won,
                     guessCount: g.guessCount, timeSeconds: g.timeSeconds,
                     boardsSolved: g.boardsSolved, totalBoards: g.totalBoards,
                     seed: p.seed, hintsUsed: g.hintsUsed,
                     stagesCompleted: g.stagesCompleted,
                     bestCorrectLetters: g.bestCorrectLetters)
-            } else if let g = p.gameResult, p.seed.hasPrefix("daily-"), p.dailyDone != true {
+                // The live finish checks achievements after its writes; a
+                // replayed progression must too, or a result that needed the
+                // retry never unlocks what it earned.
+                if xp != nil {
+                    await AchievementService.checkAchievements(
+                        userId: userId.lowercased(), gameMode: mode.rawValue, playType: "solo",
+                        won: g.won, guessCount: g.guessCount, timeSeconds: g.timeSeconds,
+                        seed: p.seed, hintsUsed: g.hintsUsed, source: .replay)
+                }
+            } else if let g = p.gameResult, p.dailyRowOutstanding {
                 // Progression landed but the daily_results tail was cut — replay
                 // just the daily leg (idempotent best-score upsert). Re-running
                 // the whole record() here would double stats/XP/streaks.
-                if await DailyResultsService.record(
+                let landed = await DailyResultsService.record(
                     gameMode: mode, completed: g.won, guessCount: g.guessCount,
                     timeSeconds: g.timeSeconds, boardsSolved: g.boardsSolved,
                     totalBoards: g.totalBoards, hintsUsed: g.hintsUsed, seed: p.seed,
                     stagesCompleted: g.stagesCompleted,
-                    bestCorrectLetters: g.bestCorrectLetters) != nil {
+                    bestCorrectLetters: g.bestCorrectLetters) != nil
+                if landed || !DailyResultsService.owesDailyRow(
+                    gameMode: mode.rawValue, completed: g.won, guessCount: g.guessCount,
+                    timeSeconds: g.timeSeconds, totalBoards: g.totalBoards) {
                     markDone(gameMode: p.gameMode, seed: p.seed, part: .daily)
                 }
             }

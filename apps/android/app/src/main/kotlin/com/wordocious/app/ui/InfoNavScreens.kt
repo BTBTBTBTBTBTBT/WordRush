@@ -285,43 +285,44 @@ private val WORDS_ACCENT = Color(0xFFEC4899)
 
 @Composable
 fun StrategyScreen(onDone: () -> Unit) {
-    val articles by produceState(initialValue = StrategyService.cached() ?: emptyList()) { value = StrategyService.articles() }
-    var selected by remember { mutableStateOf<StrategyService.Article?>(null) }
+    var articlesTry by remember { mutableStateOf(0) }
+    var articlesDone by remember { mutableStateOf(false) }
+    val articles by produceState(initialValue = StrategyService.cached() ?: emptyList(), articlesTry) { value = StrategyService.articles(); articlesDone = true }
+    var selectedSlug by remember { mutableStateOf<String?>(null) }
+    // The guide page family (StrategyKit): the flattened grouped order drives the index,
+    // the tip of the day and prev / next.
+    val entries = remember(articles) { strategyEntries(articles) }
 
-    selected?.let { a ->
-        androidx.activity.compose.BackHandler { selected = null }
-        OverlayScaffold(
-            a.title, onDone = onDone, onBack = { selected = null }, art = TitleArt.STRATEGY,
-            intro = a.title to a.dek,
-        ) {
-            Text(
-                "STRATEGY · ${a.minutes} MIN READ", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp,
-                color = darkenInk(STRATEGY_ACCENT), modifier = Modifier.padding(horizontal = 4.dp),
-            )
-            a.sections.forEach { s ->
-                InfoSectionCard(STRATEGY_ACCENT, title = s.heading) {
-                    s.body.forEach { InfoBody(it) }
-                }
+    val at = entries.indexOfFirst { it.article.slug == selectedSlug }
+    if (at >= 0) {
+        val e = entries[at]
+        androidx.activity.compose.BackHandler { selectedSlug = null }
+        // Keyed by slug: swapping articles (prev / next) starts the new one at the top.
+        androidx.compose.runtime.key(e.article.slug) {
+            OverlayScaffold(e.article.title, onDone = onDone, onBack = { selectedSlug = null }, art = TitleArt.STRATEGY) {
+                StrategyArticleBody(
+                    e, prev = entries.getOrNull(at - 1), next = entries.getOrNull(at + 1),
+                    onOpen = { selectedSlug = it.article.slug },
+                    // PLAY opens today's daily through the widget deep-link path
+                    // (wordocious://daily/KEY → DeepLinkRouter.dailyMode → MainScreen),
+                    // closing this page first. Hidden for general articles and VS.
+                    onPlay = e.playMode?.let { mode ->
+                        {
+                            onDone()
+                            com.wordocious.app.data.DeepLinkRouter.dailyMode.value = mode
+                        }
+                    },
+                )
             }
         }
         return
     }
 
-    OverlayScaffold(
-        "Strategy", onDone, art = TitleArt.STRATEGY,
-        intro = "Solve faster, in fewer guesses" to "Practical, original strategy for solving daily word puzzles faster and in fewer guesses.",
-    ) {
-        if (articles.isEmpty()) {
-            CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
-        } else articles.forEach { a ->
-            InfoGuideCard(
-                STRATEGY_ACCENT, a.title, a.dek, onClick = { selected = a }, kicker = "${a.minutes} MIN READ",
-            ) {
-                InfoIconTile(STRATEGY_ACCENT) {
-                    Icon(Icons.Filled.Lightbulb, null, tint = STRATEGY_ACCENT, modifier = Modifier.size(22.dp))
-                }
-            }
-        }
+    OverlayScaffold("Strategy", onDone, art = TitleArt.STRATEGY) {
+        // BI24: offline with no cache → the unplugged state + Try again, not an endless loader.
+        if (entries.isEmpty() && articlesDone) {
+            InfoOfflineState("strategy") { articlesDone = false; articlesTry++ }
+        } else StrategyIndexBody(entries, onOpen = { selectedSlug = it.article.slug })
     }
 }
 
@@ -329,7 +330,11 @@ fun StrategyScreen(onDone: () -> Unit) {
 
 @Composable
 fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
-    val words by produceState(initialValue = WordsService.cached() ?: emptyList()) { value = WordsService.words() }
+    // BI24: a fetch that came back empty (offline, no cache) shows the unplugged state + Try again,
+    // not a loader that never resolves.
+    var wordsTry by remember { mutableStateOf(0) }
+    var wordsDone by remember { mutableStateOf(false) }
+    val words by produceState(initialValue = WordsService.cached() ?: emptyList(), wordsTry) { value = WordsService.words(); wordsDone = true }
     var selected by remember { mutableStateOf<WordsService.Entry?>(null) }
     // ART_SPEC §2 / C6: opened as the Word of the Day page, the page keeps the WOTD headline;
     // the Words footer page shows its own WORDS title.
@@ -341,16 +346,49 @@ fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
         return
     }
 
-    OverlayScaffold(
-        navTitle, onDone, art = if (wotd) TitleArt.WOTD else TitleArt.WORDS, pageHeadline = wotd,
-        intro = "Every Word of the Day" to "Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.",
-    ) {
-        if (words.isEmpty()) {
+    // FINISH_SPEC BI17: the guide page family — the intro and the rows are borderless
+    // soft fields (no outlined cards), keeping the glossy first-letter tile, word and date.
+    OverlayScaffold(navTitle, onDone, art = if (wotd) TitleArt.WOTD else TitleArt.WORDS, pageHeadline = wotd) {
+        WordsIntro()
+        if (words.isEmpty() && wordsDone) {
+            InfoOfflineState("words") { wordsDone = false; wordsTry++ }
+        } else if (words.isEmpty()) {
             CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
-        } else words.forEach { w ->
-            InfoGuideCard(WORDS_ACCENT, w.word.uppercase(), prettyDate(w.date), onClick = { selected = w }) {
-                LetterCandyTile(w.word.take(1).uppercase(), 40.dp, 18.sp)
-            }
+        } else words.forEach { w -> WordRow(w) { selected = w } }
+    }
+}
+
+/** The archive intro as a soft purple field (no border). */
+@Composable
+private fun WordsIntro() {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(guideField(GUIDE_BRAND, 0.10f, 0.22f))
+            .padding(horizontal = 14.dp, vertical = 12.dp).semantics(mergeDescendants = true) { },
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text("Every Word of the Day", fontFamily = Nunito, fontSize = 15.sp, fontWeight = FontWeight.Black, color = InfoInk.heading)
+        Text(
+            "Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.",
+            fontSize = 13.sp, fontWeight = FontWeight.Bold, color = InfoInk.muted, lineHeight = 1.35.em,
+        )
+    }
+}
+
+/** One archive row: a borderless pink-wash field with the glossy first-letter tile, the word and its date. */
+@Composable
+private fun WordRow(w: WordsService.Entry, onClick: () -> Unit) {
+    val date = prettyDate(w.date)
+    Row(
+        Modifier.fillMaxWidth().squishClickable("${w.word.uppercase()}, $date", card = true, onClick = onClick)
+            .clip(RoundedCornerShape(16.dp)).background(guideField(WORDS_ACCENT, 0.12f, 0.24f))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        LetterCandyTile(w.word.take(1).uppercase(), 40.dp, 18.sp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(w.word.uppercase(), fontFamily = Nunito, fontSize = 15.sp, fontWeight = FontWeight.Black, color = InfoInk.heading)
+            Text(date, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = InfoInk.muted)
         }
     }
 }
@@ -369,72 +407,68 @@ private fun LetterCandyTile(letter: String, size: androidx.compose.ui.unit.Dp, f
     }
 }
 
+/**
+ * A word's page in the guide family (FINISH_SPEC BI17): the hero card (I ready on the
+ * glow, the dated eyebrow, the word in the brand caps, phonetic + part of speech), then
+ * MEANING as numbered senses with the example as a highlighted line, then the word as a
+ * puzzle answer (the summary as an amber takeaway, the strategy as a paragraph).
+ */
 @Composable
 private fun WordDetail(w: WordsService.Entry, wotd: Boolean, onDone: () -> Unit, onBack: () -> Unit) {
     val word = w.word.uppercase()
     OverlayScaffold(word, onDone = onDone, onBack = onBack, art = if (wotd) TitleArt.WOTD else TitleArt.WORDS, pageHeadline = wotd) {
-        // The word spelled in purple candy tiles on a soft green card (finishing-touches "Today's word").
-        TintedCard(
-            WOTD_CARD_ACCENT, Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = 16.dp, horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                "WORD OF THE DAY · ${prettyDate(w.date).uppercase()}", fontSize = 10.sp, fontWeight = FontWeight.Black,
-                letterSpacing = 0.8.sp, color = if (WTheme.isDark) WTheme.textSecondary else darkenInk(WOTD_CARD_ACCENT),
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
-            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                val n = word.length.coerceAtLeast(1)
-                val tile = minOf(40.dp, (maxWidth - 6.dp * (n - 1)) / n)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.semantics(mergeDescendants = true) { }) {
-                    word.forEach { c -> LetterCandyTile(c.toString(), tile, (tile.value * 0.5f).sp) }
-                }
-            }
-            if (w.phonetic.isNotEmpty() || w.partOfSpeech.isNotEmpty()) {
-                Row(
-                    Modifier.align(Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (w.phonetic.isNotEmpty()) Text(w.phonetic, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = InfoInk.body)
-                    if (w.partOfSpeech.isNotEmpty()) {
-                        Text(
-                            w.partOfSpeech.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.1.em,
-                            color = Color.White,
-                            modifier = Modifier.clip(RoundedCornerShape(50))
-                                .background(Brush.verticalGradient(listOf(Color(0xFF5ED59A), Color(0xFF22A866))))
-                                .padding(horizontal = 10.dp, vertical = 3.dp),
-                        )
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            GuideHeroCard(WOTD_CARD_ACCENT, spacing = 8.dp) {
+                GuideHostHero(MascotId.I, WOTD_CARD_ACCENT, 96.dp)
+                Text(
+                    "WORD OF THE DAY · ${prettyDate(w.date).uppercase()}", fontFamily = Nunito, fontSize = 11.sp,
+                    fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = guideAccentInk(GUIDE_BRAND),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                LiveHeadline(w.word, HeadlinePalette.HOME, Modifier.fillMaxWidth(), maxSize = 40.sp, minSize = 18.sp, maxLines = 1, sound = false)
+                if (w.phonetic.isNotEmpty() || w.partOfSpeech.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (w.phonetic.isNotEmpty()) Text(w.phonetic, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = InfoInk.muted)
+                        if (w.partOfSpeech.isNotEmpty()) GuideChip(w.partOfSpeech.uppercase(), GUIDE_BRAND)
                     }
                 }
             }
-        }
-        if (w.definition.isNotEmpty()) {
-            WordSectionCard("Meaning", Icons.Filled.MenuBook, Color(0xFF7C3AED)) {
-                InfoBody(w.definition)
-                if (w.example.isNotEmpty()) Text("“${w.example}”", fontSize = 12.5.sp, fontStyle = FontStyle.Italic, color = InfoInk.muted)
-                w.extraSenses.forEach {
-                    Text(buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Black, color = purpleTextInk)) { append(it.partOfSpeech + " ") }
-                        append(it.definition)
-                    }, fontSize = 12.5.sp, color = InfoInk.body)
+            if (w.definition.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    GuideSectionHead("MEANING")
+                    val senses = listOf(WordsService.Sense(w.partOfSpeech, w.definition)) + w.extraSenses.filter { it.definition.isNotBlank() }
+                    senses.forEachIndexed { i, sense -> SenseRow(i + 1, sense) }
+                    if (w.example.isNotEmpty()) GuideTakeaway("\u201C${w.example}\u201D", GUIDE_BRAND, italic = true)
                 }
             }
-        }
-        WordSectionCard("$word as a puzzle answer", Icons.Filled.Lightbulb, STRATEGY_ACCENT) {
-            InfoBody(w.analysisSummary)
-            InfoBody(w.analysisStrategy)
+            if (w.analysisSummary.isNotEmpty() || w.analysisStrategy.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    GuideSectionHead("$word AS A PUZZLE ANSWER")
+                    if (w.analysisSummary.isNotEmpty()) GuideTakeaway(w.analysisSummary, STRATEGY_ACCENT)
+                    if (w.analysisStrategy.isNotEmpty()) GuideParagraph(w.analysisStrategy)
+                }
+            }
         }
     }
 }
 
+/** One numbered sense: a soft numeral on a purple-wash circle, the part-of-speech eyebrow, the definition. */
 @Composable
-private fun WordSectionCard(title: String, icon: ImageVector, tint: Color, content: @Composable () -> Unit) {
-    InfoSectionCard(
-        tint, title = title.uppercase(),
-        leading = { InfoIconTile(tint, 28.dp) { Icon(icon, null, tint = tint, modifier = Modifier.size(15.dp)) } },
+private fun SenseRow(n: Int, sense: WordsService.Sense) {
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { content() }
+        GuideNumeral(n, GUIDE_BRAND, 34.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (sense.partOfSpeech.isNotBlank()) {
+                Text(
+                    sense.partOfSpeech.uppercase(), fontFamily = Nunito, fontSize = 10.sp, fontWeight = FontWeight.Black,
+                    letterSpacing = 1.sp, color = guideAccentInk(GUIDE_BRAND),
+                )
+            }
+            Text(sense.definition, fontSize = 15.5.sp, fontWeight = FontWeight.Normal, color = InfoInk.body, lineHeight = 1.5.em)
+        }
     }
 }
 
@@ -546,76 +580,39 @@ object HowToPlayService {
     }
 }
 
-private fun htpColor(hex: String): Color =
-    runCatching { Color(("FF" + hex.removePrefix("#")).toLong(16)) }.getOrDefault(Color(0xFF7C3AED))
-
 @Composable
 fun HowToPlayScreen(onDone: () -> Unit) {
-    val sections by produceState(initialValue = HowToPlayService.cached() ?: emptyList()) { value = HowToPlayService.sections() }
-    OverlayScaffold(
-        "How to Play", onDone, art = TitleArt.HOWTO,
-        intro = "New to Wordocious?" to "Everything you need to know to get started.",
-    ) {
-        // FINISH_SPEC W: replay the first-run tour (closes this page under it).
-        InfoLinkChip("Take the tour", Color(0xFF7C3AED), Modifier.align(Alignment.CenterHorizontally)) {
-            Onboarding.replay()
-            onDone()
+    var sectionsTry by remember { mutableStateOf(0) }
+    var sectionsDone by remember { mutableStateOf(false) }
+    val sections by produceState(initialValue = HowToPlayService.cached() ?: emptyList(), sectionsTry) { value = HowToPlayService.sections(); sectionsDone = true }
+    OverlayScaffold("How to Play", onDone, art = TitleArt.HOWTO) {
+        // The guide page family (StrategyKit): the hero card carries the tour replay
+        // (FINISH_SPEC W: closes this page under it), then the numbered sections.
+        HowToPlayBody(
+            sections,
+            onTour = {
+                Onboarding.replay()
+                onDone()
+            },
+            tile = { HtpTile(it) },
+            loadFailed = sections.isEmpty() && sectionsDone,
+        )
+        if (sections.isEmpty() && sectionsDone) {
+            InfoOfflineState("guide") { sectionsDone = false; sectionsTry++ }
         }
-        if (sections.isEmpty()) {
-            CastLoader(null, Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
-        } else sections.forEach { HtpSectionCard(it) }
     }
 }
 
+/** BI24: an info page whose fetch came back empty (offline, nothing cached): R unplugged + Try again. */
 @Composable
-private fun HtpSectionCard(s: HowToPlayService.Section) {
-    val accent = Color(0xFF7C3AED)
-    InfoSectionCard(accent, title = s.title) {
-        s.intro?.let { InfoBody(it) }
-        s.bullets?.let { bullets ->
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                bullets.forEach { b ->
-                    InfoBullet(accent) {
-                        Text(buildAnnotatedString {
-                            b.strong?.let { withStyle(SpanStyle(fontWeight = FontWeight.Black, color = InfoInk.heading)) { append(it) } }
-                            append(b.text)
-                        }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = InfoInk.body, lineHeight = 1.45.em)
-                    }
-                }
-            }
-        }
-        s.tilesHeading?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Black, color = InfoInk.heading) }
-        s.tiles?.let { tiles ->
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                tiles.forEach { row ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            row.letters.forEach { HtpTile(it) }
-                        }
-                        Text(buildAnnotatedString {
-                            withStyle(SpanStyle(fontWeight = FontWeight.Black, color = htpColor(row.strongColor))) { append(row.strong) }
-                            append(row.rest)
-                        }, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = InfoInk.body, lineHeight = 1.4.em)
-                    }
-                }
-            }
-        }
-        s.modes?.let { modes ->
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                modes.forEach { m ->
-                    val c = htpColor(m.accent)
-                    Column(
-                        Modifier.fillMaxWidth().tintedPill(c).padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        Text(m.name, fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) c else darkenInk(c))
-                        Text(m.body, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = InfoInk.body, lineHeight = 1.4.em)
-                    }
-                }
-            }
-        }
-        s.outro?.let { InfoBody(it) }
-    }
+private fun InfoOfflineState(what: String, onRetry: () -> Unit) {
+    BrandEmptyState(
+        title = "CAN'T REACH THE SERVER",
+        line = "Check your connection and we'll load the $what again.",
+        modifier = Modifier.padding(top = 16.dp),
+        scene = SceneArt.UNPLUGGED,
+        actionLabel = "Try again", onAction = onRetry,
+    )
 }
 
 @Composable

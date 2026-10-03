@@ -5,6 +5,7 @@ import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
 import { SUDOKU_ACCENT } from './sudoku-board';
 import { CandyButton } from '@/components/ui/candy-button';
+import { HintCountBadge } from '@/components/ui/hint-kit';
 
 // The number pad reads as "a smaller keyboard" (§8; FINISH_SPEC B2): the same
 // tile keys as components/game/keyboard.tsx (lilac lip, light face, dark
@@ -35,8 +36,11 @@ export function NumberPad({ onDigit, onUndo, onErase, onToggleNotes, onHint, not
         <CandyButton size="sm" color="purple" onClick={tap(onUndo)} disabled={disabled || !canUndo} aria-label="Undo" icon={<Undo2 className="w-3.5 h-3.5" aria-hidden="true" />}>Undo</CandyButton>
         <CandyButton size="sm" color="purple" onClick={tap(onErase)} disabled={disabled} aria-label="Erase" icon={<Eraser className="w-3.5 h-3.5" aria-hidden="true" />}>Erase</CandyButton>
         <CandyButton size="sm" color={notesMode ? 'amber' : 'purple'} onClick={tap(onToggleNotes)} disabled={disabled} aria-pressed={notesMode} aria-label="Notes" icon={<Pencil className="w-3.5 h-3.5" aria-hidden="true" />}>Notes</CandyButton>
-        <CandyButton size="sm" color="teal" onClick={tap(onHint)} disabled={disabled} aria-label="Hint" icon={<Lightbulb className="w-3.5 h-3.5" aria-hidden="true" />}>
-          Hint{hintsUsed > 0 ? ` · ${hintsUsed}` : ''}
+        {/* The count is a corner coin, never in the label: "Hint · 1" widened the row
+            past a 375 px phone, it wrapped, and the board above shrank (lib/hint-layout.ts). */}
+        <CandyButton size="sm" color="teal" onClick={tap(onHint)} disabled={disabled} aria-label={hintsUsed > 0 ? `Hint (${hintsUsed} used)` : 'Hint'} icon={<Lightbulb className="w-3.5 h-3.5" aria-hidden="true" />}
+          trailing={<HintCountBadge count={hintsUsed} />}>
+          Hint
         </CandyButton>
       </div>
       <div className="flex gap-1 justify-center px-1">

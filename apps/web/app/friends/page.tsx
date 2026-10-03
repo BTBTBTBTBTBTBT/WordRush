@@ -16,23 +16,37 @@ import { InvitePanel } from '@/components/referrals/invite-panel';
 import { useAuth } from '@/lib/auth-context';
 import { FR } from '@/lib/friends-play';
 import { PageBackground } from '@/components/ui/page-background';
+import { PageHeadline } from '@/components/ui/page-headline';
+import { GuestPitch, GUEST_GRADIENTS } from '@/components/ui/guest-pitch';
+import { PAGE_HOSTS } from '@/lib/mascots';
 
 const LIGHT_CARD_BASE = { ['--color-card-base' as string]: '#ffffff' } as React.CSSProperties;
 
 export default function FriendsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, exitGuest } = useAuth();
   return (
     // Light-only page: the shared washes (soft-surface, the game tray) mix over
     // white here in every theme, so the Friends inks stay legible.
-    <PageBackground tint="friends" scheme="light" className="min-h-screen pb-24" style={LIGHT_CARD_BASE}>
+    <PageBackground tint="friends" scheme="light" className="min-h-screen pb-24 flex flex-col" style={LIGHT_CARD_BASE}>
       <AppHeader />
 
       {/* FINISH_SPEC AG: up to 1100 px on desktop web (FriendsPanel lays its cards in two columns). */}
-      <main className="max-w-md page-wide mx-auto px-4 pt-2 space-y-3.5">
+      <main className={`max-w-md mx-auto px-4 pt-2 w-full ${!loading && !user ? 'flex flex-1 flex-col' : 'page-wide space-y-3.5'}`}>
         {!loading && !user ? (
-          <p className="text-sm font-bold p-6 text-center" style={{ color: FR.label }}>
-            Sign in to add friends, race them on every daily board and play quick games together.
-          </p>
+          // FINISH_SPEC BI23: a finished signed-out state under the FRIENDS title art — O1 + I
+          // as a duo, the headline, one line, the candy SIGN IN (no empty list, no add field).
+          <>
+            <PageHeadline name="art-title-friends" label="Friends" />
+            <GuestPitch
+              hosts={[PAGE_HOSTS.friends, PAGE_HOSTS.addFriend]}
+              title="Play with friends"
+              subtitle="Sign in to add friends, race them every day and play pocket games together."
+              gradient={GUEST_GRADIENTS.friends}
+              preview={{ kind: 'none' }}
+              onSignIn={exitGuest}
+              subColor={FR.label}
+            />
+          </>
         ) : (
           <>
             <FriendsPanel />

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase-client';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { CandyButton } from '@/components/ui/candy-button';
 import { Icon3D } from '@/components/ui/icon3d';
+import { CastLoader } from '@/components/ui/cast-loader';
 import { SETTINGS_ACCENT, SettingsSection, settingsRowStyle } from './settings-kit';
 import {
   LINK_PROVIDERS,
@@ -130,9 +131,7 @@ export function LinkedSignIns() {
       </p>
       <div className="space-y-1.5">
         {identities === null && !loadError && (
-          <div className="p-3 text-[10px] font-bold" style={{ ...settingsRowStyle(SETTINGS_ACCENT.linked), color: 'var(--color-text-muted)' }}>
-            Loading…
-          </div>
+          <div role="status" aria-label="Loading sign-ins" className="flex justify-center py-3"><CastLoader size={16} /></div>
         )}
         {loadError && (
           <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-loss-text)' }}>Couldn’t load your sign-ins. Close Settings and try again.</p>

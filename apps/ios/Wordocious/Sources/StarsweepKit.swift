@@ -321,6 +321,8 @@ struct StarsweepTool: View {
     var variant: CandyButtonStyle.Variant = .peach
     var active: Bool = false
     var dim: Bool = false
+    /// §BI22: a used count (Hint) — the gold corner coin on the circle, never in the caption.
+    var count: Int = 0
     let action: () -> Void
 
     var body: some View {
@@ -329,8 +331,9 @@ struct StarsweepTool: View {
                 StarsweepToolIcon(symbol: symbol)
             }
             .buttonStyle(CandyButtonStyle(variant: variant, size: .small, fullWidth: false, circle: true))
+            .hintCountBadge(count)
             .disabled(dim)
-            .accessibilityLabel(label)
+            .accessibilityLabel(count > 0 ? "\(label) (\(count) used)" : label)
             .accessibilityAddTraits(active ? .isSelected : [])
             Text(label)
                 .font(Brand.font(10, .heavy))

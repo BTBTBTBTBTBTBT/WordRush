@@ -1,8 +1,9 @@
 import Foundation
 
 /// FINISH_SPEC §AJ: what a footer tab tap does. Tapping Home from anywhere dismisses
-/// every sheet / popup / cover, pops every stack and lands on Home's root scrolled to
-/// the top; tapping the CURRENT tab pops it to its root (and scrolls to the top);
+/// every sheet / popup / cover, pops every stack and lands on Home's root (BI11: at the
+/// position the player left — only a re-tap on the root scrolls to the top); tapping
+/// the CURRENT tab pops it to its root (at the root: scrolls to the top);
 /// the one exception is a live VS match (quitting is a forfeit) — confirm first.
 /// Pure so the rule is unit-tested; RootTabView executes the actions.
 public enum AppTab: String, CaseIterable, Codable {
@@ -45,17 +46,22 @@ public enum TabRouter {
         if s.liveVSMatch { return [.confirmForfeit] }
         var out: [TabRouterAction] = []
         if s.overlays > 0 { out.append(.dismissOverlays) }
+        // FINISH_SPEC BI11: only a re-tap of the tab you're on, at its root with nothing
+        // over it, scrolls to the top. Coming back from another tab (or out of a pushed
+        // screen / a game) keeps the root where the player left it.
+        let reTapAtRoot = target == s.tab && s.atRoot(target)
         if target == .home {
-            // Home from anywhere: every stack back to its root, then Home at the top.
+            // Home from anywhere: every stack back to its root, then Home — at its
+            // remembered position (the top only on a re-tap at the root).
             for t in AppTab.allCases where (s.depth[t] ?? 0) > 0 { out.append(.popToRoot(t)) }
             if s.tab != .home { out.append(.select(.home)) }
-            out.append(.scrollToTop(.home))
+            if reTapAtRoot { out.append(.scrollToTop(.home)) }
             return out
         }
         if target == s.tab {
-            // Re-tap the current tab: pop it to its root and scroll to the top.
+            // Re-tap the current tab: pop it to its root; at the root, scroll to the top.
             if (s.depth[target] ?? 0) > 0 { out.append(.popToRoot(target)) }
-            out.append(.scrollToTop(target))
+            if reTapAtRoot { out.append(.scrollToTop(target)) }
             return out
         }
         out.append(.select(target))

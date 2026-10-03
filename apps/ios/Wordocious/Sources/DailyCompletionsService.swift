@@ -1,12 +1,13 @@
 import Foundation
 import Supabase
 import UIKit
+import WordociousCore
 
 /// One mode's daily result for today (for the completed-card state).
 /// Codable so the store can cache today's completions on-device (web parity:
 /// daily-completions-context.tsx seeds first render from sessionStorage so
 /// completed badges never flash in after a fetch).
-struct DailyCompletion: Codable {
+struct DailyCompletion: Codable, Equatable {
     let gameMode: String
     let completed: Bool
     let guessCount: Int
@@ -144,15 +145,16 @@ final class DailyCompletionsStore: ObservableObject {
                 // still in memory (session alive across the boundary) starts a
                 // fresh day — yesterday's entries must never count toward
                 // today's sweep.
+                // BI19: core CompletionLedger (unit tested) — day-scoped, best-result
+                // (a replay never downgrades a recorded win), applied synchronously
+                // so Home's W/L is there the moment the finish lands.
                 let today = LeaderboardService.todayLocal()
-                if self.dataDay != today {
-                    self.byMode = [:]
-                    self.optimistic = [:]
-                    self.dataDay = today
-                }
-                // Best-result semantics: never downgrade a recorded win on replay.
-                if let existing = self.byMode[c.gameMode], existing.completed && !c.completed { return }
-                self.byMode[c.gameMode] = c
+                var ledger = CompletionLedger(day: self.dataDay, byMode: self.byMode, isWin: { $0.completed })
+                let dayRolled = self.dataDay != today
+                let changed = ledger.apply(mode: c.gameMode, result: c, today: today)
+                if dayRolled { self.optimistic = [:]; self.dataDay = today; self.byMode = ledger.byMode }
+                guard changed else { return }
+                self.byMode = ledger.byMode
                 self.optimistic[c.gameMode] = c
                 self.optimisticDay = today
                 Self.writeCache(self.byMode)
@@ -176,8 +178,12 @@ final class DailyCompletionsStore: ObservableObject {
         if optimisticDay != today { optimistic = [:]; optimisticDay = today }
 
         let client = AuthService.shared.client
-        guard (try? await client.auth.session) != nil,
-              let userId = try? await client.auth.session.user.id.uuidString else {
+        // BI15: "signed out" is decided from the LOCAL session. The refreshing
+        // `client.auth.session` throws whenever the token refresh can't reach
+        // the server (offline, or the 2026-10-02 outage) — and this branch then
+        // WIPED today's completions and their cache, so every finished card on
+        // Home read as unplayed until the network came back.
+        guard let userId = localUserId() else {
             byMode = [:]; optimistic = [:]; dataDay = today; Self.writeCache(nil)
             WidgetBridge.update(completions: byMode)   // §AL: a fresh 0/N, ⭐ 0 widget
             return
@@ -197,9 +203,18 @@ final class DailyCompletionsStore: ObservableObject {
             // stale in-memory/cached state, which is how yesterday's completions
             // leaked into today. A day rollover clears `optimistic`, so a fetch
             // that returns nothing correctly yields an empty (fresh) board.
-            var merged = Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a })
-            for (k, v) in optimistic where merged[k] == nil { merged[k] = v }
-            byMode = merged
+            var stillPending = optimistic
+            // BI15: finishes still in the pending-write queue (outage, offline
+            // finish, killed mid-write — possibly a previous launch) count as
+            // done on this device; the queue retries the row in the background.
+            for c in PendingRecords.pendingTodayCompletions(day: today) where stillPending[c.gameMode] == nil {
+                stillPending[c.gameMode] = c
+            }
+            // BI19: core CompletionLedger.reconcile — the server's rows win silently.
+            var ledger = CompletionLedger<DailyCompletion>(day: today, isWin: { $0.completed })
+            ledger.reconcile(server: Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a }),
+                             stillPending: stillPending, today: today)
+            if ledger.byMode != byMode { byMode = ledger.byMode }   // swap in only what changed
             dataDay = today
             Self.writeCache(byMode)
             WidgetBridge.update(completions: byMode)
@@ -213,27 +228,28 @@ final class DailyCompletionsStore: ObservableObject {
                 byMode = [:]
                 optimistic = [:]
                 dataDay = today
-                WidgetBridge.update(completions: byMode)
             }
+            // BI15: the server is unreachable — today's queued finishes still show.
+            for c in PendingRecords.pendingTodayCompletions(day: today) where byMode[c.gameMode] == nil {
+                byMode[c.gameMode] = c
+            }
+            Self.writeCache(byMode)
+            WidgetBridge.update(completions: byMode)
         }
     }
 
     // MARK: Day-keyed cache (the iOS analogue of the web's sessionStorage seed)
 
-    private struct Cache: Codable { let day: String; let byMode: [String: DailyCompletion] }
-
+    // BI19: the CompletionLedger's persisted form ({day, byMode} — the same JSON
+    // this cache always had, so an upgrade keeps today's map).
     private static func readCache() -> [String: DailyCompletion]? {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey),
-              let cache = try? JSONDecoder().decode(Cache.self, from: data),
-              cache.day == LeaderboardService.todayLocal() else { return nil }
-        return cache.byMode
+        CompletionLedger<DailyCompletion>.load(from: .standard, key: cacheKey, today: LeaderboardService.todayLocal())
     }
 
     private static func writeCache(_ byMode: [String: DailyCompletion]?) {
         guard let byMode else { UserDefaults.standard.removeObject(forKey: cacheKey); return }
-        if let data = try? JSONEncoder().encode(Cache(day: LeaderboardService.todayLocal(), byMode: byMode)) {
-            UserDefaults.standard.set(data, forKey: cacheKey)
-        }
+        CompletionLedger(day: LeaderboardService.todayLocal(), byMode: byMode, isWin: { $0.completed })
+            .save(to: .standard, key: cacheKey)
     }
 }
 

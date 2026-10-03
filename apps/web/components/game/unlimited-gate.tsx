@@ -11,6 +11,7 @@ import { lookupInviteByCode } from '@/lib/invite-service';
 import { loadCpuProgression } from '@/lib/bot/cpu-progression';
 import { utcDay } from '@/lib/vs-lobby';
 import { VsLoadingScreen } from '@/components/vs/vs-ui';
+import { GameLoading } from '@/components/game/game-loading';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { StateCard } from '@/components/ui/soft-popup';
@@ -85,11 +86,7 @@ function GateCard({ title, blurb, fallbackHref, fallbackLabel, unlimited = false
 
 /** Entitlement isn't known yet — show nothing decisive either way. */
 function GateLoading() {
-  return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: softBackground('#7c3aed', 0.06) }}>
-      <div className="text-lg font-black animate-pulse" style={{ color: 'var(--color-text)' }}>Loading...</div>
-    </div>
-  );
+  return <GameLoading />;
 }
 
 /**

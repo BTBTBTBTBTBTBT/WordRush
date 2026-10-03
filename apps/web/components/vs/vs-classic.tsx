@@ -4,6 +4,7 @@ import { keyDuringReject } from '@/lib/tile-motion';
 import { useRejectRow } from '@/hooks/use-reject-row';
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { modeColor } from '@/lib/vs-lobby';
+import { UsedHintPill } from '@/components/ui/used-hint-pill';
 import { CandyButton } from '@/components/ui/candy-button';
 import { UiIcon } from '@/components/ui/ui-icon';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, isValidWord } from '@wordle-duel/core';
@@ -16,6 +17,7 @@ import { isTypingTarget } from '@/lib/keyboard';
 import { playInvalid } from '@/lib/sounds';
 import { useClassicHints } from '@/hooks/use-classic-hints';
 import type { EvaluatedRow } from './vs-result-detail';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 
 export interface VsGameComponentProps {
   seed: string;
@@ -200,16 +202,12 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
-      <div className="text-center px-2 shrink-0">
+      <div className="relative text-center px-2 shrink-0">
         <div className="flex justify-center gap-3">
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
-            <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: '#1a1a2e', color: '#fff' }}>{message}</span>
-          </div>
-        )}
+        <FeedbackToast message={message} />
       </div>
 
       {/* Opponent strip */}
@@ -256,14 +254,20 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
           unmounting it re-centered the flex-1 board for the frame between
           finishing and the 'waiting' screen swap — a visible board jump. */}
       {hasHints && (
-        <div className={`shrink-0 flex justify-center gap-3 px-4 pb-4 ${currentBoard.status === GameStatus.PLAYING ? '' : 'invisible pointer-events-none'}`}>
+        <div className={`shrink-0 grid grid-cols-2 gap-3 w-full max-w-[360px] mx-auto px-4 pb-4 ${currentBoard.status === GameStatus.PLAYING ? '' : 'invisible pointer-events-none'}`}>
           {/* A8: the solo screen's teal candy hint buttons. */}
-          <CandyButton size="sm" color="teal" onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
-            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}
-          </CandyButton>
-          <CandyButton size="sm" color="teal" onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
-            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}
-          </CandyButton>
+          {/* BI25: a used hint is a soft filled pill, no outline. */}
+          {hints.vowelUsed ? <UsedHintPill>{hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}</UsedHintPill> : (
+            <CandyButton size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+              {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}
+            </CandyButton>
+          )}
+          {/* BI25: a used hint is a soft filled pill, no outline. */}
+          {hints.consonantUsed ? <UsedHintPill>{hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}</UsedHintPill> : (
+            <CandyButton size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+              {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}
+            </CandyButton>
+          )}
         </div>
       )}
 

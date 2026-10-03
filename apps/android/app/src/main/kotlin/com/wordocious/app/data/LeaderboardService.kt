@@ -62,8 +62,64 @@ object LeaderboardService {
     private val boardCache = mutableMapOf<String, CachedBoard>()
     fun cacheKey(gameMode: String, day: String, userId: String?, playType: String = "solo") =
         "$gameMode:$day:$playType:${userId ?: "anon"}"
-    fun cachedBoard(key: String): CachedBoard? { loadDisk(); return boardCache[key] }
-    fun cacheBoard(key: String, board: CachedBoard) { loadDisk(); boardCache[key] = board; persist() }
+    /** BI19: the cached board with the player's optimistic row merged in (a finished daily
+     *  shows on the board at once, before / without the server). */
+    fun cachedBoard(key: String): CachedBoard? {
+        loadDisk()
+        val board = boardCache[key] ?: return optimisticOnlyBoard(key)
+        return withOptimistic(key, board)
+    }
+    /** Optimistic rows are never persisted as server rows. */
+    fun cacheBoard(key: String, board: CachedBoard) {
+        loadDisk()
+        boardCache[key] = board.copy(
+            entries = board.entries.filterNot { it.isOptimistic },
+            rankWindow = board.rankWindow?.let { w -> w.copy(entries = w.entries.filterNot { it.isOptimistic }) },
+        )
+        persist()
+    }
+
+    // ---- BI19 optimistic rows ------------------------------------------------
+    /** "mode:day:playType:uid[:friends]" → (mode, day, playType). */
+    private fun parseKey(key: String): Triple<String, String, String>? {
+        val parts = key.split(':')
+        if (parts.size < 4) return null
+        return Triple(parts[0], parts[1], parts[2])
+    }
+
+    private fun localFor(mode: String, day: String): OptimisticResults.LocalResult? {
+        val uid = AuthService.userId ?: return null
+        return runCatching { AppCache.optimistic.get(uid, day, mode) }.getOrNull()
+    }
+
+    private fun withOptimistic(key: String, board: CachedBoard): CachedBoard {
+        val (mode, day, playType) = parseKey(key) ?: return board
+        if (playType != "solo") return board
+        val local = localFor(mode, day) ?: return board
+        val uid = AuthService.userId
+        if (board.entries.any { OptimisticResults.isMe(it, uid) } ||
+            board.rankWindow?.entries?.any { OptimisticResults.isMe(it, uid) } == true
+        ) return board
+        val full = board.entries.size >= 50
+        val merged = OptimisticResults.mergeLeaderboard(board.entries, local, uid, limit = if (full) 50 else null)
+        if (merged.size == board.entries.size) return board
+        val idx = merged.indexOfFirst { it.isOptimistic }
+        return board.copy(
+            entries = merged,
+            playerCount = maxOf(board.playerCount + 1, merged.size),
+            rank = RankInfo(competitionRank(merged, idx), maxOf(board.playerCount + 1, merged.size)),
+        )
+    }
+
+    /** No cached copy of a board the player just finished on: their row alone. */
+    private fun optimisticOnlyBoard(key: String): CachedBoard? {
+        val (mode, day, playType) = parseKey(key) ?: return null
+        if (playType != "solo") return null
+        val local = localFor(mode, day) ?: return null
+        val merged = OptimisticResults.mergeLeaderboard(emptyList(), local, AuthService.userId)
+        if (merged.isEmpty()) return null
+        return CachedBoard(merged, 1, RankInfo(1, 1))
+    }
 
     /** Same stale-while-revalidate treatment for the Daily Sweep board (iOS
      *  SweepCache). Keyed "sweep:<local-day>" so it self-invalidates at midnight. */
@@ -78,8 +134,29 @@ object LeaderboardService {
     )
     private val sweepCache = mutableMapOf<String, CachedSweep>()
     fun sweepCacheKey(day: String) = "sweep:$day"
-    fun cachedSweep(key: String): CachedSweep? { loadDisk(); return sweepCache[key] }
-    fun cacheSweep(key: String, board: CachedSweep) { loadDisk(); sweepCache[key] = board; persist() }
+    fun cachedSweep(key: String): CachedSweep? {
+        loadDisk()
+        val board = sweepCache[key] ?: return null
+        val day = key.removePrefix("sweep:")
+        val merged = mergeOptimisticSweep(board.entries, day)
+        return if (merged.size == board.entries.size) board else board.copy(entries = merged)
+    }
+    fun cacheSweep(key: String, board: CachedSweep) {
+        loadDisk(); sweepCache[key] = board.copy(entries = board.entries.filterNot { it.rank == 0L }); persist()
+    }
+
+    /** BI19: the player's own overall (Sweep) row once their local results cover the set. */
+    fun mergeOptimisticSweep(rows: List<SweepEntry>, day: String): List<SweepEntry> = runCatching {
+        if (day != todayLocalDate()) return@runCatching rows
+        OptimisticResults.mergeSweep(
+            serverRows = rows.filterNot { it.rank == 0L },
+            local = AppCache.optimistic.all(day),
+            userId = AuthService.userId,
+            day = day,
+            sweepKeys = DailyCompletionsService.SWEEP_KEYS,
+            serverCompletions = DailyCompletionsService.readCache(),
+        )
+    }.getOrDefault(rows)
 
     // ---- disk-backed stale-while-revalidate (§253) -------------------------
     //
@@ -160,6 +237,9 @@ object LeaderboardService {
         @SerialName("vs_losses") val vsLosses: Int? = null,
         @SerialName("vs_games") val vsGames: Int = 0,
         val completed: Boolean = false,
+        /** BI19: the player's own just-finished row, shown before the server has it. Never
+         *  serialized (the board cache strips these rows anyway). */
+        @kotlinx.serialization.Transient val isOptimistic: Boolean = false,
     ) {
         /** Flattened username from the embedded profile, for the UI. */
         val username: String? get() = profiles?.username
@@ -242,6 +322,7 @@ object LeaderboardService {
             },
         ).decodeList<SweepEntry>()
             .filter { !ModerationService.isBlocked(it.userId) }
+            .let { rows -> if (offset == 0) mergeOptimisticSweep(rows, day) else rows }
     }.getOrElseNotCancelled { null }
 
     /** User's daily sweep rank + total (RPC daily_sweep_rank). Null if they
@@ -417,7 +498,56 @@ object LeaderboardService {
             // (iOS LeaderboardService.fetch parity). Single choke point — the
             // top-50 list, rank window, and yesterday's winners all route here.
             .filter { !ModerationService.isBlocked(it.userId) }
+            .let { rows -> if (offset == 0 && playType == "solo") withLocalResult(rows, gameMode, day, limit, userIds) else rows }
     }.getOrElseNotCancelled { null }
+
+    /**
+     * BI19 prefetch: refresh today's cached boards for [modes] (+ the overall Sweep board) in the
+     * background, one at a time, so opening the Leaderboard paints current rows at once. A failed
+     * fetch leaves the cached copy alone; a board's rank window is kept.
+     */
+    suspend fun prefetchToday(userId: String?, modes: List<String>, sweep: Boolean = true) {
+        val day = todayLocalDate()
+        for (mode in modes) {
+            val rows = fetchDailyLeaderboardOrNull(mode, day = day) ?: continue
+            val count = playerCount(mode)
+            val rank = if (userId != null) getUserDailyRank(userId, mode, day = day, topEntries = rows) else null
+            val key = cacheKey(mode, day, userId)
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                val win = boardCache[key]?.rankWindow?.takeIf { rank != null && rank.rank > 50 }
+                cacheBoard(key, CachedBoard(rows, if (count > 0) count else rows.size, rank, win))
+            }
+            delay(250)
+        }
+        if (sweep) {
+            val rows = fetchDailySweepOrNull(day) ?: return
+            val details = fetchSweepModeDetails(day, rows.map { it.userId })
+            val rank = if (userId != null) getUserSweepRank(userId, day) else null
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                cacheSweep(sweepCacheKey(day), CachedSweep(rows, rank, details))
+            }
+        }
+    }
+
+    /** BI19: reconcile the player's optimistic row against a fresh top page (the server wins
+     *  once it lists them), else place it in rank order. */
+    private fun withLocalResult(
+        rows: List<LeaderboardEntry>,
+        gameMode: String,
+        day: String,
+        limit: Int,
+        userIds: List<String>?,
+    ): List<LeaderboardEntry> {
+        val uid = AuthService.userId ?: return rows
+        if (userIds != null && userIds.none { it.equals(uid, ignoreCase = true) }) return rows
+        val serverHasMe = rows.any { OptimisticResults.isMe(it, uid) }
+        if (serverHasMe) {
+            runCatching { AppCache.optimistic.reconcile(uid, day, gameMode, serverHasUser = true) }
+            return rows
+        }
+        val local = localFor(gameMode, day) ?: return rows
+        return OptimisticResults.mergeLeaderboard(rows, local, uid, limit = if (rows.size >= limit) limit else null)
+    }
 
     /**
      * The rows AROUND the user's rank — the "your neighborhood" section shown

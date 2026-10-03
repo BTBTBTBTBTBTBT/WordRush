@@ -120,6 +120,10 @@ fun FriendsScreen(
     onOpenGame: (String) -> Unit = {},
     /** "Race my run": the VS Friend page with this friend preselected (Pro). */
     onRaceRun: (String) -> Unit = {},
+    /** BI23: the guest pitch's "Play without an account" → the Home root. */
+    onGoHome: (() -> Unit)? = null,
+    /** BI23: the guest pitch's SIGN IN — the same sign-in sheet as the AppHeader's. */
+    onSignIn: (() -> Unit)? = null,
 ) {
     val signedIn = AuthService.userId != null
     var version by remember { mutableIntStateOf(FriendsService.version) }
@@ -211,6 +215,25 @@ fun FriendsScreen(
         )
     }
 
+    if (!signedIn) {
+        // FINISH_SPEC BI23: guests get a finished signed-out state (no empty skeleton list, no
+        // add-by-username card): the FRIENDS title art, then O1 + I as a duo, the headline,
+        // one line and the candy SIGN IN, centered under the pinned AppHeader.
+        Column(
+            Modifier.fillMaxSize().pageBackground(PageTint.FRIENDS, alwaysLight = true)
+                .padding(horizontal = 16.dp).padding(top = 12.dp),
+        ) {
+            PageHeadline(TitleArt.FRIENDS, Modifier.fillMaxWidth())
+            GuestPitch(
+                hosts = listOf(Mascots.friends, Mascots.addFriends), title = "Play with friends",
+                subtitle = "Sign in to add friends, race them every day and play pocket games together.",
+                colors = GuestPitchContent.friendsColors, preview = GuestPreview.None,
+                onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,
+                modifier = Modifier.weight(1f), subColor = FriendsPink.sub,
+            )
+        }
+        return
+    }
     val friendsScroll = rememberScrollState()
     ScrollToTopOnReselect(friendsScroll) // AJ: a re-tap of Friends scrolls to the top.
     Column(
@@ -223,13 +246,6 @@ fun FriendsScreen(
         // calm centered headline (PageHeadline sizes it), nothing beside it. The bell moved into Settings ›
         // Notifications; "Add a friend" is a candy button in the YOUR FRIENDS header.
         PageHeadline(TitleArt.FRIENDS, Modifier.fillMaxWidth())
-        if (!signedIn) {
-            Text(
-                "Sign in to add friends, race them every day and play pocket games together.",
-                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub,
-            )
-            return@Column
-        }
         // K1: the note as a notice card — springs in, squishes, taps or swipes away.
         FriendsNotice(note, onDismiss = { note = null })
 
@@ -751,7 +767,7 @@ private fun YourFriendsSection(
     Column(
         Modifier.fillMaxWidth()
             .shadow(6.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
-            .clip(shape).background(LIST_TINT).border(1.5.dp, LIST_LINE, shape),
+            .clip(shape).background(LIST_TINT), // BI23: no outline
     ) {
         Row(
             Modifier.fillMaxWidth().padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 8.dp),
@@ -784,7 +800,10 @@ private fun YourFriendsSection(
         if (friends.isEmpty()) {
             Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 // No friends yet: I's invite scene above the line (ART_SPEC §7).
-                SceneEmptyState(SceneArt.INVITE, Mascots.addFriendLine, height = 120.dp, color = FriendsPink.sub)
+                BrandEmptyState(
+                    title = "NO FRIENDS YET", line = Mascots.addFriendLine, scene = SceneArt.INVITE,
+                    accent = PageAccent.friends, lineColor = FriendsPink.sub,
+                )
                 Text(
                     "1. Add friends below by username, or from the Add Friend button on any player's profile.",
                     fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub, fontFamily = Nunito,
@@ -1098,10 +1117,11 @@ private fun AddFriendSection(
 /** The Friends text fields: a soft pink-tinted container (A1, no white) with the pink focus line. */
 @Composable
 internal fun friendsFieldColors() = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = friendsWash(FRIENDS_CARD_ACCENT, 0.06f),
-    unfocusedContainerColor = friendsWash(FRIENDS_CARD_ACCENT, 0.06f),
-    focusedBorderColor = FRIENDS_CARD_ACCENT,
-    unfocusedBorderColor = friendsLine(FRIENDS_CARD_ACCENT, 0.4f),
+    // BI23 (founder: no outlined boxes): a soft filled field — no outline; focus deepens the fill.
+    focusedContainerColor = friendsWash(FRIENDS_CARD_ACCENT, 0.20f),
+    unfocusedContainerColor = friendsWash(FRIENDS_CARD_ACCENT, 0.12f),
+    focusedBorderColor = Color.Transparent,
+    unfocusedBorderColor = Color.Transparent,
     focusedTextColor = FriendsPink.heading,
     unfocusedTextColor = FriendsPink.heading,
     cursorColor = FRIENDS_CARD_ACCENT,
@@ -1132,10 +1152,10 @@ private fun TauntDialog(target: FriendsService.FriendProfile, onDone: () -> Unit
             }
             val s = status
             if (s != null) {
-                Text(
-                    s, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.heading, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                )
+                // The nudge result as the finished candy message (coin + pill), not bare text.
+                Box(Modifier.fillMaxWidth().padding(vertical = 28.dp), contentAlignment = Alignment.Center) {
+                    com.wordocious.app.ui.game.CandyMessagePill(s, com.wordocious.app.ui.game.FeedbackToast.statusTone(s))
+                }
             } else {
                 com.wordocious.app.data.FriendTaunts.ALL.forEachIndexed { i, taunt ->
                     Text(

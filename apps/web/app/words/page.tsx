@@ -2,8 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { recentDates, wordOfDay, dateKey } from '@/lib/word-of-day';
 import { LetterTile } from '@/components/game/letter-tile';
-import { InfoCard, InfoPageLayout, IntroCard, IntroText, SectionCard, infoAccent } from '@/components/ui/info-page';
-import { softBackground, softBorder } from '@/lib/soft-surface';
+import { InfoPageLayout, IntroText } from '@/components/ui/info-page';
+import { softBackground, softShadow } from '@/lib/soft-surface';
+
+// FINISH_SPEC BI17 (3-platform parity): the guide page family look — the intro
+// as plain copy and the archive rows as borderless soft fields (a purple / pink
+// wash, radius 16, one soft shadow), keeping the glossy first-letter tile.
+/** Month rows alternate the brand purple and pink washes. */
+const ROW_ACCENTS = ['#7C3AED', '#EC4899'] as const;
 
 export const revalidate = 86400;
 
@@ -42,7 +48,7 @@ export default async function WordsArchivePage() {
 
   return (
     <InfoPageLayout title="Word of the Day" art="art-title-words" artLabel="Word of the Day Archive">
-      <IntroCard>
+      <div className="flex flex-col gap-2 px-1">
         <IntroText>
           Every day Wordocious surfaces a Word of the Day — a hand-curated five-letter word from the same answer bank the
           daily puzzles draw on. Each entry links to a full breakdown: pronunciation and meaning, synonyms and opposites,
@@ -57,20 +63,20 @@ export default async function WordsArchivePage() {
           and the <Link href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</Link> to turn
           word knowledge into faster solves.
         </IntroText>
-      </IntroCard>
+      </div>
 
       {months.map(({ label, rows: monthRows }, mi) => {
-        const accent = infoAccent(mi);
+        const accent = ROW_ACCENTS[mi % ROW_ACCENTS.length];
         return (
-          <SectionCard key={label} heading={label} accent={accent} className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+          <section key={label} className="flex flex-col gap-2.5 mt-3">
+            <h2 className="m-0 px-1 font-black uppercase" style={{ fontSize: 13, letterSpacing: '1.2px', color: 'var(--color-text)' }}>{label}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {monthRows.map(({ key, date, entry }) => (
                 <Link
                   key={key}
                   href={`/word/${key}`}
-                  className="flex items-center gap-3 rounded-xl p-2.5"
-                  // A1: a tinted row (the month's accent, a lighter wash than its card).
-                  style={{ background: softBackground(accent, 0.08), border: softBorder(accent, 0.08) }}
+                  className="flex items-center gap-3 p-2.5"
+                  style={{ background: softBackground(accent, 0.1), borderRadius: 16, boxShadow: softShadow(accent, 0.1, 12, 4) }}
                 >
                   <LetterTile letter={entry.word.charAt(0).toUpperCase()} look="correct" aria-hidden className="shrink-0" style={{ width: 40, ['--gt-font' as string]: '18px' }} />
                   <div className="min-w-0">
@@ -86,16 +92,14 @@ export default async function WordsArchivePage() {
                 </Link>
               ))}
             </div>
-          </SectionCard>
+          </section>
         );
       })}
 
-      <InfoCard className="px-4 py-3">
-        <p className="m-0 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
-          Definitions adapted from Wiktionary via the Free Dictionary API (CC BY-SA). Analysis on each word page is original
-          Wordocious research.
-        </p>
-      </InfoCard>
+      <p className="m-0 mt-4 px-1 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+        Definitions adapted from Wiktionary via the Free Dictionary API (CC BY-SA). Analysis on each word page is original
+        Wordocious research.
+      </p>
     </InfoPageLayout>
   );
 }

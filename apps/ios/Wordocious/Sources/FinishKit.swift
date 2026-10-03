@@ -488,7 +488,7 @@ private struct TintedPillChrome: ViewModifier {
                     accent.frame(height: 4).allowsHitTesting(false)
                 }
                 .clipShape(shape)
-                .overlay(shape.stroke(dark ? accent.opacity(0.4) : accent.wash(0.30), lineWidth: 1.5))
+                // BI25: no outline (founder: never bordered boxes) — the wash, bar and soft shadow carry it.
                 .shadow(color: accent.opacity(0.12), radius: 5, x: 0, y: 3)
             })
     }

@@ -99,6 +99,7 @@ export function WelcomeModal() {
     <>
       {show && (
         <div
+          data-celebration-block
           className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-modal-overlay"
           style={{ backgroundColor: POPUP_DIM }}
         >

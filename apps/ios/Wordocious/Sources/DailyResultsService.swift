@@ -156,6 +156,53 @@ enum DailyResultsService {
         }
     }
 
+    /// Whether a solo daily result is owed a daily_results row at all: the mode
+    /// has a daily scoring config AND the result clears the §260 plausibility
+    /// floor. When false no row will ever be written, so the pending queue must
+    /// release the daily part instead of retrying it forever (BI15).
+    static func owesDailyRow(gameMode: String, completed: Bool, guessCount: Int,
+                             timeSeconds: Int, totalBoards: Int) -> Bool {
+        DailyScoring.config[gameMode] != nil
+            && Plausibility.isPlausibleDailyResult(completed: completed, guessCount: guessCount,
+                                                   timeSeconds: timeSeconds, totalBoards: totalBoards,
+                                                   gameMode: gameMode)
+    }
+
+    /// BI15: one daily_results write (select + insert/update) may take at most
+    /// this long. Requests hung ~30 s in the 2026-10-02 outage; past this the
+    /// write fails into the pending queue and is retried, never left hanging.
+    static let writeDeadlineSeconds: Double = 20
+
+    /// Flip Home's completed state for a daily that just finished — LOCAL only,
+    /// no network. BI15: this used to fire only from inside record(), i.e. after
+    /// the user_stats + profile round trips, so in an outage Home waited behind
+    /// several timeouts (or never flipped at all when the app was left). Now
+    /// GameResultsService.record() posts it before its first network call.
+    /// Only for TODAY's puzzle (a cross-midnight finish records onto yesterday).
+    static func postLocalCompletion(
+        gameMode: GameMode, completed: Bool, guessCount: Int, timeSeconds: Int,
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int, seed: String?,
+        stagesCompleted: Int? = nil, bestCorrectLetters: Int? = nil
+    ) async {
+        guard owesDailyRow(gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
+                           timeSeconds: timeSeconds, totalBoards: totalBoards) else { return }
+        let day = seed.flatMap(getDailySeedDate) ?? LeaderboardService.todayLocal()
+        guard day == LeaderboardService.todayLocal() else { return }
+        let composite = DailyScoring.compositeScore(
+            gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
+            timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+            hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
+            bestCorrectLetters: bestCorrectLetters, dateKey: day)
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: DailyCompletionsStore.completionPosted,
+                object: DailyCompletion(
+                    gameMode: gameMode.rawValue, completed: completed,
+                    guessCount: guessCount, timeSeconds: Double(timeSeconds),
+                    score: composite))
+        }
+    }
+
     /// Records a finished solo daily game. No-ops if signed out or the mode
     /// has no daily score config. Returns the composite score (or nil).
     ///
@@ -174,7 +221,9 @@ enum DailyResultsService {
         hintsUsed: Int = 0,
         seed: String? = nil,
         stagesCompleted: Int? = nil,
-        bestCorrectLetters: Int? = nil
+        bestCorrectLetters: Int? = nil,
+        /// false when the caller (GameResultsService.record) already posted it.
+        postLocal: Bool = true
     ) async -> Double? {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
         // §260: refuse what no human can do (zero-guess wins, six guesses in
@@ -195,18 +244,13 @@ enum DailyResultsService {
         )
         // Optimistic local update FIRST (before any network) so the home grid's
         // completed state flips the instant the game ends (web parity: the
-        // 'daily-completion' window event). Only when the row is for TODAY —
-        // a cross-midnight finish records onto yesterday and must not mark
-        // today's (different) puzzle complete.
-        if day == LeaderboardService.todayLocal() {
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: DailyCompletionsStore.completionPosted,
-                    object: DailyCompletion(
-                        gameMode: gameMode.rawValue, completed: completed,
-                        guessCount: guessCount, timeSeconds: Double(timeSeconds),
-                        score: composite))
-            }
+        // 'daily-completion' window event). Callers that reach here without
+        // going through record() (drain / backfill / improve) still get it.
+        if postLocal {
+            await postLocalCompletion(gameMode: gameMode, completed: completed, guessCount: guessCount,
+                                  timeSeconds: timeSeconds, boardsSolved: boardsSolved,
+                                  totalBoards: totalBoards, hintsUsed: hintsUsed, seed: seed,
+                                      stagesCompleted: stagesCompleted, bestCorrectLetters: bestCorrectLetters)
         }
         let client = AuthService.shared.client
         // Local (keychain) id, NOT the refreshing `client.auth.session` accessor
@@ -217,32 +261,38 @@ enum DailyResultsService {
         guard let userId = localUserId() else { return nil }
 
         do {
-            let existing: [ExistingRow] = try await client.from("daily_results")
-                .select("id, composite_score")
-                .eq("user_id", value: userId)
-                .eq("day", value: day)
-                .eq("game_mode", value: gameMode.rawValue)
-                .eq("play_type", value: "solo")
-                .limit(1)
-                .execute().value
+            // BI15: bounded — a hung request throws WriteDeadlineExceeded into
+            // the catch below (nil = not recorded → the pending daily part
+            // stays queued and drain() retries it).
+            let mode = gameMode.rawValue
+            try await withWriteDeadline(seconds: writeDeadlineSeconds) {
+                let existing: [ExistingRow] = try await client.from("daily_results")
+                    .select("id, composite_score")
+                    .eq("user_id", value: userId)
+                    .eq("day", value: day)
+                    .eq("game_mode", value: mode)
+                    .eq("play_type", value: "solo")
+                    .limit(1)
+                    .execute().value
 
-            if let row = existing.first {
-                if composite > row.compositeScore {
-                    let update = ResultUpdate(
+                if let row = existing.first {
+                    if composite > row.compositeScore {
+                        let update = ResultUpdate(
+                            completed: completed, guess_count: guessCount, time_seconds: timeSeconds,
+                            boards_solved: boardsSolved, total_boards: totalBoards,
+                            composite_score: composite, hints_used: hintsUsed
+                        )
+                        try await client.from("daily_results").update(update).eq("id", value: row.id).execute()
+                    }
+                } else {
+                    let insert = ResultInsert(
+                        user_id: userId, day: day, game_mode: mode, play_type: "solo",
                         completed: completed, guess_count: guessCount, time_seconds: timeSeconds,
                         boards_solved: boardsSolved, total_boards: totalBoards,
                         composite_score: composite, hints_used: hintsUsed
                     )
-                    try await client.from("daily_results").update(update).eq("id", value: row.id).execute()
+                    try await client.from("daily_results").insert(insert).execute()
                 }
-            } else {
-                let insert = ResultInsert(
-                    user_id: userId, day: day, game_mode: gameMode.rawValue, play_type: "solo",
-                    completed: completed, guess_count: guessCount, time_seconds: timeSeconds,
-                    boards_solved: boardsSolved, total_boards: totalBoards,
-                    composite_score: composite, hints_used: hintsUsed
-                )
-                try await client.from("daily_results").insert(insert).execute()
             }
             // The row is now on the server — tell server-backed surfaces
             // (leaderboard, records, completed card) to refetch. Posted before

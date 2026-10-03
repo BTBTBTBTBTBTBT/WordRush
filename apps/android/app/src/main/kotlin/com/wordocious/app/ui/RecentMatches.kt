@@ -76,7 +76,7 @@ fun RecentMatchesList(
     if (matches.isEmpty()) {
         if (emptyScene != null) {
             // A1 / A7: a tinted card with a cast pose (not D, the Stats host).
-            StatsEmptyState(StatsPoses.noGames, emptyText, swatch = StatsInk.BLUE)
+            StatsEmptyState(StatsPoses.noGames, emptyText, swatch = StatsInk.BLUE, title = "NO MATCHES YET")
             return
         }
         Text(
@@ -261,7 +261,7 @@ fun TodayGamesList(
     if (rows.isEmpty()) {
         if (emptyScene != null) {
             // A1 / A7: a tinted card with a cast pose (not D, the Stats host).
-            StatsEmptyState(StatsPoses.noGames, emptyText, swatch = StatsInk.BLUE)
+            StatsEmptyState(StatsPoses.noGames, emptyText, swatch = StatsInk.BLUE, title = "NO GAMES TODAY")
             return
         }
         Text(

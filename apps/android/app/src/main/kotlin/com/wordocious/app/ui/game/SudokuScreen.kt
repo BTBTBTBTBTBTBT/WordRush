@@ -312,6 +312,7 @@ fun SudokuScreen(
     // Physical keyboard (founder, 2026-09-30; web sudoku-game.tsx): 1–9 place, Backspace/Delete/0
     // erase, N notes, H hint, Ctrl/Cmd+Z undo, arrows move the selected cell (the first one
     // selects the top-left cell).
+    ProvideFeedbackAnchor {
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
@@ -353,19 +354,15 @@ fun SudokuScreen(
                 Spacer(Modifier.height(6.dp))
             }
         }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                // G5 a toast is a tinted pill (no dark slab, no white).
-                Text(it, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.tintedPill(SUDOKU_ACCENT, corner = 22.dp).padding(horizontal = 16.dp, vertical = 10.dp))
-            }
-        }
+        // The candy feedback toast, centered on the header meta row (never the title art or the board).
+        GameFeedbackToast(session.toast)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) SudokuOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain(session.state.difficulty) } } else null) { showOverlay = false }
         // The same corner Home / "?" pair as every game (§19).
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(SUDOKU_ACCENT, onBack) }
         CornerHelpButton(SUDOKU_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.SUDOKU, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -378,7 +375,7 @@ private fun SudokuHeader(session: SudokuSession) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("SUDOKU") { Text(SUDOKU_TITLE, fontSize = 24.sp, fontWeight = FontWeight.Black, color = SUDOKU_ACCENT, fontFamily = Nunito) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text(DIFFICULTY_LABEL[session.state.difficulty] ?: "Medium", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -622,9 +619,11 @@ private fun SudokuPad(session: SudokuSession, onFinished: () -> Unit) {
             PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty())
             PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) })
             PadAction("Notes", Icons.Filled.Edit, onClick = { session.toggleNotes(onFinished) }, active = s.notesMode)
+            // BI22: a fixed "Hint" label; the used count is the corner badge (an overlay).
             PadAction(
-                if (s.hintsUsed > 0) "Hint · ${s.hintsUsed}" else "Hint", Icons.Filled.Lightbulb,
+                "Hint", Icons.Filled.Lightbulb,
                 onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
+                count = s.hintsUsed,
             )
         }
         val done = session.completeDigits

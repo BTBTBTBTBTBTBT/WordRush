@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HeaderBack } from '@/components/ui/page-header';
 import { ArtTitle } from '@/components/ui/art-title';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTheme, Theme } from '@/lib/theme-context';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 import { isHapticsOn, setHapticsOn } from '@/lib/haptics';
@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/auth-context';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkedSignIns } from '@/components/settings/linked-sign-ins';
 import { NotificationSettings } from '@/components/settings/notification-settings';
-import { SETTINGS_ACCENT, SettingsOption, SettingsSection, SettingsToggle, settingsRowStyle } from '@/components/settings/settings-kit';
+import { KeyRowPreview, SETTINGS_ACCENT, SettingsOption, SettingsSection, SettingsToggle, ThemeTilesPreview, settingsRowStyle } from '@/components/settings/settings-kit';
 import { PoseArt } from '@/components/ui/soft-popup';
 import { BRAND_ACCENT, cardBarStyle, softBackground } from '@/lib/soft-surface';
 import { ART_SIZE } from '@/lib/art';
@@ -34,6 +34,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const subscriptionRef = useRef<HTMLDivElement>(null);
   const webBilling = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && !!(profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id;
   const [kbLayout, setKbLayout] = useState<KeyboardLayout>(() => getKeyboardLayout());
+  // BI25: the dialog has landed — heavier, below-the-fold pieces mount now.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (!open) { setSettled(false); return; }
+    const t = window.setTimeout(() => setSettled(true), 350);
+    return () => window.clearTimeout(t);
+  }, [open]);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -180,6 +187,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   accent={SETTINGS_ACCENT.theme}
                   label={t.label}
                   description={t.description}
+                  preview={<ThemeTilesPreview theme={t.value} />}
                   onClick={() => setTheme(t.value)}
                 />
               ))}
@@ -195,6 +203,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   accent={SETTINGS_ACCENT.keyboard}
                   label={k.label}
                   description={k.description}
+                  preview={<KeyRowPreview layout={k.value} />}
                   onClick={() => { setKbLayout(k.value); setKeyboardLayout(k.value); }}
                 />
               ))}
@@ -277,7 +286,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           </SettingsSection>
           </div>
 
-          {user && <LinkedSignIns key={user.id} />}
+          {/* BI25: mounted after the dialog lands (its identity load stays off the open frame); below the fold. */}
+          {user && settled && <LinkedSignIns key={user.id} />}
 
           {user && (
             <SettingsSection title="Account" accent={SETTINGS_ACCENT.account}>

@@ -130,12 +130,13 @@ struct HomeBannerView: View {
                     .padding(.horizontal, 10).padding(.top, 6)
                     .accessibilityHidden(true)
             }
-            rowView(word, tier: wTier, label: "WORDOCIOUS", tile: 32, radius: 9, gap: 7, icon: 16)
-                .padding(.top, 10).padding(.horizontal, 12).padding(.bottom, hasPuzzles ? 6 : 12)
+            // BI21: both rows share one tile size (sized so 10 fit) and spread edge to edge.
+            rowView(word, tier: wTier, label: "WORDOCIOUS")
+                .padding(.top, 8).padding(.horizontal, 12).padding(.bottom, hasPuzzles ? 3 : 12)
             // Remote flags can switch the Puzzles off entirely; then the row goes too.
             if hasPuzzles {
-                rowView(puzzles, tier: pTier, label: "PUZZLES", tile: 28, radius: 8, gap: 4, icon: 14)
-                    .padding(.top, 8).padding(.horizontal, 12).padding(.bottom, 12)
+                rowView(puzzles, tier: pTier, label: "PUZZLES")
+                    .padding(.top, 5).padding(.horizontal, 12).padding(.bottom, 12)
             }
         }
         .frame(maxWidth: .infinity)
@@ -164,8 +165,9 @@ struct HomeBannerView: View {
             card.padding(.top, 12)
         } else {
             // The cast (docs/MASCOT_SPEC.md §1–§2): W hosts home, left of the share button.
-            // §Z: the share button's slot (not its visibility) sets W's spot.
-            card.bannerHost(Mascots.home, trailing: slots.hasShare ? 50 : 10)
+            // BI21: the share button lives at the strip's LEFT end now, so W always
+            // stands at the right corner.
+            card.bannerHost(Mascots.home, trailing: 10)
         }
     }
 
@@ -200,19 +202,22 @@ struct HomeBannerView: View {
             let dailyHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false)
             let unlimitedHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: true)
             let clockLine = HomeBanner.bannerClockLine(word.progress, puzzles.progress, clock: Self.countdown(), unlimited: unlimited)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .top, spacing: 6) {
-                    // ART_SPEC §18.4: a headline that fits on one line sits centered;
-                    // one that wraps stays left, two lines, shrinking before a third.
-                    ZStack(alignment: .topLeading) {
+            // FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look
+            // even"): headline centered on the card's center line, then a centered wide
+            // DAILY | UNLIMITED switch, then the centered meta line.
+            VStack(spacing: 6) {
+                ZStack(alignment: .leading) {
+                    // §Z: both modes' headlines share one slot and crossfade. Symmetric
+                    // side room (the W host's clearance on BOTH sides) keeps it centered.
+                    ZStack {
                         headlineSlot(dailyHeadline, trophy: dailyDouble)
                             .opacity(unlimited ? 0 : 1).accessibilityHidden(unlimited)
                         headlineSlot(unlimitedHeadline, trophy: false)
                             .opacity(unlimited ? 1 : 0).accessibilityHidden(!unlimited)
                     }
-                    // The headline keeps clear of the host standing at the strip's right end.
-                    .padding(.trailing, Mascots.bannerClearance)
-                    // §Z: the share slot stays in Unlimited (empty there).
+                    .padding(.horizontal, Self.headlineSideClear)
+                    // §Z: the share slot stays in Unlimited (empty there). It sits at the
+                    // strip's left end, mirroring W at the right.
                     if slots.hasShare {
                         Button(action: onShare) {
                             Icon3D(.share, size: 24)
@@ -225,18 +230,18 @@ struct HomeBannerView: View {
                         .accessibilityHidden(!slots.showsShare)
                     }
                 }
-                HStack(spacing: 8) {
-                    Text(clockLine)
-                        .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
-                        .foregroundStyle(subInk)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    modeSwitch
-                }
-                .padding(.trailing, 4)
+                modeSwitch
+                    .frame(maxWidth: Self.switchMaxWidth)
+                    .frame(maxWidth: .infinity)
+                Text(clockLine)
+                    .font(Brand.font(10.5, .heavy)).tracking(0.4).monospacedDigit()
+                    .foregroundStyle(subInk)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
-        .padding(.top, 12).padding(.trailing, 8).padding(.bottom, 10).padding(.leading, 12)
+        .padding(.top, 10).padding(.horizontal, 12).padding(.bottom, 8)
         // §18.4: frosted over a background blur (solid under Reduce Transparency) —
         // FINISH_SPEC §A1: a lavender frost instead of plain white.
         // §AQ2: a flat frost — the live material blur re-sampled the page under it on
@@ -246,7 +251,12 @@ struct HomeBannerView: View {
         }
     }
 
-    /// One mode's headline: one line centered, or up to two lines left-aligned.
+    /// BI21: the headline's room on EACH side (the W host's clearance, mirrored).
+    static let headlineSideClear: CGFloat = Mascots.bannerClearance
+    /// BI21: the centered switch spans ~75% of a phone-wide card, equal halves.
+    static let switchMaxWidth: CGFloat = 280
+
+    /// One mode's headline: one line, or up to two lines, always centered.
     private func headlineSlot(_ headline: String, trophy: Bool) -> some View {
         ViewThatFits(in: .horizontal) {
             headlineRow(headline, oneLine: true, trophy: trophy)
@@ -265,11 +275,11 @@ struct HomeBannerView: View {
             // player's name in the accent, "·" as the star); the double-flawless gold
             // day takes the celebration palette.
             LiveHeadline(text: headline, palette: trophy ? .celebration : .home, size: 22,
-                         names: [name], alignment: oneLine ? .center : .leading,
+                         names: [name], alignment: .center,
                          maxLines: oneLine ? 1 : 2, minimumScale: oneLine ? 1 : 0.7)
                 .fixedSize(horizontal: oneLine, vertical: true)
         }
-        .frame(maxWidth: .infinity, minHeight: 30, alignment: oneLine ? .center : .leading)
+        .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
     }
 
     private static func countdown() -> String {
@@ -295,10 +305,26 @@ struct HomeBannerView: View {
         return Button {
             if locked { unlimitedAfterPurchase = true; showPro = true } else { onModeChange(m) }
         } label: {
-            Text(label)
-                .font(Brand.font(10.5, .black)).tracking(0.6)
-                .foregroundStyle(on ? (m == .daily ? Color(hex: 0x4C1D95) : Color(hex: 0x6D28D9)) : Color(hex: 0x7C3AED))
-                .padding(.horizontal, 10).frame(height: 26)
+            // BI21: equal halves; the PRO chip sits INSIDE the Unlimited half beside its label.
+            HStack(spacing: 5) {
+                Text(label)
+                    .font(Brand.font(11, .black)).tracking(0.6)
+                    .foregroundStyle(on ? (m == .daily ? Color(hex: 0x4C1D95) : Color(hex: 0x6D28D9)) : Color(hex: 0x7C3AED))
+                if locked {
+                    HStack(spacing: 2) {
+                        Image(systemName: "crown.fill").font(.system(size: 6.5, weight: .black))
+                        Text("PRO").font(Brand.font(7.5, .black))
+                    }
+                    .foregroundStyle(Color(hex: 0x7A3D00))
+                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFE08A), Color(hex: 0xF5A524)],
+                                                              startPoint: .top, endPoint: .bottom)))
+                    .accessibilityHidden(true)
+                }
+            }
+                .lineLimit(1).fixedSize()
+                .frame(maxWidth: .infinity).frame(height: 26)
+                .contentShape(Capsule())
                 // §A1: the "on" segment is a soft lilac pill, not white. §Z: ONE thumb
                 // slides between the segments (matched geometry); the segments keep
                 // their width and weight in both states, so nothing reflows.
@@ -307,17 +333,6 @@ struct HomeBannerView: View {
                         Capsule().fill(Color(hex: 0xFBF8FF))
                             .shadow(color: Color(hex: 0x4C1D95).opacity(0.14), radius: 2, x: 0, y: 1)
                             .matchedGeometryEffect(id: "thumb", in: switchThumb)
-                    }
-                }
-                .lineLimit(1).fixedSize()
-                .overlay(alignment: .topTrailing) {
-                    if locked {
-                        Text("PRO").font(Brand.font(7.5, .black)).foregroundStyle(Color(hex: 0x7A3D00))
-                            .padding(.horizontal, 4).padding(.vertical, 1)
-                            .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFE08A), Color(hex: 0xF5A524)],
-                                                                      startPoint: .top, endPoint: .bottom)))
-                            .offset(x: 6, y: -6)
-                            .accessibilityHidden(true)
                     }
                 }
         }
@@ -333,11 +348,14 @@ struct HomeBannerView: View {
 
     // MARK: Rows
 
-    private func rowView(_ r: Row, tier: BannerTier, label: String, tile: CGFloat, radius: CGFloat, gap: CGFloat, icon: CGFloat) -> some View {
+    /// BI21: tile slots per row — the widest row (at least 10) sets one tile size for both.
+    private var tileSlots: Int { max(10, word.modes.count, puzzles.modes.count) }
+
+    private func rowView(_ r: Row, tier: BannerTier, label: String) -> some View {
         let ink = Self.tierInk(tier)
         // FINISH_SPEC §AS7: no per-row streak flames — every streak lives in the
         // header flame's popup.
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(label).font(Brand.font(10, .black)).tracking(1).foregroundStyle(ink)
                 Text(unlimited ? HomeBanner.unlimitedGroupStatus(r.unlimitedPlayed) : HomeBanner.groupStatus(r.progress))
@@ -345,13 +363,13 @@ struct HomeBannerView: View {
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 4)
             }
-            HStack(spacing: gap) {
+            BannerSpreadRow(slots: tileSlots) {
                 ForEach(r.modes) { m in
                     BannerTile(mode: m, result: unlimited ? nil : m.dbKey.flatMap { byMode[$0] },
-                               unlimited: unlimited, size: tile, radius: radius, iconSize: icon) { onOpen(m) }
+                               unlimited: unlimited, radius: 8, iconSize: 15) { onOpen(m) }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
         }
     }
 }
@@ -365,14 +383,14 @@ struct FlameMark: View {
     }
 }
 
-/// One game in a banner row, drawn with its real home icon. Won = accent fill +
-/// white icon + glow; lost = gray + white icon; unplayed = white with a dashed
-/// accent border; Unlimited = white, no border, soft shadow.
+/// One game in a banner row, drawn with its real home icon. FINISH_SPEC BI21 (no
+/// bordered boxes): not played = a soft pale tile with the icon dimmed; won = a glossy
+/// tile in the game's color, full icon, a small white check; lost = a glossy gray tile;
+/// Unlimited = a soft tinted tile, full icon. The tile fills the size its row gives it.
 private struct BannerTile: View {
     let mode: HomeMode
     let result: DailyCompletion?
     let unlimited: Bool
-    let size: CGFloat
     let radius: CGFloat
     let iconSize: CGFloat
     let onTap: () -> Void
@@ -381,27 +399,70 @@ private struct BannerTile: View {
         let accent = mode.accent
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         let solid = !unlimited && result != nil
+        let won = !unlimited && result?.completed == true
         Button(action: onTap) {
             ZStack {
-                // FINISH_SPEC §A1: game tiles are mini game cards in their accent.
                 if unlimited {
-                    shape.fill(accent.wash(0.13))
-                        .overlay(shape.strokeBorder(accent.wash(0.34), lineWidth: 1.5))
-                        .shadow(color: accent.opacity(0.2), radius: 3, x: 0, y: 2)
+                    shape.fill(accent.wash(0.16))
+                        .shadow(color: accent.opacity(0.18), radius: 3, x: 0, y: 2)
                 } else if let result {
+                    // Glossy: the fill plus a soft white sheen over its top half.
                     shape.fill(result.completed ? accent : Color(hex: 0x9CA3AF))
-                        .shadow(color: result.completed ? accent.opacity(0.7) : .clear, radius: 4.5)
+                        .overlay(shape.fill(LinearGradient(stops: [.init(color: .white.opacity(0.38), location: 0),
+                                                                   .init(color: .white.opacity(0), location: 0.55)],
+                                                           startPoint: .top, endPoint: .bottom)))
+                        .shadow(color: result.completed ? accent.opacity(0.55) : .clear, radius: 3.5, x: 0, y: 1.5)
                 } else {
-                    shape.fill(accent.wash(0.10))
-                    shape.strokeBorder(accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
+                    shape.fill(accent.wash(0.12))
                 }
                 BannerGlyph(icon: mode.icon, ink: solid ? .white : accent, accent: accent, solid: solid, size: iconSize)
+                    .opacity(!unlimited && result == nil ? 0.45 : 1)
             }
-            .frame(width: size, height: size)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .bottomTrailing) {
+                if won {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 7, weight: .black))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 0.8, x: 0, y: 0.5)
+                        .padding(2.5)
+                        .accessibilityHidden(true)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
         .accessibilityLabel(mode.title + (unlimited ? "" : result.map { $0.completed ? ", won" : ", played" } ?? ", not played yet"))
+    }
+}
+
+/// BI21: a banner row's tiles spread edge to edge — first flush left, last flush right,
+/// equal gaps — at one tile size sized so `slots` tiles fit the width (so the 8- and
+/// 10-tile rows share a size and both end flush).
+struct BannerSpreadRow: Layout {
+    var slots: Int = 10
+    var maxTile: CGFloat = 32
+    var minGap: CGFloat = 5
+
+    func tile(_ width: CGFloat) -> CGFloat {
+        let n = CGFloat(max(slots, 1))
+        return max(18, min(maxTile, floor((width - minGap * (n - 1)) / n)))
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let w = proposal.width ?? (maxTile * CGFloat(slots) + minGap * CGFloat(max(slots - 1, 0)))
+        return CGSize(width: w, height: tile(w))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let s = tile(bounds.width)
+        let n = subviews.count
+        guard n > 0 else { return }
+        let gap = n > 1 ? max(0, (bounds.width - s * CGFloat(n)) / CGFloat(n - 1)) : 0
+        for (i, v) in subviews.enumerated() {
+            v.place(at: CGPoint(x: bounds.minX + CGFloat(i) * (s + gap), y: bounds.minY),
+                    proposal: ProposedViewSize(width: s, height: s))
+        }
     }
 }
 

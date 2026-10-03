@@ -30,7 +30,7 @@ struct SkeletonBlock: View {
                 .clipShape(shape)
                 .opacity(envReduce || Theme.reduceMotion ? 0 : 1)
             }
-            .overlay(shape.strokeBorder(dark ? accent.opacity(0.25) : accent.wash(0.24), lineWidth: 1.5))
+            // BI23: a soft filled shimmer row — no outline.
             .frame(width: width, height: height)
             .frame(maxWidth: width == nil ? .infinity : nil)
             .accessibilityHidden(true)

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- BI13: the widget corner radius (API 31+: the launcher's own, values-v31). -->
+    <dimen name="widget_radius">24dp</dimen>
+</resources>

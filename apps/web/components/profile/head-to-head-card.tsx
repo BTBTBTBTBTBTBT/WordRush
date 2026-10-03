@@ -1,6 +1,7 @@
 'use client';
 
-import { Swords } from 'lucide-react';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
+import { PAGE_SCENES } from '@/lib/art';
 import { WIN_FG } from '@/lib/tile-theme';
 import { SoftNum } from '@/components/ui/soft-number';
 
@@ -15,10 +16,14 @@ interface HeadToHeadCardProps {
 export function HeadToHeadCard({ wins, losses, total, winRate, accentColor }: HeadToHeadCardProps) {
   if (total === 0) {
     return (
-      <div className="text-center py-3">
-        <Swords className="w-5 h-5 mx-auto mb-1" style={{ color: 'var(--color-text-muted)' }} />
-        <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>No VS matches in this mode yet</p>
-      </div>
+      <BrandEmptyState
+        scene={PAGE_SCENES.empty}
+        artHeight={64}
+        accent="vs"
+        className="py-2"
+        title="NO VS MATCHES YET"
+        line="Nobody's gone head to head in this mode yet."
+      />
     );
   }
 

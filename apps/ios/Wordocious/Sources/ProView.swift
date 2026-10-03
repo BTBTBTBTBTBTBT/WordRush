@@ -221,13 +221,8 @@ struct ProView: View {
         .padding(16)
         .tintedCard(accent: accent, bar: best ? Self.goldBar : [accent, accent.wash(0.55)],
                     tint: best ? 0.16 : 0.08, line: best ? 0.40 : 0.26)
-        .overlay {
-            if best {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color(hex: 0xF5C542), lineWidth: 2)
-                    .allowsHitTesting(false)
-            }
-        }
+        // BI25: the best-value card glows gold instead of an outline.
+        .shadow(color: Color(hex: 0xF5C542).opacity(best ? 0.55 : 0), radius: 10, x: 0, y: 4)
         .overlay(alignment: .topTrailing) {
             if best {
                 Text("BEST VALUE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Self.ink)

@@ -38,9 +38,11 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
+import { HintCountBadge, StableLabel } from '@/components/ui/hint-kit';
 
 // Spyglass (More Games §17): ten themed words hidden in a 10 × 10 grid, four
 // forward directions in the daily. Tap-start / tap-end or drag to select; a
@@ -245,17 +247,13 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
           <h1 className="text-2xl font-black" style={{ color: WORDSEARCH_ACCENT }}>SPYGLASS</h1>
         </GameHostTitle>
         <div className="text-sm font-black mt-0.5" style={{ color: 'var(--color-text)' }}>{state.title}</div>
-        <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="relative flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{wordsearchDailyNumber(getTodayLocal())}</span>}
           <span>{state.found.length}/{state.words.length} found</span>
           <span>{state.misses} miss{state.misses === 1 ? '' : 'es'}{(state.lateFinds ?? 0) > 0 ? ` · ${state.lateFinds} late` : ''}</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(104) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {completion ? (
@@ -276,16 +274,18 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
             <SpyglassGrid state={state} onSelect={onSelect} />
             {wordList}
           <div className="shrink-0 px-2 pt-1 flex justify-center gap-2" role="group" aria-label="Spyglass controls">
-            <button type="button" onClick={() => { haptic('light'); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint">
-              <Lightbulb className="w-3.5 h-3.5" /> Hint{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
+            {/* Labels never change width (lib/hint-layout.ts): the hint count is a corner coin,
+                the toggles and the countdown keep their widest variant's width. */}
+            <button type="button" onClick={() => { haptic('light'); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
+              <Lightbulb className="w-3.5 h-3.5" /> Hint<HintCountBadge count={state.hintsUsed} />
             </button>
             <button type="button" onClick={() => { if (!state.wordsShown) { haptic('light'); showWords(); } }} className={capsule(!!state.wordsShown)} style={capsuleStyle(!!state.wordsShown)} aria-label="Show words" aria-disabled={!!state.wordsShown}>
-              <List className="w-3.5 h-3.5" /> {state.wordsShown ? 'Words shown' : 'Show words'}
+              <List className="w-3.5 h-3.5" /> <StableLabel value={state.wordsShown ? 'Words shown' : 'Show words'} reserve={['Show words', 'Words shown']} />
             </button>
             {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
             <PlayClock timer={timer}>{(sec) => { const canReveal = sec >= REVEAL_AFTER_SECONDS; return (
             <button type="button" onClick={() => { haptic('light'); reveal(); }} className={capsule(!canReveal)} style={capsuleStyle(!canReveal)} aria-label="Reveal" aria-disabled={!canReveal}>
-              <Eye className="w-3.5 h-3.5" /> Reveal{!canReveal ? ` · ${formatTime(REVEAL_AFTER_SECONDS - sec)}` : ''}
+              <Eye className="w-3.5 h-3.5" /> <StableLabel value={canReveal ? 'Reveal' : `Reveal · ${formatTime(REVEAL_AFTER_SECONDS - sec)}`} reserve={['Reveal · 0:00']} />
             </button>); }}</PlayClock>
           </div>
           </div>

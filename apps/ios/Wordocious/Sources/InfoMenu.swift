@@ -309,6 +309,8 @@ struct StrategyArticleModel: Decodable, Identifiable {
 final class StrategyService: ObservableObject {
     static let shared = StrategyService()
     @Published private(set) var articles: [StrategyArticleModel] = []
+    /// BI24: the last fetch failed with nothing cached (the page shows R unplugged + Try again).
+    @Published private(set) var failed = false
     private static let cacheKey = "strategy-cache-v1"
     private var loaded = false
     private struct Payload: Decodable { let articles: [StrategyArticleModel] }
@@ -333,8 +335,9 @@ final class StrategyService: ObservableObject {
         guard let url = URL(string: "https://wordocious.com/api/strategy") else { return }
         var req = URLRequest(url: url)
         req.cachePolicy = .reloadIgnoringLocalCacheData
+        failed = false
         guard let (data, _) = try? await Net.api.data(for: req),
-              let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
+              let payload = try? JSONDecoder().decode(Payload.self, from: data) else { failed = articles.isEmpty; return }
         articles = payload.articles
         loaded = true
         UserDefaults.standard.set(data, forKey: Self.cacheKey)
@@ -345,10 +348,21 @@ struct StrategyView: View {
     @ObservedObject private var service = StrategyService.shared
     @State private var selected: StrategyArticleModel?
 
+    /// FINISH_SPEC BI14: the index (Solve smarter + Tip of the day + game-colored tiles
+    /// grouped by game) leads into a reader built like the per-game guide page
+    /// (StrategyKit.swift). Loading / cache / refresh are unchanged.
     var body: some View {
         Group {
             if let a = selected {
-                MenuScaffold(a.title, onBack: { selected = nil }, help: .howToPlay) { articleBody(a) }
+                MenuScaffold("Strategy", host: Mascots.help, art: .strategy, onBack: { selected = nil }, help: .howToPlay) {
+                    ScrollView {
+                        StrategyReaderBody(article: a, all: service.articles) { selected = $0 }
+                            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)
+                            .frame(maxWidth: 560).frame(maxWidth: .infinity)
+                    }
+                    // A new article starts at its top.
+                    .id(a.slug)
+                }
             } else {
                 MenuScaffold("Strategy", host: Mascots.help, art: .strategy, help: .howToPlay) { list }
             }
@@ -358,50 +372,21 @@ struct StrategyView: View {
 
     private var list: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                InfoIntroCard(heading: "Solve smarter",
-                              line: "Practical, original strategy for solving daily word puzzles faster and in fewer guesses.")
-                if service.articles.isEmpty {
-                    ProgressView().controlSize(.large).tint(Theme.primary).frame(maxWidth: .infinity).padding(.top, 40)
+            Group {
+                if service.articles.isEmpty && service.failed {
+                    // BI24: never a spinner forever — R unplugged + Try again.
+                    BrandEmptyState(title: "Can't reach the playbook", line: "Check your connection and I'll fetch every guide.",
+                                    scene: .unplugged, actionTitle: "Try again", actionSymbol: "arrow.clockwise",
+                                    action: { Task { await service.load() } })
+                    .padding(.top, 24)
+                } else if service.articles.isEmpty {
+                    CastLoader(label: "LOADING STRATEGY", showTips: false).frame(maxWidth: .infinity).padding(.top, 40)
                 } else {
-                    ForEach(service.articles) { a in
-                        Button { selected = a } label: { card(a) }.buttonStyle(.squish)
-                    }
+                    StrategyIndexBody(articles: service.articles) { selected = $0 }
                 }
             }
             .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
-        }
-    }
-
-    private func card(_ a: StrategyArticleModel) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "lightbulb.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(InfoPageStyle.gold)
-                .frame(width: 40, height: 40).background(RoundedRectangle(cornerRadius: 11).fill(InfoPageStyle.gold.opacity(0.16)))
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(a.minutes) MIN READ").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0xA2560C))
-                Text(a.title).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading).multilineTextAlignment(.leading)
-                Text(a.dek).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.leading)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading).infoCard(InfoPageStyle.gold)
-    }
-
-    private func articleBody(_ a: StrategyArticleModel) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                InfoIntroCard(heading: "STRATEGY · \(a.minutes) MIN READ", line: a.dek)
-                ForEach(a.sections.indices, id: \.self) { i in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(a.sections[i].heading).font(Brand.font(16, .black)).foregroundStyle(FinishInk.heading)
-                        ForEach(a.sections[i].body.indices, id: \.self) { j in
-                            Text(a.sections[i].body[j]).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(3)
-                        }
-                    }
-                    .padding(14).frame(maxWidth: .infinity, alignment: .leading).infoCard(InfoPageStyle.gold)
-                }
-            }
-            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
+            .frame(maxWidth: 560).frame(maxWidth: .infinity)
         }
     }
 }
@@ -426,6 +411,8 @@ struct WordArchiveEntry: Decodable, Identifiable {
 final class WordsService: ObservableObject {
     static let shared = WordsService()
     @Published private(set) var words: [WordArchiveEntry] = []
+    /// BI24: the last fetch failed with nothing cached (the page shows R unplugged + Try again).
+    @Published private(set) var failed = false
     private static let cacheKey = "words-cache-v1"
     private var loaded = false
     private struct Payload: Decodable { let words: [WordArchiveEntry] }
@@ -444,8 +431,9 @@ final class WordsService: ObservableObject {
     func load() async {
         guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/words") else { return }
+        failed = false
         guard let (data, _) = try? await Net.api.data(from: url),
-              let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
+              let payload = try? JSONDecoder().decode(Payload.self, from: data) else { failed = words.isEmpty; return }
         words = payload.words
         loaded = true
         UserDefaults.standard.set(data, forKey: Self.cacheKey)
@@ -473,10 +461,23 @@ struct WordsView: View {
     private var list: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                InfoIntroCard(heading: "Every Word of the Day",
-                              line: "Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.")
-                if service.words.isEmpty {
-                    ProgressView().controlSize(.large).tint(Theme.primary).frame(maxWidth: .infinity).padding(.top, 40)
+                // BI17: the intro as plain type (no bordered card).
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("EVERY WORD OF THE DAY").font(Brand.font(13, .black)).tracking(1.2)
+                        .foregroundStyle(GuideFamily.ink(GuideFamily.brand))
+                    Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.")
+                        .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, 4).padding(.bottom, 6)
+                if service.words.isEmpty && service.failed {
+                    // BI24: never a spinner forever — R unplugged + Try again.
+                    BrandEmptyState(title: "Can't reach the word vault", line: "Check your connection and I'll bring every word back.",
+                                    scene: .unplugged, actionTitle: "Try again", actionSymbol: "arrow.clockwise",
+                                    action: { Task { await service.load() } })
+                    .padding(.top, 12)
+                } else if service.words.isEmpty {
+                    CastLoader(label: "LOADING WORDS", showTips: false).frame(maxWidth: .infinity).padding(.top, 40)
                 } else {
                     ForEach(service.words) { w in
                         Button { selected = w } label: { row(w) }.buttonStyle(.squish)
@@ -497,79 +498,102 @@ struct WordsView: View {
             }
             Spacer()
         }
-        .padding(12).frame(maxWidth: .infinity, alignment: .leading).infoCard(InfoPageStyle.pink)
+        .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+        // BI17: a borderless soft field (no outlined row cards).
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(GuideFamily.washFill(InfoPageStyle.pink, 0.10)))
     }
 }
 
-/// Rich Word-of-the-Day detail body (used inside MenuScaffold).
+/// Rich Word-of-the-Day detail body (used inside MenuScaffold). FINISH_SPEC BI17: the
+/// guide-page family — a hero card (I's ready pose on a glow, the word in the brand
+/// caps, pronunciation + part-of-speech chip), numbered senses with soft numerals, the
+/// example as a highlighted line and the puzzle notes; no bordered cards.
 struct WordDetailBody: View {
     let entry: WordArchiveEntry
     private var w: String { entry.word.uppercased() }
+    private static let host = Color(hex: 0x4CC77A)
+    private static let amber = Color(hex: 0xF59E0B)
+
+    private var senses: [(pos: String, def: String)] {
+        var out: [(String, String)] = []
+        if !entry.definition.isEmpty { out.append((entry.partOfSpeech, entry.definition)) }
+        out += entry.extraSenses.map { ($0.partOfSpeech, $0.definition) }
+        return out
+    }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                // Hero band — gradient tiles on a soft tinted panel.
-                // §C6 / §B6: the word spelled in glossy purple tiles on a tinted card.
-                VStack(spacing: 10) {
-                    FinishLabel("Word of the Day · \(prettyDate(entry.date))", color: Color(hex: 0x6D28D9))
-                    HStack(spacing: 6) {
-                        ForEach(Array(w).indices, id: \.self) { i in
-                            GlossyTile(face: .correct, letter: String(Array(w)[i]), width: 40)
-                        }
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(w)
-                    if !entry.phonetic.isEmpty || !entry.partOfSpeech.isEmpty {
-                        HStack(spacing: 8) {
-                            if !entry.phonetic.isEmpty { Text(entry.phonetic).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary) }
-                            if !entry.partOfSpeech.isEmpty {
-                                Text(entry.partOfSpeech.uppercased()).font(Brand.font(10, .black)).tracking(0.8)
-                                    .foregroundStyle(A11yInk.on(Color(hex: 0x6D28D9)))
-                                    .padding(.horizontal, 9).padding(.vertical, 3)
-                                    .tintedPill(InfoPageStyle.purple)
-                            }
+            VStack(alignment: .leading, spacing: 24) {
+                hero
+                if !senses.isEmpty {
+                    VStack(alignment: .leading, spacing: 14) {
+                        label("Meaning")
+                        ForEach(senses.indices, id: \.self) { i in senseRow(i + 1, senses[i]) }
+                        if !entry.example.isEmpty {
+                            GuideTakeaway(text: "\u{201C}\(entry.example)\u{201D}", accent: GuideFamily.brand)
                         }
                     }
                 }
-                .padding(.vertical, 16).frame(maxWidth: .infinity)
-                .tintedCard(accent: InfoPageStyle.purple, bar: [InfoPageStyle.purple, InfoPageStyle.pink])
-
-                if !entry.definition.isEmpty {
-                    sectionCard("Meaning", icon: "book.fill", tint: Color(hex: 0x7C3AED)) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(entry.definition).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.heading).lineSpacing(2)
-                            if !entry.example.isEmpty {
-                                Text("“\(entry.example)”").font(Brand.font(12, .regular)).italic().foregroundStyle(FinishInk.secondary)
-                            }
-                            ForEach(entry.extraSenses.indices, id: \.self) { i in
-                                (Text(entry.extraSenses[i].partOfSpeech + " ").font(Brand.font(12, .bold)).foregroundColor(Theme.primary)
-                                 + Text(entry.extraSenses[i].definition).font(Brand.font(12, .regular)).foregroundColor(Theme.textMuted))
-                            }
-                        }
-                    }
-                }
-                sectionCard("\(w) as a puzzle answer", icon: "lightbulb.fill", tint: Color(hex: 0xF59E0B)) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(entry.analysisSummary).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
-                        Text(entry.analysisStrategy).font(Brand.font(13, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
-                    }
+                VStack(alignment: .leading, spacing: 12) {
+                    label("\(w) as a puzzle answer")
+                    if !entry.analysisSummary.isEmpty { GuideTakeaway(text: entry.analysisSummary, accent: Self.amber) }
+                    if !entry.analysisStrategy.isEmpty { GuideParagraph(text: entry.analysisStrategy) }
                 }
             }
-            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
+            .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)
+            .frame(maxWidth: 560).frame(maxWidth: .infinity)
         }
     }
 
-    private func sectionCard<C: View>(_ title: String, icon: String, tint: Color, @ViewBuilder _ inner: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 7) {
-                Image(systemName: icon).font(.system(size: 12, weight: .bold)).foregroundStyle(tint)
-                    .frame(width: 26, height: 26).background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.14)))
-                Text(title.uppercased()).font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(FinishInk.heading)
+    private var hero: some View {
+        VStack(spacing: 8) {
+            GuideHostHero(host: .i, accent: Self.host, height: 96)
+            Text("WORD OF THE DAY \u{00B7} \(prettyDate(entry.date).uppercased())")
+                .font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(GuideFamily.ink(GuideFamily.brand))
+                .multilineTextAlignment(.center)
+            LiveHeadline(text: w, palette: .home, size: 40, maxLines: 1)
+                .accessibilityLabel(w)
+                .accessibilityAddTraits(.isHeader)
+            if !entry.phonetic.isEmpty || !entry.partOfSpeech.isEmpty {
+                HStack(spacing: 8) {
+                    if !entry.phonetic.isEmpty {
+                        Text(entry.phonetic).font(Brand.font(15, .bold)).foregroundStyle(FinishInk.secondary)
+                    }
+                    if !entry.partOfSpeech.isEmpty { GuideChip(text: entry.partOfSpeech, accent: GuideFamily.brand) }
+                }
             }
-            inner()
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(16).infoCard(tint)
+        .padding(.horizontal, 18).padding(.top, 18).padding(.bottom, 20)
+        .frame(maxWidth: .infinity)
+        .guideHeroCard(Self.host)
+        .padding(.top, 6)
+    }
+
+    private func label(_ t: String) -> some View {
+        Text(t.uppercased()).font(Brand.font(13, .black)).tracking(1.2).foregroundStyle(FinishInk.heading)
+            .padding(.horizontal, 2)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private func senseRow(_ n: Int, _ s: (pos: String, def: String)) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(n)").softNumber(18, color: GuideFamily.ink(GuideFamily.brand))
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(GuideFamily.washFill(GuideFamily.brand, 0.16)))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                if !s.pos.isEmpty {
+                    Text(s.pos.uppercased()).font(Brand.font(10, .black)).tracking(1.0)
+                        .foregroundStyle(GuideFamily.ink(GuideFamily.brand))
+                }
+                Text(s.def).font(Brand.font(16, .regular)).foregroundStyle(FinishInk.heading).lineSpacing(5)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Sense \(n). \(s.pos). \(s.def)")
     }
 }
 

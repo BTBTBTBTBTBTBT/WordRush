@@ -50,6 +50,7 @@ import { FR_LOOK, frBar, frSurface, podiumSlots, rowStripe } from '@/lib/friends
 import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
 import { softMix } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
+import { FeedbackPill } from '@/components/game/feedback-toast';
 
 /** The add-friend window's cast pose: I reaching out (not the Friends host, O1 — A7). */
 const ADD_POSE = poseArt('i', 'reach');
@@ -767,7 +768,7 @@ export function FriendsPanel() {
           </div>
         )}
       </FrCard>
-      {note && <p className="text-xs font-extrabold px-1" style={{ color: FR.mid }} role="status">{note}</p>}
+      {note && <div className="flex justify-center px-1" role="status" aria-live="polite"><FeedbackPill key={note} message={note} /></div>}
       {shieldNote && <ShieldNotice onDismiss={() => setShieldNote(null)}>{shieldNote}</ShieldNotice>}
 
       {/* 7b. INVITES (only with requests in flight; founder 2026-10-01: under YOUR FRIENDS) */}
@@ -825,7 +826,7 @@ export function FriendsPanel() {
             </div>
           ))}
           {inviteNote && (
-            <p className="text-xs font-extrabold cursor-pointer px-3 pb-2.5" style={{ color: FR_LOOK.rowSub }} onClick={() => setInviteNote(null)} role="status">{inviteNote}</p>
+            <div className="flex justify-center cursor-pointer px-3 pb-2.5" onClick={() => setInviteNote(null)} role="status" aria-live="polite"><FeedbackPill key={inviteNote} message={inviteNote} /></div>
           )}
         </FrCard>
       )}

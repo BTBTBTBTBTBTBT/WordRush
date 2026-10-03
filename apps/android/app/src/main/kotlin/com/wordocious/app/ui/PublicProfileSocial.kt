@@ -535,7 +535,7 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
         title = { Text("$targetName · ${modeTitleFromDb(modeName)}", fontWeight = FontWeight.Black) },
         text = {
             when (val f = fetch) {
-                null -> Text("Loading board…", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                null -> CastLoader("LOADING BOARD", Modifier.fillMaxWidth().padding(vertical = 16.dp))
                 is ProfileService.BoardFetch.Locked -> Column(
                     Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -551,9 +551,10 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
                         fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
                     )
                 }
-                is ProfileService.BoardFetch.Unavailable -> SceneEmptyState(
-                    // A missing board gets O3's not-found scene (ART_SPEC §7).
-                    SceneArt.NOT_FOUND, "This board isn't available.", height = 110.dp, color = WTheme.textMuted,
+                is ProfileService.BoardFetch.Unavailable -> BrandEmptyState(
+                    // A missing board gets O3's not-found scene (ART_SPEC §7) + BI24 headline.
+                    title = "BOARD NOT FOUND", line = "This board isn't available right now.",
+                    scene = SceneArt.NOT_FOUND, artHeight = 96.dp,
                 )
                 is ProfileService.BoardFetch.Ready -> Column(
                     Modifier.verticalScroll(rememberScrollState()).heightIn(max = 440.dp),
@@ -580,7 +581,10 @@ fun GuardedBoardDialog(targetId: String, targetName: String, seed: String, onDis
 private fun ReadOnlyBoards(board: ProfileService.BoardDetail) {
     val solutions = board.solutions.filter { it.isNotBlank() }
     if (solutions.isEmpty()) {
-        Text("No board data recorded.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        BrandEmptyState(
+            title = "NO BOARD SAVED", line = "This game finished without a board to show.",
+            scene = SceneArt.NOT_FOUND, artHeight = 80.dp,
+        )
         return
     }
     if (solutions.size == 1) {
@@ -712,7 +716,10 @@ fun MedalHistorySheet(
         ) {
             PageTitleText("$targetName's medals", fontSize = 18.sp)
             if (medals.isEmpty()) {
-                Text("No medals yet.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                BrandEmptyState(
+                    title = "NO MEDALS YET", line = "Top-three daily finishes earn medals.",
+                    host = MascotId.U, artHeight = 80.dp,
+                )
             }
             medals.forEach { m ->
                 val podiumable = m.medalType in setOf("gold", "silver", "bronze") &&
@@ -760,8 +767,11 @@ fun PodiumDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
-                    podium == null -> Text("Loading podium…", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    podium!!.isEmpty() -> Text("No podium recorded for this day.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    podium == null -> CastLoader("LOADING PODIUM", Modifier.fillMaxWidth().padding(vertical = 16.dp))
+                    podium!!.isEmpty() -> BrandEmptyState(
+                        title = "NO PODIUM", line = "Nobody made the podium that day.",
+                        scene = SceneArt.ASLEEP, artHeight = 80.dp,
+                    )
                     else -> podium!!.forEachIndexed { i, e ->
                         // C2 / A1: each place on its medal's tint, a medal disc, the soft score.
                         val medal = PodiumInk.medal(i + 1)

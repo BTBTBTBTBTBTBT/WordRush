@@ -5,10 +5,13 @@ import android.content.SharedPreferences
 import com.wordocious.core.GameMode
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Crash/offline protection for solo result recording — the Android port of web
@@ -49,6 +52,7 @@ object PendingRecords {
 
     fun init(context: Context) {
         prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        registerNetworkCallback(context.applicationContext)
     }
 
     @Serializable
@@ -88,8 +92,112 @@ object PendingRecords {
     /** Every tracked write landed. The DAILY part only applies to daily seeds —
      *  an unlimited game writes no daily_results row and must not be held
      *  hostage by a flag nothing will ever set. */
-    private fun Payload.allDone(): Boolean =
-        statsDone && matchDone && xpDone && (dailyDone || !seed.startsWith("daily-"))
+    internal fun Payload.allDone(): Boolean = outstandingParts().isEmpty()
+
+    /** The parts a drain would still have to (re)run. Pure — pinned by
+     *  PendingRecordsDecisionTest. */
+    internal fun Payload.outstandingParts(): Set<Part> = buildSet {
+        if (!statsDone) add(Part.STATS)
+        if (!matchDone) add(Part.MATCH)
+        if (!xpDone) add(Part.XP)
+        if (!dailyDone && seed.startsWith("daily-")) add(Part.DAILY)
+    }
+
+    /** What one write attempt means for its part. LANDED and REJECTED both
+     *  settle the part (REJECTED = the server would refuse it forever — the
+     *  plausibility floor, or a mode with no DailyScoring config — so retrying
+     *  it only holds the payload hostage for 7 days); PENDING leaves it queued. */
+    enum class WriteOutcome { LANDED, PENDING, REJECTED }
+
+    /** A write's outcome from its error. ANY throwable keeps the part pending —
+     *  a ktor HttpRequestTimeoutException, a SocketTimeoutException, Supabase's
+     *  HttpRequestException wrapper, and a (Timeout)CancellationException alike.
+     *  A timed-out request is never evidence that the write landed. */
+    fun outcomeOf(error: Throwable?): WriteOutcome =
+        if (error == null) WriteOutcome.LANDED else WriteOutcome.PENDING
+
+    /** Pure flag flip behind [markDone]. */
+    internal fun Payload.withPart(part: Part): Payload = when (part) {
+        Part.STATS -> copy(statsDone = true)
+        Part.MATCH -> copy(matchDone = true)
+        Part.XP -> copy(xpDone = true)
+        Part.DAILY -> copy(dailyDone = true)
+    }
+
+    /** Pure: the payload after one part's attempt. */
+    internal fun Payload.after(part: Part, outcome: WriteOutcome): Payload =
+        if (outcome == WriteOutcome.PENDING) this else withPart(part)
+
+    /** The daily_results write for this result can NEVER land — refused by the
+     *  §260 plausibility floor (client and DB trigger alike), or the mode has
+     *  no DailyScoring config (it would score as DUEL). Such a DAILY part is
+     *  settled, not retried. */
+    fun dailyPermanentlyRejected(
+        gameModeName: String, completed: Boolean, guessCount: Int, timeSeconds: Int, totalBoards: Int,
+    ): Boolean =
+        !DailyScoring.config.containsKey(gameModeName) ||
+            !Plausibility.isPlausibleDailyResult(completed, guessCount, timeSeconds, totalBoards, gameModeName)
+
+    /**
+     * Today's completions implied by queued payloads — results the player
+     * finished whose daily_results row has not been CONFIRMED on the server
+     * (outage, kill, timeout). Home merges these in so a relaunch during an
+     * outage still shows the card completed. Pure: daily seeds dealt [today],
+     * this [userId], DAILY part outstanding, not permanently rejected.
+     */
+    fun todayCompletions(
+        payloads: Collection<Payload>, userId: String, today: String,
+    ): Map<String, DailyCompletionsService.Completion> {
+        val out = mutableMapOf<String, DailyCompletionsService.Completion>()
+        for (p in payloads) {
+            if (!p.userId.equals(userId, ignoreCase = true)) continue
+            if (p.dailyDone || com.wordocious.core.getDailySeedDate(p.seed) != today) continue
+            if (dailyPermanentlyRejected(p.gameModeName, p.won, p.guessCount, p.timeSeconds, p.totalBoards)) continue
+            val score = DailyScoring.compositeScore(
+                p.gameModeName, p.won, p.guessCount, p.timeSeconds, p.boardsSolved, p.totalBoards,
+                p.hintsUsed, p.stagesCompleted, p.bestCorrectLetters, today,
+            )
+            val c = DailyCompletionsService.Completion(p.gameModeName, p.won, p.guessCount, p.timeSeconds, score)
+            val prev = out[p.gameModeName]
+            if (prev == null || (!prev.completed && c.completed)) out[p.gameModeName] = c
+        }
+        return out
+    }
+
+    /** Merge queued completions into a server/cached map. Adds missing modes
+     *  and upgrades a loss to a queued win; never downgrades a win. */
+    fun mergeCompletions(
+        base: Map<String, DailyCompletionsService.Completion>,
+        queued: Map<String, DailyCompletionsService.Completion>,
+    ): Map<String, DailyCompletionsService.Completion> {
+        if (queued.isEmpty()) return base
+        val merged = base.toMutableMap()
+        for ((k, v) in queued) {
+            val cur = merged[k]
+            if (cur == null || (!cur.completed && v.completed)) merged[k] = v
+        }
+        return merged
+    }
+
+    /** Every decodable payload currently queued (any account). */
+    fun allPayloads(): List<Payload> {
+        val p = prefs ?: return emptyList()
+        val all = runCatching { p.all }.getOrNull() ?: return emptyList()
+        return all.values.mapNotNull { v -> (v as? String)?.let { runCatching { json.decodeFromString<Payload>(it) }.getOrNull() } }
+    }
+
+    // ── In-flight guard ───────────────────────────────────────────────────────
+    // record() holds its mode+seed key here for its whole duration. A drain
+    // that fires while a LIVE record call is still hung on an outage (foreground
+    // return, network callback) must not replay the same game: neither run has
+    // flagged STATS yet, so both would read-modify-write user_stats — a
+    // permanent double count.
+    private val inFlight: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    /** Claim [gameModeName]+[seed] for one record run; false if one is already running. */
+    fun tryBeginFlight(gameModeName: String, seed: String): Boolean = inFlight.add(key(gameModeName, seed))
+    fun endFlight(gameModeName: String, seed: String) { inFlight.remove(key(gameModeName, seed)) }
+    fun isInFlight(gameModeName: String, seed: String): Boolean = key(gameModeName, seed) in inFlight
 
     private fun key(gameModeName: String, seed: String) = "$gameModeName-$seed"
 
@@ -132,12 +240,7 @@ object PendingRecords {
     fun markDone(gameModeName: String, seed: String, part: Part) {
         val p = prefs ?: return
         val current = read(gameModeName, seed) ?: return
-        val next = when (part) {
-            Part.STATS -> current.copy(statsDone = true)
-            Part.MATCH -> current.copy(matchDone = true)
-            Part.XP -> current.copy(xpDone = true)
-            Part.DAILY -> current.copy(dailyDone = true)
-        }
+        val next = current.withPart(part)
         runCatching {
             p.edit().putString(key(gameModeName, seed), json.encodeToString(next)).apply()
         }
@@ -157,15 +260,49 @@ object PendingRecords {
     @Serializable
     private data class IdRow(@SerialName("id") val id: String)
 
-    private var draining = false
+    // Atomic: launch, every ON_RESUME and the network callback all call drain()
+    // from IO threads; a plain var let two drains replay the same payload.
+    private val draining = AtomicBoolean(false)
+
+    private val drainScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO
+    )
+    @Volatile private var drainRequest: kotlinx.coroutines.Job? = null
+
+    /** Debounced drain trigger (network regained, foreground). Coalesces a burst
+     *  of callbacks into one drain [delayMs] after the first request. */
+    fun requestDrain(delayMs: Long = 2_000) {
+        // A request already waiting covers this one. (Never cancel it: once its
+        // delay is over it IS the running drain, and canceling that would cut a
+        // replay short.)
+        if (drainRequest?.isActive == true) return
+        drainRequest = drainScope.launch {
+            kotlinx.coroutines.delay(delayMs)
+            drain()
+        }
+    }
+
+    private val networkCallbackRegistered = AtomicBoolean(false)
+
+    /** Drain whenever a network becomes available — an outage that ends while
+     *  the app sits in the foreground otherwise waits for the next resume. */
+    private fun registerNetworkCallback(context: Context) {
+        if (!networkCallbackRegistered.compareAndSet(false, true)) return
+        runCatching {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            cm.registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) { requestDrain() }
+            })
+        }.onFailure { networkCallbackRegistered.set(false) }
+    }
 
     /**
-     * Re-fire any solo results whose record flow was cut off. Call once per
-     * launch after auth is ready. Idempotent; no-ops when signed out.
+     * Re-fire any solo results whose record flow was cut off. Runs at launch,
+     * on every foreground return and when the network comes back. Idempotent;
+     * no-ops when signed out; at most one drain runs at a time.
      */
     suspend fun drain() {
-        if (draining) return
-        draining = true
+        if (!draining.compareAndSet(false, true)) return
         try {
             val p = prefs ?: return
             // AuthService.userId reads the PROFILE row, which needs a network
@@ -191,6 +328,9 @@ object PendingRecords {
                 if (!payload.userId.equals(userId, ignoreCase = true)) continue
                 val mode = runCatching { GameMode.valueOf(payload.gameModeName) }.getOrNull()
                 if (mode == null) { p.edit().remove(k).apply(); continue }
+                // The live record call for this game is still airborne (hung on
+                // an outage) — it owns the payload; replaying now double-counts.
+                if (isInFlight(payload.gameModeName, payload.seed)) continue
                 // Every part landed (incl. the daily row for daily seeds), only
                 // the release didn't (killed between the last write and
                 // settle()) — nothing to replay. The old three-part check here
@@ -224,18 +364,29 @@ object PendingRecords {
                 // (merging the flags forward), skips the parts already done and
                 // marks each remaining one as it lands, so a failure here simply
                 // leaves the rest of the payload for the next launch.
-                GameResultsService.record(
-                    gameMode = mode, won = payload.won, guessCount = payload.guessCount,
-                    timeSeconds = payload.timeSeconds, boardsSolved = payload.boardsSolved,
-                    totalBoards = payload.totalBoards, seed = payload.seed,
-                    solutions = payload.solutions, guesses = payload.guesses,
-                    hintsUsed = payload.hintsUsed, playType = "solo",
-                    stagesCompleted = payload.stagesCompleted,
-                    bestCorrectLetters = payload.bestCorrectLetters,
-                )
+                try {
+                    GameResultsService.record(
+                        gameMode = mode, won = payload.won, guessCount = payload.guessCount,
+                        timeSeconds = payload.timeSeconds, boardsSolved = payload.boardsSolved,
+                        totalBoards = payload.totalBoards, seed = payload.seed,
+                        solutions = payload.solutions, guesses = payload.guesses,
+                        hintsUsed = payload.hintsUsed, playType = "solo",
+                        stagesCompleted = payload.stagesCompleted,
+                        bestCorrectLetters = payload.bestCorrectLetters,
+                        // A replayed result's unlocks wait for a calm moment (CelebrationGate).
+                        source = CelebrationGate.Source.REPLAY,
+                    )
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // One payload's failure (a medal/bonus read timing out after
+                    // the tracked parts) must not strand the rest of the queue.
+                    // Its own outstanding parts stay queued for the next drain.
+                    DailyResultsService.reportSwallowedWrite("drain", payload.gameModeName, e)
+                }
             }
         } finally {
-            draining = false
+            draining.set(false)
         }
     }
 }

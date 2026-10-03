@@ -294,6 +294,7 @@ fun OnboardingHost(signedIn: Boolean, blocked: Boolean) {
         if (Onboarding.replaying && !blocked && Onboarding.step == null) Onboarding.begin(replay = true, signedIn, guest)
     }
     if (step != null) OnboardingFlowScreen(step, signedIn, guest, profile)
+    ReportPresented(step != null) // CelebrationGate: late celebrations wait for onboarding
 }
 
 @Composable

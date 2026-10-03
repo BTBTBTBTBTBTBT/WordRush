@@ -1,6 +1,7 @@
 package com.wordocious.app.ui
 
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.semantics.heading
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -144,6 +145,7 @@ private fun HeaderControlsRow(
     onSignIn: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
+    var lastSheetTap by remember { mutableStateOf<Long?>(null) }
     var open by remember { mutableStateOf<HeaderPop?>(null) }
     Column(Modifier.fillMaxWidth()) {
     Row(
@@ -199,11 +201,19 @@ private fun HeaderControlsRow(
             CandyButton("Sign In", onClick = onSignIn, size = CandySize.SMALL)
             Spacer(Modifier.width(2.dp))
         }
-        SoftControl(Icon3DName.HELP, "Help", onClick = { menuOpen = true })
+        // BI25: help / gear are single-fire (a double tap can't open and then close).
+        SoftControl(Icon3DName.HELP, "Help", onClick = {
+            val now = android.os.SystemClock.uptimeMillis()
+            if (com.wordocious.app.data.SettingsPreviews.sheetTapFires(now, lastSheetTap, presenting = menuOpen)) { lastSheetTap = now; menuOpen = true }
+        })
         if (menuOpen) {
             InfoMenuSheet(onNav = { menuOpen = false; onNav(it) }, onDismiss = { menuOpen = false })
+            ReportPresented() // CelebrationGate: late celebrations wait for the sheet
         }
-        SoftControl(Icon3DName.GEAR, "Settings", onClick = onSettings)
+        SoftControl(Icon3DName.GEAR, "Settings", onClick = {
+            val now = android.os.SystemClock.uptimeMillis()
+            if (com.wordocious.app.data.SettingsPreviews.sheetTapFires(now, lastSheetTap, presenting = menuOpen)) { lastSheetTap = now; onSettings() }
+        })
     }
     // C5 the popups, anchored just under this controls row (this zero-height strip sits
     // right below it, so the popup's anchor bottom is the row's bottom edge).
@@ -261,6 +271,7 @@ private fun HeaderPopup(
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
+    ReportPopup() // CelebrationGate: the streak / shield / flawless popups hold late celebrations
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
@@ -323,6 +334,10 @@ private fun HeaderPopup(
                         }
                     }
                     CastPose(host.first, host.second, 74.dp, Modifier.align(Alignment.BottomEnd).offset(x = (-8).dp, y = 6.dp))
+                    // BI12: an always-visible close on the card (the scrim also closes).
+                    HeaderCircle(close, "Close", Modifier.align(Alignment.TopEnd), size = 32.dp) {
+                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
                 }
                 Column(Modifier.fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState())) { body() }
             }

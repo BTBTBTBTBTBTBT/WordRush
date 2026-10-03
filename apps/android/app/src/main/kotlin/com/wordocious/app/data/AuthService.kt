@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -116,6 +118,9 @@ object AuthService {
         if (previous.isNotEmpty() && previous != owner) {
             runCatching { DailyCompletionsService.clearCache() }
             runCatching { GamePersistence.clearAll() }
+            // BI19: persisted screen caches + optimistic results belong to the previous owner.
+            runCatching { AppCache.clearForOwnerChange() }
+            runCatching { StatsMemo.clear() }
         }
         SettingsPref.set(LAST_OWNER, owner)
     }
@@ -222,26 +227,210 @@ object AuthService {
         if (hadPersistedSession() && _profile.value == null) {
             cachedProfileRow()?.let { _profile.value = it; _isAuthenticated.value = true; runCatching { CastAvatars.recordOwn(it) } }
         }
+        startSessionWatch()
         scope.launch {
             try {
                 client.auth.awaitInitialization()
                 val user = runCatching { client.auth.currentUserOrNull() }.getOrNull()
-                if (user != null && loadProfile(user.id)) {
-                    // loadProfile claims save ownership for this user.
-                    _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                if (user != null) {
+                    // loadProfile claims save ownership for this user; false = banned (it
+                    // already signed out).
+                    if (loadProfile(user.id)) {
+                        _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                    }
                 } else {
-                    // No session — the optimistic paint (if any) was wrong.
-                    _profile.value = null
-                    _isAuthenticated.value = false
-                    SettingsPref.set(HAD_SESSION, false)
-                    SettingsPref.set(CACHED_PROFILE_JSON, "")
-                    discardUnattributedSaves()
+                    // 2026-10-03 (the outage sign-out): "no current user" is NOT "no session".
+                    // supabase-kt reports a refresh that failed on the network or a 5xx as
+                    // RefreshFailure, and currentUserOrNull() is null until it recovers — this
+                    // branch used to treat that as signed out, wipe the cached profile and
+                    // HAD_SESSION, and show the sign-in screen. Classify first.
+                    val stored = storedSessionOrNull()
+                    val outcome = when {
+                        stored == null -> AuthSessionPolicy.Outcome.NO_SESSION
+                        // The library keeps it and retries on its own.
+                        client.auth.sessionStatus.value is SessionStatus.RefreshFailure -> AuthSessionPolicy.Outcome.TRANSIENT
+                        // NotAuthenticated with a session still on disk: the library gave up on
+                        // a non-5xx error (SessionGuard kept the session). Ask the server once.
+                        // (null = refreshed; currentUserOrNull below picks it up.)
+                        else -> probeStoredSession(stored) ?: AuthSessionPolicy.Outcome.TRANSIENT
+                    }
+                    val restored = runCatching { client.auth.currentUserOrNull() }.getOrNull()
+                    when {
+                        // The probe refreshed it.
+                        restored != null -> if (loadProfile(restored.id)) {
+                            _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                        }
+                        AuthSessionPolicy.keepsUserSignedIn(outcome, hasStoredSession = stored != null) -> keepSignedInOffline()
+                        outcome == AuthSessionPolicy.Outcome.REVOKED -> signOut(callServer = false)
+                        else -> {
+                            // No session — the optimistic paint (if any) was wrong.
+                            _profile.value = null
+                            _isAuthenticated.value = false
+                            SettingsPref.set(HAD_SESSION, false)
+                            SettingsPref.set(CACHED_PROFILE_JSON, "")
+                            discardUnattributedSaves()
+                        }
+                    }
                 }
             } catch (_: Exception) {
-                // No session — stay unauthenticated
+                // Restore threw — leave whatever the optimistic paint showed; a later
+                // refresh / foreground settles it. Never a sign-out on an exception.
             } finally {
+                initDone = true
                 _isLoading.value = false
             }
+        }
+    }
+
+    // ── Session recovery (2026-10-03, the outage sign-out) ──────────────────────
+    //
+    // A refresh that fails on the network or a 5xx keeps the user signed in: the cached
+    // profile stays, isAuthenticated stays, HAD_SESSION stays. supabase-kt retries those on
+    // its own (RefreshFailure → every AuthConfig.retryDelay, plus loadFromStorage on every
+    // foreground). It gives up on any OTHER error (clearSession → NotAuthenticated), which
+    // SessionGuard stops from deleting the stored session; [runRecoveryProbe] then refreshes
+    // that stored session itself with backoff (5 s, 15 s, 30 s, 60 s, then 60 s), on foreground
+    // and when the network returns, and only a REVOKED classification ends the session.
+    //
+    // The probe never runs while the library's own retry loop is live (RefreshFailure): two
+    // refreshers holding the same refresh token can trip GoTrue's reuse detection and revoke
+    // the whole session.
+
+    @Volatile private var initDone = false
+    @Volatile private var recovering = false
+    @Volatile private var signingOut = false
+    private var recoveryAttempt = 0
+    private var probeJob: kotlinx.coroutines.Job? = null
+    private val probeLock = kotlinx.coroutines.sync.Mutex()
+    private var sessionWatchStarted = false
+
+    private suspend fun storedSessionOrNull(): io.github.jan.supabase.auth.user.UserSession? =
+        runCatching { SessionGuard.loadSession() }.getOrNull()
+
+    /** Keep the signed-in state through a transient failure: the cached profile (painted from
+     *  CACHED_PROFILE_JSON at launch) stays, and so does HAD_SESSION. */
+    private fun keepSignedInOffline() {
+        recovering = true
+        _isAuthenticated.value = true
+        _isGuest.value = false
+        SettingsPref.set(HAD_SESSION, true)
+        // A no-op while the library's own retry loop runs (RefreshFailure); otherwise this
+        // is the next try of the stored session.
+        scheduleRecoveryProbe(AuthSessionPolicy.retryDelaySeconds(recoveryAttempt++) * 1000L)
+    }
+
+    /** Refreshes [stored] directly. Null = refreshed and imported (the library owns it again);
+     *  otherwise the classified failure. */
+    private suspend fun probeStoredSession(stored: io.github.jan.supabase.auth.user.UserSession): AuthSessionPolicy.Outcome? =
+        try {
+            val fresh = client.auth.refreshSession(stored.refreshToken)
+            client.auth.importSession(fresh)
+            null
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            classifyRefreshError(e)
+        }
+
+    private fun classifyRefreshError(e: Throwable): AuthSessionPolicy.Outcome {
+        val rest = e as? io.github.jan.supabase.exceptions.RestException
+        val code = (e as? io.github.jan.supabase.auth.exception.AuthRestException)?.errorCode?.value ?: rest?.error
+        return AuthSessionPolicy.classify(
+            errorCode = code,
+            httpStatus = rest?.statusCode,
+            // Anything that isn't an HTTP response (IOException, UnknownHost, ConnectException,
+            // ktor timeouts, supabase HttpRequestException) is the network.
+            isNetworkError = rest == null,
+            isSessionMissing = false,
+            message = e.message,
+        )
+    }
+
+    /** One collector for the whole process: refresh failures never sign out; a library
+     *  give-up hands the stored session to the recovery probe; a recovered session reloads the
+     *  profile. */
+    private fun startSessionWatch() {
+        if (sessionWatchStarted) return
+        sessionWatchStarted = true
+        registerNetworkCallback()
+        scope.launch {
+            client.auth.sessionStatus.collect { st ->
+                when (st) {
+                    is SessionStatus.Authenticated -> {
+                        recoveryAttempt = 0
+                        if (recovering && !signingOut) {
+                            recovering = false
+                            val uid = st.session.user?.id ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
+                            if (uid != null && loadProfile(uid)) {
+                                _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                            }
+                        }
+                    }
+                    // Network / 5xx: the library keeps the session and retries — stay signed in.
+                    is SessionStatus.RefreshFailure -> {
+                        if (_isAuthenticated.value) recovering = true
+                    }
+                    is SessionStatus.NotAuthenticated -> {
+                        if (!st.isSignOut && initDone && !signingOut && _isAuthenticated.value) {
+                            recovering = true
+                            scheduleRecoveryProbe(0)
+                        }
+                    }
+                    else -> Unit
+                }
+                Unit
+            }
+        }
+    }
+
+    private fun scheduleRecoveryProbe(delayMs: Long) {
+        probeJob?.cancel()
+        probeJob = scope.launch {
+            kotlinx.coroutines.delay(delayMs)
+            runRecoveryProbe()
+        }
+    }
+
+    private suspend fun runRecoveryProbe(): Unit = probeLock.withLock {
+        if (!recovering || signingOut || !_isAuthenticated.value) return@withLock
+        // The library is refreshing (or already has a session): it owns this attempt.
+        if (client.auth.sessionStatus.value !is SessionStatus.NotAuthenticated) return@withLock
+        val stored = storedSessionOrNull()
+        if (stored == null) {
+            // Only a sign-out may delete it (SessionGuard), so this is a finished sign-out.
+            signOut(callServer = false)
+            return@withLock
+        }
+        when (probeStoredSession(stored)) {
+            null -> { recoveryAttempt = 0 } // imported; the Authenticated status reloads the profile
+            AuthSessionPolicy.Outcome.REVOKED -> {
+                runCatching { io.sentry.Sentry.captureMessage("auth: refresh token revoked, signing out") }
+                signOut(callServer = false)
+            }
+            AuthSessionPolicy.Outcome.NO_SESSION -> signOut(callServer = false)
+            AuthSessionPolicy.Outcome.TRANSIENT -> {
+                val wait = AuthSessionPolicy.retryDelaySeconds(recoveryAttempt++)
+                scheduleRecoveryProbe(wait * 1000L)
+            }
+        }
+        Unit
+    }
+
+    /** App foreground (MainActivity.onResume): retry a stranded session now. Waits a beat so
+     *  the library's own foreground loadFromStorage goes first. */
+    fun onForeground() {
+        if (recovering) scheduleRecoveryProbe(1_500)
+    }
+
+    private fun registerNetworkCallback() {
+        runCatching {
+            val cm = com.wordocious.app.App.instance
+                .getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            cm.registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {
+                    if (recovering) scheduleRecoveryProbe(1_500)
+                }
+            })
         }
     }
 
@@ -572,11 +761,32 @@ object AuthService {
         }
     }
 
-    /** Sign out and clear session. */
-    suspend fun signOut() {
+    /** Sign out and clear session. [callServer] false = the token is already dead (revoked):
+     *  skip the logout call and just clear locally. */
+    suspend fun signOut(callServer: Boolean = true) {
+        signingOut = true
+        recovering = false
+        // (Never cancel the probe that is running this sign-out itself.)
+        val self = kotlin.coroutines.coroutineContext[kotlinx.coroutines.Job]
+        probeJob?.takeIf { it != self }?.cancel()
         try {
-            client.auth.signOut()
-        } catch (_: Exception) {}
+            // SessionGuard only lets the stored session be deleted inside this block. The
+            // explicit clearSession covers a logout call that threw before clearing.
+            SessionGuard.allowingDelete {
+                if (callServer) {
+                    try {
+                        client.auth.signOut()
+                    } catch (_: Exception) {}
+                }
+                runCatching { client.auth.clearSession() }
+            }
+            clearSignedInState()
+        } finally {
+            signingOut = false
+        }
+    }
+
+    private fun clearSignedInState() {
         // NOTE: local saves are deliberately NOT purged here. Purging on
         // sign-OUT meant signing out and straight back in as the same person
         // destroyed their in-progress boards. The cross-account leak this
@@ -677,6 +887,11 @@ object AuthService {
             // Same user back after a sign-out keeps their boards; a different
             // account (or a hand-off from guest play) starts clean.
             claimSavesFor(userId)
+            // 2026-10-03: an empty read for the user we already hold (a request that went out
+            // with the anon key while the session refresh was failing) must not null the
+            // profile — userId reads it, and a null profile looks signed out everywhere. A
+            // brand-new sign-up with no row yet still lands null as before.
+            if (result == null && _profile.value?.id == userId) return true
             _profile.value = result
             // AH: the player's character / frame for every avatar on screen.
             runCatching { CastAvatars.recordOwn(result) }

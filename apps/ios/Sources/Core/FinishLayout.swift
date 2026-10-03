@@ -98,6 +98,34 @@ public enum BoardSizing {
     }
 }
 
+// MARK: - BI18 Crosswordocious fits one screen
+
+/// FINISH_SPEC BI18 (founder 10-03: "the daily today required you to scroll"):
+/// in play the crossword grid owns the band between the compact header and the
+/// pinned clue bar / controls / keyboard, its cell sized from the band's width
+/// AND height for the puzzle's real columns × rows (10 × 11 dailies are common).
+/// Same numbers as the web (lib/board-fit.ts crosswordCell) and Android
+/// (BoardSizing.crosswordCell): 3-pt gaps, the tray chrome off first, 14–42 pt.
+public enum CrosswordFit {
+    public static let gap: Double = 3
+    public static let maxCell: Double = 42
+    /// The play floor (letters and numbers scale down with the cell to here).
+    public static let minCell: Double = 14
+
+    /// The largest square cell that fits `columns` × `rows` cells (with `gap`
+    /// between) in `width` × `height` once `chromeX` / `chromeY` (the tray's
+    /// padding, lip, the selection ring's room) are taken off; `height` nil =
+    /// by width only. Floored to whole points and clamped to [minCell, maxCell].
+    public static func cell(columns: Int, rows: Int, width: Double, height: Double?,
+                            chromeX: Double = 0, chromeY: Double = 0, gap: Double = CrosswordFit.gap,
+                            maxCell: Double = CrosswordFit.maxCell, minCell: Double = CrosswordFit.minCell) -> Double {
+        let c = Double(max(1, columns)), r = Double(max(1, rows))
+        var t = (width - chromeX - gap * (c - 1)) / c
+        if let h = height, h.isFinite, h > 0 { t = min(t, (h - chromeY - gap * (r - 1)) / r) }
+        return max(minCell, min(maxCell, floor(t)))
+    }
+}
+
 // MARK: - A5 The living cast header
 
 /// One sampled transform of a cast member: translations as fractions of the

@@ -60,8 +60,12 @@ enum AchievementService {
     @discardableResult
     static func checkAchievements(userId: String, gameMode: String, playType: String,
                                   won: Bool, guessCount: Int, timeSeconds: Int,
-                                  seed: String?, hintsUsed: Int = 0) async -> [String] {
+                                  seed: String?, hintsUsed: Int = 0,
+                                  source: CelebrationGate.Source = .live) async -> [String] {
         let client = AuthService.shared.client
+        // BI16: a replay, or a live finish whose writes came back slowly, is late —
+        // its popups wait for a calm moment instead of landing mid-something.
+        let begun = Date()
         var unlocked: [String] = []
         let already = await fetchUnlocked(userId: userId)
         var awarded = already
@@ -386,7 +390,8 @@ enum AchievementService {
         }
 
         // FINISH_SPEC §V2: celebrate each new unlock (queued popups).
-        if !unlocked.isEmpty { let keys = unlocked; Task { @MainActor in await AchievementUnlockCenter.shared.enqueue(keys: keys) } }
+        let late = CelebrationGate.isLate(source: source, startedAt: LiveFinishClock.started(seed: seed) ?? begun)
+        if !unlocked.isEmpty { let keys = unlocked; Task { @MainActor in await AchievementUnlockCenter.shared.enqueue(keys: keys, late: late) } }
         return unlocked
     }
 

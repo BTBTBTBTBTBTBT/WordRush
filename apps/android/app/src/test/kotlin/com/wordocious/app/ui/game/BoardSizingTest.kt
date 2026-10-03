@@ -66,4 +66,28 @@ class BoardSizingTest {
         assertEquals(300f * 0.98f, f.height, eps)
         assertTrue(f.cellW > f.cellH)
     }
+
+    // BI18 Crosswordocious fits one screen in play (founder 10-03). Chrome: tray padding + border
+    // each side (23 dp) across; that plus the lip and the cursor ring's room (33 dp) down.
+    private fun xw(w: Float, h: Float?, cols: Int = 10, rows: Int = 11) =
+        BoardSizing.crosswordCell(w, h, cols, rows, gap = 3f, chromeX = 23f, chromeY = 33f)
+
+    @Test fun crosswordTenByElevenFitsByHeightOnEveryPhone() {
+        // Bands left between the compact header and the clue bar / pills / keyboard:
+        // 360×640 (44 dp keys) ≈ 340×258; 411×891 ≈ 391×485.
+        assertEquals(17f, xw(340f, 258f), eps)
+        assertEquals(34f, xw(391f, 485f), eps)
+        // Width alone would have given 29 dp on the small phone — eleven rows of those scrolled.
+        assertEquals(29f, xw(340f, null), eps)
+        for ((w, h) in listOf(340f to 258f, 391f to 485f)) {
+            val c = xw(w, h)
+            assertTrue(c * 10 + 27 + 23 <= w && c * 11 + 30 + 33 <= h)
+        }
+    }
+
+    @Test fun crosswordCapsFloorsAndSmallerGrids() {
+        assertEquals(BoardSizing.CROSSWORD_MAX_CELL, xw(1000f, 1000f), eps)
+        assertEquals(BoardSizing.CROSSWORD_MIN_CELL, xw(340f, 100f), eps)
+        assertTrue(xw(340f, 258f, cols = 7, rows = 7) > xw(340f, 258f))
+    }
 }

@@ -469,7 +469,6 @@ struct VSGameView: View {
         if mode == .propernoundle, let pvm = vm.proper {
             // The solo ProperNoundle header, board, hints row and keyboard.
             ProperNoundleVSBoard(vm: pvm, onHome: homeTapped) { opponentStrip(maxGuesses: pvm.maxGuesses, wordLength: max(1, pvm.answerLen)) }
-            if let t = pvm.toast { toastView(t) }
         } else if let game = vm.game {
             VStack(spacing: 0) {
                 VSMatchHeader(game: game, mode: mode, onHome: homeTapped)
@@ -496,11 +495,13 @@ struct VSGameView: View {
                             .allowsHitTesting(!game.isFinished)
                     }
                     KeyboardView(vm: game).padding(.bottom, 6).layoutPriority(1)
+                        // §BI9: the bounced-guess candy toast hangs from the keyboard,
+                        // never over the board.
+                        .gameFeedbackToast(game.toast, alignment: .top)
                 }
             }
             .padding(.horizontal, 10)
             .frame(maxHeight: .infinity)
-            if let t = game.toast { toastView(t) }
         } else {
             VSLoadingView(mode: mode)
         }
@@ -538,19 +539,27 @@ struct VSGameView: View {
             vsHintPill(label: game.consonantUsed ? (game.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(game.consonantRevealed ?? "")") : "Consonant",
                        used: game.consonantUsed) { Haptics.success(); game.revealConsonant() }
         }
+        .frame(maxWidth: 360)
         // 16pt bottom: keeps the pills clear of the Q-row so reaching for the
         // keyboard can't fat-finger a hint (founder request, Aug 11).
         .padding(.horizontal, 16).padding(.bottom, 16)
     }
 
-    /// §A8: the hint buttons are small teal candy pills (a bulb before the unused
-    /// ones); a used hint reads as the quiet peach pill with its revealed letter.
+    /// §A8: the hint buttons are small candy pills (a bulb before the unused ones); a
+    /// used hint reads as the quiet peach pill with its revealed letter. §BI22: amber
+    /// like every solo hint (it was teal here only), and equal halves so the revealed
+    /// letter's label never resizes a pill.
+    @ViewBuilder
     private func vsHintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {
+        // BI25: a used hint is information — a soft filled pill, no outline (same footprint).
+        if used { UsedHintPill(label: label) } else {
         Button(action: action) {
             CandyLabel(title: label, symbol: used ? nil : "lightbulb.fill")
+                .frame(maxWidth: .infinity)
         }
-        .buttonStyle(CandyButtonStyle(variant: used ? .peach : .teal, size: .small))
+        .buttonStyle(CandyButtonStyle(variant: used ? .peach : .amber, size: .small))
         .disabled(used)
+        }
     }
 
     /// Challenge-send game: no opponent — the strip says who will race this run.
@@ -570,14 +579,6 @@ struct VSGameView: View {
         .vsTinted(VsLobbyKit.purple, radius: 16, tint: 0.10, line: 0.32)
     }
 
-    /// Bounced-guess toast — the solo GameScreen's toast (fixed dark fill so it
-    /// reads in Dark too), just under the opponent strip.
-    private func toastView(_ text: String) -> some View {
-        Text(text).font(Brand.font(12, .bold)).foregroundStyle(.white)
-            .padding(.horizontal, 12).padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x1A1A2E)))
-            .padding(.top, 132).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
-    }
 
     // MARK: - Waiting (spectator: you finished, opponent still playing) —
     // ports the vs-game.tsx 'waiting' screen as a teal one-window card + their

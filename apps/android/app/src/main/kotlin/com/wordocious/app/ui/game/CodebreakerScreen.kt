@@ -364,6 +364,7 @@ fun CodebreakerScreen(
     // code letter, Backspace/Delete clears it, Enter/Tab moves to the next open code letter,
     // ← / → step through every unlocked code letter (wrapping).
     val cbKeys = keyboardViewKeys(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advance() })
+    ProvideFeedbackAnchor {
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
@@ -395,12 +396,14 @@ fun CodebreakerScreen(
             }
         }
         // G5 a toast is a tinted pill (no dark slab, no white).
-        session.toast?.let { PieceToast(it, CRYPTOGRAM_ACCENT, top = 100.dp) }
+        // The candy feedback toast, centered on the header meta row (never the title art or the board).
+        GameFeedbackToast(session.toast, fallbackTop = 100.dp)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) CodebreakerOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(CRYPTOGRAM_ACCENT, onBack) }
         CornerHelpButton(CRYPTOGRAM_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.CRYPTOGRAM, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -412,9 +415,12 @@ private fun CodebreakerCapsules(session: CodebreakerSession, onFinished: () -> U
     val revealIn = maxOf(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - session.elapsed)
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
-        Capsule(if (session.state.checks > 0) "Check · ${session.state.checks}" else "Check", Icons.Filled.DoneAll, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.check(onFinished) }
-        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hint(onFinished) }
-        Capsule(if (revealIn > 0) "Reveal · ${clockText(revealIn)}" else "Reveal", Icons.Filled.Visibility, dim = revealIn > 0) { session.reveal(onFinished) }
+        // BI22: fixed labels — the check / hint counts are corner badges (overlays) — and the
+        // ticking Reveal countdown keeps its widest width, so nothing ever nudges the row.
+        Capsule("Check", Icons.Filled.DoneAll, color = com.wordocious.app.ui.CandyColor.PURPLE, count = session.state.checks) { session.check(onFinished) }
+        Capsule("Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER, count = session.state.hintsUsed) { session.hint(onFinished) }
+        val revealLabel = if (revealIn > 0) "Reveal · ${clockText(revealIn)}" else "Reveal"
+        Capsule(revealLabel, Icons.Filled.Visibility, dim = revealIn > 0, reserve = HintLayout.countdownReserve("Reveal · ${clockText(CRYPTOGRAM_REVEAL_AFTER_SECONDS)}")) { session.reveal(onFinished) }
     }
 }
 
@@ -427,7 +433,7 @@ private fun CodebreakerHeader(session: CodebreakerSession) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("CRYPTOGRAM") { Text("CODEBREAKER", fontSize = 24.sp, fontWeight = FontWeight.Black, color = CRYPTOGRAM_ACCENT, fontFamily = Nunito) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             session.holidayTitle?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CRYPTOGRAM_ACCENT) }
             Text("$resolved/${codes.size} letters", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -730,8 +736,8 @@ private fun FrequencyStrip(session: CodebreakerSession, chipSp: TextUnit = 11.sp
 
 /** A8 a game control: a small candy button with its icon; [dim] = not yet (taps ignored, as before). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
-    PadAction(label, icon, onClick = onClick, color = color, dim = dim)
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim, reserveLabel = reserve, count = count)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

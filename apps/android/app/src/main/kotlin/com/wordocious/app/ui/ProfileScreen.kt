@@ -111,7 +111,8 @@ private fun hasVs(dbKey: String): Boolean =
     com.wordocious.app.ModeGen.byDbKey(dbKey)?.let { it.engine == "word" || it.dbKey == "PROPERNOUNDLE" } == true
 
 // ── P-cache memo bundles (session-lived StatsMemo snapshots; SWR seeds) ──────
-private data class ProfileMainMemo(
+@kotlinx.serialization.Serializable
+internal data class ProfileMainMemo(
     val stats: List<ProfileService.UserStat>,
     val recentMatches: List<ProfileService.RecentMatch>,
     val opponentNames: Map<String, String>,
@@ -123,7 +124,16 @@ private data class ProfileMainMemo(
     val vsDailyWon: Boolean? = null,
     val standing: com.wordocious.app.data.StatsDeepService.DailyStanding? = null,
     val sweepStats: MatchStatsService.DailySweepStats = MatchStatsService.DailySweepStats(),
-)
+    /** BI19: the local day it was fetched — today-scoped fields from another day never paint. */
+    val day: String = "",
+) {
+    /** This copy with its today-scoped fields reset when it is from another day. */
+    fun forToday(): ProfileMainMemo {
+        val today = com.wordocious.app.todayLocalDate()
+        return if (day == today || day.isEmpty() && todayDailies.isEmpty()) this
+        else copy(todayDailies = DailyCompletionsService.readCache(), vsDailyWon = null, standing = null, day = today)
+    }
+}
 
 /** The Puzzles-scoped fetches (founder, 2026-10-01 stats audit): they need the visible
  *  Puzzles list, so they run beside the main bundle, keyed on it. */
@@ -134,7 +144,8 @@ private data class ProfilePuzzlesMemo(
     val sweepPoints: List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>,
 )
 
-private data class ProfileChartsMemo(
+@kotlinx.serialization.Serializable
+internal data class ProfileChartsMemo(
     val guessDist: List<com.wordocious.app.data.MatchStatsService.GuessBucket>,
     val activity7: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
     val modeCal: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
@@ -154,12 +165,17 @@ fun ProfileScreen(
     onOpenProfile: (String) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {},
     /** Bumped by the VS lobby's Rivals "See all": open All-time at its VS section. */
     vsJumpRequest: Int = 0,
+    /** BI23: the guest pitch's "Play without an account" → the Home root. */
+    onGoHome: (() -> Unit)? = null,
+    /** BI23: the guest pitch's SIGN IN — the same sign-in sheet as the AppHeader's. */
+    onSignIn: (() -> Unit)? = null,
 ) {
     val profile by AuthService.profile.collectAsState()
     val scope = rememberCoroutineScope()
     // The first frame paints the session memo (and today's on-device completions) instead of
     // an empty page the fetch effect fills a frame later (founder, 2026-09-29).
-    val mainSeed = remember { profile?.id?.let { com.wordocious.app.data.StatsMemo.get<ProfileMainMemo>("profileMain:$it") } }
+    // BI19: also from the persisted copy, so a cold launch paints the last Stats too.
+    val mainSeed = remember { profile?.id?.let { com.wordocious.app.data.StatsMemo.getPersisted("profileMain:$it", ProfileMainMemo.serializer())?.forToday() } }
     var stats by remember { mutableStateOf(mainSeed?.stats ?: emptyList()) }
     var recentMatches by remember { mutableStateOf(mainSeed?.recentMatches ?: emptyList()) }
     // VS opponents' usernames for the "· vs <name>" line (web profile parity).
@@ -213,12 +229,19 @@ fun ProfileScreen(
     // these are server fetches, and the optimistic completionTick fired before
     // the insert (stale refetch).
     val tick by DailyCompletionsService.recordedTick.collectAsState()
+    // BI19: a daily just finished — the Today strip shows it at once from the local completions
+    // (the server-backed refresh below follows when the write lands).
+    val localTick by DailyCompletionsService.completionTick.collectAsState()
+    LaunchedEffect(localTick) {
+        val local = DailyCompletionsService.readCache()
+        if (local.any { (k, v) -> todayDailies[k] != v }) todayDailies = todayDailies + local
+    }
     LaunchedEffect(userId, tick) {
         if (userId != null) {
             // P-cache: seed from the session memo for an INSTANT repaint on
             // screen re-entry, then fetch fresh below and store back (SWR).
             val memoKey = "profileMain:$userId"
-            com.wordocious.app.data.StatsMemo.get<ProfileMainMemo>(memoKey)?.let { saved ->
+            com.wordocious.app.data.StatsMemo.getPersisted(memoKey, ProfileMainMemo.serializer())?.forToday()?.let { saved ->
                 stats = saved.stats
                 recentMatches = saved.recentMatches
                 opponentNames = saved.opponentNames
@@ -231,42 +254,26 @@ fun ProfileScreen(
                 sweepStats = saved.sweepStats
                 loading = false
             }
-            // All independent fetches run CONCURRENTLY (was 8 serial round-trips
-            // gating the whole screen); only usernames chains off recentMatches.
-            kotlinx.coroutines.coroutineScope {
-                val statsD = async { ProfileService.fetchUserStats(userId) }
-                val matchesD = async { ProfileService.fetchRecentAndTodayMatches(userId) }
-                val medalsD = async { ProfileService.fetchUserMedals(userId, limit = 100) }
-                val todayD = async { DailyCompletionsService.fetchTodayCompletions() }
-                val unlockedD = async { com.wordocious.app.data.AchievementService.fetchUnlocked(userId) }
-                val calD = async { com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90) }
-                // D2: today's VS result (the rail's VS dot + the Today pill), today's
-                // standing (the ONE leaderboard formula) and the sweep streaks.
-                val vsTodayD = async { runCatching { com.wordocious.app.data.DailyResultsService.dailyVsResult() }.getOrNull() }
-                val standingD = async { runCatching { com.wordocious.app.data.StatsDeepService.todayDailyStanding(userId) }.getOrNull() }
-                val sweepD = async { MatchStatsService.dailySweepStats() }
-                val matches = matchesD.await()
-                val oppIds = matches.filter { it.player2Id != null }
-                    .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
-                    .distinct()
-                val namesD = async { ProfileService.fetchUsernames(oppIds) }
-                stats = statsD.await()
-                recentMatches = matches
-                opponentNames = namesD.await()
-                medals = medalsD.await()
-                todayDailies = todayD.await()
-                unlockedAchievements = unlockedD.await()
-                activityCal = calD.await()
-                vsDailyWon = vsTodayD.await()
-                standing = standingD.await()
-                sweepStats = sweepD.await()
-            }
-            com.wordocious.app.data.StatsMemo.set(memoKey, ProfileMainMemo(
+            // BI19: one shared loader (also the post-launch / post-finish prefetch); a failed or
+            // slow fetch keeps what is showing instead of blanking it.
+            val prev = ProfileMainMemo(
                 stats = stats, recentMatches = recentMatches, opponentNames = opponentNames,
                 medals = medals, todayDailies = todayDailies, unlocked = unlockedAchievements,
                 activityCal = activityCal,
                 vsDailyWon = vsDailyWon, standing = standing, sweepStats = sweepStats,
-            ))
+                day = com.wordocious.app.todayLocalDate(),
+            )
+            val fresh = fetchProfileMain(userId, prev)
+            stats = fresh.stats
+            recentMatches = fresh.recentMatches
+            opponentNames = fresh.opponentNames
+            medals = fresh.medals
+            todayDailies = fresh.todayDailies
+            unlockedAchievements = fresh.unlocked
+            activityCal = fresh.activityCal
+            vsDailyWon = fresh.vsDailyWon
+            standing = fresh.standing
+            sweepStats = fresh.sweepStats
         }
         loading = false
     }
@@ -282,7 +289,7 @@ fun ProfileScreen(
     val chartsKey = userId?.let { "profileCharts:$it:${pageMode ?: "ALL"}:$pageTab:$isProActive" }
     var chartsState by remember { mutableStateOf<Pair<String, ProfileChartsMemo>?>(null) }
     val charts: ProfileChartsMemo? = chartsState?.takeIf { it.first == chartsKey }?.second
-        ?: chartsKey?.let { com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(it) }
+        ?: chartsKey?.let { com.wordocious.app.data.StatsMemo.getPersisted(it, ProfileChartsMemo.serializer()) }
     val guessDist = charts?.guessDist ?: emptyList()
     val activity7 = charts?.activity7 ?: emptyList()
     // Mode-scoped 90-day calendar for the mode-detail view (iOS renders
@@ -310,8 +317,15 @@ fun ProfileScreen(
         // below and store back (SWR).
         val memoKey = "profileCharts:$uid:${m ?: "ALL"}:$activeTab:$isProActive"
         loadProfileCharts(uid, m, activeTab, isProActive).let { fresh ->
-            com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
-            chartsState = memoKey to fresh
+            // BI19: an empty (failed) load never replaces charts already on screen.
+            val shown = chartsState?.takeIf { it.first == memoKey }?.second
+                ?: com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(memoKey)
+            val keep = shown != null && fresh.guessDist.isEmpty() && fresh.activity7.isEmpty() && fresh.solveTimes.isEmpty() &&
+                (shown.guessDist.isNotEmpty() || shown.activity7.isNotEmpty() || shown.solveTimes.isNotEmpty())
+            if (!keep) {
+                com.wordocious.app.data.StatsMemo.setPersisted(memoKey, fresh, ProfileChartsMemo.serializer())
+                chartsState = memoKey to fresh
+            }
         }
     }
     // All-time's VS board (founder, 2026-10-01: VS left the rail for the bottom of All-time) draws
@@ -321,13 +335,13 @@ fun ProfileScreen(
     val vsChartsKey = userId?.let { "profileCharts:$it:$vsMode:$vsTab:$isProActive" }
     var vsChartsState by remember { mutableStateOf<Pair<String, ProfileChartsMemo>?>(null) }
     val vsCharts: ProfileChartsMemo? = vsChartsState?.takeIf { it.first == vsChartsKey }?.second
-        ?: vsChartsKey?.let { com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(it) }
+        ?: vsChartsKey?.let { com.wordocious.app.data.StatsMemo.getPersisted(it, ProfileChartsMemo.serializer()) }
     LaunchedEffect(userId, onAllTime, vsMode, vsTab, isProActive, tick) {
         val uid = userId ?: return@LaunchedEffect
         if (!onAllTime) return@LaunchedEffect
         val memoKey = "profileCharts:$uid:$vsMode:$vsTab:$isProActive"
         loadProfileCharts(uid, vsMode, vsTab, isProActive).let { fresh ->
-            com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
+            com.wordocious.app.data.StatsMemo.setPersisted(memoKey, fresh, ProfileChartsMemo.serializer())
             vsChartsState = memoKey to fresh
         }
     }
@@ -434,28 +448,15 @@ fun ProfileScreen(
 
     val isGuest by AuthService.isGuest.collectAsState()
     if (isGuest) {
-        // Guest — profile/stats are account-based. Prompt sign-in (web/iOS parity): the
-        // STATS headline, then a tinted card with a cast pose (A7: not D, the Stats host)
-        // and the candy Sign in button (A8).
-        Column(
-            Modifier.fillMaxSize().pageBackground(PageTint.STATS).padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Spacer(Modifier.height(8.dp))
-            PageHeadline(TitleArt.STATS, bleed = 16.dp)
-            Spacer(Modifier.weight(0.6f))
-            StatsEmptyState(
-                StatsPoses.guest,
-                "Save your streaks, climb the daily leaderboards, and unlock achievements.",
-                title = "Sign in to track your stats",
-                swatch = StatsInk.LAVENDER,
-                poseSize = 120.dp,
-            ) {
-                CandyButton("Sign in", { AuthService.exitGuest() }, size = CandySize.LARGE, icon = CandyIcon.ARROW)
-            }
-            Spacer(Modifier.weight(1f))
-        }
+        // FINISH_SPEC BI23: D hosts the signed-out pitch, centered in the space under the
+        // pinned AppHeader (iOS / web parity) — no grey icon, no boxed card.
+        GuestPitch(
+            hosts = listOf(Mascots.stats), title = "Your stats live here",
+            subtitle = "Sign in to track your stats, streaks and every game's history.",
+            colors = GuestPitchContent.statsColors, preview = GuestPreview.Chips(GuestPitchContent.statsChips),
+            onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,
+            modifier = Modifier.pageBackground(PageTint.STATS),
+        )
         return
     }
     LazyColumn(
@@ -2274,3 +2275,50 @@ private fun hourLabelLower(h: Int): String { val am = h < 12; val t = if (h % 12
 private fun hourLabelUpper(h: Int): String { val ampm = if (h >= 12) "PM" else "AM"; val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h; return "$h12 $ampm" }
 
 // (modeLabel — the mode's display title for a matches.game_mode key — is in RecentMatches.kt.)
+
+/**
+ * BI19: the Stats tab's main data for [userId] — the screen's revalidate and the post-launch /
+ * post-finish prefetch share it, and it stores the result (session + persisted). Every fetch
+ * runs concurrently; one that comes back EMPTY (failed / timed out — they swallow errors) keeps
+ * [prev]'s copy rather than blanking a section that had data.
+ */
+internal suspend fun fetchProfileMain(userId: String, prev: ProfileMainMemo?): ProfileMainMemo {
+    val memoKey = "profileMain:$userId"
+    val base = (prev ?: com.wordocious.app.data.StatsMemo.getPersisted(memoKey, ProfileMainMemo.serializer()))?.forToday()
+    fun <T> keep(fresh: List<T>, old: List<T>?): List<T> = if (fresh.isEmpty() && !old.isNullOrEmpty()) old else fresh
+    fun <T> keepSet(fresh: Set<T>, old: Set<T>?): Set<T> = if (fresh.isEmpty() && !old.isNullOrEmpty()) old else fresh
+    val result = kotlinx.coroutines.coroutineScope {
+        val statsD = async { ProfileService.fetchUserStats(userId) }
+        val matchesD = async { ProfileService.fetchRecentAndTodayMatches(userId) }
+        val medalsD = async { ProfileService.fetchUserMedals(userId, limit = 100) }
+        val todayD = async { DailyCompletionsService.fetchTodayCompletions() }
+        val unlockedD = async { com.wordocious.app.data.AchievementService.fetchUnlocked(userId) }
+        val calD = async { com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90) }
+        // D2: today's VS result (the rail's VS dot + the Today pill), today's
+        // standing (the ONE leaderboard formula) and the sweep streaks.
+        val vsTodayD = async { runCatching { com.wordocious.app.data.DailyResultsService.dailyVsResult() }.getOrNull() }
+        val standingD = async { runCatching { com.wordocious.app.data.StatsDeepService.todayDailyStanding(userId) }.getOrNull() }
+        val sweepD = async { MatchStatsService.dailySweepStats() }
+        val matches = keep(matchesD.await(), base?.recentMatches)
+        val oppIds = matches.filter { it.player2Id != null }
+            .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
+            .distinct()
+        val namesD = async { ProfileService.fetchUsernames(oppIds) }
+        val sweep = sweepD.await()
+        ProfileMainMemo(
+            stats = keep(statsD.await(), base?.stats),
+            recentMatches = matches,
+            opponentNames = namesD.await().ifEmpty { base?.opponentNames ?: emptyMap() },
+            medals = keep(medalsD.await(), base?.medals),
+            todayDailies = todayD.await(),
+            unlocked = keepSet(unlockedD.await(), base?.unlocked),
+            activityCal = keep(calD.await(), base?.activityCal),
+            vsDailyWon = vsTodayD.await(),
+            standing = standingD.await() ?: base?.standing,
+            sweepStats = if (!sweep.hasData && base?.sweepStats?.hasData == true) base.sweepStats else sweep,
+            day = com.wordocious.app.todayLocalDate(),
+        )
+    }
+    com.wordocious.app.data.StatsMemo.setPersisted(memoKey, result, ProfileMainMemo.serializer())
+    return result
+}

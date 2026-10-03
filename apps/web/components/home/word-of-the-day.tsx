@@ -1,16 +1,19 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUTOVER_DATE, SOLUTION_SWAPS, SOLUTION_SWAPS_2 } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
 import { HomeSectionTitle } from '@/components/home/home-section-title';
-import { MODE_CARD, ModeCardBand, modeCardSurface } from '@/components/home/mode-card';
+import { GUIDE_BAR, GuideStage, ReadChip, guideCardStyle } from '@/components/strategy/guide-family';
+import { LetterTile } from '@/components/game/letter-tile';
+import { LiveHeadline } from '@/components/ui/live-headline';
 import { SoftNum } from '@/components/ui/soft-number';
-import { accentInk } from '@/lib/soft-surface';
+import { POSE_SIZE, poseSrc } from '@/lib/art';
+import { accentInk, alphaHex } from '@/lib/soft-surface';
 
 // Word of the Day, now a three-choice quiz (founder-approved home redesign,
 // 2026-10-01). Before answering, the definition is hidden behind three choices
@@ -23,6 +26,13 @@ import { accentInk } from '@/lib/soft-surface';
 // OUT of the card, as a centered Home section header above it (same size as
 // DAILIES and PUZZLES), with a small "Past words" link centered under the
 // title; the card keeps its content.
+//
+// FINISH_SPEC BI17 (3-platform parity): the card wears the guide page family's
+// hero look (no stroke, rainbow bar, I-green glow). I's "ready" pose sits on a
+// small glow beside the word in the live headline lettering; the choices are
+// glossy candy tiles that stay up through the reveal (right = green, a wrong
+// pick = rose, the rest fade). Answers survive a database outage
+// (lib/wotd-quiz-history.ts via lib/home-streaks.ts).
 
 interface WordInfo {
   word: string;
@@ -43,20 +53,32 @@ function offlineWotd(list: string[], dayIndex: number, dayKey: string): string {
 }
 
 const LETTERS = ['A', 'B', 'C'];
-/** I's green, the Word of the Day host (docs/ART_SPEC.md §21.5). */
+/** I's green, the Word of the Day host (docs/ART_SPEC.md §21.5): the card's glow + gradient. */
 const WOTD_ACCENT = '#4CC77A';
-const PAD = `${MODE_CARD.padY}px ${MODE_CARD.padX}px`;
-/** Theme-aware inks (legible on the dark card): body gray, the purple part of speech, the link. */
+/** BI17: brand purple is the reading accent (eyebrow, part-of-speech chip). */
+const READ_ACCENT = '#7C3AED';
+/** Theme-aware inks (legible on the dark card): body gray, the purple eyebrow, the link. */
 const BODY_INK = accentInk('#64748b', '#4b5563');
-const POS_INK = accentInk('#7c3aed', '#7c3aed');
+const EYEBROW_INK = accentInk(READ_ACCENT, '#6d28d9');
 const LINK_INK = accentInk('#8b5cf6', '#8b5cf6');
+/** The reveal's result line inks (green / rose; pastel on the dark card). */
+const RIGHT_INK = accentInk('#34d399', '#047857');
+const WRONG_INK = accentInk('#fb7185', '#be123c');
 
-/** §21.5: the Home game card's frame (surface, radius, border, shadow, 10 px band, padding). */
+/**
+ * FINISH_SPEC BI17: the guide hero card look (components/strategy/guide-family.tsx)
+ * in place of the bordered Home card chrome — no stroke, the 8 px rainbow bar,
+ * I-green gradient over cream, radius 24, one soft shadow.
+ */
 function WotdCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div data-squish="card" className="relative overflow-hidden" style={modeCardSurface(WOTD_ACCENT)}>
-      <ModeCardBand accent={WOTD_ACCENT} />
-      <div className={className} style={{ padding: PAD }}>{children}</div>
+    <div
+      data-squish="card"
+      className="sg-card relative"
+      style={guideCardStyle(WOTD_ACCENT, { radius: 24, hi: 0.16, lo: 0.05, hiDark: 0.24, loDark: 0.08, shadow: 0.18 })}
+    >
+      <div aria-hidden="true" style={{ height: 8, background: GUIDE_BAR }} />
+      <div className={className} style={{ padding: '12px 14px 14px' }}>{children}</div>
     </div>
   );
 }
@@ -78,6 +100,37 @@ function WotdSection({ children }: { children: React.ReactNode }) {
     </section>
   );
 }
+
+/** One quiz choice: a glossy lilac candy tile (globals.css `.wq-tile`), no stroke. */
+function QuizTile({ index, text, state, onPick }: {
+  index: number;
+  text: string;
+  state: 'ask' | 'right' | 'wrong' | 'dim';
+  onPick?: () => void;
+}) {
+  const lit = state === 'right' || state === 'wrong';
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      disabled={!onPick}
+      data-state={state}
+      aria-label={`${LETTERS[index]}: ${text}`}
+      className="wq-tile w-full flex items-center gap-2.5 text-left px-2.5 py-2"
+    >
+      <LetterTile
+        letter={LETTERS[index]}
+        look={state === 'right' ? 'correct' : 'typed'}
+        pop={false}
+        aria-hidden
+        className="shrink-0"
+        style={{ width: 28, ['--gt-font' as string]: '14px' }}
+      />
+      <span className="relative text-[14px] font-bold leading-snug" style={{ color: lit ? '#ffffff' : 'var(--color-text)' }}>{text}</span>
+    </button>
+  );
+}
+
 const REVEAL_MS = 2200;
 
 export function WordOfTheDay() {
@@ -143,12 +196,14 @@ export function WordOfTheDay() {
   if (!info) return (
     <WotdSection>
       <WotdCard className="animate-pulse">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <div className="w-3 h-3 rounded" style={{ background: 'var(--color-border)' }} />
-          <div className="h-2.5 w-24 rounded" style={{ background: 'var(--color-border)' }} />
+        <div className="flex items-center gap-3">
+          <div className="shrink-0 rounded-full" style={{ width: 52, height: 52, background: alphaHex(WOTD_ACCENT, 0.22) }} />
+          <div className="flex-1 min-w-0">
+            <div className="h-6 w-32 rounded mb-1.5" style={{ background: 'var(--color-border)' }} />
+            <div className="h-3 w-24 rounded" style={{ background: 'var(--color-border)' }} />
+          </div>
         </div>
-        <div className="h-4 w-32 rounded mb-1" style={{ background: 'var(--color-border)' }} />
-        <div className="h-3 w-48 rounded" style={{ background: 'var(--color-border)' }} />
+        <div className="h-3 w-48 rounded mt-3" style={{ background: 'var(--color-border)' }} />
       </WotdCard>
     </WotdSection>
   );
@@ -171,21 +226,32 @@ export function WordOfTheDay() {
     saveQuizAnswer(user?.id ?? null, dayKey, info.word, result).catch(() => {});
   };
 
+  const tileState = (i: number): 'right' | 'wrong' | 'dim' => {
+    if (quiz && i === quiz.answer) return 'right';
+    return answer && i === answer.picked ? 'wrong' : 'dim';
+  };
+  const resultInk = answer?.correct ? RIGHT_INK : WRONG_INK;
+
   return (
     <WotdSection>
       <WotdCard>
-        <div className="flex items-baseline gap-2">
-          <span className="text-base font-black" style={{ color: 'var(--color-text)' }}>
-            {info.word.charAt(0) + info.word.slice(1).toLowerCase()}
-          </span>
-          {info.phonetic && (
-            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{info.phonetic}</span>
-          )}
-          {partOfSpeech && (
-            <span className={`text-[10px] font-extrabold italic ${POS_INK.className}`} style={POS_INK.style}>{partOfSpeech}</span>
-          )}
+        <div className="flex items-center gap-2.5">
+          <div className="shrink-0" style={{ marginLeft: -8, marginRight: -6 }}>
+            <GuideStage host="i" accent={WOTD_ACCENT} size={52} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <LiveHeadline text={info.word} palette="home" size={28} align="left" level={3} />
+            {(info.phonetic || partOfSpeech) && (
+              <div className="mt-1 flex items-center gap-2 min-w-0">
+                {info.phonetic && (
+                  <span className="text-[13px] font-bold truncate" style={{ color: 'var(--color-text-secondary)' }}>{info.phonetic}</span>
+                )}
+                {partOfSpeech && <ReadChip accent={READ_ACCENT} size={10}>{partOfSpeech}</ReadChip>}
+              </div>
+            )}
+          </div>
           {showFlame && (
-            <span className="ml-auto flex items-center gap-0.5" aria-label={`${streak}-day word streak`}>
+            <span className="shrink-0 self-start flex items-center gap-0.5" aria-label={`${streak}-day word streak`}>
               <Icon3D name="flame" size={14} />
               <SoftNum size={13}>{streak}</SoftNum>
             </span>
@@ -193,47 +259,53 @@ export function WordOfTheDay() {
         </div>
 
         {asking && quiz && (
-          <div className="mt-1.5 flex flex-col gap-1.5">
-            <div className={`text-[11px] font-extrabold ${BODY_INK.className}`} style={BODY_INK.style}>Which one is it?</div>
+          <div className="mt-3 flex flex-col gap-2">
+            <div className={`text-[11px] font-black uppercase ${EYEBROW_INK.className}`} style={{ ...EYEBROW_INK.style, letterSpacing: '1.2px' }}>
+              Which one is it?
+            </div>
             {quiz.choices.map((c, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => pick(i)}
-                className="flex items-center gap-2 text-left px-2.5 py-1.5"
-                style={{ minHeight: 44, border: '1.5px solid #ddd6fe', borderRadius: 10, background: 'var(--color-surface)' }}
-              >
-                <span className="w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black" style={{ background: '#ede9fe', color: '#5b21b6' }}>
-                  {LETTERS[i]}
-                </span>
-                <span className="text-[12px] font-bold leading-snug" style={{ color: 'var(--color-text)' }}>{c}</span>
-              </button>
+              <QuizTile key={i} index={i} text={c} state="ask" onPick={() => pick(i)} />
             ))}
           </div>
         )}
 
         {revealing && quiz && answer && (
-          <div
-            className="mt-1.5 flex items-center gap-2 px-2.5 py-2"
-            style={{ borderRadius: 10, background: answer.correct ? '#dcfce7' : '#fee2e2' }}
-            role="status"
-          >
-            <Sparkles className="w-5 h-5 shrink-0" style={{ color: answer.correct ? '#15803d' : '#b91c1c' }} />
-            <div>
-              <div className="text-[14px] font-black" style={{ color: answer.correct ? '#15803d' : '#b91c1c' }}>
-                {answer.correct ? 'Nice! You knew it.' : 'Not this time.'}
-              </div>
-              <div className="text-[11px] font-extrabold" style={{ color: answer.correct ? '#15803d' : '#b91c1c' }}>
-                {answer.correct
-                  ? `Word streak: ${streak}`
-                  : `You picked ${LETTERS[answer.picked]}. It's ${LETTERS[quiz.answer]}: ${quiz.choices[quiz.answer]}`}
+          <div className="mt-3 flex flex-col gap-2">
+            {quiz.choices.map((c, i) => (
+              <QuizTile key={i} index={i} text={c} state={tileState(i)} />
+            ))}
+            <div
+              className="flex items-center gap-2 px-2.5 py-2"
+              style={{ borderRadius: 14, background: alphaHex(answer.correct ? '#34d399' : '#fb7185', 0.18) }}
+              role="status"
+            >
+              <Image
+                src={answer.correct ? poseSrc('o1', 'cheer') : poseSrc('r', 'sit')}
+                alt=""
+                aria-hidden
+                width={POSE_SIZE}
+                height={POSE_SIZE}
+                sizes="40px"
+                draggable={false}
+                className="shrink-0"
+                style={{ width: 40, height: 40 }}
+              />
+              <div className="min-w-0">
+                <div className={`text-[14px] font-black ${resultInk.className}`} style={resultInk.style}>
+                  {answer.correct ? 'Nice! You knew it.' : 'Not this time.'}
+                </div>
+                <div className={`text-[11px] font-extrabold ${resultInk.className}`} style={resultInk.style}>
+                  {answer.correct
+                    ? `Word streak: ${streak}`
+                    : `You picked ${LETTERS[answer.picked]}. It's ${LETTERS[quiz.answer]}: ${quiz.choices[quiz.answer]}`}
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {settled && !revealing && definition && (
-          <p className={`mt-1 text-[11px] font-bold leading-snug ${BODY_INK.className}`} style={BODY_INK.style}>{definition}</p>
+          <p className={`mt-2.5 text-[14px] font-bold leading-snug ${BODY_INK.className}`} style={BODY_INK.style}>{definition}</p>
         )}
       </WotdCard>
     </WotdSection>

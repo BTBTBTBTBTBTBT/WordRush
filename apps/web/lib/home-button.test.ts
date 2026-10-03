@@ -40,6 +40,14 @@ describe('Home button', () => {
     expect(homeCardTapBlocked(10_000 + HOME_TAP_GUARD_MS + 1)).toBe(false);
   });
 
+  it('BI10: no game launch is ever deferred past a Home tap (Next daily / Leaderboard are plain links)', () => {
+    // iOS's cause was a 0.6 s deferred "Next daily" present + Home rebuilding its covers; the
+    // web hands off synchronously, so there is nothing for a Home tap to race.
+    const cta = read('components/game/next-daily-cta.tsx');
+    expect(cta).toContain('<CandyLink href={next.href}');
+    expect(cta).not.toMatch(/setTimeout/);
+  });
+
   it('every top-left home control goes to the root and closes overlays — no history-back', () => {
     const btn = read('components/game/game-home-button.tsx');
     expect(btn).toContain('href={homeTarget(href)}');

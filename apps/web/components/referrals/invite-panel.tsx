@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { logShareEvent } from '@/lib/share-events';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
+import { FeedbackPill } from '@/components/game/feedback-toast';
 
 interface ReferralRow {
   id: string;
@@ -224,7 +225,7 @@ export function InvitePanel() {
       {slotsLeft === 0 && !creating && (
         <p className="m-0 text-[11px] font-bold text-center" style={{ color: FR_LOOK.sub }}>Slots free up when friends join.</p>
       )}
-      {error && <p className="m-0 text-xs font-bold" style={{ color: '#dc2626' }} role="alert">{error}</p>}
+      {error && <div className="flex justify-center" role="alert"><FeedbackPill key={error} message={error} tone="error" /></div>}
 
       {visibleInvites.length > 0 && (
         <div className="overflow-hidden" style={{ borderRadius: 12, border: `1.5px solid ${softMix(FR_LOOK.gold, 0.3)}` }}>

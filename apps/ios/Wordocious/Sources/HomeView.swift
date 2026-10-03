@@ -41,15 +41,21 @@ struct HomeView: View {
     private struct SweepCeleb: Identifiable {
         let id = UUID()
         let byMode: [String: DailyCompletion]
+        /// The local day it was earned on — a celebration still waiting at
+        /// midnight belongs to a day that's over and is dropped (BI16).
+        let day: String
+        /// Daily Sweep / Flawless, or the Puzzles (More Games) sweep.
+        var more = false
     }
     @State private var sweepCeleb: SweepCeleb?
-    /// A celebration earned while a game cover was STILL up (the 9th daily
-    /// records mid-game-over, before the player taps Home). Presenting a second
-    /// fullScreenCover from this covered hierarchy collides with the game
-    /// cover's dismissal — the overlap that latches the root shell's layout
-    /// mid-transition — so the celebration waits for the all-clear instead.
-    @State private var pendingSweepCeleb: SweepCeleb?
-    @ObservedObject private var chrome = ChromeVisibility.shared
+    /// FINISH_SPEC BI16: celebrations earned but not yet shown. They wait for a
+    /// calm moment — Home's root, nothing presented (the game cover that earned
+    /// it, a sheet, an alert), no other popup — never popping over a game, another
+    /// tab or a late write's awkward moment. (Presenting a second fullScreenCover
+    /// from a covered hierarchy also collides with the game cover's dismissal —
+    /// the overlap that latches the root shell's layout mid-transition.)
+    @State private var celebQueue: [SweepCeleb] = []
+    @State private var celebWaiter: Task<Void, Never>?
     @AppStorage("sweep-celebrated-day") private var sweepCelebratedDay = ""
 
     /// Show the celebration once per local day, ONLY at the moment a daily
@@ -69,11 +75,47 @@ struct HomeView: View {
         let token = "\(day):\(tier)"
         if sweepCelebratedDay == token || sweepCelebratedDay == "\(day):flawless" { return }
         sweepCelebratedDay = token
-        let celeb = SweepCeleb(byMode: completions.byMode)
-        // Immersive screen (the just-finished game) still presented? Stash the
-        // celebration; the chrome onChange below presents it cleanly once the
-        // game cover has fully dismissed.
-        if chrome.bottomNavHidden { pendingSweepCeleb = celeb } else { sweepCeleb = celeb }
+        // BI16: queued for a calm moment (a Flawless upgrade replaces a still-
+        // waiting Sweep for the same day rather than stacking behind it).
+        celebQueue.removeAll { !$0.more && $0.day == day }
+        queueCelebration(SweepCeleb(byMode: completions.byMode, day: day))
+    }
+
+    /// BI16: queue a celebration and (re)start the single waiter that presents
+    /// the queue, oldest first, each at its own calm moment.
+    private func queueCelebration(_ celeb: SweepCeleb) {
+        celebQueue.append(celeb)
+        presentNextCelebrationWhenCalm()
+    }
+
+    private func presentNextCelebrationWhenCalm() {
+        guard celebWaiter == nil, !celebQueue.isEmpty else { return }
+        celebWaiter = Task { @MainActor in
+            defer { celebWaiter = nil }
+            while !Task.isCancelled {
+                await CalmMoment.wait(extraBusy: { homePopupUp })
+                guard !Task.isCancelled else { return }
+                // Re-read after the wait: drops a sweep whose day has ended.
+                if let next = CelebrationGate.next(&celebQueue, day: { $0.day },
+                                                   today: LeaderboardService.todayLocal(),
+                                                   calm: CalmMoment.isCalm(extraBusy: homePopupUp)) {
+                    present(next)
+                    return
+                }
+                if celebQueue.isEmpty { return }
+            }
+        }
+    }
+
+    /// Home's own popups (in-view modals) — a celebration never lands on them.
+    private var homePopupUp: Bool {
+        sweepCeleb != nil || moreCeleb != nil || showShieldModal || limitModal != nil || comingSoon != nil
+    }
+
+    private func present(_ celeb: SweepCeleb) {
+        CelebrationBusy.shared.up = true
+        if celeb.more { moreCeleb = celeb; return }
+        sweepCeleb = celeb
         // FINISH_SPEC §AI: a Daily Sweep or a Flawless is a happy moment for the App
         // Store review prompt (core ReviewPromptPolicy throttles it). Delayed so the
         // celebration lands first; no custom pre-prompt.
@@ -81,6 +123,12 @@ struct HomeView: View {
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             RatingPrompt.maybeAsk()
         }
+    }
+
+    /// A celebration closed: the next queued one waits for its own calm moment.
+    private func celebrationClosed() {
+        CelebrationBusy.shared.up = false
+        presentNextCelebrationWhenCalm()
     }
 
     /// An Unlimited ProperNoundle run (PN has its own view, not GameScreen).
@@ -479,8 +527,21 @@ struct HomeView: View {
                 guard let m else { return }
                 DeepLink.shared.dailyMode = nil
                 guard let hm = (wordModes + puzzleModes).first(where: { $0.dbKey == m.rawValue }) else { return }
-                open(hm, forceDaily: true)
+                // BI10: a widget tap while a game is up must not set a second cover binding
+                // (it can't present over the first and would linger, set, until a later
+                // update presented it out of nowhere): close the games, then open.
+                if ChromeVisibility.inModalPresentation() {
+                    closeAllGames()
+                    TabRouterModel.dismissAllOverlays(animated: true)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { open(hm, forceDaily: true) }
+                } else {
+                    open(hm, forceDaily: true)
+                }
             }
+            // FINISH_SPEC BI10: the top-left Home button means NO game — every game cover
+            // this screen owns closes through its binding, so none is left set to be
+            // presented again by a later update.
+            .onReceive(NotificationCenter.default.publisher(for: HomeNav.goHome)) { _ in closeAllGames() }
             // Refresh today's daily completions whenever Home reappears (returning
             // from a daily push like ProperNoundle) so a just-finished game shows
             // its completed state immediately — no longer needs a tab round-trip.
@@ -506,8 +567,8 @@ struct HomeView: View {
                 playMode = .daily
                 pendingGame = nil
                 pnGame = nil
-                pendingSweepCeleb = nil   // an unshown sweep belongs to yesterday
-                moreCeleb = nil
+                // An unshown sweep belongs to yesterday (BI16 drops it either way).
+                celebQueue.removeAll { $0.day != LeaderboardService.todayLocal() }
                 unlimitedCounts = [:]
                 Task { await loadStreaks() }
             }
@@ -515,19 +576,8 @@ struct HomeView: View {
             .task(id: effectiveMode) { await loadUnlimitedCounts() }
             // The row streaks once today's result has LANDED, so a sweep's flame ticks up right away.
             .onDailyRecorded { refreshSweptRowStreaks(afterAward: true) }
-            // Deferred sweep celebration: present once the game cover that
-            // earned it has fully left the screen (its hidesBottomNav
-            // onDisappear fires at dismissal end), with a breath so the
-            // dismissal transition settles before the celebration cover goes up.
-            .onChange(of: chrome.bottomNavHidden) { hidden in
-                guard !hidden, let celeb = pendingSweepCeleb else { return }
-                pendingSweepCeleb = nil
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                    // A chained "Keep playing" cover may have gone up in the
-                    // meantime — re-stash and wait for ITS dismissal instead.
-                    if chrome.bottomNavHidden { pendingSweepCeleb = celeb } else { sweepCeleb = celeb }
-                }
-            }
+            // BI16: queued celebrations present from presentNextCelebrationWhenCalm
+            // (Home root, nothing presented, no other popup) — not on a chrome flip.
             // The moment a daily is recorded (even mid-game-over, before the user
             // taps Home) refresh the word card + VS state. The completion badges
             // already react via the shared DailyCompletionsStore.
@@ -546,7 +596,7 @@ struct HomeView: View {
                     checkMoreSweepCelebration()
                 }
             }
-            .fullScreenCover(item: $moreCeleb) { celeb in
+            .fullScreenCover(item: $moreCeleb, onDismiss: celebrationClosed) { celeb in
                 if #available(iOS 16.4, *) {
                     SweepCelebrationView(byMode: celeb.byMode, onClose: { moreCeleb = nil }, variant: .more)
                         .presentationBackground(.clear)
@@ -554,7 +604,7 @@ struct HomeView: View {
                     SweepCelebrationView(byMode: celeb.byMode, onClose: { moreCeleb = nil }, variant: .more)
                 }
             }
-            .fullScreenCover(item: $sweepCeleb) { celeb in
+            .fullScreenCover(item: $sweepCeleb, onDismiss: celebrationClosed) { celeb in
                 if #available(iOS 16.4, *) {
                     SweepCelebrationView(byMode: celeb.byMode) { sweepCeleb = nil }
                         .presentationBackground(.clear)
@@ -562,10 +612,15 @@ struct HomeView: View {
                     SweepCelebrationView(byMode: celeb.byMode) { sweepCeleb = nil }
                 }
             }
-            .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("\(comingSoon ?? "This mode") is coming to the iOS app soon.")
+            // BI24: an in-app sheet with a host + brand headline, not a system alert.
+            .sheet(isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
+                ZStack {
+                    PageBackground(tint: .home)
+                    BrandEmptyState(title: "Coming soon",
+                                    line: "\(comingSoon ?? "This game") is on its way to the app. Hang tight!",
+                                    host: .u, actionTitle: "Got it", action: { comingSoon = nil })
+                }
+                .presentationDetents([.medium])
             }
 
                     }
@@ -890,6 +945,14 @@ struct HomeView: View {
         return ModeCardView(mode: mode, done: done, locked: locked, unlimited: !daily)
     }
 
+    /// FINISH_SPEC BI10: clear every game cover binding (and the Played Today modal).
+    private func closeAllGames() {
+        pendingGame = nil; pnGame = nil; pnDaily = false
+        sudokuGame = nil; regionsGame = nil; ladderGame = nil; spyglassGame = nil
+        hubGame = nil; codebreakerGame = nil; kindredGame = nil; crosswordGame = nil
+        muddleGame = nil; solvedMode = nil; limitModal = nil
+    }
+
     /// Runs when any game cover (or the solved-puzzle cover) has dismissed:
     /// refresh the day, and Unlimited's played-today counts.
     private func onGameCoverDismissed() {
@@ -907,13 +970,9 @@ struct HomeView: View {
         let token = "\(day):\(tier == .flawless ? "flawless" : "sweep")"
         if moreSweepCelebratedDay == token || moreSweepCelebratedDay == "\(day):flawless" { return }
         moreSweepCelebratedDay = token
-        let celeb = SweepCeleb(byMode: completions.byMode)
-        // Present once the game cover has left the screen and no Daily Sweep celebration is up.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            if chrome.bottomNavHidden || sweepCeleb != nil || pendingSweepCeleb != nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { if sweepCeleb == nil && !chrome.bottomNavHidden { moreCeleb = celeb } }
-            } else { moreCeleb = celeb }
-        }
+        // BI16: after any Daily Sweep already queued, at its own calm moment.
+        celebQueue.removeAll { $0.more && $0.day == day }
+        queueCelebration(SweepCeleb(byMode: completions.byMode, day: day, more: true))
     }
 }
 

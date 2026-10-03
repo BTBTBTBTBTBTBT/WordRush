@@ -9,7 +9,7 @@ import { friendsTabLabel } from '@/lib/friends-badge';
 import { prefersReducedMotion } from '@/lib/motion';
 import { CandyBadge } from '@/components/ui/candy-badge';
 import { useFriendsBadge } from '@/hooks/use-friends-badge';
-import { NAV_ITEMS, tabTint, useTabTap } from '@/components/ui/tab-nav';
+import { NAV_ITEMS, tabTint, useTabScrollMemory, useTabTap } from '@/components/ui/tab-nav';
 
 // D1 of the Stats + Friends redesign (founder, 2026-09-26, "option 2"): Profile
 // and Records merge into Stats; Friends gets its own tab. iOS RootTabView and
@@ -34,6 +34,9 @@ export { tabTint } from '@/components/ui/tab-nav';
 export function BottomNav() {
   const pathname = usePathname();
   const { onTabTap, confirm } = useTabTap();
+  // BI11: the window-scrolled tabs (Leaderboard, Stats, Friends) keep their position;
+  // Home scrolls its own column and remembers it itself (app/page.tsx).
+  useTabScrollMemory(pathname === '/' ? null : pathname);
   const ref = useRef<HTMLElement | null>(null);
   // FINISH_SPEC M: the Friends tab's candy badge (hooks/use-friends-badge.ts).
   // A new item springs the badge in and wiggles the tab icon; the badge's glow
@@ -105,6 +108,8 @@ export function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
+            // BI11: no jump to the top on a tab switch — the tab restores its own position.
+            scroll={false}
             onClick={(e) => onTabTap(e, item.href)}
             className="flex flex-col items-center gap-0.5 pt-0.5 pb-0.5 min-w-0"
             aria-current={isActive ? 'page' : undefined}

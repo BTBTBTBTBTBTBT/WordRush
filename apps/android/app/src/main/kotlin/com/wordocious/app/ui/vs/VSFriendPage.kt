@@ -122,11 +122,16 @@ fun VsFriendPage(
                 if (!loaded) {
                     Box(Modifier.fillMaxWidth().padding(16.dp), Alignment.Center) { com.wordocious.app.ui.CastLoader(null) }
                 } else if (friends.isEmpty()) {
-                    // I's invite scene (ART_SPEC §7).
-                    com.wordocious.app.ui.SceneEmptyState(
-                        com.wordocious.app.ui.SceneArt.INVITE,
-                        "No friends yet — add some on the Friends tab, or send a link.",
-                        height = 120.dp, color = VsTeal.sub,
+                    // I's invite scene (ART_SPEC §7) + BI24 headline and the invite CTA.
+                    com.wordocious.app.ui.BrandEmptyState(
+                        title = "NO FRIENDS YET",
+                        line = "Add some on the Friends tab, or send a link.",
+                        scene = com.wordocious.app.ui.SceneArt.INVITE,
+                        accent = com.wordocious.app.ui.PageAccent.vs,
+                        lineColor = VsTeal.sub,
+                        actionLabel = "Invite a friend",
+                        actionColor = com.wordocious.app.ui.CandyColor.TEAL,
+                        onAction = { showInvite = true },
                     )
                 }
                 // One tinted card of striped rows (C4 / A1); a picked row takes the stronger tint.

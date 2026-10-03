@@ -81,15 +81,10 @@ struct SolvedPuzzleView: View {
                 })
                 .padding(.horizontal, 12)
             } else {
-                VStack(spacing: 12) {
-                    // R unplugged for the error screen (MASCOT_SPEC §6, ART_SPEC §7).
-                    SceneArt(.unplugged)
-                    Text("Couldn't load your solved puzzle").font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
-                    // §A8: a candy button, not a text link.
-                    Button { dismiss() } label: { CandyLabel(title: "Home") { Icon3D(.tabHome, size: 20) } }
-                        .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
-                        .accessibilityLabel("Home")
-                }
+                // R unplugged for the error screen (MASCOT_SPEC §6, ART_SPEC §7); BI24: brand
+                // headline + voice line + the Home candy.
+                BrandEmptyState(title: "Can't load this puzzle", line: "Your result is safe. I just can't fetch the board right now.",
+                                scene: .unplugged, actionTitle: "Home", actionSymbol: "house.fill", action: { dismiss() })
             }
 
             // Corner Home button on every completed screen — including Gauntlet —

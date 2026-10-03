@@ -153,6 +153,9 @@ enum GameResultsService {
             userId: userId, gameMode: gameMode.rawValue, seed: seed,
             soloMatch: .init(won: won, score: score, timeSeconds: timeSeconds,
                              solutions: solutions, guesses: guesses, hintsUsed: hintsUsed))
+        // BI15: drain() must not replay this game while its live write hangs.
+        PendingRecords.beginFlight(gameMode: gameMode.rawValue, seed: seed)
+        defer { PendingRecords.endFlight(gameMode: gameMode.rawValue, seed: seed) }
         let now = Date()
         let iso = ISO8601DateFormatter()
         let row = SoloMatchInsert(
@@ -542,6 +545,8 @@ enum GameResultsService {
             return nil
         }
         let mode = gameMode.rawValue
+        // BI16: when this finish began, so a slow write's achievements count as late.
+        LiveFinishClock.mark(seed: seed)
 
         // Crash-protection: persist the args locally BEFORE any network call so
         // a kill/offline finish is re-run by PendingRecords.drain() next launch.
@@ -554,6 +559,22 @@ enum GameResultsService {
                                   boardsSolved: boardsSolved, totalBoards: totalBoards,
                                   hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
                                   bestCorrectLetters: bestCorrectLetters))
+            // BI15: drain() must not replay this game while its live write hangs.
+            PendingRecords.beginFlight(gameMode: mode, seed: seed)
+        }
+        defer { if trackPending { PendingRecords.endFlight(gameMode: mode, seed: seed) } }
+
+        // BI15: flip Home's completed state NOW, before the first network call.
+        // It used to wait for user_stats + profiles to finish (the daily writer
+        // posted it), so in the 2026-10-02 outage a finished Muddle sat behind
+        // several 15 s timeouts and Home never showed it done. Local only; the
+        // queued payload keeps it on Home across relaunches until the row lands.
+        if trackPending && isDailySeed(seed) {
+            await DailyResultsService.postLocalCompletion(
+                gameMode: gameMode, completed: won, guessCount: guessCount,
+                timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                hintsUsed: hintsUsed, seed: seed,
+                stagesCompleted: stagesCompleted, bestCorrectLetters: bestCorrectLetters)
         }
 
         await updateUserStats(client, userId: userId, mode: mode, playType: playType,
@@ -582,11 +603,15 @@ enum GameResultsService {
                 gameMode: gameMode, completed: won, guessCount: guessCount,
                 timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
                 hintsUsed: hintsUsed, seed: seed,
-                stagesCompleted: stagesCompleted, bestCorrectLetters: bestCorrectLetters
+                stagesCompleted: stagesCompleted, bestCorrectLetters: bestCorrectLetters,
+                postLocal: !trackPending
             )
-            // nil ALSO means "mode has no daily scoring config" — no row is
-            // ever owed then, and the flag must not hold the payload hostage.
-            if trackPending, dailyScore != nil || DailyScoring.config[gameMode.rawValue] == nil {
+            // nil ALSO means "no row is owed" (no daily scoring config, or the
+            // result failed the plausibility floor) — the flag must not hold
+            // the payload hostage then. A timeout/error keeps it queued.
+            if trackPending, dailyScore != nil || !DailyResultsService.owesDailyRow(
+                gameMode: mode, completed: won, guessCount: guessCount,
+                timeSeconds: timeSeconds, totalBoards: totalBoards) {
                 PendingRecords.markDone(gameMode: mode, seed: seed, part: .daily)
             }
             // Daily Sweep / Flawless bonus once every sweep daily is in (web parity;

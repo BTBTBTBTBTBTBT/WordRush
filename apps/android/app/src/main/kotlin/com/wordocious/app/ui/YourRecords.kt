@@ -122,9 +122,11 @@ internal fun fmtRecordSecs(v: Int) = if (v < 60) "${v}s" else "${v / 60}m ${v % 
 private val GOLD = Color(0xFFD97706)
 
 /** One beatable all-time record: label, gap copy, progress (record/mine %), the game it's in. */
+@kotlinx.serialization.Serializable
 data class RecordChase(val label: String, val gap: String, val pct: Int, val gameMode: String?)
 
 /** The fetches the old Records → You view made, minus user_stats (the Stats page has them). */
+@kotlinx.serialization.Serializable
 data class YourRecordsData(
     val recordsHeld: List<LeaderboardService.AllTimeRecord> = emptyList(),
     /** EVERY beatable record, closest first — NextUpCard takes three, GameRecordsCard its game's first. */
@@ -142,7 +144,8 @@ data class YourRecordsData(
 @Composable
 fun rememberYourRecords(userId: String?, statsRows: List<ProfileService.UserStat>): YourRecordsData {
     // First frame from the session memo (screen re-creation), not an empty shelf (founder, 2026-09-29).
-    var data by remember { mutableStateOf(userId?.let { com.wordocious.app.data.StatsMemo.get<YourRecordsData>("yourRecords:$it") } ?: YourRecordsData()) }
+    // BI19: persisted too — a cold launch paints the last shelf (no loading flag on it).
+    var data by remember { mutableStateOf(userId?.let { com.wordocious.app.data.StatsMemo.getPersisted("yourRecords:$it", YourRecordsData.serializer())?.copy(loading = false) } ?: YourRecordsData()) }
     LaunchedEffect(userId, statsRows.size) {
         if (userId == null) { data = data.copy(loading = false); return@LaunchedEffect }
         val s = statsRows
@@ -151,6 +154,11 @@ fun rememberYourRecords(userId: String?, statsRows: List<ProfileService.UserStat
             val todayD = async { LeaderboardService.getUserSweepRank(userId) }
             val allD = async { LeaderboardService.getUserAllTimeSweepRank(userId) }
             Triple(recsD.await(), todayD.await(), allD.await())
+        }
+        // BI19: a failed fetch (empty) never blanks a shelf that had data.
+        if (recs.isEmpty() && (data.recordsHeld.isNotEmpty() || data.chases.isNotEmpty())) {
+            data = data.copy(loading = false)
+            return@LaunchedEffect
         }
         // One shelf row per (record type, mode): all_time_records keeps a
         // separate row per play_type ('solo' and 'vs'), and listing both made
@@ -200,7 +208,7 @@ fun rememberYourRecords(userId: String?, statsRows: List<ProfileService.UserStat
             sweepRankAllTime = rankAllTime,
             loading = false,
         )
-        com.wordocious.app.data.StatsMemo.set("yourRecords:$userId", data)
+        com.wordocious.app.data.StatsMemo.setPersisted("yourRecords:$userId", data, YourRecordsData.serializer())
     }
     return data
 }
@@ -316,11 +324,11 @@ fun SweepRecordsCard(
                 }
             }
         } else {
-            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon3D(Icon3DName.TROPHY, 30.dp, alpha = 0.5f, colorFilter = Icon3DMuted)
-                Spacer(Modifier.height(8.dp))
-                Text("No sweeps yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            }
+            // BI24 compact: R asleep + headline + one line (no muted trophy over grey text).
+            BrandEmptyState(
+                title = "NO SWEEPS YET", line = "Finish every daily in one day for your first sweep.",
+                scene = SceneArt.ASLEEP, artHeight = 72.dp,
+            )
         }
     }
 }
@@ -355,11 +363,10 @@ fun PuzzleSweepsCard(records: com.wordocious.app.data.HomeStreaksService.PuzzleR
                 Box(Modifier.weight(1f)) { MeCell(Icons.Filled.Star, "${t.bestFlawless}", "Best Flawless Run", GOLD, dim = t.bestFlawless == 0) }
             }
         } else {
-            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Filled.GridView, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
-                Spacer(Modifier.height(8.dp))
-                Text("No Puzzles sweeps yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            }
+            BrandEmptyState(
+                title = "NO PUZZLES SWEEPS YET", line = "Finish every Puzzles daily in one day to start the count.",
+                scene = SceneArt.ASLEEP, artHeight = 72.dp,
+            )
         }
     }
 }

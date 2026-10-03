@@ -337,20 +337,14 @@ fun Modifier.typePop(ch: String): Modifier = composed {
 
 // ── G5 / B6 · the finished-game pieces ────────────────────────────────────
 
-/** G5 a toast as a tinted pill (no dark slab, no white), [top] below the screen top. */
+/**
+ * G5 the game toast: now the shared candy [GameFeedbackToast] (score burst / calm
+ * candy message), centered on the screen's [feedbackAnchor] when one is on screen,
+ * else [top] below the screen top. [accent] is kept for call-site compatibility.
+ */
 @Composable
-fun PieceToast(text: String, accent: Color, top: Dp = 100.dp) {
-    Box(Modifier.fillMaxWidth().padding(top = top), contentAlignment = Alignment.TopCenter) {
-        Text(
-            text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, fontFamily = Nunito,
-            color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
-            modifier = Modifier.padding(horizontal = 24.dp)
-                .semantics { liveRegion = LiveRegionMode.Polite }
-                .tintedPill(accent, corner = 22.dp)
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 9.dp),
-        )
-    }
-}
+@Suppress("UNUSED_PARAMETER")
+fun PieceToast(text: String?, accent: Color, top: Dp = 100.dp) = GameFeedbackToast(text, fallbackTop = top)
 
 /**
  * A2 / R1 an overlay stat: inside the win popup a stat chip (tinted pill, glyph,
@@ -443,11 +437,21 @@ fun PieceResultCard(won: Boolean, title: String, note: String? = null, pills: @C
  * game answers it, e.g. "Reveal unlocks at 5:00").
  */
 @Composable
-fun PieceAction(label: String, icon: ImageVector, onClick: () -> Unit, color: CandyColor = CandyColor.PEACH, faded: Boolean = false) {
-    CandyButton(
-        label, onClick = onClick, modifier = Modifier.alpha(if (faded) 0.55f else 1f), color = color, size = CandySize.SMALL,
-        leading = { Icon(icon, null, tint = color.ink, modifier = Modifier.size(13.dp)) },
-    )
+fun PieceAction(label: String, icon: ImageVector, onClick: () -> Unit, color: CandyColor = CandyColor.PEACH, faded: Boolean = false, reserveLabel: String? = null, count: Int = 0) {
+    val leading: @Composable () -> Unit = { Icon(icon, null, tint = color.ink, modifier = Modifier.size(13.dp)) }
+    val description = hintCountDescription(label, count)
+    // BI22: the used count is a corner badge (overlay); a changing label keeps its widest width.
+    androidx.compose.foundation.layout.Box {
+        if (reserveLabel == null) {
+            CandyButton(label, onClick = onClick, modifier = Modifier.alpha(if (faded) 0.55f else 1f), color = color, size = CandySize.SMALL, contentDescription = description, leading = leading)
+        } else {
+            ReservedWidth(
+                reserve = { CandyButton(reserveLabel, onClick = {}, color = color, size = CandySize.SMALL, leading = leading) },
+                modifier = Modifier.alpha(if (faded) 0.55f else 1f),
+            ) { CandyButton(label, onClick = onClick, color = color, size = CandySize.SMALL, fill = true, contentDescription = description, leading = leading) }
+        }
+        HintCountBadge(count, Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-7).dp))
+    }
 }
 
 /** L a finished board's tray: purple when solved, slate when not; the accent while playing. */

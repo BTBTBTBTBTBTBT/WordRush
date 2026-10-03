@@ -62,6 +62,8 @@ class MainActivity : ComponentActivity() {
         // banks follow shortly after the first frame (Prewarm, founder 2026-09-29).
         com.wordocious.app.data.Prewarm.dictionary()
         AuthService.initialize()
+        // BI19: warm today's Leaderboard + Stats caches once launch settles.
+        com.wordocious.app.data.TodayPrefetch.afterLaunch()
         // Re-fire any solo results whose record flow was cut off (killed
         // mid-flight / offline finish) — idempotent, solo-only, waits for a
         // session via AuthService.userId inside drain().
@@ -229,9 +231,12 @@ class MainActivity : ComponentActivity() {
                                 // FINISH_SPEC AO: not while the first-run flow is up (it picks the username itself).
                                 if (profile?.hasOnboarded == false && !com.wordocious.app.ui.Onboarding.coversWelcome) {
                                     com.wordocious.app.ui.WelcomeScreen()
+                                    com.wordocious.app.ui.ReportPresented()
                                 }
                                 // FINISH_SPEC V2: achievement-unlock / new-tier popups, over everything.
                                 com.wordocious.app.ui.AchievementUnlockHost()
+                                // CelebrationGate (2026-10-03): sweeps + late unlocks, at a calm moment.
+                                com.wordocious.app.ui.CelebrationQueueHost()
                                 // FINISH_SPEC AP: the one-time "Welcome to Pro", full screen, over everything.
                                 com.wordocious.app.ui.ProWelcomeHost()
                             }
@@ -295,6 +300,8 @@ class MainActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
+        // 2026-10-03: a session stranded by a failed refresh (outage) retries on every foreground.
+        com.wordocious.app.data.AuthService.onForeground()
         com.wordocious.app.data.PresenceService.start()
         // FINISH_SPEC BF1: celebrate achievements earned anywhere (server, cron, another device) once.
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) { com.wordocious.app.data.AchievementSeen.check() }

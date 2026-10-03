@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Check, Link as LinkIcon, Loader2, User as UserIcon } from 'lucide-react';
+import { Check, Link as LinkIcon, User as UserIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CastLoader } from '@/components/ui/cast-loader';
@@ -22,7 +22,7 @@ import { InviteModal } from '@/components/invites/invite-modal';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { InitialAvatar, ModeChip, SectionLabel, VS_ACCENT, VS_LIGHT_VARS, VsCard, VsNav, vsCard } from './vs-ui';
 import { PAGE_HOSTS } from '@/lib/mascots';
-import { ArtScene } from '@/components/ui/art-scene';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import { PAGE_SCENES } from '@/lib/art';
 import { PageBackground } from '@/components/ui/page-background';
 
@@ -128,12 +128,16 @@ export function VsFriend() {
                 <SectionLabel>Friends</SectionLabel>
                 <div className="space-y-2">
                   {!friendsLoaded ? (
-                    <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: VS.ink }} /></div>
+                    <div className="flex justify-center py-6" role="status" aria-label="Loading friends"><CastLoader size={18} /></div>
                   ) : ordered.length === 0 ? (
-                    <div className="p-3 flex flex-col items-center gap-2 text-center text-[12.5px] font-bold" style={{ ...vsCard(VS_ACCENT, { radius: 14 }), color: '#4b5563' }}>
-                      <ArtScene scene={PAGE_SCENES.addFriend} />
-                      No friends yet. Send a link, or add friends from the Friends tab.
-                    </div>
+                    <BrandEmptyState
+                      scene={PAGE_SCENES.addFriend}
+                      artHeight={80}
+                      accent="vs"
+                      title="NO FRIENDS YET"
+                      line="Send a link below, or add friends from the Friends tab."
+                      className="py-2"
+                    />
                   ) : ordered.map((f) => {
                     const on = picked.has(f.id);
                     return (

@@ -309,31 +309,44 @@ struct CodebreakerView: View {
                         ScrollView {
                             VStack(spacing: 8) {
                                 CipherBoardView(vm: vm, finished: false, cell: cell, tray: true).padding(.horizontal, 6)
+                                // §BI22: the conflicts line keeps its slot (one line, empty when
+                                // clear) so a conflict appearing never re-centers the board.
                                 let conflicts = vm.conflicts
-                                if !conflicts.isEmpty {
-                                    Text("\(conflicts.joined(separator: ", ")) used for two code letters").font(Brand.font(11, .bold)).foregroundStyle(codebreakerWrong)
-                                }
+                                Text(conflicts.isEmpty ? " " : "\(conflicts.joined(separator: ", ")) used for two code letters")
+                                    .font(Brand.font(11, .bold)).foregroundStyle(codebreakerWrong)
+                                    .lineLimit(1).minimumScaleFactor(0.75)
+                                    .opacity(conflicts.isEmpty ? 0 : 1)
+                                    .accessibilityHidden(conflicts.isEmpty)
                             }
                             .padding(.vertical, 4)
                             .frame(maxWidth: .infinity, minHeight: geo.size.height)
                         }
                         .scrollDisabled(CodebreakerSizing.boardHeight(cipher: vm.state.cipher, cell: cell, width: geo.size.width - 12 - trayW) + 32 + trayH <= geo.size.height)
                     }
-                    FrequencyStripView(vm: vm, fontSize: 12).padding(.bottom, 2)
+                    // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
+                    FrequencyStripView(vm: vm, fontSize: 12).padding(.bottom, 2).gameFeedbackToast(vm.toast, alignment: .top)
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         // §A8: candy pills — peach Delete, purple Check, amber Hint, peach
-                        // Reveal (faded until it unlocks). One row when it fits, else two.
+                        // Reveal (faded until it unlocks). §BI22: the layout depends on the
+                        // SCREEN only (one row of quarters on the widest phones, else two rows
+                        // of halves) — it used to follow the labels, so "Hint" → "Hint · 1" or
+                        // the Reveal countdown could flip it to two rows and shrink the board.
+                        let wide = Self.pillsInOneRow
                         let delete = capsule("Delete", nil, variant: .peach) { Haptics.tap(); vm.clearLetter() }
-                        let check = capsule(vm.state.checks > 0 ? "Check · \(vm.state.checks)" : "Check", nil, variant: .purple) { Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check() }
-                        let hint = capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb", variant: .amber) { SoundManager.shared.playKeyTap(); vm.hint() }
-                        let reveal = capsule(vm.revealIn > 0 ? "Reveal · \(timeText(vm.revealIn, clock: true))" : "Reveal", "eye", variant: .peach, dim: vm.revealIn > 0) { vm.reveal() }
-                        ViewThatFits(in: .horizontal) {
-                            HStack(spacing: 6) { delete; check; hint; reveal }
-                            VStack(spacing: 6) {
-                                HStack(spacing: 6) { delete; check }
-                                HStack(spacing: 6) { hint; reveal }
+                        let check = capsule("Check", nil, variant: .purple, count: vm.state.checks) { Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check() }
+                        let hint = capsule("Hint", wide ? nil : "lightbulb", variant: .amber, count: vm.state.hintsUsed) { SoundManager.shared.playKeyTap(); vm.hint() }
+                        let reveal = capsule(vm.revealIn > 0 ? "Reveal · \(timeText(vm.revealIn, clock: true))" : "Reveal", wide ? nil : "eye", variant: .peach, dim: vm.revealIn > 0) { vm.reveal() }
+                        Group {
+                            if wide {
+                                HStack(spacing: 6) { delete; check; hint; reveal }
+                            } else {
+                                VStack(spacing: 6) {
+                                    HStack(spacing: 6) { delete; check }
+                                    HStack(spacing: 6) { hint; reveal }
+                                }
                             }
                         }
+                        .frame(maxWidth: 440)
                     }
                     // Hardware keys (founder, 2026-09-30): web cryptogram-game keydown —
                     // A–Z pencils the selected code letter, Delete clears it,
@@ -353,11 +366,6 @@ struct CodebreakerView: View {
                         .padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -402,10 +410,14 @@ struct CodebreakerView: View {
 
     /// §A8: a small candy pill; `dim` disables it (the candy fades).
     private func capsule(_ label: String, _ symbol: String?, variant: CandyButtonStyle.Variant, dim: Bool = false,
-                         action: @escaping () -> Void) -> some View {
-        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+                         count: Int = 0, action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, fullWidth: true, count: count, action: action)
             .disabled(dim)
     }
+
+    /// §BI22: Delete · Check · Hint · Reveal fit one row of equal quarters only on the
+    /// widest phones; the choice never depends on the labels.
+    private static let pillsInOneRow = UIScreen.main.bounds.width >= 428
 
     private var header: some View {
         VStack(spacing: 4) {

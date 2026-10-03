@@ -37,7 +37,8 @@ struct InfoPage: View {
                     if kind == .about || kind == .support {
                         let cs = kind == .about ? content.about : content.support
                         if cs.isEmpty {
-                            Text("Loading…").font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary)
+                            // BI24: the cast wave, never a bare "Loading…" line.
+                            CastLoader(showTips: false).frame(maxWidth: .infinity).padding(.top, 20)
                         } else {
                             ForEach(cs) { contentSectionView($0) }
                         }

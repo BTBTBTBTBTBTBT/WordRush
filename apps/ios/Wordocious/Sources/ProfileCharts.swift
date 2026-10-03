@@ -85,9 +85,13 @@ private struct EmptyChart: View {
     /// chart-specific copy (guess-distribution.tsx / solve-time-chart.tsx).
     var copy = "No games yet — play to build your stats."
     var body: some View {
-        Text(copy)
-            .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
-            .frame(maxWidth: .infinity, minHeight: 80)
+        // BI24: D (the stats host) beside the line, never plain grey text alone.
+        HStack(spacing: 10) {
+            MascotView(Mascots.stats, size: 34)
+            Text(copy).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, minHeight: 80)
     }
 }
 

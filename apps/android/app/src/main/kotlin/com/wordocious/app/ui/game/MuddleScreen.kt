@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
@@ -69,6 +70,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
@@ -152,53 +155,52 @@ private const val CARTOON_HOST = "https://wordocious.com/muddle/"
 /** App-identifying UA for the cartoon fetch (OkHttp's default "okhttp/x" has been refused by hosts before). */
 private const val CARTOON_USER_AGENT = "Wordocious-Android (Muddle cartoons; +https://wordocious.com)"
 
-// Compact rule sizes (founder, 2026-09-23 — plan §5): the whole puzzle on one screen.
-/** The cartoon's height cap as a fraction of the screen height (~26 %). */
-private const val CARTOON_SCREEN_FRACTION = 0.26f
-/** Below this the cartoon stops shrinking and the picture area scrolls instead (never the keyboard). */
-private val CARTOON_FLOOR = 120.dp
-/** Word tiles on the fixed six-column grid (36–40 dp by the rule). */
-private val WORD_TILE = 36.dp
-/** The punchline tiles (~32 dp). */
-private val FINAL_TILE = 32.dp
+// Release blocker (founder, 2026-10-02: "the picture and the tagline need to appear the
+// whole time"). The SHARED layout model (iOS MuddleView + web muddle-game implement the
+// same; dp = pt = px): the cartoon + caption sit at the top of the middle area in EVERY
+// phase and are never scrolled or squeezed away; the word rows compact instead (only the
+// active word is a full block, the others one line each; solved words a line of small
+// locked tiles, a 2x2 grid once the punchline opens). The cartoon takes what the rows
+// leave, between a 150 dp floor and a cap of 36 % of the screen height (and 3/4 of the
+// width); if the rows still don't fit, the ROWS scroll internally.
+/** The cartoon's height cap as a fraction of the screen height. */
+private const val CARTOON_SCREEN_FRACTION = 0.36f
+/** The cartoon never drops below this (unless the middle area itself cannot hold it). */
+private val CARTOON_FLOOR = 150.dp
+/** The rows always keep at least this much height when the floor has to give. */
+private val ROWS_MIN = 56.dp
+/** The compact header's band: the corner-button row (48 dp tap area + 4 dp inset); the title art sits inside it. */
+private val HEADER_BAND = 52.dp
+/** The title art's cap inside the band. */
+private val HEADER_ART_MAX = 44.dp
+/** The art keeps clear of the Home button (left) and sound + help (right). */
+private val HEADER_ART_INSET = 90.dp
+
 /**
- * Fit tiers (Doug, Android, 2026-09-27: at his font scale, with the four-row keyboard
- * and a two-row punchline, the words filled the screen and the cartoon was a sliver).
- * The layout starts at the tier its screen suggests and, if the picture band still
- * cannot hold the cartoon floor plus the caption, steps DOWN one tier at a time
- * (measured, never estimated) until it can — so the cartoon and caption always show
- * and the keyboard never scrolls. Tier 0 = the founder's compact rule sizes.
+ * The Muddle sizes: [tile] / [chip] the ACTIVE word's answer tiles and scrambled chips;
+ * [smallTile] / [smallChip] the compact one-line rows (inactive + solved words); [line]
+ * a compact row's height; [ring] the locked punchline's pattern rings; [coin] the open
+ * punchline's answer coins; [trayChip] its scrambled tray chips; [keyH] the keyboard.
  */
 private data class MuddleSizes(
-    val tile: androidx.compose.ui.unit.Dp, val finalTile: androidx.compose.ui.unit.Dp,
-    val hintRow: androidx.compose.ui.unit.Dp, val hintCircle: androidx.compose.ui.unit.Dp,
-    val scrambleSp: androidx.compose.ui.unit.TextUnit, val tileSp: androidx.compose.ui.unit.TextUnit, val finalSp: androidx.compose.ui.unit.TextUnit,
-    val keyH: androidx.compose.ui.unit.Dp,
-    /** Vertical padding around the tray letters; the cartoon's floor; the caption's type. */
-    val trayPadV: androidx.compose.ui.unit.Dp, val cartoonFloor: androidx.compose.ui.unit.Dp,
+    val tile: Dp, val chip: Dp, val smallTile: Dp, val smallChip: Dp, val line: Dp,
+    val ring: Dp, val coin: Dp, val trayChip: Dp, val keyH: Dp,
+    val hintRow: Dp, val hintCircle: Dp,
     val captionSp: androidx.compose.ui.unit.TextUnit, val captionLine: androidx.compose.ui.unit.TextUnit,
+    /** Short phones: the locked punchline is ONE line (label left, pattern rings right). */
+    val lockedOneLine: Boolean = false,
 )
-private val MUDDLE_TIERS = listOf(
-    MuddleSizes(WORD_TILE, FINAL_TILE, 32.dp, 28.dp, 17.sp, 18.sp, 17.sp, 44.dp, 6.dp, 120.dp, 14.sp, 18.sp),
-    MuddleSizes(30.dp, 28.dp, 28.dp, 26.dp, 16.sp, 16.sp, 15.sp, 38.dp, 3.dp, 100.dp, 14.sp, 18.sp),
-    MuddleSizes(26.dp, 24.dp, 26.dp, 22.dp, 14.sp, 14.sp, 13.sp, 34.dp, 2.dp, 80.dp, 13.sp, 16.sp),
-)
-private val LocalMuddleSizes = androidx.compose.runtime.compositionLocalOf { MUDDLE_TIERS[0] }
-@Composable private fun wordTile(): androidx.compose.ui.unit.Dp = LocalMuddleSizes.current.tile
-@Composable private fun finalTile(): androidx.compose.ui.unit.Dp = LocalMuddleSizes.current.finalTile
-/** Gap between tiles on the grid. */
+private val MUDDLE_REGULAR = MuddleSizes(34.dp, 24.dp, 22.dp, 20.dp, 28.dp, 18.dp, 30.dp, 22.dp, 44.dp, 30.dp, 28.dp, 14.sp, 18.sp)
+private val MUDDLE_SHORT = MuddleSizes(32.dp, 22.dp, 22.dp, 20.dp, 24.dp, 18.dp, 28.dp, 22.dp, 40.dp, 28.dp, 26.dp, 13.sp, 16.sp, lockedOneLine = true)
+private fun muddleSizesFor(screenHeightDp: Int) = if (screenHeightDp < SHORT_SCREEN_DP) MUDDLE_SHORT else MUDDLE_REGULAR
+private val LocalMuddleSizes = androidx.compose.runtime.compositionLocalOf { MUDDLE_REGULAR }
+@Composable private fun wordTile(): Dp = LocalMuddleSizes.current.tile
+/** Gap between the active word's tiles. */
 private val TILE_GAP = 6.dp
-/** The Letter · Solve icon circles (28–30 dp). */
-private val HINT_CIRCLE = 28.dp
+/** Gap between a compact row's small tiles / chips. */
+private val SMALL_GAP = 3.dp
 /** The circled ring is ~60 % of the tile, drawn inside it. */
 private const val RING_FRACTION = 0.60f
-private val CAPTION_FONT = 14.sp
-private val CAPTION_LINE_HEIGHT = 18.sp
-/** Lines the caption will take at [widthDp]: ~10.5 dp per character at 14 sp Nunito ExtraBold (measured: 24 characters across 331 dp at font scale 1.3), scaled by the font scale; 1–4. */
-private fun estimatedCaptionLines(caption: String, widthDp: Float, fontScale: Float): Int {
-    val perLine = (widthDp / (10.5f * fontScale)).coerceAtLeast(8f)
-    return kotlin.math.ceil(caption.length / perLine).toInt().coerceIn(1, 4)
-}
 
 /** Display titles for the shared holiday calendar keys (§20) — mirrors apps/web/lib/holidays.ts HOLIDAY_TITLES exactly. */
 private val HOLIDAY_TITLES = mapOf(
@@ -491,51 +493,22 @@ fun MuddleScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             MuddleFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard, onFinished)
         } else {
-            // Compact rule (founder, 2026-09-23): the WHOLE puzzle on one screen with the
-            // keyboard pinned. Header, the four words, the punchline, Delete · Clear and the
-            // keyboard are fixed-height; the cartoon takes what they leave (capped at ~26 % of
-            // the screen) and shrinks first on shorter phones — only below its floor does the
-            // picture area scroll, and then only the cartoon and caption ever move.
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                val cartoonCap = maxHeight * CARTOON_SCREEN_FRACTION
-                val fontScale = LocalDensity.current.fontScale
-                val michael = KeyboardLayoutPref.value == "michael"
-                // Start at the tier the screen suggests; the picture band below escalates it if it must.
-                var tier by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(if (maxHeight < 760.dp || fontScale > 1.1f || michael) 1 else 0) }
-                val sizes = MUDDLE_TIERS[tier]
-                androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
+            // The whole puzzle on one screen with the keyboard pinned (release blocker 10-02):
+            // compact header · the stage (cartoon + caption ALWAYS shown at the top, the rows
+            // under them, scrolling internally only if they must) · Delete · Clear · keyboard.
+            val screenH = LocalConfiguration.current.screenHeightDp
+            val sizes = muddleSizesFor(screenH)
+            androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
                 Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    MuddleHeader(session)
-                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                        // Two caption lines (font-scaled) plus the gap under the cartoon.
-                        // Reserve the caption's real line count (estimated from its length at this
-                        // width and font scale, 1–4) so the cartoon shrinks and the caption never scrolls
-                        // out of view (Doug, 2026-09-27: a narrow phone at a large font showed two lines
-                        // and an ellipsis).
-                        val captionLines = estimatedCaptionLines(session.state.caption, minOf(maxWidth, 420.dp).value - 12f, fontScale * (sizes.captionSp.value / 14f))
-                        val captionAllowance = with(LocalDensity.current) { (sizes.captionLine * captionLines).toDp() } + 8.dp
-                        // MEASURED fit: if this band cannot hold the cartoon floor plus the whole caption,
-                        // step the puzzle down one tier (smaller tiles, shorter keys) and re-measure.
-                        val needed = sizes.cartoonFloor + captionAllowance
-                        androidx.compose.runtime.LaunchedEffect(maxHeight, needed) {
-                            if (maxHeight < needed && tier < MUDDLE_TIERS.lastIndex) tier++
-                        }
-                        // The caption is measured first at its real height (a Column lays out unweighted
-                        // children before weighted ones) and the cartoon takes only what is left, so the
-                        // caption is never cut off — even when the punchline row opens after the four
-                        // words and the band shrinks below the cartoon's floor (Doug, 2026-09-29).
-                        Column(
-                            Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-                        ) {
-                            BoxWithConstraints(Modifier.weight(1f, fill = false).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                val puzzle = session.puzzle
-                                CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = minOf(cartoonCap, maxWidth * 0.75f, maxHeight))
-                            }
-                            Caption(session.state, finished = false)
-                        }
-                    }
-                    MuddlePuzzle(session, finished = false, onFinished)
+                    MuddleHeader(session, compact = true)
+                    val puzzle = session.puzzle
+                    MuddleStage(
+                        Modifier.weight(1f).fillMaxWidth().widthIn(max = 420.dp),
+                        cap = screenH.dp * CARTOON_SCREEN_FRACTION, fill = true,
+                        cartoon = { h -> CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = h) },
+                        caption = { Caption(session.state, finished = false) },
+                        rows = { MuddlePuzzle(session, finished = false, onFinished) },
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Capsule("Delete", Icons.AutoMirrored.Outlined.Backspace) { SoundManager.playDelete(); session.back() }
                         Capsule("Clear", Icons.Filled.Cancel) { SoundManager.playKeyTap(); session.clear() }
@@ -544,16 +517,10 @@ fun MuddleScreen(
                                  keyHeight = sizes.keyH)
                     Spacer(Modifier.height(4.dp))
                 }
-                }
             }
         }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 112.dp), contentAlignment = Alignment.TopCenter) {
-                // G5 / K1 a toast is a tinted pill (no dark slab, no white).
-                Text(it, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 24.dp).tintedPill(MUDDLE_ACCENT, corner = 22.dp).padding(horizontal = 16.dp, vertical = 10.dp))
-            }
-        }
+        // The candy feedback toast (no anchor here: Muddle's layout is owned elsewhere; fixed spot below the header).
+        GameFeedbackToast(session.toast, fallbackTop = 112.dp)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) MuddleOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(MUDDLE_ACCENT, onBack) }
@@ -564,22 +531,13 @@ fun MuddleScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MuddleHeader(session: MuddleSession) {
+private fun MuddleHeader(session: MuddleSession, compact: Boolean) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     val s = session.state
-    // Compact rule: the title and ONE meta line, tight — the corner buttons (44 dp + 8) keep the row above the art.
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 2.dp)) {
-        // ART_SPEC §14 / §19.3: Muddle uses its title art too (lettering + R, below the
-        // corner-button row); the cartoon band below absorbs the difference. In play the
-        // one-screen compact layout keeps the short-screen cap (84 dp) so the whole puzzle
-        // still fits. The text + host stays as the fallback.
-        com.wordocious.app.ui.GameHeaderTitle(
-            "SCRAMBLE",
-            maxHeight = if (session.isFinished) null else com.wordocious.app.ui.GAME_TITLE_ART_HEADER_MAX_SHORT,
-        ) {
-            // The game's host (R, groggy: MASCOT_SPEC §5) at the left of the title, static. It
-            // overhangs the compact 22 dp title line instead of growing the header.
-            Row(Modifier.padding(horizontal = 52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = if (compact) 0.dp else 2.dp)) {
+        // The game's host (R, groggy: MASCOT_SPEC §5) + the name: the fallback when there is no title art.
+        val fallback: @Composable () -> Unit = {
+            Row(Modifier.padding(horizontal = if (compact) 0.dp else 52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 com.wordocious.app.ui.Mascots.hostFor("SCRAMBLE")?.let {
                     Box(Modifier.size(30.dp, 22.dp), contentAlignment = Alignment.Center) {
                         com.wordocious.app.ui.Mascot(it, 30.dp, Modifier.wrapContentSize(unbounded = true))
@@ -588,7 +546,20 @@ private fun MuddleHeader(session: MuddleSession) {
                 Text("MUDDLE", fontSize = 20.sp, lineHeight = 22.sp, fontWeight = FontWeight.Black, color = MUDDLE_ACCENT, fontFamily = Nunito, maxLines = 1)
             }
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 48.dp)) {
+        if (compact) {
+            // Release blocker 10-02: the title art sits INSIDE the corner-button row (capped at
+            // 44 dp, clear of Home on the left and sound + help on the right) so the cartoon gets
+            // the height; the one meta line follows under the row.
+            val res = com.wordocious.app.ui.gameTitleArtResForKey("SCRAMBLE")
+            Box(Modifier.fillMaxWidth().height(HEADER_BAND).padding(top = GAME_CONTROLS_INSET).padding(horizontal = HEADER_ART_INSET), contentAlignment = Alignment.Center) {
+                if (res != null) com.wordocious.app.ui.FittedGameTitleArt(res, com.wordocious.app.ui.gameTitleLabelForKey("SCRAMBLE"), maxHeight = HEADER_ART_MAX)
+                else fallback()
+            }
+        } else {
+            // ART_SPEC §14 / §19.3: the title art below the corner-button row.
+            com.wordocious.app.ui.GameHeaderTitle("SCRAMBLE") { fallback() }
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = if (compact) 0.dp else 48.dp)) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
             session.holidayTitle?.let { Text(it, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = MUDDLE_ACCENT, maxLines = 1) }
             Text("${scrambleBoardsSolved(s)}/$SCRAMBLE_TOTAL_BOARDS solved", fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
@@ -604,26 +575,103 @@ private fun MuddleHeader(session: MuddleSession) {
 
 // ── Board ───────────────────────────────────────────────────────────────────
 
-/** The puzzle half, fixed-height: the four words as compact blocks, a divider, the punchline. */
+/**
+ * The middle area (release blocker 10-02, the shared layout model): the cartoon on top, the
+ * caption under it, then the rows. The caption and the rows are measured at their natural
+ * height first; the cartoon takes what is left — never below [CARTOON_FLOOR] (unless this
+ * area itself cannot hold it next to the caption and [ROWS_MIN] of rows), never above [cap]
+ * or 3/4 of the width. Rows that don't fit scroll INSIDE their own area; the cartoon and the
+ * caption never move. [fill] = take the whole height (play: the rows center in what is
+ * left under the caption); else report only the height used (the finished board).
+ */
+@Composable
+private fun MuddleStage(
+    modifier: Modifier,
+    cap: Dp,
+    fill: Boolean,
+    gap: Dp = 4.dp,
+    cartoon: @Composable (Dp) -> Unit,
+    caption: @Composable () -> Unit,
+    rows: @Composable () -> Unit,
+) {
+    val scroll = rememberScrollState()
+    androidx.compose.ui.layout.SubcomposeLayout(modifier) { c ->
+        val w = c.maxWidth
+        val total = if (c.hasBoundedHeight) c.maxHeight else 2000.dp.roundToPx()
+        val loose = androidx.compose.ui.unit.Constraints(maxWidth = w)
+        val gapPx = gap.roundToPx()
+        val captionP = subcompose("caption") { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { caption() } }.map { it.measure(loose) }
+        val captionH = captionP.maxOfOrNull { it.height } ?: 0
+        // The floor gives only when the area cannot hold it beside the caption and a minimum of rows.
+        val floor = minOf(CARTOON_FLOOR.roundToPx(), total - captionH - gapPx * 2 - ROWS_MIN.roundToPx()).coerceAtLeast(0)
+        val rowsMax = (total - captionH - gapPx * 2 - floor).coerceAtLeast(0)
+        val rowsP = subcompose("rows") {
+            Box(Modifier.fillMaxWidth().verticalScroll(scroll), contentAlignment = Alignment.TopCenter) { rows() }
+        }.map { it.measure(androidx.compose.ui.unit.Constraints(maxWidth = w, maxHeight = rowsMax)) }
+        val rowsH = (rowsP.maxOfOrNull { it.height } ?: 0).coerceAtMost(rowsMax)
+        val ceiling = minOf(cap.roundToPx(), (w * 0.75f).toInt())
+        val h = (total - rowsH - captionH - gapPx * 2).coerceAtMost(ceiling).coerceAtLeast(minOf(floor, ceiling)).coerceAtLeast(0)
+        val cartoonP = subcompose("cartoon") { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { cartoon(h.toDp()) } }.map { it.measure(loose) }
+        val cartoonH = cartoonP.maxOfOrNull { it.height } ?: 0
+        val used = cartoonH + gapPx + captionH + gapPx + rowsH
+        val height = if (fill) total else minOf(used, total)
+        layout(w, height) {
+            cartoonP.forEach { it.place(0, 0) }
+            captionP.forEach { it.place(0, cartoonH + gapPx) }
+            val top = cartoonH + gapPx + captionH + gapPx
+            val slack = if (fill) ((height - top - rowsH) / 2).coerceAtLeast(0) else 0
+            rowsP.forEach { it.place(0, top + slack) }
+        }
+    }
+}
+
+/**
+ * The puzzle half (release blocker 10-02): only the ACTIVE word is a full block; the other
+ * open words are one compact line each, a solved word a line of small locked tiles; the
+ * punchline is a short locked strip until the four are solved — then the four solved words
+ * pack into a 2x2 grid and the punchline opens with its tray and coins.
+ */
 @Composable
 private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: () -> Unit) {
     // FINISH_SPEC L: Muddle's word rows sit in the shared game tray; I4 the punchline solved = confetti.
+    val s = session.state
     val trayState = when {
         !finished -> TrayState.PLAYING
-        session.state.status == ScrambleStatus.WON -> TrayState.WON
+        s.status == ScrambleStatus.WON -> TrayState.WON
         else -> TrayState.LOST
     }
+    val finalOpen = finished || scrambleFinalOpen(s)
+    // The expanded word: the selected row while it is an open word, else the game's next open word.
+    val expanded = if (session.row in 0 until SCRAMBLE_FINAL && !s.solved[session.row]) session.row
+        else scrambleActiveRow(s)?.takeIf { it < SCRAMBLE_FINAL && !s.solved[it] }
     Box(Modifier.fillMaxWidth().widthIn(max = 420.dp)) {
     Column(
-        Modifier.fillMaxWidth().gameTray(MUDDLE_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 5.dp)),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        Modifier.fillMaxWidth().gameTray(MUDDLE_ACCENT, trayState, padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 4.dp)),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        for (i in 0 until SCRAMBLE_FINAL) {
-            WordRow(
-                session, i, active = !finished && session.row == i, shaking = session.shakeRow == i, finished = finished,
-                onSelect = { session.selectRow(i) }, onTapTile = { ch -> session.tapTile(i, ch, onFinished) },
-                onRevealLetter = { SoundManager.playKeyTap(); session.revealLetter(i, onFinished) }, onSolveWord = { SoundManager.playKeyTap(); session.solveWord(i, onFinished) },
-            )
+        if (finalOpen) {
+            // The four words as a 2x2 grid of locked lines: two compact lines in all.
+            for (pair in listOf(0 to 1, 2 to 3)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    SolvedLine(s, pair.first, Modifier.weight(1f))
+                    SolvedLine(s, pair.second, Modifier.weight(1f))
+                }
+            }
+        } else {
+            for (i in 0 until SCRAMBLE_FINAL) {
+                when {
+                    s.solved[i] -> SolvedLine(s, i, Modifier.fillMaxWidth())
+                    i == expanded -> WordRow(
+                        session, i, active = !finished && session.row == i, shaking = session.shakeRow == i, finished = finished,
+                        onSelect = { session.selectRow(i) }, onTapTile = { ch -> session.tapTile(i, ch, onFinished) },
+                        onRevealLetter = { SoundManager.playKeyTap(); session.revealLetter(i, onFinished) }, onSolveWord = { SoundManager.playKeyTap(); session.solveWord(i, onFinished) },
+                    )
+                    else -> CompactWordLine(
+                        session, i, shaking = session.shakeRow == i,
+                        onSelect = { session.selectRow(i) }, onTapTile = { ch -> session.tapTile(i, ch, onFinished) },
+                    )
+                }
+            }
         }
         FinalRow(
             session, active = !finished && session.row == SCRAMBLE_FINAL, shaking = session.shakeRow == SCRAMBLE_FINAL, finished = finished,
@@ -631,7 +679,77 @@ private fun MuddlePuzzle(session: MuddleSession, finished: Boolean, onFinished: 
             onRevealLetter = { SoundManager.playKeyTap(); session.revealLetter(SCRAMBLE_FINAL, onFinished) },
         )
     }
-    MuddleConfetti(trigger = !finished && session.state.solved[SCRAMBLE_FINAL], modifier = Modifier.matchParentSize())
+    MuddleConfetti(trigger = !finished && s.solved[SCRAMBLE_FINAL], modifier = Modifier.matchParentSize())
+    }
+}
+
+/** Scrolls [requester]'s row into view whenever it becomes active (the rows may scroll on a short phone). */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun bringActiveIntoView(active: Boolean): Modifier {
+    val requester = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    LaunchedEffect(active) { if (active) runCatching { requester.bringIntoView() } }
+    return Modifier.bringIntoViewRequester(requester)
+}
+
+/** A solved (or, finished, never-solved = muted) word: ONE line of small locked tiles, circled letters as coins. */
+@Composable
+private fun SolvedLine(s: ScrambleState, row: Int, modifier: Modifier) {
+    val w = s.words[row]
+    val solved = s.solved[row]
+    val circled = w.circled.toSet()
+    val revealed = s.revealed[row]
+    val small = LocalMuddleSizes.current.smallTile
+    Row(
+        modifier.height(LocalMuddleSizes.current.line).semantics(mergeDescendants = true) {
+            contentDescription = if (solved) "Word ${row + 1} solved: ${w.answer}" else "Word ${row + 1}: ${w.answer}"
+        },
+        horizontalArrangement = Arrangement.spacedBy(SMALL_GAP, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
+    ) {
+        w.answer.forEachIndexed { i, ch ->
+            MuddleSlot(ch.toString(), pinned = revealed.getOrNull(i)?.let { it != '_' } == true, circled = i in circled, size = small, solved = solved, muted = !solved)
+        }
+    }
+}
+
+/**
+ * An open word that is not the active one: ONE compact line — its scrambled letters as
+ * small chips on the left (a tap selects the word AND places the letter), small answer
+ * tiles with the current entry on the right (circled slots as coins), no hint buttons.
+ * Tapping the line selects it (it expands to the full block).
+ */
+@Composable
+private fun CompactWordLine(session: MuddleSession, row: Int, shaking: Boolean, onSelect: () -> Unit, onTapTile: (Char) -> Unit) {
+    val s = session.state
+    val w = s.words[row]
+    val entry = s.entries[row]
+    val dimmed = usedMask(w.scramble, entry)
+    val circled = w.circled.toSet()
+    val revealed = s.revealed[row]
+    val sz = LocalMuddleSizes.current
+    Row(
+        Modifier.fillMaxWidth().height(sz.line)
+            .then(if (shaking) Modifier.shakeOnReject(session.shakeKey) else Modifier)
+            .clip(RoundedCornerShape(8.dp))
+            .clickableNoRipple { onSelect() }
+            .padding(horizontal = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(SMALL_GAP), verticalAlignment = Alignment.CenterVertically) {
+            w.scramble.forEachIndexed { i, ch ->
+                MuddleChip(
+                    ch.toString(), used = dimmed[i], size = sz.smallChip,
+                    modifier = Modifier.size(sz.smallChip)
+                        .then(if (!dimmed[i]) Modifier.squishClickable(label = "Letter $ch") { onTapTile(ch) } else Modifier),
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(SMALL_GAP), verticalAlignment = Alignment.CenterVertically) {
+            for (i in 0 until COLS) {
+                if (i >= w.answer.length) { Spacer(Modifier.size(sz.smallTile)); continue }
+                MuddleSlot(entry.getOrNull(i)?.toString() ?: "", pinned = revealed.getOrNull(i)?.let { it != '_' } == true, circled = i in circled, size = sz.smallTile)
+            }
+        }
     }
 }
 
@@ -749,7 +867,7 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
                     },
                     contentAlignment = Alignment.BottomCenter,
                 ) {
-                    Text(answer, fontSize = CAPTION_FONT, fontWeight = FontWeight.ExtraBold, color = LILAC_TEXT, fontFamily = Nunito, maxLines = 1, softWrap = false)
+                    Text(answer, fontSize = LocalMuddleSizes.current.captionSp, fontWeight = FontWeight.ExtraBold, color = LILAC_TEXT, fontFamily = Nunito, maxLines = 1, softWrap = false)
                 }
             },
         ),
@@ -768,7 +886,7 @@ private fun Caption(s: ScrambleState, finished: Boolean) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun MuddleFinishedBoard(s: ScrambleState, puzzle: ScramblePuzzle, solvedByHint: Set<Int>) {
-    androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides MUDDLE_TIERS[1]) {
+    androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides MUDDLE_SHORT) {
         Column(Modifier.fillMaxWidth().widthIn(max = 420.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             CartoonPanel(puzzle.cartoon, puzzle.altText, height = 150.dp)
             Caption(s, finished = true)
@@ -836,23 +954,23 @@ private fun WordRow(
     val shape = RoundedCornerShape(10.dp)
     Column(
         Modifier.fillMaxWidth()
+            .then(bringActiveIntoView(active))
             .then(if (shaking) Modifier.shakeOnReject(session.shakeKey) else Modifier)
             // I4: the active word row is a tinted card (A1), not a lilac fill.
             .then(if (active) Modifier.tintedPill(MUDDLE_ACCENT, corner = 12.dp) else Modifier.clip(shape))
             .clickableNoRipple { if (!solved && !finished) onSelect() }
-            .padding(horizontal = 6.dp, vertical = 2.dp)
-            .padding(top = if (active) 3.dp else 0.dp),
+            .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = LocalMuddleSizes.current.hintRow), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
                 // I3: the scrambled letters are small glossy amber chips; a used one sinks.
-                val chip = minOf(wordTile() * 0.7f, LocalMuddleSizes.current.hintRow - 4.dp)
+                val chip = LocalMuddleSizes.current.chip
                 w.scramble.forEachIndexed { i, ch ->
                     val dim = dimmed[i] || solved
                     MuddleChip(
                         ch.toString(), used = dim, size = chip,
-                        modifier = Modifier.padding(vertical = LocalMuddleSizes.current.trayPadV / 2).size(chip)
+                        modifier = Modifier.size(chip)
                             .then(if (!dim && !finished) Modifier.squishClickable(label = "Letter $ch") { onTapTile(ch) } else Modifier),
                     )
                 }
@@ -875,9 +993,6 @@ private fun WordRow(
         }
     }
 }
-
-/** The top line of a word block — the hint circles set its height so the scramble letters never jump when they hide. */
-private val HINT_ROW_HEIGHT = 32.dp
 
 /** One answer tile: rounded, 2dp border, letter centered; the circled ring drawn INSIDE at ~60 % of the tile (never an outline around it). */
 @Composable
@@ -918,32 +1033,63 @@ private fun FinalRow(
     val dimmed = usedMask(tray, entry)
     val shape = RoundedCornerShape(10.dp)
     val playable = open && !solved && !finished
-    Column(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+    val sz = LocalMuddleSizes.current
+    Column(Modifier.fillMaxWidth().padding(top = 1.dp)) {
         HorizontalDivider(color = WTheme.border, thickness = 1.5.dp)
+        if (!open && !finished) {
+            // LOCKED (word phase): compact — the label and the letter pattern as small rings (~40 dp in all).
+            val rings: @Composable () -> Unit = {
+                Row(horizontalArrangement = Arrangement.spacedBy(if (sz.lockedOneLine) 6.dp else 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    for (len in s.final.pattern) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(if (sz.lockedOneLine) 2.dp else SMALL_GAP)) {
+                            for (k in 0 until len) MuddleSlot("", pinned = false, circled = true, size = sz.ring, punchline = true)
+                        }
+                    }
+                }
+            }
+            val lockedMod = Modifier.fillMaxWidth().alpha(0.55f).padding(horizontal = 6.dp, vertical = 2.dp)
+                .semantics(mergeDescendants = true) { contentDescription = "Punchline, locked: solve the four words to unlock it" }
+            if (sz.lockedOneLine) {
+                Row(lockedMod.heightIn(min = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    com.wordocious.app.ui.FitText(
+                        "PUNCHLINE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    rings()
+                }
+            } else {
+                Column(lockedMod, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    com.wordocious.app.ui.FitText(
+                        "PUNCHLINE \u00B7 SOLVE THE FOUR WORDS TO UNLOCK",
+                        fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp,
+                    )
+                    rings()
+                }
+            }
+            return@Column
+        }
         Column(
             Modifier.fillMaxWidth()
+                .then(bringActiveIntoView(active))
                 .then(if (shaking) Modifier.shakeOnReject(session.shakeKey) else Modifier)
                 .then(if (active) Modifier.tintedPill(Color(0xFFF5A524), corner = 12.dp) else Modifier.clip(shape))
-                .alpha(if (open || finished) 1f else 0.55f)
                 .clickableNoRipple { if (playable) onSelect() }
-                .padding(horizontal = 6.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+                .padding(horizontal = 6.dp, vertical = 3.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-            // One line: the heading, then (once open) the circled-letter tray and the Letter circle.
-            Row(Modifier.fillMaxWidth().heightIn(min = if (playable) LocalMuddleSizes.current.hintRow else 0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            // OPEN: one line — the heading, the circled-letter tray (wrapping) and the Letter circle.
+            Row(Modifier.fillMaxWidth().heightIn(min = if (playable) sz.hintRow else 0.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 com.wordocious.app.ui.FitText(
-                    if (open || finished) "PUNCHLINE" else "SOLVE THE FOUR WORDS TO UNLOCK THE PUNCHLINE",
+                    "PUNCHLINE",
                     fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp,
-                    modifier = if (playable) Modifier else Modifier.weight(1f),
                 )
                 if (playable) {
-                    FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalArrangement = Arrangement.Center) {
+                    FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         // I3: the circled letters to place, as glossy chips that sink when used.
-                        val chip = LocalMuddleSizes.current.hintRow - 6.dp
                         tray.forEachIndexed { i, ch ->
                             MuddleChip(
-                                ch.toString(), used = dimmed[i], size = chip,
-                                modifier = Modifier.padding(vertical = LocalMuddleSizes.current.trayPadV / 2).size(chip)
+                                ch.toString(), used = dimmed[i], size = sz.trayChip,
+                                modifier = Modifier.size(sz.trayChip)
                                     .then(if (!dimmed[i]) Modifier.squishClickable(label = "Letter $ch") { onTapTile(ch) } else Modifier),
                             )
                         }
@@ -951,22 +1097,21 @@ private fun FinalRow(
                     HintCircle(Icons.Filled.Lightbulb, "Reveal a letter", onRevealLetter)
                 }
             }
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-            // A word group never wraps, so the tile shrinks until the LONGEST group fits the row
+            BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            // A word group never wraps, so the coin shrinks until the LONGEST group fits the row
             // (floor 22 dp) — a ten-letter punchline lost its last letter on a narrower phone.
             val longest = s.final.pattern.maxOrNull() ?: 1
             val letters = s.final.pattern.sum().coerceAtLeast(1)
             val groups = s.final.pattern.size.coerceAtLeast(1)
             val fitTile = ((maxWidth - 4.dp * (longest - 1)) / longest)
-            // Every group on one row if the tiles can shrink to 22 dp for it; else the longest group sets the size.
+            // Every group on one row if the coins can shrink to 22 dp for it; else the longest group sets the size.
             val oneRow = (maxWidth - 12.dp * (groups - 1) - 4.dp * (letters - groups)) / letters
             val tile = when {
-                oneRow >= 22.dp -> minOf(finalTile(), oneRow)
-                fitTile < finalTile() -> maxOf(22.dp, fitTile)
-                else -> finalTile()
+                oneRow >= 22.dp -> minOf(sz.coin, oneRow)
+                fitTile < sz.coin -> maxOf(22.dp, fitTile)
+                else -> sz.coin
             }
-            val tileFont = if (tile < 28.dp) 13.sp else LocalMuddleSizes.current.finalSp
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 var pos = 0
                 for (len in s.final.pattern) {
                     val start = pos; pos += len
@@ -974,7 +1119,6 @@ private fun FinalRow(
                         for (k in 0 until len) {
                             val idx = start + k
                             val ch = if (solved || finished) target.getOrNull(idx)?.toString() ?: "" else entry.getOrNull(idx)?.toString() ?: ""
-                            @Suppress("UNUSED_VARIABLE") val unusedFont = tileFont
                             // I2: the punchline letters are gold coins; solved = the hop wave.
                             MuddleSlot(
                                 ch, pinned = false, circled = true, size = tile, punchline = true,
@@ -1044,7 +1188,8 @@ private fun MuddleFinished(
     val context = LocalContext.current
     val hintsText = if (s.hintsUsed > 0) " · ${s.hintsUsed} hint${if (s.hintsUsed == 1) "" else "s"}" else ""
     val title = if (won) (if (s.checks == 5 && s.hintsUsed == 0) "Muddle solved clean" else "Muddle solved") else "Out of checks"
-    val cartoonCap = LocalConfiguration.current.screenHeightDp.dp * CARTOON_SCREEN_FRACTION
+    val screenH = LocalConfiguration.current.screenHeightDp
+    val cartoonCap = screenH.dp * CARTOON_SCREEN_FRACTION
     val share = {
         val num = if (session.isDaily) session.dailyNumber else null
         val meta = "${num?.let { "#$it · " } ?: ""}$solvedCount/$SCRAMBLE_TOTAL_BOARDS solved · ${session.checksLabel} · ${clockText(secs)}"
@@ -1055,7 +1200,8 @@ private fun MuddleFinished(
         ShareImage.shareBitmap(context, bmp, text)
     }
     FinishedScreen(
-        header = { MuddleHeader(session) },
+        // Short phones keep the compact header so the cartoon stays >= 150 dp (release blocker 10-02).
+        header = { MuddleHeader(session, compact = screenH < SHORT_SCREEN_DP) },
         strip = {
             ResultStrip(
                 won,
@@ -1084,33 +1230,23 @@ private fun MuddleFinished(
             )
         },
     ) { _, maxH ->
-        // R2: the four words + punchline at the tier the height allows, then the cartoon
-        // takes what is left (the words are measured first). Too little room for the
-        // picture → a "See the cartoon" chip opens it in a sheet.
-        val sizes = when {
-            maxH < 380.dp -> MUDDLE_TIERS[2]
-            maxH < 470.dp -> MUDDLE_TIERS[1]
-            else -> MUDDLE_TIERS[0]
-        }
+        // R2 + the shared layout model (release blocker 10-02): the cartoon and the caption on
+        // top, then the four words (2x2) and the punchline; the cartoon takes what the rows
+        // leave (floor 150, cap 36 % of the screen). Only if even that cannot fit does a
+        // "See the cartoon" chip open it in a sheet.
         var showCartoon by remember { mutableStateOf(false) }
         val puzzle = session.puzzle
-        androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides sizes) {
-            Column(
-                Modifier.fillMaxWidth().height(maxH),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-            ) {
-                BoxWithConstraints(Modifier.weight(1f, fill = false).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    val h = minOf(cartoonCap, maxWidth * 0.75f, maxHeight)
-                    if (h >= 64.dp) {
-                        CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = h)
-                    } else {
-                        FinishedChip("See the cartoon", MUDDLE_ACCENT) { showCartoon = true }
-                    }
-                }
-                Caption(s, finished = true)
-                MuddlePuzzle(session, finished = true, onFinished)
-            }
+        androidx.compose.runtime.CompositionLocalProvider(LocalMuddleSizes provides muddleSizesFor(screenH)) {
+            MuddleStage(
+                Modifier.fillMaxWidth().widthIn(max = 420.dp).heightIn(max = maxH),
+                cap = cartoonCap, fill = false, gap = 6.dp,
+                cartoon = { h ->
+                    if (h >= 64.dp) CartoonPanel(puzzle?.cartoon, puzzle?.altText ?: "Cartoon", height = h)
+                    else FinishedChip("See the cartoon", MUDDLE_ACCENT) { showCartoon = true }
+                },
+                caption = { Caption(s, finished = true) },
+                rows = { MuddlePuzzle(session, finished = true, onFinished) },
+            )
         }
         if (showCartoon) {
             FinishedSheet("The cartoon", MUDDLE_ACCENT, onDismiss = { showCartoon = false }) {

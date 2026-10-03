@@ -17,8 +17,9 @@ export default function GlobalError({
     Sentry.captureException(error);
   }, [error]);
 
-  // G5: the same tinted card + candy button as app/error.tsx, drawn inline
-  // (no app CSS here): a lavender wash with the brand top bar, never white.
+  // BI24: the same look as app/error.tsx, drawn inline (no app CSS here): R
+  // unplugged on a lavender wash (never white), the gradient caps headline,
+  // one warm line and the candy button. No bordered box.
   return (
     <html lang="en">
       <body
@@ -38,14 +39,8 @@ export default function GlobalError({
             width: '100%',
             maxWidth: 360,
             textAlign: 'center',
-            background: '#efe6fd',
-            border: '1.5px solid #d8c6fa',
-            borderRadius: 24,
-            overflow: 'hidden',
-            boxShadow: '0 14px 36px rgba(124, 58, 237, 0.18)',
           }}
         >
-          <div aria-hidden="true" style={{ height: 10, background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }} />
           <div style={{ padding: '1.25rem 1.5rem' }}>
             {/* R, unplugged (docs/ART_SPEC.md §7). A plain <img>: this screen
                 renders without the app's layout, CSS or image pipeline. */}
@@ -58,7 +53,21 @@ export default function GlobalError({
               height={140}
               style={{ display: 'block', margin: '0 auto 1rem', width: 169, maxWidth: '60%', height: 'auto' }}
             />
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '0 0 0.5rem', color: '#2e1065' }}>
+            {/* The brand gradient caps headline (PAGE_TITLE_GRADIENTS.brand), inline. */}
+            <h1
+              style={{
+                fontSize: '1.375rem',
+                fontWeight: 900,
+                margin: '0 0 0.5rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                lineHeight: 1.15,
+                background: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                color: 'transparent',
+              }}
+            >
               Something went wrong
             </h1>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, margin: '0 0 1.25rem', color: '#6f5f8f' }}>

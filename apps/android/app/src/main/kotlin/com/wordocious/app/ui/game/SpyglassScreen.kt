@@ -8,6 +8,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -300,6 +302,7 @@ fun SpyglassScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
+    ProvideFeedbackAnchor {
     Box(Modifier.fillMaxSize().gameBackground { background(WTheme.bg) }.statusBarsPadding()) {
         if (session.isFinished) {
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
@@ -317,12 +320,14 @@ fun SpyglassScreen(
             }
         }
         // G5 a toast is a tinted pill (no dark slab, no white).
-        session.toast?.let { PieceToast(it, SPY_ACCENT, top = 110.dp) }
+        // The candy feedback toast, centered on the header meta row (never the title art or the board).
+        GameFeedbackToast(session.toast, fallbackTop = 110.dp)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) SpyglassOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(SPY_ACCENT, onBack) }
         CornerHelpButton(SPY_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.WORDSEARCH, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -332,9 +337,12 @@ private fun SpyglassCapsules(session: SpyglassSession, onFinished: () -> Unit) {
     val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
     @Suppress("UNUSED_EXPRESSION") tick
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hint(onFinished) }
-        Capsule(if (session.state.wordsShown) "Words shown" else "Show words", Icons.AutoMirrored.Filled.List, dim = session.state.wordsShown) { session.showWords(onFinished) }
-        Capsule(if (session.canReveal) "Reveal" else "Reveal · ${timeText(maxOf(0, REVEAL_AFTER_SECONDS - session.elapsed))}", Icons.Filled.Visibility, dim = !session.canReveal) { session.reveal(onFinished) }
+        // BI22: "Hint" is a fixed label (the used count is a corner badge, an overlay); "Show words"
+        // and the ticking Reveal countdown keep their widest width, so nothing nudges the row.
+        Capsule("Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER, count = session.state.hintsUsed) { session.hint(onFinished) }
+        Capsule(if (session.state.wordsShown) "Words shown" else "Show words", Icons.AutoMirrored.Filled.List, dim = session.state.wordsShown, reserve = "Words shown") { session.showWords(onFinished) }
+        val revealLabel = if (session.canReveal) "Reveal" else "Reveal · ${timeText(maxOf(0, REVEAL_AFTER_SECONDS - session.elapsed))}"
+        Capsule(revealLabel, Icons.Filled.Visibility, dim = !session.canReveal, reserve = HintLayout.countdownReserve("Reveal · ${timeText(REVEAL_AFTER_SECONDS)}")) { session.reveal(onFinished) }
     }
 }
 
@@ -345,7 +353,7 @@ private fun SpyglassHeader(session: SpyglassSession) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("WORDSEARCH") { Text("SPYGLASS", fontSize = 24.sp, fontWeight = FontWeight.Black, color = SPY_ACCENT, fontFamily = Nunito) }
         Text(session.state.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text("${session.state.found.size}/${session.state.words.size} found", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text("${session.state.misses} miss${if (session.state.misses == 1) "" else "es"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -377,15 +385,25 @@ private fun WordChips(session: SpyglassSession) {
             // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
             val visible = found || s.wordsShown || s.status != WordsearchStatus.PLAYING
             // J3 a found word = a glossy capsule in the accent with a soft glow; the rest soft tinted chips.
-            Text(
-                if (visible) w else "•".repeat(w.length), fontSize = 14.sp, fontWeight = if (found) FontWeight.Black else FontWeight.Bold,
-                letterSpacing = if (visible) 0.sp else 2.sp,
-                color = if (found) Color.White else if (visible) (if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading) else WTheme.textMuted,
-                maxLines = 1, softWrap = false,
-                modifier = Modifier
+            // BI22: each chip is as wide as its widest form (the word in Black or its dots), so
+            // "Show words" or a find never re-wraps the chips and nudges the centered grid block.
+            Box(
+                Modifier
                     .then(if (found) Modifier.glossyCapsule(SPY_ACCENT, glow = 0.8f) else Modifier.softChip(SPY_ACCENT, selected = hinted))
                     .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = if (found) 8.5.dp else 6.dp),
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.alpha(0f).clearAndSetSemantics { }) {
+                    Text(w, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
+                    Text("•".repeat(w.length), fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp, maxLines = 1, softWrap = false)
+                }
+                Text(
+                    if (visible) w else "•".repeat(w.length), fontSize = 14.sp, fontWeight = if (found) FontWeight.Black else FontWeight.Bold,
+                    letterSpacing = if (visible) 0.sp else 2.sp,
+                    color = if (found) Color.White else if (visible) (if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading) else WTheme.textMuted,
+                    maxLines = 1, softWrap = false,
+                )
+            }
         }
     }
 }
@@ -498,8 +516,8 @@ fun SpyglassGrid(s: WordsearchState, finished: Boolean, revealMissing: Boolean, 
 /** A8 a game control: a small candy button with its icon. [dim] only looks quiet — the tap
  *  still reaches the game (Reveal answers "unlocks at 5:00"), as before. */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
-    PieceAction(label, icon, onClick = onClick, color = color, faded = dim)
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
+    PieceAction(label, icon, onClick = onClick, color = color, faded = dim, reserveLabel = reserve, count = count)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

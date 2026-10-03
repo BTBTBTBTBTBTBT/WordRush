@@ -25,7 +25,16 @@ final class TabRouterModel: ObservableObject {
 
     /// A root disappearing while its tab is current means a screen was pushed over it
     /// (switching tabs also hides it, but then its tab is no longer current).
-    func rootDisappeared(_ t: AppTab) { if current == t { pushed.insert(t) } }
+    /// FINISH_SPEC BI10: a full-screen game cover also takes the root off screen, but it
+    /// is an overlay, not a push — counted as one, the Home button "popped" Home, which
+    /// re-identified Home's stack mid-dismissal (rebuilding every game cover modifier —
+    /// a still-set game binding then presented again) and reset its scroll.
+    func rootDisappeared(_ t: AppTab) {
+        if HomeButtonRules.rootDisappearanceIsPush(tab: t, current: current,
+                                                   modalUp: ChromeVisibility.inModalPresentation()) {
+            pushed.insert(t)
+        }
+    }
 
     func popToRoot(_ t: AppTab) {
         popTokens[t, default: 0] += 1
@@ -89,4 +98,18 @@ enum HomeNav {
 
     /// Home cards: false for 400 ms after the Home button.
     static var cardTapsAllowed: Bool { HomeButtonRules.acceptsCardTap(at: Date(), lastHome: lastHome) }
+
+    /// FINISH_SPEC BI10: a game handoff tapped at `requestedAt` ("Next daily", "Keep
+    /// playing: Unlimited", "Leaderboard", a queued root present) is dropped once Home
+    /// has been pressed since — Home cancels every launch still in flight.
+    static func handoffAllowed(since requestedAt: Date) -> Bool {
+        HomeButtonRules.handoffAllowed(requestedAt: requestedAt, lastHome: lastHome)
+    }
+    /// The userInfo key carrying a handoff's tap time.
+    static let requestedAtKey = "requestedAt"
+    /// Whether a handoff notification is still wanted (no Home press since its tap).
+    static func handoffAllowed(_ note: Notification) -> Bool {
+        guard let at = note.userInfo?[requestedAtKey] as? Date else { return true }
+        return handoffAllowed(since: at)
+    }
 }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BI13 the hero ring: the segment bitmap with the count (or SWEPT) and its caps label centered. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_ring_box"
+    android:layout_width="78dp"
+    android:layout_height="78dp">
+    <ImageView
+        android:id="@+id/w_ring"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:orientation="vertical"
+        android:gravity="center">
+        <TextView
+            android:id="@+id/w_ring_count"
+            style="@style/WidgetHero"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="26sp"
+            android:importantForAccessibility="no"
+            android:text="0/8" />
+        <TextView
+            android:id="@+id/w_ring_label"
+            style="@style/WidgetCaps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="DAILIES" />
+    </LinearLayout>
+</FrameLayout>

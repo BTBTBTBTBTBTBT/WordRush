@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CandyButton } from '@/components/ui/candy-button';
 import { Users } from 'lucide-react';
 import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
@@ -17,7 +17,6 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
 import { MASCOT_LINES } from '@/lib/mascots';
-import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
 import { GameArt } from '@/components/ui/game-art';
 import { GameTileGlyph } from '@/components/ui/game-tile';
@@ -33,14 +32,10 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
   fetchDailyLeaderboard,
-  fetchRankWindow,
   competitionRank,
   fetchDailySweepLeaderboard,
   fetchSweepModeDetails,
   fetchFlawlessStreaks,
-  getUserDailyRank,
-  getUserSweepRank,
-  getDailyPlayerCount,
   getTodayLocal,
   getYesterdayLocal,
   formatHintsLabel,
@@ -48,7 +43,7 @@ import {
   type SweepEntry,
   type SweepDetails,
 } from '@/lib/daily-service';
-import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { MODE_BY_DBKEY, sweepModesFor } from '@/lib/modes.generated';
 import { guessRowLabel } from '@/lib/mode-stats';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
@@ -71,31 +66,22 @@ import {
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 import { SweepModeDots, sweepStatsText } from '@/components/leaderboard/sweep-mode-dots';
 import { PageBackground } from '@/components/ui/page-background';
+import { fetchFriendsBoard, fetchModeBoard, fetchSweepBoard, lbCache, modeBoardKey, sweepBoardKey, sweepCache } from '@/lib/leaderboard-cache';
+import { mergeLeaderboard, rerankAfterInsert } from '@/lib/optimistic-results';
+import { persistentMap, sameData } from '@/lib/page-cache';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 
 const getMode = modeByKey;
 
 /** The taunt sheet's accent (Friends pink). */
 const TAUNT_ACCENT = '#ec4899';
 
-// Session-lived stale-while-revalidate cache, keyed mode:day:user. A mode-chip
-// tap or a return visit paints the last-known rows instantly while the fresh
-// fetch swaps in silently — the skeleton only ever shows on a true first load.
-const lbCache = new Map<string, {
-  lb: LeaderboardEntry[];
-  count: number;
-  rank: { rank: number; totalPlayers: number } | null;
-  // "Your neighborhood" rows when the user ranks past the top-50 list.
-  win: { startRank: number; entries: LeaderboardEntry[] } | null;
-}>();
-
-// Same stale-while-revalidate cache for the synthetic Sweep board, keyed
-// day:user (no per-mode dimension — Sweep is cross-mode).
-const sweepCache = new Map<string, {
-  lb: SweepEntry[];
-  count: number;
-  rank: { rank: number; totalPlayers: number } | null;
-  details: Map<string, SweepDetails>;
-}>();
+// Stale-while-revalidate caches, keyed mode:day:user (and SWEEP:day:user for
+// the cross-mode Sweep board). A mode-chip tap or a return visit paints the
+// last-known rows instantly while the fresh fetch swaps in silently — the
+// skeleton only ever shows on a true first load. BI19: they now live in
+// lib/leaderboard-cache.ts, persisted per user across reloads and filled by
+// the launch / post-finish prefetch; a failed fetch keeps the cached board.
 
 // Which board the fetched state below belongs to: mode · All/Friends · viewer.
 // A mode tile or the All|Friends toggle changes the view in one render, but the
@@ -107,15 +93,19 @@ const sweepCache = new Map<string, {
 const boardViewKey = (mode: string, friends: boolean, userId: string | undefined) =>
   `${mode}|${mode !== 'SWEEP' && friends ? 'friends' : 'all'}|${userId ?? 'anon'}`;
 
-// Yesterday's Winners: settled boards, so a session-lived cache is exact. Keyed
-// by mode · day · All/Friends(viewer) — a mode switch with the dropdown open
-// paints that mode's podium (or a skeleton), never the previous mode's rows.
-const yesterdayCache = new Map<string, {
+// Yesterday's Winners: settled boards, so the cache is exact (persisted, BI19).
+// Keyed by mode · day · All/Friends(viewer) — a mode switch with the dropdown
+// open paints that mode's podium (or a skeleton), never the previous mode's rows.
+const yesterdayCache = persistentMap<{
   lb?: LeaderboardEntry[];
   sweep?: SweepEntry[];
   details?: Map<string, SweepDetails>;
   streaks?: Map<string, number>;
-}>();
+}>('lb-yday');
+/** BI19: swap fetched content in only when it changed (no re-render, no flash). */
+function keep<T>(next: T) {
+  return (prev: T) => (sameData(prev, next) ? prev : next);
+}
 const NO_DETAILS = new Map<string, SweepDetails>();
 const NO_STREAKS = new Map<string, number>();
 
@@ -214,17 +204,34 @@ export default function DailyPage() {
     const day = getTodayLocal();
     const uid = user?.id ?? 'anon';
     if (isSweep) {
-      const c = sweepCache.get(`SWEEP:${day}:${uid}`);
+      const c = sweepCache.get(sweepBoardKey(day, uid));
       return { lb: [] as LeaderboardEntry[], sweep: c?.lb ?? [], count: c?.count ?? 0, rank: c?.rank ?? null, win: null, details: c?.details ?? NO_DETAILS, loading: !c };
     }
-    const c = lbCache.get(`${selectedMode}:${day}:${uid}${friendsOnly && user ? ':friends' : ''}`);
+    const c = lbCache.get(modeBoardKey(selectedMode, day, uid, friendsOnly && !!user));
     return { lb: c?.lb ?? [], sweep: [] as SweepEntry[], count: c?.count ?? 0, rank: c?.rank ?? null, win: c?.win ?? null, details: NO_DETAILS, loading: !c };
   })();
   const fetchedLeaderboard = board.lb;
   const fetchedPlayerCount = board.count;
   const fetchedUserRank = board.rank;
   const rankWindow = board.win;
-  const sweepLeaderboard = board.sweep;
+  // BI19: the overall board gets the player's own row too, the moment the last sweep daily
+  // finishes (from today's completions, which include the optimistic store).
+  const sweepLeaderboard = (() => {
+    const rows = board.sweep;
+    if (!isSweep || !profile || dailiesDay !== getTodayLocal()) return rows;
+    const keys = sweepModesFor(getTodayLocal());
+    const done = keys.map((k) => todayDailies.get(k)).filter((c): c is NonNullable<typeof c> => !!c);
+    if (done.length < keys.length) return rows;
+    const wins = done.filter((c) => c.won).length;
+    if (wins === 0) return rows;
+    const local: SweepEntry = {
+      user_id: profile.id, username: profile.username, avatar_url: profile.avatar_url ?? null,
+      total_score: done.reduce((t, c) => t + (c.score || 0), 0), total_time: done.reduce((t, c) => t + (c.timeSeconds || 0), 0),
+      modes_won: wins, is_flawless: wins === keys.length, rank: 0,
+    };
+    const merged = mergeLeaderboard(rows, local, profile.id, 'sweep', 50);
+    return merged.inserted ? rerankAfterInsert(merged.rows, merged.index) : rows;
+  })();
   const sweepDetails = board.details;
   const loading = board.loading;
 
@@ -233,21 +240,21 @@ export default function DailyPage() {
   // result's insert, while today's completion is already on hand. Placed by the server's order
   // (score desc, time asc) whenever the rows in hand lack it; not past a full top 50 (that is the
   // rank window's job). The fetched rows, count and rank stay server-only in the cache.
+  // BI19: the merge rule is lib/optimistic-results.ts (mergeLeaderboard): today's completions
+  // already include the optimistic store, so the row is there from the finish on, across reloads,
+  // until the server's own row replaces it.
   const mine = (() => {
     const c = todayDailies.get(selectedMode);
     if (selectedMode === 'SWEEP' || !c || !(c.score > 0) || !profile || dailiesDay !== getTodayLocal()) return null;
-    if (fetchedLeaderboard.some((e) => e.user_id === profile.id)) return null;
-    const i = fetchedLeaderboard.findIndex((e) => e.composite_score < c.score || (e.composite_score === c.score && e.time_seconds > c.timeSeconds));
-    const at = i < 0 ? fetchedLeaderboard.length : i;
-    if (at >= 50) return null;
     const row: LeaderboardEntry = {
       user_id: profile.id, username: profile.username, avatar_url: profile.avatar_url ?? null, avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
       composite_score: c.score, guess_count: c.guesses, time_seconds: c.timeSeconds, boards_solved: c.won ? 1 : 0, total_boards: 1,
       hints_used: 0, vs_wins: 0, vs_losses: 0, vs_games: 0, completed: c.won,
     };
-    const rows = [...fetchedLeaderboard.slice(0, at), row, ...fetchedLeaderboard.slice(at)];
-    const total = Math.max(fetchedPlayerCount + 1, rows.length);
-    return { rows, total, rank: { rank: at + 1, totalPlayers: total } };
+    const merged = mergeLeaderboard(fetchedLeaderboard, row, profile.id, 'daily', 50);
+    if (!merged.inserted) return null;
+    const total = Math.max(fetchedPlayerCount + 1, merged.rows.length);
+    return { rows: merged.rows, total, rank: { rank: merged.index + 1, totalPlayers: total } };
   })();
   const leaderboard = mine?.rows ?? fetchedLeaderboard;
   const playerCount = mine?.total ?? fetchedPlayerCount;
@@ -280,7 +287,7 @@ export default function DailyPage() {
 
     // Synthetic Sweep board — cross-mode ranking, different RPCs and row shape.
     if (selectedMode === 'SWEEP') {
-      const sweepKey = `SWEEP:${day}:${user?.id ?? 'anon'}`;
+      const sweepKey = sweepBoardKey(day, user?.id);
       const cachedSweep = sweepCache.get(sweepKey);
       setBoardFor(boardViewKey('SWEEP', false, user?.id));
       if (cachedSweep) {
@@ -300,28 +307,26 @@ export default function DailyPage() {
 
       // The player's rank needs nothing from the board, so it runs alongside it; details and
       // streaks then load together (was four round trips in a row — founder, 2026-09-29).
-      const rankP = user ? getUserSweepRank(user.id, day) : Promise.resolve(null);
-      const lb = await fetchDailySweepLeaderboard(day, 50);
-      if (seq !== loadSeq.current) return;
-      setSweepLeaderboard(lb);
-      setLoading(false);
-      // §248: only rows already FLAWLESS today can be on a live streak.
-      const [details, streaks, rank] = await Promise.all([
-        fetchSweepModeDetails(day, lb.map((e) => e.user_id)),
-        fetchFlawlessStreaks(day, lb.filter((e) => e.is_flawless).map((e) => e.user_id)),
-        rankP,
-      ]);
-      if (seq === loadSeq.current) { setSweepDetails(details); setFlawlessStreaks(streaks); if (user) setUserRank(rank); }
-      // No dedicated count RPC — the rank query yields the true total when the
-      // user swept; otherwise the (≤50) board length is the best estimate.
-      const count = rank?.totalPlayers ?? lb.length;
-      if (seq === loadSeq.current) setPlayerCount(count);
-      sweepCache.set(sweepKey, { lb, count, rank, details });
+      // lib/leaderboard-cache.ts fetches + caches it; a failure keeps the cached board (BI19).
+      try {
+        const b = await fetchSweepBoard(day, user?.id, (lb) => {
+          if (seq !== loadSeq.current) return;
+          setSweepLeaderboard(keep(lb));
+          setLoading(false);
+        });
+        if (seq !== loadSeq.current) return;
+        setSweepDetails(keep(b.details));
+        setFlawlessStreaks(keep(b.streaks));
+        if (user) setUserRank(keep(b.rank));
+        setPlayerCount(b.count);
+      } catch {
+        if (seq === loadSeq.current) setLoading(false);
+      }
       return;
     }
 
     const friends = friendsOnly && !!user;
-    const cacheKey = `${selectedMode}:${day}:${user?.id ?? 'anon'}${friends ? ':friends' : ''}`;
+    const cacheKey = modeBoardKey(selectedMode, day, user?.id, friends);
     const cached = lbCache.get(cacheKey);
     setBoardFor(boardViewKey(selectedMode, friends, user?.id));
     if (cached) {
@@ -342,43 +347,38 @@ export default function DailyPage() {
     // index — no rank query, no neighborhood window.
     if (friends) {
       const ids = [...new Set([...getFriendIds(), user!.id])];
-      const lb = await fetchDailyLeaderboard(selectedMode, 'solo', day, 50, 0, ids);
-      if (seq !== loadSeq.current) return;
-      setLeaderboard(lb);
-      setPlayerCount(lb.length);
-      setLoading(false);
-      const idx = lb.findIndex((e) => e.user_id === user!.id);
-      // §217: exact (score, time) ties share the rank on the friends board too.
-      const rank = idx >= 0 ? { rank: competitionRank(lb, idx), totalPlayers: lb.length } : null;
-      setUserRank(rank);
-      setRankWindow(null);
-      lbCache.set(cacheKey, { lb, count: lb.length, rank, win: null });
+      try {
+        // §217: exact (score, time) ties share the rank on the friends board too.
+        const b = await fetchFriendsBoard(selectedMode, day, user!.id, ids, competitionRank);
+        if (seq !== loadSeq.current) return;
+        setLeaderboard(keep(b.lb));
+        setPlayerCount(b.count);
+        setUserRank(keep(b.rank));
+        setRankWindow(null);
+      } catch { /* outage: keep the cached board */ }
+      if (seq === loadSeq.current) setLoading(false);
       return;
     }
 
-    const [lb, count] = await Promise.all([
-      fetchDailyLeaderboard(selectedMode, 'solo', day, 50),
-      getDailyPlayerCount(selectedMode, day),
-    ]);
-    if (seq !== loadSeq.current) return;
-    // Paint the rows the moment they arrive — the rank banner fills in on its
-    // own instead of holding the whole list behind its extra queries.
-    setLeaderboard(lb);
-    setPlayerCount(count);
-    setLoading(false);
-
-    let rank: { rank: number; totalPlayers: number } | null = null;
-    let win: { startRank: number; entries: LeaderboardEntry[] } | null = null;
-    if (user) {
-      rank = await getUserDailyRank(user.id, selectedMode, 'solo', day, lb, 50);
-      if (seq === loadSeq.current) setUserRank(rank);
-      // Ranked past the visible list → also show the rows around them.
-      if (rank && rank.rank > 50) {
-        win = await fetchRankWindow(selectedMode, 'solo', rank.rank, day);
+    try {
+      const b = await fetchModeBoard(selectedMode, day, user?.id, (lb, count) => {
+        if (seq !== loadSeq.current) return;
+        // Paint the rows the moment they arrive — the rank banner fills in on its
+        // own instead of holding the whole list behind its extra queries.
+        setLeaderboard(keep(lb));
+        setPlayerCount(count);
+        setLoading(false);
+      });
+      if (seq !== loadSeq.current) return;
+      if (user) {
+        setUserRank(keep(b.rank));
+        // Ranked past the visible list → also show the rows around them.
+        setRankWindow(keep(b.win));
       }
-      if (seq === loadSeq.current) setRankWindow(win);
+    } catch {
+      // Outage / slow network: never blank the board — the cached copy stays.
+      if (seq === loadSeq.current) setLoading(false);
     }
-    lbCache.set(cacheKey, { lb, count, rank, win });
   }, [selectedMode, user, friendsOnly, friendsVersion]);
 
   useEffect(() => {
@@ -394,7 +394,7 @@ export default function DailyPage() {
     const key = yesterdayKey;
     const landed = () => { if (live) setYesterdayVersion((v) => v + 1); };
     if (selectedMode === 'SWEEP') {
-      fetchDailySweepLeaderboard(yesterday, 5).then(async (lb) => {
+      fetchDailySweepLeaderboard(yesterday, 5, 0, { throwOnError: true }).then(async (lb) => {
         yesterdayCache.set(key, { ...yesterdayCache.get(key), sweep: lb });
         landed();
         // §248: streaks as they stood at yesterday's settled board.
@@ -404,14 +404,14 @@ export default function DailyPage() {
         ]);
         yesterdayCache.set(key, { sweep: lb, details: d, streaks: st });
         landed();
-      });
+      }).catch(() => { /* keep the cached podium */ });
     } else {
       // Friends toggle carries into Yesterday's Winners: podium among friends.
       const ids = friendsOnly && user ? [...new Set([...getFriendIds(), user.id])] : undefined;
-      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 5, 0, ids).then((lb) => {
+      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 5, 0, ids, { throwOnError: true }).then((lb) => {
         yesterdayCache.set(key, { lb });
         landed();
-      });
+      }).catch(() => { /* keep the cached podium */ });
     }
     return () => { live = false; };
   }, [showYesterday, yesterdayKey, selectedMode, yesterday, friendsOnly, friendsVersion, user]);
@@ -816,10 +816,14 @@ export default function DailyPage() {
             <LeaderboardSkeleton />
           ) : isSweep ? (
             sweepLeaderboard.length === 0 ? (
-              <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
-                <div className="flex justify-center mb-2"><ArtScene scene={PAGE_SCENES.empty} /></div>
-                <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
-              </div>
+              <BrandEmptyState
+                scene={PAGE_SCENES.empty}
+                artHeight={96}
+                accent="leaderboard"
+                className="py-6"
+                title="NO SWEEPS TODAY"
+                line="Nobody's swept today. Be the first!"
+              />
             ) : (
               <div>
                 <Podium places={sweepPodium} label="Top three sweepers" />
@@ -832,19 +836,28 @@ export default function DailyPage() {
               // ghost rows — the board should feel alive (and tauntable).
               <div>{ghostFriends.map((f, i) => renderGhostRow(f, i))}</div>
             ) : (
-              <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
-                <div className="flex justify-center mb-2"><ArtScene scene={friendsOnly ? PAGE_SCENES.addFriend : PAGE_SCENES.empty} /></div>
-                <p className="text-xs font-bold">
-                  {friendsOnly
-                    ? MASCOT_LINES.addFriend
-                    : 'No daily results yet. Be the first!'}
-                </p>
-                {friendsOnly && (
-                  <CandyLink href="/friends" size="sm" color="purple" icon="plus" className="mt-3">
-                    Add friends
-                  </CandyLink>
-                )}
-              </div>
+              friendsOnly ? (
+                <BrandEmptyState
+                  scene={PAGE_SCENES.addFriend}
+                  artHeight={96}
+                  accent="friends"
+                  className="py-6"
+                  title="NO FRIENDS ON THE BOARD"
+                  line={MASCOT_LINES.addFriend}
+                  actionLabel="Add friends"
+                  actionHref="/friends"
+                  actionIcon="plus"
+                />
+              ) : (
+                <BrandEmptyState
+                  scene={PAGE_SCENES.empty}
+                  artHeight={96}
+                  accent="leaderboard"
+                  className="py-6"
+                  title="NO RESULTS YET"
+                  line="Nobody's finished today's daily. Be the first!"
+                />
+              )
             )
           ) : (
             <div>

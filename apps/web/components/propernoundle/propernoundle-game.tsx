@@ -49,11 +49,16 @@ const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 import { CATEGORY_LABELS, CATEGORY_COLORS } from './categories';
 import { GameArt } from '@/components/ui/game-art';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
+import { ClueSlot } from './clue-slot';
 import { ResultCard } from '@/components/game/result-line';
 import { CandyButton } from '@/components/ui/candy-button';
 import { REVEAL } from '@/lib/tile-motion';
 import { useFinishHold } from '@/hooks/use-finish-hold';
+
+/** The three hint pills share the row in equal thirds; a slimmer side padding keeps "Consonant" whole. */
+const HINT_THIRD = { paddingLeft: 8, paddingRight: 8 } as const;
 
 type GameMode = 'daily' | 'practice';
 
@@ -712,6 +717,10 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
     return mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
   };
 
+  // FINISH_SPEC BI5: the result popup waits for the final row's reveal (no hop on this board).
+  // Called before the early return so hook order never changes (rules of hooks).
+  const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(answerLength, false));
+
   if (!puzzle) return null;
 
   // R2: the strip's points — the same total the score card shows.
@@ -745,8 +754,6 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
     </div>
   );
 
-  // FINISH_SPEC BI5: the result popup waits for the final row's reveal (no hop on this board).
-  const popupReady = useFinishHold(showVictory || showGameOver, REVEAL.finishHoldMs(answerLength, false));
   return (
     <GameBackground
       mode="PROPERNOUNDLE"
@@ -774,7 +781,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
             PROPERNOUNDLE
           </h1>
         </GameHostTitle>
-        <div className="flex justify-center items-center gap-2 mt-1">
+        <div className="relative flex justify-center items-center gap-2 mt-1">
           {mode === 'daily' && (
             <span className="text-gray-400 text-xs font-bold">#{getDailyPuzzleNumber()}</span>
           )}
@@ -793,12 +800,8 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
           <span className="text-gray-400 text-xs font-bold">
             <Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedTime)}
           </span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {/* During play: hint, board, hint buttons, keyboard are in a fixed flex column.
@@ -825,12 +828,9 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : gameStatus === 'playing' ? (
         <>
-          {/* Hint clue text */}
-          {hints.hint && (
-            <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg" style={{ background: 'linear-gradient(#dc262614, #dc262614), var(--color-card-base, #ffffff)', border: '1.5px solid #f8c9c9' }}>
-              <p className="text-xs italic leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
-            </div>
-          )}
+          {/* The clue slot is ALWAYS here at two lines (empty until Clue): appearing in the flow,
+              a multi-line clue shrank the board (lib/hint-layout.ts). Tap it for the whole clue. */}
+          <ClueSlot clue={hints.hint} />
 
           {/* Board */}
           <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
@@ -844,16 +844,16 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
             />
           </div>
 
-          {/* Hint Buttons */}
-          <div className="shrink-0 flex justify-center gap-2 px-4 pb-1">
-            <CandyButton size="sm" color="purple" onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
+          {/* Hint Buttons — equal thirds, so "Vowel" → "A" / "None" never resizes a pill. */}
+          <div className="shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[360px] mx-auto px-3 pb-1">
+            <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
               icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
               Clue
             </CandyButton>
-            <CandyButton size="sm" color="teal" onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
+            <CandyButton size="sm" color="teal" block style={HINT_THIRD} onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
               {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
             </CandyButton>
-            <CandyButton size="sm" color="pink" onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
+            <CandyButton size="sm" color="pink" block style={HINT_THIRD} onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
               {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
             </CandyButton>
           </div>

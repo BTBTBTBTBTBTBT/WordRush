@@ -25,6 +25,7 @@ import { OpponentHUD } from './opponent-hud';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 
 export interface VsGauntletProps {
   seed: string;
@@ -325,14 +326,18 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
           currentStage={gauntlet.currentStage}
           stageResults={gauntlet.stageResults}
         />
-        <GauntletStageHeader
-          stage={currentStageConfig}
-          elapsedTime={elapsedTime}
-          boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
-          totalBoards={currentStageConfig.boardCount}
-          guessesUsed={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
-          maxGuesses={currentStageConfig.maxGuesses}
-        />
+        {/* The feedback popup sits over the stage header (never on the boards). */}
+        <div className="relative">
+          <GauntletStageHeader
+            stage={currentStageConfig}
+            elapsedTime={elapsedTime}
+            boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
+            totalBoards={currentStageConfig.boardCount}
+            guessesUsed={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
+            maxGuesses={currentStageConfig.maxGuesses}
+          />
+          <FeedbackToast message={message} />
+        </div>
       </div>
 
       {/* Opponent strip */}
@@ -347,18 +352,6 @@ export function VsGauntlet({ seed, mode, solutions, onBoardSolved, onCompleted, 
           wordLength={5}
         />
       </div>
-
-      {/* Message — absolutely positioned so it doesn't shift layout */}
-      {message && (
-        <div
-          className="absolute left-0 right-0 z-20 flex justify-center animate-fade-in-scale"
-          style={{ top: '140px' }}
-        >
-          <span className="bg-gray-800 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-lg">
-            {message}
-          </span>
-        </div>
-      )}
 
       {/* Game Area */}
       <div className={`flex-1 min-h-0 overflow-hidden px-1 pt-2 pb-1 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>

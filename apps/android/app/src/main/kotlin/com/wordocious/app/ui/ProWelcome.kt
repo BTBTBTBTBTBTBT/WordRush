@@ -218,6 +218,7 @@ object ProWelcome {
 fun ProWelcomeHost() {
     val req by ProWelcome.showing.collectAsState()
     val r = req ?: return
+    ReportPopup() // CelebrationGate: Pro welcome holds late celebrations
     androidx.activity.compose.BackHandler { ProWelcome.finish() }
     key(r) { ProWelcomeScreen(r, onPlay = { ProWelcome.finish() }) }
 }

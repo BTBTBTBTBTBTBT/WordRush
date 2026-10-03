@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD_FIT, fitBoard, fitBoardGrid, tileFontPx } from './board-fit';
+import { BOARD_FIT, CROSSWORD_FIT, crosswordCell, crosswordCellFonts, fitBoard, fitBoardGrid, tileFontPx } from './board-fit';
 
 // FINISH_SPEC B5: one board-sizing rule for every game.
 
@@ -79,5 +79,47 @@ describe('tile glyph size', () => {
   it('is 58% of the tile, never under 8 px', () => {
     expect(tileFontPx(70)).toBe(41);
     expect(tileFontPx(10)).toBe(8);
+  });
+});
+
+// FINISH_SPEC BI18: Crosswordocious fits one screen in play (founder 10-03).
+describe('crosswordCell', () => {
+  const chrome = { x: 19, y: 23 }; // trayChrome(8): padding + border each side, plus the lip
+  const fits = (cell: number, w: number, h: number, cols: number, rows: number) => {
+    expect(cell * cols + 3 * (cols - 1) + chrome.x).toBeLessThanOrEqual(w - 2 * CROSSWORD_FIT.side);
+    expect(cell * rows + 3 * (rows - 1) + chrome.y).toBeLessThanOrEqual(h - CROSSWORD_FIT.vPad);
+  };
+
+  it('sizes a 10 × 11 daily from the HEIGHT left on a 375 × 667 phone (band ≈ 304 px)', () => {
+    // width alone would give 30; the height is the limit: (304 − 23 − 8 − 30) / 11 = 22.1 → 22
+    const cell = crosswordCell(375, 304, 10, 11, chrome);
+    expect(cell).toBe(22);
+    fits(cell, 375, 304, 10, 11);
+  });
+
+  it('grows on taller phones and caps at 42 px', () => {
+    const c390 = crosswordCell(390, 410, 10, 11, chrome);
+    expect(c390).toBeGreaterThan(22);
+    fits(c390, 390, 410, 10, 11);
+    expect(crosswordCell(560, 900, 10, 11, chrome)).toBe(CROSSWORD_FIT.maxCell);
+  });
+
+  it('handles non-square and smaller grids (width-limited when wide)', () => {
+    const wide = crosswordCell(375, 400, 10, 9, chrome);
+    fits(wide, 375, 400, 10, 9);
+    expect(crosswordCell(375, 311, 7, 7, chrome)).toBeGreaterThan(crosswordCell(375, 311, 10, 11, chrome));
+  });
+
+  it('never drops under the 14 px floor', () => {
+    expect(crosswordCell(375, 120, 10, 11, chrome)).toBe(CROSSWORD_FIT.minCell);
+    expect(crosswordCell(0, 0, 10, 11, chrome)).toBe(CROSSWORD_FIT.minCell);
+  });
+
+  it('scales the letter and the clue number with the cell (unchanged on big cells)', () => {
+    expect(crosswordCellFonts(42)).toEqual({ letter: 19, number: 8 });
+    expect(crosswordCellFonts(22)).toEqual({ letter: 11, number: 7 });
+    const small = crosswordCellFonts(14);
+    expect(small.letter).toBe(8);
+    expect(small.number).toBe(5);
   });
 });

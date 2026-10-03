@@ -10,8 +10,9 @@ import com.wordocious.app.ui.theme.WTheme
 
 // FINISH_SPEC AJ (founder 10-02: "tapping the home button on the footer always gets you back to
 // the main page"): a footer tab tap from ANY depth closes every pushed page / layer / sheet and
-// lands on that tab's root, scrolled to the top; re-tapping the current tab pops it to its root
-// and scrolls up. The one exception is a live VS match, which asks first (leaving = a forfeit).
+// lands on that tab's root — BI11: at the position the player left it; only a re-tap of the
+// current tab at its root scrolls up. The one exception is a live VS match, which asks first
+// (leaving = a forfeit).
 
 /** AJ the navigation layers a tab tap can clear (pure, unit-tested). */
 data class TabNavState(
@@ -38,9 +39,12 @@ object TabNav {
     /** The outcome of tapping [tab] in [state]. */
     fun onTabTap(state: TabNavState, tab: Int): TabTapOutcome {
         if (state.liveVsMatch) return TabTapOutcome.ConfirmLeaveMatch(tab)
-        // A re-tap of the current tab (or Home from anywhere) always lands on the root, at the top.
-        val reselect = tab == state.selectedTab || tab == HOME
-        return TabTapOutcome.GoToRoot(tab, scrollToTop = reselect)
+        // Every tap lands on the tab's root. BI11 (founder 10-02: "if you were … mid way down, and
+        // on another tab and click right back, the position should persist"): only a re-tap of the
+        // tab you're on, at its root with nothing over it, scrolls to the top — coming back from
+        // another tab, out of a pushed page or out of a game keeps the root where it was left.
+        val reTapAtRoot = tab == state.selectedTab && state.pushedPages == 0 && state.layers == 0
+        return TabTapOutcome.GoToRoot(tab, scrollToTop = reTapAtRoot)
     }
 
     /** After [GoToRoot]: nothing pushed, no layers, on [tab]. */
@@ -48,8 +52,9 @@ object TabNav {
 }
 
 /**
- * AJ per-tab "go to the top" signal: MainScreen bumps a tab's counter when it is re-tapped (or
- * Home from anywhere); the tab's scroll container scrolls to the top when it changes.
+ * AJ per-tab "go to the top" signal: MainScreen bumps a tab's counter when it is re-tapped at its
+ * root (BI11 — never on a return from another tab or a game); the tab's scroll container scrolls
+ * to the top when it changes.
  */
 val LocalTabReselect = compositionLocalOf { 0 }
 

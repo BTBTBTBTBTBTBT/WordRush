@@ -122,6 +122,31 @@ export function fitBoardGrid({
   return best;
 }
 
+/**
+ * Crosswordocious in play (FINISH_SPEC BI18; founder 10-03: "the daily today
+ * required you to scroll"): the grid's cell from the band left between the
+ * compact header and the pinned clue bar / controls / keyboard, by width AND
+ * height for the puzzle's real cols × rows (10 × 11 grids are common). 3 px
+ * gaps, 12 px sides, 8 px of air, the tray chrome off first; 42 px cap and a
+ * 14 px floor (letters and numbers scale with it) — iOS CrosswordFit / Android
+ * BoardSizing.crosswordCell use the same numbers.
+ */
+export const CROSSWORD_FIT = { gap: 3, side: 12, vPad: 8, maxCell: 42, minCell: 14 } as const;
+
+export function crosswordCell(width: number, height: number, cols: number, rows: number, chrome: { x: number; y: number }): number {
+  const { gap, side, vPad, maxCell, minCell } = CROSSWORD_FIT;
+  const fit = fitBoard({ width: width - chrome.x, height: height - chrome.y, cols, rows, gap, side, vPad, maxTile: maxCell });
+  return Math.max(minCell, fit?.tile ?? minCell);
+}
+
+/** A crossword cell's letter / clue-number size (px): unchanged on big cells, never unreadable on small ones. */
+export function crosswordCellFonts(cell: number): { letter: number; number: number } {
+  return {
+    letter: Math.max(Math.round(cell * 0.46), Math.min(11, Math.round(cell * 0.56))),
+    number: Math.max(5, Math.round(cell * 0.2), Math.min(7, Math.round(cell * 0.3))),
+  };
+}
+
 /** A tile's glyph size (px) on the shared tile: 58% of the tile, like the mockup's 58cqi. */
 export function tileFontPx(tile: number): number {
   return Math.max(8, Math.round(tile * 0.58));

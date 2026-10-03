@@ -364,13 +364,10 @@ struct ProperNoundleView: View {
             PageBackground(tint: .forGame(.propernoundle))  // ART_SPEC §15 / §19: the game's wallpaper
             if vm.puzzle == nil {
                 // §A7: the empty state gets its own character (O3 searching), not the host.
-                VStack(spacing: 10) {
-                    SceneArt(.notFound, height: 130)
-                    Text("No puzzle available").font(Brand.font(15, .black)).foregroundStyle(FinishInk.secondary)
-                }
-                .padding(.horizontal, 24).padding(.vertical, 18)
-                .tintedCard(accent: pnAccent, bar: [pnAccent, Color(hex: 0xFB923C)], radius: 20, barHeight: 8)
-                .padding(.horizontal, 32)
+                // BI24: brand headline + voice line + Home candy, no bordered card.
+                BrandEmptyState(title: "No puzzle yet", line: "I looked everywhere. Today's ProperNoundle is still on its way.",
+                                scene: .notFound, artHeight: 130, actionTitle: "Home", actionSymbol: "house.fill",
+                                action: { dismiss() })
             } else if vm.isFinished {
                 // FINISH_SPEC §R2: one screen — header + the answer + result strip, the
                 // board scaled to the height left, the dock; the photo, the full clue
@@ -403,14 +400,10 @@ struct ProperNoundleView: View {
                             .frame(width: g.size.width, height: g.size.height)
                     }
                     .padding(.vertical, 4)
-                    hints; NoundleKeyboard(vm: vm).padding(.bottom, 6)
+                    // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
+                    hints.gameFeedbackToast(vm.toast, alignment: .top); NoundleKeyboard(vm: vm).padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             // Post-game XP toast (web parity — ProperNoundle was the one mode
             // that never showed it).
@@ -492,7 +485,7 @@ struct ProperNoundleView: View {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
-                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                         }
                         .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                     }
@@ -505,10 +498,9 @@ struct ProperNoundleView: View {
                 Text(holiday).font(Brand.caption(12)).foregroundStyle(pnAccent)
                     .opacity(shows ? 1 : 0).accessibilityHidden(!shows)
             }
-            if let clue = vm.clue {
-                Text(clue).font(Brand.body(12)).foregroundStyle(Theme.textSecondary).italic()
-                    .multilineTextAlignment(.center).padding(.horizontal, 20)
-            }
+            // §BI22: the clue's slot is always there (two lines, empty until Clue is
+            // tapped) — the clue used to appear in the header's flow and the board shrank.
+            NoundleClueSlot(clue: vm.clue).padding(.horizontal, 20)
         }
     }
 
@@ -647,6 +639,7 @@ struct NoundleHints: View {
             hintButton(vm.revealedConsonant.map { $0 } ?? "Consonant", systemImage: "number", used: vm.revealedConsonant != nil,
                        variant: .teal) { vm.revealConsonant() }
         }
+        .frame(maxWidth: 420)
         .padding(.bottom, 4)
     }
 
@@ -654,8 +647,50 @@ struct NoundleHints: View {
     /// hint disables (the candy fades) and shows the revealed letter.
     private func hintButton(_ label: String, systemImage: String, used: Bool,
                             variant: CandyButtonStyle.Variant, action: @escaping () -> Void) -> some View {
-        PuzCandyAction(title: label, symbol: systemImage, variant: variant, action: action)
+        // §BI22: equal thirds — "Vowel" → "A" never resizes a pill or nudges the others.
+        Button(action: action) { CandyLabel(title: label, symbol: systemImage).frame(maxWidth: .infinity) }
+            .buttonStyle(CandyButtonStyle(variant: variant, size: .small))
+            .accessibilityLabel(label)
             .disabled(used)
+    }
+}
+
+/// §BI22: ProperNoundle's clue, in a slot that is always two lines tall (empty
+/// until the Clue hint lands) so revealing it never resizes the board. A long
+/// Wikipedia clue is clamped to the two lines; tapping it shows the whole clue
+/// in a popover.
+struct NoundleClueSlot: View {
+    let clue: String?
+    @State private var showFull = false
+
+    private var font: Font { Brand.body(12) }
+
+    var body: some View {
+        ZStack {
+            // Two lines of the clue's own font: the slot's fixed height.
+            Text("Ag\nAg").font(font).hidden().accessibilityHidden(true)
+            if let clue {
+                Button { showFull = true } label: {
+                    Text(clue).font(font).italic().foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2).truncationMode(.tail)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("Clue: \(clue)")
+                .accessibilityHint("Shows the whole clue")
+                .transition(.opacity)
+                .popover(isPresented: $showFull) {
+                    Text(clue).font(Brand.body(14)).italic().foregroundStyle(FinishInk.heading)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: 320).padding(16)
+                        .modifier(CompactPopover())
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(.easeOut(duration: 0.2), value: clue)
     }
 }
 
@@ -864,8 +899,14 @@ struct ProperNoundleVSBoard<Strip: View>: View {
                     .frame(width: g.size.width, height: g.size.height)
             }
             .padding(.vertical, 4)
-            if !vm.isFinished { NoundleHints(vm: vm) }
-            NoundleKeyboard(vm: vm).padding(.bottom, 6)
+            // §BI22: the hint row keeps its slot at the finish (faded, inert) so the
+            // board doesn't jump as the final row lands.
+            NoundleHints(vm: vm)
+                .opacity(vm.isFinished ? 0 : 1)
+                .allowsHitTesting(!vm.isFinished)
+                .accessibilityHidden(vm.isFinished)
+            // §BI9: the VS bounced-guess candy toast hangs from the keyboard, never over the board.
+            NoundleKeyboard(vm: vm).padding(.bottom, 6).gameFeedbackToast(vm.toast, alignment: .top)
         }
         .padding(.horizontal, 10)
     }
@@ -891,18 +932,15 @@ struct ProperNoundleVSBoard<Strip: View>: View {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
-                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                         }
                         .font(Brand.caption(12)).foregroundStyle(Theme.textMuted).monospacedDigit()
                     }
                 }
             }
-            // The clue lands here once fetched (tapping Clue burns a row).
-            if let clue = vm.clue {
-                Text(clue).font(Brand.body(12)).foregroundStyle(Theme.textSecondary).italic()
-                    .multilineTextAlignment(.center).padding(.horizontal, 8)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            // The clue lands here once fetched (tapping Clue burns a row) — in its
+            // always-present two-line slot (§BI22: the board never shrinks for it).
+            NoundleClueSlot(clue: vm.clue).padding(.horizontal, 8)
         }
         .padding(.top, 6)
     }

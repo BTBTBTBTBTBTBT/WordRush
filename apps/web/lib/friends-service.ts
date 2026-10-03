@@ -1,5 +1,6 @@
 import { profileApiHeaders } from './profile-social';
 import { getTodayLocal } from './daily-service';
+import { cacheUser, readPageCache, sameData, writePageCache } from './page-cache';
 
 /**
  * FRIENDS — client service (bible §207), the moderation-service shape:
@@ -64,8 +65,14 @@ let outgoingList: FriendProfile[] = [];
 let loaded = false;
 const listeners = new Set<() => void>();
 
-function notify() {
+/** Set by any local (optimistic) edit; a background refresh then always repaints. */
+let localEdits = false;
+function emit() {
   listeners.forEach((l) => l());
+}
+function notify() {
+  localEdits = true;
+  emit();
 }
 
 /** Subscribe to cache changes (accept/remove/etc.) — returns unsubscribe. */
@@ -82,7 +89,43 @@ let fetchedDay = '';
 let fetchedAt = 0;
 let inflight: Promise<void> | null = null;
 
+// BI19 cache-first: the last /api/friends payload is persisted per user
+// (lib/page-cache.ts), so Friends — and every friends-aware surface — paints
+// the last known world on the first frame after a reload and refreshes
+// underneath. Day-scoped like the session cache: yesterday's payload never
+// paints under today. A failed load keeps it.
+const FRIENDS_CACHE_KEY = 'friends:world';
+let hydratedFor: string | null = null;
+let lastApplied: unknown = null;
+
+function applyPayload(json: any): void {
+  lastApplied = json;
+  localEdits = false;
+  friendsList = json.friends ?? [];
+  incomingList = json.incoming ?? [];
+  friendIds = new Set(friendsList.map((f) => f.id.toLowerCase()));
+  outgoingIds = new Set((json.outgoing ?? []).map((s: string) => s.toLowerCase()));
+  outgoingList = json.outgoingProfiles ?? [];
+  meDigest = json.me ?? null;
+  lastWeekResult = json.lastWeek ?? null;
+}
+
+function hydrateFromDisk(): void {
+  if (loaded) return;
+  const u = cacheUser();
+  if (!u || hydratedFor === u) return;
+  hydratedFor = u;
+  const c = readPageCache<{ day: string; json: any }>(FRIENDS_CACHE_KEY);
+  if (!c || c.day !== localDay() || !c.json) return;
+  applyPayload(c.json);
+  fetchedDay = c.day;
+  fetchedAt = 0;          // stale: the next loadFriends() refreshes in the background
+  loaded = true;
+  emit();
+}
+
 export async function loadFriends(force = false): Promise<void> {
+  hydrateFromDisk();
   // §232: the cache is session-lived, but the DATA is day-scoped — an app/tab
   // left open across midnight kept showing yesterday's race under today's
   // countdown (founder's Monday screenshot: last week's podium, "N/N today"
@@ -112,17 +155,15 @@ async function doLoad(): Promise<void> {
     if (!res.ok) return;
     const json = await res.json();
     void import('./achievement-service').then((m) => m.announceNewAchievements(json?.newAchievements)).catch(() => {}); // BF1
-    friendsList = json.friends ?? [];
-    incomingList = json.incoming ?? [];
-    friendIds = new Set(friendsList.map((f) => f.id.toLowerCase()));
-    outgoingIds = new Set((json.outgoing ?? []).map((s: string) => s.toLowerCase()));
-    outgoingList = json.outgoingProfiles ?? [];
-    meDigest = json.me ?? null;
-    lastWeekResult = json.lastWeek ?? null;
+    const { newAchievements: _na, ...world } = json ?? {};
+    const changed = !loaded || localEdits || fetchedDay !== localDay() || !sameData(lastApplied, world);
+    applyPayload(world);
     fetchedDay = localDay();
     fetchedAt = Date.now();
     loaded = true;
-    notify();
+    writePageCache(FRIENDS_CACHE_KEY, { day: fetchedDay, json: world });
+    // Swap in only when something changed — no re-render for an identical refresh.
+    if (changed) emit();
   } catch {
     // retry next call
   }
@@ -158,7 +199,7 @@ export async function remindFriend(addresseeId: string): Promise<{ remindedAt?: 
   return { remindedAt: json.remindedAt };
 }
 
-export const friendsLoaded = (): boolean => loaded;
+export const friendsLoaded = (): boolean => { hydrateFromDisk(); return loaded; };
 export const isFriend = (userId: string): boolean => friendIds.has(userId.toLowerCase());
 export const hasRequested = (userId: string): boolean => outgoingIds.has(userId.toLowerCase());
 export const hasIncomingFrom = (userId: string): boolean =>
@@ -352,5 +393,6 @@ export function __resetFriendsCacheForTests(): void {
   incomingList = [];
   outgoingIds = new Set();
   loaded = false;
+  hydratedFor = null;
   listeners.clear();
 }

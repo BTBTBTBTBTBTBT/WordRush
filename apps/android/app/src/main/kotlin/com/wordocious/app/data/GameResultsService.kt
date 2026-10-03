@@ -49,6 +49,9 @@ object GameResultsService {
         val flawlessBonus: Int = 0,
         /** §244: consecutive flawless days including today (set on flawless days). */
         val flawlessStreak: Int = 0,
+        /** 2026-10-03: the result came back late (CelebrationGate.isLate) — its tier popup
+         *  waits for a calm moment instead of showing over the finish screen. */
+        val late: Boolean = false,
     )
 
     // ── matches insert (solo: player2_id = null) ─────────────────────────────────
@@ -90,7 +93,7 @@ object GameResultsService {
                 )
             )
         }.onFailure { DailyResultsService.reportSwallowedWrite("recordSoloMatch", gameMode.name, it) }
-            .isSuccess
+            .let { PendingRecords.outcomeOf(it.exceptionOrNull()) == PendingRecords.WriteOutcome.LANDED }
     }
 
     /** More Games §11: the idempotent IMPROVE path (Hubbub rank-ups after the
@@ -466,7 +469,7 @@ object GameResultsService {
                 )
             }
         }.onFailure { DailyResultsService.reportSwallowedWrite("updateUserStats($playType)", mode, it) }
-            .isSuccess
+            .let { PendingRecords.outcomeOf(it.exceptionOrNull()) == PendingRecords.WriteOutcome.LANDED }
     }
 
     // ── profile progression (XP / level / streaks / shield) ───────────────────────
@@ -603,6 +606,14 @@ object GameResultsService {
     /**
      * Record a finished solo game: user_stats + matches + profile progression.
      * Returns the [XpResult] that drives the post-game XP toast (null on failure).
+     *
+     * Runs NonCancellable: the More Games screens call this from a
+     * rememberCoroutineScope, so leaving the finish screen while a write hung on
+     * an outage canceled the flow mid-write (GameScreen already wrapped its call;
+     * now every caller is covered). Solo runs also hold the PendingRecords
+     * in-flight key for their whole duration, so a drain fired meanwhile (ON_RESUME,
+     * network regained) skips this game instead of double-counting it; a second
+     * concurrent record() of the same game returns null untouched.
      */
     suspend fun record(
         gameMode: GameMode,
@@ -618,6 +629,42 @@ object GameResultsService {
         playType: String = "solo",
         stagesCompleted: Int? = null,
         bestCorrectLetters: Int? = null,
+        /** 2026-10-03: LIVE (a game just finished) or REPLAY (PendingRecords.drain) — a replay
+         *  or a slow live record celebrates at a calm moment (CelebrationGate). */
+        source: CelebrationGate.Source = CelebrationGate.Source.LIVE,
+    ): XpResult? = kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+        val startedAtMs = System.currentTimeMillis()
+        val guard = playType == "solo"
+        if (guard && !PendingRecords.tryBeginFlight(gameMode.name, seed)) return@withContext null
+        try {
+            recordInner(
+                gameMode, won, guessCount, timeSeconds, boardsSolved, totalBoards, seed,
+                solutions, guesses, hintsUsed, playType, stagesCompleted, bestCorrectLetters,
+                source, startedAtMs,
+            )?.let { xp ->
+                if (CelebrationGate.isLate(source, startedAtMs, System.currentTimeMillis())) xp.copy(late = true) else xp
+            }
+        } finally {
+            if (guard) PendingRecords.endFlight(gameMode.name, seed)
+        }
+    }
+
+    private suspend fun recordInner(
+        gameMode: GameMode,
+        won: Boolean,
+        guessCount: Int,
+        timeSeconds: Int,
+        boardsSolved: Int,
+        totalBoards: Int,
+        seed: String,
+        solutions: List<String>,
+        guesses: List<String>,
+        hintsUsed: Int,
+        playType: String,
+        stagesCompleted: Int?,
+        bestCorrectLetters: Int?,
+        source: CelebrationGate.Source,
+        startedAtMs: Long,
     ): XpResult? {
         // THE line that dropped finished games. AuthService.userId is
         // `_profile.value?.id` — the PROFILE ROW, which arrives over the
@@ -667,6 +714,31 @@ object GameResultsService {
         val skipMatch = pending?.matchDone == true
         val skipXp = pending?.xpDone == true
         val skipDaily = pending?.dailyDone == true
+        // A daily_results write that can never land (plausibility floor / no
+        // DailyScoring config) settles the DAILY part instead of holding the
+        // payload hostage in the queue for 7 days.
+        val dailyRejected = isDailySeed(seed) &&
+            PendingRecords.dailyPermanentlyRejected(gameMode.name, won, guessCount, timeSeconds, totalBoards)
+
+        // Optimistic Home flip NOW, before any network: the daily_results writer
+        // posted it only after user_stats + matches + profiles, so during an
+        // outage (each write hanging to its 15 s timeout) Home stayed unflipped —
+        // or never flipped when the screen's scope died first (founder's Muddle,
+        // 2026-10-02). Today's seeds only — a cross-midnight finish or a stale
+        // replay belongs to another day's puzzle.
+        if (trackPending && isDailySeed(seed) && !skipDaily && !dailyRejected) {
+            val today = com.wordocious.app.todayLocalDate()
+            if (com.wordocious.core.getDailySeedDate(seed) == today) {
+                val score = DailyResultsService.computeCompositeScore(
+                    gameMode.name, won, guessCount, timeSeconds, boardsSolved, totalBoards,
+                    hintsUsed, stagesCompleted, bestCorrectLetters, today,
+                )
+                // BI19: also the persisted optimistic result (the leaderboard row, Stats today).
+                DailyCompletionsService.noteLocalResult(
+                    userId, gameMode.name, won, guessCount, timeSeconds, score, boardsSolved, totalBoards, hintsUsed,
+                )
+            }
+        }
 
         // The first three writes touch DISJOINT tables and never read each
         // other's output — user_stats (read-modify-write user_stats),
@@ -718,7 +790,7 @@ object GameResultsService {
                     // to be on the server — that flags the DAILY part done, so
                     // a cut write stays queued (it used to be the one primary
                     // write the retry queue could not see).
-                    if (skipDaily) true else DailyResultsService.recordDailyResult(
+                    if (skipDaily) true else if (dailyRejected) false else DailyResultsService.recordDailyResult(
                         mode = gameMode, completed = won, guessCount = guessCount,
                         elapsedSeconds = timeSeconds, boardsSolved = boardsSolved,
                         totalBoards = totalBoards, hintsUsed = hintsUsed, seed = seed,
@@ -734,7 +806,7 @@ object GameResultsService {
                     )
                 }
                 val dailyOk = dailyJob.await(); streakJob.await(); perfectJob.await()
-                if (trackPending && dailyOk) {
+                if (trackPending && (dailyOk || (dailyRejected && !skipDaily))) {
                     PendingRecords.markDone(gameMode.name, seed, PendingRecords.Part.DAILY)
                 }
                 // FRIENDS (§207) overtake push — fire-and-forget; the server
@@ -796,6 +868,7 @@ object GameResultsService {
         runCatching {
             AchievementService.checkAchievements(
                 userId, gameMode.name, playType, won, guessCount, timeSeconds, seed, hintsUsed,
+                source = source, startedAtMs = startedAtMs,
             )
         }
         return xp

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Copy, Gift } from 'lucide-react';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
-import { HeaderBack } from '@/components/ui/page-header';
+import { HeaderBack, PAGE_TITLE_GRADIENTS } from '@/components/ui/page-header';
 import { LetterTile } from '@/components/game/letter-tile';
 import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 import { SoftNum } from '@/components/ui/soft-number';
@@ -294,7 +294,7 @@ export function InviteStateBody({ pose, scene, title, children, action, busy = f
   return (
     <div className="flex flex-col items-center text-center" role={busy ? 'status' : undefined} aria-live={busy ? 'polite' : undefined}>
       {scene ? <SceneArt name={scene} height={120} className="mb-2" /> : pose ? <PoseArt pose={pose} size={110} className="mx-auto mb-1" /> : null}
-      <h1 className="m-0 text-lg font-black" style={{ color: 'var(--soft-ink, #3b1a78)' }}>{title}</h1>
+      <h1 className="m-0 text-lg font-black uppercase tracking-wide leading-tight" style={{ background: PAGE_TITLE_GRADIENTS.brand, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{title}</h1>
       {children && <p className="m-0 mt-1 text-xs font-bold" style={{ color: SOFT_INK.label }}>{children}</p>}
       <div className="w-full mt-4">
         {action ?? <CandyLink href="/" color="purple" size="lg" block icon="play">Go to Wordocious</CandyLink>}

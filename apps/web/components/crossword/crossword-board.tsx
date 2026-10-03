@@ -5,6 +5,7 @@ import { crosswordEntryCells, CROSSWORD_BLOCK, CROSSWORD_EMPTY, type CrosswordEn
 import { GameTray } from '@/components/ui/game-tray';
 import { cellsTurnedOn, crosswordCellLook, lockFlipDelay, trayChrome } from '@/lib/puzzle-look';
 import { SOFT_INK, alphaHex, cardBarStyle, softBackground, softCard } from '@/lib/soft-surface';
+import { crosswordCellFonts } from '@/lib/board-fit';
 
 export const CROSSWORD_ACCENT = '#475569';
 /** One purple look (founder, §13): every number a purple badge; nothing marks the theme. */
@@ -65,8 +66,10 @@ export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, ac
   const chrome = CROSSWORD_TRAY_CHROME;
   const gridW = (side: number) => state.w * side + (state.w - 1) * CROSSWORD_GAP + chrome.x;
   const trayState = state.status === 'won' ? 'won' : state.status === 'lost' ? 'lost' : 'playing';
-  const font = cell ? `${Math.max(11, Math.round(cell * 0.46))}px` : 'clamp(12px, 3.6vw, 18px)';
-  const numFont = cell ? `${Math.max(7, Math.round(cell * 0.2))}px` : 'clamp(7px, 1.9vw, 9px)';
+  // BI18: the letter and the clue number scale with the fitted cell (lib/board-fit.ts crosswordCellFonts).
+  const fonts = cell ? crosswordCellFonts(cell) : null;
+  const font = fonts ? `${fonts.letter}px` : 'clamp(12px, 3.6vw, 18px)';
+  const numFont = fonts ? `${fonts.number}px` : 'clamp(7px, 1.9vw, 9px)';
   return (
     <GameTray
       accent={CROSSWORD_ACCENT}

@@ -446,3 +446,139 @@ extension View {
         }
     }
 }
+
+// MARK: FINISH_SPEC BI23 — the signed-out page body
+
+/// FINISH_SPEC BI23 (founder, 2026-10-03: "get rid of the sign in to track your stats
+/// gray circle image and make that screen look nicer"): what a signed-out Stats /
+/// Leaderboard / Friends tab shows UNDER its pinned AppHeaderView — the page host (or a
+/// cast duo) popping in once, a gradient caps headline, one line, a dimmed decorative
+/// preview (sample stat chips or a mini podium: soft glossy tiles, no border), the SIGN IN
+/// candy button and a quiet "Play without an account" link (guests play every daily). It
+/// fills the space below the header and centers in it, so the header never moves.
+struct GuestPitch: View {
+    struct Chip {
+        let icon: Icon3DName
+        let value: String
+        let label: String
+        let accent: Color
+    }
+    enum Preview { case chips([Chip]), podium, none }
+
+    let hosts: [MascotID]
+    let title: String
+    let subtitle: String
+    var colors: [Color] = PageHeaderStyle.purplePink
+    let preview: Preview
+    let onSignIn: () -> Void
+    @ObservedObject private var chrome = ChromeVisibility.shared
+
+    /// The Stats tab's sample chips (streak, wins, best time).
+    static let statsChips: [Chip] = [
+        Chip(icon: .flame, value: "12", label: "STREAK", accent: Color(hex: 0xF97316)),
+        Chip(icon: .trophy, value: "48", label: "WINS", accent: Color(hex: 0xF59E0B)),
+        Chip(icon: .crown, value: "1:42", label: "BEST TIME", accent: Color(hex: 0x7C3AED)),
+    ]
+    /// The Friends tab's sample chips.
+    static let friendsChips: [Chip] = [
+        Chip(icon: .tabFriends, value: "4", label: "FRIENDS", accent: Color(hex: 0xDB2777)),
+        Chip(icon: .flame, value: "7", label: "FRIEND STREAK", accent: Color(hex: 0xF97316)),
+        Chip(icon: .trophy, value: "3", label: "RACES WON", accent: Color(hex: 0xF59E0B)),
+    ]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: -18) {
+                ForEach(hosts.indices, id: \.self) { i in
+                    MascotView(hosts[i], size: hosts.count > 1 ? 104 : 120, motion: .pop)
+                }
+            }
+            .padding(.bottom, 10)
+            PageTitle(title, colors: colors, size: 28)
+                .padding(.horizontal, 20)
+            Text(subtitle)
+                .font(Brand.body(15)).foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32).padding(.top, 6)
+            Group {
+                switch preview {
+                case .chips(let chips):
+                    HStack(spacing: 10) {
+                        ForEach(chips.indices, id: \.self) { i in chip(chips[i]) }
+                    }
+                case .podium:
+                    podium
+                case .none:
+                    EmptyView()
+                }
+            }
+            .opacity(0.72)
+            .accessibilityHidden(true)   // decorative preview, not real numbers
+            .padding(.top, isNone ? 0 : 20)
+            Button(action: onSignIn) { CandyLabel(title: "Sign in") }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large, fullWidth: false))
+                .padding(.top, 24)
+            Button { HomeNav.press {} } label: {
+                Text("Play without an account")
+                    .font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
+                    .underline()
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.squish)
+            .padding(.top, 6)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Centered in what is visible between the header and the bottom nav.
+        .padding(.bottom, chrome.bottomInset)
+    }
+
+    private var isNone: Bool { if case .none = preview { return true } else { return false } }
+
+    /// One soft glossy sample tile (game-kit look: a darker lip, a gradient face, a gloss
+    /// over the top) — no outline, no box.
+    private func chip(_ c: Chip) -> some View {
+        VStack(spacing: 2) {
+            Icon3D(c.icon, size: 24)
+            Text(c.value).font(Brand.font(20, .black)).foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 1)
+            Text(c.label).font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(.white.opacity(0.9))
+                .lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .frame(width: 92, height: 88)
+        .background { Self.gloss(c.accent, radius: 16) }
+    }
+
+    /// The Leaderboard's preview: a mini podium (2 · 1 · 3), the crown on first.
+    private var podium: some View {
+        let steps: [(rank: String, height: CGFloat, accent: Color)] = [
+            ("2", 56, Color(hex: 0x94A3B8)), ("1", 78, Color(hex: 0xF59E0B)), ("3", 42, Color(hex: 0xEA580C)),
+        ]
+        return HStack(alignment: .bottom, spacing: 8) {
+            ForEach(steps.indices, id: \.self) { i in
+                let s = steps[i]
+                VStack(spacing: 4) {
+                    if s.rank == "1" { Icon3D(.crown, size: 28) }
+                    Text(s.rank).font(Brand.font(24, .black)).foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.18), radius: 0, x: 0, y: 1)
+                        .frame(width: 70, height: s.height)
+                        .background { Self.gloss(s.accent, radius: 14) }
+                }
+            }
+        }
+    }
+
+    /// The soft glossy face behind a preview tile.
+    private static func gloss(_ accent: Color, radius: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        return ZStack(alignment: .top) {
+            shape.fill(accent.opacity(0.95)).offset(y: 3)
+            shape.fill(LinearGradient(colors: [accent.opacity(0.62), accent.opacity(0.88)],
+                                      startPoint: .top, endPoint: .bottom))
+            RoundedRectangle(cornerRadius: radius * 0.75, style: .continuous)
+                .fill(LinearGradient(colors: [.white.opacity(0.38), .white.opacity(0)],
+                                     startPoint: .top, endPoint: .bottom))
+                .frame(height: 28).padding(.horizontal, 7).padding(.top, 4)
+        }
+        .shadow(color: accent.opacity(0.22), radius: 8, x: 0, y: 5)
+    }
+}

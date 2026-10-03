@@ -70,28 +70,24 @@ struct HowToPlayView: View {
                                            Color(hex: 0x3B82F6), Color(hex: 0x10B981)]
 
     var body: some View {
-        // FINISH_SPEC §C6: back + help icons, the HOW TO PLAY headline, the intro card,
-        // then tinted section cards with top bars. Help here opens the FAQ.
+        // FINISH_SPEC BI14: the per-game guide page's language — a hero card (W's ready
+        // pose on a soft glow, the heading, the tour) then numbered sections with soft
+        // numerals and takeaways on soft color fields; no bordered cards. Help opens the FAQ.
         MenuScaffold("How to Play", host: Mascots.help, art: .howto, help: .faq) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    InfoIntroCard(heading: "How Wordocious works",
-                                  line: "Everything you need to know to get started")
-
-                    // §W: replay the three-card first-run tour.
-                    Button { showTour = true } label: { CandyLabel(title: "Take the tour", symbol: "sparkles") }
-                        .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium, fullWidth: false))
-                        .frame(maxWidth: .infinity)
+                VStack(alignment: .leading, spacing: 26) {
+                    hero
 
                     if service.sections.isEmpty {
-                        CastLoader(showTips: false).frame(maxWidth: .infinity).padding(.top, 40)
+                        CastLoader(showTips: false).frame(maxWidth: .infinity).padding(.top, 20)
                     } else {
                         ForEach(Array(service.sections.enumerated()), id: \.element.id) { i, sec in
-                            section(sec, accent: Self.accents[i % Self.accents.count])
+                            section(i + 1, sec, accent: Self.accents[i % Self.accents.count])
                         }
                     }
                 }
-                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
+                .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 28)
+                .frame(maxWidth: 560).frame(maxWidth: .infinity)
             }
         }
         .task { await service.load() }
@@ -105,28 +101,45 @@ struct HowToPlayView: View {
         }
     }
 
-    @ViewBuilder
-    private func section(_ s: HTPSection, accent: Color) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(s.title).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+    private var hero: some View {
+        VStack(spacing: 10) {
+            GuideHostHero(host: .w, accent: GuideFamily.brand)
+            Text("How Wordocious works").font(Brand.font(22, .black)).foregroundStyle(FinishInk.heading)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
+            Text("Everything you need to know to get started").font(Brand.font(14, .bold))
+                .foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
+            // §W: replay the three-card first-run tour.
+            Button { showTour = true } label: { CandyLabel(title: "Take the tour", symbol: "sparkles") }
+                .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium, fullWidth: false))
+                .padding(.top, 4)
+        }
+        .padding(.horizontal, 18).padding(.top, 20).padding(.bottom, 20)
+        .frame(maxWidth: .infinity)
+        .guideHeroCard(GuideFamily.brand)
+        .padding(.top, 6)
+    }
 
-            if let intro = s.intro {
-                Text(intro).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
-            }
+    @ViewBuilder
+    private func section(_ n: Int, _ s: HTPSection, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            GuideSectionHead(number: n, title: s.title, accent: accent)
+
+            if let intro = s.intro { GuideTakeaway(text: intro, accent: accent) }
 
             if let bullets = s.bullets {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach(bullets.indices, id: \.self) { i in
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Text("•").font(Brand.font(12, .black)).foregroundStyle(accent)
-                            bulletText(bullets[i])
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Circle().fill(accent).frame(width: 8, height: 8).alignmentGuide(.firstTextBaseline) { d in d[.bottom] }
+                            bulletText(bullets[i]).lineSpacing(4).fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
             }
 
             if let heading = s.tilesHeading {
-                Text(heading).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading).padding(.top, 2)
+                Text(heading).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading).padding(.top, 2)
             }
             if let tiles = s.tiles {
                 VStack(alignment: .leading, spacing: 10) {
@@ -135,29 +148,42 @@ struct HowToPlayView: View {
             }
 
             if let modes = s.modes {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(modes.indices, id: \.self) { i in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(modes[i].name).font(Brand.font(12, .black)).foregroundStyle(htpColor(modes[i].accent))
-                            Text(modes[i].body).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2)
-                        }
-                    }
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(modes.indices, id: \.self) { i in modeRow(modes[i]) }
                 }
             }
 
-            if let outro = s.outro {
-                Text(outro).font(Brand.font(12, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(2).padding(.top, 2)
-            }
+            if let outro = s.outro { GuideParagraph(text: outro) }
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(16).infoCard(accent)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 2)
+    }
+
+    /// A game in the mode guide: its 3D icon (matched by the name before " — "), the
+    /// name in its color and the line.
+    private func modeRow(_ m: HTPMode) -> some View {
+        let name = m.name.components(separatedBy: " — ").first?.lowercased() ?? ""
+        let home = (homeModes + moreModes).first { $0.title.lowercased() == name }
+        return HStack(alignment: .top, spacing: 12) {
+            if let home {
+                ModeIconView(icon: home.icon, accent: home.accent, box: 34)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(m.name).font(Brand.font(14, .black)).foregroundStyle(htpColor(m.accent))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(m.body).font(Brand.font(14, .regular)).foregroundStyle(FinishInk.secondary).lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private func bulletText(_ b: HTPBullet) -> Text {
         if let strong = b.strong {
-            return Text(strong).font(Brand.font(12, .black)).foregroundColor(FinishInk.heading)
-                + Text(b.text).font(Brand.font(12, .regular)).foregroundColor(FinishInk.secondary)
+            return Text(strong).font(Brand.font(15, .black)).foregroundColor(FinishInk.heading)
+                + Text(b.text).font(Brand.font(15, .regular)).foregroundColor(FinishInk.secondary)
         }
-        return Text(b.text).font(Brand.font(12, .regular)).foregroundColor(FinishInk.secondary)
+        return Text(b.text).font(Brand.font(15, .regular)).foregroundColor(FinishInk.secondary)
     }
 
     private func tileRow(_ row: HTPTileRow) -> some View {
@@ -165,8 +191,9 @@ struct HowToPlayView: View {
             HStack(spacing: 4) {
                 ForEach(row.letters.indices, id: \.self) { i in tile(row.letters[i]) }
             }
-            (Text(row.strong).font(Brand.font(12, .black)).foregroundColor(htpColor(row.strongColor))
-             + Text(row.rest).font(Brand.font(12, .regular)).foregroundColor(FinishInk.secondary))
+            (Text(row.strong).font(Brand.font(14, .black)).foregroundColor(htpColor(row.strongColor))
+             + Text(row.rest).font(Brand.font(14, .regular)).foregroundColor(FinishInk.secondary))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

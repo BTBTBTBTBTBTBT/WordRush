@@ -42,9 +42,11 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
+import { HintCountBadge, StableLabel } from '@/components/ui/hint-kit';
 
 // Codebreaker (More Games §16): decode a saying written in a substitution
 // cipher. Three letters are given. Letters are pencil — set, change and clear
@@ -348,18 +350,14 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         <GameHostTitle mode="CRYPTOGRAM" label="Codebreaker">
           <h1 className="text-2xl font-black" style={{ color: CRYPTOGRAM_ACCENT }}>CODEBREAKER</h1>
         </GameHostTitle>
-        <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="relative flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{cryptogramDailyNumber(getTodayLocal())}</span>}
           {holiday && <span style={{ color: CRYPTOGRAM_ACCENT }}>{holiday}</span>}
           <span>{resolved}/{codes.length} letters</span>
           <span>{checksLabel}</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {completion ? (
@@ -374,12 +372,20 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
         <>
-          <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
+          <div ref={bandRef} className="relative flex-1 min-h-0 overflow-y-auto flex flex-col px-2 pb-1 pt-2">
             {/* The board alone, centered in the band; the cell shrinks (floor 26px) so it never has to scroll. */}
             <div className="my-auto w-full max-w-3xl self-center flex flex-col items-center gap-3">
               <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} cell={cell} width={boardWidth} />
-              {conflicts.length > 0 && <div className="text-[11px] font-bold" style={{ color: '#dc2626' }}>{conflicts.join(', ')} used for two code letters</div>}
             </div>
+            {/* An overlay at the band's foot, never a line in the flow: the board is fitted to the
+                band exactly, so an in-flow line pushed it up (lib/hint-layout.ts). */}
+            {conflicts.length > 0 && (
+              <div className="absolute inset-x-0 bottom-1 z-10 flex justify-center pointer-events-none px-3" role="status" aria-live="polite">
+                <span className="text-[11px] font-bold rounded-full px-2.5 py-0.5" style={{ color: '#dc2626', background: 'linear-gradient(rgba(220, 38, 38, 0.1), rgba(220, 38, 38, 0.1)), var(--color-card-base, #ffffff)', boxShadow: '0 2px 6px rgba(220, 38, 38, 0.18)' }}>
+                  {conflicts.join(', ')} used for two code letters
+                </span>
+              </div>
+            )}
           </div>
           {/* Pinned (founder, 2026-09-26): the letter frequencies always sit right above the buttons and keyboard. */}
           <div className="shrink-0 px-2 pt-1 flex justify-center">
@@ -390,16 +396,18 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
               <button type="button" onClick={() => { haptic('light'); clearLetter(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the selected letter">
                 <Delete className="w-3.5 h-3.5" /> Delete
               </button>
-              <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Check the penciled letters">
-                <CheckCheck className="w-3.5 h-3.5" /> Check{state.checks > 0 ? ` · ${state.checks}` : ''}
+              {/* Labels never change width (lib/hint-layout.ts): counts are corner coins and the
+                  countdown keeps its widest width — a wider label wrapped this row and shrank the board. */}
+              <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.checks > 0 ? `Check the penciled letters (${state.checks} used)` : 'Check the penciled letters'}>
+                <CheckCheck className="w-3.5 h-3.5" /> Check<HintCountBadge count={state.checks} />
               </button>
-              <button type="button" onClick={() => { playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: reveal one letter">
-                <Lightbulb className="w-3.5 h-3.5" /> Hint{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
+              <button type="button" onClick={() => { playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: reveal one letter (${state.hintsUsed} used)` : 'Hint: reveal one letter'}>
+                <Lightbulb className="w-3.5 h-3.5" /> Hint<HintCountBadge count={state.hintsUsed} />
               </button>
               {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
               <PlayClock timer={timer}>{(sec) => { const revealIn = Math.max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - sec); return (
               <button type="button" onClick={() => { haptic('medium'); reveal(); }} disabled={revealIn > 0} className={capsule(revealIn > 0)} style={capsuleStyle(revealIn > 0)} aria-label={revealIn > 0 ? `Reveal available in ${formatTime(revealIn)}` : 'Reveal the answer (records a loss)'}>
-                <Eye className="w-3.5 h-3.5" /> {revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'}
+                <Eye className="w-3.5 h-3.5" /> <StableLabel value={revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'} reserve={[`Reveal · ${formatTime(CRYPTOGRAM_REVEAL_AFTER_SECONDS)}`]} />
               </button>); }}</PlayClock>
             </div>
             <Keyboard onKey={onKey} keyFills={usedKeyFills} />

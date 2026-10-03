@@ -488,7 +488,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 OutlinedTextField(
                     value = username, onValueChange = { username = it; error = null }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = editFieldColors(),
+                    colors = editFieldColors(), shape = RoundedCornerShape(12.dp),
                 )
                 error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
             }
@@ -499,7 +499,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     value = bio, onValueChange = { bio = it.takeCodePoints(80) },
                     placeholder = { Text("A short tagline…", fontSize = 13.sp, color = WTheme.textMuted) },
                     modifier = Modifier.fillMaxWidth(), maxLines = 3,
-                    colors = editFieldColors(),
+                    colors = editFieldColors(), shape = RoundedCornerShape(12.dp),
                 )
             }
 
@@ -515,7 +515,8 @@ fun EditProfileScreen(onDone: () -> Unit) {
                                 .squishClickable(label = "$id accent" + if (selected) ", selected" else "", role = androidx.compose.ui.semantics.Role.RadioButton) {
                                     accent = if (id == "purple") null else hex
                                 }
-                                .miniGameCard(c, 10.dp, selected = selected),
+                                // BI25: a soft filled swatch tile (selected = deeper wash), no ring.
+                                .clip(RoundedCornerShape(10.dp)).background(accentWash(c, if (selected) 0.34f else 0.12f)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Box(Modifier.padding(top = 3.dp).size(20.dp).clip(CircleShape).background(c))
@@ -528,7 +529,11 @@ fun EditProfileScreen(onDone: () -> Unit) {
             SectionCard("FEATURED TITLE") {
                 val unlockedDefs = catalog.filter { unlocked.contains(it.key) }
                 if (unlockedDefs.isEmpty()) {
-                    Text("Unlock achievements to wear one as a title.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    // BI24 compact: a cast host beside the line, not grey text alone.
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Mascot(MascotId.U, 40.dp)
+                        Text("Unlock achievements to wear one as a title.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+                    }
                 } else {
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         item { EditChip("None", featured == null, ProfileAccent.color(accent)) { featured = null } }
@@ -565,7 +570,6 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     Modifier.fillMaxWidth()
                         .squishClickable(label = "Private profile, ${if (isPrivate) "on" else "off"}", role = androidx.compose.ui.semantics.Role.Switch) { isPrivate = !isPrivate }
                         .clip(RoundedCornerShape(12.dp)).background(accentWash(EDIT_PURPLE, if (isPrivate) 0.2f else 0.08f))
-                        .border(1.5.dp, if (isPrivate) EDIT_PURPLE else accentLine(EDIT_PURPLE), RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -602,7 +606,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                             placeholder = { Text(placeholder, fontSize = 13.sp, color = WTheme.textMuted) },
                             modifier = Modifier.weight(1f),
                             keyboardOptions = KeyboardOptions(keyboardType = if (key == "website") KeyboardType.Uri else KeyboardType.Text),
-                            colors = editFieldColors(),
+                            colors = editFieldColors(), shape = RoundedCornerShape(12.dp),
                         )
                     }
                 }
@@ -675,7 +679,6 @@ private fun EditChip(label: String, selected: Boolean, accent: Color, star: Bool
             .squishClickable(label = label + if (selected) ", selected" else "", role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick)
             .clip(shape)
             .background(if (selected) accent else accentWash(accent, 0.12f))
-            .border(1.5.dp, if (selected) accent else accentLine(accent), shape)
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -692,10 +695,11 @@ private const val EMOJI_AVATAR_NUDGED = "pref-emoji-avatar-nudged"
 /** The text fields: a soft purple-tinted container (A1, no white). */
 @Composable
 private fun editFieldColors() = TextFieldDefaults.colors(
-    focusedContainerColor = accentWash(EDIT_PURPLE, 0.06f),
-    unfocusedContainerColor = accentWash(EDIT_PURPLE, 0.06f),
-    focusedIndicatorColor = EDIT_PURPLE,
-    unfocusedIndicatorColor = accentLine(EDIT_PURPLE, 0.45f),
+    focusedContainerColor = accentWash(EDIT_PURPLE, 0.14f),
+    unfocusedContainerColor = accentWash(EDIT_PURPLE, 0.10f),
+    // BI25: a soft filled field, never outlined.
+    focusedIndicatorColor = Color.Transparent,
+    unfocusedIndicatorColor = Color.Transparent,
     cursorColor = EDIT_PURPLE,
 )
 

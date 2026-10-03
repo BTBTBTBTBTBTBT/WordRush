@@ -16,6 +16,7 @@ import { getTodayLocal } from '@/lib/daily-service';
 import { readLinkReturn } from '@/lib/identity-linking';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { useFlags } from '@/hooks/use-flags';
+import { sheetTapFires } from '@/lib/settings-previews';
 import { EMPTY_STREAK_SUMMARY, type StreakSummary } from '@/lib/streak-summary';
 import { DesktopTabs } from '@/components/ui/desktop-tabs';
 import { tabTint } from '@/components/ui/tab-nav';
@@ -41,6 +42,14 @@ export function AppHeader() {
   const { profile, isProActive, isGuest, exitGuest } = useAuth();
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // BI25: help / gear fire once — a double click can't open and then close a sheet.
+  const lastSheetTap = useRef<number | null>(null);
+  const openSheetOnce = (open: () => void) => {
+    const now = performance.now();
+    if (!sheetTapFires(now, lastSheetTap.current, helpOpen || settingsOpen)) return;
+    lastSheetTap.current = now;
+    open();
+  };
   const [streakOpen, setStreakOpen] = useState(false);
   const [shieldOpen, setShieldOpen] = useState(false);
   const [flawlessOpen, setFlawlessOpen] = useState(false);
@@ -192,9 +201,9 @@ export function AppHeader() {
 
           <div className="flex items-center gap-1 shrink-0">
             {/* "?" menu — opens the site-nav menu (native MenuSheet parity) */}
-            <HeaderGlyph icon="help" onClick={() => setHelpOpen(true)} label="Menu" />
-            {/* Settings button — always visible (theme, sound, accessibility) */}
-            <HeaderGlyph icon="gear" onClick={() => setSettingsOpen(true)} label="Settings" />
+            <HeaderGlyph icon="help" onClick={() => openSheetOnce(() => setHelpOpen(true))} label="Menu" />
+            {/* Settings button — always visible (theme, sound, accessibility). BI25: single-fire. */}
+            <HeaderGlyph icon="gear" onClick={() => openSheetOnce(() => setSettingsOpen(true))} label="Settings" />
           </div>
 
           {profile && (

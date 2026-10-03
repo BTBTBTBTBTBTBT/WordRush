@@ -241,6 +241,8 @@ struct ProfileTab: View {
                         signedOut
                     }
                 }
+                // BI23: the header stays at the top whatever the branch's height.
+                .frame(maxHeight: .infinity, alignment: .top)
                 .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
             }
             .environment(\.pageTint, .stats)
@@ -331,13 +333,35 @@ struct ProfileTab: View {
                     let fPuzzles = await puzzlesF, fQuiz = await quizF
                     guard !Task.isCancelled else { return }
                     var t = Transaction(); t.disablesAnimations = true
+                    // BI19: never blank the page. The services swallow errors into
+                    // empties, so an empty result over cached data is a failed fetch
+                    // (stats, unlocks, medals and match history never shrink to
+                    // nothing): keep what's showing. Assign only what changed.
+                    let keepStats = CacheFirst.keep(fresh: fStats, cached: statRows)
+                    let keepAch = CacheFirst.keep(fresh: fAch, cached: achievementDates)
+                    let keepMedals = CacheFirst.keep(fresh: fMedals, cached: medals)
+                    let weekFailed = week.isEmpty && gamesThisWeek > 0
+                    let fetchFailed = fStats.isEmpty && !statRows.isEmpty
                     withTransaction(t) {
-                        statRows = fStats; unlockedAchievements = Set(fAch.keys); achievementDates = fAch; medals = fMedals; socialLinks = fSocial
-                        opponentNames = fNames; setRecent(fMatches)
-                        gamesThisWeek = fWeekTotal; sevenDayTotal = fSeven
-                        vsDailyWon = fVs; sweepStats = fSweep; standing = fStanding; yours = fYours
-                        puzzleStreaks = fPuzzles.streaks; puzzleTotals = fPuzzles.totals; quizRecord = fQuiz
+                        if keepStats != statRows { statRows = keepStats }
+                        if keepAch != achievementDates { unlockedAchievements = Set(keepAch.keys); achievementDates = keepAch }
+                        if keepMedals != medals { medals = keepMedals }
+                        if !fSocial.isEmpty || socialLinks.isEmpty { socialLinks = fSocial }
+                        if !fMatches.isEmpty || recentMatches.isEmpty {
+                            opponentNames = fNames
+                            if fMatches != recentMatches || recentLoading { setRecent(fMatches) }
+                        } else { recentLoading = false }
+                        if !weekFailed { gamesThisWeek = fWeekTotal; sevenDayTotal = fSeven }
+                        vsDailyWon = CacheFirst.keep(fresh: fVs, cached: vsDailyWon)
+                        standing = CacheFirst.keep(fresh: fStanding, cached: standing)
+                        // Whole-page outage (the stats read failed too): the rest of
+                        // the cached page stays rather than mixing in zeroed records.
+                        if !fetchFailed {
+                            sweepStats = fSweep; yours = fYours
+                            puzzleStreaks = fPuzzles.streaks; puzzleTotals = fPuzzles.totals; quizRecord = fQuiz
+                        }
                     }
+                    if fetchFailed { return }   // don't write the failure back into the cache
                     HomeStreaksService.storeStreaks(puzzleStreaks, .puzzles)
                     // Store the fresh results back into the session memo.
                     memo.set("yourRecords:\(uid)", yours)
@@ -408,14 +432,14 @@ struct ProfileTab: View {
                                               profileId: uid, isPro: auth.isProActive)
     }
 
+    /// FINISH_SPEC BI23: D hosts the signed-out pitch, centered BELOW the pinned header
+    /// (the old body was content-sized, so header + pitch centered together mid-screen).
     private var signedOut: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "person.crop.circle").font(.system(size: 64)).foregroundStyle(Theme.textMuted)
-            Text("Sign in to track your stats").font(Brand.headline()).foregroundStyle(Theme.textPrimary)
-            Button { showAuth = true } label: { CandyLabel(title: "Sign in") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
-        }
-        .sheet(isPresented: $showAuth) { AuthView() }
+        GuestPitch(hosts: [Mascots.stats], title: "Your stats live here",
+                   subtitle: "Sign in to track your stats, streaks and every game's history.",
+                   colors: [Color(hex: 0x2563EB), Color(hex: 0x8B5CF6)],
+                   preview: .chips(GuestPitch.statsChips), onSignIn: { showAuth = true })
+            .sheet(isPresented: $showAuth) { AuthView() }
     }
 
     private func content(_ p: Profile) -> some View {

@@ -16,11 +16,10 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { modeByKey } from '@/components/profile/mode-picker';
 import { RecordsBanner, type RecordsTab } from '@/components/leaderboard/records-banner';
-import { ArtScene } from '@/components/ui/art-scene';
 import { GAME_TITLE_ART_HEIGHT, PAGE_SCENES, gameTitleArtForDbKey, gameTitleArtLabel, type GameTitleArtName } from '@/lib/art';
 import { ArtTitle } from '@/components/ui/art-title';
 import {
-  BoardAvatar, BoardCard, BoardRow, DisclosureHeader, ResultCard, RowBadge, SECTION_LABEL, SOFT_CARD, SWEEP_BADGE_COL, SegmentedPill, SweepBadge, YOUR_ROW,
+  BoardAvatar, BoardCard, BoardRow, DisclosureHeader, ResultCard, RowBadge, SECTION_LABEL, SWEEP_BADGE_COL, SegmentedPill, SweepBadge, YOUR_ROW,
 } from '@/components/leaderboard/board-rows';
 import { boardAvatarFor } from '@/components/leaderboard/board-rows';
 import { Podium, type PodiumPlace } from '@/components/leaderboard/podium';
@@ -58,21 +57,22 @@ import {
 
 const getMode = modeByKey;
 
-// Session-lived stale-while-revalidate cache for the Daily records view —
-// same pattern as lbCache on /daily, with playType in the key (this view has
-// a Solo/VS toggle). Mode/toggle taps repaint instantly; skeleton = first load.
-const recordsLbCache = new Map<string, {
+// Stale-while-revalidate cache for the Daily records view — same pattern as
+// lbCache on /daily, with playType in the key (this view has a Solo/VS
+// toggle). Mode/toggle taps repaint instantly; skeleton = first load. BI19:
+// persisted per user across reloads (lib/page-cache.ts); a failed fetch keeps it.
+const recordsLbCache = persistentMap<{
   lb: LeaderboardEntry[];
   count: number;
   rank: { rank: number; totalPlayers: number } | null;
-}>();
+}>('records-lb', dayInKey);
 // Same for the synthetic Sweep board, keyed day:user.
-const recordsSweepCache = new Map<string, {
+const recordsSweepCache = persistentMap<{
   lb: SweepEntry[];
   count: number;
   rank: { rank: number; totalPlayers: number } | null;
   details: Map<string, SweepDetails>;
-}>();
+}>('records-sweep', dayInKey);
 const NO_DETAILS = new Map<string, SweepDetails>();
 
 // Which board the fetched state belongs to (mode · Solo/VS · All/Friends · viewer).
@@ -85,15 +85,17 @@ const recordsViewKey = (mode: string, playType: string, friends: boolean, userId
   mode === 'SWEEP' ? `SWEEP|${userId ?? 'anon'}` : `${mode}|${playType}|${friends ? 'friends' : 'all'}|${userId ?? 'anon'}`;
 
 // Yesterday's podium per mode · play type · day: settled, so the cache is exact.
-const podiumCache = new Map<string, LeaderboardEntry[]>();
-// The lifetime Sweep board, once loaded this session.
-let allTimeSweepCache: AllTimeSweepEntry[] | null = null;
+const podiumCache = persistentMap<LeaderboardEntry[]>('records-podium');
+// The lifetime Sweep board (persisted, BI19).
+const allTimeSweepStore = persistentMap<AllTimeSweepEntry[]>('records-alltime-sweep');
 
 import {
   fetchAllTimeRecordsShared, peekAllTimeRecords, RECORD_LABELS, recordValue, recordLabel,
   PER_MODE_RECORD_TYPES, GLOBAL_RECORD_TYPES, formatRecordTime as formatTime,
 } from '@/lib/records-ui';
 import { PageBackground } from '@/components/ui/page-background';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
+import { dayInKey, persistentMap, sameData } from '@/lib/page-cache';
 
 // Caps section labels (records-redesign §2); the text stays mixed-case in the
 // source so scripts/records-fold.test.ts can still find the sections.
@@ -302,9 +304,16 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
       }
       // Rank runs alongside the board; details and streaks load together (founder, 2026-09-29).
       const rankP = userId ? getUserSweepRank(userId, today) : Promise.resolve(null);
-      const lb = await fetchDailySweepLeaderboard(today, 50);
+      let lb: SweepEntry[];
+      try {
+        lb = await fetchDailySweepLeaderboard(today, 50, 0, { throwOnError: true });
+      } catch {
+        // BI19: outage — keep the cached board, never blank it.
+        if (seq === loadSeq.current) setLoading(false);
+        return;
+      }
       if (seq !== loadSeq.current) return;
-      setSweepLeaderboard(lb);
+      setSweepLeaderboard((prev) => (sameData(prev, lb) ? prev : lb));
       setLoading(false);
       // §248: only rows already FLAWLESS today can be on a live streak.
       const [details, streaks, rank] = await Promise.all([
@@ -337,9 +346,15 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
     // Friends board: one fetch holds the whole board, dense-ranked below.
     if (friends) {
       const ids = [...new Set([...getFriendIds(), userId!])];
-      const lb = await fetchDailyLeaderboard(selectedMode, playType, today, 50, 0, ids);
+      let lb: LeaderboardEntry[];
+      try {
+        lb = await fetchDailyLeaderboard(selectedMode, playType, today, 50, 0, ids, { throwOnError: true });
+      } catch {
+        if (seq === loadSeq.current) setLoading(false);
+        return;
+      }
       if (seq !== loadSeq.current) return;
-      setLeaderboard(lb);
+      setLeaderboard((prev) => (sameData(prev, lb) ? prev : lb));
       setPlayerCount(lb.length);
       setLoading(false);
       const idx = lb.findIndex((e) => e.user_id === userId);
@@ -349,14 +364,22 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
       return;
     }
 
-    const [lb, count] = await Promise.all([
-      fetchDailyLeaderboard(selectedMode, playType, today, 50),
-      getDailyPlayerCount(selectedMode, today),
-    ]);
+    let lb: LeaderboardEntry[];
+    let count: number;
+    try {
+      [lb, count] = await Promise.all([
+        fetchDailyLeaderboard(selectedMode, playType, today, 50, 0, undefined, { throwOnError: true }),
+        getDailyPlayerCount(selectedMode, today, { throwOnError: true }),
+      ]);
+    } catch {
+      // BI19: outage — keep the cached board, never blank it.
+      if (seq === loadSeq.current) setLoading(false);
+      return;
+    }
     if (seq !== loadSeq.current) return;
     // Paint the rows the moment they arrive — the rank banner fills in on its
     // own instead of holding the whole list behind its extra queries.
-    setLeaderboard(lb);
+    setLeaderboard((prev) => (sameData(prev, lb) ? prev : lb));
     setPlayerCount(count);
     setLoading(false);
 
@@ -571,10 +594,18 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
           <LeaderboardSkeleton />
         ) : isSweep ? (
           sweepLeaderboard.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
-              <div className="flex justify-center mb-2"><ArtScene scene={PAGE_SCENES.empty} /></div>
-              <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
-            </div>
+            <BrandEmptyState
+              scene={PAGE_SCENES.empty}
+              artHeight={96}
+              accent="leaderboard"
+              className="py-6"
+              title="NO SWEEPS TODAY"
+              line="Nobody's swept today. Be the first!"
+              actionLabel="Play today's dailies"
+              actionHref="/daily"
+              actionColor="amber"
+              actionIcon="play"
+            />
           ) : (
             <div>
               <Podium places={sweepPodium} label="Top three sweepers" />
@@ -582,10 +613,18 @@ function DailyRecordsView({ userId, selectedMode }: { userId?: string; selectedM
             </div>
           )
         ) : leaderboard.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
-            <div className="flex justify-center mb-2"><ArtScene scene={PAGE_SCENES.empty} /></div>
-            <p className="text-xs font-bold">No results yet today. Be the first!</p>
-          </div>
+          <BrandEmptyState
+            scene={PAGE_SCENES.empty}
+            artHeight={96}
+            accent="leaderboard"
+            className="py-6"
+            title="NO RESULTS YET"
+            line="Nobody's finished today's puzzle. Be the first!"
+            actionLabel="Play today's dailies"
+            actionHref="/daily"
+            actionColor="amber"
+            actionIcon="play"
+          />
         ) : (
           <div>
             <Podium places={lbPodium} />
@@ -645,10 +684,10 @@ function YesterdayPodium({ mode, playType, userId }: { mode: string; playType: '
 
   useEffect(() => {
     let active = true;
-    fetchDailyLeaderboard(mode, playType, yesterday, 5).then((r) => {
+    fetchDailyLeaderboard(mode, playType, yesterday, 5, 0, undefined, { throwOnError: true }).then((r) => {
       podiumCache.set(podiumKey, r);
       if (active) setLanded((v) => v + 1);
-    });
+    }).catch(() => { /* keep the cached podium */ });
     return () => { active = false; };
   }, [mode, playType, yesterday, podiumKey]);
 
@@ -738,7 +777,7 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
   const [loading, setLoading] = useState(() => peekAllTimeRecords() === null);
   // §245: one trophy-case card render/upload at a time.
   const [sharingShelf, setSharingShelf] = useState(false);
-  const [sweepBoard, setSweepBoard] = useState<AllTimeSweepEntry[] | null>(allTimeSweepCache);
+  const [sweepBoard, setSweepBoard] = useState<AllTimeSweepEntry[] | null>(() => allTimeSweepStore.get('all') ?? null);
 
   useEffect(() => {
     fetchAllTimeRecordsShared().then((data) => {
@@ -758,8 +797,10 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
     if (selectedMode !== 'SWEEP') return;
     let active = true;
     fetchAllTimeSweepLeaderboard(50).then((rows) => {
-      allTimeSweepCache = rows;
-      if (active) setSweepBoard(rows);
+      // An empty read during an outage never replaces a board we have.
+      if (rows.length === 0 && (allTimeSweepStore.get('all')?.length ?? 0) > 0) return;
+      allTimeSweepStore.set('all', rows);
+      if (active) setSweepBoard((b) => (sameData(b, rows) ? b : rows));
     }).catch(() => { if (active) setSweepBoard((b) => b ?? []); });
     return () => { active = false; };
   }, [selectedMode]);
@@ -837,10 +878,13 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
             {sweepBoard === null ? (
               <LeaderboardSkeleton />
             ) : sweepBoard.length === 0 ? (
-              <div className="py-5 text-center">
-                <div className="flex justify-center mb-1.5"><ArtScene scene={PAGE_SCENES.empty} /></div>
-                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>No sweeps yet</p>
-              </div>
+              <BrandEmptyState
+                scene={PAGE_SCENES.empty}
+                artHeight={80}
+                accent="leaderboard"
+                title="NO SWEEPS YET"
+                line="Finish every daily in one day to land here."
+              />
             ) : (
               // Service already filters blocked; the RPC rank is authoritative.
               // C2a: no single W / L here — the badge column stays, empty, so the totals line up.
@@ -862,10 +906,13 @@ function AllTimeRecordsView({ userId, selectedMode, onCount }: { userId?: string
             )}
           </BoardCard>
         ) : modeRecords.length === 0 ? (
-          <div className="py-5 text-center" style={SOFT_CARD}>
-            <div className="flex justify-center mb-1.5"><ArtScene scene={PAGE_SCENES.empty} /></div>
-            <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>No records yet</p>
-          </div>
+          <BrandEmptyState
+            scene={PAGE_SCENES.empty}
+            artHeight={80}
+            accent="leaderboard"
+            title="NO RECORDS YET"
+            line="Play this game and the first records are up for grabs."
+          />
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {PER_MODE_RECORD_TYPES.map((rt) => {

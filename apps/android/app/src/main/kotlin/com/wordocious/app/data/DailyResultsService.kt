@@ -226,7 +226,10 @@ object DailyResultsService {
         // guarded this since §205; the Android port dropped the gate, which is
         // how Doug's home grid showed a Deliverance he never played (Aug 15).
         if (day == todayLocalDate()) {
-            DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds, score)
+            // BI19: + the persisted optimistic result (idempotent: best score wins).
+            DailyCompletionsService.noteLocalResult(
+                userId, gameModeStr, completed, guessCount, elapsedSeconds, score, boardsSolved, totalBoards, hintsUsed,
+            )
         }
 
         try {

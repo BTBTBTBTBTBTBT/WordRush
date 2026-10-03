@@ -42,6 +42,10 @@ object SupabaseConfig {
             install(Auth) {
                 scheme = "wordocious"
                 host = "auth-callback"
+                // 2026-10-03 (outage sign-out): the library deletes the stored session on any
+                // non-5xx refresh error (a 429 included). SessionGuard only lets a delete
+                // through on a sign-out or a refresh that AuthSessionPolicy calls REVOKED.
+                sessionManager = SessionGuard
             }
             install(Postgrest)
             install(Storage)

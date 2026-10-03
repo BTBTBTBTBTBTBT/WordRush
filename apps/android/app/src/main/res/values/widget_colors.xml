@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC BI13 widget inks (the app theme's): soft-number plum, label lilac (75%),
+     brand purple, gold (streak / sweep only). values-night holds the dark twins. -->
+<resources>
+    <color name="widget_ink">#3B1A78</color>
+    <color name="widget_label">#BF5B3C96</color>
+    <color name="widget_accent">#7C3AED</color>
+    <color name="widget_gold">#D97706</color>
+    <color name="widget_dot">#595B3C96</color>
+    <color name="widget_bg_top">#E6DCFF</color>
+    <color name="widget_bg_mid">#F5F3FF</color>
+    <color name="widget_bg_bottom">#FFFFFF</color>
+</resources>

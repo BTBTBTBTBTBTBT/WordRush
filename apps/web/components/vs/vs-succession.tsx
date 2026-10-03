@@ -15,6 +15,7 @@ import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { isTypingTarget } from '@/lib/keyboard';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 
 const BOARD_ORDER = [0, 1, 2, 3];
 
@@ -148,13 +149,13 @@ export function VsSuccession({ seed, mode, solutions, onBoardSolved, onCompleted
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
-      <div className="text-center px-2 shrink-0">
+      <div className="relative text-center px-2 shrink-0">
         <div className="flex justify-center gap-3">
           <span className="text-gray-400 text-xs font-bold"><Icon3D name="trophy" size={14} inline className="mr-1" />{solvedCount}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
-        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
+        <FeedbackToast message={error} />
       </div>
 
       {/* Opponent strip */}

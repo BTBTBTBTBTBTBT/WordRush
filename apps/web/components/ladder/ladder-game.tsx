@@ -42,9 +42,11 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
+import { HintCountBadge } from '@/components/ui/hint-kit';
 
 // Letter Ladder (More Games §15): change one letter at a time from START to
 // END. Rejected entries are free; every accepted word is a move; the budget
@@ -277,17 +279,13 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
         <GameHostTitle mode="LADDER" label="Letter Ladder">
           <h1 className="text-2xl font-black" style={{ color: LADDER_ACCENT }}>LETTER LADDER</h1>
         </GameHostTitle>
-        <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="relative flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{ladderDailyNumber(getTodayLocal())}</span>}
           <span>Par {state.par}</span>
           <span>{state.moves} move{state.moves === 1 ? '' : 's'} · {movesLeft} left</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {completion ? (
@@ -311,8 +309,9 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
               <button type="button" onClick={() => { haptic('light'); playKeyTap(); undo(); }} disabled={state.words.length <= 1} className={capsule(state.words.length <= 1)} style={capsuleStyle(state.words.length <= 1)} aria-label="Undo">
                 <Undo2 className="w-3.5 h-3.5" /> Undo
               </button>
-              <button type="button" onClick={() => { haptic('light'); playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint">
-                <Lightbulb className="w-3.5 h-3.5" /> Hint{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
+              {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
+              <button type="button" onClick={() => { haptic('light'); playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
+                <Lightbulb className="w-3.5 h-3.5" /> Hint<HintCountBadge count={state.hintsUsed} />
               </button>
             </div>
             <Keyboard onKey={onKey} />

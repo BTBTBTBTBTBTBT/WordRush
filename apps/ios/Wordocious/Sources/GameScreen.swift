@@ -126,6 +126,9 @@ struct GameScreen: View {
                         .opacity(vm.stageCleared ? 0 : 1)
                         .allowsHitTesting(!vm.stageCleared)
                         .accessibilityHidden(vm.stageCleared)
+                        // §BI9: "Not in word list" / "Solved!" hang from the keyboard's
+                        // top edge, under the board — never over the title art or the board.
+                        .gameFeedbackToast(vm.toast, alignment: .top, pose: toastPose)
                 }
             }
             .padding(.horizontal, 10)
@@ -141,14 +144,6 @@ struct GameScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
             .sheet(isPresented: $showGuide) { GuideSheet(mode: mode) }
-
-            // §K1: the toast slides in with a spring (Reduce Motion: a fade) —
-            // animated in its own container so the rest of the screen keeps its timing.
-            ZStack {
-                if let toast = vm.toast { toastView(toast) }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .animation(G5Toast.animation, value: vm.toast)
 
             // XP toast (after recording) + one-time victory/game-over celebration.
             if let xp = vm.xpResult {
@@ -447,18 +442,26 @@ struct GameScreen: View {
                 label: vm.consonantUsed ? (vm.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(vm.consonantRevealed ?? "")") : "Consonant",
                 used: vm.consonantUsed) { Haptics.success(); vm.revealConsonant() }
         }
+        .frame(maxWidth: 360)
         // 16pt bottom: keep the pills clear of the Q-row (fat-finger, Aug 11).
         .padding(.horizontal, 16).padding(.bottom, 16)
     }
 
     /// §A8: the hint buttons are small candy buttons (gold = the hint's glow);
     /// a used hint becomes the quiet peach showing the revealed letter.
+    @ViewBuilder
     private func hintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {
+        // BI25: a used hint is information — a soft filled pill, no outline (same footprint).
+        if used { UsedHintPill(label: label) } else {
         Button(action: action) {
+            // §BI22: both pills keep one equal width ("Vowel" → "Vowel: A" / "No
+            // consonants left" no longer resizes them or nudges its neighbor).
             CandyLabel(title: label, symbol: used ? nil : "lightbulb.fill")
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(CandyButtonStyle(variant: used ? .peach : .amber, size: .small))
         .disabled(used)
+        }
     }
 
     /// The run's composite score — the same inputs the breakdown card uses (the
@@ -560,16 +563,11 @@ struct GameScreen: View {
         .padding(.vertical, 16).frame(maxWidth: .infinity)
     }
 
-    /// FINISH_SPEC §K1: a tinted pill in the event's color (coral "Not in word
-    /// list", purple "Solved!", slate for the answer reveal) with dark-purple text
-    /// (FinishInk.heading flips in Dark, so it stays legible) and a small cast pose
-    /// that fits the event — never the game's host (§A7).
-    private func toastView(_ toast: String) -> some View {
-        let tone = G5Toast.tone(forGameMessage: toast)
-        return G5Toast(text: toast, tone: tone, pose: G5Toast.pose(for: tone, avoiding: Mascots.host(mode)))
-            .padding(.horizontal, 24)
-            .padding(.top, 90)
-            .transition(G5Toast.transition)
+    /// FINISH_SPEC §K1 / §BI9: the candy toast's small cast pose that fits the
+    /// event — never the game's host (§A7).
+    private var toastPose: (MascotID, String)? {
+        guard let toast = vm.toast else { return nil }
+        return G5Toast.pose(for: G5Toast.tone(forGameMessage: toast), avoiding: Mascots.host(mode))
     }
 }
 

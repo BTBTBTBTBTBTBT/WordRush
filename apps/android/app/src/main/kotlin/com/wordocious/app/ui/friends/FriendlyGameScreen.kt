@@ -216,12 +216,15 @@ fun FriendlyGameScreen(
         if (g == null) {
             Box(Modifier.fillMaxSize(), Alignment.Center) {
                 if (notFound) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        // A missing game gets O3's not-found scene (ART_SPEC §7).
-                        com.wordocious.app.ui.SceneImage(com.wordocious.app.ui.SceneArt.NOT_FOUND)
-                        Text("This game isn't available.", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FriendsPink.sub)
-                        PinkPill("FRIENDS", solid = false, onClick = onFriends)
-                    }
+                    // A missing game gets O3's not-found scene (ART_SPEC §7) + BI24 headline.
+                    com.wordocious.app.ui.BrandEmptyState(
+                        title = "GAME NOT FOUND",
+                        line = "This game isn't available anymore.",
+                        scene = com.wordocious.app.ui.SceneArt.NOT_FOUND,
+                        accent = com.wordocious.app.ui.PageAccent.friends,
+                        lineColor = FriendsPink.sub,
+                        secondary = { PinkPill("FRIENDS", solid = false, onClick = onFriends) },
+                    )
                 } else com.wordocious.app.ui.CastLoader(null)
             }
             return@Column

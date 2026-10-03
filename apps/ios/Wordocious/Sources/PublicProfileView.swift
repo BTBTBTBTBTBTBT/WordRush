@@ -138,15 +138,10 @@ struct PublicProfileView: View {
     }
 
     private var notFoundView: some View {
-        VStack(spacing: 16) {
-            // O3 searching for the missing profile (ART_SPEC §7).
-            SceneArt(.notFound)
-            Text("Player not found").font(Brand.title(28)).foregroundStyle(Theme.textPrimary)
-            Text("This profile doesn't exist or may have been removed.")
-                .font(Brand.body(13)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
-            Button { dismiss() } label: { CandyLabel(title: "Back", symbol: "chevron.left") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
-        }.padding(24)
+        // O3 searching for the missing profile (ART_SPEC §7); BI24: brand headline.
+        BrandEmptyState(title: "Player not found", line: "I looked everywhere. This profile doesn't exist or was removed.",
+                        scene: .notFound, artHeight: 140, actionTitle: "Back", actionSymbol: "chevron.left",
+                        action: { dismiss() })
     }
 
     // MARK: Shared header bits (full page + teaser)
@@ -230,9 +225,8 @@ struct PublicProfileView: View {
     }
 
     private func moderationToastView(_ toast: String) -> some View {
-        Text(toast).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.heading)
-            .padding(.horizontal, 14).padding(.vertical, 7)
-            .tintedPill(Color(hex: 0x7C3AED))
+        // §BI9: the shared candy toast (success / error coin), not a plain pill.
+        G5Toast(text: toast, tone: toast.hasPrefix("Could not") ? .error : .success)
             .task { try? await Task.sleep(nanoseconds: 2_500_000_000); moderationToast = nil }
     }
 
@@ -557,9 +551,9 @@ struct PublicProfileView: View {
                     }
                 }.padding(16)
             } else {
-                Text("No \(tab) games played in this mode yet")
-                    .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
-                    .frame(maxWidth: .infinity).padding(24)
+                // BI24: a host + brand headline, not a plain grey line.
+                BrandEmptyState(title: "No \(tab) games yet", line: "Nothing played in this mode yet. Check back after a few rounds.",
+                                scene: .noStats, artHeight: 90)
             }
         }
         // §A1: tinted in the mode's accent with its top bar.
@@ -597,8 +591,9 @@ struct PublicProfileView: View {
                 Text("Recent Matches").font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
             }
             if matches.isEmpty {
-                Text("No matches played yet.").font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 24)
+                // BI24: R asleep + brand headline, not a plain grey line.
+                BrandEmptyState(title: "No matches yet", line: "Once games are played, the latest show up right here.",
+                                scene: .asleep, artHeight: 90)
             } else {
                 // Show 5 collapsed; the toggle expands the rest in place (no
                 // inner ScrollView — the rows render straight into the VStack).

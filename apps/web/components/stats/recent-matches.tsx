@@ -6,9 +6,9 @@ import { MODES, MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { formatGuessStat } from '@/lib/format';
 import type { Database } from '@/lib/database.types';
-import { SceneEmptyState } from '@/components/ui/art-scene';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import type { SceneName } from '@/lib/art';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, PAGE_SCENES } from '@/lib/art';
 import { WinLossBadge } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
 import { BRAND_ACCENT, alphaHex, softCard, softPill } from '@/lib/soft-surface';
@@ -92,8 +92,8 @@ export function RecentMatchesList({ matches, opponentNames, profileId, loading, 
     );
   }
   if (matches.length === 0) {
-    if (emptyScene) return <SceneEmptyState scene={emptyScene} line={emptyText} className="py-6" />;
-    return <div className="text-center py-8 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{emptyText}</div>;
+    // BI24: always the finished empty state (scene, gradient caps title, one line).
+    return <BrandEmptyState scene={emptyScene ?? PAGE_SCENES.stats} artHeight={96} title="NO GAMES YET" line={emptyText} className="py-6" />;
   }
   const shown = showAll && !onSeeAll ? matches : matches.slice(0, limit);
   return (

@@ -473,7 +473,7 @@ fun Modifier.tintedPill(accent: Color, corner: Dp = 12.dp): Modifier = composed 
     this.clip(shape)
         .background(accentWash(accent, 0.12f))
         .drawBehind { drawRect(accent, Offset.Zero, Size(size.width, 4.dp.toPx())) }
-        .border(1.5.dp, accentLine(accent, 0.30f), shape)
+    // BI25: no outline (founder: never bordered boxes; overrides A8 for the used-hint pill too).
 }
 
 /**

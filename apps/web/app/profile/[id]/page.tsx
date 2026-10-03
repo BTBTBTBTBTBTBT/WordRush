@@ -67,12 +67,14 @@ import {
 } from '@/components/profile/profile-social';
 import type { Database } from '@/lib/database.types';
 import { isGameArtIcon, PAGE_SCENES } from '@/lib/art';
-import { ArtScene } from '@/components/ui/art-scene';
 import { PageBackground } from '@/components/ui/page-background';
 import { MedalArt } from '@/components/stats/medal-art';
 import { BadgeArt, LevelBadge } from '@/components/badges/badge-art';
 import { achievementBadge, levelBadge, TIER_ACCENT } from '@/lib/badges';
 import { levelTier } from '@wordle-duel/core';
+import { readPageCache, sameData, writePageCache } from '@/lib/page-cache';
+import { CastLoadingStack } from '@/components/game/game-loading';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -273,10 +275,14 @@ export default function PublicProfilePage() {
   const profileId = params.id as string;
   const { user, profile: viewerProfile, loading: authLoading } = useAuth();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [stats, setStats] = useState<UserStats[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
+  // BI19 cache-first: the last copy of this profile paints at once (persisted
+  // per viewer, lib/page-cache.ts) and refreshes underneath; a failed read
+  // keeps it instead of reading "not found".
+  const [cached] = useState(() => readPageCache<{ profile: Profile; stats?: UserStats[]; matches?: Match[] }>(`profile:${profileId}`));
+  const [profile, setProfile] = useState<Profile | null>(cached?.profile ?? null);
+  const [stats, setStats] = useState<UserStats[]>(cached?.stats ?? []);
+  const [matches, setMatches] = useState<Match[]>(cached?.matches ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
@@ -311,7 +317,8 @@ export default function PublicProfilePage() {
   useEffect(() => {
     if (!profileId) return;
     let active = true;
-    setLoading(true);
+    const had = readPageCache<{ profile: Profile; stats?: UserStats[]; matches?: Match[] }>(`profile:${profileId}`);
+    if (had) { setProfile((p) => (p?.id === profileId ? p : had.profile)); setLoading(false); } else setLoading(true);
     supabase
       .from('profiles')
       .select('*')
@@ -319,8 +326,15 @@ export default function PublicProfilePage() {
       .maybeSingle()
       .then(({ data, error }) => {
         if (!active) return;
-        if (!data || error) setNotFound(true);
-        else setProfile(data);
+        if (error) {
+          // Outage: keep the cached profile; "not found" only when there is nothing to show.
+          if (!had) setNotFound(true);
+        } else if (!data) {
+          setNotFound(true);
+        } else {
+          setProfile((p) => (sameData(p, data) ? p : data));
+          writePageCache(`profile:${profileId}`, { ...(readPageCache<object>(`profile:${profileId}`) ?? {}), profile: data });
+        }
         setLoading(false);
       });
     return () => { active = false; };
@@ -345,12 +359,24 @@ export default function PublicProfilePage() {
           .select('*')
           .eq('user_id', profileId),
         fetch(`/api/profile/${profileId}/matches`, { headers })
-          .then((r) => (r.ok ? r.json() : { matches: [] }))
-          .catch(() => ({ matches: [] })),
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
       ]);
       if (!active) return;
-      if (statsRes.data) setStats(statsRes.data);
-      setMatches(matchesRes.matches ?? []);
+      // BI19: a failed read keeps what is on screen (and in the cache).
+      const nextStats = statsRes.data && !statsRes.error ? statsRes.data : null;
+      const nextMatches = matchesRes ? (matchesRes.matches ?? []) : null;
+      if (nextStats) setStats((prev) => (sameData(prev, nextStats) ? prev : nextStats));
+      if (nextMatches) setMatches((prev) => (sameData(prev, nextMatches) ? prev : nextMatches));
+      const key = `profile:${profileId}`;
+      const had = readPageCache<{ profile: Profile; stats?: UserStats[]; matches?: Match[] }>(key);
+      if (had || profile) {
+        writePageCache(key, {
+          ...(had ?? { profile: profile! }),
+          ...(nextStats ? { stats: nextStats } : null),
+          ...(nextMatches ? { matches: nextMatches } : null),
+        });
+      }
     })();
 
     fetchPersona(profileId).then((p) => { if (active) setPersona(p); });
@@ -382,7 +408,7 @@ export default function PublicProfilePage() {
   if (loading || (isPrivate && authLoading)) {
     return (
       <PageBackground tint="home" className="min-h-screen flex items-center justify-center">
-        <div className="text-lg font-black" style={{ color: 'var(--color-text)' }}>Loading...</div>
+        <CastLoadingStack />
       </PageBackground>
     );
   }
@@ -390,12 +416,15 @@ export default function PublicProfilePage() {
   if (notFound || !profile) {
     return (
       <PageBackground tint="home" className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center space-y-4 animate-fade-in-scale">
-          <ArtScene scene={PAGE_SCENES.notFound} priority />
-          <h1 className="text-4xl font-black" style={{ color: 'var(--color-text)' }}>Player not found</h1>
-          <p style={{ color: 'var(--color-text-muted)' }}>This profile doesn&apos;t exist or may have been removed.</p>
-          <CandyLink href="/" color="purple" size="md">Go Home</CandyLink>
-        </div>
+        <BrandEmptyState
+          scene={PAGE_SCENES.notFound}
+          priority
+          title="PLAYER NOT FOUND"
+          line="This profile doesn't exist or may have been removed."
+          actionLabel="Back to Home"
+          actionHref="/"
+          actionIcon="arrow"
+        />
       </PageBackground>
     );
   }
@@ -879,9 +908,12 @@ export default function PublicProfilePage() {
           </h2>
 
           {matches.length === 0 ? (
-            <div className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
-              No matches played yet.
-            </div>
+            <BrandEmptyState
+              scene={PAGE_SCENES.empty}
+              artHeight={96}
+              title="NO MATCHES YET"
+              line="Games show up here once the first one is played."
+            />
           ) : (
             <div className="space-y-3">
               {(showAllRecent ? matches : matches.slice(0, 5)).map((match, index) => {

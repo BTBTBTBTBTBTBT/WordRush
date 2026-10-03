@@ -20,6 +20,8 @@ struct WordOfTheDayView: View {
     @State private var streak = 0
     /// The ~2.2 s right/wrong beat right after a pick.
     @State private var revealing = false
+    /// BI17: the right choice pops once on the reveal (transform only).
+    @State private var revealPop = false
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var scheme
 
@@ -143,6 +145,12 @@ struct WordOfTheDayView: View {
         answer = result
         streak = result.correct ? streak + 1 : 0
         revealing = true
+        revealPop = false
+        withAnimation(Theme.animation(.spring(response: 0.28, dampingFraction: 0.5))) { revealPop = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            withAnimation(Theme.animation(.spring(response: 0.3, dampingFraction: 0.7))) { revealPop = false }
+        }
         Task {
             try? await Task.sleep(nanoseconds: Self.revealNanos)
             withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { revealing = false }
@@ -159,51 +167,74 @@ struct WordOfTheDayView: View {
         let definition = q.map { $0.choices[$0.answer] } ?? info.definition
         let pos = q != nil ? (info.quizPartOfSpeech ?? info.partOfSpeech) : info.partOfSpeech
         let showFlame = q != nil && (answer?.correct ?? false) && !revealing && streak > 0
-        return VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(info.word.prefix(1).uppercased() + info.word.dropFirst().lowercased())
-                    .font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
-                if let p = info.phonetic, !p.isEmpty {
-                    Text(p).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+        // FINISH_SPEC BI17: the guide-page family — I's ready pose on a glow beside the
+        // word in the brand caps, the part of speech as a chip, glossy candy choices with
+        // clear right / wrong states, all on the borderless hero card.
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    RadialGradient(colors: [Self.barColor.opacity(Theme.isDark ? 0.42 : 0.32), Self.barColor.opacity(0)],
+                                   center: .center, startRadius: 2, endRadius: 34)
+                    PoseImage(.i, "ready", height: 52)
                 }
-                if let pos, !pos.isEmpty {
-                    Text(pos).font(Brand.font(10, .heavy)).italic().foregroundStyle(Theme.primary)
+                .frame(width: 60, height: 60)
+                .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    LiveHeadline(text: info.word, palette: .home, size: 26, alignment: .leading, maxLines: 1)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel(info.word)
+                    HStack(spacing: 8) {
+                        if let p = info.phonetic, !p.isEmpty {
+                            Text(p).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
+                        }
+                        if let pos, !pos.isEmpty { GuideChip(text: pos, accent: GuideFamily.brand, size: 9) }
+                    }
                 }
+                Spacer(minLength: 4)
                 if showFlame {
-                    Spacer(minLength: 4)
                     HStack(spacing: 2) {
-                        FlameMark(size: 13)
-                        Text("\(streak)").softNumber(14)
+                        FlameMark(size: 15)
+                        Text("\(streak)").softNumber(16)
                     }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("\(streak)-day word streak")
                 }
             }
-            if asking, let q {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Which one is it?").font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x4B5563))
+            if let q, asking || revealing {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("WHICH ONE IS IT?").font(Brand.font(11, .black)).tracking(1.2)
+                        .foregroundStyle(GuideFamily.ink(GuideFamily.brand))
                     ForEach(0..<3, id: \.self) { i in
-                        Button { pick(i, info, q) } label: { choiceRow(i, q.choices[i]) }
-                            .buttonStyle(.squish)
+                        if asking {
+                            Button { pick(i, info, q) } label: { choiceRow(i, q.choices[i], state: .idle) }
+                                .buttonStyle(.squish)
+                        } else {
+                            choiceRow(i, q.choices[i], state: choiceState(i, q))
+                        }
                     }
                 }
-                .padding(.top, 6)
             }
             if revealing, let q, let a = answer {
                 resultPanel(a, q)
-                    .padding(.top, 6)
                     .transition(.opacity)
             }
             if settled && !revealing, let def = definition, !def.isEmpty {
-                Text(def).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x4B5563))
+                Text(def).font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
+                    .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 2)
             }
         }
-        .padding(GameCardChrome.inner)
+        .padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // ART_SPEC §21.5: the Home game cards' chrome, top band in I's green (its host).
-        .gameCardChrome(bar: Self.barColor)
+        .guideHeroCard(Self.barColor, radius: 22)
+    }
+
+    private enum ChoiceState { case idle, right, wrong, faded }
+
+    private func choiceState(_ i: Int, _ q: Quiz) -> ChoiceState {
+        if i == q.answer { return .right }
+        if i == answer?.picked { return .wrong }
+        return .faded
     }
 
     /// ART_SPEC §21.5: the card's top band — I's green, the Word of the Day host.
@@ -226,22 +257,48 @@ struct WordOfTheDayView: View {
         .padding(.top, 2)
     }
 
-    private func choiceRow(_ i: Int, _ text: String) -> some View {
-        HStack(spacing: 8) {
-            Text(Self.letters[i]).font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x5B21B6))
-                .frame(width: 20, height: 20)
-                .background(Circle().fill(Color(hex: 0xEDE9FE)))
-            Text(text).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.heading)
+    /// A glossy candy choice (no stroke): lilac candy while asking; on the reveal the
+    /// right one turns green candy (and pops once), a wrong pick rose, the rest fade.
+    private func choiceRow(_ i: Int, _ text: String, state: ChoiceState) -> some View {
+        let dark = Theme.isDark
+        let colors: [Color] = {
+            switch state {
+            case .right: return [Color(hex: 0x34D399), Color(hex: 0x059669)]
+            case .wrong: return [Color(hex: 0xFB7185), Color(hex: 0xE11D48)]
+            default:
+                return dark ? [Color(hex: 0x7C3AED).opacity(0.30), Color(hex: 0x7C3AED).opacity(0.16)]
+                            : [Color(hex: 0xF3EDFF), Color(hex: 0xE4D8FF)]
+            }
+        }()
+        let solid = state == .right || state == .wrong
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        return HStack(spacing: 10) {
+            GlossyTile(face: state == .right ? .correct : .typed, letter: Self.letters[i], width: 28)
+                .accessibilityHidden(true)
+            Text(text).font(Brand.font(14, .bold)).foregroundStyle(solid ? Color.white : FinishInk.heading)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        // §A1: each choice is a mini tinted tile (lilac), never white.
-        .g5Option(active: false, accent: Color(hex: 0x8B5CF6), radius: 10)
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+        .background {
+            ZStack(alignment: .top) {
+                if dark { shape.fill(Theme.surface) }
+                shape.fill(LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom))
+                // The candy gloss: a soft white sheen over the top half.
+                LinearGradient(colors: [Color.white.opacity(solid ? 0.28 : 0.45), Color.white.opacity(0)],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: 22)
+            }
+            .clipShape(shape)
+            .background(shape.fill(colors.last ?? .clear).opacity(0.001)
+                .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 6, x: 0, y: 3))
+        }
+        .opacity(state == .faded ? 0.4 : 1)
+        .scaleEffect(state == .right && revealPop ? 1.04 : 1)
         .contentShape(Rectangle())
-        .accessibilityLabel("Choice \(Self.letters[i]): \(text)")
+        .accessibilityLabel("Choice \(Self.letters[i]): \(text)\(state == .right ? ", the answer" : state == .wrong ? ", your pick" : "")")
     }
 
     private func resultPanel(_ a: HomeStreaksService.QuizAnswer, _ q: Quiz) -> some View {
@@ -263,7 +320,9 @@ struct WordOfTheDayView: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(a.correct ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Theme.isDark ? (a.correct ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)).opacity(0.18)
+                               : (a.correct ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2))))
         .accessibilityElement(children: .combine)
     }
 
@@ -275,9 +334,9 @@ struct WordOfTheDayView: View {
             SkeletonBlock(height: 16, width: 70, cornerRadius: 6)
             SkeletonBlock(height: 10, cornerRadius: 5)
         }
-        .padding(GameCardChrome.inner)
+        .padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 16)
         .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
-        .gameCardChrome(bar: Self.barColor)
+        .guideHeroCard(Self.barColor, radius: 22)
     }
 
     // MARK: - Day-keyed UserDefaults cache (one fetch per day)

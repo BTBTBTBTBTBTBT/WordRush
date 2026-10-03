@@ -8,6 +8,7 @@ import {
   puzzleCountAchievements, puzzleResultAchievements,
 } from '@wordle-duel/core';
 import { markAchievementsSeen } from './achievement-seen';
+import { isLate, type CelebrationSource } from './celebration-gate';
 
 // ============================================================
 // Achievement Definitions
@@ -299,9 +300,9 @@ export async function unlockAchievements(userId: string, keys: readonly string[]
 }
 
 /** BF1: celebrate the `newAchievements` an endpoint returned (null-safe). */
-export function announceNewAchievements(list: ReadonlyArray<{ key: string }> | null | undefined): void {
+export function announceNewAchievements(list: ReadonlyArray<{ key: string }> | null | undefined, opts: { late?: boolean } = {}): void {
   if (!Array.isArray(list) || list.length === 0) return;
-  announceAchievementUnlocks(list.map((a) => a.key).filter((k): k is string => typeof k === 'string'));
+  announceAchievementUnlocks(list.map((a) => a.key).filter((k): k is string => typeof k === 'string'), opts);
 }
 
 export { avatarAchievements, botAchievements };
@@ -323,6 +324,10 @@ export async function checkAchievements(
   timeSeconds: number,
   seed?: string,
   hintsUsed: number = 0,
+  // Outage fix: where this result came from and when its record call started,
+  // so unlocks from a replayed / slow result wait for a calm moment
+  // (lib/celebration-gate.ts). Omitted = live and on time.
+  timing?: { source: CelebrationSource; startedAtMs: number },
 ): Promise<string[]> {
   const unlocked: string[] = [];
 
@@ -1048,7 +1053,7 @@ export async function checkAchievements(
     for (const key of momentAchievements({ localHour: now.getHours(), season: currentSeason(getTodayLocal()) })) await tryUnlock(key);
   }
 
-  announceAchievementUnlocks(unlocked);
+  announceAchievementUnlocks(unlocked, { late: !!timing && isLate(timing.source, timing.startedAtMs, Date.now()) });
   return unlocked;
 }
 
@@ -1058,7 +1063,7 @@ export async function checkAchievements(
  * which plays them one after another. Unknown keys are skipped. Also fires
  * the window event BADGE_CELEBRATION_EVENT for anything else that listens.
  */
-export function announceAchievementUnlocks(keys: string[]): void {
+export function announceAchievementUnlocks(keys: string[], opts: { late?: boolean } = {}): void {
   if (keys.length === 0) return;
   // BF1: anything celebrated here is "seen" — the open / focus diff won't replay it.
   markAchievementsSeen(keys);
@@ -1074,7 +1079,9 @@ export function announceAchievementUnlocks(keys: string[]): void {
       accent: CATEGORY_ACCENT[a.category] ?? '#7c3aed',
       ...(a.xp ? { xp: a.xp } : null),
     }));
-  queueCelebrations(items);
+  // A late announcement (replay / sync / slow live finish) waits for a calm
+  // moment — lib/celebration-gate.ts.
+  queueCelebrations(items, { late: !!opts.late });
 }
 
 /**

@@ -14,8 +14,8 @@ describe('cold-start intro', () => {
     expect(introShouldPlay({ pathname: '/stats', seenThisSession: false, hasStaticSplash: true })).toBe(false);
   });
 
-  it('stays within 1.6 s, the pops finish before the glide, and Reduce Motion is a 200 ms crossfade', () => {
-    expect(introTotalMs(false)).toBeLessThanOrEqual(1600);
+  it('stays within 2.2 s (BI20 1.4× pace), the pops finish before the glide, and Reduce Motion is a 200 ms crossfade', () => {
+    expect(introTotalMs(false)).toBeLessThanOrEqual(2200); // BI20: 1.4× pace
     expect(INTRO.rowAt + 9 * INTRO.popStagger).toBeLessThan(INTRO.glideAt);
     expect(INTRO.glideAt + INTRO.glideMs).toBeLessThanOrEqual(INTRO.endAt);
     expect(INTRO.reducedFadeMs).toBe(200);

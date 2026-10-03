@@ -6,6 +6,8 @@ import { getDailySeedDate } from '@wordle-duel/core';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isBlocked } from './moderation-service';
 import { isPlausibleDailyResult } from '@/lib/plausibility';
+import { withRecordTimeout, isPermanentRejection } from './pending-records';
+import { isLate, type CelebrationSource } from './celebration-gate';
 import { avatarFieldsOf, mergeAvatarFields, selectWithAvatarColumns, type AvatarFields } from './avatar-fields-server';
 
 // ============================================================
@@ -145,14 +147,65 @@ export async function recordDailyResult(
   stagesCompleted?: number,
   bestCorrectLetters?: number,
 ) {
+  try {
+    const r = await writeDailyResult(
+      userId, gameMode, playType, completed, guessCount, timeSeconds, boardsSolved, totalBoards,
+      hintsUsed, day, stagesCompleted, bestCorrectLetters,
+    );
+    return r.score as any;
+  } catch (err) {
+    console.error('recordDailyResult failed:', err);
+    handleSupabaseError(err, 'recordDailyResult');
+    return calculateCompositeScore(
+      gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
+      stagesCompleted, bestCorrectLetters, day || getTodayLocal(),
+    );
+  }
+}
+
+export interface DailyWriteResult {
+  /** 'written' = the row is confirmed (inserted, improved, or an equal/better row already stood);
+   *  'rejected' = it can never be written (implausible, no score config, CHECK/trigger 23514). */
+  outcome: 'written' | 'rejected';
+  score: number | null;
+}
+
+/**
+ * The strict half of recordDailyResult for the pending-record queue: resolves
+ * only once the daily_results row is CONFIRMED (or permanently refused), and
+ * THROWS on anything retryable — a network failure, an abort, a timeout, a
+ * 5xx, an RLS blip — so the queued payload stays pending instead of being
+ * marked done on a write that never landed. Every request is time-boxed
+ * (withRecordTimeout): during an outage supabase-js hangs 15–30 s or forever.
+ */
+export async function writeDailyResult(
+  userId: string,
+  gameMode: string,
+  playType: 'solo' | 'vs',
+  completed: boolean,
+  guessCount: number,
+  timeSeconds: number,
+  boardsSolved: number,
+  totalBoards: number,
+  hintsUsed: number = 0,
+  day?: string,
+  stagesCompleted?: number,
+  bestCorrectLetters?: number,
+): Promise<DailyWriteResult> {
   // §255: a completed daily with zero guesses is impossible — refuse it, same
   // guard as recordGameResult, so no UI bug can ever write one.
-  if (completed && guessCount <= 0) return null as any;
+  if (completed && guessCount <= 0) return { outcome: 'rejected', score: null };
   // §260: and nothing else no human can do — six guesses in three seconds,
   // two-day timers, 200 guesses. Same floor as iOS, Android and the DB trigger.
   if (!isPlausibleDailyResult(completed, guessCount, timeSeconds, totalBoards, gameMode)) {
     console.warn(`[daily] rejected implausible result ${gameMode}: guesses=${guessCount} time=${timeSeconds}s boards=${totalBoards}`);
-    return null as any;
+    return { outcome: 'rejected', score: null };
+  }
+  // A mode with no score config would write a meaningless 0 row and, queued,
+  // retry forever. It is a catalog bug (lib/daily-key-consistency.test.ts).
+  if (!MODE_SCORE_CONFIG[gameMode]) {
+    console.warn(`[daily] no MODE_SCORE_CONFIG for ${gameMode} — daily row skipped`);
+    return { outcome: 'rejected', score: null };
   }
   const targetDay = day || getTodayLocal();
   // The puzzle's day also picks the scoring formula (pre-cutover days keep
@@ -162,20 +215,26 @@ export async function recordDailyResult(
     stagesCompleted, bestCorrectLetters, targetDay,
   );
 
-  try {
-    const { data: existing } = await (supabase as any)
+  const { data: existing, error: selectError } = await withRecordTimeout<any>(
+    (supabase as any)
       .from('daily_results')
       .select('id, composite_score')
       .eq('user_id', userId)
       .eq('day', targetDay)
       .eq('game_mode', gameMode)
       .eq('play_type', playType)
-      .maybeSingle();
+      .maybeSingle(),
+    `daily_results select ${gameMode}`,
+  );
+  // Can't tell insert from update without the read — retry later.
+  if (selectError) throw selectError;
 
-    if (existing) {
-      // Only update if new score is better
-      if (compositeScore > existing.composite_score) {
-        const { error } = await (supabase as any)
+  let error: any = null;
+  if (existing) {
+    // Only update if new score is better
+    if (compositeScore > existing.composite_score) {
+      ({ error } = await withRecordTimeout<any>(
+        (supabase as any)
           .from('daily_results')
           .update({
             completed,
@@ -186,14 +245,13 @@ export async function recordDailyResult(
             composite_score: compositeScore,
             hints_used: hintsUsed,
           })
-          .eq('id', existing.id);
-        // supabase-js does NOT throw on a constraint/column error — it returns
-        // it here. Surface it (console + Sentry) so a rejected daily write
-        // can never fail silently again.
-        reportRejectedWrite(`recordDailyResult update ${gameMode}`, error);
-      }
-    } else {
-      const { error } = await (supabase as any)
+          .eq('id', existing.id),
+        `daily_results update ${gameMode}`,
+      ));
+    }
+  } else {
+    ({ error } = await withRecordTimeout<any>(
+      (supabase as any)
         .from('daily_results')
         .insert({
           user_id: userId,
@@ -207,26 +265,32 @@ export async function recordDailyResult(
           total_boards: totalBoards,
           composite_score: compositeScore,
           hints_used: hintsUsed,
-        });
-      reportRejectedWrite(`recordDailyResult insert ${gameMode}`, error);
-    }
-
-    // Check for streak and perfect game medals (fire-and-forget)
-    checkAndAwardStreakMedals(userId, targetDay).catch(() => {});
-    checkAndAwardPerfectMedal(userId, gameMode, targetDay, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
-
-    // FRIENDS (§207) overtake push — the server re-reads the trusted score
-    // and notifies friends this result just passed. Dynamic import avoids a
-    // module cycle (friends-service imports getTodayLocal from here).
-    import('./friends-service')
-      .then((m) => m.beatCheck(targetDay, gameMode, playType))
-      .catch(() => {});
-  } catch (err) {
-    console.error('recordDailyResult failed:', err);
-    handleSupabaseError(err, 'recordDailyResult');
+        }),
+      `daily_results insert ${gameMode}`,
+    ));
+  }
+  if (error) {
+    // supabase-js does NOT throw on a constraint/column error — it returns
+    // it here. Surface it (console + Sentry) so a rejected daily write can
+    // never fail silently again. A transport failure (code '') is not a
+    // server rejection — it just stays queued.
+    if (error.code) reportRejectedWrite(`recordDailyResult ${existing ? 'update' : 'insert'} ${gameMode}`, error);
+    if (isPermanentRejection(error)) return { outcome: 'rejected', score: compositeScore };
+    throw error;
   }
 
-  return compositeScore;
+  // Check for streak and perfect game medals (fire-and-forget)
+  checkAndAwardStreakMedals(userId, targetDay).catch(() => {});
+  checkAndAwardPerfectMedal(userId, gameMode, targetDay, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
+
+  // FRIENDS (§207) overtake push — the server re-reads the trusted score
+  // and notifies friends this result just passed. Dynamic import avoids a
+  // module cycle (friends-service imports getTodayLocal from here).
+  import('./friends-service')
+    .then((m) => m.beatCheck(targetDay, gameMode, playType))
+    .catch(() => {});
+
+  return { outcome: 'written', score: compositeScore };
 }
 
 /**
@@ -354,13 +418,16 @@ export async function fetchDailyLeaderboard(
   /** FRIENDS (§207): restrict to these user ids (friends ∪ self). The board
    *  is then dense-ranked 1..N by the caller — no holes, it's your list. */
   userIds?: string[],
+  /** BI19: throw on a failed read instead of resolving [] — a cached board
+   *  must never be replaced by an empty one during an outage. */
+  opts?: { throwOnError?: boolean },
 ): Promise<LeaderboardEntry[]> {
   const targetDay = day || getTodayLocal();
 
   // FINISH_SPEC AH/AN3: the embed also asks for is_pro / pro_expires_at and
   // the avatar columns; while those don't exist yet the select is retried
   // without them (selectWithAvatarColumns), so the board never fails over them.
-  const { data } = await selectWithAvatarColumns<any[]>((extra) => {
+  const { data, error } = await selectWithAvatarColumns<any[]>((extra) => {
     let query = (supabase as any)
       .from('daily_results')
       .select(`
@@ -391,6 +458,7 @@ export async function fetchDailyLeaderboard(
       .range(offset, offset + limit - 1);
   });
 
+  if (error && opts?.throwOnError) throw error;
   if (!data) return [];
 
   // Banned users are excluded client-side (RLS can't filter the join for
@@ -545,15 +613,17 @@ export async function fetchRankWindow(
 export async function getDailyPlayerCount(
   gameMode: string,
   day?: string,
+  opts?: { throwOnError?: boolean },
 ): Promise<number> {
   const targetDay = day || getTodayLocal();
 
-  const { count } = await (supabase as any)
+  const { count, error } = await (supabase as any)
     .from('daily_results')
     .select('id', { count: 'exact', head: true })
     .eq('day', targetDay)
     .eq('game_mode', gameMode);
 
+  if (error && opts?.throwOnError) throw error;
   return count ?? 0;
 }
 
@@ -605,15 +675,18 @@ export async function fetchDailySweepLeaderboard(
   day?: string,
   limit: number = 50,
   offset: number = 0,
+  /** BI19: throw on a failed read instead of resolving [] (keep the cached board). */
+  opts?: { throwOnError?: boolean },
 ): Promise<SweepEntry[]> {
   const targetDay = day || getTodayLocal();
 
-  const { data } = await (supabase as any).rpc('daily_sweep_leaderboard', {
+  const { data, error } = await (supabase as any).rpc('daily_sweep_leaderboard', {
     p_day: targetDay,
     p_limit: limit,
     p_offset: offset,
   });
 
+  if (error && opts?.throwOnError) throw error;
   if (!data) return [];
 
   const rows: SweepEntry[] = (data as any[])
@@ -1211,9 +1284,12 @@ export function computeDailyTotals(completions: Map<string, DailyCompletion>): D
  */
 export async function fetchTodayDailyCompletions(
   userId: string,
+  /** Throw on a failed read instead of resolving an empty map — the Home
+   *  provider must keep its cached completions during an outage, not wipe them. */
+  opts?: { throwOnError?: boolean },
 ): Promise<Map<string, DailyCompletion>> {
   const day = getTodayLocal();
-  const { data } = await (supabase as any)
+  const { data, error } = await (supabase as any)
     .from('daily_results')
     .select('game_mode, completed, guess_count, time_seconds, composite_score')
     .eq('user_id', userId)
@@ -1226,7 +1302,9 @@ export async function fetchTodayDailyCompletions(
       time_seconds: number;
       composite_score: number;
     }> | null;
+    error: unknown;
   };
+  if (error && opts?.throwOnError) throw error;
 
   const out = new Map<string, DailyCompletion>();
   for (const row of data || []) {
@@ -1316,7 +1394,12 @@ export interface DailyBonusResult {
  * Returns null when nothing new was awarded (still short of 7, or
  * already awarded today).
  */
-export async function awardDailyBonusesIfComplete(_userId: string): Promise<DailyBonusResult | null> {
+export async function awardDailyBonusesIfComplete(
+  _userId: string,
+  // Outage fix: lets the unlocks it announces wait for a calm moment when the
+  // result is a replay or came back late (lib/celebration-gate.ts).
+  timing?: { source: CelebrationSource; startedAtMs: number },
+): Promise<DailyBonusResult | null> {
   const day = getTodayLocal();
 
   // Delegated to /api/daily/award-bonuses. The client used to write the
@@ -1341,7 +1424,8 @@ export async function awardDailyBonusesIfComplete(_userId: string): Promise<Dail
     const data = await res.json();
     // BF1: celebrate what the server granted (Puzzle Sweep / Week, Grand Sweep).
     if (Array.isArray(data?.newAchievements) && data.newAchievements.length) {
-      import('./achievement-service').then((m) => m.announceNewAchievements(data.newAchievements)).catch(() => {});
+      const late = !!timing && isLate(timing.source, timing.startedAtMs, Date.now());
+      import('./achievement-service').then((m) => m.announceNewAchievements(data.newAchievements, { late })).catch(() => {});
     }
     if (!data?.awarded) return null;
     return {

@@ -473,7 +473,7 @@ enum MatchStatsService {
     // Source of truth: daily_bonuses (sweep/flawless flags per day) ⨝ daily_results
     // (per-mode time + composite_score per day). Mirrors stats-service.ts.
 
-    struct DailySweepStats {
+    struct DailySweepStats: Codable, Equatable {
         var sweepCount = 0
         var flawlessCount = 0
         var avgSweepSecs = 0

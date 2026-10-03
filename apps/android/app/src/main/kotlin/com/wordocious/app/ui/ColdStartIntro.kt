@@ -101,6 +101,8 @@ private object IntroT {
     const val TO_HEADER_START = 1000f
     const val TO_HEADER_END = 1450f
     const val REDUCED_MS = 200
+    /** BI20: the whole choreography plays 1.4× slower on the clock — same curves, same order. */
+    const val PACE = 1.4f
 }
 
 /** The launch W's box (the SplashScreen icon's 192 dp circle holds the full 512 image). */
@@ -146,7 +148,7 @@ fun ColdStartIntro(onDone: () -> Unit) {
             // them, so the bounce starts on steady frames instead of jumping mid-move.
             repeat(3) { androidx.compose.runtime.withFrameNanos { } }
             // Glide to exactly the measured header frame (no overshoot), then land.
-            clock.animateTo(IntroT.TO_HEADER_END, tween(IntroT.TO_HEADER_END.toInt(), easing = LinearEasing))
+            clock.animateTo(IntroT.TO_HEADER_END, tween((IntroT.TO_HEADER_END * IntroT.PACE).toInt(), easing = LinearEasing))
         }
         // A tap-to-skip lands on its own (below).
         if (!skipping) land()

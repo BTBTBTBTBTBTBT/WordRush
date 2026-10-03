@@ -111,6 +111,7 @@ struct LeaderboardTab: View {
                     AppHeaderView()
                     if !auth.isAuthenticated { signedOut } else { content }
                 }
+                .frame(maxHeight: .infinity, alignment: .top)   // BI23: header pinned
                 .wideColumn(.page)   // §AG: iPad column, centered on the wallpaper
             }
             .environment(\.pageTint, .leaderboard)
@@ -271,17 +272,13 @@ struct LeaderboardTab: View {
     /// The loading rows inside the cream board card (no bare skeleton on the wallpaper).
     private var boardSkeleton: some View { LeaderboardSkeleton().lbCard() }
 
+    /// FINISH_SPEC BI23: O2 hosts the signed-out pitch, centered BELOW the pinned header.
     private var signedOut: some View {
-        VStack(spacing: 16) {
-            placeholder(icon: "trophy.fill", title: "Sign in to see rankings",
-                        subtitle: "Daily leaderboards are available to signed-in players.")
-            Button { showAuth = true } label: {
-                CandyLabel(title: "Sign in", symbol: "person.crop.circle.fill")
-            }
-            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large, fullWidth: false))
-        }
-        .padding(.top, 24)
-        .sheet(isPresented: $showAuth) { AuthView() }
+        GuestPitch(hosts: [Mascots.leaderboard], title: "Climb the boards",
+                   subtitle: "Sign in to see today's rankings and earn medals.",
+                   colors: [Color(hex: 0xF59E0B), Color(hex: 0xEA580C)],
+                   preview: .podium, onSignIn: { showAuth = true })
+            .sheet(isPresented: $showAuth) { AuthView() }
     }
 
     private var content: some View {
@@ -376,8 +373,9 @@ struct LeaderboardTab: View {
         if sweepLoading {
             boardSkeleton
         } else if sweepEntries.isEmpty {
-            MascotMessage(scene: .asleep, line: "No sweeps yet today. Be the first!")
-                .frame(maxWidth: .infinity).padding(.vertical, 28)
+            // BI24: brand headline over R asleep's voice line.
+            BrandEmptyState(title: "No sweeps yet", line: "Nobody has swept today. Be the first!", scene: .asleep, artHeight: 100)
+                .frame(maxWidth: .infinity).padding(.vertical, 8)
             .lbCard()
         } else {
             VStack(spacing: 0) {
@@ -413,9 +411,9 @@ struct LeaderboardTab: View {
             if ySweepKnown == nil {
                 boardSkeleton
             } else if yesterdaySweep.isEmpty {
-                Text("No sweeps yesterday")
-                    .font(Brand.font(13, .heavy)).foregroundStyle(FinishInk.secondary)
-                    .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
+                // BI24: R asleep + brand headline, not a plain grey line.
+                BrandEmptyState(title: "No sweeps yesterday", line: "Nobody cleared every daily. Today's board is wide open.",
+                                scene: .asleep, artHeight: 90)
                     .lbCard()
             } else {
                 VStack(spacing: 0) {
@@ -512,8 +510,10 @@ struct LeaderboardTab: View {
                 VStack(spacing: 8) {
                     // The cast (MASCOT_SPEC §6, ART_SPEC §7): I's invite scene grows the
                     // circle; R asleep says it's quiet in here.
-                    MascotMessage(scene: friendsOnly ? .invite : .asleep,
-                                  line: friendsOnly ? Mascots.addFriendLine : "No daily results yet. Be the first!")
+                    // BI24: brand headline over the host's voice line.
+                    BrandEmptyState(title: friendsOnly ? "Your board is empty" : "No results yet",
+                                    line: friendsOnly ? Mascots.addFriendLine : "Nobody has finished today. Be the first!",
+                                    scene: friendsOnly ? .invite : .asleep)
                     // Tier 2 (Aug 11): the empty Friends board is the
                     // best recruiting surface in the app — use it.
                     if friendsOnly {
@@ -562,9 +562,9 @@ struct LeaderboardTab: View {
             if yesterdayKnown == nil {
                 boardSkeleton
             } else if yesterday.isEmpty {
-                Text("No results from yesterday")
-                    .font(Brand.font(13, .heavy)).foregroundStyle(FinishInk.secondary)
-                    .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
+                // BI24: R asleep + brand headline, not a plain grey line.
+                BrandEmptyState(title: "Quiet yesterday", line: "No results from yesterday. Today's board is wide open.",
+                                scene: .asleep, artHeight: 90)
                     .lbCard()
             } else {
                 // Full daily rows (founder ask, Aug 11): profile links, guesses + time
@@ -788,7 +788,8 @@ struct LeaderboardTab: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20).padding(.top, 20)
             if let status = tauntStatus {
-                Text(status).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                // §BI9: the taunt result as the shared candy message (coin + pop).
+                G5CandyMessage(text: status, tone: status == "Sent!" ? .success : (status.hasPrefix("Could not") ? .error : .warn))
                     .frame(maxWidth: .infinity).padding(.vertical, 32)
             } else {
                 ScrollView {
@@ -908,13 +909,14 @@ struct LeaderboardTab: View {
             boardsSolved: c.boardsSolved ?? (c.completed ? 1 : 0), totalBoards: c.totalBoards ?? 1, hintsUsed: c.hintsUsed,
             vsWins: nil, vsLosses: nil, vsGames: nil, completed: c.completed,
             profiles: .init(username: p.username, avatarUrl: p.avatarUrl, avatarEmoji: p.avatarEmoji))
-        var out = rows
-        let i = out.firstIndex { $0.compositeScore < c.score || ($0.compositeScore == c.score && $0.timeSeconds > c.timeSeconds) } ?? out.count
-        // Past a full top-50 list the player's row belongs in the rank window, not here.
-        if i >= 50 { return (rows, count, nil) }
-        out.insert(mine, at: i)
-        let total = max(count + 1, out.count)
-        return (out, total, (rank: i + 1, total: total))
+        // BI19: core OptimisticResults (unit tested) — placed by (score desc, time asc),
+        // never past the top 50 (the rank window owns that), and the server's own row
+        // for the player always wins once it lands.
+        let r = OptimisticResults.merge(
+            rows: rows, playerCount: count, local: mine, userId: p.id,
+            score: c.score, time: c.timeSeconds,
+            rowUserId: \.userId, rowScore: \.compositeScore, rowTime: \.timeSeconds)
+        return (r.rows, r.playerCount, r.rank)
     }
 
     /// A mode tap sets the mode AND paints that mode's cached board in the same update (founder,

@@ -3,6 +3,7 @@ import Supabase
 import UIKit
 import GoogleSignIn
 import Security
+import WordociousCore
 
 /// Session storage for AuthService.uploadClient, which never holds a session.
 struct NoAuthStorage: AuthLocalStorage {
@@ -172,18 +173,31 @@ final class AuthService: ObservableObject {
             profile = cached
             isAuthenticated = true
         }
-        if let session = try? await client.auth.session {
+        do {
+            let session = try await client.auth.session
             // handleSignedIn claims save ownership for this user.
             await handleSignedIn(userId: session.user.id.uuidString)
-        } else {
-            // No session after all — the optimistic paint (if any) was wrong.
-            // Revert it and drop the hint so the next launch doesn't re-flash
-            // a phantom profile.
-            profile = nil
-            isAuthenticated = false
-            AuthService.hadPersistedSession = false
-            UserDefaults.standard.removeObject(forKey: AuthService.profileCacheKey)
-            AuthService.discardUnattributedSaves()
+        } catch {
+            // BI16: an expired token whose refresh FAILED (outage: timeout,
+            // auth unreachable, 5xx) is not "no session". It used to land here
+            // too and drop a signed-in player on the sign-in screen. Keep the
+            // stored session + cached profile and retry; only a revoked token
+            // (the SDK deletes the stored session for those) or no stored
+            // session at all signs out.
+            let outcome = AuthService.sessionOutcome(error)
+            if AuthSessionPolicy.keepsUserSignedIn(outcome, hasStoredSession: client.auth.currentSession != nil),
+               let stored = client.auth.currentSession {
+                keepSignedInOffline(userId: stored.user.id.uuidString)
+            } else {
+                // No session after all — the optimistic paint (if any) was wrong.
+                // Revert it and drop the hint so the next launch doesn't re-flash
+                // a phantom profile.
+                profile = nil
+                isAuthenticated = false
+                AuthService.hadPersistedSession = false
+                UserDefaults.standard.removeObject(forKey: AuthService.profileCacheKey)
+                AuthService.discardUnattributedSaves()
+            }
         }
         isLoading = false
 
@@ -197,14 +211,83 @@ final class AuthService: ObservableObject {
                 case .signedOut:
                     // §241: the listener can emit a transient signedOut during
                     // launch restore (the build-137 ghost). Only blank the UI
-                    // when the session is truly gone.
-                    if (try? await client.auth.session) == nil {
+                    // when the session is truly gone. BI16: "gone" = nothing
+                    // stored — NOT a refresh that failed on a dead network (the
+                    // old `try? client.auth.session == nil` read that as gone).
+                    if client.auth.currentSession == nil {
                         profile = nil
                         isAuthenticated = false
+                        accessToken = nil
+                        sessionRetry?.cancel()
                     }
                 default:
                     break
                 }
+            }
+        }
+    }
+
+    // MARK: - BI16 transient session failures
+
+    /// What a thrown session restore / refresh error means (see AuthSessionPolicy).
+    nonisolated static func sessionOutcome(_ error: Error) -> AuthSessionPolicy.Outcome {
+        guard let e = error as? AuthError else { return .transient } // URLError, timeouts, …
+        if case .sessionMissing = e {
+            return AuthSessionPolicy.classify(isSessionMissing: true, errorCode: nil, httpStatus: nil)
+        }
+        var status: Int?
+        if case .api(_, _, _, let response) = e { status = response.statusCode }
+        return AuthSessionPolicy.classify(isSessionMissing: false, errorCode: e.errorCode.rawValue,
+                                          httpStatus: status, message: e.message)
+    }
+
+    private var sessionRetry: Task<Void, Never>?
+    private var sessionRetryAttempt = 0
+
+    /// Signed in on the strength of the stored session while the server can't
+    /// refresh it: the cached profile stays (the §241 optimistic paint, or the
+    /// live one), nothing is cleared, and a retry is scheduled.
+    private func keepSignedInOffline(userId: String) {
+        isAuthenticated = true
+        isGuest = false
+        AuthService.hadPersistedSession = true
+        if profile == nil, let cached = AuthService.cachedProfileRow,
+           cached.id.lowercased() == userId.lowercased() {
+            profile = cached
+        }
+        scheduleSessionRetry()
+    }
+
+    private func scheduleSessionRetry() {
+        sessionRetry?.cancel()
+        let delay = AuthSessionPolicy.retryDelay(attempt: sessionRetryAttempt)
+        sessionRetryAttempt += 1
+        sessionRetry = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await self?.retrySessionIfNeeded()
+        }
+    }
+
+    /// Retry a session refresh that failed transiently (backoff timer, app
+    /// foreground). No-op unless a retry is pending.
+    func retrySessionIfNeeded() async {
+        guard sessionRetry != nil else { return }
+        do {
+            let session = try await client.auth.session
+            sessionRetry?.cancel(); sessionRetry = nil
+            sessionRetryAttempt = 0
+            await handleSignedIn(userId: session.user.id.uuidString)
+            // The queue couldn't drain while the session was stale.
+            await PendingRecords.drain()
+        } catch {
+            let outcome = AuthService.sessionOutcome(error)
+            if AuthSessionPolicy.keepsUserSignedIn(outcome, hasStoredSession: client.auth.currentSession != nil) {
+                scheduleSessionRetry()
+            } else {
+                // Revoked server-side: a real sign-out.
+                sessionRetry = nil
+                await signOut()
             }
         }
     }
@@ -366,6 +449,7 @@ final class AuthService: ObservableObject {
     }
 
     func signOut() async {
+        sessionRetry?.cancel(); sessionRetry = nil; sessionRetryAttempt = 0
         try? await client.auth.signOut()
         // NOTE: saves are deliberately NOT purged here. Purging on sign-OUT
         // meant signing out and straight back in as the same person destroyed
@@ -618,16 +702,25 @@ final class AuthService: ObservableObject {
         // account (or a hand-off from guest play) starts clean.
         AuthService.claimSavesFor(userId)
         stampPresence(userId: userId)
-        if let row = await fetchProfileRow(userId: userId) {
+        switch await loadProfileRow(userId: userId) {
+        case .row(let row):
             if row.isBanned { await signOut(); return }
             profile = row
-            return
+        case .failed:
+            // BI16: the server couldn't answer (outage / offline). Keep the last
+            // known profile (cached paint or live) — never blank it, and never
+            // mistake "unreachable" for "no row" and mint a second profile.
+            if profile == nil, let cached = AuthService.cachedProfileRow,
+               cached.id.lowercased() == userId.lowercased() {
+                profile = cached
+            }
+        case .missing:
+            // No profile row yet (OAuth first sign-in) — auto-create one, mirroring
+            // apps/web/lib/auth-context.tsx (anonymized username + avatar from the
+            // provider metadata + has_onboarded:false), then re-fetch.
+            await createProfileForOAuth(userId: userId)
+            if case .row(let row) = await loadProfileRow(userId: userId) { profile = row }
         }
-        // No profile row yet (OAuth first sign-in) — auto-create one, mirroring
-        // apps/web/lib/auth-context.tsx (anonymized username + avatar from the
-        // provider metadata + has_onboarded:false), then re-fetch.
-        await createProfileForOAuth(userId: userId)
-        profile = await fetchProfileRow(userId: userId)
     }
 
     /// Version/platform/last-seen stamp, once per launch — powers the admin
@@ -658,13 +751,21 @@ final class AuthService: ObservableObject {
         }
     }
 
-    private func fetchProfileRow(userId: String) async -> Profile? {
-        try? await client.from("profiles")
-            .select(Profile.selectColumns)
-            .eq("id", value: userId)
-            .single()
-            .execute()
-            .value
+    private enum ProfileLoad { case row(Profile), missing, failed }
+
+    /// BI16: tells "no row" (create one) apart from "couldn't ask" (keep what we have).
+    private func loadProfileRow(userId: String) async -> ProfileLoad {
+        do {
+            let rows: [Profile] = try await client.from("profiles")
+                .select(Profile.selectColumns)
+                .eq("id", value: userId)
+                .limit(1)
+                .execute()
+                .value
+            return rows.first.map(ProfileLoad.row) ?? .missing
+        } catch {
+            return .failed
+        }
     }
 
     private func createProfileForOAuth(userId: String) async {

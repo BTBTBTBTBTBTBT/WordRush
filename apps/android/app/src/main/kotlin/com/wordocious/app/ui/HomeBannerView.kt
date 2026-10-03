@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -186,17 +188,23 @@ fun HomeBannerView(
             Column(
                 // FINISH_SPEC A1: the frosted strip is a lilac frost, not white.
                 Modifier.fillMaxWidth().background(FinishInk.lavender.copy(alpha = 0.78f))
-                    .padding(start = 12.dp, top = 12.dp, end = 8.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(Modifier.padding(end = slots.headlineEndClear.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                // FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look
+                // even"): the headline centered on the card's center line (the W host's
+                // clearance reserved on BOTH sides), then a centered wide DAILY | UNLIMITED
+                // switch, then the centered meta line.
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
-                    Box(Modifier.weight(1f)) {
+                    Box(Modifier.fillMaxWidth().padding(horizontal = BANNER_HOST_CLEAR)) {
                         BannerHeadlineLayer(dailyHeadline, dailyDouble, headInk = Color(0xFF78350F), alpha = 1f - modeFade, active = !unlimited, name = name)
                         BannerHeadlineLayer(unlimitedHeadline, false, headInk = headInk, alpha = modeFade, active = unlimited, name = name)
                     }
                     // Nothing to share before the first finished game (iOS/web parity). Z: the
-                    // slot stays (empty) in Unlimited and before the first game.
+                    // slot stays (empty) in Unlimited and before the first game. BI21: it sits at
+                    // the strip's LEFT end, mirroring W at the right.
                     val canShare = !unlimited && word.progress.played + puzzles.progress.played > 0
                     Box(
                         Modifier.size(BannerSlotSpec.SHARE.dp)
@@ -209,36 +217,38 @@ fun HomeBannerView(
                         }
                     }
                 }
-                Row(Modifier.padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Z: both clock lines laid out on top of each other (the slot is the taller).
-                    Box(Modifier.weight(1f)) {
-                        Text(
-                            dailyClock, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
-                            color = subInk,
-                            modifier = Modifier.graphicsLayer { alpha = 1f - modeFade }
-                                .then(if (unlimited) Modifier.clearAndSetSemantics { } else Modifier),
-                        )
-                        Text(
-                            unlimitedClock, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
-                            color = subInk,
-                            modifier = Modifier.graphicsLayer { alpha = modeFade }
-                                .then(if (!unlimited) Modifier.clearAndSetSemantics { } else Modifier),
-                        )
-                    }
-                    // R3 (founder 10-02): everyone sees the switch; UNLIMITED wears a small gold
-                    // PRO pill for free players and guests, and their tap opens Go Pro.
-                    DailyUnlimitedSwitch(
-                        if (unlimited) PlayMode.UNLIMITED else PlayMode.DAILY,
-                        locked = !isPro,
-                        onChange = { m -> if (m == PlayMode.UNLIMITED && !isPro) paywall = true else onModeChange(m) },
+                // R3 (founder 10-02): everyone sees the switch; BI21: the PRO chip sits inside
+                // the UNLIMITED half for free players and guests, whose tap opens Go Pro.
+                DailyUnlimitedSwitch(
+                    if (unlimited) PlayMode.UNLIMITED else PlayMode.DAILY,
+                    locked = !isPro,
+                    onChange = { m -> if (m == PlayMode.UNLIMITED && !isPro) paywall = true else onModeChange(m) },
+                )
+                // Z: both meta lines laid out on top of each other (the slot is the taller).
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    val metaStyle = TextStyle(
+                        fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp,
+                        fontFeatureSettings = "tnum", textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        dailyClock, style = metaStyle, color = subInk, maxLines = 1,
+                        modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = 1f - modeFade }
+                            .then(if (unlimited) Modifier.clearAndSetSemantics { } else Modifier),
+                    )
+                    Text(
+                        unlimitedClock, style = metaStyle, color = subInk, maxLines = 1,
+                        modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = modeFade }
+                            .then(if (!unlimited) Modifier.clearAndSetSemantics { } else Modifier),
                     )
                 }
             }
-            BannerGroupRow(word, wTier, "WORDOCIOUS", big = true, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
+            // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
+            val tileSlots = maxOf(10, word.cards.size, puzzles.cards.size)
+            BannerGroupRow(word, wTier, "WORDOCIOUS", tileSlots, unlimited, completions, onOpen,
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 3.dp),
                 flameSlot = slots.wordFlameSlot, dailyTier = dailyWTier)
-            BannerGroupRow(puzzles, pTier, "PUZZLES", big = false, unlimited, completions, onOpen,
-                Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp),
+            BannerGroupRow(puzzles, pTier, "PUZZLES", tileSlots, unlimited, completions, onOpen,
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 5.dp, bottom = 12.dp),
                 flameSlot = slots.puzzlesFlameSlot, dailyTier = dailyPTier)
         }
         // The scene art carries the cast on a swept day (A7: no second W host beside it).
@@ -347,7 +357,8 @@ private fun BannerGroupRow(
     row: BannerRow,
     tier: BannerTier,
     label: String,
-    big: Boolean,
+    /** BI21: how many tiles the shared tile size must fit (the widest row, at least 10). */
+    tileSlots: Int,
     unlimited: Boolean,
     completions: Map<String, DailyCompletionsService.Completion>,
     onOpen: (ModeCard) -> Unit,
@@ -358,7 +369,7 @@ private fun BannerGroupRow(
     dailyTier: BannerTier = tier,
 ) {
     val ink = tierInk(tier)
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = ink)
             Text(
@@ -369,22 +380,21 @@ private fun BannerGroupRow(
             // AS7 (founder 10-02): no per-row streak flames — every streak lives in the header's
             // streak popup now. [flameSlot] / [dailyTier] stay for the slot math's callers.
         }
-        // Spec sizes (32/28 dp tiles, 7/4 dp gaps) are the ceiling; a narrow phone
-        // shrinks the tiles so all of them fit on one line.
+        // BI21: one tile size for every row — at most 32 dp, sized so [tileSlots] tiles fit
+        // with 5 dp gaps — and the row spreads edge to edge (first flush left, last flush
+        // right, equal gaps), so the 8- and 10-tile rows end flush.
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val n = row.cards.size.coerceAtLeast(1)
-            val specSize = if (big) 32.dp else 28.dp
-            val gap = if (big) 7.dp else 4.dp
-            val fit = (maxWidth - gap * (n - 1)) / n
-            val size = if (fit < specSize) fit else specSize
-            Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+            val n = tileSlots.coerceAtLeast(1)
+            val fit = (maxWidth - 5.dp * (n - 1)) / n
+            val size = if (fit < 32.dp) fit else 32.dp
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 row.cards.forEach { card ->
                     BannerTile(
                         card = card,
                         result = if (unlimited) null else card.dbKey?.let { completions[it] },
                         unlimited = unlimited,
                         size = size,
-                        radius = if (big) 9.dp else 8.dp,
+                        radius = 8.dp,
                         onClick = { onOpen(card) },
                     )
                 }
@@ -417,31 +427,32 @@ private fun BannerTile(
 ) {
     val accent = card.accent
     val shape = RoundedCornerShape(radius)
+    // FINISH_SPEC BI21 (no bordered boxes): glossy = the fill + a soft white sheen on top.
+    val gloss = Brush.verticalGradient(0f to Color.White.copy(alpha = 0.38f), 0.55f to Color.White.copy(alpha = 0f))
     val ink: Color
     val look: Modifier
     when {
-        // Unlimited: white 90%, no border, a soft violet lift, accent icon.
+        // Unlimited: a soft tinted tile with a light lift, full-strength accent icon.
         unlimited -> {
             ink = accent
-            // FINISH_SPEC A1: icon tiles are mini game cards (tint, line, 4 dp top bar).
-            look = Modifier.miniGameCard(accent, radius)
+            look = Modifier.shadow(3.dp, shape, ambientColor = accent.copy(alpha = 0.18f), spotColor = accent.copy(alpha = 0.18f))
+                .clip(shape).background(accentWash(accent, 0.16f))
         }
-        // Won: accent fill with an accent glow, white icon.
+        // Won: a glossy tile in the game's color with an accent glow, white icon + check.
         result?.completed == true -> {
             ink = Color.White
-            look = Modifier.shadow(5.dp, shape, ambientColor = accent.copy(alpha = 0.7f), spotColor = accent.copy(alpha = 0.7f))
-                .clip(shape).background(accent)
+            look = Modifier.shadow(4.dp, shape, ambientColor = accent.copy(alpha = 0.55f), spotColor = accent.copy(alpha = 0.55f))
+                .clip(shape).background(accent).background(gloss)
         }
-        // Lost: gray fill, white icon.
+        // Lost: a glossy gray tile, white icon.
         result != null -> {
             ink = Color.White
-            look = Modifier.clip(shape).background(Color(0xFF9CA3AF))
+            look = Modifier.clip(shape).background(Color(0xFF9CA3AF)).background(gloss)
         }
-        // Unplayed: white 85%, dashed accent border at 55%, accent icon.
+        // Not played: a soft pale tile, the icon dimmed.
         else -> {
             ink = accent
-            // FINISH_SPEC A1: an unplayed tile is a mini game card (was white with a dashed line).
-            look = Modifier.miniGameCard(accent, radius)
+            look = Modifier.clip(shape).background(accentWash(accent, 0.12f))
         }
     }
     val state = when {
@@ -454,7 +465,15 @@ private fun BannerTile(
         Modifier.squishClickable(card.title + state, card = true, onClick = onClick).size(size).then(look),
         contentAlignment = Alignment.Center,
     ) {
-        ModeGlyph(card, ink, box = size)
+        Box(Modifier.graphicsLayer { alpha = if (!unlimited && result == null) 0.45f else 1f }, contentAlignment = Alignment.Center) {
+            ModeGlyph(card, ink, box = size)
+        }
+        if (!unlimited && result?.completed == true) {
+            androidx.compose.material3.Icon(
+                Icons.Filled.Check, null, tint = Color.White,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(1.5.dp).size(9.dp),
+            )
+        }
     }
 }
 
@@ -535,40 +554,34 @@ internal fun Modifier.bannerShimmer(): Modifier {
 }
 
 /**
- * The DAILY | UNLIMITED switch, in the strip's second line. FINISH_SPEC Z: the two
- * segments are fixed-width (measured once from their labels in the same Black weight),
- * the labels never change weight, and only the tinted thumb slides between them
- * (instant with Reduce Motion) — so nothing reflows on the toggle. R3: with [locked]
- * (free players and guests) UNLIMITED wears a small gold PRO pill (AA4: never for Pro).
+ * The DAILY | UNLIMITED switch, centered under the headline. FINISH_SPEC BI21: about
+ * 75% of the card's width (at most 280 dp) in two EQUAL halves; R3: with [locked] (free
+ * players and guests) a small gold crown + PRO chip sits INSIDE the UNLIMITED half beside
+ * its label (AA4: never for Pro). Z: the labels never change weight and only the tinted
+ * thumb slides between the halves (instant with Reduce Motion), so nothing reflows.
  */
 @Composable
 private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (PlayMode) -> Unit) {
     val purple = Color(0xFF7C3AED)
-    val labelStyle = TextStyle(fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp)
-    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
-    val density = LocalDensity.current
-    val geo = remember(density, measurer) {
-        fun w(t: String) = with(density) { measurer.measure(t, labelStyle, maxLines = 1).size.width.toDp().value }
-        switchGeometry(kotlin.math.ceil(w("DAILY")), kotlin.math.ceil(w("UNLIMITED")))
-    }
+    val labelStyle = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp)
     val unlimited = value == PlayMode.UNLIMITED
-    val (thumbX, thumbW) = geo.thumb(unlimited)
     val still = WTheme.reducedMotion
-    val spec: androidx.compose.animation.core.AnimationSpec<Dp> =
+    val spec: androidx.compose.animation.core.AnimationSpec<Float> =
         if (still) androidx.compose.animation.core.snap()
         else androidx.compose.animation.core.spring(dampingRatio = 0.8f, stiffness = 500f)
-    val x by androidx.compose.animation.core.animateDpAsState(thumbX.dp, spec, label = "switchThumbX")
-    val w by androidx.compose.animation.core.animateDpAsState(thumbW.dp, spec, label = "switchThumbW")
+    val pos by androidx.compose.animation.core.animateFloatAsState(if (unlimited) 1f else 0f, spec, label = "switchThumb")
     val segH = BannerSlotSpec.SWITCH_SEGMENT_H.dp
-    Box {
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val track = (maxWidth * 0.76f).coerceAtMost(280.dp)
+        val half = (track - (BannerSlotSpec.SWITCH_PAD * 2).dp) / 2
         Box(
-            Modifier.width(geo.trackWidth.dp).height((BannerSlotSpec.SWITCH_SEGMENT_H + BannerSlotSpec.SWITCH_PAD * 2).dp)
+            Modifier.width(track).height((BannerSlotSpec.SWITCH_SEGMENT_H + BannerSlotSpec.SWITCH_PAD * 2).dp)
                 .clip(RoundedCornerShape(50)).background(purple.copy(alpha = 0.12f))
                 .padding(BannerSlotSpec.SWITCH_PAD.dp),
         ) {
             // The sliding thumb: the only thing that moves.
             Box(
-                Modifier.offset(x = x).width(w).height(segH)
+                Modifier.offset(x = half * pos).width(half).height(segH)
                     .clip(RoundedCornerShape(50)).background(accentWash(purple, 0.06f)),
             )
             Row {
@@ -576,24 +589,48 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
                     val on = value == mode
                     // Selected UNLIMITED stays violet, never pink/red (founder veto).
                     val ink = if (!on) purple else if (mode == PlayMode.DAILY) Color(0xFF4C1D95) else Color(0xFF6D28D9)
-                    val segW = if (mode == PlayMode.DAILY) geo.dailyWidth else geo.unlimitedWidth
-                    Box(
+                    Row(
                         Modifier.squishClickable(
                             if (mode == PlayMode.UNLIMITED && locked) "unlimited, a Pro feature" else label.lowercase(),
                             role = androidx.compose.ui.semantics.Role.Tab,
                         ) { onChange(mode) }
                             .semantics { selected = on }
-                            .width(segW.dp).height(segH),
-                        contentAlignment = Alignment.Center,
+                            .width(half).height(segH),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
                     ) {
                         Text(label, style = labelStyle, color = ink, maxLines = 1, softWrap = false)
+                        if (mode == PlayMode.UNLIMITED && locked) SwitchProChip()
                     }
                 }
             }
         }
-        if (locked) {
-            com.wordocious.app.ui.game.ProPill(Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-7).dp))
+    }
+}
+
+/** BI21 the small gold crown + PRO chip inside the switch's UNLIMITED half (no outline). */
+@Composable
+private fun SwitchProChip() {
+    Row(
+        Modifier.clip(RoundedCornerShape(50))
+            .background(Brush.verticalGradient(listOf(Color(0xFFFFE08A), Color(0xFFF5A524))))
+            .padding(horizontal = 5.dp, vertical = 1.5.dp)
+            .clearAndSetSemantics { },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        // A tiny drawn crown (three points over a band), in the chip's brown ink.
+        androidx.compose.foundation.Canvas(Modifier.width(8.dp).height(6.dp)) {
+            val w = size.width; val h = size.height
+            drawPath(
+                Path().apply {
+                    moveTo(0f, h); lineTo(0f, h * 0.15f); lineTo(w * 0.3f, h * 0.55f); lineTo(w * 0.5f, 0f)
+                    lineTo(w * 0.7f, h * 0.55f); lineTo(w, h * 0.15f); lineTo(w, h); close()
+                },
+                Color(0xFF7A3D00),
+            )
         }
+        Text("PRO", fontSize = 8.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF7A3D00), lineHeight = 9.sp)
     }
 }
 

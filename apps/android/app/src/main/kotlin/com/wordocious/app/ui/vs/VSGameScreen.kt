@@ -250,7 +250,7 @@ fun VSGameScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Icon(Icons.Filled.WifiOff, null, tint = Color(0xFFB91C1C), modifier = Modifier.size(15.dp))
+                        com.wordocious.app.ui.game.ToneCoin(com.wordocious.app.ui.game.FeedbackToast.Tone.ERROR, 20.dp, glyph = Icons.Filled.WifiOff)
                         Text(
                             "${vm.opponentName} disconnected — you win by forfeit in",
                             fontSize = 12.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.FinishInk.heading,
@@ -366,7 +366,8 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
                     }
                   }
                 }
-                CircularProgressIndicator(color = VS_ACCENT, trackColor = vsWash(VS_ACCENT, 0.24f), strokeWidth = 4.dp, modifier = Modifier.size(36.dp))
+                // BI24: the cast wave, not a bare spinner.
+                com.wordocious.app.ui.CastLoader(null)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     VsCapsLabel("WAITING FOR YOUR FRIEND ·", color = VsTeal.label, fontSize = 11.sp)
                     VsNumber("#${position + 1}", 13.sp)
@@ -517,6 +518,8 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
 
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     var confirmForfeit by remember { mutableStateOf(false) }
+    // BI22: the whole ProperNoundle clue card (opened from the two-line clue slot).
+    var showClueCard by remember { mutableStateOf(false) }
     // Confirm only when leaving would TRULY forfeit (a recorded loss): CPU
     // practice and already-resolved matches leave without the scary "counts as
     // a loss" dialog, which would be lying there.
@@ -571,18 +574,13 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             }
             Spacer(Modifier.height(2.dp))
             VsStatRow(vm, game, state)
-            // ProperNoundle VS: the Wikipedia clue (italic, centered) once revealed.
+            // ProperNoundle VS: the Wikipedia clue (italic, centered) — BI22: the solo screen's
+            // fixed two-line slot, always present, so revealing it never shrinks the board;
+            // tap it for the whole clue as an overlay card.
             if (vm.mode == GameMode.PROPERNOUNDLE) {
                 val clueText by game.clue.collectAsState()
-                clueText?.let {
-                    Text(
-                        it, color = WTheme.textSecondary, fontSize = 12.sp,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
+                val loadingClue by game.loadingClue.collectAsState()
+                com.wordocious.app.ui.game.ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true })
             }
         }
         // A run to send has no opponent: the panel says who will race it (§3).
@@ -711,6 +709,12 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),
             guessesSoFar = com.wordocious.app.ui.game.GauntletLook.guessesSoFar(gauntlet, state.boards),
         ) { game.advanceGauntletStage() }
+    }
+
+    // BI22 the whole ProperNoundle clue, over the match (the header slot shows two lines).
+    if (showClueCard && vm.mode == GameMode.PROPERNOUNDLE) {
+        val clueText by game.clue.collectAsState()
+        clueText?.let { com.wordocious.app.ui.game.ProperNoundleClueOverlay(it) { showClueCard = false } }
     }
 
     }

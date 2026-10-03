@@ -73,9 +73,10 @@ struct FriendsQuickPlaySheet: View {
             FriendsSectionHeader(title: "PICK A FRIEND")
             if friends.isEmpty {
                 // §A7 empty state: I with the invite scene (not the page host O1).
-                MascotMessage(scene: .invite, line: "Add a friend first — then pick a game and play.",
-                              font: Brand.font(12, .heavy), color: FriendsInk.muted, sceneHeight: 110)
-                    .frame(maxWidth: .infinity)
+                // BI24: brand headline over I's voice line.
+                BrandEmptyState(title: "No friends yet", line: "Add a friend first, then pick a game and play.",
+                                scene: .invite, artHeight: 110, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
+                                lineColor: FriendsInk.muted)
             } else {
                 // §C4: the friends list's lavender card with soft striped rows.
                 VStack(spacing: 0) {

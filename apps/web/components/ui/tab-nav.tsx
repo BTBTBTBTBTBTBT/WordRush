@@ -1,12 +1,12 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Icon3DName } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
 import { popupCard, PopupBar } from '@/components/ui/soft-popup';
 import { prefersReducedMotion } from '@/lib/motion';
-import { closeAllOverlays, leaveGuard, setLeaveGuard, tabTapAction } from '@/lib/nav-home';
+import { TAB_SCROLL_TOP_EVENT, closeAllOverlays, isTabRoot, leaveGuard, rememberTabScroll, rememberedTabScroll, setLeaveGuard, tabTapAction } from '@/lib/nav-home';
 
 // The four tabs (D1 of the Stats + Friends redesign) and their tap rules,
 // shared by the docked bottom bar (components/ui/bottom-nav.tsx, phones and
@@ -45,6 +45,10 @@ export function useTabTap(): { onTabTap: (e: React.MouseEvent, href: string) => 
     if (action === 'scrollTop') {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+      // BI11: the re-tap is the ONE thing that sends a tab to the top (Home scrolls an
+      // inner column, which listens for this).
+      rememberTabScroll(href, 0);
+      window.dispatchEvent(new CustomEvent(TAB_SCROLL_TOP_EVENT, { detail: href }));
     }
   };
   const confirm = confirmHref ? (
@@ -63,4 +67,52 @@ export function useTabTap(): { onTabTap: (e: React.MouseEvent, href: string) => 
     </div>
   ) : null;
   return { onTabTap, confirm };
+}
+
+/**
+ * FINISH_SPEC BI11: keep a tab root's scroll position across tab switches and
+ * game round trips. Restores where the player left `pathname` (retrying for up to
+ * ~1 s while its rows load; a touch or wheel stops it), remembers it as they
+ * scroll, and scrolls to the top on a re-tap (`TAB_SCROLL_TOP_EVENT`). `scroller`
+ * = the tab's own scrolling column (Home); omitted = the window (the other tabs —
+ * their footer links pass `scroll={false}` so Next.js doesn't jump to the top).
+ */
+export function useTabScrollMemory(pathname: string | null, scroller?: React.RefObject<HTMLElement | null>): void {
+  useEffect(() => {
+    if (!pathname || !isTabRoot(pathname)) return;
+    const el = scroller ? scroller.current : null;
+    if (scroller && !el) return;
+    const getY = () => (el ? el.scrollTop : window.scrollY);
+    const setY = (y: number) => { if (el) el.scrollTop = y; else window.scrollTo(0, y); };
+    const target = rememberedTabScroll(pathname);
+    let restoring = true;
+    let tries = 0;
+    let raf = 0;
+    const restore = () => {
+      if (!restoring) return;
+      setY(target);
+      if (Math.abs(getY() - target) > 1 && tries++ < 60) raf = requestAnimationFrame(restore);
+      else restoring = false;
+    };
+    restore();
+    const stop = () => { restoring = false; cancelAnimationFrame(raf); };
+    const onScroll = () => { if (!restoring) rememberTabScroll(pathname, getY()); };
+    const onTop = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== pathname) return;
+      stop();
+      if (el) el.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    };
+    const target$ = el ?? window;
+    target$.addEventListener('scroll', onScroll, { passive: true });
+    target$.addEventListener('touchstart', stop, { passive: true });
+    target$.addEventListener('wheel', stop, { passive: true });
+    window.addEventListener(TAB_SCROLL_TOP_EVENT, onTop);
+    return () => {
+      stop();
+      target$.removeEventListener('scroll', onScroll);
+      target$.removeEventListener('touchstart', stop);
+      target$.removeEventListener('wheel', stop);
+      window.removeEventListener(TAB_SCROLL_TOP_EVENT, onTop);
+    };
+  }, [pathname, scroller]);
 }

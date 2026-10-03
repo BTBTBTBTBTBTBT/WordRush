@@ -48,6 +48,10 @@ object AchievementSeen {
         val d = diff(earned, load(uid))
         save(uid, d.seen)
         com.wordocious.app.ui.BadgeMoments.unlockedCount = earned.size
-        if (d.celebrate.isNotEmpty()) com.wordocious.app.ui.BadgeMoments.achievements(d.celebrate, fromDiff = true)
+        // A SYNC source is always late: it waits for a calm moment (CelebrationGate, 2026-10-03).
+        if (d.celebrate.isNotEmpty()) com.wordocious.app.ui.BadgeMoments.achievements(
+            d.celebrate, fromDiff = true,
+            late = CelebrationGate.isLate(CelebrationGate.Source.SYNC, 0L, System.currentTimeMillis()),
+        )
     }
 }

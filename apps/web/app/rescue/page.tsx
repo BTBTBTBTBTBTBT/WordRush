@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { RescueGame } from '@/components/rescue/rescue-game';
 import { AdGate } from '@/components/ads/ad-gate';
 import { UnlimitedGate } from '@/components/game/unlimited-gate';
+import { GameLoading } from '@/components/game/game-loading';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
 
@@ -13,11 +14,7 @@ export default function RescuePage() {
   const searchParams = useSearchParams();
   const isDaily = searchParams.get('daily') === 'true';
 
-  if (!ready) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="text-lg font-black animate-pulse" style={{ color: 'var(--color-text)' }}>Loading...</div>
-    </div>
-  );
+  if (!ready) return <GameLoading />;
 
   const seed = isDaily ? generateDailySeed(getTodayLocal(), 'RESCUE') : undefined;
 

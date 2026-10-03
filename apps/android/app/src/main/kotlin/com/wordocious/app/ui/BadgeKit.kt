@@ -329,24 +329,33 @@ object BadgeMoments {
     /**
      * Queue the unlock popup for [keys] (oldest first). A client-side unlock ([fromDiff] false)
      * is also marked seen, so the launch / foreground diff never celebrates it twice.
+     *
+     * [late] (2026-10-03, CelebrationGate.isLate): a replayed / synced / slow result waits in
+     * [CelebrationQueue] for a calm moment instead of showing after the current screen's win
+     * popup. The launch / foreground diff ([fromDiff]) is always late.
      */
-    fun achievements(keys: List<String>, fromDiff: Boolean = false) {
+    fun achievements(keys: List<String>, fromDiff: Boolean = false, late: Boolean = fromDiff) {
         if (keys.isEmpty()) return
         if (!fromDiff) {
             runCatching { com.wordocious.app.data.AchievementSeen.markSeen(keys) }
             unlockedCount = unlockedCount?.plus(keys.size)
         }
-        post(keys.map { BadgeMoment.Achievement(it) })
+        post(keys.map { BadgeMoment.Achievement(it) }, late)
     }
 
-    fun levelUp(level: Int) = post(listOf(BadgeMoment.LevelUp(level)))
+    fun levelUp(level: Int, late: Boolean = false) = post(listOf(BadgeMoment.LevelUp(level)), late)
 
-    private fun post(incoming: List<BadgeMoment>) {
+    private fun post(incoming: List<BadgeMoment>, late: Boolean) {
         main.post {
             val add = BadgeMath.toEnqueue(items, seen, incoming)
             seen.addAll(add.map { it.id })
-            items.addAll(add)
+            if (late) CelebrationQueue.enqueueBadges(add) else items.addAll(add)
         }
+    }
+
+    /** A late moment's calm moment came ([CelebrationQueue.presentNext], main thread). */
+    fun showNow(moment: BadgeMoment) {
+        items.add(moment)
     }
 
     /** "Nice!" — the next one (if any) takes its place. */

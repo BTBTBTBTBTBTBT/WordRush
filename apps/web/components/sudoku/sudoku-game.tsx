@@ -38,7 +38,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 
 // Sudocious, the daily sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
@@ -317,17 +318,13 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
         <GameHostTitle mode="SUDOKU" label="Sudocious">
           <h1 className="text-2xl font-black" style={{ color: SUDOKU_ACCENT }}>SUDOCIOUS</h1>
         </GameHostTitle>
-        <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="relative flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{sudokuDailyNumber(getTodayLocal())}</span>}
           <span>{DIFFICULTY_LABEL[state.difficulty]}</span>
           <span className="flex items-center gap-1">Mistakes {mistakeDots}</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {completion ? (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
@@ -19,7 +19,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
-import { CartoonPanel, WordRow, FinalRow, MUDDLE_ACCENT, COLUMN_CLASS } from './muddle-board';
+import { CartoonPanel, WordRow, FinalRow, MUDDLE_ACCENT, COLUMN_CLASS, MUDDLE_CARTOON_MIN, muddlePlaySizes, useShortViewport } from './muddle-board';
 import { GameTray } from '@/components/ui/game-tray';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
@@ -43,6 +43,7 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass } from '@/components/ui/candy-button';
 
@@ -55,6 +56,12 @@ import { candyClass } from '@/components/ui/candy-button';
 const BANK = bankSession<ScrambleBank, ScramblePuzzle>('scramble', (b, d) => scramblePuzzleForDay(b, d, HOLIDAY_TABLE), scramblePuzzleForSeed);
 
 interface MuddleGameProps { isDaily?: boolean }
+
+/** Founder 10-02: the header is compact (playing and finished) — the title art (44px) sits in the corner-button row, then the one meta line. */
+const COMPACT_HEADER = { ...gameHeaderStyle('SCRAMBLE', 36), '--game-title-top': '6px', '--game-title-cap': '44px', '--game-header-shift': '10px' } as CSSProperties;
+/** The cartoon's slot: the room left over, never under 150px, at most 36dvh and 4:3 of the column (max-w-sm 384 → 288). */
+const CORNER_TOP = 'top-[var(--game-corner-top,0.5rem)]';
+const CARTOON_SLOT: CSSProperties = { flex: '1 1 0%', minHeight: MUDDLE_CARTOON_MIN, maxHeight: 'min(36dvh, calc((var(--game-col-w, 100vw) - 24px) * 0.75), 288px)' };
 
 export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const { profile, isProActive } = useAuth();
@@ -245,6 +252,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
 
   // The bank entry behind this session (fresh or restored): its cartoon and holiday.
   const puzzle = useSessionPuzzle(BANK, state?.id, state?.seed);
+  const short = useShortViewport();
 
   if (!state) return <GameLoading failed={loadFailed} />;
 
@@ -256,6 +264,12 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
   const es = elsewhere?.result.state ?? null;
   const esCaption = es ? es.caption.split('____') : null;
   const noop = () => {};
+  const sizes = muddlePlaySizes(short);
+  const finalOpen = scrambleFinalOpen(state);
+  const selectRow = (r: number) => setRow(r);
+  const tapTile = (r: number, ch: string) => { setRow(r); dispatch({ type: 'TYPE', row: r, letter: ch }); playKeyTap(); };
+  const revealLetter = (r: number) => { dispatch({ type: 'REVEAL_LETTER', row: r }); haptic('light'); };
+  const solveWord = (r: number) => { dispatch({ type: 'SOLVE_WORD', row: r }); haptic('light'); };
   // FINISH_SPEC R2: the finished board — the cartoon, the completed caption and
   // the punchline on the tray (purple once won, slate once lost), with the four
   // word rows collapsed to a summary (all of them under "See all words").
@@ -296,10 +310,13 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('SCRAMBLE', 36)}>
-        <GameHomeButton accentColor={MUDDLE_ACCENT}  href={MORE_HOME_HREF} />
-        <GameGuideButton slug="muddle" accentColor={MUDDLE_ACCENT} />
-        <SoundToggle accentColor={MUDDLE_ACCENT} />
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={COMPACT_HEADER}>
+        {/* `!absolute`: globals.css .hdr-glyph (position: relative) comes after the
+            Tailwind utilities and would otherwise drop the corner buttons into the
+            flow, pushing the title art a row down. */}
+        <GameHomeButton accentColor={MUDDLE_ACCENT} href={MORE_HOME_HREF} positionClass={`!absolute ${CORNER_TOP} left-2 z-10`} />
+        <GameGuideButton slug="muddle" accentColor={MUDDLE_ACCENT} positionClass={`!absolute ${CORNER_TOP} right-2 z-10`} />
+        <SoundToggle accentColor={MUDDLE_ACCENT} positionClass={`!absolute ${CORNER_TOP} right-[52px] z-10`} />
         <GameHostTitle mode="SCRAMBLE" label="Muddle">
           <h1 className="text-xl font-black leading-7" style={{ color: MUDDLE_ACCENT }}>MUDDLE</h1>
         </GameHostTitle>
@@ -310,11 +327,7 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
           <span>{checksLabel} · {SCRAMBLE_MAX_CHECKS - state.checks} left</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(60) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
+        <FeedbackToast message={message} top={gameToastTop(60)} />{/* the shared finished popup, over the meta row */}
       </div>
 
       {completion ? (
@@ -359,28 +372,42 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
         </>
       ) : (
       <>
-      {/* Compact rule (§5, founder 2026-09-23): one flex column — the cartoon
-          flexes to the height left over (96px floor, 26vh cap), caption and
-          words never shrink, and only this region scrolls on a short screen;
-          the keyboard below is a fixed footer that never scrolls away. */}
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-3 pt-1">
-        <CartoonPanel src={puzzle?.cartoon ?? null} alt={puzzle?.altText ?? 'Cartoon'} />
-        <p className="shrink-0 text-center font-extrabold max-w-sm px-1 mt-1.5 line-clamp-2" style={{ fontSize: 14, lineHeight: 1.25, color: 'var(--color-text)' }}>
+      {/* Founder 10-02 ("the picture and the tagline need to appear the whole
+          time"): the cartoon and caption are fixed at the top of this column
+          and never scroll. The cartoon takes the height left over (150px
+          floor; capped at 36dvh and at 4:3 of the column's width); the word
+          rows sit beneath in their OWN scroll box, so on a tight screen only
+          the rows scroll. Inactive and solved words are one compact line;
+          with the punchline open the four solved words pack two per line. */}
+      <div className="flex-1 min-h-0 flex flex-col items-center px-3 pt-1">
+        <div className="w-full flex justify-center" style={CARTOON_SLOT}>
+          <CartoonPanel src={puzzle?.cartoon ?? null} alt={puzzle?.altText ?? 'Cartoon'} fill />
+        </div>
+        <p className="shrink-0 text-center font-extrabold max-w-sm px-1 mt-1" style={{ fontSize: 14, lineHeight: 1.22, color: 'var(--color-text)' }}>
           {captionParts[0]}
-          <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{state.solved[SCRAMBLE_FINAL] ? state.final.answer.toLowerCase() : ' '}</span>
+          <span className="inline-block min-w-[3em] border-b-2 mx-1 align-baseline" style={{ borderColor: MUDDLE_ACCENT, color: '#5b21b6' }}>{state.solved[SCRAMBLE_FINAL] ? state.final.answer.toLowerCase() : '\u00a0'}</span>
           {captionParts[1] ?? ''}
         </p>
         {/* FINISH_SPEC L: the word rows sit on the shared game tray. */}
-        <GameTray accent={MUDDLE_ACCENT} state="playing" padding={6} className={`${COLUMN_CLASS} flex flex-col shrink-0 mt-1.5`}>
-          {state.words.map((_, i) => (
-            <WordRow key={i} state={state} row={i} active={row === i} shaking={shakeRow === i} finished={false}
-              onSelect={(r) => setRow(r)} onTapTile={(r, ch) => { setRow(r); dispatch({ type: 'TYPE', row: r, letter: ch }); playKeyTap(); }}
-              onRevealLetter={(r) => { dispatch({ type: 'REVEAL_LETTER', row: r }); haptic('light'); }} onSolveWord={(r) => { dispatch({ type: 'SOLVE_WORD', row: r }); haptic('light'); }} />
-          ))}
-          <FinalRow state={state} active={row === SCRAMBLE_FINAL} shaking={shakeRow === SCRAMBLE_FINAL} finished={false}
-            onSelect={() => setRow(SCRAMBLE_FINAL)} onTapTile={(ch) => { setRow(SCRAMBLE_FINAL); dispatch({ type: 'TYPE', row: SCRAMBLE_FINAL, letter: ch }); playKeyTap(); }}
-            onRevealLetter={() => { dispatch({ type: 'REVEAL_LETTER', row: SCRAMBLE_FINAL }); haptic('light'); }} />
-        </GameTray>
+        <div className="w-full min-h-0 overflow-y-auto overscroll-contain flex flex-col items-center mt-1" style={{ flex: '0 1 auto' }} data-muddle-rows>
+          <GameTray accent={MUDDLE_ACCENT} state="playing" padding={4} className={`${COLUMN_CLASS} flex flex-col shrink-0`}>
+            {finalOpen ? (
+              <div className="grid grid-cols-2 gap-x-1">
+                {state.words.map((_, i) => (
+                  <WordRow key={i} state={state} row={i} variant="mini" active={false} shaking={shakeRow === i} finished={false}
+                    onSelect={noop} onTapTile={noop} onRevealLetter={noop} onSolveWord={noop} />
+                ))}
+              </div>
+            ) : state.words.map((_, i) => (
+              <WordRow key={i} state={state} row={i} variant={row === i && !state.solved[i] ? 'full' : 'line'} sizes={sizes}
+                active={row === i} shaking={shakeRow === i} finished={false}
+                onSelect={selectRow} onTapTile={tapTile} onRevealLetter={revealLetter} onSolveWord={solveWord} />
+            ))}
+            <FinalRow state={state} sizes={sizes} active={row === SCRAMBLE_FINAL} shaking={shakeRow === SCRAMBLE_FINAL} finished={false}
+              onSelect={() => setRow(SCRAMBLE_FINAL)} onTapTile={(ch) => { setRow(SCRAMBLE_FINAL); dispatch({ type: 'TYPE', row: SCRAMBLE_FINAL, letter: ch }); playKeyTap(); }}
+              onRevealLetter={() => { dispatch({ type: 'REVEAL_LETTER', row: SCRAMBLE_FINAL }); haptic('light'); }} />
+          </GameTray>
+        </div>
       </div>
 
       <div className="shrink-0 pb-1.5 px-2 pt-1 flex flex-col gap-1.5">
@@ -392,7 +419,10 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
             <XCircle className="w-3.5 h-3.5" /> Clear
           </button>
         </div>
-        <Keyboard onKey={onKey} />
+        {/* A plain block wrapper: as a direct item of this flex column the keyboard's
+            mx-auto would size it to its max-content (436px of w-10 keys) and
+            overflow a 375px screen. */}
+        <div className="w-full"><Keyboard onKey={onKey} keyHeight={short ? 40 : 44} /></div>
       </div>
       {void scrambleFinalLetters}
       </>

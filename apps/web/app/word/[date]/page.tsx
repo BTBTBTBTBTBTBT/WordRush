@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen, Lightbulb, BarChart3, Shuffle, Swords, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { PageBackground } from '@/components/ui/page-background';
-import { InfoCard } from '@/components/ui/info-page';
 import { CandyLink } from '@/components/ui/candy-button';
+import { GuideBody, GuideHeroCard, GuideNumeral, GuideTakeaway, GuideWordmark, ReadChip } from '@/components/strategy/guide-family';
+import { accentInk } from '@/lib/soft-surface';
 import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch, wordPlayAnalysis } from '@/lib/word-of-day';
 import { wordInsights, ordinal, BANK_SIZE } from '@/lib/word-insights';
 
@@ -42,20 +43,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// C6 / A1: each section is a tinted card with the top bar, in its icon's color.
-const SectionCard = ({ accent, children }: { accent: string; children: React.ReactNode }) => (
-  <InfoCard as="section" accent={accent} className="p-5" style={{ marginBottom: 24 }}>
-    {children}
-  </InfoCard>
+// FINISH_SPEC BI17 (3-platform parity): the guide page family look. The hero is
+// the guide hero card (I-green, I "ready"); below it no cards — section labels,
+// numbered senses on accent-wash numerals, takeaways as soft color fields.
+/** I's green, the Word of the Day host. */
+const WOTD_ACCENT = '#4CC77A';
+/** Brand purple, the reading accent (senses, eyebrows, the example). */
+const READ_ACCENT = '#7C3AED';
+const AMBER = '#F59E0B';
+const EYEBROW_INK = accentInk(READ_ACCENT, '#6d28d9');
+
+/** A section label: 13 px black caps, tracking 1.2, heading ink. */
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <h2 className="m-0 font-black uppercase" style={{ fontSize: 13, letterSpacing: '1.2px', color: 'var(--color-text)' }}>{children}</h2>
 );
 
-const SectionTitle = ({ icon, tint, children }: { icon: React.ReactNode; tint: string; children: React.ReactNode }) => (
-  <h2 className="text-sm font-black uppercase tracking-wide mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-    <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: tint }}>
-      {icon}
-    </span>
-    {children}
-  </h2>
+/** One numbered sense: the soft numeral, a small part-of-speech eyebrow, the definition. */
+const SenseRow = ({ n, partOfSpeech, children }: { n: number; partOfSpeech?: string; children: React.ReactNode }) => (
+  <li className="flex items-start gap-3">
+    <GuideNumeral n={n} accent={READ_ACCENT} />
+    <div className="min-w-0 pt-0.5">
+      {partOfSpeech && (
+        <div className={`font-black uppercase leading-none mb-1 ${EYEBROW_INK.className}`} style={{ ...EYEBROW_INK.style, fontSize: 10, letterSpacing: '1px' }}>
+          {partOfSpeech}
+        </div>
+      )}
+      <p className="m-0" style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--color-text)' }}>{children}</p>
+    </div>
+  </li>
 );
 
 export default async function WordOfDayPage({ params }: Props) {
@@ -99,137 +114,115 @@ export default async function WordOfDayPage({ params }: Props) {
           close={{ href: '/', label: 'Close and return home' }}
         />
 
-        {/* Hero band — white tiles on a purple→pink gradient (matches native). */}
-        <div className="rounded-2xl px-6 py-7 mb-6 text-center" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
-          <p className="text-[11px] font-extrabold uppercase tracking-widest mb-3" style={{ color: 'rgba(255,255,255,0.9)' }}>
-            Word of the Day · {prettyDate(date)}
-          </p>
-          <div className="flex gap-1.5 justify-center mb-3">
-            {w.split('').map((ch, i) => (
-              <div
-                key={i}
-                className="w-12 h-12 rounded-md flex items-center justify-center text-xl font-black"
-                style={{ background: '#fff', color: '#6d28d9', boxShadow: '0 3px 0 rgba(0,0,0,0.12)' }}
-              >
-                {ch}
-              </div>
-            ))}
-          </div>
-          <h1 className="text-3xl font-black text-white">{w}</h1>
-          {(entry.phonetic || entry.partOfSpeech) && (
-            <p className="text-sm font-bold mt-1" style={{ color: 'rgba(255,255,255,0.95)' }}>
-              {entry.phonetic && <span className="mr-2">{entry.phonetic}</span>}
-              {entry.partOfSpeech && <span className="italic">{entry.partOfSpeech}</span>}
+        <div className="flex flex-col gap-7 mb-8">
+          {/* The hero: guide hero card, I "ready", the word in the brand caps (the page's h1). */}
+          <GuideHeroCard accent={WOTD_ACCENT} host="i" poseSize={96} priority className="px-5 pt-3 pb-5 gap-2">
+            <p className={`m-0 font-black uppercase ${EYEBROW_INK.className}`} style={{ ...EYEBROW_INK.style, fontSize: 11, letterSpacing: '1.2px' }}>
+              Word of the Day · {prettyDate(date)}
             </p>
-          )}
-        </div>
-
-        {/* Definition (dictionary) */}
-        {entry.definition && (
-          <SectionCard accent="#7c3aed">
-            <SectionTitle tint="rgba(124,58,237,0.14)" icon={<BookOpen className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}>
-              Meaning
-            </SectionTitle>
-            <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>{entry.definition}</p>
-            {entry.example && (
-              <p className="text-sm italic mt-2" style={{ color: 'var(--color-text-muted)' }}>“{entry.example}”</p>
-            )}
-            {entry.extraSenses && entry.extraSenses.length > 0 && (
-              <ul className="mt-3 space-y-1">
-                {entry.extraSenses.map((s, i) => (
-                  <li key={i} className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                    <span style={{ color: '#7c3aed' }} className="font-bold mr-1">{s.partOfSpeech}</span>
-                    {s.definition}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {(entry.synonyms?.length || entry.antonyms?.length) ? (
-              <div className="mt-4 space-y-2">
-                {entry.synonyms && entry.synonyms.length > 0 && (
-                  <p className="text-sm" style={{ color: 'var(--color-text)' }}>
-                    <span className="font-black uppercase text-[11px] tracking-wide mr-2" style={{ color: 'var(--color-text-muted)' }}>Similar</span>
-                    {entry.synonyms.join(', ')}
-                  </p>
+            <GuideWordmark>{w}</GuideWordmark>
+            {(entry.phonetic || entry.partOfSpeech) && (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {entry.phonetic && (
+                  <span className="font-bold" style={{ fontSize: 15, color: 'var(--color-text-secondary)' }}>{entry.phonetic}</span>
                 )}
-                {entry.antonyms && entry.antonyms.length > 0 && (
-                  <p className="text-sm" style={{ color: 'var(--color-text)' }}>
-                    <span className="font-black uppercase text-[11px] tracking-wide mr-2" style={{ color: 'var(--color-text-muted)' }}>Opposite</span>
-                    {entry.antonyms.join(', ')}
-                  </p>
-                )}
+                {entry.partOfSpeech && <ReadChip accent={READ_ACCENT}>{entry.partOfSpeech}</ReadChip>}
               </div>
-            ) : null}
-          </SectionCard>
-        )}
-
-        {/* ORIGINAL: letter analysis — unique, factual, useful for word-puzzle players */}
-        <SectionCard accent="#f59e0b">
-          <SectionTitle tint="rgba(245,158,11,0.16)" icon={<Lightbulb className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />}>
-            {w} as a word-puzzle answer
-          </SectionTitle>
-          <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>{analysis.summary}</p>
-          <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>{analysis.strategy}</p>
-        </SectionCard>
-
-        {/* ORIGINAL: by the numbers — first-party stats from the curated answer bank */}
-        <SectionCard accent="#4f46e5">
-          <SectionTitle tint="rgba(79,70,229,0.14)" icon={<BarChart3 className="w-3.5 h-3.5" style={{ color: '#4f46e5' }} />}>
-            {w} by the numbers
-          </SectionTitle>
-          <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>
-            Across the {BANK_SIZE.toLocaleString()} curated answers in the Wordocious bank,{' '}
-            {topFacts.map((f, i) => (
-              <span key={f.letter}>
-                <strong>{f.letter}</strong> appears in {f.pct}% of answers (the {ordinal(f.rank)} most common letter)
-                {i < topFacts.length - 1 ? ', ' : '. '}
-              </span>
-            ))}
-            {insights.sameStartCount > 0
-              ? `${insights.sameStartCount} other answer${insights.sameStartCount === 1 ? '' : 's'} share the opening “${insights.prefix}-”, so two purple tiles up front still leave real guessing to do.`
-              : `No other answer in the bank opens with “${insights.prefix}-”, so locking those first two letters all but gives it away.`}
-          </p>
-          <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            <strong>Difficulty:</strong> {insights.difficulty}/5 — {insights.difficultyLabel}, because {insights.difficultyWhy}.
-          </p>
-        </SectionCard>
-
-        {/* ORIGINAL: near misses & anagrams from the answer bank */}
-        {(insights.neighbors.length > 0 || insights.anagrams.length > 0) && (
-          <SectionCard accent="#ec4899">
-            <SectionTitle tint="rgba(236,72,153,0.14)" icon={<Shuffle className="w-3.5 h-3.5" style={{ color: '#ec4899' }} />}>
-              Near misses
-            </SectionTitle>
-            {insights.neighbors.length > 0 && (
-              <p className="text-base leading-relaxed mb-2" style={{ color: 'var(--color-text)' }}>
-                One letter away in the answer bank: <strong>{insights.neighbors.join(', ')}</strong>. Each of these turns four
-                tiles purple against {w} — the classic endgame squeeze where spending a guess on the differing letter beats
-                burning attempts on hope.
-              </p>
             )}
-            {insights.anagrams.length > 0 && (
-              <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>
-                Same letters, different order: <strong>{insights.anagrams.join(', ')}</strong> — amber-heavy boards can be
-                hiding {insights.anagrams.length === 1 ? 'this anagram' : 'one of these anagrams'} instead.
-              </p>
-            )}
-          </SectionCard>
-        )}
+          </GuideHeroCard>
 
-        {/* Play CTA — internal links into the game modes */}
-        <SectionCard accent="#14b8a6">
-          <SectionTitle tint="rgba(20,184,166,0.14)" icon={<Swords className="w-3.5 h-3.5" style={{ color: '#14b8a6' }} />}>
-            Put it to use
-          </SectionTitle>
-          <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>
-            Words like {w} are exactly what the daily puzzles throw at you. Warm up in{' '}
-            <Link href="/practice" className="font-bold" style={{ color: '#7c3aed' }}>Practice</Link>, race the clock in the{' '}
-            <Link href="/" className="font-bold" style={{ color: '#7c3aed' }}>Daily Challenge</Link>, or study the{' '}
-            <Link href="/strategy/best-starting-words" className="font-bold" style={{ color: '#7c3aed' }}>best starting words</Link>{' '}
-            before your next run. New to the multi-board modes? The{' '}
-            <Link href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</Link> cover every mode.
-          </p>
-        </SectionCard>
+          {/* Definition (dictionary): numbered senses, the example as a highlighted line. */}
+          {entry.definition && (
+            <section className="flex flex-col gap-3.5">
+              <SectionLabel>Meaning</SectionLabel>
+              <ol className="m-0 p-0 list-none flex flex-col gap-3.5">
+                <SenseRow n={1} partOfSpeech={entry.partOfSpeech}>{entry.definition}</SenseRow>
+                {(entry.extraSenses ?? []).map((s, i) => (
+                  <SenseRow key={i} n={i + 2} partOfSpeech={s.partOfSpeech}>{s.definition}</SenseRow>
+                ))}
+              </ol>
+              {entry.example && (
+                <GuideTakeaway accent={READ_ACCENT}><em>“{entry.example}”</em></GuideTakeaway>
+              )}
+              {(entry.synonyms?.length || entry.antonyms?.length) ? (
+                <div className="flex flex-col gap-1.5">
+                  {entry.synonyms && entry.synonyms.length > 0 && (
+                    <p className="m-0 text-sm" style={{ color: 'var(--color-text)' }}>
+                      <span className={`font-black uppercase mr-2 ${EYEBROW_INK.className}`} style={{ ...EYEBROW_INK.style, fontSize: 10, letterSpacing: '1px' }}>Similar</span>
+                      {entry.synonyms.join(', ')}
+                    </p>
+                  )}
+                  {entry.antonyms && entry.antonyms.length > 0 && (
+                    <p className="m-0 text-sm" style={{ color: 'var(--color-text)' }}>
+                      <span className={`font-black uppercase mr-2 ${EYEBROW_INK.className}`} style={{ ...EYEBROW_INK.style, fontSize: 10, letterSpacing: '1px' }}>Opposite</span>
+                      {entry.antonyms.join(', ')}
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </section>
+          )}
+
+          {/* ORIGINAL: letter analysis — unique, factual, useful for word-puzzle players */}
+          <section className="flex flex-col gap-3">
+            <SectionLabel>{w} as a puzzle answer</SectionLabel>
+            <GuideTakeaway accent={AMBER}>{analysis.summary}</GuideTakeaway>
+            <GuideBody>{analysis.strategy}</GuideBody>
+          </section>
+
+          {/* ORIGINAL: by the numbers — first-party stats from the curated answer bank */}
+          <section className="flex flex-col gap-3">
+            <SectionLabel>{w} by the numbers</SectionLabel>
+            <GuideBody>
+              Across the {BANK_SIZE.toLocaleString()} curated answers in the Wordocious bank,{' '}
+              {topFacts.map((f, i) => (
+                <span key={f.letter}>
+                  <strong>{f.letter}</strong> appears in {f.pct}% of answers (the {ordinal(f.rank)} most common letter)
+                  {i < topFacts.length - 1 ? ', ' : '. '}
+                </span>
+              ))}
+              {insights.sameStartCount > 0
+                ? `${insights.sameStartCount} other answer${insights.sameStartCount === 1 ? '' : 's'} share the opening “${insights.prefix}-”, so two purple tiles up front still leave real guessing to do.`
+                : `No other answer in the bank opens with “${insights.prefix}-”, so locking those first two letters all but gives it away.`}
+            </GuideBody>
+            <GuideBody>
+              <strong>Difficulty:</strong> {insights.difficulty}/5 — {insights.difficultyLabel}, because {insights.difficultyWhy}.
+            </GuideBody>
+          </section>
+
+          {/* ORIGINAL: near misses & anagrams from the answer bank */}
+          {(insights.neighbors.length > 0 || insights.anagrams.length > 0) && (
+            <section className="flex flex-col gap-3">
+              <SectionLabel>Near misses</SectionLabel>
+              {insights.neighbors.length > 0 && (
+                <GuideBody>
+                  One letter away in the answer bank: <strong>{insights.neighbors.join(', ')}</strong>. Each of these turns four
+                  tiles purple against {w} — the classic endgame squeeze where spending a guess on the differing letter beats
+                  burning attempts on hope.
+                </GuideBody>
+              )}
+              {insights.anagrams.length > 0 && (
+                <GuideBody>
+                  Same letters, different order: <strong>{insights.anagrams.join(', ')}</strong> — amber-heavy boards can be
+                  hiding {insights.anagrams.length === 1 ? 'this anagram' : 'one of these anagrams'} instead.
+                </GuideBody>
+              )}
+            </section>
+          )}
+
+          {/* Play CTA — internal links into the game modes */}
+          <section className="flex flex-col gap-3">
+            <SectionLabel>Put it to use</SectionLabel>
+            <GuideBody>
+              Words like {w} are exactly what the daily puzzles throw at you. Warm up in{' '}
+              <Link href="/practice" className="font-bold" style={{ color: '#7c3aed' }}>Practice</Link>, race the clock in the{' '}
+              <Link href="/" className="font-bold" style={{ color: '#7c3aed' }}>Daily Challenge</Link>, or study the{' '}
+              <Link href="/strategy/best-starting-words" className="font-bold" style={{ color: '#7c3aed' }}>best starting words</Link>{' '}
+              before your next run. New to the multi-board modes? The{' '}
+              <Link href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</Link> cover every mode.
+            </GuideBody>
+          </section>
+        </div>
 
         {/* Prev / next day */}
         <div className="flex items-center justify-between">

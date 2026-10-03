@@ -92,4 +92,33 @@ class WidgetStatsTest {
         val atMidnight = Calendar.getInstance(tz).apply { clear(); set(2026, Calendar.OCTOBER, 3, 0, 0, 0) }
         assertEquals(24 * 3600 * 1000L, WidgetStats.msToMidnight(atMidnight))
     }
+
+    @Test
+    fun resetTextRoundsUp() {
+        assertEquals("4h", WidgetStats.resetText(4 * 3600L))
+        assertEquals("4h", WidgetStats.resetText(3 * 3600L + 1))
+        assertEquals("1h", WidgetStats.resetText(3600L))
+        assertEquals("45m", WidgetStats.resetText(45 * 60L))
+        assertEquals("1m", WidgetStats.resetText(10L))
+        assertEquals("1m", WidgetStats.resetText(-5L))
+    }
+
+    @Test
+    fun nextNameSpellsOutTheClippedTitles() {
+        assertEquals("Deliverance", WidgetStats.nextName("RESCUE", "Deliv."))
+        assertEquals("Succession", WidgetStats.nextName("SEQUENCE", "Succ."))
+        assertEquals("Classic", WidgetStats.nextName("DUEL", "Classic"))
+        assertEquals("Abc", WidgetStats.nextName("X", "Abc."))
+    }
+
+    @Test
+    fun labelFlipsOnTheHourThenEveryQuarterHour() {
+        val tz = TimeZone.getTimeZone("UTC")
+        fun at(h: Int, m: Int) = Calendar.getInstance(tz).apply {
+            clear(); set(2026, Calendar.OCTOBER, 2, h, m, 0)
+        }
+        assertEquals(at(21, 0).timeInMillis, WidgetStats.nextLabelFlipMillis(at(20, 10)))
+        assertEquals(at(21, 0).timeInMillis, WidgetStats.nextLabelFlipMillis(at(20, 0)))
+        assertEquals(at(23, 30).timeInMillis, WidgetStats.nextLabelFlipMillis(at(23, 20)))
+    }
 }

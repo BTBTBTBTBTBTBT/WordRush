@@ -73,7 +73,7 @@ struct FriendsCardChrome: ViewModifier {
             }
             .background(shape.fill(accent.wash(tint)))
             .clipShape(shape)
-            .overlay(shape.stroke(accent.wash(line), lineWidth: 1.5).allowsHitTesting(false))
+            // BI23 (founder: no outlined boxes anywhere): wash + soft shadow, no stroke.
             .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)
         }
     }

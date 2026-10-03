@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.AlertDialog
@@ -139,6 +140,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf(false) }
+    // BI25: the screen has landed — heavier, below-the-fold pieces compose now.
+    var settled by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { kotlinx.coroutines.delay(350); settled = true }
 
     Column(modifier = Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         // A3: the controls row — Done is the bare close control (no bubble).
@@ -161,7 +165,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             Section("THEME", SettingsAccent.theme) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     THEMES.forEach { (key, label, desc) ->
-                        ChoiceTile(label, desc, themeAccent(key), active = theme == key) { ThemePref.set(key); theme = key }
+                        ChoiceTile(label, desc, SettingsAccent.theme, active = theme == key, preview = { ThemeTilesPreview(key) }) { ThemePref.set(key); theme = key }
                     }
                 }
             }
@@ -171,7 +175,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     KEYBOARD_LAYOUTS.forEach { (key, label, desc) ->
                         val active = com.wordocious.app.ui.game.KeyboardLayoutPref.value == key
-                        ChoiceTile(label, desc, SettingsAccent.keyboard, active = active) { com.wordocious.app.ui.game.KeyboardLayoutPref.value = key }
+                        ChoiceTile(label, desc, SettingsAccent.keyboard, active = active, preview = { KeyRowPreview(key) }) { com.wordocious.app.ui.game.KeyboardLayoutPref.value = key }
                     }
                 }
             }
@@ -302,7 +306,8 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             // (`if auth.isAuthenticated`); a guest has no session to sign out of
             // and no account to delete.
             if (isAuthenticated) {
-                LinkedSignIns()
+                // BI25: composed after the screen lands (its identity load stays off the tap frame); below the fold.
+                if (settled) LinkedSignIns()
 
                 Section("ACCOUNT", SettingsAccent.account, padded = true) {
                     // A8: Sign Out is the quiet peach candy; Delete Account the pink (destructive) one.
@@ -529,26 +534,95 @@ private fun Section(title: String, accent: Color, padded: Boolean = false, conte
     }
 }
 
-/** A theme / keyboard choice: a tinted tile in [accent]; selected = stronger tint + the ring (A1), squishing (A9). */
+/**
+ * BI25: a THEME / KEYBOARD choice as a soft filled tile — unselected a pale wash of the
+ * section's color (no stroke); selected a glossy filled tile in that color with white
+ * text and a small white check badge; a live [preview] on the right. The selected face
+ * cross-fades (alpha only); the press squishes (A9).
+ */
 @Composable
-private fun ChoiceTile(label: String, desc: String, accent: Color, active: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth()
-            .squishClickable(label = "$label, $desc" + if (active) ", selected" else "", role = Role.RadioButton, onClick = onClick)
-            .miniGameCard(accent, 14.dp, selected = active)
-            .padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+private fun ChoiceTile(
+    label: String, desc: String, accent: Color, active: Boolean,
+    preview: @Composable () -> Unit = {}, onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    val face by androidx.compose.animation.core.animateFloatAsState(if (active) 1f else 0f, androidx.compose.animation.core.tween(180), label = "choice")
+    val glossy = androidx.compose.ui.graphics.Brush.verticalGradient(
+        listOf(androidx.compose.ui.graphics.lerp(accent, Color.White, 0.22f), accent, androidx.compose.ui.graphics.lerp(accent, Color.Black, 0.12f)),
+    )
+    val sheen = androidx.compose.ui.graphics.Brush.verticalGradient(0f to Color.White.copy(alpha = 0.32f), 0.5f to Color.Transparent)
+    Box(
+        Modifier.fillMaxWidth()
+            .squishClickable(label = "$label, $desc" + if (active) ", selected" else "", role = Role.RadioButton, onClick = onClick),
     ) {
-        // The theme's swatch.
-        Box(Modifier.size(22.dp).clip(CircleShape).background(accent).border(2.dp, Color.White.copy(alpha = 0.8f), CircleShape))
-        Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
-            Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Box(Modifier.matchParentSize().clip(shape).background(if (WTheme.isDark) accent.copy(alpha = 0.16f) else Wash.mix(accent, 0.11f)))
+        Box(Modifier.matchParentSize().alpha(face).clip(shape).background(glossy).background(sheen))
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(label, fontSize = 14.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = if (active) Color.White else WTheme.text)
+                Text(desc, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = Nunito, color = if (active) Color.White.copy(alpha = 0.88f) else WTheme.textMuted)
+            }
+            preview()
+            Box(Modifier.size(20.dp).alpha(face).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+                Icon(Icons.Filled.Check, null, tint = accent, modifier = Modifier.size(13.dp))
+            }
         }
-        if (active) {
-            Box(Modifier.size(22.dp).clip(CircleShape).background(accent), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp))
+    }
+}
+
+/** BI25: four mini glossy letter tiles in the theme's colors on its page wash (SettingsPreviews). */
+@Composable
+private fun ThemeTilesPreview(theme: String) {
+    val spec = com.wordocious.app.data.SettingsPreviews.theme(theme)
+    Row(
+        Modifier.clip(RoundedCornerShape(7.dp)).background(Color(0xFF000000 or spec.page.toLong())).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        spec.tiles.forEach { t ->
+            val c = Color(0xFF000000 or t.hex.toLong())
+            Box(
+                Modifier.size(15.dp).clip(RoundedCornerShape(3.5.dp))
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(c, Color.White, 0.25f), c)))
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(0f to Color.White.copy(alpha = 0.35f), 0.5f to Color.Transparent)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(t.letter, fontSize = 9.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = Color.White)
+            }
+        }
+    }
+}
+
+/** BI25: a mini key row showing where Enter and Delete sit for a keyboard layout. */
+@Composable
+private fun KeyRowPreview(layout: String) {
+    val sp = com.wordocious.app.data.SettingsPreviews
+    Column(
+        Modifier.clip(RoundedCornerShape(7.dp)).background(Color.White.copy(alpha = if (WTheme.isDark) 0.12f else 0.55f)).padding(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        sp.keyRows(layout).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                row.forEach { key ->
+                    val special = key == sp.ENTER || key == sp.DELETE
+                    val w = if (special) 15.dp else if (key == sp.SPACE) 26.dp else 8.dp
+                    Box(
+                        Modifier.width(w).height(11.dp).clip(RoundedCornerShape(2.5.dp))
+                            .background(if (special) Color(0xFFF59E0B) else Color.White),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        when (key) {
+                            sp.ENTER -> Icon(Icons.AutoMirrored.Filled.KeyboardReturn, null, tint = Color.White, modifier = Modifier.size(8.dp))
+                            // The real keyboard's chunky backspace glyph (KeyboardView).
+                            sp.DELETE -> com.wordocious.app.ui.game.ChunkyBackspace(10.dp)
+                            sp.SPACE -> {}
+                            else -> Text(key, fontSize = 6.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = Color(0xFF3B1A78))
+                        }
+                    }
+                }
             }
         }
     }

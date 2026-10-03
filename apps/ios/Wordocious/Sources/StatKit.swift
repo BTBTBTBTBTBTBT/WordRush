@@ -338,14 +338,42 @@ extension View {
 /// before and stores the result back. Purely additive: what is fetched and how
 /// it renders are unchanged. Key by a stable string that includes the user id,
 /// mode and play type, e.g. "guessDist:\(uid):\(mode):\(playType)".
+///
+/// FINISH_SPEC BI19: Codable values are also persisted (Caches/stats-memo.json,
+/// versioned, size-bounded), so a COLD launch paints the last stats too instead
+/// of skeletons. The Codable overloads below are picked automatically; anything
+/// else stays session-only, exactly as before.
 @MainActor
 final class StatsMemo {
     static let shared = StatsMemo()
     private var store: [String: Any] = [:]
+    private let disk: PersistentMemoStore? = FileManager.default
+        .urls(for: .cachesDirectory, in: .userDomainMask).first
+        .map { PersistentMemoStore(url: $0.appendingPathComponent("stats-memo.json")) }
+    private var flushWork: DispatchWorkItem?
     private init() {}
 
     func get<T>(_ key: String) -> T? { store[key] as? T }
     func set<T>(_ key: String, _ value: T) { store[key] = value }
+
+    /// Memory first, then the last launch's value from disk.
+    func get<T: Decodable>(_ key: String) -> T? {
+        if let v = store[key] as? T { return v }
+        guard let v = disk?.get(key, as: T.self) else { return nil }
+        store[key] = v
+        return v
+    }
+
+    func set<T: Encodable>(_ key: String, _ value: T) {
+        store[key] = value
+        disk?.set(key, value)
+        // Coalesce a page's burst of sets into one write, off the main thread.
+        flushWork?.cancel()
+        let disk = disk
+        let work = DispatchWorkItem { DispatchQueue.global(qos: .utility).async { disk?.flush() } }
+        flushWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: work)
+    }
 
     /// The signed-in id every memo key carries ("anon" before auth lands).
     static var uid: String { AuthService.shared.profile?.id ?? "anon" }
@@ -380,9 +408,11 @@ struct StatsEmptyCard: View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader(title, accent: accent)
             KitCard {
-                HStack(spacing: 8) {
-                    Image(systemName: "chart.bar").font(.system(size: 13)).foregroundStyle(Theme.textMuted)
-                    Text(hint).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                // BI24: D (the stats host) beside the line, never a generic SF Symbol.
+                HStack(spacing: 10) {
+                    MascotView(Mascots.stats, size: 34)
+                    Text(hint).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 10)
             }

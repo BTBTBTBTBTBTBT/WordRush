@@ -250,16 +250,20 @@ struct VSCalloutPill: View {
 
     var body: some View {
         HStack(spacing: 7) {
-            Circle().fill(VsLobbyKit.ink).frame(width: 7, height: 7)
+            // §BI9: a glossy teal coin, not a plain dot.
+            G5Coin(accent: VsLobbyKit.ink, glyph: "bolt.fill", size: 22)
             Text(text)
                 .font(Brand.font(12, .black)).foregroundStyle(VsLobbyKit.titleInk)
                 .lineLimit(2).multilineTextAlignment(.leading)
         }
-        .padding(.horizontal, 14).padding(.vertical, 9)
-        // §A1: no plain white — a soft teal wash with its border.
-        .background(Capsule().fill(VsLobbyKit.ink.wash(0.12)))
-        .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.34), lineWidth: 1.5))
-        .shadow(color: VsLobbyKit.deep.opacity(0.14), radius: 8, x: 0, y: 3)
+        .padding(.leading, 8).padding(.trailing, 14).padding(.vertical, 7)
+        // §A1 / §BI9: the calm candy pill — a soft teal wash, its rim and a bottom lip.
+        .background(ZStack {
+            Capsule().fill(VsLobbyKit.ink.wash(0.38)).offset(y: 2.5)
+            Capsule().fill(LinearGradient(colors: [VsLobbyKit.ink.wash(0.06), VsLobbyKit.ink.wash(0.16)],
+                                          startPoint: .top, endPoint: .bottom))
+            Capsule().strokeBorder(VsLobbyKit.ink.wash(0.45), lineWidth: 1.5)
+        })
         .padding(.horizontal, 24)
         .transition(.move(edge: .top).combined(with: .opacity))
     }

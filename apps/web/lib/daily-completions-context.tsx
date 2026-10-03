@@ -3,6 +3,38 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { fetchTodayDailyCompletions, getTodayLocal, type DailyCompletion } from '@/lib/daily-service';
+import { mergePendingCompletions, pendingTodayCompletions, preferCompletion } from '@/lib/pending-records';
+import {
+  applyLocalResult,
+  localResultsFor,
+  mergeCompletions,
+  pruneStore,
+  reconcile,
+  updateResultStore,
+} from '@/lib/optimistic-results';
+import { cacheUser } from '@/lib/page-cache';
+
+/**
+ * Server (or cached) completions plus today's results still sitting in the
+ * pending-record queue (finished during an outage, daily row not confirmed):
+ * Home must keep those cards completed across a reload. A row the server
+ * already has always stands — a queued result never downgrades it.
+ */
+function withPending(map: Map<string, DailyCompletion>, userId: string | undefined): Map<string, DailyCompletion> {
+  if (!userId) return map;
+  const today = getTodayLocal();
+  // BI19: plus the optimistic store (lib/optimistic-results.ts) — every finish
+  // is written there before any network, so the W / L survives a reload even
+  // when the pending-record payload has already been cleared.
+  const local = localResultsFor(updateResultStore((st) => pruneStore(st, today)), userId, today);
+  return mergeCompletions(mergePendingCompletions(map, pendingTodayCompletions(userId, today)), local);
+}
+
+/** BI19: the server's rows for today landed — drop the local entries it now has (the server wins silently). */
+function reconcileLocal(server: Map<string, DailyCompletion>, userId: string): void {
+  const today = getTodayLocal();
+  updateResultStore((st) => reconcile(pruneStore(st, today), userId, today, server.keys()));
+}
 
 interface DailyCompletionsContextValue {
   todayDailies: Map<string, DailyCompletion>;
@@ -60,7 +92,9 @@ function writeCache(map: Map<string, DailyCompletion>) {
 export function DailyCompletionsProvider({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   // Initialize from localStorage so the very first render already has data
-  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => readCache());
+  // BI19: plus the returning player's optimistic results (cacheUser() reads
+  // the stored session, so this works on the very first frame).
+  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => withPending(readCache(), cacheUser() ?? undefined));
   // readCache() is day-guarded, so whatever seeded the initial state is today's.
   const [dailiesDay, setDailiesDay] = useState<string>(() => getTodayLocal());
   const fetchedRef = useRef<string | null>(null);
@@ -82,8 +116,15 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
       setAndCache(new Map());
       return;
     }
-    const data = await fetchTodayDailyCompletions(user.id);
-    setAndCache(data);
+    try {
+      // throwOnError: a failed read (outage) keeps what we have instead of
+      // wiping Home's completed cards with an empty map.
+      const data = await fetchTodayDailyCompletions(user.id, { throwOnError: true });
+      reconcileLocal(data, user.id);
+      setAndCache(withPending(data, user.id));
+    } catch {
+      setAndCache((prev) => withPending(prev, user.id));
+    }
     fetchedRef.current = user.id;
   }, [user, setAndCache]);
 
@@ -106,14 +147,15 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
     if (fetchedRef.current === user.id) return;
     // If localStorage already has today's data, use it immediately
     // and do a silent background refresh.
-    const cached = readCache();
+    const cached = withPending(readCache(), user.id);
     if (cached.size > 0) {
       setTodayDailies(cached);
       setDailiesDay(getTodayLocal());   // readCache() only returns today's data
       fetchedRef.current = user.id;
       // Background refresh to pick up any changes
-      fetchTodayDailyCompletions(user.id).then((fresh) => {
-        setAndCache(fresh);
+      fetchTodayDailyCompletions(user.id, { throwOnError: true }).then((fresh) => {
+        reconcileLocal(fresh, user.id);
+        setAndCache(withPending(fresh, user.id));
       }).catch(() => {});
     } else {
       refreshDailies().catch(() => {});
@@ -123,22 +165,47 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   const addCompletion = useCallback((gameMode: string, result: DailyCompletion) => {
     setAndCache((prev) => {
       const next = new Map(prev);
-      next.set(gameMode, result);
+      // Never downgrade (a win beats a loss, then the better score — the
+      // daily row keeps the best too).
+      next.set(gameMode, preferCompletion(prev.get(gameMode), result));
       return next;
     });
   }, [setAndCache]);
 
+  // Pending-record queue drain: whenever the network or the tab comes back
+  // ('online', visible, focus) — not only on Home's load — so a result
+  // finished during an outage reaches the server as soon as it can.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    import('@/lib/stats-service')
+      .then((m) => { if (!cancelled) cleanup = m.installPendingRecordDrainTriggers(user.id); })
+      .catch(() => {});
+    return () => { cancelled = true; cleanup?.(); };
+  }, [user?.id]);
+
   // Listen for 'daily-completion' events fired by recordGameResult so the
   // cache updates automatically without game components needing to import
   // this context.
+  const userId = user?.id;
   useEffect(() => {
     const handler = (e: Event) => {
       const { gameMode, won, guesses, timeSeconds, score } = (e as CustomEvent).detail;
+      // BI19: persist the finish locally FIRST (user · day · mode) so a reload,
+      // the leaderboard's own row and the Stats Today card all have it before
+      // the server confirms.
+      if (userId) {
+        const day = getTodayLocal();
+        updateResultStore((st) => applyLocalResult(pruneStore(st, day), {
+          userId, day, mode: gameMode, won: !!won, guesses: guesses ?? 0, timeSeconds: timeSeconds ?? 0, score: score ?? 0, savedAt: Date.now(),
+        }));
+      }
       addCompletion(gameMode, { won, guesses, timeSeconds, score: score ?? 0 });
     };
     window.addEventListener('daily-completion', handler);
     return () => window.removeEventListener('daily-completion', handler);
-  }, [addCompletion]);
+  }, [addCompletion, userId]);
 
   // Stable context value to avoid unnecessary re-renders
   const value = useMemo(() => ({

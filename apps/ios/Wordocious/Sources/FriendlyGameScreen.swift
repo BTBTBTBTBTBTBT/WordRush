@@ -68,15 +68,14 @@ struct FriendlyGameScreen: View {
                 if g.isActive, case .chain(let c) = g.state { chainInputArea(g, c) }
             } else if let loadError {
                 Spacer()
-                VStack(spacing: 12) {
-                    // O3 when the game is gone, R unplugged for any other error
-                    // (MASCOT_SPEC §6, ART_SPEC §7).
-                    SceneArt(loadError == Self.goneLine ? .notFound : .unplugged)
-                    Text(loadError).font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading).multilineTextAlignment(.center)
-                    Button { dismiss() } label: { CandyLabel(title: "Friends", symbol: "chevron.left") }
-                        .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium, fullWidth: false))
-                }
-                .padding(24)
+                // O3 when the game is gone, R unplugged for any other error
+                // (MASCOT_SPEC §6, ART_SPEC §7); BI24: brand headline + voice line + candy.
+                let gone = loadError == Self.goneLine
+                BrandEmptyState(title: gone ? "Game not found" : "Can't load this game", line: loadError,
+                                scene: gone ? .notFound : .unplugged, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
+                                lineColor: FriendsInk.heading,
+                                actionTitle: "Friends", actionSymbol: "chevron.left", actionVariant: .pink,
+                                action: { dismiss() })
                 Spacer()
             } else {
                 Spacer()
@@ -372,9 +371,22 @@ struct FriendlyGameScreen: View {
         }
     }
 
+    /// §BI22: the pinned inputs' move-error slot is always there (one candy line,
+    /// empty when there's no error) — the message used to grow the pinned area and
+    /// push the board up. Sized by the message's own chrome, never overlapping keys.
+    private var errorSlot: some View {
+        ZStack {
+            G5CandyMessage(text: "Ag", tone: .error).hidden().accessibilityHidden(true)
+            if let moveError { errorText(moveError) }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(.easeOut(duration: 0.2), value: moveError)
+    }
+
     private func errorText(_ m: String) -> some View {
-        Text(m).font(Brand.font(12, .heavy)).foregroundStyle(Color(hex: 0xDC2626))
-            .multilineTextAlignment(.center)
+        // §BI9: the calm candy message (coral coin, one shake), not bare red text.
+        G5CandyMessage(text: m, tone: .error)
+            .id(m)
             .transition(.opacity)
     }
 
@@ -789,7 +801,7 @@ struct FriendlyGameScreen: View {
             send(.ghost(l))
         }
         return VStack(spacing: 8) {
-            if let moveError { errorText(moveError).padding(.horizontal, 16) }
+            errorSlot.padding(.horizontal, 16)
             if g.yourTurn {
                 // §A8: the purple candy ADD (dimmed until a letter is picked).
                 Button(action: play) {
@@ -904,7 +916,7 @@ struct FriendlyGameScreen: View {
                 Text("\(themName)'s word — it lands in the chain here.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
             }
-            if let moveError { errorText(moveError).padding(.horizontal, 16) }
+            errorSlot.padding(.horizontal, 16)
             LetterKeyboard(
                 onLetter: { l in
                     guard mine, letters.count < wordMax else { return }

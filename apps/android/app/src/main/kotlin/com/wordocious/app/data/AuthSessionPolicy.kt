@@ -1,0 +1,72 @@
+package com.wordocious.app.data
+
+/**
+ * What a failed session refresh / restore means for the signed-in state (founder, 2026-10-03:
+ * during a Supabase outage a late Daily Sweep popped AND the app showed the sign-in screen).
+ *
+ * The rule (iOS / Android / web parity): a refresh that fails because the network or the auth
+ * server is unhealthy NEVER signs the user out. The cached session, user and profile stay, and
+ * the refresh is retried later. Only an explicit invalid / revoked refresh token, or the user
+ * signing out, ends the session.
+ *
+ * Pure (no Supabase types) so the decision is JVM-unit-tested: AuthSessionPolicyTest.
+ */
+object AuthSessionPolicy {
+    enum class Outcome {
+        /** Network / server trouble — keep everything, retry later. */
+        TRANSIENT,
+        /** The refresh token is invalid or revoked — the session is really over. */
+        REVOKED,
+        /** There is no stored session to refresh at all. */
+        NO_SESSION,
+    }
+
+    /** GoTrue error codes that mean the refresh token / session can never work again. */
+    val REVOKING_CODES = setOf(
+        "refresh_token_not_found",
+        "refresh_token_already_used",
+        "session_not_found",
+        "session_expired",
+        "user_not_found",
+        "user_banned",
+    )
+
+    /**
+     * Classify one failed refresh.
+     *
+     * - [isSessionMissing]: nothing stored → [Outcome.NO_SESSION].
+     * - A revoking GoTrue [errorCode] → [Outcome.REVOKED] (whatever the status).
+     * - A 400 / 401 whose [message] says "Invalid Refresh Token" (older GoTrue, no code) → REVOKED.
+     * - Everything else — a network error (timeout, IOException, unknown host, connect), a 5xx,
+     *   a 429, a 408, an unknown status, any other 4xx without a revoking code (a proxy's 403) —
+     *   is [Outcome.TRANSIENT]. Signing a player out over an error we can't prove is a
+     *   revocation is the worse failure: they lose nothing by waiting for the next retry.
+     */
+    fun classify(
+        errorCode: String?,
+        httpStatus: Int?,
+        isNetworkError: Boolean,
+        isSessionMissing: Boolean,
+        message: String? = null,
+    ): Outcome {
+        if (isSessionMissing) return Outcome.NO_SESSION
+        val code = errorCode?.trim()?.lowercase()
+        if (code != null && code in REVOKING_CODES) return Outcome.REVOKED
+        if (isNetworkError || httpStatus == null) return Outcome.TRANSIENT
+        if (httpStatus >= 500 || httpStatus == 429 || httpStatus == 408) return Outcome.TRANSIENT
+        if ((httpStatus == 400 || httpStatus == 401) &&
+            message?.contains("invalid refresh token", ignoreCase = true) == true
+        ) return Outcome.REVOKED
+        return Outcome.TRANSIENT
+    }
+
+    /** True when the player stays signed in (cached profile kept, no sign-in screen). */
+    fun keepsUserSignedIn(outcome: Outcome, hasStoredSession: Boolean): Boolean =
+        outcome == Outcome.TRANSIENT && hasStoredSession
+
+    /** Retry backoff after the [attempt]-th consecutive transient failure (0-based):
+     *  5 s, 15 s, 30 s, 60 s, then every 60 s. */
+    fun retryDelaySeconds(attempt: Int): Int = RETRY_SECONDS.getOrElse(attempt.coerceAtLeast(0)) { 60 }
+
+    private val RETRY_SECONDS = listOf(5, 15, 30, 60)
+}

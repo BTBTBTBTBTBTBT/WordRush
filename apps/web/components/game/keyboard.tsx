@@ -72,6 +72,9 @@ interface KeyboardProps {
   /** BI5: the reveal runs on the multi-board ("mini") clock. Defaults to on when
    *  per-board states are given for 2+ boards (QuadWord / OctoWord / Deliverance). */
   revealMini?: boolean;
+  /** Muddle (founder 10-02): a fixed key height in px instead of the responsive
+   *  h-12 / sm:h-14 classes (the Michael layout's extra row runs 6px shorter). */
+  keyHeight?: number;
 }
 
 /** The letter states the keys show: each new color lands with its tile (AQ1). */
@@ -158,7 +161,7 @@ function QuadrantKey({
 // Memoized (founder, 2026-09-29): the game screens pass stable props (useCallback
 // handlers, memoized letter states), so a tick or a message elsewhere on the
 // screen no longer re-renders every key.
-export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterStates = EMPTY_STATES, boardLetterStates: rawBoardStates, blackedOutLetters, keyFills, revealWord, revealMini }: KeyboardProps) {
+export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterStates = EMPTY_STATES, boardLetterStates: rawBoardStates, blackedOutLetters, keyFills, revealWord, revealMini, keyHeight }: KeyboardProps) {
   const mini = revealMini ?? (rawBoardStates != null && rawBoardStates.length > 1);
   const letterStates = useRevealed(rawLetterStates, revealWord, mini);
   const boardLetterStates = useRevealed(rawBoardStates, revealWord, mini);
@@ -171,7 +174,8 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
   const rows = LAYOUT_ROWS[layout];
   // Michael Keyboard is a row taller — shorter keys keep total height close
   // to the 3-row layouts so tight boards (OctoWord, Gauntlet) don't squeeze.
-  const keyH = layout === 'michael' ? 'h-10 sm:h-12 lg:h-10' : 'h-12 sm:h-14 lg:h-11';   // §255: see Key
+  const keyH = keyHeight ? '' : layout === 'michael' ? 'h-10 sm:h-12 lg:h-10' : 'h-12 sm:h-14 lg:h-11';   // §255: see Key
+  const hStyle = keyHeight ? { height: layout === 'michael' ? keyHeight - 6 : keyHeight } : undefined;
 
   return (
     <div className="flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard" style={{ paddingBottom: 3 }}>
@@ -189,7 +193,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
                   onClick={() => { haptic('light'); playKeyTap(); }}
                   aria-label="Space (decorative)"
                   className={cn(keyH, 'kkey flex-1 max-w-[240px] text-xs select-none')}
-                  style={{ ['--k-ink' as string]: '#8a78ad' }}
+                  style={{ ['--k-ink' as string]: '#8a78ad', ...hStyle }}
                 >
                   <span>space</span>
                 </button>
@@ -208,6 +212,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
                     key === 'BACK' ? 'min-w-[3.25rem] sm:min-w-[4rem]' : 'text-[12px] tracking-[0.04em]',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
+                  style={hStyle}
                 >
                   {/* Fixed dark ink on the fixed light key face (never the theme's
                       text color, which is near-white in Dark). */}
@@ -224,6 +229,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
                   aria-label={`${key}, unavailable`}
                   data-s="blocked"
                   className={cn(keyH, 'kkey w-10 sm:w-12 lg:w-11 text-base sm:text-lg opacity-60 cursor-not-allowed animate-pulse select-none')}
+                  style={hStyle}
                 >
                   <span>?</span>
                 </button>
@@ -255,7 +261,8 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
                   ['--k-face' as string]: fill,
                   ['--k-edge' as string]: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), ${fill}`,
                   ['--k-ink' as string]: '#ffffff',
-                } : undefined}
+                  ...hStyle,
+                } : hStyle}
               >
                 <span className={state || fill ? 'kkey-text' : undefined}>{key}</span>
               </button>

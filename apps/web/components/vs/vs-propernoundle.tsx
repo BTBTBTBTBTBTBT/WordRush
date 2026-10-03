@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { isTypingTarget } from '@/lib/keyboard';
 import { CandyButton } from '@/components/ui/candy-button';
-import { softPill } from '@/lib/soft-surface';
 import { playInvalid } from '@/lib/sounds';
 import { GameMode, pnGuessBlocked } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
@@ -16,6 +15,11 @@ import { normalizeString, evaluateGuess, checkWin } from '@/components/propernou
 import { useHints } from '@/components/propernoundle/use-hints';
 import type { VsGameComponentProps } from './vs-classic';
 import type { EvaluatedRow } from './vs-result-detail';
+import { FeedbackToast } from '@/components/game/feedback-toast';
+import { ClueSlot } from '@/components/propernoundle/clue-slot';
+
+/** The three hint pills share the row in equal thirds; a slimmer side padding keeps "Consonant" whole. */
+const HINT_THIRD = { paddingLeft: 8, paddingRight: 8 } as const;
 
 const MAX_GUESSES = 6;
 
@@ -227,7 +231,7 @@ export function VsProperNoundle({
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
-      <div className="text-center px-2 shrink-0">
+      <div className="relative text-center px-2 shrink-0">
         <div className="flex justify-center items-center gap-2">
           {puzzleMetadata?.themeCategory && (
             <span
@@ -241,11 +245,7 @@ export function VsProperNoundle({
           <span className="text-gray-400 text-xs font-bold">{guesses.length}/{MAX_GUESSES} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
+        <FeedbackToast message={message} />
       </div>
 
       {/* Opponent strip */}
@@ -260,13 +260,9 @@ export function VsProperNoundle({
         />
       </div>
 
-      {/* Hint clue text (once fetched) */}
-      {hints.hint && (
-        // A1: the clue sits on ProperNoundle's red wash, never plain white.
-        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5" style={softPill('#dc2626', { radius: 12 })}>
-          <p className="text-xs italic leading-snug font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
-        </div>
-      )}
+      {/* The clue slot is ALWAYS here at two lines (empty until Clue), on ProperNoundle's red
+          wash: appearing in the flow, a multi-line clue shrank the board. Tap it for the whole clue. */}
+      <ClueSlot clue={hints.hint} />
 
       {/* Board */}
       <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
@@ -284,16 +280,16 @@ export function VsProperNoundle({
           Hidden with `invisible` (not unmounted) so the row keeps its slot:
           unmounting it re-centered the flex-1 board for the frame between
           finishing and the 'waiting' screen swap — a visible board jump. */}
-      <div className={`shrink-0 flex justify-center gap-2 px-4 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
-          {/* A8: the solo screen's candy hint buttons. */}
-          <CandyButton size="sm" color="purple" onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
+      <div className={`shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[360px] mx-auto px-3 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
+          {/* A8: the solo screen's candy hint buttons, in equal thirds so a revealed letter never resizes a pill. */}
+          <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
             icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
             Clue
           </CandyButton>
-          <CandyButton size="sm" color="teal" onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
+          <CandyButton size="sm" color="teal" block style={HINT_THIRD} onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
             {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
           </CandyButton>
-          <CandyButton size="sm" color="pink" onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
+          <CandyButton size="sm" color="pink" block style={HINT_THIRD} onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
             {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
           </CandyButton>
         </div>

@@ -164,7 +164,7 @@ object StatsDeepService {
     // ── Today's daily standing (web fetchTodayDailyStanding) ───────────────────
 
     /** topPercent: average top-percentile across today's played dailies (1 = top 1%). */
-    data class DailyStanding(val topPercent: Int, val modesCounted: Int)
+    @kotlinx.serialization.Serializable data class DailyStanding(val topPercent: Int, val modesCounted: Int)
 
     @Serializable
     private data class MineRow(

@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- PendingRecords drains the result queue when a network comes back
+         (ConnectivityManager.registerDefaultNetworkCallback). Normal permission;
+         declared here rather than relying on an ad SDK's merged manifest. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Unity LevelPlay (docs/LEVELPLAY_SETUP.md) reads the advertising ID
          on Android 13+ only with this permission; it is also how the

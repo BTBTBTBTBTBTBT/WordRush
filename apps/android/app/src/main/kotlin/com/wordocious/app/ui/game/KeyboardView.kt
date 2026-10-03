@@ -323,7 +323,7 @@ private val BACKSPACE_BODY = androidx.compose.ui.graphics.vector.PathParser()
     .toPath()
 
 @Composable
-private fun ChunkyBackspace(width: androidx.compose.ui.unit.Dp) {
+internal fun ChunkyBackspace(width: androidx.compose.ui.unit.Dp) {
     androidx.compose.foundation.Canvas(Modifier.size(width, width * 0.75f)) {
         val k = size.width / 32f
         val body = androidx.compose.ui.graphics.Path().apply { addPath(BACKSPACE_BODY) }

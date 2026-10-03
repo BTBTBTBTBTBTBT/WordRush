@@ -26,6 +26,9 @@ import { getTileHex } from '@/lib/tile-theme';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { SoftNum } from '@/components/ui/soft-number';
 import { MedalArt } from '@/components/stats/medal-art';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
+import { CastLoader } from '@/components/ui/cast-loader';
+import { PAGE_SCENES, type SceneName } from '@/lib/art';
 import { BRAND_ACCENT, alphaHex, softBackground, softBorder, softCard, softPill } from '@/lib/soft-surface';
 import {
   fetchH2H,
@@ -174,9 +177,15 @@ function ModalTitle({ children }: { children: ReactNode }) {
   );
 }
 
-function EmptyNote({ children }: { children: ReactNode }) {
+/** BI24: a modal's empty / error state, compact: the cast scene, gradient caps title, one line. No box. */
+function EmptyNote({ title, line, scene = PAGE_SCENES.empty }: { title: string; line: string; scene?: SceneName }) {
+  return <BrandEmptyState scene={scene} artHeight={72} title={title} line={line} className="py-3" />;
+}
+
+/** A modal's loading state: the cast wave (never bare text). */
+function LoadingNote({ label }: { label: string }) {
   return (
-    <p className="text-xs font-bold text-center py-6" style={{ color: 'var(--color-text-muted)' }}>{children}</p>
+    <div role="status" aria-label={label} className="flex justify-center py-6"><CastLoader size={18} /></div>
   );
 }
 
@@ -277,19 +286,17 @@ export function GuardedBoardModal({
   return (
     <Modal open={open} onClose={onClose} ariaLabel={`${targetName}'s ${modeLabel(mode)} board`} wide>
       <ModalTitle>{targetName}&apos;s {modeLabel(mode)} — {day}</ModalTitle>
-      {result === null && <EmptyNote>Loading board…</EmptyNote>}
+      {result === null && <LoadingNote label="Loading board" />}
       {result?.status === 'locked' && (
-        <div className="text-center py-6">
-          <Lock className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-text-muted)' }} />
-          <p className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-            Finish today&apos;s {modeLabel(mode)} first — no spoilers
-          </p>
-          <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
-            Boards open only for dailies you&apos;ve finished.
-          </p>
-        </div>
+        <BrandEmptyState
+          host="w"
+          artHeight={80}
+          className="py-3"
+          title="NO SPOILERS"
+          line={`Finish today's ${modeLabel(mode)} first and this board opens up.`}
+        />
       )}
-      {result?.status === 'error' && <EmptyNote>Couldn&apos;t load this board. Try again later.</EmptyNote>}
+      {result?.status === 'error' && <EmptyNote scene={PAGE_SCENES.offline} title="CAN'T LOAD THIS BOARD" line="Check your connection and try again later." />}
       {board && (
         <div>
           <div className="flex items-center gap-3 mb-3 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
@@ -485,7 +492,7 @@ export function YouVsThemCard({
       <Modal open={showDetail} onClose={() => setShowDetail(false)} ariaLabel="All shared dailies" wide>
         <ModalTitle>You vs {targetName}</ModalTitle>
         {h2h.shared.length === 0 ? (
-          <EmptyNote>No shared dailies yet.</EmptyNote>
+          <EmptyNote title="NO SHARED DAILIES YET" line="Play the same daily on the same day to compare." />
         ) : (
           <div className="space-y-1">
             <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 text-[9px] font-black uppercase tracking-wider pb-1" style={{ color: 'var(--color-text-muted)' }}>
@@ -607,8 +614,8 @@ export function TrophyCaseCard({
 
       <Modal open={showHistory} onClose={() => setShowHistory(false)} ariaLabel="Medal history" wide>
         <ModalTitle>{targetName}&apos;s medals</ModalTitle>
-        {history === null && <EmptyNote>Loading…</EmptyNote>}
-        {history !== null && history.length === 0 && <EmptyNote>No medals yet.</EmptyNote>}
+        {history === null && <LoadingNote label="Loading medals" />}
+        {history !== null && history.length === 0 && <EmptyNote title="NO MEDALS YET" line="Medals land here once they're earned." />}
         {history !== null && history.length > 0 && (
           <div>
             {history.map((m, i) => (
@@ -640,8 +647,8 @@ export function TrophyCaseCard({
         {podiumFor && (
           <>
             <ModalTitle>{modeLabel(podiumFor.mode)} podium — {podiumFor.day}</ModalTitle>
-            {podium === null && <EmptyNote>Loading…</EmptyNote>}
-            {podium !== null && podium.length === 0 && <EmptyNote>Podium unavailable for this day.</EmptyNote>}
+            {podium === null && <LoadingNote label="Loading podium" />}
+            {podium !== null && podium.length === 0 && <EmptyNote title="NO PODIUM" line="This day's podium isn't available." />}
             {podium !== null && podium.length > 0 && (
               <div className="space-y-1.5">
                 {podium.map((p) => (
@@ -767,7 +774,7 @@ export function HighlightsReel({
 
       <Modal open={showCalendar} onClose={() => setShowCalendar(false)} ariaLabel="Streak calendar">
         <ModalTitle>Last 60 days</ModalTitle>
-        {calendar === null && <EmptyNote>Loading…</EmptyNote>}
+        {calendar === null && <LoadingNote label="Loading calendar" />}
         {calendar !== null && (
           <>
             <div className="grid grid-cols-10 gap-1.5 justify-items-center">
@@ -874,8 +881,8 @@ export function LatelyCard({
         {podiumFor && (
           <>
             <ModalTitle>{modeLabel(podiumFor.mode)} podium — {podiumFor.day}</ModalTitle>
-            {podium === null && <EmptyNote>Loading…</EmptyNote>}
-            {podium !== null && podium.length === 0 && <EmptyNote>Podium unavailable for this day.</EmptyNote>}
+            {podium === null && <LoadingNote label="Loading podium" />}
+            {podium !== null && podium.length === 0 && <EmptyNote title="NO PODIUM" line="This day's podium isn't available." />}
             {podium !== null && podium.length > 0 && (
               <div className="space-y-1.5">
                 {podium.map((p) => (

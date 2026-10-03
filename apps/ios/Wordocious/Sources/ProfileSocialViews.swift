@@ -528,23 +528,18 @@ struct GuardedBoardSheet: View {
     @ViewBuilder private var content: some View {
         switch state {
         case .loading:
-            ProgressView().tint(Theme.primary)
+            // BI24: the cast wave, never a bare spinner.
+            CastLoader(label: "LOADING BOARD", showTips: false)
         case .locked:
-            VStack(spacing: 10) {
-                Icon3D(.lock, size: 36) // ART_SPEC §5
-                Text("Finish today's \(request.modeTitle) first — no spoilers")
-                    .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
-                    .multilineTextAlignment(.center)
-                Text("Boards open only for dailies you've finished.")
-                    .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-            }.padding(24)
+            // BI24: a host + brand headline, not a lock glyph over plain text.
+            BrandEmptyState(title: "No spoilers yet",
+                            line: "Finish today's \(request.modeTitle) and this board opens up.",
+                            host: .o3)
         case .failed:
-            VStack(spacing: 10) {
-                // R unplugged for the offline / error screen (MASCOT_SPEC §6, ART_SPEC §7).
-                SceneArt(.unplugged)
-                Text("Couldn't load this board").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
-                Text(Mascots.offlineLine).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-            }.padding(24)
+            // R unplugged for the offline / error screen (MASCOT_SPEC §6, ART_SPEC §7).
+            BrandEmptyState(title: "Can't load this board", line: Mascots.offlineLine, scene: .unplugged,
+                            actionTitle: "Try again", actionSymbol: "arrow.clockwise",
+                            action: { state = .loading; Task { await load() } })
         case let .loaded(board, boards):
             ScrollView {
                 VStack(spacing: 12) {
@@ -571,8 +566,9 @@ struct GuardedBoardSheet: View {
 
     @ViewBuilder private func boardsGrid(_ boards: [BoardState]) -> some View {
         if boards.isEmpty {
-            Text("Board unavailable for this mode.")
-                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).padding(24)
+            // BI24: O3 + brand headline, not a plain grey line.
+            BrandEmptyState(title: "No board to show", line: "This mode doesn't keep a board I can replay.",
+                            scene: .notFound, artHeight: 100)
         } else {
             let wordLen = boards.first?.solution.count ?? 5
             let tile = CompletedBoardLayout.tileSize(boardCount: boards.count, wordLen: wordLen)
@@ -691,9 +687,10 @@ struct MedalHistorySheet: View {
                 ScrollView {
                     VStack(spacing: 6) {
                         if medals.isEmpty {
-                            Text("No medals yet — daily podiums award them.")
-                                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                                .padding(.vertical, 30)
+                            // BI24: a host + brand headline, not a plain grey line.
+                            BrandEmptyState(title: "No medals yet", line: "Daily podiums award them. Finish top three to earn one.",
+                                            host: Mascots.leaderboard)
+                                .padding(.vertical, 12)
                         }
                         ForEach(medals) { m in row(m) }
                     }
@@ -779,11 +776,12 @@ struct PodiumScreen: View {
                     socialCaption("\(socialModeTitle(request.mode).uppercased()) · \(socialDayLabel(request.day).uppercased())")
                         .padding(.top, 14)
                     if loading {
-                        ProgressView().tint(Theme.primary).padding(.vertical, 30)
+                        CastLoader(label: "LOADING PODIUM", showTips: false).padding(.vertical, 30)
                     } else if entries.isEmpty {
-                        Text("No podium recorded for this day.")
-                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                            .padding(.vertical, 30)
+                        // BI24: R asleep + brand headline, not a plain grey line.
+                        BrandEmptyState(title: "No podium this day", line: "Nobody made the top three for this one.",
+                                        scene: .asleep, artHeight: 100)
+                            .padding(.vertical, 8)
                     } else {
                         ForEach(entries) { e in
                             NavigationLink(value: e.userId) {

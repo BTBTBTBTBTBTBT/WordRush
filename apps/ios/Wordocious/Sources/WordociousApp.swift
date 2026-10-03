@@ -65,6 +65,8 @@ struct WordociousApp: App {
                 .overlay { HeaderPopupHost() }
                 // BF1: a result just landed — the server may have awarded achievements.
                 .onReceive(NotificationCenter.default.publisher(for: DailyCompletionsStore.completionRecorded)) { _ in
+                    // BI19: the boards + stats changed — rewarm today's caches.
+                    DataPrefetch.today(force: true)
                     Task {
                         try? await Task.sleep(nanoseconds: 3_000_000_000)
                         await AchievementUnlockCenter.shared.sync()
@@ -90,6 +92,8 @@ struct WordociousApp: App {
                     // Re-fire any solo results whose record calls were cut off
                     // (killed mid-flight / offline finish) — idempotent, solo-only.
                     await PendingRecords.drain()
+                    // BI15: and again on every foreground + whenever the network returns.
+                    PendingRecords.startAutoRetry()
                     // VS race results that never reached the server (§14).
                     await VsPendingRaces.retryAll()
                     // Finished-save sweep AFTER the queue drain: records any
@@ -102,6 +106,8 @@ struct WordociousApp: App {
                     await ModerationService.loadBlockedIds()
                     // APNs token capture (send path comes later with the key).
                     PushRegistration.register()
+                    // BI19: warm today's Leaderboard + Stats so their first open paints real data.
+                    DataPrefetch.today()
                     // FINISH_SPEC BF1: celebrate any achievement earned but never seen here.
                     await AchievementUnlockCenter.shared.sync()
                 }
@@ -129,6 +135,12 @@ struct WordociousApp: App {
                         // done (or it's past 18:00) it rolls to tomorrow, so a
                         // finished day never gets tonight's nudge.
                         Task { await NotificationService.reschedule() }
+                        // BI19: rewarm today's caches on return (throttled to every 2 min).
+                        if LaunchGate.isOpen { DataPrefetch.today() }
+                        // BI16: a session refresh the outage failed retries on foreground.
+                        Task { await auth.retrySessionIfNeeded() }
+                        // BI15: retry results a dead connection / outage left queued.
+                        if LaunchGate.isOpen { Task { await PendingRecords.drain() } }
                     } else if phase == .background {
                         // Record the day the app was last ACTIVE: a session that
                         // stays foregrounded across midnight shouldn't reset on

@@ -56,6 +56,7 @@ export function ProPromptModal() {
     <>
       {show && (
         <div
+          data-celebration-block
           className="fixed bottom-16 left-4 right-4 z-50 max-w-md mx-auto animate-slide-up"
         >
           <div

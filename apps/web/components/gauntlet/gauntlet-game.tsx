@@ -12,6 +12,7 @@ import { latestGuess } from '@/lib/key-reveal';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import Link from 'next/link';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
@@ -547,31 +548,19 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           currentStage={gauntlet.currentStage}
           stageResults={gauntlet.stageResults}
         />
-        <GauntletStageHeader
-          stage={currentStageConfig}
-          elapsedTime={elapsedTime}
-          boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
-          totalBoards={currentStageConfig.boardCount}
-          guessesUsed={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
-          maxGuesses={currentStageConfig.maxGuesses}
-        />
-      </div>
-
-      {/* Message / Blackout Warning — absolutely positioned so it doesn't shift layout */}
-      {message && (
-        <div
-          className="absolute left-0 right-0 z-20 flex justify-center animate-fade-in-scale"
-          style={{ top: '140px' }}
-        >
-          <span className={`font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
-            showStolenGuess
-              ? 'bg-orange-600 text-white border border-orange-400/60'
-              : 'bg-gray-800 text-white'
-          }`}>
-            {message}
-          </span>
+        {/* The feedback popup sits over the stage header (never on the boards). */}
+        <div className="relative">
+          <GauntletStageHeader
+            stage={currentStageConfig}
+            elapsedTime={elapsedTime}
+            boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
+            totalBoards={currentStageConfig.boardCount}
+            guessesUsed={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
+            maxGuesses={currentStageConfig.maxGuesses}
+          />
+          <FeedbackToast message={message} tone={showStolenGuess ? 'warn' : undefined} />
         </div>
-      )}
+      </div>
 
       {/* Stolen Guess Flash */}
       {showStolenGuess && (

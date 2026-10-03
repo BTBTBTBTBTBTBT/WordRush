@@ -298,6 +298,7 @@ fun LadderScreen(
     // Physical keyboard (founder, 2026-09-30; web ladder-game.tsx): A–Z / Enter / Backspace as the
     // keys below, Ctrl/Cmd+Z = Undo.
     val ladderKeys = keyboardViewKeys(onKey = { session.type(it) }, onDelete = { session.delete() }, onEnter = { session.submit(onFinished) })
+    ProvideFeedbackAnchor {
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
@@ -316,19 +317,21 @@ fun LadderScreen(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Capsule("Undo", Icons.AutoMirrored.Filled.Undo, dim = session.state.words.size <= 1) { session.undo(onFinished) }
-                    Capsule(if (session.state.hintsUsed > 0) "Hint · ${session.state.hintsUsed}" else "Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hint(onFinished) }
+                    Capsule("Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER, count = session.state.hintsUsed) { session.hint(onFinished) }
                 }
                 KeyboardView(onKey = { session.type(it) }, onDelete = { session.delete() }, onEnter = { session.submit(onFinished) })
                 Spacer(Modifier.height(6.dp))
             }
         }
         // G5 a toast is a tinted pill (no dark slab, no white).
-        session.toast?.let { PieceToast(it, LADDER_ACCENT, top = 100.dp) }
+        // The candy feedback toast, centered on the header meta row (never the title art or the board).
+        GameFeedbackToast(session.toast, fallbackTop = 100.dp)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) LadderOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(LADDER_ACCENT, onBack) }
         CornerHelpButton(LADDER_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.LADDER, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -340,7 +343,7 @@ private fun LadderHeader(session: LadderSession) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("LADDER") { Text("LETTER LADDER", fontSize = 24.sp, fontWeight = FontWeight.Black, color = LADDER_ACCENT, fontFamily = Nunito) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text("Par ${session.state.par}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text("${session.state.moves} move${if (session.state.moves == 1) "" else "s"} · ${session.movesLeft} left", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -433,8 +436,8 @@ fun LadderBoard(s: LadderState, typing: String, invalid: Boolean, revealPath: Bo
 
 /** A8 a game control: a small candy button with its icon; [dim] = nothing to undo (taps ignored, as before). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
-    PadAction(label, icon, onClick = onClick, color = color, dim = dim)
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim, reserveLabel = reserve, count = count)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

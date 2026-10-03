@@ -57,7 +57,8 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
         // FINISH_SPEC V3: a level-up that crosses into a new tier queues the tier-badge popup
         // (once per level per session, however often this toast re-composes).
         if (com.wordocious.app.ui.BadgeMath.tierChangedOnLevelUp(result.leveledUp, result.newLevel)) {
-            com.wordocious.app.ui.BadgeMoments.levelUp(result.newLevel)
+            // A late result's tier popup waits for a calm moment (CelebrationGate, 2026-10-03).
+            com.wordocious.app.ui.BadgeMoments.levelUp(result.newLevel, late = result.late)
         }
         visible = true
         // Web: 3s dwell, extended to 5s when sweep/flawless chips need reading.

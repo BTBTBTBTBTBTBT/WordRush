@@ -46,11 +46,12 @@ import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard, TintTile } from '@/components/profile/stat-kit';
 import { STAT_LABELS } from '@/lib/stat-labels';
 import { PageHeadline } from '@/components/ui/page-headline';
+import { GuestPitch, GUEST_GRADIENTS, GUEST_STATS_CHIPS } from '@/components/ui/guest-pitch';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { SoftNum } from '@/components/ui/soft-number';
 import { BRAND_ACCENT, alphaHex, cardBarStyle, softBorder, softCard, softPill } from '@/lib/soft-surface';
-import { MASCOT_LINES } from '@/lib/mascots';
+import { MASCOT_LINES, PAGE_HOSTS } from '@/lib/mascots';
 import { PAGE_SCENES } from '@/lib/art';
 import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -72,6 +73,8 @@ import {
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 import { useFlags } from '@/hooks/use-flags';
+import { fetchStatsStatic, statsStaticKey } from '@/lib/stats-static';
+import { mergePendingCompletions } from '@/lib/pending-records';
 import type { Database } from '@/lib/database.types';
 
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -84,6 +87,7 @@ import { MODE_CHROME } from '@/components/home/mode-chrome';
 import { GameSquare, GameTileGlyph } from '@/components/ui/game-tile';
 import { formatGuessStat } from '@/lib/format';
 import { PageBackground } from '@/components/ui/page-background';
+import { CastLoadingStack } from '@/components/game/game-loading';
 import { MedalArt, GoldMedal, SilverMedal, BronzeMedal } from '@/components/stats/medal-art';
 
 // STATS (Stats + Friends redesign D2, founder 2026-09-26: "option 2" — Profile
@@ -201,64 +205,8 @@ export default function StatsPage() {
   // re-fetch on a Solo/VS toggle, and keepPreviousData keeps the old charts
   // up (with the F1 fade) instead of dropping to skeletons.
   const { data: staticData, isLoading: loadingStats } = useSWR(
-    profile ? ['profile-static', profile.id] : null,
-    async () => {
-      const [statsRes, matchBundle, medalsRes, achievementsRes, dailiesRes, sweepPointsRes, standingRes, vsTodayRes, sweepStatsRes] = await Promise.all([
-        supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
-        // Matches + opponent usernames chained INSIDE the Promise.all — the
-        // name lookup used to run after it, adding a round trip to everything.
-        (async () => {
-          // The newest 50 plus every game of the last 36 h, so Today's Games is never cut short
-          // by a long Unlimited session (founder, 2026-09-29); `seed` tells daily from Unlimited.
-          const cols = 'id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit, seed';
-          const mine = `player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`;
-          const since = new Date(Date.now() - 36 * 3600_000).toISOString();
-          const [recent, today] = await Promise.all([
-            supabase.from('matches').select(cols).or(mine).order('created_at', { ascending: false }).limit(50),
-            supabase.from('matches').select(cols).or(mine).gte('created_at', since).order('created_at', { ascending: false }).limit(400),
-          ]);
-          const byId = new Map<string, Match>();
-          for (const m of [...((today.data || []) as Match[]), ...((recent.data || []) as Match[])]) byId.set(m.id, m);
-          const matchRows = Array.from(byId.values()).sort((x, y) => (x.created_at < y.created_at ? 1 : x.created_at > y.created_at ? -1 : 0));
-          const oppIds = Array.from(new Set(
-            matchRows
-              .filter((m) => m.player2_id)
-              .map((m) => (m.player1_id === profile!.id ? m.player2_id! : m.player1_id)),
-          ));
-          const opponentNames: Record<string, string> = {};
-          if (oppIds.length > 0) {
-            const { data: oppProfiles } = await (supabase as any)
-              .from('profiles')
-              .select('id, username')
-              .in('id', oppIds);
-            for (const p of (oppProfiles as Array<{ id: string; username: string }> | null) || []) {
-              opponentNames[p.id] = p.username;
-            }
-          }
-          return { matchRows, opponentNames };
-        })(),
-        fetchUserMedals(profile!.id, 120),
-        fetchUserAchievements(profile!.id),
-        fetchTodayDailyCompletions(profile!.id),
-        fetchDailyPointsOverTime(profile!.id, 30),
-        fetchTodayDailyStanding(profile!.id),
-        fetchDailyVsResult(profile!.id).catch(() => null),
-        fetchDailySweepStats(profile!.id).catch(() => null),
-      ]);
-      return {
-        stats: statsRes as UserStats[],
-        matches: matchBundle.matchRows,
-        opponentNames: matchBundle.opponentNames,
-        medals: medalsRes,
-        userAchievements: new Set(achievementsRes.map(a => a.key)),
-        achievementDates: new Map<string, string | null>(achievementsRes.map(a => [a.key, a.unlocked_at ?? null])),
-        todayDailies: dailiesRes,
-        sweepPoints: sweepPointsRes,
-        standing: standingRes,
-        vsDailyWon: vsTodayRes as boolean | null,
-        sweepStats: sweepStatsRes as DailySweepStats | null,
-      };
-    },
+    profile ? statsStaticKey(profile.id) : null,
+    () => fetchStatsStatic(profile!.id),
     { revalidateOnFocus: true, onError: (err: any) => handleSupabaseError(err, 'profile-data') },
   );
 
@@ -297,10 +245,20 @@ export default function StatsPage() {
   // page's "Today" line paint at once instead of reading "not played" and then
   // flipping (founder, 2026-09-29).
   const { todayDailies: ctxDailies, dailiesDay } = useDailyCompletions();
-  const todayDailies = staticData?.todayDailies ?? (dailiesDay === getTodayLocal() ? ctxDailies : NO_DAILIES);
+  // BI19: the page's read (persisted, so possibly from before the last finish)
+  // plus the context's — which holds every finish the moment it happens (the
+  // optimistic store) — so the Today card shows a new W / L at once. A row the
+  // page read from the server always stands.
+  const ctxToday = dailiesDay === getTodayLocal() ? ctxDailies : NO_DAILIES;
+  // A persisted bundle from an earlier day has nothing to say about today.
+  const staticToday = staticData && staticData.day === getTodayLocal() ? staticData : null;
+  const todayDailies = useMemo(
+    () => (staticToday?.todayDailies ? mergePendingCompletions(staticToday.todayDailies, ctxToday) : ctxToday),
+    [staticToday?.todayDailies, ctxToday],
+  );
   const sweepPoints = staticData?.sweepPoints ?? [];
-  const standing = staticData?.standing ?? null;
-  const vsDailyWon = staticData?.vsDailyWon ?? null;
+  const standing = staticToday?.standing ?? null;
+  const vsDailyWon = staticToday?.vsDailyWon ?? null;
   const sweepStats = staticData?.sweepStats ?? null;
   const activity = tabData?.activity ?? [];
   const guessDist = tabData?.guessDist ?? [];
@@ -412,24 +370,28 @@ export default function StatsPage() {
   if (loading) {
     return (
       <PageBackground tint="stats" className="min-h-screen flex items-center justify-center">
-        <div className="text-lg font-black animate-pulse" style={{ color: 'var(--color-text)' }}>Loading...</div>
+        <CastLoadingStack />
       </PageBackground>
     );
   }
 
   if (!profile) {
+    // FINISH_SPEC BI23: the shared header stays pinned at the top (like Home and the signed-in
+    // page); D's pitch centers in the space below it.
     return (
-      <PageBackground tint="stats" className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--color-text)' }}>Sign in to see your stats</h1>
-          <p className="text-sm font-medium mb-5" style={{ color: 'var(--color-text-secondary)' }}>
-            Create a free account to save your stats, streaks, and daily leaderboard ranks.
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <CandyButton onClick={exitGuest} color="purple" size="md">Sign In</CandyButton>
-            <CandyLink href="/" color="peach" size="md">Go Home</CandyLink>
-          </div>
-        </div>
+      <PageBackground tint="stats" className="min-h-screen flex flex-col pb-24">
+        <AppHeader />
+        <main className="flex flex-1 flex-col max-w-md mx-auto w-full">
+          <GuestPitch
+            hosts={[PAGE_HOSTS.stats]}
+            title="Your stats live here"
+            subtitle="Sign in to track your stats, streaks and every game's history."
+            gradient={GUEST_GRADIENTS.stats}
+            preview={{ kind: 'chips', chips: GUEST_STATS_CHIPS }}
+            onSignIn={exitGuest}
+          />
+        </main>
+        <BottomNav />
       </PageBackground>
     );
   }

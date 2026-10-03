@@ -234,20 +234,15 @@ struct KindredView: View {
     private var isPro: Bool { AuthService.shared.isProActive }
 
     // Band estimates for the in-play layout (see body).
-    private static let railHeight: CGFloat = 20        // progress rail row
-    private static let barHeight: CGFloat = 58         // one solved-group bar (label + words)
-    private static let chipRowHeight: CGFloat = 26     // Name-a-category chips row
-    private static let tileMin: CGFloat = 56, tileMax: CGFloat = 92
+    private static let chipRowHeight = CGFloat(HintLayout.kindredChipSlotHeight)  // Name-a-category chips row
 
     /// tile = clamp((band − rail − bars − chips − gaps) / rows, 56, 92); each grid cell carries a
     /// 3 pt ring margin on every side, hence the −6.
-    private static func tileHeight(band: CGFloat, tiles: Int, bars: Int, chips: Bool) -> CGFloat {
-        let rows = CGFloat(max(1, (tiles + 3) / 4))
-        // §L: the grid's tray (8-pt padding both sides + the 4-pt lip).
-        var reserved = railHeight + CGFloat(bars) * (barHeight + 6) + 8 * 3 + 8 * 2 + GameTray.lip
-        if chips { reserved += chipRowHeight + 8 }
-        let cell = ((band - reserved) / rows).rounded(.down) - 6
-        return min(tileMax, max(tileMin, cell))
+    /// §BI22: core `HintLayout.kindredTileHeight` — the category chips' slot is always
+    /// reserved, so "Name a category" never shrinks the grid (it used to).
+    private static func tileHeight(band: CGFloat, tiles: Int, bars: Int, named: Int) -> CGFloat {
+        CGFloat(HintLayout.kindredTileHeight(band: Double(band), tiles: tiles, solvedBars: bars,
+                                             revealedCategories: named, trayLip: Double(GameTray.lip)))
     }
 
     var body: some View {
@@ -287,14 +282,23 @@ struct KindredView: View {
                     // the first layout pass — same approach as Hubbub's cluster.
                     GeometryReader { geo in
                         let revealed = vm.revealedLabels
-                        let tileH = Self.tileHeight(band: geo.size.height, tiles: vm.state.tiles.count, bars: vm.state.solved.count, chips: !revealed.isEmpty)
+                        let tileH = Self.tileHeight(band: geo.size.height, tiles: vm.state.tiles.count, bars: vm.state.solved.count, named: revealed.count)
                         ScrollView {
                             VStack(spacing: 8) {
-                                if !revealed.isEmpty {
-                                    WordWrapLayout(spacing: 6, lineSpacing: 6) {
-                                        ForEach(revealed, id: \.tier) { g in KindredCategoryChip(group: g) }
+                                // §BI22: the named categories' slot is always there (one line,
+                                // empty until "Name a category"; more chips than fit scroll
+                                // sideways) — the grid never moves or shrinks for a hint.
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(revealed, id: \.tier) { g in
+                                            KindredCategoryChip(group: g).transition(.opacity.combined(with: .scale(scale: 0.9)))
+                                        }
                                     }
+                                    .padding(.horizontal, 2)
+                                    .frame(minWidth: geo.size.width - 4)
+                                    .animation(Theme.reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.75), value: revealed.map(\.tier))
                                 }
+                                .frame(height: Self.chipRowHeight)
                                 // §L: the sixteen words sit on the shared game tray.
                                 KindredTileGrid(vm: vm, tileHeight: tileH)
                                     .gameTray(accent: kindredAccent, padding: 8)
@@ -318,19 +322,19 @@ struct KindredView: View {
                             capsule("Deselect", "xmark.circle", variant: .peach, dim: vm.state.selected.isEmpty) { vm.deselect() }
                             capsule("Submit", "checkmark.circle.fill", variant: .purple, dim: vm.state.selected.count != 4) { vm.submit() }
                         }
+                        // §BI22: the hint pills are equal halves; the used count is the gold
+                        // corner coin, never part of the label.
                         HStack(spacing: 8) {
-                            capsule("Name a category", "tag", variant: .amber) { SoundManager.shared.playKeyTap(); vm.hintLabel() }
-                            capsule(vm.state.hintsUsed > 0 ? "Show a pair · \(vm.state.hintsUsed)" : "Show a pair", "link", variant: .pink) { SoundManager.shared.playKeyTap(); vm.hintPair() }
+                            PuzCandyAction(title: "Name a category", symbol: "tag", variant: .amber, fullWidth: true) { SoundManager.shared.playKeyTap(); vm.hintLabel() }
+                            PuzCandyAction(title: "Show a pair", symbol: "link", variant: .pink, fullWidth: true, count: vm.state.hintsUsed) { SoundManager.shared.playKeyTap(); vm.hintPair() }
                         }
+                        .frame(maxWidth: 420)
                     }
+                    // §BI9: the feedback popup hangs from the controls under the board — never over the title art or the board.
+                    .gameFeedbackToast(vm.toast, alignment: .top)
                     .padding(.bottom, 10)
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {

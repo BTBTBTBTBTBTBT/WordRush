@@ -222,10 +222,14 @@ struct LadderView: View {
                 VStack(spacing: 8) {
                     header
                     ScrollView { LadderBoardView(vm: vm, revealPath: false, tray: true).padding(.horizontal, 6).padding(.vertical, 4) }
+                    // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
+                    // §BI22: equal halves — "Hint · 2" never widens its pill or nudges Undo.
                     HStack(spacing: 8) {
                         capsule("Undo", "arrow.uturn.backward", variant: .peach, dim: vm.state.words.count <= 1) { vm.undo() }
-                        capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb", variant: .amber) { vm.hint() }
+                        capsule("Hint", "lightbulb", variant: .amber, count: vm.state.hintsUsed) { vm.hint() }
                     }
+                    .frame(maxWidth: 300)
+                    .gameFeedbackToast(vm.toast, alignment: .top)
                     // Hardware keys (founder, 2026-09-30): web ladder-game keydown —
                     // A–Z / Return / Delete as the keys, plus ⌘Z = Undo.
                     LetterKeyboard(onLetter: { vm.type($0) }, onEnter: { vm.submit() }, onDelete: { vm.delete() },
@@ -236,11 +240,6 @@ struct LadderView: View {
                         .padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -285,8 +284,8 @@ struct LadderView: View {
 
     /// §A8: small candy pills (peach Undo, amber Hint).
     private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, dim: Bool = false,
-                         action: @escaping () -> Void) -> some View {
-        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+                         count: Int = 0, action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, fullWidth: true, count: count, action: action)
             .disabled(dim)
     }
 
@@ -302,7 +301,7 @@ struct LadderView: View {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
-                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                         }
                         .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                     }

@@ -3,7 +3,7 @@ import { supabase } from './supabase-client';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isDailySeed, getDailySeedDate, type GauntletStageConfig, type GauntletStageResult } from '@wordle-duel/core';
 import {
-  recordDailyResult,
+  writeDailyResult,
   recordDailyVsResult,
   checkAndUpdateRecord,
   awardDailyBonusesIfComplete,
@@ -12,11 +12,29 @@ import {
   toLocalDayString,
 } from './daily-service';
 import { checkAchievements } from './achievement-service';
+import { celebrateLevelUp } from './badges';
+import { isLate, type CelebrationSource } from './celebration-gate';
 import { grantFreeShield } from './shield-service';
 import { DAILY_MODES, requiredDailyModeCount, sweepModesFor } from './daily-modes';
 import { MODE_BY_DBKEY, SWEEP_MODES, MORE_GAME_MODES } from './modes.generated';
 import { guessDistributionRange, distributionSpec, type MatchRow } from './mode-stats';
 import { avatarFieldsOf, selectWithAvatarColumns, type AvatarFields } from './avatar-fields-server';
+import { calculateCompositeScore } from './composite-scoring';
+import { isPlausibleDailyResult } from './plausibility';
+import {
+  PENDING_RECORD_MAX_AGE_MS,
+  pendingRecordKey,
+  pendingRecordKeys,
+  readPendingRecord,
+  mergePendingRecord,
+  markPendingRecordDone,
+  markPendingSubstepDone,
+  beginInFlight,
+  endInFlight,
+  isInFlight,
+  withRecordTimeout,
+  type PendingRecordPayload,
+} from './pending-records';
 
 export interface XpResult {
   xpGain: number;
@@ -34,128 +52,45 @@ export interface XpResult {
 }
 
 // ============================================================
-// Pending-record retry (tab-close / network-loss protection)
+// Pending-record retry (tab-close / network-loss / outage protection)
 // ============================================================
 //
 // A finished game can be silently lost when the tab closes right after the
-// last guess: the terminal board snapshot persists via beforeunload, but
-// recordGameResult/recordSoloMatch are plain async fetches — on reload the
-// snapshot restores isCompleted=true and the recording effects never refire.
-// To close that gap, each solo record call writes a compact arg payload to
-// localStorage BEFORE touching the network and marks its part done on
-// success; the key is removed once every registered part is done.
-// drainPendingRecords() re-runs leftovers on the next signed-in visit. What
-// it re-runs is driven by the per-part done-flags, NOT by whether a row
-// turned up on the server: a `matches` row proves only that the match half
-// landed, and treating it as proof for the whole payload threw away XP,
-// levels and streaks that had never been written.
+// last guess, or when Supabase is down at the finish: recordGameResult /
+// recordSoloMatch are plain async fetches. So each solo record call writes a
+// compact arg payload to localStorage BEFORE touching the network
+// (lib/pending-records.ts) and flags each part done only once its writes are
+// CONFIRMED; the key is removed once every registered part is done.
+// drainPendingRecords() re-runs leftovers — on load, on 'online', and when
+// the tab becomes visible / focused. What it re-runs is driven by the
+// per-part done-flags, NOT by whether a row turned up on the server: a
+// `matches` row proves only that the match half landed. Inside the
+// gameResult half, progressionDone (user_stats + profile) and dailyDone
+// (daily_results) are tracked separately, so a retry that only owes the
+// daily row never counts the game a second time.
 
-const PENDING_RECORD_PREFIX = 'wordocious-pending-record-';
-const PENDING_RECORD_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-
-interface PendingGameResultArgs {
-  won: boolean;
-  guessCount: number;
-  timeMs: number;
-  boardsSolved?: number;
-  totalBoards?: number;
-  hintsUsed: number;
-  stagesCompleted?: number;
-  bestCorrectLetters?: number;
-}
-
-interface PendingSoloMatchArgs {
-  won: boolean;
-  score: number;
-  timeSeconds: number;
-  solutions: string[];
-  guesses: string[];
-  startedAtIso: string;
-  hintsUsed?: number;
-}
-
-interface PendingRecordPayload {
-  userId: string;
-  gameMode: string;
-  seed: string;
-  savedAt: number;
-  gameResult?: PendingGameResultArgs;
-  gameResultDone?: boolean;
-  soloMatch?: PendingSoloMatchArgs;
-  soloMatchDone?: boolean;
-}
-
-function pendingRecordKey(gameMode: string, seed: string): string {
-  return `${PENDING_RECORD_PREFIX}${gameMode}-${seed}`;
-}
-
-function readPendingRecord(key: string): PendingRecordPayload | null {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as PendingRecordPayload) : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Merge a patch into the pending payload for this game (creating it if absent). */
-function mergePendingRecord(
-  userId: string,
-  gameMode: string,
-  seed: string,
-  patch: Partial<PendingRecordPayload>,
-): void {
-  if (typeof window === 'undefined') return;
-  try {
-    const key = pendingRecordKey(gameMode, seed);
-    const existing = readPendingRecord(key);
-    const next: PendingRecordPayload = {
-      ...existing,
-      userId,
-      gameMode,
-      seed,
-      savedAt: existing?.savedAt ?? Date.now(),
-      ...patch,
-    };
-    localStorage.setItem(key, JSON.stringify(next));
-  } catch {}
-}
-
-/** Mark one half of the pending payload complete; remove the key when all registered parts are done. */
-function markPendingRecordDone(gameMode: string, seed: string, part: 'gameResult' | 'soloMatch'): void {
-  if (typeof window === 'undefined') return;
-  try {
-    const key = pendingRecordKey(gameMode, seed);
-    const p = readPendingRecord(key);
-    if (!p) return;
-    if (part === 'gameResult') p.gameResultDone = true;
-    else p.soloMatchDone = true;
-    const allDone = (!p.gameResult || p.gameResultDone) && (!p.soloMatch || p.soloMatchDone);
-    if (allDone) localStorage.removeItem(key);
-    else localStorage.setItem(key, JSON.stringify(p));
-  } catch {}
-}
+let drainRunning: Promise<void> | null = null;
 
 /**
  * Re-fire any solo game results whose record calls were cut off (tab close
- * mid-flight, network drop at the final guess). Call once after auth
- * hydration. Idempotent per PART: a half already flagged done — or, for the
- * match half, already present on the server — is skipped, and only the halves
- * that genuinely never ran are re-fired.
+ * mid-flight, network drop / outage at the final guess). Safe to call any
+ * number of times from anywhere: concurrent calls share one run, and a game
+ * whose LIVE record call is still in flight is never replayed.
  */
-export async function drainPendingRecords(userId: string): Promise<void> {
-  if (typeof window === 'undefined') return;
-  const keys: string[] = [];
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith(PENDING_RECORD_PREFIX)) keys.push(k);
-    }
-  } catch {
-    return;
-  }
+export function drainPendingRecords(userId: string): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (drainRunning) return drainRunning;
+  drainRunning = drainPendingRecordsOnce(userId).finally(() => { drainRunning = null; });
+  return drainRunning;
+}
+
+async function drainPendingRecordsOnce(userId: string): Promise<void> {
+  const keys = pendingRecordKeys();
 
   for (const key of keys) {
+    // The live call for this game is still running (a hung write) — replaying
+    // now would count it twice. The live call settles the payload itself.
+    if (isInFlight(key)) continue;
     const p = readPendingRecord(key);
     if (!p || !p.userId || !p.gameMode || !p.seed) {
       try { localStorage.removeItem(key); } catch {}
@@ -169,31 +104,33 @@ export async function drainPendingRecords(userId: string): Promise<void> {
     // Another account's pending result — leave it for that account's next session.
     if (p.userId !== userId) continue;
 
-    try {
-      // A matches row for this seed+mode proves the `soloMatch` HALF landed —
-      // and only that half. It says nothing about the progression half
-      // (user_stats, XP, level, win streak, daily-login streak), which is a
-      // separate network call that routinely fails on its own. Clearing the
-      // key on row presence alone therefore deleted work that had never run:
-      // the match showed up in history while the XP, level and both streaks
-      // were gone for good, unrecoverably. So the row only marks the match
-      // part done — never re-inserting it, so history can't duplicate — and
-      // what actually gets re-run is decided by the done-flags below.
-      const { data: existing, error } = await (supabase as any)
-        .from('matches')
-        .select('id')
-        .eq('player1_id', userId)
-        .eq('seed', p.seed)
-        .eq('game_mode', p.gameMode)
-        .limit(1)
-        .maybeSingle();
-      if (error) continue; // can't verify (offline?) — retry on a later drain
-      if (existing && p.soloMatch && !p.soloMatchDone) {
-        markPendingRecordDone(p.gameMode, p.seed, 'soloMatch');
-        p.soloMatchDone = true;
+    if (p.soloMatch && !p.soloMatchDone) {
+      try {
+        // A matches row for this seed+mode proves the `soloMatch` HALF landed —
+        // and only that half. It says nothing about the progression half
+        // (user_stats, XP, level, win streak, daily-login streak), which is a
+        // separate network call that routinely fails on its own. So the row
+        // only marks the match part done — never re-inserting it, so history
+        // can't duplicate — and what gets re-run is decided by the done-flags.
+        const { data: existing, error } = await withRecordTimeout<any>(
+          (supabase as any)
+            .from('matches')
+            .select('id')
+            .eq('player1_id', userId)
+            .eq('seed', p.seed)
+            .eq('game_mode', p.gameMode)
+            .limit(1)
+            .maybeSingle(),
+          'drain matches check',
+        );
+        if (error) continue; // can't verify (offline / outage) — retry on a later drain
+        if (existing) {
+          markPendingRecordDone(p.gameMode, p.seed, 'soloMatch');
+          p.soloMatchDone = true;
+        }
+      } catch {
+        continue;
       }
-    } catch {
-      continue;
     }
 
     // Everything registered has landed — nothing left to retry.
@@ -211,6 +148,7 @@ export async function drainPendingRecords(userId: string): Promise<void> {
         p.gameResult.timeMs, p.seed, p.gameResult.boardsSolved,
         p.gameResult.totalBoards, p.gameResult.hintsUsed ?? 0,
         p.gameResult.stagesCompleted, p.gameResult.bestCorrectLetters,
+        false, /* retry */ true,
       );
     }
     if (p.soloMatch && !p.soloMatchDone) {
@@ -225,9 +163,33 @@ export async function drainPendingRecords(userId: string): Promise<void> {
         guesses: p.soloMatch.guesses,
         startedAtIso: p.soloMatch.startedAtIso,
         hintsUsed: p.soloMatch.hintsUsed,
-      });
+      }, { retry: true });
     }
   }
+}
+
+/**
+ * Drain the queue whenever the network or the tab comes back: window
+ * 'online', visibilitychange → visible, and focus. drainPendingRecords
+ * de-duplicates overlapping triggers. Returns the cleanup.
+ */
+export function installPendingRecordDrainTriggers(userId: string): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const drain = () => { drainPendingRecords(userId).catch(() => {}); };
+  const onVisible = () => { if (document.visibilityState === 'visible') drain(); };
+  window.addEventListener('online', drain);
+  window.addEventListener('focus', drain);
+  document.addEventListener('visibilitychange', onVisible);
+  return () => {
+    window.removeEventListener('online', drain);
+    window.removeEventListener('focus', drain);
+    document.removeEventListener('visibilitychange', onVisible);
+  };
+}
+
+function dispatchDailyCompletion(detail: { gameMode: string; won: boolean; guesses: number; timeSeconds: number; score: number }): void {
+  if (typeof window === 'undefined') return;
+  try { window.dispatchEvent(new CustomEvent('daily-completion', { detail })); } catch {}
 }
 
 /**
@@ -252,8 +214,15 @@ export async function recordGameResult(
   // VS draw: pass won=false + isDraw=true. A draw counts the game (and its
   // time) but does NOT increment losses or reset the win streak.
   isDraw: boolean = false,
+  // Internal: drainPendingRecords replaying a queued payload. Sub-steps the
+  // payload already flags done (progression / daily row) are skipped.
+  retry: boolean = false,
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
+  // Outage fix (lib/celebration-gate.ts): celebrations from a replayed result,
+  // or from a live one that comes back > LATE_AFTER_MS after this call
+  // started, wait for a calm moment instead of popping wherever the player is.
+  const timing = { source: (retry ? 'replay' : 'live') as CelebrationSource, startedAtMs: Date.now() };
 
   // §255: a WIN with zero guesses is impossible in every mode — it can only be
   // a UI bug (the stale victory overlay after "Play again" made one LOOK real).
@@ -261,26 +230,73 @@ export async function recordGameResult(
   // can ever reach user_stats, XP, streaks or all_time_records.
   if (won && guessCount <= 0) return null;
 
+  const isDailyGame = seed ? isDailySeed(seed) : false;
+  const today = getTodayLocal();
+  // The day comes from the SEED, not the wall clock: a cross-midnight finish
+  // records onto yesterday and must not mark today's (different) puzzle
+  // complete (iOS parity; the Android twin of this gate was Doug's
+  // phantom-Deliverance fix, Aug 16).
+  const isTodaysSoloDaily = playType === 'solo' && isDailyGame && (getDailySeedDate(seed!) ?? today) === today;
+  const boards = boardsSolved ?? (won ? (totalBoards ?? 1) : 0);
+  const total = totalBoards ?? 1;
+
   // Crash-protection: persist the args locally BEFORE any network call so a
-  // tab closed mid-flight can re-run this via drainPendingRecords(). Solo
-  // only — VS results are recorded server-coordinated and must not retry.
+  // tab closed mid-flight (or a write lost to an outage) can be re-run by
+  // drainPendingRecords(). Solo only — VS results are recorded
+  // server-coordinated and must not retry.
   const trackPending = playType === 'solo' && !!seed && typeof window !== 'undefined';
+  const pendingKey = trackPending ? pendingRecordKey(gameMode, seed!) : '';
+  let prior: PendingRecordPayload | null = null;
   if (trackPending) {
-    mergePendingRecord(userId, gameMode, seed!, {
-      gameResult: { won, guessCount, timeMs, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters },
-      gameResultDone: false,
+    if (retry) {
+      prior = readPendingRecord(pendingKey);
+      mergePendingRecord(userId, gameMode, seed!, {
+        gameResult: { won, guessCount, timeMs, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters },
+        gameResultDone: false,
+      });
+    } else {
+      // A fresh finish starts every sub-step over.
+      mergePendingRecord(userId, gameMode, seed!, {
+        gameResult: { won, guessCount, timeMs, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters },
+        gameResultDone: false,
+        progressionDone: false,
+        dailyDone: false,
+      });
+    }
+    beginInFlight(pendingKey);
+  }
+
+  // (iOS parity) Home's card flips at FINISH, before any network write: an
+  // outage must never leave a finished daily looking unplayed. The score is
+  // the same composite the daily row will carry; the confirmed write below
+  // re-fires the event with the server-side value.
+  if (isTodaysSoloDaily && !retry && isPlausibleDailyResult(won, guessCount, timeSeconds, total, gameMode)) {
+    dispatchDailyCompletion({
+      gameMode, won, guesses: guessCount, timeSeconds,
+      score: Math.round(calculateCompositeScore(
+        gameMode, won, guessCount, timeSeconds, boards, total, hintsUsed,
+        stagesCompleted, bestCorrectLetters, getDailySeedDate(seed!) ?? today,
+      )),
     });
   }
 
+  let profile: any = null;
   try {
+  const skipProgression = retry && !!prior?.progressionDone;
+  if (!skipProgression) {
   // Fetch existing stats for this mode+playType
-  const { data: existing } = await (supabase as any)
-    .from('user_stats')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('game_mode', gameMode)
-    .eq('play_type', playType)
-    .maybeSingle() as { data: any };
+  const { data: existing, error: existingError } = await withRecordTimeout<any>(
+    (supabase as any)
+      .from('user_stats')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('game_mode', gameMode)
+      .eq('play_type', playType)
+      .maybeSingle(),
+    'user_stats select',
+  );
+  // A failed read must not fall through to the INSERT branch.
+  if (existingError) throw existingError;
 
   if (existing) {
     const newTotalGames = existing.total_games + 1;
@@ -291,45 +307,58 @@ export async function recordGameResult(
     // supabase-js resolves (never throws) on failure — check the error so an
     // offline/rejected write aborts to the catch and the pending payload
     // survives for drainPendingRecords.
-    const { error: statsError } = await (supabase as any)
-      .from('user_stats')
-      .update({
-        wins: existing.wins + (won ? 1 : 0),
-        losses: existing.losses + (won || isDraw ? 0 : 1),
-        total_games: newTotalGames,
-        best_score: guessCount > 0 && (existing.best_score === 0 || guessCount < existing.best_score)
-          ? guessCount
-          : existing.best_score,
-        average_time: newAvgTime,
-        fastest_time: timeSeconds > 0 && (existing.fastest_time === 0 || timeSeconds < existing.fastest_time)
-          ? timeSeconds
-          : existing.fastest_time,
-      })
-      .eq('id', existing.id);
+    const { error: statsError } = await withRecordTimeout<any>(
+      (supabase as any)
+        .from('user_stats')
+        .update({
+          wins: existing.wins + (won ? 1 : 0),
+          losses: existing.losses + (won || isDraw ? 0 : 1),
+          total_games: newTotalGames,
+          best_score: guessCount > 0 && (existing.best_score === 0 || guessCount < existing.best_score)
+            ? guessCount
+            : existing.best_score,
+          average_time: newAvgTime,
+          fastest_time: timeSeconds > 0 && (existing.fastest_time === 0 || timeSeconds < existing.fastest_time)
+            ? timeSeconds
+            : existing.fastest_time,
+        })
+        .eq('id', existing.id),
+      'user_stats update',
+    );
     if (statsError) throw statsError;
   } else {
-    const { error: statsError } = await (supabase as any)
-      .from('user_stats')
-      .insert({
-        user_id: userId,
-        game_mode: gameMode,
-        play_type: playType,
-        wins: won ? 1 : 0,
-        losses: won || isDraw ? 0 : 1,
-        total_games: 1,
-        best_score: guessCount,
-        average_time: timeSeconds,
-        fastest_time: timeSeconds,
-      });
+    const { error: statsError } = await withRecordTimeout<any>(
+      (supabase as any)
+        .from('user_stats')
+        .insert({
+          user_id: userId,
+          game_mode: gameMode,
+          play_type: playType,
+          wins: won ? 1 : 0,
+          losses: won || isDraw ? 0 : 1,
+          total_games: 1,
+          best_score: guessCount,
+          average_time: timeSeconds,
+          fastest_time: timeSeconds,
+        }),
+      'user_stats insert',
+    );
     if (statsError) throw statsError;
   }
 
   // Update profile totals + daily login streak in a single fetch/update
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('total_wins, total_losses, current_streak, best_streak, xp, level, last_played_at, daily_login_streak, best_daily_login_streak')
-    .eq('id', userId)
-    .single() as { data: any };
+  const { data: profileRow, error: profileError } = await withRecordTimeout<any>(
+    (supabase as any)
+      .from('profiles')
+      .select('total_wins, total_losses, current_streak, best_streak, xp, level, last_played_at, daily_login_streak, best_daily_login_streak')
+      .eq('id', userId)
+      .single(),
+    'profiles select',
+  );
+  // A failed read used to skip XP/streaks silently and still mark the
+  // payload done. Only "no profile row" (PGRST116) is a real skip.
+  if (profileError && profileError.code !== 'PGRST116') throw profileError;
+  profile = profileRow;
 
   if (profile) {
     // --- Win streak (resets on loss; a draw leaves it untouched) ---
@@ -339,11 +368,9 @@ export async function recordGameResult(
     // --- XP ---
     const xpGain = won ? 100 : 25;
     const streakBonus = won && newWinStreak > 1 ? 50 : 0;
-    const isDailyGame = seed ? isDailySeed(seed) : false;
     const dailyBonus = isDailyGame ? 50 : 0;
     const totalXpGain = xpGain + streakBonus + dailyBonus;
     const newXp = profile.xp + totalXpGain;
-    const oldLevel = profile.level || Math.floor(profile.xp / 1000) + 1;
     const newLevel = Math.floor(newXp / 1000) + 1;
 
     // --- Daily login streak (consecutive days played, player-local) ---
@@ -353,7 +380,6 @@ export async function recordGameResult(
 
     if (lastPlayed) {
       const lastDay = toLocalDayString(lastPlayed);
-      const today = getTodayLocal();
       const yesterday = getYesterdayLocal();
 
       if (lastDay === today) {
@@ -382,21 +408,27 @@ export async function recordGameResult(
     // XP that was never written, with the win streak and daily-login streak
     // silently lost too. Check it and abort to the catch so the pending
     // payload survives for drainPendingRecords and no XP toast is shown.
-    const { error: progressionError } = await (supabase as any)
-      .from('profiles')
-      .update({
-        total_wins: profile.total_wins + (won ? 1 : 0),
-        total_losses: profile.total_losses + (won || isDraw ? 0 : 1),
-        current_streak: newWinStreak,
-        best_streak: newBestWinStreak,
-        xp: newXp,
-        level: newLevel,
-        last_played_at: now.toISOString(),
-        daily_login_streak: newDailyStreak,
-        best_daily_login_streak: newBestDailyStreak,
-      })
-      .eq('id', userId);
+    const { error: progressionError } = await withRecordTimeout<any>(
+      (supabase as any)
+        .from('profiles')
+        .update({
+          total_wins: profile.total_wins + (won ? 1 : 0),
+          total_losses: profile.total_losses + (won || isDraw ? 0 : 1),
+          current_streak: newWinStreak,
+          best_streak: newBestWinStreak,
+          xp: newXp,
+          level: newLevel,
+          last_played_at: now.toISOString(),
+          daily_login_streak: newDailyStreak,
+          best_daily_login_streak: newBestDailyStreak,
+        })
+        .eq('id', userId),
+      'profiles update',
+    );
     if (progressionError) throw progressionError;
+  }
+  // Progression is confirmed: a retry from here on owes only the daily row.
+  if (trackPending) markPendingSubstepDone(gameMode, seed!, 'progressionDone');
   }
 
   // --- Daily result recording ---
@@ -407,33 +439,35 @@ export async function recordGameResult(
     // idempotently into a single play_type='vs' row per day+mode. Draws
     // count the game without a win OR a loss.
     await recordDailyVsResult(userId, gameMode, won, isDraw);
-  } else if (seed && isDailySeed(seed)) {
-    const boards = boardsSolved ?? (won ? (totalBoards ?? 1) : 0);
-    const total = totalBoards ?? 1;
-
-    const dailyScore = await recordDailyResult(
+  } else if (seed && isDailyGame && !(retry && prior?.dailyDone)) {
+    // Strict write: THROWS on a timeout / network failure (payload stays
+    // pending); resolves 'rejected' for a result that can never land
+    // (plausibility floor, no score config) so it doesn't queue forever.
+    const daily = await writeDailyResult(
       userId, gameMode, playType, won, guessCount, timeSeconds, boards, total, hintsUsed,
       // Day comes from the SEED, not the wall clock: a daily started 23:58
       // and finished 00:02 must land on the day its puzzle was issued for.
       getDailySeedDate(seed) ?? undefined,
       stagesCompleted, bestCorrectLetters,
     );
-    // Notify the DailyCompletionsProvider so the sweep banner updates
-    // instantly when navigating back to the home screen. ONLY when the row
-    // is for TODAY — a cross-midnight finish records onto yesterday and must
-    // not mark today's (different) puzzle complete (iOS parity; the Android
-    // twin of this gate was Doug's phantom-Deliverance fix, Aug 16).
-    if (typeof window !== 'undefined' && (getDailySeedDate(seed) ?? getTodayLocal()) === getTodayLocal()) {
-      window.dispatchEvent(new CustomEvent('daily-completion', {
-        detail: { gameMode, won, guesses: guessCount, timeSeconds, score: Math.round(dailyScore ?? 0) },
-      }));
+    if (trackPending) markPendingSubstepDone(gameMode, seed, 'dailyDone');
+    // Confirmed: tell the DailyCompletionsProvider (Home, sweep banner) — this
+    // also refreshes Home after a queued retry lands. ONLY for TODAY's puzzle.
+    if (daily.outcome === 'written' && isTodaysSoloDaily) {
+      dispatchDailyCompletion({ gameMode, won, guesses: guessCount, timeSeconds, score: Math.round(daily.score ?? 0) });
     }
     // After the solo daily row lands, see whether this was the 7th
     // of the day and award the one-shot Daily Sweep / Flawless
     // Victory bonuses if so. Awaited so the XpResult below can carry
     // the new XP into the XpToast in a single render.
-    sweepResult = await awardDailyBonusesIfComplete(userId);
+    if (daily.outcome === 'written') {
+      sweepResult = await withRecordTimeout(awardDailyBonusesIfComplete(userId, timing), 'award bonuses').catch(() => null);
+    }
   }
+
+  // All critical writes above landed — release the crash-protection payload.
+  // (Everything below is best-effort and must not hold the queue.)
+  if (trackPending) markPendingRecordDone(gameMode, seed!, 'gameResult');
 
   // --- All-time record checks ---
   if (won && timeSeconds > 0) {
@@ -445,13 +479,16 @@ export async function recordGameResult(
 
   // Most games played (per mode) — fetch current total_games from user_stats
   try {
-    const { data: stats } = await (supabase as any)
-      .from('user_stats')
-      .select('total_games')
-      .eq('user_id', userId)
-      .eq('game_mode', gameMode)
-      .eq('play_type', playType)
-      .maybeSingle() as { data: any };
+    const { data: stats } = await withRecordTimeout<any>(
+      (supabase as any)
+        .from('user_stats')
+        .select('total_games')
+        .eq('user_id', userId)
+        .eq('game_mode', gameMode)
+        .eq('play_type', playType)
+        .maybeSingle(),
+      'records total_games',
+    );
     if (stats?.total_games) {
       checkAndUpdateRecord('most_games_played', gameMode, playType, userId, stats.total_games, true).catch(() => {});
     }
@@ -476,7 +513,7 @@ export async function recordGameResult(
 
   // Highest level (global)
   if (profile) {
-    const xpForLevel = (won ? 100 : 25) + (won && (profile.current_streak || 0) > 0 ? 50 : 0) + ((seed && isDailySeed(seed)) ? 50 : 0);
+    const xpForLevel = (won ? 100 : 25) + (won && (profile.current_streak || 0) > 0 ? 50 : 0) + (isDailyGame ? 50 : 0);
     const currentLevel = Math.floor(((profile.xp || 0) + xpForLevel) / 1000) + 1;
     checkAndUpdateRecord('highest_level', null, null, userId, currentLevel, true).catch(() => {});
   }
@@ -484,11 +521,14 @@ export async function recordGameResult(
   // Most gold medals (global)
   if (profile) {
     try {
-      const { data: medalProfile } = await (supabase as any)
-        .from('profiles')
-        .select('gold_medals')
-        .eq('id', userId)
-        .single() as { data: any };
+      const { data: medalProfile } = await withRecordTimeout<any>(
+        (supabase as any)
+          .from('profiles')
+          .select('gold_medals')
+          .eq('id', userId)
+          .single(),
+        'records gold_medals',
+      );
       if (medalProfile?.gold_medals > 0) {
         checkAndUpdateRecord('most_gold_medals', null, null, userId, medalProfile.gold_medals, true).catch(() => {});
       }
@@ -496,13 +536,16 @@ export async function recordGameResult(
   }
 
   // Most daily completions (global — count from daily_results)
-  if (seed && isDailySeed(seed)) {
+  if (isDailyGame) {
     try {
-      const { count } = await (supabase as any)
-        .from('daily_results')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('completed', true);
+      const { count } = await withRecordTimeout<any>(
+        (supabase as any)
+          .from('daily_results')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('completed', true),
+        'records daily count',
+      );
       if (count && count > 0) {
         checkAndUpdateRecord('most_daily_completions', null, null, userId, count, true).catch(() => {});
       }
@@ -510,16 +553,13 @@ export async function recordGameResult(
   }
 
   // Check achievements (fire-and-forget, don't block game flow)
-  checkAchievements(userId, gameMode, playType, won, guessCount, timeSeconds, seed, hintsUsed).catch(() => {});
-
-  // All critical writes above landed — release the crash-protection payload.
-  if (trackPending) markPendingRecordDone(gameMode, seed!, 'gameResult');
+  checkAchievements(userId, gameMode, playType, won, guessCount, timeSeconds, seed, hintsUsed, timing).catch(() => {});
 
   // Return XP details for post-game display
   if (profile) {
     const xpGain = won ? 100 : 25;
     const streakBonusVal = won && (profile.current_streak + (won ? 1 : 0)) > 1 ? 50 : 0;
-    const dailyBonusVal = (seed && isDailySeed(seed)) ? 50 : 0;
+    const dailyBonusVal = isDailyGame ? 50 : 0;
     const sweepExtraXp = sweepResult?.xpBonus ?? 0;
     const sweepBonus = sweepResult?.sweepAwarded
       ? (sweepResult.flawlessAwarded ? 200 : sweepResult.xpBonus)
@@ -533,6 +573,14 @@ export async function recordGameResult(
       try { flawlessStreakVal = (await fetchDailySweepStats(userId)).currentFlawlessStreak; } catch {}
     }
     const totalXp = xpGain + streakBonusVal + dailyBonusVal + sweepExtraXp;
+    const prevLevel = profile.level || 1;
+    const reachedLevel = Math.floor(((profile.xp || 0) + totalXp) / 1000) + 1;
+    // A replayed or late result: queue its tier popup here as LATE so it waits
+    // for calm (a replay has no XpToast at all; for a late live finish the
+    // XpToast's own live copy is then a skipped duplicate).
+    if (reachedLevel > prevLevel && isLate(timing.source, timing.startedAtMs, Date.now())) {
+      celebrateLevelUp(prevLevel, reachedLevel, { late: true });
+    }
     return {
       xpGain,
       streakBonus: streakBonusVal,
@@ -548,13 +596,16 @@ export async function recordGameResult(
   return null;
   } catch (err) {
     // The payload is deliberately NOT marked done — drainPendingRecords will
-    // re-fire this on the next visit. Report it anyway: a systematic failure
-    // here (an RLS regression, a constraint) silently costs every player their
-    // XP, level and streaks until someone happens to notice.
+    // re-fire this (on 'online', focus, or the next visit). Report it anyway:
+    // a systematic failure here (an RLS regression, a constraint) silently
+    // costs every player their XP, level and streaks until someone notices.
+    // A timeout / transport failure (no PostgREST code) is an outage, not a bug.
     console.error('recordGameResult failed:', err);
-    reportRejectedWrite(`recordGameResult ${gameMode}/${playType}`, err);
+    if ((err as any)?.code) reportRejectedWrite(`recordGameResult ${gameMode}/${playType}`, err);
     handleSupabaseError(err, 'recordGameResult');
     return null;
+  } finally {
+    if (trackPending) endInFlight(pendingKey);
   }
 }
 
@@ -622,12 +673,13 @@ export async function recordSoloMatch(data: {
    * checks.
    */
   hintsUsed?: number;
-}) {
+}, opts?: { retry?: boolean }) {
   // §255: same impossible-win guard as recordGameResult — no 0-guess win rows.
   if (data.won && data.score <= 0) return;
   // Crash-protection: persist the args locally BEFORE the network call so a
   // tab closed mid-flight can re-run this via drainPendingRecords().
   const trackPending = typeof window !== 'undefined';
+  const pendingKey = pendingRecordKey(data.gameMode, data.seed);
   if (trackPending) {
     mergePendingRecord(data.userId, data.gameMode, data.seed, {
       soloMatch: {
@@ -641,12 +693,14 @@ export async function recordSoloMatch(data: {
       },
       soloMatchDone: false,
     });
+    beginInFlight(pendingKey);
   }
 
   try {
     // supabase-js resolves with { error } instead of throwing — check it so
     // a failed insert hits the catch (toast) and keeps the pending payload.
-    const { error } = await (supabase as any).from('matches').insert({
+    // Time-boxed: an outage hangs the request; a timeout stays queued.
+    const { error } = await withRecordTimeout<any>((supabase as any).from('matches').insert({
       game_mode: data.gameMode,
       player1_id: data.userId,
       player2_id: null,
@@ -659,14 +713,17 @@ export async function recordSoloMatch(data: {
       hints_used: data.hintsUsed ?? 0,
       started_at: data.startedAtIso,
       completed_at: new Date().toISOString(),
-    });
+    }), 'matches insert');
     if (error) throw error;
     if (trackPending) markPendingRecordDone(data.gameMode, data.seed, 'soloMatch');
   } catch (err) {
     console.error('recordSoloMatch failed:', err);
-    reportRejectedWrite(`recordSoloMatch ${data.gameMode}`, err);
+    if ((err as any)?.code) reportRejectedWrite(`recordSoloMatch ${data.gameMode}`, err);
     handleSupabaseError(err, 'recordSoloMatch');
-    toast({ title: 'Failed to save game results', description: 'Your stats may not be recorded.', variant: 'destructive' });
+    // A background retry failing again is not news to the player.
+    if (!opts?.retry) toast({ title: 'Failed to save game results', description: 'Saved on this device — it will retry when you are back online.', variant: 'destructive' });
+  } finally {
+    if (trackPending) endInFlight(pendingKey);
   }
 }
 

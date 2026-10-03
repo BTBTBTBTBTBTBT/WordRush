@@ -14,8 +14,9 @@ import {
   type MatchInvite,
 } from '@/lib/invite-service';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
-import { ArtScene } from '@/components/ui/art-scene';
-import { PAGE_SCENES, poseSrc } from '@/lib/art';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
+import { CastLoadingStack } from '@/components/game/game-loading';
+import { PAGE_SCENES, poseSrc, type SceneName } from '@/lib/art';
 
 // The invite's characters (decorative): W pointing you to the match; Ozzy
 // sneaks into the sign-in card (FINISH_SPEC K1 / A7).
@@ -71,8 +72,27 @@ export default function JoinInvitePage() {
     </PageBackground>
   );
 
+  // BI24: loading / dead-invite states sit open on the VS wash (no card): the
+  // cast wave, or a cast scene over the gradient caps headline and a candy way out.
+  const open = (node: React.ReactNode) => (
+    <PageBackground tint="vs" className="min-h-screen-stable flex items-center justify-center px-5">{node}</PageBackground>
+  );
+  const deadInvite = (scene: SceneName, title: string, line: string) => open(
+    <BrandEmptyState
+      scene={scene}
+      artHeight={140}
+      accent="vs"
+      title={title}
+      line={line}
+      actionLabel="Go to VS"
+      actionHref="/vs"
+      actionColor="teal"
+      actionIcon="arrow"
+    />,
+  );
+
   if (loading || status === 'loading') {
-    return centered(<p className="text-sm font-bold animate-pulse" style={{ color: 'var(--color-text-muted)' }}>Loading invite…</p>);
+    return open(<CastLoadingStack label="LOADING INVITE" />);
   }
 
   if (!user) {
@@ -88,9 +108,9 @@ export default function JoinInvitePage() {
     );
   }
 
-  if (status === 'notfound') return centered(<><ArtScene scene={PAGE_SCENES.notFound} className="mb-3" /><p className="text-sm font-black" style={{ color: '#dc2626' }}>Invite not found.</p></>);
-  if (status === 'expired') return centered(<p className="text-sm font-black" style={{ color: '#dc2626' }}>This invite has expired.</p>);
-  if (status === 'closed') return centered(<p className="text-sm font-black" style={{ color: 'var(--color-text-muted)' }}>This invite is no longer active.</p>);
+  if (status === 'notfound') return deadInvite(PAGE_SCENES.notFound, 'INVITE NOT FOUND', "That link doesn't match any invite.");
+  if (status === 'expired') return deadInvite(PAGE_SCENES.empty, 'INVITE EXPIRED', 'This one ran out of time. Ask your friend for a fresh link.');
+  if (status === 'closed') return deadInvite(PAGE_SCENES.empty, 'INVITE CLOSED', 'This invite is no longer active.');
 
   return centered(
     <>

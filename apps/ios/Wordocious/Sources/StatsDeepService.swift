@@ -151,7 +151,7 @@ enum StatsDeepService {
 
     // MARK: - Today's daily standing (web fetchTodayDailyStanding)
 
-    struct DailyStanding {
+    struct DailyStanding: Codable, Equatable {
         /// Average top-percentile across today's played dailies (1 = top 1%).
         let topPercent: Int
         let modesCounted: Int

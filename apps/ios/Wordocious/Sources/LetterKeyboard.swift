@@ -27,6 +27,9 @@ struct LetterKeyboard: View {
     var onHardwareKey: ((HardwareKey) -> Bool)? = nil
     /// False while the board is inert (finished, overlay up).
     var hardwareEnabled: Bool = true
+    /// FINISH_SPEC BI8: Muddle asks for shorter keys (44 pt, 40 on short phones)
+    /// so its cartoon keeps the room; nil = the layout preference's height.
+    var keyHeightOverride: CGFloat? = nil
 
     @AppStorage("pref-keyboard-layout") private var layout = "standard"
 
@@ -35,7 +38,7 @@ struct LetterKeyboard: View {
         "ASDFGHJKL".map { String($0) },
         "ZXCVBNM".map { String($0) },
     ]
-    private var keyHeight: CGFloat { layout == "michael" ? 44 : 52 }
+    private var keyHeight: CGFloat { keyHeightOverride.map { min($0, layout == "michael" ? 44 : 52) } ?? (layout == "michael" ? 44 : 52) }
 
     var body: some View {
         VStack(spacing: 7) {

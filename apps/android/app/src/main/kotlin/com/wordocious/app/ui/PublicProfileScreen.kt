@@ -366,12 +366,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         }
         // Brief moderation confirmation (iOS toast parity; auto-clears in 2.5s).
         moderationToast?.let { t ->
-            Text(
-                t, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .tintedPill(PROFILE_PURPLE, 50.dp)
-                    .padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 5.dp),
+            // The finished candy message: a success / error coin and the soft candy pill.
+            com.wordocious.app.ui.game.CandyMessagePill(
+                t, com.wordocious.app.ui.game.FeedbackToast.statusTone(t),
+                Modifier.align(Alignment.CenterHorizontally).padding(bottom = 3.dp),
             )
         }
 
@@ -385,21 +383,14 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         if (p == null) {
             // iOS notFoundView — deleted/banned/bad-id profiles get a message and
             // a way out instead of skeletons that never resolve.
-            Column(
-                Modifier.fillMaxWidth().padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                // O3's not-found scene (ART_SPEC §7).
-                SceneImage(SceneArt.NOT_FOUND)
-                Text("Player not found", fontSize = 28.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                Text(
-                    "This profile doesn't exist or may have been removed.",
-                    fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-                CandyButton("Back", onClick = onClose, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
-            }
+            // O3's not-found scene (ART_SPEC §7) + BI24 headline, line and the way out.
+            BrandEmptyState(
+                title = "PLAYER NOT FOUND",
+                line = "This profile doesn't exist or may have been removed.",
+                modifier = Modifier.padding(top = 24.dp),
+                scene = SceneArt.NOT_FOUND, artHeight = 140.dp,
+                actionLabel = "Back", onAction = onClose,
+            )
             return@Column
         }
 
@@ -658,11 +649,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                             )
                         }
                     } else {
-                        Text(
-                            "No $playType games played in this mode yet",
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        BrandEmptyState(
+                            title = "NOT PLAYED YET",
+                            line = "No ${if (playType == "vs") "VS" else playType} games in this mode yet.",
+                            scene = SceneArt.NO_STATS, artHeight = 72.dp,
                         )
                     }
                 }
@@ -696,7 +686,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 Text("Recent Matches", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             }
             if (matches.isEmpty()) {
-                Text("No matches played yet.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                BrandEmptyState(
+                    title = "NO MATCHES YET", line = "Games will show up here as they're played.",
+                    scene = SceneArt.ASLEEP, artHeight = 72.dp,
+                )
             } else {
                 (if (showAllRecent) matches else matches.take(5)).forEach { m -> PublicMatchRow(m, userId) }
                 if (matches.size > 5) {

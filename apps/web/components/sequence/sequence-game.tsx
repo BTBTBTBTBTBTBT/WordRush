@@ -39,7 +39,8 @@ import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { toRecapBoards } from '@/components/game/completed-mini-board';
 import { SequenceMiniBoard } from './sequence-mini-board';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -294,12 +295,15 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
             SUCCESSION
           </h1>
         </GameHostTitle>
-        {state.status === 'PLAYING' && <div className="flex justify-center gap-3 mt-1">
+        {/* The feedback popup sits over the meta row under the title (never the title art or boards). */}
+        <div className="relative">
+          {state.status === 'PLAYING' && <div className="flex justify-center gap-3 mt-1">
           <span className="text-gray-400 text-xs font-bold"><Icon3D name="trophy" size={14} inline className="mr-1" />{solvedCount}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>}
-        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
+          <FeedbackToast message={error} />
+        </div>
       </div>
 
       {/* The ref'd area stays mounted in both states (useSquareBoardFit measures it while playing). */}

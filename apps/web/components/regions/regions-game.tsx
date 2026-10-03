@@ -39,7 +39,8 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { formatGuessStat } from '@/lib/format';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { useBoardFit } from '@/hooks/use-board-fit';
 import { softPill, softBackground, softBorder } from '@/lib/soft-surface';
@@ -334,17 +335,13 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
         <GameHostTitle mode="REGIONS" label="Starsweep">
           <h1 className="text-2xl font-black" style={{ color: REGIONS_ACCENT }}>{REGIONS_HEADER}</h1>
         </GameHostTitle>
-        <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="relative flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{regionsDailyNumber(getTodayLocal())}</span>}
           <span>{REGIONS_SIZE_LABEL[state.n] ?? `${state.n} × ${state.n}`}</span>
           <span className="flex items-center gap-1">Mistakes {mistakeDots}</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {completion ? (

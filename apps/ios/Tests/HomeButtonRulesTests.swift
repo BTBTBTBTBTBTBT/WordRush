@@ -30,6 +30,41 @@ final class HomeButtonRulesTests: XCTestCase {
         XCTAssertTrue(end3.atRoot(.home))
     }
 
+    /// BI10: the founder's repro on 2.7 (240) — Hubbub (a Home cover) → "Next: Sudocious"
+    /// (the root's cover) → Home. Home must not rebuild Home (a cover is not a push), must
+    /// not scroll it, and must cancel every game launch that was still in flight.
+    func testNextDailyThenHomeNeverOpensAnotherGame() {
+        // A cover over Home's root is an overlay, never depth…
+        XCTAssertFalse(HomeButtonRules.rootDisappearanceIsPush(tab: .home, current: .home, modalUp: true))
+        // …while a real push (How to play, the VS lobby) still is, and another tab's
+        // root leaving screen on a tab switch is neither.
+        XCTAssertTrue(HomeButtonRules.rootDisappearanceIsPush(tab: .home, current: .home, modalUp: false))
+        XCTAssertFalse(HomeButtonRules.rootDisappearanceIsPush(tab: .home, current: .stats, modalUp: false))
+
+        // So in game B the router sees Home at depth 0 with one overlay: the route only
+        // dismisses — no popToRoot(.home) (which rebuilt Home's covers) and no scroll.
+        let inGameB = TabRouterState(tab: .home, overlays: 1)
+        let actions = HomeButtonRules.route(from: inGameB)
+        XCTAssertEqual(actions, [.dismissOverlays])
+        let end = TabRouter.apply(actions, to: inGameB)
+        XCTAssertTrue(end.atRoot(.home))
+        XCTAssertNil(end.scrolledToTop[.home])
+
+        // A handoff tapped before Home (the 0.6 s "Next daily" post, a queued root present,
+        // a post-purchase Unlimited start) is dropped once Home was pressed.
+        let tapNext = Date(timeIntervalSince1970: 2_000)
+        XCTAssertTrue(HomeButtonRules.handoffAllowed(requestedAt: tapNext, lastHome: nil))
+        XCTAssertTrue(HomeButtonRules.handoffAllowed(requestedAt: tapNext, lastHome: tapNext.addingTimeInterval(-30)))
+        XCTAssertFalse(HomeButtonRules.handoffAllowed(requestedAt: tapNext, lastHome: tapNext.addingTimeInterval(0.3)))
+    }
+
+    func testHomeButtonNeverScrollsHome() {
+        // BI11: even from Home's root with nothing over it, the game's Home button
+        // leaves Home's scroll position alone (only the footer re-tap scrolls).
+        XCTAssertEqual(HomeButtonRules.route(from: TabRouterState(tab: .home)), [])
+        XCTAssertEqual(TabRouter.tap(.home, in: TabRouterState(tab: .home)), [.scrollToTop(.home)])
+    }
+
     func testCardGuardAndDebounce() {
         let t0 = Date(timeIntervalSince1970: 1_000)
         XCTAssertTrue(HomeButtonRules.acceptsCardTap(at: t0, lastHome: nil))

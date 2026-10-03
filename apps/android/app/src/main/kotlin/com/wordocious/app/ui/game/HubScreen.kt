@@ -133,6 +133,8 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     )
         private set
     var typing by mutableStateOf("")
+    /** Bumped on every submit so the same toast text ("+1" twice) replays its burst. */
+    var toastSeq by mutableStateOf(0)
     val outer = mutableStateListOf<Char>().apply { addAll(state.letters.drop(1).toList()) }
     var toast by mutableStateOf<String?>(null)
     var showResults by mutableStateOf(false)
@@ -249,6 +251,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     fun shuffle() { outer.shuffle(); SoundManager.playKeyTap() }
     fun submit() {
         if (state.ended) return
+        toastSeq++
         if (typing.length < HUB_MIN_WORD) { toast = "Four letters or more"; return }
         val word = typing.uppercase()
         dispatch(HubAction.Submit(word))
@@ -337,7 +340,7 @@ fun HubScreen(
         else { adGateDone = true; session.beginTimer() }
     }
     PauseClockInBackground(session, session::enterBackground, session::leaveBackground)
-    LaunchedEffect(session.toast) { if (session.toast != null) { kotlinx.coroutines.delay(1400); session.toast = null } }
+    LaunchedEffect(session.toast, session.toastSeq) { if (session.toast != null) { kotlinx.coroutines.delay(1400); session.toast = null } }
     // The clock runs only while the board itself is on screen (founder, 2026-09-28).
     LaunchedEffect(showOverlay, session.showResults) {
         if (showOverlay || session.showResults) session.pauseClock(HubSession.Pause.VIEW) else session.resumeClock(HubSession.Pause.VIEW)
@@ -346,6 +349,7 @@ fun HubScreen(
 
     // Physical keyboard (founder, 2026-09-30; web hub-game.tsx): only the seven puzzle letters type,
     // Enter submits, Backspace/Delete erases, Space shuffles. Board view only.
+    ProvideFeedbackAnchor {
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.state.ended && !session.showResults && !showOverlay && !showGuide) { k ->
@@ -368,13 +372,14 @@ fun HubScreen(
                 HubBoard(session)
             }
         }
-        // G5 a toast is a tinted pill (no dark slab, no white).
-        session.toast?.let { PieceToast(it, HUB_ACCENT) }
+        // The candy feedback toast (score burst / calm message), centered on the entry line above the hive.
+        GameFeedbackToast(session.toast, nonce = session.toastSeq)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) HubOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(HUB_ACCENT, onBack) }
         CornerHelpButton(HUB_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.HUB, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -446,6 +451,26 @@ private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean
     }
 }
 
+/** BI22 a pending "Starts with…" hint: a soft filled amber chip (no outline) with a small bulb, "AB… · 6 letters". */
+@Composable
+private fun PendingHintChip(w: String) {
+    val amber = Color(0xFFF5A524)
+    Row(
+        Modifier.clip(CircleShape).background(amber.copy(alpha = if (WTheme.isDark) 0.28f else 0.20f))
+            .padding(start = 7.dp, end = 9.dp, top = 3.dp, bottom = 3.dp)
+            .semantics(mergeDescendants = true) { contentDescription = "Hint: starts with ${w.take(2)}, ${w.length} letters" },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Icon(Icons.Filled.Lightbulb, null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
+        Text(
+            "${w.take(2)}… · ${w.length} letters", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1, softWrap = false,
+            color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
+            modifier = Modifier.clearAndSetSemantics { },
+        )
+    }
+}
+
 /** An unfound word on the results screen: a quiet slate chip. */
 @Composable
 private fun MissedChip(w: String) {
@@ -512,18 +537,17 @@ private fun HubBoard(session: HubSession) {
                 Capsule("Starts with…", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintStart() }
                 Capsule("Reveal a word", Icons.Filled.Visibility, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintReveal() }
             }
+            // BI22: the pending "Starts with…" hints are NOT a row in this column any more (that row
+            // appearing moved everything under the hint capsules): they lead the found-words flow
+            // below, which is already the flexible, scrolling area.
             val pending = s.hinted.filter { it !in s.found }
-            if (pending.isNotEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (w in pending) Text("${w.take(2)}… · ${w.length} letters", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                    color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
-                    modifier = Modifier.softChip(Color(0xFFF59E0B)).padding(horizontal = 9.dp, vertical = 3.dp))
-            }
             // "N OF M WORDS" heads the found-words area directly under the hint capsules;
             // the chips wrap newest-first and fill the rest, scrolling once they overflow.
             val total = s.found.size + s.bonusFound.size
             Text("$total ${if (total == 1) "WORD" else "WORDS"} · ${s.points} ${if (s.points == 1) "PT" else "PTS"}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    for (w in pending) PendingHintChip(w)
                     // Every accepted word, newest first, in the order found (the event log spans both lists).
                     for (w in hubFoundInOrder(s).asReversed()) Chip(session, w)
                 }
@@ -541,7 +565,7 @@ private fun HubBoard(session: HubSession) {
 /** Current entry: 28 sp bold, center letter in the accent; placeholder when empty. Erase-on-reject lives in HubSession.submit. */
 @Composable
 private fun HubEntryLine(session: HubSession) {
-    Box(Modifier.fillMaxWidth().heightIn(min = HUB_ENTRY_H), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxWidth().heightIn(min = HUB_ENTRY_H).feedbackAnchor(), contentAlignment = Alignment.Center) {
         if (session.typing.isEmpty()) Text("Tap letters or type", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         else Text(
             buildAnnotatedString {

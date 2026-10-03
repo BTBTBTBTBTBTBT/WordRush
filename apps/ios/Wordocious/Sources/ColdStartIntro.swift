@@ -209,8 +209,11 @@ private struct ColdStartIntro: View {
 
     /// The W's size at the center (the old launch image's 512 px @3x).
     private static let launchSize: CGFloat = 512 / 3
-    /// The glide lands at 1.55 s; the intro ends exactly then (≤ 1.6 s).
-    private static let landing: Double = 1.55
+    /// BI20 (founder 10-03: "slow down the intro … not make it seem rushed … don't lose the
+    /// fluidity"): the whole choreography plays 1.4× slower — same curves, same order.
+    static let pace: Double = 1.4
+    /// The glide lands at 1.55 s of choreography time (≈ 2.2 s on the clock); the intro ends then.
+    private static let landing: Double = 1.55 * pace
     private static let background = Color(hex: 0xF1D7F6)
 
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
@@ -231,7 +234,7 @@ private struct ColdStartIntro: View {
                         .position(x: size.width / 2, y: size.height / 2)
                 } else {
                     TimelineView(.animation) { ctx in
-                        frame(t: ctx.date.timeIntervalSince(start), size: size, safeTop: safeTop, origin: origin)
+                        frame(t: ctx.date.timeIntervalSince(start) / Self.pace, size: size, safeTop: safeTop, origin: origin)
                     }
                 }
             }

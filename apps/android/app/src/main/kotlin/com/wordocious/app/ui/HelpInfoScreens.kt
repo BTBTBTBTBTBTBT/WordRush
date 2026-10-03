@@ -53,9 +53,11 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
     var tab by remember { mutableStateOf(initialTab) }
     val tabs = listOf("How to Play", "Game Modes", "FAQ")
     // Game-mode descriptions + FAQ are single-sourced via /api/content.
+    var contentTry by remember { mutableStateOf(0) }
+    var contentDone by remember { mutableStateOf(false) }
     val content by androidx.compose.runtime.produceState(
-        initialValue = com.wordocious.app.data.ContentService.cached()
-    ) { value = com.wordocious.app.data.ContentService.load() }
+        initialValue = com.wordocious.app.data.ContentService.cached(), contentTry,
+    ) { value = com.wordocious.app.data.ContentService.load() ?: value; contentDone = true }
     val art = when (tab) { 0 -> TitleArt.HOWTO; 1 -> TitleArt.GUIDES; else -> TitleArt.FAQ }
     val intro = when (tab) {
         0 -> "Guess the word" to "The basics: tiles, colors and the daily reset."
@@ -77,7 +79,9 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
         when (tab) {
             0 -> HowToPlay()
             1 -> GameModesHelp(content?.helpModes ?: emptyList())
-            else -> Faq(content?.helpFaq ?: emptyList())
+            else -> if (content?.helpFaq.isNullOrEmpty() && contentDone) {
+                HelpOfflineState { contentDone = false; contentTry++ }
+            } else Faq(content?.helpFaq ?: emptyList())
         }
     }
 }
@@ -167,6 +171,18 @@ private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.Hel
     }
 }
 
+/** BI24: content that came back empty (offline, nothing cached): R unplugged + Try again. */
+@Composable
+private fun HelpOfflineState(onRetry: () -> Unit) {
+    BrandEmptyState(
+        title = "CAN'T REACH THE SERVER",
+        line = "Check your connection and we'll load this page again.",
+        modifier = Modifier.padding(top = 16.dp),
+        scene = SceneArt.UNPLUGGED,
+        actionLabel = "Try again", onAction = onRetry,
+    )
+}
+
 @Composable
 private fun Faq(items: List<com.wordocious.app.data.ContentService.FaqItem>) {
     if (items.isEmpty()) {
@@ -206,9 +222,11 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     val contact = when (kind) { "terms" -> "legal@wordocious.com"; "support" -> "support@wordocious.com"; else -> null }
     // About + Support are single-sourced via /api/content; Privacy + Terms stay hardcoded.
     val fromApi = kind == "about" || kind == "support"
+    var contentTry by remember { mutableStateOf(0) }
+    var contentDone by remember { mutableStateOf(false) }
     val content by androidx.compose.runtime.produceState(
-        initialValue = if (fromApi) com.wordocious.app.data.ContentService.cached() else null
-    ) { if (fromApi) value = com.wordocious.app.data.ContentService.load() }
+        initialValue = if (fromApi) com.wordocious.app.data.ContentService.cached() else null, contentTry,
+    ) { if (fromApi) { value = com.wordocious.app.data.ContentService.load() ?: value; contentDone = true } }
     val contentSections = if (kind == "about") content?.about else content?.support
     // C6: Privacy and Terms wear their own title art; the section cards take the page's color.
     val art = when (kind) { "privacy" -> TitleArt.PRIVACY; "terms" -> TitleArt.TERMS; else -> null }
@@ -217,7 +235,8 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     InfoPage(title, onBack = onDone, art = art, backLabel = "Close", intro = title to subtitle) {
         if (fromApi) {
             val cs = contentSections ?: emptyList()
-            if (cs.isEmpty()) CastLoader(null, Modifier.padding(top = 24.dp).fillMaxWidth())
+            if (cs.isEmpty() && contentDone) HelpOfflineState { contentDone = false; contentTry++ }
+            else if (cs.isEmpty()) CastLoader(null, Modifier.padding(top = 24.dp).fillMaxWidth())
             else cs.forEach { ContentSectionCard(it, accent) }
         } else {
             infoSections(kind).forEach { InfoSectionCardFor(it, accent) }

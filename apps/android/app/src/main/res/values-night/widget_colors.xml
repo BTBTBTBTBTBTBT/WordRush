@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC BI13: the widget inks on the deep purple dark background. -->
+<resources>
+    <color name="widget_ink">#E9DDFF</color>
+    <color name="widget_label">#BFCDB8FF</color>
+    <color name="widget_accent">#A78BFA</color>
+    <color name="widget_gold">#FCD34D</color>
+    <color name="widget_dot">#59CDB8FF</color>
+    <color name="widget_bg_top">#2A1650</color>
+    <color name="widget_bg_mid">#231340</color>
+    <color name="widget_bg_bottom">#1C1231</color>
+</resources>

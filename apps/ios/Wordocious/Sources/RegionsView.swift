@@ -229,15 +229,13 @@ struct RegionsView: View {
                     Spacer(minLength: 4)
                     board.padding(.horizontal, 6)
                     Spacer(minLength: 4)
-                    starsLeft
+                    // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
+                    // §BI22: one fixed-height status line — the first move (or a hint)
+                    // swaps the 11-pt tip for the 15-pt count without nudging the board.
+                    starsLeft.frame(height: 22).gameFeedbackToast(vm.toast, alignment: .top)
                     RegionsPad(vm: vm).padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -305,7 +303,7 @@ struct RegionsView: View {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 3) {
                             Image(systemName: "clock").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0x60A5FA))
-                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").softNumber(13)
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit().softNumber(13)
                         }
                     }
                 }
@@ -529,8 +527,7 @@ struct RegionsPad: View {
             StarsweepTool(label: "Erase", symbol: "eraser", dim: !vm.canErase) { vm.erase() }
             StarsweepTool(label: "Auto-cross", symbol: "xmark", variant: vm.state.autoCross ? .purple : .peach,
                           active: vm.state.autoCross) { vm.toggleAutoCross() }
-            StarsweepTool(label: vm.hintsUsed > 0 ? "Hint · \(vm.hintsUsed)" : "Hint", symbol: "lightbulb.fill",
-                          variant: .amber) { vm.hint() }
+            StarsweepTool(label: "Hint", symbol: "lightbulb.fill", variant: .amber, count: vm.hintsUsed) { vm.hint() }
         }
         .padding(.horizontal, 2)
     }

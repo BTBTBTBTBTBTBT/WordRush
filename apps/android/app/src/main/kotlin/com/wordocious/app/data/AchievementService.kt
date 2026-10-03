@@ -175,6 +175,10 @@ object AchievementService {
         timeSeconds: Int,
         seed: String?,
         hintsUsed: Int = 0,
+        /** 2026-10-03: where the result came from + when its record call started — a
+         *  replayed or slow one celebrates at a calm moment (CelebrationGate.isLate). */
+        source: CelebrationGate.Source = CelebrationGate.Source.LIVE,
+        startedAtMs: Long = System.currentTimeMillis(),
     ): List<String> = runCatching {
         val client = SupabaseConfig.client
         val unlocked = mutableListOf<String>()
@@ -816,5 +820,9 @@ object AchievementService {
         unlocked.toList()
     }.getOrElse { emptyList() }
         // FINISH_SPEC V2: queue the unlock popup(s) for what this game just unlocked.
-        .also { com.wordocious.app.ui.BadgeMoments.achievements(it) }
+        .also {
+            com.wordocious.app.ui.BadgeMoments.achievements(
+                it, late = CelebrationGate.isLate(source, startedAtMs, System.currentTimeMillis()),
+            )
+        }
 }

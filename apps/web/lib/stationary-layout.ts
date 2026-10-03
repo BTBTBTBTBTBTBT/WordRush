@@ -56,27 +56,34 @@ export const BANNER_SLOT = {
   /** The strip's top padding: art frame / host frame. */
   stripTopArt: 8,
   stripTopHost: 12,
-  stripBottom: 10,
-  /** Gap between the headline row and the controls row. */
-  stripGap: 4,
+  stripBottom: 8,
+  /** Gap between the headline row and the controls block. */
+  stripGap: 6,
   /** The headline box: always two 22 px × 1.15 lines (one-line headlines center in it). */
   headline: 51,
   /** The share button's box, reserved even when there is nothing to share. */
   share: 36,
   /** The celebration art beside the headline (and Unlimited's U loop in the same box). */
   art: 100,
-  /** Clock line (three 12 px lines max) beside the switch. */
-  controls: 36,
-  clockLine: 12,
+  /**
+   * FINISH_SPEC BI21: the controls block under the headline — the centered DAILY |
+   * UNLIMITED switch (30), a 6 px gap, then the centered one-line meta line (14).
+   */
+  controls: 50,
+  switchRow: 30,
+  metaLine: 14,
   /** A row's label · status · streak line. */
   rowHeader: 16,
-  rowGap: 8,
-  wordPadTop: 10,
-  wordPadBottom: 6,
-  puzzlePadTop: 8,
+  rowGap: 6,
+  wordPadTop: 8,
+  wordPadBottom: 3,
+  puzzlePadTop: 5,
   puzzlePadBottom: 12,
+  /** BI21: one tile size for both rows (at most 32, sized so 10 fit with 5 px gaps). */
   tileLg: 32,
-  tileSm: 28,
+  tileSm: 32,
+  tileGapMin: 5,
+  tileSlots: 10,
 } as const;
 
 export interface BannerInput {

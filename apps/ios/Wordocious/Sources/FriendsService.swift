@@ -158,12 +158,56 @@ enum FriendsService {
             }
             return
         }
+        let uid = await MainActor.run { AuthService.shared.profile?.id.lowercased() }
+        // BI19: a cold launch paints today's last payload from disk at once (same
+        // user, same local day only — §232: never yesterday's race), then the
+        // stale-while-revalidate refetch above swaps the fresh one in.
+        if !loaded, !force, let uid, let cached = readDisk(uid: uid) {
+            apply(cached)
+            fetchedDay = localDay()
+            fetchedAt = .distantPast   // stale on purpose: the next appear refetches
+            loaded = true
+            notify()
+            Task { await load(force: true) }
+            return
+        }
         guard let url = URL(string: "https://wordocious.com/api/friends?day=\(localDay())&weekStart=\(localWeekStart())") else { return }
         let req = await PublicProfileService.authedRequest(url)
+        // A failed fetch keeps whatever is showing (never blanks the Friends tab).
         guard let (data, resp) = try? await Net.api.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200,
               let payload = try? JSONDecoder().decode(FriendsPayload.self, from: data)
         else { return }
+        if let uid { writeDisk(uid: uid, data: data) }
+        apply(payload)
+        fetchedDay = localDay()
+        fetchedAt = Date()
+        loaded = true
+        notify()
+    }
+
+    // MARK: BI19 on-disk payload (Caches; per user, per local day)
+
+    private struct DiskPayload: Codable { let v: Int; let uid: String; let day: String; let data: Data }
+    private static var diskURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("friends-payload.json")
+    }
+
+    private static func readDisk(uid: String) -> FriendsPayload? {
+        guard let url = diskURL, let raw = try? Data(contentsOf: url),
+              let d = try? JSONDecoder().decode(DiskPayload.self, from: raw),
+              d.v == 1, d.uid == uid, d.day == localDay() else { return nil }
+        return try? JSONDecoder().decode(FriendsPayload.self, from: d.data)
+    }
+
+    private static func writeDisk(uid: String, data: Data) {
+        guard let url = diskURL, data.count < 1_000_000,
+              let raw = try? JSONEncoder().encode(DiskPayload(v: 1, uid: uid, day: localDay(), data: data)) else { return }
+        try? raw.write(to: url, options: .atomic)
+    }
+
+    private static func apply(_ payload: FriendsPayload) {
         friends = payload.friends
         incoming = payload.incoming
         friendIds = Set(payload.friends.map { $0.id.lowercased() })
@@ -171,10 +215,6 @@ enum FriendsService {
         outgoingProfiles = payload.outgoingProfiles
         meDigest = payload.me
         lastWeek = payload.lastWeek
-        fetchedDay = localDay()
-        fetchedAt = Date()
-        loaded = true
-        notify()
     }
 
     enum RemindOutcome { case reminded, already, failed }

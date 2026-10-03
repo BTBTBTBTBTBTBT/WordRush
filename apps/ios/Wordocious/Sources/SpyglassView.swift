@@ -209,23 +209,20 @@ struct SpyglassView: View {
                     // Grid, word chips and the two capsules are one centered block (founder, 2026-09-24).
                     Spacer(minLength: 6)
                     SpyglassGridView(vm: vm, revealMissing: false, tray: true).padding(.horizontal, 6)
-                    wordChips.padding(.top, 4)
+                    // §BI9: the feedback popup hangs from the word list under the grid — never over the title art or the board.
+                    wordChips.padding(.top, 4).gameFeedbackToast(vm.toast, alignment: .top)
                     // §A8: candy pills — amber Hint, teal Show words, peach Reveal
                     // (each fades while it's unavailable). One row when it fits.
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 8) { hintPill; showPill; revealPill }
-                        VStack(spacing: 6) { HStack(spacing: 8) { hintPill; showPill }; revealPill }
-                    }
-                    .padding(.top, 6)
+                    // §BI22: one row of equal thirds — a label changing ("Hint · 2", "Words
+                    // shown", the Reveal countdown) used to flip ViewThatFits between one and
+                    // two rows, which moved the grid.
+                    HStack(spacing: 8) { hintPill; showPill; revealPill }
+                        .frame(maxWidth: 420)
+                        .padding(.top, 6)
                     Spacer(minLength: 6)
                     Spacer().frame(height: 4)
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                // FINISH_SPEC §K1: the tinted toast pill in the event's color.
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.top, 110).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -271,12 +268,14 @@ struct SpyglassView: View {
     /// §A8: a small candy pill; `dim` shows it faded (it stays tappable — the
     /// view model explains why it can't act yet).
     private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, dim: Bool = false,
-                         action: @escaping () -> Void) -> some View {
-        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+                         count: Int = 0, action: @escaping () -> Void) -> some View {
+        // Equal thirds; the icons ride along only on wide phones (the labels scale to fit).
+        PuzCandyAction(title: label, symbol: UIScreen.main.bounds.width >= 400 ? symbol : nil, variant: variant,
+                       fullWidth: true, count: count, action: action)
             .opacity(dim ? 0.55 : 1)
     }
     private var hintPill: some View {
-        capsule(vm.state.hintsUsed > 0 ? "Hint · \(vm.state.hintsUsed)" : "Hint", "lightbulb", variant: .amber) { vm.hint() }
+        capsule("Hint", "lightbulb", variant: .amber, count: vm.state.hintsUsed) { vm.hint() }
     }
     private var showPill: some View {
         capsule(vm.state.wordsShown ? "Words shown" : "Show words", "list.bullet", variant: .teal, dim: vm.state.wordsShown) { vm.showWords() }
@@ -301,7 +300,7 @@ struct SpyglassView: View {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
                             Image(systemName: "clock").font(.system(size: 9))
-                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                         }
                         .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                     }
@@ -318,18 +317,25 @@ struct SpyglassView: View {
             // Hidden until found or shown: the word's length as dots (founder, 2026-09-26).
             let visible = found || s.wordsShown || s.status != .playing
             // §J3: a found word is a glossy capsule in the accent with a soft glow;
-            // the rest are tinted pills (hinted ones ringed in the accent).
-            Text(visible ? w : String(repeating: "•", count: w.count)).font(Brand.font(14, found ? .black : .bold))
-                .tracking(visible ? 0 : 2)
-                .lineLimit(1).fixedSize(horizontal: true, vertical: false)
+            // the rest are tinted pills (hinted ones a stronger tint).
+            // §BI22: every chip is sized by its word in the heaviest weight (hidden), so
+            // "Show words", a find or the end never re-wraps the list and moves the grid.
+            Text(w).font(Brand.font(14, .black)).lineLimit(1).fixedSize(horizontal: true, vertical: false).hidden()
+                .overlay {
+                    Text(visible ? w : String(repeating: "•", count: w.count)).font(Brand.font(14, found ? .black : .bold))
+                        .tracking(visible ? 0 : 2)
+                        .lineLimit(1).fixedSize(horizontal: true, vertical: false)
+                }
+                .accessibilityElement(children: .ignore)
                 .accessibilityLabel(visible ? "\(w)\(found ? ", found" : "")" : "\(w.count)-letter word")
                 .foregroundStyle(found ? Color.white : (visible ? PuzKit.ink : FinishInk.secondary))
                 .shadow(color: found ? Color(hex: 0x1A2E05).opacity(0.5) : .clear, radius: 0.5, x: 0, y: 1)
                 .padding(.horizontal, 12).padding(.vertical, 6)
                 .background {
                     if !found {
-                        Capsule().fill(PuzKit.face(spyglassAccent, 0.10))
-                            .overlay(Capsule().stroke(hinted ? spyglassAccent : PuzKit.line(spyglassAccent, 0.3), lineWidth: hinted ? 1.5 : 1))
+                        // §BI22: a hinted word glows with a stronger soft fill (no outline ring).
+                        Capsule().fill(PuzKit.face(spyglassAccent, hinted ? 0.26 : 0.10))
+                            .overlay(Capsule().stroke(PuzKit.line(spyglassAccent, hinted ? 0.45 : 0.3), lineWidth: 1))
                     }
                 }
                 .modifier(SpyglassFoundChip(on: found))

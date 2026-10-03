@@ -48,6 +48,8 @@ export function DesktopTabs() {
             <Link
               key={item.href}
               href={item.href}
+              // BI11: no jump to the top on a tab switch — the tab restores its own position.
+              scroll={false}
               onClick={(e) => onTabTap(e, item.href)}
               className={candyClass({ color: isActive ? 'purple' : 'peach', size: 'sm', extra: 'dk-tab' })}
               aria-current={isActive ? 'page' : undefined}

@@ -1154,3 +1154,128 @@ Android 40 dp, iOS 42 pt) — no row of its own. The "Next {Game} in 3h 12m" cou
 BI7. No sound the player didn't cause (founder 10-02: "random sound effects playing while I was playing sudocious and I
 wasn't even hitting anything"): the header cast's idle hop, rotating-headline ticks and the Friends badge arrival chime
 are silent ×3 (the visuals stay). In-app notice banners keep their chime (a visible banner explains it).
+BI8. Muddle: cartoon + caption always visible and bigger; solved words compact; punchline row fits
+BI9. In-game feedback popups finished: colorful +N score burst with quality label, calm candy messages, never over the title
+(founder 10-02: "look at hubbub how it shows the +5, that needs to be engaging as a colorful graphic"). One classifier ×3
+(core FeedbackToast.swift / FeedbackToast.kt / lib/feedback-toast.ts, unit tested): "+N" / "Pangram! +N" = a gold (rainbow
+for a pangram) candy burst with a 3D star, outlined +N and Good!/Nice!/Great!/Amazing!/PANGRAM!, spring pop + one sparkle
+burst + float-up; anything else = a calm candy pill with a glossy tone coin (errors shake once). Anchored on the entry line
+or the line under the board in every game and VS; Reduce Motion = a fade. App-wide sweep: Friends, Leaderboard, Public
+profile (moderation), invites/referrals and friendly-game statuses use the same candy message ×3.
+BI12. Streak / shield / flawless header popups always close (founder 10-02: "no tap to close feature and you have to
+restart the app"): iOS full-height scroll content was swallowing the scrim's taps — the space around the card now closes,
+the card keeps its taps, and a white close circle sits on the card's header corner ×3.
+BI14. Strategy (and How to Play) now match the per-game Guides pages ×3: hero card (host ready pose on a glow, game title art, title, dek, MIN READ chip), Solve smarter + Tip of the day (deterministic by local date), game-colored tiles grouped Wordocious dailies / Puzzles / Every game, reader with numbered soft-numeral sections, takeaways on soft color fields, a candy PLAY {GAME} into today's daily (hidden for general articles and VS) and prev/next; How to Play gets the same hero + numbered sections + 3D game icons on the mode rows; no bordered boxes. Shared rules: StrategyPlan.swift / StrategyCatalog (Android) / lib/strategy-games.ts, unit tested.
+BI10. Home button never opens another game (root cause: iOS counted a full-screen game COVER over Home as a PUSH — the
+Home root's onDisappear fires under a cover — so every top-left Home press also "popped" Home, bumping its pop token, which
+re-identifies Home's whole NavigationStack mid-dismissal; all twelve game `.fullScreenCover` modifiers were torn down and
+rebuilt, and any game binding still set at that instant presented again (a cover dismissed only by `dismissAllOverlays`'
+UIKit call — e.g. game A still behind the root's "Next daily" game B — a New-puzzle/Play-again swap in flight, or a widget
+open that couldn't present while covered). The same rebuild reset Home's scroll). Fix ×3: iOS — a root leaving screen under
+a modal is not depth (core `HomeButtonRules.rootDisappearanceIsPush`), Home closes every game through its BINDING (HomeView
+`closeAllGames`, the root's nextDaily / unlimitedGame / queued present), and every handoff ("Next daily", Unlimited,
+Leaderboard, a queued root present) carries its tap time and is dropped if Home was pressed since
+(`HomeButtonRules.handoffAllowed`); a widget open over a game closes it first. Android (one game layer, synchronous
+handoffs) and web (Home pushes "/", Next daily is a plain link) don't share the cause. Tests: HomeButtonRulesTests (A → Next
+daily → B → Home ⇒ Home root, nothing presented, no Home rebuild, no scroll, in-flight handoff dropped), HomeNavTest, home-button.test.ts.
+BI11. Tab switches keep each tab's scroll position; only a re-tap on the root scrolls to top (founder 10-02: "the home
+footer automatically scrolls up … if you were … mid way down, and on another tab and click right back, the position should
+persist"). Replaces AJ's "scrolled to the top": footer Home from another tab (any depth) still dismisses overlays and pops
+stacks but keeps Home's position; leaving a game with the top-left Home button keeps it too; re-tapping the current tab at
+its root scrolls to the top (a re-tap with a push just pops). Same for every tab. Core TabRouter / Android TabNav /
+web nav-home + `useTabScrollMemory` (Home's column and the window-scrolled tabs remember their position; footer links pass
+`scroll={false}`).
+BI15. Every game's daily result reaches Home, leaderboards, stats; timed-out writes queue and retry (founder 10-02: beat the
+Muddle daily on iOS 2.7 (240) during the Supabase outage — board restored, but no W on Home and no leaderboard row; "make
+sure all games hit those spots and stats accordingly"). Audit ×3 of all 18 dailies (9 word dailies + ProperNoundle + the 9
+Puzzles): seed → isDaily → scoring config → daily_results key → Home key → leaderboard key is one dbKey everywhere (no
+Muddle key bug; the write died in the outage). Fixes: Home flips the instant a daily finishes (local, before any network —
+it used to wait behind the user_stats + profile round trips); today's finishes still in the pending queue count as done on
+Home across relaunches until the row lands; Home no longer blanks today's completions when the token refresh can't reach the
+server; the queue drains at launch, on every foreground and when the network returns, never replays a game whose live write
+is still in flight, re-checks achievements on a replayed result; a daily_results write is bounded (20 s) and a timeout
+leaves the part queued; results that owe no row (implausible / no config) no longer sit in the queue forever. Tests: the
+table-driven mode map + timed-out-write-stays-queued (iOS DailyResultPipelineTests, Android + web equivalents).
+BI16. Late celebrations wait for a calm moment; an outage never signs you out (founder 10-02, same outage: his last write
+landed late, so the Daily Sweep popped at an awkward moment, and the app showed SIGN-IN as if he were signed out).
+Celebrations from a late result (pending-queue replay, the launch/foreground achievement sync, or a live write that came
+back more than 6 s after the finish) wait for calm: Home's root, nothing presented (game, cover, sheet, alert), no other
+popup. Daily Sweep / Flawless / Puzzles sweep always wait for calm and present one at a time; one still waiting when the
+local day rolls is dropped. A live finish's achievements keep the BF2 behavior (after the win popup). Sign-out: a session
+refresh that fails from a network or server error (timeout, auth unreachable, 5xx, 429) keeps the stored session, user and
+last profile and retries (5 s, 15 s, 30 s, then every 60 s, plus foreground and network back). Only an invalid/revoked
+refresh token (refresh_token_not_found / _already_used, session_not_found / _expired, user_not_found / _banned, "Invalid
+Refresh Token") or the player signing out clears it. A profile fetch that can't reach the server keeps the last profile
+(never blanks it or mints a new one). Root causes: iOS launch restore read any thrown `auth.session` (an expired token
+whose refresh timed out) as "no session" and wiped the profile cache; web auth-js 2.93.3 treats only 502/503/504 and
+thrown fetches as retryable, so a 500 / 520-530 / 429 / HTML error page on refresh deleted the stored session and fired
+SIGNED_OUT (now an auth-only fetch wrapper turns outage responses into network errors), and an expired token's retryable
+failure surfaced as INITIAL_SESSION null, which auth-context read as signed out. Rules: core CelebrationGate + AuthSessionPolicy
+(iOS), Android + web equivalents, unit tested (transient refresh error keeps the user signed in; revoked token signs out).
+BI17. Word of the Day restyled to match the Guides family; quiz progress survives outages ×3: Home card on the borderless hero card (I's ready pose on a glow, the word in brand caps, pronunciation + part-of-speech chip), glossy candy choices with clear right (green, pops once) / wrong (rose) / faded states through the reveal beat; the word page gets the hero (I, date eyebrow, big caps word), numbered senses with soft numerals, the example as a highlighted line and the puzzle notes on soft color fields; archive rows borderless. Every quiz answer is also kept on the device per player (written first); an outage read falls back to it, and device-only days merge in and re-send when the database answers (WotdQuizLocal, unit tested).
+BI18. Crossword fits one screen in play: cells sized from width and height for the real grid size, compact header, keyboard pinned (founder 10-03: "the daily today required you to scroll to see the whole puzzle"; today's daily is 10 × 11). ×3: the play header is compact like Muddle's (title art ≤ 44 in the corner-button row, then the puzzle title and the meta line); the grid alone owns the band between the header and the pinned clue bar / Check · Letter · Word · Reveal all / keyboard, its cell the largest square that fits the band's width AND height for the puzzle's real cols × rows (3-pt gaps, tray chrome and cursor-ring room off first, 14–42 cap; letters and clue numbers scale with the cell), so nothing scrolls. The clue bar keeps a fixed two-line height (the grid never resizes between clues); a Clues toggle beside it swaps the Across / Down list into the band (it scrolls there; picking a clue goes back to the grid). Screens under 700 tall get 44-pt keys. Rules: iOS CrosswordFit (Core, FinishLayoutTests), Android BoardSizing.crosswordCell (BoardSizingTest), web lib/board-fit.ts crosswordCell + crosswordCellFonts (board-fit.test.ts), unit tested. Estimated cells for 10 × 11: iPhone SE 20 pt, 390×844 29 pt, Pro Max 36 pt; Android 360×640 17 dp, 411×891 34 dp; web 375×667 22 px, 390×844 32 px.
+BI19. Instant W/L + leaderboard via optimistic local results; cache-first pages that never blank (founder 10-03: "the W and
+L will populate immediately now upon return to the main menu as well as the leaderboard immediately populating the
+results … make sure the information on all pages is quick to load and stays every time"). A finished daily is written
+locally before any network call (Home's W/L map, the player's own row on the cached per-game boards placed by score desc /
+time asc and marked as theirs, the Stats cache) and kept until the server confirms; the server's rows then win silently.
+Pages paint their last cached data and refresh underneath; a failed fetch keeps the cache. iOS: core OptimisticResults
+(merge, CompletionLedger, CacheFirst, PersistentMemoStore) wired into DailyCompletionsStore + the leaderboard own-row
+merge; StatsMemo, Friends' same-day payload and All-Time records now persist across launches; the Stats tab no longer
+blanks on a failed read; DataPrefetch warms today's boards + Stats after launch, on return (throttled) and after each
+finish lands. Web: lib/optimistic-results (Home W/L, per-game + Sweep board rows, Stats Today card), lib/page-cache
+(per user, versioned, size-bounded, cleared on sign-out) behind Leaderboard, Records, Friends, Home banner, public profiles,
+persisted SWR for Stats, prefetch after launch + after each finish. Android: equivalents. Verified: iOS app build + 263
+core tests; Android 430 JVM tests; web 1220 vitest tests + tsc clean (all unit tests; no device/browser run, DB was down).
+Not covered: WOTD (already cached on iOS; untouched on web), web rank/medal/achievement reads can still blank the rank
+line in an outage, iOS per-card Stats views not audited for failed-read blanking.
+BI21. Home banner card rebalanced: centered headline, centered wide Daily|Unlimited switch with PRO inside, centered meta line, evenly spread borderless progress icons
+BI22. Hints and feedback never resize or move the board (overlay / reserved slot) (founder 10-03: "hitting the hint button
+caused one of the puzzle games to shrink a bit"). Culprits: Hubbub (the "Starts with…" chips were a row of their own, so
+the honeycomb band shrank), ProperNoundle (the clue landed in the header's flow — a long Wikipedia clue shrank the board a
+lot) and Kindred (the "Name a category" chip row was subtracted from the grid's band); also Codebreaker / Crossword (a
+label growing — "Hint · 1", "Word · 1", "Reveal all?", the Reveal countdown — could flip the control rows from one to two)
+and Codebreaker's conflicts line. Fix ×3: Hubbub's hint chips lead the found-word flow (soft filled amber chips, lightbulb,
+no dashed outline); ProperNoundle has an always-present two-line clue slot (clamped; tap = the whole clue); Kindred's
+category slot is always reserved (chips scroll sideways); control rows are laid out by the screen, never the labels, with
+equal-width pills (Classic + VS Vowel/Consonant, ProperNoundle Clue/Vowel/Consonant, Ladder, Kindred, Spyglass,
+Codebreaker, Crossword — web shows the counts as a gold corner badge); fixed-height status lines (Starsweep stars left,
+Codebreaker conflicts, Pocket-game move errors); in-play clocks use tabular digits; the VS Six/Seven hint pills are amber
+like every solo hint; Spyglass hinted words glow with a stronger tint instead of a ring. Toasts stay overlays (BI9).
+Tests: iOS HintLayoutTests (Kindred tiles identical with 0–4 named categories), web lib/hint-layout.test.ts (Hubbub tile
+identical with/without hints, clue slot fixed, source guards), Android equivalents.
+BI23. Guest empty states keep the header pinned; cast mascot instead of a generic icon (founder 10-03: "get rid of the
+sign in to track your stats gray circle image and make that screen look nicer"). iOS Stats + Leaderboard put the
+content-sized signed-out body under the header in one VStack, so header + body centered mid-screen; web Stats' guest page
+had no header at all. Fix ×3: one shared GuestPitch (iOS Mascots.swift, Android GuestPitch.kt, web
+components/ui/guest-pitch.tsx) fills the space under the pinned AppHeader and centers in it: the page host (Stats D,
+Leaderboard O2, Friends O1 + I as a duo) pops in once, a gradient caps headline (YOUR STATS LIVE HERE / CLIMB THE BOARDS /
+PLAY WITH FRIENDS), one line, a dimmed decorative preview (Stats: streak / wins / best-time glossy chips; Leaderboard: a
+mini 2·1·3 podium; soft glossy tiles, no border, hidden from accessibility), the SIGN IN candy (no generic icon) and a
+quiet "Play without an account" link to Home. Friends guests keep the FRIENDS title art and no longer see the empty
+skeleton list or the add-by-username card. No outlines: the Friends list / friends cards, skeleton rows and the
+add-by-username field are soft filled (iOS FriendsCardChrome + SkeletonBlock + field; Android friendsCard, list card,
+friendsFieldColors). Web Leaderboard shows boards to guests (no gate), so only Stats + Friends changed there.
+BI24. No unfinished-looking states: every empty/error/loading/not-found state uses a cast host, brand headline, subtext and CTA
+(founder 10-03, after the grey person-circle on signed-out Stats: "any screens that show things like that are unfinished in my
+opinion and you should know what good looks like by now"). One shared BrandEmptyState ×3 (iOS BrandEmptyState.swift, Android
+ui/BrandEmptyState.kt, web components/ui/brand-empty-state.tsx): the state's ART_SPEC §7 scene (R asleep for empty boards, R
+unplugged for errors / offline, O3 for not found, I for no friends, D for no stats) or the page host, the title in the brand
+gradient caps, ONE short line in the app's voice, a candy action where one makes sense (Try again / Home / Back / Got it), an
+optional dimmed preview; it fades + rises in (transform / opacity only), no bordered box, no emoji, no generic SF Symbol /
+Material / lucide icon. Loading is always the CastLoader wave (never a bare spinner or a plain "Loading…" line); a fetch that
+fails with nothing cached shows R unplugged + Try again instead of spinning forever. Compact in-card hints (Stats "not enough
+data yet", empty charts) put D beside the line instead of a generic chart icon. System alerts are not used for in-app
+messages (iOS "Coming soon" is a sheet with U + Got it).
+BI25. Settings options are filled tiles with live theme/keyboard previews (no outlines); sheets open on the tap frame, single-fire
+(founder 10-03 on the sim: THEME / KEYBOARD rows were stroked boxes with a thick selected ring; the gear took over a second and
+one tap queued then closed). ×3: each choice is a soft filled tile — unselected a pale wash of the section color, no stroke;
+selected a glossy filled tile in that color (top sheen, soft glow) with white text and a small white check badge, cross-faded
+(opacity only), squishing on press. THEME tiles carry four mini glossy W·O·R·D tiles in that theme's colors on its page wash;
+KEYBOARD tiles a mini key row showing where Enter (return) and Delete sit (Michael: the Z row with delete on both ends + the
+enter / space / enter row). The shared option + field chrome lost its outlines too (iOS g5Option / g5Field / tintedPill, Pro
+best-value card glows instead of a gold ring; Android Edit profile fields, swatches, privacy row, chips and Pro plan cards;
+web softRow / softInput): selected = deeper wash + glow, fields = soft fill, errors tint the fill rose. Help / gear are
+single-fire (600 ms debounce, ignored while a sheet is up) and the Settings sheet builds light: Linked sign-ins (identity
+load + provider art, below the fold) mounts ~0.35 s after the sheet lands. Rules: iOS Core SettingsPreviews
+(SettingsPreviewsTests), Android data/SettingsPreviews (SettingsPreviewsTest), web lib/settings-previews.ts, unit tested.

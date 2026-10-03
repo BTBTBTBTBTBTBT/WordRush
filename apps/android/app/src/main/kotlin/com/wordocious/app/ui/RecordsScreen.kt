@@ -387,9 +387,9 @@ private fun DailyRecordsTab(
             } else if (isSweep) {
                 if (sweepEntries.isEmpty()) {
                     // An empty board gets R asleep (ART_SPEC §7 scene).
-                    SceneEmptyState(
-                        SceneArt.ASLEEP, "No sweeps yet today. Be the first!",
-                        Modifier.padding(vertical = 24.dp, horizontal = 16.dp), height = 120.dp, color = lbSubInk(),
+                    BrandEmptyState(
+                        title = "NO SWEEPS YET", line = "Finish all of today's dailies to land on this board.",
+                        scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                     )
                 } else {
                     // TIE-AWARE score display (daily-board parity).
@@ -409,10 +409,10 @@ private fun DailyRecordsTab(
                 }
             } else if (entries.isEmpty()) {
                 // Web parity (records page): an empty board gets R asleep (ART_SPEC §7 scene).
-                SceneEmptyState(
-                    SceneArt.ASLEEP,
-                    if (friendsOnly && userId != null) "None of your friends have played yet today" else "No results yet today. Be the first!",
-                    Modifier.padding(vertical = 24.dp, horizontal = 16.dp), height = 120.dp, color = lbSubInk(),
+                BrandEmptyState(
+                    title = "NO RESULTS YET",
+                    line = if (friendsOnly && userId != null) "None of your friends have played yet today." else "Nobody has finished this daily yet. Be the first!",
+                    scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                 )
             } else {
                 // iOS's Records row is the same guesses/time + W/L line for Solo and VS
@@ -573,7 +573,8 @@ private fun AllTimeTab(
 ) {
     // Re-entering the All-time tab (it is disposed on every Daily ↔ All-time switch) paints the
     // session copy on the first frame instead of the card skeleton (founder, 2026-09-29).
-    val seedRecords = remember { com.wordocious.app.data.StatsMemo.get<List<LeaderboardService.AllTimeRecord>>("allTimeRecords") }
+    // BI19: persisted across launches too.
+    val seedRecords = remember { com.wordocious.app.data.StatsMemo.getPersisted("allTimeRecords", kotlinx.serialization.builtins.ListSerializer(LeaderboardService.AllTimeRecord.serializer())) }
     var records by remember { mutableStateOf(seedRecords ?: emptyList()) }
     var loading by remember { mutableStateOf(seedRecords == null) }
     var selectedMode by remember { mutableStateOf(initialMode) }
@@ -588,7 +589,7 @@ private fun AllTimeTab(
         val fresh = LeaderboardService.fetchAllTimeRecords()
         // A failed fetch returns empty — keep the session copy on screen rather than blanking it.
         if (fresh.isNotEmpty() || seedRecords == null) records = fresh
-        if (fresh.isNotEmpty()) com.wordocious.app.data.StatsMemo.set("allTimeRecords", fresh)
+        if (fresh.isNotEmpty()) com.wordocious.app.data.StatsMemo.setPersisted("allTimeRecords", fresh, kotlinx.serialization.builtins.ListSerializer(LeaderboardService.AllTimeRecord.serializer()))
         loading = false
     }
     LaunchedEffect(isSweep) {
@@ -675,18 +676,18 @@ private fun AllTimeTab(
                     when {
                         // Still loading — the same pulsing rows every other board uses.
                         board == null -> Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) { LeaderboardSkeleton() }
-                        board.isEmpty() -> SceneEmptyState(
-                            SceneArt.ASLEEP, "No sweeps yet. Be the first!",
-                            Modifier.padding(20.dp), height = 120.dp, color = lbSubInk(),
+                        board.isEmpty() -> BrandEmptyState(
+                            title = "NO SWEEPS YET", line = "Sweep every daily in one day to start the all-time board.",
+                            scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                         )
                         else -> board.forEachIndexed { i, e ->
                             AllTimeSweepRow(rank = (e.rank.takeIf { it > 0 }?.toInt()) ?: (i + 1), entry = e, isCurrentUser = userId != null && e.userId == userId, onOpenProfile = onOpenProfile, index = i)
                         }
                     }
                 } else if (modeRecords.isEmpty()) {
-                    SceneEmptyState(
-                        SceneArt.ASLEEP, "No records yet",
-                        Modifier.padding(20.dp), height = 120.dp, color = lbSubInk(),
+                    BrandEmptyState(
+                        title = "NO RECORDS YET", line = "The first big finish here sets the mark.",
+                        scene = SceneArt.ASLEEP, lineColor = lbSubInk(),
                     )
                 } else {
                     PER_MODE_RECORD_TYPES.forEachIndexed { i, rt ->

@@ -689,9 +689,9 @@ struct FriendsPanelView: View {
                         .autocorrectionDisabled()
                         .focused($fieldFocused)
                         .padding(.horizontal, 12).frame(height: 40)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Self.lavender.wash(0.10)))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(fieldFocused ? Self.lavender.wash(0.6) : Self.lavender.wash(0.30), lineWidth: 1.5))
+                        // BI23: a soft filled field (no outline); focus deepens the fill.
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Self.lavender.wash(fieldFocused ? 0.22 : 0.14)))
                         .onSubmit { add() }
                     Button(action: add) {
                         CandyLabel(title: "Add") { Icon3D(.addFriend, size: 16) } // ART_SPEC §5
@@ -887,7 +887,8 @@ struct FriendsPanelView: View {
             }
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
             if let status = tauntStatus {
-                Text(status).font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading)
+                // §BI9: the taunt result as the shared candy message (coin + pop).
+                G5CandyMessage(text: status, tone: status == "Sent!" ? .success : (status.hasPrefix("Could not") ? .error : .warn))
                     .frame(maxWidth: .infinity).padding(.vertical, 32)
             } else {
                 VStack(spacing: 0) {
@@ -1210,7 +1211,9 @@ struct FriendsScreenView: View {
     var padsForChrome = true
     var asTab = false
     @ObservedObject private var chrome = ChromeVisibility.shared
+    @ObservedObject private var auth = AuthService.shared
     @State private var focusAdd: UUID?
+    @State private var showAuth = false
 
     /// The scroll's horizontal padding (the headline bleeds past it to the edges).
     private static let sidePadding: CGFloat = 16
@@ -1220,8 +1223,23 @@ struct FriendsScreenView: View {
             if asTab {
                 VStack(spacing: 0) {
                     AppHeaderView()
-                    scroll(proxy)
+                    // §241: a returning player never sees the pitch during the launch restore.
+                    if auth.isAuthenticated || (auth.isLoading && AuthService.hadPersistedSession) {
+                        scroll(proxy)
+                    } else {
+                        // FINISH_SPEC BI23: O1 hosts the signed-out pitch (web / Android parity),
+                        // centered BELOW the pinned header.
+                        // The FRIENDS title art stays on top; O1 + I (the add-friends host) as a duo.
+                        PageHeadline(.friends, bleed: Self.sidePadding)
+                            .padding(.horizontal, Self.sidePadding).padding(.top, 6)
+                        GuestPitch(hosts: [Mascots.friends, Mascots.addFriends], title: "Play with friends",
+                                   subtitle: "Sign in to add friends, race them every day and play pocket games together.",
+                                   colors: [Color(hex: 0xDB2777), Color(hex: 0xF97316)],
+                                   preview: .none, onSignIn: { showAuth = true })
+                            .sheet(isPresented: $showAuth) { AuthView() }
+                    }
                 }
+                .frame(maxHeight: .infinity, alignment: .top)
                 .pageBackground(.friends, lightOnly: true)
                 // navigationTitle stays for the next push's back label.
                 .navigationTitle("Friends")

@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
+import { makeAuthResilientFetch } from './auth-session-policy';
 
 let _supabase: SupabaseClient<Database> | null = null;
 
@@ -17,6 +18,15 @@ export function getSupabase(): SupabaseClient<Database> {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
+    },
+    // Outage fix (2026-10-03): auth-js deletes the stored session (and fires
+    // SIGNED_OUT) on any refresh failure it doesn't consider retryable — which
+    // includes a 500, a Cloudflare 52x, a 429 or an HTML error page. This
+    // wrapper rethrows those as network errors so only a real revocation can
+    // sign the player out (lib/auth-session-policy.ts). Non-auth requests pass
+    // straight through. `fetch` is resolved per call, not captured at import.
+    global: {
+      fetch: makeAuthResilientFetch((input, init) => fetch(input, init)),
     },
   });
 

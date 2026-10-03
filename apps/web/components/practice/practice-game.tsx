@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Clock } from 'lucide-react';
+import { UsedHintPill } from '@/components/ui/used-hint-pill';
 import { CandyButton } from '@/components/ui/candy-button';
 import { UiIcon } from '@/components/ui/ui-icon';
 import { useBoardFit } from '@/hooks/use-board-fit';
@@ -39,7 +40,8 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { useClassicHints, type PersistedClassicHintState } from '@/hooks/use-classic-hints';
 import { GameBackground } from '@/components/ui/page-background';
 import { modeTrayAccent } from '@/lib/tray-fit';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 
 interface PracticeGameProps {
   mode: GameMode;
@@ -426,15 +428,14 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             </>
           );
         })()}
-        {!gameComplete && <div className="flex justify-center gap-3 mt-1">
+        {/* The feedback popup sits over the meta row under the title (never the title art or boards). */}
+        <div className="relative">
+          {!gameComplete && <div className="flex justify-center gap-3 mt-1">
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>}
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(90) }}>
-            <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: '#1a1a2e', color: '#fff' }}>{message}</span>
-          </div>
-        )}
+          <FeedbackToast message={message} />
+        </div>
       </div>
 
       {gameComplete ? (
@@ -523,14 +524,21 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       )}
 
       {/* Hint buttons — Six/Seven only, hidden when game is complete */}
+      {/* Equal halves: "Vowel" → "Vowel: A" / "No consonants left" never resizes a pill. */}
       {hasHints && !gameComplete && (
-        <div className="shrink-0 flex justify-center gap-3 px-4 pb-3">
-          <CandyButton size="sm" color="teal" onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
-            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}
-          </CandyButton>
-          <CandyButton size="sm" color="teal" onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
-            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}
-          </CandyButton>
+        <div className="shrink-0 grid grid-cols-2 gap-3 w-full max-w-[360px] mx-auto px-4 pb-3">
+          {/* BI25: a used hint is a soft filled pill, no outline. */}
+          {hints.vowelUsed ? <UsedHintPill>{hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}</UsedHintPill> : (
+            <CandyButton size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+              {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}
+            </CandyButton>
+          )}
+          {/* BI25: a used hint is a soft filled pill, no outline. */}
+          {hints.consonantUsed ? <UsedHintPill>{hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}</UsedHintPill> : (
+            <CandyButton size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+              {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}
+            </CandyButton>
+          )}
         </div>
       )}
 

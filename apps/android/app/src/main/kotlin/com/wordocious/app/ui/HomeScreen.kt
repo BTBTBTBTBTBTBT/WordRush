@@ -90,8 +90,12 @@ fun HomeScreen(
     // Re-fetch the instant a daily is recorded (completionTick) so a just-finished
     // game's badge/tint shows immediately on return — no tab round-trip.
     val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    // Also refetch once a row LANDS (recordedTick) — a queued result retried by
+    // PendingRecords.drain() after an outage swaps its optimistic entry for the
+    // server row.
+    val landedTick by com.wordocious.app.data.DailyCompletionsService.recordedTick.collectAsState()
     val completions by androidx.compose.runtime.produceState(
-        initialValue = com.wordocious.app.data.DailyCompletionsService.readCache(), key1 = tick
+        initialValue = com.wordocious.app.data.DailyCompletionsService.readCache(), key1 = tick, key2 = landedTick
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
@@ -182,44 +186,40 @@ fun HomeScreen(
     // the new day's empty set after a midnight rollover) can never blank the
     // stats mid-celebration — the iOS widget-launch "0/9 WON · 0:00 · 0 pts"
     // sweep-modal bug.
-    var sweepCeleb by remember {
-        mutableStateOf<Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>?>(null)
-    }
-    var moreCeleb by remember {
-        mutableStateOf<Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>?>(null)
-    }
-    // Celebrations wait until Home is on screen: Home stays composed under a game now, and
-    // the jingle + rating ask must not fire over the game's own results (founder, 2026-09-29).
+    // 2026-10-03 (CelebrationGate): every sweep celebration is QUEUED and shown by
+    // CelebrationQueueHost at a calm moment — the Home tab at its root, nothing presented, no
+    // other popup — never the moment a late write lands. Each carries its day; a queued one
+    // from a past day is dropped. The once-per-day tokens are written when it actually shows.
+    // (Home stays composed under a game, 2026-09-29, so detection runs here regardless.)
     val homeHidden by LocalTabHidden.current
-    androidx.compose.runtime.LaunchedEffect(completions, sweepCeleb, homeHidden) {
-        if (sweepCeleb != null || homeHidden) return@LaunchedEffect
+    val showingSweep = CelebrationQueue.showingSweep
+    androidx.compose.runtime.LaunchedEffect(completions) {
         val tier = moreSweepTier(completions, MORE_CARDS) ?: return@LaunchedEffect
-        val day = com.wordocious.app.todayLocalDate()
-        val token = "$day:${if (tier == MoreSweepTier.FLAWLESS) "flawless" else "sweep"}"
-        val seen = com.wordocious.app.data.SettingsPref.get("more-sweep-celebrated-day", "")
-        if (seen == token || seen == "$day:flawless") return@LaunchedEffect
-        com.wordocious.app.data.SettingsPref.set("more-sweep-celebrated-day", token)
-        moreCeleb = completions
+        CelebrationQueue.enqueueSweep(
+            CelebrationQueue.Item.Sweep(
+                more = true, day = com.wordocious.app.todayLocalDate(),
+                flawless = tier == MoreSweepTier.FLAWLESS, byMode = completions,
+            )
+        )
     }
-    androidx.compose.runtime.LaunchedEffect(completions, homeHidden) {
-        if (homeHidden) return@LaunchedEffect
+    androidx.compose.runtime.LaunchedEffect(completions) {
         if (com.wordocious.app.data.DailyCompletionsService.sweepOnly(completions).size < com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES) return@LaunchedEffect
         val totals = com.wordocious.app.data.DailyCompletionsService.totals(completions)
         // Hard guard (iOS parity): a "sweep" with zero recorded wins is by
         // definition stale/degenerate data — never a real day of play.
         if (totals.won == 0) return@LaunchedEffect
-        val day = com.wordocious.app.todayLocalDate()
-        val token = "$day:${if (totals.flawless) "flawless" else "sweep"}"
-        val seen = com.wordocious.app.data.SettingsPref.get("sweep-celebrated-day", "")
-        if (seen == token || seen == "$day:flawless") return@LaunchedEffect
-        com.wordocious.app.data.SettingsPref.set("sweep-celebrated-day", token)
-        sweepCeleb = completions
+        CelebrationQueue.enqueueSweep(
+            CelebrationQueue.Item.Sweep(
+                more = false, day = com.wordocious.app.todayLocalDate(),
+                flawless = totals.flawless, byMode = completions,
+            )
+        )
         // FINISH_SPEC AI: the review ask now fires when the celebration CLOSES (SweepCelebration).
     }
     // FINISH_SPEC AI: a won game that hit a 7-day streak milestone asks for a review once
     // Home is back on screen with no celebration up (gates in StoreReview).
-    androidx.compose.runtime.LaunchedEffect(homeHidden, sweepCeleb, moreCeleb) {
-        if (homeHidden || sweepCeleb != null || moreCeleb != null) return@LaunchedEffect
+    androidx.compose.runtime.LaunchedEffect(homeHidden, showingSweep) {
+        if (homeHidden || showingSweep != null) return@LaunchedEffect
         delay(1_200)
         if (com.wordocious.app.data.StoreReview.takePendingStreakMilestone()) {
             (context as? android.app.Activity)?.let {
@@ -232,7 +232,7 @@ fun HomeScreen(
     Column(modifier = Modifier.fillMaxSize().pageBackground(PageTint.HOME)) {
         // (Shared AppHeader is rendered by MainScreen above all tabs.)
         val homeScroll = rememberScrollState()
-        ScrollToTopOnReselect(homeScroll) // AJ: Home / re-tap scrolls to the top.
+        ScrollToTopOnReselect(homeScroll) // AJ/BI11: only a re-tap of Home at its root scrolls to the top.
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(homeScroll)
                 .padding(horizontal = 16.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
@@ -424,23 +424,23 @@ fun HomeScreen(
         }
         // One-time Daily Sweep / Flawless Victory celebration overlay —
         // rendered from the snapshot captured at fire time, never live state.
-        if (sweepCeleb == null) moreCeleb?.let { celeb ->
-            SweepCelebration(
-                byMode = celeb, more = true,
-                onShare = { com.wordocious.app.data.DailySweepShare.shareMore(context, celeb) },
-                onClose = { moreCeleb = null },
-            )
-        }
-        sweepCeleb?.let { celeb ->
-            SweepCelebration(
-                byMode = celeb,
-                onShare = { com.wordocious.app.data.DailySweepShare.share(context, celeb) },
-                onClose = { sweepCeleb = null },
-            )
+        showingSweep?.let { celeb ->
+            androidx.compose.runtime.key(celeb) {
+                SweepCelebration(
+                    byMode = celeb.byMode, more = celeb.more,
+                    onShare = {
+                        if (celeb.more) com.wordocious.app.data.DailySweepShare.shareMore(context, celeb.byMode)
+                        else com.wordocious.app.data.DailySweepShare.share(context, celeb.byMode)
+                    },
+                    onClose = { CelebrationQueue.finishSweep() },
+                )
+            }
         }
     }
     // Pro-only "Invite a friend to VS" modal (web InviteModal / iOS InviteSheet).
     if (inviteOpen) InviteSheet(onDismiss = { inviteOpen = false })
+    // CelebrationGate: Home's own sheets / modals keep late celebrations waiting.
+    ReportPresented(inviteOpen || limitModal != null)
 }
 
 /**
@@ -637,47 +637,10 @@ internal fun PlainWordOfTheDayCard(onClick: () -> Unit = {}) {
             null,
         )
     }
-    // ART_SPEC §21.5: the Home game-card treatment with I's green band.
-    GameCardFrame(WOTD_CARD_ACCENT, onClick = onClick) {
-        // Card-chrome rows (the word) are capped; the definition below is NOT — it
-        // reflows at the user's full text size, on proportional lines. The WORD OF THE
-        // DAY title + "Past words" sit above the card (ART_SPEC §12, WordOfTheDayCard).
-        val w = wotd   // local capture: produceState delegate can't smart-cast
-        if (w == null) {
-            // Web parity: structural animate-pulse skeleton, not a "…" placeholder.
-            SkeletonBlock(height = 16.dp, width = 70.dp, cornerRadius = 6.dp)
-            Spacer(Modifier.height(6.dp))
-            SkeletonBlock(height = 10.dp, cornerRadius = 5.dp)
-            return@GameCardFrame
-        }
-        CappedFontScale {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val display = w.word.first().uppercase() + w.word.drop(1).lowercase()
-                Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                // Pronunciation sits between the word and the part of speech
-                // (WordOfTheDayView.swift:107). It was fetched but never rendered.
-                w.definition?.takeIf { it.phonetic.isNotBlank() }?.let {
-                    Text(
-                        it.phonetic, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                        color = WTheme.textMuted,
-                    )
-                }
-                w.definition?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
-                    // Web parity (page.tsx): plain italic purple text, no background pill.
-                    Text(
-                        it.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = purpleTextInk,
-                    )
-                }
-            }
-        }
-        // No maxLines: iOS lets the card grow to the full definition. Explicit
-        // PROPORTIONAL lineHeight (not bodyLarge's flat 24sp): the definition
-        // reflows at the user's full text size, but on iOS-tight lines.
-        w.definition?.takeIf { it.definition.isNotBlank() }?.let {
-            Text(it.definition, fontSize = 11.sp, lineHeight = 1.3.em, fontWeight = FontWeight.Bold, color = darkSafe(Color(0xFF4B5563), WTheme.textSecondary), modifier = Modifier.padding(top = 2.dp))
-        }
-    }
+    // FINISH_SPEC BI17: the guide-family WOTD card (WordOfTheDayQuiz.kt), same as the quiz card.
+    val w = wotd   // local capture: produceState delegate can't smart-cast
+    if (w == null) WotdPlainSkeleton()
+    else WotdPlainCard(w.word, w.definition?.phonetic.orEmpty(), w.definition?.partOfSpeech.orEmpty(), w.definition?.definition.orEmpty(), onClick)
 }
 
 @Composable

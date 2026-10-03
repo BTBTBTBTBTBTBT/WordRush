@@ -173,3 +173,40 @@ final class StreakWeekTests: XCTestCase {
         XCTAssertEqual(CastMoves.flourishPose(index: 9, elapsed: CastMoves.flourishDuration(count: 10) + 0.01), .identity)
     }
 }
+
+// MARK: BI18 — Crosswordocious fits one screen in play (founder 10-03)
+
+final class CrosswordFitTests: XCTestCase {
+    /// The live grid's chrome: the tray's padding each side (22) across; padding + lip + ring room (32) down.
+    private func cell(_ w: Double, _ h: Double?, cols: Int = 10, rows: Int = 11) -> Double {
+        CrosswordFit.cell(columns: cols, rows: rows, width: w, height: h, chromeX: 22, chromeY: 32)
+    }
+    private func assertFits(_ c: Double, _ w: Double, _ h: Double, cols: Int = 10, rows: Int = 11, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertLessThanOrEqual(c * Double(cols) + 3 * Double(cols - 1) + 22, w, file: file, line: line)
+        XCTAssertLessThanOrEqual(c * Double(rows) + 3 * Double(rows - 1) + 32, h, file: file, line: line)
+    }
+
+    func testTodaysTenByElevenFitsEveryPhoneByHeight() {
+        // Bands left between the compact header and the clue bar / pills / keyboard:
+        // SE 375×667 (44-pt keys) ≈ 355×290; 390×844 ≈ 370×382; Pro Max 430×932 ≈ 410×458.
+        let se = cell(355, 290), mid = cell(370, 382), max = cell(410, 458)
+        XCTAssertEqual(se, 20)
+        XCTAssertEqual(mid, 29)
+        XCTAssertEqual(max, 36)
+        assertFits(se, 355, 290); assertFits(mid, 370, 382); assertFits(max, 410, 458)
+        // Width alone would have given the SE 30 pt cells — eleven rows of those scrolled.
+        XCTAssertEqual(cell(355, nil), 30)
+    }
+
+    func testSmallerAndNonSquareGrids() {
+        XCTAssertGreaterThan(cell(355, 290, cols: 7, rows: 7), cell(355, 290))
+        let wide = cell(355, 400, cols: 10, rows: 9)
+        assertFits(wide, 355, 400, cols: 10, rows: 9)
+    }
+
+    func testCapAndFloor() {
+        XCTAssertEqual(cell(1000, 1000), CrosswordFit.maxCell)
+        XCTAssertEqual(cell(355, 100), CrosswordFit.minCell)
+        XCTAssertEqual(CrosswordFit.cell(columns: 0, rows: 0, width: 0, height: 0), CrosswordFit.minCell)
+    }
+}

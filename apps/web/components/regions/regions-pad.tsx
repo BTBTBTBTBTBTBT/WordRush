@@ -4,6 +4,7 @@ import { Undo2, Eraser, X, Lightbulb } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
 import { candyClass } from '@/components/ui/candy-button';
+import { HintCountBadge } from '@/components/ui/hint-kit';
 
 // The Starsweep action row (§18b, §19): ProperNoundle-style capsules —
 // Undo · Erase · Auto-cross · Hint — EACH with its icon. Auto-cross is a
@@ -39,8 +40,10 @@ export function RegionsPad({ onUndo, onErase, onToggleAutoCross, onHint, autoCro
       <button type="button" onClick={tap(onToggleAutoCross)} disabled={disabled} className={capsule(autoCross, disabled)} aria-pressed={autoCross} aria-label="Auto-cross">
         <X className={icon} strokeWidth={3.5} /><span className="candy-label">Auto-cross</span>
       </button>
-      <button type="button" onClick={tap(onHint)} disabled={disabled} className={capsule(false, disabled)} aria-label="Hint">
-        <Lightbulb className={icon} strokeWidth={3} /><span className="candy-label">Hint{hintsUsed > 0 ? ` · ${hintsUsed}` : ''}</span>
+      {/* The count is a corner coin, never in the label: "Hint · 1" widened the row,
+          it wrapped to two lines and the board above shrank (lib/hint-layout.ts). */}
+      <button type="button" onClick={tap(onHint)} disabled={disabled} className={capsule(false, disabled)} aria-label={hintsUsed > 0 ? `Hint (${hintsUsed} used)` : 'Hint'}>
+        <Lightbulb className={icon} strokeWidth={3} /><span className="candy-label">Hint</span><HintCountBadge count={hintsUsed} />
       </button>
     </div>
   );

@@ -80,6 +80,7 @@ import { VsSuccession } from './vs-succession';
 import { VsDeliverance } from './vs-deliverance';
 import { VsGauntlet } from './vs-gauntlet';
 import { VsProperNoundle } from './vs-propernoundle';
+import { FeedbackPill } from '@/components/game/feedback-toast';
 
 interface VsGameProps {
   mode: GameMode;
@@ -173,9 +174,8 @@ const SOLO_TITLES: Record<string, { title: string; className: string; style?: CS
 function VsToast({ text, className = 'bottom-8' }: { text: string; className?: string }) {
   return (
     <div className={`fixed left-0 right-0 text-center z-50 px-4 pointer-events-none ${className}`} style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
-      <span className="inline-block text-[13px] font-extrabold px-4 py-2 rounded-full animate-fade-in-up" style={{ ...vsCard(VS_ACCENT, { radius: 999 }), color: VS.deep }}>
-        {text}
-      </span>
+      {/* The shared finished popup (calm candy pill + tone coin), re-keyed so each new line pops in. */}
+      <span role="status" aria-live="polite" className="inline-block"><FeedbackPill key={text} message={text} /></span>
     </div>
   );
 }

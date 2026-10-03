@@ -119,7 +119,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "240"
+        CURRENT_PROJECT_VERSION: "241"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -158,10 +158,15 @@ targets:
       # which used to be duplicated into the extension. Regenerate it with
       # scripts/sync-widget-assets.sh after adding art the widget uses.
       - path: WordociousWidget/Assets.xcassets
+      # BI13: the brand's Nunito for the widget's hero numbers and caps labels.
+      - path: Wordocious/Resources/Nunito.ttf
+        buildPhase: resources
     info:
       path: WordociousWidget/Info.plist
       properties:
         CFBundleDisplayName: Wordocious
+        UIAppFonts:
+          - Nunito.ttf
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         NSExtension:
@@ -175,7 +180,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: WordociousWidget/WordociousWidget.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "2.7"
-        CURRENT_PROJECT_VERSION: "240"
+        CURRENT_PROJECT_VERSION: "241"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES

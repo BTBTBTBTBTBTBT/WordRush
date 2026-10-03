@@ -45,6 +45,13 @@ final class AchievementUnlockCenter: ObservableObject {
     /// FINISH_SPEC BF2: reasons the popup must wait (the win popup is up, a live VS
     /// match) — moments hold in `pending` and show once every block lifts.
     private var blocks: Set<String> = []
+    /// BI16: late moments (replayed results, the sync, a slow live write) wait
+    /// here for a calm moment instead of popping over whatever is on screen.
+    private var latePending: [Moment] = []
+    private var lateWaiter: Task<Void, Never>?
+
+    /// A popup is up (or about to be) — other celebrations wait on this.
+    var isShowing: Bool { window != nil || !queue.isEmpty }
 
     private init() {}
 
@@ -96,12 +103,15 @@ final class AchievementUnlockCenter: ObservableObject {
         let earned = dates.map { AchievementSeen.Earned(key: $0.key, at: $0.value) }
         let r = AchievementSeen.diff(earned: earned, seen: Self.loadSeen(uid))
         Self.saveSeen(r.seen, uid)
-        await present(keys: r.celebrate, unlockedCount: dates.count)
+        // BI16: whatever the sync finds was earned elsewhere / earlier — late.
+        await present(keys: r.celebrate, unlockedCount: dates.count, late: true)
     }
 
     /// Newly unlocked achievement keys (from checkAchievements / a result response).
     /// Each is marked seen (so a later sync never repeats it) and queued.
-    func enqueue(keys: [String]) async {
+    /// `late` (BI16): the result came from a replay or answered slowly — the
+    /// moment waits for calm (Home's root, nothing presented, no other popup).
+    func enqueue(keys: [String], late: Bool = false) async {
         var fresh = keys.filter { !seen.contains("a:\($0)") }
         if let uid = AuthService.shared.profile?.id {
             let stored = Self.loadSeen(uid) ?? []
@@ -110,11 +120,11 @@ final class AchievementUnlockCenter: ObservableObject {
         }
         guard !fresh.isEmpty else { return }
         // A beat so a game's own win popup lands (and holds the queue) first.
-        try? await Task.sleep(nanoseconds: 1_200_000_000)
-        await present(keys: fresh, unlockedCount: nil)
+        if !late { try? await Task.sleep(nanoseconds: 1_200_000_000) }
+        await present(keys: fresh, unlockedCount: nil, late: late)
     }
 
-    private func present(keys: [String], unlockedCount: Int?) async {
+    private func present(keys: [String], unlockedCount: Int?, late: Bool = false) async {
         guard !keys.isEmpty else { return }
         let catalog = AchievementCatalog.shared
         if keys.contains(where: { catalog.find($0) == nil }) { await catalog.load() }
@@ -133,7 +143,23 @@ final class AchievementUnlockCenter: ObservableObject {
             return .achievement(key: key, name: Self.prettify(key), description: "", icon: nil,
                                 unlocked: max(unlocked, 1), total: total)
         }
-        add(moments)
+        if late { addLate(moments) } else { add(moments) }
+    }
+
+    /// BI16: hold late moments until a calm moment, then queue them in order.
+    private func addLate(_ moments: [Moment]) {
+        let fresh = moments.filter { !seen.contains($0.id) && !latePending.contains($0) }
+        guard !fresh.isEmpty else { return }
+        latePending.append(contentsOf: fresh)
+        guard lateWaiter == nil else { return }
+        lateWaiter = Task { @MainActor [weak self] in
+            await CalmMoment.wait()
+            guard let self else { return }
+            self.lateWaiter = nil
+            let p = self.latePending
+            self.latePending = []
+            self.add(p)
+        }
     }
 
     /// §V3: a level-up that crossed into a new tier.
@@ -545,5 +571,67 @@ private struct AchievementShareCard: View {
         .padding(28)
         .frame(width: 360)
         .background(LinearGradient(colors: [Color(hex: 0xF3E8FF), Color(hex: 0xFFF1E0)], startPoint: .top, endPoint: .bottom))
+    }
+}
+
+/// FINISH_SPEC BI16: is now a calm moment for a celebration? Home's root on
+/// screen, nothing presented over the shell (game cover, sheet, alert), no
+/// immersive screen still leaving, and no other popup up. The rules themselves
+/// are core `CelebrationGate`; this reads the live app state into them.
+@MainActor
+enum CalmMoment {
+    static func isCalm(extraBusy: Bool = false) -> Bool {
+        guard LaunchGate.isOpen, UIApplication.shared.applicationState == .active else { return false }
+        let router = TabRouterModel.shared
+        let onHomeRoot = router.current == .home && !router.pushed.contains(.home)
+        let presented = ChromeVisibility.shared.bottomNavHidden || ChromeVisibility.inModalPresentation()
+        let popupUp = extraBusy
+            || HeaderPopups.shared.shown != nil
+            || AchievementUnlockCenter.shared.isShowing
+            || ProWelcomeCenter.shared.current != nil
+            || CelebrationBusy.shared.up
+        return CelebrationGate.isCalm(onHomeRoot: onHomeRoot, anythingPresented: presented, popupUp: popupUp)
+    }
+
+    /// Suspends until calm has held for two checks in a row (a ~0.5 s settle
+    /// beat, so a cover mid-dismissal never collides with the celebration).
+    /// Polls only while someone is waiting. `extraBusy` adds the caller's own
+    /// popups (e.g. Home's shield modal).
+    static func wait(extraBusy: @escaping @MainActor () -> Bool = { false }) async {
+        var calmChecks = 0
+        while !Task.isCancelled {
+            calmChecks = isCalm(extraBusy: extraBusy()) ? calmChecks + 1 : 0
+            if calmChecks >= 2 { return }
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+    }
+}
+
+/// BI16: a full-screen celebration (Daily Sweep / Flawless / Puzzles sweep) is
+/// up — the late achievement popups wait for it, and it for them.
+@MainActor
+final class CelebrationBusy: ObservableObject {
+    static let shared = CelebrationBusy()
+    @Published var up = false
+    private init() {}
+}
+
+/// BI16: when each daily's live record call began (keyed by seed), so an
+/// achievement check can tell a prompt finish from a write that came back late.
+enum LiveFinishClock {
+    private static let lock = NSLock()
+    private static var starts: [String: Date] = [:]
+
+    static func mark(seed: String) {
+        lock.lock(); defer { lock.unlock() }
+        if starts.count > 64 { starts.removeAll() }
+        starts[seed] = Date()
+    }
+
+    static func started(seed: String?) -> Date? {
+        guard let seed else { return nil }
+        lock.lock(); defer { lock.unlock() }
+        guard let d = starts[seed], Date().timeIntervalSince(d) < 600 else { return nil }
+        return d
     }
 }

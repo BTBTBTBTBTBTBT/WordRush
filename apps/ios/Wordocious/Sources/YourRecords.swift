@@ -238,11 +238,9 @@ struct SweepRecordsCard: View {
                         }
                     }
                 } else {
-                    VStack(spacing: 8) {
-                        Icon3D(.trophy, size: 35).opacity(0.5)
-                        Text("No sweeps yet").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 24)
+                    // BI24: a host + brand headline, not a faded icon over grey text.
+                    BrandEmptyState(title: "No sweeps yet", line: "Finish every daily in one day for your first sweep.",
+                                    host: Mascots.records, artHeight: 80)
                 }
             }
             .padding(14)
@@ -298,12 +296,9 @@ struct PuzzleSweepsCard: View {
                         meCell("crown.fill", "\(totals.bestFlawless)", "Best Flawless Run", gold, dim: totals.bestFlawless == 0)
                     }
                 } else {
-                    VStack(spacing: 8) {
-                        Image(systemName: "square.grid.2x2").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
-                        Text("Finish every Puzzle in a day for your first sweep").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 24)
+                    // BI24: a host + brand headline, not a generic SF Symbol over grey text.
+                    BrandEmptyState(title: "No Puzzles sweeps yet", line: "Finish every Puzzle in a day for your first sweep.",
+                                    host: Mascots.puzzles, artHeight: 80)
                 }
             }
             .padding(14)

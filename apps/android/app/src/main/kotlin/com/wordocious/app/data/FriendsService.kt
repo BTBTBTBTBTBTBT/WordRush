@@ -183,9 +183,22 @@ object FriendsService {
             // stayed frozen at whatever they were when the screen first loaded.
             if (System.currentTimeMillis() - fetchedAtMs <= 30_000) return
         }
+        // BI19 cache-first: a cold launch paints the last friends payload (this user, today)
+        // before the request below; a failed request leaves it on screen.
+        val cacheKey = AuthService.userId?.let { "friends:${it.lowercase()}:${localDay()}" }
+        if (!loaded && cacheKey != null) {
+            AppCache.screens.getRaw(cacheKey)
+                ?.let { raw -> runCatching { json.decodeFromString<FriendsPayload>(raw) }.getOrNull() }
+                ?.let { applyPayload(it, fetchedAt = 0L) }
+        }
         val resp = api("GET", "/api/friends?day=${localDay()}&weekStart=${localWeekStart()}") ?: return
         val payload = runCatching { json.decodeFromString<FriendsPayload>(resp.second) }.getOrNull() ?: return
         if (resp.first != 200) return
+        if (cacheKey != null) AppCache.screens.putRaw(cacheKey, resp.second)
+        applyPayload(payload, fetchedAt = System.currentTimeMillis())
+    }
+
+    private fun applyPayload(payload: FriendsPayload, fetchedAt: Long) {
         friends = payload.friends
         incoming = payload.incoming
         friendIds = payload.friends.map { it.id.lowercase() }.toSet()
@@ -194,7 +207,7 @@ object FriendsService {
         meDigest = payload.me
         lastWeek = payload.lastWeek
         fetchedDay = localDay()
-        fetchedAtMs = System.currentTimeMillis()
+        fetchedAtMs = fetchedAt
         loaded = true
         notifyChanged()
     }

@@ -6,6 +6,7 @@ import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { formatGuessStat } from '@/lib/format';
 import { fewestRecordLabel } from '@/lib/mode-stats';
 import { fetchAllTimeRecords, type AllTimeRecord } from '@/lib/daily-service';
+import { readPageCache, writePageCache } from '@/lib/page-cache';
 
 // Record-row chrome shared by the Records page (global Hall of Fame / by-mode
 // records) and the Stats tab (your own records — Stats + Friends redesign D2
@@ -15,12 +16,21 @@ import { fetchAllTimeRecords, type AllTimeRecord } from '@/lib/daily-service';
 // All-Time and Your Records both need the full record list — share one
 // session-lived fetch (fresh on reload; records change rarely) instead of
 // re-querying per visit.
+// BI19: and persisted (lib/page-cache.ts) so a reload paints the last list at
+// once; an empty read (the query swallows errors) never replaces a list we have.
 let allTimeRecordsPromise: Promise<AllTimeRecord[]> | null = null;
 let allTimeRecordsValue: AllTimeRecord[] | null = null;
+const RECORDS_CACHE_KEY = 'records:all-time';
 export function fetchAllTimeRecordsShared(): Promise<AllTimeRecord[]> {
   if (!allTimeRecordsPromise) {
     allTimeRecordsPromise = fetchAllTimeRecords().then((rows) => {
+      const cached = peekAllTimeRecords();
+      if (rows.length === 0 && cached && cached.length > 0) {
+        allTimeRecordsPromise = null;   // retry on the next visit
+        return cached;
+      }
       allTimeRecordsValue = rows;
+      writePageCache(RECORDS_CACHE_KEY, rows, { user: null });
       return rows;
     }).catch((e) => {
       allTimeRecordsPromise = null;  // don't memoize a failure
@@ -31,7 +41,8 @@ export function fetchAllTimeRecordsShared(): Promise<AllTimeRecord[]> {
 }
 /** The shared list if it has already landed this session — lets a remounting view
  *  paint it in its first render instead of a skeleton frame (founder, 2026-09-29). */
-export const peekAllTimeRecords = (): AllTimeRecord[] | null => allTimeRecordsValue;
+export const peekAllTimeRecords = (): AllTimeRecord[] | null =>
+  allTimeRecordsValue ?? (allTimeRecordsValue = readPageCache<AllTimeRecord[]>(RECORDS_CACHE_KEY, { user: null }) ?? null);
 
 export const RECORD_LABELS: Record<string, { label: string; icon: IconLike; format: (v: number) => string }> = {
   fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },

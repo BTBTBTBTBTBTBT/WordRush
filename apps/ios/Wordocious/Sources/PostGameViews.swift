@@ -524,8 +524,11 @@ struct NextDailyCTA: View {
                                 dismiss()
                                 // Let the dismiss animation finish before the root
                                 // presents the next cover (competing presentations drop).
+                                // BI10: stamped with the tap time — a Home press in between cancels it.
+                                let at = Date()
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                    NotificationCenter.default.post(name: Self.playNextDaily, object: key)
+                                    NotificationCenter.default.post(name: Self.playNextDaily, object: key,
+                                                                    userInfo: [HomeNav.requestedAtKey: at])
                                 }
                             } label: {
                                 // FINISH_SPEC §B6 / §A8: the gold (amber) candy button
@@ -586,8 +589,10 @@ struct NextDailyCTA: View {
                 // Same choreography as playNextDaily: let this cover's dismiss
                 // finish before the root switches tabs.
                 Self.pendingLeaderboardMode = key
+                let at = Date()   // BI10: a Home press in between cancels it
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    NotificationCenter.default.post(name: Self.openLeaderboard, object: key)
+                    NotificationCenter.default.post(name: Self.openLeaderboard, object: key,
+                                                    userInfo: [HomeNav.requestedAtKey: at])
                 }
             } label: {
                 // §B6 / §A8: the purple candy button with the 3D trophy.
@@ -613,8 +618,10 @@ struct NextDailyCTA: View {
                 dismiss()
                 // Same choreography as playNextDaily: let this cover's dismiss
                 // finish before the root presents the unlimited game.
+                let at = Date()   // BI10: a Home press in between cancels it
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    NotificationCenter.default.post(name: Self.playUnlimited, object: key)
+                    NotificationCenter.default.post(name: Self.playUnlimited, object: key,
+                                                    userInfo: [HomeNav.requestedAtKey: at])
                 }
             }
         }

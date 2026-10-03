@@ -22,7 +22,7 @@ import { VS, modeTitle, raceTarget, sentStatus, type SentChallenge } from '@/lib
 import { VsGame } from './vs-game';
 import { ChallengeResult } from './challenge-result';
 import { InitialAvatar, ModeChip, TealButton, VS_LIGHT_VARS, VsCard } from './vs-ui';
-import { ArtScene } from '@/components/ui/art-scene';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import { PAGE_SCENES, artSrc } from '@/lib/art';
 import { NOTICE_POSES } from './vs-notice-art';
 import { PageBackground } from '@/components/ui/page-background';
@@ -69,12 +69,21 @@ export function VsChallenge({ code }: { code: string }) {
     );
   }
   if (!lookup || !lookup.ok) {
-    return centered(
-      <>
-        <ArtScene scene={PAGE_SCENES.notFound} />
-        <div className="text-[15px] font-black" style={{ color: VS.deep }}>{lookup && !lookup.ok ? lookup.error : 'Challenge not found'}</div>
-        {vsHome}
-      </>,
+    // BI24: open on the VS wash (no card): O3's scene, the gradient caps headline, one line, VS Home.
+    return (
+      <PageBackground tint="vs" scheme="light" className="min-h-screen-stable flex items-center justify-center px-5" style={VS_LIGHT_VARS}>
+        <BrandEmptyState
+          scene={PAGE_SCENES.notFound}
+          artHeight={140}
+          accent="vs"
+          title="CHALLENGE NOT FOUND"
+          line={(lookup && !lookup.ok && lookup.error) || "That link doesn't match any challenge."}
+          actionLabel="VS Home"
+          actionHref="/vs"
+          actionColor="teal"
+          actionIcon="arrow"
+        />
+      </PageBackground>
     );
   }
 

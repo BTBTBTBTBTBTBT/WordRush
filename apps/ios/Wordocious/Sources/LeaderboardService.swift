@@ -402,3 +402,66 @@ enum LeaderboardService {
             .execute().count) ?? 0
     }
 }
+
+/// FINISH_SPEC BI19: warm today's Leaderboard + Stats caches so those tabs paint
+/// real data on their first open — right after launch settles and again after
+/// each finish lands on the server. A trickle (one board at a time, with gaps),
+/// never a burst; a failed fetch leaves the cache as it was.
+@MainActor
+enum DataPrefetch {
+    private static var running: Task<Void, Never>?
+    private static var lastRun = Date.distantPast
+
+    /// `force` = a result just landed (the boards changed); otherwise at most
+    /// once every 2 minutes.
+    static func today(force: Bool = false) {
+        guard force || Date().timeIntervalSince(lastRun) > 120 else { return }
+        guard let uid = AuthService.shared.profile?.id else { return }
+        lastRun = Date()
+        running?.cancel()
+        running = Task { @MainActor in
+            await warmStats(uid: uid)
+            await warmLeaderboards(uid: uid)
+        }
+    }
+
+    private static func warmLeaderboards(uid: String) async {
+        let modes = homeModes.compactMap(\.dbKey).compactMap { GameMode(rawValue: $0) }
+        for m in modes {
+            guard !Task.isCancelled else { return }
+            async let rowsOpt = try? LeaderboardService.fetch(gameMode: m)
+            async let countV = LeaderboardService.playerCount(gameMode: m)
+            guard let rows = await rowsOpt else { _ = await countV; continue }   // keep the cache
+            let count = await countV
+            guard !Task.isCancelled else { return }
+            let key = LeaderboardCache.key(mode: m, userId: uid)
+            let prev = LeaderboardCache.shared[key]
+            // The player's rank straight from the rows when they're on them; else the
+            // last known rank and window stay (the tab's own load refines both).
+            let mine = rows.firstIndex { $0.userId.lowercased() == uid.lowercased() }
+            let rank: (rank: Int, total: Int)? = mine.map {
+                (rank: LeaderboardService.competitionRank(rows, $0), total: max(count, rows.count))
+            } ?? prev?.userRank
+            LeaderboardCache.shared[key] = .init(
+                entries: rows, playerCount: max(count, rows.count), userRank: rank,
+                rankWindow: mine == nil ? prev?.rankWindow : nil)
+            try? await Task.sleep(nanoseconds: 250_000_000)
+        }
+    }
+
+    /// The Stats tab's headline reads, into the same memo keys it paints from.
+    private static func warmStats(uid: String) async {
+        let memo = StatsMemo.shared
+        async let statsF = UserStatsService.fetch(userId: uid)
+        async let sweepF = MatchStatsService.dailySweepStats()
+        async let standingF = StatsDeepService.todayDailyStanding()
+        let stats = await statsF, sweep = await sweepF, standing = await standingF
+        guard !Task.isCancelled else { return }
+        // An empty read is a failed one (stats never shrink to nothing): keep the cache,
+        // and don't trust the other zeroed reads from the same outage either.
+        guard !stats.isEmpty else { return }
+        memo.set("statRows:\(uid)", stats)
+        memo.set("sweepStats:\(uid)", sweep)
+        if let standing { memo.set("standing:\(uid)", Optional(standing)) }
+    }
+}

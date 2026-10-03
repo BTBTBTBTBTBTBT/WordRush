@@ -128,9 +128,17 @@ export function formatUnlockDate(iso: string | null | undefined): string {
 
 // ── The celebration queue (V2 + V3) ─────────────────────────────────────────
 
-export type BadgeCelebration =
+export type BadgeCelebration = (
   | { kind: 'achievement'; key: string; name: string; description: string; badge: AchievementBadgeName; accent: string; xp?: number }
-  | { kind: 'tier'; level: number; tier: LevelTier; accent: string };
+  | { kind: 'tier'; level: number; tier: LevelTier; accent: string }
+) & {
+  /**
+   * From a LATE result (pending-records replay, launch / visibility sync, or a
+   * live finish that came back > 6 s late — lib/celebration-gate.ts): it waits
+   * for a calm moment instead of showing over whatever is on screen.
+   */
+  late?: true;
+};
 
 /** The window event fired with every batch (detail: the queued items). */
 export const BADGE_CELEBRATION_EVENT = 'wordocious:badge-celebration';
@@ -145,10 +153,16 @@ function sameItem(a: BadgeCelebration, b: BadgeCelebration): boolean {
   return false;
 }
 
-/** Adds celebrations to the end of the queue (duplicates already queued are skipped). */
-export function queueCelebrations(items: BadgeCelebration[]): void {
+/**
+ * Adds celebrations to the end of the queue (duplicates already queued are
+ * skipped — a late item stays late even if the same unlock is announced live
+ * afterwards, e.g. the XpToast's tier popup for a result that came back late).
+ * `late` marks them as waiting for a calm moment.
+ */
+export function queueCelebrations(items: BadgeCelebration[], opts: { late?: boolean } = {}): void {
   const fresh: BadgeCelebration[] = [];
-  for (const it of items) {
+  for (const raw of items) {
+    const it: BadgeCelebration = opts.late ? { ...raw, late: true } : raw;
     if (queue.some((q) => sameItem(q, it)) || fresh.some((q) => sameItem(q, it))) continue;
     fresh.push(it);
   }
@@ -165,11 +179,21 @@ export function getCelebrations(): readonly BadgeCelebration[] {
   return queue;
 }
 
-/** Drops the celebration on screen (the oldest). */
-export function dismissCelebration(): void {
+/** Drops the celebration on screen: `item` when given, else the oldest. */
+export function dismissCelebration(item?: BadgeCelebration): void {
   if (queue.length === 0) return;
-  queue = queue.length === 1 ? EMPTY : queue.slice(1);
+  const i = item ? queue.indexOf(item) : 0;
+  if (i < 0) return;
+  queue = queue.length === 1 ? EMPTY : queue.filter((_, j) => j !== i);
   listeners.forEach((l) => l());
+}
+
+/**
+ * The celebration to show next: the oldest LIVE one (today's behavior), else
+ * the oldest late one (which then waits for calm). Null when empty.
+ */
+export function nextCelebration(items: readonly BadgeCelebration[]): BadgeCelebration | null {
+  return items.find((c) => !c.late) ?? items[0] ?? null;
 }
 
 /** Subscribes to queue changes (useSyncExternalStore-shaped). */
@@ -178,9 +202,9 @@ export function subscribeCelebrations(fn: () => void): () => void {
   return () => { listeners.delete(fn); };
 }
 
-/** Queues the tier popup when a level-up crossed into a new tier. */
-export function celebrateLevelUp(prevLevel: number, newLevel: number): void {
+/** Queues the tier popup when a level-up crossed into a new tier (`late` → waits for calm). */
+export function celebrateLevelUp(prevLevel: number, newLevel: number, opts: { late?: boolean } = {}): void {
   if (!tierChanged(prevLevel, newLevel)) return;
   const tier = levelTier(newLevel);
-  queueCelebrations([{ kind: 'tier', level: newLevel, tier, accent: TIER_ACCENT[tier] }]);
+  queueCelebrations([{ kind: 'tier', level: newLevel, tier, accent: TIER_ACCENT[tier] }], opts);
 }

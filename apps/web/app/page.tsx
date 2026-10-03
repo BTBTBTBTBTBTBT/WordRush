@@ -2,7 +2,7 @@
 
 import { afterIntro } from '@/lib/intro';
 import { homeCardTapBlocked } from '@/lib/nav-home';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { CandyButton } from '@/components/ui/candy-button';
@@ -20,6 +20,7 @@ import { AppHeader } from '@/components/ui/app-header';
 import { PageBackground } from '@/components/ui/page-background';
 import { HomeSectionTitle } from '@/components/home/home-section-title';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { useTabScrollMemory } from '@/components/ui/tab-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
@@ -30,6 +31,9 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { getTodayLocal, fetchDailyVsResult, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
+import { enqueueCelebration, takeNextCelebration, type QueuedCelebration } from '@/lib/celebration-gate';
+import { useCalmMoment } from '@/hooks/use-calm-moment';
+import { readPageCache, sameData, writePageCache } from '@/lib/page-cache';
 import { shareTodayProgress } from '@/lib/daily-share';
 import { SWEEP_MODES, MORE_GAME_MODES } from '@/lib/modes.generated';
 import { bannerHeadline, type GroupProgress } from '@wordle-duel/core';
@@ -54,7 +58,19 @@ function progressOf(cards: HomeCard[], today: Map<string, DailyCompletion>): Gro
 
 // Mode cards (chrome + catalog) and the card itself live in components/home.
 
+/** A sweep celebration waiting for a calm moment: which one, its tier and the snapshot it shows. */
+interface QueuedSweep {
+  variant: 'daily' | 'more';
+  tier: 'sweep' | 'flawless';
+  storageKey: string;
+  snapshot: Map<string, DailyCompletion>;
+}
+
 export default function HomePage() {
+  // BI11: Home keeps its scroll position across tab switches and game round trips
+  // (only a footer re-tap on Home scrolls it to the top).
+  const homeScrollRef = useRef<HTMLDivElement | null>(null);
+  useTabScrollMemory('/', homeScrollRef);
   const { user, profile, signOut, isProActive } = useAuth();
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -68,14 +84,18 @@ export default function HomePage() {
   // Puzzles Sweep / Flawless celebration (founder, 2026-09-26) — same once-per-day-per-tier
   // rule, its own key, and it waits for the Daily Sweep celebration to close first.
   const [moreCeleb, setMoreCeleb] = useState<Map<string, DailyCompletion> | null>(null);
+  // Sweep celebrations waiting for a calm moment (lib/celebration-gate.ts).
+  const [celebQueue, setCelebQueue] = useState<QueuedCelebration<QueuedSweep>[]>([]);
   // Today's daily VS outcome (server-backed, iOS vsDailyWon parity) — the VS
   // Battle card grays with a W/L badge like every other completed daily.
-  const [vsDailyWon, setVsDailyWon] = useState<boolean | null>(null);
+  // BI19: Home's banner numbers paint from the persisted cache (today's only)
+  // and refresh underneath; a failed fetch keeps them.
+  const [vsDailyWon, setVsDailyWon] = useState<boolean | null>(() => readPageCache<boolean | null>('home:vs-daily', { day: getTodayLocal() }) ?? null);
   // The banner rows' streaks (home redesign, 2026-10-01): Wordocious from the
   // Daily Sweep stats, Puzzles counted from daily_results; Unlimited's per-mode
   // "played today" counts.
-  const [sweepStreaks, setSweepStreaks] = useState({ sweep: 0, flawless: 0 });
-  const [puzzleStreaks, setPuzzleStreaks] = useState({ sweep: 0, flawless: 0 });
+  const [sweepStreaks, setSweepStreaks] = useState(() => readPageCache<{ sweep: number; flawless: number }>('home:sweep-streaks', { day: getTodayLocal() }) ?? { sweep: 0, flawless: 0 });
+  const [puzzleStreaks, setPuzzleStreaks] = useState(() => readPageCache<{ sweep: number; flawless: number }>('home:puzzle-streaks', { day: getTodayLocal() }) ?? { sweep: 0, flawless: 0 });
   const [unlimitedCounts, setUnlimitedCounts] = useState<Map<string, number>>(new Map());
   const router = useRouter();
   // Remote flags (Stage 7): every Puzzles title is shown only when its
@@ -102,29 +122,49 @@ export default function HomePage() {
     // stale/degenerate data, never a real day of play.
     if (dailiesDay !== getTodayLocal() || wins === 0) return;
     const tier = wins >= SWEEP_MODES.length ? 'flawless' : 'sweep';
-    const key = `wordocious-sweep-celebrated-${getTodayLocal()}`;
+    const today = getTodayLocal();
+    const key = `wordocious-sweep-celebrated-${today}`;
     try {
       const seen = localStorage.getItem(key);
       if (seen === 'flawless' || seen === tier) return;
-      localStorage.setItem(key, tier);
-      setSweepCeleb(new Map(todayDailies));
+      // Queued, not shown: it waits for a calm moment (below).
+      setCelebQueue((q) => enqueueCelebration(q, { key: 'daily', day: today, payload: { variant: 'daily', tier, storageKey: key, snapshot: new Map(todayDailies) } }));
     } catch {}
   }, [user, todayDailies, dailiesDay]);
 
   useEffect(() => {
-    if (!user || sweepCeleb) return;
+    if (!user) return;
     if (dailiesDay !== getTodayLocal()) return;
     const tier = moreSweepTier(todayDailies, visibleMore);
     if (!tier) return;
-    const key = `wordocious-more-sweep-celebrated-${getTodayLocal()}`;
+    const today = getTodayLocal();
+    const key = `wordocious-more-sweep-celebrated-${today}`;
     try {
       const seen = localStorage.getItem(key);
       if (seen === 'flawless' || seen === tier) return;
-      localStorage.setItem(key, tier);
-      setMoreCeleb(new Map(todayDailies));
+      setCelebQueue((q) => enqueueCelebration(q, { key: 'more', day: today, payload: { variant: 'more', tier, storageKey: key, snapshot: new Map(todayDailies) } }));
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, todayDailies, dailiesDay, sweepCeleb]);
+  }, [user, todayDailies, dailiesDay]);
+
+  // Outage fix (2026-10-03, lib/celebration-gate.ts): a sweep celebration is
+  // ALWAYS gated on a calm moment — Home at its root, nothing open, no other
+  // popup — so a late write can't pop it mid-game or over another popup. At
+  // present time one whose day is no longer today is dropped, and the
+  // once-per-day-per-tier key is written only when it actually shows. The
+  // Daily Sweep goes first; the Puzzles one waits for it to close.
+  useCalmMoment(celebQueue.length > 0 && !sweepCeleb && !moreCeleb, () => {
+    const { next, rest } = takeNextCelebration(celebQueue, getTodayLocal(), ['daily', 'more']);
+    setCelebQueue(rest);
+    if (!next) return;
+    const { variant, tier, storageKey, snapshot } = next.payload;
+    try {
+      const seen = localStorage.getItem(storageKey);
+      if (seen === 'flawless' || seen === tier) return;
+      localStorage.setItem(storageKey, tier);
+    } catch { return; }
+    if (variant === 'daily') setSweepCeleb(snapshot); else setMoreCeleb(snapshot);
+  });
 
   // Restore the switch on mount for Pro users — but only within the SAME
   // browser session and local day (founder-approved UX: reopening the app
@@ -209,7 +249,15 @@ export default function HomePage() {
   useEffect(() => {
     if (!user?.id) { setVsDailyWon(null); return; }
     let cancelled = false;
-    fetchDailyVsResult(user.id).then((w) => { if (!cancelled) setVsDailyWon(w); }).catch(() => {});
+    fetchDailyVsResult(user.id).then((w) => {
+      if (cancelled) return;
+      // The read swallows errors (null): today's VS result never un-happens, so
+      // a null never replaces a cached one.
+      const day = getTodayLocal();
+      const next = w ?? readPageCache<boolean | null>('home:vs-daily', { day }) ?? null;
+      writePageCache('home:vs-daily', next, { day });
+      setVsDailyWon(next);
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, [user?.id]);
 
@@ -224,11 +272,26 @@ export default function HomePage() {
     const cancelWait = afterIntro(() => {
       import('@/lib/stats-service')
         .then((m) => m.fetchDailySweepStats(user.id))
-        .then((st) => { if (!cancelled) setSweepStreaks({ sweep: st.currentSweepStreak, flawless: st.currentFlawlessStreak }); })
+        .then((st) => {
+          if (cancelled) return;
+          // Within a day a streak never shrinks — an outage's zeroed read keeps the cached one.
+          const day = getTodayLocal();
+          const had = readPageCache<{ sweep: number; flawless: number }>('home:sweep-streaks', { day });
+          const next = { sweep: Math.max(st.currentSweepStreak, had?.sweep ?? 0), flawless: Math.max(st.currentFlawlessStreak, had?.flawless ?? 0) };
+          writePageCache('home:sweep-streaks', next, { day });
+          setSweepStreaks((prev) => (sameData(prev, next) ? prev : next));
+        })
         .catch(() => {});
       import('@/lib/home-streaks')
         .then((m) => m.fetchPuzzleStreaks(user.id, puzzleKeys ? puzzleKeys.split(',') : []))
-        .then((st) => { if (!cancelled) setPuzzleStreaks(st); })
+        .then((st) => {
+          if (cancelled) return;
+          const day = getTodayLocal();
+          const had = readPageCache<{ sweep: number; flawless: number }>('home:puzzle-streaks', { day });
+          const next = { ...st, sweep: Math.max(st.sweep, had?.sweep ?? 0), flawless: Math.max(st.flawless, had?.flawless ?? 0) };
+          writePageCache('home:puzzle-streaks', next, { day });
+          setPuzzleStreaks((prev) => (sameData(prev, next) ? prev : next));
+        })
         .catch(() => {});
     });
     return () => { cancelled = true; cancelWait(); };
@@ -336,6 +399,7 @@ export default function HomePage() {
       {/* AY: right after a Home-button tap, a tap on a card here is the same finger
           falling through — ignore it (HOME_TAP_GUARD_MS). */}
       <div
+        ref={homeScrollRef}
         className="px-4 page-wide-pad flex-1 min-h-0 overflow-y-auto pb-tab-clear"
         style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
         onClickCapture={(e) => { if (homeCardTapBlocked()) { e.preventDefault(); e.stopPropagation(); } }}

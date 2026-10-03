@@ -332,6 +332,7 @@ fun RegionsScreen(
 
     androidx.activity.compose.BackHandler { onBack() }
 
+    ProvideFeedbackAnchor {
     Box(Modifier.fillMaxSize().gameBackground { background(WTheme.bg) }.statusBarsPadding()) {
         if (session.isFinished) {
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
@@ -352,18 +353,14 @@ fun RegionsScreen(
                 Spacer(Modifier.height(6.dp))
             }
         }
-        session.toast?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 100.dp), contentAlignment = Alignment.TopCenter) {
-                // G5 a toast is a tinted pill (no dark slab, no white).
-                Text(it, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.tintedPill(REGIONS_ACCENT, corner = 22.dp).padding(horizontal = 16.dp, vertical = 10.dp))
-            }
-        }
+        // The candy feedback toast, centered on the header meta row (never the title art or the board).
+        GameFeedbackToast(session.toast)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) RegionsOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain(session.n) } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(REGIONS_ACCENT, onBack) }
         CornerHelpButton(REGIONS_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.REGIONS, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -375,7 +372,7 @@ private fun RegionsHeader(session: RegionsSession) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("REGIONS") { Text("STARSWEEP", fontSize = 24.sp, fontWeight = FontWeight.Black, color = REGIONS_ACCENT, fontFamily = Nunito) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text(session.sizeLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -441,9 +438,11 @@ private fun RegionsPad(session: RegionsSession, onFinished: () -> Unit) {
         PadAction("Undo", Icons.AutoMirrored.Filled.Undo, onClick = { session.undo(onFinished) }, dim = s.history.isEmpty())
         PadAction("Erase", Icons.AutoMirrored.Filled.Backspace, onClick = { session.erase(onFinished) }, dim = !session.canErase)
         PadAction("Auto-cross", Icons.Filled.Close, onClick = { session.toggleAutoCross(onFinished) }, active = s.autoCross)
+        // BI22: a fixed "Hint" label; the used count is the corner badge (an overlay).
         PadAction(
-            if (s.hintsUsed > 0) "Hint · ${s.hintsUsed}" else "Hint", Icons.Filled.Lightbulb,
+            "Hint", Icons.Filled.Lightbulb,
             onClick = { session.hint(onFinished) }, color = com.wordocious.app.ui.CandyColor.AMBER,
+            count = s.hintsUsed,
         )
     }
 }

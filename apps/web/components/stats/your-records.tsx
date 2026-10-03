@@ -13,7 +13,8 @@ import {
   fetchAllTimeRecordsShared, RECORD_LABELS, recordValue, recordLabel, formatRecordTime, SHIELD_EVERY,
   type UserStatRow,
 } from '@/lib/records-ui';
-import { isGameArtIcon } from '@/lib/art';
+import { isGameArtIcon, PAGE_SCENES } from '@/lib/art';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import type { IconLike } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
@@ -202,10 +203,15 @@ export function SweepRecordsCard({ sweep, sweepRankToday, sweepRankAllTime }: Pi
           )}
         </div>
       ) : (
-        <div className="py-5 text-center">
-          <MedalArt medal="trophy" size={28} className="mx-auto mb-1.5" />
-          <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
-        </div>
+        <BrandEmptyState
+          scene={PAGE_SCENES.empty}
+          artHeight={72}
+          title="NO SWEEPS YET"
+          line="Finish every daily in one day for your first sweep."
+          actionLabel="Play today's dailies"
+          actionHref="/daily"
+          actionIcon="play"
+        />
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 // Phase 2 (`puz` area) helpers shared by the puzzle game screens — Muddle,
 // Hubbub, Crosswordocious, Kindred, Cipher, Spyglass, Ladder, Sudocious and
@@ -182,12 +183,60 @@ struct PuzCandyAction: View {
     var variant: CandyButtonStyle.Variant = .purple
     var size: CandyButtonStyle.Size = .small
     var fullWidth: Bool = false
+    /// §BI22: a used-count (hints, checks) — a gold coin on the top-right corner,
+    /// never part of the label, so the pill never widens. 0 = no badge.
+    var count: Int = 0
     let action: () -> Void
 
     var body: some View {
         Button(action: action) { CandyLabel(title: title, symbol: symbol) }
             .buttonStyle(CandyButtonStyle(variant: variant, size: size, fullWidth: fullWidth))
-            .accessibilityLabel(title)
+            .hintCountBadge(count)
+            .accessibilityLabel(count > 0 ? "\(title) (\(count) used)" : title)
+    }
+}
+
+/// §BI22: the used-count coin (web components/ui/hint-kit.tsx `HintCountBadge`
+/// parity): 17 pt gold coin, white rim, a darker lip, dark-amber number. Overlay
+/// only — the button's size never changes when it appears or grows.
+struct HintCountBadge: View {
+    let count: Int
+
+    var body: some View {
+        let text = HintLayout.countText(count)
+        if !text.isEmpty {
+            Text(text)
+                .font(Brand.font(10, .black)).monospacedDigit()
+                .foregroundStyle(Color(hex: 0x7A3D00))
+                .shadow(color: .white.opacity(0.55), radius: 0, x: 0, y: 1)
+                .padding(.horizontal, 4)
+                .frame(minWidth: 17, minHeight: 17)
+                .background(
+                    ZStack {
+                        Capsule().fill(Color(hex: 0xB45309)).offset(y: 2)
+                        Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFE27A), Color(hex: 0xF5A524)],
+                                                      startPoint: .top, endPoint: .bottom))
+                        Capsule().strokeBorder(Color.white, lineWidth: 1.5)
+                    }
+                )
+                .fixedSize()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .transition(.scale(scale: 0.6).combined(with: .opacity))
+        }
+    }
+}
+
+extension View {
+    /// §BI22: pins the gold used-count coin to this button's top-right corner
+    /// (top −7, right −5, web parity) without changing its size.
+    func hintCountBadge(_ count: Int) -> some View {
+        overlay(alignment: .topTrailing) {
+            HintCountBadge(count: count)
+                .alignmentGuide(.top) { $0[.top] + 7 }
+                .alignmentGuide(.trailing) { $0[.trailing] - 5 }
+                .animation(Theme.reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.6), value: count)
+        }
     }
 }
 

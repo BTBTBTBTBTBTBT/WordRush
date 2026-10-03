@@ -3,6 +3,7 @@
 import { Switch } from '@/components/ui/switch';
 import { SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
 import { alphaHex, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
+import { KEY_DELETE, KEY_ENTER, KEY_SPACE, keyRows, themePreview } from '@/lib/settings-previews';
 
 // The Settings + Edit profile kit (docs/FINISH_SPEC.md C4b / G5; A1 no plain
 // white): each section is a tinted card in its own accent with a slim top bar,
@@ -43,34 +44,100 @@ export function SettingsSection({ title, accent, children, className = '' }: {
   );
 }
 
-/** A selectable option row (theme, keyboard): tinted, selected = stronger wash + ring. */
-export function SettingsOption({ selected, accent, label, description, onClick }: {
+/**
+ * BI25: a theme / keyboard choice as a soft filled tile — unselected a pale wash of the
+ * section's color (no stroke); selected a glossy filled tile in that color with white
+ * text and a small white check badge; an optional live preview on the right.
+ */
+export function SettingsOption({ selected, accent, label, description, onClick, preview }: {
   selected: boolean;
   accent: string;
   label: string;
   description: string;
   onClick: () => void;
+  preview?: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       aria-pressed={selected}
-      className="w-full text-left p-3 flex items-center gap-3"
+      className="relative w-full text-left px-3 py-2.5 flex items-center gap-2.5 overflow-hidden"
       onClick={onClick}
-      style={softRow(accent, { selected, radius: 14 })}
+      style={{ background: softBackground(accent, 0.11), borderRadius: 16, border: 'none' }}
     >
-      <span className="flex-1 min-w-0">
-        <span className="block font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{label}</span>
-        <span className="block text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{description}</span>
-      </span>
       <span
         aria-hidden="true"
-        className="grid place-items-center shrink-0 rounded-full"
-        style={{ width: 18, height: 18, border: `2px solid ${selected ? accent : alphaHex(accent, 0.4)}`, background: selected ? accent : 'transparent' }}
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          borderRadius: 16,
+          background: `linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0) 50%), linear-gradient(180deg, color-mix(in srgb, ${accent} 78%, #fff) 0%, ${accent} 55%, color-mix(in srgb, ${accent} 88%, #000) 100%)`,
+          boxShadow: `0 4px 12px ${alphaHex(accent, 0.35)}`,
+          opacity: selected ? 1 : 0,
+          transition: 'opacity 180ms ease-out',
+        }}
+      />
+      <span className="relative flex-1 min-w-0">
+        <span className="block font-black text-sm" style={{ color: selected ? '#ffffff' : 'var(--color-text)' }}>{label}</span>
+        <span className="block text-[10px] font-bold" style={{ color: selected ? 'rgba(255,255,255,0.88)' : 'var(--color-text-muted)' }}>{description}</span>
+      </span>
+      {preview && <span className="relative shrink-0">{preview}</span>}
+      <span
+        aria-hidden="true"
+        className="relative grid place-items-center shrink-0 rounded-full"
+        style={{ width: 20, height: 20, background: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.15)', opacity: selected ? 1 : 0, transition: 'opacity 180ms ease-out' }}
       >
-        {selected && <span className="rounded-full" style={{ width: 6, height: 6, background: '#ffffff' }} />}
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.4l2.3 2.3L9.6 3.6" stroke={accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </span>
     </button>
+  );
+}
+
+/** BI25: four mini glossy letter tiles in the theme's colors on its page wash. */
+export function ThemeTilesPreview({ theme }: { theme: string }) {
+  const spec = themePreview(theme);
+  return (
+    <span aria-hidden="true" className="flex gap-0.5 p-1" style={{ background: spec.page, borderRadius: 7 }}>
+      {spec.tiles.map((t, i) => (
+        <span
+          key={i}
+          className="grid place-items-center font-black text-white"
+          style={{
+            width: 15, height: 15, borderRadius: 3.5, fontSize: 9, lineHeight: 1,
+            background: `linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 50%), linear-gradient(180deg, color-mix(in srgb, ${t.hex} 75%, #fff), ${t.hex})`,
+          }}
+        >
+          {t.letter}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** BI25: a mini key row showing where Enter and Delete sit for a keyboard layout. */
+export function KeyRowPreview({ layout }: { layout: string }) {
+  return (
+    <span aria-hidden="true" className="flex flex-col gap-0.5 p-1" style={{ background: 'rgba(255,255,255,0.55)', borderRadius: 7 }}>
+      {keyRows(layout).map((row, r) => (
+        <span key={r} className="flex gap-0.5 justify-center">
+          {row.map((k, i) => {
+            const special = k === KEY_ENTER || k === KEY_DELETE;
+            return (
+              <span
+                key={i}
+                className="grid place-items-center font-black"
+                style={{
+                  width: special ? 15 : k === KEY_SPACE ? 26 : 8, height: 11, borderRadius: 2.5, fontSize: special ? 7 : 6, lineHeight: 1,
+                  background: special ? '#f59e0b' : '#ffffff', color: special ? '#ffffff' : '#3b1a78',
+                  boxShadow: '0 1px 0 rgba(0,0,0,0.12)',
+                }}
+              >
+                {k === KEY_ENTER ? '\u21B5' : k === KEY_DELETE ? '\u232B' : k === KEY_SPACE ? '' : k}
+              </span>
+            );
+          })}
+        </span>
+      ))}
+    </span>
   );
 }
 

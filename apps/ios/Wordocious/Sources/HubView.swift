@@ -21,6 +21,8 @@ final class HubVM: ObservableObject {
     @Published var typing = ""
     @Published var outer: [Character]
     @Published var toast: String?
+    /// §BI9: bumps on every flash so a repeated "+1" replays its burst.
+    @Published var toastSeq = 0
     @Published var showResults = false
     @Published var shake = false
     @Published private(set) var finalTimeSeconds: Int?
@@ -204,7 +206,11 @@ final class HubVM: ObservableObject {
         let gc = state.guessCount, secs = elapsed, used = state.hintsUsed, boards = state.boardsSolved, row = hubMatchRow(state), seed = self.seed
         Task { await GameResultsService.improve(gameMode: .hub, seed: seed, completed: true, guessCount: gc, timeSeconds: secs, boardsSolved: boards, totalBoards: HUB_TOTAL_BOARDS, hintsUsed: used, guesses: row.guesses) }
     }
-    private func flash(_ m: String) { toast = m; Task { try? await Task.sleep(nanoseconds: 1_400_000_000); if toast == m { toast = nil } } }
+    private func flash(_ m: String) {
+        toastSeq += 1; toast = m
+        let seq = toastSeq
+        Task { try? await Task.sleep(nanoseconds: 1_400_000_000); if toastSeq == seq { toast = nil } }
+    }
 }
 
 struct HubView: View {
@@ -232,10 +238,6 @@ struct HubView: View {
                     board
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -313,7 +315,7 @@ struct HubView: View {
                 if !vm.state.ended {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
-                            Image(systemName: "clock").font(.system(size: 9)); Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                            Image(systemName: "clock").font(.system(size: 9)); Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))").monospacedDigit()
                             // The clock keeps counting the hunt after Hubbub; say so (founder, 2026-09-28).
                             if vm.state.status == .won { Text("· playing on").font(Brand.caption(10)) }
                         }
@@ -360,6 +362,19 @@ struct HubView: View {
             .background(Capsule().fill(PuzKit.face(hubAccent, pangram ? 0.2 : 0.09)))
             .overlay(Capsule().stroke(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.line(hubAccent, 0.28), lineWidth: 1))
             .opacity(dim ? 0.6 : 1)
+    }
+
+    /// §BI22: a pending "Starts with…" hint — a soft filled amber candy chip with a
+    /// lightbulb (no dashed outline), first in the found-word flow.
+    private func hintChip(_ w: String) -> some View {
+        let amber = Color(hex: 0xF5A524)
+        return HStack(spacing: 4) {
+            Image(systemName: "lightbulb.fill").font(.system(size: 9, weight: .black)).foregroundStyle(amber)
+            Text("\(w.prefix(2))… · \(w.count) letters").font(Brand.font(11, .black)).foregroundStyle(PuzKit.ink)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background(Capsule().fill(PuzKit.face(amber, 0.2)))
+        .accessibilityLabel("Hint: starts with \(w.prefix(2)), \(w.count) letters")
     }
 
     private func chipRows(_ words: [String], dim: Bool = false) -> some View {
@@ -442,7 +457,9 @@ struct HubView: View {
             let pending = s.hinted.filter { !s.found.contains($0) }
             VStack(spacing: Self.boardRowSpacing) {
                 rankBar
-                entryLine
+                // §BI9: the feedback popup sits on the entry line, just above the
+                // honeycomb — never over the HUBBUB title art or the board.
+                entryLine.gameFeedbackToast(vm.toast, seq: vm.toastSeq)
                 // The cluster band: everything between the entry line and the controls,
                 // cluster centered inside it.
                 cluster(side: side)
@@ -456,15 +473,16 @@ struct HubView: View {
                     capsule("Starts with…", "lightbulb", variant: .amber) { vm.hintStart() }
                     capsule("Reveal a word", "eye", variant: .pink) { vm.hintReveal() }
                 }
-                if !pending.isEmpty {
-                    HStack(spacing: 6) { ForEach(pending, id: \.self) { w in Text("\(w.prefix(2))… · \(w.count) letters").font(Brand.caption(11)).foregroundStyle(FinishInk.secondary).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(PuzKit.face(hubAccent, 0.08))).overlay(Capsule().stroke(hubAccent, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))) } }
-                }
                 let total = s.found.count + s.bonusFound.count
                 Text("\(total) \(total == 1 ? "WORD" : "WORDS") · \(s.points) \(s.points == 1 ? "PT" : "PTS")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 // Found words: newest first in a wrapping flow that fills the lower area
                 // and scrolls once it overflows.
                 ScrollView(showsIndicators: false) {
                     HubWrapLayout(spacing: 5, lineSpacing: 5) {
+                        // §BI22: "Starts with…" hints lead the found-word flow INSIDE its
+                        // scroll area — they used to be a row of their own in the column,
+                        // which squeezed the honeycomb band (the board shrank on a hint).
+                        ForEach(pending, id: \.self) { hintChip($0) }
                         // Every accepted word, newest first, in the order found (the event log spans both lists).
                         ForEach(hubFoundInOrder(s).reversed(), id: \.self) { chip($0) }
                     }

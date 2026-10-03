@@ -46,11 +46,10 @@ struct RecentMatchesList: View {
                 ForEach(0..<min(5, limit), id: \.self) { _ in SkeletonBlock(height: 52, cornerRadius: 12) }
             }
         } else if matches.isEmpty {
-            Group {
-                if let emptyHost { MascotMessage(host: emptyHost, line: emptyText, scene: emptyScene) }
-                else { Text(emptyText).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted) }
-            }
-            .frame(maxWidth: .infinity).padding(.vertical, 16)
+            // BI24: always a host + brand headline over the line, never plain grey text.
+            BrandEmptyState(title: "No games yet", line: emptyText, scene: emptyScene ?? (emptyHost == nil ? .noStats : nil),
+                            host: emptyHost ?? Mascots.stats, artHeight: 90)
+            .frame(maxWidth: .infinity)
         } else {
             let shown = (showAll && onSeeAll == nil) ? matches : Array(matches.prefix(limit))
             VStack(spacing: 8) {   // eager: no mid-scroll height swings on Stats
@@ -134,11 +133,10 @@ struct TodayGamesList: View {
         if loading {
             VStack(spacing: 8) { ForEach(0..<5, id: \.self) { _ in SkeletonBlock(height: 52, cornerRadius: 12) } }
         } else if entries.isEmpty {
-            Group {
-                if let emptyHost { MascotMessage(host: emptyHost, line: emptyText, scene: emptyScene) }
-                else { Text(emptyText).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted) }
-            }
-            .frame(maxWidth: .infinity).padding(.vertical, 16)
+            // BI24: always a host + brand headline over the line, never plain grey text.
+            BrandEmptyState(title: "No games yet", line: emptyText, scene: emptyScene ?? (emptyHost == nil ? .noStats : nil),
+                            host: emptyHost ?? Mascots.stats, artHeight: 90)
+            .frame(maxWidth: .infinity)
         } else {
             VStack(spacing: 8) {   // eager: no mid-scroll height swings on Stats
                 ForEach(entries) { e in

@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { X as XIcon } from 'lucide-react';
+import { HeaderCircle } from '@/components/ui/page-header';
 import { useExit } from '@/hooks/use-exit';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
@@ -71,6 +73,10 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
         style={{ maxHeight: '100%', borderRadius: 24, boxShadow: '0 18px 40px rgba(40, 15, 80, 0.35)', background: softBackground(accent, 0.08) }}
       >
         <div className="relative flex items-center gap-3" style={{ padding: '14px 16px 12px', paddingRight: 92, background: header }}>
+          {/* BI12: an always-visible close on the card (the scrim also closes). */}
+          <HeaderCircle label="Close" onClick={onClose} size={32} className="absolute top-1 right-1 z-10">
+            <XIcon aria-hidden="true" style={{ width: 18, height: 18, color: '#fff' }} strokeWidth={3.2} />
+          </HeaderCircle>
           <Icon3D name={icon} size={58} style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))' }} />
           <div className="min-w-0">
             <h3 className="m-0 font-black text-white leading-tight" style={{ fontSize: 21, textShadow: '0 2px 0 rgba(0, 0, 0, 0.12)' }}>{title}</h3>

@@ -24,6 +24,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Refresh
@@ -45,6 +47,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
@@ -159,6 +164,8 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
     var dir by mutableStateOf("A")
         private set
     var toast by mutableStateOf<String?>(null)
+    /** BI18: the clue list in place of the grid (the Clues toggle beside the clue bar). */
+    var showClues by mutableStateOf(false)
     /** Reveal all is two-tap: armed for three seconds, red while it waits. */
     var armReveal by mutableStateOf(false)
     /** Bumps on every Check that cleared letters so those cells shake once. */
@@ -324,6 +331,7 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
         val cells = crosswordEntryCells(state, e)
         dir = e.dir
         selected = cells.firstOrNull { state.fill[it] == CROSSWORD_EMPTY } ?: cells.firstOrNull()
+        showClues = false // BI18: a picked clue goes back to the grid
         persist()
     }
     /** After typing: the next open cell in the active entry, else the next unfinished entry's first empty cell. */
@@ -478,6 +486,7 @@ fun CrosswordScreen(
     // Physical keyboard (founder, 2026-09-30; web crossword-game.tsx): A–Z fills the selected cell,
     // Backspace/Delete erases, Enter/Tab jumps to the next entry, arrows move, Space flips Across/Down.
     val xwKeys = keyboardViewKeys(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advanceEntry() })
+    ProvideFeedbackAnchor {
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
@@ -498,33 +507,46 @@ fun CrosswordScreen(
             // FINISH_SPEC R2: the one-screen finished screen (header · strip · board · dock).
             CrosswordFinished(session, isPro, onBack, onPlayAgain, onOpenDaily, onOpenUnlimited, onOpenLeaderboard)
         } else {
-            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                CrosswordHeader(session)
-                Column(
-                    Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    CrosswordGrid(session, finished = false)
-                    ClueColumns(session, finished = false)
+            // BI18 (founder 10-03: "the daily today required you to scroll"): the whole puzzle fits
+            // one screen in play — the compact header, the grid sized from the band's width AND
+            // height for its real cols × rows, the clue bar and the keyboard pinned. The clue list
+            // sits behind the Clues toggle beside the clue bar (it scrolls inside the band).
+            val shortScreen = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 700
+            Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                CrosswordPlayHeader(session)
+                if (session.showClues) {
+                    Column(
+                        Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) { ClueColumns(session, finished = false) }
+                } else {
+                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { CrosswordGrid(session, finished = false, fitHeight = true) }
                 }
-                ActiveClueBar(session)
+                Row(Modifier.fillMaxWidth().widthIn(max = 700.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f)) { ActiveClueBar(session) }
+                    if (session.activeEntry != null) CluesToggle(session.showClues) { SoundManager.playKeyTap(); session.showClues = !session.showClues }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Capsule(if (session.state.checks > 0) "Check · ${session.state.checks}" else "Check", Icons.Filled.DoneAll, com.wordocious.app.ui.CandyColor.PURPLE) { SoundManager.playKeyTap(); session.check(onFinished) }
+                    // BI22: fixed labels — the used counts are corner badges (overlays); "Reveal all?" keeps its width.
+                    Capsule("Check", Icons.Filled.DoneAll, com.wordocious.app.ui.CandyColor.PURPLE, count = session.state.checks) { SoundManager.playKeyTap(); session.check(onFinished) }
                     Capsule("Letter", Icons.Filled.Lightbulb, com.wordocious.app.ui.CandyColor.AMBER) { SoundManager.playKeyTap(); session.revealLetter(onFinished) }
-                    Capsule(if (session.state.hintsUsed > 0) "Word · ${session.state.hintsUsed}" else "Word", Icons.Filled.Visibility, com.wordocious.app.ui.CandyColor.AMBER) { SoundManager.playKeyTap(); session.revealWord(onFinished) }
-                    Capsule(if (session.armReveal) "Reveal all?" else "Reveal all", Icons.Filled.Flag, if (session.armReveal) com.wordocious.app.ui.CandyColor.PINK else com.wordocious.app.ui.CandyColor.PEACH) { session.revealPuzzle(onFinished) }
+                    Capsule("Word", Icons.Filled.Visibility, com.wordocious.app.ui.CandyColor.AMBER, count = session.state.hintsUsed) { SoundManager.playKeyTap(); session.revealWord(onFinished) }
+                    Capsule(if (session.armReveal) "Reveal all?" else "Reveal all", Icons.Filled.Flag, if (session.armReveal) com.wordocious.app.ui.CandyColor.PINK else com.wordocious.app.ui.CandyColor.PEACH, reserve = "Reveal all?") { session.revealPuzzle(onFinished) }
                 }
-                KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advanceEntry() })
+                // BI18: 44 dp keys on short phones, like Muddle's one-screen rule.
+                KeyboardView(onKey = { session.type(it, onFinished) }, onDelete = { session.delete() }, onEnter = { session.advanceEntry() }, keyHeight = if (shortScreen) 44.dp else null)
                 Spacer(Modifier.height(6.dp))
             }
         }
         // G5 a toast is a tinted pill (no dark slab, no white).
-        session.toast?.let { PieceToast(it, CROSSWORD_ACCENT, top = 112.dp) }
+        // The candy feedback toast, centered on the header meta row (never the title art or the board).
+        GameFeedbackToast(session.toast, fallbackTop = 112.dp)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) CrosswordOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(CROSSWORD_ACCENT, onBack) }
         CornerHelpButton(CROSSWORD_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.CROSSWORD, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -558,7 +580,7 @@ private fun CrosswordHeader(session: CrosswordSession) {
         // The game's title art: lettering + host (ART_SPEC §10); the fitted text otherwise.
         com.wordocious.app.ui.GameHeaderTitle("CROSSWORD") { FitTitle("CROSSWORDOCIOUS") }
         Text(s.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.padding(horizontal = 52.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             session.holidayTitle?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = CROSSWORD_ACCENT) }
             Text("${s.correctCount}/${s.letterCount} letters", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -567,6 +589,35 @@ private fun CrosswordHeader(session: CrosswordSession) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
                 Text(clockText(session.elapsed), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
+        }
+    }
+}
+
+/**
+ * BI18: the play header is compact like Muddle's — the title art (≤ 44 dp) IN the corner-button
+ * row between Home and Help, then the puzzle title and the meta line.
+ */
+@Composable
+private fun CrosswordPlayHeader(session: CrosswordSession) {
+    val tick by produceState(0, session.isFinished) { while (!session.isFinished) { kotlinx.coroutines.delay(1000); value++ } }
+    val s = session.state
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        val res = com.wordocious.app.ui.gameTitleArtResForKey("CROSSWORD")
+        Box(Modifier.fillMaxWidth().height(52.dp).padding(top = GAME_CONTROLS_INSET).padding(horizontal = 56.dp), contentAlignment = Alignment.Center) {
+            if (res != null) com.wordocious.app.ui.FittedGameTitleArt(res, com.wordocious.app.ui.gameTitleLabelForKey("CROSSWORD"), maxHeight = 44.dp)
+            else FitTitle("CROSSWORDOCIOUS")
+        }
+        Text(s.title, fontSize = 14.sp, lineHeight = 17.sp, fontWeight = FontWeight.Black, color = WTheme.text, fontFamily = Nunito, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.padding(horizontal = 12.dp))
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            session.holidayTitle?.let { Text(it, fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Bold, color = CROSSWORD_ACCENT) }
+            Text("${s.correctCount}/${s.letterCount} letters", fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(session.checksLabel, fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            @Suppress("UNUSED_EXPRESSION") tick
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                Icon(Icons.Filled.Schedule, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+                Text(clockText(session.elapsed), fontSize = 12.sp, lineHeight = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         }
     }
@@ -584,9 +635,9 @@ private fun CrosswordHeader(session: CrosswordSession) {
  * when solved, slate when revealed). No grid lines — gaps only.
  */
 @Composable
-private fun CrosswordGrid(session: CrosswordSession, finished: Boolean) = CrosswordGrid(
+private fun CrosswordGrid(session: CrosswordSession, finished: Boolean, fitHeight: Boolean = false) = CrosswordGrid(
     session.state, if (finished) null else session.selected, if (finished) emptySet() else session.activeCells.toSet(), session.shakeKey,
-    interactive = !finished,
+    interactive = !finished, fitHeight = fitHeight,
 ) { if (!finished) session.selectCell(it) }
 
 /** The active entry's faces: a soft lilac wash instead of frosted / white. */
@@ -599,7 +650,10 @@ private val ACTIVE_TYPED = TileLooks.TYPED.copy(faceTop = Color(0xFFF7F2FF), fac
  *  the cells press (squish) and select. */
 @Composable
 internal fun CrosswordGrid(
-    s: CrosswordState, selected: Int?, active: Set<Int>, shakeKey: Int, maxCell: Dp = 42.dp, interactive: Boolean = true, onSelect: (Int) -> Unit,
+    s: CrosswordState, selected: Int?, active: Set<Int>, shakeKey: Int, maxCell: Dp = 42.dp, interactive: Boolean = true,
+    /** BI18: size the cell from the space's height too (the play band), so the whole grid is on screen. */
+    fitHeight: Boolean = false,
+    onSelect: (Int) -> Unit,
 ) {
     val numbers = HashMap<Int, Int>()
     for (e in s.entries) { val start = e.r * s.w + e.c; if (start !in numbers) numbers[start] = e.n }
@@ -609,10 +663,21 @@ internal fun CrosswordGrid(
     val trayPad = if (small) 7.dp else 10.dp
     val dark = WTheme.isDark
     val tray = finishTray(s.status != CrosswordStatus.PLAYING, s.status == CrosswordStatus.WON)
-    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val cell = ((maxWidth - trayPad * 2 - gap * (s.w - 1)) / s.w).coerceAtMost(maxCell)
-        val glyph = (cell.value * 0.46f).coerceIn(if (small) 9f else 12f, 19f)
-        val ns = (cell.value * 0.2f).coerceIn(if (small) 5f else 7f, 9f).sp
+    BoxWithConstraints(if (fitHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val cell = if (fitHeight) {
+            // BI18: width AND height for the real cols × rows (BoardSizing.crosswordCell, unit-tested):
+            // the tray's padding + border off both axes, its lip and the cursor ring's room off the height.
+            val chrome = (trayPad + GameTrayStyle.BORDER).value * 2f
+            BoardSizing.crosswordCell(
+                maxWidth.value, maxHeight.value.takeIf { constraints.hasBoundedHeight }, s.w, s.h, gap.value,
+                chromeX = chrome, chromeY = chrome + GameTrayStyle.LIP.value + 6f, maxCell = maxCell.value,
+            ).dp
+        } else ((maxWidth - trayPad * 2 - gap * (s.w - 1)) / s.w).coerceAtMost(maxCell)
+        // Letters and clue numbers scale with the cell (BI18: readable down to the 14 dp floor).
+        val glyph = if (fitHeight) maxOf(cell.value * 0.46f, minOf(11f, cell.value * 0.56f)).coerceAtMost(19f)
+            else (cell.value * 0.46f).coerceIn(if (small) 9f else 12f, 19f)
+        val ns = if (fitHeight) maxOf(5f, cell.value * 0.2f, minOf(7f, cell.value * 0.3f)).coerceAtMost(9f).sp
+            else (cell.value * 0.2f).coerceIn(if (small) 5f else 7f, 9f).sp
         GameTray(
             CROSSWORD_ACCENT, state = tray, corner = if (small) 14.dp else GameTrayStyle.CORNER,
             padding = androidx.compose.foundation.layout.PaddingValues(trayPad),
@@ -742,26 +807,49 @@ private fun ClueColumn(session: CrosswordSession, dir: String, title: String, fi
 /** The sticky active-clue bar above the keyboard: "3A" badge + the clue; tap to switch direction. */
 @Composable
 private fun ActiveClueBar(session: CrosswordSession) {
-    val e = session.activeEntry ?: return
+    // BI22: the fixed two-line slot is ALWAYS laid out (empty with no active entry), so the
+    // grid above never resizes when a clue appears or goes.
+    val e = session.activeEntry ?: run { Spacer(Modifier.fillMaxWidth().widthIn(max = 700.dp).height(CLUE_BAR_HEIGHT)); return }
     Row(
         Modifier.fillMaxWidth().widthIn(max = 700.dp)
             .squishClickable { SoundManager.playKeyTap(); session.toggleDir() }
             .clip(RoundedCornerShape(14.dp))
             .background(com.wordocious.app.ui.accentWash(CROSSWORD_ACCENT))
             .border(1.5.dp, com.wordocious.app.ui.accentLine(CROSSWORD_ACCENT), RoundedCornerShape(14.dp))
+            // BI18: a fixed two-line height so the grid never resizes between clues.
+            .height(CLUE_BAR_HEIGHT)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
         NumberBadge("${e.n}${e.dir}", 24.dp, 11.sp)
-        Text(e.clue, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f))
+        Text(e.clue, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         Icon(Icons.Filled.SwapHoriz, "Switch direction", tint = CROSSWORD_ACCENT, modifier = Modifier.size(16.dp))
+    }
+}
+
+private val CLUE_BAR_HEIGHT = 56.dp
+
+/** BI18: the Clues toggle beside the clue bar — the clue list takes the grid's band (picking a clue goes back); "Grid" while it shows. */
+@Composable
+private fun CluesToggle(showing: Boolean, onClick: () -> Unit) {
+    Column(
+        Modifier.size(52.dp, CLUE_BAR_HEIGHT)
+            .squishClickable(onClick = onClick)
+            .clip(RoundedCornerShape(14.dp))
+            .background(com.wordocious.app.ui.accentWash(CROSSWORD_ACCENT))
+            .border(1.5.dp, com.wordocious.app.ui.accentLine(CROSSWORD_ACCENT), RoundedCornerShape(14.dp))
+            .semantics { contentDescription = if (showing) "Show the grid" else "Show all clues"; selected = showing },
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+    ) {
+        Icon(if (showing) Icons.Filled.GridOn else Icons.Filled.FormatListNumbered, null, tint = CROSSWORD_ACCENT, modifier = Modifier.size(17.dp))
+        Text(if (showing) "Grid" else "Clues", fontSize = 10.sp, lineHeight = 11.sp, fontWeight = FontWeight.Black, color = CROSSWORD_ACCENT, fontFamily = Nunito, maxLines = 1)
     }
 }
 
 /** A8 a game control: a small candy button with its icon. */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, color: com.wordocious.app.ui.CandyColor, onClick: () -> Unit) =
-    PadAction(label, icon, onClick = onClick, color = color)
+private fun Capsule(label: String, icon: ImageVector, color: com.wordocious.app.ui.CandyColor, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, reserveLabel = reserve, count = count)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

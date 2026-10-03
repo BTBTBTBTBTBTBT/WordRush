@@ -271,7 +271,7 @@ struct VSChallengeSentView: View {
                     }
                     switch vm.sendState {
                     case .sending:
-                        ProgressView().tint(VsLobbyKit.purple)
+                        CastLoader(label: "SENDING", labelColor: VsLobbyKit.purpleSub, showTips: false)
                     case .failed(let message):
                         Text(message).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
                             .multilineTextAlignment(.center)

@@ -31,6 +31,8 @@ final class CrosswordVM: ObservableObject {
     @Published private(set) var dir: CrosswordDir = .across
     @Published private(set) var armReveal = false
     @Published var toast: String?
+    /// BI18: the clue list in place of the grid (the Clues toggle beside the clue bar).
+    @Published var showClues = false
     @Published private(set) var finalTimeSeconds: Int?
     @Published var xpResult: GameResultsService.XpResult?
 
@@ -170,6 +172,7 @@ final class CrosswordVM: ObservableObject {
         let cells = crosswordEntryCells(state, e), fill = Array(state.fill)
         dir = e.dir
         selected = cells.first(where: { fill[$0] == CROSSWORD_EMPTY }) ?? cells.first
+        showClues = false  // BI18: a picked clue goes back to the grid
     }
     func toggleDirection() { guard !isFinished else { return }; SoundManager.shared.playKeyTap(); dir = dir == .across ? .down : .across }
     /// Arrow keys on a hardware keyboard (web crossword-game keydown): hop to
@@ -336,26 +339,51 @@ struct CrosswordView: View {
                 }
                 .padding(.horizontal, 10)
             } else {
-                VStack(spacing: 8) {
-                    header
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            CrosswordGridView(vm: vm, finished: false, tray: true)
-                            CrosswordClueColumns(vm: vm, finished: false)
+                // BI18 (founder 10-03: "the daily today required you to scroll"): the whole
+                // puzzle fits one screen in play — the compact header, the grid sized from
+                // the band's width AND height for its real columns × rows (CrosswordFit),
+                // the clue bar and the keyboard pinned. The clue list sits behind the
+                // Clues toggle beside the clue bar (it scrolls inside the band).
+                VStack(spacing: 6) {
+                    playHeader
+                    GeometryReader { geo in
+                        ScrollView {
+                            Group {
+                                if vm.showClues {
+                                    CrosswordClueColumns(vm: vm, finished: false)
+                                } else {
+                                    CrosswordGridView(vm: vm, finished: false, width: geo.size.width, tray: true,
+                                                      maxHeight: geo.size.height, minCell: CGFloat(CrosswordFit.minCell))
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: geo.size.height)
                         }
-                        .padding(.vertical, 4)
+                        .scrollDisabled(!vm.showClues)
                     }
                     VStack(spacing: 8) {
-                        if let e = vm.activeEntry { CrosswordActiveClueBar(entry: e) { vm.toggleDirection() } }
+                        // §BI22: the clue bar's fixed two-line slot is ALWAYS there (empty
+                        // with no active entry) so the grid never resizes.
+                        HStack(spacing: 6) {
+                            CrosswordActiveClueBar(entry: vm.activeEntry) { vm.toggleDirection() }
+                            CrosswordCluesToggle(showing: vm.showClues) { SoundManager.shared.playKeyTap(); vm.showClues.toggle() }
+                        }
+                        .frame(maxWidth: 700)
                         // §A8: candy pills — purple Check, amber Letter, pink Word, peach
-                        // Reveal all (pink once armed). One row when it fits, else two.
-                        ViewThatFits(in: .horizontal) {
-                            HStack(spacing: 6) { controlPills }
-                            VStack(spacing: 6) {
-                                HStack(spacing: 6) { checkPill; letterPill }
-                                HStack(spacing: 6) { wordPill; revealPill }
+                        // Reveal all (pink once armed). §BI22: one row of equal quarters on the
+                        // widest phones, else two rows of halves — chosen by the SCREEN, never
+                        // the labels ("Word · 1", "Reveal all?" used to flip the rows and
+                        // shrink the grid).
+                        Group {
+                            if Self.pillsInOneRow {
+                                HStack(spacing: 6) { controlPills }
+                            } else {
+                                VStack(spacing: 6) {
+                                    HStack(spacing: 6) { checkPill; letterPill }
+                                    HStack(spacing: 6) { wordPill; revealPill }
+                                }
                             }
                         }
+                        .frame(maxWidth: 440)
                         // Hardware keys (founder, 2026-09-30): web crossword-game keydown —
                         // A–Z / Delete as the keys, arrows move the cursor, Return or
                         // Tab = next entry, Space flips Across/Down.
@@ -371,16 +399,15 @@ struct CrosswordView: View {
                                            default: return false
                                            }
                                            return true
-                                       })
+                                       },
+                                       // BI18: 44-pt keys on short phones (SE), like Muddle's one-screen rule.
+                                       keyHeightOverride: UIScreen.main.bounds.height < 700 ? 44 : nil)
                     }
+                    // §BI9: the feedback popup hangs from the clue bar / controls under the grid — never over the title art or the board.
+                    .gameFeedbackToast(vm.toast, alignment: .top)
                     .padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
-            }
-            if let toast = vm.toast {
-                G5Toast(text: toast, tone: G5Toast.tone(forGameMessage: toast))
-                    .padding(.horizontal, 24)
-                    .padding(.top, 110).frame(maxHeight: .infinity, alignment: .top)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
             if showOverlay {
@@ -423,23 +450,26 @@ struct CrosswordView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
+    /// §BI22: the four control pills fit one row only on the widest phones.
+    private static let pillsInOneRow = UIScreen.main.bounds.width >= 428
+
     @ViewBuilder private var controlPills: some View { checkPill; letterPill; wordPill; revealPill }
     private var checkPill: some View {
-        PuzCandyAction(title: vm.state.checks > 0 ? "Check · \(vm.state.checks)" : "Check", variant: .purple) {
+        PuzCandyAction(title: "Check", variant: .purple, fullWidth: true, count: vm.state.checks) {
             Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check()
         }
     }
     private var letterPill: some View {
-        PuzCandyAction(title: "Letter", symbol: "lightbulb", variant: .amber) { SoundManager.shared.playKeyTap(); vm.revealLetter() }
+        PuzCandyAction(title: "Letter", symbol: Self.pillsInOneRow ? nil : "lightbulb", variant: .amber, fullWidth: true) { SoundManager.shared.playKeyTap(); vm.revealLetter() }
     }
     private var wordPill: some View {
-        PuzCandyAction(title: vm.state.hintsUsed > 0 ? "Word · \(vm.state.hintsUsed)" : "Word", symbol: "eye", variant: .pink) {
+        PuzCandyAction(title: "Word", symbol: Self.pillsInOneRow ? nil : "eye", variant: .pink, fullWidth: true, count: vm.state.hintsUsed) {
             SoundManager.shared.playKeyTap(); vm.revealWord()
         }
     }
     /// An armed Reveal all (tap again to confirm) turns from quiet peach to pink.
     private var revealPill: some View {
-        PuzCandyAction(title: vm.armReveal ? "Reveal all?" : "Reveal all", variant: vm.armReveal ? .pink : .peach) { vm.revealPuzzle() }
+        PuzCandyAction(title: vm.armReveal ? "Reveal all?" : "Reveal all", variant: vm.armReveal ? .pink : .peach, fullWidth: true) { vm.revealPuzzle() }
     }
 
     private var header: some View {
@@ -448,23 +478,47 @@ struct CrosswordView: View {
                 .lineLimit(1).minimumScaleFactor(0.6).soloGameTitle(.crossword, fallbackInset: 48)
             Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 48)
-            HStack(spacing: 8) {
-                if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(crosswordAccent) }
-                Text("\(vm.filled)/\(vm.total) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                Text(vm.checksLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                if !vm.isFinished {
-                    TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        HStack(spacing: 2) {
-                            Image(systemName: "clock").font(.system(size: 9))
-                            Text(timeText(vm.elapsed, clock: true))
-                        }
-                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                    }
+            metaLine
+        }
+    }
+
+    /// BI18: the play header is compact like Muddle's (BI8) — the title art (≤ 44 pt)
+    /// IN the corner-button row between Home and Help, then the title and the meta line.
+    private var playHeader: some View {
+        VStack(spacing: 2) {
+            Group {
+                if let art = GameTitleArt.forMode(.crossword) {
+                    GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 44, minHeight: 0)
+                } else {
+                    Text("CROSSWORDOCIOUS").font(Brand.font(20, .black)).foregroundStyle(crosswordAccent)
+                        .lineLimit(1).minimumScaleFactor(0.6)
                 }
             }
-            .lineLimit(1).minimumScaleFactor(0.8)
+            .frame(height: GameCornerButton.rowHeight - GameCornerButton.topInset)
+            .padding(.horizontal, 44 + GameCornerButton.sideInset + 4)
+            Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 12)
+            metaLine
         }
+    }
+
+    private var metaLine: some View {
+        HStack(spacing: 8) {
+            if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
+            if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(crosswordAccent) }
+            Text("\(vm.filled)/\(vm.total) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            Text(vm.checksLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            if !vm.isFinished {
+                TimelineView(.periodic(from: .now, by: 1)) { _ in
+                    HStack(spacing: 2) {
+                        Image(systemName: "clock").font(.system(size: 9))
+                        Text(timeText(vm.elapsed, clock: true))
+                    }
+                    .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                }
+            }
+        }
+        .lineLimit(1).minimumScaleFactor(0.8)
     }
 
     /// §R2: the headline + the compact one-line result strip.
@@ -533,24 +587,24 @@ struct CrosswordGridView: View {
     /// §L: sit the grid on the shared game tray (the live game; recaps tray at
     /// their own call sites).
     var tray = false
-    /// §R2: the height the grid may take (the finished screen scales it to fit).
+    /// §R2: the height the grid may take (the finished screen scales it to fit;
+    /// BI18: the play band, so the whole grid is on screen).
     var maxHeight: CGFloat? = nil
+    /// The smallest cell (BI18: 14 pt in play; the finished screen keeps 8).
+    var minCell: CGFloat = 8
 
     private let gap: CGFloat = 3
 
-    /// Cell side that fits `w` columns on the phone, capped like the web (42px) —
-    /// FINISH_SPEC §B5's shared sizing rule (fixed 3-pt gaps). The tray's padding
-    /// comes out of the width first.
+    /// Cell side that fits the grid's columns AND (when given) rows, capped like the
+    /// web (42 pt) — BI18 / FINISH_SPEC §B5 (CrosswordFit, unit-tested; fixed 3-pt
+    /// gaps). The tray's padding comes off the width; its padding + lip and the
+    /// selection ring's room off the height.
     private var cell: CGFloat {
-        let available = (width ?? UIScreen.main.bounds.width - 40) - (tray ? GameTray.padding * 2 : 0)
-        let w = max(1, vm.state.w), h = max(1, vm.state.h)
-        let fitW = floor(CGFloat(BoardSizing.fitTile(widthUnits: Double(w), fixedWidth: Double(gap * CGFloat(w - 1)),
-                                                     heightUnits: 1, width: Double(available) / BoardSizing.widthFill,
-                                                     height: nil, maxTile: 42, minTile: 8)))
-        guard let maxHeight else { return fitW }
-        // Leave the tray's padding + lip (and the selection ring's room) out of the height.
-        let usable = maxHeight - (tray ? GameTray.padding * 2 + GameTray.lip : 0) - 6 - gap * CGFloat(h - 1)
-        return max(8, min(fitW, floor(usable / CGFloat(h))))
+        CGFloat(CrosswordFit.cell(columns: vm.state.w, rows: vm.state.h,
+                                  width: Double(width ?? UIScreen.main.bounds.width - 40), height: maxHeight.map(Double.init),
+                                  chromeX: Double(tray ? GameTray.padding * 2 : 0),
+                                  chromeY: Double((tray ? GameTray.padding * 2 + GameTray.lip : 0) + 6),
+                                  gap: Double(gap), minCell: Double(minCell)))
     }
 
     var body: some View {
@@ -591,7 +645,7 @@ struct CrosswordGridView: View {
         let badge = max(8, side * 0.3)
         return Button { vm.selectCell(i) } label: {
             ZStack(alignment: .topLeading) {
-                GlossyTile(face: face, letter: letter, width: side, letterScale: 0.5,
+                GlossyTile(face: face, letter: letter, width: side, letterScale: side < 26 ? 0.56 : 0.5,
                            glowAmount: revealed ? 0.85 : 0, goldRing: revealed)
                     .modifier(TypePop(letter: (locked || revealed) ? "" : letter, size: CGSize(width: side, height: side)))
                 // The active entry wears a soft accent wash over its tiles.
@@ -678,28 +732,59 @@ struct CrosswordClueColumns: View {
 
 /// The sticky active-clue bar above the keyboard: a "3A" badge and the clue; tapping switches direction.
 struct CrosswordActiveClueBar: View {
-    let entry: CrosswordEntry
+    /// nil = no active entry: the bar keeps its slot, empty (§BI22).
+    let entry: CrosswordEntry?
     let onToggle: () -> Void
 
     var body: some View {
         Button(action: onToggle) {
             HStack(spacing: 8) {
-                Text("\(entry.n)\(entry.dir.rawValue)").font(Brand.font(11, .black)).foregroundStyle(FinishInk.softNumber)
-                    .frame(width: 26, height: 24)
-                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(cwCellBG))
-                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(cwCellBorder, lineWidth: 1))
-                Text(entry.clue).font(Brand.font(15, .heavy)).foregroundStyle(Theme.textPrimary)
-                    .multilineTextAlignment(.leading).lineLimit(2).minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "arrow.left.arrow.right").font(.system(size: 14, weight: .bold)).foregroundStyle(crosswordAccent)
+                if let entry {
+                    Text("\(entry.n)\(entry.dir.rawValue)").font(Brand.font(11, .black)).foregroundStyle(FinishInk.softNumber)
+                        .frame(width: 26, height: 24)
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(cwCellBG))
+                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(cwCellBorder, lineWidth: 1))
+                    Text(entry.clue).font(Brand.font(15, .heavy)).foregroundStyle(Theme.textPrimary)
+                        .multilineTextAlignment(.leading).lineLimit(2).minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "arrow.left.arrow.right").font(.system(size: 14, weight: .bold)).foregroundStyle(crosswordAccent)
+                } else {
+                    Color.clear.frame(maxWidth: .infinity)
+                }
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
+            // BI18: a fixed two-line height so the grid never resizes between clues.
+            .frame(height: 56)
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(PuzKit.face(cwPurple, 0.10)))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(PuzKit.line(cwPurple, 0.32), lineWidth: 1.5))
         }
         .buttonStyle(.squish)
+        .disabled(entry == nil)
         .frame(maxWidth: 700)
-        .accessibilityLabel("Active clue \(entry.n) \(entry.dir == .across ? "Across" : "Down"): \(entry.clue). Tap to switch direction")
+        .accessibilityLabel(entry.map { "Active clue \($0.n) \($0.dir == .across ? "Across" : "Down"): \($0.clue). Tap to switch direction" } ?? "No clue selected")
+    }
+}
+
+/// BI18: the Clues toggle beside the clue bar — the clue list takes the grid's
+/// band (picking a clue goes back to the grid); "Grid" while the list shows.
+struct CrosswordCluesToggle: View {
+    let showing: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(systemName: showing ? "square.grid.3x3" : "list.number").font(.system(size: 15, weight: .bold))
+                Text(showing ? "Grid" : "Clues").font(Brand.font(10, .black))
+            }
+            .foregroundStyle(crosswordAccent)
+            .frame(width: 52, height: 56)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(PuzKit.face(cwPurple, 0.10)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(PuzKit.line(cwPurple, 0.32), lineWidth: 1.5))
+        }
+        .buttonStyle(.squish)
+        .accessibilityLabel(showing ? "Show the grid" : "Show all clues")
+        .accessibilityAddTraits(showing ? .isSelected : [])
     }
 }
 

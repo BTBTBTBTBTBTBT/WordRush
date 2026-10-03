@@ -18,6 +18,7 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { BRAND_ACCENT, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 import { InviteCodeTiles, InviteSentCard } from '@/components/friends/invite-screens';
 import { codeFromInviteUrl } from '@/lib/invite-screens';
+import { FeedbackPill } from '@/components/game/feedback-toast';
 
 // The VS invite window (G5, docs/FINISH_SPEC.md): a lavender-washed sheet with
 // the brand top bar (A1; the washes follow the theme's card base), I with the
@@ -348,7 +349,7 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
             </>
           )}
 
-          {error && <p className="text-xs font-bold text-red-500 text-center mt-3" role="alert">{error}</p>}
+          {error && <div className="flex justify-center mt-3" role="alert"><FeedbackPill key={error} message={error} tone="error" /></div>}
         </div>
         </>
         )}

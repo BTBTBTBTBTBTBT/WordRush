@@ -1,19 +1,22 @@
 // The cold-start intro's rules and timeline (docs/FINISH_SPEC.md F2;
 // components/providers/cold-start-intro.tsx). Pure, so they're testable.
 
+/** BI20 (founder 10-03: "slow down the intro … don't lose the fluidity"): the timeline plays 1.4× slower — same curves, same order. */
+export const INTRO_PACE = 1.4;
+
 export const INTRO = {
   /** Marks the intro as shown for this browser session (never on a warm start / resume). */
   sessionKey: 'wordocious-intro-shown',
   /** The W bounces first; the row starts assembling here (ms). */
-  rowAt: 420,
+  rowAt: Math.round(420 * INTRO_PACE),
   /** The nine other heroes pop in this far apart (ms). */
-  popStagger: 60,
+  popStagger: Math.round(60 * INTRO_PACE),
   /** The assembled row glides up into the header here (ms)… */
-  glideAt: 1040,
+  glideAt: Math.round(1040 * INTRO_PACE),
   /** …over this long (ms). */
-  glideMs: 420,
-  /** Everything has cleared by here (ms); the whole intro stays ≤ 1.6 s. */
-  endAt: 1460,
+  glideMs: Math.round(420 * INTRO_PACE),
+  /** Everything has cleared by here (ms); the whole intro stays ≤ 2.2 s. */
+  endAt: Math.round(1460 * INTRO_PACE),
   /** The last fade (ms): only when there is no header row to land on. */
   outMs: 140,
   /**

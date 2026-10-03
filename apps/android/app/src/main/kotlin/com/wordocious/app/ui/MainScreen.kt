@@ -522,6 +522,13 @@ fun MainScreen() {
     // FINISH_SPEC AJ: the per-tab "scroll to the top" counters and the leave-the-match confirm.
     val tabReselect = remember { androidx.compose.runtime.mutableStateListOf(0, 0, 0, 0) }
     var confirmLeaveTab by remember { mutableStateOf<Int?>(null) }
+    // CelebrationGate (2026-10-03): late celebrations (sweeps, late unlocks) wait for the Home
+    // tab at its root with nothing over it — see CelebrationQueue.
+    val onHomeRoot = selectedTab == 0 && !covered && activeGame == null && publicProfileId == null && !showRecords
+    androidx.compose.runtime.SideEffect { CelebrationCalm.homeRoot = onHomeRoot }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { CelebrationCalm.homeRoot = false } }
+    ReportPresented(confirmLeaveTab != null || showNewPassword)
+    ReportPopup(showShieldModal && !covered)
     fun goToRoot(tab: Int, scrollToTop: Boolean) {
         publicProfileId = null; showRecords = false
         activeGame = null; activeSeed = null; infoRoute = null; showSettings = false; showSignIn = false
@@ -646,6 +653,8 @@ fun MainScreen() {
                                         onOpenFriends = { selectedTab = 3 },
                                         // "All-time →" in the header → the global Records screen (D2 step 3).
                                         onOpenRecords = { showRecords = true },
+                                        onGoHome = { goToRoot(TabNav.HOME, scrollToTop = false) },
+                                        onSignIn = { showSignIn = true },
                                     )
                                     2 -> ProfileScreen(
                                         onGoPro = { infoRoute = "pro" },
@@ -660,8 +669,12 @@ fun MainScreen() {
                                         // D2 step 3: the Global Records tile on the All-time page → the Hall of Fame.
                                         onOpenRecords = { showRecords = true },
                                         vsJumpRequest = statsVsJump,
+                                        onGoHome = { goToRoot(TabNav.HOME, scrollToTop = false) },
+                                        onSignIn = { showSignIn = true },
                                     )
                                     3 -> FriendsScreen(
+                                        onGoHome = { goToRoot(TabNav.HOME, scrollToTop = false) },
+                                        onSignIn = { showSignIn = true },
                                         onOpenProfile = { publicProfileId = it },
                                         // D3: a Challenge (the free live VS Battle) opens the private lobby with its code.
                                         onJoinInvite = { m, code -> vsInvite = m to code },

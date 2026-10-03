@@ -1,5 +1,6 @@
 import SwiftUI
 import StoreKit
+import WordociousCore
 
 /// Settings — mirrors components/settings-dialog.tsx (theme picker + Sound /
 /// Colorblind / Reduced-motion toggles) plus account + info links + version.
@@ -29,6 +30,8 @@ struct SettingsView: View {
     @State private var deleteError = false
     @State private var infoKind: InfoKind?
     @State private var consentError: String?
+    /// BI25: the sheet has finished presenting — heavier, below-the-fold pieces load now.
+    @State private var settled = false
     // Colorblind + reduced-motion are owned by ThemeManager so changes publish
     // and apply app-wide (tile palette / animation gating).
 
@@ -97,7 +100,9 @@ struct SettingsView: View {
                         }
                         // Which providers open this account + link Google / Apple
                         // to it (founder, 2026-09-30). Signed-in accounts only.
-                        if auth.isAuthenticated && SupabaseConfig.isConfigured {
+                        // BI25: built after the sheet lands (its identity load + Google
+                        // art stay off the presenting frame); it sits below the fold.
+                        if settled && auth.isAuthenticated && SupabaseConfig.isConfigured {
                             LinkedSignInsSection()
                         }
                         section("SUBSCRIPTION", accent: G5Accent.gold) {
@@ -237,6 +242,11 @@ struct SettingsView: View {
             }
             .sheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]) }
         }
+        .task {
+            // BI25: after the slide-up (~0.35 s), never on the tap frame.
+            try? await Task.sleep(nanoseconds: 380_000_000)
+            settled = true
+        }
     }
 
     private func section<C: View>(_ title: String, accent: Color, @ViewBuilder _ content: @escaping () -> C) -> some View {
@@ -250,35 +260,19 @@ struct SettingsView: View {
     ]
 
     private func keyboardRow(_ k: (value: String, label: String, desc: String)) -> some View {
-        optionRow(label: k.label, desc: k.desc, active: keyboardLayout == k.value, accent: G5Accent.blue) {
+        SettingsOptionTile(label: k.label, desc: k.desc, active: keyboardLayout == k.value, accent: G5Accent.blue) {
+            KeyRowPreview(layout: k.value)
+        } action: {
             keyboardLayout = k.value
         }
     }
 
     private func themeRow(_ t: (value: String, label: String, desc: String)) -> some View {
-        optionRow(label: t.label, desc: t.desc, active: theme == t.value, accent: G5Accent.lilac) {
+        SettingsOptionTile(label: t.label, desc: t.desc, active: theme == t.value, accent: G5Accent.lilac) {
+            ThemeTilesPreview(theme: t.value)
+        } action: {
             themeManager.theme = t.value
         }
-    }
-
-    /// §A1 a selectable mini tile (selected = stronger tint + accent ring), squish (§A9).
-    private func optionRow(label: String, desc: String, active: Bool, accent: Color,
-                           action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(label).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
-                    Text(desc).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
-                }
-                Spacer()
-                if active { Image(systemName: "checkmark.circle.fill").foregroundStyle(accent) }
-            }
-            .padding(12)
-            .contentShape(Rectangle())
-            .g5Option(active: active, accent: accent, radius: 14)
-        }
-        .buttonStyle(.squish)
-        .accessibilityAddTraits(active ? .isSelected : [])
     }
 
     private func toggleRow(_ title: String, _ sub: String, _ binding: Binding<Bool>, accent: Color) -> some View {
@@ -300,5 +294,135 @@ struct SettingsView: View {
         }
         .padding(.vertical, 11)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - BI25 option tiles (no outlines)
+
+/// BI25: a THEME / KEYBOARD choice as a soft filled tile — unselected a pale wash of
+/// the section's color (no stroke); selected a glossy filled tile in that color with
+/// white text and a small white check badge. A live preview sits on the right. The
+/// selected look cross-fades (opacity only); the press squishes (transform).
+struct SettingsOptionTile<Preview: View>: View {
+    let label: String
+    let desc: String
+    let active: Bool
+    let accent: Color
+    @ViewBuilder var preview: () -> Preview
+    let action: () -> Void
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        let dark = Theme.isDark
+        Button(action: action) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(label).font(Brand.font(14, .black))
+                        .foregroundStyle(active ? Color.white : FinishInk.heading)
+                    Text(desc).font(Brand.font(10, .bold))
+                        .foregroundStyle(active ? Color.white.opacity(0.88) : FinishInk.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 6)
+                preview()
+                ZStack {
+                    Circle().fill(Color.white)
+                    Image(systemName: "checkmark").font(.system(size: 10, weight: .black)).foregroundStyle(accent)
+                }
+                .frame(width: 20, height: 20)
+                .shadow(color: Color.black.opacity(0.15), radius: 1.5, x: 0, y: 1)
+                .opacity(active ? 1 : 0)
+                .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 12).padding(.vertical, 11)
+            .background {
+                ZStack {
+                    shape.fill(dark ? accent.opacity(0.16) : accent.wash(0.11))
+                    // The glossy selected face: the accent, lighter at the top, a soft
+                    // top sheen and a darker lip — opacity-faded in, never a ring.
+                    ZStack(alignment: .top) {
+                        shape.fill(LinearGradient(colors: [Color.white.mixed(over: accent, 0.22), accent,
+                                                           Color.black.mixed(over: accent, 0.12)],
+                                                  startPoint: .top, endPoint: .bottom))
+                        shape.fill(LinearGradient(colors: [Color.white.opacity(0.32), Color.white.opacity(0)],
+                                                  startPoint: .top, endPoint: .center))
+                            .padding(2)
+                    }
+                    .shadow(color: accent.opacity(0.35), radius: 6, x: 0, y: 4)
+                    .opacity(active ? 1 : 0)
+                }
+            }
+            .contentShape(shape)
+            .animation(.easeOut(duration: 0.18), value: active)
+        }
+        .buttonStyle(.squish)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(active ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+/// BI25: a live THEME preview — four mini glossy letter tiles in the theme's colors on
+/// a chip of that theme's page wash (rules: Core `SettingsPreviews`, unit tested ×3).
+struct ThemeTilesPreview: View {
+    let theme: String
+
+    var body: some View {
+        let spec = SettingsPreviews.theme(theme)
+        HStack(spacing: 2) {
+            ForEach(Array(spec.tiles.enumerated()), id: \.offset) { _, t in
+                ZStack {
+                    RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                        .fill(LinearGradient(colors: [Color.white.mixed(over: Color(hex: UInt(t.hex)), 0.25), Color(hex: UInt(t.hex))],
+                                             startPoint: .top, endPoint: .bottom))
+                    RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                        .fill(LinearGradient(colors: [Color.white.opacity(0.35), .clear], startPoint: .top, endPoint: .center))
+                        .padding(1)
+                    Text(t.letter).font(Brand.font(9, .black)).foregroundStyle(.white)
+                }
+                .frame(width: 15, height: 15)
+            }
+        }
+        .padding(4)
+        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color(hex: UInt(spec.page))))
+        .accessibilityHidden(true)
+    }
+}
+
+/// BI25: a mini key row showing where Enter and Delete sit for a keyboard layout.
+struct KeyRowPreview: View {
+    let layout: String
+
+    var body: some View {
+        VStack(spacing: 2) {
+            ForEach(Array(SettingsPreviews.keyRows(layout).enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 2) {
+                    ForEach(Array(row.enumerated()), id: \.offset) { _, key in keyCap(key) }
+                }
+            }
+        }
+        .padding(4)
+        .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.white.opacity(Theme.isDark ? 0.12 : 0.55)))
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func keyCap(_ key: String) -> some View {
+        let special = key == SettingsPreviews.enter || key == SettingsPreviews.delete
+        let shape = RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+        ZStack {
+            shape.fill(special ? Color(hex: 0xF59E0B) : Color.white)
+                .shadow(color: Color.black.opacity(0.12), radius: 0, x: 0, y: 1)
+            switch key {
+            case SettingsPreviews.enter:
+                Image(systemName: "return").font(.system(size: 6.5, weight: .black)).foregroundStyle(.white)
+            case SettingsPreviews.delete:
+                Image(systemName: "delete.left.fill").font(.system(size: 6.5, weight: .black)).foregroundStyle(.white)
+            case SettingsPreviews.space:
+                EmptyView()
+            default:
+                Text(key).font(Brand.font(6.5, .black)).foregroundStyle(FinishInk.softNumber)
+            }
+        }
+        .frame(width: special ? 15 : (key == SettingsPreviews.space ? 26 : 8), height: 11)
     }
 }

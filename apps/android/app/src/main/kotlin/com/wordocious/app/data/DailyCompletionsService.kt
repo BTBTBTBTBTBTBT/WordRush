@@ -2,6 +2,7 @@ package com.wordocious.app.data
 
 import com.wordocious.app.ModeGen
 import com.wordocious.app.todayLocalDate
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
@@ -100,7 +101,18 @@ object DailyCompletionsService {
     /** Map of game_mode → completion for today's daily (solo). Empty if not signed in. */
     suspend fun fetchTodayCompletions(): Map<String, Completion> {
         lastServedDay = todayLocalDate()
-        val userId = AuthService.userId ?: return emptyMap()
+        // Profile row first, LOCAL SESSION second: during an outage the launch
+        // profile fetch fails, and bailing here returned an EMPTY map that wiped
+        // Home's completed cards (cache included) for the whole session.
+        val userId = AuthService.userId
+            ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
+            ?: return emptyMap()
+        // Results finished on this device whose daily_results row the server
+        // has not confirmed yet (still in the PendingRecords queue) count as
+        // completed — a relaunch mid-outage must not show the card unplayed.
+        val queued = runCatching {
+            PendingRecords.todayCompletions(PendingRecords.allPayloads(), userId, todayLocalDate())
+        }.getOrDefault(emptyMap())
         return runCatching {
             val map = client.postgrest["daily_results"]
                 .select(Columns.raw("game_mode,completed,guess_count,time_seconds,composite_score")) {
@@ -118,7 +130,12 @@ object DailyCompletionsService {
             // show as an N-1/9 Sweep. Keep any optimistic noteCompletion entry
             // (in the day-keyed cache) the server response is still missing.
             val merged = map.toMutableMap()
+            // BI19: the server now lists these modes — their optimistic results are confirmed.
+            val today = todayLocalDate()
+            for (k in map.keys) runCatching { AppCache.optimistic.reconcile(userId, today, k, serverHasUser = true) }
             for ((k, v) in readCache()) if (k !in merged) merged[k] = v
+            for ((k, v) in localResults(userId)) if (k !in merged) merged[k] = v
+            for ((k, v) in PendingRecords.mergeCompletions(merged, queued)) merged[k] = v
             writeCache(merged)
             // Home-screen widget snapshot (iOS WidgetBridge.update on refetch).
             com.wordocious.app.widget.WidgetBridge.update(merged)
@@ -133,7 +150,12 @@ object DailyCompletionsService {
                 }
             }
             merged
-        }.getOrElse { readCache() }   // transient failure → keep cached state
+        }.getOrElse {
+            // Transient failure → keep cached state (+ optimistic results, + queued).
+            val cached = readCache().toMutableMap()
+            for ((k, v) in localResults(userId)) if (k !in cached) cached[k] = v
+            PendingRecords.mergeCompletions(cached, queued)
+        }
     }
 
     private val prefetchScope = kotlinx.coroutines.CoroutineScope(
@@ -160,6 +182,46 @@ object DailyCompletionsService {
         // Home-screen widget snapshot (iOS WidgetBridge.update on record) —
         // the widget flips this chip the instant the puzzle finishes.
         com.wordocious.app.widget.WidgetBridge.update(current)
+    }
+
+    /** BI19: today's optimistic results for [userId] (persisted until the server confirms). */
+    private fun localResults(userId: String): Map<String, Completion> = runCatching {
+        val today = todayLocalDate()
+        OptimisticResults.completionsFor(AppCache.optimistic.all(today), userId, today)
+    }.getOrDefault(emptyMap())
+
+    /**
+     * BI19: a daily just finished — record it locally BEFORE any network: the persisted
+     * optimistic store (leaderboard rows, survives a relaunch) and the Home / widget / Stats
+     * completion cache via [noteCompletion]. Today's results only.
+     */
+    fun noteLocalResult(
+        userId: String,
+        gameMode: String,
+        completed: Boolean,
+        guessCount: Int,
+        timeSeconds: Int,
+        score: Double,
+        boardsSolved: Int,
+        totalBoards: Int,
+        hintsUsed: Int,
+    ) {
+        val today = todayLocalDate()
+        val p = AuthService.profile.value
+        runCatching {
+            AppCache.optimistic.apply(
+                OptimisticResults.LocalResult(
+                    userId = userId, day = today, gameMode = gameMode, completed = completed,
+                    guessCount = guessCount, timeSeconds = timeSeconds, score = score,
+                    boardsSolved = boardsSolved, totalBoards = totalBoards, hintsUsed = hintsUsed,
+                    username = p?.username, avatarUrl = p?.avatarUrl, avatarEmoji = p?.avatarEmoji,
+                    savedAtMs = System.currentTimeMillis(),
+                ),
+                today,
+            )
+        }
+        noteCompletion(gameMode, completed, guessCount, timeSeconds, score)
+        TodayPrefetch.afterFinish(gameMode)
     }
 
     fun readCache(): Map<String, Completion> {

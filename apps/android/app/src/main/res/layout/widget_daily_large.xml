@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FINISH_SPEC BI13 large widget (iOS LargeView twin): header = the friendly W + WORDOCIOUS /
+     TODAY'S DAILIES, the streak set into the 3D flame on the right; the hero ring beside the
+     4×2 daily chips; PUZZLES with its count, then the ten Puzzles chips (5×2); one stat line
+     across the bottom. Every chip deep-links. No boxes or outlines. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:id="@+id/w_mascot"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/mascot_w"
+                android:importantForAccessibility="no"
+                android:contentDescription="@null" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+                <TextView
+                    style="@style/WidgetCaps"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.16"
+                    android:textColor="@color/widget_accent"
+                    android:text="WORDOCIOUS" />
+                <TextView
+                    style="@style/WidgetCaps"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="TODAY'S DAILIES" />
+            </LinearLayout>
+            <include layout="@layout/widget_flame" android:layout_width="36dp" android:layout_height="36dp" />
+            <TextView
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:textColor="@color/widget_ink"
+                android:text="DAY STREAK" />
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="0.25" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2.2"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <include layout="@layout/widget_ring" android:layout_width="84dp" android:layout_height="84dp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <ImageView
+                android:id="@+id/w_t0"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <ImageView
+                android:id="@+id/w_t4"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t5"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t6"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_t7"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+        </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="0.25" />
+
+        <LinearLayout
+            android:id="@+id/w_puzzles_head"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                style="@style/WidgetCaps"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/widget_ink"
+                android:text="PUZZLES" />
+            <TextView
+                android:id="@+id/w_puzzles_count"
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0/10" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/w_puzzles"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2.6"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <ImageView
+                android:id="@+id/w_p0"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p4"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+            <ImageView
+                android:id="@+id/w_p5"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p6"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p7"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p8"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+            <ImageView
+                android:id="@+id/w_p9"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/game_practice"
+                android:padding="4dp"
+                android:contentDescription="@null" />
+        </LinearLayout>
+        </LinearLayout>
+
+        <View android:layout_width="1dp" android:layout_height="8dp" />
+        <LinearLayout
+            android:id="@+id/w_footer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:importantForAccessibility="yes">
+            <TextView
+                android:id="@+id/w_f1_label"
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="NEXT " />
+            <TextView
+                android:id="@+id/w_f1_value"
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_accent"
+                android:text="CLASSIC" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <ImageView
+                android:layout_width="3dp"
+                android:layout_height="3dp"
+                android:src="@drawable/widget_dot"
+                android:importantForAccessibility="no"
+                android:contentDescription="@null" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <TextView
+                android:id="@+id/w_left"
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_ink"
+                android:text="" />
+            <TextView
+                
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" LEFT" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <ImageView
+                android:layout_width="3dp"
+                android:layout_height="3dp"
+                android:src="@drawable/widget_dot"
+                android:importantForAccessibility="no"
+                android:contentDescription="@null" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <TextView
+                android:id="@+id/w_f3_value"
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/widget_ink"
+                android:text="0" />
+            <TextView
+                android:id="@+id/w_f3_label"
+                style="@style/WidgetCaps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" PTS TODAY" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

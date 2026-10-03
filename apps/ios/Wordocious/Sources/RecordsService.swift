@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 import WordociousCore
 
-struct AllTimeRecord: Identifiable, Decodable {
+struct AllTimeRecord: Identifiable, Codable {
     let id: String
     let recordType: String
     let gameMode: String?
@@ -18,7 +18,7 @@ struct AllTimeRecord: Identifiable, Decodable {
     /// leaves it nil; fetchAll fills it for the six cells where it applies.
     var hintsUsed: Int? = nil
 
-    struct Ref: Decodable {
+    struct Ref: Codable {
         let username: String
         let avatarUrl: String?
         enum CodingKeys: String, CodingKey { case username; case avatarUrl = "avatar_url" }

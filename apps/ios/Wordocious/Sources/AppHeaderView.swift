@@ -18,6 +18,8 @@ struct AppHeaderView: View {
     @State private var menuDest: InfoMenuDestination?
     @State private var showSettings = false
     @State private var showAuth = false
+    /// BI25: the last help / gear fire (single-fire guard).
+    @State private var lastSheetTap: Date?
     /// §AS6: the popups live at the app root (full-screen scrim + card).
     @ObservedObject private var popups = HeaderPopups.shared
 
@@ -62,8 +64,11 @@ struct AppHeaderView: View {
                         .padding(.top, 4)
                 }
 
-                iconControl(.help, label: "Help") { showMenu = true }
-                iconControl(.gear, label: "Settings") { showSettings = true }
+                // BI25: single-fire — a double tap (or a tap while a sheet is on its
+                // way) can't open and then close it; the sheet builds light and
+                // presents on the tap frame (heavy pieces load after it lands).
+                iconControl(.help, label: "Help") { openSheet { showMenu = true } }
+                iconControl(.gear, label: "Settings") { openSheet { showSettings = true } }
             }
             .padding(.horizontal, 8)
             .padding(.top, 2)
@@ -78,6 +83,15 @@ struct AppHeaderView: View {
         .sheet(item: $menuDest) { infoMenuDestinationView($0).presentationDetents([.large]) }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showAuth) { AuthView() }
+    }
+
+    /// BI25: the help / gear taps fire once (SettingsPreviews.sheetTapFires, unit tested).
+    private func openSheet(_ open: () -> Void) {
+        let now = Date()
+        let presenting = showMenu || showSettings || showAuth || menuDest != nil
+        guard SettingsPreviews.sheetTapFires(at: now, lastFire: lastSheetTap, presenting: presenting) else { return }
+        lastSheetTap = now
+        open()
     }
 
     private func toggle(_ p: HeaderPop) {

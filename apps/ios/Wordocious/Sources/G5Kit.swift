@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 // FINISH_SPEC §G5 / §K1 (phase 2, "everything else not yet touched"): the small
 // shared pieces the sweep reuses across Settings, Edit profile, sign-in, the
@@ -69,8 +70,7 @@ struct G5Divider: View {
 // MARK: - Option tiles, fields
 
 /// §A1 a selectable mini tile (theme / keyboard rows, accent + emoji pickers):
-/// the 12% wash + 30% border; selected = the 26% wash, a 2-pt accent border and a
-/// 3-pt ring at 22%.
+/// the 10% wash, no stroke; selected = the 30% wash + a top sheen and soft glow (BI25).
 struct G5OptionChrome: ViewModifier {
     let active: Bool
     var accent: Color = G5Accent.purple
@@ -80,13 +80,17 @@ struct G5OptionChrome: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         let dark = Theme.isDark
         return content
-            .background(ZStack {
-                shape.fill(dark ? Theme.surface : accent.wash(active ? 0.26 : 0.10))
-                if dark { shape.fill(accent.opacity(active ? 0.22 : 0.07)) }
-            })
-            .overlay(shape.strokeBorder(dark ? accent.opacity(active ? 0.9 : 0.32) : (active ? accent : accent.wash(0.30)),
-                                        lineWidth: active ? 2 : 1.5))
-            .overlay(shape.inset(by: -3).stroke(accent.opacity(active ? 0.22 : 0), lineWidth: 3).allowsHitTesting(false))
+            // BI25: soft filled, never outlined — selected is a deeper wash with a
+            // top sheen and a soft accent glow instead of a ring.
+            .background(ZStack(alignment: .top) {
+                shape.fill(dark ? Theme.surface : accent.wash(active ? 0.30 : 0.10))
+                if dark { shape.fill(accent.opacity(active ? 0.30 : 0.08)) }
+                if active {
+                    shape.fill(LinearGradient(colors: [Color.white.opacity(dark ? 0.10 : 0.45), .clear],
+                                              startPoint: .top, endPoint: .center))
+                }
+            }
+            .shadow(color: accent.opacity(active ? 0.28 : 0), radius: 6, x: 0, y: 3))
     }
 }
 
@@ -103,10 +107,33 @@ extension View {
         return self
             .padding(.horizontal, 12).padding(.vertical, 11)
             .background(ZStack {
-                shape.fill(dark ? Theme.background : accent.wash(0.07))
-                if dark { shape.fill(accent.opacity(0.06)) }
+                shape.fill(dark ? Theme.background : accent.wash(0.11))
+                if dark { shape.fill(accent.opacity(0.12)) }
             })
-            .overlay(shape.strokeBorder(error ? Color(hex: 0xF87171) : (dark ? Theme.border : accent.wash(0.30)), lineWidth: 1.5))
+            // BI25: a soft filled field (no outline); an error tints the fill rose.
+            .overlay(shape.fill(Color(hex: 0xF87171).opacity(error ? 0.16 : 0)).allowsHitTesting(false))
+    }
+}
+
+/// BI25: a used in-game hint ("Vowel: A", "No vowels left") — a soft amber-filled pill,
+/// never outlined (the founder's no-outlines rule overrides A8), on the small candy's
+/// footprint (34 pt + its 4-pt lip) so nothing moves when a hint is spent.
+struct UsedHintPill: View {
+    let label: String
+    var accent: Color = G5Accent.gold
+
+    var body: some View {
+        Text(label)
+            .font(Brand.font(13, .black))
+            .foregroundStyle(FinishInk.heading)
+            .lineLimit(1).minimumScaleFactor(0.7)
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity)
+            .frame(height: 34)
+            .background(Capsule().fill(Theme.isDark ? accent.opacity(0.22) : accent.wash(0.20)))
+            .padding(.bottom, 4)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isStaticText)
     }
 }
 
@@ -120,7 +147,7 @@ enum G5Tone {
         switch self {
         case .success: return G5Accent.green
         case .error: return G5Accent.coral
-        case .info: return G5Accent.blue
+        case .info: return G5Accent.lilac  // §BI9: never the generic blue info look
         case .win: return G5Accent.purple
         case .loss: return G5Accent.slate
         case .warn: return G5Accent.gold
@@ -131,7 +158,7 @@ enum G5Tone {
         switch self {
         case .success: return "checkmark.circle.fill"
         case .error: return "exclamationmark.circle.fill"
-        case .info: return "info.circle.fill"
+        case .info: return "lightbulb.fill"
         case .win: return "star.circle.fill"
         case .loss: return "moon.circle.fill"
         case .warn: return "exclamationmark.triangle.fill"
@@ -167,36 +194,24 @@ struct G5Notice: View {
     }
 }
 
-/// §K1 the toast: a tinted pill in the event's color with dark-purple Nunito Black
-/// text and a small icon or cast pose. Callers keep their own timing; pair with
-/// `G5Toast.transition` + `G5Toast.animation` (spring in; Reduce Motion: fade).
+/// §K1 / §BI9 the toast. A "+N" / "Pangram! +N" flash is a celebratory candy
+/// SCORE burst (`G5ScoreBurst`); everything else is a calm candy MESSAGE: a soft
+/// tinted pill with a bottom lip, a small glossy 3D coin icon (or a cast pose)
+/// and dark-purple Nunito Black text. Never a generic "i". The pieces run their
+/// own short entrance (transform/opacity only; Reduce Motion: a fade).
 struct G5Toast: View {
     let text: String
     var tone: G5Tone = .info
-    /// A small cast pose instead of the symbol (A7: not the screen's host).
+    /// A small cast pose instead of the coin icon (A7: not the screen's host).
     var pose: (MascotID, String)? = nil
 
     var body: some View {
-        HStack(spacing: 8) {
-            if let pose {
-                PoseImage(pose.0, pose.1, height: 30)
-            } else {
-                Image(systemName: tone.symbol)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(tone.accent)
-                    .accessibilityHidden(true)
-            }
-            Text(text)
-                .font(Brand.font(13, .black))
-                .foregroundStyle(FinishInk.heading)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
+        switch FeedbackToast.kind(text) {
+        case let .score(points, pangram, label):
+            G5ScoreBurst(points: points, pangram: pangram, label: label)
+        case .message:
+            G5CandyMessage(text: text, tone: tone, pose: pose)
         }
-        .padding(.leading, pose == nil ? 12 : 8).padding(.trailing, 16).padding(.vertical, pose == nil ? 9 : 5)
-        .tintedPill(tone.accent)
-        .shadow(color: Color(hex: 0x3C1E6E).opacity(0.14), radius: 10, x: 0, y: 6)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
     }
 
     /// Slide in from the top with a spring; Reduce Motion: a plain fade.
@@ -208,15 +223,16 @@ struct G5Toast: View {
         Theme.reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.38, dampingFraction: 0.7)
     }
 
-    /// The toast tone for a game screen message.
+    /// The toast tone for a game screen message (FeedbackToast parity ×3).
     static func tone(forGameMessage message: String) -> G5Tone {
-        let m = message.lowercased()
-        if m.contains("solved") || m.contains("nice") || m.contains("great") { return .win }
-        if m.contains("copied") || m.contains("saved") { return .success }
-        if m.hasPrefix("not ") || m.contains("already") || m.contains("enough") || m.contains("invalid")
-            || m.contains("must") { return .error }
-        if m.contains("the word was") || m.contains("answer") || m.contains("out of") { return .loss }
-        return .info
+        switch FeedbackToast.tone(for: message) {
+        case .win: return .win
+        case .success: return .success
+        case .error: return .error
+        case .loss: return .loss
+        case .warn: return .warn
+        case .info: return .info
+        }
     }
 
     /// A small pose that fits the tone (§K1), never `host` (§A7).

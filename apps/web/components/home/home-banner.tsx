@@ -7,7 +7,7 @@ import { LiveHeadline } from '@/components/ui/live-headline';
 import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
-import { softBorder, softIconTile } from '@/lib/soft-surface';
+import { softBorder } from '@/lib/soft-surface';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Check } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -20,7 +20,7 @@ import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
 import { BannerHost, BANNER_HOST_CLEARANCE } from '@/components/ui/mascot';
 import { PAGE_HOSTS } from '@/lib/mascots';
-import { MODE_SWITCH, homeBannerContent, homeBannerSlots, modeSwitchLayout } from '@/lib/stationary-layout';
+import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
 import { HomeClock } from '@/components/home/home-clock';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
@@ -71,39 +71,49 @@ interface Props {
   onShare: () => void;
 }
 
-function Tile({ card, result, unlimited, size, onOpen }: {
-  card: HomeCard; result?: DailyCompletion; unlimited: boolean; size: 'lg' | 'sm'; onOpen: () => void;
+/**
+ * BI21: one tile size for both rows — at most 32 px, sized so ten fit with 5 px gaps —
+ * and each row spreads edge to edge (justify-between), so the 8- and 10-tile rows end flush.
+ */
+const TILE_SIZE = `min(${BANNER_SLOT.tileLg}px, calc((100% - ${BANNER_SLOT.tileGapMin * (BANNER_SLOT.tileSlots - 1)}px) / ${BANNER_SLOT.tileSlots}))`;
+const TILE_ICON = 15;
+const GLOSS = 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0) 55%)';
+
+function Tile({ card, result, unlimited, onOpen }: {
+  card: HomeCard; result?: DailyCompletion; unlimited: boolean; onOpen: () => void;
 }) {
   const Icon = card.icon;
-  const px = size === 'lg' ? 32 : 28;
-  const iconPx = size === 'lg' ? 16 : 14;
+  const iconPx = TILE_ICON;
   const accent = card.accentColor;
   let style: React.CSSProperties;
   let ink: string;
-  // FINISH_SPEC A1: an unplayed (or Unlimited) tile is a mini game card — the
-  // accent's wash, its border and a thin accent top bar — never plain white.
-  const mini = { ...softIconTile(accent, { radius: size === 'lg' ? 9 : 8 }), boxShadow: `inset 0 3px 0 ${accent}, 0 2px 5px ${accent}33` };
+  // FINISH_SPEC BI21 (no bordered boxes): not played = a soft pale tile with the icon
+  // dimmed; won = a glossy tile in the game's color, full icon, a small white check;
+  // lost = a glossy gray tile; Unlimited = a soft tinted tile, full icon.
+  const won = !unlimited && !!result?.won;
   if (unlimited) {
-    style = mini;
+    style = { background: `color-mix(in srgb, ${accent} 16%, #ffffff)`, boxShadow: `0 2px 5px ${accent}2e` };
     ink = accent;
   } else if (result) {
     style = result.won
-      ? { background: accent, boxShadow: `0 0 9px ${accent}b3` }
-      : { background: '#9ca3af' };
+      ? { background: `${GLOSS}, ${accent}`, boxShadow: `0 1.5px 7px ${accent}8c` }
+      : { background: `${GLOSS}, #9ca3af` };
     ink = '#ffffff';
   } else {
-    style = mini;
+    style = { background: `color-mix(in srgb, ${accent} 12%, #ffffff)` };
     ink = accent;
   }
+  const dim = !unlimited && !result ? 0.45 : 1;
   return (
     <button
       type="button"
       data-squish="card"
       onClick={onOpen}
       aria-label={`${card.title}${unlimited ? '' : result ? (result.won ? ', won' : ', played') : ', not played yet'}`}
-      className="flex items-center justify-center shrink-0"
-      style={{ width: px, height: px, borderRadius: size === 'lg' ? 9 : 8, ...style }}
+      className="relative flex items-center justify-center shrink-0"
+      style={{ width: TILE_SIZE, aspectRatio: '1 / 1', borderRadius: 8, ...style }}
     >
+      <span className="flex items-center justify-center" style={{ opacity: dim }}>
       {Icon && isGameArtIcon(Icon)
         // The 3D game art fills the tile (docs/ART_SPEC.md §3); a soft white
         // halo keeps it readable on a won tile's solid accent.
@@ -113,6 +123,15 @@ function Tile({ card, result, unlimited, size, onOpen }: {
         : Icon
         ? <Icon style={{ width: iconPx, height: iconPx, color: ink }} />
         : <Check style={{ width: iconPx, height: iconPx, color: ink }} />}
+      </span>
+      {won && (
+        <Check
+          aria-hidden="true"
+          strokeWidth={4}
+          className="absolute"
+          style={{ right: 2, bottom: 2, width: 8, height: 8, color: '#ffffff', filter: 'drop-shadow(0 0.5px 0.8px rgba(0,0,0,0.3))' }}
+        />
+      )}
     </button>
   );
 }
@@ -134,6 +153,8 @@ function RowHeader({ label, status, ink, streak, height }: { label: string; stat
 }
 
 const HEAD_SIZE = 22;
+/** BI21: the headline's room on EACH side (the W host's clearance, mirrored). */
+const HEADLINE_SIDE_CLEAR = BANNER_HOST_CLEARANCE - 8;
 
 export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onModeChange, name, onOpen, onShare }: Props) {
   const unlimited = playMode === 'unlimited';
@@ -158,7 +179,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // The art frame belongs to the day (a swept / flawless Daily), not to the mode.
   const tierArt = slots.frame === 'art' && dailyTier !== 'none' ? TIER_ART[dailyTier] : null;
   const frameAccent = tierArt ? (unlimited ? UNLIMITED_PEACH : tierArt.accent) : null;
-  const switchBox = modeSwitchLayout(playMode, { locked: !isPro });
   // FINISH_SPEC X: during Halloween the banner wears its Halloween art beside
   // the headline (art-scene-banner-halloween; not shipped yet — the slot
   // renders nothing until the file exists). Same in both modes, so the
@@ -170,7 +190,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
 
 
   // Z: fixed-width segments, one font weight in both states; only the thumb slides.
-  const segment = (mode: 'daily' | 'unlimited', label: string, width: number) => {
+  // BI21: two EQUAL halves; the PRO chip sits inside the UNLIMITED half beside its label.
+  const segment = (mode: 'daily' | 'unlimited', label: string) => {
     const on = playMode === mode;
     // R3 (founder 10-02): free players and guests see UNLIMITED too, with the
     // gold PRO pill; tapping it opens the Go Pro popup instead of switching.
@@ -181,19 +202,19 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         onClick={() => (locked ? openGoProPopup({ reason: 'Unlimited play' }) : onModeChange(mode))}
         aria-pressed={on}
         aria-label={locked ? 'Unlimited, a Pro perk' : undefined}
-        className="relative font-black flex items-center justify-center shrink-0 whitespace-nowrap"
+        className="relative font-black flex items-center justify-center whitespace-nowrap"
         style={{
-          width, height: MODE_SWITCH.height, padding: 0, borderRadius: 999, fontSize: 10.5, letterSpacing: 0.6,
+          flex: '1 1 0', minWidth: 0, height: MODE_SWITCH.height, padding: 0, borderRadius: 999, fontSize: 11, letterSpacing: 0.6,
           background: 'transparent',
           color: on ? (mode === 'daily' ? '#4c1d95' : '#6d28d9') : '#7c3aed',
         }}
       >
-        <span className="inline-flex items-center gap-1">{label}{locked && <ProPill />}</span>
+        <span className="inline-flex items-center gap-1.5">{label}{locked && <span className="inline-flex items-center gap-0.5"><ProPill /></span>}</span>
       </button>
     );
   };
 
-  const row = (r: BannerRow, tier: BannerTier, label: string, size: 'lg' | 'sm') => (
+  const row = (r: BannerRow, tier: BannerTier, label: string) => (
     <>
       <RowHeader
         label={label}
@@ -203,14 +224,13 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         streak={null}
         height={slots.rowHeader}
       />
-      <div className="flex" style={{ gap: size === 'lg' ? 7 : 4 }}>
+      <div className="flex justify-between w-full">
         {r.cards.map((c) => (
           <Tile
             key={c.id}
             card={c}
             result={!unlimited && c.dbKey ? todayDailies.get(c.dbKey) : undefined}
             unlimited={unlimited}
-            size={size}
             onOpen={() => onOpen(c)}
           />
         ))}
@@ -241,12 +261,17 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
 
       {/* Frosted headline strip: it titles the whole card, so it sits apart from the Wordocious row's glow.
           §18.4: white at 72% with a background blur (globals.css .banner-frost). */}
-      <div className="banner-frost relative flex flex-col gap-1" style={{ padding: `${slots.stripTop}px 8px 10px 12px` }}>
+      {/* FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look even"):
+          the headline centered on the card's center line, then a centered wide
+          DAILY | UNLIMITED switch, then the centered meta line. */}
+      <div className="banner-frost relative flex flex-col" style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
-        <div className="flex items-start gap-1.5" style={{ paddingRight: tierArt || seasonArt ? 0 : BANNER_HOST_CLEARANCE - 8 }}>
+        {/* BI21: the W host's clearance on BOTH sides keeps the headline centered; the
+            share button sits at the strip's LEFT end, mirroring W at the right. */}
+        <div className="relative flex items-start" style={{ paddingLeft: tierArt || seasonArt ? slots.shareWidth + 6 : HEADLINE_SIDE_CLEAR, paddingRight: tierArt || seasonArt ? 0 : HEADLINE_SIDE_CLEAR }}>
           {/* Z: the headline box is always two lines tall (one-line headlines center in it). */}
-          <div className="flex-1 min-w-0 flex items-center gap-1.5" style={{ height: slots.headline }}>
+          <div className="flex-1 min-w-0 flex items-center justify-center text-center gap-1.5" style={{ height: slots.headline }}>
             {content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
             {/* The old WORDOCIOUS wordmark style (Nunito Black, violet→pink) with a soft pink glow;
                 the double-flawless gold day keeps its tier ink. */}
@@ -269,14 +294,12 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
               type="button"
               onClick={onShare}
               aria-label="Share today's progress"
-              className="mode-xfade shrink-0 flex items-center justify-center active:opacity-60"
-              style={{ width: slots.shareWidth, height: slots.shareWidth }}
+              className="mode-xfade absolute left-0 flex items-center justify-center active:opacity-60"
+              style={{ top: (slots.headline - slots.shareWidth) / 2, width: slots.shareWidth, height: slots.shareWidth }}
             >
               <Icon3D name="share" size={24} />
             </button>
-          ) : (
-            <span aria-hidden="true" className="shrink-0" style={{ width: slots.shareWidth, height: slots.shareWidth }} />
-          )}
+          ) : null}
         </div>
       </div>
       {seasonSlot && (
@@ -317,43 +340,43 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         </div>
       )}
       </div>
-        {/* Z: a fixed-height controls row; the clock line is clamped to its three lines and crossfades. */}
-        <div className="flex items-center gap-2" style={{ paddingRight: 4, height: slots.controls }}>
-          <div
-            key={playMode}
-            className="mode-xfade flex-1 min-w-0 font-extrabold"
-            style={{ fontSize: 10.5, letterSpacing: 0.4, lineHeight: '12px', maxHeight: slots.controls, color: subInk,
-                     overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}
-          >
-            {/* The live clock is a leaf (components/home/home-clock.tsx): only this line re-renders each second. */}
-            <HomeClock render={(clock) => bannerClockLine(word.progress, puzzles.progress, clock, unlimited)} />
-          </div>
+        {/* Z: a fixed-height controls block in both modes. BI21: the switch centered at
+            ~76% of the card (at most 280 px) in two equal halves, then the meta line. */}
+        <div className="flex flex-col items-center" style={{ height: slots.controls, gap: BANNER_SLOT.controls - BANNER_SLOT.switchRow - BANNER_SLOT.metaLine }}>
           <div
             role="group"
             aria-label="Daily or Unlimited"
-            className="relative flex shrink-0"
-            style={{ padding: MODE_SWITCH.pad, borderRadius: 999, background: 'rgba(124,58,237,0.12)', width: switchBox.width, height: switchBox.height }}
+            className="relative flex"
+            style={{ padding: MODE_SWITCH.pad, borderRadius: 999, background: 'rgba(124,58,237,0.12)', width: '76%', maxWidth: 280, height: BANNER_SLOT.switchRow }}
           >
             <span
               aria-hidden="true"
               className="mode-switch-thumb absolute"
               style={{
-                top: MODE_SWITCH.pad, left: MODE_SWITCH.pad, height: MODE_SWITCH.height, width: switchBox.thumb.width,
-                transform: `translateX(${switchBox.thumb.x}px)`, borderRadius: 999,
+                top: MODE_SWITCH.pad, left: MODE_SWITCH.pad, height: MODE_SWITCH.height, width: `calc(50% - ${MODE_SWITCH.pad}px)`,
+                transform: unlimited ? 'translateX(100%)' : 'translateX(0)', borderRadius: 999,
                 background: '#f5eeff', boxShadow: '0 1px 3px rgba(76, 29, 149, 0.18)',
               }}
             />
-            {segment('daily', 'DAILY', switchBox.daily.width)}
-            {segment('unlimited', 'UNLIMITED', switchBox.unlimited.width)}
+            {segment('daily', 'DAILY')}
+            {segment('unlimited', 'UNLIMITED')}
+          </div>
+          <div
+            key={playMode}
+            className="mode-xfade w-full text-center font-extrabold truncate"
+            style={{ fontSize: 10.5, letterSpacing: 0.4, lineHeight: `${BANNER_SLOT.metaLine}px`, height: BANNER_SLOT.metaLine, color: subInk, fontVariantNumeric: 'tabular-nums' }}
+          >
+            {/* The live clock is a leaf (components/home/home-clock.tsx): only this line re-renders each second. */}
+            <HomeClock render={(clock) => bannerClockLine(word.progress, puzzles.progress, clock, unlimited)} />
           </div>
         </div>
       </div>
 
-      <div className="relative flex flex-col gap-2" style={{ padding: '10px 12px 6px' }}>
-        {row(word, wTier, 'WORDOCIOUS', 'lg')}
+      <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px 12px ${BANNER_SLOT.wordPadBottom}px` }}>
+        {row(word, wTier, 'WORDOCIOUS')}
       </div>
-      <div className="relative flex flex-col gap-2" style={{ padding: '8px 12px 12px' }}>
-        {row(puzzles, pTier, 'PUZZLES', 'sm')}
+      <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.puzzlePadTop}px 12px ${BANNER_SLOT.puzzlePadBottom}px` }}>
+        {row(puzzles, pTier, 'PUZZLES')}
       </div>
     </div>
   );

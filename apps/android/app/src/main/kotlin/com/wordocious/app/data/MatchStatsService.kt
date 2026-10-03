@@ -40,15 +40,15 @@ object MatchStatsService {
     private val localZone: ZoneId get() = ZoneId.systemDefault()
 
     // ── Result models ──────────────────────────────────────────────────────────
-    data class GuessBucket(val guesses: Int, val count: Int, val label: String = guesses.toString())
-    data class DayActivity(val day: String, val played: Int, val won: Int)
-    data class SolvePoint(val index: Int, val seconds: Int, val mode: String)
-    data class HourBucket(val hour: Int, val played: Int, val won: Int)
+    @kotlinx.serialization.Serializable data class GuessBucket(val guesses: Int, val count: Int, val label: String = guesses.toString())
+    @kotlinx.serialization.Serializable data class DayActivity(val day: String, val played: Int, val won: Int)
+    @kotlinx.serialization.Serializable data class SolvePoint(val index: Int, val seconds: Int, val mode: String)
+    @kotlinx.serialization.Serializable data class HourBucket(val hour: Int, val played: Int, val won: Int)
     // Serializable: also decoded from the /api/profile/[id]/top-words endpoint
     // (ProfileService.fetchPublicTopWords).
     @kotlinx.serialization.Serializable
     data class TopWord(val word: String, val count: Int, val wins: Int)
-    data class ProInsights(
+    @kotlinx.serialization.Serializable data class ProInsights(
         val fastestTime: Int? = null,
         val fewestGuesses: Int? = null,
         val perfectGames: Int = 0,
@@ -556,7 +556,7 @@ object MatchStatsService {
     // Source of truth: daily_bonuses (sweep/flawless flags per day) ⨝ daily_results
     // (per-mode time + composite_score per day). Mirrors stats-service.ts.
 
-    data class DailySweepStats(
+    @kotlinx.serialization.Serializable data class DailySweepStats(
         val sweepCount: Int = 0,
         val flawlessCount: Int = 0,
         val avgSweepSecs: Int = 0,

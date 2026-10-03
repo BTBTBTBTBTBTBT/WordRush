@@ -9,7 +9,8 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
 import { usePresenceId } from '@/lib/presence-id';
-import { Loader2 } from 'lucide-react';
+import { CastLoader } from '@/components/ui/cast-loader';
+import { PageTitleText } from '@/components/ui/page-header';
 
 interface PvPGameProps {
   mode: GameMode;
@@ -164,8 +165,8 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="p-8 max-w-md w-full text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
-          <h2 className="text-2xl font-bold">Finding Opponent...</h2>
+          <div className="flex justify-center" role="status"><CastLoader /></div>
+          <h2><PageTitleText accent="vs">Finding opponent</PageTitleText></h2>
           <p className="text-muted-foreground">Position in queue: {queuePosition + 1}</p>
           <Button variant="outline" onClick={onBack}>Cancel</Button>
         </Card>

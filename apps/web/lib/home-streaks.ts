@@ -8,6 +8,10 @@
 import { dayStreaks, dayRunTotals, isDailySeed } from '@wordle-duel/core';
 import { supabase } from './supabase-client';
 import { getTodayLocal, toLocalDayString } from './daily-service';
+import {
+  mergeQuizState, parseQuizHistory, pruneQuizHistory, quizHistKey, recordQuizAnswer,
+  type QuizAnswer, type QuizHistory, type QuizRow,
+} from './wotd-quiz-history';
 
 const LOOKBACK_DAYS = 400;
 
@@ -82,14 +86,60 @@ export async function fetchUnlimitedCountsToday(userId: string): Promise<Map<str
   return counts;
 }
 
-export interface QuizAnswer {
-  picked: number;
-  correct: boolean;
-}
+export type { QuizAnswer } from './wotd-quiz-history';
 
 const guestKey = (day: string) => `wordocious-wotd-quiz-${day}`;
 
-/** Today's saved answer (signed in: the database; guest: this browser), plus the word streak. */
+/** This device's quiz history for the player (pruned to the lookback window). */
+function readLocalHistory(userId: string | null): QuizHistory {
+  try { return pruneQuizHistory(parseQuizHistory(localStorage.getItem(quizHistKey(userId))), sinceDay()); } catch { return {}; }
+}
+
+function writeLocalHistory(userId: string | null, hist: QuizHistory): void {
+  try { localStorage.setItem(quizHistKey(userId), JSON.stringify(pruneQuizHistory(hist, sinceDay()))); } catch {}
+}
+
+/** The player's server rows, or null when the read failed (an outage: the device history decides). */
+async function readServerRows(userId: string): Promise<QuizRow[] | null> {
+  try {
+    const { data, error } = await (supabase as any)
+      .from('word_quiz_answers')
+      .select('day, picked, correct')
+      .eq('user_id', userId)
+      .gte('day', sinceDay())
+      .order('day', { ascending: false })
+      .limit(LOOKBACK_DAYS) as { data: QuizRow[] | null; error: unknown };
+    if (error || !Array.isArray(data)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+async function insertAnswer(userId: string, day: string, word: string, answer: QuizAnswer): Promise<void> {
+  const { error } = await (supabase as any)
+    .from('word_quiz_answers')
+    .insert({ user_id: userId, day, word, picked: answer.picked, correct: answer.correct });
+  // 23505 = already answered that day on another device; the first answer stands.
+  if (error && error.code !== '23505') throw error;
+}
+
+/** Background: answers made during an outage land on the server later (insert only; duplicates ignored). */
+function resendLocalOnly(userId: string, local: QuizHistory, days: string[]): void {
+  void (async () => {
+    for (const day of days) {
+      const e = local[day];
+      if (!e?.word) continue;
+      try { await insertAnswer(userId, day, e.word, e); } catch { return; }
+    }
+  })();
+}
+
+/**
+ * Today's saved answer plus the word streak. Guest: this browser (today's key).
+ * Signed in: the database merged with this device's history; when the database
+ * read fails, the device history alone (so an outage never re-asks the quiz).
+ */
 export async function fetchQuizState(userId: string | null, day: string): Promise<{ today: QuizAnswer | null; streak: number }> {
   if (!userId) {
     try {
@@ -98,49 +148,32 @@ export async function fetchQuizState(userId: string | null, day: string): Promis
       return { today: v && typeof v.picked === 'number' ? { picked: v.picked, correct: !!v.correct } : null, streak: 0 };
     } catch { return { today: null, streak: 0 }; }
   }
-  const { data } = await (supabase as any)
-    .from('word_quiz_answers')
-    .select('day, picked, correct')
-    .eq('user_id', userId)
-    .gte('day', sinceDay())
-    .order('day', { ascending: false })
-    .limit(LOOKBACK_DAYS) as { data: Array<{ day: string; picked: number; correct: boolean }> | null };
-  const days: Record<string, { played: number; won: number }> = {};
-  let today: QuizAnswer | null = null;
-  for (const r of data ?? []) {
-    days[r.day] = { played: 1, won: r.correct ? 1 : 0 };
-    if (r.day === day) today = { picked: r.picked, correct: r.correct };
-  }
-  return { today, streak: dayStreaks(days, 1, day).flawless };
+  const local = readLocalHistory(userId);
+  const rows = await readServerRows(userId);
+  const state = mergeQuizState(rows, local, day);
+  if (rows && state.localOnly.length > 0) resendLocalOnly(userId, local, state.localOnly);
+  return { today: state.today, streak: state.streak };
 }
 
-/** Saves the answer once; a second save for the same day is ignored by the primary key. */
+/** Saves the answer once: on this device FIRST, then the server (a second save for the same day is ignored). */
 export async function saveQuizAnswer(userId: string | null, day: string, word: string, answer: QuizAnswer): Promise<void> {
+  writeLocalHistory(userId, recordQuizAnswer(readLocalHistory(userId), day, word, answer));
   if (!userId) {
     try { localStorage.setItem(guestKey(day), JSON.stringify(answer)); } catch {}
     return;
   }
-  const { error } = await (supabase as any)
-    .from('word_quiz_answers')
-    .insert({ user_id: userId, day, word, picked: answer.picked, correct: answer.correct });
-  // 23505 = already answered today on another device; the first answer stands.
-  if (error && error.code !== '23505') throw error;
+  await insertAnswer(userId, day, word, answer);
 }
 
 /**
  * The All-time Word of the Day record (founder, 2026-10-01 stats audit): the
- * current word streak, the best run, and how many answers were right.
+ * current word streak, the best run, and how many answers were right. Days
+ * answered on this device during an outage fill the server's gaps.
  */
 export async function fetchQuizRecord(userId: string): Promise<{ streak: number; best: number; right: number; answered: number }> {
   if (!userId) return { streak: 0, best: 0, right: 0, answered: 0 };
-  const { data } = await (supabase as any)
-    .from('word_quiz_answers')
-    .select('day, correct')
-    .eq('user_id', userId)
-    .gte('day', sinceDay())
-    .limit(LOOKBACK_DAYS) as { data: Array<{ day: string; correct: boolean }> | null };
-  const days: Record<string, { played: number; won: number }> = {};
-  for (const r of data ?? []) days[r.day] = { played: 1, won: r.correct ? 1 : 0 };
+  const rows = await readServerRows(userId);
+  const { days, streak } = mergeQuizState(rows, readLocalHistory(userId), getTodayLocal());
   const totals = dayRunTotals(days, 1);
-  return { streak: dayStreaks(days, 1, getTodayLocal()).flawless, best: totals.bestFlawless, right: totals.flawlessDays, answered: totals.sweepDays };
+  return { streak, best: totals.bestFlawless, right: totals.flawlessDays, answered: totals.sweepDays };
 }

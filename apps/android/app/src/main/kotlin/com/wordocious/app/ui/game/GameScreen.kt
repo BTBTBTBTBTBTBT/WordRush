@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
@@ -134,10 +135,13 @@ fun HintPills(
     consonantUsed: Boolean, consonantRevealed: String?,
     onVowel: () -> Unit, onConsonant: () -> Unit,
 ) {
+    // BI22: two equal fixed halves of a centered row (max 360 dp), so "Vowel" → "Vowel: A" /
+    // "No consonants left" never resizes a pill or moves the other.
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
     Row(
         // iOS classicHintButtons: HStack(spacing: 12) inset 16pt. 16dp bottom
         // keeps the pills clear of the Q-row (fat-finger, Aug 11).
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp),
+        modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -154,6 +158,7 @@ fun HintPills(
             onClick = onConsonant, modifier = Modifier.weight(1f), fill = true,
         )
     }
+    }
 }
 
 /**
@@ -169,29 +174,31 @@ fun ProperNoundleHints(
     vowelRevealed: String?, consonantRevealed: String?,
     onClue: () -> Unit, onVowel: () -> Unit, onConsonant: () -> Unit,
 ) {
-    // iOS sizes each pill to its own label and centers the row; a pill SHRINKS when
-    // its label collapses to the revealed letter.
+    // BI22: three equal fixed thirds of a centered row (max 420 dp) — a pill no longer
+    // shrinks when its label collapses to the revealed letter, so nothing in the row moves.
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        modifier = Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HintCandy(
             label = "Clue", usedLabel = "Clue used",
             used = clueUsed, color = com.wordocious.app.ui.CandyColor.PURPLE,
             icon = if (loadingClue) Icons.Filled.HourglassEmpty else Icons.Filled.Lightbulb,
-            onClick = onClue,
+            onClick = onClue, modifier = Modifier.weight(1f), fill = true,
         )
         HintCandy(
             label = "Vowel", usedLabel = vowelRevealed ?: "Vowel",
             used = vowelRevealed != null, color = com.wordocious.app.ui.CandyColor.PINK,
-            icon = Icons.Filled.Visibility, onClick = onVowel,
+            icon = Icons.Filled.Visibility, onClick = onVowel, modifier = Modifier.weight(1f), fill = true,
         )
         HintCandy(
             label = "Consonant", usedLabel = consonantRevealed ?: "Consonant",
             used = consonantRevealed != null, color = com.wordocious.app.ui.CandyColor.TEAL,
-            icon = Icons.Filled.Tag, onClick = onConsonant,
+            icon = Icons.Filled.Tag, onClick = onConsonant, modifier = Modifier.weight(1f), fill = true,
         )
+    }
     }
 }
 
@@ -320,6 +327,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         factory = GameVMFactory(seed, mode),
     )
     val state by vm.state.collectAsState()
+    // Where the candy feedback toast sits: the header stat row under the title art.
+    val feedbackAnchor = remember { FeedbackAnchor() }
     val input by vm.currentInput.collectAsState()
     // The clock is NOT collected here (founder, 2026-09-29): reading it in this body
     // recomposed the whole game screen every second. ClockText subscribes on its own;
@@ -708,6 +717,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 
     val accent = com.wordocious.app.ui.modeAccent(mode)
     var showGuide by remember { mutableStateOf(false) }
+    // BI22: the full ProperNoundle clue card (opened from the two-line clue slot).
+    var showClueCard by remember { mutableStateOf(false) }
     // Gauntlet stage-cleared interstitial is up (see StageTransitionOverlay below).
     var stageSkip by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val stageCleared = mode == GameMode.GAUNTLET && state.gauntlet != null &&
@@ -808,7 +819,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 // Gauntlet header, 11pt in the standard one. A flat 12dp made
                 // both read a size larger than iOS next to the same numbers.
                 val statIcon = if (mode == GameMode.GAUNTLET) 10.dp else 11.dp
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.feedbackAnchor(feedbackAnchor), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val used = state.boards.maxOf { it.guesses.size }
                     if (mode == GameMode.PROPERNOUNDLE) {
                         // iOS ProperNoundleView header: category capsule, daily
@@ -860,18 +871,13 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         ClockText(vm.elapsed, statSp)
                     }
                 }
-                // ProperNoundle Clue text (italic, centered) once revealed (spec).
+                // ProperNoundle Clue (italic, centered) — BI22: a fixed two-line slot that is
+                // ALWAYS present (empty until the Clue is used), so revealing the clue never
+                // shrinks the board; tap it for the whole clue as an overlay card.
                 if (mode == GameMode.PROPERNOUNDLE) {
                     val clueText by vm.clue.collectAsState()
-                    clueText?.let {
-                        Text(
-                            it, color = WTheme.textSecondary, fontSize = 12.sp,
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
-                        )
-                    }
+                    val loadingClue by vm.loadingClue.collectAsState()
+                    ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true })
                 }
             }
 
@@ -978,29 +984,16 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             ) { stageSkip = 0; vm.advanceGauntletStage() }
         }
 
-        // Rejection toast — web: absolute @ top 90px, dark pill, white 12px bold
-        // ("Not enough letters" / "Not in word list" / "Already guessed").
+        // Rejection toast ("Not enough letters" / "Not in word list" / "Already guessed"):
+        // the shared candy feedback toast (coral coin + shake), centered on the header
+        // stat row under the title art — never over the art or the board.
         val rejectMsg by vm.rejectMessage.collectAsState()
-        rejectMsg?.let {
-            Box(Modifier.fillMaxWidth().padding(top = 90.dp), contentAlignment = Alignment.TopCenter) {
-                // FINISH_SPEC K1 / G5: the toast is a tinted pill in the reject red (a soft
-                // wash, its line and a red top band) with dark-purple ink. FIXED ink on a
-                // FIXED fill in both themes, so it never goes low-contrast in Dark.
-                val shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
-                Text(
-                    it, color = Color(0xFF2A1650), fontSize = 13.sp, fontWeight = FontWeight.Black,
-                    modifier = Modifier
-                        .shadow(6.dp, shape, clip = false, ambientColor = Color(0x33F0435F), spotColor = Color(0x33F0435F))
-                        .clip(shape)
-                        .background(Color(0xFFFFEEF1))
-                        .drawWithContent {
-                            drawContent()
-                            drawRect(Color(0xFFF0435F), size = androidx.compose.ui.geometry.Size(size.width, 3.dp.toPx()))
-                        }
-                        .border(1.5.dp, Color(0xFFF8B4C0), shape)
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
+        GameFeedbackToast(rejectMsg, fallbackTop = 90.dp, anchor = feedbackAnchor)
+
+        // BI22 the whole ProperNoundle clue, over the game (the header slot shows two lines).
+        if (showClueCard && mode == GameMode.PROPERNOUNDLE) {
+            val clueText by vm.clue.collectAsState()
+            clueText?.let { ProperNoundleClueOverlay(it) { showClueCard = false } }
         }
     }
 }

@@ -17,6 +17,7 @@ import { FirstRunTour } from '@/components/onboarding/first-run-tour';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { ShareVariantHost } from '@/components/share/share-variant-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
+import { DataCacheProvider } from '@/components/providers/data-cache-provider';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
 import { PwaProvider } from '@/components/providers/pwa-provider';
 import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
@@ -165,6 +166,8 @@ export default function RootLayout({
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>
+              {/* BI19: persisted SWR cache + launch / post-finish prefetch. */}
+              <DataCacheProvider>
               <AuthGate>
                 <ThemeProvider>
                   <StreakShieldProvider>
@@ -191,6 +194,7 @@ export default function RootLayout({
                   </StreakShieldProvider>
                 </ThemeProvider>
               </AuthGate>
+              </DataCacheProvider>
             </SitePresenceProvider>
           </DailyCompletionsProvider>
         </AuthProvider>

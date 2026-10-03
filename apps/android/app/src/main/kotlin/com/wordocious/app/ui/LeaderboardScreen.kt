@@ -111,35 +111,20 @@ internal fun pickerGameModeOrNull(id: String): com.wordocious.core.GameMode? =
  * - Top 50 entries with rank badges (🥇🥈🥉 for top 3), username, score, guesses/time
  */
 @Composable
-fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordocious.core.GameMode) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {}) {
+fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordocious.core.GameMode) -> Unit = {}, onOpenFriends: () -> Unit = {}, onOpenRecords: () -> Unit = {}, onGoHome: (() -> Unit)? = null, onSignIn: (() -> Unit)? = null) {
     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
 
     // Signed-out gate (iOS ProfileTab `signedOut`): guests get a trophy
     // placeholder + Sign in (A8: the large purple candy button) instead of the live board.
     if (!isAuthenticated) {
-        Column(
-            Modifier.fillMaxSize().pageBackground(PageTint.LEADERBOARD).padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Spacer(Modifier.weight(1f))
-            Icon3D(Icon3DName.TROPHY, 64.dp)
-            Text(
-                "Sign in to see rankings", fontSize = 18.sp, fontWeight = FontWeight.Black, color = lbNameInk(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            )
-            Text(
-                "Daily leaderboards are available to signed-in players.",
-                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = lbSubInk(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            )
-            CandyButton(
-                "Sign in", onClick = { AuthService.exitGuest() },
-                color = CandyColor.PURPLE, size = CandySize.LARGE,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            Spacer(Modifier.weight(1f))
-        }
+        // FINISH_SPEC BI23: O2 hosts the signed-out pitch with a dimmed mini podium.
+        GuestPitch(
+            hosts = listOf(Mascots.leaderboard), title = "Climb the boards",
+            subtitle = "Sign in to see today's rankings and earn medals.",
+            colors = GuestPitchContent.leaderboardColors, preview = GuestPreview.Podium,
+            onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,
+            modifier = Modifier.pageBackground(PageTint.LEADERBOARD),
+        )
         return
     }
 
@@ -326,7 +311,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             kotlinx.coroutines.delay(300)
         }
     }
-    LaunchedEffect(selectedMode, tick, friendsOnly, friendsVersion) {
+    // BI19: completionTick too — a finished daily repaints at once, since the cached board carries
+    // the player's optimistic row (LeaderboardService.cachedBoard) and the fetch merges it in
+    // until the server lists them (no pre-result board is cached: optimistic rows are stripped).
+    LaunchedEffect(selectedMode, tick, completionTick, friendsOnly, friendsVersion) {
         val mode = selectedMode
         val day = com.wordocious.app.todayLocalDate()
         // Daily Sweep board takes its own RPC path (no play-type / rank-window
@@ -519,11 +507,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 )
                 val status = tauntStatus
                 if (status != null) {
-                    Text(
-                        status, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = lbNameInk(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
-                    )
+                    // The taunt result as the finished candy message (coin + pill), not bare text.
+                    androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                        com.wordocious.app.ui.game.CandyMessagePill(status, com.wordocious.app.ui.game.FeedbackToast.statusTone(status))
+                    }
                 } else {
                     FriendTaunts.ALL.forEach { taunt ->
                         CandyButton(
@@ -654,7 +641,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     Column(Modifier.lbBoardCard().padding(horizontal = 12.dp, vertical = 10.dp)) { LeaderboardSkeleton() }
                 } else if (isSweep) {
                     if (sweepEntries.isEmpty()) {
-                        EmptyBoardCard("No sweeps yet today. Be the first!")
+                        EmptyBoardCard("Finish all of today's dailies to land on this board.")
                     } else {
                         Column(Modifier.lbBoardCard()) {
                             sweepEntries.forEachIndexed { index, entry ->
@@ -682,21 +669,27 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         }
                     } else {
                         // R asleep on an empty board; I's invite scene on an empty Friends board (ART_SPEC §7).
-                        SceneEmptyState(
-                            if (friendsOnly) SceneArt.INVITE else SceneArt.ASLEEP,
-                            if (friendsOnly) Mascots.addFriendLine else "No daily results yet. Be the first!",
-                            Modifier.lbBoardCard().padding(vertical = 24.dp, horizontal = 16.dp),
-                            height = 120.dp,
-                            color = lbSubInk(),
-                        ) {
-                            // Empty Friends board → recruit (§207 Tier 2, web parity).
-                            if (friendsOnly) {
-                                CandyButton(
-                                    "Add friends", onClick = onOpenFriends,
-                                    color = CandyColor.PURPLE, size = CandySize.MEDIUM,
-                                    modifier = Modifier.padding(top = 4.dp),
-                                )
-                            }
+                        // BI24: headline + one line + the candy CTA (recruit, or play today's daily).
+                        if (friendsOnly) {
+                            BrandEmptyState(
+                                title = "NO FRIENDS HERE YET",
+                                line = Mascots.addFriendLine,
+                                scene = SceneArt.INVITE,
+                                lineColor = lbSubInk(),
+                                // Empty Friends board → recruit (§207 Tier 2, web parity).
+                                actionLabel = "Add friends", onAction = onOpenFriends,
+                            )
+                        } else {
+                            val playMode = if (completions[selectedMode] == null) modeCardForKey(selectedMode)?.engineMode else null
+                            BrandEmptyState(
+                                title = "NO RESULTS YET",
+                                line = "Nobody has finished today's ${modeCardForKey(selectedMode)?.title ?: "daily"} yet. Be the first!",
+                                scene = SceneArt.ASLEEP,
+                                lineColor = lbSubInk(),
+                                actionLabel = if (playMode != null) "Play now" else null,
+                                actionIcon = CandyIcon.PLAY,
+                                onAction = playMode?.let { gm -> { onPlay(gm) } },
+                            )
                         }
                     }
                 } else {
@@ -857,7 +850,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             )
                         } else if (isSweep) {
                             if (yesterdaySweep.isEmpty()) {
-                                LbEmptyLine("No sweeps yesterday")
+                                LbEmptyLine("Nobody swept every daily yesterday.", title = "NO SWEEPS YESTERDAY")
                             } else {
                                 yesterdaySweep.forEachIndexed { i, e ->
                                     SweepRow(
@@ -873,7 +866,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 }
                             }
                         } else if (yesterday.isEmpty()) {
-                            LbEmptyLine("No results from yesterday")
+                            LbEmptyLine("No one finished this daily yesterday.", title = "NO RESULTS YESTERDAY")
                         } else {
                             // Full daily rows (founder ask, Aug 11): profile
                             // taps, guesses + time detail, W/L badge column.
@@ -914,12 +907,9 @@ internal fun NeighborhoodGap() {
 
 /** A short muted line in a board card (yesterday's empty states). */
 @Composable
-internal fun LbEmptyLine(text: String) {
-    Text(
-        text, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-        color = lbSubInk(), modifier = Modifier.fillMaxWidth().padding(24.dp),
-        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-    )
+internal fun LbEmptyLine(text: String, title: String = "NOBODY YESTERDAY") {
+    // BI24 compact: R asleep at a small size over a headline + the line (no plain grey text alone).
+    BrandEmptyState(title = title, line = text, scene = SceneArt.ASLEEP, artHeight = 72.dp, lineColor = lbSubInk())
 }
 
 /** §212: photo → emoji → initial, left of every username (web lbAvatar twin). */
@@ -1151,10 +1141,7 @@ private fun SweepPill(flawless: Boolean, streak: Int = 0) {
 /** Empty-state card for the Sweep boards: R asleep (ART_SPEC §7 scene) on the cream card. */
 @Composable
 private fun EmptyBoardCard(message: String) {
-    SceneEmptyState(
-        SceneArt.ASLEEP, message, Modifier.lbBoardCard().padding(vertical = 24.dp, horizontal = 16.dp),
-        height = 120.dp, color = lbSubInk(),
-    )
+    BrandEmptyState(title = "NO SWEEPS YET", line = message, scene = SceneArt.ASLEEP, lineColor = lbSubInk())
 }
 
 /**

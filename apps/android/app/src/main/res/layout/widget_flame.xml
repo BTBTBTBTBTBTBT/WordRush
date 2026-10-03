@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BI13 the streak number set right into the 3D flame (on its body, above the face). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_flame_box"
+    android:layout_width="34dp"
+    android:layout_height="34dp">
+    <ImageView
+        android:id="@+id/w_flame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:src="@drawable/icon3d_flame"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
+    <TextView
+        android:id="@+id/w_streak"
+        style="@style/WidgetFlameNumber"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="13dp"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="6sp"
+        android:autoSizeMaxTextSize="13sp"
+        android:text="0" />
+</FrameLayout>

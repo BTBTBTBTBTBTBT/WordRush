@@ -88,7 +88,10 @@ struct RootTabView: View {
     /// Present a root cover only when no immersive screen (a dismissing game
     /// cover) is still on screen — immediately if already clear, otherwise the
     /// moment ChromeVisibility reports the all-clear (see onChange below).
-    private func presentAfterCoverClears(_ present: @escaping () -> Void) {
+    private func presentAfterCoverClears(_ launch: @escaping () -> Void) {
+        // BI10: a queued present still fires only if Home wasn't pressed meanwhile.
+        let at = Date()
+        let present = { if HomeNav.handoffAllowed(since: at) { launch() } }
         if chrome.bottomNavHidden {
             pendingRootPresent = present
             // §263 failsafe: a pushed view whose onDisappear never fired once
@@ -213,6 +216,12 @@ struct RootTabView: View {
         // posts, so this cover presents cleanly from the root.
         // FINISH_SPEC §AY: a screen's top-left Home button — the footer's Home route.
         .onReceive(NotificationCenter.default.publisher(for: HomeNav.goHome)) { _ in
+            // FINISH_SPEC BI10: Home means NO game — drop a queued root present and clear
+            // the root's own game covers through their bindings (a cover dismissed only by
+            // UIKit keeps its binding set, and SwiftUI presents it again on a later update).
+            pendingRootPresent = nil
+            nextDaily = nil
+            unlimitedGame = nil
             let state = TabRouterState(
                 tab: Self.appTab(tab),
                 depth: [.leaderboard: leaderboardPath.count, .friends: friendsPath.count,
@@ -239,7 +248,8 @@ struct RootTabView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playNextDaily)) { note in
-            guard let key = note.object as? String else { return }
+            // BI10: a Home press after the tap cancels the handoff.
+            guard let key = note.object as? String, HomeNav.handoffAllowed(note) else { return }
             presentAfterCoverClears { nextDaily = (homeModes + moreModes).first { $0.dbKey == key } }
         }
         .fullScreenCover(item: $nextDaily) { m in
@@ -268,7 +278,8 @@ struct RootTabView: View {
         // unlimited seed exactly like HomeView does (and remember it as the
         // mode's current unlimited game so Home resumes it if abandoned), then
         // present the same GameScreen/ProperNoundleView the home grid uses.
-        .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in
+            guard HomeNav.handoffAllowed(note) else { return }   // BI10
             // §214: LeaderboardTab preselects the mode itself (same note);
             // the root just lands the player on the Leaderboard tab.
             tab = .leaderboard
@@ -283,7 +294,7 @@ struct RootTabView: View {
             tab = .stats
         }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
-            guard let key = note.object as? String,
+            guard let key = note.object as? String, HomeNav.handoffAllowed(note),   // BI10
                   let m = (homeModes + moreModes).first(where: { $0.dbKey == key }) else { return }
             presentAfterCoverClears { unlimitedGame = UnlimitedLaunch(mode: m, seed: mintUnlimitedSeed(m)) }
         }

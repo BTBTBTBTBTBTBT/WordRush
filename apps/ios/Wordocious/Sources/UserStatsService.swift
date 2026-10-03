@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 /// One user_stats row (per mode + play_type).
-struct UserStatRow: Decodable {
+struct UserStatRow: Codable, Equatable {
     let gameMode: String
     let playType: String
     let wins: Int

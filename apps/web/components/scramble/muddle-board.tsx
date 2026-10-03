@@ -32,20 +32,56 @@ export const COLUMN_CLASS = 'w-full max-w-sm';
 const CHIP = chipSize(TILE);
 
 /**
- * The cartoon panel (More Games §5/§8): a standard card in the cream paper
- * tone, 4:3, sized by its parent's height (the flex column lets it shrink on
- * short screens) and capped at ~26vh so the words below always fit. Until the
- * founder's image batch runs, a placeholder sketch stands in; the caption is
- * ALWAYS typeset by the app beneath the panel, never drawn.
+ * Muddle layout model (founder 10-02, "the picture and the tagline need to
+ * appear the whole time"; iOS + Android draw the same pt/dp): the sizes of
+ * the full ACTIVE word block and the open punchline. The finished board and
+ * "See all words" keep the original sizes (MUDDLE_FULL).
  */
-export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false }: { src: string | null; alt: string; fixed?: boolean }) {
-  // Playing: a flex item that takes whatever height the column has left
-  // (never under 96px, never over 26vh); the width follows from the 4:3 ratio.
-  // Finished: a plain 26vh card at the top of the scrolling results.
-  const size = fixed ? { height: '26vh', flexShrink: 0 } : { flex: '1 1 0%', minHeight: 96, maxHeight: '26vh' };
+export interface MuddleSizes { tile: number; tileGap: number; tileFont: number; chip: number; iconBtn: number; coin: number }
+export const MUDDLE_FULL: MuddleSizes = { tile: TILE, tileGap: TILE_GAP, tileFont: TILE_FONT, chip: CHIP, iconBtn: ICON_BTN, coin: FINAL_TILE };
+/** While playing: tile 34 / chip 24 / coin 30; on a short viewport (< 700 tall) 32 / 22 / 28. */
+export function muddlePlaySizes(short: boolean): MuddleSizes {
+  return short
+    ? { tile: 32, tileGap: 4, tileFont: 16, chip: 22, iconBtn: 28, coin: 28 }
+    : { tile: 34, tileGap: 5, tileFont: 17, chip: 24, iconBtn: 30, coin: 30 };
+}
+/** A compact word line (inactive or solved): ~28 tall, chips 20, answer tiles 22; the locked punchline's rings 18; the open punchline's tray chips 22. */
+export const MUDDLE_LINE = { height: 28, chip: 20, tile: 22, tileGap: 3, tileFont: 12, ring: 18, trayChip: 22 } as const;
+/** The cartoon never drops under this while playing or finished (px). */
+export const MUDDLE_CARTOON_MIN = 150;
+/** The short-viewport breakpoint the tile sizes follow (matches globals.css .game-art-header). */
+export const MUDDLE_SHORT_QUERY = '(max-height: 699.98px)';
+
+/** True while the viewport is under 700 tall (the short sizes). */
+export function useShortViewport(): boolean {
+  const [short, setShort] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia(MUDDLE_SHORT_QUERY);
+    const on = () => setShort(mq.matches);
+    on();
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  return short;
+}
+
+/**
+ * The cartoon panel (More Games §5/§8): a standard card in the cream paper
+ * tone, 4:3. The caption is ALWAYS typeset by the app beneath the panel,
+ * never drawn. Sizing:
+ * - `fill` (playing): fills its parent's height (the parent row is the flex
+ *   item that takes the room left over, ≥ 150px); the width follows from 4:3.
+ * - `fixed` (finished): a plain card, 26vh tall but never under 150px.
+ * - default (completed-more-board): a flex item, 96px floor, 26vh cap.
+ */
+export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false, fill = false }: { src: string | null; alt: string; fixed?: boolean; fill?: boolean }) {
+  const size: CSSProperties = fill
+    ? { alignSelf: 'stretch', flexShrink: 0 }
+    : fixed ? { height: `max(${MUDDLE_CARTOON_MIN}px, 26vh)`, flexShrink: 0 } : { flex: '1 1 0%', minHeight: 96, maxHeight: '26vh' };
   return (
     // I4: the cream paper card keeps its tone, with the A1 border + soft shadow.
-    <div className="rounded-2xl overflow-hidden" style={{ background: '#fdf8ec', border: softBorder(MUDDLE_ACCENT), boxShadow: softShadow(MUDDLE_ACCENT, 0.14), aspectRatio: '4 / 3', maxWidth: '100%', ...size }} role="img" aria-label={alt}>
+    <div className="rounded-2xl overflow-hidden" data-muddle-cartoon style={{ background: '#fdf8ec', border: softBorder(MUDDLE_ACCENT), boxShadow: softShadow(MUDDLE_ACCENT, 0.14), aspectRatio: '4 / 3', maxWidth: '100%', ...size }} role="img" aria-label={alt}>
       {src ? (
         // While playing the cartoon is the screen's hero: load it eagerly at high
         // priority (founder, 2026-09-29). React 18 passes only the lowercase attribute.
@@ -71,7 +107,7 @@ export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false
 });
 
 /** I4: a small round candy hint button (bulb / eye); the label lives in aria-label and the title tooltip. */
-function IconButton({ label, onClick, children }: { label: string; onClick: (e: MouseEvent) => void; children: ReactNode }) {
+function IconButton({ label, onClick, children, size = ICON_BTN }: { label: string; onClick: (e: MouseEvent) => void; children: ReactNode; size?: number }) {
   return (
     <CandyButton
       size="round"
@@ -81,7 +117,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: (e: 
       aria-label={label}
       title={label}
       className="shrink-0"
-      style={{ ['--candy-h' as string]: `${ICON_BTN}px`, ['--candy-lip-h' as string]: '3px', ['--candy-ring' as string]: '1px', marginBottom: 3 } as CSSProperties}
+      style={{ ['--candy-h' as string]: `${size}px`, ['--candy-lip-h' as string]: '3px', ['--candy-ring' as string]: '1px', marginBottom: 3 } as CSSProperties}
     />
   );
 }
@@ -135,7 +171,7 @@ function useJustBecame(on: boolean, holdMs: number): boolean {
 }
 
 /** I3: a scrambled clue letter as a small glossy chip (light amber face, dark-purple letter); used letters sink. */
-function LetterChip({ ch, used, disabled, onClick, ink = '#3b1a78' }: { ch: string; used: boolean; disabled: boolean; onClick: (e: MouseEvent) => void; ink?: string }) {
+function LetterChip({ ch, used, disabled, onClick, ink = '#3b1a78', size = CHIP }: { ch: string; used: boolean; disabled: boolean; onClick: (e: MouseEvent) => void; ink?: string; size?: number }) {
   return (
     <button
       type="button"
@@ -145,12 +181,12 @@ function LetterChip({ ch, used, disabled, onClick, ink = '#3b1a78' }: { ch: stri
       className="gtile mud-chip shrink-0 border-0 p-0"
       data-s="typed"
       style={{
-        width: CHIP, height: CHIP,
+        width: size, height: size,
         ['--gt-edge' as string]: '#e3a54c',
         ['--gt-face' as string]: 'linear-gradient(#fff7e8, #ffe1ad)',
         ['--gt-ring' as string]: 'inset 0 0 0 1.5px rgba(217, 119, 6, 0.32)',
         ['--gt-glyph' as string]: ink,
-        ['--gt-font' as string]: `${Math.round(CHIP * 0.56)}px`,
+        ['--gt-font' as string]: `${Math.round(size * 0.56)}px`,
       } as CSSProperties}
       aria-label={used ? `${ch}, used` : ch}
     >
@@ -158,6 +194,36 @@ function LetterChip({ ch, used, disabled, onClick, ink = '#3b1a78' }: { ch: stri
     </button>
   );
 }
+
+
+/** One answer slot at any size: a circled slot is a round coin (I1), the others the B1 square glossy tile. */
+function AnswerSlot({ ch, ring, pinned, solved, size, font, motion, flipVar }: {
+  ch: string; ring: boolean; pinned: boolean; solved: boolean; size: number; font: number; motion: string; flipVar: CSSProperties | null;
+}) {
+  const filled = ch !== '';
+  const look = answerSlotLook({ circled: ring, filled, pinned, solved });
+  const label = ring ? `${ch || 'empty'}, circled` : ch || 'empty';
+  if (look.kind === 'coin') {
+    return <Coin coin={look.coin} frosted={look.frosted} letter={ch} size={size} className={motion} style={flipVar ?? undefined} label={label} />;
+  }
+  // FINISH_SPEC B1: the shared glossy tile — purple once filled (a pinned hint letter in the hint violet), frosted when empty.
+  return (
+    <span className={`gtile ${motion}`} data-s={look.look === 'empty' ? 'empty' : 'correct'} style={{ width: size, height: size, ['--gt-font' as string]: `${font}px`, ...flipVar, ...(look.look === 'hint' ? { ['--gt-edge' as string]: '#5b21b6', ['--gt-face' as string]: `linear-gradient(#b197fc, ${HINT} 70%, #7c4ddb)` } : null) } as CSSProperties} aria-label={label}>
+      <b>{ch}</b>
+    </span>
+  );
+}
+
+/**
+ * How a word row draws (founder 10-02 layout model):
+ * - `full`: the ACTIVE word — scrambled chips over the six-column answer
+ *   tiles, Letter · Solve at right (also the finished "See all words" rows);
+ * - `line`: an inactive or solved word as ONE ~28px line — small chips at
+ *   left, small answer tiles at right, no hint buttons; clicking selects it;
+ * - `mini`: a solved word's small locked tiles only (the 2×2 grid while the
+ *   punchline is open).
+ */
+export type WordRowVariant = 'full' | 'line' | 'mini';
 
 interface WordRowProps {
   state: ScrambleState;
@@ -169,19 +235,20 @@ interface WordRowProps {
   onRevealLetter: (row: number) => void;
   onSolveWord: (row: number) => void;
   finished: boolean;
+  variant?: WordRowVariant;
+  sizes?: MuddleSizes;
 }
 
 /**
- * One word (More Games §5, the classic newspaper layout) as ONE compact block:
- * the scrambled letters as small glossy chips on the left (FINISH_SPEC I3)
- * with the Letter · Solve round candy buttons on the right (I4), then the
- * answer slots directly beneath on ONE fixed six-column grid (the sixth slot
- * simply empty for a five-letter word). A circled slot is a round coin (I1);
- * the others are the B1 square glossy tiles. The active row is a tinted card
- * (A1). Tapping a chip places its letter (the type pop); used chips sink. A
- * word just solved flips over and glows (B3).
+ * One word (More Games §5, the classic newspaper layout). In `full`, ONE
+ * compact block: the scrambled letters as small glossy chips on the left
+ * (FINISH_SPEC I3) with the Letter · Solve round candy buttons on the right
+ * (I4), then the answer slots directly beneath on ONE fixed six-column grid
+ * (the sixth slot simply empty for a five-letter word). The active row is a
+ * tinted card (A1). Tapping a chip places its letter (the type pop); used
+ * chips sink. A word just solved flips over and glows (B3).
  */
-export const WordRow = memo(function WordRow({ state, row, active, shaking, onSelect, onTapTile, onRevealLetter, onSolveWord, finished }: WordRowProps) {
+export const WordRow = memo(function WordRow({ state, row, active, shaking, onSelect, onTapTile, onRevealLetter, onSolveWord, finished, variant = 'full', sizes = MUDDLE_FULL }: WordRowProps) {
   const w = state.words[row];
   const entry = state.entries[row];
   const solved = state.solved[row];
@@ -191,6 +258,55 @@ export const WordRow = memo(function WordRow({ state, row, active, shaking, onSe
   const revealed = state.revealed[row];
   const isActive = active && !finished;
   const justSolved = useJustBecame(solved, REVEAL.end(w.answer.length) + REVEAL.bloomMs);
+  const compact = variant !== 'full';
+  const tile = compact ? MUDDLE_LINE.tile : sizes.tile;
+  const font = compact ? MUDDLE_LINE.tileFont : sizes.tileFont;
+  const gap = variant === 'mini' ? 2 : compact ? MUDDLE_LINE.tileGap : sizes.tileGap;
+  const slot = (i: number) => {
+    const ch = solved ? w.answer[i] : entry[i] ?? '';
+    // B3: placing a letter = the type pop; a word just solved = the reveal flip + glow.
+    const motion = justSolved ? 'gt-flip' : ch !== '' && !solved ? 'gt-pop' : '';
+    const flipVar = justSolved ? ({ ['--gt-d' as string]: `${i * REVEAL.stagger}ms` } as CSSProperties) : null;
+    return <AnswerSlot key={i} ch={ch} ring={circled.has(i)} pinned={revealed[i] !== '_'} solved={solved} size={tile} font={font} motion={motion} flipVar={flipVar} />;
+  };
+  const chips = (size: number, gapClass: string) => (
+    <div className={`flex items-center ${gapClass}`} aria-label={`Scrambled letters ${w.scramble.split('').join(' ')}`}>
+      {[...w.scramble].map((ch, i) => (
+        <LetterChip key={i} ch={ch} size={size} used={used[i] || solved} disabled={solved || finished || used[i]}
+          onClick={(e) => { e.stopPropagation(); onSelect(row); onTapTile(row, ch); }} />
+      ))}
+    </div>
+  );
+  const grid = (
+    <div className="grid" style={{ gridTemplateColumns: `repeat(${COLS}, ${tile}px)`, gap }}>
+      {Array.from({ length: COLS }, (_, i) => (i >= w.answer.length ? <span key={i} aria-hidden /> : slot(i)))}
+    </div>
+  );
+
+  if (variant === 'mini') {
+    return (
+      <div className={`flex items-center justify-center ${shaking ? 'gt-nudge' : ''}`} style={{ height: MUDDLE_LINE.height, gap }} role="group" aria-label={`Word ${row + 1}${solved ? ', solved' : ''}`}>
+        {Array.from({ length: w.answer.length }, (_, i) => slot(i))}
+      </div>
+    );
+  }
+
+  if (variant === 'line') {
+    const selectable = !solved && !finished;
+    return (
+      <div
+        className={`${COLUMN_CLASS} flex items-center justify-between gap-2 px-2 ${selectable ? 'cursor-pointer' : ''} ${shaking ? 'gt-nudge' : ''}`}
+        style={{ height: MUDDLE_LINE.height, border: '1.5px solid transparent', borderRadius: 10 }}
+        onClick={() => selectable && onSelect(row)}
+        role="group"
+        aria-label={`Word ${row + 1}${solved ? ', solved' : ''}`}
+      >
+        {chips(MUDDLE_LINE.chip, 'gap-0.5')}
+        {grid}
+      </div>
+    );
+  }
+
   return (
     <div
       className={`${COLUMN_CLASS} flex flex-col gap-1 px-2 py-1 ${shaking ? 'gt-nudge' : ''}`}
@@ -199,56 +315,35 @@ export const WordRow = memo(function WordRow({ state, row, active, shaking, onSe
       role="group"
       aria-label={`Word ${row + 1}`}
     >
-      <div className="flex items-center justify-between" style={{ height: ICON_BTN + 4 }}>
-        <div className="flex items-center gap-1" aria-label={`Scrambled letters ${w.scramble.split('').join(' ')}`}>
-          {[...w.scramble].map((ch, i) => (
-            <LetterChip key={i} ch={ch} used={used[i] || solved} disabled={solved || finished || used[i]}
-              onClick={(e) => { e.stopPropagation(); onSelect(row); onTapTile(row, ch); }} />
-          ))}
-        </div>
+      <div className="flex items-center justify-between" style={{ height: sizes.iconBtn + 3 }}>
+        {chips(sizes.chip, 'gap-1')}
         {!solved && !finished && (
           <div className="flex items-center gap-2.5">
-            <IconButton label="Reveal a letter" onClick={(e) => { e.stopPropagation(); onRevealLetter(row); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
-            <IconButton label="Solve this word" onClick={(e) => { e.stopPropagation(); onSolveWord(row); }}><Eye className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
+            <IconButton size={sizes.iconBtn} label="Reveal a letter" onClick={(e) => { e.stopPropagation(); onRevealLetter(row); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
+            <IconButton size={sizes.iconBtn} label="Solve this word" onClick={(e) => { e.stopPropagation(); onSolveWord(row); }}><Eye className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
           </div>
         )}
       </div>
-      <div className="grid" style={{ gridTemplateColumns: `repeat(${COLS}, ${TILE}px)`, gap: TILE_GAP }}>
-        {Array.from({ length: COLS }, (_, i) => {
-          if (i >= w.answer.length) return <span key={i} aria-hidden />;
-          const ch = solved ? w.answer[i] : entry[i] ?? '';
-          const filled = ch !== '';
-          const pinned = revealed[i] !== '_';
-          const ring = circled.has(i);
-          const look = answerSlotLook({ circled: ring, filled, pinned, solved });
-          // B3: placing a letter = the type pop; a word just solved = the reveal flip + glow.
-          const motion = justSolved ? 'gt-flip' : filled && !solved ? 'gt-pop' : '';
-          const flipVar = justSolved ? { ['--gt-d' as string]: `${i * REVEAL.stagger}ms` } : null;
-          const label = ring ? `${ch || 'empty'}, circled` : ch || 'empty';
-          if (look.kind === 'coin') {
-            return <Coin key={i} coin={look.coin} frosted={look.frosted} letter={ch} size={TILE} className={motion} style={flipVar ?? undefined} label={label} />;
-          }
-          // FINISH_SPEC B1: the shared glossy tile — purple once filled (a pinned hint letter in the hint violet), frosted when empty.
-          return (
-            <span key={i} className={`gtile ${motion}`} data-s={look.look === 'empty' ? 'empty' : 'correct'} style={{ width: TILE, height: TILE, ['--gt-font' as string]: `${TILE_FONT}px`, ...flipVar, ...(look.look === 'hint' ? { ['--gt-edge' as string]: '#5b21b6', ['--gt-face' as string]: `linear-gradient(#b197fc, ${HINT} 70%, #7c4ddb)` } : null) } as CSSProperties} aria-label={label}>
-              <b>{ch}</b>
-            </span>
-          );
-        })}
-      </div>
+      {grid}
     </div>
   );
 });
 
-interface FinalRowProps { state: ScrambleState; active: boolean; shaking: boolean; onSelect: () => void; onTapTile: (letter: string) => void; onRevealLetter: () => void; finished: boolean }
+interface FinalRowProps {
+  state: ScrambleState; active: boolean; shaking: boolean; onSelect: () => void; onTapTile: (letter: string) => void; onRevealLetter: () => void; finished: boolean;
+  /** Coin size of the open / finished punchline (MUDDLE_FULL when omitted). */
+  sizes?: MuddleSizes;
+}
 
 /**
  * The punchline under a divider, grouped by word; its letters are gold coins
  * (FINISH_SPEC I2; empty = the gold ring on frosted) and its tray is the
- * circled letters as glossy chips. Solving it = a hop wave across the coins +
- * confetti (B3; off with Reduce Motion).
+ * circled letters as glossy chips. Locked (founder 10-02): one compact block —
+ * the label over small rings for the pattern. Open: the label with Letter at
+ * right, the tray chips (wrapping), then the answer coins (wrapping).
+ * Solving it = a hop wave across the coins + confetti (B3; off with Reduce Motion).
  */
-export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelect, onTapTile, onRevealLetter, finished }: FinalRowProps) {
+export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelect, onTapTile, onRevealLetter, finished, sizes = MUDDLE_FULL }: FinalRowProps) {
   const open = scrambleFinalOpen(state);
   const entry = state.entries[SCRAMBLE_FINAL];
   const solved = state.solved[SCRAMBLE_FINAL];
@@ -257,41 +352,43 @@ export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelec
   const remaining = scrambleRemaining(tray, entry);
   const used = usedLetters(tray, remaining);
   const isActive = active && !finished;
+  const locked = !open && !finished;
   const showTray = open && !solved && !finished;
   const total = state.final.pattern.reduce((a, b) => a + b, 0);
   const justSolved = useJustBecame(solved, total * REVEAL.hopStagger + REVEAL.hopMs + 3200);
   const confetti = justSolved && !prefersReducedMotion();
+  const coinSize = locked ? MUDDLE_LINE.ring : sizes.coin;
   let pos = 0;
   return (
     <div
-      className={`${COLUMN_CLASS} flex flex-col gap-1 px-2 pt-1.5 pb-1 mt-1 ${shaking ? 'gt-nudge' : ''}`}
+      className={`${COLUMN_CLASS} flex flex-col ${locked ? 'gap-1 px-1.5 pt-1 pb-0.5 mt-0.5' : 'gap-1 px-2 pt-1.5 pb-1 mt-1'} ${shaking ? 'gt-nudge' : ''}`}
       style={{
         ...(isActive ? softCard(MUDDLE_ACCENT, { radius: 12, shadow: false }) : { border: '1.5px solid transparent', borderRadius: 12, borderTop: '1.5px solid var(--color-border)' }),
-        opacity: open || finished ? 1 : 0.55,
+        opacity: locked ? 0.6 : 1,
       }}
       onClick={() => open && !solved && !finished && onSelect()}
       role="group"
       aria-label="Punchline"
     >
       {confetti && <Confetti />}
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1" style={{ minHeight: showTray ? ICON_BTN + 4 : undefined }}>
+      <div className="flex items-center justify-between gap-2" style={{ minHeight: showTray ? sizes.iconBtn + 2 : undefined }}>
         <span className="text-[10px] font-black tracking-widest uppercase leading-none" style={{ color: 'var(--color-text-muted)' }}>{open || finished ? 'The punchline' : 'Solve the four words to unlock the punchline'}</span>
         {showTray && (
-          <div className="flex items-center justify-end gap-2 ml-auto min-w-0">
-            <div className="flex items-center justify-end gap-1 flex-wrap" aria-label="Circled letters">
-              {[...tray].map((ch, i) => (
-                <LetterChip key={i} ch={ch} used={used[i]} disabled={used[i]} onClick={(e) => { e.stopPropagation(); onSelect(); onTapTile(ch); }} />
-              ))}
-            </div>
-            <IconButton label="Reveal a letter of the punchline" onClick={(e) => { e.stopPropagation(); onRevealLetter(); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
-          </div>
+          <IconButton size={sizes.iconBtn} label="Reveal a letter of the punchline" onClick={(e) => { e.stopPropagation(); onRevealLetter(); }}><Lightbulb className="w-4 h-4" color="#ffffff" strokeWidth={2.75} /></IconButton>
         )}
       </div>
-      <div className="flex flex-wrap gap-x-2.5 gap-y-1.5">
+      {showTray && (
+        <div className="flex items-center gap-1 flex-wrap" aria-label="Circled letters">
+          {[...tray].map((ch, i) => (
+            <LetterChip key={i} ch={ch} size={MUDDLE_LINE.trayChip} used={used[i]} disabled={used[i]} onClick={(e) => { e.stopPropagation(); onSelect(); onTapTile(ch); }} />
+          ))}
+        </div>
+      )}
+      <div className={`flex flex-wrap ${locked ? 'gap-x-2 gap-y-1' : 'gap-x-2.5 gap-y-1.5'}`}>
         {state.final.pattern.map((len, wi) => {
           const start = pos; pos += len;
           return (
-            <div key={wi} className="flex gap-1">
+            <div key={wi} className={`flex ${locked ? 'gap-0.5' : 'gap-1'}`}>
               {Array.from({ length: len }, (_, k) => {
                 const idx = start + k;
                 const ch = solved || finished ? target[idx] : entry[idx] ?? '';
@@ -304,7 +401,7 @@ export const FinalRow = memo(function FinalRow({ state, active, shaking, onSelec
                     coin={coin.coin}
                     frosted={coin.frosted}
                     letter={ch}
-                    size={FINAL_TILE}
+                    size={coinSize}
                     className={justSolved ? 'gt-hop' : filled && !solved ? 'gt-pop' : ''}
                     style={justSolved ? ({ ['--gt-hop-d' as string]: `${idx * REVEAL.hopStagger}ms` } as CSSProperties) : undefined}
                     label={ch || 'empty'}

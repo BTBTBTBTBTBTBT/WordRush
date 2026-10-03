@@ -1,7 +1,7 @@
 import Foundation
 
 /// A row from the `medals` table (daily podium finishes + streak/perfect medals).
-struct MedalRow: Decodable, Identifiable {
+struct MedalRow: Codable, Identifiable, Equatable {
     let id: String
     let medalType: String
     let gameMode: String?

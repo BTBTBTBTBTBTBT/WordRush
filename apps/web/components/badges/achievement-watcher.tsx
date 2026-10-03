@@ -32,7 +32,9 @@ export function AchievementWatcher() {
         if (cancelled) return;
         const { fresh, next } = diffSeen(readSeen(userId), earned);
         writeSeen(userId, next);
-        announceAchievementUnlocks(fresh);
+        // A launch / visibility sync is always "late": it waits for a calm
+        // moment (lib/celebration-gate.ts) instead of popping over a game.
+        announceAchievementUnlocks(fresh, { late: true });
       } catch { /* offline: try again next focus */ }
     };
     void check(true);

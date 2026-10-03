@@ -104,12 +104,12 @@ struct VSFriendPage: View {
             VSSectionLabel(text: "FRIENDS")
             VStack(spacing: 0) {
                 if loading {
-                    ProgressView().tint(VsLobbyKit.ink).padding(20)
+                    CastLoader(label: "LOADING FRIENDS", labelColor: VsLobbyKit.sub, showTips: false).padding(20)
+                        .frame(maxWidth: .infinity)
                 } else if friends.isEmpty {
-                    // I grows the circle (MASCOT_SPEC §6).
-                    MascotMessage(scene: .invite, line: "No friends yet — add some from the Friends tab, or send a link.",
-                                  size: 72, color: VsLobbyKit.sub)
-                        .padding(16).frame(maxWidth: .infinity)
+                    // I grows the circle (MASCOT_SPEC §6); BI24: brand headline + voice line.
+                    BrandEmptyState(title: "No friends yet", line: "Add some from the Friends tab, or send a link.",
+                                    scene: .invite, artHeight: 100, colors: PageHeaderStyle.purplePink, lineColor: VsLobbyKit.sub)
                 }
                 ForEach(Array(friends.enumerated()), id: \.element.id) { i, f in
                     friendRow(f).vsStripedRow(i)

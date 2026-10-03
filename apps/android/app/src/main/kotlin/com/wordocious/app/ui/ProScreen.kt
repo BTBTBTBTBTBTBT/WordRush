@@ -353,10 +353,6 @@ private fun PlanCard(
             Modifier.fillMaxWidth()
                 .squishClickable("$title plan, $price$unit, $note", role = Role.RadioButton, enabled = enabled, onClick = onSelect)
                 .semantics { this.selected = selected }
-                .then(
-                    if (selected) Modifier.border(3.dp, PRO_GOLD.copy(alpha = 0.25f), RoundedCornerShape(21.dp)).padding(3.dp)
-                    else Modifier,
-                )
                 .shadow(if (selected) 6.dp else 3.dp, shape, clip = false, ambientColor = PRO_GOLD.copy(alpha = 0.25f), spotColor = PRO_GOLD.copy(alpha = 0.35f))
                 .clip(shape)
                 .background(if (dark) WTheme.surface else Wash.mix(PRO_GOLD, if (selected) Wash.SELECTED else Wash.CARD))
@@ -364,7 +360,7 @@ private fun PlanCard(
                     drawContent()
                     drawRect(Brush.horizontalGradient(listOf(Color(0xFFFFD66B), PRO_GOLD, Color(0xFFE8901A))), Offset.Zero, Size(size.width, 6.dp.toPx()))
                 }
-                .border(if (selected) 2.dp else 1.5.dp, if (selected) PRO_GOLD else accentLine(PRO_GOLD), shape)
+                // BI25: no outline — the selected plan takes the deeper wash + stronger glow.
                 .padding(start = 16.dp, end = 14.dp, top = 16.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),

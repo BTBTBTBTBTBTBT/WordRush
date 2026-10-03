@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from 'react';
 import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, CheckCheck, Lightbulb, Eye, Flag, ArrowLeftRight } from 'lucide-react';
+import { Clock, CheckCheck, Lightbulb, Eye, Flag, ArrowLeftRight, ListOrdered, Grid3x3 } from 'lucide-react';
 import {
   crosswordPuzzleForDay, crosswordPuzzleForSeed, crosswordDailyNumber, createCrosswordState, crosswordReduce, crosswordMatchRow, crosswordGuessCount,
   crosswordEntryCells, crosswordEntriesAt, crosswordEntrySolved, crosswordCorrectCount, crosswordLetterCount, CROSSWORD_BLOCK, CROSSWORD_EMPTY, CROSSWORD_TOTAL_BOARDS,
@@ -19,7 +19,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
-import { CrosswordBoard, ClueColumns, CROSSWORD_ACCENT, CROSSWORD_GAP, CROSSWORD_TRAY_CHROME } from './crossword-board';
+import { CrosswordBoard, ClueColumns, CROSSWORD_ACCENT, CROSSWORD_TRAY_CHROME } from './crossword-board';
 import { alphaHex, softBackground, softBorder } from '@/lib/soft-surface';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
@@ -42,10 +42,12 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { GameBackground } from '@/components/ui/page-background';
-import { gameHeaderStyle, gameToastTop } from '@/lib/art';
+import { gameHeaderStyle } from '@/lib/art';
+import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { candyClass, candyVars } from '@/components/ui/candy-button';
-import { fitBoard } from '@/lib/board-fit';
+import { HintCountBadge, StableLabel } from '@/components/ui/hint-kit';
+import { crosswordCell } from '@/lib/board-fit';
 
 // Crosswordocious (More Games §13): a themed fill-in sayings crossword. Tap a
 // cell or a clue, type; letters are free to set and clear. Check locks right
@@ -58,6 +60,9 @@ const BANK = bankSession<CrosswordBank, CrosswordPuzzle>('crossword', (b, d) => 
 
 interface CrosswordGameProps { isDaily?: boolean }
 
+/** BI18: the play header is compact like Muddle's — the title art (44 px) in the corner-button row, then the title and the meta line. */
+const PLAY_HEADER = { ...gameHeaderStyle('CROSSWORD', 36), '--game-title-top': '6px', '--game-title-cap': '44px', '--game-header-shift': '10px' } as CSSProperties;
+
 export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
   const { profile, isProActive } = useAuth();
   const isPro = isProActive;
@@ -65,28 +70,35 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
 
   const [state, setState] = useState<CrosswordState | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
-  // Fit the grid to the band between the header and the pinned clue bar / keyboard
-  // (founder, 2026-09-28: on a short desktop window the last rows hid behind them).
-  // cell = clamp((bandHeight − padding − gaps) / rows, 26, 42); below the floor the band scrolls.
-  const bandRef = useRef<HTMLDivElement | null>(null);
+  // BI18 (founder 10-03: "the daily today required you to scroll"): the whole
+  // puzzle fits one screen in play. The grid owns the band between the compact
+  // header and the pinned clue bar / controls / keyboard, its cell sized from the
+  // band's width AND height for the puzzle's real cols × rows (lib/board-fit.ts
+  // crosswordCell: 3 px gaps, the tray chrome off first, 14–42 px). The clue list
+  // sits behind the Clues toggle beside the clue bar, never under the grid.
+  const [bandEl, setBandEl] = useState<HTMLDivElement | null>(null);
   const [boardCell, setBoardCell] = useState<number | undefined>(undefined);
+  const [showClues, setShowClues] = useState(false);
+  // Short screens (under 700 px tall) get 44 px keys, like the other one-screen games.
+  const [shortScreen, setShortScreen] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-height: 699.98px)');
+    const on = () => setShortScreen(mq.matches);
+    on(); mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
   const rows = state?.h ?? 0, cols = state?.w ?? 0;
   useEffect(() => {
-    const el = bandRef.current;
+    const el = bandEl;
     if (!el || !rows) return;
-    // FINISH_SPEC B5: the shared board-sizing rule (lib/board-fit.ts) with this
-    // grid's 3 px gaps, 12 px sides, 16 px of air and the 26–42 px cell range,
-    // inside the game tray (FINISH_SPEC L: its padding, border and lip come off first).
     const measure = () => {
-      const chrome = CROSSWORD_TRAY_CHROME;
-      const fit = fitBoard({ width: el.clientWidth - chrome.x, height: el.clientHeight - chrome.y, cols, rows, gap: CROSSWORD_GAP, side: 12, vPad: 16, maxTile: 42 });
-      const next = Math.max(26, fit?.tile ?? 26);
+      const next = crosswordCell(el.clientWidth, el.clientHeight, cols, rows, CROSSWORD_TRAY_CHROME);
       setBoardCell((prev) => (prev === next ? prev : next));
     };
     measure();
     const ro = new ResizeObserver(measure); ro.observe(el);
     return () => ro.disconnect();
-  }, [rows, cols]);
+  }, [bandEl, rows, cols]);
   const [dir, setDir] = useState<CrosswordDir>('A');
   const [armReveal, setArmReveal] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
@@ -244,6 +256,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
     if (!state) return;
     const cells = crosswordEntryCells(state, e);
     setDir(e.dir); setSelected(cells.find((i) => state.fill[i] === CROSSWORD_EMPTY) ?? cells[0]);
+    setShowClues(false); // BI18: a picked clue goes back to the grid
   }, [state]);
   /** After typing: next empty cell in the active entry, else the next entry's first empty cell. */
   const advance = useCallback((s: CrosswordState, from: number, entry: CrosswordEntry | null) => {
@@ -346,7 +359,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
       {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={state.checks} guessLabel="Checks" timeSeconds={elapsedSeconds} points={points} onPlayAgain={mode !== 'daily' && isPro ? startPractice : undefined} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} flawlessStreak={xpResult.flawlessStreak} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      <div className="game-art-header text-center px-2 shrink-0 relative" style={gameHeaderStyle('CROSSWORD')}>
+      <div className="game-art-header text-center px-2 shrink-0 relative" style={!finished && !completion ? PLAY_HEADER : gameHeaderStyle('CROSSWORD')}>
         <GameHomeButton accentColor={CROSSWORD_ACCENT}  href={MORE_HOME_HREF} />
         <GameGuideButton slug="crosswordocious" accentColor={CROSSWORD_ACCENT} />
         <SoundToggle accentColor={CROSSWORD_ACCENT} />
@@ -354,18 +367,14 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
           <h1 className="font-black whitespace-nowrap" style={{ color: CROSSWORD_ACCENT, fontSize: 'clamp(15px, 5vw, 24px)' }}>CROSSWORDOCIOUS</h1>
         </GameHostTitle>
         <div className="text-sm font-black mt-0.5" style={{ color: 'var(--color-text)' }}>{state.title}</div>
-        <div className="flex justify-center items-center gap-2 mt-0.5 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="relative flex justify-center items-center gap-2 mt-0.5 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{crosswordDailyNumber(getTodayLocal())}</span>}
           {holiday && <span style={{ color: CROSSWORD_ACCENT }}>{holiday}</span>}
           <span>{filled}/{total} letters</span>
           <span>{checksLabel}</span>
           <span><Clock className="w-3 h-3 inline mr-0.5" /><PlayClock timer={timer}>{formatTime}</PlayClock></span>
+          <FeedbackToast message={message} />
         </div>
-        {message && (
-          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: gameToastTop(104) }}>
-            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
-          </div>
-        )}
       </div>
 
       {completion ? (
@@ -381,33 +390,45 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
         <>
-          <div ref={bandRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center gap-3 px-3 pb-1 pt-1">
-            <CrosswordBoard state={state} selected={selected} activeCells={activeCells} onSelect={selectCell} finished={false} cell={boardCell} />
-            <ClueColumns state={state} activeEntry={activeEntry} onPick={pickEntry} finished={false} />
+          {/* BI18: the band holds the grid alone, fitted (no scrolling); the Clues toggle swaps in the list, which scrolls inside the band. */}
+          <div ref={setBandEl} className={`flex-1 min-h-0 flex flex-col items-center px-3 pt-1 pb-1 ${showClues ? 'overflow-y-auto' : 'overflow-hidden justify-center'}`}>
+            {showClues
+              ? <ClueColumns state={state} activeEntry={activeEntry} onPick={pickEntry} finished={false} />
+              : <CrosswordBoard state={state} selected={selected} activeCells={activeCells} onSelect={selectCell} finished={false} cell={boardCell} />}
           </div>
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
-            {activeEntry && (
-              <button type="button" onClick={() => setDir((d) => (d === 'A' ? 'D' : 'A'))} className="mx-auto max-w-[700px] w-full flex items-center gap-2 rounded-xl px-3 pt-2.5 pb-2 text-left" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}` }} aria-label="Active clue; tap to switch direction">
-                <span className="shrink-0 rounded-md text-[11px] font-black w-6 h-6 flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed', boxShadow: `inset 0 0 0 1px #c4b5fd, inset 0 -2px 0 ${alphaHex('#7c3aed', 0.2)}` }}>{activeEntry.n}{activeEntry.dir}</span>
-                <span className="text-[15px] font-extrabold leading-snug flex-1" style={{ color: 'var(--color-text)' }}>{activeEntry.clue}</span>
-                <ArrowLeftRight className="w-4 h-4 shrink-0" style={{ color: CROSSWORD_ACCENT }} />
-              </button>
+            {/* BI22: the clue bar's fixed two-line slot ALWAYS renders (empty with no active entry) so the grid never resizes. */}
+            {(
+              <div className="mx-auto max-w-[700px] w-full flex items-stretch gap-1.5">
+                {/* BI18: the bar keeps a fixed two-line height so the grid never resizes between clues. */}
+                <button type="button" disabled={!activeEntry} onClick={() => setDir((d) => (d === 'A' ? 'D' : 'A'))} className="flex-1 min-w-0 h-[60px] flex items-center gap-2 rounded-xl px-3 pt-2.5 pb-2 text-left" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}` }} aria-label={activeEntry ? 'Active clue; tap to switch direction' : 'No clue selected'}>
+                  {activeEntry && (<>
+                    <span className="shrink-0 rounded-md text-[11px] font-black w-6 h-6 flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed', boxShadow: `inset 0 0 0 1px #c4b5fd, inset 0 -2px 0 ${alphaHex('#7c3aed', 0.2)}` }}>{activeEntry.n}{activeEntry.dir}</span>
+                    <span className="text-[15px] font-extrabold leading-snug flex-1 line-clamp-2" style={{ color: 'var(--color-text)' }}>{activeEntry.clue}</span>
+                    <ArrowLeftRight className="w-4 h-4 shrink-0" style={{ color: CROSSWORD_ACCENT }} />
+                  </>)}
+                </button>
+                <button type="button" onClick={() => { playKeyTap(); setShowClues((v) => !v); }} className="shrink-0 w-12 flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-black" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}`, color: CROSSWORD_ACCENT }} aria-pressed={showClues} aria-label={showClues ? 'Show the grid' : 'Show all clues'}>
+                  {showClues ? <Grid3x3 className="w-4 h-4" /> : <ListOrdered className="w-4 h-4" />}
+                  {showClues ? 'Grid' : 'Clues'}
+                </button>
+              </div>
             )}
             <div className="flex justify-center gap-1.5 px-1 flex-wrap" role="group" aria-label="Crossword controls">
               <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Check the filled letters">
-                <CheckCheck className="w-3.5 h-3.5" /> Check{state.checks > 0 ? ` · ${state.checks}` : ''}
+                <CheckCheck className="w-3.5 h-3.5" /> Check<HintCountBadge count={state.checks} />
               </button>
               <button type="button" onClick={() => { playKeyTap(); revealLetter(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Reveal the selected letter">
                 <Lightbulb className="w-3.5 h-3.5" /> Letter
               </button>
               <button type="button" onClick={() => { playKeyTap(); revealWord(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Reveal the active word">
-                <Eye className="w-3.5 h-3.5" /> Word{state.hintsUsed > 0 ? ` · ${state.hintsUsed}` : ''}
+                <Eye className="w-3.5 h-3.5" /> Word<HintCountBadge count={state.hintsUsed} />
               </button>
               <button type="button" onClick={revealPuzzle} className={capsule(false)} style={capsuleStyle(false, armReveal)} aria-label="Reveal the whole puzzle (records a loss)">
-                <Flag className="w-3.5 h-3.5" /> {armReveal ? 'Reveal all?' : 'Reveal all'}
+                <Flag className="w-3.5 h-3.5" /> <StableLabel value={armReveal ? 'Reveal all?' : 'Reveal all'} reserve={['Reveal all?']} />
               </button>
             </div>
-            <Keyboard onKey={onKey} />
+            <Keyboard onKey={onKey} keyHeight={shortScreen ? 44 : undefined} />
           </div>
         </>
       ) : (

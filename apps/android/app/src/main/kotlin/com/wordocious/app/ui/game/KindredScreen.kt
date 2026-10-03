@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -371,6 +370,7 @@ fun KindredScreen(
 
     // Physical keyboard (founder, 2026-09-30; web groups-game.tsx, iOS parity): Return submits the
     // four picked words, Escape deselects them all.
+    ProvideFeedbackAnchor {
     Box(
         Modifier.fillMaxSize()
             .hardwareKeys(enabled = !session.isFinished && !showOverlay && !showGuide) { k ->
@@ -397,23 +397,24 @@ fun KindredScreen(
                 // without measuring every child. Order: chips → grid → rail → bars; the column
                 // still scrolls as a fallback on very short screens (tiles at the floor may
                 // overflow, the buttons never do).
+                // BI22: the named-category chips row is a fixed slot that is ALWAYS reserved
+                // (empty until "Name a category" is used), so a hint never shrinks the tiles
+                // or pushes the grid down (HintLayout.kindredTileHeight).
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                     val s = session.state
                     val revealedLabels = s.revealedTiers.mapNotNull { t -> s.groups.firstOrNull { it.tier == t } }.filter { g -> s.solved.none { it.tier == g.tier } }
                     val rows = ((s.tiles.size + 3) / 4).coerceAtLeast(1)
                     val gap = 8.dp
-                    val railH = 24.dp
-                    val barsH = (56.dp + 6.dp) * s.solved.size
-                    val chipsH = if (revealedLabels.isNotEmpty()) 26.dp + gap else 0.dp
-                    val gapsH = 8.dp /* column vertical padding */ + gap /* grid→rail */ +
-                        KINDRED_TRAY_PAD * 2 + GameTrayStyle.LIP /* the grid's tray */ +
-                        (if (s.solved.isNotEmpty()) gap else 0.dp) /* rail→bars */ + 6.dp * (rows - 1) /* between tile rows */ + chipsH
-                    val tileH = ((maxHeight - railH - barsH - gapsH) / rows).coerceIn(56.dp, 92.dp)
+                    val chipSlot = kindredChipSlotHeight()
+                    val tileH = HintLayout.kindredTileHeight(
+                        bandH = maxHeight.value, rows = rows, solved = s.solved.size, revealedLabels = revealedLabels.size,
+                        chipSlotH = (chipSlot + gap).value, trayPad = KINDRED_TRAY_PAD.value, trayLip = GameTrayStyle.LIP.value, gap = gap.value,
+                    ).dp
                     Column(
                         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap),
                     ) {
-                        if (revealedLabels.isNotEmpty()) RevealedChips(revealedLabels)
+                        RevealedChips(revealedLabels, chipSlot)
                         TileGrid(session, tileH)
                         ProgressRail(s)
                         // Solved groups stack UNDER the grid in solve order, newest at the bottom,
@@ -433,18 +434,20 @@ fun KindredScreen(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Capsule("Name a category", Icons.Filled.Label, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintLabel() }
-                    Capsule(if (session.state.hintsUsed > 0) "Show a pair · ${session.state.hintsUsed}" else "Show a pair", Icons.Filled.Link, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintPair() }
+                    Capsule("Show a pair", Icons.Filled.Link, color = com.wordocious.app.ui.CandyColor.AMBER, count = session.state.hintsUsed) { session.hintPair() }
                 }
                 Spacer(Modifier.height(10.dp))
             }
         }
         // G5 a toast is a tinted pill (no dark slab, no white).
-        session.toast?.let { PieceToast(it, GROUPS_ACCENT, top = 100.dp) }
+        // The candy feedback toast, centered on the header meta row (never the title art or the board).
+        GameFeedbackToast(session.toast, fallbackTop = 100.dp)
         session.xpResult?.let { XpToast(it) { session.xpResult = null } }
         if (showOverlay) KindredOverlay(session, onPlayAgain = if (!isDaily && isPro && onPlayAgain != null) { { showOverlay = false; onPlayAgain() } } else null) { showOverlay = false }
         Box(Modifier.align(Alignment.TopStart)) { CornerHomeButton(GROUPS_ACCENT, onBack) }
         CornerHelpButton(GROUPS_ACCENT, onClick = { showGuide = true; session.pauseForGuide() }, modifier = Modifier.align(Alignment.TopEnd).padding(GAME_CONTROLS_INSET))
         if (showGuide) GuideSheet(mode = GameMode.GROUPS, onDismiss = { showGuide = false; session.resumeFromGuide() })
+    }
     }
 }
 
@@ -454,7 +457,7 @@ private fun KindredHeader(session: KindredSession) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("GROUPS") { Text("KINDRED", fontSize = 24.sp, fontWeight = FontWeight.Black, color = GROUPS_ACCENT, fontFamily = Nunito) }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.feedbackAnchor(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             session.holidayTitle?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GROUPS_ACCENT) }
             Text(session.groupsLabel, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -531,14 +534,23 @@ internal fun KindredFinishedBars(solved: List<GroupsGroup>, unsolved: List<Group
     }
 }
 
-/** Categories named by a hint, as tier-colored chips above the grid. */
-@OptIn(ExperimentalLayoutApi::class)
+/** BI22 the named-category slot's fixed height: one 11 sp chip (1.3 em line + 5 dp padding each side) + 2 dp slack, at any font scale. */
 @Composable
-private fun RevealedChips(groups: List<GroupsGroup>) {
-    FlowRow(
-        Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+private fun kindredChipSlotHeight(): androidx.compose.ui.unit.Dp =
+    with(androidx.compose.ui.platform.LocalDensity.current) { (11.sp * 1.3f).toDp() } + 12.dp
+
+/**
+ * Categories named by a hint, as tier-colored chips above the grid — in a fixed-height,
+ * always-present slot (BI22): one centered line that scrolls sideways when the chips
+ * overflow, empty until a category is named, so the grid never moves or resizes.
+ */
+@Composable
+private fun RevealedChips(groups: List<GroupsGroup>, slotHeight: androidx.compose.ui.unit.Dp) {
+    Box(Modifier.widthIn(max = 420.dp).fillMaxWidth().height(slotHeight), contentAlignment = Alignment.Center) {
+    if (groups.isNotEmpty()) Row(
+        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         groups.forEach { g ->
             val accent = tierAccent(g.tier)
@@ -548,9 +560,10 @@ private fun RevealedChips(groups: List<GroupsGroup>) {
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Pips(g.tier, if (WTheme.isDark) Color(0xFFC4B5FD) else accent, size = 4)
-                Text(g.label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading)
+                Text(g.label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading, maxLines = 1, softWrap = false)
             }
         }
+    }
     }
 }
 
@@ -653,8 +666,8 @@ private fun MistakeDots(mistakes: Int) {
 
 /** A8 a game control: a small candy button with its icon; [dim] = nothing to do (taps ignored, as before). */
 @Composable
-private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, onClick: () -> Unit) =
-    PadAction(label, icon, onClick = onClick, color = color, dim = dim)
+private fun Capsule(label: String, icon: ImageVector, dim: Boolean = false, color: com.wordocious.app.ui.CandyColor = com.wordocious.app.ui.CandyColor.PEACH, reserve: String? = null, count: Int = 0, onClick: () -> Unit) =
+    PadAction(label, icon, onClick = onClick, color = color, dim = dim, reserveLabel = reserve, count = count)
 
 // ── Result + overlay ────────────────────────────────────────────────────────
 

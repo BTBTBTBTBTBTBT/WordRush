@@ -1,10 +1,43 @@
 // The footer tabs always go home (docs/FINISH_SPEC.md AJ). Pure decisions +
 // tiny client plumbing: tapping a tab from ANY depth lands on that tab's root
-// at the top, closing every global overlay on the way; tapping the tab you're
-// already on (at its root) scrolls to the top. The one exception: a live VS
+// (BI11: where the player left it), closing every global overlay on the way;
+// tapping the tab you're already on (at its root) scrolls to the top. The one exception: a live VS
 // match registers a guard, and leaving asks first (it counts as a forfeit).
 
 export const CLOSE_OVERLAYS_EVENT = 'wordocious:close-overlays';
+
+// ── BI11: tab switches keep each tab's scroll position ─────────────────────
+// (founder 10-02: "if you were … mid way down [on Home], and on another tab
+// and click right back, the position should persist"). Coming back to a tab —
+// from another tab, or out of a game with the top-left Home button — lands on
+// its root where the player left it; only a re-tap of the tab you're on, at its
+// root, scrolls to the top (`tabTapAction` → 'scrollTop').
+
+/** The four tab roots (the footer's hrefs). */
+export const TAB_ROOTS = ['/', '/daily', '/stats', '/friends'] as const;
+/** Fired (detail = the tab's href) when a re-tap at the root scrolls it to the top. */
+export const TAB_SCROLL_TOP_EVENT = 'wordocious:tab-scroll-top';
+
+const tabScroll = new Map<string, number>();
+
+export function isTabRoot(pathname: string | null | undefined): boolean {
+  return !!pathname && (TAB_ROOTS as readonly string[]).includes(pathname);
+}
+
+/** Remember where a tab root is scrolled (px from the top). */
+export function rememberTabScroll(pathname: string, y: number): void {
+  if (isTabRoot(pathname)) tabScroll.set(pathname, Math.max(0, Math.round(y)));
+}
+
+/** Where a tab root was left (0 = never visited, or re-tapped to the top). */
+export function rememberedTabScroll(pathname: string): number {
+  return tabScroll.get(pathname) ?? 0;
+}
+
+/** Tests only. */
+export function _resetTabScrollForTests(): void {
+  tabScroll.clear();
+}
 
 export type TabTapAction = 'scrollTop' | 'navigate' | 'confirm';
 
