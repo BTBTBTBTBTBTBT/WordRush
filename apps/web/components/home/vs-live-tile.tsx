@@ -103,9 +103,9 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
           <div className="flex items-center gap-2 mt-0.5">
             <CastButton screen="blue" size="sm" color="teal" icon="play" onClick={onOpen}>Play</CastButton>
             {isPro && (
-              <CastButton screen="blue" size="sm" color="peach" onClick={onInvite} icon={<Icon3D name="add-friend" size={16} />}>
+              <CandyButton size="sm" color="peach" onClick={onInvite} icon={<Icon3D name="add-friend" size={16} />}>
                 Invite
-              </CastButton>
+              </CandyButton>
             )}
           </div>
         </div>

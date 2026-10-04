@@ -123,7 +123,7 @@ struct SweepCelebrationView: View {
                         }
                         .buttonStyle(CastButtonStyle(color: flawless ? .pink : (more ? nil : .gold), size: .large))
                         Button { onClose() } label: { CandyLabel(title: "Close") }
-                            .buttonStyle(CastButtonStyle(color: .slate, size: .large, fullWidth: false))
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .large, fullWidth: false))
                     }
                     .padding(.top, 4)
                 }

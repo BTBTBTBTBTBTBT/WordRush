@@ -184,9 +184,9 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
             >
               {sharing ? 'Sharing…' : 'Share'}
             </CastButton>
-            <CastButton color="peach" size="lg" onClick={onClose}>
+            <CandyButton color="peach" size="lg" onClick={onClose}>
               Close
-            </CastButton>
+            </CandyButton>
           </div>
         </div>
       </div>

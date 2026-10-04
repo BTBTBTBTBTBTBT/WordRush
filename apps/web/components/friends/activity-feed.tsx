@@ -18,6 +18,7 @@ import { FrCard, FriendAvatar, GameIconSquare, SectionLabel } from './friends-ui
 import { SceneArt } from './invite-screens';
 import { ArtScene } from '@/components/ui/art-scene';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { ART_SIZE, PAGE_SCENES, artSrc, poseArt, type PoseArtName } from '@/lib/art';
 import { FR_LOOK, frBar, frSurface, momentAccent, momentKey, momentPoses, numberRuns } from '@/lib/friends-look';
@@ -323,7 +324,7 @@ export function ActivityFeed({ onRematch }: Props) {
                       <span className="text-[10px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>{dayLabel(e.day, today)}</span>
                       {/* AS5: no View button — the row (or the avatar) opens the profile. */}
                       {isGame && pocket && (
-                        <CandyButton size="sm" color="pink" icon="replay" onClick={(ev) => { ev.stopPropagation(); rematch(e); }}>Rematch</CandyButton>
+                        <CastButton screen="pink" size="sm" color="pink" icon="replay" onClick={(ev) => { ev.stopPropagation(); rematch(e); }}>Rematch</CastButton>
                       )}
                     </div>
                   </div>
@@ -386,7 +387,7 @@ export function ActivityFeed({ onRematch }: Props) {
                       );
                     })}
                     {isGame && (
-                      <CandyButton size="sm" color="pink" onClick={() => rematch(e)}>Rematch</CandyButton>
+                      <CastButton screen="pink" size="sm" color="pink" onClick={() => rematch(e)}>Rematch</CastButton>
                     )}
                   </div>
                 )}

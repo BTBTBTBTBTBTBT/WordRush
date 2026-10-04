@@ -101,7 +101,7 @@ struct VSLiveTile<Destination: View>: View {
                             Button(action: onInvite) {
                                 CandyLabel(title: "Invite") { Icon3D(.addFriend, size: 15) }
                             }
-                            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                             .accessibilityLabel("Invite")
                         }
                     }

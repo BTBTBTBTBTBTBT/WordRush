@@ -5,6 +5,7 @@ import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { PageBackground } from '@/components/ui/page-background';
 import { challengeHeadline, vsClock, vsMargin, type VsRun } from '@wordle-duel/core';
@@ -163,7 +164,7 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
         )}
 
         <div className="space-y-1">
-          <CandyButton color="purple" size="lg" block icon="replay" onClick={onChallengeBack}>CHALLENGE BACK</CandyButton>
+          <CastButton screen="blue" color="purple" size="lg" block icon="replay" onClick={onChallengeBack}>CHALLENGE BACK</CastButton>
           <p className="text-center text-[11px] font-bold" style={{ color: '#6d28d9' }}>New puzzle, {them.name} races you</p>
         </div>
         <CandyButton color="peach" size="md" block onClick={onHome}>VS HOME</CandyButton>
@@ -210,7 +211,7 @@ export function ChallengeSent({ mode, run, guessLog, solutions, code, link, erro
           </div>
         </div>
         {link && code && !error && (
-          <CandyButton color="teal" size="lg" block icon="share" onClick={onShare}>SHARE LINK</CandyButton>
+          <CastButton screen="blue" color="teal" size="lg" block icon="share" onClick={onShare}>SHARE LINK</CastButton>
         )}
         <CandyButton color="peach" size="md" block onClick={onHome}>VS HOME</CandyButton>
       </div>

@@ -154,8 +154,8 @@ fun SweepCelebration(
                 size = CastSize.L, fill = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            CastButton(
-                "Close", onClick = closeAndMaybeReview, color = CastColor.SLATE, size = CastSize.M,
+            CandyButton(
+                "Close", onClick = closeAndMaybeReview, color = CandyColor.PEACH, size = CandySize.MEDIUM,
                 fill = true, modifier = Modifier.fillMaxWidth(0.6f),
             )
         }

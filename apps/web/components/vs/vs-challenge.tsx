@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { vsClock, type GameMode } from '@wordle-duel/core';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CastLink } from '@/components/ui/cast-button';
 import { CastLoader } from '@/components/ui/cast-loader';
 import { SoftNum } from '@/components/ui/soft-number';
 import { useAuth } from '@/lib/auth-context';
@@ -64,7 +65,7 @@ export function VsChallenge({ code }: { code: string }) {
       <>
         <div className="text-[16px] font-black" style={{ color: VS.deep }}>Sign in to race</div>
         <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>A friend challenged you to race their Wordocious run. Sign in (or create a free account) to play.</p>
-        <CandyLink href={`/?returnTo=${encodeURIComponent(`/vs/challenge/${code}`)}`} color="teal" size="lg" block>Sign in</CandyLink>
+        <CastLink screen="blue" href={`/?returnTo=${encodeURIComponent(`/vs/challenge/${code}`)}`} color="teal" size="lg" block>Sign in</CastLink>
       </>,
     );
   }

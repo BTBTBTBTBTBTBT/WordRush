@@ -101,9 +101,9 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle, unlimite
                   View Solved Puzzle
                 </CastButton>
               ) : (
-                <CastButton color="peach" size="md" block onClick={onClose}>
+                <CandyButton color="peach" size="md" block onClick={onClose}>
                   Come back tomorrow
-                </CastButton>
+                </CandyButton>
               )}
             </div>
           </div>

@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
 import { useAuth } from '@/lib/auth-context';
 import { CandyButton } from '@/components/ui/candy-button';
-import { CastButton } from '@/components/ui/cast-button';
+import { CastButton, TextLink, TextLinkA } from '@/components/ui/cast-button';
 import { softRow } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
 
@@ -66,9 +66,9 @@ export function DailyLanding() {
           Sign in to see the leaderboards
         </CastButton>
         <div className="mt-3">
-          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <TextLink onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CastButton>
+          </TextLink>
           <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Today&apos;s dailies are free to play. Sign in to save stats, build streaks, and rank on the boards.
           </p>

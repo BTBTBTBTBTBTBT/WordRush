@@ -218,7 +218,7 @@ fun InvitePanel() {
                         }
                         // A3: the bare 3D share icon; cancel as a small quiet candy.
                         SoftControl(Icon3DName.SHARE, contentDescription = "Share invite ${inv.code}", onClick = { share(inv.code) }, iconSize = 18.dp)
-                        CastButton("Cancel", onClick = { cancelTarget = inv }, color = CastColor.SLATE, size = CastSize.S, contentDescription = "Cancel invite ${inv.code}")
+                        CandyButton("Cancel", onClick = { cancelTarget = inv }, color = CandyColor.PEACH, size = CandySize.SMALL, contentDescription = "Cancel invite ${inv.code}")
                     } else {
                         when (inv.status) {
                             "redeemed" -> Text("$inviteeName joined! +3 days", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))

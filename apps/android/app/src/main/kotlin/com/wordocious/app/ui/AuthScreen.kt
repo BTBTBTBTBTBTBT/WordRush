@@ -194,11 +194,10 @@ fun AuthScreen(
                 )
             }
             if (mode == "signin") {
-                // A8: a small soft peach candy button (was a text link).
-                CastButton(
+                // BJ15 round 2: a text link, never a pill.
+                TextLink(
                     "Forgot password?", onClick = { mode = "reset"; error = null; resetSent = false },
-                    color = CastColor.SLATE, size = CastSize.S,
-                    modifier = Modifier.align(Alignment.End),
+                    fontSize = 12.sp, modifier = Modifier.align(Alignment.End),
                 )
             }
 
@@ -298,24 +297,20 @@ fun AuthScreen(
                 when (mode) { "signin" -> "Don't have an account?"; "signup" -> "Already have an account?"; else -> "Remembered it?" },
                 fontSize = 13.sp, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, fontWeight = FontWeight.Bold,
             )
-            // A8: the mode switch is a small pink candy button (was a TextButton).
-            CastButton(
-                if (isSignIn) "Sign Up" else "Sign In",
+            // BJ15 round 2: the mode switch is an inline text link, not a pill.
+            TextLink(
+                if (isSignIn) "Sign up" else "Sign in",
                 onClick = {
                     mode = if (mode == "signin") "signup" else "signin"
                     error = null; resetSent = false
                 },
-                color = CastColor.PINK, size = CastSize.S,
             )
         }
 
         Spacer(Modifier.height(14.dp))
         // Apple 5.1.1(v) / Google Play: a signed-out visitor must be able to play
-        // the single-player daily without registering. A8: a soft peach candy button.
-        CastButton(
-            "Play without an account", onClick = { AuthService.enterGuest() },
-            color = CastColor.SLATE, size = CastSize.M,
-        )
+        // the single-player daily without registering. BJ15 round 2: a secondary text link, not a pill.
+        TextLink("Play without an account", onClick = { AuthService.enterGuest() }, fontSize = 15.sp)
 
         Spacer(Modifier.height(24.dp))
 

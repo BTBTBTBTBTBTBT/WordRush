@@ -228,13 +228,13 @@ export default async function WordOfDayPage({ params }: Props) {
         {/* Prev / next day */}
         <div className="flex items-center justify-between">
           {/* A8: candy buttons. */}
-          <CastLink screen="green" href={`/word/${prev}`} color="peach" size="sm" icon={<ChevronLeft className="w-4 h-4" aria-hidden="true" />}>
+          <CandyLink href={`/word/${prev}`} color="peach" size="sm" icon={<ChevronLeft className="w-4 h-4" aria-hidden="true" />}>
             {prev}
-          </CastLink>
+          </CandyLink>
           {hasNext && (
-            <CastLink screen="green" href={`/word/${next}`} color="peach" size="sm" trailing={<ChevronRight className="w-4 h-4" aria-hidden="true" />}>
+            <CandyLink href={`/word/${next}`} color="peach" size="sm" trailing={<ChevronRight className="w-4 h-4" aria-hidden="true" />}>
               {next}
-            </CastLink>
+            </CandyLink>
           )}
         </div>
 

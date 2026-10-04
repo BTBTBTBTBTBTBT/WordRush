@@ -197,9 +197,9 @@ fun ProScreen(onDone: () -> Unit) {
                         color = if (WTheme.isDark) WTheme.textSecondary else proLabel, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    CastButton(
+                    CandyButton(
                         "Restore Purchases", onClick = { StoreManager.restore() },
-                        color = CastColor.SLATE, size = CastSize.S,
+                        color = CandyColor.PEACH, size = CandySize.SMALL,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                     )
                 }
@@ -329,9 +329,9 @@ private fun PlansContent() {
             } else null,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         )
-        CastButton(
+        CandyButton(
             "Restore Purchases", onClick = { StoreManager.restore() },
-            color = CastColor.SLATE, size = CastSize.M,
+            color = CandyColor.PEACH, size = CandySize.MEDIUM,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         // Disclosure (Google Play wording for Android) — BJ11: the live Play prices.

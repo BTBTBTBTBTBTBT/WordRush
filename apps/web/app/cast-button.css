@@ -48,13 +48,13 @@
     drop-shadow(0 1px 1px color-mix(in srgb, var(--cast-deep) 56%, transparent));
 }
 /* Live fallback (dynamic labels): white Nunito Black, a thin same-hue stroke, a soft same-hue
-   shadow, sized so its cap height matches the art (Nunito cap ≈ 0.705 em). */
+   shadow, sized so its cap height matches the art (cap ratio 0.75, round 2). */
 .cast > .cast-label-live {
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: calc(var(--cast-cap) / 0.705);
+  font-size: calc(var(--cast-cap) / 0.75);
   letter-spacing: 0.01em;
   text-transform: uppercase;
   text-shadow:
@@ -63,3 +63,23 @@
     0 1px 2px color-mix(in srgb, var(--cast-deep) 35%, transparent);
   padding: 2px 1px;
 }
+/* BJ15 round 2: text links / tertiary actions stay text (never a pill). */
+.cast-text-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: #7c3aed;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.cast-text-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+[data-theme="dark"] .cast-text-link { color: #c4a5ff; }
+.cast-text-link:disabled { opacity: 0.55; cursor: default; }

@@ -142,7 +142,7 @@ struct StreakShieldModal: View {
                     // §G2: the quiet peach candy.
                     CandyLabel(title: "Let it reset")
                 }
-                .buttonStyle(CastButtonStyle(color: .slate, size: .large)).disabled(loading != nil)
+                .buttonStyle(CandyButtonStyle(variant: .peach, size: .large)).disabled(loading != nil)
             }
             .padding(.vertical, 20).padding(.horizontal, 24)
         }

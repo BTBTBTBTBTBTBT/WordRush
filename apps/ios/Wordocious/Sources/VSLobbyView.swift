@@ -583,7 +583,7 @@ struct VSLobbyView: View {
                     .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                     .simultaneousGesture(TapGesture().onEnded { onClose() })
                     Button { onClose() } label: { CandyLabel(title: "Maybe later") }
-                        .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
                 }
                 .padding(24).frame(maxWidth: 340)
                 .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, tint: 0.10, line: 0.32)

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { isTypingTarget } from '@/lib/keyboard';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { playInvalid } from '@/lib/sounds';
 import { GameMode, pnGuessBlocked } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
@@ -282,16 +283,16 @@ export function VsProperNoundle({
           finishing and the 'waiting' screen swap — a visible board jump. */}
       <div className={`shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[360px] mx-auto px-3 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
           {/* A8: the solo screen's candy hint buttons, in equal thirds so a revealed letter never resizes a pill. */}
-          <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
+          <CastButton screen="blue" size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
             icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
             Clue
-          </CandyButton>
-          <CandyButton size="sm" color="teal" block style={HINT_THIRD} onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
+          </CastButton>
+          <CastButton screen="blue" size="sm" color="teal" block style={HINT_THIRD} onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
             {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
-          </CandyButton>
-          <CandyButton size="sm" color="pink" block style={HINT_THIRD} onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
+          </CastButton>
+          <CastButton screen="blue" size="sm" color="pink" block style={HINT_THIRD} onClick={handleConsonantReveal} disabled={hints.consonantUsed} icon={<Hash className="w-3 h-3" aria-hidden="true" />}>
             {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
-          </CandyButton>
+          </CastButton>
         </div>
 
       {/* Keyboard */}

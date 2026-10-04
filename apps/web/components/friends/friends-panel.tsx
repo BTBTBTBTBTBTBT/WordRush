@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { Users, X, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { PageHeadline } from '@/components/ui/page-headline';
 import { CandyButton, CandyIcon, candyClass } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyBadge } from '@/components/ui/candy-badge';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -647,7 +648,7 @@ export function FriendsPanel() {
           <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: '#5b3c96' }}>
             Your friends{friends.length > 0 ? ` · ${friends.length}` : ''}
           </h2>
-          <CandyButton size="sm" color="pink" icon="plus" onClick={jumpToAdd} className="shrink-0">Add a friend</CandyButton>
+          <CastButton screen="pink" size="sm" color="pink" icon="plus" onClick={jumpToAdd} className="shrink-0">Add a friend</CastButton>
         </div>
         {pending ? (
           <div className="animate-pulse" aria-hidden>
@@ -745,7 +746,7 @@ export function FriendsPanel() {
                 <span className="text-[11px] font-extrabold" style={{ color: FR_LOOK.rowSub }}>
                   <SoftNum size={12}>{slackers.length}</SoftNum> {slackers.length === 1 ? 'friend hasn’t' : 'friends haven’t'} played today
                 </span>
-                <CandyButton
+                <CastButton screen="pink"
                   size="sm"
                   color="amber"
                   icon={<Icon3D name="bell" size={16} />}
@@ -754,7 +755,7 @@ export function FriendsPanel() {
                   className="shrink-0"
                 >
                   Nudge all
-                </CandyButton>
+                </CastButton>
               </div>
             )}
           </div>
@@ -788,7 +789,7 @@ export function FriendsPanel() {
                 <span className="block text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>Wants to be friends</span>
               </Link>
               {/* T2: Accept = green candy; T3: NEW FRIENDS! once accepted. */}
-              <CandyButton
+              <CastButton screen="pink"
                 size="sm"
                 icon="check"
                 onClick={() => { void acceptFriend(r.id); setNewFriend({ id: r.id, name: r.username, url: r.avatar_url, emoji: r.avatar_emoji }); }}
@@ -883,7 +884,7 @@ export function FriendsPanel() {
               className="flex-1 min-w-0 px-3 text-[13px] font-bold outline-none"
               style={{ height: 36, background: softMix(FR_LOOK.pink, 0.05), border: `1.5px solid ${softMix(FR_LOOK.pink, 0.32)}`, borderRadius: 12, color: FR_LOOK.ink }}
             />
-            <CandyButton
+            <CastButton screen="pink"
               size="sm"
               color="pink"
               icon={<Icon3D name="add-friend" size={16} />}
@@ -893,7 +894,7 @@ export function FriendsPanel() {
               className="shrink-0"
             >
               Add
-            </CandyButton>
+            </CastButton>
           </div>
           {suggestions.length > 0 && (
             <div className="space-y-1">
@@ -928,7 +929,7 @@ export function FriendsPanel() {
             </div>
           )}
           <div>
-            <CandyButton size="sm" color="purple" icon="share" onClick={shareInvite}>Share invite link</CandyButton>
+            <CastButton screen="pink" size="sm" color="purple" icon="share" onClick={shareInvite}>Share invite link</CastButton>
           </div>
         </div>
       </FrCard>
@@ -1036,7 +1037,7 @@ export function FriendsPanel() {
             </p>
             <div className="flex gap-2.5 px-4 pb-4">
               <CandyButton size="md" color="peach" block onClick={() => setUnfriendTarget(null)}>Cancel</CandyButton>
-              <CandyButton
+              <CastButton screen="pink"
                 size="md"
                 block
                 style={DANGER}
@@ -1047,7 +1048,7 @@ export function FriendsPanel() {
                 }}
               >
                 Unfriend
-              </CandyButton>
+              </CastButton>
             </div>
           </div>
         </div>

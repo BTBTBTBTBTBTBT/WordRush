@@ -4,6 +4,7 @@ import { LiveHeadline } from '@/components/ui/live-headline';
 import Image from 'next/image';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { friendsBannerClockLine, friendsBannerHeadline, type FriendsBannerInput } from '@wordle-duel/core';
 import type { FriendProfile } from '@/lib/friends-service';
@@ -80,9 +81,9 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
 
       {none ? (
         <div className="relative" style={{ padding: '8px 12px 12px' }}>
-          <CandyButton color="pink" size="md" block icon={<Icon3D name="add-friend" size={20} />} onClick={onAddFriend}>
+          <CastButton screen="pink" color="pink" size="md" block icon={<Icon3D name="add-friend" size={20} />} onClick={onAddFriend}>
             Add a friend
-          </CandyButton>
+          </CastButton>
         </div>
       ) : (
         <>

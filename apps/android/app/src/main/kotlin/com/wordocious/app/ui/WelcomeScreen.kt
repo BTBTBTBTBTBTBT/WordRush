@@ -168,11 +168,11 @@ fun WelcomeScreen() {
 
                 // Skip for now — A8: a soft peach candy button (was a text link).
                 Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
-                    CastButton(
+                    CandyButton(
                         "Skip for now",
                         onClick = {
-                            if (saving) return@CastButton
-                            val uid = profile?.id ?: return@CastButton
+                            if (saving) return@CandyButton
+                            val uid = profile?.id ?: return@CandyButton
                             saving = true
                             scope.launch {
                                 runCatching {
@@ -181,7 +181,7 @@ fun WelcomeScreen() {
                                 AuthService.refreshProfile()
                             }
                         },
-                        color = CastColor.SLATE, size = CastSize.M,
+                        color = CandyColor.PEACH, size = CandySize.MEDIUM,
                     )
                 }
             }

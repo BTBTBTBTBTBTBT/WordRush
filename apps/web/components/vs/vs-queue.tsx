@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton, candyVars } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
 import { alphaHex } from '@/lib/soft-surface';
 import { BotFigure, VS_ACCENT, VsCard, VsModeTile, vsCard } from './vs-ui';
@@ -148,9 +149,9 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
               </div>
             )}
             <div className="flex gap-2">
-              <CandyButton color="teal" size="md" className="flex-1" icon="play" onClick={() => { firedRef.current = true; onPlayBot(); }}>
+              <CastButton screen="blue" color="teal" size="md" className="flex-1" icon="play" onClick={() => { firedRef.current = true; onPlayBot(); }}>
                 Play {stepIn.name} now
-              </CandyButton>
+              </CastButton>
               {!keepWaiting && (
                 <CandyButton
                   color="peach"

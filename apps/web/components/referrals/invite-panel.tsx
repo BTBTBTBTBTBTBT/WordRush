@@ -312,7 +312,7 @@ export function InvitePanel() {
                       aria-label="Share invite link"
                       style={{ width: 32, padding: 0 }}
                     />
-                    <CastButton screen="pink"
+                    <CandyButton
                       size="sm"
                       color="peach"
                       icon={<XIcon className="w-3.5 h-3.5" aria-hidden="true" />}

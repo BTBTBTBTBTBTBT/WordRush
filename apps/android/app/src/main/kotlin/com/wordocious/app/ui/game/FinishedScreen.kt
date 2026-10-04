@@ -485,10 +485,10 @@ fun FinishedDock(
                 )
             }
             if (nd != null && nextMode != null && onOpenDaily != null) {
-                CandyButton(
+                CastButton(
                     "Next: ${next.title}", onClick = { onOpenDaily(nextMode) },
-                    modifier = Modifier.weight(1f), color = CandyColor.AMBER, size = CandySize.MEDIUM, fill = true,
-                    leading = { CtaGameIcon(next.id, 24.dp) }, trailing = "›",
+                    modifier = Modifier.weight(1f), color = CastColor.GOLD, size = CastSize.M, fill = true,
+                    leading = { CtaGameIcon(next.id, 24.dp) },
                     contentDescription = "Next daily: ${next.title}",
                 )
                 if (onOpenLeaderboard != null) {
@@ -497,10 +497,10 @@ fun FinishedDock(
                     }
                 }
             } else if (nd != null && onOpenLeaderboard != null) {
-                CandyButton(
+                CastButton(
                     "Leaderboard", onClick = { onOpenLeaderboard(mode) },
-                    modifier = Modifier.weight(1f), color = CandyColor.PURPLE, size = CandySize.MEDIUM, fill = true,
-                    leading = { Icon3D(Icon3DName.TROPHY, 22.dp) }, trailing = "›",
+                    modifier = Modifier.weight(1f), size = CastSize.M, fill = true,
+                    leading = { Icon3D(Icon3DName.TROPHY, 22.dp) },
                     contentDescription = "$lbTitle Leaderboard",
                 )
             }
@@ -560,13 +560,22 @@ fun ShareResultsCandy(onShare: () -> Unit, countdownFor: String?, modifier: Modi
         }
     }
     val sub = FinishedCountdown.shareSubtitle(countdownFor, secs, short)
-    CandyButton(
-        "Share results", onClick = onShare, modifier = modifier, color = CandyColor.PINK, size = CandySize.MEDIUM,
-        // The two-line label needs the glyph's room; it comes back when the line is dropped.
-        icon = if (sub == null) com.wordocious.app.ui.CandyIcon.SHARE else null,
-        fill = fill, subtitle = sub,
-        contentDescription = if (sub != null) "Share results. $sub" else "Share results",
-    )
+    // BJ15 round 2: the countdown is a small muted caption UNDER the button (never squeezed into the
+    // skin with the label art); the button keeps the normal cap height.
+    androidx.compose.foundation.layout.Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        CastButton(
+            "Share results", onClick = onShare, color = CastColor.PINK, size = CastSize.M, fill = fill,
+            modifier = if (fill) Modifier.fillMaxWidth() else Modifier,
+            contentDescription = if (sub != null) "Share results. $sub" else "Share results",
+        )
+        if (sub != null) {
+            Text(
+                sub, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1,
+                color = if (com.wordocious.app.ui.theme.WTheme.isDark) com.wordocious.app.ui.theme.WTheme.textMuted else com.wordocious.app.ui.FinishInk.muted,
+                modifier = Modifier.padding(top = 3.dp),
+            )
+        }
+    }
 }
 
 /** A CTA's leading game icon (the glossy 3D game art), decorative. */
@@ -811,7 +820,7 @@ fun FinishedSheet(title: String, accent: Color, onDismiss: () -> Unit, content: 
                 modifier = Modifier.semantics { heading() },
             )
             content()
-            CastButton("Close", onClick = onDismiss, color = CastColor.SLATE, size = CastSize.M)
+            CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
         }
     }
 }

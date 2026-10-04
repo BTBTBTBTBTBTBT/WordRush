@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -183,6 +184,8 @@ fun CastButton(
     enabled: Boolean = true,
     contentDescription: String = text,
     leading: (@Composable () -> Unit)? = null,
+    /** BJ15 round 2: a small live line under the label art, inside the same height (the share candy's countdown). */
+    subtitle: String? = null,
 ) {
     val c = color ?: LocalCastColor.current
     val context = LocalContext.current
@@ -224,7 +227,14 @@ fun CastButton(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             leading?.invoke()
-            CastLabel(text, c, size)
+            if (subtitle == null) {
+                CastLabel(text, c, size)
+            } else {
+                androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CastLabel(text, c, size, capScale = 0.78f)
+                    CastLiveText(subtitle, c, size.height.value * 0.18f)
+                }
+            }
         }
     }
 }
@@ -247,19 +257,18 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawThreeSlice(img:
 
 /** The label: art lettering at the cap height (shrinks only in a fixed slot), or the live fallback. */
 @Composable
-fun CastLabel(text: String, color: CastColor, size: CastSize) {
+fun CastLabel(text: String, color: CastColor, size: CastSize, capScale: Float = 1f) {
     val context = LocalContext.current
     val density = LocalDensity.current.density
-    val capPx = CastLabels.capPx(size.height, density)
+    val capPx = CastLabels.capPx(size.height * capScale, density)
     val slug = CastLabels.slug(text)
     val img = remember(slug, capPx) { slug?.let { CastArt.label(context, it, capPx) } }
     if (img != null) {
-        BoxWithConstraints(contentAlignment = Alignment.Center) {
-            val natW = img.width.toFloat()
-            val maxW = if (constraints.hasBoundedWidth) constraints.maxWidth.toFloat() else natW
-            val k = if (natW > maxW && natW > 0f) maxW / natW else 1f
-            val wDp = (natW * k / density).dp
-            val hDp = (img.height * k / density).dp
+        Box(Modifier.shrinkToSlot(), contentAlignment = Alignment.Center) {
+            // Drawn 1:1 at the pre-scaled pixel size; only a too-narrow slot scales it down (shrinkToSlot).
+            val k = 1f
+            val wDp = (img.width / density).dp
+            val hDp = (img.height / density).dp
             val shadow = color.deep.copy(alpha = 0.56f)
             val halo = Color(0xFF9A5A00).copy(alpha = 0.55f)
             val gold = color == CastColor.GOLD
@@ -287,22 +296,56 @@ fun CastLabel(text: String, color: CastColor, size: CastSize) {
 }
 
 /** labels.json live fallback: white Nunito Black, a thin same-hue stroke, a soft same-hue shadow;
- *  sized so its cap height matches the art labels (Nunito cap ≈ 0.705 em). */
+ *  sized so its cap height matches the art labels (cap ratio 0.75, round 2). */
 @Composable
 fun CastLiveText(text: String, color: CastColor, capDp: Float) {
     val d = LocalDensity.current
-    val fontSize = (capDp / 0.705f / d.fontScale).sp
+    val full = (capDp / 0.75f / d.fontScale).sp
     val px = d.density
-    val base = tightTextStyle(TextStyle(fontFamily = Nunito, fontWeight = FontWeight.Black, fontSize = fontSize, letterSpacing = 0.01.em))
-    Box(contentAlignment = Alignment.Center) {
+    val base = tightTextStyle(TextStyle(fontFamily = Nunito, fontWeight = FontWeight.Black, fontSize = full, letterSpacing = 0.01.em))
+    // Round 2: measured at full size, then scaled down to the slot (never clipped), centered.
+    Box(
+        Modifier.shrinkToSlot(),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(
-            text, maxLines = 1, overflow = TextOverflow.Clip, softWrap = false,
+            text, maxLines = 1, overflow = TextOverflow.Visible, softWrap = false,
             style = base.copy(
                 color = color.deep,
                 drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.2f * px, join = androidx.compose.ui.graphics.StrokeJoin.Round),
                 shadow = Shadow(color.deep.copy(alpha = 0.35f), Offset(0f, 1f * px), 2f * px),
             ),
         )
-        Text(text, maxLines = 1, overflow = TextOverflow.Clip, softWrap = false, style = base.copy(color = Color.White))
+        Text(text, maxLines = 1, overflow = TextOverflow.Visible, softWrap = false, style = base.copy(color = Color.White))
+    }
+}
+
+/** BJ15 round 2: text links / tertiary actions stay text (never a cast pill) — brand purple, heavy, no outline. */
+@Composable
+fun TextLink(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, fontSize: androidx.compose.ui.unit.TextUnit = 14.sp) {
+    val interaction = remember { MutableInteractionSource() }
+    Text(
+        text,
+        modifier = modifier
+            .squishFeedback(interaction)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .semantics { role = Role.Button }
+            .padding(vertical = 6.dp, horizontal = 2.dp),
+        style = TextStyle(
+            fontFamily = Nunito, fontWeight = FontWeight.Black, fontSize = fontSize,
+            color = if (WTheme.isDark) Color(0xFFC4A5FF) else Color(0xFF7C3AED),
+        ),
+        maxLines = 1,
+    )
+}
+
+/** Round 2: measure the content at its natural width; if the slot is narrower, scale it down to fit
+ *  (centered) instead of clipping. Labels never scale up. */
+private fun Modifier.shrinkToSlot(): Modifier = layout { m, c ->
+    val p = m.measure(c.copy(minWidth = 0, maxWidth = androidx.compose.ui.unit.Constraints.Infinity))
+    val w = if (c.hasBoundedWidth) minOf(p.width, c.maxWidth) else p.width
+    val k = if (p.width > 0) w.toFloat() / p.width else 1f
+    layout(w, p.height) {
+        p.placeWithLayer((w - p.width) / 2, 0) { scaleX = k; scaleY = k }
     }
 }

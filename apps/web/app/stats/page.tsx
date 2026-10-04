@@ -516,7 +516,7 @@ export default function StatsPage() {
             </div>
             {/* A8 / A3: Edit is a small round candy button; Share is the bare 3D share icon. */}
             <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-2">
-              <CastButton screen="slate"
+              <CandyButton
                 onClick={() => setEditOpen(true)}
                 aria-label="Edit profile"
                 color="purple"
@@ -566,7 +566,7 @@ export default function StatsPage() {
             <div className="flex flex-wrap items-center gap-2 mt-3 pt-3" style={{ borderTop: `1.5px dashed ${alphaHex('#7c3aed', 0.25)}` }}>
               <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
               {(profile as any).is_private && (
-                <CastButton screen="slate"
+                <CandyButton
                   onClick={() => setEditOpen(true)}
                   title="Your profile is private — other players see a limited card. Tap to change."
                   color="peach"
@@ -574,14 +574,14 @@ export default function StatsPage() {
                   icon={<Lock className="w-3.5 h-3.5" aria-hidden="true" />}
                 >
                   Private
-                </CastButton>
+                </CandyButton>
               )}
               {!isProActive && (
                 <CastLink screen="slate" href="/pro" color="amber" size="sm" className="ml-auto">Go Pro</CastLink>
               )}
               {/* DEV-ONLY (profiles.is_admin): a quiet peach tool pill. */}
               {(profile as any).is_admin && (
-                <CastButton screen="slate"
+                <CandyButton
                   onClick={async () => {
                     const newValue = !(profile as any).is_pro;
                     await (supabase as any).from('profiles').update({ is_pro: newValue }).eq('id', profile.id);
@@ -594,7 +594,7 @@ export default function StatsPage() {
                   icon={<span className="w-1.5 h-1.5 rounded-full" style={{ background: (profile as any).is_pro ? WIN_FG : '#9ca3af' }} />}
                 >
                   Dev · Pro {(profile as any).is_pro ? 'on' : 'off'}
-                </CastButton>
+                </CandyButton>
               )}
             </div>
           )}
@@ -675,7 +675,7 @@ export default function StatsPage() {
                     <span className="text-xs font-extrabold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
                       {`${today.won ? 'Won' : 'Lost'} · ${matchStat(selected, today.guesses)}${today.timeSeconds > 0 ? ` · ${formatDuration(today.timeSeconds)}` : ''} · ${today.score.toLocaleString()} pts`}
                     </span>
-                    <CastLink screen="slate" href={href} color="peach" size="sm" icon="eye" className="shrink-0" aria-label={`Open today's ${meta.title}`}>Open</CastLink>
+                    <CandyLink href={href} color="peach" size="sm" icon="eye" className="shrink-0" aria-label={`Open today's ${meta.title}`}>Open</CandyLink>
                   </div>
                 ) : notPlayed}
                 {today && <div className="flex justify-center"><DailyRankBadge gameMode={selected} /></div>}
@@ -1033,9 +1033,9 @@ export default function StatsPage() {
                     </div>
                     {medals.length > 5 && (
                       <div className="flex justify-center mt-2.5">
-                        <CastButton screen="slate" onClick={() => setShowAllMedals((v) => !v)} color="peach" size="sm" aria-expanded={showAllMedals}>
+                        <CandyButton onClick={() => setShowAllMedals((v) => !v)} color="peach" size="sm" aria-expanded={showAllMedals}>
                           {showAllMedals ? 'Show less' : `View all ${medals.length} medals`}
-                        </CastButton>
+                        </CandyButton>
                       </div>
                     )}
                   </>

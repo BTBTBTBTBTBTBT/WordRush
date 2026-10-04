@@ -230,7 +230,7 @@ struct ProManageHandoffSheet: View {
                     restoring = true
                     Task { await store.restore(); restoring = false }
                 } label: { CandyLabel(title: restoring ? "Restoring…" : "Restore Purchases", symbol: "arrow.clockwise") }
-                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                     .disabled(restoring)
                 Spacer(minLength: 0)
             }
@@ -290,7 +290,7 @@ struct ProMemberSheet: View {
                 Button { showManage = true } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
                     .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                 Button { dismiss() } label: { CandyLabel(title: "Close") }
-                    .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 20)

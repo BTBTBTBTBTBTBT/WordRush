@@ -150,8 +150,8 @@ fun VSLiveTile(
                     )
                     if (isPro) {
                         // Same tap as before: the Invite modal. Peach = the quiet secondary.
-                        CastButton(
-                            "INVITE", onClick = onInvite, color = CastColor.SLATE, size = CastSize.S,
+                        CandyButton(
+                            "INVITE", onClick = onInvite, color = CandyColor.PEACH, size = CandySize.SMALL,
                             leading = { Icon3D(Icon3DName.ADD_FRIEND, 16.dp) }, // ART_SPEC §5
                             contentDescription = "Invite",
                         )

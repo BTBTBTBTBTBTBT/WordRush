@@ -342,27 +342,28 @@ export function ShareResultsCandy({ onShare, copied = false, countdownFor, class
   const left = useNextDailyIn(!!countdownFor);
   const line = countdownFor && left && !copied ? { game: countdownFor, left } : null;
   const glyph = <CandyIcon name={copied ? 'check' : 'share'} size={16} />;
+  // BJ15 round 2: the countdown is a small muted caption UNDER the button (never squeezed into the
+  // skin with the label art); the button keeps the normal cap height.
   return (
-    <CastButton
-      color="pink" size="md" block className={`${ROW_CANDY} ${className}`}
-      // Under 700 tall the line is hidden, so the glyph comes back.
-      icon={line ? <span className="hidden [@media(max-height:699.98px)]:inline-flex">{glyph}</span> : glyph}
-      onClick={onShare}
-      aria-label={copied ? 'Copied' : line ? `Share results. Next ${line.game} in ${line.left}` : 'Share results'}
-    >
-      <span className="flex flex-col items-center min-w-0 max-w-full">
-        <span className="block max-w-full truncate leading-[15px]">{copied ? 'Copied!' : 'Share results'}</span>
-        {line && (
-          // The game name gives way first, so the time always shows.
-          <span className="flex max-w-full min-w-0 normal-case tracking-normal text-[10px] leading-[12px] font-extrabold [@media(max-height:699.98px)]:hidden"
-            style={{ textShadow: '1px 0 0 #3b1a78, -1px 0 0 #3b1a78, 0 1px 0 #3b1a78, 0 -1px 0 #3b1a78' }}>
-            <span className="shrink-0 whitespace-pre">Next </span>
-            <span className="min-w-0 truncate">{line.game}</span>
-            <span className="shrink-0 whitespace-pre"> in {line.left}</span>
-          </span>
-        )}
-      </span>
-    </CastButton>
+    <div className={`flex flex-col items-center min-w-0 ${className}`}>
+      <CastButton
+        color="pink" size="md" block
+        icon={glyph}
+        onClick={onShare}
+        aria-label={copied ? 'Copied' : line ? `Share results. Next ${line.game} in ${line.left}` : 'Share results'}
+      >
+        {copied ? 'Copied!' : 'Share results'}
+      </CastButton>
+      {line && (
+        // The game name gives way first, so the time always shows.
+        <span className="flex max-w-full min-w-0 mt-[3px] text-[11px] leading-[13px] font-extrabold [@media(max-height:699.98px)]:hidden"
+          style={{ color: 'var(--color-text-muted, #6f5f8f)' }} aria-hidden="true">
+          <span className="shrink-0 whitespace-pre">Next </span>
+          <span className="min-w-0 truncate">{line.game}</span>
+          <span className="shrink-0 whitespace-pre"> in {line.left}</span>
+        </span>
+      )}
+    </div>
   );
 }
 

@@ -30,6 +30,7 @@ import { ChallengeResult, ChallengeSent } from './challenge-result';
 import { VsQueueScreen, VsStartingScreen } from './vs-queue';
 import { BotFigure, BotPoseAvatar, BotSpeech, CardBar, GhostAvatar, InitialAvatar, ModeChip, VS_ACCENT, VS_LIGHT_VARS, VsCard, VsLoadingScreen, VsModeIcon, VsModeTile, VsPill, vsCard } from './vs-ui';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { PageBackground } from '@/components/ui/page-background';
 import { darken } from '@/lib/soft-surface';
@@ -1379,7 +1380,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>
                 VS Battle pits you against a live opponent and records your results — it needs an account.
               </p>
-              <CandyButton color="teal" size="lg" block onClick={exitGuest}>Sign in</CandyButton>
+              <CastButton screen="blue" color="teal" size="lg" block onClick={exitGuest}>Sign in</CastButton>
             </div>
           </VsCard>
           <div className="flex justify-center">
@@ -1464,7 +1465,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           <div className="flex items-center justify-center gap-1 text-xs font-bold" style={{ color: VS.label }}>
             <Icon3D name="lock" size={17} /> Bot matches are a Pro feature
           </div>
-          <CandyButton color="purple" size="md" block onClick={() => router.push('/pro')} icon={<Icon3D name="crown" size={18} />}>Unlock with Pro</CandyButton>
+          <CastButton screen="blue" color="purple" size="md" block onClick={() => router.push('/pro')} icon={<Icon3D name="crown" size={18} />}>Unlock with Pro</CastButton>
         </div>
       );
     }
@@ -1955,7 +1956,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 <p className="text-[14px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>{oppName} wants a rematch!</p>
                 <div className="flex gap-2.5">
                   <CandyButton color="peach" size="md" className="flex-1" onClick={handleDeclineRematch}>Decline</CandyButton>
-                  <CandyButton color="teal" size="md" className="flex-1" icon="replay" onClick={handleRematch}>Accept</CandyButton>
+                  <CastButton screen="blue" color="teal" size="md" className="flex-1" icon="replay" onClick={handleRematch}>Accept</CastButton>
                 </div>
               </div>
             </VsCard>
@@ -1968,7 +1969,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 <X className="w-4 h-4" aria-hidden="true" /> No rematch
               </div>
             ) : rematchState === 'offered' ? (
-              <CandyButton color="teal" size="lg" block disabled icon={<Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}>Waiting…</CandyButton>
+              <CastButton screen="blue" color="teal" size="lg" block disabled icon={<Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}>Waiting…</CastButton>
             ) : rematchState !== 'received' ? (
               /* Honest label: for free users the tap opens the Pro upsell,
                  not a rematch — say so instead of a bait "Rematch". */
@@ -2205,7 +2206,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
 
           {(isCpu || flow === 'race') && (
             cpuWinLocked ? (
-              <CandyButton color="teal" size="lg" block icon="trophy" onClick={() => matchService.resolveNow?.()}>Claim your win</CandyButton>
+              <CastButton screen="blue" color="teal" size="lg" block icon="trophy" onClick={() => matchService.resolveNow?.()}>Claim your win</CastButton>
             ) : (
               <CandyButton color="peach" size="md" block icon="arrow" onClick={() => matchService.resolveNow?.()}>Skip to result</CandyButton>
             )

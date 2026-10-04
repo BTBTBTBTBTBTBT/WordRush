@@ -17,6 +17,7 @@ import {
 import { FriendAvatar, GameGlyph, SectionLabel, Sheet } from './friends-ui';
 import { GameSquare } from '@/components/ui/game-tile';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { FR_LOOK, frBar, frSurface } from '@/lib/friends-look';
 import { LiveHeadline } from '@/components/ui/live-headline';
 import { BrandEmptyState } from '@/components/ui/brand-empty-state';
@@ -180,7 +181,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
 
       {error && <p className="mt-3 text-[12px] font-bold text-center" style={{ color: '#dc2626' }}>{error}</p>}
 
-      <CandyButton
+      <CastButton screen="pink"
         color="pink"
         block
         onClick={invite}
@@ -189,7 +190,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
         className="mt-4"
       >
         Invite to {FRIENDLY_TITLES[kind]}
-      </CandyButton>
+      </CastButton>
       <p className="mt-1 text-center text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>
         {friend.username} gets a ping. If they&apos;re busy, it waits as your turn.
       </p>

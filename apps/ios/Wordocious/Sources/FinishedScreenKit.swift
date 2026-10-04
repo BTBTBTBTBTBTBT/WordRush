@@ -203,22 +203,23 @@ struct FinishedShareCTA: View {
     @State private var shareReveal: Bool?
 
     var body: some View {
-        Button {
-            if hasSpoilers { showShareOptions = true } else { onShare(false) }
-        } label: {
+        // BJ15 round 2: the countdown is a small muted caption UNDER the button (never squeezed
+        // into the skin with the label art); the button keeps the normal cap height.
+        VStack(spacing: 3) {
+            Button {
+                if hasSpoilers { showShareOptions = true } else { onShare(false) }
+            } label: {
+                CandyLabel(title: "Share results")   // the lettering alone, at the full cap height
+            }
+            .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
             if let nextGame, !FinishLayoutMetrics.isShort {
-                // Refreshed on each minute boundary; the glyph steps aside for the two lines.
                 TimelineView(.everyMinute) { _ in
-                    let line = FinishCloseScreen.countdownLine(game: nextGame, seconds: secondsUntilLocalMidnight())
-                    CandyLabel(title: "Share results", subtitle: line) { EmptyView() }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Share results. \(line)")
+                    Text(FinishCloseScreen.countdownLine(game: nextGame, seconds: secondsUntilLocalMidnight()))
+                        .font(Brand.font(11, .heavy)).foregroundStyle(FinishInk.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
-            } else {
-                CandyLabel(title: "Share results") { Icon3D(.share, size: 20) }
             }
         }
-        .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
         .softSheet(isPresented: $showShareOptions,
                onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
             ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])

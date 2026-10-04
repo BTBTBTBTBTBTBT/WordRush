@@ -166,9 +166,9 @@ internal fun MascotStep(profile: Profile?) {
                     )
                 }
                 Spacer(Modifier.height(14.dp))
-                CastButton(
+                CandyButton(
                     "Do it later", onClick = { Onboarding.dispatch(OnboardingEvent.MascotLater) },
-                    color = CastColor.SLATE, size = CastSize.S,
+                    color = CandyColor.PEACH, size = CandySize.SMALL,
                     contentDescription = "Do it later and keep this mascot",
                 )
                 Spacer(Modifier.height(12.dp))
@@ -341,9 +341,9 @@ internal fun AllSetStep(profile: Profile?, guest: Boolean) {
                     modifier = ONBOARD_CTA,
                 )
                 Spacer(Modifier.height(12.dp))
-                CastButton(
+                CandyButton(
                     "Explore first", onClick = { Onboarding.dispatch(OnboardingEvent.Explore) },
-                    color = CastColor.SLATE, size = CastSize.M,
+                    color = CandyColor.PEACH, size = CandySize.MEDIUM,
                     contentDescription = "Explore first, go to Home",
                 )
             }

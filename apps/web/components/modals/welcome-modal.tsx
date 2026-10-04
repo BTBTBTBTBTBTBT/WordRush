@@ -185,9 +185,9 @@ export function WelcomeModal() {
 
               {/* Skip */}
               <div className="flex justify-center mt-1">
-                <CastButton color="peach" size="sm" onClick={handleSkip} disabled={saving}>
+                <CandyButton color="peach" size="sm" onClick={handleSkip} disabled={saving}>
                   Skip for now
-                </CastButton>
+                </CandyButton>
               </div>
             </div>
           </div>

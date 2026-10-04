@@ -81,7 +81,7 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
               Upgrade to Pro
             </CastLink>
 
-            <CastButton screen="blue" color="peach" size="sm" onClick={onClose}>Come back tomorrow</CastButton>
+            <CandyButton color="peach" size="sm" onClick={onClose}>Come back tomorrow</CandyButton>
             </div>
           </div>
         </div>

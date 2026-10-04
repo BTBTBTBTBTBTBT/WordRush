@@ -181,9 +181,9 @@ fun ManageSubscriptionHandoff(onDismiss: () -> Unit) {
                 color = CastColor.GOLD, size = CastSize.L, fill = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
-            CastButton(
+            CandyButton(
                 "Restore Purchases", onClick = { com.wordocious.app.data.StoreManager.restore() },
-                color = CastColor.SLATE, size = CastSize.S,
+                color = CandyColor.PEACH, size = CandySize.SMALL,
             )
         }
     }
@@ -273,7 +273,7 @@ fun YoureProSheet(onDismiss: () -> Unit) {
                 "Manage subscription", onClick = { manage = true },
                 color = CastColor.GOLD, size = CastSize.M, fill = true, modifier = Modifier.fillMaxWidth(),
             )
-            CastButton("Close", onClick = onDismiss, color = CastColor.SLATE, size = CastSize.M)
+            CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
         }
     }
 }

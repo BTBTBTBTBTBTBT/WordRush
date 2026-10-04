@@ -553,7 +553,7 @@ private fun GiftWeekSheet(onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             InvitePanel()
-            CastButton("Close", onClick = onDismiss, color = CastColor.SLATE, size = CastSize.M)
+            CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
         }
     }
 }

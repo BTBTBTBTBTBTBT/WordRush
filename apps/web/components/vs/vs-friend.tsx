@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Link as LinkIcon, User as UserIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { CastLoader } from '@/components/ui/cast-loader';
 import { alphaHex } from '@/lib/soft-surface';
 import { VS_MODE_ORDER } from '@wordle-duel/core';
@@ -113,7 +114,7 @@ export function VsFriend() {
               <Icon3D name="crown" size={28} className="mx-auto" />
               <div className="text-[15px] font-black" style={{ color: VS.deep }}>Challenging friends is Pro</div>
               <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>Answering a challenge is free. Go Pro to send your own runs and invite friends live.</p>
-              <CandyButton color="purple" size="lg" block onClick={() => router.push('/pro')}>SEE PRO</CandyButton>
+              <CastButton screen="blue" color="purple" size="lg" block onClick={() => router.push('/pro')}>SEE PRO</CastButton>
             </div>
           </VsCard>
         ) : (
@@ -174,9 +175,9 @@ export function VsFriend() {
                     {checkCircle(link)}
                   </button>
                 </div>
-                <CandyButton color="teal" size="lg" block icon="play" onClick={start} disabled={!canSend}>
+                <CastButton screen="blue" color="teal" size="lg" block icon="play" onClick={start} disabled={!canSend}>
                   {friendCta(pickedFriends.length, link)}
-                </CandyButton>
+                </CastButton>
                 <p className="text-center text-[11.5px] font-bold" style={{ color: VS.label }}>They get a notification with your time to beat.</p>
               </>
             ) : (
@@ -186,7 +187,7 @@ export function VsFriend() {
                     Play at the same time: send a private match link or invite by @username. The match starts when your friend joins.
                   </p>
                   <div className="flex gap-2">
-                    <CandyButton color="teal" size="md" className="flex-1" onClick={() => setInvite('link')} icon={<LinkIcon className="w-3.5 h-3.5 text-white" aria-hidden="true" strokeWidth={3} />}>SHARE A LINK</CandyButton>
+                    <CastButton screen="blue" color="teal" size="md" className="flex-1" onClick={() => setInvite('link')} icon={<LinkIcon className="w-3.5 h-3.5 text-white" aria-hidden="true" strokeWidth={3} />}>SHARE A LINK</CastButton>
                     <CandyButton color="peach" size="md" className="flex-1" onClick={() => setInvite('username')} icon={<UserIcon className="w-3.5 h-3.5" aria-hidden="true" strokeWidth={3} />}>@USERNAME</CandyButton>
                   </div>
                 </div>

@@ -134,7 +134,7 @@ struct OnboardingView: View {
                 }, onSignIn: {})
                 .overlay(alignment: .topTrailing) {
                     Button { onFinish(false) } label: { CandyLabel(title: "Close") }
-                        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                         .padding(.horizontal, 16).padding(.top, 8)
                 }
                 .transition(.opacity)
@@ -191,7 +191,7 @@ struct OnboardingFlow: View {
 
     private func skipButton(_ action: @escaping () -> Void) -> some View {
         Button(action: action) { CandyLabel(title: "Skip") }
-            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
             .padding(.horizontal, 16).padding(.top, 8)
     }
 
@@ -303,7 +303,7 @@ struct OnboardingTour: View {
             HStack {
                 Spacer()
                 Button(action: onSkip) { CandyLabel(title: skipTitle) }
-                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
             }
             .padding(.horizontal, 16).padding(.top, 8)
             pager.frame(maxHeight: .infinity)
@@ -678,7 +678,7 @@ struct OnboardingAllSet: View {
                 Button(action: onPlay) { CandyLabel(title: "Play today's Classic", symbol: "play.fill") }
                     .buttonStyle(CastButtonStyle(size: .large))
                 Button(action: onExplore) { CandyLabel(title: "Explore first") }
-                    .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
             }
             .padding(.horizontal, 28).padding(.bottom, 24)
         }

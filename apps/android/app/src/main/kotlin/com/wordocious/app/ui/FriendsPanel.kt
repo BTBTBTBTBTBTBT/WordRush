@@ -519,9 +519,9 @@ private fun InvitesSection(
                             },
                             color = CastColor.GOLD, size = CastSize.S, enabled = !reminded,
                         )
-                        CastButton(
+                        CandyButton(
                             "Cancel", onClick = { scope.launch { FriendsService.decline(r.id) } },
-                            color = CastColor.SLATE, size = CastSize.S, contentDescription = "Cancel request to ${r.username}",
+                            color = CandyColor.PEACH, size = CandySize.SMALL, contentDescription = "Cancel request to ${r.username}",
                         )
                     }
                 }
@@ -1179,8 +1179,8 @@ private fun TauntDialog(target: FriendsService.FriendProfile, onDone: () -> Unit
                         }.stripedRow(i, Color(0xFFF59E0B), first = false).padding(horizontal = 16.dp, vertical = 13.dp),
                     )
                 }
-                CastButton(
-                    "Cancel", onClick = onDone, color = CastColor.SLATE, size = CastSize.M,
+                CandyButton(
+                    "Cancel", onClick = onDone, color = CandyColor.PEACH, size = CandySize.MEDIUM,
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp),
                 )
             }

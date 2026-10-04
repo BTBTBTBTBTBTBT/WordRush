@@ -164,7 +164,7 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
             <CastButton size="md" color="purple" onClick={onClose}>{isTier ? 'Nice!' : 'Awesome!'}</CastButton>
             {!isTier && (
               <>
-                <CastButton size="md" color="peach" onClick={() => { onClose(); router.push(viewUrl(VIEW_ALL)); }}>See all</CastButton>
+                <CandyButton size="md" color="peach" onClick={() => { onClose(); router.push(viewUrl(VIEW_ALL)); }}>See all</CandyButton>
                 <HeaderGlyph
                   icon="share"
                   label="Share this achievement"

@@ -183,9 +183,9 @@ export function StreakShieldModal({
                     </p>
                   )}
 
-                  <CastButton color="peach" size="md" block onClick={onDecline} disabled={loading !== null}>
+                  <CandyButton color="peach" size="md" block onClick={onDecline} disabled={loading !== null}>
                     Let it reset
-                  </CastButton>
+                  </CandyButton>
                 </div>
               </>
             )}

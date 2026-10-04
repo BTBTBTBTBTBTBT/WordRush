@@ -177,7 +177,7 @@ fun ModeLimitModal(
                             "View Solved Puzzle", onClick = { onClose(); onViewPuzzle() }, size = CastSize.M,
                         )
                     } else {
-                        CastButton("Come back tomorrow", onClick = onClose, color = CastColor.SLATE, size = CastSize.M)
+                        CandyButton("Come back tomorrow", onClick = onClose, color = CandyColor.PEACH, size = CandySize.MEDIUM)
                     }
                 }
             }

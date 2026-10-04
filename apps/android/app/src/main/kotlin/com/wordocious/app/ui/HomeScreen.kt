@@ -397,9 +397,9 @@ fun HomeScreen(
             if (isAuthed) {
                 // FINISH_SPEC A8: a small soft peach candy button (was a muted text link).
                 Box(Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
-                    CastButton(
+                    CandyButton(
                         "Sign Out", onClick = { signOutScope.launch { com.wordocious.app.data.AuthService.signOut() } },
-                        color = CastColor.SLATE, size = CastSize.S,
+                        color = CandyColor.PEACH, size = CandySize.SMALL,
                     )
                 }
             }
@@ -495,7 +495,7 @@ private fun FirstGameCard(onPlay: () -> Unit, onHowToPlay: () -> Unit, onDismiss
                 // FINISH_SPEC A8: the glossy candy PLAY pill.
                 CastButton("Play", onClick = onPlay, size = CastSize.S)
                 // A8: a soft peach candy button (was an underlined text link).
-                CastButton("How to play", onClick = onHowToPlay, color = CastColor.SLATE, size = CastSize.S)
+                CandyButton("How to play", onClick = onHowToPlay, color = CandyColor.PEACH, size = CandySize.SMALL)
             }
         }
         HomeDismissX(onDismiss)

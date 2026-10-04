@@ -682,7 +682,7 @@ struct HomeView: View {
                     NavigationLink { HowToPlayView() } label: {
                         CandyLabel(title: "How to play")
                     }
-                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                 }
                 .padding(.top, 8)
             }
@@ -843,7 +843,7 @@ struct HomeView: View {
             CandyLabel(title: "Sign Out", symbol: "rectangle.portrait.and.arrow.right")
         }
         // §A8: a small quiet peach candy, not a text link.
-        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
     }
@@ -1061,7 +1061,7 @@ struct ModeLimitModal: View {
                     .padding(.bottom, 6)
                 }
                 Button(action: onClose) { CandyLabel(title: "Not now") }
-                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                     .accessibilityHint(showViewSolved ? "" : "Come back tomorrow")
             }
             .padding(24)

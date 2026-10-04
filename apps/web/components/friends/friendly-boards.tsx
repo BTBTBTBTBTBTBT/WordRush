@@ -14,6 +14,7 @@ import {
 import { FriendAvatar, SectionLabel } from './friends-ui';
 import { GameTray } from '@/components/ui/game-tray';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { pieceSrc } from '@/lib/art';
 import type { TrayState } from '@/lib/game-tray';
 import { softMix } from '@/lib/soft-surface';
@@ -581,9 +582,9 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
               : `${them.name} is adding a letter. It lands here live.`}
           </p>
           {myTurn && (
-            <CandyButton color="pink" block icon={pick ? 'plus' : undefined} onClick={() => void send()} disabled={!pick || busy}>
+            <CastButton screen="pink" color="pink" block icon={pick ? 'plus' : undefined} onClick={() => void send()} disabled={!pick || busy}>
               {pick ? `ADD ${pick}` : 'PICK A LETTER'}
-            </CandyButton>
+            </CastButton>
           )}
           <LetterKeys onKey={onKey} selected={pick} disabled={!myTurn} />
         </>

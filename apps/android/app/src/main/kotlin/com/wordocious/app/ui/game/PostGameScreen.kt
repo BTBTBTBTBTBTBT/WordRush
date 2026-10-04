@@ -648,12 +648,12 @@ internal fun NextDailyRow(
     ) {
         if (next != null) {
             if (next.engineMode != null) {
-                com.wordocious.app.ui.CandyButton(
+                com.wordocious.app.ui.CastButton(
                     "Next daily: ${next.title}",
                     onClick = { onOpenDaily(next.engineMode) },
                     modifier = Modifier.fillMaxWidth(),
-                    color = com.wordocious.app.ui.CandyColor.AMBER,
-                    fill = true, fontSize = 16.sp, trailing = "›",
+                    color = com.wordocious.app.ui.CastColor.GOLD,
+                    fill = true,
                     leading = { CtaGameIcon(next.id) },
                 )
             }
@@ -672,12 +672,11 @@ internal fun NextDailyRow(
         if (onOpenLeaderboard != null) {
             val lbTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.title
                 ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
-            com.wordocious.app.ui.CandyButton(
+            com.wordocious.app.ui.CastButton(
                 "$lbTitle Leaderboard",
                 onClick = { onOpenLeaderboard(currentMode) },
                 modifier = Modifier.fillMaxWidth(),
-                color = com.wordocious.app.ui.CandyColor.PURPLE,
-                fill = true, fontSize = 16.sp, trailing = "›",
+                fill = true,
                 leading = { com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.TROPHY, 26.dp) },
             )
         }
@@ -689,12 +688,12 @@ internal fun NextDailyRow(
             // Full mode name per founder ("Unlimited Succession", not "Succ.").
             val fullTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.title
                 ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
-            com.wordocious.app.ui.CandyButton(
+            com.wordocious.app.ui.CastButton(
                 "Keep playing: Unlimited $fullTitle",
                 onClick = { onOpenUnlimited(currentMode) },
                 modifier = Modifier.fillMaxWidth(),
-                color = com.wordocious.app.ui.CandyColor.PEACH,
-                fill = true, fontSize = 15.sp, trailing = "›",
+                color = com.wordocious.app.ui.CastColor.SLATE,
+                fill = true,
                 leading = { CtaGameIcon(com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.id) },
             )
         }

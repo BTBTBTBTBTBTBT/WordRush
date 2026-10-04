@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
 import { PlayerAvatar } from '@/components/avatar/player-avatar';
 import { CandyButton, type CandyIconName, type CandySize } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import type { MascotId } from '@/lib/mascots';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { MODE_CHROME } from '@/components/home/mode-chrome';
@@ -251,12 +252,12 @@ export function BotSpeech({ text, accent = VS_ACCENT, side = 'left' }: { text: s
 export function TealButton({ children, onClick, disabled, size = 'md', block = false, icon, className = '' }: {
   children: React.ReactNode; onClick?: () => void; disabled?: boolean; size?: CandySize; block?: boolean; icon?: CandyIconName | React.ReactNode; className?: string;
 }) {
-  return <CandyButton color="teal" size={size} block={block} icon={icon} onClick={onClick} disabled={disabled} className={className}>{children}</CandyButton>;
+  return <CastButton screen="blue" color="teal" size={size} block={block} icon={icon} onClick={onClick} disabled={disabled} className={className}>{children}</CastButton>;
 }
 
 /** A small row action (Challenge, Race it): a small teal candy pill. */
 export function SoftPill({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) {
-  return <CandyButton color="teal" size="sm" onClick={onClick} disabled={disabled} className="shrink-0">{children}</CandyButton>;
+  return <CastButton screen="blue" color="teal" size="sm" onClick={onClick} disabled={disabled} className="shrink-0">{children}</CastButton>;
 }
 
 /** Centered teal ring spinner (VS polish §2 — loading, sending, starting). */

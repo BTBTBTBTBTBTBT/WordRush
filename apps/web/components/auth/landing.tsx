@@ -14,7 +14,7 @@ import { GameArt } from '@/components/ui/game-art';
 import { ArtTitle } from '@/components/ui/art-title';
 import { CastRow } from '@/components/ui/mascot';
 import { CandyButton } from '@/components/ui/candy-button';
-import { CastButton } from '@/components/ui/cast-button';
+import { CastButton, TextLink, TextLinkA } from '@/components/ui/cast-button';
 import { softRow } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
 import { ART_SIZE } from '@/lib/art';
@@ -151,9 +151,9 @@ export function Landing() {
           Sign in to play
         </CastButton>
         <div className="mt-3">
-          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <TextLink onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CastButton>
+          </TextLink>
           <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Play today&apos;s daily puzzles free. Sign in to save stats, streaks, and compete.
           </p>
@@ -233,9 +233,9 @@ export function Landing() {
           Sign in to play
         </CastButton>
         <div className="mb-4">
-          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <TextLink onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CastButton>
+          </TextLink>
         </div>
         <div className="flex items-center justify-center gap-3 text-[11px] font-bold flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
           <Link href="/how-to-play">How to Play</Link><span>·</span>

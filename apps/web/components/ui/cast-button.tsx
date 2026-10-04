@@ -184,3 +184,15 @@ export function castArtPaths(): string[] {
   for (const slug of CAST_LABEL_SLUGS) out.push(artSrc(`art-btnlabel-${slug}`));
   return out;
 }
+
+/** BJ15 round 2: text links / tertiary actions stay text, never a cast pill (Forgot password?, Sign up, Play without an account). */
+export function TextLink({ className = '', style, children, type = 'button', ...rest }: { className?: string; style?: CSSProperties; children?: ReactNode } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'style' | 'className' | 'children'>) {
+  return <button type={type} {...rest} className={`cast-text-link ${className}`.trim()} style={style}>{children}</button>;
+}
+
+/** The link twin of TextLink (`native` = a plain <a>). */
+export function TextLinkA({ href, native = false, className = '', style, children, ...rest }: { href: string; native?: boolean; className?: string; style?: CSSProperties; children?: ReactNode } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'style' | 'className' | 'children' | 'href'>) {
+  const cls = `cast-text-link ${className}`.trim();
+  if (native) return <a href={href} {...rest} className={cls} style={style}>{children}</a>;
+  return <Link href={href} {...rest} className={cls} style={style}>{children}</Link>;
+}

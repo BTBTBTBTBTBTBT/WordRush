@@ -278,15 +278,32 @@ struct CastLabelView: View {
     }
 }
 
+/// BJ15 round 2: text links / tertiary actions stay text (never a cast pill) — the brand purple,
+/// heavy, no outline (Forgot password?, Sign up, Play without an account).
+struct TextLinkLabel: View {
+    let title: String
+    var size: CGFloat = 14
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        Text(title)
+            .font(Brand.font(size, .black))
+            .foregroundStyle(scheme == .dark ? Color(hex: 0xC4A5FF) : Color(hex: 0x7C3AED))
+            .lineLimit(1).minimumScaleFactor(0.8)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+    }
+}
+
 /// labels.json live fallback: white Nunito Black, one thin same-hue stroke, a soft same-hue
-/// shadow; sized so its cap height matches the art labels (Nunito cap ≈ 0.705 em).
+/// shadow; sized so its cap height matches the art labels (cap ratio 0.75: Nunito Black caps read ≈ 0.75 em with the stroke — round 2, matched to the art).
 struct CastLiveText: View {
     let text: String
     let color: CastColor
     let cap: CGFloat
 
     var body: some View {
-        let size = cap / 0.705
+        let size = cap / 0.75
         let label = Text(text).font(Brand.fixedFont(size, .black))
         let w: CGFloat = 1.1
         ZStack {
@@ -298,7 +315,7 @@ struct CastLiveText: View {
             label.foregroundStyle(.white)
         }
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.4)
         .shadow(color: color.deep.opacity(0.35), radius: 1, x: 0, y: 1)
     }
 }
@@ -332,6 +349,18 @@ struct CastShowcaseHost: View {
                 case "pro": root = AnyView(ProView())
                 case "invite": root = AnyView(InviteSheet())
                 case "gopro": root = AnyView(CastShowcaseBoard())
+                case "share":
+                    // The finished screen's action row: Share results (+ the countdown caption) beside a slate CTA.
+                    root = AnyView(VStack(spacing: 16) {
+                        HStack(alignment: .top, spacing: 10) {
+                            FinishedShareCTA(nextGame: "Classic", onShare: { _ in })
+                            Button {} label: { CandyLabel(title: "New puzzle") }
+                                .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
+                        }
+                    }
+                    .padding(20)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0xF3EEFF)))
                 default:
                     root = AnyView(ZStack {
                         Color.black.opacity(0.35).ignoresSafeArea()

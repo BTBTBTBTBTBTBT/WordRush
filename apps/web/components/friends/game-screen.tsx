@@ -18,6 +18,7 @@ import { PAGE_SCENES } from '@/lib/art';
 import { ResultHost } from '@/components/ui/mascot';
 import { pocketResultHost } from '@/lib/mascots';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { PageBackground } from '@/components/ui/page-background';
 import { frBar } from '@/lib/friends-look';
@@ -279,7 +280,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         <div className="space-y-2.5 pt-1">
           {/* Pocket game result host: O3 pops on a win, R on a loss, U on a draw. */}
           <ResultHost id={pocketResultHost(youWon ? 'win' : theyWon ? 'loss' : 'draw')} pop={youWon} />
-          <CandyButton
+          <CastButton screen="pink"
             color="pink"
             block
             onClick={rematch}
@@ -287,7 +288,7 @@ export function FriendlyGameScreen({ id }: { id: string }) {
             icon={rematching ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : 'replay'}
           >
             Rematch
-          </CandyButton>
+          </CastButton>
           <CandyButton color="peach" block onClick={() => router.push('/friends')}>
             Friends
           </CandyButton>
@@ -301,15 +302,15 @@ export function FriendlyGameScreen({ id }: { id: string }) {
             <p className="text-[12.5px] font-bold" style={{ color: FR.label }}>
               It keeps going. Come back from YOUR TURN on the Friends tab any time in the next 3 days.
             </p>
-            <CandyButton color="pink" size="md" block onClick={() => router.push('/friends')}>
+            <CastButton screen="pink" color="pink" size="md" block onClick={() => router.push('/friends')}>
               Back to Friends
-            </CandyButton>
+            </CastButton>
             <CandyButton color="peach" size="md" block onClick={() => setConfirmClose(false)}>
               Keep playing
             </CandyButton>
-            <CandyButton size="sm" block onClick={resign} style={DANGER}>
+            <CastButton screen="pink" size="sm" block onClick={resign} style={DANGER}>
               Resign ({them.name} wins)
-            </CandyButton>
+            </CastButton>
           </div>
         </Sheet>
       )}

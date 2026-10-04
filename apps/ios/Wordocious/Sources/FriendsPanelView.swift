@@ -861,7 +861,7 @@ struct FriendsPanelView: View {
                             Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
                                 CandyLabel(title: "Cancel")
                             }
-                            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                         }
                         .padding(.horizontal, 12).padding(.vertical, 6)
                         .friendsStripe(i, accent: Self.lavender)
@@ -929,7 +929,7 @@ struct FriendsPanelView: View {
                 .friendsCard(accent: FriendsInk.pink, radius: 16)
                 .padding(.horizontal, 16)
                 Button { tauntTarget = nil } label: { CandyLabel(title: "Cancel") }
-                    .buttonStyle(CastButtonStyle(color: .slate, size: .medium, fullWidth: true))
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: true))
                     .padding(.horizontal, 16).padding(.top, 12)
             }
             Spacer(minLength: 0)

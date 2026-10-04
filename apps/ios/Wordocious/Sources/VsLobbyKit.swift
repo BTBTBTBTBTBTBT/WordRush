@@ -694,7 +694,7 @@ struct VSGreyPill: View {
         Button(action: action) {
             CandyLabel(title: title, symbol: icon)
         }
-        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
     }
 }
 

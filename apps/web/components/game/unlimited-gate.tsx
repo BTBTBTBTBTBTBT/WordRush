@@ -74,9 +74,9 @@ function GateCard({ title, blurb, fallbackHref, fallbackLabel, unlimited = false
               {fallbackLabel}
             </CastLink>
             <div className="flex justify-center">
-              <CastLink href="/" color="peach" size="sm" icon={<Home className="w-3.5 h-3.5" strokeWidth={3} aria-hidden="true" />}>
+              <CandyLink href="/" color="peach" size="sm" icon={<Home className="w-3.5 h-3.5" strokeWidth={3} aria-hidden="true" />}>
                 Home
-              </CastLink>
+              </CandyLink>
             </div>
           </div>
         </div>

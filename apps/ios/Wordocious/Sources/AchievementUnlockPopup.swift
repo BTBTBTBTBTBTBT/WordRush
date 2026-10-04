@@ -475,7 +475,7 @@ struct AchievementUnlockPopup: View {
                     // BF2: See all (→ Stats achievements) + share the badge card.
                     HStack(spacing: 10) {
                         Button { seeAll() } label: { CandyLabel(title: "See all") }
-                            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
                         Button { shareBadge() } label: {
                             Icon3D(.share, size: 26).frame(width: 44, height: 44).contentShape(Rectangle())
                         }

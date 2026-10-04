@@ -174,7 +174,7 @@ fun StreakShieldModal(
                             textAlign = TextAlign.Center,
                         )
                     }
-                    CastButton(
+                    CandyButton(
                         "Let it reset",
                         onClick = {
                             if (!busy) {
@@ -182,7 +182,7 @@ fun StreakShieldModal(
                                 scope.launch { onDecline(); busy = false }
                             }
                         },
-                        color = CastColor.SLATE, size = CastSize.M, fill = true,
+                        color = CandyColor.PEACH, size = CandySize.MEDIUM, fill = true,
                         enabled = !busy, modifier = Modifier.fillMaxWidth(),
                     )
                 }

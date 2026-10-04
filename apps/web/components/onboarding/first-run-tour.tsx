@@ -459,7 +459,7 @@ export function FirstRunTour() {
         <PageBackground tint="home" className="relative w-full h-full flex flex-col overflow-hidden" style={{ paddingTop: 'max(14px, env(safe-area-inset-top, 0px))', paddingBottom: 'max(18px, env(safe-area-inset-bottom, 0px))' }}>
           {/* Skip, top right (steps 2–4). */}
           <div className="flex justify-end px-4" style={{ flex: 'none', minHeight: 40 }}>
-            {showSkip && <CastButton size="sm" color="peach" onClick={skip}>Skip</CastButton>}
+            {showSkip && <CandyButton size="sm" color="peach" onClick={skip}>Skip</CandyButton>}
           </div>
 
           {/* 1. WELCOME */}

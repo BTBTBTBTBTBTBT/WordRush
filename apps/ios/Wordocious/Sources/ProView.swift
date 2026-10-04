@@ -132,7 +132,7 @@ struct ProView: View {
             Button { Task { await store.restore() } } label: {
                 CandyLabel(title: "Restore Purchases", symbol: "arrow.clockwise")
             }
-            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
         }
         .padding(20).frame(maxWidth: .infinity)
         .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.12, line: 0.32)
@@ -197,7 +197,7 @@ struct ProView: View {
             Button { Task { await store.restore() } } label: {
                 CandyLabel(title: "Restore Purchases", symbol: "arrow.clockwise")
             }
-            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
             .frame(maxWidth: .infinity)
             .padding(.top, 4)
 

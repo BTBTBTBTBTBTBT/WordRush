@@ -153,9 +153,9 @@ struct AuthView: View {
                         mode = mode == .reset ? .signin : (mode == .signin ? .signup : .signin)
                         error = nil; resetSent = false; signupSent = false; confirmPassword = ""
                     } label: {
-                        CandyLabel(title: mode == .signin ? "Sign up" : mode == .signup ? "Sign in" : "Back to sign in")
+                        TextLinkLabel(title: mode == .signin ? "Sign up" : mode == .signup ? "Sign in" : "Back to sign in")
                     }
-                    .buttonStyle(CastButtonStyle(color: mode == .reset ? .slate : .pink, size: .small, fullWidth: false))
+                    .buttonStyle(.squish)   // BJ15 round 2: an inline text link, not a pill
                     .accessibilityLabel(mode == .signin ? "Don't have an account? Sign up"
                                         : mode == .signup ? "Already have an account? Sign in"
                                         : "Back to sign in")
@@ -172,9 +172,10 @@ struct AuthView: View {
                     AuthService.claimSavesFor("guest")
                     auth.isGuest = true
                 }) {
-                    CandyLabel(title: "Play without an account", symbol: "play.fill")
+                    TextLinkLabel(title: "Play without an account", size: 15)
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 }
-                .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
+                .buttonStyle(.squish)   // BJ15 round 2: a secondary text link, not a pill
                 .disabled(working)
             }
         }
@@ -216,8 +217,8 @@ struct AuthView: View {
                 Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
                 if let (title, action) = trailing {
                     Spacer()
-                    Button(action: action) { CandyLabel(title: title) }
-                        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
+                    Button(action: action) { TextLinkLabel(title: title, size: 12) }
+                        .buttonStyle(.squish)   // BJ15 round 2: a text link, not a pill
                         .accessibilityLabel(title)
                 }
             }

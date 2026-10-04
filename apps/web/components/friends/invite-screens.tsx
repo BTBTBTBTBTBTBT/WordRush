@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Copy, Gift } from 'lucide-react';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { HeaderBack, PAGE_TITLE_GRADIENTS } from '@/components/ui/page-header';
 import { LetterTile } from '@/components/game/letter-tile';
 import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
@@ -211,9 +212,9 @@ export function InviteSentCard({ name, code, note, onSendAnother, sendAnotherDis
       {note && <p className="m-0 text-[11.5px] font-bold" style={{ color: SOFT_INK.label }}>{note}</p>}
       <div className="flex w-full gap-2.5 pt-1">
         {onSendAnother && (
-          <CandyButton size="md" color="pink" block icon="plus" onClick={onSendAnother} disabled={sendAnotherDisabled}>
+          <CastButton screen="pink" size="md" color="pink" block icon="plus" onClick={onSendAnother} disabled={sendAnotherDisabled}>
             Send another
-          </CandyButton>
+          </CastButton>
         )}
         <CandyButton size="md" color="peach" block onClick={onDone}>Done</CandyButton>
       </div>
@@ -272,7 +273,7 @@ export function InviteReceivedBody({ inviter, headline, children, acceptLabel = 
         {onDecline && (
           <CandyButton size="lg" color="peach" block onClick={onDecline} disabled={busy} style={{ flex: '0 0 38%' }}>{declineLabel}</CandyButton>
         )}
-        <CandyButton size="lg" block icon={acceptIcon ?? 'check'} onClick={onAccept} disabled={busy} style={GREEN_CANDY}>{acceptLabel}</CandyButton>
+        <CastButton screen="pink" size="lg" block icon={acceptIcon ?? 'check'} onClick={onAccept} disabled={busy} style={GREEN_CANDY}>{acceptLabel}</CastButton>
       </div>
     </div>
   );
@@ -299,7 +300,7 @@ export function InviteStateBody({ pose, scene, title, children, action, busy = f
       <h1 className="m-0 text-lg font-black uppercase tracking-wide leading-tight" style={{ background: PAGE_TITLE_GRADIENTS.brand, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>{title}</h1>
       {children && <p className="m-0 mt-1 text-xs font-bold" style={{ color: SOFT_INK.label }}>{children}</p>}
       <div className="w-full mt-4">
-        {action ?? <CandyLink href="/" color="purple" size="lg" block icon="play">Go to Wordocious</CandyLink>}
+        {action ?? <CastLink screen="pink" href="/" color="purple" size="lg" block icon="play">Go to Wordocious</CastLink>}
       </div>
     </div>
   );
@@ -425,7 +426,7 @@ export function NewFriendsModal({ me, friend, onChallenge, onSeeFriends, onClose
         </div>
         <p className="m-0 text-xs font-bold" style={{ color: SOFT_INK.label }}>You and @{friend.name} are now friends. Race them on every daily.</p>
         <div className="flex w-full flex-col gap-2 pt-2">
-          <CandyButton size="lg" color="pink" block icon="play" onClick={onChallenge}>Challenge them</CandyButton>
+          <CastButton screen="pink" size="lg" color="pink" block icon="play" onClick={onChallenge}>Challenge them</CastButton>
           <CandyButton size="md" color="peach" block onClick={onSeeFriends}>See friends</CandyButton>
         </div>
       </div>
@@ -448,8 +449,8 @@ export function ProUnlockedBody({ onStart, startHref, note, titleId }: { onStart
       {note && <p className="m-0 mt-1 text-xs font-bold" style={{ color: SOFT_INK.label }}>{note}</p>}
       <div className="w-full mt-4">
         {startHref
-          ? <CandyLink href={startHref} color="amber" size="lg" block icon="play">Start playing</CandyLink>
-          : <CandyButton color="amber" size="lg" block icon="play" onClick={onStart}>Start playing</CandyButton>}
+          ? <CastLink screen="pink" href={startHref} color="amber" size="lg" block icon="play">Start playing</CastLink>
+          : <CastButton screen="pink" color="amber" size="lg" block icon="play" onClick={onStart}>Start playing</CastButton>}
       </div>
       <Confetti colors={CANDY_CONFETTI.gold} />
     </div>
@@ -525,8 +526,8 @@ export function GiftProCard({ giftsLeft, slots = GIFT_SLOTS, onSend, sendHref, s
         {children}
         {(onSend || sendHref) && (
           sendHref
-            ? <CandyLink href={sendHref} color="amber" size="md" block icon={<GiftCandyIcon />}>{label}</CandyLink>
-            : <CandyButton color="amber" size="md" block icon={<GiftCandyIcon />} onClick={onSend} disabled={sending || sendDisabled}>{label}</CandyButton>
+            ? <CastLink screen="pink" href={sendHref} color="amber" size="md" block icon={<GiftCandyIcon />}>{label}</CastLink>
+            : <CastButton screen="pink" color="amber" size="md" block icon={<GiftCandyIcon />} onClick={onSend} disabled={sending || sendDisabled}>{label}</CastButton>
         )}
         {footer}
       </div>

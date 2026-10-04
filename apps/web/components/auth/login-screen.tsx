@@ -4,13 +4,11 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { ArtTitle } from '@/components/ui/art-title';
+import { CastHeader } from '@/components/ui/cast-header';
 import { validateUsername } from '@wordle-duel/core';
 import { CandyButton } from '@/components/ui/candy-button';
-import { CastButton } from '@/components/ui/cast-button';
-import { PoseArt, barCard, softInput, softNotice } from '@/components/ui/soft-popup';
-import { ART_SIZE } from '@/lib/art';
-import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
+import { CastButton, TextLink, TextLinkA } from '@/components/ui/cast-button';
+import { barCard, softInput, softNotice } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
 import { HeadingArt } from '@/components/ui/heading-art';
 
@@ -154,7 +152,7 @@ export function LoginScreen() {
           {mode !== 'reset' && (
             <>
               {/* Google Sign-In */}
-              <CastButton
+              <CandyButton
                 color="peach"
                 size="lg"
                 block
@@ -164,7 +162,7 @@ export function LoginScreen() {
                 style={{ textTransform: 'none' }}
               >
                 Continue with Google
-              </CastButton>
+              </CandyButton>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
@@ -221,9 +219,9 @@ export function LoginScreen() {
                     Password
                   </label>
                   {mode === 'signin' && (
-                    <CastButton color="peach" size="sm" onClick={() => switchMode('reset')} style={{ textTransform: 'none' }}>
+                    <TextLink onClick={() => switchMode('reset')} style={{ textTransform: 'none' }}>
                       Forgot password?
-                    </CastButton>
+                    </TextLink>
                   )}
                 </div>
                 <div className="relative">
@@ -299,16 +297,16 @@ export function LoginScreen() {
             </CastButton>
 
             <div className="text-center">
-              <CastButton
-                color="peach"
-                size="sm"
+              <TextLink
+               
+               
                 onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
                 style={{ textTransform: 'none' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up"
                   : mode === 'signup' ? 'Already have an account? Sign in'
                   : 'Back to sign in'}
-              </CastButton>
+              </TextLink>
             </div>
           </form>
         </div>

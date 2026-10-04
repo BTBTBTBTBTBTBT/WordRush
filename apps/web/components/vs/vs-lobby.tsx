@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { VS_MODE_ORDER, vsClock } from '@wordle-duel/core';
 import { SoftNum } from '@/components/ui/soft-number';
 import { useAuth } from '@/lib/auth-context';
@@ -269,7 +270,7 @@ export function VsLobby() {
                   {/* The VS mode count comes from the catalog, never a literal (sweep-copy guard). */}
                   All {MODES.length} modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.
                 </p>
-                <CandyButton color="purple" size="md" className="mt-2" onClick={() => router.push('/pro')}>SEE PRO</CandyButton>
+                <CastButton screen="blue" color="purple" size="md" className="mt-2" onClick={() => router.push('/pro')}>SEE PRO</CastButton>
               </div>
               </VsCard>
             )}

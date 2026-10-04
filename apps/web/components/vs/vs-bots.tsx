@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton, candyClass } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { CastLoader } from '@/components/ui/cast-loader';
 import { LADDER_BOTS, LADDER_CLEAR_RUN, ladderRungs, vsClock, VS_MODE_ORDER } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
@@ -226,7 +227,7 @@ export function VsBots() {
                   {isPro ? (
                     <SoftPill onClick={() => play('ghost')}>Race it</SoftPill>
                   ) : (
-                    <CandyButton color="purple" size="sm" onClick={() => router.push('/pro')} icon={<Icon3D name="lock" size={14} />}>Pro</CandyButton>
+                    <CastButton screen="blue" color="purple" size="sm" onClick={() => router.push('/pro')} icon={<Icon3D name="lock" size={14} />}>Pro</CastButton>
                   )}
                 </div>
               </VsCard>

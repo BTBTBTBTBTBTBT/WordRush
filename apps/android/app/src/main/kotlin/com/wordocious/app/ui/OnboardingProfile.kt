@@ -141,16 +141,16 @@ internal fun ProfileStep() {
             Spacer(Modifier.height(10.dp))
             OnboardLine("Save your streaks, climb the leaderboards, and race your friends.")
             Spacer(Modifier.height(28.dp))
-            CandyButton(
+            CastButton(
                 "Create my account", onClick = { Onboarding.dispatch(OnboardingEvent.CreateAccount) },
-                color = CandyColor.PURPLE, size = CandySize.LARGE, trailing = "›", fill = true,
+                size = CastSize.L, fill = true,
                 modifier = ONBOARD_CTA,
             )
             Spacer(Modifier.height(12.dp))
             // The flow moves on to ALL SET once the guest session is in (Onboarding's auth watch).
-            CastButton(
+            CandyButton(
                 "Play as guest", onClick = { AuthService.enterGuest() },
-                color = CastColor.SLATE, size = CastSize.M,
+                color = CandyColor.PEACH, size = CandySize.MEDIUM, icon = CandyIcon.PLAY,
                 contentDescription = "Play as guest, without an account",
             )
         }
@@ -263,10 +263,10 @@ internal fun UsernameStep(profile: Profile?) {
                 }
             }
             Spacer(Modifier.height(24.dp))
-            CandyButton(
+            CastButton(
                 if (saving) "Saving…" else "That's me!",
                 onClick = { save() },
-                color = CandyColor.PURPLE, size = CandySize.LARGE, trailing = if (saving) null else "›", fill = true,
+                size = CastSize.L, fill = true,
                 enabled = canSave,
                 contentDescription = "Save the username ${name.trim()}",
                 leading = if (saving) {
