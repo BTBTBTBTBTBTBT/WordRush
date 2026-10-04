@@ -1027,7 +1027,10 @@ struct ModeLimitModal: View {
                     .accessibilityHidden(true)
                 Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
-                    .multilineTextAlignment(.center).padding(.bottom, 16)
+                    .multilineTextAlignment(.center)
+                    // Release gate: never truncated (it lost "…ad-free gameplay across every mode").
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 16)
 
                 // §A2: the countdown is a soft number on a tinted pill.
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
