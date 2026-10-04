@@ -12,6 +12,7 @@
 #   SKIP_BUILD=1 ./capture-sim.sh    reuse the last DEBUG build
 #   SHOTS="stats leaderboard" ./capture-sim.sh   just those
 #   KEEP_BOOTED=1 ./capture-sim.sh   leave the sim running afterwards
+#   APP=/path/Wordocious.app SKIP_BUILD=1 ./capture-sim.sh   capture a prebuilt DEBUG .app
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -40,8 +41,8 @@ if [ -z "${SKIP_BUILD:-}" ]; then
   xcodebuild -project "$IOS/Wordocious.xcodeproj" -scheme Wordocious -configuration Debug \
     -destination "id=$UDID" build -quiet
 fi
-APP="$(xcodebuild -project "$IOS/Wordocious.xcodeproj" -scheme Wordocious -configuration Debug \
-  -destination "id=$UDID" -showBuildSettings 2>/dev/null | awk -F' = ' '/ TARGET_BUILD_DIR /{d=$2} / WRAPPER_NAME /{w=$2} END{print d"/"w}')"
+APP="${APP:-$(xcodebuild -project "$IOS/Wordocious.xcodeproj" -scheme Wordocious -configuration Debug \
+  -destination "id=$UDID" -showBuildSettings 2>/dev/null | awk -F' = ' '/ TARGET_BUILD_DIR /{d=$2} / WRAPPER_NAME /{w=$2} END{print d"/"w}')}"
 [ -d "$APP" ] || { echo "no app at $APP"; exit 1; }
 
 xcrun simctl boot "$UDID" 2>/dev/null || true

@@ -195,10 +195,24 @@ enum StoreDemoData {
         if path.hasPrefix("/rest/v1/") {
             let table = String(path.dropFirst("/rest/v1/".count))
             switch table {
-            case "profiles": return (200, json(profiles(idFilter: param("id"))), count)
+            case "profiles": return (200, json(profiles(idFilter: param("id"), nameFilter: param("username"))), count)
+            case "app_flags":
+                // Every Puzzles title on, as for a real player.
+                let keys: [String] = ["sudoku", "scramble", "hub", "crossword", "groups", "ladder", "cryptogram", "wordsearch", "regions"]
+                let rows: [[String: Any]] = keys.map { ["key": "mode." + $0, "enabled": true, "audience": "all"] }
+                return (200, json(rows), count)
             case "daily_results" where (param("select") ?? "").contains("profiles!inner"):
                 return (200, json(leaderboard(mode: String((param("game_mode") ?? "eq.DUEL").dropFirst(3)),
                                               ids: param("user_id"))), count)
+            case "daily_results" where param("play_type") == "eq.vs":
+                // Today's Daily Battle: won (Stats "VS Battle W").
+                let mine: Bool = (param("user_id") ?? "").lowercased() == "eq." + StoreDemo.meId
+                let row: [String: Any] = ["id": "demo-vs", "vs_wins": 1, "vs_losses": 0, "vs_games": 1]
+                return (200, json(mine ? [row] : [[String: Any]]()), count)
+            case "daily_results" where param("select") == "composite_score" && param("user_id") == nil:
+                // The day's field for one mode (Stats "Standing"): 160 scores, WordWiz near the top fifth.
+                let field: [[String: Any]] = (0..<160).map { i in ["composite_score": Double(180 + (i * 53) % 820)] }
+                return (200, json(field), count)
             case "daily_results" where (param("user_id") ?? "").lowercased() == "eq." + StoreDemo.meId:
                 return (200, json(myResults(day: param("day"), mode: param("game_mode"))), count)
             default: return (200, json([Any]()), count)
@@ -234,7 +248,11 @@ enum StoreDemoData {
     }
 
     /// `id=eq.X` / `id=in.(a,b)` → those people; otherwise the whole cast.
-    static func profiles(idFilter: String?) -> [[String: Any]] {
+    static func profiles(idFilter: String?, nameFilter: String? = nil) -> [[String: Any]] {
+        if let n = nameFilter {
+            let wanted: String = n.lowercased()
+            return StoreDemo.everyone.filter { wanted.contains($0.name.lowercased()) }.map(profileRow)
+        }
         guard let f = idFilter else { return StoreDemo.everyone.map(profileRow) }
         let ids: [String]
         if f.hasPrefix("eq.") { ids = [String(f.dropFirst(3))] }
@@ -297,12 +315,27 @@ enum StoreDemoData {
         }
         var out: [[String: Any]]
         if let day, day == "eq." + StoreDemo.today {
-            out = StoreDemo.shot == "home" ? [] : rows(back: 0, count: 6)
+            out = StoreDemo.shot == "home" ? [] : rows(back: 0, count: 6) + puzzlesToday()
         } else {
             out = (1...60).flatMap { rows(back: $0, count: $0 % 5 == 0 ? 6 : 8) } + (StoreDemo.shot == "home" ? [] : rows(back: 0, count: 6))
         }
         if let mode, mode.hasPrefix("eq.") { out = out.filter { ($0["game_mode"] as? String) == String(mode.dropFirst(3)) } }
         return out
+    }
+
+    /// Four Puzzles finished today (Stats "Puzzles 4 of 10").
+    static func puzzlesToday() -> [[String: Any]] {
+        let done: [(String, Int, Int)] = [("SUDOKU", 1, 212), ("SCRAMBLE", 4, 96), ("GROUPS", 4, 131), ("LADDER", 1, 74)]
+        var list: [[String: Any]] = []
+        for (m, boards, secs) in done {
+            var r: [String: Any] = [:]
+            r["user_id"] = StoreDemo.meId; r["day"] = StoreDemo.today; r["game_mode"] = m; r["play_type"] = "solo"
+            r["completed"] = true; r["guess_count"] = boards + 1; r["time_seconds"] = Double(secs)
+            r["composite_score"] = Double(640 + secs); r["boards_solved"] = boards; r["total_boards"] = boards
+            r["hints_used"] = 0; r["created_at"] = StoreDemo.iso(Date())
+            list.append(r)
+        }
+        return list
     }
 
     static func friendRow(_ p: StoreDemo.Person, online: Bool, activity: String?) -> [String: Any] {
@@ -374,10 +407,17 @@ enum StoreDemoDriver {
             await PerfDrive.sleep(2.0)
             PerfTour.send(.sheet(.quickPlay))
         case "vs":
-            PerfTour.send(.cover(.vsBot))
-            // After the intro + countdown, two guesses; the bot plays on its own clock meanwhile.
-            await PerfDrive.sleep(11.0)
-            for w in ["CRANE", "MOIST"] { await PerfDrive.type(w, gap: 0.12); PerfDrive.enter(); await PerfDrive.sleep(4.0) }
+            // The live match-found card: you vs a friend, both mascots, the VS lettering, your head-to-head.
+            let lexi = StoreDemo.people[0]
+            for p in StoreDemo.everyone {
+                AvatarDirectory.shared.record(userId: p.id, username: p.name, url: nil, config: AvatarConfigRaw(fields: p.avatar),
+                                              castId: nil, frame: p.avatar["frame"], accent: nil)
+            }
+            let me = VSMatchIntroView.Player(username: StoreDemo.me.name, avatarUrl: nil, level: StoreDemo.me.level)
+            let them = VSMatchIntroView.Player(username: lexi.name, avatarUrl: nil, level: lexi.level)
+            present(AnyView(VSMatchIntroView(mode: .duel, me: me, opponent: them,
+                                             headToHead: HeadToHeadRecord(myWins: 7, theirWins: 5, draws: 0), onDone: {})),
+                    full: true)
         case "mascot": present(AnyView(StoreDemoMascotPage()))
         default: PerfTour.send(.selectTab(.home))
         }
@@ -415,13 +455,13 @@ enum StoreDemoDriver {
         return out
     }
 
-    private static func present(_ root: AnyView) {
+    private static func present(_ root: AnyView, full: Bool = false) {
         let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
         guard var top = scene?.windows.first(where: \.isKeyWindow)?.rootViewController ?? scene?.windows.first?.rootViewController
         else { return }
         while let next = top.presentedViewController { top = next }
         let host = UIHostingController(rootView: root)
-        host.modalPresentationStyle = .pageSheet
+        host.modalPresentationStyle = full ? .fullScreen : .pageSheet
         top.present(host, animated: false)
     }
 }

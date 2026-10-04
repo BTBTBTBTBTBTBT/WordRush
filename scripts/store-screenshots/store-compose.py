@@ -23,22 +23,22 @@ SHOTS = [
     ('IMG_9886.PNG', 'stats-today', 'Your day at a glance',          'Sweep, More Games, VS and your standing'),
     ('IMG_9888.PNG', 'records',     'Records and a trophy shelf',    'Medals, fastest wins, fewest guesses'),
 ]
-# Simulator set (capture-sim.sh, -storeDemo). Slot 10 reuses the composed widgets frame
-# from the last version (a `None` source = copy docs/store/screenshots-2.7/10-widgets-<size>.png).
+# Simulator set (capture-sim.sh, -storeDemo). Slot 10 composes the mascot widget renders
+# from docs/design/widgets-2026-10-02 (a `None` source = compose_widgets).
 SHOTS_SIM = [
-    ('sim-01-home.png',        'home',        '19 fresh puzzles every day',  'Sweep all eight dailies for a Daily Sweep'),
+    ('sim-01-home.png',        'home',        '8 fresh puzzles every day',   'Finish all eight for a Daily Sweep'),
     ('sim-02-classic.png',     'classic',     'One word, six tries',         'Every guess shows you a little more'),
     ('sim-03-octo.png',        'octoword',    'Eight boards at once',        'OctoWord: every guess plays on all eight'),
-    ('sim-04-finish.png',      'victory',     'Every solve is scored',       'Guesses, speed and a clean finish all count'),
-    ('sim-05-stats.png',       'stats',       'Your day at a glance',        'Streaks, levels and every daily you played'),
-    ('sim-06-leaderboard.png', 'leaderboard', 'Climb the daily podium',      'Every game, every day, all-time too'),
-    ('sim-07-friends.png',     'friends',     'Play with your friends',      "Today's race, who's on now, pocket games"),
-    ('sim-08-vs.png',          'vs',          'VS battles, head to head',    'Race a friend live or take on the cast'),
-    ('sim-09-mascot.png',      'mascot',      'Build your own mascot',       'Bodies, colors, hats and a backdrop to match'),
-    (None,                     'widgets',     None,                          None),
+    ('sim-04-finish.png',      'victory',     'Every solve is scored',       'Guesses, time and points on every win'),
+    ('sim-05-stats.png',       'stats',       'Your day at a glance',        'Your streak, level and every daily played'),
+    ('sim-06-leaderboard.png', 'leaderboard', 'Climb the daily podium',      'See where you rank in every game today'),
+    ('sim-07-friends.png',     'friends',     'Play with your friends',      'Pocket games like Tic-Tac-Tile, live'),
+    ('sim-08-vs.png',          'vs',          'VS battles, head to head',    'Match up with a friend and track who leads'),
+    ('sim-09-mascot.png',      'mascot',      'Build your own mascot',       'Pick a body, color, pattern, eyes and more'),
+    (None,                     'widgets',     'Widgets with your mascot',    'Your dailies, streak and points at a glance'),
 ]
 if SET == 'sim': SHOTS = SHOTS_SIM
-WIDGETS = os.path.join(HERE, '..', '..', 'docs', 'store', 'screenshots-2.7', '10-widgets-{}.png')
+WIDGET_DIR = os.path.join(HERE, '..', '..', 'docs', 'design', 'widgets-2026-10-02')
 SIZES = {'67': (1320, 2868), '65': (1284, 2778)}
 
 def font(size, weight):
@@ -69,17 +69,23 @@ def wrap(draw, text, f, maxw):
     if cur: lines.append(cur)
     return lines
 
-def compose(src, head, sub, W, H):
+HEAD_PX, SUB_PX = 88, 46   # SET=sim: one size for every frame (founder 10-03: same type, same axis)
+
+def caption(canvas, head, sub, W, fixed):
+    """Headline + subline centered on the frame's axis; returns the y below the subline."""
     s = W / 1320
-    canvas = gradient(W, H, (0xF5, 0xF3, 0xFF), (0xEC, 0xE8, 0xFC)).convert('RGBA')
     draw = ImageDraw.Draw(canvas)
-    # headline: Nunito Black, purple→pink like the app's titles
-    # one line if it fits at 96/88/80 px, else wrap at 88 (never an orphan word on line two)
-    hf, lines = None, None
-    for px in (96, 88, 80):
-        hf = font(int(px * s), 'Black'); lines = wrap(draw, head, hf, W - int(160 * s))
-        if len(lines) == 1: break
-    if len(lines) > 1: hf = font(int(88 * s), 'Black'); lines = wrap(draw, head, hf, W - int(160 * s))
+    if fixed:
+        # Every frame: one headline line at HEAD_PX, one subline line at SUB_PX — or fail loudly.
+        hf = font(int(HEAD_PX * s), 'Black'); lines = wrap(draw, head, hf, W - int(160 * s))
+        assert len(lines) == 1, f'headline wraps: {head!r}'
+    else:
+        # founder-phone set: one line if it fits at 96/88/80 px, else wrap at 88
+        hf, lines = None, None
+        for px in (96, 88, 80):
+            hf = font(int(px * s), 'Black'); lines = wrap(draw, head, hf, W - int(160 * s))
+            if len(lines) == 1: break
+        if len(lines) > 1: hf = font(int(88 * s), 'Black'); lines = wrap(draw, head, hf, W - int(160 * s))
     y = int(150 * s)
     lh = int(hf.size * 1.12)
     for ln in lines:
@@ -89,13 +95,23 @@ def compose(src, head, sub, W, H):
         grad = hgradient(mask.width, mask.height, (0x7C, 0x3A, 0xED), (0xEC, 0x48, 0x99)).convert('RGBA')
         canvas.paste(grad, (int((W - tw) / 2) - 10, y), mask)
         y += lh
-    # subline: muted, bold
-    sf = font(int(46 * s), 'Bold')
+    sf = font(int(SUB_PX * s), 'Bold')
     y += int(18 * s)
-    for ln in wrap(draw, sub, sf, W - int(200 * s)):
+    sublines = wrap(draw, sub, sf, W - int(200 * s))
+    if fixed: assert len(sublines) == 1, f'subline wraps: {sub!r}'
+    for ln in sublines:
         tw = draw.textlength(ln, font=sf)
         draw.text(((W - tw) / 2, y), ln, font=sf, fill=(0x6B, 0x67, 0x85))
         y += int(sf.size * 1.3)
+    return y
+
+def ground(W, H):
+    return gradient(W, H, (0xF5, 0xF3, 0xFF), (0xEC, 0xE8, 0xFC)).convert('RGBA')
+
+def compose(src, head, sub, W, H):
+    s = W / 1320
+    canvas = ground(W, H)
+    y = caption(canvas, head, sub, W, SET == 'sim')
     # phone shot: fit the remaining band, rounded corners, hairline border, soft shadow
     top = y + int(70 * s); bottom_pad = int(64 * s)
     shot = Image.open(src).convert('RGBA')
@@ -113,12 +129,43 @@ def compose(src, head, sub, W, H):
     ImageDraw.Draw(canvas).rounded_rectangle((x0, y0, x0 + pw - 1, y0 + ph - 1), r, outline=(0xDD, 0xD6, 0xFE), width=max(2, int(3 * s)))
     return canvas.convert('RGB')
 
+def compose_widgets(head, sub, W, H):
+    """The mascot widget renders (large, medium, small light + small dark) stacked in the
+    same column a phone shot fills, each with the phone's soft shadow."""
+    s = W / 1320
+    canvas = ground(W, H)
+    y = caption(canvas, head, sub, W, True)
+    top = y + int(70 * s); bottom_pad = int(64 * s)
+    # the same width a phone shot takes on this frame size
+    cw = int(1320 * (H - top - bottom_pad) / 2868)
+    gap = int(44 * s)
+    half = (cw - gap) // 2
+    def load(name, w):
+        im = Image.open(os.path.join(WIDGET_DIR, name)).convert('RGBA')
+        return im.resize((w, int(im.height * w / im.width)), Image.LANCZOS)
+    large, medium = load('large-you-mid-light.png', cw), load('medium-you-mid-light.png', cw)
+    sl, sd = load('small-you-swept-light.png', half), load('small-you-mid-dark.png', half)
+    total = large.height + medium.height + sl.height + 2 * gap
+    x0 = (W - cw) // 2; yy = top + (H - top - bottom_pad - total) // 2
+    places = [(large, x0, yy), (medium, x0, yy + large.height + gap)]
+    yb = yy + large.height + medium.height + 2 * gap
+    places += [(sl, x0, yb), (sd, x0 + half + gap, yb)]
+    shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    for im, x, y1 in places:
+        a = im.split()[3].point(lambda v: 70 if v > 128 else 0)
+        tint = Image.new('RGBA', im.size, (0x4C, 0x1D, 0x95, 0)); tint.putalpha(a)
+        shadow.alpha_composite(tint, (x, y1 + int(24 * s)))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(int(36 * s)))
+    canvas = Image.alpha_composite(canvas, shadow)
+    for im, x, y1 in places: canvas.alpha_composite(im, (x, y1))
+    return canvas.convert('RGB')
+
 for key, (W, H) in SIZES.items():
     out = os.path.join(HERE, 'store-out', key); os.makedirs(out, exist_ok=True)
     for f in os.listdir(out): os.remove(os.path.join(out, f))
     for i, (fn, name, head, sub) in enumerate(SHOTS, 1):
         p = os.path.join(out, f'{i:02d}-{name}.png')
-        if fn is None: img = Image.open(WIDGETS.format(key)).convert('RGB')
+        if fn is None: img = compose_widgets(head, sub, W, H)
         else: img = compose(os.path.join(SRC, fn), head, sub, W, H)
         img.save(p, optimize=True)
         print(key, os.path.basename(p), img.size, os.path.getsize(p) // 1024, 'KB')
