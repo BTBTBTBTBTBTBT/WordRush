@@ -26,7 +26,7 @@ SHOTS = [
 # Simulator set (capture-sim.sh, -storeDemo). Slot 10 composes the mascot widget renders
 # from docs/design/widgets-2026-10-02 (a `None` source = compose_widgets).
 SHOTS_SIM = [
-    ('sim-01-home.png',        'home',        '8 fresh puzzles every day',   'Finish all eight for a Daily Sweep'),
+    ('sim-01-home.png',        'home',        '18 fresh puzzles every day',  'Eight dailies and ten puzzles, new each morning'),
     ('sim-02-classic.png',     'classic',     'One word, six tries',         'Every guess shows you a little more'),
     ('sim-03-octo.png',        'octoword',    'Eight boards at once',        'OctoWord: every guess plays on all eight'),
     ('sim-04-finish.png',      'victory',     'Every solve is scored',       'Guesses, time and points on every win'),

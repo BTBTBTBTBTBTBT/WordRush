@@ -29,7 +29,7 @@ SHOTS="${SHOTS:-$ALL}"
 settle() {
   case "$1" in
     classic) echo 15 ;; finish) echo 22 ;; octo) echo 18 ;;
-    friends) echo 11 ;; vs) echo 30 ;; *) echo 9 ;;
+    friends) echo 11 ;; vs) echo 11 ;; *) echo 9 ;;
   esac
 }
 

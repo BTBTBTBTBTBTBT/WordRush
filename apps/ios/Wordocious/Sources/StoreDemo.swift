@@ -17,7 +17,7 @@ import WordociousCore
 //   PresenceService.start). VS vs a bot plays fully on device.
 //
 // `-storeShot <name>` then drives the app to one screen (StoreDemoDriver):
-//   home | classic | octo | finish | stats | leaderboard | friends | vs | mascot
+//   home | classic | octo | finish | stats | leaderboard | friends | vs | vsintro | mascot
 // The capture script (scripts/store-screenshots/capture-sim.sh) launches one
 // shot per process on a fresh install, waits, and screenshots.
 enum StoreDemo {
@@ -94,6 +94,10 @@ enum StoreDemo {
     static func bootIfRequested() {
         guard active else { return }
         UserDefaults.standard.set(true, forKey: Onboarding.flagKey)
+        // The bot ladder this far (local-only store; each shot runs on a fresh install): 6 of 10, a 4-win streak.
+        let ladder: [String: Any] = ["streak": 4, "bestStreak": 9, "rung": 2, "unlocked": [String](), "botOfDayStreak": 3,
+                                     "ladderCleared": 6, "ladderRun": 0, "ladderVersion": CpuProgression.castLadderVersion]
+        if let data = try? JSONSerialization.data(withJSONObject: ladder) { UserDefaults.standard.set(data, forKey: "wd_cpu_progression_v1") }
         URLProtocol.registerClass(StoreDemoURLProtocol.self)
         Task { @MainActor in await StoreDemoDriver.run() }
     }
@@ -144,7 +148,7 @@ final class StoreDemoURLProtocol: URLProtocol {
         let host = url.host ?? ""
         // Static art (Muddle cartoons, the content JSON) is a plain read: let it load
         // through an un-intercepted session so those screens look real. Never a write.
-        if method == "GET", !host.contains("supabase"), !url.path.hasPrefix("/api/") {
+        if method == "GET", !host.contains("supabase"), !host.hasPrefix("server."), !url.path.hasPrefix("/api/") {
             let task = Self.passthrough.dataTask(with: request) { [weak self] data, resp, err in
                 guard let self else { return }
                 if let resp { self.client?.urlProtocol(self, didReceive: resp, cacheStoragePolicy: .notAllowed) }
@@ -197,13 +201,18 @@ enum StoreDemoData {
             switch table {
             case "profiles": return (200, json(profiles(idFilter: param("id"), nameFilter: param("username"))), count)
             case "app_flags":
-                // Every Puzzles title on, as for a real player.
-                let keys: [String] = ["sudoku", "scramble", "hub", "crossword", "groups", "ladder", "cryptogram", "wordsearch", "regions"]
-                let rows: [[String: Any]] = keys.map { ["key": "mode." + $0, "enabled": true, "audience": "all"] }
+                // Production's flags (all on): the More Games menu + every Puzzles title, so
+                // Home reads "18 FRESH PUZZLES" (8 dailies + 10 puzzles) like the live app.
+                let keys: [String] = ["menu.more"] + ["sudoku", "scramble", "hub", "crossword", "groups", "ladder", "cryptogram",
+                                                      "wordsearch", "regions"].map { "mode." + $0 }
+                let rows: [[String: Any]] = keys.map { ["key": $0, "enabled": true, "audience": "all"] }
                 return (200, json(rows), count)
             case "daily_results" where (param("select") ?? "").contains("profiles!inner"):
                 return (200, json(leaderboard(mode: String((param("game_mode") ?? "eq.DUEL").dropFirst(3)),
                                               ids: param("user_id"))), count)
+            case "user_stats": return (200, json(userStats()), count)
+            case "matches" where (param("select") ?? "").contains("winner_id") && param("or") != nil:
+                return (200, json(rivalMatches(or: param("or") ?? "")), count)
             case "daily_results" where param("play_type") == "eq.vs":
                 // Today's Daily Battle: won (Stats "VS Battle W").
                 let mine: Bool = (param("user_id") ?? "").lowercased() == "eq." + StoreDemo.meId
@@ -218,6 +227,9 @@ enum StoreDemoData {
             default: return (200, json([Any]()), count)
             }
         }
+        // The VS server's lobby counts (never the live socket).
+        if path.hasSuffix("/vs/counts") { return (200, json(["waiting": ["DUEL": 3, "QUORDLE": 1], "playing": ["DUEL": 8, "OCTORDLE": 2]]), [:]) }
+        if path.hasSuffix("/presence") { return (200, json(["online": 46]), [:]) }
         if path.hasPrefix("/api/friends/feed") { return (200, json(["events": feed(), "reactions": [String: Any]()]), [:]) }
         if path == "/api/friends" { return (200, json(friendsPayload()), [:]) }
         return (200, json([Any]()), count)
@@ -323,6 +335,39 @@ enum StoreDemoData {
         return out
     }
 
+    /// All-time per-mode records: solo, VS people (64-41) and VS bots (52-18).
+    static func userStats() -> [[String: Any]] {
+        let solo: [(String, Int, Int)] = [("DUEL", 312, 9), ("QUORDLE", 188, 14), ("OCTORDLE", 141, 19), ("SEQUENCE", 133, 12),
+                                          ("RESCUE", 129, 8), ("DUEL_6", 118, 11), ("DUEL_7", 102, 16), ("GAUNTLET", 97, 23)]
+        var out: [[String: Any]] = []
+        func row(_ mode: String, _ type: String, _ w: Int, _ l: Int, _ avg: Int, _ fast: Int) -> [String: Any] {
+            ["game_mode": mode, "play_type": type, "wins": w, "losses": l, "total_games": w + l,
+             "best_score": 990, "average_time": avg, "fastest_time": fast]
+        }
+        for (m, w, l) in solo { out.append(row(m, "solo", w, l, 96, 31)) }
+        out.append(row("DUEL", "vs", 64, 41, 88, 29))
+        out.append(row("DUEL", "vs_cpu", 52, 18, 92, 33))
+        return out
+    }
+
+    /// VS history against three friends (the lobby's RIVALS): LexiLoop 7-5, Quillby 4-6, VowelMaven 5-2.
+    static func rivalMatches(or: String) -> [[String: Any]] {
+        // The caller's own id exactly as it asked (`player1_id.eq.<uid>,…`), so its comparisons match.
+        let first: String = or.trimmingCharacters(in: CharacterSet(charactersIn: "()")).components(separatedBy: ",").first ?? ""
+        let uid: String = first.hasPrefix("player1_id.eq.") ? String(first.dropFirst("player1_id.eq.".count)) : StoreDemo.meId
+        let p = StoreDemo.people
+        let records: [(String, Int, Int)] = [(p[0].id, 7, 5), (p[1].id, 4, 6), (p[3].id, 5, 2)]
+        let modes: [String] = ["DUEL", "QUORDLE", "DUEL_6"]
+        var out: [[String: Any]] = []
+        for (k, (opp, w, l)) in records.enumerated() {
+            for i in 0..<(w + l) {
+                let winner: String = i < w ? uid : opp
+                out.append(["player1_id": uid, "player2_id": opp, "winner_id": winner, "game_mode": modes[k]])
+            }
+        }
+        return out
+    }
+
     /// Four Puzzles finished today (Stats "Puzzles 4 of 10").
     static func puzzlesToday() -> [[String: Any]] {
         let done: [(String, Int, Int)] = [("SUDOKU", 1, 212), ("SCRAMBLE", 4, 96), ("GROUPS", 4, 131), ("LADDER", 1, 74)]
@@ -407,12 +452,14 @@ enum StoreDemoDriver {
             await PerfDrive.sleep(2.0)
             PerfTour.send(.sheet(.quickPlay))
         case "vs":
-            // The live match-found card: you vs a friend, both mascots, the VS lettering, your head-to-head.
+            // The VS lobby, as Home's VS BATTLE tile opens it: the VS banner, today's Daily Battle,
+            // PLAY (modes + live / friend / bots), your People | Bots records and RIVALS.
+            recordCast()
+            present(AnyView(NavigationStack { VSLobbyView() }), full: true)
+        case "vsintro":
+            // The Match Found card: you vs a friend, both mascots, the VS lettering, your head-to-head.
             let lexi = StoreDemo.people[0]
-            for p in StoreDemo.everyone {
-                AvatarDirectory.shared.record(userId: p.id, username: p.name, url: nil, config: AvatarConfigRaw(fields: p.avatar),
-                                              castId: nil, frame: p.avatar["frame"], accent: nil)
-            }
+            recordCast()
             let me = VSMatchIntroView.Player(username: StoreDemo.me.name, avatarUrl: nil, level: StoreDemo.me.level)
             let them = VSMatchIntroView.Player(username: lexi.name, avatarUrl: nil, level: lexi.level)
             present(AnyView(VSMatchIntroView(mode: .duel, me: me, opponent: them,
@@ -453,6 +500,14 @@ enum StoreDemoDriver {
         if let w = pool.first(where: { greens($0) == 2 && yellows($0) >= 3 && !out.contains($0) }) ?? pool.first(where: { greens($0) == 2 }) { out.append(w) }
         if let w = pool.first(where: { greens($0) == 4 && !out.contains($0) }) ?? pool.first(where: { greens($0) == 3 && !out.contains($0) }) { out.append(w) }
         return out
+    }
+
+    /// Every cast member's look in the avatar directory (screens that draw a player by name).
+    private static func recordCast() {
+        for p in StoreDemo.everyone {
+            AvatarDirectory.shared.record(userId: p.id, username: p.name, url: nil, config: AvatarConfigRaw(fields: p.avatar),
+                                          castId: nil, frame: p.avatar["frame"], accent: nil)
+        }
     }
 
     private static func present(_ root: AnyView, full: Bool = false) {
