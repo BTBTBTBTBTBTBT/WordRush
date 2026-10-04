@@ -65,9 +65,11 @@ function Podium() {
   );
 }
 
-export function GuestPitch({ hosts, title, heading, subtitle, gradient, preview, onSignIn, subColor = 'var(--color-text-secondary)', className = '' }: {
+export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, gradient, preview, onSignIn, subColor = 'var(--color-text-secondary)', className = '' }: {
   hosts: MascotId[];
   title: string;
+  /** False when the page's own title art already names it (the VS guest gate): no heading here. */
+  showTitle?: boolean;
   /** BJ16: cast-color title art in place of the gradient headline (`title` stays its accessible name). */
   heading?: HeadingSlug;
   subtitle: string;
@@ -85,7 +87,7 @@ export function GuestPitch({ hosts, title, heading, subtitle, gradient, preview,
           <Mascot key={h} id={h} size={duo ? 104 : 120} motion="pop" priority style={i > 0 ? { marginLeft: -18 } : undefined} />
         ))}
       </div>
-      {heading ? (
+      {!showTitle ? null : heading ? (
         <div className="mt-2.5 w-full">
           <HeadingArt slug={heading} label={title} height={36} maxWidth={320} as="h2" />
         </div>

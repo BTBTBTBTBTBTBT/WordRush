@@ -525,7 +525,8 @@ struct VSLobbyView: View {
     // Founder: no plain-text headings — the Friends guest pitch (cast scene, the VS
     // BATTLE heading art, one line, the SIGN IN cast button). Web / Android parity.
     private var guestPrompt: some View {
-        GuestPitch(hosts: [Mascots.vs, Mascots.home], title: "VS Battle", heading: .vsbattle,
+        // The page's VS BATTLE title art already names it: no second heading in the pitch.
+        GuestPitch(hosts: [Mascots.vs, Mascots.home], title: "VS Battle", showsTitle: false,
                    subtitle: "Sign in to battle live opponents, bots and your friends' runs, and keep your results.",
                    colors: [Color(hex: 0x0D9488), Color(hex: 0x7C3AED)],
                    preview: .none, onSignIn: { showAuth = true })
@@ -572,7 +573,7 @@ struct VSLobbyView: View {
                     .background(Capsule().fill(VsLobbyKit.purple.wash(0.12)))
                     .accessibilityElement(children: .combine)
                     NavigationLink { ProView() } label: {
-                        CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 20) }
+                        CandyLabel(title: "Go Pro")   // the GO PRO lettering says it: no small crown
                     }
                     .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                     .simultaneousGesture(TapGesture().onEnded { onClose() })

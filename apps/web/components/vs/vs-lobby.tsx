@@ -135,12 +135,12 @@ export function VsLobby() {
             <CastLoader />
           </div>
         ) : signedOut ? (
-          // Founder: no plain-text headings — the Friends guest pitch (cast scene,
-          // VS BATTLE heading art, one line, the SIGN IN cast button).
+          // Founder: no plain-text headings — the Friends guest pitch (cast scene, one
+          // line, the SIGN IN cast button); the page's VS BATTLE title art names it once.
           <GuestPitch
             hosts={[PAGE_HOSTS.vs, PAGE_HOSTS.home]}
             title="VS Battle"
-            heading="vsbattle"
+            showTitle={false}
             subtitle="Sign in to battle live opponents, bots and your friends' runs, and keep your results."
             gradient={GUEST_GRADIENTS.friends}
             preview={{ kind: 'none' }}

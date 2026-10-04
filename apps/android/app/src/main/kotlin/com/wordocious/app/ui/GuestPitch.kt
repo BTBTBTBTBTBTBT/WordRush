@@ -80,6 +80,8 @@ fun GuestPitch(
     subColor: Color = WTheme.textSecondary,
     /** BJ16: cast-color title art in place of the gradient headline ([title] stays its description). */
     heading: Heading? = null,
+    /** False when the page's own title art already names it (the VS guest gate): no heading here. */
+    showTitle: Boolean = true,
 ) {
     Column(
         modifier.fillMaxSize().padding(horizontal = 20.dp).padding(bottom = TAB_CONTENT_BOTTOM_PAD),
@@ -90,7 +92,9 @@ fun GuestPitch(
             hosts.forEach { Mascot(it, if (hosts.size > 1) 104.dp else 120.dp, motion = MascotMotion.POP) }
         }
         Spacer(Modifier.height(10.dp))
-        if (heading != null) {
+        if (!showTitle) {
+            Unit
+        } else if (heading != null) {
             HeadingArt(heading, height = 36.dp, maxWidth = 320.dp, contentDescription = title)
         } else {
             PageTitleText(title, accent = colors, fontSize = 28.sp, maxLines = 1)

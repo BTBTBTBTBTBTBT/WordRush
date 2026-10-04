@@ -496,6 +496,14 @@ enum StoreDemoDriver {
         switch StoreDemo.shot ?? "home" {
         case "classic": await classic(finish: false)
         case "finish": await classic(finish: true)
+        case "finishDaily":
+            // Today's Classic Six DAILY (unplayed in the demo), won: the daily finish dock (SHARE + NEXT,
+            // RANKS, the Keep playing card) — free or Pro per `-storeDemoFree`.
+            NotificationCenter.default.post(name: NextDailyCTA.playNextDaily, object: GameMode.duel6.rawValue)
+            await PerfDrive.sleep(2.5)
+            guard let answer = PerfTour.game?.boards.first?.solution.uppercased() else { return }
+            for w in openers(for: answer).prefix(2) { await PerfDrive.type(w, gap: 0.05); PerfDrive.enter(); await PerfDrive.sleep(1.6) }
+            await PerfDrive.type(answer, gap: 0.05); PerfDrive.enter()
         case "octo": await octo()
         case "stats": PerfTour.send(.selectTab(.stats))
         case "leaderboard": PerfTour.send(.selectTab(.leaderboard))

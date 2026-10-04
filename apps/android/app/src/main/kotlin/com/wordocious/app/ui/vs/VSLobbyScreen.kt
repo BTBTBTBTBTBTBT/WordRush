@@ -548,7 +548,8 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
 @Composable
 private fun GuestPrompt(onSignIn: () -> Unit) {
     com.wordocious.app.ui.GuestPitch(
-        hosts = listOf(MascotId.S, MascotId.W), title = "VS Battle", heading = com.wordocious.app.ui.Heading.VSBATTLE,
+        // The page's VS BATTLE title art already names it: no second heading in the pitch.
+        hosts = listOf(MascotId.S, MascotId.W), title = "VS Battle", showTitle = false,
         subtitle = "Sign in to battle live opponents, bots and your friends' runs, and keep your results.",
         colors = com.wordocious.app.ui.GuestPitchContent.friendsColors, preview = com.wordocious.app.ui.GuestPreview.None,
         onSignIn = onSignIn, onPlay = null,

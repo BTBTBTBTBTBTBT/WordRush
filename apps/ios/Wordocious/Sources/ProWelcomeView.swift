@@ -368,6 +368,9 @@ struct ProWelcomeView: View {
                 .frame(maxWidth: 520)
                 .frame(maxWidth: .infinity)
             }
+            // Scrolled copy stops at the status bar (the top safe area), never runs under it;
+            // at the bottom it still scrolls to the screen edge.
+            .mask { Rectangle().ignoresSafeArea(edges: .bottom) }
             if confetti && !still { ConfettiView().ignoresSafeArea().allowsHitTesting(false) }
         }
         .animation(still ? nil : .spring(response: 0.4, dampingFraction: 0.7), value: shieldsCredited)

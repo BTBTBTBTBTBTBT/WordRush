@@ -381,7 +381,7 @@ struct SettingsProCard: View {
                     ProCrownSprite(size: 64)
                 }
             }
-            Button { showPro = true } label: { CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 18) } }
+            Button { showPro = true } label: { CandyLabel(title: "Go Pro") }
                 .buttonStyle(CastButtonStyle(color: .gold, size: .medium))
         }
         .padding(14)
