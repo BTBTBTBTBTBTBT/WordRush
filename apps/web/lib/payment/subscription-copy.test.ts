@@ -23,6 +23,12 @@ describe('subscription hand-offs (BJ11)', () => {
       'Monthly ($6.99) and Yearly ($59.99) renew automatically until you cancel, any time in Settings › Subscription. The Day Pass is a one-time 24 hours of Pro and never renews.',
     );
   });
+
+  it('leaves the Day Pass out where no Day Pass is offered (the Go Pro popup)', () => {
+    expect(webRenewalDisclosure(6.99, 59.99, { dayPass: false })).toBe(
+      'Monthly ($6.99) and Yearly ($59.99) renew automatically until you cancel, any time in Settings › Subscription.',
+    );
+  });
 });
 
 describe('proLapsedLine', () => {

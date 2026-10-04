@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { GameArt } from '@/components/ui/game-art';
 import { isGameArtIcon, onPageShadow } from '@/lib/art';
@@ -10,6 +10,7 @@ import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
 import { modeCardSlots } from '@/lib/stationary-layout';
 import { TRIM, compactCardLine, trimPath, trimStops } from '@/lib/card-trim';
+import { createCardNameScope, type CardNameScopeStore } from '@/lib/card-name-size';
 
 // The home-grid mode card, extracted verbatim from app/page.tsx (More Games
 // Stage 5) so the More Games sheet renders the SAME card pixel for pixel. The
@@ -224,24 +225,35 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
+// BJ18: the shared-size store lives in lib/card-name-size.ts (pure, unit-tested).
+const CardNameScopeContext = createContext<CardNameScopeStore | null>(null);
+
+/** Wrap ONE grid of mode cards so their names share one size (BJ18). */
+export function CardNameScope({ children }: { children: ReactNode }) {
+  const [store] = useState(createCardNameScope);
+  return <CardNameScopeContext.Provider value={store}>{children}</CardNameScopeContext.Provider>;
+}
+
 /**
- * The game name at 900 / 17 in its color on ONE line (BH2), shrinking (down to 11)
- * only when it is wider than the column (Crosswordocious, ProperNoundle on a phone).
+ * The game name at 900 / 17 in its color on ONE line (BH2). Inside a CardNameScope it takes the
+ * grid's shared size (BJ18); a name wider than its column at that size still shrinks on its own
+ * (down to 11, then tighter tracking, then 10.5) before an ellipsis may ever show.
  */
 function FitName({ color, accent, children }: { color: string | null; accent: string; children: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const scope = useContext(CardNameScopeContext);
   // The accent name stays legible on the dark card: the accent itself on
   // light, its pastel on dark (deep accents like #1e40af vanish on #252542).
   const ink = color == null ? accentInk(accent, accent) : null;
   useIsoLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const key = {};
     let lastWidth = -1;
-    const fit = () => {
+    // Draw at `start`, shrinking on this card only while the name is still wider than its column.
+    const apply = (start: number) => {
       const width = el.clientWidth;
-      if (width === lastWidth) return;
-      lastWidth = width;
-      let size: number = MODE_CARD.name;
+      let size = start;
       el.style.fontSize = `${size}px`;
       el.style.letterSpacing = '';
       while (size > MODE_CARD.nameMin && el.scrollWidth > width + 0.5) {
@@ -257,6 +269,19 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
       if (el.scrollWidth > width + 0.5) el.style.fontSize = `${MODE_CARD.nameMinLast}px`;
       // Still too wide at the floor (a very narrow screen): the ellipsis takes over (never wraps).
     };
+    const fit = () => {
+      const width = el.clientWidth;
+      if (width === lastWidth) return;
+      lastWidth = width;
+      if (!scope) { apply(MODE_CARD.name); return; }
+      if (width <= 0) return; // not laid out (hidden): a 0-wide slot must not drag the grid to the floor
+      // The size this name fits at on its own (text width scales with the font size).
+      el.style.fontSize = `${MODE_CARD.name}px`;
+      el.style.letterSpacing = '';
+      const natural = el.scrollWidth;
+      const own = natural > width + 0.5 && natural > 0 ? (MODE_CARD.name * width) / natural : MODE_CARD.name;
+      scope.report(key, own, apply);
+    };
     fit();
     // Refit once the web font is in: measured in the narrower fallback, a name that "fit" overflows
     // (an ellipsis) when Nunito Black swaps in, and the width doesn't change so the observer stays quiet.
@@ -266,8 +291,13 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
     document.fonts?.addEventListener?.('loadingdone', refit);
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
     ro?.observe(el);
-    return () => { live = false; ro?.disconnect(); document.fonts?.removeEventListener?.('loadingdone', refit); };
-  }, [children]);
+    return () => {
+      live = false;
+      ro?.disconnect();
+      document.fonts?.removeEventListener?.('loadingdone', refit);
+      scope?.remove(key);
+    };
+  }, [children, scope]);
   return (
     <div
       ref={ref}

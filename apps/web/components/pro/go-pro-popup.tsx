@@ -172,7 +172,7 @@ export function GoProPopupHost() {
               <p className="m-0 mt-2 text-[11px] font-extrabold" style={{ color: '#b45309' }}>{CHECKOUT_HANDOFF_LINE}</p>
             )}
             <p className="m-0 mt-1.5 text-[10px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-              {webRenewalDisclosure(PRO_PLANS.monthly.price, PRO_PLANS.yearly.price)}{' '}
+              {webRenewalDisclosure(PRO_PLANS.monthly.price, PRO_PLANS.yearly.price, { dayPass: false })}{' '}
               <a href="/terms" style={{ color: '#7c3aed', fontWeight: 800 }}>Terms</a>
               {' · '}
               <a href="/privacy" style={{ color: '#7c3aed', fontWeight: 800 }}>Privacy</a>

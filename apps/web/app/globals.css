@@ -1104,18 +1104,23 @@
 
 /* ── A3 · Header controls: the soft 3D icon drawn bare (no circle / pill), 23 px
    tall, numbers in 17 px soft type, a 44 px tap area that never moves layout. */
-.hdr-glyph {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  background: none;
-  border: 0;
-  padding: 0;
-  line-height: 0;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+/* In the components layer so a caller's utilities win (release gate 10-03: unlayered, its
+   `position: relative` beat Tailwind's `absolute`, and the game header's Home / sound / help
+   corner buttons collapsed onto each other in the middle of the header). */
+@layer components {
+  .hdr-glyph {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: 0;
+    padding: 0;
+    line-height: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 .hdr-glyph::after {
   content: '';

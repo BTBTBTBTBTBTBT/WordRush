@@ -43,9 +43,14 @@ export const SUBSCRIPTION_HANDOFF: Record<BillingStore, SubscriptionHandoff> = {
 /** The line under a web Subscribe button: where the purchase happens. */
 export const CHECKOUT_HANDOFF_LINE = "Opens Stripe's secure checkout";
 
-/** The web auto-renew disclosure under the plans (price + renewal + where to cancel). */
-export function webRenewalDisclosure(monthly: number, yearly: number): string {
-  return `Monthly ($${monthly.toFixed(2)}) and Yearly ($${yearly.toFixed(2)}) renew automatically until you cancel, any time in Settings › Subscription. The Day Pass is a one-time 24 hours of Pro and never renews.`;
+/**
+ * The web auto-renew disclosure under the plans (price + renewal + where to cancel). The Day
+ * Pass sentence only where a Day Pass is offered (the /pro page; the Go Pro popup sells
+ * monthly / yearly only, so it must not describe a plan it doesn't show).
+ */
+export function webRenewalDisclosure(monthly: number, yearly: number, { dayPass = true }: { dayPass?: boolean } = {}): string {
+  const renew = `Monthly ($${monthly.toFixed(2)}) and Yearly ($${yearly.toFixed(2)}) renew automatically until you cancel, any time in Settings › Subscription.`;
+  return dayPass ? `${renew} The Day Pass is a one-time 24 hours of Pro and never renews.` : renew;
 }
 
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;

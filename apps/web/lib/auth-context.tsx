@@ -104,6 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
   const [profileError, setProfileError] = useState(false);
+  // Release-gate QA only: `next dev` + localStorage 'wordo:dev-force-pro' = '1' forces this
+  // client's entitlement to Pro (no account, nothing written). Compiled out of production builds.
+  const [devForcePro, setDevForcePro] = useState(false);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    try { if (window.localStorage.getItem('wordo:dev-force-pro') === '1') setDevForcePro(true); } catch { /* storage blocked */ }
+  }, []);
   const profileRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Outage hold (lib/auth-session-policy.ts): while auth is unreachable the
   // player stays signed in from the stored session and we retry on a backoff
@@ -642,7 +649,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         session,
         loading,
-        isProActive: isProActive(profile),
+        isProActive: devForcePro || isProActive(profile),
         profileError,
         isGuest,
         enterGuest,

@@ -124,6 +124,8 @@ const clickText = (t) => evaluate(`(() => { const el = [...document.querySelecto
 // Guest + launch.
 await go('/');
 await evaluate("localStorage.setItem('wordocious-guest', '1')");
+// Past the first-run tour (AO) so Home / tabs measure Home, not the welcome overlay.
+await evaluate("localStorage.setItem('onboarded-v2', '1')");
 await step('launch', 4000, () => send('Page.reload'));
 await step('home.idle', 2000, async () => {});
 await step('home.scroll', 600, scrollPage);
