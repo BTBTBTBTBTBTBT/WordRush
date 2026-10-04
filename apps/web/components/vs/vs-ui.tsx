@@ -14,8 +14,8 @@ import { isGameArtIcon, type TitleArtName } from '@/lib/art';
 import { VS, modeColor, modeTitle } from '@/lib/vs-lobby';
 import { SOFT, alphaHex, cardBarStyle, overAlpha, softMix, softShadow } from '@/lib/soft-surface';
 import { botArt, type BotPose } from '@/lib/bot/bot-personas';
-
 import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
+
 // Shared pieces of the VS screens (VS overhaul, spec docs/VS_REDESIGN_SPEC.md
 // §0; finishing build docs/FINISH_SPEC.md D3): the real mode icons from the
 // home cards, the mode chip, section labels, the teal nav, the tinted VS cards
@@ -101,13 +101,13 @@ export function VsNav({ title, onBack, right, host, art, artLabel, heading }: {
   title: string; onBack: () => void; right?: React.ReactNode; host?: MascotId;
   /** Whole-cast title art in place of the text title (docs/ART_SPEC.md §2). */
   art?: TitleArtName; artLabel?: string;
-}) {
   /** FINISH_SPEC BJ16: a heading lettering (art-titlecast-<slug>) in place of the text title. */
   heading?: HeadingSlug;
-  return <PageHeader title={title} art={art} artLabel={artLabel} accent="vs" back={{ onClick: onBack }} host={host} right={right} />;
+}) {
   if (heading) {
     return <PageHeader title={<HeadingArt slug={heading} height={36} maxWidth={240} />} titleTag="div" accent="vs" back={{ onClick: onBack }} right={right} />;
   }
+  return <PageHeader title={title} art={art} artLabel={artLabel} accent="vs" back={{ onClick: onBack }} host={host} right={right} />;
 }
 
 // ── A1 tinted surfaces (light-pinned: VS pages are light-only) ──────────────
@@ -167,7 +167,7 @@ export function VsCard({ accent = VS_ACCENT, selected, radius = 16, bar = true, 
  * `userId` / name), in their frame; the signed-in player's own always comes
  * from their profile. AM2: `emoji` is never drawn.
  */
-export function InitialAvatar({ name, url, accent, size = 34, castId, level, userId, config, pro }: {
+export function InitialAvatar({ name, url, accent, size = 34, castId, level, userId, config, pro, lookupByName }: {
   name: string; url?: string | null;
   /** Retired (AM2): never drawn. */
   emoji?: string | null;
@@ -179,8 +179,10 @@ export function InitialAvatar({ name, url, accent, size = 34, castId, level, use
   userId?: string | null;
   config?: unknown;
   pro?: boolean | null;
+  /** BJ5: a human player known only by name — look their avatar up by it. */
+  lookupByName?: boolean;
 }) {
-  return <PlayerAvatar name={name} userId={userId} url={url} accent={accent} config={config} castId={castId} level={level} pro={pro} size={size} />;
+  return <PlayerAvatar name={name} userId={userId} url={url} accent={accent} config={config} castId={castId} level={level} pro={pro} lookupByName={lookupByName} size={size} />;
 }
 
 /**

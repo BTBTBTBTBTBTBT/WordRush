@@ -145,7 +145,8 @@ export default function JoinReferralPage() {
     );
   }
 
-  const inviter = { name: inviterName ?? 'A friend' };
+  // AN5: the inviter's own mascot, looked up by name (the lookup API returns only the username).
+  const inviter = { name: inviterName ?? 'A friend', lookupByName: !!inviterName };
   const headline = inviterName ? <>{inviterName} wants to play with you!</> : <>You&apos;ve been invited!</>;
   const giftLine = (
     <>

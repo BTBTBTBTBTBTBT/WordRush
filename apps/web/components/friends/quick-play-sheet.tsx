@@ -92,7 +92,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
     <Sheet onClose={onClose} label={`Play with ${friend.username}`}>
       <SoftRise active={picked}>
       <div className="flex items-center gap-3 mb-4">
-        <FriendAvatar name={friend.username} url={friend.avatar_url} emoji={friend.avatar_emoji} size={48} online={on} pulse={on} />
+        <FriendAvatar name={friend.username} userId={friend.id} url={friend.avatar_url} config={friend.avatar_config} castId={friend.avatar_cast_id} frame={friend.avatar_frame} pro={friend.is_pro} level={friend.level} size={48} online={on} pulse={on} />
         <div className="flex-1 min-w-0">
           {/* BJ16: the LET'S PLAY! lettering; the friend's @name rides under it. */}
           <HeadingArt slug="letsplay" label={`Play with ${friend.username}`} height={28} maxWidth={170} align="left" />

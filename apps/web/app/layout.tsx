@@ -165,9 +165,9 @@ export default function RootLayout({
         <ColdStartIntro />
         {/* A9: everything tappable squishes (one document listener). */}
         <SquishHost />
-        <MotionPause />
         <CastArtWarmup />
         <HeadingArtWarmup />
+        <MotionPause />
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>

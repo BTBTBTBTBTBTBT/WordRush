@@ -18,6 +18,10 @@ export const VsSoloHudContext = createContext<string | null>(null);
 export interface VsOpponentIdentity {
   name: string;
   avatarUrl: string | null;
+  /** FINISH_SPEC AN5: a person's id / saved mascot / Pro flag when known. */
+  userId?: string | null;
+  avatarConfig?: unknown;
+  pro?: boolean | null;
   /** Bot art in a circle instead of the player avatar. */
   isBot: boolean;
   /** Small tag after the name: "Bot", "Their run". */
@@ -91,7 +95,7 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
       ) : who?.isBot && who.avatarUrl ? (
         <BotAvatar src={who.avatarUrl} size={32} accent={accent} />
       ) : (
-        <InitialAvatar name={name} url={who?.avatarUrl ?? null} size={32} />
+        <InitialAvatar name={name} url={who?.avatarUrl ?? null} userId={who?.userId} config={who?.avatarConfig} pro={who?.pro} size={32} />
       )}
       <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
         <div className="flex items-center gap-1.5 min-w-0">

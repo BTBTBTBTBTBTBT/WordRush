@@ -33,7 +33,17 @@ const EMPTY = { background: softMix('#7c3aed', 0.08), border: `1.5px solid ${sof
 /** A key / pick card's soft bottom lip. */
 const LIP = `inset 0 -2.5px 0 ${softMix('#7c3aed', 0.3)}`;
 
-export interface Player { name: string; url: string | null; emoji: string | null; /** Profile accent for the letter tile (ART_SPEC §20), when known. */ accent?: string | null }
+export interface Player {
+  name: string; url: string | null; emoji: string | null;
+  /** Profile accent for the letter tile (ART_SPEC §20), when known. */
+  accent?: string | null;
+  /** FINISH_SPEC AN5: the player's id / saved mascot / cast / frame / Pro flag when known. */
+  userId?: string | null;
+  config?: unknown;
+  castId?: string | null;
+  frame?: string | null;
+  pro?: boolean | null;
+}
 
 interface BoardProps<S> {
   state: S;
@@ -382,7 +392,7 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
 
   const chip = (p: Player | null, faded = false) => (
     <span className="shrink-0 flex items-center justify-center" style={{ width: 28, opacity: faded ? 0.4 : 1 }}>
-      {p ? <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} accent={p.accent} size={26} /> : <span style={{ width: 26, height: 26 }} />}
+      {p ? <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={26} /> : <span style={{ width: 26, height: 26 }} />}
     </span>
   );
 
@@ -642,7 +652,7 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
           const p = mine ? you : them;
           return (
             <div key={wi} className="flex items-center" style={{ gap: 6 }}>
-              <FriendAvatar name={p.name} url={p.url} emoji={p.emoji} accent={p.accent} size={22} />
+              <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={22} />
               <div className="flex-1 flex" style={{ gap: 3 }}>
                 {[...w.word].map((ch, i) => {
                   const glow = newest && i === w.word.length - 1;

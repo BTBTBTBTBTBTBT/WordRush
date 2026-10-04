@@ -7,7 +7,7 @@ import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { HeaderBack, PAGE_TITLE_GRADIENTS } from '@/components/ui/page-header';
 import { LetterTile } from '@/components/game/letter-tile';
-import { LetterTileAvatar } from '@/components/ui/letter-tile-avatar';
+import { PlayerAvatar } from '@/components/avatar/player-avatar';
 import { SoftNum } from '@/components/ui/soft-number';
 import { PoseArt, POPUP_DIM, POPUP_SHADOW, PopupBar, popupCard } from '@/components/ui/soft-popup';
 import { CANDY_CONFETTI, Confetti } from '@/components/effects/confetti';
@@ -15,8 +15,8 @@ import { ART_SIZE, artSrc, type PoseArtName, type SceneArtName } from '@/lib/art
 import { prefersReducedMotion } from '@/lib/motion';
 import { SOFT_INK, alphaHex, darken, softMix, softPill } from '@/lib/soft-surface';
 import { GIFT_DAYS, GIFT_SLOTS, codeTiles } from '@/lib/invite-screens';
-
 import { HeadingArt } from '@/components/ui/heading-art';
+
 // The friend-invite + gift-a-week-of-Pro screens (docs/FINISH_SPEC.md T1–T4),
 // shared by the invite sheet, the Friends tab, the join landing, the referral
 // redeemer and the Pro page: tinted cards with their top bar (A1), the new
@@ -227,21 +227,39 @@ export function InviteSentCard({ name, code, note, onSendAnother, sendAnotherDis
 export interface InvitePerson {
   name: string;
   url?: string | null;
+  /** Retired (AM2): never drawn. */
   emoji?: string | null;
   accent?: string | null;
+  /** FINISH_SPEC AN5: the player's id / saved mascot / cast / frame / Pro flag when the data carries them. */
+  userId?: string | null;
+  config?: unknown;
+  castId?: string | null;
+  frame?: string | null;
+  pro?: boolean | null;
+  /** BJ5: a human known only by name — look their avatar up by it. */
+  lookupByName?: boolean;
 }
 
-/** A player's avatar: their photo (circle) or their letter tile. */
+/**
+ * A player's avatar (FINISH_SPEC AN5 / AN6): through the one renderer — their
+ * photo or their saved mascot (else the default), a rounded square in their frame.
+ */
 export function PersonAvatar({ person, size }: { person: InvitePerson; size: number }) {
-  if (person.url) {
-    return (
-      <span className="relative inline-flex shrink-0 rounded-full overflow-hidden" style={{ width: size, height: size, boxShadow: `0 0 0 3px #ffffff, 0 4px 10px ${alphaHex(INVITE_ACCENT, 0.25)}` }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={person.url} alt="" width={size} height={size} decoding="async" className="w-full h-full object-cover" />
-      </span>
-    );
-  }
-  return <LetterTileAvatar name={person.name} emoji={person.emoji} accent={person.accent} size={size} shadow={`0 4px 10px ${alphaHex(INVITE_ACCENT, 0.25)}`} />;
+  return (
+    <PlayerAvatar
+      name={person.name}
+      userId={person.userId}
+      url={person.url}
+      accent={person.accent}
+      config={person.config}
+      castId={person.castId}
+      frame={person.frame}
+      pro={person.pro}
+      lookupByName={person.lookupByName}
+      size={size}
+      shadow={`0 0 0 3px #ffffff, 0 4px 10px ${alphaHex(INVITE_ACCENT, 0.25)}`}
+    />
+  );
 }
 
 /**

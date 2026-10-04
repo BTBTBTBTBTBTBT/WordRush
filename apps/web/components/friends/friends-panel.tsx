@@ -82,9 +82,26 @@ function agoShort(iso?: string): string {
 const withinDay = (iso?: string | null): boolean =>
   !!iso && Date.now() - Date.parse(iso) < 24 * 60 * 60 * 1000;
 
+/** AN5: a friend row's avatar fields for an invite card's PersonAvatar. */
+function invitePersonAvatar(f: FriendProfile): Pick<InvitePerson, 'userId' | 'config' | 'castId' | 'frame' | 'pro'> {
+  return { userId: f.id, config: f.avatar_config, castId: f.avatar_cast_id, frame: f.avatar_frame, pro: f.is_pro };
+}
+
 /** Small avatar used by Today's Race and older callers. */
 export function Avatar({ f }: { f: FriendProfile }) {
-  return <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={32} />;
+  return (
+    <FriendAvatar
+      name={f.username}
+      userId={f.id}
+      url={f.avatar_url}
+      config={f.avatar_config}
+      castId={f.avatar_cast_id}
+      frame={f.avatar_frame}
+      pro={f.is_pro}
+      level={f.level}
+      size={32}
+    />
+  );
 }
 
 type SheetState =
@@ -170,7 +187,7 @@ export function FriendsPanel() {
     const { accepted, watch } = trackRequests(watched, getOutgoing().map((r) => r.id), list.map((f) => f.id));
     try { window.localStorage.setItem(key, JSON.stringify(watch)); } catch { /* storage blocked */ }
     const f = accepted.length > 0 ? list.find((x) => x.id.toLowerCase() === accepted[0].toLowerCase()) : undefined;
-    if (f) setNewFriend((cur) => cur ?? { id: f.id, name: f.username, url: f.avatar_url, emoji: f.avatar_emoji });
+    if (f) setNewFriend((cur) => cur ?? { id: f.id, name: f.username, url: f.avatar_url, emoji: f.avatar_emoji, ...invitePersonAvatar(f) });
   }, [user, settled, ver]);
 
   useEffect(() => {
@@ -229,13 +246,18 @@ export function FriendsPanel() {
     const entries = friends.map((f) => ({
       id: f.id, username: f.username, avatar_url: f.avatar_url,
       avatar_emoji: f.avatar_emoji ?? null, level: f.level,
+      // AN5: the friend's saved mascot (undefined = the avatar directory fills it).
+      avatar_config: f.avatar_config, avatar_cast_id: f.avatar_cast_id, avatar_frame: f.avatar_frame, is_pro: f.is_pro,
       pts: f.weekPoints ?? 0, me: false,
     }));
     if (profile) {
       entries.push({
         id: profile.id, username: 'You', avatar_url: profile.avatar_url ?? null,
         avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
-        level: profile.level ?? 0, pts: meDigest?.weekPoints ?? 0, me: true,
+        level: profile.level ?? 0,
+        // Your own avatar always comes from your profile (PlayerAvatar's own match by id).
+        avatar_config: undefined, avatar_cast_id: undefined, avatar_frame: undefined, is_pro: undefined,
+        pts: meDigest?.weekPoints ?? 0, me: true,
       });
     }
     entries.sort((a, b) => b.pts - a.pts);
@@ -398,7 +420,7 @@ export function FriendsPanel() {
       else {
         // T1 / T3: the invite-sent card, or NEW FRIENDS! on a mutual request.
         const clean = name.replace(/^@+/, '');
-        if (r.status === 'accepted') setNewFriend({ id: r.friendId, name: clean });
+        if (r.status === 'accepted') setNewFriend({ id: r.friendId, name: clean, userId: r.friendId });
         else setSentTo(`@${clean}`);
         setUsername('');
       }
@@ -603,8 +625,12 @@ export function FriendsPanel() {
                     <FriendAvatar
                       // Your own entry is labeled "You" but its tile shows your real initials + accent (§20).
                       name={e.me && profile ? profile.username : e.username}
+                      userId={e.id}
                       url={e.avatar_url}
-                      emoji={e.avatar_emoji}
+                      config={e.avatar_config}
+                      castId={e.avatar_cast_id}
+                      frame={e.avatar_frame}
+                      pro={e.is_pro}
                       accent={e.me ? (profile as { accent_color?: string | null } | null)?.accent_color ?? null : null}
                       size={slot.avatar}
                     />
@@ -677,7 +703,7 @@ export function FriendsPanel() {
                   }}
                 >
                   <Link href={`/profile/${f.id}`} className="flex items-start gap-2.5 flex-1 min-w-0">
-                    <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={36} online={line.online} />
+                    <FriendAvatar name={f.username} userId={f.id} url={f.avatar_url} config={f.avatar_config} castId={f.avatar_cast_id} frame={f.avatar_frame} pro={f.is_pro} level={f.level} size={36} online={line.online} />
                     <span className="flex-1 min-w-0">
                       <span className="flex items-center gap-1 text-[14px] font-black truncate" style={{ color: FR_LOOK.ink }}>
                         <span className="truncate">@{f.username}</span>
@@ -782,7 +808,7 @@ export function FriendsPanel() {
           {incoming.map((r, i) => (
             <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.12)}` }}>
               <span className="relative shrink-0 inline-flex">
-                <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+                <FriendAvatar name={r.username} userId={r.id} url={r.avatar_url} config={r.avatar_config} castId={r.avatar_cast_id} frame={r.avatar_frame} pro={r.is_pro} level={r.level} size={34} />
                 <CandyBadge count={1} size={14} style={{ position: 'absolute', top: -5, right: -5 }} />
               </span>
               <Link href={`/profile/${r.id}`} className="flex-1 min-w-0">
@@ -793,7 +819,7 @@ export function FriendsPanel() {
               <CastButton screen="pink"
                 size="sm"
                 icon="check"
-                onClick={() => { void acceptFriend(r.id); setNewFriend({ id: r.id, name: r.username, url: r.avatar_url, emoji: r.avatar_emoji }); }}
+                onClick={() => { void acceptFriend(r.id); setNewFriend({ id: r.id, name: r.username, url: r.avatar_url, emoji: r.avatar_emoji, ...invitePersonAvatar(r) }); }}
                 aria-label={`Accept ${r.username}`}
                 style={{ width: 32, padding: 0, ...GREEN_CANDY }}
               />
@@ -802,7 +828,7 @@ export function FriendsPanel() {
           ))}
           {outgoing.map((r, i) => (
             <div key={r.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ background: rowStripe(incoming.length + i + 1), borderTop: `1px solid ${softMix(FR_LOOK.pink, 0.12)}` }}>
-              <FriendAvatar name={r.username} url={r.avatar_url} emoji={r.avatar_emoji} size={34} />
+              <FriendAvatar name={r.username} userId={r.id} url={r.avatar_url} config={r.avatar_config} castId={r.avatar_cast_id} frame={r.avatar_frame} pro={r.is_pro} level={r.level} size={34} />
               <Link href={`/profile/${r.id}`} className="flex-1 min-w-0">
                 <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>@{r.username}</span>
                 <span className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>
@@ -910,7 +936,7 @@ export function FriendsPanel() {
                       const r = await requestFriend({ addresseeId: u.id });
                       if ('error' in r) setNote(r.error);
                       else {
-                        if (r.status === 'accepted') setNewFriend({ id: u.id, name: u.username, url: u.avatar_url, emoji: u.avatar_emoji });
+                        if (r.status === 'accepted') setNewFriend({ id: u.id, name: u.username, url: u.avatar_url, emoji: u.avatar_emoji, ...invitePersonAvatar(u) });
                         else setSentTo(`@${u.username}`);
                         setUsername('');
                       }
@@ -921,7 +947,7 @@ export function FriendsPanel() {
                   className="w-full flex items-center gap-2.5 px-2 py-1.5 text-left"
                   style={{ background: softMix(FR_LOOK.lavender, 0.1), border: `1.5px solid ${softMix(FR_LOOK.lavender, 0.26)}`, borderRadius: 12 }}
                 >
-                  <FriendAvatar name={u.username} url={u.avatar_url} emoji={u.avatar_emoji} size={30} />
+                  <FriendAvatar name={u.username} userId={u.id} url={u.avatar_url} config={u.avatar_config} castId={u.avatar_cast_id} frame={u.avatar_frame} pro={u.is_pro} level={u.level} size={30} />
                   <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: FR_LOOK.ink }}>{u.username}</span>
                   <LevelBadge level={u.level} size={18} numberSize={11} numberClassName="" />
                   <Icon3D name="add-friend" size={17} />
@@ -1009,6 +1035,7 @@ export function FriendsPanel() {
         <NewFriendsModal
           me={{
             name: profile?.username ?? 'You',
+            userId: profile?.id ?? null,
             url: profile?.avatar_url ?? null,
             emoji: (profile as { avatar_emoji?: string | null } | null)?.avatar_emoji ?? null,
             accent: (profile as { accent_color?: string | null } | null)?.accent_color ?? null,

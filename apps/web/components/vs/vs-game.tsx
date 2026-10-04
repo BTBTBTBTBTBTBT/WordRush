@@ -20,7 +20,8 @@ import { SocketIOMatchService, type MatchEndedData, type OpponentGuessLogEntry }
 import { shareCaption } from '@wordle-duel/core';
 import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuIdentity, cpuOpponentIdForKind, botIdForKind, castBotForKind, engineDifficultyForKind, guessRangeForKind, parseCpuKind, type CpuKind } from '@/lib/adapters/bot-match-service';
 import { VsSoloHudContext, VsOpponentContext } from './opponent-hud';
-import { BOT_PERSONAS, botLine, botPersona, botRosterEntry, isBotCastId, type BotDifficulty, type BotEvent, type BotPose, type BotTier } from '@/lib/bot/bot-personas';
+import { BOT_PERSONAS, botArt, botLine, botPersona, botRosterEntry, isBotCastId, type BotDifficulty, type BotEvent, type BotPose, type BotTier } from '@/lib/bot/bot-personas';
+import type { AvatarRowFields } from '@/lib/avatar-cast';
 import { recordCpuGame, recordBotOfDay, recordBotOfDayResult, recordLadderGame, loadCpuProgression } from '@/lib/bot/cpu-progression';
 import { VS, ladderNextKind, modeTitle, sendPanelLine, challengeShareText, readBotDaily, writeBotDaily, lookingRowLabel, vsLookingOn } from '@/lib/vs-lobby';
 import { pingVsLooking, postRaceResult, sendChallenge, type ChallengeRun, type ChallengeView } from '@/lib/vs-challenges-client';
@@ -714,7 +715,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       } else if (oppId && oppId.startsWith(RACE_OPPONENT_PREFIX) && raceRef.current) {
         // A friend's run: the challenger's identity, not a bot label.
         const c = raceRef.current.challenger;
-        setOpponentInfo({ username: c.username, avatarUrl: c.avatarUrl, level: 0 });
+        setOpponentInfo({
+          username: c.username, userId: c.id, avatarUrl: c.avatarUrl, level: 0,
+          avatarConfig: c.avatar_config ?? null, avatarFrame: c.avatar_frame ?? null, avatarCastId: c.avatar_cast_id ?? null, isPro: c.is_pro,
+        });
         opponentNameRef.current = c.username;
         const me = profileRef.current;
         if (me) fetchHeadToHead(me.id, c.id).then(setHeadToHead).catch(() => {});
@@ -1638,6 +1642,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               username: profile?.username || 'You',
               avatarUrl: (profile as any)?.avatar_url ?? null,
               level: (profile as any)?.level ?? null,
+              userId: profile?.id ?? null,
+              avatarConfig: (profile as any)?.avatar_config,
               emoji: (profile as any)?.avatar_emoji ?? null,
               accent: (profile as any)?.accent_color ?? null,
             }}
@@ -1657,6 +1663,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               username: opponentInfo?.username ?? '…',
               avatarUrl: opponentInfo?.avatarUrl ?? null,
               level: flow ? null : (opponentInfo?.level ?? null),
+              userId: opponentInfo?.userId ?? null,
+              avatarConfig: opponentInfo?.avatarConfig,
+              castId: opponentInfo?.avatarCastId,
+              pro: opponentInfo?.isPro ?? null,
             }) : null}
             headToHead={headToHead}
             mode={mode}
@@ -1779,7 +1789,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           mode={mode}
           outcome={raceOutcome}
           me={{ run: challengeRun, guessLog: challengeRun.guessLog }}
-          them={{ run: race.run, guessLog: race.run.guessLog, name: race.challenger.username, avatarUrl: race.challenger.avatarUrl }}
+          them={{
+            run: race.run, guessLog: race.run.guessLog, name: race.challenger.username, avatarUrl: race.challenger.avatarUrl,
+            userId: race.challenger.id, avatarConfig: race.challenger.avatar_config, castId: race.challenger.avatar_cast_id, pro: race.challenger.is_pro,
+          }}
           solutions={race.run.solutions.length ? race.run.solutions : challengeRun.solutions}
           h2h={headToHead}
           xp={xpResult?.xpGain ?? null}
@@ -1838,6 +1851,24 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           const solutions = matchResult.solutions ?? [];
           // Loaded on the Share tap, not with the match (founder, 2026-09-29).
           const { generateVsShareImage, logToGrids } = await import('@/lib/vs-share-image');
+          // BJ5: each side's resolved avatar — yours from your profile, a person's through the
+          // one resolver (directory-filled when the match payload lacks the fields), a bot's cast art.
+          const { shareAvatarFor } = await import('@/lib/share-avatar');
+          const { avatarDirectory } = await import('@/lib/avatar-directory');
+          const me = profile as Record<string, unknown> | null;
+          const myShareAvatar = me ? shareAvatarFor(me as AvatarRowFields, String(me.username ?? myName), (me.accent_color as string | null | undefined) ?? null, { level: Number(me.level) || null, pro: !!isPro }) : null;
+          const oppRow = opponentInfo?.userId ? avatarDirectory.get('id', opponentInfo.userId) : null;
+          const ghostOpp = isCpu && cpuPersona?.botId === 'ghost';
+          const oppShareAvatar = ghostOpp
+            ? myShareAvatar
+            : isCpu
+              ? (cpuPersona?.botId && isBotCastId(cpuPersona.botId) ? { kind: 'bot' as const, src: botArt(cpuPersona.botId, 'ready') } : cpuPersona?.avatar ? { kind: 'bot' as const, src: cpuPersona.avatar } : null)
+              : oppRow
+                ? shareAvatarFor(oppRow, oppRow.username ?? oppName, oppRow.accent_color, { level: oppRow.level, pro: oppRow.is_pro })
+                : shareAvatarFor({
+                  avatar_url: opponentInfo?.avatarUrl ?? null, avatar_config: opponentInfo?.avatarConfig ?? undefined,
+                  avatar_cast_id: opponentInfo?.avatarCastId ?? undefined, avatar_frame: opponentInfo?.avatarFrame ?? undefined,
+                }, oppName);
           const blob = await generateVsShareImage({
             modeLabel: `VS ${label}`,
             isWin,
@@ -1845,11 +1876,13 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             me: {
               name: myName, score: matchResult.playerScore ?? matchResult.playerGuesses,
               won: isWin, solved: mySolved, grids: logToGrids(myGuessLog, solutions),
+              avatar: myShareAvatar,
             },
             opponent: {
               name: oppName, score: matchResult.opponentScore ?? matchResult.opponentGuesses,
               won: !isWin && !isDraw, solved: oppSolved,
               grids: logToGrids(matchResult.opponentGuessLog ?? [], solutions),
+              avatar: oppShareAvatar,
             },
           });
           if (blob) {
@@ -1945,7 +1978,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {opponentUserId && headToHead && !isCpu && (
             <VsCard accent="#7c3aed">
               <div className="flex items-center gap-3 p-3">
-                <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={34} />
+                <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} userId={opponentInfo?.userId} config={opponentInfo?.avatarConfig} castId={opponentInfo?.avatarCastId} pro={opponentInfo?.isPro} size={34} />
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] font-black uppercase truncate" style={{ color: VS.label, letterSpacing: 0.8 }}>You and {oppName}</div>
                   <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{headToHeadLine(oppName, headToHead)}</div>
@@ -2156,7 +2189,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                   {waitGhost ? (
                     <GhostAvatar name={myNameForGhost} emoji={(profile as any)?.avatar_emoji ?? null} accent={(profile as any)?.accent_color ?? null} size={44} />
                   ) : (
-                    <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} size={44} />
+                    <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} userId={opponentInfo?.userId} config={opponentInfo?.avatarConfig} castId={opponentInfo?.avatarCastId} pro={opponentInfo?.isPro} size={44} />
                   )}
                 </span>
               )}
@@ -2281,6 +2314,9 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   const opponentIdentity = {
     name: opponentInfo?.username || (isCpu ? 'Bot' : 'Opponent'),
     avatarUrl: opponentInfo?.avatarUrl ?? null,
+    userId: isCpu ? null : opponentInfo?.userId ?? null,
+    avatarConfig: isCpu ? undefined : opponentInfo?.avatarConfig,
+    pro: isCpu ? null : opponentInfo?.isPro ?? null,
     isBot: isCpu,
     tag: hudBotId ? `Rung ${botPersona(hudBotId).rung}` : hudGhost ? 'Your best run' : isCpu ? 'Bot' : flow === 'race' ? 'Their run' : undefined,
     typing: opponentTyping,

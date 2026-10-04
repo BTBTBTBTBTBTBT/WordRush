@@ -97,7 +97,10 @@ export function VsChallenge({ code }: { code: string }) {
         mode={challenge.gameMode}
         outcome={entry.outcome}
         me={{ run: { solved: entry.solved, boardsSolved: entry.boardsSolved, guesses: entry.guesses, timeMs: entry.timeMs, totalBoards: challenge.run.totalBoards }, guessLog: entry.guessLog }}
-        them={{ run: challenge.run, guessLog: challenge.run.guessLog, name, avatarUrl: challenge.challenger.avatarUrl }}
+        them={{
+          run: challenge.run, guessLog: challenge.run.guessLog, name, avatarUrl: challenge.challenger.avatarUrl,
+          userId: challenge.challenger.id, avatarConfig: challenge.challenger.avatar_config, castId: challenge.challenger.avatar_cast_id, pro: challenge.challenger.is_pro,
+        }}
         solutions={challenge.run.solutions}
         h2h={h2h}
         xp={null}
@@ -155,7 +158,15 @@ export function VsChallenge({ code }: { code: string }) {
       <VsCard className="w-full max-w-sm">
         {/* BJ7: top-aligned header, 12 padding, 10 between blocks. */}
         <div className="flex items-start gap-2.5" style={{ padding: '10px 12px 2px' }}>
-          <InitialAvatar name={name} url={challenge.challenger.avatarUrl} size={40} />
+          <InitialAvatar
+            name={name}
+            url={challenge.challenger.avatarUrl}
+            userId={challenge.challenger.id}
+            config={challenge.challenger.avatar_config}
+            castId={challenge.challenger.avatar_cast_id}
+            pro={challenge.challenger.is_pro}
+            size={40}
+          />
           <span className="flex-1 font-black pt-2" style={{ fontSize: 16, color: VS.deep, letterSpacing: 0.4 }}>RACE @{name.toUpperCase()}’S RUN</span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={artSrc(NOTICE_POSES.challenge[0])} alt="" aria-hidden="true" width={48} height={48} draggable={false} style={{ width: 48, height: 48, objectFit: 'contain', margin: '-4px -4px -4px 0' }} />

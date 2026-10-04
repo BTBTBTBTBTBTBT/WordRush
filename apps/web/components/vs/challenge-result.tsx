@@ -75,7 +75,8 @@ interface ResultProps {
   mode: string;
   outcome: 'win' | 'loss' | 'draw';
   me: SideRun;
-  them: SideRun & { name: string; avatarUrl: string | null };
+  /** + FINISH_SPEC AN5: the challenger's id / saved mascot / cast / Pro flag when known. */
+  them: SideRun & { name: string; avatarUrl: string | null; userId?: string | null; avatarConfig?: unknown; castId?: string | null; pro?: boolean | null };
   solutions: string[];
   h2h: HeadToHeadRecord | null;
   xp: number | null;
@@ -151,7 +152,7 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
         {(h2hText || xp) && (
           <VsCard accent="#7c3aed">
             <div className="flex items-center gap-3 p-3">
-              <InitialAvatar name={them.name} url={them.avatarUrl} size={36} />
+              <InitialAvatar name={them.name} url={them.avatarUrl} userId={them.userId} config={them.avatarConfig} castId={them.castId} pro={them.pro} size={36} />
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] font-black uppercase truncate" style={{ color: '#6b7280', letterSpacing: 0.8 }}>YOU AND @{them.name}</div>
                 {h2hText && <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{h2hText}</div>}

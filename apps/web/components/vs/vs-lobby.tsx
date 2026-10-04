@@ -166,7 +166,7 @@ export function VsLobby() {
                 index={i}
                 accent={NOTICE_COLORS.challenge}
                 pose={incomingPoses[i]}
-                avatar={<InitialAvatar name={c.challenger.username} url={c.challenger.avatarUrl} size={38} />}
+                avatar={<InitialAvatar name={c.challenger.username} url={c.challenger.avatarUrl} userId={c.challenger.id} config={c.challenger.avatar_config} castId={c.challenger.avatar_cast_id} pro={c.challenger.is_pro} size={38} />}
                 headline={<>Challenge from @{c.challenger.username}</>}
                 detail={(
                   <>
@@ -250,7 +250,7 @@ export function VsLobby() {
                       return (
                         // BJ7: top-aligned row, detail 4 under the name.
                         <div key={r.opponentId} className="flex items-start gap-2.5 px-3 py-2" style={{ borderTop: i === 0 ? undefined : `1px solid ${alphaHex(VS_ACCENT, 0.18)}` }}>
-                          <InitialAvatar name={r.username} url={r.avatarUrl} size={36} />
+                          <InitialAvatar name={r.username} url={r.avatarUrl} userId={r.opponentId} config={r.avatar_config} castId={r.avatar_cast_id} pro={r.is_pro} size={36} />
                           <span className="flex-1 min-w-0">
                             <span className="block text-[13px] font-black truncate" style={{ color: '#1f2937' }}>@{r.username}</span>
                             <span className="block text-[11px] font-bold truncate mt-1" style={{ color: line.ahead ? VS.ink : VS.label }}>{line.text}</span>
@@ -290,7 +290,7 @@ export function VsLobby() {
                         index={i}
                         accent={NOTICE_COLORS[kind]}
                         pose={sentPoses[i]}
-                        avatar={first ? <InitialAvatar name={first.username} size={38} /> : <VsModeTile mode={s.gameMode} size={38} icon={20} />}
+                        avatar={first ? <InitialAvatar name={first.username} lookupByName size={38} /> : <VsModeTile mode={s.gameMode} size={38} icon={20} />}
                         headline={status}
                         detail={(
                           <>

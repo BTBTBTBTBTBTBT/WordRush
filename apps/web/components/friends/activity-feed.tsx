@@ -285,7 +285,7 @@ export function ActivityFeed({ onRematch }: Props) {
               >
                 <div aria-hidden="true" style={{ ...frBar(accent, 5), borderRadius: '16px 16px 0 0' }} />
                 <div className="flex items-start gap-2.5" style={{ padding: '8px 10px 9px' }}>
-                  <FriendAvatar name={e.username} url={e.avatar_url} emoji={e.avatar_emoji} size={36} />
+                  <FriendAvatar name={e.username} userId={e.userId} url={e.avatar_url} config={e.avatar_config} castId={e.avatar_cast_id} frame={e.avatar_frame} pro={e.is_pro} size={36} />
                   <div className="flex-1 min-w-0">
                     <span className="flex items-start gap-1.5">
                       <span className="shrink-0 pt-px">{icon}</span>

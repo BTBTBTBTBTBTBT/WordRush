@@ -150,7 +150,7 @@ export function VsFriend() {
                         className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
                         style={vsCard(VS_ACCENT, { selected: on, radius: 14 })}
                       >
-                        <InitialAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={34} />
+                        <InitialAvatar name={f.username} url={f.avatar_url} userId={f.id} config={f.avatar_config} castId={f.avatar_cast_id} pro={f.is_pro} level={f.level} size={34} />
                         <span className="flex-1 min-w-0">
                           <span className="block text-[13px] font-black truncate" style={{ color: '#1f2937' }}>@{f.username}</span>
                           <span className="block text-[11px] font-bold truncate" style={{ color: (f.h2hW ?? 0) > (f.h2hL ?? 0) ? VS.ink : VS.label }}>

@@ -103,7 +103,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
                     className="flex flex-col items-center gap-1"
                     style={{ width: 58 }}
                   >
-                    <FriendAvatar name={f.username} url={f.avatar_url} emoji={f.avatar_emoji} size={36} online pulse />
+                    <FriendAvatar name={f.username} userId={f.id} url={f.avatar_url} config={f.avatar_config} castId={f.avatar_cast_id} frame={f.avatar_frame} pro={f.is_pro} level={f.level} size={36} online pulse />
                     <span className="w-full text-center text-[10.5px] font-black truncate" style={{ color: FR_LOOK.bannerInk }}>{f.username}</span>
                     <span className="w-full text-center text-[9.5px] font-extrabold truncate -mt-0.5" style={{ color: FR_LOOK.bannerSub }}>{doingLine(f.activity)}</span>
                   </button>

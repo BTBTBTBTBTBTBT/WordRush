@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client';
+import { avatarFieldsOf, selectWithAvatarColumns } from './avatar-fields-server';
 
 export interface HeadToHeadRecord {
   myWins: number;
@@ -10,6 +11,13 @@ export interface VsProfile {
   username: string;
   avatarUrl: string | null;
   level: number;
+  /** FINISH_SPEC AN5: the player's id (the avatar's own-match / directory key) when a real person. */
+  userId?: string | null;
+  /** FINISH_SPEC AN5: the opponent's saved mascot / frame / cast + active Pro (null / false when unknown or the columns are missing). */
+  avatarConfig?: Record<string, unknown> | null;
+  avatarFrame?: string | null;
+  avatarCastId?: string | null;
+  isPro?: boolean;
 }
 
 /**
@@ -45,18 +53,33 @@ export async function fetchHeadToHead(
 
 /** Minimal public profile bits needed by the VS intro/header/result UI. */
 export async function fetchVsProfile(userId: string): Promise<VsProfile | null> {
-  const { data } = await (supabase as any)
-    .from('profiles')
-    .select('username, avatar_url, level')
-    .eq('id', userId)
-    .maybeSingle() as {
-    data: { username: string; avatar_url: string | null; level: number | null } | null;
-  };
+  // AN5: the avatar columns ride along through the tolerant select (retried
+  // without them while they are missing) — a missing column never breaks the
+  // opponent load.
+  let data: { username: string; avatar_url: string | null; level: number | null } | null = null;
+  try {
+    const res = await selectWithAvatarColumns<{ username: string; avatar_url: string | null; level: number | null }>(
+      (extra) => (supabase as any)
+        .from('profiles')
+        .select(`username, avatar_url, level${extra}`)
+        .eq('id', userId)
+        .maybeSingle(),
+    );
+    data = res.data;
+  } catch {
+    data = null;
+  }
 
   if (!data) return null;
+  const fields = avatarFieldsOf(data);
   return {
     username: data.username || 'Player',
+    userId,
     avatarUrl: data.avatar_url,
     level: data.level ?? 1,
+    avatarConfig: fields.avatar_config,
+    avatarFrame: fields.avatar_frame,
+    avatarCastId: fields.avatar_cast_id,
+    isPro: fields.is_pro,
   };
 }
