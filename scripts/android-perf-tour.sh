@@ -17,7 +17,9 @@
 # Compose runs interpreted and its numbers mean little.
 #
 # Emulator: AVD "wordo" (android-35):
-#   ~/Library/Android/sdk/emulator/emulator -avd wordo -no-window -no-audio -no-boot-anim &
+#   ~/Library/Android/sdk/emulator/emulator -avd wordo -no-window -no-audio -no-boot-anim -gpu host &
+# (-gpu host matters: headless defaults to SwiftShader, where every frame takes 200-300 ms.)
+# Game rows: <game>.open (the widget deep link) and <game>.close (BACK) are measured too.
 # The tour plays as a guest; dailies opened via the widget deep link stay on-device.
 # Report: apps/android/build/perf/perf-tour-<label>.md
 
@@ -143,12 +145,12 @@ fi
 word_game() {
   local p="$1" key="$2"
   wanted "$p" || return 0
-  open_daily "$key"; sleep 3
+  measure "$p.open" 3 open_daily "$key"
   measure "$p.type" 0.4 type_word CRANE
   measure "$p.submit" 2.2 key KEYCODE_ENTER
   measure "$p.type2" 0.4 type_word SLOTH
   measure "$p.submit2" 2.2 key KEYCODE_ENTER
-  back; sleep 1.5
+  measure "$p.close" 1.5 back
 }
 word_game classic DUEL
 word_game quad QUORDLE
@@ -157,24 +159,24 @@ word_game gauntlet GAUNTLET
 
 # Puzzles.
 if wanted hubbub; then
-  open_daily HUB; sleep 3
+  measure "hubbub.open" 3 open_daily HUB
   measure "hubbub.taps" 1 sh -c "for c in E T A O I N S R H L; do $ADB shell input text \$c; done; $ADB shell input keyevent KEYCODE_ENTER; $ADB shell input keyevent KEYCODE_SPACE"
-  back; sleep 1.5
+  measure "hubbub.close" 1.5 back
 fi
 if wanted sudocious; then
-  open_daily SUDOKU; sleep 3
+  measure "sudocious.open" 3 open_daily SUDOKU
   measure "sudocious.taps" 1 sh -c "for i in 1 2 3 4 5 6 7 8 9; do $ADB shell input keyevent KEYCODE_DPAD_RIGHT; $ADB shell input text \$i; done"
-  back; sleep 1.5
+  measure "sudocious.close" 1.5 back
 fi
 if wanted muddle; then
-  open_daily SCRAMBLE; sleep 3
+  measure "muddle.open" 3 open_daily SCRAMBLE
   measure "muddle.type" 1 sh -c "$ADB shell input text S; $ADB shell input text T; $ADB shell input text A; $ADB shell input text R; $ADB shell input text E; $ADB shell input keyevent KEYCODE_ENTER"
-  back; sleep 1.5
+  measure "muddle.close" 1.5 back
 fi
 if wanted crossword; then
-  open_daily CROSSWORD; sleep 3
+  measure "crossword.open" 3 open_daily CROSSWORD
   measure "crossword.type" 1 type_word STARELINE
-  back; sleep 1.5
+  measure "crossword.close" 1.5 back
 fi
 
 {

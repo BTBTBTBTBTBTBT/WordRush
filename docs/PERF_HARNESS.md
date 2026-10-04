@@ -75,7 +75,7 @@ transition costs one ~50–70 ms frame on the simulator on its own).
 
 ```sh
 (cd apps/android && ./gradlew :app:installBenchmarkRelease)   # optimized, debug-signed
-~/Library/Android/sdk/emulator/emulator -avd wordo -no-window -no-audio -no-boot-anim &
+~/Library/Android/sdk/emulator/emulator -avd wordo -no-window -no-audio -no-boot-anim -gpu host &   # headless defaults to SwiftShader: 200-300 ms frames
 ./scripts/android-perf-tour.sh --label before
 ONLY=home,octo ./scripts/android-perf-tour.sh
 ```
