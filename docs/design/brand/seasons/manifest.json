@@ -2234,6 +2234,258 @@
       ]
     },
     {
+      "id": "thanksgiving-title-game-classic",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-classic.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Classic game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        859,
+        186
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-classicseven",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-classicseven.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Classic Seven game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1109,
+        159
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-classicsix",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-classicsix.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Classic Six game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1194,
+        172
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-codebreaker",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-codebreaker.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Codebreaker (cryptogram) game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        957,
+        176
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-crosswordocious",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-crosswordocious.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Crosswordocious game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1306,
+        153
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-deliverance",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-deliverance.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Deliverance (rescue) game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1153,
+        166
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-gauntlet",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-gauntlet.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Gauntlet game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        888,
+        171
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-hubbub",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-hubbub.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Hubbub game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        768,
+        188
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-kindred",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-kindred.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Kindred (groups) game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        929,
+        192
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-letterladder",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-letterladder.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Letter Ladder game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1303,
+        167
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-muddle",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-muddle.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Muddle (scramble) game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        774,
+        174
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-octoword",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-octoword.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Octoword game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1038,
+        178
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-propernoundle",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-propernoundle.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "ProperNoundle game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        974,
+        167
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-quadword",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-quadword.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Quadword game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        999,
+        195
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-spyglass",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-spyglass.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Spyglass (word search) game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        843,
+        173
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-starsweep",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-starsweep.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Starsweep (regions) game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        917,
+        170
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-succession",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-succession.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Succession (sequence) game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1077,
+        183
+      ]
+    },
+    {
+      "id": "thanksgiving-title-game-sudocious",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/game-sudocious.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Sudocious game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.",
+      "size": [
+        1043,
+        182
+      ]
+    },
+    {
       "id": "thanksgiving-title-label-give-thanks",
       "season": "thanksgiving",
       "kind": "title",

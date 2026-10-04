@@ -107,6 +107,8 @@ for k, v in {'pilgrim-hat': 'Pilgrim buckle hat', 'chef-toque': 'Chef toque', 'a
              'turkey-hat': 'Plush turkey hat', 'turkey-tail': 'Turkey tail-feather fan (worn behind)', 'plaid-cape': 'Plaid blanket cape (behind)',
              'corn-husk': 'Corn husk leaves (behind)', 'autumn-shawl': 'Knitted autumn shawl (behind)', 'pumpkin-pie': 'Whole pumpkin pie', 'maple-leaf': 'Maple leaf'}.items():
     CAPTIONS[f'thanksgiving/pieces/{k}.png'] = f'{v}: costume piece, layered onto hero art in code.'
+for k, v in GAMES.items():
+    CAPTIONS[f'thanksgiving/titles/game-{k}.png'] = f'{v} game title in its game color with a chocolate-brown rim (harvest style, no drips). Spell-checked.'
 CAPTIONS.update({
     'thanksgiving/titles/happy-thanksgiving.png': 'Greeting header, stacked HAPPY / THANKSGIVING in pumpkin orange with a chocolate rim. Spell-checked.',
     'thanksgiving/titles/happy-thanksgiving-alt1.png': 'One-line HAPPY THANKSGIVING with a maple leaf (the words run together with no gap, so the stacked version is preferred).',

@@ -22,6 +22,7 @@
      cheerleader (amber O), plaid blanket and leaf (R), pie chef (D), knitted shawl (pink O), acorn cap (C), corn
      husk (I), pie-slice hat (orange O), knit beanie (U) and turkey hat (S).
    - **Lettering:** HAPPY THANKSGIVING (stacked, plus a one-line alt that runs together), THANKSGIVING, DAILIES,
-     PUZZLES, GOBBLE GOBBLE!, GIVE THANKS and 4 page titles. All are spell-checked.
+     PUZZLES, GOBBLE GOBBLE!, GIVE THANKS, 4 page titles and all 18 game titles in their game colors.
+     All 29 are spell-checked.
    - **Other art:** 10 props, 12 costume pieces, and warm-dusk wallpapers for the same 5 pages.
-5. **ChatGPT:** 8 generations and no limit hit. Nothing ships until you pick from `gallery.html`.
+5. **ChatGPT:** 12 generations and no limit hit. Nothing ships until you pick from `gallery.html`.
