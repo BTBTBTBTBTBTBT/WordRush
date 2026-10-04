@@ -51,7 +51,7 @@ end
 # wait for processing
 20.times do
   states = sets.map { |s| call("GET", "/v1/appScreenshotSets/#{s["id"]}/appScreenshots?fields[appScreenshots]=assetDeliveryState&limit=50")["data"].map { |x| x.dig("attributes", "assetDeliveryState", "state") } }.flatten
-  puts "states: #{states.tally}"
+  puts "states: #{states.group_by(&:itself).transform_values(&:size)}"
   break if states.all? { |st| st == "COMPLETE" }
   abort("a screenshot FAILED") if states.include?("FAILED")
   sleep 10

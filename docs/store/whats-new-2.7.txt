@@ -1,9 +1,11 @@
 Wordocious 2.7 is our biggest update yet: a whole new look starring the WORDOCIOUS cast.
-• Build your own mascot with hats, extras and backdrops. It shows up on every leaderboard.
+• Every screen redesigned, with new titles, buttons and menus in the cast's colors.
+• Build your own mascot with hats, extras and backdrops. It shows up on every leaderboard and podium.
 • A brand new welcome that walks you through everything.
 • Battle the cast: ten bots to beat, from sleepy R all the way up to W.
-• Smoother play everywhere, with keys that color as each tile flips.
-• Your wins and scores show up on Home and the leaderboard the moment you finish.
-• Brand new widgets, Strategy guides and Word of the Day.
+• Smoother play everywhere: games open and close faster, with keys that color as each tile flips.
+• Your wins and scores show up on Home, Stats and Moments the moment you finish.
+• Pick a friend for pocket games in a new character-select menu.
+• Brand new widgets with your mascot, Strategy guides and Word of the Day.
 • Sounds, haptics, 3D achievement badges and level badges.
 • Halloween costumes for the whole cast, Oct 24 to Nov 1.
