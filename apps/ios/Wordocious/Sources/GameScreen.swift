@@ -811,3 +811,33 @@ enum KeyboardSlot {
         }
     }
 }
+
+/// FINISH_SPEC BJ14: a heavy part of a game screen (its keypad) that arrives one
+/// run-loop turn after the screen's first frame, so the presenting frame builds less.
+/// Until then its slot holds the part's last measured height (kept across launches;
+/// `estimate` only before the very first measure), so nothing moves — and the game
+/// cover's overlay hides the turn anyway. `--flag noKeyStage` builds it at once.
+struct StagedSlot<Content: View>: View {
+    let key: String
+    var estimate: CGFloat
+    @ViewBuilder var content: () -> Content
+    @State private var built = KeyboardSlot.startBuilt
+
+    private var defaultsKey: String { "bj14.slot.\(key)" }
+
+    var body: some View {
+        if built {
+            content()
+                .background(GeometryReader { g in
+                    Color.clear.onAppear {
+                        if g.size.height > 0 { UserDefaults.standard.set(Double(g.size.height), forKey: defaultsKey) }
+                    }
+                })
+        } else {
+            let saved = UserDefaults.standard.double(forKey: defaultsKey)
+            Color.clear
+                .frame(height: saved > 0 ? CGFloat(saved) : estimate)
+                .onAppear { DispatchQueue.main.async { built = true } }
+        }
+    }
+}

@@ -387,6 +387,7 @@ struct CrosswordView: View {
                         // Hardware keys (founder, 2026-09-30): web crossword-game keydown —
                         // A–Z / Delete as the keys, arrows move the cursor, Return or
                         // Tab = next entry, Space flips Across/Down.
+                        StagedSlot(key: "crosswordKeys", estimate: 3 * (UIScreen.main.bounds.height < 700 ? 44 : 52) + 14) {   // BJ14
                         LetterKeyboard(onLetter: { vm.setLetter($0) }, onEnter: { vm.nextEntry() }, onDelete: { vm.deleteLetter() },
                                        onHardwareKey: { key in
                                            switch key {
@@ -402,6 +403,7 @@ struct CrosswordView: View {
                                        },
                                        // BI18: 44-pt keys on short phones (SE), like Muddle's one-screen rule.
                                        keyHeightOverride: UIScreen.main.bounds.height < 700 ? 44 : nil)
+                        }
                     }
                     // §BI9: the feedback popup hangs from the clue bar / controls under the grid — never over the title art or the board.
                     .gameFeedbackToast(vm.toast, alignment: .top)

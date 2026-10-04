@@ -1635,6 +1635,15 @@ cost a 100–260 ms frame on idle Home. Not safe, not cheap: no warmup. A real o
 "warming" environment flag every onAppear checks) — owed. Kept: the keyboard a turn after the board (exact slot).
 Round-5 table: opens Classic 301 (first game of the launch), QuadWord 109, OctoWord 99, Sudocious 304, Muddle 323,
 Crossword 324, VS bot start 214; closes 33–109 (Classic 50, OctoWord 109); OctoWord zoom worst 51 / 33 / 17.
+BJ14 round 6: Sudocious / Muddle / Crossword keypads arrive one turn after the board (StagedSlot in GameScreen.swift: the
+slot holds the keypad's last measured height, saved across launches; `--flag noKeyStage` for A/B). Three runs each, first
+open: Sudocious 419 → 364 ms, Muddle 319 → 306, Crossword 297 → 283; burst screenshots show the cover's shell over the
+staging turn and no layout shift after. A safe Classic warmup (board + keyboard sized offscreen around a VS stand-in, key
+catcher disabled; the probe showed it really built: 24 ms, no Home hitch) did NOT help the first open (309 vs 266 ms, 3 runs
+each) and added launch frames over 25 ms, so it was dropped: the first-open cost is not the view types a sized-but-unrendered
+tree covers (layer / glyph / image work that needs a window). VS bot start not staged: its board appears inside the VS
+screen with no overlay, so a keyboard-less frame would be visible. Full table: opens Classic 270, QuadWord 124, OctoWord
+125, Sudocious 255, Muddle 248, Crossword 250, VS 210; closes 33–111.
 BJ15. Cast-color buttons + art labels (founder 10-03; spec docs/design/brand/buttons/cast/README.md + labels.json). One shared
 primary button per platform — iOS `CastButtonStyle` (CastButton.swift; `CandyLabel` switches to art inside it), Android
 `CastButton` (ui/CastButton.kt), web `CastButton` / `CastLink` (components/ui/cast-button.tsx + app/cast-button.css). Skin =

@@ -428,6 +428,7 @@ struct MuddleView: View {
             .gameFeedbackToast(vm.toast, alignment: .top)  // §BI9: under the board, never over the title art
             // Hardware keys (founder, 2026-09-30): web muddle-game keydown —
             // A–Z / Delete as the keys, Return or Tab = next row, ↑ ↓ step rows.
+            StagedSlot(key: "muddleKeys", estimate: 3 * MdSize.keyHeight + 24) {   // BJ14
             LetterKeyboard(onLetter: { vm.typeLetter($0) }, onEnter: { vm.nextRow() }, onDelete: { vm.deleteLetter() },
                            onHardwareKey: { key in
                                switch key {
@@ -440,6 +441,7 @@ struct MuddleView: View {
                            },
                            keyHeightOverride: MdSize.keyHeight)
                 .padding(.bottom, 4)
+            }
         }
         .padding(.horizontal, MdSize.columnPad)
         .onPreferenceChange(MdRowsKey.self) { h in if h > 0, abs(h - rowsHeight) > 0.5 { rowsHeight = h } }

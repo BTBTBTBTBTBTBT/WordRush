@@ -209,7 +209,9 @@ struct SudokuView: View {
                     board.padding(.horizontal, 6)
                     Spacer(minLength: 4)
                     // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
-                    SudokuPad(vm: vm).padding(.bottom, 6).gameFeedbackToast(vm.toast, alignment: .top)
+                    StagedSlot(key: "sudokuPad", estimate: 180) {   // BJ14
+                        SudokuPad(vm: vm).padding(.bottom, 6).gameFeedbackToast(vm.toast, alignment: .top)
+                    }
                 }
                 .padding(.horizontal, 10)
             }
