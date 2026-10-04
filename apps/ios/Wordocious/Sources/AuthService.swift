@@ -137,13 +137,21 @@ final class AuthService: ObservableObject {
         return AuthService.cachedProEntitlement
     }
 
+    /// The keychain store; `-storeDemo` (DEBUG) swaps in a fixed in-memory session.
+    nonisolated private static func sessionStorage() -> any AuthLocalStorage {
+        #if DEBUG
+        if StoreDemo.active { return StoreDemoAuthStorage() }
+        #endif
+        return ResilientAuthStorage()
+    }
+
     nonisolated private init() {
         let key = SupabaseConfig.isConfigured ? SupabaseConfig.anonKey : "anon-key-not-set"
         let main = SupabaseClient(
             supabaseURL: SupabaseConfig.url, supabaseKey: key,
             // Realtime keeps URLSession.shared's defaults: its socket copies the session's
             // config, and a 15 s idle limit would drop a quiet socket between heartbeats.
-            options: .init(auth: .init(storage: ResilientAuthStorage()), global: .init(session: Net.api),
+            options: .init(auth: .init(storage: Self.sessionStorage()), global: .init(session: Net.api),
                            realtime: .init(session: .shared))
         )
         client = main

@@ -628,7 +628,7 @@ struct PerfTourHost: View {
     @State private var helpSelection: InfoMenuDestination?
 
     var body: some View {
-        if PerfTour.requested {
+        if PerfTour.requested || StoreDemo.active {
             Color.clear
                 .onReceive(PerfTour.commands) { c in
                     switch c {

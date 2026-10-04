@@ -33,6 +33,10 @@ final class GameViewModel: ObservableObject {
     private var accumulatedMs: Double = 0
     private var resumeAtMs: Double?
     private var nowMs: Double { Date().timeIntervalSince1970 * 1000 }
+    #if DEBUG
+    /// `-storeDemo` store shots: a believable clock on a board the driver typed in seconds.
+    func storeDemoAddElapsed(seconds: Double) { accumulatedMs += seconds * 1000 }
+    #endif
 
     var elapsedSeconds: Int {
         if let f = finalTimeSeconds { return f }

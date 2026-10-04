@@ -207,12 +207,20 @@ struct HomeBannerView: View {
 
     // MARK: Frosted headline strip
 
+    /// The hour the greeting reads (`-storeDemo` store shots are always GOOD MORNING).
+    private static func greetingHour(_ date: Date) -> Int {
+        #if DEBUG
+        if StoreDemo.active { return 9 }
+        #endif
+        return Calendar.current.component(.hour, from: date)
+    }
+
     private var strip: some View {
         // The headline's greeting follows the hour (a minute timeline); only the clock
         // line below ticks every second (FINISH_SPEC BJ3: a 1 s tick here used to
         // rebuild and re-measure all four headline layouts every second).
         TimelineView(.everyMinute) { ctx in
-            let hour = Calendar.current.component(.hour, from: ctx.date)
+            let hour = Self.greetingHour(ctx.date)
             // §Z: both modes' headlines are laid out in one slot (the taller sets its
             // height) and crossfade, so the switch never changes the strip's height.
             let dailyHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false)

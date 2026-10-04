@@ -5,7 +5,10 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, 'store-src')
-FONT = '/Users/brianterchin/Developer/WordRush/.claude/worktrees/more-games/apps/ios/Wordocious/Resources/Nunito.ttf'
+FONT = os.path.join(HERE, '..', '..', 'apps', 'ios', 'Wordocious', 'Resources', 'Nunito.ttf')
+# SET=sim composes the simulator captures (capture-sim.sh → store-src/sim-NN-<name>.png);
+# the default is the founder-phone set below.
+SET = os.environ.get('SET', 'sim')   # 'phone' = the founder-shot SHOTS table
 
 # founder order (2026-09-28): Home, More Games, Classic board, Classic answered, then ours
 SHOTS = [
@@ -20,6 +23,22 @@ SHOTS = [
     ('IMG_9886.PNG', 'stats-today', 'Your day at a glance',          'Sweep, More Games, VS and your standing'),
     ('IMG_9888.PNG', 'records',     'Records and a trophy shelf',    'Medals, fastest wins, fewest guesses'),
 ]
+# Simulator set (capture-sim.sh, -storeDemo). Slot 10 reuses the composed widgets frame
+# from the last version (a `None` source = copy docs/store/screenshots-2.7/10-widgets-<size>.png).
+SHOTS_SIM = [
+    ('sim-01-home.png',        'home',        '19 fresh puzzles every day',  'Sweep all eight dailies for a Daily Sweep'),
+    ('sim-02-classic.png',     'classic',     'One word, six tries',         'Every guess shows you a little more'),
+    ('sim-03-octo.png',        'octoword',    'Eight boards at once',        'OctoWord: every guess plays on all eight'),
+    ('sim-04-finish.png',      'victory',     'Every solve is scored',       'Guesses, speed and a clean finish all count'),
+    ('sim-05-stats.png',       'stats',       'Your day at a glance',        'Streaks, levels and every daily you played'),
+    ('sim-06-leaderboard.png', 'leaderboard', 'Climb the daily podium',      'Every game, every day, all-time too'),
+    ('sim-07-friends.png',     'friends',     'Play with your friends',      "Today's race, who's on now, pocket games"),
+    ('sim-08-vs.png',          'vs',          'VS battles, head to head',    'Race a friend live or take on the cast'),
+    ('sim-09-mascot.png',      'mascot',      'Build your own mascot',       'Bodies, colors, hats and a backdrop to match'),
+    (None,                     'widgets',     None,                          None),
+]
+if SET == 'sim': SHOTS = SHOTS_SIM
+WIDGETS = os.path.join(HERE, '..', '..', 'docs', 'store', 'screenshots-2.7', '10-widgets-{}.png')
 SIZES = {'67': (1320, 2868), '65': (1284, 2778)}
 
 def font(size, weight):
@@ -98,6 +117,8 @@ for key, (W, H) in SIZES.items():
     out = os.path.join(HERE, 'store-out', key); os.makedirs(out, exist_ok=True)
     for f in os.listdir(out): os.remove(os.path.join(out, f))
     for i, (fn, name, head, sub) in enumerate(SHOTS, 1):
-        img = compose(os.path.join(SRC, fn), head, sub, W, H)
-        p = os.path.join(out, f'{i:02d}-{name}.png'); img.save(p, optimize=True)
+        p = os.path.join(out, f'{i:02d}-{name}.png')
+        if fn is None: img = Image.open(WIDGETS.format(key)).convert('RGB')
+        else: img = compose(os.path.join(SRC, fn), head, sub, W, H)
+        img.save(p, optimize=True)
         print(key, os.path.basename(p), img.size, os.path.getsize(p) // 1024, 'KB')

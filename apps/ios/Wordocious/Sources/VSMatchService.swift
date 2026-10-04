@@ -38,6 +38,9 @@ final class VSMatchService {
     /// trust, so anyone knowing a (public) user id could seize that player's
     /// live match during their reconnect grace window.
     func connect(presenceId: String?, token: String?) {
+        #if DEBUG
+        if StoreDemo.active { return }   // `-storeDemo`: never open the live socket
+        #endif
         guard let url = VSConfig.serverURL else { return }
         let manager = SocketManager(socketURL: url, config: [
             .log(false), .compress, .forceWebsockets(true), .reconnects(true),

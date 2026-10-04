@@ -81,6 +81,9 @@ final class PresenceService {
 
     /// Idempotent: no-ops if already connected or the user isn't loaded yet.
     func start() {
+        #if DEBUG
+        if StoreDemo.active { return }   // `-storeDemo`: no heartbeat, no socket
+        #endif
         startHeartbeat()
         guard socket == nil, VSConfig.isConfigured,
               let url = VSConfig.serverURL, let pid = presenceId else { return }

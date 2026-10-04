@@ -14,6 +14,10 @@ enum Net {
         let c = URLSessionConfiguration.default
         c.timeoutIntervalForRequest = requestTimeout
         c.urlCache = URLCache.shared
+        #if DEBUG
+        // `-storeDemo`: every request is answered on device (StoreDemo.swift), nothing leaves.
+        if StoreDemo.active { c.protocolClasses = [StoreDemoURLProtocol.self] + (c.protocolClasses ?? []); c.urlCache = nil }
+        #endif
         return URLSession(configuration: c)
     }
 }

@@ -16,6 +16,7 @@ final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNot
         UNUserNotificationCenter.current().delegate = self
         #if DEBUG
         PerfTour.bootIfRequested()   // FINISH_SPEC BJ3: `-perfTour` (docs/PERF_HARNESS.md)
+        StoreDemo.bootIfRequested()  // `-storeDemo`: canned signed-in world for store screenshots
         #endif
         return true
     }
