@@ -147,7 +147,6 @@ private val LILAC_BORDER = Color(0xFFC4B5FD)
 private val LILAC_TEXT = Color(0xFF5B21B6)
 /** The cartoon panel's cream paper tone (§8). */
 private val PAPER = Color(0xFFFDF8EC)
-private val SKETCH_INK = Color(0xFF1A1A2E)
 /** ONE fixed six-column grid for every word (the sixth slot simply empty for a five-letter word). */
 private const val COLS = 6
 /** Where the cartoon batch is hosted (the web serves /muddle/<file> from public/muddle). */
@@ -757,8 +756,8 @@ private fun CompactWordLine(session: MuddleSession, row: Int, shaking: Boolean, 
  * The cartoon panel (§5/§8): a standard card in the cream paper tone, always
  * 4:3, sized from the height the screen leaves it (compact rule: capped at
  * ~26 % of the screen) and centered. The puzzle's cartoon loads from the web
- * host when set; until the founder's image batch runs a placeholder sketch
- * stands in. The caption is ALWAYS typeset by the app beneath the panel.
+ * host (prewarmed at launch); the paper card alone holds its place until it has
+ * decoded. The caption is ALWAYS typeset by the app beneath the panel.
  */
 @Composable
 private fun CartoonPanel(cartoon: String?, altText: String, height: Dp) {
@@ -782,18 +781,14 @@ private fun CartoonPanel(cartoon: String?, altText: String, height: Dp) {
     ) {
         if (cartoon != null) {
             val url = CARTOON_HOST + cartoon
-            val request = remember(url, attempt) {
-                coil.request.ImageRequest.Builder(context)
-                    .data(url)
-                    .setHeader("User-Agent", CARTOON_USER_AGENT)
-                    .setHeader("Accept", "image/webp,image/*;q=0.9,*/*;q=0.8")
-                    .setParameter("attempt", attempt)
-                    .build()
-            }
+            val request = remember(url, attempt) { MuddleCartoons.request(context, cartoon, attempt) }
+            // Founder 10-03 (no placeholder states): prewarmed into Coil's memory cache at launch
+            // (MuddleCartoons.prewarm), so it paints on the first frame; until then (and on a
+            // failure) the slot is the plain paper card at its exact size — never a sketch.
             coil.compose.SubcomposeAsyncImage(
                 model = request, contentDescription = altText, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(),
-                loading = { PlaceholderSketch() },
-                error = { PlaceholderSketch() },
+                loading = {},
+                error = {},
                 onError = { st ->
                     failed = true
                     val t = st.result.throwable
@@ -809,38 +804,25 @@ private fun CartoonPanel(cartoon: String?, altText: String, height: Dp) {
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
                     .background(PAPER.copy(alpha = 0.92f), RoundedCornerShape(999.dp)).padding(horizontal = 10.dp, vertical = 3.dp),
             )
-        } else {
-            PlaceholderSketch()
-            Text(
-                "Cartoon panel \u2014 art batch pending", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6B7280), fontFamily = Nunito,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp),
-            )
         }
     }
 }
 
-/** The web placeholder sketch (muddle-board.tsx CartoonPanel) in a 400×300 frame: dashed border, a smiling face, a purple and an orange dot. */
-@Composable
-private fun PlaceholderSketch() {
-    Canvas(Modifier.fillMaxSize()) {
-        val sx = size.width / 400f; val sy = size.height / 300f
-        val stroke = 3f * sx
-        drawRoundRect(
-            SKETCH_INK.copy(alpha = 0.35f), Offset(34f * sx, 30f * sy), Size(332f * sx, 240f * sy), CornerRadius(18f * sx),
-            style = Stroke(stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f * sx, 8f * sx)), cap = StrokeCap.Round),
-        )
-        val ink = Stroke(stroke, cap = StrokeCap.Round)
-        // Shoulders: M120 215 Q200 120 280 215
-        drawPath(Path().apply { moveTo(120f * sx, 215f * sy); quadraticBezierTo(200f * sx, 120f * sy, 280f * sx, 215f * sy) }, SKETCH_INK, style = ink)
-        // Head
-        drawCircle(SKETCH_INK, 34f * sx, Offset(200f * sx, 130f * sy), style = ink)
-        // Eyes: M186 124 q6 -8 12 0 / M202 124 q6 -8 12 0
-        drawPath(Path().apply { moveTo(186f * sx, 124f * sy); quadraticBezierTo(192f * sx, 116f * sy, 198f * sx, 124f * sy) }, SKETCH_INK, style = ink)
-        drawPath(Path().apply { moveTo(202f * sx, 124f * sy); quadraticBezierTo(208f * sx, 116f * sy, 214f * sx, 124f * sy) }, SKETCH_INK, style = ink)
-        // Smile: M188 146 q12 12 24 0
-        drawPath(Path().apply { moveTo(188f * sx, 146f * sy); quadraticBezierTo(200f * sx, 158f * sy, 212f * sx, 146f * sy) }, SKETCH_INK, style = ink)
-        drawCircle(MUDDLE_ACCENT.copy(alpha = 0.9f), 14f * sx, Offset(300f * sx, 90f * sy))
-        drawCircle(PURPLE.copy(alpha = 0.9f), 9f * sx, Offset(100f * sx, 90f * sy))
+/** Founder 10-03: the Muddle cartoon requests (one shape, so the prewarm and the panel share Coil's memory cache key). */
+object MuddleCartoons {
+    fun request(context: android.content.Context, cartoon: String, attempt: Int = 0): coil.request.ImageRequest =
+        coil.request.ImageRequest.Builder(context)
+            .data(CARTOON_HOST + cartoon)
+            .setHeader("User-Agent", CARTOON_USER_AGENT)
+            .setHeader("Accept", "image/webp,image/*;q=0.9,*/*;q=0.8")
+            .setParameter("attempt", attempt)
+            .build()
+
+    /** Today's daily cartoon downloaded + decoded into Coil's memory cache (call off the first frame). */
+    fun prewarm(context: android.content.Context) {
+        val bank = ScrambleBank.bundled ?: return
+        val cartoon = scramblePuzzleForDay(bank, todayLocalDate(), HolidayTable.bundled)?.cartoon ?: return
+        coil.Coil.imageLoader(context).enqueue(request(context, cartoon))
     }
 }
 

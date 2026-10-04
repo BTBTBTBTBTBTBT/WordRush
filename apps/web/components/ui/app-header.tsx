@@ -21,7 +21,7 @@ import { EMPTY_STREAK_SUMMARY, type StreakSummary } from '@/lib/streak-summary';
 import { DesktopTabs } from '@/components/ui/desktop-tabs';
 import { tabTint } from '@/components/ui/tab-nav';
 import { afterIntro } from '@/lib/intro';
-import { warmTabWallpapers } from '@/lib/predecode';
+import { warmMuddleCartoon, warmTabWallpapers } from '@/lib/predecode';
 import { DESKTOP_MIN, minWidthQuery } from '@/lib/desktop-layout';
 
 // The home header (docs/HEADER_SPEC.md §1; FINISH_SPEC A3, A5, C1, C5), shared
@@ -181,6 +181,8 @@ export function AppHeader({ share }: { share?: HeaderShare } = {}) {
     if (typeof window.matchMedia !== 'function' || !window.matchMedia(minWidthQuery(DESKTOP_MIN)).matches) return;
     return afterIntro(() => warmTabWallpapers(true));
   }, []);
+  // Founder 10-03: today's Muddle cartoon decoded at idle, so its panel never opens empty.
+  useEffect(() => afterIntro(() => warmMuddleCartoon()), []);
 
   return (
     <>

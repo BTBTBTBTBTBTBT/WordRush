@@ -14,7 +14,7 @@ import WordociousCore
 private let muddleAccent = Color(hex: 0xF97316)
 /// The cream paper of the cartoon panel (web CartoonPanel).
 private let mdPaper = Color(hex: 0xFDF8EC)
-/// The placeholder sketch's purple dot; the solved caption's punchline ink.
+/// The solved caption's punchline ink.
 private let mdPurple = Color(hex: 0x7C3AED)
 private let mdLilacText = Color(hex: 0x5B21B6)
 private let mdCols = 6
@@ -696,23 +696,23 @@ struct MuddleFinishedBoard: View {
 }
 
 /// The cartoon panel (More Games §5/§8): a standard card in the cream paper
-/// tone at 4:3. The puzzle's image when the founder's batch has produced one;
-/// until then the placeholder sketch. The caption is ALWAYS typeset by the app
+/// tone at 4:3 with the puzzle's image. The caption is ALWAYS typeset by the app
 /// beneath the panel, never drawn into the picture. The caller sets the height;
-/// the 4:3 fit centers it horizontally.
+/// the 4:3 fit centers it horizontally. Founder 10-03 (no placeholder states): the
+/// art is decoded before the screen shows (`MuddleCartoons.prewarm`, from Home) and
+/// drawn on the first frame; if it is not decoded yet the slot stays the plain paper
+/// card at its exact size until it is — never a sketch or "pending" text.
 struct MuddleCartoonPanel: View {
     let cartoon: String?
     let altText: String
+    @State private var loaded: UIImage?
 
     var body: some View {
+        let image = loaded ?? cartoon.flatMap { MuddleCartoons.cached($0) }
         ZStack {
             mdPaper
-            if let cartoon, let url = URL(string: "https://wordocious.com/muddle/\(cartoon)") {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image { image.resizable().scaledToFill() } else { placeholder }
-                }
-            } else {
-                placeholder
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill()
             }
         }
         .aspectRatio(4 / 3, contentMode: .fit)
@@ -723,39 +723,35 @@ struct MuddleCartoonPanel: View {
         .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)
         .frame(maxWidth: .infinity)
         .accessibilityLabel(altText)
-    }
-
-    /// The web's placeholder SVG (a 400 × 300 viewBox) drawn to scale.
-    private var placeholder: some View {
-        Canvas { ctx, size in
-            let sx = size.width / 400, sy = size.height / 300
-            func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x * sx, y: y * sy) }
-            let ink = Color(hex: 0x1A1A2E)
-            let stroke = StrokeStyle(lineWidth: 3 * min(sx, sy), lineCap: .round, lineJoin: .round)
-            // Dashed frame
-            var frame = Path()
-            frame.addRoundedRect(in: CGRect(x: 34 * sx, y: 30 * sy, width: 332 * sx, height: 240 * sy), cornerSize: CGSize(width: 18 * sx, height: 18 * sy))
-            ctx.stroke(frame, with: .color(ink.opacity(0.35)), style: StrokeStyle(lineWidth: 3 * min(sx, sy), lineCap: .round, dash: [10 * sx, 8 * sx]))
-            // Smile arc
-            var arc = Path()
-            arc.move(to: pt(120, 215)); arc.addQuadCurve(to: pt(280, 215), control: pt(200, 120))
-            ctx.stroke(arc, with: .color(ink), style: stroke)
-            // Face
-            ctx.stroke(Path(ellipseIn: CGRect(x: 166 * sx, y: 96 * sy, width: 68 * sx, height: 68 * sy)), with: .color(ink), style: stroke)
-            var eyes = Path()
-            eyes.move(to: pt(186, 124)); eyes.addQuadCurve(to: pt(198, 124), control: pt(192, 116))
-            eyes.move(to: pt(202, 124)); eyes.addQuadCurve(to: pt(214, 124), control: pt(208, 116))
-            ctx.stroke(eyes, with: .color(ink), style: stroke)
-            var mouth = Path()
-            mouth.move(to: pt(188, 146)); mouth.addQuadCurve(to: pt(212, 146), control: pt(200, 158))
-            ctx.stroke(mouth, with: .color(ink), style: stroke)
-            // Accent dots
-            ctx.fill(Path(ellipseIn: CGRect(x: 286 * sx, y: 76 * sy, width: 28 * sx, height: 28 * sy)), with: .color(muddleAccent.opacity(0.9)))
-            ctx.fill(Path(ellipseIn: CGRect(x: 91 * sx, y: 81 * sy, width: 18 * sx, height: 18 * sy)), with: .color(mdPurple.opacity(0.9)))
-            ctx.draw(Text("Cartoon panel — art batch pending").font(Brand.font(14 * min(sx, sy), .heavy)).foregroundColor(Color(hex: 0x6B7280)),
-                     at: pt(200, 258))
+        .task(id: cartoon) {
+            guard let cartoon, MuddleCartoons.cached(cartoon) == nil else { return }
+            loaded = await MuddleCartoons.load(cartoon)
         }
-        .accessibilityHidden(true)
+    }
+}
+
+/// Founder 10-03: the Muddle cartoons, downloaded (URLCache: the /muddle/ URLs are immutable)
+/// AND decoded off main, kept in memory so the panel draws them on its first frame.
+enum MuddleCartoons {
+    private static let cache: NSCache<NSString, UIImage> = {
+        let c = NSCache<NSString, UIImage>()
+        c.countLimit = 6
+        return c
+    }()
+
+    static func url(_ cartoon: String) -> URL? { URL(string: "https://wordocious.com/muddle/\(cartoon)") }
+
+    static func cached(_ cartoon: String) -> UIImage? { cache.object(forKey: cartoon as NSString) }
+
+    /// Download (or read from URLCache) + decode; nil on failure.
+    static func load(_ cartoon: String) async -> UIImage? {
+        if let hit = cached(cartoon) { return hit }
+        guard let url = url(cartoon),
+              let (data, _) = try? await URLSession.shared.data(for: URLRequest(url: url)),
+              let raw = UIImage(data: data) else { return nil }
+        let decoded = await Task.detached(priority: .utility) { raw.preparingForDisplay() ?? raw }.value
+        cache.setObject(decoded, forKey: cartoon as NSString)
+        return decoded
     }
 }
 

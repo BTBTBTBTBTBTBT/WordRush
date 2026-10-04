@@ -61,8 +61,8 @@ enum AppWarmup {
         ProperNoundle.prewarm()
     }
 
-    /// Today's Muddle cartoon into URLCache (its /muddle/ URLs are immutable,
-    /// cached a year), so the panel paints at once instead of after a download.
+    /// Today's Muddle cartoon downloaded (URLCache: its /muddle/ URLs are immutable,
+    /// cached a year) and decoded in memory, so the panel paints on its first frame.
     /// Once per local day; called from Home.
     @MainActor private static var cartoonDay: String?
     @MainActor static func prefetchMuddleCartoon() {
@@ -71,12 +71,10 @@ enum AppWarmup {
         cartoonDay = today
         Task.detached(priority: .utility) {
             guard let bank = ScrambleBankStore.shared,
-                  let cartoon = scramblePuzzleForDay(bank, day: today, holidays: HolidayTable.bundled)?.cartoon,
-                  let url = URL(string: "https://wordocious.com/muddle/\(cartoon)") else { return }
-            let req = URLRequest(url: url)
-            if URLCache.shared.cachedResponse(for: req) != nil { return }
-            // AsyncImage loads through URLSession.shared — same cache.
-            _ = try? await URLSession.shared.data(for: req)
+                  let cartoon = scramblePuzzleForDay(bank, day: today, holidays: HolidayTable.bundled)?.cartoon
+            else { return }
+            // Founder 10-03: downloaded AND decoded into memory, so the panel's first frame has it.
+            _ = await MuddleCartoons.load(cartoon)
         }
     }
 }

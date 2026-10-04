@@ -24,6 +24,8 @@ class App : Application() {
             runCatching { com.wordocious.app.ui.CastArt.prewarm(this@App, resources.displayMetrics.density) }
             // FINISH_SPEC BJ16: popup / sheet heading lettering, pre-scaled to its display size.
             runCatching { com.wordocious.app.ui.HeadingArtCache.prewarm(this@App, resources.displayMetrics.density) }
+            // Founder 10-03: today's Muddle cartoon decoded before its panel shows (no placeholder frame).
+            runCatching { com.wordocious.app.ui.game.MuddleCartoons.prewarm(this@App) }
         }
         // Storage hygiene + cross-midnight grace (iOS launch-sweep parity):
         // Android previously never swept per-seed daily saves, so they

@@ -85,23 +85,11 @@ export const CartoonPanel = memo(function CartoonPanel({ src, alt, fixed = false
       {src ? (
         // While playing the cartoon is the screen's hero: load it eagerly at high
         // priority (founder, 2026-09-29). React 18 passes only the lowercase attribute.
+        // Founder 10-03: prewarmed (lib/predecode warmMuddleCartoon); until it decodes the paper card
+        // alone holds the slot at its exact size — never a placeholder sketch or text.
         // eslint-disable-next-line @next/next/no-img-element
         <img src={`/muddle/${src}`} alt={alt} width={400} height={300} className="w-full h-full object-cover" loading={fixed ? 'lazy' : 'eager'} {...(fixed ? {} : { fetchpriority: 'high' })} />
-      ) : (
-        <svg viewBox="0 0 400 300" className="w-full h-full" aria-hidden>
-          <rect x="0" y="0" width="400" height="300" fill="#fdf8ec" />
-          <g fill="none" stroke="#1a1a2e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="34" y="30" width="332" height="240" rx="18" strokeDasharray="10 8" opacity="0.35" />
-            <path d="M120 215 Q200 120 280 215" />
-            <circle cx="200" cy="130" r="34" />
-            <path d="M186 124 q6 -8 12 0 M202 124 q6 -8 12 0" />
-            <path d="M188 146 q12 12 24 0" />
-          </g>
-          <circle cx="300" cy="90" r="14" fill="#f97316" opacity="0.9" />
-          <circle cx="100" cy="90" r="9" fill="#7c3aed" opacity="0.9" />
-          <text x="200" y="262" textAnchor="middle" fontFamily="Nunito, system-ui, sans-serif" fontWeight="800" fontSize="14" fill="#6b7280">Cartoon panel — art batch pending</text>
-        </svg>
-      )}
+      ) : null}
     </div>
   );
 });

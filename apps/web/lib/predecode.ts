@@ -55,3 +55,30 @@ export function warmTabWallpapers(wide: boolean): void {
   const go = () => { void decodeInSequence(tabWallpaperSrcs(wide)); };
   if (w.requestIdleCallback) w.requestIdleCallback(go, { timeout: 5000 }); else setTimeout(go, 2500);
 }
+
+let muddleWarmed = false;
+
+/**
+ * Founder 10-03 (no placeholder states): today's Muddle cartoon fetched + decoded once per page
+ * load when the browser is idle (the bank + core load lazily, off the tab pages' bundles), so the
+ * Muddle panel paints it on its first frame. Called from the tab header after the intro.
+ */
+export function warmMuddleCartoon(): void {
+  if (muddleWarmed || typeof window === 'undefined') return;
+  muddleWarmed = true;
+  const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+  const go = () => {
+    void (async () => {
+      try {
+        const [{ loadBankPuzzle }, core, { HOLIDAY_TABLE }, { getTodayLocal }] = await Promise.all([
+          import('./bank-loader'), import('@wordle-duel/core'), import('./holidays'), import('./daily-service'),
+        ]);
+        const p = await loadBankPuzzle<import('@wordle-duel/core').ScrambleBank, import('@wordle-duel/core').ScramblePuzzle>(
+          'scramble', (b) => core.scramblePuzzleForDay(b, getTodayLocal(), HOLIDAY_TABLE),
+        );
+        if (p?.cartoon) await decodeImage(`/muddle/${p.cartoon}`);
+      } catch { /* best effort */ }
+    })();
+  };
+  if (w.requestIdleCallback) w.requestIdleCallback(go, { timeout: 6000 }); else setTimeout(go, 3000);
+}
