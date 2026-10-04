@@ -18,6 +18,7 @@ struct GameScreen: View {
     @State private var stageCardUp = false
     /// BJ2: the finished screen is built (hidden) under the settled win card.
     @State private var finishPrebuilt = false
+    @State private var keysBuilt = KeyboardSlot.startBuilt
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let mode: GameMode
 
@@ -86,13 +87,22 @@ struct GameScreen: View {
                             // Stage-cleared shows the full-screen StageTransition overlay
                             // (below). §AU3: the keyboard keeps its slot (faded, inert) so the
                             // board never jumps while the winning row lands and the card fades in.
+                            if keysBuilt {
                             KeyboardView(vm: vm).padding(.bottom, 6)
+                                .background(KeyboardSlot.measure(vm))
                                 .opacity(vm.stageCleared ? 0 : 1)
                                 .allowsHitTesting(!vm.stageCleared)
                                 .accessibilityHidden(vm.stageCleared)
                                 // §BI9: "Not in word list" / "Solved!" hang from the keyboard's
                                 // top edge, under the board — never over the title art or the board.
                                 .gameFeedbackToast(vm.toast, alignment: .top, pose: toastPose)
+                            } else {
+                                // BJ14: the keyboard arrives one run-loop turn after the
+                                // board (the open's first frame builds less), in a slot of
+                                // its exact height so nothing moves; the game cover's
+                                // overlay hides the turn.
+                                Color.clear.frame(height: KeyboardSlot.height(vm))
+                            }
                             }
                         }
                         if vm.isFinished && (revealComplete || finishPrebuilt) {
@@ -281,6 +291,7 @@ struct GameScreen: View {
             }
         }
         .onAppear {
+            if !keysBuilt { DispatchQueue.main.async { keysBuilt = true } }
             // A game resumed already-finished (status won't change) jumps straight
             // to the finished screen — no victory replay.
             if vm.isFinished { revealComplete = true }
@@ -765,5 +776,71 @@ struct GauntletArtHeader: View {
                 withAnimation(.spring(response: 0.34, dampingFraction: 0.55)) { shown = true }
             }
         }
+    }
+}
+
+/// FINISH_SPEC BJ14: the game keyboard's slot while it is staged a turn after the
+/// board — its measured height (per layout / key style), else the layout's math.
+@MainActor
+enum KeyboardSlot {
+    private static var measured: [String: CGFloat] = [:]
+
+    static var startBuilt: Bool {
+        #if DEBUG
+        return PerfTour.flag("noKeyStage")
+        #else
+        return false
+        #endif
+    }
+
+    private static func key(_ vm: GameViewModel) -> String {
+        "\(UserDefaults.standard.string(forKey: "pref-keyboard-layout") ?? "standard")|\(vm.useQuadrantKeyboard)"
+    }
+
+    /// Keyboard + its 6-pt bottom padding.
+    static func height(_ vm: GameViewModel) -> CGFloat {
+        if let h = measured[key(vm)] { return h }
+        let michael = UserDefaults.standard.string(forKey: "pref-keyboard-layout") == "michael"
+        let rows: CGFloat = michael ? 4 : 3
+        return rows * (michael ? 44 : 52) + (rows - 1) * 7 + 6
+    }
+
+    static func measure(_ vm: GameViewModel) -> some View {
+        GeometryReader { g in
+            Color.clear.onAppear { measured[key(vm)] = g.size.height }
+        }
+    }
+}
+
+/// FINISH_SPEC BJ14: the first game opened in a launch paid ~150–250 ms extra on its
+/// presenting frame (first instantiation of the board / tile / keyboard view types).
+/// Once, while Home is idle, build those views offscreen (no window: no onAppear, no
+/// first responder) around a VS-style stand-in board — VS view models never read or
+/// write solo persistence, and nothing here records, saves or plays — then let it go.
+@MainActor
+enum GameWarmup {
+    private static var done = false
+
+    static func run() {
+        guard !done else { return }
+        done = true
+        #if DEBUG
+        if PerfTour.flag("noWarm") { return }
+        let tourGame = PerfTour.game
+        defer { PerfTour.game = tourGame }
+        #endif
+        DictionaryLoader.ensureInitialized()
+        let vm = GameViewModel(seed: "warmup-bj14", mode: .duel, isVersus: true)
+        let host = UIHostingController(rootView:
+            VStack(spacing: 0) {
+                BoardLayout(vm: vm, availableWidth: 390, fitHeight: 420)
+                KeyboardView(vm: vm)
+            }
+            .frame(width: 390, height: 700))
+        host.view.frame = CGRect(x: 0, y: 0, width: 390, height: 700)
+        host.view.setNeedsLayout()
+        host.view.layoutIfNeeded()
+        // Released at the end of this turn.
+        DispatchQueue.main.async { _ = host }
     }
 }

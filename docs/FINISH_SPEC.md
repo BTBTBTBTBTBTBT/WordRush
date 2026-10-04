@@ -1619,6 +1619,14 @@ burst screenshots); `--flag closeSnap` restores the snapshot for A/B. Closes: Oc
 QuadWord 64, Sudocious 71, Muddle 54, Crossword 59, VS 33. The remaining close frame is the game's teardown inside
 `completeTransition` (~45 ms + ~50 ms the next turn). Android: unplayed board rows are one Canvas (GameScreen EmptyTileRow,
 the same drawGameTile paint; ProperNoundle's grouped rows keep TileViews).
+BJ14 round 4: the open overlay is not the cost — beginOpen (Home snapshot + card lift + commit) measures 25 ms; the long
+frame is the cover's build on the next turn. Classic-family games now (a) build the keyboard one run-loop turn after the
+board, in a slot of its measured height (layout math before the first measure; `--flag noKeyStage` for A/B), and (b) warm
+the board / tile / keyboard view types once, 1.5 s after Home settles: an offscreen UIHostingController (no window: no
+onAppear, no first responder) around a VS stand-in view model (never touches solo persistence), released the same turn
+(`--flag noWarm`). Classic first open (3 runs each): 309 → 297 (stage) → 245 ms (stage + warm); warm opens 116 → 98;
+QuadWord 154 → 135 cold. Owed: Sudocious / Muddle / Crossword (270–360 ms, their own screens), the sharp OctoWord zoom
+(needs a scale factor through GameTrayChrome + SolvedBoardFrame clamps to stay identical), the ~100 ms teardown on close.
 BJ15. Cast-color buttons + art labels (founder 10-03; spec docs/design/brand/buttons/cast/README.md + labels.json). One shared
 primary button per platform — iOS `CastButtonStyle` (CastButton.swift; `CandyLabel` switches to art inside it), Android
 `CastButton` (ui/CastButton.kt), web `CastButton` / `CastLink` (components/ui/cast-button.tsx + app/cast-button.css). Skin =
