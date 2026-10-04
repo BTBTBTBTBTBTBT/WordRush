@@ -10,6 +10,9 @@ reviewed by the founder in a gallery, then shipped behind `currentSeason(date)`.
 ```
 seasons/
   manifest.json            # every season + every asset: id, kind, cast id, file, status, approved date
+  build-gallery.py         # refreshes manifest.json, <season>/gallery.png and gallery.html (run after adding art)
+  gallery.html             # one self-contained review page (WebP data URIs), each costume next to its hero
+  LAST-SESSION.md          # 5-line summary of the latest art night for the founder
   <season>/
     cast/<id>[-alt<n>].png # costumed cast member, transparent, same framing as cast/hero
     titles/<slug>.png      # seasonal title lettering (games, DAILIES, PUZZLES, greetings)

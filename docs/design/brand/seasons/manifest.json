@@ -1,0 +1,1481 @@
+{
+  "version": 1,
+  "note": "Seasonal cast library. status: draft -> approved (founder) -> shipped (art-season-<season>-*).",
+  "seasons": {
+    "halloween": {
+      "window": "Oct 17 \u2013 Nov 1 (local date)"
+    }
+  },
+  "assets": [
+    {
+      "id": "halloween-cast-w",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "w",
+      "file": "halloween/cast/w.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "W as a vampire: black cape with red lining and stand-up collar, tiny fangs in his usual smile. Replaces his magenta cape.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-w-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "w",
+      "file": "halloween/cast/w-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: W as a bat, ear headband and scalloped wings in place of his cape.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-w-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "w",
+      "file": "halloween/cast/w-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: W as a pumpkin prince, pumpkin crown, orange cape with leaf collar, jack-o'-lantern scepter.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o1",
+      "file": "halloween/cast/o1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "O (amber) as a pumpkin cheerleader: pumpkin stem hat, black-and-orange skirt, four purple/black pom-poms.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o1-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o1",
+      "file": "halloween/cast/o1-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: amber O as a candy-corn fairy, candy-corn party hat, pale wings, ruffled tutu, purple pom-poms kept.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o1-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o1",
+      "file": "halloween/cast/o1-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: amber O as a spider, googly-eye headband, striped fuzzy sleeves on all four arms.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-r",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "r",
+      "file": "halloween/cast/r.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "R as a ghost: bedsheet worn like a hooded cloak, nightcap poking through, sleepy face and R fully visible.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-r-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "r",
+      "file": "halloween/cast/r-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: R as a sleepy trick-or-treater, bat slippers, striped cuffs, candy pillowcase (second try; first had long legs).",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-r-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "r",
+      "file": "halloween/cast/r-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: R as a night owl, owl ear tufts on the nightcap, feather wing cape, cocoa.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-d",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "d",
+      "file": "halloween/cast/d.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "D as a wizard: purple star-and-moon hat and cape; his pencil gets a gold star tip as a wand.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-d-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "d",
+      "file": "halloween/cast/d-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: D as a mad scientist, open lab coat, pencil in the pocket, bubbling potion, wild white hair tuft.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-d-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "d",
+      "file": "halloween/cast/d-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: D as a friendly robot, antenna, bolt ears, silver sleeves and boots, button belt; pencil kept.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o2",
+      "file": "halloween/cast/o2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "O (pink) as a witch: black hat with purple band, heart sunglasses resting on the brim, black-and-purple cape. No broom.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o2-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o2",
+      "file": "halloween/cast/o2-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: pink O as a black cat, ears behind her heart sunglasses, curly tail, bell collar. No whiskers.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o2-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o2",
+      "file": "halloween/cast/o2-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: pink O as a unicorn, gold horn and ears behind her heart sunglasses, pastel rainbow mane and tail.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-c",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "c",
+      "file": "halloween/cast/c.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "C as an alien astronaut: space-suit collar ring, backpack, gloves and boots, springy antennae. The C is still his mouth.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-c-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "c",
+      "file": "halloween/cast/c-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: C as a pirate, star tricorn and bandana, striped sash, treasure map. Both eyes visible, C is still the mouth.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-c-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "c",
+      "file": "halloween/cast/c-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: C as a little dinosaur, orange back spikes, striped tail, claw slippers. C is still the mouth.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-i",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "i",
+      "file": "halloween/cast/i.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "I as a scarecrow: patched straw hat with his sprout through the crown, plaid vest, straw tufts.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-i-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "i",
+      "file": "halloween/cast/i-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: I as a gentle Frankenstein, flat-top tuft with the sprout through it, neck bolts, purple vest.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o3",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o3",
+      "file": "halloween/cast/o3.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "O (orange cyclops) as a mummy (second try): five loose bandage strips, eye, mouth and tongue fully clear.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o3-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o3",
+      "file": "halloween/cast/o3-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: orange cyclops O as a goofy magician, top hat with a bat popping out, cape, wand.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-o3-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "o3",
+      "file": "halloween/cast/o3-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Mummy, first try: more bandages; one strip brushes the mouth corner.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-u",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "u",
+      "file": "halloween/cast/u.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "U as a fairy-ghost: pearly lilac wings, a wavy ghost tail (he floats anyway), a glowing lantern.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-u-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "u",
+      "file": "halloween/cast/u-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: U as a stargazer wizard, starry hat and shawl, floating crescent moon (green glow spill cleaned).",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-u-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "u",
+      "file": "halloween/cast/u-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: U floating calmly over a pumpkin, knitted scarf, autumn leaf on top.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-s",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "s",
+      "file": "halloween/cast/s.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "S in a skeleton onesie: bone-print sleeves and legs, rib panels at his sides; headband, sneakers and S stay.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-s-alt1",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "s",
+      "file": "halloween/cast/s-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: S as a superhero, purple cape, domino mask, orange wristbands; his S is the emblem.",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-title-happy-halloween",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/happy-halloween.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Greeting header (v2): orange with a purple rim, jack-o'-lantern O, bat perched outside the word.",
+      "size": [
+        1277,
+        230
+      ]
+    },
+    {
+      "id": "halloween-title-happy-halloween-alt1",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/happy-halloween-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "HAPPY HALLOWEEN (v1): the bat overlaps the lower W slightly.",
+      "size": [
+        1421,
+        264
+      ]
+    },
+    {
+      "id": "halloween-title-dailies",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/dailies.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "DAILIES (v2): purple with a black rim, cobweb corner, plain S.",
+      "size": [
+        679,
+        175
+      ]
+    },
+    {
+      "id": "halloween-title-dailies-alt1",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/dailies-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "DAILIES (v1): bigger drips; its S has a small drip.",
+      "size": [
+        825,
+        250
+      ]
+    },
+    {
+      "id": "halloween-title-puzzles",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/puzzles.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "PUZZLES: orange with a black rim (pairs with DAILIES).",
+      "size": [
+        928,
+        261
+      ]
+    },
+    {
+      "id": "halloween-title-game-classic",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-classic.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Classic game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        737,
+        257
+      ]
+    },
+    {
+      "id": "halloween-title-game-classicseven",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-classicseven.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Classic Seven game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        867,
+        199
+      ]
+    },
+    {
+      "id": "halloween-title-game-classicsix",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-classicsix.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Classic Six game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        1096,
+        228
+      ]
+    },
+    {
+      "id": "halloween-title-game-codebreaker",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-codebreaker.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Codebreaker (cryptogram) game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        806,
+        199
+      ]
+    },
+    {
+      "id": "halloween-title-game-crosswordocious",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-crosswordocious.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Crosswordocious game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        880,
+        189
+      ]
+    },
+    {
+      "id": "halloween-title-game-deliverance",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-deliverance.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Deliverance (rescue) game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        865,
+        228
+      ]
+    },
+    {
+      "id": "halloween-title-game-gauntlet",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-gauntlet.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Gauntlet game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        828,
+        221
+      ]
+    },
+    {
+      "id": "halloween-title-game-hubbub",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-hubbub.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Hubbub game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        756,
+        219
+      ]
+    },
+    {
+      "id": "halloween-title-game-kindred",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-kindred.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Kindred (groups) game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        740,
+        231
+      ]
+    },
+    {
+      "id": "halloween-title-game-letterladder",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-letterladder.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Letter Ladder game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        828,
+        201
+      ]
+    },
+    {
+      "id": "halloween-title-game-muddle",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-muddle.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Muddle (scramble) game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        710,
+        244
+      ]
+    },
+    {
+      "id": "halloween-title-game-octoword",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-octoword.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Octoword game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        801,
+        219
+      ]
+    },
+    {
+      "id": "halloween-title-game-propernoundle",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-propernoundle.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "ProperNoundle game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        850,
+        202
+      ]
+    },
+    {
+      "id": "halloween-title-game-quadword",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-quadword.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Quadword game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        1041,
+        225
+      ]
+    },
+    {
+      "id": "halloween-title-game-spyglass",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-spyglass.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Spyglass (word search) game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        751,
+        216
+      ]
+    },
+    {
+      "id": "halloween-title-game-starsweep",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-starsweep.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Starsweep (regions) game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        794,
+        233
+      ]
+    },
+    {
+      "id": "halloween-title-game-succession",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-succession.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Succession (sequence) game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        1021,
+        225
+      ]
+    },
+    {
+      "id": "halloween-title-game-sudocious",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/game-sudocious.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Sudocious game title in its game color with a black rim; drips, bat, cobweb or pumpkin O. Spell-checked.",
+      "size": [
+        1001,
+        193
+      ]
+    },
+    {
+      "id": "halloween-title-label-boo",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/label-boo.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Label: BOO!, ghost-white with ghost-eye O letters.",
+      "size": [
+        484,
+        198
+      ]
+    },
+    {
+      "id": "halloween-title-label-spooky",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/label-spooky.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Label: SPOOKY, the O letters have little eyes.",
+      "size": [
+        684,
+        196
+      ]
+    },
+    {
+      "id": "halloween-title-label-trick-or-treat",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/label-trick-or-treat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Label: TRICK OR TREAT (for buttons, banners or share cards).",
+      "size": [
+        1153,
+        181
+      ]
+    },
+    {
+      "id": "halloween-title-page-friends",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/page-friends.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: FRIENDS in pink.",
+      "size": [
+        698,
+        216
+      ]
+    },
+    {
+      "id": "halloween-title-page-leaderboard",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/page-leaderboard.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: LEADERBOARD in gold, bat outside.",
+      "size": [
+        823,
+        244
+      ]
+    },
+    {
+      "id": "halloween-title-page-stats",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/page-stats.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: STATS in slate, cobweb corner.",
+      "size": [
+        536,
+        235
+      ]
+    },
+    {
+      "id": "halloween-title-page-wordoftheday",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/page-wordoftheday.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: WORD OF THE DAY in green, jack-o'-lantern O.",
+      "size": [
+        815,
+        169
+      ]
+    },
+    {
+      "id": "halloween-prop-bat",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/bat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Bat, wings spread: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        378,
+        198
+      ]
+    },
+    {
+      "id": "halloween-prop-bat-flying",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/bat-flying.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Bat flying sideways: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        277,
+        186
+      ]
+    },
+    {
+      "id": "halloween-prop-black-cat",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/black-cat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Black cat: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        239,
+        256
+      ]
+    },
+    {
+      "id": "halloween-prop-broom",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/broom.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Broom: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        200,
+        272
+      ]
+    },
+    {
+      "id": "halloween-prop-candle",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/candle.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Candle: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        157,
+        248
+      ]
+    },
+    {
+      "id": "halloween-prop-candy-bag",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/candy-bag.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Candy bag (clear wrap, see-through): small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        223,
+        261
+      ]
+    },
+    {
+      "id": "halloween-prop-candy-corn",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/candy-corn.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Candy corn: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        195,
+        229
+      ]
+    },
+    {
+      "id": "halloween-prop-candy-wrapped",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/candy-wrapped.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Wrapped candy: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        280,
+        130
+      ]
+    },
+    {
+      "id": "halloween-prop-cauldron",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/cauldron.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Bubbling cauldron: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        252,
+        255
+      ]
+    },
+    {
+      "id": "halloween-prop-cobweb",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/cobweb.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Corner cobweb: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        251,
+        230
+      ]
+    },
+    {
+      "id": "halloween-prop-ghost",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/ghost.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Friendly ghost: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        257,
+        218
+      ]
+    },
+    {
+      "id": "halloween-prop-jack-o-lantern",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/jack-o-lantern.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Friendly jack-o'-lantern: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        270,
+        271
+      ]
+    },
+    {
+      "id": "halloween-prop-leaf-maple",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/leaf-maple.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Maple leaf: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        241,
+        245
+      ]
+    },
+    {
+      "id": "halloween-prop-leaf-oak",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/leaf-oak.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Oak leaf: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        203,
+        229
+      ]
+    },
+    {
+      "id": "halloween-prop-lollipop",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/lollipop.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Swirl lollipop: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        176,
+        253
+      ]
+    },
+    {
+      "id": "halloween-prop-moon-crescent",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/moon-crescent.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Crescent moon: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        206,
+        229
+      ]
+    },
+    {
+      "id": "halloween-prop-moon-full",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/moon-full.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Full moon: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        222,
+        219
+      ]
+    },
+    {
+      "id": "halloween-prop-owl",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/owl.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Purple owl: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        243,
+        224
+      ]
+    },
+    {
+      "id": "halloween-prop-pumpkin",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/pumpkin.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Pumpkin: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        265,
+        261
+      ]
+    },
+    {
+      "id": "halloween-prop-pumpkin-stack",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/pumpkin-stack.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Two stacked pumpkins: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        208,
+        264
+      ]
+    },
+    {
+      "id": "halloween-prop-spider",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/spider.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Hanging spider: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        224,
+        248
+      ]
+    },
+    {
+      "id": "halloween-prop-star",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/star.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Gold star: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        231,
+        223
+      ]
+    },
+    {
+      "id": "halloween-prop-stars-cluster",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/stars-cluster.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Three tiny stars: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        212,
+        215
+      ]
+    },
+    {
+      "id": "halloween-prop-witch-hat",
+      "season": "halloween",
+      "kind": "prop",
+      "castId": null,
+      "file": "halloween/props/witch-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Witch hat: small motif for code-drawn orange/black wallpapers (place faint, in margins).",
+      "size": [
+        263,
+        225
+      ]
+    },
+    {
+      "id": "halloween-extra-av-bat-ears",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-bat-ears.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: bat-ear headband, same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        371,
+        241
+      ]
+    },
+    {
+      "id": "halloween-extra-av-bat-wings",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-bat-wings.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: bat wings (back slot), same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        426,
+        204
+      ]
+    },
+    {
+      "id": "halloween-extra-av-candycorn-hat",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-candycorn-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: candy-corn party hat, same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        244,
+        297
+      ]
+    },
+    {
+      "id": "halloween-extra-av-mummy-wrap",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-mummy-wrap.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: mummy-bandage headband, same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        337,
+        242
+      ]
+    },
+    {
+      "id": "halloween-extra-av-pumpkin-hat",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-pumpkin-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: pumpkin cap, same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        336,
+        253
+      ]
+    },
+    {
+      "id": "halloween-extra-av-vampire-collar",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-vampire-collar.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: vampire collar, same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        369,
+        238
+      ]
+    },
+    {
+      "id": "halloween-extra-av-witch-hat",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-witch-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: witch hat, same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        367,
+        297
+      ]
+    },
+    {
+      "id": "halloween-extra-av-wizard-hat",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/av-wizard-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Avatar-maker accessory: wizard hat, same style as the shipped art-av-acc parts (needs anchor fitting).",
+      "size": [
+        344,
+        306
+      ]
+    },
+    {
+      "id": "halloween-extra-badge-night-owl",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/badge-night-owl.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Achievement badge idea: Night Owl (owl in a witch hat).",
+      "size": [
+        476,
+        466
+      ]
+    },
+    {
+      "id": "halloween-extra-badge-pumpkin-streak",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/badge-pumpkin-streak.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Achievement badge idea: Pumpkin Streak.",
+      "size": [
+        475,
+        461
+      ]
+    },
+    {
+      "id": "halloween-extra-badge-trick-or-treat",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/badge-trick-or-treat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Achievement badge idea: Trick or Treat (play all dailies on Oct 31).",
+      "size": [
+        475,
+        461
+      ]
+    },
+    {
+      "id": "halloween-extra-btn-candycorn",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/btn-candycorn.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Blank button skin: candy-corn stripes. Label drawn in code (three-slice like the cast buttons).",
+      "size": [
+        640,
+        180
+      ]
+    },
+    {
+      "id": "halloween-extra-btn-cobweb",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/btn-cobweb.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Blank button skin: glossy black with a cobweb corner. Label drawn in code (three-slice like the cast buttons).",
+      "size": [
+        640,
+        182
+      ]
+    },
+    {
+      "id": "halloween-extra-btn-ghost",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/btn-ghost.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Blank button skin: ghost white with a lavender edge. Label drawn in code (three-slice like the cast buttons).",
+      "size": [
+        641,
+        180
+      ]
+    },
+    {
+      "id": "halloween-extra-btn-midnight",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/btn-midnight.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Blank button skin: midnight purple with a crescent moon. Label drawn in code (three-slice like the cast buttons).",
+      "size": [
+        641,
+        204
+      ]
+    },
+    {
+      "id": "halloween-extra-btn-pumpkin",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/btn-pumpkin.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Blank button skin: pumpkin orange with a stem. Label drawn in code (three-slice like the cast buttons).",
+      "size": [
+        637,
+        216
+      ]
+    },
+    {
+      "id": "halloween-extra-btn-slime",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/btn-slime.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Blank button skin: slime green with two drips. Label drawn in code (three-slice like the cast buttons).",
+      "size": [
+        640,
+        221
+      ]
+    },
+    {
+      "id": "halloween-extra-home-host-o1",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/home-host-o1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Home host option: pumpkin cheerleader O jumping, pom-poms up, jack-o'-lantern pail.",
+      "size": [
+        1040,
+        932
+      ]
+    },
+    {
+      "id": "halloween-extra-home-host-w",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/home-host-w.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Home host: vampire W waving with a jack-o'-lantern candy pail, for HAPPY HALLOWEEN, <NAME>!",
+      "size": [
+        1063,
+        850
+      ]
+    },
+    {
+      "id": "halloween-extra-podium-halloween",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/podium-halloween.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Leaderboard podium idea: jack-o'-lantern 1, starry midnight 2, cobweb charcoal 3.",
+      "size": [
+        1551,
+        639
+      ]
+    },
+    {
+      "id": "halloween-extra-streak-flame-jack",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/streak-flame-jack.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Jack-o'-lantern streak flame (same shape as the shipped flame icon).",
+      "size": [
+        456,
+        502
+      ]
+    },
+    {
+      "id": "halloween-extra-streak-shield-candy",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/streak-shield-candy.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Candy-corn streak shield with a wrapped candy (same shape as the shipped shield).",
+      "size": [
+        475,
+        512
+      ]
+    },
+    {
+      "id": "halloween-extra-tile-theme-pumpkin",
+      "season": "halloween",
+      "kind": "extra",
+      "castId": null,
+      "file": "halloween/extras/tile-theme-pumpkin.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Tile theme mockup: pumpkin = correct, midnight purple = present, charcoal = absent. TRICK / TREAT.",
+      "size": [
+        1430,
+        602
+      ]
+    }
+  ]
+}
