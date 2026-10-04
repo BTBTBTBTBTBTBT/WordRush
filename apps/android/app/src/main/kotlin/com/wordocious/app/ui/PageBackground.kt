@@ -187,7 +187,8 @@ private fun rememberHighContrast(): Boolean {
  * dimming there too.
  */
 fun Modifier.pageBackground(tint: PageTint, alwaysLight: Boolean = false): Modifier =
-    wallpaperBackground(tint.wallpaperRes(), tint.light, tint.dark, DIM_DARK_PAGE, alwaysLight, topFade = true)
+    wallpaperBackground(tint.wallpaperRes(), tint.light, tint.dark, DIM_DARK_PAGE, alwaysLight, topFade = true,
+        tiles = BackdropTiles.page, accent = tint.accent)
 
 /** FINISH_SPEC N2: the calm header fade — the page tint at 55% at the window top, gone by this depth. */
 val HEADER_FADE_DEPTH = 170.dp
@@ -207,7 +208,11 @@ private fun Modifier.wallpaperBackground(
     darkDim: Float,
     alwaysLight: Boolean = false,
     topFade: Boolean = false,
+    tiles: BackdropTiles.Look? = null,
+    accent: Color = Color(0xFF7C3AED),
 ): Modifier = composed {
+    // BJ8: the few calm backdrop tiles (one shared config), drawn with the wallpaper.
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val isDark = WTheme.isDark && !alwaysLight
     val context = LocalContext.current
     val wall: ImageBitmap? = remember(res) { res?.let { Wallpapers.get(context, it) } }
@@ -242,6 +247,7 @@ private fun Modifier.wallpaperBackground(
                     )
                 }
             }
+            if (tiles != null) with(BackdropTiles) { drawBackdropTiles(tiles, accent, root, origin, measurer) }
             // N2: a very soft fade under the header so the cast sits on calm color.
             if (topFade) {
                 val top = -origin.y
@@ -286,7 +292,8 @@ fun Modifier.gameBackground(fallback: Modifier.() -> Modifier): Modifier = compo
         val argb = accent.toArgb()
         val light = remember(argb) { TintMath.gameLight(argb).map { Color(it) } }
         val dark = remember(argb) { TintMath.gameDark(argb).map { Color(it) } }
-        wallpaperBackground(LocalGameWallpaper.current, light, dark, DIM_DARK_GAME)
+        wallpaperBackground(LocalGameWallpaper.current, light, dark, DIM_DARK_GAME,
+            tiles = BackdropTiles.game, accent = accent)
     }
 }
 
