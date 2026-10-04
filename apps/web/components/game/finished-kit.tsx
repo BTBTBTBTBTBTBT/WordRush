@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton, CandyIcon, CandyLink } from '@/components/ui/candy-button';
-import { CastButton, CastLink } from '@/components/ui/cast-button';
+import { CastButton, CastLink, castNaturalWidth, castRowMin } from '@/components/ui/cast-button';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -321,8 +321,6 @@ function useNextDailyIn(on: boolean): string | null {
   return on ? left : null;
 }
 
-/** The dock's action-row candies: 13 px labels (12 px under 700 tall) and 10 px side padding, so Share + Next + the trophy share one 40 px row. */
-const ROW_CANDY = 'min-w-0 !px-2.5 !text-[13px] [@media(max-height:699.98px)]:!text-[12px]';
 
 /**
  * The finished screen's share CTA (founder 10-02, every game): a pink "Share
@@ -333,11 +331,13 @@ const ROW_CANDY = 'min-w-0 !px-2.5 !text-[13px] [@media(max-height:699.98px)]:!t
  * as a small second line (the glyph steps aside for it); under 700 px tall the
  * countdown is dropped and the label sits alone with its glyph.
  */
-export function ShareResultsCandy({ onShare, copied = false, countdownFor, className = '' }: {
+export function ShareResultsCandy({ onShare, copied = false, countdownFor, className = '', rowItem = false }: {
   onShare: () => void; copied?: boolean;
   /** The game's title for the countdown line (dailies only); undefined = no line. */
   countdownFor?: string;
   className?: string;
+  /** BJ17: a `.cast-row` item — shares the line, never narrower than its label at the normal cap. */
+  rowItem?: boolean;
 }) {
   const left = useNextDailyIn(!!countdownFor);
   const line = countdownFor && left && !copied ? { game: countdownFor, left } : null;
@@ -345,7 +345,8 @@ export function ShareResultsCandy({ onShare, copied = false, countdownFor, class
   // BJ15 round 2: the countdown is a small muted caption UNDER the button (never squeezed into the
   // skin with the label art); the button keeps the normal cap height.
   return (
-    <div className={`flex flex-col items-center min-w-0 ${className}`}>
+    <div className={`flex flex-col items-center min-w-0 ${rowItem ? 'cast-row-flex' : ''} ${className}`}
+      style={rowItem ? castRowMin(castNaturalWidth(copied ? 'Copied!' : 'Share results', 'md', 16)) : undefined}>
       <CastButton
         color="pink" size="md" block
         icon={glyph}
@@ -398,31 +399,39 @@ export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzl
   const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
   const next = isDaily ? DAILY_ORDER.find((m) => m.id !== currentMode && !todayDailies.has(m.id)) : undefined;
   const nextMode = next ? PROFILE_MODES.find((m) => m.dbKey === next.id) : undefined;
-  const primary = isDaily && (nextMode && next ? (
-    <CastLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`Next Daily: ${nextMode.title}`}>
-      Next: {nextMode.shortTitle ?? nextMode.title}
+  // BJ17: the row is a .cast-row — Share + the primary split it at their normal cap height, or
+  // wrap to full-width lines when a label can't fit (never one squeezed beside a full-size one).
+  // The next-daily candy and its round Leaderboard travel together as one row item.
+  const nextLabel = nextMode ? `Next: ${nextMode.shortTitle ?? nextMode.title}` : '';
+  const primary = isDaily && (nextMode && next && mode ? (
+    <div className="cast-row-flex flex items-center gap-2" style={castRowMin(castNaturalWidth(nextLabel, 'md', 16) + 48)}>
+      <CastLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className="flex-1 min-w-0" aria-label={`Next Daily: ${nextMode.title}`}>
+        {nextLabel}
+      </CastLink>
+      <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="round" icon={<Icon3D name="trophy" size={20} />} aria-label={`View ${mode.title} Leaderboard`} />
+    </div>
+  ) : nextMode && next ? (
+    <CastLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className="cast-row-flex" style={castRowMin(castNaturalWidth(nextLabel, 'md', 16))} aria-label={`Next Daily: ${nextMode.title}`}>
+      {nextLabel}
     </CastLink>
   ) : mode ? (
-    <CastLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={18} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`View ${mode.title} Leaderboard`}>
+    <CastLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={18} />} className="cast-row-flex" style={castRowMin(castNaturalWidth('Leaderboard', 'md', 18))} aria-label={`View ${mode.title} Leaderboard`}>
       Leaderboard
     </CastLink>
   ) : null);
   const share = onShare ? (
     <ShareResultsCandy onShare={onShare} copied={copied} countdownFor={isDaily ? mode?.title : undefined}
-      // Alone (an Unlimited result) it hugs its label; beside Next / Leaderboard the two split the row.
-      className={primary ? 'flex-1' : '!w-auto max-w-full'} />
+      // Alone (an Unlimited result) it hugs its label; beside Next / Leaderboard it is a cast-row item.
+      rowItem={!!primary} className={primary ? '' : '!w-auto max-w-full'} />
   ) : null;
   return (
     <div className={`shrink-0 w-full max-w-[400px] mx-auto flex flex-col gap-2 pt-2 ${className}`} style={{ paddingBottom: 6 }}>
       {extra && <div className="flex items-center justify-center min-w-0">{extra}</div>}
       {/* AT1 + founder 10-02: one row, spanning the dock, so the group is centered on the SCREEN. */}
       {(share || primary) && (
-        <div className="flex items-center justify-center gap-2 w-full">
+        <div className="cast-row">
           {share}
           {primary}
-          {isDaily && nextMode && mode && (
-            <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="round" icon={<Icon3D name="trophy" size={20} />} aria-label={`View ${mode.title} Leaderboard`} />
-          )}
         </div>
       )}
       {/* BA1: under 700 px tall, the Unlimited card's place is this one slim line. */}

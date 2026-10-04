@@ -377,15 +377,20 @@ struct UnlimitedKeepPlayingCard: View {
                 }
             }
             if afterUnlimited {
-                HStack(spacing: 8) {
+                // BJ17: one cap height across the row — both cast buttons medium; the two CTAs split
+                // the row at equal widths or wrap full width (CastButtonRow), never squeezed.
+                CastButtonRow {
                     if let share { share }
                     Button(action: tap) { CandyLabel(title: "New puzzle") }
-                        .buttonStyle(CastButtonStyle(color: .slate, size: .large))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
                         .overlay(alignment: .topTrailing) { if locked { proPill.offset(x: -6, y: -8) } }
                         .accessibilityLabel("New Unlimited \(game) puzzle")
                     if let onOtherGames {
-                        Button(action: onOtherGames) { CandyLabel(title: "Other games") }
-                            .buttonStyle(CastButtonStyle(size: .small, fullWidth: false))
+                        // BJ15 round 2: a tertiary action stays a text link (never a third cast pill).
+                        Button(action: onOtherGames) { TextLinkLabel(title: "Other games", size: 13) }
+                            .buttonStyle(.plain)
+                            .frame(height: 44)
+                            .castRowFixed()
                     }
                 }
             }

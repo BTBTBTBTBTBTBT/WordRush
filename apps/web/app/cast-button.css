@@ -91,3 +91,11 @@
 .cast-text-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 [data-theme="dark"] .cast-text-link { color: #c4a5ff; }
 .cast-text-link:disabled { opacity: 0.55; cursor: default; }
+
+/* FINISH_SPEC BJ17: a row of cast buttons — every label at ONE cap height. Each .cast-row-flex item
+   starts from a zero basis with its natural width as its min width (castRowMin / castNaturalWidth),
+   so the items split the line (equal while their labels fit) and, when they cannot all fit, the row
+   wraps: each wrapped item fills its own line instead of squeezing its label. Top-aligned (the share
+   candy's countdown caption hangs below it). iOS: CastButtonRow (Layout), Android: CastButtonRow. */
+.cast-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 8px; width: 100%; }
+.cast-row > .cast-row-flex { flex: 1 1 0%; }

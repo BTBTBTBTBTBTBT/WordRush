@@ -46,6 +46,26 @@ export function labelArt(text: string): string | null {
   return LABEL_ART[labelKey(text)] ?? null;
 }
 
+/**
+ * FINISH_SPEC BJ17: a cast button's natural width (px) with its label at the normal cap height —
+ * the label (art aspect × cap, or ≈ 0.66 em per live letter) + both insets (+ a leading icon and
+ * its 6 px gap). A `.cast-row` item uses it as its min width so the row wraps instead of squeezing.
+ */
+export function castNaturalWidth(text: string, size: CastSize | CandySize = 'm', iconPx = 0): number {
+  const h = HEIGHT[sizeOf(size)];
+  const cap = Math.round(h * 0.42 * 3) / 3;
+  const pad = Math.max(0.6 * h, (14 * h) / 44);
+  const slug = labelArt(text);
+  const [aw, ah] = slug ? ART_SIZE[`art-btnlabel-${slug}` as ArtName] ?? [300, 96] : [0, 1];
+  const label = slug ? (aw / ah) * cap : text.length * 0.66 * (cap / 0.75) + 2;
+  return Math.ceil(label + 2 * pad + (iconPx ? iconPx + 6 : 0));
+}
+
+/** BJ17: the inline min width of a `.cast-row-flex` item (never wider than the row). */
+export function castRowMin(px: number): CSSProperties {
+  return { minWidth: `min(100%, ${px}px)` };
+}
+
 /** An old candy color → its cast color (purple → the screen's color; amber → gold; quiet peach → slate). */
 export function castOf(color: CandyColor | CastColor | undefined, screen: CastColor = 'purple'): CastColor {
   switch (color) {

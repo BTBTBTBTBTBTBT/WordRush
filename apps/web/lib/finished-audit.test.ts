@@ -77,7 +77,7 @@ describe('one-screen finished audit', () => {
     const share = src.slice(src.indexOf('export function ShareResultsCandy'), src.indexOf('// ── R2: the action dock'));
     // The md candy (40 px, globals.css .candy-md) with the countdown as its second line, gone on compact heights.
     expect(share).toContain('size="md"');
-    expect(share).toMatch(/text-\[10px\][^\n]*\[@media\(max-height:699\.98px\)\]:hidden/);
+    expect(share).toMatch(/text-\[11px\][^\n]*\[@media\(max-height:699\.98px\)\]:hidden/);
     expect(share).toContain('Next </span>');
     // No separate countdown row, no share row: the dock renders the candy inside its one action row.
     const dock = src.slice(src.indexOf('export function FinishedDock'));

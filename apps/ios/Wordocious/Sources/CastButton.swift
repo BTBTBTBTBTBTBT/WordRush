@@ -223,6 +223,79 @@ struct CastButtonStyle: ButtonStyle {
     }
 }
 
+/// `CastButtonRow`: this item keeps its natural width (a round / chip / hug-width button); unmarked items
+/// are the row's cast buttons and share the line's spare width.
+struct CastRowFixed: LayoutValueKey { static let defaultValue = false }
+
+extension View {
+    /// FINISH_SPEC BJ17: keep this item at its natural width inside a `CastButtonRow`.
+    func castRowFixed() -> some View { layoutValue(key: CastRowFixed.self, value: true) }
+}
+
+/// FINISH_SPEC BJ17: a row of cast buttons whose labels all render at ONE cap height (the finished
+/// dock's SHARE RESULTS beside Next / Leaderboard was squeezed to ~64% while its neighbor stayed
+/// full size). Every item is measured at its ideal width; a line takes items while its cast buttons
+/// fit at EQUAL widths (each as wide as the widest of them) beside the fixed ones, then they split
+/// the line equally. When they cannot, the next item wraps to a full-width line of its own, so a
+/// label never shrinks. Items align to the top (the share candy's countdown hangs below it).
+/// Android: CastButtonRow (CastButton.kt), web: .cast-row (cast-button.css).
+struct CastButtonRow: Layout {
+    var spacing: CGFloat = 8
+    var lineSpacing: CGFloat = 8
+
+    private struct Line { var items: [Int]; var widths: [CGFloat] = []; var height: CGFloat = 0 }
+
+    private func lines(_ width: CGFloat?, _ subviews: Subviews) -> (CGFloat, [Line]) {
+        let natural = subviews.map { $0.sizeThatFits(.unspecified).width }
+        let fixed = subviews.map { $0[CastRowFixed.self] }
+        let maxW = width ?? (natural.reduce(0, +) + spacing * CGFloat(max(0, subviews.count - 1)))
+        func fits(_ items: [Int]) -> Bool {
+            let f = items.filter { fixed[$0] }.reduce(CGFloat(0)) { $0 + natural[$1] }
+            let flex = items.filter { !fixed[$0] }
+            let widest = flex.map { natural[$0] }.max() ?? 0
+            return f + spacing * CGFloat(items.count - 1) + widest * CGFloat(flex.count) <= maxW + 0.5
+        }
+        var out: [Line] = []
+        var cur: [Int] = []
+        for i in subviews.indices {
+            if cur.isEmpty || fits(cur + [i]) { cur.append(i) } else { out.append(Line(items: cur)); cur = [i] }
+        }
+        if !cur.isEmpty { out.append(Line(items: cur)) }
+        for li in out.indices {
+            let items = out[li].items
+            let f = items.filter { fixed[$0] }.reduce(CGFloat(0)) { $0 + min(natural[$1], maxW) }
+            let nFlex = items.filter { !fixed[$0] }.count
+            let share = nFlex > 0 ? max(0, (maxW - f - spacing * CGFloat(items.count - 1)) / CGFloat(nFlex)) : 0
+            out[li].widths = items.map { fixed[$0] ? min(natural[$0], maxW) : share }
+            out[li].height = zip(items, out[li].widths).map { i, w in
+                subviews[i].sizeThatFits(ProposedViewSize(width: w, height: nil)).height
+            }.max() ?? 0
+        }
+        return (maxW, out)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let (w, ls) = lines(proposal.width, subviews)
+        let h = ls.reduce(CGFloat(0)) { $0 + $1.height } + lineSpacing * CGFloat(max(0, ls.count - 1))
+        return CGSize(width: w, height: h)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let (w, ls) = lines(bounds.width, subviews)
+        var y = bounds.minY
+        for line in ls {
+            let used = line.widths.reduce(0, +) + spacing * CGFloat(max(0, line.items.count - 1))
+            var x = bounds.minX + max(0, (w - used) / 2)
+            for (i, itemW) in zip(line.items, line.widths) {
+                subviews[i].place(at: CGPoint(x: x, y: y), anchor: .topLeading,
+                                  proposal: ProposedViewSize(width: itemW, height: nil))
+                x += itemW + spacing
+            }
+            y += line.height + lineSpacing
+        }
+    }
+}
+
 /// The three-slice skin: caps drawn as is, the middle 1-px column stretched.
 struct CastButtonSkin: View {
     let color: CastColor

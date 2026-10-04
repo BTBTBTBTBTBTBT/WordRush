@@ -1,6 +1,8 @@
 package com.wordocious.app.ui.game
 
 import com.wordocious.app.ui.CastButton
+import com.wordocious.app.ui.CastButtonRow
+import com.wordocious.app.ui.castFlex
 import com.wordocious.app.ui.CastColor
 import com.wordocious.app.ui.CastSize
 import com.wordocious.app.ui.cast
@@ -444,13 +446,14 @@ fun FinishedDock(
             UnlimitedCard(mode, onPlay = newPuzzle, newPuzzle = true, onOtherGames = onOtherGames) {
                 // The card's action row: Share results · NEW PUZZLE · More (founder 10-02: the
                 // share candy takes the old share icon's place — no row of its own, no countdown).
-                onShare?.let { ShareResultsCandy(it, countdownFor = null) }
+                // BJ17: both cast buttons at M (one cap height), equal widths or stacked (CastButtonRow).
+                onShare?.let { ShareResultsCandy(it, countdownFor = null, modifier = Modifier.castFlex(), fill = true) }
                 CastButton(
-                    "New puzzle", onClick = newPuzzle, modifier = Modifier.weight(1f),
-                    color = CastColor.SLATE, size = CastSize.L, fill = true,
+                    "New puzzle", onClick = newPuzzle, modifier = Modifier.castFlex(),
+                    color = CastColor.SLATE, size = CastSize.M, fill = true,
                     contentDescription = "New puzzle: Unlimited ${finishedModeTitle(mode)}",
                 )
-                extra?.invoke(this)
+                extra?.let { Row(verticalAlignment = Alignment.CenterVertically) { it() } }
                 if (more != null) MoreChip(accent, more)
             }
             return@Column
@@ -469,25 +472,23 @@ fun FinishedDock(
         // AT1: the actions center on the SCREEN — one row spanning the dock. Founder 10-02:
         // "Share results" leads it (beside Next / Leaderboard, the two split the row), with
         // the daily countdown inside the candy; nothing floats beside the row.
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        ) {
-            val lbTitle = finishedModeTitle(mode)
-            val next = nd?.next
-            val nextMode = next?.engineMode
+        // BJ17: a CastButtonRow — the cast buttons split the row at equal widths with every label at the
+        // normal cap height, or (when a label can't fit) wrap to full-width lines; never squeezed.
+        val lbTitle = finishedModeTitle(mode)
+        val next = nd?.next
+        val nextMode = next?.engineMode
+        CastButtonRow(Modifier.fillMaxWidth()) {
             val hasPrimary = nd != null && (onOpenLeaderboard != null || (nextMode != null && onOpenDaily != null))
             onShare?.let {
                 ShareResultsCandy(
                     it, countdownFor = if (isDaily) lbTitle else null,
-                    modifier = if (hasPrimary) Modifier.weight(1f) else Modifier, fill = hasPrimary,
+                    modifier = if (hasPrimary) Modifier.castFlex() else Modifier, fill = hasPrimary,
                 )
             }
             if (nd != null && nextMode != null && onOpenDaily != null) {
                 CastButton(
                     "Next: ${next.title}", onClick = { onOpenDaily(nextMode) },
-                    modifier = Modifier.weight(1f), color = CastColor.GOLD, size = CastSize.M, fill = true,
+                    modifier = Modifier.castFlex(), color = CastColor.GOLD, size = CastSize.M, fill = true,
                     leading = { CtaGameIcon(next.id, 24.dp) },
                     contentDescription = "Next daily: ${next.title}",
                 )
@@ -499,12 +500,12 @@ fun FinishedDock(
             } else if (nd != null && onOpenLeaderboard != null) {
                 CastButton(
                     "Leaderboard", onClick = { onOpenLeaderboard(mode) },
-                    modifier = Modifier.weight(1f), size = CastSize.M, fill = true,
+                    modifier = Modifier.castFlex(), size = CastSize.M, fill = true,
                     leading = { Icon3D(Icon3DName.TROPHY, 22.dp) },
                     contentDescription = "$lbTitle Leaderboard",
                 )
             }
-            extra?.invoke(this)
+            extra?.let { Row(verticalAlignment = Alignment.CenterVertically) { it() } }
             if (more != null) MoreChip(accent, more)
         }
         // R3 "Keep playing: Unlimited <Game>" on a daily result (the tester-reported dead
@@ -632,7 +633,7 @@ fun UnlimitedCard(
     newPuzzle: Boolean,
     onOtherGames: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    actions: (@Composable RowScope.() -> Unit)? = null,
+    actions: (@Composable () -> Unit)? = null,
 ) {
     val title = finishedModeTitle(mode)
     val peach = UNLIMITED_PEACH
@@ -692,7 +693,7 @@ fun UnlimitedCard(
             }
         }
         if (actions != null) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), content = actions)
+            CastButtonRow(Modifier.fillMaxWidth(), content = actions)
         }
     }
 }
@@ -764,6 +765,7 @@ fun ProPaywallDialog(onDismiss: () -> Unit, onPro: () -> Unit) {
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
+        com.wordocious.app.ui.EdgeToEdgeDialogWindow()
         Box(
             Modifier.fillMaxSize()
                 .pageBackground(com.wordocious.app.ui.PageTint.HOME)

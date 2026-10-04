@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -347,5 +348,76 @@ private fun Modifier.shrinkToSlot(): Modifier = layout { m, c ->
     val k = if (p.width > 0) w.toFloat() / p.width else 1f
     layout(w, p.height) {
         p.placeWithLayer((w - p.width) / 2, 0) { scaleX = k; scaleY = k }
+    }
+}
+
+/** [CastButtonRow]: this item shares the line's spare width (a cast button); unmarked items keep their size. */
+fun Modifier.castFlex(): Modifier = this.then(Modifier.layoutId(CAST_FLEX))
+
+private const val CAST_FLEX = "castFlex"
+
+/**
+ * FINISH_SPEC BJ17: a row of cast buttons whose labels must all render at ONE cap height
+ * (the finished dock's SHARE RESULTS beside Next / Leaderboard was squeezed to ~64% while its
+ * neighbor stayed full size). Every item is measured at its natural width; a line takes items
+ * while its [castFlex] items fit at EQUAL widths (each as wide as the widest of them) beside the
+ * fixed ones, and then they split the line equally. When they cannot, the next item wraps to a
+ * new line (full width), so a label never shrinks. Items align to the top (the share candy's
+ * countdown caption hangs below its button); fixed items center on the [controlHeight] band.
+ * iOS: CastButtonRow (Layout), web: .cast-row (flex-wrap).
+ */
+@Composable
+fun CastButtonRow(
+    modifier: Modifier = Modifier,
+    spacing: Dp = 8.dp,
+    lineSpacing: Dp = 8.dp,
+    /** The row's cast-button height: fixed items (chips, round buttons) center on it. */
+    controlHeight: Dp = CastSize.M.height,
+    content: @Composable () -> Unit,
+) {
+    androidx.compose.ui.layout.Layout(content, modifier) { ms, c ->
+        val gap = spacing.roundToPx()
+        val lineGap = lineSpacing.roundToPx()
+        val control = controlHeight.roundToPx()
+        val maxW = if (c.hasBoundedWidth) c.maxWidth else Int.MAX_VALUE / 4
+        val flex = ms.map { it.layoutId == CAST_FLEX }
+        val natural = ms.map { it.maxIntrinsicWidth(androidx.compose.ui.unit.Constraints.Infinity).coerceAtMost(maxW) }
+        // Greedy lines: fixed widths + gaps + (flex count × widest flex) must fit.
+        val lines = mutableListOf<MutableList<Int>>()
+        var cur = mutableListOf<Int>()
+        fun fits(items: List<Int>): Boolean {
+            val fixed = items.filter { !flex[it] }.sumOf { natural[it] }
+            val flexIdx = items.filter { flex[it] }
+            val widest = flexIdx.maxOfOrNull { natural[it] } ?: 0
+            return fixed + gap * (items.size - 1) + widest * flexIdx.size <= maxW
+        }
+        for (i in ms.indices) {
+            if (cur.isEmpty() || fits(cur + i)) cur.add(i) else { lines.add(cur); cur = mutableListOf(i) }
+        }
+        if (cur.isNotEmpty()) lines.add(cur)
+        val rowW = if (c.hasBoundedWidth) c.maxWidth else lines.maxOfOrNull { l -> l.sumOf { natural[it] } + gap * (l.size - 1) } ?: 0
+        val placed = lines.map { l ->
+            val fixed = l.filter { !flex[it] }.sumOf { natural[it] }
+            val nFlex = l.count { flex[it] }
+            val share = if (nFlex > 0) ((rowW - fixed - gap * (l.size - 1)) / nFlex).coerceAtLeast(0) else 0
+            l.map { i ->
+                val w = if (flex[i]) share else natural[i]
+                i to ms[i].measure(androidx.compose.ui.unit.Constraints(minWidth = if (flex[i]) w else 0, maxWidth = w, maxHeight = c.maxHeight))
+            }
+        }
+        fun dy(i: Int, h: Int) = if (flex[i]) 0 else ((control - h) / 2).coerceAtLeast(0)
+        val heights = placed.map { l -> l.maxOf { (i, p) -> p.height + dy(i, p.height) } }
+        val totalH = heights.sum() + lineGap * (heights.size - 1).coerceAtLeast(0)
+        layout(rowW, totalH.coerceIn(c.minHeight, c.maxHeight)) {
+            var y = 0
+            placed.forEachIndexed { li, l ->
+                val used = l.sumOf { it.second.width } + gap * (l.size - 1)
+                var x = ((rowW - used) / 2).coerceAtLeast(0)
+                for ((i, p) in l) {
+                    p.place(x, y + dy(i, p.height)); x += p.width + gap
+                }
+                y += heights[li] + lineGap
+            }
+        }
     }
 }

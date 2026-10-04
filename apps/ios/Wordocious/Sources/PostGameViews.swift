@@ -615,7 +615,8 @@ struct NextDailyCTA: View {
             if AuthService.shared.profile != nil {
                 VStack(spacing: compact ? 6 : 10) {
                     if let next = nextMode, let key = next.dbKey {
-                        HStack(spacing: 8) {
+                        // BJ17: equal widths at the normal cap height, or wrapped full width (CastButtonRow).
+                        CastButtonRow {
                             if let share { share }
                             Button {
                                 dismiss()
@@ -645,7 +646,7 @@ struct NextDailyCTA: View {
                         .padding(.vertical, 4)
                     }
                     // Sweep done: share rides the Leaderboard row instead.
-                    let leaderboardRow = HStack(spacing: 8) {
+                    let leaderboardRow = CastButtonRow {
                         if nextMode == nil, let share { share }
                         viewLeaderboard
                     }
