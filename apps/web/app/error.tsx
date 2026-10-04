@@ -23,6 +23,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         artHeight={140}
         priority
         title="SOMETHING WENT WRONG"
+        heading="oops"
         line="Don't worry, your streak is safe."
         actionLabel="Try again"
         actionIcon="replay"

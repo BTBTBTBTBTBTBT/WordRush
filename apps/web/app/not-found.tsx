@@ -13,6 +13,7 @@ export default function NotFound() {
         artHeight={140}
         priority
         title="PAGE NOT FOUND"
+        heading="notfound"
         line={MASCOT_LINES.notFound}
         actionLabel="Back to Home"
         actionHref="/"

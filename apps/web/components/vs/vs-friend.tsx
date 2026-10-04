@@ -103,7 +103,7 @@ export function VsFriend() {
     <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
       <InviteModal open={invite !== null} onClose={() => setInvite(null)} initialMode={mode} initialTab={invite ?? 'link'} />
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3.5">
-        <VsNav title="CHALLENGE" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={mode} />} />
+        <VsNav title="CHALLENGE" heading="challenge" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={mode} />} />
 
         {loading ? (
           <div className="flex justify-center py-16"><CastLoader /></div>

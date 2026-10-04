@@ -73,7 +73,7 @@ export function VsBots() {
     <PageBackground tint="vs" scheme="light" className="min-h-screen pb-24" style={VS_LIGHT_VARS}>
       {/* BJ7: 12 between sections. */}
       <div className="max-w-md mx-auto px-4 pt-2 space-y-3">
-        <VsNav title="BOTS" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />
+        <VsNav title="BOTS" heading="bots" host={PAGE_HOSTS.vs} onBack={() => router.push('/vs')} right={<ModeChip mode={isPro ? mode : 'DUEL'} />} />
 
         {loading ? (
           <div className="flex justify-center py-16"><CastLoader /></div>

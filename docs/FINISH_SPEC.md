@@ -1673,8 +1673,12 @@ tap-presented titles are pre-decoded off the presenting frame — iOS HeadingArt
 HeadingArtCache.prewarm (App.onCreate, IO), web <HeadingArtWarmup/> (root layout, idle, 6 per slice). Tour titles: iOS
 aligns to web / Android (DAILY GAMES, SCORE BIG, KEEP YOUR STREAK, PLAY TOGETHER). Quick wins: WELCOME! on the first-run
 welcome, GO PRO on the reason-less Go Pro popup (web), STATS / LEADERBOARD above the signed-out pitch, VS BATTLE on the
-Android live-search nav, SO CLOSE! on the Gauntlet loss. Not wired yet (no live heading found / card or section labels, next
-pass): shields (a small section label in the header streak popup), header streak / flawless popups (art-moment-streak /
--flawless), Strategy "VS", nudge, archetypes, h2h, trophycase, podium, streakcal, support, about, deleteaccount, profile,
-oops, notfound, dailychallenge, onastreak, newpassword, iOS level-up popup, the VS countdown "MATCH FOUND", Edit Profile's
-MAKE YOUR MASCOT section card, web Leaderboard signed-out title.
+Android live-search nav, SO CLOSE! on the Gauntlet loss. Round 2: header streak / flawless / shield popups (STREAK! /
+FLAWLESS! moment art, SHIELDS where the popup is its own), Strategy VS tile (VS BATTLE), NUDGE! (taunt sheets, @name under),
+ARCHETYPES, HEAD TO HEAD (+ "vs @name"), PODIUM, STREAK CALENDAR (web modal), ABOUT / SUPPORT info pages, NOT FOUND / OOPS!
+(BrandEmptyState `heading`: web 404 + error page, profile / game not found), NEW PASSWORD, DAILY CHALLENGE (web landing),
+ON A STREAK! (Pro prompt), PROFILE (web profile header), iOS level-up (LEVEL UP!), the VS countdown MATCH FOUND!. Auth
+screen: the big WELCOME! + WORDOCIOUS / Daily Word Games lines are replaced by the Home cast header (the card's WELCOME BACK!
+already greets — no duplicate); the first-run welcome keeps WELCOME!. Left as small in-card labels: the iOS streak popup's
+SHIELDS section, TROPHY CASE, Edit Profile's MAKE YOUR MASCOT card. Web Leaderboard has no signed-out pitch (guests see the
+board with its banner title). DELETE ACCOUNT: the web page wears it; iOS / Android use a system alert.
