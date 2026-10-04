@@ -26,21 +26,7 @@ Status 10-03 ~4:30 AM: 1–7, 9, 10, 11 done and shipped ×3 (see NIGHT-ART-2026
 - BJ10 Menus/sheets "soft pop": dim + gentle spring scale (0.94→1) from the bottom-center instead of the system slide.
 - FINAL GATE (founder 10-03): after the LAST feature lands (incl. widget-you, logo sweep, subscribe screens, avatar round 2, transitions), run one final full fluidity audit with the perf harness over EVERY surface — first-appearance frame (no placeholder/pop-in), scroll/typing/transition hitches (>25 ms), main-thread %, AttributeGraph cycles = 0 — on iOS (Release sim) + Android (gfxinfo, one emulator) + web (trace). Fix regressions, re-run, publish before/after table. Only then cut 242/198.
 
-## ChatGPT queue after the image limit resets (1:56 AM, 10-04) — cast-color TITLES
-
-The paid API (gpt-image-1, even at input fidelity high) letters these flatter and wider than the ChatGPT
-cast-color set, so every TITLE goes back through ChatGPT. Style refs to attach: `titles/cast-colors/dailies.png`
-and `pocket-rps.png`. Rules: one cast color per title, a deeper same-color rim, soft footer-level gloss, no
-flourishes, each title on ONE line, 4 per sheet, cyan/magenta key (pick the key away from the colors).
-Split with `titles/cast-colors/split-sheet.py <png> <cyan|magenta> slugs`, spell-check, contact sheet each batch.
-
-1. Pocket titles (replace the interim API ones, condensed to 82%): GHOST (slate) · WORD CHAIN (green) · PICK A FRIEND (pink)
-2. TITLE-INVENTORY.md priority 1, in table order (29): solved, nottoday, share, sweep, overview, shields, savestreak,
-   streaksaved, playedtoday, vsused, achievement, letsplay, invite, editprofile, mascot, bots, challenge, findingrival,
-   matchfound, welcomeback, jointhefun, resetpassword, makeprofile, username, yourein, tour-daily, tour-score,
-   tour-streak, tour-together
-3. TITLE-INVENTORY.md priority 2, in table order (30): nudge … onastreak
-
-The API priority-1 sheets already made (`titles/cast-colors/raw/inv1-*.png`, $1.56) stay as raw only —
-a fallback if ChatGPT can't match; they were not split into final titles.
-Button LABELS stay on the API set (`buttons/labels/`), which matches.
+## Cast-color titles — DONE via the paid API (10-03 evening)
+All 59 TITLE-INVENTORY titles + the 3 pocket re-letters were made with gpt-image-1 (input fidelity high), split and
+color-matched to the finished cast-color titles (`titles/cast-colors/finish-inventory.py`), contact sheet
+`titles/cast-colors-all-2026-10-03.png`, shipped ×3 as `art-titlecast-<slug>` (call sites wired separately).

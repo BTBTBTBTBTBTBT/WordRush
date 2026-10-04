@@ -209,9 +209,13 @@ for k in ['1', '2', '3']:
 if os.path.exists(os.path.join(PODIUM_DIR, 'floor.png')):
     ship('art-podium-floor', wide(os.path.join(PODIUM_DIR, 'floor.png'), 1080)); n += 1
 CAST_TITLES = os.path.join(HERE, 'titles', 'cast-colors')   # cast-color titles (founder 10-03; not wired until the mapping is confirmed)
-# Only the approved menu/page set ships; pocket-* and the TITLE-INVENTORY titles wait for founder approval.
+# The menu/page set + the pocket-game titles + every TITLE-INVENTORY.md slug (founder 10-03: ship them all;
+# call-site wiring is separate).
+import re as _re
 CAST_TITLE_SET = ['dailies', 'puzzles', 'wotd', 'vsbattle', 'leaderboard', 'stats', 'friends', 'settings', 'gopro', 'strategy',
-                  'guides', 'menu', 'welcome', 'howto', 'words', 'moregames', 'records', 'faq', 'privacy', 'terms']
+                  'guides', 'menu', 'welcome', 'howto', 'words', 'moregames', 'records', 'faq', 'privacy', 'terms',
+                  'pocket-rps', 'pocket-ttt', 'pocket-coin', 'pocket-pass', 'pocket-ghost', 'pocket-chain', 'pick-friend']
+CAST_TITLE_SET += [s_ for s_ in _re.findall(r'^\| (\S+) \| .+? \| \w+ \|$', open(os.path.join(HERE, 'TITLE-INVENTORY.md')).read(), _re.M) if s_ != 'Slug']
 for t in CAST_TITLE_SET:
     if os.path.exists(os.path.join(CAST_TITLES, t + '.png')):
         ship('art-titlecast-' + t, wide(os.path.join(CAST_TITLES, t + '.png'), 1080)); n += 1
