@@ -1649,6 +1649,16 @@ onboarding / welcome / auth, sweep + achievement + streak-shield popups, mode-li
 buttons, toggles, segmented controls, system sheets, and the web friends/VS files with other agents' uncommitted work
 (next pass). DEBUG iOS: `-bj15Screen finish|pro|invite|gopro` presents that screen (gopro = the Settings Go Pro card + every
 color, light and dark) for headless screenshots.
+BJ15 round 2 (coordinator 10-03): text links / tertiary / quiet actions are NEVER cast pills — Forgot password?, Sign up /
+Sign in (the mode switch), Play without an account are brand-purple text links on all 3 (iOS TextLinkLabel, Android
+TextLink, web TextLink / TextLinkA); quiet peach actions (Not now, Close, Skip, Maybe later, Let it reset, Restore
+Purchases, Explore first, Come back tomorrow, Cancel, How to play, Sign out, See all…) went back to their previous candy
+style; real secondary CTAs (Keep playing, New puzzle, Decline beside Accept, Copy) stay slate cast. Web round icon buttons
+are never cast. Live-fallback cap ratio 0.705 → 0.75 (matches the art caps); Android live text + art labels scale down to
+a narrow slot instead of clipping. A subtitle never goes inside the skin: Share results' "Next Classic in 4h 29m" is a
+small muted caption UNDER the button (×3), and the label art keeps the normal cap height. Also swapped: web friends / VS
+(primary only; peach + round untouched), Android PostGameScreen + the trailing-› CTAs (the › dropped). DEBUG iOS adds
+`-bj15Screen share`.
 BJ16. No plain-text menu headings (59 titles wired) (founder 10-03: "There shouldn't be any plain text menus"). The 59
 cast-color heading titles (docs/design/brand/TITLE-INVENTORY.md, shipped ×3 as art-titlecast-<slug>) get ONE shared
 component per platform: iOS `HeadingArt` enum + `HeadingArtView` (ArtKit.swift), Android `Heading` enum + `HeadingArt`
