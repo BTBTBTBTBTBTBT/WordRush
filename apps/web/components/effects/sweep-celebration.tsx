@@ -14,6 +14,7 @@ import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.gener
 import { getTodayLocal } from '@/lib/daily-service';
 import { MomentArt } from '@/components/ui/art-title';
 import { CandyButton, type CandyColor } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
 import { ART_SIZE, artSrc } from '@/lib/art';
@@ -173,7 +174,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
 
           {/* Actions: candy buttons. */}
           <div className="flex gap-2 mt-5 w-full">
-            <CandyButton
+            <CastButton
               color={look.candy}
               size="lg"
               className="flex-1"
@@ -182,10 +183,10 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
               disabled={sharing}
             >
               {sharing ? 'Sharing…' : 'Share'}
-            </CandyButton>
-            <CandyButton color="peach" size="lg" onClick={onClose}>
+            </CastButton>
+            <CastButton color="peach" size="lg" onClick={onClose}>
               Close
-            </CandyButton>
+            </CastButton>
           </div>
         </div>
       </div>

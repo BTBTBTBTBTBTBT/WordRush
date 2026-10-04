@@ -148,9 +148,9 @@ internal fun ProfileStep() {
             )
             Spacer(Modifier.height(12.dp))
             // The flow moves on to ALL SET once the guest session is in (Onboarding's auth watch).
-            CandyButton(
+            CastButton(
                 "Play as guest", onClick = { AuthService.enterGuest() },
-                color = CandyColor.PEACH, size = CandySize.MEDIUM, icon = CandyIcon.PLAY,
+                color = CastColor.SLATE, size = CastSize.M,
                 contentDescription = "Play as guest, without an account",
             )
         }

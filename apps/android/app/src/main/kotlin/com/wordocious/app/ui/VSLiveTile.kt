@@ -145,14 +145,13 @@ fun VSLiveTile(
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     // A8: PLAY is the card's primary candy (teal, the VS color) — same tap as the card.
-                    CandyButton(
-                        "PLAY", onClick = onOpen, color = CandyColor.TEAL, size = CandySize.SMALL,
-                        icon = CandyIcon.PLAY, contentDescription = "Play ${card.title}",
+                    CastButton(
+                        "PLAY", onClick = onOpen, color = CastColor.TEAL, size = CastSize.S, contentDescription = "Play ${card.title}",
                     )
                     if (isPro) {
                         // Same tap as before: the Invite modal. Peach = the quiet secondary.
-                        CandyButton(
-                            "INVITE", onClick = onInvite, color = CandyColor.PEACH, size = CandySize.SMALL,
+                        CastButton(
+                            "INVITE", onClick = onInvite, color = CastColor.SLATE, size = CastSize.S,
                             leading = { Icon3D(Icon3DName.ADD_FRIEND, 16.dp) }, // ART_SPEC §5
                             contentDescription = "Invite",
                         )

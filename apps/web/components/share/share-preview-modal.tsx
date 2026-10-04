@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Download, Copy, X, Check } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { BRAND_ACCENT, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 import { copyShareToClipboard } from '@/lib/share-utils';
 
@@ -117,11 +118,11 @@ export function SharePreviewHost() {
 
             <div className="space-y-2">
               {/* A8: candy buttons — purple primary, pink secondary. */}
-              <CandyButton onClick={handleDownload} color="purple" size="md" block icon={<Download className="w-4 h-4" aria-hidden="true" />}>
+              <CastButton onClick={handleDownload} color="purple" size="md" block icon={<Download className="w-4 h-4" aria-hidden="true" />}>
                 Save image
-              </CandyButton>
+              </CastButton>
 
-              <CandyButton
+              <CastButton
                 onClick={handleCopyCaption}
                 color="pink"
                 size="md"
@@ -129,7 +130,7 @@ export function SharePreviewHost() {
                 icon={copied ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
               >
                 {copied ? 'Link copied' : 'Copy link'}
-              </CandyButton>
+              </CastButton>
             </div>
           </div>
         </div>

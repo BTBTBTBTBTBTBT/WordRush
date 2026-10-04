@@ -73,6 +73,9 @@ struct WordociousApp: App {
                     }
                 }
                 .overlay { ColdStartIntroHost() }
+                #if DEBUG
+                .overlay { CastShowcaseHost() }   // BJ15 visual check: -bj15Screen pro|invite|finish
+                #endif
                 .background { AchievementUnlockHost() } // FINISH_SPEC §V2: arms the unlock popups (own window).
                 .background { ProWelcomeHost() } // FINISH_SPEC §AP: arms Welcome to Pro (own window).
                 .task {

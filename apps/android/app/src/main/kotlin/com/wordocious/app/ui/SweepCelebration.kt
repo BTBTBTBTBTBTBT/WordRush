@@ -148,14 +148,14 @@ fun SweepCelebration(
                 }
             }
             Spacer(Modifier.height(2.dp))
-            CandyButton(
+            CastButton(
                 "Share", onClick = onShare,
-                color = if (flawless) CandyColor.PINK else CandyColor.AMBER,
-                size = CandySize.LARGE, icon = CandyIcon.SHARE, fill = true,
+                color = (if (flawless) CandyColor.PINK else CandyColor.AMBER).cast(null),
+                size = CastSize.L, fill = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            CandyButton(
-                "Close", onClick = closeAndMaybeReview, color = CandyColor.PEACH, size = CandySize.MEDIUM,
+            CastButton(
+                "Close", onClick = closeAndMaybeReview, color = CastColor.SLATE, size = CastSize.M,
                 fill = true, modifier = Modifier.fillMaxWidth(0.6f),
             )
         }

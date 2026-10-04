@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import { HeaderCircle } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { POPUP_DIM, popupCard } from '@/components/ui/soft-popup';
 import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
@@ -164,7 +165,7 @@ export function StreakShieldModal({
                   {/* Shields are the only way to save a streak — coin purchase was
                       removed with the coin economy. No shields: the Pro note. */}
                   {shields > 0 ? (
-                    <CandyButton
+                    <CastButton
                       color="purple"
                       size="lg"
                       block
@@ -174,16 +175,16 @@ export function StreakShieldModal({
                       disabled={loading !== null}
                     >
                       {loading === 'shield' ? 'USING A SHIELD…' : 'USE A SHIELD'}
-                    </CandyButton>
+                    </CastButton>
                   ) : (
                     <p className="text-[12px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                       You&apos;re out of shields. Pro members get 4 every billing period.
                     </p>
                   )}
 
-                  <CandyButton color="peach" size="md" block onClick={onDecline} disabled={loading !== null}>
+                  <CastButton color="peach" size="md" block onClick={onDecline} disabled={loading !== null}>
                     Let it reset
-                  </CandyButton>
+                  </CastButton>
                 </div>
               </>
             )}

@@ -2,6 +2,7 @@
 
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyLink } from '@/components/ui/candy-button';
+import { CastLink } from '@/components/ui/cast-button';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { SWEEP_MODES } from '@/lib/modes.generated';
@@ -66,9 +67,9 @@ function ViewLeaderboardLink({ currentMode }: { currentMode: string }) {
 
   return (
     <div className={CTA_ROW}>
-      <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="lg" block icon={<Icon3D name="trophy" size={26} />} aria-label={`View ${mode.title} Leaderboard`}>
+      <CastLink href={`/daily?mode=${currentMode}`} color="purple" size="lg" block icon={<Icon3D name="trophy" size={26} />} aria-label={`View ${mode.title} Leaderboard`}>
         {mode.title} Leaderboard
-      </CandyLink>
+      </CastLink>
     </div>
   );
 }
@@ -79,9 +80,9 @@ function NextDailyLink({ next }: { next: { id: string; href: string } }) {
 
   return (
     <div className={CTA_ROW}>
-      <CandyLink href={next.href} color="amber" size="lg" block icon="arrow" aria-label={`Next Daily: ${mode.title}`}>
+      <CastLink href={next.href} color="amber" size="lg" block icon="arrow" aria-label={`Next Daily: ${mode.title}`}>
         Next daily: {mode.title}
-      </CandyLink>
+      </CastLink>
     </div>
   );
 }

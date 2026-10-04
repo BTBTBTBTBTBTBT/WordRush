@@ -298,7 +298,7 @@ struct VSChallengeSentView: View {
                                       message: Text(VsChallengeService.shareText(mode: mode, code: code))) {
                                 CandyLabel(title: "Share link") { Icon3D(.share, size: 20) }
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                            .buttonStyle(CastButtonStyle(color: .blue, size: .large))
                             .simultaneousGesture(TapGesture().onEnded {
                                 ShareEvents.log(kind: "link_invite", gameMode: mode.rawValue, surface: "vs_challenge")
                             })

@@ -678,11 +678,11 @@ struct HomeView: View {
                     } label: {
                         CandyLabel(title: "Play", symbol: "play.fill")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(size: .small, fullWidth: false))
                     NavigationLink { HowToPlayView() } label: {
                         CandyLabel(title: "How to play")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                 }
                 .padding(.top, 8)
             }
@@ -733,7 +733,7 @@ struct HomeView: View {
             Button { dismissProPrompt(); showProSheet = true } label: {
                 CandyLabel(title: "Go Pro")
             }
-            .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
             Button { dismissProPrompt() } label: {
                 Image(systemName: "xmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(FinishInk.secondary)
                     .frame(width: 26, height: 26).contentShape(Rectangle())
@@ -818,7 +818,7 @@ struct HomeView: View {
                     Button { playInvite = .init(mode: mode, code: top.invite_code) } label: {
                         CandyLabel(title: "Accept", symbol: "play.fill")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .teal, size: .small))
+                    .buttonStyle(CastButtonStyle(color: .teal, size: .small))
                     Button {
                         let id = top.id
                         pendingInvites.removeAll { $0.id == id }
@@ -826,7 +826,7 @@ struct HomeView: View {
                     } label: {
                         CandyLabel(title: "Decline")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .small))
                     .accessibilityLabel("Decline invite")
                 }
             }
@@ -843,7 +843,7 @@ struct HomeView: View {
             CandyLabel(title: "Sign Out", symbol: "rectangle.portrait.and.arrow.right")
         }
         // §A8: a small quiet peach candy, not a text link.
-        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
         .frame(maxWidth: .infinity)
         .padding(.top, 2)
     }
@@ -1042,7 +1042,7 @@ struct ModeLimitModal: View {
                 Button(action: onUpgrade) {
                     CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 20) }
                 }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                 .accessibilityLabel("Upgrade to Pro")
                 .padding(.bottom, 6)
 
@@ -1054,11 +1054,11 @@ struct ModeLimitModal: View {
                     Button(action: onViewSolved) {
                         CandyLabel(title: "View Solved Puzzle", symbol: "eye.fill")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium))
+                    .buttonStyle(CastButtonStyle(size: .medium))
                     .padding(.bottom, 6)
                 }
                 Button(action: onClose) { CandyLabel(title: "Not now") }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                     .accessibilityHint(showViewSolved ? "" : "Come back tomorrow")
             }
             .padding(24)

@@ -305,12 +305,12 @@ fun InviteSentCard(
             }
             Row(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (onSendAnother != null) {
-                    CandyButton(
-                        "Send another", onClick = onSendAnother, color = CandyColor.PINK, size = CandySize.MEDIUM,
+                    CastButton(
+                        "Send another", onClick = onSendAnother, color = CastColor.PINK, size = CastSize.M,
                         modifier = Modifier.weight(1f), fill = true, enabled = sendAnotherEnabled,
                     )
                 }
-                CandyButton("Done", onClick = onDone, color = CandyColor.PEACH, size = CandySize.MEDIUM, modifier = Modifier.weight(1f), fill = true)
+                CastButton("Done", onClick = onDone, color = CastColor.SLATE, size = CastSize.M, modifier = Modifier.weight(1f), fill = true)
             }
         }
     }
@@ -366,12 +366,12 @@ fun InviteReceivedCard(
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            CandyButton(
-                "Decline", onClick = onDecline, color = CandyColor.PEACH, size = CandySize.MEDIUM,
+            CastButton(
+                "Decline", onClick = onDecline, color = CastColor.SLATE, size = CastSize.M,
                 modifier = Modifier.weight(0.62f), fill = true, enabled = !busy, contentDescription = "Decline ${inviter.name}",
             )
-            CandyButton(
-                "Accept", onClick = onAccept, color = CandyColor.TEAL, size = CandySize.MEDIUM,
+            CastButton(
+                "Accept", onClick = onAccept, color = CastColor.TEAL, size = CastSize.M,
                 modifier = Modifier.weight(1f), fill = true, enabled = !busy, contentDescription = "Accept ${inviter.name}",
                 leading = { Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(17.dp)) },
             )
@@ -483,13 +483,12 @@ fun NewFriendsCard(
                     color = labelInk(light), textAlign = TextAlign.Center,
                 )
                 if (onChallenge != null) {
-                    CandyButton(
-                        "Challenge them", onClick = onChallenge, color = CandyColor.PINK, size = CandySize.LARGE,
-                        icon = CandyIcon.PLAY, modifier = Modifier.fillMaxWidth(), fill = true,
+                    CastButton(
+                        "Challenge them", onClick = onChallenge, color = CastColor.PINK, size = CastSize.L, modifier = Modifier.fillMaxWidth(), fill = true,
                         contentDescription = "Challenge ${friend.name}",
                     )
                 }
-                CandyButton("See friends", onClick = onSeeFriends, color = CandyColor.PEACH, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true)
+                CastButton("See friends", onClick = onSeeFriends, color = CastColor.SLATE, size = CastSize.M, modifier = Modifier.fillMaxWidth(), fill = true)
             }
         }
         if (onClose != null) PopupClose(onClose, Modifier.align(Alignment.TopEnd).padding(top = 10.dp), tint = headingInk(light))
@@ -591,8 +590,8 @@ fun GiftProCard(
         }
         content()
         if (onSend != null) {
-            CandyButton(
-                sendLabel, onClick = onSend, color = CandyColor.AMBER, size = CandySize.MEDIUM,
+            CastButton(
+                sendLabel, onClick = onSend, color = CastColor.GOLD, size = CastSize.M,
                 modifier = Modifier.fillMaxWidth(), fill = true, enabled = sendEnabled,
                 leading = { Icon(Icons.Filled.CardGiftcard, null, tint = Color.White, modifier = Modifier.size(17.dp)) },
             )

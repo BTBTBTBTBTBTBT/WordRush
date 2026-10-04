@@ -6,6 +6,7 @@ import { Icon3D } from '@/components/ui/icon3d';
 import type { HomeCard } from './mode-chrome';
 import { MODE_CARD, ModeCardBand, TitleLineSlot, modeCardSurface } from './mode-card';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { botArt, botOfDayPersona } from '@/lib/bot/bot-personas';
 
@@ -100,11 +101,11 @@ export function VSLiveTile({ card, livePlayerCount, vsDailyWon, playMode, isPro,
             )}
           </button>
           <div className="flex items-center gap-2 mt-0.5">
-            <CandyButton size="sm" color="teal" icon="play" onClick={onOpen}>Play</CandyButton>
+            <CastButton screen="blue" size="sm" color="teal" icon="play" onClick={onOpen}>Play</CastButton>
             {isPro && (
-              <CandyButton size="sm" color="peach" onClick={onInvite} icon={<Icon3D name="add-friend" size={16} />}>
+              <CastButton screen="blue" size="sm" color="peach" onClick={onInvite} icon={<Icon3D name="add-friend" size={16} />}>
                 Invite
-              </CandyButton>
+              </CastButton>
             )}
           </div>
         </div>

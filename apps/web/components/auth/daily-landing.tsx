@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
 import { useAuth } from '@/lib/auth-context';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { softRow } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
 
@@ -48,9 +49,9 @@ export function DailyLanding() {
     <div className="min-h-screen overflow-y-auto" style={{ background: softBackground('#7c3aed', 0.06) }}>
       <header className="flex items-center justify-between px-5 py-4 max-w-3xl mx-auto">
         <Link href="/" className="text-2xl font-black tracking-tight" style={wordmarkStyle}>WORDOCIOUS</Link>
-        <CandyButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
+        <CastButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
           Sign In
-        </CandyButton>
+        </CastButton>
       </header>
 
       <section className="text-center px-6 pt-8 pb-8 max-w-2xl mx-auto">
@@ -61,13 +62,13 @@ export function DailyLanding() {
         <p className="text-base font-bold mb-6 leading-relaxed" style={p}>
           The same eight words for every player in the world, every day. Solve them, then see exactly where you stand.
         </p>
-        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
+        <CastButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
           Sign in to see the leaderboards
-        </CandyButton>
+        </CastButton>
         <div className="mt-3">
-          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CandyButton>
+          </CastButton>
           <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Today&apos;s dailies are free to play. Sign in to save stats, build streaks, and rank on the boards.
           </p>

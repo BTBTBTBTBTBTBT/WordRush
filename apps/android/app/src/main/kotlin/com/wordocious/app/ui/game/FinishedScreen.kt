@@ -1,5 +1,9 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.CastButton
+import com.wordocious.app.ui.CastColor
+import com.wordocious.app.ui.CastSize
+import com.wordocious.app.ui.cast
 import com.wordocious.app.ui.SoftModalSheet
 import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.core.LinearEasing
@@ -441,9 +445,9 @@ fun FinishedDock(
                 // The card's action row: Share results · NEW PUZZLE · More (founder 10-02: the
                 // share candy takes the old share icon's place — no row of its own, no countdown).
                 onShare?.let { ShareResultsCandy(it, countdownFor = null) }
-                CandyButton(
+                CastButton(
                     "New puzzle", onClick = newPuzzle, modifier = Modifier.weight(1f),
-                    color = CandyColor.PEACH, size = CandySize.LARGE, fill = true,
+                    color = CastColor.SLATE, size = CastSize.L, fill = true,
                     contentDescription = "New puzzle: Unlimited ${finishedModeTitle(mode)}",
                 )
                 extra?.invoke(this)
@@ -668,9 +672,9 @@ fun UnlimitedCard(
                 }
             } else {
                 Box {
-                    CandyButton(
+                    CastButton(
                         "Play", onClick = { if (locked) paywall = true else onPlay() },
-                        color = CandyColor.PEACH, size = CandySize.SMALL,
+                        color = CastColor.SLATE, size = CastSize.S,
                         contentDescription = if (locked) "Play Unlimited $title, a Pro feature" else "Play Unlimited $title",
                         modifier = Modifier.padding(top = if (locked) 6.dp else 0.dp),
                     )
@@ -703,9 +707,9 @@ fun UnlimitedMiniButton(mode: GameMode, onPlay: () -> Unit, modifier: Modifier =
     var paywall by remember { mutableStateOf(false) }
     if (paywall) ProPaywallDialog(onDismiss = { paywall = false }, onPro = { paywall = false; onPlay() })
     Box(modifier.padding(top = if (locked) 5.dp else 0.dp)) {
-        CandyButton(
+        CastButton(
             "Unlimited", onClick = { if (locked) paywall = true else onPlay() },
-            color = CandyColor.PEACH, size = CandySize.SMALL,
+            color = CastColor.SLATE, size = CastSize.S,
             leading = { UnlimitedLoopArt(22.dp) },
             contentDescription = if (locked) "Keep playing: Unlimited $title, a Pro feature" else "Keep playing: Unlimited $title",
         )
@@ -807,7 +811,7 @@ fun FinishedSheet(title: String, accent: Color, onDismiss: () -> Unit, content: 
                 modifier = Modifier.semantics { heading() },
             )
             content()
-            CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
+            CastButton("Close", onClick = onDismiss, color = CastColor.SLATE, size = CastSize.M)
         }
     }
 }

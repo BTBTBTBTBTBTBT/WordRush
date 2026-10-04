@@ -143,7 +143,7 @@ internal fun MascotStep(profile: Profile?) {
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                OnboardLettering("Make your mascot", 28.sp)
+                HeadingArt(Heading.MASCOT, height = 44.dp, maxWidth = 340.dp)   // BJ16
                 Spacer(Modifier.height(12.dp))
                 MascotBuilder(
                     config = config,
@@ -166,9 +166,9 @@ internal fun MascotStep(profile: Profile?) {
                     )
                 }
                 Spacer(Modifier.height(14.dp))
-                CandyButton(
+                CastButton(
                     "Do it later", onClick = { Onboarding.dispatch(OnboardingEvent.MascotLater) },
-                    color = CandyColor.PEACH, size = CandySize.SMALL,
+                    color = CastColor.SLATE, size = CastSize.S,
                     contentDescription = "Do it later and keep this mascot",
                 )
                 Spacer(Modifier.height(12.dp))
@@ -336,15 +336,14 @@ internal fun AllSetStep(profile: Profile?, guest: Boolean) {
                 Spacer(Modifier.height(10.dp))
                 OnboardLine("Meet the gang. Your first puzzle is ready.")
                 Spacer(Modifier.height(28.dp))
-                CandyButton(
-                    "Play today's Classic", onClick = { Onboarding.dispatch(OnboardingEvent.Play) },
-                    color = CandyColor.PURPLE, size = CandySize.LARGE, icon = CandyIcon.PLAY, fill = true,
+                CastButton(
+                    "Play today's Classic", onClick = { Onboarding.dispatch(OnboardingEvent.Play) }, size = CastSize.L, fill = true,
                     modifier = ONBOARD_CTA,
                 )
                 Spacer(Modifier.height(12.dp))
-                CandyButton(
+                CastButton(
                     "Explore first", onClick = { Onboarding.dispatch(OnboardingEvent.Explore) },
-                    color = CandyColor.PEACH, size = CandySize.MEDIUM,
+                    color = CastColor.SLATE, size = CastSize.M,
                     contentDescription = "Explore first, go to Home",
                 )
             }

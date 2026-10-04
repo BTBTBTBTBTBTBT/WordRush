@@ -469,13 +469,13 @@ struct AchievementUnlockPopup: View {
                 }
 
                 Button(action: onNice) { CandyLabel(title: isLevel ? "Nice!" : "Awesome!") }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                    .buttonStyle(CastButtonStyle(size: .large))
                     .padding(.top, 4)
                 if !isLevel {
                     // BF2: See all (→ Stats achievements) + share the badge card.
                     HStack(spacing: 10) {
                         Button { seeAll() } label: { CandyLabel(title: "See all") }
-                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                         Button { shareBadge() } label: {
                             Icon3D(.share, size: 26).frame(width: 44, height: 44).contentShape(Rectangle())
                         }

@@ -11,6 +11,7 @@ import { PRO_PLANS } from '@/lib/payment/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { PageBackground } from '@/components/ui/page-background';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { PopupBar, SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
 import { ART_SIZE, artSrc, badgeSrc, onPageShadow } from '@/lib/art';
@@ -290,7 +291,7 @@ export default function ProPage() {
                   })}
                 </div>
 
-                <CandyButton
+                <CastButton screen="gold"
                   color="amber"
                   size="lg"
                   block
@@ -300,7 +301,7 @@ export default function ProPage() {
                   disabled={loading !== null || !paymentsEnabled}
                 >
                   {!user ? 'Sign in to go Pro' : !paymentsEnabled ? 'Coming soon' : loading === selected.id ? 'Opening checkout…' : plan === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'}
-                </CandyButton>
+                </CastButton>
                 {/* BJ11: say where the purchase happens before it opens. */}
                 {user && paymentsEnabled && (
                   <p className="m-0 mt-2 text-center text-[11px] font-extrabold" style={{ color: '#b45309' }}>{CHECKOUT_HANDOFF_LINE}</p>
@@ -319,7 +320,7 @@ export default function ProPage() {
                 </span>
                 <div className="flex-1 h-px" style={{ background: 'rgba(245, 165, 36, 0.35)' }} />
               </div>
-              <CandyButton
+              <CastButton screen="gold"
                 color="peach"
                 size="md"
                 block
@@ -332,7 +333,7 @@ export default function ProPage() {
                   : loading === PRO_PLANS.day.id
                   ? 'Opening checkout…'
                   : `Just today — $${PRO_PLANS.day.price.toFixed(0)} for 24 hours of Pro →`}
-              </CandyButton>
+              </CastButton>
               <p className="mt-2 text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 {paymentsEnabled
                   ? 'Eight day passes cost more than a month of Pro.'

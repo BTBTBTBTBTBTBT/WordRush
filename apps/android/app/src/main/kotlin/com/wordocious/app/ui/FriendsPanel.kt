@@ -286,10 +286,9 @@ fun FriendsScreen(
                             )
                             Text(g.line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        CandyButton(
+                        CastButton(
                             if (g.yourTurn) "PLAY" else "WAITING", onClick = { onOpenGame(g.id) },
-                            color = if (g.yourTurn) CandyColor.PURPLE else CandyColor.PEACH, size = CandySize.SMALL,
-                            icon = if (g.yourTurn) CandyIcon.PLAY else null,
+                            color = (if (g.yourTurn) CandyColor.PURPLE else CandyColor.PEACH).cast(CastColor.PINK), size = CastSize.S,
                         )
                     }
                 }
@@ -429,14 +428,14 @@ fun FriendsScreen(
             title = { Text("Unfriend ${target.username}?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = FriendsPink.heading) },
             text = { Text("You can re-add them anytime.", fontFamily = Nunito, fontWeight = FontWeight.Bold, color = FriendsPink.muted) },
             confirmButton = {
-                CandyButton("Unfriend", onClick = {
+                CastButton("Unfriend", onClick = {
                     val id = target.id
                     unfriendTarget = null
                     scope.launch { FriendsService.remove(id); FriendsService.load(force = true) }
-                }, color = CandyColor.PINK, size = CandySize.MEDIUM)
+                }, color = CastColor.PINK, size = CastSize.M)
             },
             dismissButton = {
-                CandyButton("Keep", onClick = { unfriendTarget = null }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
+                CastButton("Keep", onClick = { unfriendTarget = null }, color = CastColor.SLATE, size = CastSize.M)
             },
         )
     }
@@ -507,7 +506,7 @@ private fun InvitesSection(
                         }
                         // §212: the invite usually died unseen — re-push, 1/24h.
                         val reminded = withinDay(r.remindedAt)
-                        CandyButton(
+                        CastButton(
                             if (reminded) "Reminded" else "Remind",
                             onClick = {
                                 scope.launch {
@@ -518,11 +517,11 @@ private fun InvitesSection(
                                     }
                                 }
                             },
-                            color = CandyColor.AMBER, size = CandySize.SMALL, enabled = !reminded,
+                            color = CastColor.GOLD, size = CastSize.S, enabled = !reminded,
                         )
-                        CandyButton(
+                        CastButton(
                             "Cancel", onClick = { scope.launch { FriendsService.decline(r.id) } },
-                            color = CandyColor.PEACH, size = CandySize.SMALL, contentDescription = "Cancel request to ${r.username}",
+                            color = CastColor.SLATE, size = CastSize.S, contentDescription = "Cancel request to ${r.username}",
                         )
                     }
                 }
@@ -782,7 +781,7 @@ private fun YourFriendsSection(
                 Modifier.weight(1f), color = FinishInk.label,
             )
             if (slackers.isNotEmpty()) {
-                CandyButton(
+                CastButton(
                     "Nudge all",
                     onClick = {
                         scope.launch {
@@ -793,12 +792,12 @@ private fun YourFriendsSection(
                             onNote(if (n > 0) "Nudged $n friend${if (n == 1) "" else "s"}!" else "Everyone already nudged today")
                         }
                     },
-                    color = CandyColor.AMBER, size = CandySize.SMALL,
+                    color = CastColor.GOLD, size = CastSize.S,
                     contentDescription = "Nudge all who haven't played",
                 )
             }
             // C4b: "Add a friend" moved here from the header circle (same flow).
-            CandyButton("Add a friend", onClick = onAdd, color = CandyColor.PINK, size = CandySize.SMALL)
+            CastButton("Add a friend", onClick = onAdd, color = CastColor.PINK, size = CastSize.S)
         }
         if (friends.isEmpty()) {
             Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -860,14 +859,14 @@ private fun YourFriendsSection(
                         (f.friendStreak ?: 0).takeIf { it > 0 }?.let { Box(Modifier.heightIn(min = 34.dp), contentAlignment = Alignment.Center) { FlameCount("$it") } }
                         // C4: chunky candy actions — Play / Challenge purple, Nudge amber.
                         when {
-                            on -> CandyButton("Play", onClick = { onPlay(f) }, color = CandyColor.PURPLE, size = CandySize.SMALL, contentDescription = "Play with ${f.username}")
-                            played > 0 || (f.todayPoints ?: 0) > 0 -> CandyButton(
+                            on -> CastButton("Play", onClick = { onPlay(f) }, color = CastColor.PINK, size = CastSize.S, contentDescription = "Play with ${f.username}")
+                            played > 0 || (f.todayPoints ?: 0) > 0 -> CastButton(
                                 if (challengingId == f.id) "Sending…" else "Challenge",
                                 onClick = { onChallenge(f) },
-                                color = CandyColor.PURPLE, size = CandySize.SMALL,
+                                color = CastColor.PINK, size = CastSize.S,
                                 enabled = challengingId == null, contentDescription = "Challenge ${f.username}",
                             )
-                            else -> CandyButton("Nudge", onClick = { onTaunt(f) }, color = CandyColor.AMBER, size = CandySize.SMALL, contentDescription = "Nudge ${f.username}")
+                            else -> CastButton("Nudge", onClick = { onTaunt(f) }, color = CastColor.GOLD, size = CastSize.S, contentDescription = "Nudge ${f.username}")
                         }
                     }
                     // §225: long-press menu — profile / taunt / challenge / gift / unfriend.
@@ -1074,9 +1073,9 @@ private fun AddFriendSection(
                         colors = friendsFieldColors(),
                         modifier = Modifier.weight(1f).focusRequester(focus),
                     )
-                    CandyButton(
+                    CastButton(
                         if (sending) "…" else "Add", onClick = { add() },
-                        color = CandyColor.PINK, size = CandySize.MEDIUM,
+                        color = CastColor.PINK, size = CastSize.M,
                         enabled = !sending && username.trim().isNotEmpty(), contentDescription = "Send friend request",
                     )
                 }
@@ -1108,9 +1107,9 @@ private fun AddFriendSection(
                     }
                 }
                 // §225/§289: the share link covers the "get them on the app" direction.
-                CandyButton(
+                CastButton(
                     "Share invite link", onClick = { shareInvite() },
-                    color = CandyColor.PURPLE, size = CandySize.SMALL, icon = CandyIcon.SHARE,
+                    color = CastColor.PINK, size = CastSize.S,
                     enabled = !sharingInvite,
                 )
             }
@@ -1180,8 +1179,8 @@ private fun TauntDialog(target: FriendsService.FriendProfile, onDone: () -> Unit
                         }.stripedRow(i, Color(0xFFF59E0B), first = false).padding(horizontal = 16.dp, vertical = 13.dp),
                     )
                 }
-                CandyButton(
-                    "Cancel", onClick = onDone, color = CandyColor.PEACH, size = CandySize.MEDIUM,
+                CastButton(
+                    "Cancel", onClick = onDone, color = CastColor.SLATE, size = CastSize.M,
                     modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp),
                 )
             }

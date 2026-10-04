@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { PageBackground } from '@/components/ui/page-background';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { CastHeader } from '@/components/ui/cast-header';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
@@ -462,7 +463,7 @@ export function FirstRunTour() {
         <PageBackground tint="home" className="relative w-full h-full flex flex-col overflow-hidden" style={{ paddingTop: 'max(14px, env(safe-area-inset-top, 0px))', paddingBottom: 'max(18px, env(safe-area-inset-bottom, 0px))' }}>
           {/* Skip, top right (steps 2–4). */}
           <div className="flex justify-end px-4" style={{ flex: 'none', minHeight: 40 }}>
-            {showSkip && <CandyButton size="sm" color="peach" onClick={skip}>Skip</CandyButton>}
+            {showSkip && <CastButton size="sm" color="peach" onClick={skip}>Skip</CastButton>}
           </div>
 
           {/* 1. WELCOME */}
@@ -476,9 +477,9 @@ export function FirstRunTour() {
               )}
               <Headline>WELCOME TO WORDOCIOUS!</Headline>
               <Line>Daily word games, a cast of friends, and bragging rights.</Line>
-              <CandyButton size="lg" color="purple" icon="arrow" onClick={() => goStep('tour')} className="mt-2" style={{ minWidth: 220 }}>
+              <CastButton size="lg" color="purple" icon="arrow" onClick={() => goStep('tour')} className="mt-2" style={{ minWidth: 220 }}>
                 Let&apos;s go!
-              </CandyButton>
+              </CastButton>
               {!replay && !user && <TextLink onClick={haveAccount}>I already have an account</TextLink>}
             </StepIn>
           )}
@@ -538,9 +539,9 @@ export function FirstRunTour() {
                         Just signed up? Tap the link in the email we sent, and we&apos;ll pick up right here.
                       </p>
                     )}
-                    <CandyButton size="lg" color="purple" icon="plus" onClick={createAccount} style={{ minWidth: 240 }}>
+                    <CastButton size="lg" color="purple" icon="plus" onClick={createAccount} style={{ minWidth: 240 }}>
                       Create my account
-                    </CandyButton>
+                    </CastButton>
                     <TextLink onClick={playAsGuest}>Play as guest</TextLink>
                   </>
                 )}
@@ -596,9 +597,9 @@ export function FirstRunTour() {
               )}
               <Headline>YOU&apos;RE IN!</Headline>
               <Line>Meet the gang. Your first puzzle is ready.</Line>
-              <CandyButton size="lg" color="purple" icon="play" onClick={() => finish(playHref)} className="mt-2" style={{ minWidth: 240 }}>
+              <CastButton size="lg" color="purple" icon="play" onClick={() => finish(playHref)} className="mt-2" style={{ minWidth: 240 }}>
                 Play today&apos;s Classic
-              </CandyButton>
+              </CastButton>
               <TextLink onClick={() => finish()}>Explore first</TextLink>
             </StepIn>
           )}
@@ -615,11 +616,11 @@ export function FirstRunTour() {
                   ))}
                 </div>
                 {!lastCard ? (
-                  <CandyButton size="lg" color="purple" icon="arrow" onClick={() => go(index + 1)} style={{ minWidth: 200 }}>Next</CandyButton>
+                  <CastButton size="lg" color="purple" icon="arrow" onClick={() => go(index + 1)} style={{ minWidth: 200 }}>Next</CastButton>
                 ) : replay ? (
-                  <CandyButton size="lg" color="purple" icon="check" onClick={close} style={{ minWidth: 200 }}>Got it</CandyButton>
+                  <CastButton size="lg" color="purple" icon="check" onClick={close} style={{ minWidth: 200 }}>Got it</CastButton>
                 ) : (
-                  <CandyButton size="lg" color="purple" icon="arrow" onClick={() => goStep('profile')} style={{ minWidth: 200 }}>Next</CandyButton>
+                  <CastButton size="lg" color="purple" icon="arrow" onClick={() => goStep('profile')} style={{ minWidth: 200 }}>Next</CastButton>
                 )}
               </>
             ) : step !== 'mascot' ? (

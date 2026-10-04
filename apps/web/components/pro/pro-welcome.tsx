@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { CandyButton, CandyIcon } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { Icon3D } from '@/components/ui/icon3d';
 import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
 import { ART_SIZE, artSrc, badgeSrc } from '@/lib/art';
@@ -289,7 +290,7 @@ export function ProWelcome({ kind, shields, name, onClose }: {
           </div>
         )}
 
-        <CandyButton
+        <CastButton screen="gold"
           color="amber"
           size="lg"
           block
@@ -298,7 +299,7 @@ export function ProWelcome({ kind, shields, name, onClose }: {
           onClick={letsPlay}
         >
           LET&apos;S PLAY!
-        </CandyButton>
+        </CastButton>
         <Link
           href="/friends"
           onClick={() => { onClose(); dropCrown(450); }}

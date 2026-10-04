@@ -48,6 +48,7 @@ import { STAT_LABELS } from '@/lib/stat-labels';
 import { PageHeadline } from '@/components/ui/page-headline';
 import { GuestPitch, GUEST_GRADIENTS, GUEST_STATS_CHIPS } from '@/components/ui/guest-pitch';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { SoftNum } from '@/components/ui/soft-number';
 import { BRAND_ACCENT, alphaHex, cardBarStyle, softBorder, softCard, softPill } from '@/lib/soft-surface';
@@ -513,7 +514,7 @@ export default function StatsPage() {
             </div>
             {/* A8 / A3: Edit is a small round candy button; Share is the bare 3D share icon. */}
             <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-2">
-              <CandyButton
+              <CastButton screen="slate"
                 onClick={() => setEditOpen(true)}
                 aria-label="Edit profile"
                 color="purple"
@@ -563,7 +564,7 @@ export default function StatsPage() {
             <div className="flex flex-wrap items-center gap-2 mt-3 pt-3" style={{ borderTop: `1.5px dashed ${alphaHex('#7c3aed', 0.25)}` }}>
               <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
               {(profile as any).is_private && (
-                <CandyButton
+                <CastButton screen="slate"
                   onClick={() => setEditOpen(true)}
                   title="Your profile is private — other players see a limited card. Tap to change."
                   color="peach"
@@ -571,14 +572,14 @@ export default function StatsPage() {
                   icon={<Lock className="w-3.5 h-3.5" aria-hidden="true" />}
                 >
                   Private
-                </CandyButton>
+                </CastButton>
               )}
               {!isProActive && (
-                <CandyLink href="/pro" color="amber" size="sm" className="ml-auto">Go Pro</CandyLink>
+                <CastLink screen="slate" href="/pro" color="amber" size="sm" className="ml-auto">Go Pro</CastLink>
               )}
               {/* DEV-ONLY (profiles.is_admin): a quiet peach tool pill. */}
               {(profile as any).is_admin && (
-                <CandyButton
+                <CastButton screen="slate"
                   onClick={async () => {
                     const newValue = !(profile as any).is_pro;
                     await (supabase as any).from('profiles').update({ is_pro: newValue }).eq('id', profile.id);
@@ -591,7 +592,7 @@ export default function StatsPage() {
                   icon={<span className="w-1.5 h-1.5 rounded-full" style={{ background: (profile as any).is_pro ? WIN_FG : '#9ca3af' }} />}
                 >
                   Dev · Pro {(profile as any).is_pro ? 'on' : 'off'}
-                </CandyButton>
+                </CastButton>
               )}
             </div>
           )}
@@ -672,7 +673,7 @@ export default function StatsPage() {
                     <span className="text-xs font-extrabold flex-1 min-w-0 truncate" style={{ color: 'var(--color-text)' }}>
                       {`${today.won ? 'Won' : 'Lost'} · ${matchStat(selected, today.guesses)}${today.timeSeconds > 0 ? ` · ${formatDuration(today.timeSeconds)}` : ''} · ${today.score.toLocaleString()} pts`}
                     </span>
-                    <CandyLink href={href} color="peach" size="sm" icon="eye" className="shrink-0" aria-label={`Open today's ${meta.title}`}>Open</CandyLink>
+                    <CastLink screen="slate" href={href} color="peach" size="sm" icon="eye" className="shrink-0" aria-label={`Open today's ${meta.title}`}>Open</CastLink>
                   </div>
                 ) : notPlayed}
                 {today && <div className="flex justify-center"><DailyRankBadge gameMode={selected} /></div>}
@@ -748,7 +749,7 @@ export default function StatsPage() {
                   sub={`best ${sweepStats?.bestFlawlessStreak ?? 0}`}
                 />
               </div>
-              <SectionHeader label="Daily Sweeps" accent="#4f46e5" right={<CandyLink href={`/daily?mode=${SWEEP_KEY}`} color="purple" size="sm" icon="trophy">Sweep board</CandyLink>} />
+              <SectionHeader label="Daily Sweeps" accent="#4f46e5" right={<CastLink screen="slate" href={`/daily?mode=${SWEEP_KEY}`} color="purple" size="sm" icon="trophy">Sweep board</CastLink>} />
               <SweepRecordsCard sweep={yours.sweep} sweepRankToday={yours.sweepRankToday} sweepRankAllTime={yours.sweepRankAllTime} />
               <PuzzleSweepRecordsCard rec={puzzleRec ?? null} />
               {sweepPoints.length >= 2 && (
@@ -1030,9 +1031,9 @@ export default function StatsPage() {
                     </div>
                     {medals.length > 5 && (
                       <div className="flex justify-center mt-2.5">
-                        <CandyButton onClick={() => setShowAllMedals((v) => !v)} color="peach" size="sm" aria-expanded={showAllMedals}>
+                        <CastButton screen="slate" onClick={() => setShowAllMedals((v) => !v)} color="peach" size="sm" aria-expanded={showAllMedals}>
                           {showAllMedals ? 'Show less' : `View all ${medals.length} medals`}
-                        </CandyButton>
+                        </CastButton>
                       </div>
                     )}
                   </>

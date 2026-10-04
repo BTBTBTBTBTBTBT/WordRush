@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ArtTitle } from '@/components/ui/art-title';
 import { validateUsername } from '@wordle-duel/core';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { PoseArt, barCard, softInput, softNotice } from '@/components/ui/soft-popup';
 import { ART_SIZE } from '@/lib/art';
 import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
@@ -153,7 +154,7 @@ export function LoginScreen() {
           {mode !== 'reset' && (
             <>
               {/* Google Sign-In */}
-              <CandyButton
+              <CastButton
                 color="peach"
                 size="lg"
                 block
@@ -163,7 +164,7 @@ export function LoginScreen() {
                 style={{ textTransform: 'none' }}
               >
                 Continue with Google
-              </CandyButton>
+              </CastButton>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
@@ -220,9 +221,9 @@ export function LoginScreen() {
                     Password
                   </label>
                   {mode === 'signin' && (
-                    <CandyButton color="peach" size="sm" onClick={() => switchMode('reset')} style={{ textTransform: 'none' }}>
+                    <CastButton color="peach" size="sm" onClick={() => switchMode('reset')} style={{ textTransform: 'none' }}>
                       Forgot password?
-                    </CandyButton>
+                    </CastButton>
                   )}
                 </div>
                 <div className="relative">
@@ -293,12 +294,12 @@ export function LoginScreen() {
               pressing again is a mistake. Sign-up without this returns
               "User already registered" for the account you just made.
             */}
-            <CandyButton type="submit" color="purple" size="lg" block disabled={loading || sent}>
+            <CastButton type="submit" color="purple" size="lg" block disabled={loading || sent}>
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
-            </CandyButton>
+            </CastButton>
 
             <div className="text-center">
-              <CandyButton
+              <CastButton
                 color="peach"
                 size="sm"
                 onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
@@ -307,7 +308,7 @@ export function LoginScreen() {
                 {mode === 'signin' ? "Don't have an account? Sign up"
                   : mode === 'signup' ? 'Already have an account? Sign in'
                   : 'Back to sign in'}
-              </CandyButton>
+              </CastButton>
             </div>
           </form>
         </div>

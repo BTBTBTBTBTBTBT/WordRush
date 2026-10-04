@@ -76,7 +76,7 @@ struct AppHeaderView: View {
                     // Home header had no entry). Presents the sign-in sheet.
                     if auth.isGuest {
                         Button { showAuth = true } label: { CandyLabel(title: "Sign In") }
-                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(size: .small, fullWidth: false))
                     }
                     if let share, share.visible {
                         groupIcon(.share, label: "Share today's progress", action: share.action)

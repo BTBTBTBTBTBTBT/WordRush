@@ -106,10 +106,10 @@ fun JoinLandingHost() {
                                 fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
                             )
                             if (isAuthed) {
-                                CandyButton(
+                                CastButton(
                                     if (claim == "busy") "Claiming…" else "Claim my free week",
                                     onClick = {
-                                        if (claim == "busy") return@CandyButton
+                                        if (claim == "busy") return@CastButton
                                         claim = "busy"
                                         scope.launch {
                                             val (ok, reason) = ReferralService.redeem(c)
@@ -121,13 +121,13 @@ fun JoinLandingHost() {
                                             }
                                         }
                                     },
-                                    color = CandyColor.AMBER, modifier = Modifier.fillMaxWidth(), fill = true, enabled = claim != "busy",
+                                    color = CastColor.GOLD, modifier = Modifier.fillMaxWidth(), fill = true, enabled = claim != "busy",
                                 )
                             } else {
                                 // A guest: the code waits (PENDING_KEY) and is redeemed right after sign-up.
-                                CandyButton(
+                                CastButton(
                                     "Sign up to claim", onClick = { close(); AuthService.exitGuest() },
-                                    color = CandyColor.AMBER, modifier = Modifier.fillMaxWidth(), fill = true,
+                                    color = CastColor.GOLD, modifier = Modifier.fillMaxWidth(), fill = true,
                                 )
                             }
                         }
@@ -159,7 +159,7 @@ private fun JoinState(@DrawableRes art: Int, title: String, line: String?, cta: 
             if (line != null) {
                 Text(line, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center)
             }
-            if (cta != null) CandyButton(cta, onClick = onCta, color = color, modifier = Modifier.fillMaxWidth(), fill = true)
+            if (cta != null) CastButton(cta, onClick = onCta, color = (color).cast(null), modifier = Modifier.fillMaxWidth(), fill = true)
         }
     }
 }

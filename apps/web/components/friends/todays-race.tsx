@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Swords, Flag } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { FR_LOOK, raceChipColor, rowStripe } from '@/lib/friends-look';
 import { softMix } from '@/lib/soft-surface';
@@ -110,7 +111,7 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                 {f && (
                   <>
                     {r.points === 0 && (
-                      <CandyButton
+                      <CastButton screen="pink"
                         size="sm"
                         color="amber"
                         icon={<Icon3D name="bell" size={16} />}
@@ -120,7 +121,7 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                         style={{ width: 32, padding: 0 }}
                       />
                     )}
-                    <CandyButton
+                    <CastButton screen="pink"
                       size="sm"
                       color="pink"
                       icon={<Swords className="w-3.5 h-3.5" aria-hidden="true" />}
@@ -130,7 +131,7 @@ export function TodaysRace({ friends, me, onTaunt, onNote }: Props) {
                       className="shrink-0"
                     >
                       {challenging === f.id ? 'Sending…' : 'Challenge'}
-                    </CandyButton>
+                    </CastButton>
                   </>
                 )}
               </div>

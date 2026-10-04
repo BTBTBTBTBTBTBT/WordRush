@@ -376,7 +376,7 @@ struct VSLobbyView: View {
                     } label: {
                         CandyLabel(title: "See all")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .teal, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .teal, size: .small, fullWidth: false))
                 }
                 VStack(spacing: 0) {
                     ForEach(Array(model.rivals.prefix(3).enumerated()), id: \.element.id) { i, r in
@@ -403,7 +403,7 @@ struct VSLobbyView: View {
             NavigationLink { VSFriendPage(mode: mode, preselected: [r.opponentId]) } label: {
                 CandyLabel(title: "Challenge")
             }
-            .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
         }
         .padding(.horizontal, 12).padding(.vertical, 7)
     }
@@ -422,7 +422,7 @@ struct VSLobbyView: View {
                 NavigationLink { ProView() } label: {
                     CandyLabel(title: "See Pro", symbol: "crown.fill")
                 }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .medium, fullWidth: false))
             }
             if ArtAsset.exists("art-medal-trophy") {
                 VSArt("art-medal-trophy", height: 60).frame(width: 56)
@@ -494,7 +494,7 @@ struct VSLobbyView: View {
                         if joining { ProgressView().controlSize(.small).tint(.white) }
                     }
                 }
-                .buttonStyle(CandyButtonStyle(variant: .teal, size: .medium, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .teal, size: .medium, fullWidth: false))
                 .disabled(joinCode.count < 4 || joining)
             }
             .padding(10)
@@ -532,7 +532,7 @@ struct VSLobbyView: View {
                 .font(Brand.font(13, .medium)).foregroundStyle(VsLobbyKit.mutedInk)
                 .multilineTextAlignment(.center)
             Button { showAuth = true } label: { CandyLabel(title: "Sign in") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                .buttonStyle(CastButtonStyle(color: .blue, size: .large))
         }
         .padding(16)
         .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
@@ -580,10 +580,10 @@ struct VSLobbyView: View {
                     NavigationLink { ProView() } label: {
                         CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 20) }
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                    .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                     .simultaneousGesture(TapGesture().onEnded { onClose() })
                     Button { onClose() } label: { CandyLabel(title: "Maybe later") }
-                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
                 }
                 .padding(24).frame(maxWidth: 340)
                 .vsTinted(VsLobbyKit.gold, bar: VsLobbyKit.goldBar, tint: 0.10, line: 0.32)

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { CandyBadge } from '@/components/ui/candy-badge';
 import { PlayerAvatar } from '@/components/avatar/player-avatar';
 import { SoftNum } from '@/components/ui/soft-number';
@@ -77,8 +78,8 @@ export function PendingInvitesBanner({ userId }: Props) {
         <SceneArt name="art-scene-invite-sent" height={50} className="shrink-0" style={{ marginTop: -4 }} />
       </div>
       <div className="flex items-center justify-end gap-2 px-3 pb-2.5 -mt-1">
-        <CandyButton size="sm" color="peach" onClick={handleDismiss} aria-label={`Decline @${name}'s invite`} className="shrink-0">Decline</CandyButton>
-        <CandyButton size="sm" icon="check" onClick={handleAccept} aria-label={`Accept @${name}'s invite and play`} className="shrink-0" style={GREEN_CANDY}>Accept</CandyButton>
+        <CastButton screen="pink" size="sm" color="peach" onClick={handleDismiss} aria-label={`Decline @${name}'s invite`} className="shrink-0">Decline</CastButton>
+        <CastButton screen="pink" size="sm" icon="check" onClick={handleAccept} aria-label={`Accept @${name}'s invite and play`} className="shrink-0" style={GREEN_CANDY}>Accept</CastButton>
       </div>
     </div>
   );

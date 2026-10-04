@@ -1,5 +1,9 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.CastButton
+import com.wordocious.app.ui.CastColor
+import com.wordocious.app.ui.CastSize
+import com.wordocious.app.ui.cast
 import com.wordocious.app.ui.Motion
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -850,15 +854,15 @@ fun WinActions(won: Boolean, accent: Color, onContinue: (() -> Unit)?, onPlayAga
 /** A8 the PINK Play again / Try again candy. */
 @Composable
 fun WinPlayAgain(label: String, onClick: () -> Unit) {
-    CandyButton(label, onClick = onClick, color = CandyColor.PINK, size = CandySize.MEDIUM, icon = CandyIcon.PLAY)
+    CastButton(label, onClick = onClick, color = CastColor.PINK, size = CastSize.M)
 }
 
 /** R1 the CONTINUE candy in the game accent (the nearest candy color). */
 @Composable
 fun WinContinue(accent: Color, onClick: () -> Unit, besidePink: Boolean = false) {
-    CandyButton(
+    CastButton(
         "Continue", onClick = onClick,
-        color = WinPopupMath.candyFor(accent.copy(alpha = 1f).toArgb(), avoidPink = besidePink),
-        size = CandySize.MEDIUM, icon = CandyIcon.ARROW,
+        color = (WinPopupMath.candyFor(accent.copy(alpha = 1f).toArgb(), avoidPink = besidePink)).cast(null),
+        size = CastSize.M,
     )
 }

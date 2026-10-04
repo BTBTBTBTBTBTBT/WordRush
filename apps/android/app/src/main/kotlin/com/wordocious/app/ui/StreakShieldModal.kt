@@ -149,7 +149,7 @@ fun StreakShieldModal(
                     }
                     // Shields are the only way to save a streak. No shields: the Pro note.
                     if (shields > 0) {
-                        CandyButton(
+                        CastButton(
                             if (busy) "USING A SHIELD…" else "USE A SHIELD",
                             onClick = {
                                 if (!busy) {
@@ -162,8 +162,7 @@ fun StreakShieldModal(
                                         onClose()
                                     }
                                 }
-                            },
-                            color = CandyColor.PURPLE, size = CandySize.LARGE, fill = true,
+                            }, size = CastSize.L, fill = true,
                             enabled = !busy, modifier = Modifier.fillMaxWidth(),
                         )
                     } else {
@@ -174,7 +173,7 @@ fun StreakShieldModal(
                             textAlign = TextAlign.Center,
                         )
                     }
-                    CandyButton(
+                    CastButton(
                         "Let it reset",
                         onClick = {
                             if (!busy) {
@@ -182,7 +181,7 @@ fun StreakShieldModal(
                                 scope.launch { onDecline(); busy = false }
                             }
                         },
-                        color = CandyColor.PEACH, size = CandySize.MEDIUM, fill = true,
+                        color = CastColor.SLATE, size = CastSize.M, fill = true,
                         enabled = !busy, modifier = Modifier.fillMaxWidth(),
                     )
                 }

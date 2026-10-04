@@ -10,6 +10,7 @@ import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { HeaderBack } from '@/components/ui/page-header';
 import { PopupBar, POPUP_ACCENT, popupCard, softRow } from '@/components/ui/soft-popup';
 import { AuthModal } from '@/components/auth/auth-modal';
@@ -146,7 +147,7 @@ export function GoProPopupHost() {
                 );
               })}
             </div>
-            <CandyButton
+            <CastButton screen="gold"
               color="amber"
               size="lg"
               block
@@ -156,7 +157,7 @@ export function GoProPopupHost() {
               disabled={loading || (!!user && !paymentsEnabled)}
             >
               {!user ? 'Sign in to go Pro' : !paymentsEnabled ? 'Coming soon' : loading ? 'Opening checkout…' : plan === 'yearly' ? 'Subscribe Yearly' : 'Subscribe Monthly'}
-            </CandyButton>
+            </CastButton>
             {error && <p className="mt-2 text-xs font-bold" style={{ color: 'var(--color-loss-text)' }}>{error}</p>}
             {/* BJ11: where the purchase happens, the renewal terms and the legal links, before checkout opens. */}
             {user && paymentsEnabled && (

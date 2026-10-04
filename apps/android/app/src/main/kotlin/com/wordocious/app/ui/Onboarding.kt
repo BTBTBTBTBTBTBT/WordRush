@@ -386,7 +386,7 @@ internal fun OnboardingFrame(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (onSkip != null) {
-                CandyButton("Skip", onClick = onSkip, color = CandyColor.PEACH, size = CandySize.SMALL, contentDescription = "Skip this step")
+                CastButton("Skip", onClick = onSkip, color = CastColor.SLATE, size = CastSize.S, contentDescription = "Skip this step")
             }
         }
         Column(Modifier.weight(1f).fillMaxWidth(), content = content)
@@ -510,9 +510,9 @@ private fun WelcomeStep(replay: Boolean) {
             if (!replay) {
                 Spacer(Modifier.height(12.dp))
                 // The link chip: a quiet peach candy (A8 — no plain-text action links).
-                CandyButton(
+                CastButton(
                     "I already have an account", onClick = { Onboarding.dispatch(OnboardingEvent.HaveAccount) },
-                    color = CandyColor.PEACH, size = CandySize.SMALL,
+                    color = CastColor.SLATE, size = CastSize.S,
                     contentDescription = "I already have an account. Sign in",
                 )
             }

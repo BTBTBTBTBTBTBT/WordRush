@@ -32,6 +32,7 @@ enum AppWarmup {
         // Avatar parts + the podium pedestals, decoded off main before Home / the Leaderboard paint them.
         MascotArtCache.prewarm()
         PodiumView.prewarm()
+        CastArt.prewarm()          // BJ15: cast button skins + art labels, decoded + pre-scaled off main
         HomeHostMascot.prewarm()   // BJ6: the Good Morning host's pose, before Home paints
         Task { @MainActor in WidgetAvatarSnapshot.start() }   // BI13c: the player's look for the widget
         Task.detached(priority: .utility) {

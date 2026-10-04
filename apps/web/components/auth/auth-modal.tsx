@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Mail, Lock, User } from 'lucide-react';
 import { validateUsername } from '@wordle-duel/core';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { PoseArt, barCard, softInput, softNotice } from '@/components/ui/soft-popup';
 
 interface AuthModalProps {
@@ -98,7 +99,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
         <div className="space-y-4">
           {/* Google Sign-In */}
-          <CandyButton
+          <CastButton
             color="peach"
             size="lg"
             block
@@ -108,7 +109,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             style={{ textTransform: 'none' }}
           >
             Continue with Google
-          </CandyButton>
+          </CastButton>
 
 
           {/* Divider */}
@@ -182,12 +183,12 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
               </div>
             )}
 
-            <CandyButton type="submit" color="purple" size="lg" block disabled={loading}>
+            <CastButton type="submit" color="purple" size="lg" block disabled={loading}>
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-            </CandyButton>
+            </CastButton>
 
             <div className="text-center">
-              <CandyButton
+              <CastButton
                 color="peach"
                 size="sm"
                 onClick={() => {
@@ -197,7 +198,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 style={{ textTransform: 'none' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-              </CandyButton>
+              </CastButton>
             </div>
           </form>
         </div>

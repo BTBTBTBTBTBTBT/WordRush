@@ -121,9 +121,9 @@ struct SweepCelebrationView: View {
                         } label: {
                             CandyLabel(title: "Share") { Icon3D(.share, size: 20) }
                         }
-                        .buttonStyle(CandyButtonStyle(variant: flawless ? .pink : (more ? .purple : .amber), size: .large))
+                        .buttonStyle(CastButtonStyle(color: flawless ? .pink : (more ? nil : .gold), size: .large))
                         Button { onClose() } label: { CandyLabel(title: "Close") }
-                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .large, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .slate, size: .large, fullWidth: false))
                     }
                     .padding(.top, 4)
                 }

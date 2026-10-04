@@ -292,7 +292,7 @@ struct VSCandyTag: View {
                 if showLock { Icon3D(.lock, size: 14) }
             }
         }
-        .buttonStyle(CandyButtonStyle(variant: variant, size: size, fullWidth: false))
+        .buttonStyle(CastButtonStyle(color: variant.cast(screen: .blue), size: size, fullWidth: false))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
@@ -540,7 +540,7 @@ struct VSPrimaryButton: View {
                 CandyLabel(title: title, symbol: symbol)
             }
         }
-        .buttonStyle(CandyButtonStyle(variant: variant, size: .large))
+        .buttonStyle(CastButtonStyle(color: variant.cast(screen: .blue), size: .large))
         .disabled(disabled)
     }
 }
@@ -685,7 +685,7 @@ struct VSGreyPill: View {
         Button(action: action) {
             CandyLabel(title: title, symbol: icon)
         }
-        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
     }
 }
 
@@ -705,7 +705,7 @@ struct VSSoftPurpleButton: View {
                 CandyLabel(title: title, symbol: icon)
             }
         }
-        .buttonStyle(CandyButtonStyle(variant: variant, size: .large))
+        .buttonStyle(CastButtonStyle(color: variant.cast(screen: .blue), size: .large))
     }
 }
 
@@ -790,7 +790,7 @@ struct VSConfirmCard: View {
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 VSPrimaryButton(title: primary, action: onPrimary).padding(.top, 4)
                 Button(action: onSecondary) { CandyLabel(title: secondary) }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .large))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .large))
             }
             .padding(18).frame(maxWidth: 340)
             .vsTinted(VsLobbyKit.purple, bar: VsLobbyKit.purpleBar)

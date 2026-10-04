@@ -58,10 +58,10 @@ struct WelcomeView: View {
                     Button(action: save) {
                         CandyLabel(title: saving ? "Saving…" : "Let's Play!", symbol: "play.fill")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .large)).disabled(saving)
+                    .buttonStyle(CastButtonStyle(size: .large)).disabled(saving)
 
                     Button { skip() } label: { CandyLabel(title: "Skip for now") }
-                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                         .padding(.top, 6)
                         .disabled(saving)
                 }

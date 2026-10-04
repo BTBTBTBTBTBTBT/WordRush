@@ -1,6 +1,7 @@
 'use client';
 
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { BRAND_ACCENT, SOFT_INK, alphaHex, softCard, softPill } from '@/lib/soft-surface';
 import type { GroupProgress } from '@wordle-duel/core';
@@ -79,9 +80,9 @@ export function HomeTodayCard({ word, puzzles, unlimited, wordPlayed, puzzlesPla
             the share button in the app header, so this card keeps only the next daily to play. */}
         {next ? (
           <div className="mt-auto flex justify-end">
-            <CandyButton size="md" color="purple" icon="play" onClick={() => onOpen(next)} className="shrink-0" style={{ maxWidth: '62%' }}>
+            <CastButton size="md" color="purple" icon="play" onClick={() => onOpen(next)} className="shrink-0" style={{ maxWidth: '62%' }}>
               {next.title}
-            </CandyButton>
+            </CastButton>
           </div>
         ) : null}
       </div>

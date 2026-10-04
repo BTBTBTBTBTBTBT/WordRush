@@ -12,6 +12,7 @@ import { shareAchievementCard } from '@/lib/achievement-share';
 import { viewUrl, VIEW_ALL } from '@/lib/stats-view';
 import { Confetti } from '@/components/effects/confetti';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { BRAND_BAR } from '@/components/ui/soft-popup';
 import { BadgeArt } from './badge-art';
@@ -160,10 +161,10 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
           )}
 
           <div className="mt-4 flex items-center justify-center gap-2">
-            <CandyButton size="md" color="purple" onClick={onClose}>{isTier ? 'Nice!' : 'Awesome!'}</CandyButton>
+            <CastButton size="md" color="purple" onClick={onClose}>{isTier ? 'Nice!' : 'Awesome!'}</CastButton>
             {!isTier && (
               <>
-                <CandyButton size="md" color="peach" onClick={() => { onClose(); router.push(viewUrl(VIEW_ALL)); }}>See all</CandyButton>
+                <CastButton size="md" color="peach" onClick={() => { onClose(); router.push(viewUrl(VIEW_ALL)); }}>See all</CastButton>
                 <HeaderGlyph
                   icon="share"
                   label="Share this achievement"

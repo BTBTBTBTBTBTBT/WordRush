@@ -176,14 +176,14 @@ fun ManageSubscriptionHandoff(onDismiss: () -> Unit) {
                 copy.body, fontSize = 13.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
                 color = if (dark) WTheme.textMuted else FinishInk.muted,
             )
-            CandyButton(
+            CastButton(
                 copy.cta, onClick = { openManageSubscription(context); onDismiss() },
-                color = CandyColor.AMBER, size = CandySize.LARGE, fill = true, icon = CandyIcon.ARROW,
+                color = CastColor.GOLD, size = CastSize.L, fill = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
-            CandyButton(
+            CastButton(
                 "Restore Purchases", onClick = { com.wordocious.app.data.StoreManager.restore() },
-                color = CandyColor.PEACH, size = CandySize.SMALL,
+                color = CastColor.SLATE, size = CastSize.S,
             )
         }
     }
@@ -273,11 +273,11 @@ fun YoureProSheet(onDismiss: () -> Unit) {
                 ProCrownSprite(26.dp)
             }
             ProFacts(profile, dark)
-            CandyButton(
+            CastButton(
                 "Manage subscription", onClick = { manage = true },
-                color = CandyColor.AMBER, size = CandySize.MEDIUM, fill = true, modifier = Modifier.fillMaxWidth(),
+                color = CastColor.GOLD, size = CastSize.M, fill = true, modifier = Modifier.fillMaxWidth(),
             )
-            CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
+            CastButton("Close", onClick = onDismiss, color = CastColor.SLATE, size = CastSize.M)
         }
     }
 }
@@ -415,14 +415,14 @@ fun ProSettingsCard(modifier: Modifier = Modifier) {
             }
         }
         if (pro) {
-            CandyButton(
+            CastButton(
                 "Manage subscription", onClick = { manage = true },
-                color = CandyColor.AMBER, size = CandySize.MEDIUM, fill = true, modifier = Modifier.fillMaxWidth(),
+                color = CastColor.GOLD, size = CastSize.M, fill = true, modifier = Modifier.fillMaxWidth(),
             )
         } else {
-            CandyButton(
+            CastButton(
                 "Go Pro", onClick = { paywall = true },
-                color = CandyColor.AMBER, size = CandySize.MEDIUM, fill = true, modifier = Modifier.fillMaxWidth(),
+                color = CastColor.GOLD, size = CastSize.M, fill = true, modifier = Modifier.fillMaxWidth(),
                 leading = { ProCrownSprite(22.dp, tilt = 0f) },
             )
         }

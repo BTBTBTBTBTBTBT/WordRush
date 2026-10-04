@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { GameArt } from '@/components/ui/game-art';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { POPUP_ACCENT, POPUP_DIM, PoseArt, PopupBar, popupCard, softInput, softRow } from '@/components/ui/soft-popup';
 import { softIconTile } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
@@ -178,15 +179,15 @@ export function WelcomeModal() {
               </div>
 
               {/* CTA */}
-              <CandyButton color="purple" size="lg" block icon="play" onClick={handleSave} disabled={saving}>
+              <CastButton color="purple" size="lg" block icon="play" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saving...' : "Let's Play!"}
-              </CandyButton>
+              </CastButton>
 
               {/* Skip */}
               <div className="flex justify-center mt-1">
-                <CandyButton color="peach" size="sm" onClick={handleSkip} disabled={saving}>
+                <CastButton color="peach" size="sm" onClick={handleSkip} disabled={saving}>
                   Skip for now
-                </CandyButton>
+                </CastButton>
               </div>
             </div>
           </div>

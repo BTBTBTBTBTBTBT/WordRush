@@ -1,5 +1,9 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.CastButton
+import com.wordocious.app.ui.CastColor
+import com.wordocious.app.ui.CastSize
+import com.wordocious.app.ui.cast
 import com.wordocious.app.ui.miniGameCard
 import com.wordocious.app.ui.CandyButton
 import com.wordocious.app.ui.CandyColor
@@ -151,7 +155,7 @@ fun VsTealButton(
     icon: CandyIcon? = null,
     onClick: () -> Unit,
 ) {
-    CandyButton(text, onClick = { if (enabled) onClick() }, modifier = modifier, color = color, size = size, icon = icon, fill = fill, enabled = enabled)
+    CastButton(text, onClick = { if (enabled) onClick() }, modifier = modifier, color = (color).cast(CastColor.BLUE), size = (size).cast, fill = fill, enabled = enabled)
 }
 
 /**
@@ -169,7 +173,7 @@ fun VsSoftPill(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
-    CandyButton(text, onClick = { if (enabled) onClick() }, modifier = modifier, color = color, size = CandySize.SMALL, enabled = enabled)
+    CastButton(text, onClick = { if (enabled) onClick() }, modifier = modifier, color = (color).cast(CastColor.BLUE), size = CastSize.S, enabled = enabled)
 }
 
 /**

@@ -278,7 +278,7 @@ struct FriendsPanelView: View {
                                 Button { openGame = OpenGame(id: g.id, initial: g) } label: {
                                     CandyLabel(title: "Play", symbol: "play.fill")
                                 }
-                                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                                 .accessibilityLabel("Play \(g.title) with \(g.opponent.username)")
                             } else {
                                 FriendsStatusChip(title: "Waiting", accent: accent)
@@ -497,7 +497,7 @@ struct FriendsPanelView: View {
                 } label: {
                     CandyLabel(title: "Add a friend", symbol: "plus")
                 }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                 .accessibilityLabel("Add a friend")
             }
             VStack(alignment: .leading, spacing: 0) {
@@ -550,7 +550,7 @@ struct FriendsPanelView: View {
                             } label: {
                                 CandyLabel(title: "Nudge all", symbol: "bell.fill")
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
                             .accessibilityLabel("Nudge all who haven't played")
                         }
                         .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
@@ -668,18 +668,18 @@ struct FriendsPanelView: View {
     @ViewBuilder private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
         if online {
             Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: { CandyLabel(title: "Play") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                 .accessibilityLabel("Play with \(f.username)")
         } else if (f.playedToday ?? 0) > 0 {
             Button { challenge(f) } label: {
                 CandyLabel(title: challenging == f.id ? "Sending…" : "Challenge")
             }
-            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
             .disabled(challenging != nil)
             .accessibilityLabel("Challenge \(f.username) to a VS Battle")
         } else {
             Button { tauntTarget = f } label: { CandyLabel(title: "Nudge") }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
                 .accessibilityLabel("Nudge \(f.username)")
         }
     }
@@ -705,7 +705,7 @@ struct FriendsPanelView: View {
                     Button(action: add) {
                         CandyLabel(title: "Add") { Icon3D(.addFriend, size: 16) } // ART_SPEC §5
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                     .disabled(sending || username.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityLabel("Add friend")
                 }
@@ -751,7 +751,7 @@ struct FriendsPanelView: View {
                     Button { shareInviteLink() } label: {
                         CandyLabel(title: "Share invite link") { Icon3D(.share, size: 16) }
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                     .disabled(resolvingShare)
                 }
                 if let addNote {
@@ -814,7 +814,7 @@ struct FriendsPanelView: View {
                             } label: {
                                 CandyLabel(title: "Accept", symbol: "checkmark")
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .teal, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .teal, size: .small, fullWidth: false))
                             Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
                                 Image(systemName: "xmark").font(.system(size: 12, weight: .black))
                                     .foregroundStyle(FinishInk.softNumber)
@@ -856,12 +856,12 @@ struct FriendsPanelView: View {
                             } label: {
                                 CandyLabel(title: withinDay(r.remindedAt) ? "Reminded" : "Remind")
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                             .disabled(withinDay(r.remindedAt))
                             Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
                                 CandyLabel(title: "Cancel")
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                         }
                         .padding(.horizontal, 12).padding(.vertical, 6)
                         .friendsStripe(i, accent: Self.lavender)
@@ -929,7 +929,7 @@ struct FriendsPanelView: View {
                 .friendsCard(accent: FriendsInk.pink, radius: 16)
                 .padding(.horizontal, 16)
                 Button { tauntTarget = nil } label: { CandyLabel(title: "Cancel") }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: true))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .medium, fullWidth: true))
                     .padding(.horizontal, 16).padding(.top, 12)
             }
             Spacer(minLength: 0)

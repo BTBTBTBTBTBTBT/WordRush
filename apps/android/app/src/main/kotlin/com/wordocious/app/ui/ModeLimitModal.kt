@@ -154,28 +154,27 @@ fun ModeLimitModal(
                             )
                         }
                         // FINISH_SPEC Y: the card's action just reads "Play" (no infinity glyph).
-                        CandyButton(
+                        CastButton(
                             "Play", onClick = goUnlimited,
-                            color = CandyColor.PEACH, size = CandySize.SMALL,
+                            color = CastColor.SLATE, size = CastSize.S,
                             contentDescription = "Play Unlimited $modeName, a Pro feature",
                         )
                     }
                     Spacer(Modifier.height(14.dp))
                     // A8: the large amber candy CTA (the Go Pro paywall).
-                    CandyButton(
+                    CastButton(
                         "Upgrade to Pro", onClick = goUnlimited,
-                        color = CandyColor.AMBER, size = CandySize.LARGE, fill = true,
+                        color = CastColor.GOLD, size = CastSize.L, fill = true,
                         leading = { Icon3D(Icon3DName.CROWN, 22.dp) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(10.dp))
                     if (onViewPuzzle != null) {
-                        CandyButton(
-                            "View Solved Puzzle", onClick = { onClose(); onViewPuzzle() },
-                            color = CandyColor.PURPLE, size = CandySize.MEDIUM, icon = CandyIcon.EYE,
+                        CastButton(
+                            "View Solved Puzzle", onClick = { onClose(); onViewPuzzle() }, size = CastSize.M,
                         )
                     } else {
-                        CandyButton("Come back tomorrow", onClick = onClose, color = CandyColor.PEACH, size = CandySize.MEDIUM)
+                        CastButton("Come back tomorrow", onClick = onClose, color = CastColor.SLATE, size = CastSize.M)
                     }
                 }
             }

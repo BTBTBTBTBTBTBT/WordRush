@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { X as XIcon } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { GiftProCard, InviteCodeTiles, InviteSentCard, PendingPill } from '@/components/friends/invite-screens';
 import { FR_LOOK, rowStripe } from '@/lib/friends-look';
@@ -303,7 +304,7 @@ export function InvitePanel() {
                 )}
                 {open && (
                   <>
-                    <CandyButton
+                    <CastButton screen="pink"
                       size="sm"
                       color={copiedCode === inv.code ? 'teal' : 'peach'}
                       icon={copiedCode === inv.code ? 'check' : 'share'}
@@ -311,7 +312,7 @@ export function InvitePanel() {
                       aria-label="Share invite link"
                       style={{ width: 32, padding: 0 }}
                     />
-                    <CandyButton
+                    <CastButton screen="pink"
                       size="sm"
                       color="peach"
                       icon={<XIcon className="w-3.5 h-3.5" aria-hidden="true" />}

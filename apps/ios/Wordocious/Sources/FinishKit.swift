@@ -355,9 +355,24 @@ struct CandyLabel<Icon: View>: View {
     var subtitle: String? = nil
     @ViewBuilder var icon: () -> Icon
     @Environment(\.candyInk) private var ink
+    /// FINISH_SPEC BJ15: set by `CastButtonStyle` → the art label (or its live fallback).
+    @Environment(\.castInk) private var cast
 
     var body: some View {
-        if let subtitle {
+        if let cast {
+            // Cast buttons: the lettering alone (no SF Symbol), any custom icon kept.
+            HStack(spacing: 6) {
+                icon()
+                if let subtitle {
+                    VStack(spacing: 0) {
+                        CastLabelView(title: title, ink: cast, capScale: 0.78)
+                        CastLiveText(text: subtitle, color: cast.color, cap: cast.height * 0.18)
+                    }
+                } else {
+                    CastLabelView(title: title, ink: cast)
+                }
+            }
+        } else if let subtitle {
             HStack(spacing: 6) {
                 icon()
                 VStack(spacing: 1) {

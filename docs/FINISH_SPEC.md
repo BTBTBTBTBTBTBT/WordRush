@@ -1610,3 +1610,25 @@ OctoWord mini board (octo.zoomIn / zoomType / zoomOut; `--flag slowZoom` for scr
 board still staging has no tap target, so it can't be zoomed into empty. Still owed: the warm ~110–330 ms open floor
 (header / keyboard / page built on the presenting frame), closes (game teardown in completeTransition; an intermittent
 ~460–660 ms frame on Home re-entry after a finished game), and the overlay's ~100 ms.
+BJ15. Cast-color buttons + art labels (founder 10-03; spec docs/design/brand/buttons/cast/README.md + labels.json). One shared
+primary button per platform — iOS `CastButtonStyle` (CastButton.swift; `CandyLabel` switches to art inside it), Android
+`CastButton` (ui/CastButton.kt), web `CastButton` / `CastLink` (components/ui/cast-button.tsx + app/cast-button.css). Skin =
+art-btn-<color>-<s|m|l>[-pressed][-dark] three-slice (caps drawn as is, only the middle 1-px column stretches; web = CSS
+border-image), s/m/l = 32/44/56 (old candy small/medium/large map to them). Label = the 39 ChatGPT/API labels shipped ×3 as
+art-btnlabel-<slug> (buttons/labels/ship-labels.py: trimmed to the letters, normalized to 96 px tall; web ART_SIZE + Android
+keep_night_art.xml updated), looked up by the label's letters, drawn at ONE cap height = 0.42 × h; the button widens to
+label + 2 × max(0.6 h, 14 @44); a fixed-width slot shrinks the label (inset kept), never upscales. Shadow = the label alpha
+in the color's deep hue, 1 pt down; gold adds the #9a5a00 55% amber halo. Dynamic text (names, prices, countdowns, CREATE
+INVITE LINK, STARTS WITH…) = the live fallback: white Nunito Black at the same cap height (size = cap / 0.705), thin
+same-hue stroke, soft same-hue shadow. Press = the -pressed skin + label drops 1 pt + the existing squish; dark = -dark
+skins. Color: the screen's cast color (Go Pro gold, Friends/invite pink, VS blue, WOTD green, Stats slate; default purple);
+old variants keep their meaning — amber → gold (Pro), peach (quiet) → slate, pink / teal kept. Old SF-symbol / outlined
+glyph icons are dropped on cast buttons; 3D icons (crown, loop art) stay. Perf: iOS CastArt.prewarm (AppWarmup) decodes all
+96 skins and pre-scales every label to its exact pixel height per size off main (drawn 1:1, no on-screen resampling);
+Android CastArt.prewarm (App.onCreate, IO) decodes + pre-scales the same; web <CastArtWarmup/> decodes every skin + label
+at idle in slices of 12. Swapped (first pass, highest traffic): finish card + finished screens, Home CTAs + header SIGN IN,
+Go Pro / Pro identity / Pro welcome, Friends panel + invite sheet / panel / finish, VS lobby + live tile + challenges, WOTD,
+onboarding / welcome / auth, sweep + achievement + streak-shield popups, mode-limit modals. Not swapped: icon-only round
+buttons, toggles, segmented controls, system sheets, and the web friends/VS files with other agents' uncommitted work
+(next pass). DEBUG iOS: `-bj15Screen finish|pro|invite|gopro` presents that screen (gopro = the Settings Go Pro card + every
+color, light and dark) for headless screenshots.

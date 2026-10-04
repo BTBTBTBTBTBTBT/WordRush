@@ -14,6 +14,7 @@ import { GameArt } from '@/components/ui/game-art';
 import { ArtTitle } from '@/components/ui/art-title';
 import { CastRow } from '@/components/ui/mascot';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { softRow } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
 import { ART_SIZE } from '@/lib/art';
@@ -116,9 +117,9 @@ export function Landing() {
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-4 max-w-3xl mx-auto">
         <span className="text-2xl font-black tracking-tight" style={wordmarkStyle}>WORDOCIOUS</span>
-        <CandyButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
+        <CastButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
           Sign In
-        </CandyButton>
+        </CastButton>
       </header>
 
       {/* Hero */}
@@ -146,13 +147,13 @@ export function Landing() {
           cryptograms, plus live VS matches with friends. Everyone plays the same daily puzzles, climbs the same
           leaderboards, and chases the same streaks.
         </p>
-        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
+        <CastButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
           Sign in to play
-        </CandyButton>
+        </CastButton>
         <div className="mt-3">
-          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CandyButton>
+          </CastButton>
           <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Play today&apos;s daily puzzles free. Sign in to save stats, streaks, and compete.
           </p>
@@ -228,13 +229,13 @@ export function Landing() {
 
       {/* Footer */}
       <footer className="px-5 py-8 text-center border-t" style={{ borderColor: 'var(--color-border)' }}>
-        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)} className="mb-2">
+        <CastButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)} className="mb-2">
           Sign in to play
-        </CandyButton>
+        </CastButton>
         <div className="mb-4">
-          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CandyButton>
+          </CastButton>
         </div>
         <div className="flex items-center justify-center gap-3 text-[11px] font-bold flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
           <Link href="/how-to-play">How to Play</Link><span>·</span>

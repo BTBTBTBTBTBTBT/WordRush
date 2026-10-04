@@ -6,6 +6,7 @@ import { Icon3D } from '@/components/ui/icon3d';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { SoftNum } from '@/components/ui/soft-number';
 import { POPUP_ACCENT, POPUP_DIM, PopupBar, popupCard } from '@/components/ui/soft-popup';
@@ -83,7 +84,7 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle, unlimite
               </div>
 
               {/* R3: the redesigned Go Pro popup (never a plain page); a purchase lands in Unlimited. */}
-              <CandyButton
+              <CastButton
                 color="amber"
                 size="lg"
                 block
@@ -92,16 +93,16 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle, unlimite
                 onClick={() => { onClose(); openGoProPopup({ afterPurchaseHref: unlimitedHref, reason: `Unlimited ${modeName}` }); }}
               >
                 Upgrade to Pro
-              </CandyButton>
+              </CastButton>
 
               {onViewPuzzle ? (
-                <CandyButton color="peach" size="md" block onClick={() => { onClose(); onViewPuzzle(); }}>
+                <CastButton color="peach" size="md" block onClick={() => { onClose(); onViewPuzzle(); }}>
                   View Solved Puzzle
-                </CandyButton>
+                </CastButton>
               ) : (
-                <CandyButton color="peach" size="md" block onClick={onClose}>
+                <CastButton color="peach" size="md" block onClick={onClose}>
                   Come back tomorrow
-                </CandyButton>
+                </CastButton>
               )}
             </div>
           </div>

@@ -137,7 +137,7 @@ struct AuthView: View {
                         if working { ProgressView().tint(.white) }
                     }
                 }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                .buttonStyle(CastButtonStyle(size: .large))
                 .disabled(working || !SupabaseConfig.isConfigured || (mode == .reset && resetSent)
                           || (mode == .signup && signupSent))
 
@@ -154,7 +154,7 @@ struct AuthView: View {
                     } label: {
                         CandyLabel(title: mode == .signin ? "Sign up" : mode == .signup ? "Sign in" : "Back to sign in")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: mode == .reset ? .peach : .pink, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: mode == .reset ? .slate : .pink, size: .small, fullWidth: false))
                     .accessibilityLabel(mode == .signin ? "Don't have an account? Sign up"
                                         : mode == .signup ? "Already have an account? Sign in"
                                         : "Back to sign in")
@@ -173,7 +173,7 @@ struct AuthView: View {
                 }) {
                     CandyLabel(title: "Play without an account", symbol: "play.fill")
                 }
-                .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
+                .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
                 .disabled(working)
             }
         }
@@ -216,7 +216,7 @@ struct AuthView: View {
                 if let (title, action) = trailing {
                     Spacer()
                     Button(action: action) { CandyLabel(title: title) }
-                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                         .accessibilityLabel(title)
                 }
             }

@@ -1,0 +1,65 @@
+/* ── FINISH_SPEC BJ15 · Cast-color buttons + art labels (components/ui/cast-button.tsx;
+   docs/design/brand/buttons/cast/README.md). The skin is a CSS border-image three-slice
+   (vars set inline per color × size); :active swaps the -pressed skin, the dark theme the
+   -dark skins. Press squish comes from squish-host. ── */
+.cast {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: var(--cast-h);
+  min-width: calc(var(--cast-h) * 1.6);
+  padding: 0 var(--cast-pad);
+  border: 0 solid transparent;
+  border-image: var(--cast-skin);
+  background: none;
+  color: #fff;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  text-decoration: none;
+}
+.cast:active { border-image: var(--cast-skin-p); }
+[data-theme="dark"] .cast { border-image: var(--cast-skin-d); }
+[data-theme="dark"] .cast:active { border-image: var(--cast-skin-pd); }
+.cast:disabled, .cast[aria-disabled="true"] { opacity: 0.55; cursor: default; }
+.cast-block { display: flex; width: 100%; }
+.cast > * { position: relative; flex: none; }
+.cast:active > .cast-label-art, .cast:active > .cast-label-live { transform: translateY(1px); }
+/* The art label: one cap height on every button (0.42 × h); shrinks only in a fixed slot. */
+.cast > .cast-label-art {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: var(--cast-cap);
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px color-mix(in srgb, var(--cast-deep) 56%, transparent));
+}
+.cast > .cast-label-gold {
+  filter: drop-shadow(0 0 0.9px rgba(154, 90, 0, 0.55)) drop-shadow(0 0 0.9px rgba(154, 90, 0, 0.55))
+    drop-shadow(0 1px 1px color-mix(in srgb, var(--cast-deep) 56%, transparent));
+}
+/* Live fallback (dynamic labels): white Nunito Black, a thin same-hue stroke, a soft same-hue
+   shadow, sized so its cap height matches the art (Nunito cap ≈ 0.705 em). */
+.cast > .cast-label-live {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: calc(var(--cast-cap) / 0.705);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow:
+    1.1px 0 0 var(--cast-deep), -1.1px 0 0 var(--cast-deep), 0 1.1px 0 var(--cast-deep), 0 -1.1px 0 var(--cast-deep),
+    0.8px 0.8px 0 var(--cast-deep), -0.8px 0.8px 0 var(--cast-deep), 0.8px -0.8px 0 var(--cast-deep), -0.8px -0.8px 0 var(--cast-deep),
+    0 1px 2px color-mix(in srgb, var(--cast-deep) 35%, transparent);
+  padding: 2px 1px;
+}

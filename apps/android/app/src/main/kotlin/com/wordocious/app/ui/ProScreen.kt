@@ -154,9 +154,9 @@ fun ProScreen(onDone: () -> Unit) {
                         fontSize = 13.sp, fontWeight = FontWeight.Bold, color = proMuted, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    CandyButton(
-                        "Sign in", onClick = { showAuth = true }, color = CandyColor.AMBER, size = CandySize.LARGE,
-                        fill = true, icon = CandyIcon.ARROW, modifier = Modifier.fillMaxWidth(),
+                    CastButton(
+                        "Sign in", onClick = { showAuth = true }, color = CastColor.GOLD, size = CastSize.L,
+                        fill = true, modifier = Modifier.fillMaxWidth(),
                     )
                 }
             } else if (isPro) {
@@ -188,18 +188,18 @@ fun ProScreen(onDone: () -> Unit) {
                     )
                     var manage by remember { mutableStateOf(false) }
                     if (manage) ManageSubscriptionHandoff(onDismiss = { manage = false })
-                    CandyButton(
+                    CastButton(
                         "Manage subscription", onClick = { manage = true },
-                        color = CandyColor.AMBER, size = CandySize.LARGE, fill = true, modifier = Modifier.fillMaxWidth(),
+                        color = CastColor.GOLD, size = CastSize.L, fill = true, modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
                         SubscriptionCopy.handoff(SubscriptionCopy.Store.GOOGLE).line, fontSize = 11.sp, fontWeight = FontWeight.Black,
                         color = if (WTheme.isDark) WTheme.textSecondary else proLabel, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    CandyButton(
+                    CastButton(
                         "Restore Purchases", onClick = { StoreManager.restore() },
-                        color = CandyColor.PEACH, size = CandySize.SMALL,
+                        color = CastColor.SLATE, size = CastSize.S,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                     )
                 }
@@ -220,7 +220,7 @@ fun ProScreen(onDone: () -> Unit) {
             title = { Text("Purchase issue", fontWeight = FontWeight.Black, color = proInk) },
             text = { Text(lastError ?: "", color = proMuted, fontWeight = FontWeight.Bold) },
             confirmButton = {
-                CandyButton("OK", onClick = { StoreManager.clearError() }, color = CandyColor.PURPLE, size = CandySize.MEDIUM)
+                CastButton("OK", onClick = { StoreManager.clearError() }, color = CastColor.GOLD, size = CastSize.M)
             },
         )
     }
@@ -315,7 +315,7 @@ private fun PlansContent() {
 
         // A8: the large amber candy CTA for the selected plan.
         val processing = purchasingId != null
-        CandyButton(
+        CastButton(
             when {
                 processing -> "Processing…"
                 plan == StoreManager.PRO_YEARLY -> "Subscribe Yearly"
@@ -323,15 +323,15 @@ private fun PlansContent() {
                 else -> "Get 24 Hours of Pro"
             },
             onClick = { if (!busy) buy(plan) },
-            color = CandyColor.AMBER, size = CandySize.LARGE, fill = true, enabled = !busy,
+            color = CastColor.GOLD, size = CastSize.L, fill = true, enabled = !busy,
             leading = if (processing) {
                 { CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.5.dp) }
             } else null,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         )
-        CandyButton(
+        CastButton(
             "Restore Purchases", onClick = { StoreManager.restore() },
-            color = CandyColor.PEACH, size = CandySize.MEDIUM,
+            color = CastColor.SLATE, size = CastSize.M,
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         // Disclosure (Google Play wording for Android) — BJ11: the live Play prices.

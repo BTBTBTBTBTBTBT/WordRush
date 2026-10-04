@@ -8,6 +8,7 @@ const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginSc
 import { useAuth } from '@/lib/auth-context';
 import { getGuide, PUBLIC_MODE_GUIDES as MODE_GUIDES } from '@/lib/guide-content';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { softRow } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
 
@@ -40,9 +41,9 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-4 max-w-3xl mx-auto">
         <Link href="/" className="text-2xl font-black tracking-tight" style={wordmarkStyle}>WORDOCIOUS</Link>
-        <CandyButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
+        <CastButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
           Sign In
-        </CandyButton>
+        </CastButton>
       </header>
 
       {/* Hero */}
@@ -56,13 +57,13 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
         <p className="text-base font-bold mb-6 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           {guide.tagline}
         </p>
-        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
+        <CastButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)}>
           Sign in to play
-        </CandyButton>
+        </CastButton>
         <div className="mt-3">
-          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CandyButton>
+          </CastButton>
           <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Play today&apos;s daily {guide.title} free. Sign in to save stats, streaks, and compete on the leaderboard.
           </p>
@@ -140,13 +141,13 @@ export function ModeLanding({ guideSlug }: { guideSlug: string }) {
 
       {/* Footer */}
       <footer className="px-5 py-8 text-center border-t" style={{ borderColor: 'var(--color-border)' }}>
-        <CandyButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)} className="mb-2">
+        <CastButton color="purple" size="lg" icon="play" onClick={() => setShowLogin(true)} className="mb-2">
           Sign in to play
-        </CandyButton>
+        </CastButton>
         <div className="mb-4">
-          <CandyButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
+          <CastButton color="peach" size="md" onClick={enterGuest} style={{ textTransform: 'none' }}>
             Play without an account
-          </CandyButton>
+          </CastButton>
         </div>
         <div className="flex items-center justify-center gap-3 text-[11px] font-bold flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
           <Link href="/how-to-play">How to Play</Link><span>·</span>

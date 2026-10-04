@@ -357,9 +357,9 @@ struct ProWelcomeView: View {
                     grid
                     VStack(spacing: 10) {
                         Button(action: onPlay) { CandyLabel(title: "LET'S PLAY!", symbol: "play.fill") }
-                            .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                            .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                         Button { showGift = true } label: { CandyLabel(title: "Gift a friend a free week", symbol: "gift.fill") }
-                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                     }
                     .padding(.top, 4)
                 }

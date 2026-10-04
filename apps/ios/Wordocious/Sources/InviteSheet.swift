@@ -151,11 +151,11 @@ struct InviteSheet: View {
                     Button { copy(url) } label: {
                         CandyLabel(title: copied ? "Copied!" : "Copy", symbol: copied ? "checkmark" : "doc.on.doc")
                     }
-                    .buttonStyle(CandyButtonStyle(variant: copied ? .teal : .peach, size: .medium))
+                    .buttonStyle(CastButtonStyle(color: copied ? .teal : .slate, size: .medium))
                     Button { share(url) } label: {
                         CandyLabel(title: "Share") { Icon3D(.share, size: 18) }
                     }
-                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
+                    .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
                 }
                 Text("Link expires in 24 hours.")
                     .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
@@ -165,7 +165,7 @@ struct InviteSheet: View {
             Button { createLink() } label: {
                 CandyLabel(title: busy ? "Creating…" : "Create Invite Link", symbol: "link")
             }
-            .buttonStyle(CandyButtonStyle(variant: .pink, size: .large))
+            .buttonStyle(CastButtonStyle(color: .pink, size: .large))
             .disabled(busy)
         }
     }
@@ -186,7 +186,7 @@ struct InviteSheet: View {
                 Button { sendToUsername() } label: {
                     CandyLabel(title: busy ? "Sending…" : "Send Invite", symbol: "paperplane.fill")
                 }
-                .buttonStyle(CandyButtonStyle(variant: .pink, size: .large))
+                .buttonStyle(CastButtonStyle(color: .pink, size: .large))
                 .disabled(busy)
             }
         }

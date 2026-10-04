@@ -208,10 +208,10 @@ fun TodaysRaceCard(
                         ) { Icon3D(Icon3DName.BELL, 16.dp) }
                     }
                     val sending = challengingId == f.id
-                    CandyButton(
+                    CastButton(
                         if (sending) "Sending…" else "Challenge",
                         onClick = { onChallenge(f) },
-                        color = CandyColor.PURPLE, size = CandySize.SMALL,
+                        color = CastColor.PINK, size = CastSize.S,
                         enabled = challengingId == null,
                         contentDescription = "Challenge ${f.username} to a VS Battle",
                     )

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { PageBackground } from '@/components/ui/page-background';
 import { CandyLink } from '@/components/ui/candy-button';
+import { CastLink } from '@/components/ui/cast-button';
 import { GuideBody, GuideHeroCard, GuideNumeral, GuideTakeaway, GuideWordmark, ReadChip } from '@/components/strategy/guide-family';
 import { accentInk } from '@/lib/soft-surface';
 import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch, wordPlayAnalysis } from '@/lib/word-of-day';
@@ -227,13 +228,13 @@ export default async function WordOfDayPage({ params }: Props) {
         {/* Prev / next day */}
         <div className="flex items-center justify-between">
           {/* A8: candy buttons. */}
-          <CandyLink href={`/word/${prev}`} color="peach" size="sm" icon={<ChevronLeft className="w-4 h-4" aria-hidden="true" />}>
+          <CastLink screen="green" href={`/word/${prev}`} color="peach" size="sm" icon={<ChevronLeft className="w-4 h-4" aria-hidden="true" />}>
             {prev}
-          </CandyLink>
+          </CastLink>
           {hasNext && (
-            <CandyLink href={`/word/${next}`} color="peach" size="sm" trailing={<ChevronRight className="w-4 h-4" aria-hidden="true" />}>
+            <CastLink screen="green" href={`/word/${next}`} color="peach" size="sm" trailing={<ChevronRight className="w-4 h-4" aria-hidden="true" />}>
               {next}
-            </CandyLink>
+            </CastLink>
           )}
         </div>
 

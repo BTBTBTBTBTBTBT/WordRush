@@ -20,6 +20,8 @@ class App : Application() {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             runCatching { com.wordocious.app.ui.PodiumArt.prewarm(this@App, resources.displayMetrics.density) }
             runCatching { com.wordocious.app.ui.MascotComposer.prewarm(this@App) }
+            // FINISH_SPEC BJ15: cast button skins + art labels (decoded + pre-scaled before any button paints).
+            runCatching { com.wordocious.app.ui.CastArt.prewarm(this@App, resources.displayMetrics.density) }
         }
         // Storage hygiene + cross-midnight grace (iOS launch-sweep parity):
         // Android previously never swept per-seed daily saves, so they

@@ -159,7 +159,7 @@ struct InvitePanelView: View {
                     if creating { ProgressView().tint(.white).controlSize(.small) }
                 }
             }
-            .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium))
+            .buttonStyle(CastButtonStyle(color: .gold, size: .medium))
             .disabled(creating || slotsLeft == 0)
             if slotsLeft == 0 && !creating {
                 Text("Slots free up when friends join.")

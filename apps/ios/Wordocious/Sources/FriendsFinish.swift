@@ -275,10 +275,10 @@ struct FriendsInviteSentCard: View {
             }
             HStack(spacing: 10) {
                 Button(action: onSendAnother) { CandyLabel(title: "Send another", symbol: "paperplane.fill") }
-                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
+                    .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
                 if let onDone {
                     Button(action: onDone) { CandyLabel(title: "Done") }
-                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
                 }
             }
             .padding(.top, 2)
@@ -318,9 +318,9 @@ struct FriendsNewFriendsCard: View {
             .accessibilityLabel("You and \(friendName) are now friends")
             HStack(spacing: 10) {
                 Button(action: onChallenge) { CandyLabel(title: "Challenge them") { Image("swords").renderingMode(.template).resizable().scaledToFit().frame(width: 14, height: 14).foregroundStyle(.white) } }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium))
+                    .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
                 Button(action: onSeeFriends) { CandyLabel(title: "See friends") }
-                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
+                    .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
             }
         }
         .padding(14)

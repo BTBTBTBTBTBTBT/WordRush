@@ -358,9 +358,9 @@ private fun ProWelcomeScreen(req: ProWelcome.Request, onPlay: () -> Unit) {
                 }
                 if (credited != null) ShieldChip(ProWelcomeRules.shieldChip(credited))
                 Spacer(Modifier.height(2.dp))
-                CandyButton(
-                    "LET'S PLAY!", onClick = onPlay, color = CandyColor.AMBER, size = CandySize.LARGE,
-                    fill = true, icon = CandyIcon.PLAY, contentDescription = "Let's play",
+                CastButton(
+                    "LET'S PLAY!", onClick = onPlay, color = CastColor.GOLD, size = CastSize.L,
+                    fill = true, contentDescription = "Let's play",
                     modifier = Modifier.fillMaxWidth(),
                 )
                 GiftLinkChip { gift = true }
@@ -542,7 +542,7 @@ private fun GiftWeekSheet(onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             InvitePanel()
-            CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
+            CastButton("Close", onClick = onDismiss, color = CastColor.SLATE, size = CastSize.M)
         }
     }
 }

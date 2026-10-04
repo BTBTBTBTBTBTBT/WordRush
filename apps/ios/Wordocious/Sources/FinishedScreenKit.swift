@@ -218,7 +218,7 @@ struct FinishedShareCTA: View {
                 CandyLabel(title: "Share results") { Icon3D(.share, size: 20) }
             }
         }
-        .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
+        .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
         .softSheet(isPresented: $showShareOptions,
                onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
             ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
@@ -370,7 +370,7 @@ struct UnlimitedKeepPlayingCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if !afterUnlimited {
                     Button(action: tap) { CandyLabel(title: "Play") }
-                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .medium, fullWidth: false))
                         .overlay(alignment: .topTrailing) { if locked { proPill.offset(x: 6, y: -8) } }
                         .accessibilityLabel(locked ? "Keep playing: Unlimited \(game). Pro" : "Keep playing: Unlimited \(game)")
                 }
@@ -379,12 +379,12 @@ struct UnlimitedKeepPlayingCard: View {
                 HStack(spacing: 8) {
                     if let share { share }
                     Button(action: tap) { CandyLabel(title: "New puzzle") }
-                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .large))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .large))
                         .overlay(alignment: .topTrailing) { if locked { proPill.offset(x: -6, y: -8) } }
                         .accessibilityLabel("New Unlimited \(game) puzzle")
                     if let onOtherGames {
                         Button(action: onOtherGames) { CandyLabel(title: "Other games") }
-                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(size: .small, fullWidth: false))
                     }
                 }
             }

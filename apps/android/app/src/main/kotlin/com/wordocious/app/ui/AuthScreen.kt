@@ -198,9 +198,9 @@ fun AuthScreen(
             }
             if (mode == "signin") {
                 // A8: a small soft peach candy button (was a text link).
-                CandyButton(
+                CastButton(
                     "Forgot password?", onClick = { mode = "reset"; error = null; resetSent = false },
-                    color = CandyColor.PEACH, size = CandySize.SMALL,
+                    color = CastColor.SLATE, size = CastSize.S,
                     modifier = Modifier.align(Alignment.End),
                 )
             }
@@ -281,10 +281,9 @@ fun AuthScreen(
             }
             // A8: the large purple candy CTA (a spinner leads the label while working).
             val submitLabel = when (mode) { "signin" -> "Sign In"; "signup" -> "Create Account"; else -> "Send Reset Link" }
-            CandyButton(
+            CastButton(
                 if (working) "Please wait\u2026" else submitLabel,
-                onClick = { if (!working && !(mode == "reset" && resetSent)) submit() },
-                color = CandyColor.PURPLE, size = CandySize.LARGE, fill = true,
+                onClick = { if (!working && !(mode == "reset" && resetSent)) submit() }, size = CastSize.L, fill = true,
                 enabled = !working && !(mode == "reset" && resetSent),
                 contentDescription = submitLabel,
                 leading = if (working) {
@@ -303,22 +302,22 @@ fun AuthScreen(
                 fontSize = 13.sp, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, fontWeight = FontWeight.Bold,
             )
             // A8: the mode switch is a small pink candy button (was a TextButton).
-            CandyButton(
+            CastButton(
                 if (isSignIn) "Sign Up" else "Sign In",
                 onClick = {
                     mode = if (mode == "signin") "signup" else "signin"
                     error = null; resetSent = false
                 },
-                color = CandyColor.PINK, size = CandySize.SMALL,
+                color = CastColor.PINK, size = CastSize.S,
             )
         }
 
         Spacer(Modifier.height(14.dp))
         // Apple 5.1.1(v) / Google Play: a signed-out visitor must be able to play
         // the single-player daily without registering. A8: a soft peach candy button.
-        CandyButton(
+        CastButton(
             "Play without an account", onClick = { AuthService.enterGuest() },
-            color = CandyColor.PEACH, size = CandySize.MEDIUM, icon = CandyIcon.PLAY,
+            color = CastColor.SLATE, size = CastSize.M,
         )
 
         Spacer(Modifier.height(24.dp))

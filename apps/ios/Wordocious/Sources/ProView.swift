@@ -89,7 +89,7 @@ struct ProView: View {
                 .font(Brand.font(13, .medium)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center)
             Button { showAuth = true } label: { CandyLabel(title: "Sign in", symbol: "person.fill") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .large))
         }
         .padding(20)
         .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.10, line: 0.30)
@@ -125,14 +125,14 @@ struct ProView: View {
                 .font(Brand.font(13, .heavy)).foregroundStyle(FinishInk.heading)
                 .multilineTextAlignment(.center)
             Button { showManage = true } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                 .padding(.top, 4)
             Text(SubscriptionCopy.handoff(.apple).line)
                 .font(Brand.font(11, .heavy)).foregroundStyle(Self.ink.opacity(0.8))
             Button { Task { await store.restore() } } label: {
                 CandyLabel(title: "Restore Purchases", symbol: "arrow.clockwise")
             }
-            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
         }
         .padding(20).frame(maxWidth: .infinity)
         .tintedCard(accent: Self.goldTint, bar: Self.goldBar, tint: 0.12, line: 0.32)
@@ -187,7 +187,7 @@ struct ProView: View {
                     CandyLabel(title: "Just today — \(displayPrice(.day, fallback: dayPrice)) for 24 hours", symbol: "bolt.fill")
                 }
             }
-            .buttonStyle(CandyButtonStyle(variant: .teal, size: .medium))
+            .buttonStyle(CastButtonStyle(color: .teal, size: .medium))
             .disabled(store.purchasingId != nil)
             Text("Eight day passes cost more than a month of Pro.")
                 .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
@@ -197,7 +197,7 @@ struct ProView: View {
             Button { Task { await store.restore() } } label: {
                 CandyLabel(title: "Restore Purchases", symbol: "arrow.clockwise")
             }
-            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
             .frame(maxWidth: .infinity)
             .padding(.top, 4)
 
@@ -257,7 +257,7 @@ struct ProView: View {
                     CandyLabel(title: loading ? "Processing…" : cta, symbol: loading ? nil : "crown.fill")
                 }
             }
-            .buttonStyle(CandyButtonStyle(variant: variant, size: .large))
+            .buttonStyle(CastButtonStyle(color: variant.cast(screen: .gold), size: .large))
             .disabled(store.purchasingId != nil)
         }
         .padding(16)

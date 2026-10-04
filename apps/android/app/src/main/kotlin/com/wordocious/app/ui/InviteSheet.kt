@@ -227,7 +227,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                         Spacer(Modifier.size(12.dp))
                         // A8: the Share candy across the width.
                         Row(Modifier.fillMaxWidth()) {
-                            CandyButton(
+                            CastButton(
                                 "Share",
                                 onClick = {
                                     com.wordocious.app.data.ShareEvents.log(
@@ -243,7 +243,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                     })
                                 },
-                                color = CandyColor.PINK, size = CandySize.MEDIUM, icon = CandyIcon.SHARE,
+                                color = CastColor.PINK, size = CastSize.M,
                                 modifier = Modifier.weight(1f), fill = true,
                             )
                         }
@@ -317,8 +317,8 @@ private fun TabButton(
 /** A8 the sheet's primary action: a large pink candy button across the width. */
 @Composable
 private fun PrimaryButton(label: String, enabled: Boolean, onClick: () -> Unit) {
-    CandyButton(
-        label, onClick = onClick, color = CandyColor.PINK, size = CandySize.LARGE,
+    CastButton(
+        label, onClick = onClick, color = CastColor.PINK, size = CastSize.L,
         modifier = Modifier.fillMaxWidth(), fill = true, enabled = enabled,
     )
 }

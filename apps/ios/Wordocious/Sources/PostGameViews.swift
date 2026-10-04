@@ -103,7 +103,7 @@ struct FinishedStatsHeader: View {
                 Button(action: onPlayAgain) {
                     CandyLabel(title: won ? "Play Again" : "Try Again", symbol: "arrow.clockwise")
                 }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .medium, fullWidth: false))
             }
         }
     }
@@ -632,7 +632,7 @@ struct NextDailyCTA: View {
                                 // with the next game's icon.
                                 CandyLabel(title: share == nil ? "Next daily: \(next.title)" : "Next: \(next.title)") { gameIcon(next) }
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .amber, size: compact ? .medium : .large))
+                            .buttonStyle(CastButtonStyle(color: .gold, size: compact ? .medium : .large))
                             .accessibilityLabel("Next daily: \(next.title)")
                         }
                     } else if nextMode == nil {
@@ -695,7 +695,7 @@ struct NextDailyCTA: View {
                 // §B6 / §A8: the purple candy button with the 3D trophy.
                 CandyLabel(title: share != nil && nextMode == nil ? "Leaderboard" : "\(mode.title) Leaderboard") { Icon3D(.trophy, size: 26) }
             }
-            .buttonStyle(CandyButtonStyle(variant: .purple, size: compact ? .medium : .large))
+            .buttonStyle(CastButtonStyle(size: compact ? .medium : .large))
             .accessibilityLabel("View \(mode.title) Leaderboard")
         }
     }

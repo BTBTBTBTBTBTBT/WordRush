@@ -134,7 +134,7 @@ struct OnboardingView: View {
                 }, onSignIn: {})
                 .overlay(alignment: .topTrailing) {
                     Button { onFinish(false) } label: { CandyLabel(title: "Close") }
-                        .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                         .padding(.horizontal, 16).padding(.top, 8)
                 }
                 .transition(.opacity)
@@ -191,7 +191,7 @@ struct OnboardingFlow: View {
 
     private func skipButton(_ action: @escaping () -> Void) -> some View {
         Button(action: action) { CandyLabel(title: "Skip") }
-            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
             .padding(.horizontal, 16).padding(.top, 8)
     }
 
@@ -274,7 +274,7 @@ struct OnboardingWelcome: View {
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             Button(action: onGo) { CandyLabel(title: "Let's go!", symbol: "arrow.right") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                .buttonStyle(CastButtonStyle(size: .large))
             if showSignIn {
                 Button(action: onSignIn) {
                     Text("I already have an account")
@@ -305,7 +305,7 @@ struct OnboardingTour: View {
             HStack {
                 Spacer()
                 Button(action: onSkip) { CandyLabel(title: skipTitle) }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
             }
             .padding(.horizontal, 16).padding(.top, 8)
             pager.frame(maxHeight: .infinity)
@@ -316,7 +316,7 @@ struct OnboardingTour: View {
                 if last { CandyLabel(title: lastTitle, symbol: lastTitle == "Next" ? "arrow.right" : "play.fill") }
                 else { CandyLabel(title: "Next", symbol: "arrow.right") }
             }
-            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+            .buttonStyle(CastButtonStyle(size: .large))
             .padding(.horizontal, 24).padding(.bottom, 20)
         }
         .onChange(of: page) { _ in Feedback.whoosh() }
@@ -414,7 +414,7 @@ struct OnboardingUsername: View {
             }
             Spacer(minLength: 8)
             Button(action: save) { CandyLabel(title: saving ? "Saving…" : "That's me!", symbol: "checkmark") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                .buttonStyle(CastButtonStyle(size: .large))
                 .disabled(saving || status != .available)
         }
         .padding(.horizontal, 28).padding(.bottom, 24)
@@ -541,10 +541,7 @@ struct OnboardingMascotStep: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 12) {
-                    Text("MAKE YOUR MASCOT")
-                        .font(Brand.font(28, .black)).foregroundStyle(FinishInk.number)
-                        .lineLimit(1).minimumScaleFactor(0.6)
-                        .accessibilityAddTraits(.isHeader)
+                    HeadingArtView(.mascot, height: 44, maxWidth: 340)   // BJ16: lettering, not plain text
                     if ready {
                         MascotBuilderView(initial: AvatarCatalog.initial(auth.profile?.username),
                                           config: config, mode: .onboarding,
@@ -687,9 +684,9 @@ struct OnboardingAllSet: View {
                     .multilineTextAlignment(.center)
                 Spacer(minLength: 8)
                 Button(action: onPlay) { CandyLabel(title: "Play today's Classic", symbol: "play.fill") }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+                    .buttonStyle(CastButtonStyle(size: .large))
                 Button(action: onExplore) { CandyLabel(title: "Explore first") }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
             }
             .padding(.horizontal, 28).padding(.bottom, 24)
         }

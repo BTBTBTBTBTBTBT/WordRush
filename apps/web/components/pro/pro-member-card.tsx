@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { ART_SIZE, artSrc, badgeSrc } from '@/lib/art';
 import { proRenewalLabel } from '@/lib/pro-crown';
 import { memberSince, proPlanLine } from '@/lib/pro-identity';
@@ -92,11 +93,11 @@ export function ProMemberCard({ onManage, onGoPro, manageBusy = false, webBillin
           </div>
         </div>
         {pro ? (
-          <CandyButton color="amber" size="md" block onClick={onManage} disabled={manageBusy}>
+          <CastButton screen="gold" color="amber" size="md" block onClick={onManage} disabled={manageBusy}>
             {manageBusy ? 'Opening…' : 'Manage subscription'}
-          </CandyButton>
+          </CastButton>
         ) : (
-          <CandyButton
+          <CastButton screen="gold"
             color="amber"
             size="md"
             block
@@ -107,7 +108,7 @@ export function ProMemberCard({ onManage, onGoPro, manageBusy = false, webBillin
             onClick={() => (onGoPro ? onGoPro() : openGoProPopup())}
           >
             Go Pro
-          </CandyButton>
+          </CastButton>
         )}
       </div>
     </section>

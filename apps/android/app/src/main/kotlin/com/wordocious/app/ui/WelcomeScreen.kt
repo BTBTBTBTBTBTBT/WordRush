@@ -141,13 +141,13 @@ fun WelcomeScreen() {
                 Spacer(Modifier.height(14.dp))
 
                 // Get Started — A8: the large purple candy CTA.
-                CandyButton(
+                CastButton(
                     if (saving) "Saving\u2026" else "Let's Play!",
                     onClick = {
-                        if (saving) return@CandyButton
+                        if (saving) return@CastButton
                         val t = username.trim()
-                        validateUsername(t)?.let { error = it; return@CandyButton }
-                        val uid = profile?.id ?: return@CandyButton
+                        validateUsername(t)?.let { error = it; return@CastButton }
+                        val uid = profile?.id ?: return@CastButton
                         saving = true; error = null
                         scope.launch {
                             val ok = runCatching {
@@ -162,18 +162,17 @@ fun WelcomeScreen() {
                                 saving = false
                             }
                         }
-                    },
-                    color = CandyColor.PURPLE, size = CandySize.LARGE, fill = true, icon = CandyIcon.PLAY,
+                    }, size = CastSize.L, fill = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
                 // Skip for now — A8: a soft peach candy button (was a text link).
                 Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
-                    CandyButton(
+                    CastButton(
                         "Skip for now",
                         onClick = {
-                            if (saving) return@CandyButton
-                            val uid = profile?.id ?: return@CandyButton
+                            if (saving) return@CastButton
+                            val uid = profile?.id ?: return@CastButton
                             saving = true
                             scope.launch {
                                 runCatching {
@@ -182,7 +181,7 @@ fun WelcomeScreen() {
                                 AuthService.refreshProfile()
                             }
                         },
-                        color = CandyColor.PEACH, size = CandySize.MEDIUM,
+                        color = CastColor.SLATE, size = CastSize.M,
                     )
                 }
             }

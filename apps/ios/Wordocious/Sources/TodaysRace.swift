@@ -157,7 +157,7 @@ struct TodaysRaceCard: View {
                 Button { onChallenge(f) } label: {
                     CandyLabel(title: challenging == f.id ? "Sending…" : "Challenge")
                 }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                .buttonStyle(CastButtonStyle(size: .small, fullWidth: false))
                 .disabled(challenging != nil)
                 .accessibilityLabel("Challenge \(f.username) to a VS Battle")
             }

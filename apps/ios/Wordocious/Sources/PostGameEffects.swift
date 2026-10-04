@@ -233,18 +233,18 @@ struct VictoryOverlay: View {
                         Button(action: onPlayAgain) {
                             CandyLabel(title: won ? "Play again" : "Try again", symbol: "arrow.clockwise")
                         }
-                        .buttonStyle(CandyButtonStyle(variant: won ? .purple : .pink, size: .medium, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: won ? nil : .pink, size: .medium, fullWidth: false))
                     }
                     if actions.isEmpty {
                         // §R1: a candy CONTINUE instead of "Tap anywhere to continue" (tap-anywhere still works).
                         Button(action: onDismiss) { CandyLabel(title: "Continue", symbol: "arrow.right") }
-                            .buttonStyle(CandyButtonStyle(variant: won ? .purple : .peach, size: .large))
+                            .buttonStyle(CastButtonStyle(color: won ? nil : .slate, size: .large))
                     } else {
                         HStack(spacing: 10) {
                             ForEach(actions.indices, id: \.self) { i in
                                 let a = actions[i]
                                 Button(action: a.action) { CandyLabel(title: a.label) }
-                                    .buttonStyle(CandyButtonStyle(variant: a.primary ? .purple : .peach, size: .medium))
+                                    .buttonStyle(CastButtonStyle(color: a.primary ? nil : .slate, size: .medium))
                             }
                         }
                     }

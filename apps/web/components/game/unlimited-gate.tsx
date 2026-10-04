@@ -13,6 +13,7 @@ import { utcDay } from '@/lib/vs-lobby';
 import { VsLoadingScreen } from '@/components/vs/vs-ui';
 import { GameLoading } from '@/components/game/game-loading';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { StateCard } from '@/components/ui/soft-popup';
 import { ART_SIZE, artSrc } from '@/lib/art';
@@ -61,21 +62,21 @@ function GateCard({ title, blurb, fallbackHref, fallbackLabel, unlimited = false
           <div className="flex flex-col items-stretch gap-1">
             {unlimited ? (
               // R3: the redesigned Go Pro popup; a purchase lands right back in this Unlimited game.
-              <CandyButton color="amber" size="lg" block icon={<Icon3D name="crown" size={24} />} onClick={() => openGoProPopup({ afterPurchaseHref: window.location.pathname, reason: 'Unlimited play' })}>
+              <CastButton color="amber" size="lg" block icon={<Icon3D name="crown" size={24} />} onClick={() => openGoProPopup({ afterPurchaseHref: window.location.pathname, reason: 'Unlimited play' })}>
                 Go Pro
-              </CandyButton>
+              </CastButton>
             ) : (
-              <CandyLink href="/pro" color="amber" size="lg" block icon={<Icon3D name="crown" size={24} />}>
+              <CastLink href="/pro" color="amber" size="lg" block icon={<Icon3D name="crown" size={24} />}>
                 Go Pro
-              </CandyLink>
+              </CastLink>
             )}
-            <CandyLink href={fallbackHref} color="purple" size="md" block>
+            <CastLink href={fallbackHref} color="purple" size="md" block>
               {fallbackLabel}
-            </CandyLink>
+            </CastLink>
             <div className="flex justify-center">
-              <CandyLink href="/" color="peach" size="sm" icon={<Home className="w-3.5 h-3.5" strokeWidth={3} aria-hidden="true" />}>
+              <CastLink href="/" color="peach" size="sm" icon={<Home className="w-3.5 h-3.5" strokeWidth={3} aria-hidden="true" />}>
                 Home
-              </CandyLink>
+              </CastLink>
             </div>
           </div>
         </div>

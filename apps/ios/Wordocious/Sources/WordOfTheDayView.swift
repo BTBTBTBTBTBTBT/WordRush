@@ -253,7 +253,7 @@ struct WordOfTheDayView: View {
             Button { showWords = true } label: {
                 CandyLabel(title: "Past words", symbol: "book.fill")
             }
-            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
             .fixedSize()
         }
         .frame(maxWidth: .infinity)

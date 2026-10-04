@@ -7,6 +7,7 @@ import { Confetti } from './confetti';
 import { Mascot } from '@/components/ui/mascot';
 import { MomentArt } from '@/components/ui/art-title';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ClockGlyph } from '@/components/game/result-line';
@@ -300,22 +301,22 @@ export function ResultPopup(p: ResultPopupProps) {
             {/* Actions: Play again (Unlimited), explicit choices, or CONTINUE in the game accent. */}
             <div className="mt-4 flex flex-col items-center gap-2">
               {p.onPlayAgain && !hasActions && (
-                <CandyButton size="md" color={win ? 'purple' : 'amber'} icon="replay" onClick={(e) => { e.stopPropagation(); p.onPlayAgain!(); }}>
+                <CastButton size="md" color={win ? 'purple' : 'amber'} icon="replay" onClick={(e) => { e.stopPropagation(); p.onPlayAgain!(); }}>
                   {p.playAgainLabel ?? (win ? 'Play again' : 'Try again')}
-                </CandyButton>
+                </CastButton>
               )}
               {hasActions ? (
                 <div className="flex justify-center gap-2 flex-wrap">
                   {p.actions!.map((a) => (
-                    <CandyButton key={a.label} size="md" color={a.primary ? 'purple' : 'peach'} onClick={(e) => { e.stopPropagation(); a.onClick(); }}>
+                    <CastButton key={a.label} size="md" color={a.primary ? 'purple' : 'peach'} onClick={(e) => { e.stopPropagation(); a.onClick(); }}>
                       {a.label}
-                    </CandyButton>
+                    </CastButton>
                   ))}
                 </div>
               ) : (
-                <CandyButton size="md" style={candyAccent} icon="arrow" onClick={(e) => { e.stopPropagation(); p.onContinue?.(); }}>
+                <CastButton size="md" style={candyAccent} icon="arrow" onClick={(e) => { e.stopPropagation(); p.onContinue?.(); }}>
                   Continue
-                </CandyButton>
+                </CastButton>
               )}
             </div>
           </div>

@@ -95,13 +95,13 @@ struct VSLiveTile<Destination: View>: View {
                         NavigationLink(destination: destination) {
                             CandyLabel(title: "Play", symbol: "play.fill")
                         }
-                        .buttonStyle(CandyButtonStyle(variant: .teal, size: .small, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: .teal, size: .small, fullWidth: false))
                         .accessibilityLabel("Play VS Battle")
                         if isPro {
                             Button(action: onInvite) {
                                 CandyLabel(title: "Invite") { Icon3D(.addFriend, size: 15) }
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                            .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                             .accessibilityLabel("Invite")
                         }
                     }

@@ -15,6 +15,7 @@ import { Icon3D } from '@/components/ui/icon3d';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { BRAND_ACCENT, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 import { InviteCodeTiles, InviteSentCard } from '@/components/friends/invite-screens';
 import { codeFromInviteUrl } from '@/lib/invite-screens';
@@ -306,9 +307,9 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
           {tab === 'link' && (
             <>
               {!inviteUrl ? (
-                <CandyButton size="md" color="purple" block icon="arrow" onClick={handleGenerateLink} disabled={busy}>
+                <CastButton screen="pink" size="md" color="purple" block icon="arrow" onClick={handleGenerateLink} disabled={busy}>
                   {busy ? 'Creating…' : 'Generate invite link'}
-                </CandyButton>
+                </CastButton>
               ) : (
                 <>
                   {/* T1: the invite code on glossy letter tiles with a copy candy (copies the link). */}
@@ -316,9 +317,9 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
                     <InviteCodeTiles code={codeFromInviteUrl(inviteUrl) ?? ''} tile={28} copied={copied} onCopy={handleCopy} copyLabel="Copy invite link" />
                     <code className="block mt-1.5 text-[10px] font-bold truncate text-center" style={{ color: 'var(--color-text-muted)' }}>{inviteUrl}</code>
                   </div>
-                  <CandyButton size="md" color="purple" block icon={<Icon3D name="share" size={20} />} onClick={handleShare}>
+                  <CastButton screen="pink" size="md" color="purple" block icon={<Icon3D name="share" size={20} />} onClick={handleShare}>
                     Share
-                  </CandyButton>
+                  </CastButton>
                   <p className="text-[10px] font-bold mt-2 text-center" style={{ color: 'var(--color-text-muted)' }}>
                     Link expires in 24 hours.
                   </p>
@@ -341,9 +342,9 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
                     className="w-full px-3 py-2 text-sm font-bold mb-3 outline-none"
                     style={{ ...tint(BRAND_ACCENT), borderRadius: '12px', color: 'var(--color-text)' }}
                   />
-                  <CandyButton size="md" color="purple" block icon="arrow" onClick={handleSendToUsername} disabled={busy}>
+                  <CastButton screen="pink" size="md" color="purple" block icon="arrow" onClick={handleSendToUsername} disabled={busy}>
                     {busy ? 'Sending…' : 'Send invite'}
-                  </CandyButton>
+                  </CastButton>
                 </>
               )}
             </>

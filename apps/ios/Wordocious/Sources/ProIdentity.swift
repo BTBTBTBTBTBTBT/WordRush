@@ -223,14 +223,14 @@ struct ProManageHandoffSheet: View {
                         dismiss()
                     }
                 } label: { CandyLabel(title: copy.cta, symbol: "arrow.up.right") }
-                    .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                    .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                     .disabled(opening)
                     .padding(.top, 4)
                 Button {
                     restoring = true
                     Task { await store.restore(); restoring = false }
                 } label: { CandyLabel(title: restoring ? "Restoring…" : "Restore Purchases", symbol: "arrow.clockwise") }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .small, fullWidth: false))
                     .disabled(restoring)
                 Spacer(minLength: 0)
             }
@@ -292,9 +292,9 @@ struct ProMemberSheet: View {
                 .tintedCard(accent: ProGold.accent, bar: ProGold.bar, radius: 20, barHeight: 8, tint: 0.12, line: 0.32)
 
                 Button { showManage = true } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
-                    .buttonStyle(CandyButtonStyle(variant: .amber, size: .large))
+                    .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                 Button { dismiss() } label: { CandyLabel(title: "Close") }
-                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
+                    .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 20)
@@ -352,7 +352,7 @@ struct SettingsProCard: View {
                 Spacer(minLength: 0)
             }
             Button { showManage = true } label: { CandyLabel(title: "Manage subscription", symbol: "creditcard.fill") }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .medium))
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -386,7 +386,7 @@ struct SettingsProCard: View {
                 }
             }
             Button { showPro = true } label: { CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 18) } }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .medium))
+                .buttonStyle(CastButtonStyle(color: .gold, size: .medium))
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)

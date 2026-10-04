@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton, CandyLink } from '@/components/ui/candy-button';
+import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { cardBarStyle, softCard } from '@/lib/soft-surface';
 import { badgeSrc, poseSrc } from '@/lib/art';
@@ -76,11 +77,11 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
               <SoftNum size={16}>{countdown}</SoftNum>
             </div>
 
-            <CandyLink href="/pro" onClick={onClose} color="amber" size="lg" block icon={<Icon3D name="crown" size={20} />} className="mb-3">
+            <CastLink screen="blue" href="/pro" onClick={onClose} color="amber" size="lg" block icon={<Icon3D name="crown" size={20} />} className="mb-3">
               Upgrade to Pro
-            </CandyLink>
+            </CastLink>
 
-            <CandyButton color="peach" size="sm" onClick={onClose}>Come back tomorrow</CandyButton>
+            <CastButton screen="blue" color="peach" size="sm" onClick={onClose}>Come back tomorrow</CastButton>
             </div>
           </div>
         </div>

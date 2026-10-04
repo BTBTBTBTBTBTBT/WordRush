@@ -397,9 +397,9 @@ fun HomeScreen(
             if (isAuthed) {
                 // FINISH_SPEC A8: a small soft peach candy button (was a muted text link).
                 Box(Modifier.fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
-                    CandyButton(
+                    CastButton(
                         "Sign Out", onClick = { signOutScope.launch { com.wordocious.app.data.AuthService.signOut() } },
-                        color = CandyColor.PEACH, size = CandySize.SMALL,
+                        color = CastColor.SLATE, size = CastSize.S,
                     )
                 }
             }
@@ -493,9 +493,9 @@ private fun FirstGameCard(onPlay: () -> Unit, onHowToPlay: () -> Unit, onDismiss
             ) {
                 // Flat accent capsule with a play glyph + soft drop shadow (iOS btn).
                 // FINISH_SPEC A8: the glossy candy PLAY pill.
-                CandyButton("Play", onClick = onPlay, color = CandyColor.PURPLE, size = CandySize.SMALL, icon = CandyIcon.PLAY)
+                CastButton("Play", onClick = onPlay, size = CastSize.S)
                 // A8: a soft peach candy button (was an underlined text link).
-                CandyButton("How to play", onClick = onHowToPlay, color = CandyColor.PEACH, size = CandySize.SMALL)
+                CastButton("How to play", onClick = onHowToPlay, color = CastColor.SLATE, size = CastSize.S)
             }
         }
         HomeDismissX(onDismiss)
@@ -528,7 +528,7 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
             )
         }
         // FINISH_SPEC A8: a small glossy candy pill.
-        CandyButton("Go Pro", onClick = onGoPro, color = CandyColor.AMBER, size = CandySize.SMALL)
+        CastButton("Go Pro", onClick = onGoPro, color = CastColor.GOLD, size = CastSize.S)
         HomeDismissX(onDismiss)
     }
 }
@@ -701,14 +701,14 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
             }
         }
         // FINISH_SPEC A8: a small glossy candy pill.
-        CandyButton(
+        CastButton(
             "Play",
             onClick = {
                 runCatching { com.wordocious.core.GameMode.valueOf(top.gameMode) }.getOrNull()?.let { m ->
                     onJoinInvite(m, top.inviteCode)
                 }
             },
-            color = CandyColor.PINK, size = CandySize.SMALL, icon = CandyIcon.PLAY,
+            color = CastColor.PINK, size = CastSize.S,
         )
         Box(
             // A1 / A9: a tinted pink dismiss circle that squishes (was a white circle).
@@ -776,7 +776,7 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
         if (isPro) {
             Spacer(Modifier.weight(1f))
             // FINISH_SPEC A8: a small glossy candy pill.
-            CandyButton("Invite", onClick = onInvite, color = CandyColor.PINK, size = CandySize.SMALL)
+            CastButton("Invite", onClick = onInvite, color = CastColor.PINK, size = CastSize.S)
         }
     }
 }

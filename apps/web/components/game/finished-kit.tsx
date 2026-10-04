@@ -7,6 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton, CandyIcon, CandyLink } from '@/components/ui/candy-button';
+import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -192,11 +193,11 @@ export function UnlimitedCard({ currentMode, onNewPuzzle, className = '', compac
   const ink = darken(UNLIMITED_PEACH, 0.45);
   const newPuzzle = isProActive ? onNewPuzzle : undefined;
   const action = (size: 'sm' | 'md') => newPuzzle ? (
-    <CandyButton color="peach" size={size} icon="replay" onClick={newPuzzle} className="shrink-0">New puzzle</CandyButton>
+    <CastButton color="peach" size={size} icon="replay" onClick={newPuzzle} className="shrink-0">New puzzle</CastButton>
   ) : isProActive ? (
-    <CandyLink href={href} native color="peach" size="sm" icon="play" className="shrink-0" aria-label={`Play Unlimited ${mode.title}`}>Play</CandyLink>
+    <CastLink href={href} native color="peach" size="sm" icon="play" className="shrink-0" aria-label={`Play Unlimited ${mode.title}`}>Play</CastLink>
   ) : (
-    <CandyButton
+    <CastButton
       color="peach"
       size="sm"
       icon="play"
@@ -206,7 +207,7 @@ export function UnlimitedCard({ currentMode, onNewPuzzle, className = '', compac
       onClick={() => openGoProPopup({ afterPurchaseHref: href, reason: `Unlimited ${mode.title}` })}
     >
       Play
-    </CandyButton>
+    </CastButton>
   );
   const surface: React.CSSProperties = { background: softBackground(UNLIMITED_PEACH, 0.14), border: softBorder(UNLIMITED_PEACH, 0.14), boxShadow: `inset 0 4px 0 ${UNLIMITED_PEACH}, ${softShadow(UNLIMITED_PEACH, 0.14)}` };
   const otherGames = newPuzzle && (
@@ -271,17 +272,17 @@ export function UnlimitedChip({ currentMode, onNewPuzzle }: { currentMode: strin
   // ~38 px tall: the small candy at a 34 px face + its 4 px lip.
   const look = { ['--candy-h' as string]: '34px', ['--candy-lip-h' as string]: '4px' } as React.CSSProperties;
   if (isProActive && onNewPuzzle) {
-    return <CandyButton color="peach" size="sm" icon={icon} onClick={onNewPuzzle} style={look} aria-label={`New ${mode.title} puzzle`}>Unlimited</CandyButton>;
+    return <CastButton color="peach" size="sm" icon={icon} onClick={onNewPuzzle} style={look} aria-label={`New ${mode.title} puzzle`}>Unlimited</CastButton>;
   }
   if (isProActive) {
-    return <CandyLink href={href} native color="peach" size="sm" icon={icon} style={look} aria-label={`Play Unlimited ${mode.title}`}>Unlimited</CandyLink>;
+    return <CastLink href={href} native color="peach" size="sm" icon={icon} style={look} aria-label={`Play Unlimited ${mode.title}`}>Unlimited</CastLink>;
   }
   // Free + guest: the PRO pill, and the tap opens Go Pro (as the card did).
   return (
-    <CandyButton color="peach" size="sm" icon={icon} trailing={<ProPill />} style={look} aria-label={`Play Unlimited ${mode.title} with Pro`}
+    <CastButton color="peach" size="sm" icon={icon} trailing={<ProPill />} style={look} aria-label={`Play Unlimited ${mode.title} with Pro`}
       onClick={() => openGoProPopup({ afterPurchaseHref: href, reason: `Unlimited ${mode.title}` })}>
       Unlimited
-    </CandyButton>
+    </CastButton>
   );
 }
 
@@ -341,7 +342,7 @@ export function ShareResultsCandy({ onShare, copied = false, countdownFor, class
   const line = countdownFor && left && !copied ? { game: countdownFor, left } : null;
   const glyph = <CandyIcon name={copied ? 'check' : 'share'} size={16} />;
   return (
-    <CandyButton
+    <CastButton
       color="pink" size="md" block className={`${ROW_CANDY} ${className}`}
       // Under 700 tall the line is hidden, so the glyph comes back.
       icon={line ? <span className="hidden [@media(max-height:699.98px)]:inline-flex">{glyph}</span> : glyph}
@@ -360,7 +361,7 @@ export function ShareResultsCandy({ onShare, copied = false, countdownFor, class
           </span>
         )}
       </span>
-    </CandyButton>
+    </CastButton>
   );
 }
 
@@ -396,13 +397,13 @@ export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzl
   const next = isDaily ? DAILY_ORDER.find((m) => m.id !== currentMode && !todayDailies.has(m.id)) : undefined;
   const nextMode = next ? PROFILE_MODES.find((m) => m.dbKey === next.id) : undefined;
   const primary = isDaily && (nextMode && next ? (
-    <CandyLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`Next Daily: ${nextMode.title}`}>
+    <CastLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`Next Daily: ${nextMode.title}`}>
       Next: {nextMode.shortTitle ?? nextMode.title}
-    </CandyLink>
+    </CastLink>
   ) : mode ? (
-    <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={18} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`View ${mode.title} Leaderboard`}>
+    <CastLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={18} />} className={`flex-1 ${ROW_CANDY}`} aria-label={`View ${mode.title} Leaderboard`}>
       Leaderboard
-    </CandyLink>
+    </CastLink>
   ) : null);
   const share = onShare ? (
     <ShareResultsCandy onShare={onShare} copied={copied} countdownFor={isDaily ? mode?.title : undefined}

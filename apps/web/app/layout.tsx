@@ -1,4 +1,5 @@
 import './globals.css';
+import './cast-button.css';
 import type { Metadata } from 'next';
 import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
@@ -24,6 +25,7 @@ import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
 import { ColdStartIntro } from '@/components/providers/cold-start-intro';
 import { SPLASH } from '@/lib/intro';
 import { SquishHost } from '@/components/ui/squish-host';
+import { CastArtWarmup } from '@/components/ui/cast-art-warmup';
 import { MotionPause } from '@/components/providers/motion-pause';
 import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
@@ -163,6 +165,7 @@ export default function RootLayout({
         {/* A9: everything tappable squishes (one document listener). */}
         <SquishHost />
         <MotionPause />
+        <CastArtWarmup />
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>
