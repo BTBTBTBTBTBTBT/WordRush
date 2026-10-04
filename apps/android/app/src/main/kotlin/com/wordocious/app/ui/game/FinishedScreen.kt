@@ -416,8 +416,8 @@ internal fun finishedModeTitle(mode: GameMode): String =
  * call: free players and guests see it with a gold PRO pill and their tap opens the Go
  * Pro paywall ([ProPaywallDialog]; a purchase plays straight through). After an
  * UNLIMITED game ([onNewPuzzle], Pro) the card IS the primary action: NEW PUZZLE +
- * "Other games" ([onOtherGames]). Guests get no daily CTAs (their dailies never
- * record, so "next" would be a lie).
+ * "Other games" ([onOtherGames]). Guests get SHARE + NEXT (their finishes flip Home
+ * locally) but no Leaderboard.
  */
 @Composable
 fun FinishedDock(
@@ -458,8 +458,11 @@ fun FinishedDock(
             }
             return@Column
         }
-        val daily = isDaily && signedIn && onOpenDaily != null
+        // Guests get SHARE + NEXT too (iOS / web parity): their finishes flip Home
+        // locally now, so "next" is honest. The leaderboard stays account-only.
+        val daily = isDaily && onOpenDaily != null
         val nd = if (daily) rememberNextDaily(mode) else null
+        val lbOpen = if (signedIn) onOpenLeaderboard else null
         if (nd?.allDone == true) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon3D(Icon3DName.TROPHY, 18.dp)
@@ -478,7 +481,7 @@ fun FinishedDock(
         val next = nd?.next
         val nextMode = next?.engineMode
         CastButtonRow(Modifier.fillMaxWidth()) {
-            val hasPrimary = nd != null && (onOpenLeaderboard != null || (nextMode != null && onOpenDaily != null))
+            val hasPrimary = nd != null && (lbOpen != null || (nextMode != null && onOpenDaily != null))
             onShare?.let {
                 ShareResultsCandy(
                     it, countdownFor = if (isDaily) lbTitle else null,
@@ -494,17 +497,19 @@ fun FinishedDock(
                     leading = { CtaGameIcon(next.id, 24.dp) },
                     contentDescription = "Next daily: ${next.title}",
                 )
-                if (onOpenLeaderboard != null) {
-                    CandyRoundButton("$lbTitle Leaderboard", onClick = { onOpenLeaderboard(mode) }, color = CandyColor.PURPLE, diameter = 40.dp) {
+                if (lbOpen != null) {
+                    CandyRoundButton("$lbTitle Leaderboard", onClick = { lbOpen(mode) }, color = CandyColor.PURPLE, diameter = 40.dp) {
                         Icon3D(Icon3DName.TROPHY, 22.dp)
                     }
                 }
-            } else if (nd != null && onOpenLeaderboard != null) {
+            } else if (nd != null && lbOpen != null) {
+                // Sweep done: SHARE + the 3D trophy on the short RANKS label keep ONE row at
+                // phone width (iOS 7da97f04); screen readers still hear the full name.
                 CastButton(
-                    "Leaderboard", onClick = { onOpenLeaderboard(mode) },
+                    "Ranks", onClick = { lbOpen(mode) },
                     modifier = Modifier.castFlex(), size = CastSize.M, fill = true,
                     leading = { Icon3D(Icon3DName.TROPHY, 22.dp) },
-                    contentDescription = "$lbTitle Leaderboard",
+                    contentDescription = "View $lbTitle Leaderboard",
                 )
             }
             extra?.let { Row(verticalAlignment = Alignment.CenterVertically) { it() } }

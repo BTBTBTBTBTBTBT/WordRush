@@ -309,14 +309,16 @@ internal fun ModeCardView(
                         }
                     }
                     // Completed daily shows guesses · time; else the mode description (web parity).
-                    Text(
+                    // Shrinks to fit its line (font scale 1.3 clipped "Find the hidden wo…") — the
+                    // card height is fixed, so one shrunk line beats a second line.
+                    FitText(
                         subtitleOverride ?: if (completion != null) {
                             // Through the mode's guess semantics (Sudoku reads "0 mistakes",
                             // Letter Ladder "Par") — the shared cross-platform formatter; one line.
                             HomeCardSpec.compactLine("${formatGuessStat(card.guessSemantics, card.guessBase, completion.guessCount)} · ${formatShortTime(completion.timeSeconds)}")
                         } else if (vsDone) "Played today" else card.desc,
-                        fontSize = HomeCardSpec.DESC.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium, color = WTheme.textMuted,
-                        maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+                        fontSize = HomeCardSpec.DESC.sp, fontWeight = FontWeight.Medium, color = WTheme.textMuted,
+                        minScale = 0.7f,
                         modifier = Modifier.offset(y = (-3).dp),
                     )
                 }

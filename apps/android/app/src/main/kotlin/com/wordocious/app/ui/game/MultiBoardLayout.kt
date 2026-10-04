@@ -56,6 +56,10 @@ fun MultiBoardLayout(
 
     // OctoWord tap-to-zoom state
     var expandedIndex by remember { mutableStateOf<Int?>(null) }
+    // System BACK on a zoomed board zooms OUT first (iOS/web: the backdrop tap);
+    // only the next BACK leaves the game. Composed inside the game, so it wins
+    // over the navigation-level handler while a board is zoomed.
+    androidx.activity.compose.BackHandler(enabled = expandedIndex != null) { expandedIndex = null }
 
     BoxWithConstraints(modifier = modifier) {
         val containerW = maxWidth
