@@ -188,7 +188,7 @@ struct SettingsView: View {
                         // Settings host is R, so not R).
                         VStack(spacing: 4) {
                             PoseImage(.u, "tea", height: 68)
-                            Text("Wordocious · v1.0.0").font(Brand.font(11, .bold))
+                            Text("Wordocious · v\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""))").font(Brand.font(11, .bold))
                                 .foregroundStyle(FinishInk.secondary)
                         }
                         .frame(maxWidth: .infinity)

@@ -327,7 +327,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 CastPose(MascotId.U, "tea", 68.dp)
                 Text(
-                    "Wordocious · v1.0.0",
+                    "Wordocious · v${com.wordocious.app.BuildConfig.VERSION_NAME} (${com.wordocious.app.BuildConfig.VERSION_CODE})",
                     fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
