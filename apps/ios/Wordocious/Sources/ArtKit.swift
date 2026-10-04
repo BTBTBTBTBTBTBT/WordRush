@@ -398,6 +398,9 @@ struct GameTitleArtView: View {
     /// Game headers: the corner buttons' vertical center measured from the header's
     /// top. The art is pushed down (never up) so its center meets the buttons'.
     var centerY: CGFloat? = nil
+    /// BJ14 round 7: a solo game header — record where the art is drawn for the next
+    /// open's shell (`HeaderArtProbe`). Nil everywhere else.
+    var headerOf: GameMode? = nil
     /// BA1: the finished screen's short-screen cap.
     @Environment(\.finishedTitleCap) private var finishedCap
 
@@ -410,6 +413,9 @@ struct GameTitleArtView: View {
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
+                .background {
+                    if let headerOf, finishedCap == nil { HeaderArtProbe(asset: asset, mode: headerOf).allowsHitTesting(false) }
+                }
                 .titleArtMotion(float: false)
                 .accessibilityLabel(label)
                 .accessibilityAddTraits(.isHeader)
@@ -480,7 +486,9 @@ private struct TitleArtMotion: ViewModifier {
 
     init(float: Bool) {
         self.float = float
-        let still = Theme.reduceMotion
+        // BJ14 round 7: a game opening under a shell that already shows its title art
+        // settled — no pop (it would jump against the copy as the shell fades).
+        let still = Theme.reduceMotion || (!float && GameTransition.headerHandoff)
         _scale = State(initialValue: still ? 1 : 0.94)
         _opacity = State(initialValue: still ? 1 : 0)
         _settled = State(initialValue: still)

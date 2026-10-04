@@ -115,9 +115,18 @@ final class GameTransition {
             .flatMap(\.windows).first(where: \.isKeyWindow)
     }
 
+    /// BJ14 round 7: the open's shell carries the game's page (its wallpaper / tint and
+    /// its header title art in their final places), so the game's build frame reads as
+    /// the page arriving, not an empty shell. While true, game title art skips its
+    /// one-time pop (the overlay already shows it settled — a pop under it would jump).
+    private(set) static var headerHandoff = false
+    /// How long the page takes to fade in over the growing shell.
+    static let pageFadeIn: Double = 0.16
+
     /// Put the overlay up and commit the whole open (lift → grow) to the render
     /// server. Call right before presenting the cover (next run-loop turn).
-    func beginOpen(color fallback: UIColor) {
+    /// `hint`: the opening game's mode key (GameMode raw value), when known.
+    func beginOpen(color fallback: UIColor, hint: String? = nil) {
         finishRun(animated: false)
         guard let window = Self.keyWindow, let scene = window.windowScene else { return }
         let screen = window.bounds
@@ -144,6 +153,16 @@ final class GameTransition {
             stage.addSubview(backdrop)
         }
 
+        // Images only (decoded off main ahead of time), no layout of the game's views.
+        #if DEBUG
+        let noPage = PerfTour.flag("noShellPage")   // A/B: the plain shell
+        #else
+        let noPage = false
+        #endif
+        let page = kind == .crossFade || noPage ? nil
+            : GameCoverPreview.pageView(key: hint, screen: screen, dark: window.traitCollection.userInterfaceStyle == .dark)
+        Self.headerHandoff = page?.hasArt == true
+
         switch kind {
         case .grow:
             let card = frame!
@@ -165,13 +184,35 @@ final class GameTransition {
             UIView.animate(withDuration: MotionSpec.shellFadeIn, delay: MotionSpec.liftDuration, options: [.curveEaseOut]) {
                 shell.alpha = 1
             }
+            // The page sits fixed at its final place, seen through a window that grows
+            // exactly like the shell (same spring), and fades in just after the shell:
+            // the card color becomes the game's page, its header already in place.
+            var peek: UIView?
+            if let page {
+                let w = Self.shell(frame: lifted, color: .black, radius: radius)
+                page.view.mask = w
+                page.view.alpha = 0
+                stage.addSubview(page.view)
+                peek = w
+                UIView.animate(withDuration: Self.pageFadeIn, delay: MotionSpec.liftDuration + MotionSpec.shellFadeIn * 0.5,
+                               options: [.curveEaseOut]) {
+                    page.view.alpha = 1
+                }
+            }
             UIView.animate(withDuration: MotionSpec.growDuration, delay: MotionSpec.liftDuration,
                            usingSpringWithDamping: MotionSpec.growDamping, initialSpringVelocity: 0, options: []) {
                 shell.frame = screen
                 shell.layer.cornerRadius = 0
+                peek?.frame = screen
+                peek?.layer.cornerRadius = 0
             }
         case .rise:
             let shell = Self.shell(frame: screen, color: color, radius: 28)
+            if let page {
+                // Inside the shell: it rises with it and lands exactly in place.
+                shell.clipsToBounds = true
+                shell.addSubview(page.view)
+            }
             let start = MotionSpec.riseStartFrame(screen)
             shell.transform = CGAffineTransform(translationX: 0, y: start.midY - screen.midY)
                 .scaledBy(x: MotionSpec.riseScale, y: MotionSpec.riseScale)
@@ -228,6 +269,7 @@ final class GameTransition {
     }
 
     private func finishRun(animated: Bool) {
+        Self.headerHandoff = false
         run?.stage.removeFromSuperview()
         run = nil
         overlay?.isHidden = true
@@ -305,6 +347,11 @@ final class GameCoverDismissal: NSObject, UIViewControllerTransitioningDelegate,
         if let toVC = ctx.viewController(forKey: .to), let toView = ctx.view(forKey: .to) {
             toView.frame = ctx.finalFrame(for: toVC)
             container.insertSubview(toView, at: 0)
+            // BJ14 round 7: lay Home out NOW, before any animation is stamped, so its
+            // re-entry cost lands before the close starts (not as a stall mid-fade) and
+            // the card's frame is known up front: the fade and the shrink are committed
+            // together and play on the render server with no main-thread hand-off.
+            toView.layoutIfNeeded()
         }
         let kind = self.kind
         let shell = GameTransition.shell(frame: container.bounds, color: target.color, radius: 0)
@@ -333,42 +380,51 @@ final class GameCoverDismissal: NSObject, UIViewControllerTransitioningDelegate,
             #endif
             snap?.removeFromSuperview()
             shell.removeFromSuperview()
-            fromView.layer.shouldRasterize = false
-            fromView.alpha = 1
-            ctx.completeTransition(!ctx.transitionWasCancelled)
-            #if DEBUG
-            PerfTour.mark("close.completed")
-            DispatchQueue.main.async { PerfTour.mark("close.nextTurn") }
-            #endif
+            // The game's teardown (~45 ms) runs a turn AFTER the shell's removal has
+            // committed, so it never holds the last frame of the close on screen. The
+            // faded game stays (invisible) until then.
+            DispatchQueue.main.async {
+                fromView.layer.shouldRasterize = false
+                fromView.alpha = 1
+                ctx.completeTransition(!ctx.transitionWasCancelled)
+                #if DEBUG
+                PerfTour.mark("close.completed")
+                DispatchQueue.main.async { PerfTour.mark("close.nextTurn") }
+                #endif
+            }
         }
         let fade = kind == .crossFade ? MotionSpec.crossFadeDuration : MotionSpec.closeFadeDuration
-        UIView.animate(withDuration: fade, delay: 0, options: [.curveEaseOut]) {
-            fader.alpha = 0
-        } completion: { [target] _ in
-            guard kind != .crossFade else { finish(); return }
-            // The card's CURRENT frame (Home has re-laid out under the shell by now).
+        let bounds = container.bounds
+        /// The shrink into the card / the reverse rise, starting `delay` from now.
+        let land: (Double) -> Void = { [target] delay in
             let live = GameTransition.shared.liveFrame(target.key).map { container.convert($0, from: nil) }
-            if kind == .grow, let card = MotionSpec.usableSource(live, in: container.bounds) {
+            if kind == .grow, let card = MotionSpec.usableSource(live, in: bounds) {
                 let dur = MotionSpec.shrinkDuration
-                UIView.animate(withDuration: dur, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 0, options: []) {
+                UIView.animate(withDuration: dur, delay: delay, usingSpringWithDamping: 1, initialSpringVelocity: 0, options: []) {
                     shell.frame = card
                     shell.layer.cornerRadius = target.radius
                 }
-                UIView.animate(withDuration: dur * MotionSpec.shrinkFadeFraction, delay: dur * (1 - MotionSpec.shrinkFadeFraction),
+                UIView.animate(withDuration: dur * MotionSpec.shrinkFadeFraction, delay: delay + dur * (1 - MotionSpec.shrinkFadeFraction),
                                options: [.curveEaseIn], animations: { shell.alpha = 0 }) { _ in finish() }
             } else {
                 // No card to land in: the soft rise in reverse.
                 let dur = MotionSpec.riseDuration * 0.7
-                let b = container.bounds
-                let end = MotionSpec.riseStartFrame(b)
-                UIView.animate(withDuration: dur, delay: 0, options: [.curveEaseIn]) {
+                let end = MotionSpec.riseStartFrame(bounds)
+                UIView.animate(withDuration: dur, delay: delay, options: [.curveEaseIn]) {
                     shell.layer.cornerRadius = 28
-                    shell.transform = CGAffineTransform(translationX: 0, y: end.midY - b.midY)
+                    shell.transform = CGAffineTransform(translationX: 0, y: end.midY - bounds.midY)
                         .scaledBy(x: MotionSpec.riseScale, y: MotionSpec.riseScale)
                     shell.alpha = 0
                 } completion: { _ in finish() }
             }
         }
+        UIView.animate(withDuration: fade, delay: 0, options: [.curveEaseOut]) {
+            fader.alpha = 0
+        } completion: { _ in
+            if kind == .crossFade { finish() }
+        }
+        // Committed with the fade (Home is laid out above): no main-thread turn between them.
+        if kind != .crossFade { land(fade) }
     }
 }
 
@@ -424,17 +480,21 @@ extension View {
 
     /// BJ9: `.fullScreenCover(item:)` for a GAME — no system slide; the shell grows
     /// from the armed card (or soft-rises), and every close shrinks back.
+    /// `hint`: the game's mode key (GameMode raw value) so the shell can carry its page
+    /// (default: the item's own `GameCoverHint`).
     func gameCover<Item: Identifiable, Cover: View>(item: Binding<Item?>, onDismiss: (() -> Void)? = nil,
                                                     color: Color? = nil,
+                                                    hint: ((Item) -> String?)? = nil,
                                                     @ViewBuilder content: @escaping (Item) -> Cover) -> some View {
-        modifier(GameCoverItem(item: item, onDismiss: onDismiss, color: color, cover: content))
+        modifier(GameCoverItem(item: item, onDismiss: onDismiss, color: color,
+                               hint: hint ?? { ($0 as? GameCoverHint)?.coverHintKey }, cover: content))
     }
 
     /// BJ9: `.fullScreenCover(isPresented:)` for a GAME.
     func gameCover<Cover: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil,
-                                color: Color? = nil,
+                                color: Color? = nil, hint: String? = nil,
                                 @ViewBuilder content: @escaping () -> Cover) -> some View {
-        modifier(GameCoverFlag(isPresented: isPresented, onDismiss: onDismiss, color: color, cover: content))
+        modifier(GameCoverFlag(isPresented: isPresented, onDismiss: onDismiss, color: color, hint: hint, cover: content))
     }
 }
 
@@ -454,6 +514,7 @@ private struct GameCoverItem<Item: Identifiable, Cover: View>: ViewModifier {
     @Binding var item: Item?
     let onDismiss: (() -> Void)?
     let color: Color?
+    let hint: (Item) -> String?
     let cover: (Item) -> Cover
     @State private var shown: Item?
 
@@ -478,7 +539,7 @@ private struct GameCoverItem<Item: Identifiable, Cover: View>: ViewModifier {
             #if DEBUG
             if PerfTour.flag("noXition") { withTransaction(noSlide) { shown = next }; return }
             #endif
-            GameTransition.shared.beginOpen(color: defaultShellColor(color))
+            GameTransition.shared.beginOpen(color: defaultShellColor(color), hint: hint(next))
             let id = AnyHashable(next.id)
             DispatchQueue.main.async {
                 guard let current = item, AnyHashable(current.id) == id else {
@@ -497,6 +558,7 @@ private struct GameCoverFlag<Cover: View>: ViewModifier {
     @Binding var isPresented: Bool
     let onDismiss: (() -> Void)?
     let color: Color?
+    let hint: String?
     let cover: () -> Cover
     @State private var shown = false
 
@@ -521,7 +583,7 @@ private struct GameCoverFlag<Cover: View>: ViewModifier {
         #if DEBUG
         if PerfTour.flag("noXition") { withTransaction(noSlide) { shown = true }; return }
         #endif
-        GameTransition.shared.beginOpen(color: defaultShellColor(color))
+        GameTransition.shared.beginOpen(color: defaultShellColor(color), hint: hint)
         DispatchQueue.main.async {
             guard isPresented else { GameTransition.shared.cancelOpen(); return }
             withTransaction(noSlide) { shown = true }
@@ -573,4 +635,208 @@ func presentedRoot(of view: UIView) -> UIViewController? {
     guard var vc = r as? UIViewController else { return nil }
     while let p = vc.parent { vc = p }
     return vc.presentingViewController != nil ? vc : nil
+}
+
+// MARK: - BJ14 round 7: the shell carries the game's page
+
+/// A game cover item that knows its game (a GameMode raw value), so the open's shell can
+/// carry that game's page background + header title art.
+protocol GameCoverHint {
+    var coverHintKey: String? { get }
+}
+
+/// The game's page as plain image views for the open's shell: its wallpaper (or tint
+/// gradient) and its header title art at the exact window frame the real header drew it
+/// in last time (recorded by `HeaderArtProbe`, persisted per screen size). Everything is
+/// decoded off main ahead of time; a cache miss draws without that piece (never decodes
+/// at the tap).
+@MainActor
+enum GameCoverPreview {
+    struct Page {
+        let view: UIView
+        let hasArt: Bool
+    }
+
+    private static let defaultsKey = "bj14.headerArtFrames.v1"
+    /// "asset|WxH" → [x, y, w, h, lastUsed]
+    private static var frames: [String: [Double]] = UserDefaults.standard.dictionary(forKey: defaultsKey) as? [String: [Double]] ?? [:]
+    /// Decoded header art kept for the most recently opened games only.
+    private static let keepRecent = 8
+
+    private static func frameKey(_ asset: String, _ screen: CGSize) -> String {
+        "\(asset)|\(Int(screen.width))x\(Int(screen.height))"
+    }
+
+    private static func rect(_ v: [Double]) -> CGRect? {
+        v.count >= 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : nil
+    }
+
+    static func pageView(key: String?, screen: CGRect, dark: Bool) -> Page? {
+        guard let key, let mode = GameMode(rawValue: key) else { return nil }
+        let tint = PageTint.forGame(mode)
+        let v = UIView(frame: screen)
+        v.isUserInteractionEnabled = false
+        v.clipsToBounds = true
+        let a11y = UIAccessibility.isReduceTransparencyEnabled || UIAccessibility.isDarkerSystemColorsEnabled
+        if let wall = PreviewImages.shared.get(wallKey(tint)) {
+            let iv = UIImageView(image: wall)
+            iv.frame = v.bounds
+            iv.contentMode = .scaleAspectFill
+            iv.clipsToBounds = true
+            v.addSubview(iv)
+            let over = UIView(frame: v.bounds)
+            over.backgroundColor = dark ? UIColor(red: 0x12 / 255, green: 0x0D / 255, blue: 0x1F / 255, alpha: a11y ? 0.70 : tint.darkOverlay)
+                : UIColor.white.withAlphaComponent(a11y ? 0.20 : 0)
+            v.addSubview(over)
+        } else {
+            // The tint's gradient: the page itself when the game has no wallpaper (PageBackground's
+            // fallback), else the closest look until the wallpaper is decoded for next time.
+            let g = CAGradientLayer()
+            g.frame = v.bounds
+            g.colors = tint.stops(dark: dark).map { UIColor($0).cgColor }
+            g.startPoint = CGPoint(x: 0, y: 0)
+            g.endPoint = CGPoint(x: 1, y: 1)
+            v.layer.addSublayer(g)
+            warmWallpaper(tint)
+        }
+        var hasArt = false
+        if let art = GameTitleArt.forMode(mode)?.asset {
+            let k = frameKey(art, screen.size)
+            if let f = frames[k].flatMap(rect) {
+                if let img = PreviewImages.shared.get(artKey(art, f)) {
+                    let iv = UIImageView(image: img)
+                    iv.frame = f
+                    iv.contentMode = .scaleToFill
+                    v.addSubview(iv)
+                    hasArt = true
+                } else {
+                    warmArt(art, f)
+                }
+                touch(k)
+            }
+        }
+        return Page(view: v, hasArt: hasArt)
+    }
+
+    /// The real header drew `asset` at `frame` (window coordinates): remember it and have its
+    /// pieces decoded for the next open.
+    static func record(asset: String, frame: CGRect, screen: CGSize, mode: GameMode?) {
+        guard frame.width > 1, frame.height > 1 else { return }
+        let k = frameKey(asset, screen)
+        let r = frame   // exact: the shell's copy must land on the same pixels
+        let old = frames[k].flatMap(rect)
+        if old == nil || old != r {
+            frames[k] = [r.minX, r.minY, r.width, r.height, Date().timeIntervalSince1970]
+            UserDefaults.standard.set(frames, forKey: defaultsKey)
+        }
+        warmArt(asset, r)
+        if let mode { warmWallpaper(PageTint.forGame(mode)) }
+    }
+
+    /// Launch (AppWarmup): every game's wallpaper at a fifth of its pixels (~0.5 MB each, so a
+    /// first open shows its real page), and the recently opened games' header art, off main.
+    static func prewarm() {
+        for g in ModeGen.all {
+            if let key = g.dbKey, let mode = GameMode(rawValue: key) { warmWallpaper(PageTint.forGame(mode)) }
+        }
+        let size = UIScreen.main.bounds.size
+        let suffix = "|\(Int(size.width))x\(Int(size.height))"
+        let recent = frames.filter { $0.key.hasSuffix(suffix) }
+            .sorted { ($0.value.last ?? 0) > ($1.value.last ?? 0) }.prefix(keepRecent)
+        for (k, v) in recent {
+            guard let f = rect(v) else { continue }
+            let asset = String(k.dropLast(suffix.count))
+            warmArt(asset, f)
+        }
+    }
+
+    private static func touch(_ k: String) {
+        guard var v = frames[k], v.count >= 5 else { return }
+        v[4] = Date().timeIntervalSince1970
+        frames[k] = v
+        UserDefaults.standard.set(frames, forKey: defaultsKey)
+    }
+
+    private static func wallKey(_ tint: PageTint) -> String { "wall|" + tint.wallpaper }
+    private static func artKey(_ asset: String, _ f: CGRect) -> String { "art|\(asset)|\(Int(f.width * 10))x\(Int(f.height * 10))" }
+
+    /// The wallpaper at a fifth of its pixels: it is a soft, blurred backdrop on screen for
+    /// a fraction of a second under the real one (~0.5 MB each).
+    private static func warmWallpaper(_ tint: PageTint) {
+        let name = tint.wallpaper
+        PreviewImages.shared.decode(wallKey(tint)) {
+            guard let src = UIImage(named: name) else { return nil }
+            let px = CGSize(width: src.size.width * src.scale / 5, height: src.size.height * src.scale / 5)
+            return src.preparingThumbnail(of: CGSize(width: px.width.rounded(), height: px.height.rounded()))
+        }
+    }
+
+    /// The header art at its exact on-screen pixel size (drawn 1:1, like the real one).
+    private static func warmArt(_ asset: String, _ f: CGRect) {
+        let scale = UIScreen.main.scale
+        PreviewImages.shared.decode(artKey(asset, f)) {
+            guard let src = UIImage(named: asset) else { return nil }
+            let px = CGSize(width: (f.width * scale).rounded(), height: (f.height * scale).rounded())
+            if src.size.width * src.scale <= px.width * 1.05 { return src.preparingForDisplay() }
+            return src.preparingThumbnail(of: px)
+        }
+    }
+}
+
+/// Decoded images for the open's shell, filled on a utility thread.
+final class PreviewImages: @unchecked Sendable {
+    static let shared = PreviewImages()
+    private let lock = NSLock()
+    private var images: [String: UIImage] = [:]
+    private var pending: Set<String> = []
+
+    func get(_ key: String) -> UIImage? {
+        lock.lock(); defer { lock.unlock() }
+        return images[key]
+    }
+
+    func decode(_ key: String, make: @escaping @Sendable () -> UIImage?) {
+        lock.lock()
+        if images[key] != nil || pending.contains(key) { lock.unlock(); return }
+        pending.insert(key)
+        lock.unlock()
+        DispatchQueue.global(qos: .utility).async {
+            let img = make()
+            self.lock.lock()
+            self.pending.remove(key)
+            if let img { self.images[key] = img }
+            self.lock.unlock()
+        }
+    }
+}
+
+/// On a game header's title art: once the page has settled, records where the art is
+/// drawn (window coordinates) for the next open's shell. Zero per-frame cost.
+struct HeaderArtProbe: UIViewRepresentable {
+    let asset: String
+    let mode: GameMode?
+
+    final class Probe: UIView {
+        var asset = ""
+        var mode: GameMode?
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            guard window != nil else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in self?.record() }
+        }
+        private func record() {
+            guard let w = window, w.bounds.size == w.screen.bounds.size else { return }
+            GameCoverPreview.record(asset: asset, frame: convert(bounds, to: w), screen: w.bounds.size, mode: mode)
+        }
+    }
+
+    func makeUIView(context: Context) -> Probe {
+        let p = Probe()
+        p.isUserInteractionEnabled = false
+        p.backgroundColor = .clear
+        p.asset = asset; p.mode = mode
+        return p
+    }
+
+    func updateUIView(_ p: Probe, context: Context) { p.asset = asset; p.mode = mode }
 }

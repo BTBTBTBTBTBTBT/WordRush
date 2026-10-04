@@ -117,7 +117,7 @@ struct LeaderboardTab: View {
             .environment(\.pageTint, .leaderboard)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
-            .gameCover(item: $lbGame) { g in
+            .gameCover(item: $lbGame, hint: { $0.mode.rawValue }) { g in
                 NavigationStack {
                     // A More Games title opens ITS view (which starts or restores today's daily).
                     if let id = CustomDailyView.customId(for: g.mode) { CustomDailyView(id: id) }

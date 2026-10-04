@@ -40,6 +40,7 @@ enum AppWarmup {
         HomeHostMascot.prewarm()   // BJ6: the Good Morning host's pose, before Home paints
         HeadingArt.prewarm()       // BJ16: popup / sheet heading lettering at display size, off main
         GoProSign.prewarm()        // BJ17: the GO PRO sign cast (Stats locked sections + the free finish upsell)
+        Task { @MainActor in GameCoverPreview.prewarm() }   // BJ14 r7: recent games' page + header art for the open's shell
         Task { @MainActor in WidgetAvatarSnapshot.start() }   // BI13c: the player's look for the widget
         Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: 2_000_000_000)

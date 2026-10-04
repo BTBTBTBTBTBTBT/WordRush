@@ -259,7 +259,7 @@ struct RootTabView: View {
             guard let key = note.object as? String, HomeNav.handoffAllowed(note) else { return }
             presentAfterCoverClears { nextDaily = (homeModes + moreModes).first { $0.dbKey == key } }
         }
-        .gameCover(item: $nextDaily) { m in
+        .gameCover(item: $nextDaily, hint: { $0.dbKey }) { m in
             NavigationStack {
                 if let gm = m.mode {
                     GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title)
@@ -313,7 +313,7 @@ struct RootTabView: View {
             pendingRootPresent = nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { present() }
         }
-        .gameCover(item: $unlimitedGame) { g in
+        .gameCover(item: $unlimitedGame, hint: { $0.mode.dbKey }) { g in
             NavigationStack {
                 if let gm = g.mode.mode {
                     GameScreen(seed: g.seed, mode: gm, title: g.mode.title, onPlayAgain: {

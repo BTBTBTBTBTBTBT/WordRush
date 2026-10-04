@@ -435,9 +435,10 @@ extension View {
     /// with `.gameHost` beside it, `fallbackInset` clear of the corner circles.
     /// (VS matches keep `.gameTitleArt`.)
     @ViewBuilder
-    func soloGameTitle(_ mode: GameMode, hostSize: CGFloat = 30, fallbackInset: CGFloat = 0) -> some View {
+    func soloGameTitle(_ mode: GameMode, hostSize: CGFloat = 30, fallbackInset: CGFloat = 0, isHeader: Bool = true) -> some View {
         if let art = GameTitleArt.forMode(mode) {
-            GameTitleArtView(asset: art.asset, label: art.label, maxHeight: GameTitleArtView.soloCap, minHeight: 44)
+            GameTitleArtView(asset: art.asset, label: art.label, maxHeight: GameTitleArtView.soloCap, minHeight: 44,
+                             headerOf: isHeader ? mode : nil)
                 .padding(.horizontal, 16)
                 .padding(.top, GameCornerButton.rowHeight)
         } else {
@@ -469,6 +470,8 @@ struct GuestPitch: View {
     let title: String
     /// BJ16: cast-color title art in place of the gradient headline (`title` stays its a11y label).
     var heading: HeadingArt? = nil
+    /// False when the page's own title art already names it (the VS guest gate): no heading here.
+    var showsTitle: Bool = true
     let subtitle: String
     var colors: [Color] = PageHeaderStyle.purplePink
     let preview: Preview
@@ -496,14 +499,16 @@ struct GuestPitch: View {
                 }
             }
             .padding(.bottom, 10)
-            Group {
-                if let heading {
-                    HeadingArtView(heading, height: 36, maxWidth: 320, label: title)
-                } else {
-                    PageTitle(title, colors: colors, size: 28)
+            if showsTitle {
+                Group {
+                    if let heading {
+                        HeadingArtView(heading, height: 36, maxWidth: 320, label: title)
+                    } else {
+                        PageTitle(title, colors: colors, size: 28)
+                    }
                 }
+                .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
             Text(subtitle)
                 .font(Brand.body(15)).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)

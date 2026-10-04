@@ -435,7 +435,7 @@ struct HomeView: View {
                     ProperNoundleView(seed: g.seed, onPlayAgain: { pnGame = PNGame(seed: freshPNSeed()) })
                 }
             }
-            .gameCover(isPresented: $pnDaily, onDismiss: { onGameCoverDismissed() }) {
+            .gameCover(isPresented: $pnDaily, onDismiss: { onGameCoverDismissed() }, hint: GameMode.propernoundle.rawValue) {
                 NavigationStack { ProperNoundleView() }
             }
             .gameCover(item: $sudokuGame, onDismiss: { onGameCoverDismissed() }) { g in
@@ -1048,7 +1048,7 @@ struct ModeLimitModal: View {
                 // §G5 / §A8: amber "Go Pro" candy (the money CTA), then the solved
                 // review, then the quiet peach "Not now".
                 Button(action: onUpgrade) {
-                    CandyLabel(title: "Go Pro") { Icon3D(.crown, size: 20) }
+                    CandyLabel(title: "Go Pro")   // the GO PRO lettering says it: no small crown
                 }
                 .buttonStyle(CastButtonStyle(color: .gold, size: .large))
                 .accessibilityLabel("Upgrade to Pro")
@@ -1100,3 +1100,16 @@ struct LivePulseDot: View {
             }
     }
 }
+
+// BJ14 round 7: each game cover names its game, so the open's shell carries its page.
+extension HomeView.ActiveGame: GameCoverHint { var coverHintKey: String? { mode.rawValue } }
+extension HomeView.PNGame: GameCoverHint { var coverHintKey: String? { GameMode.propernoundle.rawValue } }
+extension HomeView.SudokuGame: GameCoverHint { var coverHintKey: String? { GameMode.sudoku.rawValue } }
+extension HomeView.RegionsGame: GameCoverHint { var coverHintKey: String? { GameMode.regions.rawValue } }
+extension HomeView.LadderGame: GameCoverHint { var coverHintKey: String? { GameMode.ladder.rawValue } }
+extension HomeView.SpyglassGame: GameCoverHint { var coverHintKey: String? { GameMode.wordsearch.rawValue } }
+extension HomeView.HubGame: GameCoverHint { var coverHintKey: String? { GameMode.hub.rawValue } }
+extension HomeView.CodebreakerGame: GameCoverHint { var coverHintKey: String? { GameMode.cryptogram.rawValue } }
+extension HomeView.KindredGame: GameCoverHint { var coverHintKey: String? { GameMode.groups.rawValue } }
+extension HomeView.CrosswordGame: GameCoverHint { var coverHintKey: String? { GameMode.crossword.rawValue } }
+extension HomeView.MuddleGame: GameCoverHint { var coverHintKey: String? { GameMode.scramble.rawValue } }

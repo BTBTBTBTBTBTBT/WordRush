@@ -76,7 +76,7 @@ struct FinishedStatsHeader: View {
             Text(ModeStyle.title(mode)).font(Brand.font(28, .black))
                 .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .soloGameTitle(mode, fallbackInset: 52)
+                .soloGameTitle(mode, fallbackInset: 52, isHeader: false)
 
             // FINISH_SPEC §B6: the result line is tinted pills (purple guesses, blue
             // time; gold boards on multi-board games) with 3D icons + soft numbers,
@@ -615,29 +615,7 @@ struct NextDailyCTA: View {
             if AuthService.shared.profile != nil {
                 VStack(spacing: compact ? 6 : 10) {
                     if let next = nextMode, let key = next.dbKey {
-                        // BJ17: equal widths at the normal cap height, or wrapped full width (CastButtonRow).
-                        CastButtonRow {
-                            if let share { share }
-                            Button {
-                                dismiss()
-                                // Let the dismiss animation finish before the root
-                                // presents the next cover (competing presentations drop).
-                                // BI10: stamped with the tap time — a Home press in between cancels it.
-                                let at = Date()
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                                    NotificationCenter.default.post(name: Self.playNextDaily, object: key,
-                                                                    userInfo: [HomeNav.requestedAtKey: at])
-                                }
-                            } label: {
-                                // FINISH_SPEC §B6 / §A8: the gold (amber) candy button with the next
-                                // game's icon. BJ18: beside Share it is the short NEXT art label at
-                                // Share's medium cap height, so the two keep ONE row at phone width
-                                // (the game's name is the accessibility label).
-                                CandyLabel(title: share == nil ? "Next daily: \(next.title)" : "Next") { gameIcon(next) }
-                            }
-                            .buttonStyle(CastButtonStyle(color: .gold, size: compact || share != nil ? .medium : .large))
-                            .accessibilityLabel("Next daily: \(next.title)")
-                        }
+                        nextRow(next, key: key)
                     } else if nextMode == nil {
                         // §AM3: the 3D trophy, not the emoji.
                         HStack(spacing: 6) {
@@ -667,16 +645,45 @@ struct NextDailyCTA: View {
                 .padding(.top, compact ? 0 : 4)
             } else {
                 // FINISH_SPEC §R3 (founder 10-02): guests see the Unlimited card too —
-                // it opens the Go Pro paywall, which signs them in first. (Guests: share
-                // sits on its own line above it — no daily row to ride.)
+                // it opens the Go Pro paywall, which signs them in first. Guests get
+                // SHARE + NEXT like an account (their finishes flip Home); no leaderboard.
                 VStack(spacing: compact ? 6 : 10) {
-                    if let share { share }
+                    if let next = nextMode, let key = next.dbKey {
+                        nextRow(next, key: key)
+                    } else if let share { share }
                     keepPlayingUnlimited(mini: compact && FinishLayoutMetrics.isShort)
                 }
                 .frame(maxWidth: 400)
             }
         }
         .task { await completions.load() }
+    }
+
+    /// SHARE + NEXT (the next daily, with its icon) — accounts and guests alike (a guest's
+    /// finishes flip Home too, so "next" is honest; web / Android parity).
+    @ViewBuilder private func nextRow(_ next: HomeMode, key: String) -> some View {
+        CastButtonRow {
+            if let share { share }
+            Button {
+                dismiss()
+                // Let the dismiss animation finish before the root
+                // presents the next cover (competing presentations drop).
+                // BI10: stamped with the tap time — a Home press in between cancels it.
+                let at = Date()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    NotificationCenter.default.post(name: Self.playNextDaily, object: key,
+                                                    userInfo: [HomeNav.requestedAtKey: at])
+                }
+            } label: {
+                // FINISH_SPEC §B6 / §A8: the gold (amber) candy button with the next
+                // game's icon. BJ18: beside Share it is the short NEXT art label at
+                // Share's medium cap height, so the two keep ONE row at phone width
+                // (the game's name is the accessibility label).
+                CandyLabel(title: share == nil ? "Next daily: \(next.title)" : "Next") { gameIcon(next) }
+            }
+            .buttonStyle(CastButtonStyle(color: .gold, size: compact || share != nil ? .medium : .large))
+            .accessibilityLabel("Next daily: \(next.title)")
+        }
     }
 
     /// Share rides the Leaderboard row once the sweep is done (no Next daily).
