@@ -396,6 +396,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // O3's not-found scene (ART_SPEC §7) + BI24 headline, line and the way out.
             BrandEmptyState(
                 title = "PLAYER NOT FOUND",
+                heading = Heading.NOTFOUND,   // BJ16
                 line = "This profile doesn't exist or may have been removed.",
                 modifier = Modifier.padding(top = 24.dp),
                 scene = SceneArt.NOT_FOUND, artHeight = 140.dp,

@@ -28,7 +28,7 @@ struct InfoPage: View {
         // duplicate header in the pushed case.
         // FINISH_SPEC §C6: Privacy and Terms wear their own title art; every page
         // opens with the intro card, then section cards with top bars.
-        MenuScaffold(title, art: art, help: .howToPlay) {
+        MenuScaffold(title, art: art, heading: heading, help: .howToPlay) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     InfoIntroCard(heading: title, line: subtitle)
@@ -102,6 +102,11 @@ struct InfoPage: View {
     /// §C6: the page's own title art (Privacy / Terms); About / Support keep the text title.
     private var art: ArtTitleName? {
         switch kind { case .privacy: return .privacy; case .terms: return .terms; default: return nil }
+    }
+
+    /// BJ16: About / Support wear their ABOUT / SUPPORT lettering (no plain-text titles).
+    private var heading: HeadingArt? {
+        switch kind { case .about: return .about; case .support: return .support; default: return nil }
     }
 
     /// The section cards' color: green for Privacy, purple otherwise.

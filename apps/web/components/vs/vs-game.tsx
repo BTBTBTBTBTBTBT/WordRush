@@ -82,9 +82,9 @@ import { VsDeliverance } from './vs-deliverance';
 import { VsGauntlet } from './vs-gauntlet';
 import { VsProperNoundle } from './vs-propernoundle';
 import { FeedbackPill } from '@/components/game/feedback-toast';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 interface VsGameProps {
-import { HeadingArt } from '@/components/ui/heading-art';
   mode: GameMode;
   /**
    * Private-match invite code. When present, joinQueue routes through
@@ -1427,9 +1427,14 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
       style={{ background: screen === 'match' ? 'rgba(248,247,255,0.92)' : VS.page }}
     >
       <div className="text-center space-y-3">
-        <div className="text-[12px] font-black uppercase animate-fade-in-scale" style={{ color: VS.label, letterSpacing: 1.4 }}>
-          {countdownIsRematch ? 'Rematch starting in' : 'Match found'}
-        </div>
+        {/* BJ16: MATCH FOUND! as lettering (the rematch label stays caps text). */}
+        {countdownIsRematch ? (
+          <div className="text-[12px] font-black uppercase animate-fade-in-scale" style={{ color: VS.label, letterSpacing: 1.4 }}>
+            Rematch starting in
+          </div>
+        ) : (
+          <HeadingArt slug="matchfound" height={40} />
+        )}
         <div className="flex justify-center"><ModeChip mode={mode} /></div>
         {/* A2: the 3-2-1-GO in soft numbers. */}
         <SoftNum key={countdown} as="div" size={countdown === 0 ? 96 : 128} className="animate-fade-in-scale" style={{ lineHeight: 1.05 }}>

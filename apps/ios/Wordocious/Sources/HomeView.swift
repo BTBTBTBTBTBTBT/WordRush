@@ -725,7 +725,7 @@ struct HomeView: View {
         HStack(spacing: 12) {
             Icon3D(.crown, size: 32)
             VStack(alignment: .leading, spacing: 1) {
-                Text("You're on a streak!").font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
+                HeadingArtView(.onastreak, height: 22, maxWidth: 150, label: "You're on a streak!", alignment: .leading)   // BJ16
                 Text("Upgrade to Pro for ad-free play, stats, shields, and more.")
                     .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(2)
             }

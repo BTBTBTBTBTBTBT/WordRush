@@ -5,6 +5,7 @@ import { CandyButton, CandyLink, type CandyColor, type CandyIconName } from '@/c
 import { PAGE_TITLE_GRADIENTS, type PageAccent } from '@/components/ui/page-header';
 import type { SceneName } from '@/lib/art';
 import type { MascotId } from '@/lib/mascots';
+import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
 
 // FINISH_SPEC BI24: the one finished empty / error / not-found state. No generic
 // icon, no bare spinner, no plain-text line, no bordered box: a cast host (its
@@ -32,6 +33,8 @@ export interface BrandEmptyStateProps {
   secondary?: ReactNode;
   /** A dimmed preview of what will appear here. */
   preview?: ReactNode;
+  /** FINISH_SPEC BJ16: the title as heading lettering (NOT FOUND, OOPS!, …); `title` stays its label. */
+  heading?: HeadingSlug;
   /** Full-screen states (404, error) load the art eagerly. */
   priority?: boolean;
   className?: string;
@@ -40,7 +43,7 @@ export interface BrandEmptyStateProps {
 export function BrandEmptyState({
   title, line, scene, host = 'w', artHeight = 120, accent = 'brand',
   actionLabel, actionHref, onAction, actionColor = 'purple', actionIcon,
-  secondary, preview, priority = false, className = '',
+  secondary, preview, priority = false, className = '', heading,
 }: BrandEmptyStateProps) {
   return (
     <div className={`animate-fade-in-up flex flex-col items-center gap-2 text-center w-full px-6 py-4 ${className}`} role="status">
@@ -49,12 +52,16 @@ export function BrandEmptyState({
       ) : (
         <Mascot id={host} size={Math.round(artHeight * 0.8)} motion="bob" priority={priority} />
       )}
+      {heading ? (
+        <HeadingArt slug={heading} as="h2" label={title} height={40} className="mt-1" />
+      ) : (
       <h2
         className="mt-1 text-xl font-black uppercase tracking-wide leading-tight"
         style={{ background: PAGE_TITLE_GRADIENTS[accent], WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
       >
         {title}
       </h2>
+      )}
       <p className="text-sm font-bold max-w-xs" style={{ color: 'var(--color-text-muted)' }}>{line}</p>
       {actionLabel && actionHref && (
         <CandyLink href={actionHref} color={actionColor} size="md" icon={actionIcon} className="mt-2">{actionLabel}</CandyLink>

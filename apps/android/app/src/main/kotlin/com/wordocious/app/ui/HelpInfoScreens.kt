@@ -232,7 +232,9 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     val art = when (kind) { "privacy" -> TitleArt.PRIVACY; "terms" -> TitleArt.TERMS; else -> null }
     val accent = INFO_NAV.firstOrNull { it.route == kind }?.accent ?: Color(0xFF7C3AED)
 
-    InfoPage(title, onBack = onDone, art = art, backLabel = "Close", intro = title to subtitle) {
+    // BJ16: About / Support wear their ABOUT / SUPPORT lettering.
+    val heading = when (kind) { "about" -> Heading.ABOUT; "support" -> Heading.SUPPORT; else -> null }
+    InfoPage(title, onBack = onDone, art = art, heading = heading, backLabel = "Close", intro = title to subtitle) {
         if (fromApi) {
             val cs = contentSections ?: emptyList()
             if (cs.isEmpty() && contentDone) HelpOfflineState { contentDone = false; contentTry++ }

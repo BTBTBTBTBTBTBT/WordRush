@@ -521,7 +521,7 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
     ) {
         Icon3D(Icon3DName.CROWN, 30.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("You're on a streak!", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+            HeadingArt(Heading.ONASTREAK, height = 22.dp, maxWidth = 150.dp, contentDescription = "You're on a streak!", alignment = Alignment.CenterStart)   // BJ16
             Text(
                 "Upgrade to Pro for ad-free play, stats, shields, and more.",
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,

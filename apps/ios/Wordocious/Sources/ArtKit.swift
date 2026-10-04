@@ -1031,7 +1031,7 @@ enum HeadingArt: String, CaseIterable {
         let items = warm.map { art -> (String, CGFloat) in
             let s = art.size(height: popupHeight, maxWidth: maxWidth)
             return (art.asset, max(s.width, s.height))
-        }
+        } + [("art-moment-streak", 150), ("art-moment-flawless", 150), ("art-titlecast-shields", 150)]   // the header popups
         DispatchQueue.global(qos: .utility).async {
             for (name, _) in items { _ = ArtAsset.exists(name) }
         }

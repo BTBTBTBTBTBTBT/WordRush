@@ -144,6 +144,11 @@ object HeadingArtCache {
             val (w, _) = h.box(Heading.POPUP_HEIGHT, Heading.MAX_WIDTH)
             get(context, h, max(1, (w.value * density).roundToInt()))
         }
+        // The header streak / flawless / shield popups' lettering (drawn through artPainter at 150 dp).
+        val px = ArtBitmaps.bucketPx((150 * density).roundToInt())
+        for (res in listOf(R.drawable.art_moment_streak, R.drawable.art_moment_flawless, R.drawable.art_titlecast_shields)) {
+            ArtBitmaps.get(context, res, px)
+        }
     }
 }
 

@@ -417,7 +417,9 @@ private fun CountdownOverlay(count: Int, mode: GameMode, isRematch: Boolean = fa
         Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Text(
+            // BJ16: MATCH FOUND! as lettering (other countdown labels stay caps text).
+            if (title == null && !isRematch) com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.MATCHFOUND, height = 40.dp)
+            else Text(
                 title ?: if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND",
                 fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 2.4.sp, color = VsTeal.label,
             )

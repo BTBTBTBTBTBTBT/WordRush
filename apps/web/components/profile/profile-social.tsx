@@ -50,6 +50,7 @@ import {
   type LatelyEvent,
   type BoardFetchResult,
 } from '@/lib/profile-social';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 // ── Shared bits ─────────────────────────────────────────────────────────────
 
@@ -351,7 +352,7 @@ export function ArchetypeModal({
 
   return (
     <Modal open={open} onClose={onClose} ariaLabel="Player archetypes explained">
-      <ModalTitle>Player archetypes</ModalTitle>
+      <HeadingArt slug="archetypes" as="h3" label="Player archetypes" height={36} className="mb-3" />
       <p className="text-xs font-bold mb-3" style={{ color: 'var(--color-text-muted)' }}>
         Computed from recent solo dailies. First matching rule wins, top to bottom.
       </p>
@@ -491,7 +492,9 @@ export function YouVsThemCard({
       </TappableCard>
 
       <Modal open={showDetail} onClose={() => setShowDetail(false)} ariaLabel="All shared dailies" wide>
-        <ModalTitle>You vs {targetName}</ModalTitle>
+        {/* BJ16: the HEAD TO HEAD lettering; who rides under it. */}
+        <HeadingArt slug="h2h" as="h3" label={`You vs ${targetName}`} height={36} />
+        <p aria-hidden="true" className="text-xs font-black text-center mb-3" style={{ color: 'var(--color-text-muted)' }}>You vs {targetName}</p>
         {h2h.shared.length === 0 ? (
           <EmptyNote title="NO SHARED DAILIES YET" line="Play the same daily on the same day to compare." />
         ) : (
@@ -647,7 +650,8 @@ export function TrophyCaseCard({
       <Modal open={podiumFor !== null} onClose={() => setPodiumFor(null)} ariaLabel="Daily podium">
         {podiumFor && (
           <>
-            <ModalTitle>{modeLabel(podiumFor.mode)} podium — {podiumFor.day}</ModalTitle>
+            <><HeadingArt slug="podium" as="h3" label={`${modeLabel(podiumFor.mode)} podium — ${podiumFor.day}`} height={36} />
+            <p aria-hidden="true" className="text-xs font-black text-center mb-3" style={{ color: 'var(--color-text-muted)' }}>{modeLabel(podiumFor.mode)} · {podiumFor.day}</p></>
             {podium === null && <LoadingNote label="Loading podium" />}
             {podium !== null && podium.length === 0 && <EmptyNote title="NO PODIUM" line="This day's podium isn't available." />}
             {podium !== null && podium.length > 0 && (
@@ -774,7 +778,9 @@ export function HighlightsReel({
       </div>
 
       <Modal open={showCalendar} onClose={() => setShowCalendar(false)} ariaLabel="Streak calendar">
-        <ModalTitle>Last 60 days</ModalTitle>
+        {/* BJ16: the STREAK CALENDAR lettering; the window rides under it. */}
+        <HeadingArt slug="streakcal" as="h3" label="Streak calendar, last 60 days" height={36} />
+        <p aria-hidden="true" className="text-xs font-black text-center mb-3" style={{ color: 'var(--color-text-muted)' }}>Last 60 days</p>
         {calendar === null && <LoadingNote label="Loading calendar" />}
         {calendar !== null && (
           <>
@@ -881,7 +887,8 @@ export function LatelyCard({
       <Modal open={podiumFor !== null} onClose={() => setPodiumFor(null)} ariaLabel="Daily podium">
         {podiumFor && (
           <>
-            <ModalTitle>{modeLabel(podiumFor.mode)} podium — {podiumFor.day}</ModalTitle>
+            <><HeadingArt slug="podium" as="h3" label={`${modeLabel(podiumFor.mode)} podium — ${podiumFor.day}`} height={36} />
+            <p aria-hidden="true" className="text-xs font-black text-center mb-3" style={{ color: 'var(--color-text-muted)' }}>{modeLabel(podiumFor.mode)} · {podiumFor.day}</p></>
             {podium === null && <LoadingNote label="Loading podium" />}
             {podium !== null && podium.length === 0 && <EmptyNote title="NO PODIUM" line="This day's podium isn't available." />}
             {podium !== null && podium.length > 0 && (

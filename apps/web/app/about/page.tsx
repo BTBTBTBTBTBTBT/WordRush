@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <InfoPageLayout title="About Wordocious">
+    <InfoPageLayout title="About Wordocious" art="art-titlecast-about" artLabel="About Wordocious">
       <IntroCard title={<>Daily Word Games &mdash; the same puzzles for everyone</>} />
 
       {ABOUT_SECTIONS.map((section, si) => (

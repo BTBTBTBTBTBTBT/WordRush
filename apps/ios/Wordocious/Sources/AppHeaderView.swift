@@ -166,6 +166,8 @@ struct PopCard<Body: View>: View {
     let subtitle: String
     let host: MascotID
     let hostPose: String
+    /// FINISH_SPEC BJ16: the headline as moment lettering (STREAK! / FLAWLESS!); `title` stays its label.
+    var titleArt: String? = nil
     @ViewBuilder var content: () -> Body
 
     var body: some View {
@@ -175,10 +177,18 @@ struct PopCard<Body: View>: View {
                 Icon3D(icon, size: 58)
                     .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 4)
                 VStack(alignment: .leading, spacing: 1) {
+                    if let titleArt, ArtAsset.exists(titleArt) {
+                        ArtThumbs.image(titleArt, points: 150)
+                            .resizable().interpolation(.high).scaledToFit()
+                            .frame(maxWidth: 150, maxHeight: 36, alignment: .leading)
+                            .accessibilityLabel(title)
+                            .accessibilityAddTraits(.isHeader)
+                    } else {
                     Text(title).font(Brand.font(21, .black)).foregroundStyle(.white)
                         .shadow(color: .black.opacity(0.12), radius: 0, x: 0, y: 2)
                         .lineLimit(1).minimumScaleFactor(0.7)
                         .accessibilityAddTraits(.isHeader)
+                    }
                     Text(subtitle).font(Brand.font(12, .heavy)).foregroundStyle(.white.opacity(0.9))
                         .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 }

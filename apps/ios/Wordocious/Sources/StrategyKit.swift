@@ -304,6 +304,9 @@ struct StrategyIndexBody: View {
             Group {
                 if let art = g.titleArt {
                     GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 30, alignment: .leading)
+                } else if let gen = g.gen, ArtAsset.exists("art-titlecast-vsbattle"), gen.shortTitle.uppercased() == "VS" {
+                    // BJ16: VS wears the VS BATTLE lettering.
+                    GameTitleArtView(asset: "art-titlecast-vsbattle", label: "VS Battle", maxHeight: 30, alignment: .leading)
                 } else if let gen = g.gen {
                     // VS has no title art: its short name lettered in the accent.
                     Text(gen.shortTitle.uppercased()).font(Brand.font(24, .black)).foregroundStyle(g.accent)

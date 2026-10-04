@@ -76,6 +76,8 @@ fun InfoPage(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     art: TitleArt? = null,
+    /** FINISH_SPEC BJ16: a heading lettering (art-titlecast-<slug>) in place of the text title. */
+    heading: Heading? = null,
     pageHeadline: Boolean = false,
     backLabel: String = "Back",
     intro: Pair<String, String?>? = null,
@@ -101,6 +103,7 @@ fun InfoPage(
             SoftControl(Icon3DName.HELP, "Help", { menuOpen = true })
         }
         when {
+            heading != null -> HeadingArt(heading, Modifier.padding(vertical = 4.dp), height = 52.dp, contentDescription = title)
             art != null && pageHeadline -> PageHeadline(art)
             art != null -> FooterHeadline(art)
             else -> Box(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {

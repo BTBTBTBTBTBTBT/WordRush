@@ -437,21 +437,8 @@ struct AchievementUnlockPopup: View {
                     .padding(.horizontal, 6)
                     .accessibilityElement(children: .combine)
                 } else {
-                // "NEW TIER!" in lettering-style ink + one gloss sweep.
-                let ink = OutlinedText(text: headline, size: 26, fill: Color(hex: 0xFFD166), width: 2)
-                ink.overlay {
-                    if !still {
-                        GeometryReader { g in
-                            LinearGradient(colors: [.white.opacity(0), .white.opacity(0.75), .white.opacity(0)],
-                                           startPoint: .leading, endPoint: .trailing)
-                                .frame(width: g.size.width * 0.35)
-                                .offset(x: sweep * g.size.width)
-                        }
-                        .mask(ink)
-                        .allowsHitTesting(false)
-                    }
-                }
-                .minimumScaleFactor(0.6)
+                // BJ16: the LEVEL UP! lettering (was the outlined "NEW TIER!" + gloss sweep; Android parity).
+                HeadingArtView(.levelup, height: 34, label: "Level up!")
 
                 VStack(spacing: 5) {
                     if case .levelUp(let level) = moment {

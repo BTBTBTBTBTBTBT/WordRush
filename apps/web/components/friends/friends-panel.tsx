@@ -53,6 +53,7 @@ import { ART_SIZE, artSrc, poseArt } from '@/lib/art';
 import { softMix } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
 import { FeedbackPill } from '@/components/game/feedback-toast';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 /** The add-friend window's cast pose: I reaching out (not the Friends host, O1 — A7). */
 const ADD_POSE = poseArt('i', 'reach');
@@ -977,7 +978,9 @@ export function FriendsPanel() {
           >
             <div aria-hidden="true" style={frBar(FR_LOOK.bannerBar)} />
             <div className="px-4 py-3">
-              <p className="text-[11px] font-black uppercase" style={{ color: FR_LOOK.bannerClock, letterSpacing: 1.2 }}>Nudge {tauntTarget.username}</p>
+              {/* BJ16: the NUDGE! lettering; who rides under it. */}
+              <HeadingArt slug="nudge" label={`Nudge ${tauntTarget.username}`} height={30} maxWidth={140} align="left" />
+              <p aria-hidden="true" className="text-[11px] font-black" style={{ color: FR_LOOK.bannerClock, letterSpacing: 0.6 }}>@{tauntTarget.username}</p>
             </div>
             {tauntStatus ? (
               <div className="p-6 text-center text-sm font-extrabold" style={{ color: FR_LOOK.ink }} role="status">{tauntStatus}</div>

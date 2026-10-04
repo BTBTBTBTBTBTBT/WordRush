@@ -464,9 +464,12 @@ private fun StrategyTile(e: StrategyEntry, modifier: Modifier, onClick: () -> Un
                     modifier = Modifier.fillMaxWidth().height(30.dp),
                     contentScale = ContentScale.Fit, alignment = Alignment.CenterStart,
                 )
-                e.gameId == "vs" -> Box(Modifier.height(30.dp), contentAlignment = Alignment.CenterStart) {
-                    TitleLettering("VS", accent, 24f)
-                }
+                // BJ16: VS wears the VS BATTLE lettering.
+                e.gameId == "vs" -> Image(
+                    artPainter(com.wordocious.app.R.drawable.art_titlecast_vsbattle, 180.dp), contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().height(30.dp),
+                    contentScale = ContentScale.Fit, alignment = Alignment.CenterStart,
+                )
                 else -> CastPose(e.host, "ready", 36.dp)
             }
             Text(

@@ -815,7 +815,11 @@ struct LeaderboardTab: View {
     private func tauntSheet(_ target: FriendsService.FriendProfile) -> some View {
         let accent = Color(hex: 0x7C3AED)
         return VStack(spacing: 12) {
-            FinishLabel("Taunt \(target.username)", color: Color(hex: 0x5B3C96))
+            // BJ16: the NUDGE! lettering; who rides under it.
+            VStack(alignment: .leading, spacing: 0) {
+                HeadingArtView(.nudge, height: 30, maxWidth: 140, label: "Nudge \(target.username)", alignment: .leading)
+                FinishLabel("@\(target.username)", color: Color(hex: 0x5B3C96)).accessibilityHidden(true)
+            }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20).padding(.top, 20)
             if let status = tauntStatus {

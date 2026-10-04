@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { InfoPageLayout, IntroCard, SectionCard, infoAccent } from '@/components/ui/info-page';
-import { PAGE_HOSTS } from '@/lib/mascots';
 import { SUPPORT_SECTIONS } from '@/lib/content/static-content';
 
 export default function SupportPage() {
   return (
     // C6 layout; hosted by C (Help / Guides) beside the text title. Back keeps
     // its old target (home).
-    <InfoPageLayout title="Help & Support" host={PAGE_HOSTS.guides} backHref="/">
+    <InfoPageLayout title="Help & Support" art="art-titlecast-support" artLabel="Help & Support" backHref="/">
       <IntroCard title={<>Got a question? We&apos;ve got answers.</>} />
 
       {SUPPORT_SECTIONS.map((section, si) => (

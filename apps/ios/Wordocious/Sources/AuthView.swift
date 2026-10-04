@@ -42,14 +42,10 @@ struct AuthView: View {
                 PageBackground(tint: .home)
                 ScrollView {
                     VStack(spacing: 24) {
-                        VStack(spacing: 8) {
-                            // ART_SPEC §8: the whole cast around WELCOME! over the wordmark.
-                            if ArtAsset.exists(ArtTitleName.welcome.assetName) {
-                                ArtTitle(.welcome, maxWidth: 360)
-                            }
-                            Wordmark(size: 30)
-                            Text("Daily Word Games").font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
-                        }.padding(.top, 20)
+                        // BJ16 round 2: the Home WORDOCIOUS cast header (no WELCOME! / wordmark / tagline —
+                        // the card's WELCOME BACK! lettering already greets; no duplicate info).
+                        LivingCastHeader(pro: false)
+                            .padding(.top, 12)
 
                         card
                         footer

@@ -33,6 +33,8 @@ interface PopupShellProps {
   label: string;
   icon: Icon3DName;
   title: string;
+  /** FINISH_SPEC BJ16: the headline as lettering art (STREAK! / FLAWLESS! / SHIELDS); `title` stays its name. */
+  titleArt?: string;
   sub: string;
   host: PoseArtName;
   /** Header gradient. */
@@ -42,7 +44,7 @@ interface PopupShellProps {
   children: React.ReactNode;
 }
 
-function PopupShell({ open, onClose, label, icon, title, sub, host, header, accent, children }: PopupShellProps) {
+function PopupShell({ open, onClose, label, icon, title, titleArt, sub, host, header, accent, children }: PopupShellProps) {
   const ref = useRef<HTMLDivElement>(null);
   // FINISH_SPEC U: a popup opening = `whoosh`.
   useEffect(() => { if (open) feedback('whoosh'); }, [open]);
@@ -79,7 +81,14 @@ function PopupShell({ open, onClose, label, icon, title, sub, host, header, acce
           </HeaderCircle>
           <Icon3D name={icon} size={58} style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))' }} />
           <div className="min-w-0">
-            <h3 className="m-0 font-black text-white leading-tight" style={{ fontSize: 21, textShadow: '0 2px 0 rgba(0, 0, 0, 0.12)' }}>{title}</h3>
+            {titleArt ? (
+              <h3 className="m-0" style={{ lineHeight: 0 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={artSrc(titleArt)} alt={title} decoding="async" draggable={false} className="block select-none pointer-events-none" style={{ height: 34, width: 'auto', maxWidth: 150, objectFit: 'contain', objectPosition: 'left center' }} />
+              </h3>
+            ) : (
+              <h3 className="m-0 font-black text-white leading-tight" style={{ fontSize: 21, textShadow: '0 2px 0 rgba(0, 0, 0, 0.12)' }}>{title}</h3>
+            )}
             <small className="block font-extrabold" style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.92)' }}>{sub}</small>
           </div>
           <Image
@@ -135,6 +144,7 @@ export function StreakPopup({ open, onClose, streak, best, today, playedToday, s
       label={`Daily streak: ${streak} ${streak === 1 ? 'day' : 'days'}, best ${best}`}
       icon="flame"
       title={`${streak}-day streak!`}
+      titleArt="art-moment-streak"
       sub={isBest ? 'Your best ever. Keep it rolling.' : streak > 0 ? 'Keep it rolling.' : 'Play a daily to start one.'}
       host={poseArt('s', 'trophy')}
       header="linear-gradient(135deg, #ffb36b, #f5a524 60%, #ff8a5c)"
@@ -256,6 +266,7 @@ export function ShieldPopup({ open, onClose, shields }: { open: boolean; onClose
       label={`Streak shields: ${shields}`}
       icon="shield"
       title={`${shields} streak shield${shields === 1 ? '' : 's'}`}
+      titleArt="art-titlecast-shields"
       sub={shields > 0 ? 'Your streak is protected.' : 'Earn one at every 7-day milestone.'}
       host={poseArt('u', 'lotus')}
       header="linear-gradient(135deg, #a78bfa, #7c3aed 60%, #6d28d9)"
@@ -281,6 +292,7 @@ export function FlawlessPopup({ open, onClose, streak }: { open: boolean; onClos
       label={`Flawless streak: ${streak}`}
       icon="trophy"
       title={`${streak} flawless day${streak === 1 ? '' : 's'}`}
+      titleArt="art-moment-flawless"
       sub="Every daily won, day after day."
       host={poseArt('o2', 'cheer')}
       header="linear-gradient(135deg, #ffd166, #f5a524 60%, #e8901a)"

@@ -74,6 +74,9 @@ export type HeadingSlug = keyof typeof HEADING_ART;
 /** Titles that present on a tap (popups, sheets, result strips): decoded at idle after the first paint. */
 export const HEADING_WARM: readonly HeadingSlug[] = ['solved', 'nottoday', 'share', 'sweep', 'shields', 'savestreak', 'streaksaved', 'playedtoday', 'vsused', 'achievement', 'letsplay', 'invite', 'editprofile', 'mascot', 'findingrival', 'matchfound', 'nudge', 'invitesent', 'newfriends', 'giftpro', 'prounlocked', 'invited', 'welcomepro', 'freeweek', 'properk', 'gauntletcleared', 'laddercleared', 'alreadyplayed', 'levelup', 'oops'];
 
+/** Other lettering the header popups show on a tap (STREAK! / FLAWLESS!), decoded with the headings. */
+const HEADING_WARM_EXTRA = ['art-moment-streak', 'art-moment-flawless'] as const;
+
 /** Sheet / popup heading height (BJ16: 44–56 px) and widest draw. */
 export const HEADING_HEIGHT = 48;
 export const HEADING_MAX_WIDTH = 300;
@@ -156,6 +159,13 @@ export function HeadingArtWarmup() {
         held.push(img);
       }
       if (i < HEADING_WARM.length) idle(step);
+      else for (const name of HEADING_WARM_EXTRA) {
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = artSrc(name);
+        img.decode().catch(() => {});
+        held.push(img);
+      }
     };
     idle(step);
   }, []);

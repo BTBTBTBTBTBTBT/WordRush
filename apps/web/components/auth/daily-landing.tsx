@@ -10,6 +10,7 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton, TextLink, TextLinkA } from '@/components/ui/cast-button';
 import { softRow } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 /**
  * §229: public landing for /daily — the Daily Challenge leaderboard page.
@@ -58,7 +59,8 @@ export function DailyLanding() {
         <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#7c3aed' }}>
           Eight word puzzles a day, one leaderboard
         </p>
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={h}>Daily Challenge</h1>
+        {/* BJ16: the DAILY CHALLENGE lettering. */}
+        <HeadingArt slug="dailychallenge" as="h1" height={56} maxWidth={420} className="mb-3" />
         <p className="text-base font-bold mb-6 leading-relaxed" style={p}>
           The same eight words for every player in the world, every day. Solve them, then see exactly where you stand.
         </p>

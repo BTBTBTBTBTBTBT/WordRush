@@ -75,7 +75,7 @@ struct FriendlyGameScreen: View {
                                 scene: gone ? .notFound : .unplugged, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
                                 lineColor: FriendsInk.heading,
                                 actionTitle: "Friends", actionSymbol: "chevron.left", actionVariant: .pink,
-                                action: { dismiss() })
+                                action: { dismiss() }, heading: gone ? .notfound : .oops)   // BJ16
                 Spacer()
             } else {
                 Spacer()

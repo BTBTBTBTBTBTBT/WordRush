@@ -436,8 +436,12 @@ struct VSGameView: View {
             PageBackground(tint: .vs, lightOnly: true)
             VSOverlayWordmark()
             VStack(spacing: 18) {
-                Text(vm.countdownLabel)
-                    .font(Brand.font(12, .black)).tracking(2).foregroundStyle(VsLobbyKit.mutedInk)
+                if vm.countdownLabel == "MATCH FOUND" {
+                    HeadingArtView(.matchfound, height: 40)   // BJ16: lettering (other labels stay caps text)
+                } else {
+                    Text(vm.countdownLabel)
+                        .font(Brand.font(12, .black)).tracking(2).foregroundStyle(VsLobbyKit.mutedInk)
+                }
                 HStack(spacing: 8) {
                     VSModeGlyphTile(mode: mode, selected: true, size: 30)
                     Text(modeName.uppercased()).font(Brand.font(22, .black)).tracking(0.4)

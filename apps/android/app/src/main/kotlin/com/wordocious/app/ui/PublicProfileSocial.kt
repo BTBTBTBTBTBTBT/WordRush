@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -353,7 +354,7 @@ fun ArchetypeDialog(targetName: String, targetArchetype: String, onDismiss: () -
         onDismissRequest = onDismiss,
         containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
         confirmButton = { DialogDone("Done", onDismiss) },
-        title = { Text("Player archetypes", fontWeight = FontWeight.Black) },
+        title = { HeadingArt(Heading.ARCHETYPES, height = 36.dp, contentDescription = "Player archetypes") },   // BJ16
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()).heightIn(max = 420.dp),
@@ -472,7 +473,12 @@ fun H2HDetailDialog(targetName: String, h2h: ProfileService.H2HSummary, onDismis
         onDismissRequest = onDismiss,
         containerColor = accentWash(SOCIAL_PURPLE, 0.10f),
         confirmButton = { DialogDone("Done", onDismiss) },
-        title = { Text("You vs $targetName", fontWeight = FontWeight.Black) },
+        title = {   // BJ16: HEAD TO HEAD lettering, the rival under it
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                HeadingArt(Heading.H2H, height = 34.dp, contentDescription = "You vs $targetName")
+                Text("vs @$targetName", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.clearAndSetSemantics { })
+            }
+        },
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()).heightIn(max = 440.dp),

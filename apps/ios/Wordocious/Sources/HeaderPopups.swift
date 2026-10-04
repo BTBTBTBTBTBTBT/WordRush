@@ -151,7 +151,7 @@ struct HeaderPopupHost: View {
         let puzzleFlawlessShown = d.puzzleFlawless > 0 || d.puzzleFlawlessBest > 0
         return PopCard(tint: Color(hex: 0xFFF6EA),
                        header: [Color(hex: 0xFFB36B), Color(hex: 0xF5A524), Color(hex: 0xFF8A5C)],
-                       icon: .flame, title: headline, subtitle: sub, host: .s, hostPose: "trophy") {
+                       icon: .flame, title: headline, subtitle: sub, host: .s, hostPose: "trophy", titleArt: MomentArt.streak.assetName) {
             sectionLabel("DAILY STREAK", Self.warmInk)
             HStack(spacing: 8) {
                 statTile(streak, "CURRENT")
@@ -278,7 +278,8 @@ struct HeaderPopupHost: View {
         let shown = min(n, 6)
         return PopCard(tint: Color(hex: 0xF5EFFF),
                        header: [Color(hex: 0xA78BFA), Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
-                       icon: .shield, title: title, subtitle: sub, host: .u, hostPose: "lotus") {
+                       icon: .shield, title: title, subtitle: sub, host: .u, hostPose: "lotus",
+                       titleArt: HeadingArt.shields.asset) {   // BJ16: the popup's own SHIELDS heading
             HStack(spacing: 8) {
                 ForEach(0..<shown, id: \.self) { _ in Icon3D(.shield, size: 40) }
                 Icon3D(.shield, size: 40).saturation(0).opacity(0.28)
@@ -297,7 +298,7 @@ struct HeaderPopupHost: View {
         PopCard(tint: Color(hex: 0xFFF8E6),
                 header: [Color(hex: 0xFFD166), Color(hex: 0xF5A524), Color(hex: 0xF59E0B)],
                 icon: .trophy, title: "\(streak)-day flawless run!", subtitle: "Every daily won, day after day.",
-                host: .o2, hostPose: "twirl") {
+                host: .o2, hostPose: "twirl", titleArt: MomentArt.flawless.assetName) {
             HStack(spacing: 8) { statTile(streak, "CURRENT") }
                 .padding(.horizontal, 14).padding(.top, 12)
             popText("Consecutive days winning all \(DailyCompletionsStore.totalDailyModes) Daily Sweep games. Win every one today to keep it alive.")

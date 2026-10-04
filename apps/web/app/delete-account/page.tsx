@@ -43,7 +43,7 @@ const DELETED = [
 export default function DeleteAccountPage() {
   return (
     <div className="min-h-screen pb-12" style={{ background: softBackground('#7c3aed', 0.06) }}>
-      <InfoPageHeader title="Delete Account" />
+      <InfoPageHeader title="Delete Account" art="art-titlecast-deleteaccount" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6 space-y-4">
         <div
           className="p-5"

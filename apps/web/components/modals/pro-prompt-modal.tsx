@@ -10,6 +10,7 @@ import { CandyLink } from '@/components/ui/candy-button';
 import { HeaderBack } from '@/components/ui/page-header';
 import { PopupBar, popupCard, POPUP_ACCENT } from '@/components/ui/soft-popup';
 import { ART_SIZE, artSrc } from '@/lib/art';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 // The Go Pro nudge after a 7-day streak (docs/FINISH_SPEC.md G1): the gold
 // card family — a gold wash with the gold top bar, W crowned with the golden
@@ -80,7 +81,8 @@ export function ProPromptModal() {
                 style={{ height: 78, width: 'auto', filter: 'drop-shadow(0 4px 8px rgba(180, 83, 9, 0.25))' }}
               />
               <div className="flex-1 min-w-0">
-                <p className="font-black" style={{ fontSize: 16, color: 'var(--color-text)' }}>You&apos;re on a streak!</p>
+                {/* BJ16: the ON A STREAK! lettering. */}
+                <HeadingArt slug="onastreak" label="You're on a streak!" height={28} maxWidth={200} align="left" />
                 <p className="text-[11px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
                   Upgrade to Pro for ad-free play, stats, shields, and more.
                 </p>

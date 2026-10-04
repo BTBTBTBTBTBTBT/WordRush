@@ -49,6 +49,8 @@ fun BrandEmptyState(
     onAction: (() -> Unit)? = null,
     secondary: (@Composable () -> Unit)? = null,
     preview: (@Composable () -> Unit)? = null,
+    /** FINISH_SPEC BJ16: the title as heading lettering (NOT FOUND, OOPS!, …); [title] stays its label. */
+    heading: Heading? = null,
 ) {
     val still = WTheme.reducedMotion
     val enter = remember { Animatable(if (still) 1f else 0f) }
@@ -64,7 +66,8 @@ fun BrandEmptyState(
         if (scene != null) SceneImage(scene, height = artHeight)
         else Mascot(host, artHeight * 0.8f, motion = MascotMotion.BOB)
         Spacer(Modifier.height(2.dp))
-        PageTitleText(title, accent = accent, fontSize = 20.sp, maxLines = 2)
+        if (heading != null) HeadingArt(heading, height = 40.dp, contentDescription = title)
+        else PageTitleText(title, accent = accent, fontSize = 20.sp, maxLines = 2)
         Text(
             line, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = lineColor,
             textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 320.dp),

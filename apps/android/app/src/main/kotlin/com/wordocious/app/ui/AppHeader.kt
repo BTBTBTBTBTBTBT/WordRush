@@ -286,6 +286,8 @@ private fun HeaderPopup(
     title: String,
     subtitle: String,
     host: Pair<MascotId, String>,
+    /** FINISH_SPEC BJ16: the headline as lettering art (STREAK! / FLAWLESS! / SHIELDS); [title] stays its label. */
+    titleArt: Int? = null,
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -340,7 +342,12 @@ private fun HeaderPopup(
                     ) {
                         Icon3D(icon, 58.dp)
                         Column(Modifier.semantics(mergeDescendants = true) { contentDescription = "$title. $subtitle" }) {
-                            Text(
+                            if (titleArt != null) androidx.compose.foundation.Image(
+                                artPainter(titleArt, 150.dp), contentDescription = null,
+                                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                alignment = Alignment.CenterStart,
+                                modifier = Modifier.height(34.dp).widthIn(max = 150.dp),
+                            ) else Text(
                                 title, fontSize = 21.sp, fontWeight = FontWeight.Black, fontFamily = Nunito, color = Color.White,
                                 style = androidx.compose.ui.text.TextStyle(
                                     shadow = androidx.compose.ui.graphics.Shadow(Color(0x1F000000), Offset(0f, 2f * density.density), 0f),
@@ -442,6 +449,7 @@ private fun StreakPopup(p: com.wordocious.app.data.Profile, onDismiss: () -> Uni
             else -> "Keep it rolling."
         },
         host = MascotId.S to "trophy",
+        titleArt = com.wordocious.app.R.drawable.art_moment_streak,   // BJ16
     ) {
         StreakSectionLabel("DAILY STREAK")
         Row(
@@ -611,6 +619,7 @@ private fun ShieldPopup(shields: Int, onDismiss: () -> Unit) {
         title = "$shields streak ${if (shields == 1) "shield" else "shields"}",
         subtitle = if (shields > 0) "Your streak is protected." else "Earn one at your next 7-day milestone.",
         host = MascotId.U to "lotus",
+        titleArt = com.wordocious.app.R.drawable.art_titlecast_shields,   // BJ16: the popup's own SHIELDS heading
     ) {
         // Up to four earned shields, then the next one to earn, faded.
         Row(
@@ -639,6 +648,7 @@ private fun FlawlessPopup(days: Int, onDismiss: () -> Unit) {
         title = "$days-day flawless run!",
         subtitle = "Every Daily Sweep game won.",
         host = MascotId.O2 to "cheer",
+        titleArt = com.wordocious.app.R.drawable.art_moment_flawless,   // BJ16
     ) {
         Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 4.dp)) {
             PopupStatTile("$days", "CURRENT", STREAK_ORANGE, STREAK_LABEL, Modifier.weight(1f))

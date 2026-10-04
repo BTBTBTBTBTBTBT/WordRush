@@ -18,6 +18,8 @@ struct BrandEmptyState<Preview: View>: View {
     var actionSymbol: String? = nil
     var actionVariant: CandyButtonStyle.Variant = .purple
     var action: (() -> Void)? = nil
+    /// FINISH_SPEC BJ16: the title as heading lettering (NOT FOUND, OOPS!, …); `title` stays its label.
+    var heading: HeadingArt? = nil
     @ViewBuilder var preview: () -> Preview
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -34,12 +36,16 @@ struct BrandEmptyState<Preview: View>: View {
                 }
             }
             .padding(.bottom, 2)
+            if let heading {
+                HeadingArtView(heading, height: 40, label: title)
+            } else {
             Text(title.uppercased())
                 .font(Brand.font(20, .black)).tracking(0.4)
                 .foregroundStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
                 .multilineTextAlignment(.center)
                 .lineLimit(2).minimumScaleFactor(0.7)
                 .accessibilityAddTraits(.isHeader)
+            }
             Text(line)
                 .font(Brand.font(14, .bold)).foregroundStyle(lineColor)
                 .multilineTextAlignment(.center)
@@ -73,9 +79,9 @@ extension BrandEmptyState where Preview == EmptyView {
     init(title: String, line: String, scene: ArtScene? = nil, host: MascotID = .w, artHeight: CGFloat = 120,
          colors: [Color] = PageHeaderStyle.purplePink, lineColor: Color = FinishInk.secondary,
          actionTitle: String? = nil, actionSymbol: String? = nil,
-         actionVariant: CandyButtonStyle.Variant = .purple, action: (() -> Void)? = nil) {
+         actionVariant: CandyButtonStyle.Variant = .purple, action: (() -> Void)? = nil, heading: HeadingArt? = nil) {
         self.init(title: title, line: line, scene: scene, host: host, artHeight: artHeight, colors: colors,
                   lineColor: lineColor, actionTitle: actionTitle, actionSymbol: actionSymbol,
-                  actionVariant: actionVariant, action: action, preview: { EmptyView() })
+                  actionVariant: actionVariant, action: action, heading: heading, preview: { EmptyView() })
     }
 }

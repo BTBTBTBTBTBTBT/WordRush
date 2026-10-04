@@ -170,7 +170,8 @@ export function StrategyTile({ href, accent, art, host, isVs, title, minutes }: 
           {art ? (
             <GuideTitleArt art={art} height={30} accent={accent} align="left" />
           ) : isVs ? (
-            <span aria-hidden="true" className={`font-black italic leading-none ${ink.className}`} style={{ ...ink.style, fontSize: 30, letterSpacing: '0.02em' }}>VS</span>
+            // BJ16: VS wears the VS BATTLE lettering.
+            <ArtTitle name="art-titlecast-vsbattle" as="div" maxHeight={30} maxWidth={180} align="left" motion="none" priority={false} />
           ) : (
             <Image src={poseSrc(host, 'ready')} alt="" aria-hidden width={POSE_SIZE} height={POSE_SIZE} sizes="36px" loading="lazy" draggable={false} style={{ width: 36, height: 36 }} />
           )}

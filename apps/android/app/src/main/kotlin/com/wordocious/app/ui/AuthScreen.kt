@@ -109,24 +109,9 @@ fun AuthScreen(
                 HeaderBackButton(onDismiss, close = true)
             }
         }
-        // WELCOME! heads sign-in (ART_SPEC §8) — the shared headline (N1 sizing).
-        // G5: a cast pose over the lettering-only title (FINISH_SPEC N1 — the title has no cast now).
-        CastPose(MascotId.W, "wave", 92.dp)
-        PageHeadline(TitleArt.WELCOME, Modifier.padding(bottom = 12.dp))
-        // Wordmark
-        Text(
-            "WORDOCIOUS",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Black,
-            style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
-        )
-        Text(
-            "Daily Word Games",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = WTheme.textMuted,
-            modifier = Modifier.padding(top = 4.dp, bottom = 28.dp),
-        )
+        // BJ16 round 2: the Home WORDOCIOUS cast header (no WELCOME! / wordmark / tagline —
+        // the card's WELCOME BACK! lettering already greets; no duplicate info).
+        LivingCastHeader(Modifier.fillMaxWidth().padding(bottom = 24.dp), reportAnchor = false)
 
         // Card — iOS AuthView: 20pt radius, 18pt padding, 16pt stack spacing, and
         // a violet-300 stroke (NOT the neutral --color-border used elsewhere).

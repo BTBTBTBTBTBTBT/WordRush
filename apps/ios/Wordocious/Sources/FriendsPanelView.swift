@@ -889,7 +889,11 @@ struct FriendsPanelView: View {
     private func tauntSheet(_ target: FriendsService.FriendProfile) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                FriendsLabel("Taunt \(target.username)", color: FriendsInk.section)
+                // BJ16: the NUDGE! lettering; who rides under it.
+                VStack(alignment: .leading, spacing: 0) {
+                    HeadingArtView(.nudge, height: 30, maxWidth: 140, label: "Nudge \(target.username)", alignment: .leading)
+                    FriendsLabel("@\(target.username)", color: FriendsInk.section).accessibilityHidden(true)
+                }
                 Spacer(minLength: 0)
                 // §A7: a secondary spot — R, not the page host O1.
                 PoseImage(.r, "wake", height: 44)

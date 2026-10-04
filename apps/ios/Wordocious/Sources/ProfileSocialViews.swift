@@ -269,7 +269,7 @@ struct ArchetypeSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    socialCaption("PLAYER ARCHETYPES")
+                    HeadingArtView(.archetypes, height: 30, maxWidth: 220, label: "Player archetypes", alignment: .leading)   // BJ16
                     Spacer()
                     HeaderCircleButton(.symbol("xmark"), size: 32, label: "Close") { dismiss() }
                 }
@@ -473,7 +473,13 @@ struct H2HDetailScreen: View {
             .navigationTitle("You vs \(target.username)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) { PageTitle("You vs \(target.username)", size: 17) }
+                ToolbarItem(placement: .principal) {   // BJ16: HEAD TO HEAD lettering, the rival under it
+                    VStack(spacing: 0) {
+                        HeadingArtView(.h2h, height: 24, maxWidth: 150, label: "You vs \(target.username)", motion: false)
+                        Text("vs @\(target.username)").font(Brand.font(10, .black)).foregroundStyle(FinishInk.secondary)
+                            .lineLimit(1).accessibilityHidden(true)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
                 }
@@ -807,7 +813,7 @@ struct PodiumScreen: View {
         }
         .navigationTitle("Podium")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .principal) { PageTitle("Podium", size: 17) } }
+        .toolbar { ToolbarItem(placement: .principal) { HeadingArtView(.podium, height: 30, maxWidth: 160, motion: false) } }   // BJ16
         .task {
             entries = await PublicProfileService.podium(day: request.day, mode: request.mode)
             loading = false

@@ -63,7 +63,7 @@ fun NewPasswordDialog(onDone: () -> Unit) {
                 "WORDOCIOUS", fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
                 style = TextStyle(brush = Brush.horizontalGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd)), fontFamily = Nunito),
             )
-            Text("Set a New Password", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            HeadingArt(Heading.NEWPASSWORD, height = 40.dp, contentDescription = "Set a New Password")   // BJ16
 
             if (done) {
                 // iOS holds this confirmation for 1.5s before dismissing the sheet.

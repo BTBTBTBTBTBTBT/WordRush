@@ -75,6 +75,7 @@ import { levelTier } from '@wordle-duel/core';
 import { readPageCache, sameData, writePageCache } from '@/lib/page-cache';
 import { CastLoadingStack } from '@/components/game/game-loading';
 import { BrandEmptyState } from '@/components/ui/brand-empty-state';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -452,7 +453,7 @@ export default function PublicProfilePage() {
     return (
       <PageBackground tint="home" className="min-h-screen p-4 pb-24">
         {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
-        <PageHeader className="max-w-sm mx-auto" title="Profile" titleTag="div" back={{ href: '/' }} />
+        <PageHeader className="max-w-sm mx-auto" title={<HeadingArt slug="profile" height={40} />} titleTag="div" back={{ href: '/' }} />
         <div className="max-w-sm mx-auto pt-4 space-y-4 animate-fade-in-up">
           <div
             className="overflow-hidden flex flex-col items-center text-center"
@@ -565,7 +566,7 @@ export default function PublicProfilePage() {
       {/* BJ7: 12 between sections (was 24). */}
       <div className="max-w-6xl mx-auto space-y-3">
         {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
-        <PageHeader title="Profile" titleTag="div" back={{ href: '/' }} />
+        <PageHeader title={<HeadingArt slug="profile" height={40} />} titleTag="div" back={{ href: '/' }} />
         {/* Header Section */}
         <div className="flex flex-col items-center gap-2.5 animate-fade-in-up">
           {/* Avatar with today-progress ring + "N/total today" pill */}

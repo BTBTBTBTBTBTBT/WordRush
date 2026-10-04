@@ -111,27 +111,10 @@ export function LoginScreen() {
         {/* Branding: W waving hello over the WELCOME! lettering (docs/ART_SPEC.md §8; FINISH_SPEC N1:
             the title is lettering only, a small centered headline) over the wordmark. */}
         <div className="text-center space-y-2">
-          <PoseArt pose="art-pose-w-wave" size={96} priority className="mx-auto art-pop" />
-          <ArtTitle
-            name="art-titlecast-welcome"
-            label="Welcome"
-            as="div"
-            widthPct={HEADLINE.widthPct}
-            maxWidth={headlineMaxWidth(...ART_SIZE['art-titlecast-welcome'])}
-          />
-          <h1
-            className="text-3xl font-black tracking-tight"
-            style={{
-              background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            WORDOCIOUS
-          </h1>
-          <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            Daily Word Games
-          </p>
+          {/* BJ16 round 2: the Home WORDOCIOUS cast header (no WELCOME! / wordmark / tagline —
+              the card's WELCOME BACK! lettering already greets; no duplicate info). */}
+          <h1 className="sr-only">Wordocious</h1>
+          <CastHeader ground />
         </div>
 
         {/* Card */}

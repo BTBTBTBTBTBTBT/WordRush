@@ -141,7 +141,7 @@ struct PublicProfileView: View {
         // O3 searching for the missing profile (ART_SPEC §7); BI24: brand headline.
         BrandEmptyState(title: "Player not found", line: "I looked everywhere. This profile doesn't exist or was removed.",
                         scene: .notFound, artHeight: 140, actionTitle: "Back", actionSymbol: "chevron.left",
-                        action: { dismiss() })
+                        action: { dismiss() }, heading: .notfound)   // BJ16
     }
 
     // MARK: Shared header bits (full page + teaser)

@@ -1148,11 +1148,15 @@ private fun TauntDialog(target: FriendsService.FriendProfile, onDone: () -> Unit
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 FriendFace(target.username, target.avatarUrl, target.avatarEmoji, 34.dp, online = false, userId = target.id)
-                Text(
-                    "NUDGE ${target.username.uppercase()}",
-                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading, letterSpacing = 0.08.em,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                )
+                // BJ16: the NUDGE! lettering; who rides under it.
+                Column(Modifier.weight(1f)) {
+                    HeadingArt(Heading.NUDGE, height = 30.dp, maxWidth = 140.dp, contentDescription = "Nudge ${target.username}", alignment = Alignment.CenterStart)
+                    Text(
+                        "@${target.username}",
+                        fontSize = 12.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 CastPose(MascotId.R, "sleepwalk", 48.dp)
             }
             val s = status

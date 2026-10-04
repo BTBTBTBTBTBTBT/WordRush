@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { CandyButton } from '@/components/ui/candy-button';
 import { barCard, softInput, softNotice } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 // Recovery landing for the password-reset email. Supabase links here either
 // with ?code= (PKCE) or with tokens in the URL hash (implicit); we handle both:
@@ -103,9 +104,8 @@ function ResetPasswordInner() {
           className="p-6 space-y-4"
           style={barCard()}
         >
-          <h2 className="text-lg font-black text-center" style={{ color: 'var(--color-text)' }}>
-            Set a New Password
-          </h2>
+          {/* BJ16: the NEW PASSWORD lettering. */}
+          <HeadingArt slug="newpassword" as="h2" label="Set a New Password" height={40} />
 
           {!ready ? (
             <p className="text-xs font-bold text-center py-4" style={{ color: 'var(--color-text-muted)' }}>

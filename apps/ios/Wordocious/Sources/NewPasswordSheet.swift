@@ -22,7 +22,7 @@ struct NewPasswordSheet: View {
                     Wordmark(size: 26).padding(.top, 8)
                     // §G5: the form sits on a tinted card (§A1) with candy CTA (§A8).
                     VStack(spacing: 16) {
-                        Text("Set a New Password").font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
+                        HeadingArtView(.newpassword, height: 40, label: "Set a New Password")   // BJ16
 
                         if done {
                             G5Notice("Password updated — you're signed in!", tone: .success)

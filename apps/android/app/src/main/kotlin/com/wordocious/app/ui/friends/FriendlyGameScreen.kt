@@ -219,6 +219,7 @@ fun FriendlyGameScreen(
                     // A missing game gets O3's not-found scene (ART_SPEC §7) + BI24 headline.
                     com.wordocious.app.ui.BrandEmptyState(
                         title = "GAME NOT FOUND",
+                        heading = com.wordocious.app.ui.Heading.NOTFOUND,   // BJ16
                         line = "This game isn't available anymore.",
                         scene = com.wordocious.app.ui.SceneArt.NOT_FOUND,
                         accent = com.wordocious.app.ui.PageAccent.friends,
