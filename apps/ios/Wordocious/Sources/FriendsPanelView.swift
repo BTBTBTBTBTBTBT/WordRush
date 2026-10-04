@@ -1245,7 +1245,7 @@ struct FriendsScreenView: View {
                         // The FRIENDS title art stays on top; O1 + I (the add-friends host) as a duo.
                         PageHeadline(.friends, bleed: Self.sidePadding)
                             .padding(.horizontal, Self.sidePadding).padding(.top, 6)
-                        GuestPitch(hosts: [Mascots.friends, Mascots.addFriends], title: "Play with friends",
+                        GuestPitch(hosts: [Mascots.friends, Mascots.addFriends], title: "Play with friends", heading: .playwithfriends,
                                    subtitle: "Sign in to add friends, race them every day and play pocket games together.",
                                    colors: [Color(hex: 0xDB2777), Color(hex: 0xF97316)],
                                    preview: .none, onSignIn: { showAuth = true })

@@ -423,8 +423,21 @@ struct CastShowcaseHost: View {
                 case "invite": root = AnyView(InviteSheet())
                 case "gopro": root = AnyView(CastShowcaseBoard())
                 case "share":
-                    // The finished screen's action row: Share results (+ the countdown caption) beside a slate CTA.
+                    // The finished screen's action row (BJ18): SHARE (+ the countdown caption) and NEXT with
+                    // the next game's 3D icon in ONE CastButtonRow, plus the slate CTA row.
                     root = AnyView(VStack(spacing: 16) {
+                        CastButtonRow {
+                            FinishedShareCTA(nextGame: "Classic", onShare: { _ in })
+                            Button {} label: {
+                                CandyLabel(title: "Next") { GameArtImage(asset: "game-six", size: 26) }
+                            }
+                            .buttonStyle(CastButtonStyle(color: .gold, size: .medium))
+                        }
+                        CastButtonRow {
+                            FinishedShareCTA(nextGame: "Classic", onShare: { _ in })
+                            Button {} label: { CandyLabel(title: "Leaderboard") }
+                                .buttonStyle(CastButtonStyle(color: .purple, size: .medium))
+                        }
                         HStack(alignment: .top, spacing: 10) {
                             FinishedShareCTA(nextGame: "Classic", onShare: { _ in })
                             Button {} label: { CandyLabel(title: "New puzzle") }

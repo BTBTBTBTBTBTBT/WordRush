@@ -40,6 +40,7 @@ export default function FriendsPage() {
             <GuestPitch
               hosts={[PAGE_HOSTS.friends, PAGE_HOSTS.addFriend]}
               title="Play with friends"
+              heading="playwithfriends"
               subtitle="Sign in to add friends, race them every day and play pocket games together."
               gradient={GUEST_GRADIENTS.friends}
               preview={{ kind: 'none' }}

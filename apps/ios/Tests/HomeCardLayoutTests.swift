@@ -30,4 +30,13 @@ final class HomeCardLayoutTests: XCTestCase {
         XCTAssertEqual(CardLine.compact("38 guesses · 10m 46s"), "38g · 10m 46s")
         XCTAssertEqual(CardLine.compact("12 mistakes · 10m 46s"), "12 miss · 10m 46s")
     }
+
+    /// BJ18: one name size per grid — the widest name decides it; floored at 13 (then per-card shrink).
+    func testUniformNameSizeFitsTheWidestName() {
+        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 70], slot: 80), 17)
+        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 85], slot: 80), 16)       // 17 × 80/85 = 16.0
+        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [60, 200], slot: 80), 13)      // the floor
+        XCTAssertEqual(HomeCardSpec.uniformNameSize(widths: [], slot: 80), 17)
+        XCTAssertEqual(HomeCardSpec.nameSlot(gridWidth: 350), 170 - 94)
+    }
 }

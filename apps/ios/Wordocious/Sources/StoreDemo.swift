@@ -524,13 +524,14 @@ enum StoreDemoDriver {
 /// The mascot maker, as Edit Profile opens it, with WordWiz's look.
 private struct StoreDemoMascotPage: View {
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        // BJ16: the MAKE YOUR MASCOT lettering over the builder, as the real mascot builder
+        // (OnboardingView) draws it — no plain-text nav title.
+        ScrollView {
+            VStack(spacing: 12) {
+                HeadingArtView(.mascot, height: 44, maxWidth: 340)
                 MascotBuilderView(initial: "W", config: AvatarCatalog.validate(raw: AvatarConfigRaw(fields: StoreDemo.me.avatar)), level: StoreDemo.me.level, isPro: true)
-                    .padding(16)
             }
-            .navigationTitle("Your mascot")
-            .navigationBarTitleDisplayMode(.inline)
+            .padding(16)
         }
     }
 }

@@ -111,7 +111,8 @@ final class MotionSpecTests: XCTestCase {
         var offenders: [String] = []
         for f in files where !skip.contains(f.lastPathComponent) {
             let lines = try String(contentsOf: f, encoding: .utf8).components(separatedBy: "\n")
-            for (i, line) in lines.enumerated() where line.contains(".sheet(") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+            // `PerfTour.send(.sheet(...))` is a DEBUG perf-tour command (the tour presents the real sheet), not a presentation.
+            for (i, line) in lines.enumerated() where line.contains(".sheet(") && !line.contains("PerfTour.send(.sheet(") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
                 let window = lines[i..<min(lines.count, i + 4)].joined(separator: " ")
                 if !SoftPopPolicy.systemSheetTypes.contains(where: { window.contains($0) }) {
                     offenders.append("\(f.lastPathComponent):\(i + 1)")

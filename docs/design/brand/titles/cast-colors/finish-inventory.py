@@ -97,6 +97,7 @@ MANUAL = {
     'inv2-7.png': [('privatematch', ('unwrap', 0)), ('oops', 1), ('notfound', 2), ('rotate', ('unwrap', 3))],
     'inv2-8.png': [('dailychallenge', ('unwrap', 0)), ('onastreak', 1)],
     'fix-1.png': [('bots', 0), ('levelup', 1)],
+    'inv3-1.png': [('playwithfriends', (0, 1)), ('more', 2)],   # PLAY WITH wrapped above FRIENDS → joined
 }
 
 

@@ -467,6 +467,8 @@ struct GuestPitch: View {
 
     let hosts: [MascotID]
     let title: String
+    /// BJ16: cast-color title art in place of the gradient headline (`title` stays its a11y label).
+    var heading: HeadingArt? = nil
     let subtitle: String
     var colors: [Color] = PageHeaderStyle.purplePink
     let preview: Preview
@@ -494,8 +496,14 @@ struct GuestPitch: View {
                 }
             }
             .padding(.bottom, 10)
-            PageTitle(title, colors: colors, size: 28)
-                .padding(.horizontal, 20)
+            Group {
+                if let heading {
+                    HeadingArtView(heading, height: 36, maxWidth: 320, label: title)
+                } else {
+                    PageTitle(title, colors: colors, size: 28)
+                }
+            }
+            .padding(.horizontal, 20)
             Text(subtitle)
                 .font(Brand.body(15)).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)

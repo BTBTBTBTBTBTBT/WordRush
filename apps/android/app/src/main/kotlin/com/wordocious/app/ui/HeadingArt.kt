@@ -93,6 +93,8 @@ enum class Heading(@DrawableRes val res: Int, val label: String, val aspect: Flo
     ROTATE(R.drawable.art_titlecast_rotate, "Rotate Your Phone", 1080f / 96f),
     DAILYCHALLENGE(R.drawable.art_titlecast_dailychallenge, "Daily Challenge", 1080f / 128f),
     ONASTREAK(R.drawable.art_titlecast_onastreak, "On a Streak!", 1080f / 184f),
+    PLAYWITHFRIENDS(R.drawable.art_titlecast_playwithfriends, "Play with Friends", 1080f / 119f),
+    MORE(R.drawable.art_titlecast_more, "More", 894f / 311f, warm = true),
     ;
 
     /** The box at [height] (≤ [maxWidth] wide), aspect kept; two-line art (aspect < 3.2) draws taller. */

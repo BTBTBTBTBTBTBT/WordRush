@@ -859,7 +859,8 @@ private fun ModeCardGrid(
     isPro: Boolean,
     onOpen: (ModeCard) -> Unit,
 ) {
-    // FINISH_SPEC BH2: 10 dp gaps both ways between the compact cards.
+    // FINISH_SPEC BH2: 10 dp gaps both ways between the compact cards. BJ18: one name size per grid.
+    CardNameSizeScope(cards.map { it.title }) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp)) {
     cards.chunked(2).forEach { rowCards ->
         Row(horizontalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp), modifier = Modifier.fillMaxWidth()) {
@@ -874,6 +875,7 @@ private fun ModeCardGrid(
             }
             if (rowCards.size == 1) Spacer(Modifier.weight(1f))
         }
+    }
     }
     }
 }

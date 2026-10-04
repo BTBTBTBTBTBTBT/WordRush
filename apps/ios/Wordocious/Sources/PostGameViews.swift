@@ -629,11 +629,13 @@ struct NextDailyCTA: View {
                                                                     userInfo: [HomeNav.requestedAtKey: at])
                                 }
                             } label: {
-                                // FINISH_SPEC §B6 / §A8: the gold (amber) candy button
-                                // with the next game's icon.
-                                CandyLabel(title: share == nil ? "Next daily: \(next.title)" : "Next: \(next.title)") { gameIcon(next) }
+                                // FINISH_SPEC §B6 / §A8: the gold (amber) candy button with the next
+                                // game's icon. BJ18: beside Share it is the short NEXT art label at
+                                // Share's medium cap height, so the two keep ONE row at phone width
+                                // (the game's name is the accessibility label).
+                                CandyLabel(title: share == nil ? "Next daily: \(next.title)" : "Next") { gameIcon(next) }
                             }
-                            .buttonStyle(CastButtonStyle(color: .gold, size: compact ? .medium : .large))
+                            .buttonStyle(CastButtonStyle(color: .gold, size: compact || share != nil ? .medium : .large))
                             .accessibilityLabel("Next daily: \(next.title)")
                         }
                     } else if nextMode == nil {

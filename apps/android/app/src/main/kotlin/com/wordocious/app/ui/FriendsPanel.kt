@@ -226,7 +226,7 @@ fun FriendsScreen(
         ) {
             PageHeadline(TitleArt.FRIENDS, Modifier.fillMaxWidth())
             GuestPitch(
-                hosts = listOf(Mascots.friends, Mascots.addFriends), title = "Play with friends",
+                hosts = listOf(Mascots.friends, Mascots.addFriends), title = "Play with friends", heading = Heading.PLAYWITHFRIENDS,
                 subtitle = "Sign in to add friends, race them every day and play pocket games together.",
                 colors = GuestPitchContent.friendsColors, preview = GuestPreview.None,
                 onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,

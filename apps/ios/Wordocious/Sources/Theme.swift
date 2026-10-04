@@ -167,6 +167,15 @@ enum Brand {
         rawFont(size, weight)
     }
 
+    /// BJ18: the width of `text` in the brand face at `size` scaled like `font(_:_:)` (Home grid name fit).
+    static func textWidth(_ text: String, _ size: CGFloat, _ weight: Font.Weight) -> CGFloat {
+        let scaled = min(UIFontMetrics.default.scaledValue(for: size), size * maxScale)
+        _ = rawFont(scaled, weight)
+        let key = "\(scaled)-\(Int(numericWeight(weight)))-\(UIApplication.shared.preferredContentSizeCategory.rawValue)"
+        let ui = fontCache[key] ?? UIFont.systemFont(ofSize: scaled, weight: .black)
+        return ceil((text as NSString).size(withAttributes: [.font: ui]).width)
+    }
+
     private static func rawFont(_ size: CGFloat, _ weight: Font.Weight) -> Font {
         let wght = numericWeight(weight)
         // The cache key must carry the size category: without it, the first

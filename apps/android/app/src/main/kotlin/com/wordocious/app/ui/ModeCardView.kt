@@ -92,6 +92,41 @@ internal object CardTrimGeometry {
 private val MODE_CARD_CORNER = HomeCardSpec.RADIUS.dp
 private val MODE_CARD_BAND = CardTrimGeometry.BAND.dp
 private val MODE_CARD_ICON = HomeCardSpec.ICON.dp
+
+/** BJ18: the Home grid's shared card-name size (sp); a lone card keeps [HomeCardSpec.NAME]. */
+internal val LocalCardNameSize = androidx.compose.runtime.compositionLocalOf { HomeCardSpec.NAME }
+
+/** BJ18: the uniform name size never goes below this share of [HomeCardSpec.NAME] (13 sp). */
+internal const val CARD_NAME_UNIFORM_MIN = 13f / 17f
+
+/**
+ * FINISH_SPEC BJ18 (founder 10-03: QuadWord's name rendered smaller than Classic's): every card in a
+ * Home grid draws its name at ONE size — the largest (≤ 17 sp, ≥ 13 sp, 0.5 sp steps) at which the
+ * widest name fits its slot (card − insets − icon − gaps − the reserved badge). Measured with the
+ * card's own capped font scale; a name still too wide at the floor shrinks on its own card (FitText).
+ * iOS: HomeCardNameSize, web: FitName's shared size.
+ */
+@androidx.compose.runtime.Composable
+internal fun CardNameSizeScope(titles: List<String>, columns: Int = 2, content: @androidx.compose.runtime.Composable () -> Unit) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+        val d = androidx.compose.ui.platform.LocalDensity.current
+        val capped = androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.3f))
+        val base = androidx.compose.material3.LocalTextStyle.current
+        val cardW = (maxWidth - (HomeCardSpec.GAP * (columns - 1)).dp) / columns
+        val slot = cardW - (2 * HomeCardSpec.PAD_X + HomeCardSpec.ICON + 8f + 4f + HomeCardSpec.BADGE).dp
+        val size = androidx.compose.runtime.remember(titles, slot, capped, base) {
+            val slotPx = with(capped) { slot.toPx() }
+            val style = base.copy(fontSize = HomeCardSpec.NAME.sp, fontWeight = FontWeight.Black)
+            val widest = titles.maxOfOrNull {
+                measurer.measure(it, style, maxLines = 1, softWrap = false, density = capped).size.width
+            } ?: 0
+            val scale = if (widest <= 0) 1f else (slotPx / widest).coerceIn(CARD_NAME_UNIFORM_MIN, 1f)
+            kotlin.math.floor(HomeCardSpec.NAME * scale * 2f) / 2f
+        }
+        androidx.compose.runtime.CompositionLocalProvider(LocalCardNameSize provides size) { content() }
+    }
+}
 private val MODE_CARD_MIN_HEIGHT = HomeCardSpec.HEIGHT.dp
 /** ART_SPEC §21.1: the completion badge on the VS card's title line. */
 private val MODE_CARD_BADGE = 26.dp
@@ -259,8 +294,10 @@ internal fun ModeCardView(
                     // (its slot always reserved so solved and unsolved names line up).
                     Row(Modifier.offset(y = (-3).dp), verticalAlignment = Alignment.Top) {
                         // One line, shrink-to-fit (Crosswordocious, ProperNoundle), never wraps.
+                        // BJ18: the grid's ONE name size (LocalCardNameSize); FitText shrinks this card only
+                        // as a last resort (a name still wider than its slot at the uniform floor).
                         FitText(
-                            card.title, fontSize = HomeCardSpec.NAME.sp, fontWeight = FontWeight.Black,
+                            card.title, fontSize = LocalCardNameSize.current.sp, fontWeight = FontWeight.Black,
                             color = if (isLocked) WTheme.textMuted else card.accent, minScale = 0.6f,
                             modifier = Modifier.weight(1f),
                         )

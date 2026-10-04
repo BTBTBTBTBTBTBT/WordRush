@@ -68,6 +68,8 @@ export const HEADING_ART = {
   'rotate': 'Rotate Your Phone',
   'dailychallenge': 'Daily Challenge',
   'onastreak': 'On a Streak!',
+  'playwithfriends': 'Play with Friends',
+  'more': 'More',
 } as const;
 export type HeadingSlug = keyof typeof HEADING_ART;
 

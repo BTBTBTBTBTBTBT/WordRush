@@ -1699,3 +1699,15 @@ screen: the big WELCOME! + WORDOCIOUS / Daily Word Games lines are replaced by t
 already greets — no duplicate); the first-run welcome keeps WELCOME!. Left as small in-card labels: the iOS streak popup's
 SHIELDS section, TROPHY CASE, Edit Profile's MAKE YOUR MASCOT card. Web Leaderboard has no signed-out pitch (guests see the
 board with its banner title). DELETE ACCOUNT: the web page wears it; iOS / Android use a system alert.
+BJ18. Release-gate polish (coordinator 10-03). Finish row: Share + Next keep ONE CastButtonRow line at phone width via the
+short art labels SHARE (art-btnlabel-share; a11y "Share results", countdown caption still under it) and NEXT
+(art-btnlabel-next, led by the next game's 3D icon; a11y "Next daily: <game>"), both medium ×3 (iOS NextDailyCTA's Next is
+medium whenever Share rides beside it). DEBUG iOS `-bj15Screen share` shows SHARE+NEXT, SHARE+LEADERBOARD, SHARE+NEW PUZZLE.
+Titles PLAY WITH FRIENDS (pink) + MORE (purple) via the API (raw/inv3-1, $0.07), split by finish-inventory.py, shipped ×3
+as art-titlecast-playwithfriends / -more: the guest Friends GuestPitch draws PLAY WITH FRIENDS (GuestPitch `heading` slot
+×3, 36 tall ≤ 320 wide, the words as a11y); Android's finished "More" sheet (FinishedSheet) wears MORE (iOS / web expand
+"More" inline — no sheet title to replace). Home card names: ONE size per grid ×2 native (Android CardNameSizeScope, iOS
+`.homeCardNames` + HomeCardSpec.uniformNameSize) — the largest ≤ 17 that fits the widest name in its slot, floored at 13,
+then per-card shrink as the last resort. iOS tests: CastButtonStyle is a kit squish style (own 0.92 squish + pressed skin);
+MotionSpec ignores `PerfTour.send(.sheet(...))` (a perf-tour command, not a presentation); StoreDemo's mascot page wears MAKE
+YOUR MASCOT like OnboardingView.

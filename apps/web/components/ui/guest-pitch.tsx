@@ -4,6 +4,7 @@ import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { CastButton } from '@/components/ui/cast-button';
 import type { MascotId } from '@/lib/mascots';
 import { PodiumPedestal } from '@/components/leaderboard/podium';
+import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
 
 // FINISH_SPEC BI23 (founder, 2026-10-03: "get rid of the sign in to track your stats
 // gray circle image and make that screen look nicer"): the signed-out Stats / Friends
@@ -64,9 +65,11 @@ function Podium() {
   );
 }
 
-export function GuestPitch({ hosts, title, subtitle, gradient, preview, onSignIn, subColor = 'var(--color-text-secondary)', className = '' }: {
+export function GuestPitch({ hosts, title, heading, subtitle, gradient, preview, onSignIn, subColor = 'var(--color-text-secondary)', className = '' }: {
   hosts: MascotId[];
   title: string;
+  /** BJ16: cast-color title art in place of the gradient headline (`title` stays its accessible name). */
+  heading?: HeadingSlug;
   subtitle: string;
   gradient: string;
   preview: GuestPreview;
@@ -82,12 +85,18 @@ export function GuestPitch({ hosts, title, subtitle, gradient, preview, onSignIn
           <Mascot key={h} id={h} size={duo ? 104 : 120} motion="pop" priority style={i > 0 ? { marginLeft: -18 } : undefined} />
         ))}
       </div>
-      <h1
-        className="mt-2.5 font-black uppercase leading-tight text-transparent bg-clip-text"
-        style={{ fontSize: 28, letterSpacing: 0.4, backgroundImage: gradient }}
-      >
-        {title}
-      </h1>
+      {heading ? (
+        <div className="mt-2.5 w-full">
+          <HeadingArt slug={heading} label={title} height={36} maxWidth={320} as="h2" />
+        </div>
+      ) : (
+        <h1
+          className="mt-2.5 font-black uppercase leading-tight text-transparent bg-clip-text"
+          style={{ fontSize: 28, letterSpacing: 0.4, backgroundImage: gradient }}
+        >
+          {title}
+        </h1>
+      )}
       <p className="mt-1.5 text-[15px] font-semibold max-w-xs" style={{ color: subColor }}>{subtitle}</p>
       {preview.kind !== 'none' && (
         <div className="mt-5 opacity-[0.72]" aria-hidden="true">

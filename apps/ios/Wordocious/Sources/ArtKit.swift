@@ -878,6 +878,8 @@ enum HeadingArt: String, CaseIterable {
     case rotate
     case dailychallenge
     case onastreak
+    case playwithfriends
+    case more
 
     var asset: String { "art-titlecast-\(rawValue)" }
 
@@ -943,6 +945,8 @@ enum HeadingArt: String, CaseIterable {
         case .rotate: return "Rotate Your Phone"
         case .dailychallenge: return "Daily Challenge"
         case .onastreak: return "On a Streak!"
+        case .playwithfriends: return "Play with Friends"
+        case .more: return "More"
         }
     }
 
@@ -1008,6 +1012,8 @@ enum HeadingArt: String, CaseIterable {
         case .rotate: return 1080.0 / 96.0
         case .dailychallenge: return 1080.0 / 128.0
         case .onastreak: return 1080.0 / 184.0
+        case .playwithfriends: return 1080.0 / 119.0
+        case .more: return 894.0 / 311.0
         }
     }
 

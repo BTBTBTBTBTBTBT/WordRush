@@ -122,6 +122,13 @@ describe('second pass (§6–§9)', () => {
     expect(ART_SIZE['art-titlecast-leaderboard']).toBeDefined();
   });
 
+  it('ships the PLAY WITH FRIENDS (guest Friends) and MORE (finished sheet) titles', () => {
+    for (const name of ['art-titlecast-playwithfriends', 'art-titlecast-more'] as ArtName[]) {
+      expect(ART_SIZE[name], name).toBeDefined();
+      expect(fs.existsSync(pub(artSrc(name))), name).toBe(true);
+    }
+  });
+
   it('has a pocket game icon for every friendly kind (§9), 256 px square', () => {
     for (const k of FRIENDLY_KINDS) {
       expect(POCKET_ART_KINDS.has(k), k).toBe(true);

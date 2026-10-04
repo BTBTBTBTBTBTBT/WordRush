@@ -324,6 +324,7 @@ struct HomeView: View {
                             LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
                                 ForEach(wordModes) { mode in card(mode) }
                             }
+                            .homeCardNames(wordModes.map(\.title))
                             // The More Games dailies as plain cards (the band and its sheet are gone).
                             if !puzzleModes.isEmpty {
                                 // ART_SPEC §2 / §19.2: the whole-cast PUZZLES art, centered.
@@ -332,6 +333,7 @@ struct HomeView: View {
                                 LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
                                     ForEach(puzzleModes) { mode in card(mode) }
                                 }
+                                .homeCardNames(puzzleModes.map(\.title))
                             }
                             WordOfTheDayView()
                             if let vs = visibleHomeModes.first(where: { $0.id == "vs" }) {

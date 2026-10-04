@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
+import { GameArt } from '@/components/ui/game-art';
 import { SoftNum } from '@/components/ui/soft-number';
 import { CandyButton, CandyIcon, CandyLink } from '@/components/ui/candy-button';
 import { CastButton, CastLink, castNaturalWidth, castRowMin } from '@/components/ui/cast-button';
@@ -346,14 +347,15 @@ export function ShareResultsCandy({ onShare, copied = false, countdownFor, class
   // skin with the label art); the button keeps the normal cap height.
   return (
     <div className={`flex flex-col items-center min-w-0 ${rowItem ? 'cast-row-flex' : ''} ${className}`}
-      style={rowItem ? castRowMin(castNaturalWidth(copied ? 'Copied!' : 'Share results', 'md', 16)) : undefined}>
+      style={rowItem ? castRowMin(castNaturalWidth(copied ? 'Copied!' : 'Share', 'md', 16)) : undefined}>
       <CastButton
         color="pink" size="md" block
         icon={glyph}
         onClick={onShare}
         aria-label={copied ? 'Copied' : line ? `Share results. Next ${line.game} in ${line.left}` : 'Share results'}
       >
-        {copied ? 'Copied!' : 'Share results'}
+        {/* BJ18: the short SHARE art label (one row with NEXT at phone width); aria-label keeps "Share results". */}
+        {copied ? 'Copied!' : 'Share'}
       </CastButton>
       {line && (
         // The game name gives way first, so the time always shows.
@@ -402,16 +404,20 @@ export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzl
   // BJ17: the row is a .cast-row — Share + the primary split it at their normal cap height, or
   // wrap to full-width lines when a label can't fit (never one squeezed beside a full-size one).
   // The next-daily candy and its round Leaderboard travel together as one row item.
-  const nextLabel = nextMode ? `Next: ${nextMode.shortTitle ?? nextMode.title}` : '';
+  // BJ18: the short art labels keep ONE row at phone width — SHARE + NEXT (the next game's 3D icon
+  // leads the label; the game's name is the accessible name) — instead of wrapping and costing the
+  // board ~52 px.
+  const nextLabel = 'Next';
+  const nextIcon = nextMode ? <GameArt id={nextMode.id} size={24} /> : null;
   const primary = isDaily && (nextMode && next && mode ? (
-    <div className="cast-row-flex flex items-center gap-2" style={castRowMin(castNaturalWidth(nextLabel, 'md', 16) + 48)}>
-      <CastLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className="flex-1 min-w-0" aria-label={`Next Daily: ${nextMode.title}`}>
+    <div className="cast-row-flex flex items-center gap-2" style={castRowMin(castNaturalWidth(nextLabel, 'md', 24) + 48)}>
+      <CastLink href={next.href} color="amber" size="md" block icon={nextIcon} className="flex-1 min-w-0" aria-label={`Next Daily: ${nextMode.title}`}>
         {nextLabel}
       </CastLink>
       <CandyLink href={`/daily?mode=${currentMode}`} color="purple" size="round" icon={<Icon3D name="trophy" size={20} />} aria-label={`View ${mode.title} Leaderboard`} />
     </div>
   ) : nextMode && next ? (
-    <CastLink href={next.href} color="amber" size="md" block icon={<CandyIcon name="arrow" size={16} />} className="cast-row-flex" style={castRowMin(castNaturalWidth(nextLabel, 'md', 16))} aria-label={`Next Daily: ${nextMode.title}`}>
+    <CastLink href={next.href} color="amber" size="md" block icon={nextIcon} className="cast-row-flex" style={castRowMin(castNaturalWidth(nextLabel, 'md', 24))} aria-label={`Next Daily: ${nextMode.title}`}>
       {nextLabel}
     </CastLink>
   ) : mode ? (

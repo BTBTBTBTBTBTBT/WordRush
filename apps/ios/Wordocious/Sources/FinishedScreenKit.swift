@@ -209,9 +209,11 @@ struct FinishedShareCTA: View {
             Button {
                 if hasSpoilers { showShareOptions = true } else { onShare(false) }
             } label: {
-                CandyLabel(title: "Share results")   // the lettering alone, at the full cap height
+                // BJ18: the short SHARE art label, so Share + NEXT keep ONE row at phone width.
+                CandyLabel(title: "Share")   // the lettering alone, at the full cap height
             }
             .buttonStyle(CastButtonStyle(color: .pink, size: .medium))
+            .accessibilityLabel("Share results")
             if let nextGame, !FinishLayoutMetrics.isShort {
                 TimelineView(.everyMinute) { _ in
                     Text(FinishCloseScreen.countdownLine(game: nextGame, seconds: secondsUntilLocalMidnight()))

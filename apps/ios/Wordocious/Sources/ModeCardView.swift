@@ -25,6 +25,8 @@ struct ModeCardView: View {
     var unlimited: Bool = false
 
     private static let icon = HomeCardSpec.icon
+    /// BJ18: the Home grid's shared name size (HomeCardNameFit); a lone card keeps 17.
+    @Environment(\.homeCardNameSize) private var nameSize
 
     var body: some View {
         let isVs = mode.id == "vs"
@@ -67,7 +69,7 @@ struct ModeCardView: View {
     /// reserved, so solved and unsolved names line up). §Y: VoiceOver still hears "Unlimited".
     private var titleRow: some View {
         HStack(alignment: .top, spacing: 4) {
-            Text(mode.title).font(Brand.font(HomeCardSpec.name, .black))
+            Text(mode.title).font(Brand.font(nameSize, .black))   // BJ18: the grid's ONE name size
                 .foregroundStyle(locked ? Theme.textMuted : mode.accent)
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,4 +178,42 @@ extension View {
     func gameCardChrome(bar: Color, done: Bool = false, locked: Bool = false) -> some View {
         modifier(GameCardChrome(bar: bar, done: done, locked: locked))
     }
+}
+
+
+// MARK: - BJ18 one name size per grid
+
+private struct HomeCardNameSizeKey: EnvironmentKey { static let defaultValue: CGFloat = HomeCardSpec.name }
+
+extension EnvironmentValues {
+    var homeCardNameSize: CGFloat {
+        get { self[HomeCardNameSizeKey.self] }
+        set { self[HomeCardNameSizeKey.self] = newValue }
+    }
+}
+
+/// FINISH_SPEC BJ18: every card in a Home grid draws its name at ONE size — the largest that fits
+/// the widest name in its slot (HomeCardSpec.uniformNameSize); a card's own minimumScaleFactor is
+/// only the last resort. Android CardNameSizeScope, web FitName's shared size.
+private struct HomeCardNameFit: ViewModifier {
+    let titles: [String]
+    @State private var width: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        let widths = titles.map { Brand.textWidth($0, HomeCardSpec.name, .black) }
+        let size = width > 0 ? HomeCardSpec.uniformNameSize(widths: widths, slot: HomeCardSpec.nameSlot(gridWidth: width))
+                             : HomeCardSpec.name
+        content
+            .environment(\.homeCardNameSize, size)
+            .background(GeometryReader { g in
+                Color.clear
+                    .onAppear { width = g.size.width }
+                    .onChange(of: g.size.width) { width = $0 }
+            })
+    }
+}
+
+extension View {
+    /// BJ18: one card-name size across this grid of Home cards.
+    func homeCardNames(_ titles: [String]) -> some View { modifier(HomeCardNameFit(titles: titles)) }
 }

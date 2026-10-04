@@ -486,8 +486,10 @@ fun FinishedDock(
                 )
             }
             if (nd != null && nextMode != null && onOpenDaily != null) {
+                // BJ18: the short NEXT art label (the next game's 3D icon leads it; its name is the
+                // content description) so Share + Next keep ONE row at phone width.
                 CastButton(
-                    "Next: ${next.title}", onClick = { onOpenDaily(nextMode) },
+                    "Next", onClick = { onOpenDaily(nextMode) },
                     modifier = Modifier.castFlex(), color = CastColor.GOLD, size = CastSize.M, fill = true,
                     leading = { CtaGameIcon(next.id, 24.dp) },
                     contentDescription = "Next daily: ${next.title}",
@@ -564,8 +566,9 @@ fun ShareResultsCandy(onShare: () -> Unit, countdownFor: String?, modifier: Modi
     // BJ15 round 2: the countdown is a small muted caption UNDER the button (never squeezed into the
     // skin with the label art); the button keeps the normal cap height.
     androidx.compose.foundation.layout.Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        // BJ18: the short SHARE art label (one row with NEXT); the description keeps "Share results".
         CastButton(
-            "Share results", onClick = onShare, color = CastColor.PINK, size = CastSize.M, fill = fill,
+            "Share", onClick = onShare, color = CastColor.PINK, size = CastSize.M, fill = fill,
             modifier = if (fill) Modifier.fillMaxWidth() else Modifier,
             contentDescription = if (sub != null) "Share results. $sub" else "Share results",
         )
@@ -816,11 +819,16 @@ fun FinishedSheet(title: String, accent: Color, onDismiss: () -> Unit, content: 
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                title.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp,
-                color = if (WTheme.isDark) WTheme.textMuted else FinishInk.label,
-                modifier = Modifier.semantics { heading() },
-            )
+            // BJ16: the "More" sheet wears the MORE title art (purple); other titles stay the small label.
+            if (title == "More") {
+                com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.MORE, height = 36.dp, maxWidth = 200.dp, contentDescription = "More")
+            } else {
+                Text(
+                    title.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp,
+                    color = if (WTheme.isDark) WTheme.textMuted else FinishInk.label,
+                    modifier = Modifier.semantics { heading() },
+                )
+            }
             content()
             CandyButton("Close", onClick = onDismiss, color = CandyColor.PEACH, size = CandySize.MEDIUM)
         }

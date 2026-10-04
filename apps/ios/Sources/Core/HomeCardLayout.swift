@@ -22,6 +22,25 @@ public enum HomeCardSpec {
     public static let badge: CGFloat = 22
     /// DAILIES / PUZZLES title art scale over the compact grid (~25% smaller).
     public static let sectionTitleScale: CGFloat = 0.75
+
+    /// BJ18: the grid-wide name size never drops below this; a name still wider than its slot at
+    /// the floor shrinks on its own card (minimumScaleFactor) as the last resort.
+    public static let nameUniformMin: CGFloat = 13
+
+    /// The name's slot in a grid card: card − insets − icon − 8 gap − 4 gap − the reserved badge.
+    public static func nameSlot(gridWidth: CGFloat, columns: Int = 2) -> CGFloat {
+        let card = (gridWidth - gap * CGFloat(max(0, columns - 1))) / CGFloat(max(1, columns))
+        return card - 2 * padX - icon - 8 - 4 - badge
+    }
+
+    /// FINISH_SPEC BJ18 (founder 10-03: QuadWord's name smaller than Classic's): ONE name size for a
+    /// whole grid — the largest (≤ `name`, ≥ `nameUniformMin`, 0.5 pt steps) at which the widest name
+    /// fits `slot`. `widths` are the names measured at `name`. Android CardNameSizeScope parity.
+    public static func uniformNameSize(widths: [CGFloat], slot: CGFloat) -> CGFloat {
+        guard slot > 0, let widest = widths.max(), widest > 0 else { return name }
+        let fit = (name * min(1, slot / widest) * 2).rounded(.down) / 2
+        return max(nameUniformMin, min(name, fit))
+    }
 }
 
 /// BH1: the trim is ONE shape — a slim band across the card's top whose bottom edge is a row of

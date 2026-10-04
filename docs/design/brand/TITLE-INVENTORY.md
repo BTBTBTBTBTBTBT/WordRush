@@ -74,6 +74,8 @@ Tour titles: the web/Android set above wins; iOS (OnboardingView.swift:723) alig
 | rotate | ROTATE YOUR PHONE | blue |
 | dailychallenge | DAILY CHALLENGE | purple |
 | onastreak | ON A STREAK! | gold |
+| playwithfriends | PLAY WITH FRIENDS | pink |
+| more | MORE | purple |
 
 ## Quick wins with existing art (wire later, no ChatGPT needed)
 - Web Go Pro popup without a reason → `art-title-gopro` (go-pro-popup.tsx:117).
