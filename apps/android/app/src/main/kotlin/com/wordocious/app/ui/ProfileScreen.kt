@@ -2212,6 +2212,9 @@ private fun ProStatCell(label: String, value: String, icon: Any, color: Color, m
 // ── Pro Stats (global "All" view, Pro-gated) ───────────────────────────────────────
 @Composable
 private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, onGoPro: () -> Unit) {
+    // FINISH_SPEC BJ17 (web parity, pro-stats.tsx): free players see no card here — Standing Trend's
+    // GO PRO sign invitation just above is the gate (no second locked box).
+    if (!isPro) return
     data class Bar(val label: String, val winRate: Int, val avgTime: Int)
     // Every daily mode the catalog knows, in catalog order (a More Games title
     // only earns a bar once it has games); the short labels keep the legacy
@@ -2233,9 +2236,7 @@ private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, o
             Modifier.fillMaxWidth().statsSurface(StatsInk.GOLD, bar = Color(0xFFF5A524)).padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            if (!isPro) {
-                ProLockedTeaser("Pro Feature", onGoPro)
-            } else if (bars.isEmpty()) {
+            if (bars.isEmpty()) {
                 // A7: a cast pose other than D (the Stats host).
                 Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     CastPose(StatsPoses.proStats.id, StatsPoses.proStats.pose, 90.dp)
@@ -2261,20 +2262,6 @@ private fun ProBarRow(label: String, value: String, frac: Float, color: Color) {
             Box(Modifier.fillMaxWidth(frac.coerceIn(0.02f, 1f)).height(16.dp).clip(RoundedCornerShape(5.dp)).background(Brush.horizontalGradient(listOf(color.copy(alpha = 0.75f), color))))
         }
         Text(value, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.width(48.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
-    }
-}
-
-/** Frosted locked teaser — lock glyph + label + Upgrade-to-Pro button (iOS locked overlay). */
-@Composable
-private fun ProLockedTeaser(label: String, onGoPro: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon3D(Icon3DName.LOCK, 32.dp) // ART_SPEC §5
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted)
-        // A8: the upgrade action is an amber candy button with the 3D crown.
-        CandyButton(
-            "Upgrade to Pro", onGoPro, color = CandyColor.AMBER, size = CandySize.MEDIUM,
-            leading = { Icon3D(Icon3DName.CROWN, 18.dp) },
-        )
     }
 }
 

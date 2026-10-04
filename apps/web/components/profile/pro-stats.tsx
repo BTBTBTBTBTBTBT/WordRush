@@ -79,10 +79,9 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
     }));
   }, { revalidateOnFocus: false });
 
-  // Pro-only: free users see no card here — the blurred Skill Radar section
-  // below it is the single Pro gate on the profile's global view (same
-  // single-gate pattern as the mode-detail Deep Insights teaser; the old
-  // locked card was redundant with it).
+  // Pro-only: free users see no card here — the GO PRO sign invitations (FINISH_SPEC BJ17) on
+  // Standing Trend above and Skill Radar below are the Pro gates on the global view (iOS / Android
+  // hide this card for free players too).
   if (!isPro) return null;
 
   if (modeStats.length === 0) return null;

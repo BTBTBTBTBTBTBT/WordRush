@@ -920,7 +920,6 @@ struct ProStatsCard: View {
     /// the All-view Pro Stats showing nothing for a Pro user with data.
     let statRows: [UserStatRow]
     @ObservedObject private var auth = AuthService.shared
-    @State private var showPro = false
     // Tap-to-reveal (web-parity tooltip): the selected bar's label per chart.
     @State private var selectedWin: String?
     @State private var selectedTime: String?
@@ -956,14 +955,13 @@ struct ProStatsCard: View {
     }
 
     var body: some View {
-        // Web parity: pro-stats.tsx returns null for a Pro user with no data —
-        // only the free-user locked teaser always shows.
+        // Web parity: pro-stats.tsx returns null for a Pro user with no data.
         Group {
-            if !auth.isProActive || !bars.isEmpty {
+            // FINISH_SPEC BJ17 (web parity, pro-stats.tsx): free players see no card here — Standing
+            // Trend's GO PRO sign invitation just above is the gate (no second locked box).
+            if auth.isProActive && !bars.isEmpty {
                 LegacyChartCard(title: "PRO STATS") {
-            if !auth.isProActive {
-                locked
-            } else {
+            Group {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         Text("Win Rate by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
@@ -1016,22 +1014,6 @@ struct ProStatsCard: View {
                 }
             }
                 }
-            }
-        }
-        .softSheet(isPresented: $showPro) { ProView() }
-    }
-
-    private var locked: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12).fill(StatsInk.rowFill(Color(hex: 0xF5A524))).frame(height: 160)
-            VStack(spacing: 8) {
-                Icon3D(.lock, size: 34) // ART_SPEC §5
-                Text("Pro Feature").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
-                // §A8: the Pro upsell is an amber candy button.
-                Button { showPro = true } label: {
-                    CandyLabel(title: "Upgrade to Pro") { Icon3D(.crown, size: 16) }
-                }
-                .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
             }
         }
     }

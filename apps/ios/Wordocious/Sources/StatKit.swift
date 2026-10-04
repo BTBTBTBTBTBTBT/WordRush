@@ -4,7 +4,7 @@ import WordociousCore
 /// Shared visual grammar for the Profile + Records stat pages — ports
 /// components/profile/stat-kit.tsx. Every section uses SectionHeader; every
 /// stat cell uses StatCell inside a StatGrid; every chart sits in a ChartCard;
-/// every Pro gate uses ProLockOverlay. One look, defined once.
+/// every Pro gate uses ProStatsInvite. One look, defined once.
 
 /// Uppercase tracked section label with an accent tick + optional right control.
 struct SectionHeader<Right: View>: View {
@@ -241,31 +241,82 @@ struct ChartCard<Content: View>: View {
     }
 }
 
-/// The single Pro gate: blurred content + lock pill that opens ProView.
-struct ProLockOverlay<Content: View>: View {
-    var label: String = "Unlock with Pro"
-    @ViewBuilder var content: Content
+/// FINISH_SPEC BJ17: the GO PRO sign cast (ChatGPT / API art, art-gopro-sign-<id>): all ten
+/// each holding the gold GO PRO lettering. The Stats locked sections and the free finish-screen
+/// upsell use them; every size is decoded off main at launch (AppWarmup) so none pops in.
+enum GoProSign {
+    static let cast = ["w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s"]   // cast order (web GOPRO_SIGN_CAST)
+    static func asset(_ id: String) -> String { "art-gopro-sign-\(id)" }
+    /// A deterministic pick from the local date, so the finish upsell's character changes daily.
+    static func ofDay(_ date: Date = Date()) -> String {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        let n = (c.year ?? 0) * 372 + (c.month ?? 0) * 31 + (c.day ?? 0)
+        return cast[n % cast.count]
+    }
+    /// Longest-side sizes in use: the Stats full / compact blocks and the finish card.
+    static let points: [CGFloat] = [116, 60, 64]
+    static func prewarm() {
+        ArtThumbs.prewarm(cast.flatMap { id in points.map { (asset(id), $0) } })
+    }
+}
+
+/// The single Pro gate (FINISH_SPEC BJ17, founder 10-03: "a mascot saying go pro… instead of it
+/// being blurred out"): no blur and no sample numbers behind glass. The section keeps its own header;
+/// in place of the stats, W holds up the gold GO PRO sign, one line says what Pro unlocks HERE, and
+/// the gold cast GO PRO button opens ProView. `compact` = the small W beside the line + a small
+/// button, for every locked section after the first on a page (one big W per page).
+struct ProStatsInvite: View {
+    let line: String
+    var compact: Bool = false
+    /// Which cast member holds the sign (GoProSign.cast): each locked section has its own.
+    var cast: String = "w"
     @State private var showPro = false
 
-    init(label: String = "Unlock with Pro", @ViewBuilder content: () -> Content) {
-        self.label = label
-        self.content = content()
-    }
+    private var art: String { GoProSign.asset(cast) }
+    /// Display sizes (longest side, pt) — GoProSign.prewarm decodes both off main ahead of time.
+    static let fullPoints: CGFloat = 116, compactPoints: CGFloat = 60
 
     var body: some View {
-        ZStack {
-            content
-                .blur(radius: 3).opacity(0.6)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            // §A8: the Pro upsell is an amber candy button.
-            Button { showPro = true } label: {
-                CandyLabel(title: label) { Icon3D(.lock, size: 15) } // ART_SPEC §5
+        Group {
+            if compact {
+                HStack(spacing: 12) {
+                    ArtThumbs.image(art, points: Self.compactPoints)
+                        .resizable().interpolation(.high).scaledToFit()
+                        .frame(width: Self.compactPoints, height: Self.compactPoints)
+                    VStack(alignment: .leading, spacing: 8) {
+                        lineText.multilineTextAlignment(.leading)
+                        button(.small)
+                    }
+                    .frame(maxWidth: 230, alignment: .leading)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+            } else {
+                VStack(spacing: 8) {
+                    ArtThumbs.image(art, points: Self.fullPoints)
+                        .resizable().interpolation(.high).scaledToFit()
+                        .frame(width: Self.fullPoints, height: Self.fullPoints)
+                    lineText.multilineTextAlignment(.center).frame(maxWidth: 280)
+                    button(.medium)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
             }
-            .buttonStyle(CandyButtonStyle(variant: .amber, size: .small, fullWidth: false))
-            .accessibilityLabel(label)
         }
+        .accessibilityElement(children: .contain)
         .softSheet(isPresented: $showPro) { ProView() }
+    }
+
+    private var lineText: some View {
+        Text(line).font(Brand.font(13, .heavy)).foregroundStyle(FinishInk.heading)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func button(_ size: CandyButtonStyle.Size) -> some View {
+        Button { showPro = true } label: { CandyLabel(title: "Go Pro") { EmptyView() } }
+            .buttonStyle(CastButtonStyle(color: .gold, size: size, fullWidth: false))
+            .accessibilityLabel("Go Pro")
+            .accessibilityHint(line)
     }
 }
 

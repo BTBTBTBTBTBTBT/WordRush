@@ -8,7 +8,7 @@ import {
   gameTitleArtForGuide, gameTitleArtLabel, isGameArtIcon, pageCardShadow, pocketArtSrc, resultMoment, type ArtName,
   GAME_HEADER, GAME_TILES_OPACITY, accentCardShadow, artMotion, gameHeaderArtHeight, gameHeaderStyle, gameTint,
   gameTintForDbKey, gameToastTop, mixOver, GAME_TITLE_TOP, WALL_OVERLAY, gameWallForDbKey, pageWall, wideWallSrc,
-  type WallArtName, POSE_ART, POSE_ART_NAMES, POSE_SIZE, poseArt, poseSrc,
+  type WallArtName, POSE_ART, POSE_ART_NAMES, POSE_SIZE, poseArt, poseSrc, GOPRO_SIGN_CAST, goProSignOfDay,
 } from './art';
 import { CAST } from './mascots';
 import { MODES } from './modes.generated';
@@ -333,5 +333,37 @@ describe('cast poses (finishing build)', () => {
     expect(Object.keys(POSE_ART).sort()).toEqual([...CAST].sort());
     expect(poseArt('s', 'trophy')).toBe('art-pose-s-trophy');
     expect(poseSrc('u', 'lotus')).toBe('/art/art-pose-u-lotus.webp');
+  });
+});
+
+// FINISH_SPEC BJ17: the GO PRO sign cast — every member ships ×3, and the finish upsell's daily pick
+// rotates through all ten with the same formula on iOS (GoProSign.ofDay) and Android (GoProSign.ofDay).
+describe('GO PRO sign cast (BJ17)', () => {
+  it('ships every member with its size, on iOS and Android too', () => {
+    const root = path.join(__dirname, '..', '..');
+    for (const id of GOPRO_SIGN_CAST) {
+      expect(ART_SIZE[`art-gopro-sign-${id}`], id).toBeDefined();
+      expect(fs.existsSync(path.join(root, 'ios', 'Wordocious', 'Resources', 'Assets.xcassets', `art-gopro-sign-${id}.imageset`, `art-gopro-sign-${id}.png`)), id).toBe(true);
+      expect(fs.existsSync(path.join(root, 'android', 'app', 'src', 'main', 'res', 'drawable-nodpi', `art_gopro_sign_${id}.webp`)), id).toBe(true);
+    }
+    expect([...GOPRO_SIGN_CAST]).toEqual([...CAST]);
+  });
+
+  it('rotates the finish upsell through all ten over ten days', () => {
+    const seen = new Set<string>();
+    for (let d = 1; d <= 10; d++) seen.add(goProSignOfDay(`2026-10-${String(d).padStart(2, '0')}`));
+    expect(seen.size).toBe(10);
+    expect(goProSignOfDay('2026-10-03')).toBe(GOPRO_SIGN_CAST[(2026 * 372 + 10 * 31 + 3) % 10]);
+  });
+
+  it('keeps the same cast order and day formula in the iOS and Android ports', () => {
+    const root = path.join(__dirname, '..', '..');
+    const ios = fs.readFileSync(path.join(root, 'ios', 'Wordocious', 'Sources', 'StatKit.swift'), 'utf8');
+    const droid = fs.readFileSync(path.join(root, 'android', 'app', 'src', 'main', 'kotlin', 'com', 'wordocious', 'app', 'ui', 'StatKit.kt'), 'utf8');
+    const list = GOPRO_SIGN_CAST.map((id) => `"${id}"`).join(', ');
+    expect(ios).toContain(`static let cast = [${list}]`);
+    expect(droid).toContain(`val cast = listOf(${list})`);
+    expect(ios).toContain('* 372 +');
+    expect(droid).toContain('* 372 +');
   });
 });

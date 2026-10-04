@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { Swords, Lightbulb, BookOpen, Skull, Grid3X3 } from 'lucide-react';
 import { WIN_FG } from '@/lib/tile-theme';
-import { SectionHeader, KitCard, ProLockOverlay } from './stat-kit';
+import { SectionHeader, KitCard, ProStatsInvite } from './stat-kit';
 import {
   fetchSkillRadar, fetchRivalries, fetchOpenerDeep, fetchPositionAccuracy,
   fetchWordAlmanac, fetchGauntletStageStats, fetchHintHonesty,
@@ -84,9 +84,17 @@ function StatsEmptyCard({ title, accent = '#7c3aed', hint }: { title: string; ac
   );
 }
 
-export function SkillRadarCard({ userId, isPro }: { userId: string; isPro: boolean }) {
-  const { data } = useSWR(isPro ? ['skill-radar', userId] : ['skill-radar-locked'], () =>
-    isPro ? fetchSkillRadar(userId) : Promise.resolve<SkillRadarData | null>({ speed: 62, accuracy: 74, consistency: 55, endurance: 40, versatility: 68 }));
+export function SkillRadarCard({ userId, isPro, compact = true }: { userId: string; isPro: boolean; compact?: boolean }) {
+  const { data } = useSWR(isPro ? ['skill-radar', userId] : null, () => fetchSkillRadar(userId));
+  // FINISH_SPEC BJ17: free players get the GO PRO sign invitation (no blur, no sample radar).
+  if (!isPro) {
+    return (
+      <div className="animate-fade-in-up">
+        <SectionHeader label="Skill Radar" accent="#7c3aed" />
+        <ProStatsInvite line="See your speed, accuracy and steadiness on a skill radar with Pro" compact={compact} cast="d" />
+      </div>
+    );
+  }
   if (!data) {
     if (!isPro) return null;
     return <StatsEmptyCard title="Skill Radar" hint="Play 5+ solo games to generate your skill radar." />;
@@ -102,27 +110,32 @@ export function SkillRadarCard({ userId, isPro }: { userId: string; isPro: boole
   return (
     <div className="animate-fade-in-up">
       <SectionHeader label="Skill Radar" accent="#7c3aed" />
-      {isPro ? card : <ProLockOverlay label="Unlock Skill Radar with Pro">{card}</ProLockOverlay>}
+      {card}
     </div>
   );
 }
 
 /* ── Rivalries (VS) ──────────────────────────────────── */
 
-export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolean }) {
+export function RivalriesCard({ userId, isPro, compact = true }: { userId: string; isPro: boolean; compact?: boolean }) {
   const { data } = useSWR(isPro ? ['rivalries', userId] : null, () => fetchRivalries(userId, 5));
   const rows = data ?? [];
-  if (isPro && rows.length === 0) {
+  if (!isPro) {
+    return (
+      <div className="animate-fade-in-up">
+        <SectionHeader label="Rivalries" accent="#ec4899" />
+        <ProStatsInvite line="See your head-to-head record against every rival with Pro" compact={compact} cast="o2" />
+      </div>
+    );
+  }
+  if (rows.length === 0) {
     if (!data) return null; // still loading
     return <StatsEmptyCard title="Rivalries" accent="#ec4899" hint="Face the same opponent a few times to start a rivalry." />;
   }
   const card = (
     <KitCard tint="#ec4899">
       <div className="space-y-1.5">
-        {(isPro ? rows : [
-          { opponentId: '1', username: 'WordSmith', wins: 4, losses: 2, draws: 0, total: 6 },
-          { opponentId: '2', username: 'LexiconLou', wins: 1, losses: 3, draws: 1, total: 5 },
-        ]).map((r) => {
+        {rows.map((r) => {
           const pct = r.total > 0 ? (r.wins / r.total) * 100 : 0;
           return (
             <div key={r.opponentId} className="p-2" style={{ background: alphaHex('#ec4899', 0.08), borderRadius: '10px' }}>
@@ -145,7 +158,7 @@ export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolea
   return (
     <div className="animate-fade-in-up">
       <SectionHeader label="Rivalries" accent="#ec4899" />
-      {isPro ? card : <ProLockOverlay label="Unlock Rivalries with Pro">{card}</ProLockOverlay>}
+      {card}
     </div>
   );
 }
@@ -173,21 +186,19 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
   // (the panel shows a "totals only" note instead).
   if (playType === 'vs_cpu') return null;
 
-  // Locked preview uses static sample content so free users see the shape.
-  const d = isPro ? data : {
-    openers: [{ word: 'CRANE', count: 12, avgGreens: 1.2, avgYellows: 1.6, winRate: 75 }],
-    positions: { wordLength: 5, pct: [34, 22, 28, 31, 41], sampleGuesses: 120 },
-    almanac: [
-      { word: 'PIQUE', won: true, guesses: 4, time: 88, date: new Date().toISOString() },
-      { word: 'KNOLL', won: false, guesses: 6, time: 240, date: new Date().toISOString() },
-    ],
-    hints: null,
-    gauntlet: [],
-  };
+  // FINISH_SPEC BJ17: free players get the GO PRO sign invitation (no blur, no sample insights).
+  if (!isPro) {
+    return (
+      <div className="mt-4 animate-fade-in-up">
+        <SectionHeader label="Deep Insights" accent={accentColor} />
+        <ProStatsInvite line="See your best openers, letter accuracy and word almanac with Pro" cast="i" />
+      </div>
+    );
+  }
+  const d = data;
   if (!d) return null;
   const hasAny = (d.openers?.length ?? 0) > 0 || d.positions || (d.almanac?.length ?? 0) > 0 || d.hints || (d.gauntlet?.length ?? 0) > 0;
   if (!hasAny) {
-    if (!isPro) return null;
     return <StatsEmptyCard title="Deep Insights" hint="Play more of this mode to unlock openers, accuracy and almanac insights." />;
   }
 
@@ -305,7 +316,7 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
   return (
     <div className="mt-4 animate-fade-in-up">
       <SectionHeader label="Deep Insights" accent={accentColor} />
-      {isPro ? inner : <ProLockOverlay label="Unlock Deep Insights with Pro">{inner}</ProLockOverlay>}
+      {inner}
     </div>
   );
 }

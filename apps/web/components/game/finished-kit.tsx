@@ -14,7 +14,7 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 import { SWEEP_MODES } from '@/lib/modes.generated';
 import { dailyHref, MODE_ROUTES } from '@/lib/mode-routes';
-import { ART_SIZE, artSrc } from '@/lib/art';
+import { ART_SIZE, artSrc, goProSignOfDay } from '@/lib/art';
 import { SOFT_INK, darken, softBackground, softBorder, softPill, softShadow } from '@/lib/soft-surface';
 import { ClockGlyph } from './result-line';
 import { fitScale, formatNextDailyIn, unlimitedHref } from '@/lib/finished-layout';
@@ -165,6 +165,21 @@ export function UnlimitedLoopArt({ size = 64 }: { size?: number }) {
   );
 }
 
+/** BJ17: the free upsell card's gold tint (the Go Pro screen's cast color). */
+const UPSELL_GOLD = '#f59e0b';
+
+/** BJ17: today's GO PRO sign character (a daily rotation through all ten; decoded at idle by CastArtWarmup). */
+function GoProSignArt({ size }: { size: number }) {
+  const d = new Date();
+  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const name = `art-gopro-sign-${goProSignOfDay(day)}` as const;
+  const [w, h] = ART_SIZE[name];
+  return (
+    <img src={artSrc(name)} alt="" aria-hidden="true" width={w} height={h} draggable={false} decoding="async"
+      className="shrink-0 select-none pointer-events-none" style={{ width: size, height: size, objectFit: 'contain' }} />
+  );
+}
+
 /** The small gold PRO pill on a free player's Unlimited button (R3). */
 export function ProPill() {
   return (
@@ -199,19 +214,23 @@ export function UnlimitedCard({ currentMode, onNewPuzzle, className = '', compac
   ) : isProActive ? (
     <CastLink href={href} native color="peach" size="sm" icon="play" className="shrink-0" aria-label={`Play Unlimited ${mode.title}`}>Play</CastLink>
   ) : (
+    // FINISH_SPEC BJ17 (founder 10-03): a free player's card is the Go Pro upsell — the gold cast GO PRO
+    // button in place of Play + its PRO pill (the checkout still lands straight in that Unlimited game).
     <CastButton
-      color="peach"
-      size="sm"
-      icon="play"
-      trailing={<ProPill />}
+      color="gold"
+      size={size}
       className="shrink-0"
-      aria-label={`Play Unlimited ${mode.title} with Pro`}
+      aria-label={`Go Pro: Unlimited ${mode.title}`}
       onClick={() => openGoProPopup({ afterPurchaseHref: href, reason: `Unlimited ${mode.title}` })}
     >
-      Play
+      Go Pro
     </CastButton>
   );
-  const surface: React.CSSProperties = { background: softBackground(UNLIMITED_PEACH, 0.14), border: softBorder(UNLIMITED_PEACH, 0.14), boxShadow: `inset 0 4px 0 ${UNLIMITED_PEACH}, ${softShadow(UNLIMITED_PEACH, 0.14)}` };
+  // BJ17: free players — the day's GO PRO sign character in the art slot (same box, no added height), on gold.
+  const upsell = !isProActive;
+  const tint = upsell ? UPSELL_GOLD : UNLIMITED_PEACH;
+  const art = (size: number) => upsell ? <GoProSignArt size={size} /> : <UnlimitedLoopArt size={size} />;
+  const surface: React.CSSProperties = { background: softBackground(tint, 0.14), border: softBorder(tint, 0.14), boxShadow: `inset 0 4px 0 ${tint}, ${softShadow(tint, 0.14)}` };
   const otherGames = newPuzzle && (
     <Link href="/" className="text-[11px] font-black underline shrink-0" style={{ color: 'var(--color-text-muted)' }}>Other games</Link>
   );
@@ -224,13 +243,13 @@ export function UnlimitedCard({ currentMode, onNewPuzzle, className = '', compac
         role="group"
         aria-label={`Keep playing: Unlimited ${mode.title}`}
       >
-        <UnlimitedLoopArt size={64} />
+        {art(64)}
         <div className="flex-1 min-w-0">
           <div className="text-[10px] font-black uppercase soft-ink" style={{ letterSpacing: '0.12em', ['--ink-l' as string]: ink, ['--ink-d' as string]: '#fdba74' } as React.CSSProperties}>
             {newPuzzle ? 'Keep going' : 'Keep playing'}
           </div>
           <div className="text-[14px] font-black leading-tight truncate" style={{ color: 'var(--color-text)' }}>Unlimited {mode.title}</div>
-          <div className="text-[11px] font-bold leading-tight" style={{ color: 'var(--color-text-muted)' }}>Fresh puzzles, no waiting</div>
+          <div className="text-[11px] font-bold leading-tight" style={{ color: 'var(--color-text-muted)' }}>{upsell ? 'Fresh puzzles anytime with Pro' : 'Fresh puzzles, no waiting'}</div>
           {otherGames && <div className="mt-0.5">{otherGames}</div>}
         </div>
         {action('md')}
@@ -245,7 +264,7 @@ export function UnlimitedCard({ currentMode, onNewPuzzle, className = '', compac
         role="group"
         aria-label={`Keep playing: Unlimited ${mode.title}`}
       >
-        <UnlimitedLoopArt size={36} />
+        {art(upsell ? 40 : 36)}
         <div className="flex-1 min-w-0 text-[13px] font-black leading-tight truncate" style={{ color: 'var(--color-text)' }}>Unlimited {mode.title}</div>
         {otherGames}
         {action('sm')}

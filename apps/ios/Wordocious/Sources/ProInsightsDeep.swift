@@ -4,8 +4,8 @@ import WordociousCore
 /// Pro Insights deep layer (restat R4) — ports components/profile/
 /// pro-insights-deep.tsx: Skill Radar, Rivalries, and the per-mode deep card
 /// (opener yield, position accuracy, gauntlet stage breakdown, hint honesty,
-/// Word Almanac). Every card self-fetches; free users see static sample
-/// content blurred behind the Pro pill.
+/// Word Almanac). Every card self-fetches; free users see the section's
+/// header + a GO PRO sign invitation (ProStatsInvite, FINISH_SPEC BJ17) — no blur, no sample numbers.
 
 // MARK: - Skill Radar
 
@@ -124,31 +124,35 @@ struct SkillRadarCard: View {
     /// the radar derives from these + a solve-times fetch, so it can't be
     /// emptied by its own fetch racing auth hydration.
     var statRows: [UserStatRow] = []
+    /// BJ17: the locked invitation's size — compact under another locked section on the page.
+    var compact: Bool = true
     @State private var data: StatsDeepService.SkillRadarData?
 
     /// Memo in the first frame (founder, 2026-09-29) — the radar popped in after .task.
-    init(isPro: Bool, statRows: [UserStatRow] = []) {
-        self.isPro = isPro; self.statRows = statRows
+    init(isPro: Bool, statRows: [UserStatRow] = [], compact: Bool = true) {
+        self.isPro = isPro; self.statRows = statRows; self.compact = compact
         let cached: StatsDeepService.SkillRadarData? = isPro ? StatsMemo.shared.get(Self.memoKey) : nil
         _data = State(initialValue: cached)
         _radarLoaded = State(initialValue: cached != nil)
     }
     private static var memoKey: String { "skillRadar:\(StatsMemo.uid)" }
 
-    /// Locked preview uses the web's static sample so free users see the shape.
-    private static let sample = StatsDeepService.SkillRadarData(
-        speed: 62, accuracy: 74, consistency: 55, endurance: 40, versatility: 68)
-
     @State private var radarLoaded: Bool
 
     var body: some View {
         Group {
-            if isPro, data == nil, !radarLoaded {
+            if !isPro {
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionHeader("Skill Radar", accent: Theme.primary)
+                    ProStatsInvite(line: "See your speed, accuracy and steadiness on a skill radar with Pro",
+                                   compact: compact, cast: "d")
+                }
+            } else if isPro, data == nil, !radarLoaded {
                 StatsCardPlaceholder(title: "Skill Radar", height: 260)
             } else if isPro, data == nil, radarLoaded {
                 StatsEmptyCard(title: "Skill Radar",
                                hint: "Play 5+ solo games to generate your skill radar.")
-            } else if let d = isPro ? data : Self.sample {
+            } else if let d = data {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Skill Radar", accent: Theme.primary)
                     let card = KitCard {
@@ -160,9 +164,7 @@ struct SkillRadarCard: View {
                                 .multilineTextAlignment(.center)
                         }
                     }
-                    if isPro { card } else {
-                        ProLockOverlay(label: "Unlock Skill Radar with Pro") { card }
-                    }
+                    card
                 }
             } else {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
@@ -198,32 +200,35 @@ private struct RadarLabeledChart: View {
 /// Most-faced opponents with head-to-head W–L + win-share bar (Pro).
 struct RivalriesCard: View {
     let isPro: Bool
+    /// BJ17: the locked invitation's size.
+    var compact: Bool = true
     @State private var rows: [StatsDeepService.Rivalry]
     @State private var loaded: Bool
 
     /// Memo in the first frame (founder, 2026-09-29).
-    init(isPro: Bool) {
-        self.isPro = isPro
+    init(isPro: Bool, compact: Bool = true) {
+        self.isPro = isPro; self.compact = compact
         let cached: [StatsDeepService.Rivalry]? = isPro ? StatsMemo.shared.get(Self.memoKey) : nil
         _rows = State(initialValue: cached ?? [])
         _loaded = State(initialValue: cached != nil)
     }
     private static var memoKey: String { "rivalries:\(StatsMemo.uid)" }
 
-    private static let sample: [StatsDeepService.Rivalry] = [
-        .init(opponentId: "1", username: "WordSmith", wins: 4, losses: 2, draws: 0, total: 6),
-        .init(opponentId: "2", username: "LexiconLou", wins: 1, losses: 3, draws: 1, total: 5),
-    ]
-
     var body: some View {
-        let display = isPro ? rows : Self.sample
+        let display = rows
         Group {
-            if isPro, display.isEmpty, !loaded {
+            if !isPro {
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionHeader("Rivalries", accent: Color(hex: 0xEC4899))
+                    ProStatsInvite(line: "See your head-to-head record against every rival with Pro",
+                                   compact: compact, cast: "o2")
+                }
+            } else if display.isEmpty, !loaded {
                 StatsCardPlaceholder(title: "Rivalries", accent: Color(hex: 0xEC4899), height: 110)
-            } else if isPro, display.isEmpty, loaded {
+            } else if display.isEmpty, loaded {
                 StatsEmptyCard(title: "Rivalries", accent: Color(hex: 0xEC4899),
                                hint: "Face the same opponent a few times to start a rivalry.")
-            } else if !(isPro && display.isEmpty) {
+            } else if !display.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Rivalries", accent: Color(hex: 0xEC4899))
                     let card = KitCard(accent: Color(hex: 0xEC4899)) {
@@ -231,9 +236,7 @@ struct RivalriesCard: View {
                             ForEach(display) { r in rivalryRow(r) }
                         }
                     }
-                    if isPro { card } else {
-                        ProLockOverlay(label: "Unlock Rivalries with Pro") { card }
-                    }
+                    card
                 }
                 .asyncEntrance(rows.count)   // F3: fade+rise when the fetch lands
             } else {
@@ -282,7 +285,7 @@ struct RivalriesCard: View {
 
 /// Deep Insights (restat R4): opener yield, position accuracy, stage
 /// breakdown (Gauntlet), hint honesty, Word Almanac. Pro-gated with a static
-/// sample preview for free users.
+/// GO PRO sign invitation for free users (BJ17).
 struct ProDeepModeCard: View {
     let gameMode: String
     let isPro: Bool
@@ -291,6 +294,8 @@ struct ProDeepModeCard: View {
     /// CPU practice — the card hides entirely on vs_cpu (the panel shows a
     /// "totals only" note instead), matching pro-insights-deep.tsx.
     var playType: String = "solo"
+    /// BJ17: the locked invitation's size (full: it leads its mode's page).
+    var compact: Bool = false
 
     private struct DeepData {
         var openers: [StatsDeepService.OpenerDeepStat] = []
@@ -306,23 +311,14 @@ struct ProDeepModeCard: View {
     @State private var data: DeepData?
 
     /// Memo in the first frame (founder, 2026-09-29) — the section popped in after .task.
-    init(gameMode: String, isPro: Bool, accent: Color, playType: String = "solo") {
+    init(gameMode: String, isPro: Bool, accent: Color, playType: String = "solo", compact: Bool = false) {
         self.gameMode = gameMode; self.isPro = isPro; self.accent = accent; self.playType = playType
+        self.compact = compact
         _data = State(initialValue: isPro ? StatsMemo.shared.get(Self.memoKey(gameMode, playType)) : nil)
     }
     private static func memoKey(_ gameMode: String, _ playType: String) -> String {
         "deepMode:\(StatsMemo.uid):\(gameMode):\(playType)"
     }
-
-    /// Locked preview uses static sample content so free users see the shape.
-    private static let sample = DeepData(
-        openers: [.init(word: "CRANE", count: 12, avgGreens: 1.2, avgYellows: 1.6, winRate: 75)],
-        positions: .init(wordLength: 5, pct: [34, 22, 28, 31, 41], sampleGuesses: 120),
-        almanac: [
-            .init(word: "PIQUE", won: true, guesses: 4, time: 88, date: "sample-1"),
-            .init(word: "KNOLL", won: false, guesses: 6, time: 240, date: "sample-2"),
-        ],
-        hints: nil, gauntlet: [])
 
     /// Word games only (founder, 2026-09-30: Sudocious/Starsweep store 81-cell boards as their
     /// "words", and Position Accuracy drew 81 slots that stretched the Stats page sideways).
@@ -333,10 +329,16 @@ struct ProDeepModeCard: View {
     }
 
     var body: some View {
-        let d = isPro ? data : Self.sample
+        let d = data
         Group {
             if !isWordGame {
                 Color.clear.frame(height: 0)
+            } else if !isPro, playType != "vs_cpu" {
+                VStack(alignment: .leading, spacing: 8) {
+                    SectionHeader("Deep Insights", accent: accent)
+                    ProStatsInvite(line: "See your best openers, letter accuracy and word almanac with Pro",
+                                   compact: compact, cast: "i")
+                }
             } else if isPro, data == nil, playType != "vs_cpu" {
                 StatsCardPlaceholder(title: "Deep Insights", accent: accent, height: 200)
             } else if isPro, let real = data, !real.hasAny, playType != "vs_cpu" {
@@ -352,9 +354,7 @@ struct ProDeepModeCard: View {
                         if let h = d.hints { hintsCard(h) }
                         if !d.almanac.isEmpty { almanacCard(d.almanac) }
                     }
-                    if isPro { inner } else {
-                        ProLockOverlay(label: "Unlock Deep Insights with Pro") { inner }
-                    }
+                    inner
                 }
             } else {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty

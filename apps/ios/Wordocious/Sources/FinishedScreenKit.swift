@@ -312,6 +312,8 @@ struct UnlimitedKeepPlayingCard: View {
     }
 
     private static let peach = Color(hex: 0xFB923C)
+    /// BJ17: the free upsell's gold tint (the Go Pro screen's cast color).
+    private static let gold = Color(hex: 0xF59E0B)
 
     var body: some View {
         if mini && !afterUnlimited { miniButton } else { card }
@@ -346,11 +348,20 @@ struct UnlimitedKeepPlayingCard: View {
     /// §AD: no idle wobble with Reduce Motion or in Low Power Mode.
     private var wobbling: Bool { !(envReduce || Theme.reduceMotion) && !Motion.calm() }
 
+    /// FINISH_SPEC BJ17 (founder 10-03): a free player's card is the Go Pro upsell — the day's
+    /// GO PRO sign character in the art slot (same 64 pt, so no added height) and the gold cast
+    /// GO PRO button in place of Play / New puzzle + its PRO pill, on a gold tint. Pro: unchanged.
+    private var upsell: Bool { locked }
+    private var upsellCast: String { GoProSign.ofDay() }
+
     private var card: some View {
         VStack(spacing: 10) {
             HStack(spacing: 10) {
                 Group {
-                    if ArtAsset.exists("art-scene-unlimited-loop") {
+                    if upsell {
+                        ArtThumbs.image(GoProSign.asset(upsellCast), points: 64)
+                            .resizable().interpolation(.high).scaledToFit()
+                    } else if ArtAsset.exists("art-scene-unlimited-loop") {
                         // BJ2: the slow orbit wobble (±4°, ±2 pt, 2.6 s each way) on Core
                         // Animation — the SwiftUI repeatForever rebuilt the whole finished
                         // screen every frame (40–75% main thread under an 8-board recap).
@@ -368,10 +379,16 @@ struct UnlimitedKeepPlayingCard: View {
                         .font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xA2560C))
                     Text("Unlimited \(game)").font(Brand.font(16, .black)).foregroundStyle(FinishInk.heading)
                         .lineLimit(1).minimumScaleFactor(0.7)
-                    Text("Fresh puzzles, no waiting").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                    Text(upsell ? "Fresh puzzles anytime with Pro" : "Fresh puzzles, no waiting")
+                        .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if !afterUnlimited {
+                if upsell && !afterUnlimited {
+                    Button(action: tap) { CandyLabel(title: "Go Pro") }
+                        .buttonStyle(CastButtonStyle(color: .gold, size: .medium, fullWidth: false))
+                        .accessibilityLabel("Go Pro: Unlimited \(game)")
+                } else if !afterUnlimited {
                     Button(action: tap) { CandyLabel(title: "Play") }
                         .buttonStyle(CastButtonStyle(color: .slate, size: .medium, fullWidth: false))
                         .overlay(alignment: .topTrailing) { if locked { proPill.offset(x: 6, y: -8) } }
@@ -383,10 +400,15 @@ struct UnlimitedKeepPlayingCard: View {
                 // the row at equal widths or wrap full width (CastButtonRow), never squeezed.
                 CastButtonRow {
                     if let share { share }
-                    Button(action: tap) { CandyLabel(title: "New puzzle") }
-                        .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
-                        .overlay(alignment: .topTrailing) { if locked { proPill.offset(x: -6, y: -8) } }
-                        .accessibilityLabel("New Unlimited \(game) puzzle")
+                    if upsell {
+                        Button(action: tap) { CandyLabel(title: "Go Pro") }
+                            .buttonStyle(CastButtonStyle(color: .gold, size: .medium))
+                            .accessibilityLabel("Go Pro: new Unlimited \(game) puzzle")
+                    } else {
+                        Button(action: tap) { CandyLabel(title: "New puzzle") }
+                            .buttonStyle(CastButtonStyle(color: .slate, size: .medium))
+                            .accessibilityLabel("New Unlimited \(game) puzzle")
+                    }
                     if let onOtherGames {
                         // BJ15 round 2: a tertiary action stays a text link (never a third cast pill).
                         Button(action: onOtherGames) { TextLinkLabel(title: "Other games", size: 13) }
@@ -398,7 +420,9 @@ struct UnlimitedKeepPlayingCard: View {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
-        .tintedCard(accent: Self.peach, bar: [Color(hex: 0xFFD6C2), Self.peach], radius: 18, barHeight: 6, tint: 0.10, line: 0.30)
+        .tintedCard(accent: upsell ? Self.gold : Self.peach,
+                    bar: upsell ? [Color(hex: 0xFDE68A), Self.gold] : [Color(hex: 0xFFD6C2), Self.peach],
+                    radius: 18, barHeight: 6, tint: upsell ? 0.12 : 0.10, line: 0.30)
         // The G1 Go Pro paywall (guests sign in inside it first). A purchase closes it
         // and starts the Unlimited game directly.
         .softSheet(isPresented: $showPro, onDismiss: {

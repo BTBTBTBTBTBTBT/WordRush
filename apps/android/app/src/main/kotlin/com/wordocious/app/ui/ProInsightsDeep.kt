@@ -60,8 +60,8 @@ import kotlin.math.sin
  * pro-insights-deep.tsx (and iOS ProInsightsDeep.swift): Skill Radar,
  * Rivalries, and the per-mode deep card (opener yield, position accuracy,
  * gauntlet stage breakdown, hint honesty, Word Almanac). Every card
- * self-fetches; free users see static sample content blurred behind the
- * gradient Pro pill.
+ * self-fetches; free users see the section header + the GO PRO sign
+ * invitation (ProStatsInvite, FINISH_SPEC BJ17) — no blur, no sample numbers.
  */
 
 private val WIN_PURPLE = Color(0xFF7C3AED)
@@ -136,7 +136,7 @@ private fun RadarChart(data: StatsDeepService.SkillRadarData) {
 
 /** Skill Radar section — the five-axis signature chart (Pro). */
 @Composable
-fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
+fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit, compact: Boolean = true) {
     // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
     // the card used to be absent on every Stats page swap, then pop in and shove the page
     // down (founder, 2026-09-29).
@@ -154,8 +154,15 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
             radarLoaded = true
         }
     }
-    // Locked preview uses the web's static sample so free users see the shape.
-    val d = if (isPro) data else StatsDeepService.SkillRadarData(62, 74, 55, 40, 68)
+    // FINISH_SPEC BJ17: free players get the GO PRO sign invitation (no blur, no sample radar).
+    if (!isPro) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionHeader("Skill Radar", accent = WTheme.primary)
+            ProStatsInvite("See your speed, accuracy and steadiness on a skill radar with Pro", onGoPro, compact, cast = "d")
+        }
+        return
+    }
+    val d = data
     if (d == null) {
         // Pro user with too little history — say why, don't vanish (iOS parity).
         if (isPro && radarLoaded) {
@@ -177,7 +184,7 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
                 )
             }
         }
-        if (isPro) card() else ProLockOverlay("Unlock Skill Radar with Pro", onGoPro) { card() }
+        card()
     }
     }
 }
@@ -186,7 +193,7 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
 
 /** Most-faced opponents with head-to-head W–L + win-share bar (Pro). */
 @Composable
-fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
+fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit, compact: Boolean = true) {
     // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
     // the card used to be absent on every Stats page swap, then pop in and shove the page
     // down (founder, 2026-09-29).
@@ -203,11 +210,16 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
             com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
         }
     }
-    val display = if (isPro) rows else listOf(
-        StatsDeepService.Rivalry("1", "WordSmith", 4, 2, 0, 6),
-        StatsDeepService.Rivalry("2", "LexiconLou", 1, 3, 1, 5),
-    )
-    if (isPro && display.isEmpty()) {
+    // FINISH_SPEC BJ17: free players get the GO PRO sign invitation (no blur, no sample rivals).
+    if (!isPro) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionHeader("Rivalries", accent = Color(0xFFEC4899))
+            ProStatsInvite("See your head-to-head record against every rival with Pro", onGoPro, compact, cast = "o2")
+        }
+        return
+    }
+    val display = rows
+    if (display.isEmpty()) {
         if (loaded) StatsEmptyCard("Rivalries", accent = Color(0xFFEC4899),
             hint = "Face the same opponent a few times to start a rivalry.")
         return
@@ -224,7 +236,7 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
                 }
             }
         }
-        if (isPro) card() else ProLockOverlay("Unlock Rivalries with Pro", onGoPro) { card() }
+        card()
     }
     }
 }
@@ -266,16 +278,6 @@ private data class DeepData(
         get() = openers.isNotEmpty() || positions != null || almanac.isNotEmpty() ||
             hints != null || gauntlet.isNotEmpty()
 }
-
-/** Locked preview uses static sample content so free users see the shape (web parity). */
-private val DEEP_SAMPLE = DeepData(
-    openers = listOf(StatsDeepService.OpenerDeepStat("CRANE", 12, 1.2, 1.6, 75)),
-    positions = StatsDeepService.PositionAccuracy(5, listOf(34, 22, 28, 31, 41), 120),
-    almanac = listOf(
-        StatsDeepService.AlmanacEntry("PIQUE", true, 4, 88, "sample-1"),
-        StatsDeepService.AlmanacEntry("KNOLL", false, 6, 240, "sample-2"),
-    ),
-)
 
 /**
  * Deep Insights (restat R4): opener yield, position accuracy, stage breakdown
@@ -330,7 +332,15 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
     // No per-game rows exist for CPU practice — hide the deep card entirely
     // (the panel shows a "totals only" note instead; restat B1).
     if (playType == "vs_cpu") return
-    val d = if (isPro) data else DEEP_SAMPLE
+    // FINISH_SPEC BJ17: free players get the GO PRO sign invitation (no blur, no sample insights).
+    if (!isPro) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionHeader("Deep Insights", accent = accent)
+            ProStatsInvite("See your best openers, letter accuracy and word almanac with Pro", onGoPro, cast = "i")
+        }
+        return
+    }
+    val d = data
     if (isPro && data != null && !data!!.hasAny) {
         StatsEmptyCard("Deep Insights", accent = accent,
             hint = "Play more of this mode to unlock openers, accuracy and almanac insights.")
@@ -350,7 +360,7 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
                 if (d.almanac.isNotEmpty()) AlmanacCard(d.almanac, accent)
             }
         }
-        if (isPro) inner() else ProLockOverlay("Unlock Deep Insights with Pro", onGoPro) { inner() }
+        inner()
     }
     }
 }

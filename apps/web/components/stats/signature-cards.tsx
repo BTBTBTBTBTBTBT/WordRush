@@ -2,14 +2,14 @@
 
 import useSWR from 'swr';
 import { CalendarDays, CalendarRange, Undo2, Star, TrendingUp } from 'lucide-react';
-import { KitCard, StatCell, ChartCard, ProLockOverlay } from '@/components/profile/stat-kit';
+import { KitCard, StatCell, ChartCard, ProStatsInvite } from '@/components/profile/stat-kit';
 import { WIN_FG } from '@/lib/tile-theme';
 import { fetchSignatureStats, fetchStandingTrend, type SignatureStats, type StandingPoint } from '@/lib/signature-stats';
 
 // The audit's new stats on the All-time page (D2). Free: SignatureCard — Best
 // day, Best week, Comebacks (a win on the very last row), Perfect games. Pro:
 // StandingTrendCard — your average Top X% per day over the last 30 days, the
-// one badge formula, blurred behind the Pro lock for free players.
+// one badge formula; free players see the GO PRO sign invitation (FINISH_SPEC BJ17).
 
 const fmtDay = (day: string) => new Date(`${day}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 const fmtWeek = (monday: string) => {
@@ -43,9 +43,10 @@ export function StandingTrendCard({ userId, isPro }: { userId: string; isPro: bo
     { revalidateOnFocus: false },
   );
   const pts: StandingPoint[] | null = isPro ? (fetched ?? null) : [];
-  // A sample curve for the locked preview so free players see the shape.
-  const data = isPro ? (pts ?? []) : [38, 31, 27, 22, 25, 18, 14, 16, 12, 9].map((p, i) => ({ day: `d${i}`, topPercent: p, modes: 3 }));
-  if (isPro && pts !== null && pts.length < 2) return null;
+  // BJ17: the first locked section on All-time → the full GO PRO sign invitation (no sample curve).
+  if (!isPro) return <ProStatsInvite line="Track your daily Top % over the last 30 days with Pro" cast="w" />;
+  const data = pts ?? [];
+  if (pts !== null && pts.length < 2) return null;
   const w = 300, h = 80, pad = 6;
   const xs = data.map((_, i) => pad + (i * (w - pad * 2)) / Math.max(1, data.length - 1));
   const ys = data.map((d) => pad + ((d.topPercent - 1) / 99) * (h - pad * 2)); // 1% at the top
@@ -71,7 +72,7 @@ export function StandingTrendCard({ userId, isPro }: { userId: string; isPro: bo
       </div>
     </ChartCard>
   );
-  return isPro ? chart : <ProLockOverlay label="Standing trend — Pro">{chart}</ProLockOverlay>;
+  return chart;
 }
 
 function fmtDayLabel(day: string): string {

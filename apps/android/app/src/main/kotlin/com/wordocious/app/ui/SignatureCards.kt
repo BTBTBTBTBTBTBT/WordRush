@@ -100,13 +100,9 @@ fun SignatureCard(userId: String) {
     }
 }
 
-// A sample curve for the locked preview so free players see the shape.
-private val STANDING_SAMPLE: List<SignatureStats.StandingPoint> =
-    listOf(38, 31, 27, 22, 25, 18, 14, 16, 12, 9).mapIndexed { i, p -> SignatureStats.StandingPoint("d$i", p, 3) }
-
 /** STANDING TREND (Pro) — average Top X% per day over the last 30 days as a
  *  sparkline (1 % at the top, dashed Top-25 % line). Hidden for a Pro player
- *  with fewer than two points; free players see the sample curve under the lock. */
+ *  with fewer than two points; free players see the GO PRO sign invitation (BJ17). */
 @Composable
 fun StandingTrendCard(userId: String, isPro: Boolean, onGoPro: () -> Unit) {
     // Seeded from the session memo in the FIRST composition, not in the effect a frame later —
@@ -120,8 +116,16 @@ fun StandingTrendCard(userId: String, isPro: Boolean, onGoPro: () -> Unit) {
         pts = fresh
         com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
     }
-    val data: List<SignatureStats.StandingPoint> = if (isPro) (pts ?: return) else STANDING_SAMPLE
-    if (isPro && data.size < 2) return
+    // FINISH_SPEC BJ17: the first locked section on All-time → the full GO PRO sign invitation (no sample curve).
+    if (!isPro) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionHeader("Standing Trend", accent = WTheme.primary)
+            ProStatsInvite("Track your daily Top % over the last 30 days with Pro", onGoPro, cast = "w")
+        }
+        return
+    }
+    val data: List<SignatureStats.StandingPoint> = pts ?: return
+    if (data.size < 2) return
     val latest = data.lastOrNull()
     val first = data.firstOrNull()
     val improving = latest != null && first != null && latest.topPercent < first.topPercent
@@ -146,7 +150,7 @@ fun StandingTrendCard(userId: String, isPro: Boolean, onGoPro: () -> Unit) {
                     }
                 }
             }
-            if (isPro) card() else ProLockOverlay("Standing trend — Pro", onGoPro) { card() }
+            card()
         }
     }
 }

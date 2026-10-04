@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { castArtPaths } from '@/components/ui/cast-button';
+import { GOPRO_SIGN_CAST, artSrc } from '@/lib/art';
 
 // FINISH_SPEC BJ15: decode every cast-button skin + label at idle after the first paint, so a
 // button never decodes on the frame that presents it (or on a press, when the -pressed skin swaps in).
@@ -13,7 +14,8 @@ export function CastArtWarmup() {
     if (held.length) return;
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const idle = (cb: () => void) => (ric ? ric.call(window, cb, { timeout: 2500 }) : setTimeout(cb, 800));
-    const paths = castArtPaths();
+    // + BJ17: the GO PRO sign cast (Stats locked sections, the free finish upsell).
+    const paths = [...castArtPaths(), ...GOPRO_SIGN_CAST.map((id) => artSrc(`art-gopro-sign-${id}`))];
     let i = 0;
     const step = () => {
       // A few per idle slice — never a long task.

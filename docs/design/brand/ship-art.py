@@ -180,6 +180,10 @@ for f in sorted(os.listdir(ACH_DIR)) if os.path.isdir(ACH_DIR) else []:
 for sc, w_ in [('achievement', 1200), ('welcome-cast', 1200), ('all-set', 1200), ('banner-halloween', 1200)]:   # BF2, AO
     if os.path.exists(os.path.join(HERE, 'scenes', f'{sc}.png')):
         ship(f'art-scene-{sc}', wide(os.path.join(HERE, 'scenes', f'{sc}.png'), w_)); n += 1
+GOPRO_DIR = os.path.join(HERE, 'scenes', 'gopro-sign')   # BJ17: the cast holding GO PRO → art-gopro-sign-<id>
+for m in ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']:
+    if os.path.exists(os.path.join(GOPRO_DIR, f'{m}.png')):
+        ship(f'art-gopro-sign-{m}', wide(os.path.join(GOPRO_DIR, f'{m}.png'), 480)); n += 1
 REACT_DIR = os.path.join(HERE, 'icons', 'react')   # friend reactions (FINISH_SPEC AM1): art-react-<key>
 for k in ['clap', 'fire', 'wow', 'grr', 'rematch', 'heart']:
     if os.path.exists(os.path.join(REACT_DIR, f'{k}.png')):

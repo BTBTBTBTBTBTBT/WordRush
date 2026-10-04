@@ -539,6 +539,16 @@ struct ProfileTab: View {
                 withAnimation(Theme.animation(.easeOut(duration: 0.35))) { proxy.scrollTo(vsSectionId, anchor: .top) }
             }
         }
+        #if DEBUG
+        // Store-demo QA (BJ17): `-storeStatsScroll <anchor id>` lands the page on one section
+        // (e.g. standing-trend) so a locked state can be shot without manual scrolling.
+        .task {
+            let a = ProcessInfo.processInfo.arguments
+            guard let i = a.firstIndex(of: "-storeStatsScroll"), i + 1 < a.count else { return }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            proxy.scrollTo(a[i + 1], anchor: .top)
+        }
+        #endif
         // BJ1: a pick resets the scroll to the top (instant).
         .onChange(of: scrollTopToken) { _ in proxy.scrollTo(topAnchorId, anchor: .top) }
         }
@@ -847,6 +857,7 @@ struct ProfileTab: View {
         // Standing trend — your Top X% per day over 30 days (Pro); the card
         // carries its own STANDING TREND header so both hide together.
         StandingTrendCard(userId: p.id, isPro: auth.isProActive)
+            .id("standing-trend")
         ProStatsCard(statRows: statRows)
         SkillRadarCard(isPro: auth.isProActive, statRows: statRows)
         // Progression: medals + achievements under one banner.

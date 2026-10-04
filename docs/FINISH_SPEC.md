@@ -1699,6 +1699,23 @@ screen: the big WELCOME! + WORDOCIOUS / Daily Word Games lines are replaced by t
 already greets — no duplicate); the first-run welcome keeps WELCOME!. Left as small in-card labels: the iOS streak popup's
 SHIELDS section, TROPHY CASE, Edit Profile's MAKE YOUR MASCOT card. Web Leaderboard has no signed-out pitch (guests see the
 board with its banner title). DELETE ACCOUNT: the web page wears it; iOS / Android use a system alert.
+BJ17. Pro-locked stats: cast GO PRO invitation instead of blur (founder 10-03: "have ChatGPT design one of the mascots
+saying go pro on the stats that are unavailable to them on the stat page. Instead of it being blurred out"; then "a few
+different characters holding those signs up"). ART: all ten cast members holding the gold GO PRO lettering, art-gopro-sign-<id>
+(w o1 r d o2 c i o3 u s; 480 wide) ×3, from the paid images-edit API with each hero + refs + titles/cast-colors/gopro.png
+attached (docs/design/brand/scenes/raw/gopro-*-1.png); where the model misspelled or cropped the lettering (c, o3, r, s, d, o2)
+scenes/gopro-sign/compose.py lays the canonical gopro lettering over the sign (characters untouched). Decoded at idle on all
+three (iOS GoProSign.prewarm in AppWarmup, Android GoProSign.prewarm in App.onCreate, web CastArtWarmup). STATS: the old
+ProLockOverlay (blurred sample radar / rivals / trend / insights behind a pill) is gone ×3 — no blur, no sample numbers. A
+locked section keeps its header; in place of the stats ProStatsInvite shows a cast member with the sign, ONE line saying what
+Pro unlocks there, and the gold cast GO PRO button (art-btnlabel-gopro) that opens the Go Pro flow. No box around it. One big
+sign per page: Standing Trend (W) and Deep Insights (I) are full (116 pt art, line, medium button); Skill Radar (D) and
+Rivalries (O2) are compact (60 pt art beside the line + small button). The free-tier PRO STATS locked box is hidden on iOS /
+Android like web already did (Standing Trend's invitation above is the gate). FINISH UPSELL: for FREE players the Keep playing
+· Unlimited card becomes the Go Pro upsell — the day's GO PRO sign character (a deterministic daily rotation through all
+ten: n = year*372 + month*31 + day, mod 10; same formula ×3) in the 64 pt art slot, a gold tint, "Fresh puzzles anytime with
+Pro", and the gold GO PRO cast button in place of Play / New puzzle + the PRO pill. Same height as before; Pro players see the
+unchanged peach card. Guard: art.test.ts (every sign ships ×3, ten-day rotation, iOS/Android cast order + formula match).
 BJ18. Release-gate polish (coordinator 10-03). Finish row: Share + Next keep ONE CastButtonRow line at phone width via the
 short art labels SHARE (art-btnlabel-share; a11y "Share results", countdown caption still under it) and NEXT
 (art-btnlabel-next, led by the next game's 3D icon; a11y "Next daily: <game>"), both medium ×3 (iOS NextDailyCTA's Next is

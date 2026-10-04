@@ -644,6 +644,12 @@ fun UnlimitedCard(
     // Free players and guests see the card too (founder 10-02); their tap opens the
     // Go Pro paywall, and turning Pro there plays straight through to [onPlay].
     val locked = !newPuzzle && (profile == null || !AuthService.isProActive)
+    // FINISH_SPEC BJ17 (founder 10-03): a free player's card is the Go Pro upsell — the day's GO PRO
+    // sign character in the art slot (same 64 dp, no added height) and the gold cast GO PRO button in
+    // place of Play + its PRO pill, on a gold tint. Pro players: unchanged.
+    val upsell = locked
+    val tint = if (upsell) UPSELL_GOLD else peach
+    val upsellCast = remember { com.wordocious.app.ui.GoProSign.ofDay() }
     var paywall by remember { mutableStateOf(false) }
     if (paywall) ProPaywallDialog(onDismiss = { paywall = false }, onPro = { paywall = false; onPlay() })
     val shape = RoundedCornerShape(18.dp)
@@ -651,15 +657,22 @@ fun UnlimitedCard(
     Column(
         modifier.fillMaxWidth()
             .clip(shape)
-            .background(accentWash(peach, 0.14f))
-            .drawBehind { drawRect(peach, Offset.Zero, Size(size.width, 4.dp.toPx())) }
-            .border(1.5.dp, accentLine(peach, 0.34f), shape)
+            .background(accentWash(tint, 0.14f))
+            .drawBehind { drawRect(tint, Offset.Zero, Size(size.width, 4.dp.toPx())) }
+            .border(1.5.dp, accentLine(tint, 0.34f), shape)
             .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 8.dp)
             .semantics { contentDescription = "Keep playing: Unlimited $title" },
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            UnlimitedLoopArt(64.dp)
+            if (upsell) {
+                androidx.compose.foundation.Image(
+                    com.wordocious.app.ui.artPainter(com.wordocious.app.ui.GoProSign.res(upsellCast), 64.dp), contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.size(64.dp),
+                )
+            } else {
+                UnlimitedLoopArt(64.dp)
+            }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
                     if (newPuzzle) "KEEP GOING" else "KEEP PLAYING", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
@@ -670,7 +683,7 @@ fun UnlimitedCard(
                     color = if (dark) WTheme.text else FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "Fresh puzzles, no waiting", fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                    if (upsell) "Fresh puzzles anytime with Pro" else "Fresh puzzles, no waiting", fontSize = 11.sp, fontWeight = FontWeight.Bold,
                     color = if (dark) WTheme.textMuted else FinishInk.muted, maxLines = 1,
                 )
             }
@@ -683,6 +696,11 @@ fun UnlimitedCard(
                             .tintedPill(peach, corner = 14.dp).padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 4.dp),
                     )
                 }
+            } else if (upsell) {
+                CastButton(
+                    "Go Pro", onClick = { paywall = true }, color = CastColor.GOLD, size = CastSize.M,
+                    contentDescription = "Go Pro: Unlimited $title",
+                )
             } else {
                 Box {
                     CastButton(
@@ -700,6 +718,9 @@ fun UnlimitedCard(
         }
     }
 }
+
+/** BJ17 the free upsell card's gold tint (the Go Pro screen's cast color). */
+private val UPSELL_GOLD = Color(0xFFF59E0B)
 
 /** BA1 the one-screen rule's short phone: under this height (dp) the finished screens compact. */
 const val SHORT_SCREEN_DP = 700

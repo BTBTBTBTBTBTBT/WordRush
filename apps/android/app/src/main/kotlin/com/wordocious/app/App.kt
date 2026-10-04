@@ -24,6 +24,8 @@ class App : Application() {
             runCatching { com.wordocious.app.ui.CastArt.prewarm(this@App, resources.displayMetrics.density) }
             // FINISH_SPEC BJ16: popup / sheet heading lettering, pre-scaled to its display size.
             runCatching { com.wordocious.app.ui.HeadingArtCache.prewarm(this@App, resources.displayMetrics.density) }
+            // FINISH_SPEC BJ17: the GO PRO sign cast (Stats locked sections + the free finish upsell).
+            runCatching { com.wordocious.app.ui.GoProSign.prewarm(this@App, resources.displayMetrics.density) }
             // Founder 10-03: today's Muddle cartoon decoded before its panel shows (no placeholder frame).
             runCatching { com.wordocious.app.ui.game.MuddleCartoons.prewarm(this@App) }
         }

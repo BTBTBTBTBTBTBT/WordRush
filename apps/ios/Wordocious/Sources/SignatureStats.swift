@@ -227,7 +227,7 @@ struct SignatureCard: View {
 
 /// Your average Top X% per day over the last 30 days as a sparkline (1 % at
 /// the top, dashed Top-25 % line, amber dots at or under it). Free players see
-/// a fixed sample curve behind the Pro lock; Pro hides it under two points.
+/// the GO PRO sign invitation (BJ17); Pro hides it under two points.
 struct StandingTrendCard: View {
     let userId: String
     let isPro: Bool
@@ -241,10 +241,7 @@ struct StandingTrendCard: View {
 
     private static let purple = Color(hex: 0x7C3AED)
     private static let amber = Color(hex: 0xD97706)
-    private static let sample: [SignatureStats.StandingPoint] =
-        [38, 31, 27, 22, 25, 18, 14, 16, 12, 9].enumerated().map { .init(day: "d\($0.offset)", topPercent: $0.element, modes: 3) }
-
-    private var data: [SignatureStats.StandingPoint] { isPro ? (points ?? []) : Self.sample }
+    private var data: [SignatureStats.StandingPoint] { points ?? [] }
 
     var body: some View {
         Group {
@@ -258,7 +255,8 @@ struct StandingTrendCard: View {
                     } else if isPro {
                         chart
                     } else {
-                        ProLockOverlay(label: "Standing trend — Pro") { chart }
+                        // BJ17: the first locked section on All-time → the full GO PRO sign invitation.
+                        ProStatsInvite(line: "Track your daily Top % over the last 30 days with Pro", cast: "w")
                     }
                 }
             }

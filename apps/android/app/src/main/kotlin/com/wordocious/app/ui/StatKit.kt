@@ -1,5 +1,10 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.layout.ContentScale
+import com.wordocious.app.R
+import kotlin.math.roundToInt
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
@@ -32,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -53,7 +57,7 @@ import com.wordocious.app.ui.theme.WTheme
  * Shared visual grammar for the Profile + Records stat pages — ports
  * components/profile/stat-kit.tsx (and iOS StatKit.swift). Every section uses
  * SectionHeader; every stat cell uses StatCell; every chart sits in a
- * ChartCard; every Pro gate uses ProLockOverlay. One look, defined once.
+ * ChartCard; every Pro gate uses ProStatsInvite. One look, defined once.
  */
 
 /** Uppercase tracked section label with an accent tick + optional right control. */
@@ -185,32 +189,65 @@ fun ChartCard(
 }
 
 /**
- * The single Pro gate: blurred sample content + a gradient lock pill that
- * opens the Pro screen. Ports stat-kit.tsx ProLockOverlay / iOS ProLockOverlay.
- * (Modifier.blur needs API 31; older devices still get the 0.6-alpha dim +
- * the lock pill over static sample data, so nothing real ever leaks.)
+ * FINISH_SPEC BJ17: the GO PRO sign cast (ChatGPT / API art, art_gopro_sign_<id>): all ten holding the
+ * gold GO PRO lettering. The Stats locked sections and the free finish upsell use them; [prewarm] decodes
+ * every display size off main at launch (App.onCreate) so none pops in.
+ */
+object GoProSign {
+    val cast = listOf("w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s")   // cast order (web GOPRO_SIGN_CAST)
+    fun res(id: String): Int = when (id) {
+        "o1" -> R.drawable.art_gopro_sign_o1; "r" -> R.drawable.art_gopro_sign_r
+        "d" -> R.drawable.art_gopro_sign_d; "o2" -> R.drawable.art_gopro_sign_o2
+        "c" -> R.drawable.art_gopro_sign_c; "i" -> R.drawable.art_gopro_sign_i
+        "o3" -> R.drawable.art_gopro_sign_o3; "u" -> R.drawable.art_gopro_sign_u
+        "s" -> R.drawable.art_gopro_sign_s; else -> R.drawable.art_gopro_sign_w
+    }
+    /** A deterministic pick from the local date (same formula as web / iOS), so the finish upsell changes daily. */
+    fun ofDay(date: java.time.LocalDate = java.time.LocalDate.now()): String =
+        cast[(date.year * 372 + date.monthValue * 31 + date.dayOfMonth) % cast.size]
+    /** Longest-side sizes in use: the Stats full / compact blocks and the finish card. */
+    val sizes = listOf(116, 60, 64)
+    fun prewarm(context: android.content.Context, density: Float) {
+        for (id in cast) for (dp in sizes) ArtBitmaps.get(context, res(id), ArtBitmaps.bucketPx((dp * density).roundToInt()))
+    }
+}
+
+/**
+ * The single Pro gate (FINISH_SPEC BJ17, founder 10-03: "a mascot saying go pro… instead of it being
+ * blurred out"): no blur and no sample numbers behind glass. The section keeps its own header; in place
+ * of the stats, a cast member holds up the gold GO PRO sign, one line says what Pro unlocks HERE, and the
+ * gold cast GO PRO button opens the Pro screen. [compact] = the small sign art beside the line + a small
+ * button, for every locked section after the first on a page (one big sign per page).
  */
 @Composable
-fun ProLockOverlay(
-    label: String = "Unlock with Pro",
-    onGoPro: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    // A9: the whole locked card squishes on press (the scrim drives the shared interaction).
-    val interaction = remember { MutableInteractionSource() }
-    Box(Modifier.fillMaxWidth().pressSquish(interaction)) {
-        Box(
-            Modifier.fillMaxWidth().blur(3.dp).alpha(0.6f)
-                .clearAndSetSemantics { },
-        ) { content() }
-        // Transparent scrim eats taps on the blurred content underneath.
-        Box(Modifier.matchParentSize().clickable(interactionSource = interaction, indication = null, onClick = onGoPro))
-        // A8: the lock pill is a small pink candy button with the 3D lock (ART_SPEC §5).
-        CandyButton(
-            label, onGoPro, Modifier.align(Alignment.Center),
-            color = CandyColor.PINK, size = CandySize.SMALL,
-            leading = { Icon3D(Icon3DName.LOCK, 16.dp) },
-        )
+fun ProStatsInvite(line: String, onGoPro: () -> Unit, compact: Boolean = false, cast: String = "w") {
+    val art = GoProSign.res(cast)
+    val text = @Composable { align: TextAlign ->
+        Text(line, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 17.sp, textAlign = align,
+            color = if (WTheme.isDark) WTheme.text else FinishInk.heading)
+    }
+    if (compact) {
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Image(artPainter(art, 60.dp), contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.size(60.dp))
+            Column(Modifier.widthIn(max = 230.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                text(TextAlign.Start)
+                CastButton("Go Pro", onClick = onGoPro, color = CastColor.GOLD, size = CastSize.S)
+            }
+        }
+    } else {
+        Column(
+            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Image(artPainter(art, 116.dp), contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.size(116.dp))
+            Box(Modifier.widthIn(max = 280.dp)) { text(TextAlign.Center) }
+            CastButton("Go Pro", onClick = onGoPro, color = CastColor.GOLD, size = CastSize.M)
+        }
     }
 }
 

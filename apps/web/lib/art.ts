@@ -286,6 +286,15 @@ export function halloweenSrc(id: PoseCastId): string {
  * the podium pedestals + floor plate (docs/design/brand/podium/make-pedestals.py), and the cast-color titles
  * (art-titlecast-*) + three-slice button skins (art-btn-<color>-<s|m|l>[-pressed][-dark], caps = height / 2).
  */
+/** FINISH_SPEC BJ17: the GO PRO sign cast — all ten, in cast order. */
+export const GOPRO_SIGN_CAST = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'] as const;
+export type GoProSignId = (typeof GOPRO_SIGN_CAST)[number];
+/** The finish upsell's character for a local day (YYYY-MM-DD): a deterministic daily rotation through all ten. */
+export function goProSignOfDay(day: string): GoProSignId {
+  const [y, m, d] = day.split('-').map(Number);
+  return GOPRO_SIGN_CAST[((y || 0) * 372 + (m || 0) * 31 + (d || 0)) % GOPRO_SIGN_CAST.length];
+}
+
 export type NightArtName =
   | `art-ach-${string}`
   | `art-av-${string}`
@@ -299,7 +308,9 @@ export type NightArtName =
   | 'art-podium-floor'
   | `art-titlecast-${string}`
   | `art-btn-${string}`
-  | `art-btnlabel-${string}`;
+  | `art-btnlabel-${string}`
+  // FINISH_SPEC BJ17: the cast holding the gold GO PRO sign (Stats locked sections + the free finish upsell)
+  | `art-gopro-sign-${GoProSignId}`;
 
 export type ArtName = DayArtName | TitleArtName | MomentArtName | SceneArtName | GameTitleArtName | BackgroundArtName | WallArtName | PoseArtName | StarsweepArtName | MuddleCoinArtName | GamePieceArtName | MedalArtName | BadgeArtName | HalloweenArtName | NightArtName;
 
@@ -890,6 +901,16 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-scene-achievement': [1200, 519],
   'art-scene-all-set': [1200, 381],
   'art-scene-banner-halloween': [905, 570],
+  'art-gopro-sign-w': [480, 467],
+  'art-gopro-sign-o1': [480, 452],
+  'art-gopro-sign-r': [480, 408],
+  'art-gopro-sign-d': [480, 528],
+  'art-gopro-sign-o2': [480, 470],
+  'art-gopro-sign-c': [480, 529],
+  'art-gopro-sign-i': [480, 477],
+  'art-gopro-sign-o3': [480, 509],
+  'art-gopro-sign-u': [480, 466],
+  'art-gopro-sign-s': [480, 507],
   'art-scene-welcome-cast': [1200, 402],
   'art-toggle-dark-knob': [243, 245],
   'art-toggle-dark-switch': [340, 200],

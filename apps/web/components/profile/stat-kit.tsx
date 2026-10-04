@@ -2,10 +2,9 @@
 
 import type { ReactNode, ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Icon3D } from '@/components/ui/icon3d';
-import Link from 'next/link';
 import { SoftNum } from '@/components/ui/soft-number';
-import { candyClass } from '@/components/ui/candy-button';
+import { CastLink } from '@/components/ui/cast-button';
+import { ART_SIZE, artSrc, type GoProSignId } from '@/lib/art';
 import { BRAND_ACCENT, cardBarStyle, softCard } from '@/lib/soft-surface';
 
 /** Counts from 0 to `target` over ~500ms on mount (F4). Snaps under
@@ -190,21 +189,38 @@ export function ChartCard({
   );
 }
 
-/** The single Pro gate: blurred content + lock + upgrade link. */
-export function ProLockOverlay({ children, label = 'Unlock with Pro' }: { children: ReactNode; label?: string }) {
+/**
+ * The single Pro gate (FINISH_SPEC BJ17, founder 10-03: "a mascot saying go pro… instead of it being
+ * blurred out"): no blur and no sample numbers behind glass. The section keeps its own header; in place of
+ * the stats, a cast member holds up the gold GO PRO sign, one line says what Pro unlocks HERE, and the gold
+ * cast GO PRO button opens /pro. `compact` = the small sign art beside the line + a small button, for every
+ * locked section after the first on a page (one big sign per page).
+ */
+export function ProStatsInvite({ line, compact = false, cast = 'w' }: { line: string; compact?: boolean; cast?: GoProSignId }) {
+  const name = `art-gopro-sign-${cast}` as const;
+  const [w, h] = ART_SIZE[name];
+  const box = compact ? 60 : 116;
+  const img = (
+    <img src={artSrc(name)} alt="" aria-hidden="true" width={w} height={h} draggable={false} decoding="async"
+      className="shrink-0" style={{ width: box, height: box, objectFit: 'contain' }} />
+  );
+  const text = <p className="text-[13px] font-extrabold leading-snug" style={{ color: 'var(--color-text)' }}>{line}</p>;
+  if (compact) {
+    return (
+      <div className="flex items-center justify-center gap-3 py-1">
+        {img}
+        <div className="flex flex-col items-start gap-2" style={{ maxWidth: 230 }}>
+          {text}
+          <CastLink href="/pro" color="gold" size="sm" aria-label="Go Pro">Go Pro</CastLink>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="relative">
-      <div className="pointer-events-none select-none blur-[3px] opacity-60" aria-hidden>{children}</div>
-      <Link
-        href="/pro"
-        className="absolute inset-0 flex flex-col items-center justify-center gap-1.5"
-        aria-label={label}
-      >
-        {/* A8: the gate's call to action is a small candy pill (the whole overlay is the link). */}
-        <span className={candyClass({ color: 'pink', size: 'sm' })}>
-          <Icon3D name="lock" size={15} /> <span className="candy-label">{label}</span>
-        </span>
-      </Link>
+    <div className="flex flex-col items-center gap-2 py-1 text-center">
+      {img}
+      <div style={{ maxWidth: 280 }}>{text}</div>
+      <CastLink href="/pro" color="gold" size="md" aria-label="Go Pro">Go Pro</CastLink>
     </div>
   );
 }
