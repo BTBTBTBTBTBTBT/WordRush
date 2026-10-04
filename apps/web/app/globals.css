@@ -829,6 +829,9 @@
 @media (prefers-reduced-transparency: reduce) {
   .banner-frost { background: rgba(245, 238, 255, 0.94); }
 }
+/* Dark mode: the Home banner takes the dark card tokens (it stayed light). */
+[data-theme="dark"] .banner-frost { background: rgba(37, 37, 66, 0.82); }
+[data-theme="dark"] { --banner-gloss: 0.05; --banner-ink: #c4b5fd; --banner-ink-gold: #fcd34d; }
 
 /* Game screen headers wearing title art (docs/ART_SPEC.md §14, §19.3;
    lib/art.ts gameHeaderStyle): the corner buttons keep their own top row and
@@ -1844,6 +1847,10 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 .lh-inner { display: inline; }
 .lh-w { display: inline-block; white-space: nowrap; }
 .lh-space { white-space: pre-wrap; }
+/* Unwrapped, a space must not break the line: the fit pass measures the overflow and shrinks
+   (or switches to the balanced two-line wrap). A breaking space hid the overflow, so the Home
+   banner's "WARMING UP · 1 DOWN" broke onto a clipped second line at 375 wide. */
+.lh:not([data-wrap="true"]) .lh-space { white-space: pre; }
 .lh-ch { position: relative; display: inline-block; animation: lh-pop 340ms cubic-bezier(0.3, 1.5, 0.5, 1) both; animation-delay: calc(var(--i, 0) * 25ms); }
 .lh-stroke {
   color: var(--lh-deep);

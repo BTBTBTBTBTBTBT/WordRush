@@ -440,8 +440,9 @@ export function FinishedDock({ currentMode, isDaily, onShare, copied, onNewPuzzl
       {nextLabel}
     </CastLink>
   ) : mode ? (
-    <CastLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={18} />} className="cast-row-flex" style={castRowMin(castNaturalWidth('Leaderboard', 'md', 18))} aria-label={`View ${mode.title} Leaderboard`}>
-      Leaderboard
+    <CastLink href={`/daily?mode=${currentMode}`} color="purple" size="md" block icon={<Icon3D name="trophy" size={18} />} className="cast-row-flex" style={castRowMin(castNaturalWidth('Ranks', 'md', 18))} aria-label={`View ${mode.title} Leaderboard`}>
+      {/* Sweep done: the trophy on the short RANKS label keeps SHARE + it on ONE row (iOS 7da97f04). */}
+      Ranks
     </CastLink>
   ) : null);
   const share = onShare ? (

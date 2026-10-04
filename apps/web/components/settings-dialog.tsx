@@ -28,7 +28,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
-  const { user, session, signOut, profile } = useAuth();
+  const { user, session, signOut, profile, isProActive } = useAuth();
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   // FINISH_SPEC U: the separate Haptics toggle (default on; lib/haptics.ts 'pref-haptics').
   const [hapticsOn, setHapticsOnState] = useState(() => isHapticsOn());
@@ -234,6 +234,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           {/* C4b: the Friends notification toggles (moved here from the Friends bell). */}
           {user && <NotificationSettings />}
 
+          {/* Guests and free players have nothing to manage: the store rows only show
+              for a signed-in Pro member or a web (Stripe) purchase on file. */}
+          {user && (isProActive || webBilling) && (
           <div ref={subscriptionRef} style={{ scrollMarginTop: 8 }}>
           <SettingsSection title="Subscription" accent={SETTINGS_ACCENT.subscription}>
             {/* The web can't tell which store a Pro sub was bought in, so both
@@ -248,6 +251,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             />
           </SettingsSection>
           </div>
+          )}
 
           {/* BI25: mounted after the dialog lands (its identity load stays off the open frame); below the fold. */}
           {user && settled && <LinkedSignIns key={user.id} />}

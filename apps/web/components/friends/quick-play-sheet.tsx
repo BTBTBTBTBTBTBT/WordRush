@@ -291,7 +291,9 @@ function FriendPicker({ friends, kind, now, onPick }: {
         {ordered.length === 0 ? (
           <BrandEmptyState scene="i-invite" accent="friends" artHeight={110} title="No friends yet" line="Add a friend first, then pick a game and play." className="py-2" />
         ) : (
-          <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, columnGap: PICKER_GAP, rowGap: 12 }}>
+          // A partial last row sits CENTERED (founder: symmetry) — wrapped cells of the grid's
+          // exact column width instead of grid tracks that pin the remainder to the left.
+          <div className="flex flex-wrap justify-center" style={{ columnGap: PICKER_GAP, rowGap: 12 }}>
             {ordered.map((f) => {
               const st = pickerStatus(f, now);
               return (
@@ -301,6 +303,7 @@ function FriendPicker({ friends, kind, now, onPick }: {
                   onClick={() => onPick(f)}
                   aria-label={`${f.username}, ${st.text}`}
                   className="flex flex-col items-center min-w-0"
+                  style={{ width: `calc((100% - ${(cols - 1) * PICKER_GAP}px) / ${cols})` }}
                 >
                   {/* The friend's REAL avatar (the shared resolver) as a tile filling the cell; on now = a soft green glow, no outline. */}
                   <span

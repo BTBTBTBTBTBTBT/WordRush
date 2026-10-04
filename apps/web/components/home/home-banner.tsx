@@ -8,7 +8,7 @@ import { LiveHeadline } from '@/components/ui/live-headline';
 import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
-import { softBorder } from '@/lib/soft-surface';
+import { alphaHex, softBorder } from '@/lib/soft-surface';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Check } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -35,6 +35,8 @@ import { headlineRowHeight, homeHeadlineLayout } from '@/lib/home-headline';
 // The words come from the shared core so iOS and Android print the same thing.
 
 const TIER_COLOR: Record<Exclude<BannerTier, 'none'>, string> = { sweep: '#ebd6fd', flawless: '#fde68a' };
+/** The tier fills as washes over the card base (≈ the colors above on white). */
+const TIER_WASH: Record<Exclude<BannerTier, 'none'>, string> = { sweep: alphaHex('#a855f7', 0.24), flawless: alphaHex('#f59e0b', 0.5) };
 const TIER_INK: Record<BannerTier, string> = { none: '#6d28d9', sweep: '#7e22ce', flawless: '#92400e' };
 
 /**
@@ -212,13 +214,15 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const wTier = content.wordTier;
   const pTier = content.puzzleTier;
   const double = wTier === 'flawless' && pTier === 'flawless';
-  const topColor = wTier === 'none' ? '#ece8ff' : TIER_COLOR[wTier];
-  const bottomColor = pTier === 'none' ? '#e2e6ff' : TIER_COLOR[pTier];
+  // Washes OVER the theme's card base (the other Home cards' rule, modeCardSurface): the
+  // same pastels on light, the dark surface under them in dark mode (it used to stay light).
+  const topColor = wTier === 'none' ? alphaHex('#7c3aed', 0.12) : TIER_WASH[wTier];
+  const bottomColor = pTier === 'none' ? alphaHex('#4f46e5', 0.15) : TIER_WASH[pTier];
   // BJ6 round 3 flair: a very soft diagonal sheen over the fill (static).
   const background = unlimited
-    ? `${CARD_SHEEN}, linear-gradient(135deg, #fce7f3, #ede9fe)`
-    : `${CARD_SHEEN}, linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%), linear-gradient(180deg, ${topColor} 0%, ${topColor} 52%, ${bottomColor} 72%, ${bottomColor} 100%)`;
-  const subInk = double ? '#92400e' : '#6d28d9';
+    ? `${CARD_SHEEN}, linear-gradient(135deg, ${alphaHex('#ec4899', 0.14)}, ${alphaHex('#8b5cf6', 0.14)}), var(--color-card-base, #ffffff)`
+    : `${CARD_SHEEN}, linear-gradient(135deg, rgba(255,255,255,var(--banner-gloss, 0.35)), rgba(255,255,255,0) 55%), linear-gradient(180deg, ${topColor} 0%, ${topColor} 52%, ${bottomColor} 72%, ${bottomColor} 100%), var(--color-card-base, #ffffff)`;
+  const subInk = double ? 'var(--banner-ink-gold, #92400e)' : 'var(--banner-ink, #6d28d9)';
   const shimmer = !unlimited && (wTier !== 'none' || pTier !== 'none');
   // The art frame belongs to the day (a swept / flawless Daily), not to the mode.
   const tierArt = slots.frame === 'art' && dailyTier !== 'none' ? TIER_ART[dailyTier] : null;
@@ -274,7 +278,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       <RowHeader
         label={label}
         status={unlimited ? unlimitedGroupStatus(r.unlimitedPlayed) : groupStatus(r.progress)}
-        ink={TIER_INK[tier]}
+        // Theme-aware: the light inks on the light card, pastels on the dark card (globals.css --banner-ink*).
+        ink={tier === 'flawless' ? `var(--banner-ink-gold, ${TIER_INK[tier]})` : `var(--banner-ink, ${TIER_INK[tier]})`}
         // AS7: no row flames — every streak lives in the streak-flame popup.
         streak={null}
         height={slots.rowHeader}

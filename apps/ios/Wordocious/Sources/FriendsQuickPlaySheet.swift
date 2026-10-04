@@ -102,11 +102,20 @@ struct FriendsQuickPlaySheet: View {
                                 scene: .invite, artHeight: 110, colors: [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)],
                                 lineColor: FriendsInk.muted)
             } else {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: FriendsKit.PickerGrid.gap, alignment: .top),
-                                         count: grid.cols),
-                          spacing: FriendsKit.PickerGrid.rowSpacing) {
-                    ForEach(friends, id: \.id) { f in
-                        pickerCell(f, avatar: grid.avatar, now: now)
+                // Rows of the grid's exact column width, each CENTERED, so a partial last
+                // row sits in the middle (founder: symmetry) instead of pinned left.
+                let gap = FriendsKit.PickerGrid.gap
+                let cols = max(1, grid.cols)
+                let cellW = (gridWidth - gap * CGFloat(cols - 1)) / CGFloat(cols)
+                VStack(spacing: FriendsKit.PickerGrid.rowSpacing) {
+                    ForEach(Array(stride(from: 0, to: friends.count, by: cols)), id: \.self) { start in
+                        HStack(alignment: .top, spacing: gap) {
+                            ForEach(friends[start..<min(start + cols, friends.count)], id: \.id) { f in
+                                pickerCell(f, avatar: grid.avatar, now: now)
+                                    .frame(width: cellW > 0 ? cellW : nil)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                 }
             }

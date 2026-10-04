@@ -311,11 +311,16 @@ private fun FriendPicker(
         } else {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val (cols, avatar) = PickerGrid.layout(maxWidth.value)
+                // A partial last row sits CENTERED (founder: symmetry): every cell keeps the
+                // grid's column width and each row centers, instead of trailing spacers.
+                val cellW = (maxWidth - (PickerGrid.GAP * (cols - 1)).dp) / cols
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     ordered.chunked(cols).forEach { row ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(PickerGrid.GAP.dp)) {
-                            row.forEach { f -> PickerCell(f, avatar.dp, now, Modifier.weight(1f)) { onPick(f) } }
-                            repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(PickerGrid.GAP.dp, Alignment.CenterHorizontally),
+                        ) {
+                            row.forEach { f -> PickerCell(f, avatar.dp, now, Modifier.width(cellW)) { onPick(f) } }
                         }
                     }
                 }
