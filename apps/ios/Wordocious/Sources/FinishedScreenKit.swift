@@ -388,7 +388,7 @@ struct UnlimitedKeepPlayingCard: View {
                     if let onOtherGames {
                         // BJ15 round 2: a tertiary action stays a text link (never a third cast pill).
                         Button(action: onOtherGames) { TextLinkLabel(title: "Other games", size: 13) }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.squish)
                             .frame(height: 44)
                             .castRowFixed()
                     }
