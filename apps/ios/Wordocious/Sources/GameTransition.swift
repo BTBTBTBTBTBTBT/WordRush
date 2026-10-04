@@ -135,6 +135,10 @@ final class GameTransition {
         stage.isUserInteractionEnabled = true   // swallows taps until the game is up
         ov.addSubview(stage)
         ov.isHidden = false
+        #if DEBUG
+        PerfTour.mark("open.begin")
+        defer { PerfTour.mark("open.committed") }
+        #endif
         if let backdrop = window.snapshotView(afterScreenUpdates: false) {
             backdrop.frame = screen
             stage.addSubview(backdrop)
@@ -279,14 +283,25 @@ final class GameCoverDismissal: NSObject, UIViewControllerTransitioningDelegate,
     }
 
     func animateTransition(using ctx: UIViewControllerContextTransitioning) {
+        #if DEBUG
+        PerfTour.mark("close.animEntry")
+        #endif
         let container = ctx.containerView
         guard let fromVC = ctx.viewController(forKey: .from), let fromView = ctx.view(forKey: .from) ?? fromVC.view else {
             ctx.completeTransition(!ctx.transitionWasCancelled)
             return
         }
-        // The game's last frame as ONE flat layer (fading it is the cheapest thing
-        // there is); the live hierarchy leaves right away.
-        let snap = fromView.snapshotView(afterScreenUpdates: false)
+        // BJ14: fade the LIVE game view (the render server animates its opacity). A
+        // `snapshotView` of it was a synchronous render-server snapshot that cost ~200
+        // ms on a finished OctoWord screen, right in the close's first frame.
+        #if DEBUG
+        let snap = PerfTour.flag("closeSnap") ? fromView.snapshotView(afterScreenUpdates: false) : nil
+        #else
+        let snap: UIView? = nil
+        #endif
+        #if DEBUG
+        PerfTour.mark("close.snapped")
+        #endif
         if let toVC = ctx.viewController(forKey: .to), let toView = ctx.view(forKey: .to) {
             toView.frame = ctx.finalFrame(for: toVC)
             container.insertSubview(toView, at: 0)
@@ -302,13 +317,29 @@ final class GameCoverDismissal: NSObject, UIViewControllerTransitioningDelegate,
             fader = snap
         } else {
             container.bringSubviewToFront(fromView)
+            // Fade it as ONE flattened layer (rasterized by the render server, not
+            // the main thread): sublayers never show through each other mid-fade.
+            fromView.layer.allowsGroupOpacity = true
+            fromView.layer.rasterizationScale = fromView.window?.screen.scale ?? UIScreen.main.scale
+            fromView.layer.shouldRasterize = true
             fader = fromView
         }
+        #if DEBUG
+        PerfTour.mark("close.begin")
+        #endif
         let finish = {
+            #if DEBUG
+            PerfTour.mark("close.finish")
+            #endif
             snap?.removeFromSuperview()
             shell.removeFromSuperview()
+            fromView.layer.shouldRasterize = false
             fromView.alpha = 1
             ctx.completeTransition(!ctx.transitionWasCancelled)
+            #if DEBUG
+            PerfTour.mark("close.completed")
+            DispatchQueue.main.async { PerfTour.mark("close.nextTurn") }
+            #endif
         }
         let fade = kind == .crossFade ? MotionSpec.crossFadeDuration : MotionSpec.closeFadeDuration
         UIView.animate(withDuration: fade, delay: 0, options: [.curveEaseOut]) {

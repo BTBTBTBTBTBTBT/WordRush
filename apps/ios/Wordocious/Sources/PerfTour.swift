@@ -62,6 +62,20 @@ enum PerfTour {
     }()
     nonisolated static func flag(_ f: String) -> Bool { flags.contains(f) }
 
+    /// BJ14: a timestamped trace line (`-perfMarks <host path>`), for lining up
+    /// events with the monitor's long frames.
+    nonisolated static let marksPath: String? = {
+        let a = ProcessInfo.processInfo.arguments
+        guard let i = a.firstIndex(of: "-perfMarks"), i + 1 < a.count else { return nil }
+        return a[i + 1]
+    }()
+    nonisolated static func mark(_ s: String) {
+        guard let p = marksPath else { return }
+        let line = String(format: "%.4f %@\n", CACurrentMediaTime(), s)
+        if let h = FileHandle(forWritingAtPath: p) { h.seekToEndOfFile(); h.write(line.data(using: .utf8)!); h.closeFile() }
+        else { try? line.write(toFile: p, atomically: false, encoding: .utf8) }
+    }
+
     /// The word board on screen (GameViewModel registers itself), for Gauntlet's answer.
     static weak var game: GameViewModel?
     /// Every live hardware-key catcher (KeyCaptureView registers itself).
@@ -153,6 +167,7 @@ final class PerfMonitor: NSObject {
         current!.worstMs = max(current!.worstMs, ms)
         if ms > 25 { current!.over25 += 1 }
         if ms > 50 {
+            PerfTour.mark("HITCH \(current!.name) \(Int(ms)) end")
             current!.over50 += 1
             signposter.emitEvent("hitch", "\(self.current!.name, privacy: .public) \(Int(ms)) ms")
         }
@@ -163,6 +178,7 @@ final class PerfMonitor: NSObject {
         end()
         let now = CACurrentMediaTime()
         current = Stat(name: name)
+        PerfTour.mark("STEP \(name)")
         startedAt = now
         // Busy time of the wake already in progress counts from now.
         if awakeAt > 0 { awakeAt = now }

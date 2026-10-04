@@ -220,6 +220,9 @@ struct RootTabView: View {
         // posts, so this cover presents cleanly from the root.
         // FINISH_SPEC §AY: a screen's top-left Home button — the footer's Home route.
         .onReceive(NotificationCenter.default.publisher(for: HomeNav.goHome)) { _ in
+            #if DEBUG
+            PerfTour.mark("goHome.root"); DispatchQueue.main.async { PerfTour.mark("goHome.root.nextTurn") }
+            #endif
             // FINISH_SPEC BI10: Home means NO game — drop a queued root present and clear
             // the root's own game covers through their bindings (a cover dismissed only by
             // UIKit keeps its binding set, and SwiftUI presents it again on a later update).

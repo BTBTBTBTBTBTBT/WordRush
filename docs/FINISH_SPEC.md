@@ -1610,6 +1610,15 @@ OctoWord mini board (octo.zoomIn / zoomType / zoomOut; `--flag slowZoom` for scr
 board still staging has no tap target, so it can't be zoomed into empty. Still owed: the warm ~110–330 ms open floor
 (header / keyboard / page built on the presenting frame), closes (game teardown in completeTransition; an intermittent
 ~460–660 ms frame on Home re-entry after a finished game), and the overlay's ~100 ms.
+BJ14 round 3 — the post-win close: timestamped marks (`-perfMarks <host file>`: steps, Home route, the close animator's
+phases, long frames) showed the 200–660 ms frame was `fromView.snapshotView(afterScreenUpdates: false)` at the start of the
+close — a synchronous render-server snapshot of the finished screen (~200 ms for OctoWord's recap) — not Home re-rendering
+(the Home route itself took ~1 ms). The close now fades the LIVE game view, flattened by the render server
+(shouldRasterize + group opacity for the fade only, so the board never shows through the win card mid-fade; checked in
+burst screenshots); `--flag closeSnap` restores the snapshot for A/B. Closes: OctoWord 210–660 → 105 ms, Classic 464 → 50–71,
+QuadWord 64, Sudocious 71, Muddle 54, Crossword 59, VS 33. The remaining close frame is the game's teardown inside
+`completeTransition` (~45 ms + ~50 ms the next turn). Android: unplayed board rows are one Canvas (GameScreen EmptyTileRow,
+the same drawGameTile paint; ProperNoundle's grouped rows keep TileViews).
 BJ15. Cast-color buttons + art labels (founder 10-03; spec docs/design/brand/buttons/cast/README.md + labels.json). One shared
 primary button per platform — iOS `CastButtonStyle` (CastButton.swift; `CandyLabel` switches to art inside it), Android
 `CastButton` (ui/CastButton.kt), web `CastButton` / `CastLink` (components/ui/cast-button.tsx + app/cast-button.css). Skin =

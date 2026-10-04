@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import androidx.compose.ui.graphics.drawscope.inset
 import com.wordocious.app.ui.gameBackground
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
@@ -1223,11 +1224,36 @@ internal fun SingleBoard(
             // Empty rows (frosted glass)
             val emptyStart = board.guesses.size + if (playing) 1 else 0
             for (rowIdx in emptyStart until board.maxGuesses) {
-                BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) {
-                    TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, modifier = Modifier.weight(1f))
+                if (groups == null) {
+                    // BJ14: an unplayed row is ONE Canvas (the same drawGameTile paint as
+                    // TileView's empty face), not wordLen animated TileView composables.
+                    EmptyTileRow(wordLen, Modifier.weight(1f).fillMaxWidth())
+                } else {
+                    BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) {
+                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
+        }
+    }
+}
+
+/**
+ * FINISH_SPEC BJ14: a row of [count] EMPTY tiles in one Canvas — the geometry of a
+ * [BoardRow] of square TileViews ([BOARD_TILE_GAP] apart, top-aligned), painted with
+ * the same [drawGameTile] look.
+ */
+@Composable
+private fun EmptyTileRow(count: Int, modifier: Modifier = Modifier) {
+    val look = TileLooks.of(TileFace.EMPTY, WTheme.colorblind, WTheme.isDark)
+    androidx.compose.foundation.Canvas(modifier) {
+        val gap = BOARD_TILE_GAP.toPx()
+        val cellW = (size.width - gap * (count - 1)) / count
+        val tileH = minOf(cellW, size.height)
+        for (col in 0 until count) {
+            val left = col * (cellW + gap)
+            inset(left, 0f, size.width - left - cellW, size.height - tileH) { drawGameTile(look) }
         }
     }
 }

@@ -686,7 +686,12 @@ enum GameResultsService {
     /// Games, Recent Matches and People | Bots are never a game behind.
     static let gameRecorded = Notification.Name("wordocious.game-recorded")
     static func postGameRecorded() {
-        Task { @MainActor in NotificationCenter.default.post(name: gameRecorded, object: nil) }
+        Task { @MainActor in
+            #if DEBUG
+            PerfTour.mark("gameRecorded")
+            #endif
+            NotificationCenter.default.post(name: gameRecorded, object: nil)
+        }
     }
 
     private static func updateUserStats(
