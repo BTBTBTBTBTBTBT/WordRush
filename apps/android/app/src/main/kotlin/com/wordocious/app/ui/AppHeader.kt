@@ -297,10 +297,7 @@ private fun HeaderPopup(
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         // Our own scrim covers the whole window (the platform dim is turned off).
-        val view = androidx.compose.ui.platform.LocalView.current
-        androidx.compose.runtime.SideEffect {
-            (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window?.setDimAmount(0f)
-        }
+        EdgeToEdgeDialogWindow(dimAmount = 0f)
         val appear = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
         // AZ: the shared spring in, and a matching quick exit (never an instant pop out).
         LaunchedEffect(Unit) { appear.animateTo(1f, softPopSpring()) }   // BJ10: the soft-pop spring

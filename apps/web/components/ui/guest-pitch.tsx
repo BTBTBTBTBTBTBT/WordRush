@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Mascot } from '@/components/ui/mascot';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
-import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import type { MascotId } from '@/lib/mascots';
 import { PodiumPedestal } from '@/components/leaderboard/podium';
 
@@ -98,7 +98,7 @@ export function GuestPitch({ hosts, title, subtitle, gradient, preview, onSignIn
           )}
         </div>
       )}
-      <CandyButton onClick={onSignIn} color="purple" size="lg" className="mt-6">Sign In</CandyButton>
+      <CastButton onClick={onSignIn} color="purple" size="lg" className="mt-6">Sign In</CastButton>
       <Link href="/" className="mt-1.5 inline-flex min-h-[44px] items-center px-2 text-sm font-bold underline" style={{ color: subColor }}>
         Play without an account
       </Link>

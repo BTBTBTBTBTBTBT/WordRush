@@ -100,7 +100,7 @@ struct VSChallengeResultView: View {
         ScrollView {
             VStack(spacing: 14) {
                 ZStack {
-                    Wordmark(size: 22)
+                    CastRow(size: 22)   // founder 10-03: the cast spells the brand (no gradient text wordmark)
                     HStack {
                         HeaderCircleButton(.symbol("xmark"), label: "Close", action: onHome)
                         Spacer()
@@ -260,7 +260,7 @@ struct VSChallengeSentView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Wordmark(size: 22).padding(.top, 10)
+                CastRow(size: 22).padding(.top, 10)   // founder 10-03: the cast spells the brand (no gradient text wordmark)
                 VStack(spacing: 12) {
                     Text(headline).font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
                     if let run = vm.sentRun {

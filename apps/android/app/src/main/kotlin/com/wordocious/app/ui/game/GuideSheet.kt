@@ -137,8 +137,7 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         // The popup paints its own scrim (PopupScrim): no second window dim behind it.
-        val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-        SideEffect { dialogWindow?.setDimAmount(0f) }
+        com.wordocious.app.ui.EdgeToEdgeDialogWindow(dimAmount = 0f)
         PopupScrim(onTap = onDismiss) {
             BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding()) {
                 val viewport = maxHeight

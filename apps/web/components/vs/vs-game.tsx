@@ -59,7 +59,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine, INTRO_DURATION_MS } from './match-intro';
 import { FinalBoards, VsResultWindow, logSolved, type EvaluatedRow } from './vs-result-detail';
-import { ResultHost } from '@/components/ui/mascot';
+import { CastRow, ResultHost } from '@/components/ui/mascot';
 import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES, resultMoment } from '@/lib/art';
 import { MomentArt } from '@/components/ui/art-title';
@@ -1928,9 +1928,8 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {/* Top bar — close (home) + wordmark, as on the challenge result. */}
           <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
             <HeaderBack kind="close" onClick={handleHome} className="absolute left-0" />
-            <span className="font-black" style={{ fontSize: 20, backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)', ...GRADIENT_TEXT }}>
-              WORDOCIOUS
-            </span>
+            {/* Founder 10-03 (no plain-text headings): the cast spells the brand. */}
+            <span role="img" aria-label="Wordocious"><CastRow size={22} gap={0} /></span>
           </div>
 
           {/* The ladder-cleared celebration when this game cleared the final rung. */}

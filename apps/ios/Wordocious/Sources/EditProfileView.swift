@@ -71,7 +71,9 @@ struct EditProfileView: View {
                     avatarSection
                     // §AN4: "Make your mascot" — the build-your-own-mascot builder (the AH
                     // cast pick lives here now as presets; frames are its Frame tab).
-                    sectionCard("MAKE YOUR MASCOT", accent: Color(hex: AvatarCatalog.colorValue(mascot.color))) {
+                    // Founder 10-03 (no plain-text headings): the MAKE YOUR MASCOT lettering titles the builder.
+                    G5Card(nil, accent: Color(hex: AvatarCatalog.colorValue(mascot.color)), spacing: 8) {
+                        HeadingArtView(.mascot, height: 30, maxWidth: 240, alignment: .leading)
                         MascotBuilderView(initial: AvatarCatalog.initial(username.isEmpty ? auth.profile?.username : username),
                                           config: mascot, mode: .profile,
                                           hasPhoto: hasPhoto, level: auth.profile?.level ?? 1, isPro: auth.isProActive,

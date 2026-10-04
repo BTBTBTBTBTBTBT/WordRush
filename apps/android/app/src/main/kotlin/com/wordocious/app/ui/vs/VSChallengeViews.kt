@@ -158,17 +158,14 @@ fun MiniRunBoard(mode: GameMode, run: VsChallengeService.Run, solutions: List<St
     }
 }
 
-/** Close (purple) + centered WORDOCIOUS wordmark — the results screens' top bar (§5). */
+/** Close (purple) + the centered cast row spelling WORDOCIOUS — the results screens' top bar (§5). */
 @Composable
 internal fun ResultTopBar(onClose: () -> Unit) {
     Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp)) {
         // The shared white close circle (HEADER_SPEC §4).
         com.wordocious.app.ui.HeaderBackButton(onClose, Modifier.align(Alignment.CenterStart), close = true)
-        Text(
-            "WORDOCIOUS", fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
-            style = TextStyle(brush = Brush.horizontalGradient(WORDMARK), fontFamily = Nunito),
-            modifier = Modifier.align(Alignment.Center),
-        )
+        // Founder 10-03 (no plain-text headings): the cast spells the brand, not a gradient wordmark.
+        com.wordocious.app.ui.CastRow(22.dp, Modifier.align(Alignment.Center))
     }
 }
 

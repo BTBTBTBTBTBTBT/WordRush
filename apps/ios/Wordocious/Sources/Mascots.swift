@@ -515,8 +515,9 @@ struct GuestPitch: View {
             .opacity(0.72)
             .accessibilityHidden(true)   // decorative preview, not real numbers
             .padding(.top, isNone ? 0 : 20)
+            // BJ15: THE primary button is the cast button (SIGN IN lettering), as on the sign-in screen.
             Button(action: onSignIn) { CandyLabel(title: "Sign in") }
-                .buttonStyle(CandyButtonStyle(variant: .purple, size: .large, fullWidth: false))
+                .buttonStyle(CastButtonStyle(color: .purple, size: .large, fullWidth: false))
                 .padding(.top, 24)
             Button { HomeNav.press {} } label: {
                 Text("Play without an account")

@@ -439,7 +439,8 @@ fun EditProfileScreen(onDone: () -> Unit) {
 
             // AN4: make your mascot — the cast presets (AH's character pick), every part, the
             // level-tier / Pro frames, Randomize and Save. The photo stays an option below.
-            SectionCard("MAKE YOUR MASCOT") {
+            // Founder 10-03 (no plain-text headings): the MAKE YOUR MASCOT lettering titles the builder.
+            SectionCard(heading = Heading.MASCOT) {
                 if (avatarUrl != null) MascotWearToggle(wearPhoto, onChange = { photo ->
                     mascot = mascot?.copy(display = if (photo) AvatarOptions.DISPLAY_PHOTO else AvatarOptions.DISPLAY_MASCOT)
                     mascotSaved = false
@@ -664,13 +665,14 @@ private val EDIT_PURPLE = Color(0xFF7C3AED)
 
 /** A titled section — iOS EditProfileView.sectionCard — as a tinted card with its top bar (A1). */
 @Composable
-private fun SectionCard(title: String, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+private fun SectionCard(title: String = "", heading: Heading? = null, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
     TintedCard(
         EDIT_PURPLE, Modifier.fillMaxWidth(), corner = 18.dp, barHeight = 8.dp,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        FinishLabel(title)
+        if (heading != null) HeadingArt(heading, height = 30.dp, alignment = Alignment.CenterStart)
+        else FinishLabel(title)
         content()
     }
 }

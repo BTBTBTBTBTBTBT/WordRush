@@ -101,7 +101,8 @@ fun GuestPitch(
             GuestPreview.Podium -> GuestPodium(Modifier.padding(top = 20.dp).alpha(0.72f).clearAndSetSemantics { })
             GuestPreview.None -> Unit
         }
-        CandyButton("Sign in", onSignIn, color = CandyColor.PURPLE, size = CandySize.LARGE,
+        // BJ15: THE primary button is the cast button (SIGN IN lettering), as on the sign-in screen.
+        CastButton("Sign in", onSignIn, color = CastColor.PURPLE, size = CastSize.L,
             modifier = Modifier.padding(top = 24.dp))
         if (onPlay != null) {
             Text(

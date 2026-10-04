@@ -12,7 +12,7 @@ import { challengeHeadline, vsClock, vsMargin, type VsRun } from '@wordle-duel/c
 import { challengeSentSub, h2hLine, modeColor, modeTitle, rowStates } from '@/lib/vs-lobby';
 import type { HeadToHeadRecord } from '@/lib/head-to-head';
 import { InitialAvatar, VS_LIGHT_VARS, VsCard, VsModeIcon } from './vs-ui';
-import { ResultHost } from '@/components/ui/mascot';
+import { CastRow, ResultHost } from '@/components/ui/mascot';
 import { vsResultHost } from '@/lib/mascots';
 import { MomentArt } from '@/components/ui/art-title';
 import { resultMoment } from '@/lib/art';
@@ -59,12 +59,8 @@ function TopBar({ onClose }: { onClose: () => void }) {
   return (
     <div className="relative flex items-center justify-center" style={{ minHeight: 44 }}>
       <HeaderBack kind="close" onClick={onClose} className="absolute left-0" />
-      <span
-        className="font-black"
-        style={{ fontSize: 20, backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}
-      >
-        WORDOCIOUS
-      </span>
+      {/* Founder 10-03 (no plain-text headings): the cast spells the brand. */}
+      <span role="img" aria-label="Wordocious"><CastRow size={22} gap={0} /></span>
     </div>
   );
 }

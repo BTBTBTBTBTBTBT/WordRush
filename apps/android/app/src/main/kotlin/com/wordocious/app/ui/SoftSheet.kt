@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
@@ -135,13 +136,19 @@ fun SoftModalSheet(
         }
     }
 
+    // 10-03 (AVD check): inside the dialog window the nav-bar inset can read 0 (the Close row sat
+    // under the gesture bar), so the host activity's own inset is the floor.
+    val hostView = LocalView.current
+    val hostNavBottom = remember(hostView) {
+        androidx.core.view.ViewCompat.getRootWindowInsets(hostView)
+            ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+    }
     Dialog(
         onDismissRequest = close,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         // Our own scrim fades with the pop (the platform dim is off).
-        val view = LocalView.current
-        SideEffect { (view.parent as? DialogWindowProvider)?.window?.setDimAmount(0f) }
+        EdgeToEdgeDialogWindow(dimAmount = 0f)
         // Built this frame (alpha 0), popped from the next.
         LaunchedEffect(Unit) { appear.animateTo(1f, if (reduce) tween(MotionSpec.CROSS_FADE_MS) else softPopSpring()) }
         BackHandler { close() }
@@ -174,7 +181,7 @@ fun SoftModalSheet(
                     .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     .background(containerColor)
                     // Like ModalBottomSheet: the sheet takes the nav-bar inset (and consumes it).
-                    .windowInsetsPadding(WindowInsets.navigationBars),
+                    .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets(bottom = hostNavBottom))),
             ) {
                 dragHandle?.let { Box(Modifier.align(Alignment.CenterHorizontally)) { it() } }
                 content()
@@ -192,4 +199,29 @@ fun Modifier.softPopScale(appear: () -> Float): Modifier = graphicsLayer {
     val s = MotionSpec.POP_SCALE + (1f - MotionSpec.POP_SCALE) * p
     scaleX = s; scaleY = s
     transformOrigin = TransformOrigin(0.5f, 1f)
+}
+
+/**
+ * Inside a `Dialog(decorFitsSystemWindows = false)`: lay the dialog window over the system bars
+ * too. On API 30+ a dialog window otherwise gets a frame inset by the status + nav bars while its
+ * content measures the full display (seen 10-03 on the API 35 AVD: the finished "More" sheet's
+ * Close button sat under the gesture bar, cut off). The content pads its own insets.
+ */
+@Composable
+fun EdgeToEdgeDialogWindow(dimAmount: Float? = null) {
+    val view = LocalView.current
+    SideEffect {
+        val w = (view.parent as? DialogWindowProvider)?.window ?: return@SideEffect
+        dimAmount?.let { w.setDimAmount(it) }
+        w.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN)
+        val a = w.attributes
+        var changed = false
+        if (android.os.Build.VERSION.SDK_INT >= 28 && a.layoutInDisplayCutoutMode !=
+            android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES) {
+            a.layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            changed = true
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 30 && a.fitInsetsTypes != 0) { a.fitInsetsTypes = 0; changed = true }
+        if (changed) w.attributes = a
+    }
 }

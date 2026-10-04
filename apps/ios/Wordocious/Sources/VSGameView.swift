@@ -900,7 +900,7 @@ struct VSGameView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             ZStack {
-                Wordmark(size: 22)
+                CastRow(size: 22)   // founder 10-03: the cast spells the brand (no gradient text wordmark)
                 HStack {
                     HeaderCircleButton(.symbol("xmark"), label: "Close", action: goHome)
                     Spacer()

@@ -1,26 +1,25 @@
 import SwiftUI
 import WordociousCore
 
-/// WORDOCIOUS wordmark for the dark VS overlays (clash splash + countdown) —
-/// the header wordmark's gradient/weight, rendered at the SAME fixed position
-/// on both overlays so it appears not to move across the clash → countdown
-/// transition. Shared by VSMatchIntroView and VSGameView.countdownOverlay.
+/// The VS countdown's brand mark (founder 10-03: no plain-text headings) — the cast row
+/// spelling WORDOCIOUS (the Home header's figures), static, ~1/4 down the overlay.
 struct VSOverlayWordmark: View {
     var body: some View {
         GeometryReader { geo in
-            Text("WORDOCIOUS")
-                .font(Brand.font(58, .black)).tracking(-0.5)
-                .lineLimit(1).minimumScaleFactor(0.6)
-                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
-                                                startPoint: .leading, endPoint: .trailing))
-                .padding(.horizontal, 12)
-                .frame(maxWidth: .infinity)
-                // Centered ~1/4 down the overlay (user-specified placement) —
-                // identical on the clash splash and the countdown so it reads
-                // as pinned across the transition.
+            VSCastMark(width: geo.size.width)
                 .position(x: geo.size.width / 2, y: geo.size.height * 0.24)
         }
         .allowsHitTesting(false)
+    }
+}
+
+/// The cast row sized to the screen width (decorative; reads "Wordocious").
+struct VSCastMark: View {
+    let width: CGFloat
+    var body: some View {
+        CastRow(size: min(36, max(22, (width - 40) / 10.5)))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Wordocious")
     }
 }
 
@@ -75,15 +74,20 @@ struct VSMatchIntroView: View {
             // Opaque VS page — nothing behind (the queue screen) can ghost through.
             PageBackground(tint: .vs, lightOnly: true)
 
-            VSOverlayWordmark()
-
-            VStack(spacing: 16) {
-                window
-                Text("TAP TO SKIP")
-                    .font(Brand.font(10, .black)).tracking(2)
-                    .foregroundStyle(VsLobbyKit.label.opacity(0.7))
+            // Founder 10-03: the cast row (not a gradient text wordmark) and the card as ONE
+            // group, centered on the screen — no sparse teal gap between them.
+            GeometryReader { geo in
+                VStack(spacing: 16) {
+                    VSCastMark(width: geo.size.width)
+                        .padding(.bottom, 6)
+                    window
+                    Text("TAP TO SKIP")
+                        .font(Brand.font(10, .black)).tracking(2)
+                        .foregroundStyle(VsLobbyKit.label.opacity(0.7))
+                }
+                .padding(.horizontal, 16)
+                .frame(width: geo.size.width, height: geo.size.height)
             }
-            .padding(.horizontal, 16)
         }
         .contentShape(Rectangle())
         .onTapGesture { finish() }

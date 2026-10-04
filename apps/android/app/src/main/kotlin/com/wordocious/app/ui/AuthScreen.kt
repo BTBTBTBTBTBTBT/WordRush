@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -71,7 +72,14 @@ fun AuthScreen(
     // Pre-auth Privacy/Terms overlay (web parity: the footer links work).
     var infoRoute by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     infoRoute?.let { route ->
-        InfoScreen(kind = route, onDone = { infoRoute = null })
+        androidx.activity.compose.BackHandler { infoRoute = null }
+        // 10-03 (AVD check): the signed-out root has no status-bar padding of its own, so the
+        // page's back / help controls drew under the clock. Insets consumed upstream add nothing.
+        androidx.compose.foundation.layout.Box(
+            Modifier.fillMaxSize().pageBackground(PageTint.HOME).statusBarsPadding(),
+        ) {
+            InfoScreen(kind = route, onDone = { infoRoute = null })
+        }
         return
     }
     // Hardware back closes the overlay rather than leaving the app.
@@ -97,8 +105,11 @@ fun AuthScreen(
         modifier = Modifier
             .fillMaxSize()
             .pageBackground(PageTint.HOME)
+            // 10-03 (AVD check): the cast row sat under the clock on the signed-out root; the
+            // overlay host consumes this inset already, so there it adds nothing.
+            .statusBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp),
+            .padding(horizontal = 24.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Overlay mode gets a close affordance (iOS sheets get the system grabber).
