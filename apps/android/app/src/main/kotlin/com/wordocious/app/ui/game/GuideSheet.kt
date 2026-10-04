@@ -182,7 +182,7 @@ private fun GuideCard(
 
     Box(
         Modifier.widthIn(max = WideLayout.POPUP_CARD_DP.dp).fillMaxWidth()
-            .graphicsLayer { scaleX = scale; scaleY = scale; this.alpha = alpha }
+            .graphicsLayer { scaleX = scale; scaleY = scale; this.alpha = alpha; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f) }
             .semantics { paneTitle = "How to play $title" },
         contentAlignment = Alignment.TopCenter,
     ) {
