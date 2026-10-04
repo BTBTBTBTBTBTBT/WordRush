@@ -24,7 +24,7 @@ import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { chooseShareVariant } from '@/components/share/share-variant-modal';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed, pnGuessBlocked } from '@wordle-duel/core';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
@@ -337,7 +337,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
 
   // Record game result helper
   const recordResult = useCallback(() => {
-    if (!profile || hasRecordedRef.current) return;
+    if (hasRecordedRef.current) return;
     if (gameStatus !== 'won' && gameStatus !== 'lost') return;
     hasRecordedRef.current = true;
     const timeMs = elapsedTime * 1000;
@@ -346,6 +346,8 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
     // tiles are 'hint-used' (not 'correct'), so they don't inflate it.
     const bestCorrectLetters = guesses.reduce(
       (best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0);
+    // Guest: today's daily still flips Home (the optimistic path, no server).
+    if (!profile) { noteGuestDailyFinish('PROPERNOUNDLE', gameStatus === 'won', guesses.length, timeMs, seed, gameStatus === 'won' ? 1 : 0, 1, hintsUsed, undefined, bestCorrectLetters); return; }
     recordGameResult(
       profile.id,
       'PROPERNOUNDLE',

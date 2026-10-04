@@ -16,7 +16,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -92,7 +92,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   useEffect(() => {
     if (state.status === 'WON' && !isRestoredCompleted.current) setShowVictory(true);
     if (state.status === 'LOST' && !isRestoredCompleted.current) setShowGameOver(true);
-    if (profile && !isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
+    if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       // Use the frozen elapsedTime (timer stops when status leaves PLAYING)
       // so the recorded time exactly matches what the user sees in the
       // header, VictoryAnimation, and share text. Using a fresh Date.now()
@@ -100,6 +100,9 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       const timeMs = elapsedTime * 1000;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
+      if (!profile) {
+        noteGuestDailyFinish('QUORDLE', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
+      } else {
       recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
       const longestGuesses = state.boards.reduce<string[]>((longest, b) => b.guesses.length > longest.length ? b.guesses : longest, []);
       recordSoloMatch({
@@ -113,6 +116,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
         guesses: longestGuesses,
         startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
       });
+      }
     }
     if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('quordle');

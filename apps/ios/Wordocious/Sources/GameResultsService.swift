@@ -543,6 +543,18 @@ enum GameResultsService {
         // telemetry, and no self-heal for the rest of the session. localUserId()
         // reads the stored session instead, which is available offline.
         guard let userId = localUserId() else {
+            // A guest has nothing to write, but today's daily still flips Home
+            // (the same local completion a signed-in finish posts).
+            if await MainActor.run(body: { AuthService.shared.isGuest }) {
+                if playType == "solo" && isDailySeed(seed) {
+                    await DailyResultsService.postLocalCompletion(
+                        gameMode: gameMode, completed: won, guessCount: guessCount,
+                        timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                        hintsUsed: hintsUsed, seed: seed,
+                        stagesCompleted: stagesCompleted, bestCorrectLetters: bestCorrectLetters)
+                }
+                return nil
+            }
             reportDroppedResult("record", gameMode: gameMode.rawValue,
                                 reason: "no local session while recording a finished game")
             return nil

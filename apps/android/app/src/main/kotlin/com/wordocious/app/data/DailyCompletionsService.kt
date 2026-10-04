@@ -106,7 +106,10 @@ object DailyCompletionsService {
         // Home's completed cards (cache included) for the whole session.
         val userId = AuthService.userId
             ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
-            ?: return emptyMap()
+            // A guest's own finishes live only in the day-keyed cache (the cache
+            // is owner-scoped: claimSavesFor wipes it on any owner change) —
+            // returning empty here wiped the card a guest had just finished.
+            ?: return if (AuthService.isGuest.value) readCache() else emptyMap()
         // Results finished on this device whose daily_results row the server
         // has not confirmed yet (still in the PendingRecords queue) count as
         // completed — a relaunch mid-outage must not show the card unplayed.
@@ -196,6 +199,29 @@ object DailyCompletionsService {
         if (com.wordocious.core.getDailySeedDate(seed) != todayLocalDate()) return
         val existing = readCache()[gameMode]
         val score = if (existing != null && existing.completed == completed) existing.score else 0.0
+        noteCompletion(gameMode, completed, guessCount, timeSeconds, score)
+    }
+
+    /**
+     * A GUEST finished a solo game: [GameResultsService.record] has no user to write
+     * for, but Home must still flip today's card at once (web noteGuestDailyFinish /
+     * iOS parity). Today's daily seed only; the composite score is the one a
+     * signed-in finish would carry.
+     */
+    fun noteGuestFinish(
+        seed: String, gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Int,
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int, stagesCompleted: Int?, bestCorrectLetters: Int?,
+    ) {
+        if (!com.wordocious.core.isDailySeed(seed)) return
+        val today = todayLocalDate()
+        if (com.wordocious.core.getDailySeedDate(seed) != today) return
+        if (completed && guessCount <= 0) return
+        val score = runCatching {
+            DailyResultsService.computeCompositeScore(
+                gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards,
+                hintsUsed, stagesCompleted, bestCorrectLetters, today,
+            )
+        }.getOrDefault(0.0)
         noteCompletion(gameMode, completed, guessCount, timeSeconds, score)
     }
 

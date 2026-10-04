@@ -14,7 +14,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -108,7 +108,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       if (!isRestoredCompleted.current) setShowGameOver(true);
       setStreak(0);
     }
-    if (profile && !isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
+    if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       // Use the frozen elapsedTime (timer stops when status leaves PLAYING)
       // so the recorded time exactly matches what the user sees in the
       // header, VictoryAnimation, and share text. Using a fresh Date.now()
@@ -116,6 +116,9 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       const timeMs = elapsedTime * 1000;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
+      if (!profile) {
+        noteGuestDailyFinish('SEQUENCE', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
+      } else {
       recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
       const allGuesses = state.boards.flatMap(b => b.guesses);
       recordSoloMatch({
@@ -129,6 +132,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         guesses: allGuesses,
         startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
       });
+      }
     }
     if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('sequence');

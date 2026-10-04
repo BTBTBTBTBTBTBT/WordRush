@@ -199,9 +199,46 @@ function dispatchGameRecorded(gameMode: string): void {
   try { window.dispatchEvent(new CustomEvent(GAME_RECORDED_EVENT, { detail: { gameMode } })); } catch {}
 }
 
-function dispatchDailyCompletion(detail: { gameMode: string; won: boolean; guesses: number; timeSeconds: number; score: number }): void {
+function dispatchDailyCompletion(detail: { gameMode: string; won: boolean; guesses: number; timeSeconds: number; score: number; guest?: boolean }): void {
   if (typeof window === 'undefined') return;
   try { window.dispatchEvent(new CustomEvent('daily-completion', { detail })); } catch {}
+}
+
+/**
+ * A GUEST finished a solo game (recordGameResult needs a user and is never
+ * called for one). Today's daily only: Home's card flips through the same
+ * optimistic 'daily-completion' path a signed-in finish takes (BI19), with
+ * the same plausibility gate and composite score — the provider files it
+ * under the guest's local id, so it survives a reload and never reaches the
+ * server. Not today's daily (practice, a cross-midnight finish) → no-op.
+ */
+export function noteGuestDailyFinish(
+  gameMode: string,
+  won: boolean,
+  guessCount: number,
+  timeMs: number,
+  seed?: string,
+  boardsSolved?: number,
+  totalBoards?: number,
+  hintsUsed: number = 0,
+  stagesCompleted?: number,
+  bestCorrectLetters?: number,
+): void {
+  if (!seed || !isDailySeed(seed)) return;
+  if (won && guessCount <= 0) return;
+  const today = getTodayLocal();
+  if ((getDailySeedDate(seed) ?? today) !== today) return;
+  const timeSeconds = Math.round(timeMs / 1000);
+  const total = totalBoards ?? 1;
+  const boards = boardsSolved ?? (won ? total : 0);
+  if (!isPlausibleDailyResult(won, guessCount, timeSeconds, total, gameMode)) return;
+  dispatchDailyCompletion({
+    gameMode, won, guesses: guessCount, timeSeconds, guest: true,
+    score: Math.round(calculateCompositeScore(
+      gameMode, won, guessCount, timeSeconds, boards, total, hintsUsed,
+      stagesCompleted, bestCorrectLetters, today,
+    )),
+  });
 }
 
 /**

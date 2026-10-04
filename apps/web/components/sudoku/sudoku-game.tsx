@@ -20,7 +20,7 @@ import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './pers
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
@@ -153,7 +153,7 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
 
   const recordResult = useCallback(() => {
     const elapsedSeconds = getElapsed();
-    if (!profile || !state || hasRecordedRef.current) return;
+    if (!state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
     const won = state.status === 'won';
@@ -161,6 +161,8 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
     const seed = mode === 'daily' ? state.seed : undefined;
     // guess_count = mistakes + 1: a perfect run is 1, the composite formula and
     // the Perfect medal need no special case (catalog guessBase = 1).
+    // Guest: today's daily still flips Home (the optimistic path, no server).
+    if (!profile) { noteGuestDailyFinish('SUDOKU', won, state.mistakes + 1, timeMs, seed, won ? 1 : 0, 1, state.hintsUsed); return; }
     recordGameResult(profile.id, 'SUDOKU', 'solo', won, state.mistakes + 1, timeMs, seed, won ? 1 : 0, 1, state.hintsUsed)
       .then((xp) => { if (xp) setXpResult(xp); });
     const row = sudokuMatchRow(state);

@@ -21,7 +21,7 @@ import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './pers
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
@@ -172,12 +172,14 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
 
   const recordResult = useCallback(() => {
     const elapsedSeconds = getElapsed();
-    if (!profile || !state || hasRecordedRef.current) return;
+    if (!state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
     const won = state.status === 'won';
     const timeMs = elapsedSeconds * 1000;
     const seed = mode === 'daily' ? state.seed : undefined;
+    // Guest: today's daily still flips Home (the optimistic path, no server).
+    if (!profile) { noteGuestDailyFinish('REGIONS', won, state.mistakes + 1, timeMs, seed, won ? 1 : 0, 1, state.hintsUsed); return; }
     recordGameResult(profile.id, 'REGIONS', 'solo', won, state.mistakes + 1, timeMs, seed, won ? 1 : 0, 1, state.hintsUsed)
       .then((xp) => { if (xp) setXpResult(xp); });
     const row = regionsMatchRow(state);

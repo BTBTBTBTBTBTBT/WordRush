@@ -32,7 +32,7 @@ import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './pers
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { improveDailyRun } from '@/lib/daily-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
@@ -203,7 +203,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const points = state ? computeScoreBreakdown('HUB', isWon, hubGuessCount(hubRank(state)), scoredSeconds, hubBoardsSolved(state.points, state.max), HUB_TOTAL_BOARDS, state.hintsUsed).total : 0;
 
   const finalise = useCallback((s: HubState) => {
-    if (!profile || recordedRankRef.current >= 0) return;
+    if (recordedRankRef.current >= 0) return;
     const elapsedSeconds = getElapsed();
     const rank = hubRank(s);
     recordedRankRef.current = rank;
@@ -211,6 +211,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     const won = s.status === 'won';
     const gc = hubGuessCount(rank);
     const seed = mode === 'daily' ? s.seed : undefined;
+    // Guest: today's daily still flips Home (the optimistic path, no server).
+    if (!profile) { noteGuestDailyFinish('HUB', won, gc, elapsedSeconds * 1000, seed, hubBoardsSolved(s.points, s.max), HUB_TOTAL_BOARDS, s.hintsUsed); return; }
     recordGameResult(profile.id, 'HUB', 'solo', won, gc, elapsedSeconds * 1000, seed, hubBoardsSolved(s.points, s.max), HUB_TOTAL_BOARDS, s.hintsUsed)
       .then((xp) => { if (xp) setXpResult(xp); });
     const row = hubMatchRow(s);

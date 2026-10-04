@@ -25,7 +25,7 @@ import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './pers
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
@@ -177,12 +177,14 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
 
   const recordResult = useCallback(() => {
     const elapsedSeconds = getElapsed();
-    if (!profile || !state || hasRecordedRef.current) return;
+    if (!state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
     const won = state.status === 'won';
     const gc = scrambleGuessCount(state);
     const seed = mode === 'daily' ? state.seed : undefined;
+    // Guest: today's daily still flips Home (the optimistic path, no server).
+    if (!profile) { noteGuestDailyFinish('SCRAMBLE', won, gc, elapsedSeconds * 1000, seed, scrambleBoardsSolved(state), SCRAMBLE_TOTAL_BOARDS, state.hintsUsed); return; }
     recordGameResult(profile.id, 'SCRAMBLE', 'solo', won, gc, elapsedSeconds * 1000, seed, scrambleBoardsSolved(state), SCRAMBLE_TOTAL_BOARDS, state.hintsUsed)
       .then((xp) => { if (xp) setXpResult(xp); });
     const r = scrambleMatchRow(state);

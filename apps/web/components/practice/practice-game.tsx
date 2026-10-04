@@ -24,7 +24,7 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { FinishedDock, ResultStrip } from '@/components/game/finished-kit';
 import { FinishedScreen, FINISHED_NAV_CLEAR } from '@/components/game/finished-screen';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { recordDailyResult } from '@/lib/daily-service';
 import { computeScoreBreakdown } from '@/lib/composite-scoring';
 import { recordModePlayed } from '@/lib/play-limit-service';
@@ -204,7 +204,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   useEffect(() => {
     if (state.status === GameStatus.WON && !isRestoredCompleted.current) setShowVictory(true);
     if (state.status === GameStatus.LOST && !isRestoredCompleted.current) setShowGameOver(true);
-    if (profile && !isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
+    if (!isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       // useActivePlayTimer freezes elapsedTime as soon as isPlaying flips
       // false, so the value here matches what the user saw in the header,
       // VictoryAnimation, and PostGameSummary at the moment of completion.
@@ -217,6 +217,9 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         currentBoard.hintEvaluations?.[i]
           ? best
           : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0);
+      if (!profile) {
+        noteGuestDailyFinish(mode, state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed, undefined, bestCorrectLetters);
+      } else {
       recordGameResult(profile.id, mode, 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed, undefined, bestCorrectLetters)
         .then(xp => { if (xp) setXpResult(xp); });
       recordSoloMatch({
@@ -231,6 +234,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
         hintsUsed,
       });
+      }
     }
     if (!isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       const modePlayId = mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'practice';

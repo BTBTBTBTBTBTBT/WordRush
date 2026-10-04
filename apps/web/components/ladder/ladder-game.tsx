@@ -25,7 +25,7 @@ import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './pers
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal, fetchSolvedDailyRow } from '@/lib/daily-service';
@@ -189,12 +189,14 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
 
   const recordResult = useCallback(() => {
     const elapsedSeconds = getElapsed();
-    if (!profile || !state || hasRecordedRef.current) return;
+    if (!state || hasRecordedRef.current) return;
     if (state.status !== 'won' && state.status !== 'lost') return;
     hasRecordedRef.current = true;
     const won = state.status === 'won';
     const gc = ladderGuessCount(state);
     const seed = mode === 'daily' ? state.seed : undefined;
+    // Guest: today's daily still flips Home (the optimistic path, no server).
+    if (!profile) { noteGuestDailyFinish('LADDER', won, gc, elapsedSeconds * 1000, seed, won ? 1 : 0, 1, state.hintsUsed); return; }
     recordGameResult(profile.id, 'LADDER', 'solo', won, gc, elapsedSeconds * 1000, seed, won ? 1 : 0, 1, state.hintsUsed)
       .then((xp) => { if (xp) setXpResult(xp); });
     const row = ladderMatchRow(state);

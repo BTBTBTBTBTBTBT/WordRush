@@ -30,6 +30,13 @@ function withPending(map: Map<string, DailyCompletion>, userId: string | undefin
   return mergeCompletions(mergePendingCompletions(map, pendingTodayCompletions(userId, today)), local);
 }
 
+/**
+ * A guest has no user id; their finishes go into the same optimistic store
+ * (BI19) under this local key, so Home flips the moment a guest finishes a
+ * daily and keeps it across a reload. Never sent anywhere.
+ */
+export const GUEST_RESULTS_ID = 'guest';
+
 /** BI19: the server's rows for today landed — drop the local entries it now has (the server wins silently). */
 function reconcileLocal(server: Map<string, DailyCompletion>, userId: string): void {
   const today = getTodayLocal();
@@ -94,7 +101,7 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   // Initialize from localStorage so the very first render already has data
   // BI19: plus the returning player's optimistic results (cacheUser() reads
   // the stored session, so this works on the very first frame).
-  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => withPending(readCache(), cacheUser() ?? undefined));
+  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => withPending(readCache(), cacheUser() ?? GUEST_RESULTS_ID));
   // readCache() is day-guarded, so whatever seeded the initial state is today's.
   const [dailiesDay, setDailiesDay] = useState<string>(() => getTodayLocal());
   const fetchedRef = useRef<string | null>(null);
@@ -139,8 +146,11 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
       // guest never sees the prior user's daily results. During auth loading `user`
       // is also null but `loading` is true, so we keep the cache then (no flicker).
       if (!loading) {
-        setTodayDailies((prev) => (prev.size > 0 ? new Map() : prev));
         try { localStorage.removeItem(CACHE_KEY); } catch {}
+        // The guest's OWN finishes today (filed under GUEST_RESULTS_ID) stand.
+        const guest = withPending(new Map(), GUEST_RESULTS_ID);
+        setTodayDailies((prev) => (prev.size === 0 && guest.size === 0 ? prev : guest));
+        setDailiesDay(getTodayLocal());
       }
       return;
     }
@@ -191,15 +201,29 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   const userId = user?.id;
   useEffect(() => {
     const handler = (e: Event) => {
-      const { gameMode, won, guesses, timeSeconds, score } = (e as CustomEvent).detail;
+      const { gameMode, won, guesses, timeSeconds, score, guest } = (e as CustomEvent).detail;
+      // A guest's finish (noteGuestDailyFinish) only counts while no one is signed in.
+      if (guest && userId) return;
       // BI19: persist the finish locally FIRST (user · day · mode) so a reload,
       // the leaderboard's own row and the Stats Today card all have it before
-      // the server confirms.
-      if (userId) {
+      // the server confirms. A guest's lands under GUEST_RESULTS_ID.
+      const owner = userId ?? (guest ? GUEST_RESULTS_ID : undefined);
+      if (owner) {
         const day = getTodayLocal();
         updateResultStore((st) => applyLocalResult(pruneStore(st, day), {
-          userId, day, mode: gameMode, won: !!won, guesses: guesses ?? 0, timeSeconds: timeSeconds ?? 0, score: score ?? 0, savedAt: Date.now(),
+          userId: owner, day, mode: gameMode, won: !!won, guesses: guesses ?? 0, timeSeconds: timeSeconds ?? 0, score: score ?? 0, savedAt: Date.now(),
         }));
+      }
+      if (guest) {
+        // Guest: in memory only — the day-keyed cache belongs to signed-in
+        // accounts (a later sign-in must never inherit the guest's cards).
+        setTodayDailies((prev) => {
+          const next = new Map(prev);
+          next.set(gameMode, preferCompletion(prev.get(gameMode), { won, guesses, timeSeconds, score: score ?? 0 }));
+          return next;
+        });
+        setDailiesDay(getTodayLocal());
+        return;
       }
       addCompletion(gameMode, { won, guesses, timeSeconds, score: score ?? 0 });
     };

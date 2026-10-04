@@ -680,6 +680,14 @@ object GameResultsService {
         val userId = AuthService.userId
             ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
             ?: run {
+                // A guest has nothing to write, but today's daily still flips Home.
+                if (AuthService.isGuest.value) {
+                    if (playType == "solo") DailyCompletionsService.noteGuestFinish(
+                        seed, gameMode.name, won, guessCount, timeSeconds, boardsSolved, totalBoards,
+                        hintsUsed, stagesCompleted, bestCorrectLetters,
+                    )
+                    return null
+                }
                 DailyResultsService.reportSwallowedWrite(
                     "record (no session — finished game dropped)", gameMode.name,
                     IllegalStateException("no profile and no local session while recording a finished game"),

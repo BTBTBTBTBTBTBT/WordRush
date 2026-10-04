@@ -155,6 +155,13 @@ final class DailyCompletionsStore: ObservableObject {
                 if dayRolled { self.optimistic = [:]; self.dataDay = today; self.byMode = ledger.byMode }
                 guard changed else { return }
                 self.byMode = ledger.byMode
+                // A guest's finish (no session): its own day-keyed store, never the
+                // account cache or `optimistic` — a later sign-in must not inherit it.
+                if localUserId() == nil && AuthService.shared.isGuest {
+                    Self.writeGuest(self.byMode)
+                    WidgetBridge.update(completions: self.byMode)
+                    return
+                }
                 self.optimistic[c.gameMode] = c
                 self.optimisticDay = today
                 Self.writeCache(self.byMode)
@@ -185,8 +192,11 @@ final class DailyCompletionsStore: ObservableObject {
         // Home read as unplayed until the network came back.
         guard let userId = localUserId() else {
             // BJ3: assign only on a change — a @Published write re-renders all of Home,
-            // and this runs on every Home appear for a guest.
-            if !byMode.isEmpty { byMode = [:] }
+            // and this runs on every Home appear for a guest. A guest keeps the
+            // dailies THEY finished today (they used to read 0/N on Home while the
+            // reopened game showed the finished board).
+            let guest = AuthService.shared.isGuest ? (Self.readGuest() ?? [:]) : [:]
+            if byMode != guest { byMode = guest }
             optimistic = [:]
             if dataDay != today { dataDay = today }
             Self.writeCache(nil)
@@ -249,6 +259,16 @@ final class DailyCompletionsStore: ObservableObject {
     // this cache always had, so an upgrade keeps today's map).
     private static func readCache() -> [String: DailyCompletion]? {
         CompletionLedger<DailyCompletion>.load(from: .standard, key: cacheKey, today: LeaderboardService.todayLocal())
+    }
+
+    /// A guest's own finishes today (owner-scoped: never read for an account).
+    private static let guestKey = "daily-completions-guest"
+    private static func readGuest() -> [String: DailyCompletion]? {
+        CompletionLedger<DailyCompletion>.load(from: .standard, key: guestKey, today: LeaderboardService.todayLocal())
+    }
+    private static func writeGuest(_ byMode: [String: DailyCompletion]) {
+        CompletionLedger(day: LeaderboardService.todayLocal(), byMode: byMode, isWin: { $0.completed })
+            .save(to: .standard, key: guestKey)
     }
 
     private static func writeCache(_ byMode: [String: DailyCompletion]?) {

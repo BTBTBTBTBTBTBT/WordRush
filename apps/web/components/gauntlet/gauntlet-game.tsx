@@ -25,7 +25,7 @@ import { artSrc } from '@/lib/art';
 import { GauntletSequenceMiniBoard } from './gauntlet-sequence-mini-board';
 import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, recordGauntletStages, fetchGauntletStages, type GauntletStagesResult, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, noteGuestDailyFinish, recordSoloMatch, recordGauntletStages, fetchGauntletStages, type GauntletStagesResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
@@ -211,7 +211,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     } else if (state.status === GameStatus.LOST) {
       setShowResults(true);
     }
-    if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
+    if ((state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       // Use the frozen elapsedTime (timer stops ticking when the stage ends)
       // so this exactly matches the VictoryAnimation and GauntletResults
       // numbers the player sees.
@@ -243,6 +243,9 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       const cumulativeTotalBoards = stageCfgs.reduce((sum, s) => sum + s.boardCount, 0) || 21;
       // Fully-cleared stage count drives the loss stage-depth ladder.
       const stagesCompleted = (state.gauntlet?.stageResults ?? []).filter(r => r.status === GameStatus.WON).length;
+      if (!profile) {
+        noteGuestDailyFinish('GAUNTLET', state.status === GameStatus.WON, totalGuesses, timeMs, seed, cumulativeBoardsSolved, cumulativeTotalBoards, 0, stagesCompleted);
+      } else {
       recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, cumulativeBoardsSolved, cumulativeTotalBoards, 0, stagesCompleted).then(xp => { if (xp) setXpResult(xp); });
       recordSoloMatch({
         userId: profile.id,
@@ -262,6 +265,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           stages: state.gauntlet.stages,
           stageResults: state.gauntlet.stageResults,
         });
+      }
       }
     }
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
