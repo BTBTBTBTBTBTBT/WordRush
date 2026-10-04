@@ -1,0 +1,371 @@
+{
+ "w": {
+  "hero": "w",
+  "caption": "W as a pilgrim: black buckle hat, his own magenta cape kept.",
+  "layers": [
+   {
+    "piece": "pilgrim-hat",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.78,
+    "dx": 0.02,
+    "dy": 0.07
+   }
+  ]
+ },
+ "d": {
+  "hero": "d",
+  "caption": "D as the pie chef: tall white toque, a whole pumpkin pie at his feet.",
+  "layers": [
+   {
+    "piece": "chef-toque",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.66,
+    "dx": 0.0,
+    "dy": 0.07
+   },
+   {
+    "piece": "pumpkin-pie",
+    "z": "front",
+    "anchor": "feet",
+    "w": 0.5,
+    "dx": -0.62,
+    "dy": -0.12
+   }
+  ]
+ },
+ "c": {
+  "hero": "c",
+  "caption": "C as an acorn: crosshatched acorn cap with a curly stem.",
+  "layers": [
+   {
+    "piece": "acorn-cap",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.86,
+    "dx": 0.0,
+    "dy": 0.1
+   }
+  ]
+ },
+ "o3": {
+  "hero": "o3",
+  "caption": "Orange cyclops O wearing a slice of pumpkin pie as a hat (whipped cream on top).",
+  "layers": [
+   {
+    "piece": "pie-hat",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.8,
+    "dx": 0.02,
+    "dy": 0.07
+   }
+  ]
+ },
+ "u": {
+  "hero": "u",
+  "caption": "U in a cozy striped knit beanie (burnt orange, brown, cream) with a pom-pom.",
+  "layers": [
+   {
+    "piece": "knit-beanie",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.8,
+    "dx": 0.0,
+    "dy": 0.16
+   }
+  ]
+ },
+ "s": {
+  "hero": "s",
+  "caption": "S in a plush turkey hat sitting on top of his own headband.",
+  "layers": [
+   {
+    "piece": "turkey-hat",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.86,
+    "dx": 0.0,
+    "dy": 0.08
+   }
+  ]
+ },
+ "i": {
+  "hero": "i",
+  "geom": {
+   "top": [
+    472,
+    197
+   ],
+   "angle": -2,
+   "center": [
+    472,
+    540
+   ]
+  },
+  "caption": "I as an ear of corn: open corn husk leaves behind him; his sprout stays the silk on top.",
+  "layers": [
+   {
+    "piece": "corn-husk",
+    "z": "behind",
+    "anchor": "center",
+    "w": 1.9,
+    "dx": 0.0,
+    "dy": 0.05
+   }
+  ]
+ },
+ "o1": {
+  "hero": "o1",
+  "geom": {
+   "W": 500,
+   "top": [
+    506,
+    240
+   ],
+   "angle": 3,
+   "center": [
+    506,
+    470
+   ]
+  },
+  "caption": "Amber O as a turkey cheerleader: a big fan of tail feathers behind her, purple pom-poms kept.",
+  "layers": [
+   {
+    "piece": "turkey-tail",
+    "z": "behind",
+    "anchor": "center",
+    "w": 2.5,
+    "dx": 0.0,
+    "dy": -0.3
+   }
+  ]
+ },
+ "r": {
+  "hero": "r",
+  "caption": "R wrapped for a cozy nap: red-and-orange plaid blanket cape behind him, a maple leaf on his nightcap.",
+  "layers": [
+   {
+    "piece": "plaid-cape",
+    "z": "behind",
+    "anchor": "center",
+    "w": 1.75,
+    "dx": -0.05,
+    "dy": 0.12
+   },
+   {
+    "piece": "maple-leaf",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.22,
+    "dx": 0.18,
+    "dy": -0.02,
+    "rot": 20
+   }
+  ]
+ },
+ "o2": {
+  "hero": "o2",
+  "caption": "Pink O in a cranberry-and-mustard knitted shawl cape with tassels; heart sunglasses kept.",
+  "layers": [
+   {
+    "piece": "autumn-shawl",
+    "z": "behind",
+    "anchor": "center",
+    "w": 1.6,
+    "dx": 0.0,
+    "dy": 0.12
+   }
+  ]
+ },
+ "w-alt1": {
+  "hero": "w",
+  "caption": "Alternate: W in the striped knit beanie with a pom-pom.",
+  "layers": [
+   {
+    "piece": "knit-beanie",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.62,
+    "dx": 0.02,
+    "dy": 0.12
+   }
+  ]
+ },
+ "d-alt1": {
+  "hero": "d",
+  "caption": "Alternate: D as a pilgrim, buckle hat; glasses and pencil kept.",
+  "layers": [
+   {
+    "piece": "pilgrim-hat",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.78,
+    "dx": 0.0,
+    "dy": 0.07
+   }
+  ]
+ },
+ "o2-alt1": {
+  "hero": "o2",
+  "caption": "Alternate: pink O with a turkey-feather fan behind her, like a parade turkey.",
+  "layers": [
+   {
+    "piece": "turkey-tail",
+    "z": "behind",
+    "anchor": "center",
+    "w": 1.9,
+    "dx": 0.0,
+    "dy": -0.15
+   }
+  ]
+ },
+ "c-alt1": {
+  "hero": "c",
+  "caption": "Alternate: C as a pie chef, tall white toque.",
+  "layers": [
+   {
+    "piece": "chef-toque",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.66,
+    "dx": 0.0,
+    "dy": 0.07
+   }
+  ]
+ },
+ "i-alt1": {
+  "hero": "i",
+  "geom": {
+   "top": [
+    472,
+    197
+   ],
+   "angle": -2,
+   "center": [
+    472,
+    540
+   ]
+  },
+  "caption": "Alternate: I in the cranberry-and-mustard knitted shawl.",
+  "layers": [
+   {
+    "piece": "autumn-shawl",
+    "z": "behind",
+    "anchor": "center",
+    "w": 1.75,
+    "dx": 0.0,
+    "dy": 0.08
+   }
+  ]
+ },
+ "o3-alt1": {
+  "hero": "o3",
+  "caption": "Alternate: orange cyclops O as a pie chef: white toque and a whole pumpkin pie.",
+  "layers": [
+   {
+    "piece": "chef-toque",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.62,
+    "dx": 0.02,
+    "dy": 0.07
+   },
+   {
+    "piece": "pumpkin-pie",
+    "z": "front",
+    "anchor": "feet",
+    "w": 0.5,
+    "dx": -0.7,
+    "dy": -0.15
+   }
+  ]
+ },
+ "u-alt1": {
+  "hero": "u",
+  "caption": "Alternate: U wrapped in the plaid blanket cape, a maple leaf drifting above him.",
+  "layers": [
+   {
+    "piece": "plaid-cape",
+    "z": "behind",
+    "anchor": "center",
+    "w": 1.55,
+    "dx": 0.0,
+    "dy": 0.05
+   },
+   {
+    "piece": "maple-leaf",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.2,
+    "dx": 0.38,
+    "dy": -0.12,
+    "rot": -15
+   }
+  ]
+ },
+ "s-alt1": {
+  "hero": "s",
+  "caption": "Alternate: S running the turkey trot, a turkey-feather fan behind him.",
+  "layers": [
+   {
+    "piece": "turkey-tail",
+    "z": "behind",
+    "anchor": "center",
+    "w": 1.9,
+    "dx": -0.1,
+    "dy": -0.12
+   }
+  ]
+ },
+ "o1-alt1": {
+  "hero": "o1",
+  "geom": {
+   "W": 500,
+   "top": [
+    506,
+    240
+   ],
+   "angle": 3,
+   "center": [
+    506,
+    470
+   ]
+  },
+  "caption": "Alternate: amber O in the striped knit beanie, pom-poms up.",
+  "layers": [
+   {
+    "piece": "knit-beanie",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.62,
+    "dx": 0.0,
+    "dy": 0.14
+   }
+  ]
+ },
+ "r-alt1": {
+  "hero": "r",
+  "caption": "Alternate: R napping beside a whole pumpkin pie, maple leaf on his nightcap.",
+  "layers": [
+   {
+    "piece": "pumpkin-pie",
+    "z": "front",
+    "anchor": "feet",
+    "w": 0.55,
+    "dx": -0.78,
+    "dy": -0.12
+   },
+   {
+    "piece": "maple-leaf",
+    "z": "front",
+    "anchor": "top",
+    "w": 0.22,
+    "dx": 0.18,
+    "dy": -0.02,
+    "rot": 20
+   }
+  ]
+ }
+}

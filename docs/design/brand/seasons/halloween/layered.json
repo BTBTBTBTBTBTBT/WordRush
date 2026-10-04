@@ -1,0 +1,32 @@
+{
+ "halloween/cast/u-alt3.png": {
+  "method": "layered",
+  "hero": "u",
+  "faceRegionDiff": 1.648,
+  "pieces": [
+   "bat-wings",
+   "bat-ears"
+  ],
+  "caption": "Alternate: U as a bat (right side up this time): scalloped bat wings behind him, bat-ear headband."
+ },
+ "halloween/cast/i-alt2.png": {
+  "method": "layered",
+  "hero": "i",
+  "faceRegionDiff": 0.709,
+  "pieces": [
+   "witch-hat",
+   "candy-pail"
+  ],
+  "caption": "Alternate: I as a little witch: black witch hat with an orange band, his sprout still on top, jack-o'-lantern candy pail."
+ },
+ "halloween/cast/s-alt2.png": {
+  "method": "layered",
+  "hero": "s",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "cat-ears-pink",
+   "cat-tail"
+  ],
+  "caption": "Alternate: S as a black cat: cat-ear headband above his own headband, curly tail with an orange bow."
+ }
+}

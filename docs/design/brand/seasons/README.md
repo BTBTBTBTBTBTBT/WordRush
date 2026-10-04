@@ -17,6 +17,8 @@ seasons/
     cast/<id>[-alt<n>].png # costumed cast member, transparent, same framing as cast/hero
     titles/<slug>.png      # seasonal title lettering (games, DAILIES, PUZZLES, greetings)
     props/<name>.png       # small motifs for code-drawn wallpapers, banners, badges
+    pieces/<name>.png      # costume PIECES (hats, wings, capes) that layer-costume.py puts onto the hero art
+    layered.json           # per layered costume: pieces used + face/letter region diff vs the hero
     walls/                 # code-drawn full-res wallpapers (script + output), never ChatGPT upscales
     extras/                # buttons, badges, tile themes, share cards, widget accents
     raw/                   # untouched ChatGPT captures (keep for re-cuts)
@@ -37,11 +39,24 @@ Status per asset in manifest.json: `draft` → `approved` (founder) → `shipped
 | fourth-of-july | Jun 28 – Jul 4 | stars & stripes, fireworks, picnic |
 | back-to-school | Aug 15 – Sep 5 | backpacks, pencils, glasses |
 
+## Costumes are LAYERED (founder 10-04)
+The cast member is always the canonical approved pixels (`cast/hero/<id>.png`). ChatGPT draws only the costume
+pieces on flat cyan. `layer-costume.py split` keys and splits a sheet, and `layer-costume.py build <season>`
+composites the pieces at anchors measured from the hero (head line + head width, center, feet):
+- back pieces are clipped outside the hero silhouette, so they never show through soft eyes;
+- a hero feature on top (I's sprout) can be put back in front of a hat;
+- the face/letter region diff is recorded.
+Specs live in `layer-costume.py` (Halloween) and `<season>/specs.json`. Use a full ChatGPT redraw only when the
+costume changes the silhouette (onesie, full bandages, ghost sheet), and then run a face-region check before
+accepting it. The manifest notes `method: layered` + `faceRegionDiff`, or `redrawn`.
+
 ## Rules (all seasons)
 - Cast accuracy is the hard rule: attach `cast/hero/<id>.png` + `refs/<id>.png` (+ `poses/`) to every prompt;
   costume ON the character, never changing face, mouth/teeth, eyes, friendly brows, letter, body color/shape.
   Side-by-side check; reject drift. W never angry.
-- ChatGPT = characters, lettering, small props. Wallpapers drawn in code at full resolution.
+- ChatGPT = costume pieces, lettering, small props. Wallpapers drawn in code at full resolution
+  (`halloween/walls/make-halloween-walls.py` is the engine; `thanksgiving/walls/` reuses it with a harvest palette).
+- Animation (see `../animation/w-wave/NOTES.md`): animate the real approved art, never a redrawn character.
 - American spelling, no emoji, no bordered boxes, backgrounds never distract, inclusive holiday framing.
 - Nothing ships until the founder approves from the gallery.
 

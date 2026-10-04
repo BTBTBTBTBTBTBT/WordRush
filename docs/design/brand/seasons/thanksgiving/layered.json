@@ -1,0 +1,187 @@
+{
+ "thanksgiving/cast/w.png": {
+  "method": "layered",
+  "hero": "w",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "pilgrim-hat"
+  ],
+  "caption": "W as a pilgrim: black buckle hat, his own magenta cape kept."
+ },
+ "thanksgiving/cast/c.png": {
+  "method": "layered",
+  "hero": "c",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "acorn-cap"
+  ],
+  "caption": "C as an acorn: crosshatched acorn cap with a curly stem."
+ },
+ "thanksgiving/cast/o3.png": {
+  "method": "layered",
+  "hero": "o3",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "pie-hat"
+  ],
+  "caption": "Orange cyclops O wearing a slice of pumpkin pie as a hat (whipped cream on top)."
+ },
+ "thanksgiving/cast/u.png": {
+  "method": "layered",
+  "hero": "u",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "knit-beanie"
+  ],
+  "caption": "U in a cozy striped knit beanie (burnt orange, brown, cream) with a pom-pom."
+ },
+ "thanksgiving/cast/s.png": {
+  "method": "layered",
+  "hero": "s",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "turkey-hat"
+  ],
+  "caption": "S in a plush turkey hat sitting on top of his own headband."
+ },
+ "thanksgiving/cast/d.png": {
+  "method": "layered",
+  "hero": "d",
+  "faceRegionDiff": 0.486,
+  "pieces": [
+   "chef-toque",
+   "pumpkin-pie"
+  ],
+  "caption": "D as the pie chef: tall white toque, a whole pumpkin pie at his feet."
+ },
+ "thanksgiving/cast/i.png": {
+  "method": "layered",
+  "hero": "i",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "corn-husk"
+  ],
+  "caption": "I as an ear of corn: open corn husk leaves behind him; his sprout stays the silk on top."
+ },
+ "thanksgiving/cast/o1.png": {
+  "method": "layered",
+  "hero": "o1",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "turkey-tail"
+  ],
+  "caption": "Amber O as a turkey cheerleader: a big fan of tail feathers behind her, purple pom-poms kept."
+ },
+ "thanksgiving/cast/r.png": {
+  "method": "layered",
+  "hero": "r",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "plaid-cape",
+   "maple-leaf"
+  ],
+  "caption": "R wrapped for a cozy nap: red-and-orange plaid blanket cape behind him, a maple leaf on his nightcap."
+ },
+ "thanksgiving/cast/o2.png": {
+  "method": "layered",
+  "hero": "o2",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "autumn-shawl"
+  ],
+  "caption": "Pink O in a cranberry-and-mustard knitted shawl cape with tassels; heart sunglasses kept."
+ },
+ "thanksgiving/cast/w-alt1.png": {
+  "method": "layered",
+  "hero": "w",
+  "faceRegionDiff": 0.025,
+  "pieces": [
+   "knit-beanie"
+  ],
+  "caption": "Alternate: W in the striped knit beanie with a pom-pom."
+ },
+ "thanksgiving/cast/d-alt1.png": {
+  "method": "layered",
+  "hero": "d",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "pilgrim-hat"
+  ],
+  "caption": "Alternate: D as a pilgrim, buckle hat; glasses and pencil kept."
+ },
+ "thanksgiving/cast/o2-alt1.png": {
+  "method": "layered",
+  "hero": "o2",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "turkey-tail"
+  ],
+  "caption": "Alternate: pink O with a turkey-feather fan behind her, like a parade turkey."
+ },
+ "thanksgiving/cast/c-alt1.png": {
+  "method": "layered",
+  "hero": "c",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "chef-toque"
+  ],
+  "caption": "Alternate: C as a pie chef, tall white toque."
+ },
+ "thanksgiving/cast/i-alt1.png": {
+  "method": "layered",
+  "hero": "i",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "autumn-shawl"
+  ],
+  "caption": "Alternate: I in the cranberry-and-mustard knitted shawl."
+ },
+ "thanksgiving/cast/o3-alt1.png": {
+  "method": "layered",
+  "hero": "o3",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "chef-toque",
+   "pumpkin-pie"
+  ],
+  "caption": "Alternate: orange cyclops O as a pie chef: white toque and a whole pumpkin pie."
+ },
+ "thanksgiving/cast/u-alt1.png": {
+  "method": "layered",
+  "hero": "u",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "plaid-cape",
+   "maple-leaf"
+  ],
+  "caption": "Alternate: U wrapped in the plaid blanket cape, a maple leaf drifting above him."
+ },
+ "thanksgiving/cast/s-alt1.png": {
+  "method": "layered",
+  "hero": "s",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "turkey-tail"
+  ],
+  "caption": "Alternate: S running the turkey trot, a turkey-feather fan behind him."
+ },
+ "thanksgiving/cast/o1-alt1.png": {
+  "method": "layered",
+  "hero": "o1",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "knit-beanie"
+  ],
+  "caption": "Alternate: amber O in the striped knit beanie, pom-poms up."
+ },
+ "thanksgiving/cast/r-alt1.png": {
+  "method": "layered",
+  "hero": "r",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "pumpkin-pie",
+   "maple-leaf"
+  ],
+  "caption": "Alternate: R napping beside a whole pumpkin pie, maple leaf on his nightcap."
+ }
+}

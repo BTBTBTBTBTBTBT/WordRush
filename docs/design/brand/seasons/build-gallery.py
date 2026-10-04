@@ -8,8 +8,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BRAND = os.path.dirname(ROOT)
-KINDS = [('cast', 'Costumed cast'), ('titles', 'Title lettering'), ('props', 'Props for code-drawn wallpapers'), ('extras', 'Extras to judge')]
-KIND_ID = {'cast': 'cast', 'titles': 'title', 'props': 'prop', 'extras': 'extra'}
+KINDS = [('cast', 'Costumed cast'), ('titles', 'Title lettering'), ('walls', 'Code-drawn wallpapers (full resolution)'), ('props', 'Props for code-drawn wallpapers'), ('pieces', 'Costume pieces (ChatGPT draws only these; code layers them onto the real hero art)'), ('extras', 'Extras to judge')]
+KIND_ID = {'cast': 'cast', 'titles': 'title', 'walls': 'wall', 'props': 'prop', 'pieces': 'piece', 'extras': 'extra'}
+WINDOWS = {'halloween': 'Oct 17 – Nov 1 (local date)', 'thanksgiving': 'Nov 16 – 27 (local date)'}
 CAST_ORDER = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']
 TODAY = datetime.date.today().isoformat()
 
@@ -93,6 +94,37 @@ for k, v in BTN.items():
     CAPTIONS[f'halloween/extras/btn-{k}.png'] = f'Blank button skin: {v}. Label drawn in code (three-slice like the cast buttons).'
 
 
+# ---- 10-04 night 2: Halloween walls + layered pieces, Thanksgiving
+for pg in ['home', 'games', 'stats', 'friends', 'leaderboard']:
+    CAPTIONS[f'halloween/walls/wall-{pg}.webp'] = f'{pg.title()} wallpaper, 1290 x 2796, drawn in code: midnight gradient, low orange glow, few faint props in the margins only.'
+    CAPTIONS[f'halloween/walls/wall-{pg}-wide.webp'] = f'{pg.title()} wallpaper, 2400 x 1500 (web desktop).'
+    CAPTIONS[f'thanksgiving/walls/wall-{pg}.webp'] = f'{pg.title()} wallpaper, 1290 x 2796, drawn in code: warm dusk gradient, golden horizon glow, harvest moon, few faint harvest props in the margins.'
+    CAPTIONS[f'thanksgiving/walls/wall-{pg}-wide.webp'] = f'{pg.title()} wallpaper, 2400 x 1500 (web desktop).'
+for k, v in {'bat-wings': 'Bat wings (right side up)', 'bat-ears': 'Bat-ear headband', 'witch-hat': 'Witch hat (hole filled)', 'cat-ears-pink': 'Cat-ear headband',
+             'cat-tail': 'Cat tail with an orange bow', 'candy-pail': 'Jack-o\'-lantern candy pail'}.items():
+    CAPTIONS[f'halloween/pieces/{k}.png'] = f'{v}: costume piece, layered onto hero art in code.'
+for k, v in {'pilgrim-hat': 'Pilgrim buckle hat', 'chef-toque': 'Chef toque', 'acorn-cap': 'Acorn cap', 'pie-hat': 'Pumpkin-pie slice hat', 'knit-beanie': 'Striped knit beanie',
+             'turkey-hat': 'Plush turkey hat', 'turkey-tail': 'Turkey tail-feather fan (worn behind)', 'plaid-cape': 'Plaid blanket cape (behind)',
+             'corn-husk': 'Corn husk leaves (behind)', 'autumn-shawl': 'Knitted autumn shawl (behind)', 'pumpkin-pie': 'Whole pumpkin pie', 'maple-leaf': 'Maple leaf'}.items():
+    CAPTIONS[f'thanksgiving/pieces/{k}.png'] = f'{v}: costume piece, layered onto hero art in code.'
+CAPTIONS.update({
+    'thanksgiving/titles/happy-thanksgiving.png': 'Greeting header, stacked HAPPY / THANKSGIVING in pumpkin orange with a chocolate rim. Spell-checked.',
+    'thanksgiving/titles/happy-thanksgiving-alt1.png': 'One-line HAPPY THANKSGIVING with a maple leaf (the words run together with no gap, so the stacked version is preferred).',
+    'thanksgiving/titles/thanksgiving.png': 'THANKSGIVING in golden yellow with an acorn outside the word.',
+    'thanksgiving/titles/dailies.png': 'DAILIES in cranberry red with a chocolate rim.',
+    'thanksgiving/titles/puzzles.png': 'PUZZLES in burnt orange with a leaf outside the word.',
+    'thanksgiving/titles/label-gobble-gobble.png': 'Label: GOBBLE GOBBLE! in cranberry.',
+    'thanksgiving/titles/label-give-thanks.png': 'Label: GIVE THANKS in gold with a maple leaf.',
+    'thanksgiving/titles/page-leaderboard.png': 'Page title: LEADERBOARD in gold, acorn outside.',
+    'thanksgiving/titles/page-stats.png': 'Page title: STATS in caramel.',
+    'thanksgiving/titles/page-friends.png': 'Page title: FRIENDS in cranberry.',
+    'thanksgiving/titles/page-wordoftheday.png': 'Page title: WORD OF THE DAY in sage green, maple leaf outside.',
+})
+for k, v in {'pie-slice': 'Pumpkin pie slice', 'turkey-platter': 'Roast turkey on a platter', 'cornucopia': 'Cornucopia', 'leaf-oak': 'Oak leaf', 'acorn': 'Acorn',
+             'corn': 'Ear of corn', 'apple': 'Red apple', 'wheat': 'Wheat bundle', 'leaf-maple': 'Maple leaf', 'pumpkin-pie': 'Whole pumpkin pie'}.items():
+    CAPTIONS[f'thanksgiving/props/{k}.png'] = f'{v}: small motif for code-drawn harvest wallpapers (place faint, in margins).'
+
+
 def load_manifest():
     p = os.path.join(ROOT, 'manifest.json')
     if os.path.exists(p):
@@ -106,11 +138,16 @@ def scan(man):
         for kind, _ in KINDS:
             kd = os.path.join(ROOT, season, kind)
             if not os.path.isdir(kd): continue
+            layered = {}
+            lp = os.path.join(ROOT, season, 'layered.json')
+            if os.path.exists(lp):
+                with open(lp) as f: layered = json.load(f)
             for fn in sorted(os.listdir(kd)):
-                if not fn.endswith('.png'): continue
+                if not (fn.endswith('.png') or (kind == 'walls' and fn.endswith('.webp'))): continue
                 rel = f'{season}/{kind}/{fn}'
-                stem = fn[:-4]
+                stem = fn.rsplit('.', 1)[0]
                 a = by_file.get(rel, {})
+                lay = layered.get(rel)
                 cast_id = stem.split('-alt')[0] if kind == 'cast' else a.get('castId')
                 entry = {
                     'id': f'{season}-{KIND_ID[kind]}-{stem}',
@@ -120,8 +157,15 @@ def scan(man):
                     'file': rel,
                     'status': a.get('status', 'draft'),
                     'created': a.get('created', TODAY),
-                    'caption': a.get('caption') or CAPTIONS.get(rel, ''),
+                    'caption': (lay or {}).get('caption') or a.get('caption') or CAPTIONS.get(rel, ''),
                 }
+                if kind == 'cast':
+                    if lay:
+                        entry['method'] = 'layered'
+                        entry['faceRegionDiff'] = lay['faceRegionDiff']
+                        entry['pieces'] = lay['pieces']
+                    else:
+                        entry['method'] = a.get('method', 'redrawn (night 1; side-by-side visual check only, no face score)')
                 if a.get('approved'): entry['approved'] = a['approved']
                 with Image.open(os.path.join(ROOT, rel)) as im: entry['size'] = list(im.size)
                 out.append(entry)
@@ -129,8 +173,8 @@ def scan(man):
         k = [x[0] for x in KINDS].index(e['file'].split('/')[1])
         c = e['castId'] if e['kind'] == 'cast' else ''
         ci = CAST_ORDER.index(c) if c in CAST_ORDER else 99
-        stem = os.path.basename(e['file'])[:-4]
-        head = {'happy-halloween': 0, 'dailies': 1, 'puzzles': 2}.get(stem.split('-alt')[0], 3) if e['kind'] == 'title' else 0
+        stem = os.path.basename(e['file']).rsplit('.', 1)[0]
+        head = {'happy-halloween': 0, 'happy-thanksgiving': 0, 'thanksgiving': 1, 'dailies': 2, 'puzzles': 3}.get(stem.split('-alt')[0], 3) if e['kind'] == 'title' else 0
         return (e['season'], k, ci, head, stem.split('-alt')[0], '-alt' in stem, stem)
     out.sort(key=order)
     man['assets'] = out
@@ -177,21 +221,21 @@ def contact_sheet(season, assets):
                     if not os.path.exists(p): continue
                     im = Image.open(p).convert('RGBA'); bb = im.getchannel('A').getbbox(); im = im.crop(bb); im.thumbnail((cell, cell))
                     sheet.paste(im, (x + (cell - im.width) // 2, ry + j * (cell + 10) + (cell - im.height) // 2), im)
-                d.text((x + 4, ry + 2 * cell + 12), os.path.basename(a['file'])[:-4], fill='#b9a8e0', font=font(16))
+                d.text((x + 4, ry + 2 * cell + 12), os.path.basename(a['file']).rsplit('.', 1)[0], fill='#b9a8e0', font=font(16))
         elif kind == 'titles':
             cols, cellw, cellh = 3, (W - 2 * pad) // 3, 150
             for k, a in enumerate(items):
                 x = pad + (k % cols) * cellw; ry = yy + (k // cols) * (cellh + 30)
                 im = Image.open(os.path.join(ROOT, a['file'])).convert('RGBA'); im.thumbnail((cellw - 20, cellh - 10))
                 sheet.paste(im, (x + (cellw - im.width) // 2, ry + (cellh - im.height) // 2), im)
-                d.text((x + 6, ry + cellh + 4), os.path.basename(a['file'])[:-4], fill='#b9a8e0', font=font(16))
+                d.text((x + 6, ry + cellh + 4), os.path.basename(a['file']).rsplit('.', 1)[0], fill='#b9a8e0', font=font(16))
         else:
             cols, cell = 8, 220
             for k, a in enumerate(items):
                 x = pad + (k % cols) * (cell + 22); ry = yy + (k // cols) * (cell + 30)
                 im = Image.open(os.path.join(ROOT, a['file'])).convert('RGBA'); im.thumbnail((cell - 20, cell - 20))
                 sheet.paste(im, (x + (cell - im.width) // 2, ry + (cell - im.height) // 2), im)
-                d.text((x + 6, ry + cell + 4), os.path.basename(a['file'])[:-4], fill='#b9a8e0', font=font(16))
+                d.text((x + 6, ry + cell + 4), os.path.basename(a['file']).rsplit('.', 1)[0], fill='#b9a8e0', font=font(16))
         y += h
     out = os.path.join(ROOT, season, 'gallery.png')
     sheet.save(out)
@@ -221,7 +265,7 @@ def html(man):
             if not items: continue
             parts.append(f'<h3>{esc(label)} <span class="n">{len(items)}</span></h3><div class="grid {kind}">')
             for a in items:
-                src = data_uri(os.path.join(ROOT, a['file']), 560 if kind == 'titles' else 420)
+                src = data_uri(os.path.join(ROOT, a['file']), 560 if kind in ('titles', 'walls') else 420)
                 fig = f'<img src="{src}" alt="{esc(a["id"])}" loading="lazy">'
                 if kind == 'cast':
                     cid = a['castId']
@@ -230,15 +274,19 @@ def html(man):
                         hero_cache[cid] = data_uri(hp, 300) if os.path.exists(hp) else ''
                     fig = (f'<div class="pair"><div class="hero"><img src="{hero_cache[cid]}" alt="{cid} hero" loading="lazy"><span>hero</span></div>'
                            f'<div class="costume">{fig}<span>costume</span></div></div>')
-                name = os.path.basename(a['file'])[:-4]
+                name = os.path.basename(a['file']).rsplit('.', 1)[0]
+                meth = ''
+                if kind == 'cast':
+                    meth = (f'<p class="meth">Layered on the real hero art; face/letter region diff {a["faceRegionDiff"]}/255</p>' if a.get('method') == 'layered'
+                            else '<p class="meth">Redrawn by ChatGPT (night 1); visual side-by-side check</p>')
                 parts.append(f'<figure class="card">{fig}<figcaption><div class="row"><b>{esc(name)}</b>'
                              f'<em class="chip {esc(a["status"])}">{esc(a["status"])}</em></div>'
-                             f'<p>{esc(a.get("caption", ""))}</p><code>{esc(a["file"])}</code></figcaption></figure>')
+                             f'<p>{esc(a.get("caption", ""))}</p>{meth}<code>{esc(a["file"])}</code></figcaption></figure>')
             parts.append('</div>')
         parts.append('</section>')
     counts = {}
     for a in man['assets']: counts[a['kind']] = counts.get(a['kind'], 0) + 1
-    names = {'cast': 'costumes', 'title': 'titles', 'prop': 'props', 'extra': 'extras'}
+    names = {'cast': 'costumes', 'title': 'titles', 'wall': 'wallpapers', 'prop': 'props', 'piece': 'costume pieces', 'extra': 'extras'}
     summary = ' · '.join(f'{v} {names.get(k, k)}' for k, v in counts.items())
     return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Seasonal Cast Library</title>
@@ -250,10 +298,12 @@ def html(man):
 main{{max-width:1240px;margin:0 auto;padding:28px 16px 60px}}h1{{margin:0 0 4px;font-size:28px}}.sub{{color:var(--muted);margin:0 0 22px}}
 h2{{font-size:24px;margin:28px 0 2px;color:var(--accent)}}.win{{margin:0 0 8px;color:var(--muted)}}h3{{font-size:17px;margin:26px 0 12px}}.n{{color:var(--muted);font-weight:500}}
 .grid{{display:grid;gap:14px}}.grid.cast{{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}.grid.titles{{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}}
-.grid.props,.grid.extras{{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+.grid.walls{{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}.grid.walls .card img{{height:300px;width:auto;object-fit:contain;border-radius:10px}}
+.meth{{font-size:12px!important;color:var(--accent)!important;margin:2px 0 4px!important}}.anim{{background:var(--card);border-radius:16px;padding:16px;margin:10px 0 8px}}.anim p{{color:var(--muted);font-size:13px;margin:10px 0 0}}
+.grid.props,.grid.pieces,.grid.extras{{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
 .card{{margin:0;background:var(--card);border-radius:16px;padding:12px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(60,30,120,.06)}}
 .card img{{display:block;max-width:100%;height:auto;margin:0 auto}}.grid.titles .card img{{max-height:120px;object-fit:contain}}
-.grid.props .card img,.grid.extras .card img{{height:130px;object-fit:contain}}
+.grid.props .card img,.grid.pieces .card img,.grid.extras .card img{{height:130px;object-fit:contain}}
 .pair{{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--tile);border-radius:12px;padding:8px}}
 .pair>div{{display:flex;flex-direction:column;align-items:center;justify-content:flex-end}}.pair img{{height:150px;object-fit:contain}}
 .pair span{{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:4px}}
@@ -262,13 +312,27 @@ code{{font-size:11px;color:var(--muted);word-break:break-all}}
 .chip{{font-style:normal;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:999px;color:var(--draft);background:var(--draftbg)}}
 .chip.approved{{color:var(--ok);background:var(--okbg)}}.chip.shipped{{color:var(--ship);background:var(--shipbg)}}
 </style></head><body><main>
-<h1>Seasonal Cast Library</h1><p class="sub">Reusable holiday art made in ChatGPT, for the founder to approve before anything ships. {esc(summary)}. Each costume sits next to its hero for an accuracy check.</p>
+<h1>Seasonal Cast Library</h1><p class="sub">Reusable holiday art (characters, lettering and props from ChatGPT; wallpapers and layered costumes built in code), for the founder to approve before anything ships. {esc(summary)}. Each costume sits next to its hero for an accuracy check.</p>
+{anim_section()}
 {"".join(parts)}
 </main></body></html>'''
 
+def anim_section():
+    p = os.path.join(BRAND, 'animation', 'w-wave', 'embed.html')
+    if not os.path.exists(p): return ''
+    with open(p) as f: frag = f.read()
+    rig = json.load(open(os.path.join(BRAND, 'animation', 'w-wave', 'rig.json')))
+    d = rig.get('restDiff', {})
+    return ('<section class="season"><h2>Animation pilot</h2><p class="win">W puppet: cut from the approved hero art and animated in code. '
+            'He breathes, blinks every 3 to 5 s, waves twice every 6 s and his cape sways. Tap him to make him hop and laugh.</p>'
+            f'<div class="anim">{frag}<p>Accuracy: at rest, the layers rebuild the hero with a mean difference of {d.get("meanAbsRGB")}/255 '
+            '(target under 2). The only new art is the raised hand, which is color-matched to his own arm. '
+            'Notes: docs/design/brand/animation/w-wave/NOTES.md</p></div></section>')
+
 def main():
     man = scan(load_manifest())
-    man.setdefault('seasons', {}).setdefault('halloween', {'window': 'Oct 17 – Nov 1 (local date)'})
+    for k, v in WINDOWS.items():
+        man.setdefault('seasons', {}).setdefault(k, {'window': v})
     with open(os.path.join(ROOT, 'manifest.json'), 'w') as f: json.dump(man, f, indent=2); f.write('\n')
     for season in sorted({a['season'] for a in man['assets']}):
         print('sheet', contact_sheet(season, [a for a in man['assets'] if a['season'] == season]))

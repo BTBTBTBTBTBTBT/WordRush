@@ -4,6 +4,9 @@
   "seasons": {
     "halloween": {
       "window": "Oct 17 \u2013 Nov 1 (local date)"
+    },
+    "thanksgiving": {
+      "window": "Nov 16 \u2013 27 (local date)"
     }
   },
   "assets": [
@@ -16,6 +19,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "W as a vampire: black cape with red lining and stand-up collar, tiny fangs in his usual smile. Replaces his magenta cape.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -30,6 +34,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: W as a bat, ear headband and scalloped wings in place of his cape.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -44,6 +49,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: W as a pumpkin prince, pumpkin crown, orange cape with leaf collar, jack-o'-lantern scepter.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -58,6 +64,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "O (amber) as a pumpkin cheerleader: pumpkin stem hat, black-and-orange skirt, four purple/black pom-poms.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -72,6 +79,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: amber O as a candy-corn fairy, candy-corn party hat, pale wings, ruffled tutu, purple pom-poms kept.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -86,6 +94,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: amber O as a spider, googly-eye headband, striped fuzzy sleeves on all four arms.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -100,6 +109,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "R as a ghost: bedsheet worn like a hooded cloak, nightcap poking through, sleepy face and R fully visible.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -114,6 +124,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: R as a sleepy trick-or-treater, bat slippers, striped cuffs, candy pillowcase (second try; first had long legs).",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -128,6 +139,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: R as a night owl, owl ear tufts on the nightcap, feather wing cape, cocoa.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -142,6 +154,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "D as a wizard: purple star-and-moon hat and cape; his pencil gets a gold star tip as a wand.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -156,6 +169,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: D as a mad scientist, open lab coat, pencil in the pocket, bubbling potion, wild white hair tuft.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -170,6 +184,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: D as a friendly robot, antenna, bolt ears, silver sleeves and boots, button belt; pencil kept.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -184,6 +199,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "O (pink) as a witch: black hat with purple band, heart sunglasses resting on the brim, black-and-purple cape. No broom.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -198,6 +214,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: pink O as a black cat, ears behind her heart sunglasses, curly tail, bell collar. No whiskers.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -212,6 +229,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: pink O as a unicorn, gold horn and ears behind her heart sunglasses, pastel rainbow mane and tail.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -226,6 +244,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "C as an alien astronaut: space-suit collar ring, backpack, gloves and boots, springy antennae. The C is still his mouth.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -240,6 +259,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: C as a pirate, star tricorn and bandana, striped sash, treasure map. Both eyes visible, C is still the mouth.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -254,6 +274,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: C as a little dinosaur, orange back spikes, striped tail, claw slippers. C is still the mouth.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -268,6 +289,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "I as a scarecrow: patched straw hat with his sprout through the crown, plaid vest, straw tufts.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -282,6 +304,27 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: I as a gentle Frankenstein, flat-top tuft with the sprout through it, neck bolts, purple vest.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-i-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "i",
+      "file": "halloween/cast/i-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: I as a little witch: black witch hat with an orange band, his sprout still on top, jack-o'-lantern candy pail.",
+      "method": "layered",
+      "faceRegionDiff": 0.709,
+      "pieces": [
+        "witch-hat",
+        "candy-pail"
+      ],
       "size": [
         1024,
         1024
@@ -296,6 +339,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "O (orange cyclops) as a mummy (second try): five loose bandage strips, eye, mouth and tongue fully clear.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -310,6 +354,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: orange cyclops O as a goofy magician, top hat with a bat popping out, cape, wand.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -324,6 +369,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Mummy, first try: more bandages; one strip brushes the mouth corner.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -338,6 +384,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "U as a fairy-ghost: pearly lilac wings, a wavy ghost tail (he floats anyway), a glowing lantern.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -352,6 +399,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: U as a stargazer wizard, starry hat and shawl, floating crescent moon (green glow spill cleaned).",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -366,6 +414,27 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: U floating calmly over a pumpkin, knitted scarf, autumn leaf on top.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-u-alt3",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "u",
+      "file": "halloween/cast/u-alt3.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: U as a bat (right side up this time): scalloped bat wings behind him, bat-ear headband.",
+      "method": "layered",
+      "faceRegionDiff": 1.648,
+      "pieces": [
+        "bat-wings",
+        "bat-ears"
+      ],
       "size": [
         1024,
         1024
@@ -380,6 +449,7 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "S in a skeleton onesie: bone-print sleeves and legs, rib panels at his sides; headband, sneakers and S stay.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
       "size": [
         1024,
         1024
@@ -394,6 +464,27 @@
       "status": "draft",
       "created": "2026-10-04",
       "caption": "Alternate: S as a superhero, purple cape, domino mask, orange wristbands; his S is the emblem.",
+      "method": "redrawn (night 1; side-by-side visual check only, no face score)",
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "halloween-cast-s-alt2",
+      "season": "halloween",
+      "kind": "cast",
+      "castId": "s",
+      "file": "halloween/cast/s-alt2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: S as a black cat: cat-ear headband above his own headband, curly tail with an orange bow.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "cat-ears-pink",
+        "cat-tail"
+      ],
       "size": [
         1024,
         1024
@@ -453,20 +544,6 @@
       "size": [
         825,
         250
-      ]
-    },
-    {
-      "id": "halloween-title-puzzles",
-      "season": "halloween",
-      "kind": "title",
-      "castId": null,
-      "file": "halloween/titles/puzzles.png",
-      "status": "draft",
-      "created": "2026-10-04",
-      "caption": "PUZZLES: orange with a black rim (pairs with DAILIES).",
-      "size": [
-        928,
-        261
       ]
     },
     {
@@ -820,6 +897,160 @@
       ]
     },
     {
+      "id": "halloween-title-puzzles",
+      "season": "halloween",
+      "kind": "title",
+      "castId": null,
+      "file": "halloween/titles/puzzles.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "PUZZLES: orange with a black rim (pairs with DAILIES).",
+      "size": [
+        928,
+        261
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-friends",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-friends.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Friends wallpaper, 1290 x 2796, drawn in code: midnight gradient, low orange glow, few faint props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-friends-wide",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-friends-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Friends wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-games",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-games.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Games wallpaper, 1290 x 2796, drawn in code: midnight gradient, low orange glow, few faint props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-games-wide",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-games-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Games wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-home",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-home.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Home wallpaper, 1290 x 2796, drawn in code: midnight gradient, low orange glow, few faint props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-home-wide",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-home-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Home wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-leaderboard",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-leaderboard.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Leaderboard wallpaper, 1290 x 2796, drawn in code: midnight gradient, low orange glow, few faint props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-leaderboard-wide",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-leaderboard-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Leaderboard wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-stats",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-stats.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Stats wallpaper, 1290 x 2796, drawn in code: midnight gradient, low orange glow, few faint props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "halloween-wall-wall-stats-wide",
+      "season": "halloween",
+      "kind": "wall",
+      "castId": null,
+      "file": "halloween/walls/wall-stats-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Stats wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
       "id": "halloween-prop-bat",
       "season": "halloween",
       "kind": "prop",
@@ -1156,6 +1387,90 @@
       ]
     },
     {
+      "id": "halloween-piece-bat-ears",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/bat-ears.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Bat-ear headband: costume piece, layered onto hero art in code.",
+      "size": [
+        330,
+        291
+      ]
+    },
+    {
+      "id": "halloween-piece-bat-wings",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/bat-wings.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Bat wings (right side up): costume piece, layered onto hero art in code.",
+      "size": [
+        545,
+        251
+      ]
+    },
+    {
+      "id": "halloween-piece-candy-pail",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/candy-pail.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Jack-o'-lantern candy pail: costume piece, layered onto hero art in code.",
+      "size": [
+        330,
+        386
+      ]
+    },
+    {
+      "id": "halloween-piece-cat-ears-pink",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/cat-ears-pink.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Cat-ear headband: costume piece, layered onto hero art in code.",
+      "size": [
+        446,
+        302
+      ]
+    },
+    {
+      "id": "halloween-piece-cat-tail",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/cat-tail.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Cat tail with an orange bow: costume piece, layered onto hero art in code.",
+      "size": [
+        206,
+        401
+      ]
+    },
+    {
+      "id": "halloween-piece-witch-hat",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/witch-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Witch hat (hole filled): costume piece, layered onto hero art in code.",
+      "size": [
+        357,
+        319
+      ]
+    },
+    {
       "id": "halloween-extra-av-bat-ears",
       "season": "halloween",
       "kind": "extra",
@@ -1475,6 +1790,993 @@
       "size": [
         1430,
         602
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-w",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "w",
+      "file": "thanksgiving/cast/w.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "W as a pilgrim: black buckle hat, his own magenta cape kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "pilgrim-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-w-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "w",
+      "file": "thanksgiving/cast/w-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: W in the striped knit beanie with a pom-pom.",
+      "method": "layered",
+      "faceRegionDiff": 0.025,
+      "pieces": [
+        "knit-beanie"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-o1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "o1",
+      "file": "thanksgiving/cast/o1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Amber O as a turkey cheerleader: a big fan of tail feathers behind her, purple pom-poms kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "turkey-tail"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-o1-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "o1",
+      "file": "thanksgiving/cast/o1-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: amber O in the striped knit beanie, pom-poms up.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "knit-beanie"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-r",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "r",
+      "file": "thanksgiving/cast/r.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "R wrapped for a cozy nap: red-and-orange plaid blanket cape behind him, a maple leaf on his nightcap.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "plaid-cape",
+        "maple-leaf"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-r-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "r",
+      "file": "thanksgiving/cast/r-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: R napping beside a whole pumpkin pie, maple leaf on his nightcap.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "pumpkin-pie",
+        "maple-leaf"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-d",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "d",
+      "file": "thanksgiving/cast/d.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "D as the pie chef: tall white toque, a whole pumpkin pie at his feet.",
+      "method": "layered",
+      "faceRegionDiff": 0.486,
+      "pieces": [
+        "chef-toque",
+        "pumpkin-pie"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-d-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "d",
+      "file": "thanksgiving/cast/d-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: D as a pilgrim, buckle hat; glasses and pencil kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "pilgrim-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-o2",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "o2",
+      "file": "thanksgiving/cast/o2.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Pink O in a cranberry-and-mustard knitted shawl cape with tassels; heart sunglasses kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "autumn-shawl"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-o2-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "o2",
+      "file": "thanksgiving/cast/o2-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: pink O with a turkey-feather fan behind her, like a parade turkey.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "turkey-tail"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-c",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "c",
+      "file": "thanksgiving/cast/c.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "C as an acorn: crosshatched acorn cap with a curly stem.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "acorn-cap"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-c-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "c",
+      "file": "thanksgiving/cast/c-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: C as a pie chef, tall white toque.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "chef-toque"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-i",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "i",
+      "file": "thanksgiving/cast/i.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "I as an ear of corn: open corn husk leaves behind him; his sprout stays the silk on top.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "corn-husk"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-i-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "i",
+      "file": "thanksgiving/cast/i-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: I in the cranberry-and-mustard knitted shawl.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "autumn-shawl"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-o3",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "o3",
+      "file": "thanksgiving/cast/o3.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Orange cyclops O wearing a slice of pumpkin pie as a hat (whipped cream on top).",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "pie-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-o3-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "o3",
+      "file": "thanksgiving/cast/o3-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: orange cyclops O as a pie chef: white toque and a whole pumpkin pie.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "chef-toque",
+        "pumpkin-pie"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-u",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "u",
+      "file": "thanksgiving/cast/u.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "U in a cozy striped knit beanie (burnt orange, brown, cream) with a pom-pom.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "knit-beanie"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-u-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "u",
+      "file": "thanksgiving/cast/u-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: U wrapped in the plaid blanket cape, a maple leaf drifting above him.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "plaid-cape",
+        "maple-leaf"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-s",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "s",
+      "file": "thanksgiving/cast/s.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "S in a plush turkey hat sitting on top of his own headband.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "turkey-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-cast-s-alt1",
+      "season": "thanksgiving",
+      "kind": "cast",
+      "castId": "s",
+      "file": "thanksgiving/cast/s-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Alternate: S running the turkey trot, a turkey-feather fan behind him.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "turkey-tail"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "thanksgiving-title-happy-thanksgiving",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/happy-thanksgiving.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Greeting header, stacked HAPPY / THANKSGIVING in pumpkin orange with a chocolate rim. Spell-checked.",
+      "size": [
+        1264,
+        374
+      ]
+    },
+    {
+      "id": "thanksgiving-title-happy-thanksgiving-alt1",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/happy-thanksgiving-alt1.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "One-line HAPPY THANKSGIVING with a maple leaf (the words run together with no gap, so the stacked version is preferred).",
+      "size": [
+        1316,
+        155
+      ]
+    },
+    {
+      "id": "thanksgiving-title-thanksgiving",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/thanksgiving.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "THANKSGIVING in golden yellow with an acorn outside the word.",
+      "size": [
+        1258,
+        169
+      ]
+    },
+    {
+      "id": "thanksgiving-title-dailies",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/dailies.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "DAILIES in cranberry red with a chocolate rim.",
+      "size": [
+        780,
+        186
+      ]
+    },
+    {
+      "id": "thanksgiving-title-label-give-thanks",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/label-give-thanks.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Label: GIVE THANKS in gold with a maple leaf.",
+      "size": [
+        1236,
+        174
+      ]
+    },
+    {
+      "id": "thanksgiving-title-label-gobble-gobble",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/label-gobble-gobble.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Label: GOBBLE GOBBLE! in cranberry.",
+      "size": [
+        1285,
+        170
+      ]
+    },
+    {
+      "id": "thanksgiving-title-page-friends",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/page-friends.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: FRIENDS in cranberry.",
+      "size": [
+        820,
+        189
+      ]
+    },
+    {
+      "id": "thanksgiving-title-page-leaderboard",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/page-leaderboard.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: LEADERBOARD in gold, acorn outside.",
+      "size": [
+        1269,
+        187
+      ]
+    },
+    {
+      "id": "thanksgiving-title-page-stats",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/page-stats.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: STATS in caramel.",
+      "size": [
+        620,
+        189
+      ]
+    },
+    {
+      "id": "thanksgiving-title-page-wordoftheday",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/page-wordoftheday.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Page title: WORD OF THE DAY in sage green, maple leaf outside.",
+      "size": [
+        1286,
+        157
+      ]
+    },
+    {
+      "id": "thanksgiving-title-puzzles",
+      "season": "thanksgiving",
+      "kind": "title",
+      "castId": null,
+      "file": "thanksgiving/titles/puzzles.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "PUZZLES in burnt orange with a leaf outside the word.",
+      "size": [
+        961,
+        196
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-friends",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-friends.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Friends wallpaper, 1290 x 2796, drawn in code: warm dusk gradient, golden horizon glow, harvest moon, few faint harvest props in the margins.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-friends-wide",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-friends-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Friends wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-games",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-games.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Games wallpaper, 1290 x 2796, drawn in code: warm dusk gradient, golden horizon glow, harvest moon, few faint harvest props in the margins.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-games-wide",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-games-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Games wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-home",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-home.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Home wallpaper, 1290 x 2796, drawn in code: warm dusk gradient, golden horizon glow, harvest moon, few faint harvest props in the margins.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-home-wide",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-home-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Home wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-leaderboard",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-leaderboard.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Leaderboard wallpaper, 1290 x 2796, drawn in code: warm dusk gradient, golden horizon glow, harvest moon, few faint harvest props in the margins.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-leaderboard-wide",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-leaderboard-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Leaderboard wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-stats",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-stats.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Stats wallpaper, 1290 x 2796, drawn in code: warm dusk gradient, golden horizon glow, harvest moon, few faint harvest props in the margins.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "thanksgiving-wall-wall-stats-wide",
+      "season": "thanksgiving",
+      "kind": "wall",
+      "castId": null,
+      "file": "thanksgiving/walls/wall-stats-wide.webp",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Stats wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-acorn",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/acorn.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Acorn: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        272,
+        340
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-apple",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/apple.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Red apple: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        308,
+        340
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-corn",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/corn.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Ear of corn: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        300,
+        360
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-cornucopia",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/cornucopia.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Cornucopia: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        355,
+        267
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-leaf-maple",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/leaf-maple.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Maple leaf: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        322,
+        376
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-leaf-oak",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/leaf-oak.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Oak leaf: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        268,
+        302
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-pie-slice",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/pie-slice.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Pumpkin pie slice: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        323,
+        278
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-pumpkin-pie",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/pumpkin-pie.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Whole pumpkin pie: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        466,
+        307
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-turkey-platter",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/turkey-platter.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Roast turkey on a platter: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        376,
+        303
+      ]
+    },
+    {
+      "id": "thanksgiving-prop-wheat",
+      "season": "thanksgiving",
+      "kind": "prop",
+      "castId": null,
+      "file": "thanksgiving/props/wheat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Wheat bundle: small motif for code-drawn harvest wallpapers (place faint, in margins).",
+      "size": [
+        286,
+        364
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-acorn-cap",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/acorn-cap.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Acorn cap: costume piece, layered onto hero art in code.",
+      "size": [
+        403,
+        294
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-autumn-shawl",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/autumn-shawl.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Knitted autumn shawl (behind): costume piece, layered onto hero art in code.",
+      "size": [
+        483,
+        354
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-chef-toque",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/chef-toque.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Chef toque: costume piece, layered onto hero art in code.",
+      "size": [
+        414,
+        327
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-corn-husk",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/corn-husk.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Corn husk leaves (behind): costume piece, layered onto hero art in code.",
+      "size": [
+        404,
+        376
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-knit-beanie",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/knit-beanie.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Striped knit beanie: costume piece, layered onto hero art in code.",
+      "size": [
+        363,
+        350
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-maple-leaf",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/maple-leaf.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Maple leaf: costume piece, layered onto hero art in code.",
+      "size": [
+        322,
+        376
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-pie-hat",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/pie-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Pumpkin-pie slice hat: costume piece, layered onto hero art in code.",
+      "size": [
+        420,
+        299
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-pilgrim-hat",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/pilgrim-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Pilgrim buckle hat: costume piece, layered onto hero art in code.",
+      "size": [
+        470,
+        304
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-plaid-cape",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/plaid-cape.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Plaid blanket cape (behind): costume piece, layered onto hero art in code.",
+      "size": [
+        405,
+        340
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-pumpkin-pie",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/pumpkin-pie.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Whole pumpkin pie: costume piece, layered onto hero art in code.",
+      "size": [
+        466,
+        307
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-turkey-hat",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/turkey-hat.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Plush turkey hat: costume piece, layered onto hero art in code.",
+      "size": [
+        441,
+        320
+      ]
+    },
+    {
+      "id": "thanksgiving-piece-turkey-tail",
+      "season": "thanksgiving",
+      "kind": "piece",
+      "castId": null,
+      "file": "thanksgiving/pieces/turkey-tail.png",
+      "status": "draft",
+      "created": "2026-10-04",
+      "caption": "Turkey tail-feather fan (worn behind): costume piece, layered onto hero art in code.",
+      "size": [
+        485,
+        344
       ]
     }
   ]

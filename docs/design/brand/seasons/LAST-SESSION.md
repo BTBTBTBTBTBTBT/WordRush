@@ -1,7 +1,27 @@
-# Last session: 2026-10-04, 02:40 to 04:15 CT (Halloween, night 1)
+# Last session: 2026-10-04, 15:55 to ~17:00 CT (night 2: W animation pilot, Halloween follow-ups, Thanksgiving)
 
-1. **Cast:** all 10 costumes are redone from the hero and ref art, each checked side by side against its hero. There are also 18 alternates, so every character has 2 or 3 to pick from. Total: 28.
-2. **Lettering:** HAPPY HALLOWEEN, DAILIES and PUZZLES, all 18 game titles, 4 page titles (Leaderboard, Stats, Friends, Word of the Day) and 3 labels (TRICK OR TREAT, SPOOKY, BOO!). Every one is spell-checked, and 5 that weren't legible were redone. Total: 30.
-3. **Props and extras:** 24 transparent props for code-drawn wallpapers. 23 extras to judge: 2 costumed Home hosts, a jack-o'-lantern streak flame, a candy shield, a pumpkin tile theme, a podium, 3 badges, 6 blank button skins and 8 avatar accessories.
-4. **ChatGPT:** it never hit the free image limit (about 50 generations). Images are 1092 px pane captures, not downloads. 8 drafts were rejected for drift or legibility.
-5. **Review and next:** pick from `gallery.html` (or `halloween/gallery.png`); nothing ships until you approve. Tomorrow: code-drawn orange and black wallpapers, then the Thanksgiving cast.
+1. **W puppet pilot** (`../animation/w-wave/preview.html`, also playing at the top of `gallery.html`):
+   - **What it does:** W breathes, blinks every 3 to 5 s, waves twice every 6 s and his cape sways and ripples.
+     Tap him and he hops and laughs.
+   - **How it's built:** every layer is cut from the approved hero art. At rest the layers rebuild the hero with a
+     mean difference of 0.014/255.
+   - **The one new piece:** the raised hand (ChatGPT), color-matched to his own arm.
+   - **Weakest moment:** the quick arm swap at the start and end of the wave. Details are in `NOTES.md`.
+2. **New rule applied: costumes are LAYERED.**
+   - ChatGPT drew only the costume pieces. `layer-costume.py` puts them onto the real hero pixels.
+   - Each one has a face/letter check stored in `manifest.json` (score 0 = untouched).
+   - Night 1's costumes are marked "redrawn".
+3. **Halloween:** 3 new alternates:
+   - U as a bat, with the wings right side up this time;
+   - I as a little witch with a candy pail;
+   - S as a black cat.
+   The orange and black wallpapers are code-drawn at 1290 x 2796 plus 2400 x 1500 for Home, games, Stats, Friends
+   and Leaderboard. Props stay small and faint, in the margins only.
+4. **Thanksgiving:**
+   - **Costumes:** all 10, each with one alternate (20 in total), all layered. Pilgrim hat (W), turkey-feather
+     cheerleader (amber O), plaid blanket and leaf (R), pie chef (D), knitted shawl (pink O), acorn cap (C), corn
+     husk (I), pie-slice hat (orange O), knit beanie (U) and turkey hat (S).
+   - **Lettering:** HAPPY THANKSGIVING (stacked, plus a one-line alt that runs together), THANKSGIVING, DAILIES,
+     PUZZLES, GOBBLE GOBBLE!, GIVE THANKS and 4 page titles. All are spell-checked.
+   - **Other art:** 10 props, 12 costume pieces, and warm-dusk wallpapers for the same 5 pages.
+5. **ChatGPT:** 8 generations and no limit hit. Nothing ships until you pick from `gallery.html`.

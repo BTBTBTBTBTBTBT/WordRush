@@ -1,0 +1,74 @@
+{
+ "canvas": [
+  1024,
+  1024
+ ],
+ "source": "cast/hero/w.png",
+ "eyes": {
+  "R": {
+   "cx": 691.3342457420924,
+   "cy": 351.19160583941607,
+   "w": 64,
+   "h": 69
+  },
+  "L": {
+   "cx": 465.42070735881344,
+   "cy": 394.3685111237878,
+   "w": 65,
+   "h": 72
+  }
+ },
+ "armWaveSize": [
+  277,
+  300
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.014,
+  "meanAbsAlpha": 0.028,
+  "maxRGB": 150.8,
+  "pixels": 474891,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "stage": {
+  "w": 1300,
+  "h": 1090,
+  "heroX": 40,
+  "heroY": 50
+ },
+ "armWave": {
+  "img": "arm-wave",
+  "pivotInImg": [
+   60,
+   245
+  ],
+  "pivotOnHero": [
+   858,
+   520
+  ],
+  "scale": 1.15,
+  "imgAngle": -52,
+  "baseAngle": -42,
+  "amp": 25
+ },
+ "cape": {
+  "pivot": [
+   330,
+   470
+  ],
+  "swayDeg": 3.5,
+  "swayPeriod": 2.6,
+  "rippleAmpPx": 6,
+  "ripplePeriod": 1.8,
+  "top": 430,
+  "hem": 905
+ },
+ "breath": {
+  "origin": [
+   530,
+   955
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ }
+}
