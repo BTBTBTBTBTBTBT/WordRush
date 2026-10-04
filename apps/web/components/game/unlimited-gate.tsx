@@ -16,6 +16,7 @@ import { CandyButton, CandyLink } from '@/components/ui/candy-button';
 import { CastButton, CastLink } from '@/components/ui/cast-button';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { StateCard } from '@/components/ui/soft-popup';
+import { HeadingArt } from '@/components/ui/heading-art';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { softBackground } from '@/lib/soft-surface';
 
@@ -57,7 +58,9 @@ function GateCard({ title, blurb, fallbackHref, fallbackLabel, unlimited = false
             className={`mx-auto select-none pointer-events-none art-pop ${unlimited ? 'loop-wobble' : ''}`}
             style={{ height: 130, width: 'auto', filter: 'drop-shadow(0 6px 10px rgba(180, 83, 9, 0.25))' }}
           />
-          <h1 className="text-xl font-black" style={{ color: 'var(--color-text)' }}>{title}</h1>
+          {/* No plain-text headings (founder): the PRO PERK lettering, the gate's line under it. */}
+          <HeadingArt slug="properk" label={title} as="h1" level={1} height={44} maxWidth={280} />
+          <p className="text-base font-black -mt-1" style={{ color: 'var(--color-text)' }}>{title}</p>
           <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>{blurb}</p>
           <div className="flex flex-col items-stretch gap-1">
             {unlimited ? (

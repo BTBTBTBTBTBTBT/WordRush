@@ -9,6 +9,8 @@
  * one daily battle, answer challenges and codes for free, and see the Pro card
  * instead of Rivals; guests keep the sign-in card.
  */
+import { GuestPitch, GUEST_GRADIENTS } from '@/components/ui/guest-pitch';
+import { PAGE_HOSTS } from '@/lib/mascots';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -133,15 +135,19 @@ export function VsLobby() {
             <CastLoader />
           </div>
         ) : signedOut ? (
-          <VsCard>
-            <div className="text-center space-y-3 p-4">
-              <div className="text-base font-black" style={{ color: VS.deep }}>Sign in to play VS</div>
-              <p className="text-[13px] font-semibold" style={{ color: '#4b5563' }}>
-                VS Battle pits you against live opponents, bots and your friends&apos; runs, and records your results. It needs an account.
-              </p>
-              <TealButton size="lg" block onClick={exitGuest}>SIGN IN</TealButton>
-            </div>
-          </VsCard>
+          // Founder: no plain-text headings — the Friends guest pitch (cast scene,
+          // VS BATTLE heading art, one line, the SIGN IN cast button).
+          <GuestPitch
+            hosts={[PAGE_HOSTS.vs, PAGE_HOSTS.home]}
+            title="VS Battle"
+            heading="vsbattle"
+            subtitle="Sign in to battle live opponents, bots and your friends' runs, and keep your results."
+            gradient={GUEST_GRADIENTS.friends}
+            preview={{ kind: 'none' }}
+            onSignIn={exitGuest}
+            subColor="#4b5563"
+            className="min-h-[60vh]"
+          />
         ) : (
           <>
             <VsBanner

@@ -522,21 +522,15 @@ struct VSLobbyView: View {
     }
 
     // VS is account-based (live opponents, recorded results) — guests sign in first.
+    // Founder: no plain-text headings — the Friends guest pitch (cast scene, the VS
+    // BATTLE heading art, one line, the SIGN IN cast button). Web / Android parity.
     private var guestPrompt: some View {
-        VStack(spacing: 10) {
-            // §A7: S hosts VS — the guest card shows him ready in his own pose.
-            PoseImage(.s, "ready", height: 80)
-            Text("Sign in to play VS")
-                .font(Brand.font(16, .black)).foregroundStyle(VsLobbyKit.titleInk)
-            Text("VS Battle pits you against a live opponent and records your results — it needs an account.")
-                .font(Brand.font(13, .medium)).foregroundStyle(VsLobbyKit.mutedInk)
-                .multilineTextAlignment(.center)
-            Button { showAuth = true } label: { CandyLabel(title: "Sign in") }
-                .buttonStyle(CastButtonStyle(color: .blue, size: .large))
-        }
-        .padding(16)
-        .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
-        .padding(.top, 4)
+        GuestPitch(hosts: [Mascots.vs, Mascots.home], title: "VS Battle", heading: .vsbattle,
+                   subtitle: "Sign in to battle live opponents, bots and your friends' runs, and keep your results.",
+                   colors: [Color(hex: 0x0D9488), Color(hex: 0x7C3AED)],
+                   preview: .none, onSignIn: { showAuth = true })
+            .frame(maxWidth: .infinity)
+            .padding(.top, 4)
     }
 
     // MARK: - Daily VS limit modal (ports vs-limit-modal.tsx)

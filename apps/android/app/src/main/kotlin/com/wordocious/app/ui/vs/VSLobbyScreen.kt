@@ -543,19 +543,15 @@ private fun CodeRow(onOpenChallenge: (String) -> Unit, onEnterInvite: (GameMode,
     error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
 }
 
-/** Guest sign-in prompt — VS is account-based (iOS VSLobbyView.guestPrompt). */
+/** Guest sign-in prompt — VS is account-based. Founder: no plain-text headings — the
+ *  Friends guest pitch (cast scene, the VS BATTLE heading art, one line, SIGN IN). */
 @Composable
 private fun GuestPrompt(onSignIn: () -> Unit) {
-    VsTintedCard(Modifier.fillMaxWidth(), corner = 18.dp, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            // A7: a waiting character that isn't the page host (S).
-            VsCastPose(MascotId.O1, "waiting", 84.dp)
-            Text("Sign in to play VS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinishInk.heading)
-            Text(
-                "VS Battle pits you against a live opponent and records your results — it needs an account.",
-                fontSize = 13.sp, fontWeight = FontWeight.Medium, color = FinishInk.muted, textAlign = TextAlign.Center,
-            )
-            CandyButtonFill("SIGN IN", onSignIn)
-        }
-    }
+    com.wordocious.app.ui.GuestPitch(
+        hosts = listOf(MascotId.S, MascotId.W), title = "VS Battle", heading = com.wordocious.app.ui.Heading.VSBATTLE,
+        subtitle = "Sign in to battle live opponents, bots and your friends' runs, and keep your results.",
+        colors = com.wordocious.app.ui.GuestPitchContent.friendsColors, preview = com.wordocious.app.ui.GuestPreview.None,
+        onSignIn = onSignIn, onPlay = null,
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp), subColor = VsTeal.sub,
+    )
 }

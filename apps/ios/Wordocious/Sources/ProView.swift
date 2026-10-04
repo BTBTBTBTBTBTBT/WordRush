@@ -83,8 +83,11 @@ struct ProView: View {
     // purchase can be tied to an account (appAccountToken → entitlement).
     private var guestPrompt: some View {
         VStack(spacing: 14) {
+            // No plain-text headings (founder): the PRO PERK lettering, the line under it.
+            HeadingArtView(.properk, height: 40, maxWidth: 260, label: "Sign in to go Pro")
             Text("Sign in to go Pro")
-                .font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
+                .font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                .padding(.top, -6)
             Text("Create a free account or sign in first — Pro unlocks unlimited replays, VS on every mode, and more, tied to your account.")
                 .font(Brand.font(13, .medium)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center)

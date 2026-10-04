@@ -44,6 +44,7 @@ enum class Heading(@DrawableRes val res: Int, val label: String, val aspect: Flo
     STREAKSAVED(R.drawable.art_titlecast_streaksaved, "Streak Saved!", 1080f / 164f, warm = true),
     PLAYEDTODAY(R.drawable.art_titlecast_playedtoday, "Played Today", 916f / 161f, warm = true),
     VSUSED(R.drawable.art_titlecast_vsused, "Daily VS Used", 932f / 162f, warm = true),
+    VSBATTLE(R.drawable.art_titlecast_vsbattle, "VS Battle", 940f / 244f),
     ACHIEVEMENT(R.drawable.art_titlecast_achievement, "Achievement Unlocked!", 947f / 262f, warm = true),
     LETSPLAY(R.drawable.art_titlecast_letsplay, "Let's Play!", 785f / 136f, warm = true),
     INVITE(R.drawable.art_titlecast_invite, "Invite a Friend", 1080f / 139f, warm = true),

@@ -829,6 +829,7 @@ enum HeadingArt: String, CaseIterable {
     case streaksaved
     case playedtoday
     case vsused
+    case vsbattle
     case achievement
     case letsplay
     case invite
@@ -896,6 +897,7 @@ enum HeadingArt: String, CaseIterable {
         case .streaksaved: return "Streak Saved!"
         case .playedtoday: return "Played Today"
         case .vsused: return "Daily VS Used"
+        case .vsbattle: return "VS Battle"
         case .achievement: return "Achievement Unlocked!"
         case .letsplay: return "Let's Play!"
         case .invite: return "Invite a Friend"
@@ -963,6 +965,7 @@ enum HeadingArt: String, CaseIterable {
         case .streaksaved: return 1080.0 / 164.0
         case .playedtoday: return 916.0 / 161.0
         case .vsused: return 932.0 / 162.0
+        case .vsbattle: return 940.0 / 244.0
         case .achievement: return 947.0 / 262.0
         case .letsplay: return 785.0 / 136.0
         case .invite: return 1080.0 / 139.0

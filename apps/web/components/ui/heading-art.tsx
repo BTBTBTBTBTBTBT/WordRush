@@ -19,6 +19,7 @@ export const HEADING_ART = {
   'streaksaved': 'Streak Saved!',
   'playedtoday': 'Played Today',
   'vsused': 'Daily VS Used',
+  'vsbattle': 'VS Battle',
   'achievement': 'Achievement Unlocked!',
   'letsplay': 'Let’s Play!',
   'invite': 'Invite a Friend',

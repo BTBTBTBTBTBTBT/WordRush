@@ -147,7 +147,9 @@ fun ProScreen(onDone: () -> Unit) {
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Text("Sign in to go Pro", fontSize = 18.sp, fontWeight = FontWeight.Black, color = proInk,
+                    // No plain-text headings (founder): the PRO PERK lettering, the line under it.
+                    HeadingArt(Heading.PROPERK, height = 40.dp, maxWidth = 260.dp, contentDescription = "Sign in to go Pro")
+                    Text("Sign in to go Pro", fontSize = 15.sp, fontWeight = FontWeight.Black, color = proInk,
                         textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                     Text(
                         "Create a free account or sign in first — Pro unlocks unlimited replays, VS on every mode, and more, tied to your account.",
