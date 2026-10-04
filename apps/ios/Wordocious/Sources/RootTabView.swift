@@ -522,12 +522,6 @@ private struct BottomNav: View {
         .frame(maxWidth: .infinity)
         .background(bar.ignoresSafeArea(edges: .bottom))
         .task {
-            // BJ14: warm the game views once Home has settled (offscreen, side-effect free).
-            await LaunchGate.wait()
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            GameWarmup.run()
-        }
-        .task {
             await LaunchGate.wait()   // §AU5: after the cold-start intro lands
             await FriendsService.load()
             await FriendlyGamesService.load()

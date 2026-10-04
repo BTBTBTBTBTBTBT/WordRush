@@ -811,36 +811,3 @@ enum KeyboardSlot {
         }
     }
 }
-
-/// FINISH_SPEC BJ14: the first game opened in a launch paid ~150–250 ms extra on its
-/// presenting frame (first instantiation of the board / tile / keyboard view types).
-/// Once, while Home is idle, build those views offscreen (no window: no onAppear, no
-/// first responder) around a VS-style stand-in board — VS view models never read or
-/// write solo persistence, and nothing here records, saves or plays — then let it go.
-@MainActor
-enum GameWarmup {
-    private static var done = false
-
-    static func run() {
-        guard !done else { return }
-        done = true
-        #if DEBUG
-        if PerfTour.flag("noWarm") { return }
-        let tourGame = PerfTour.game
-        defer { PerfTour.game = tourGame }
-        #endif
-        DictionaryLoader.ensureInitialized()
-        let vm = GameViewModel(seed: "warmup-bj14", mode: .duel, isVersus: true)
-        let host = UIHostingController(rootView:
-            VStack(spacing: 0) {
-                BoardLayout(vm: vm, availableWidth: 390, fitHeight: 420)
-                KeyboardView(vm: vm)
-            }
-            .frame(width: 390, height: 700))
-        host.view.frame = CGRect(x: 0, y: 0, width: 390, height: 700)
-        host.view.setNeedsLayout()
-        host.view.layoutIfNeeded()
-        // Released at the end of this turn.
-        DispatchQueue.main.async { _ = host }
-    }
-}

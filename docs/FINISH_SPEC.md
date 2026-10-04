@@ -1627,6 +1627,14 @@ onAppear, no first responder) around a VS stand-in view model (never touches sol
 (`--flag noWarm`). Classic first open (3 runs each): 309 → 297 (stage) → 245 ms (stage + warm); warm opens 116 → 98;
 QuadWord 154 → 135 cold. Owed: Sudocious / Muddle / Crossword (270–360 ms, their own screens), the sharp OctoWord zoom
 (needs a scale factor through GameTrayChrome + SolvedBoardFrame clamps to stay identical), the ~100 ms teardown on close.
+BJ14 round 5 — CORRECTION: the round-4 warmup was removed. Event marks showed it built nothing (an offscreen
+UIHostingController's layoutIfNeeded without a window is ~1 ms, no view graph), so its A/B "gain" was run-to-run noise.
+Forcing the build (sizeThatFits) DOES instantiate the views, but then their onAppear fires even without a window (checked
+with a DEBUG probe) — a whole game screen's onAppear would start its timer / ad gate / presence / VS start(), and each warm
+cost a 100–260 ms frame on idle Home. Not safe, not cheap: no warmup. A real one needs views with no onAppear work (or a
+"warming" environment flag every onAppear checks) — owed. Kept: the keyboard a turn after the board (exact slot).
+Round-5 table: opens Classic 301 (first game of the launch), QuadWord 109, OctoWord 99, Sudocious 304, Muddle 323,
+Crossword 324, VS bot start 214; closes 33–109 (Classic 50, OctoWord 109); OctoWord zoom worst 51 / 33 / 17.
 BJ15. Cast-color buttons + art labels (founder 10-03; spec docs/design/brand/buttons/cast/README.md + labels.json). One shared
 primary button per platform — iOS `CastButtonStyle` (CastButton.swift; `CandyLabel` switches to art inside it), Android
 `CastButton` (ui/CastButton.kt), web `CastButton` / `CastLink` (components/ui/cast-button.tsx + app/cast-button.css). Skin =
