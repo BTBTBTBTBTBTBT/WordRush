@@ -347,9 +347,9 @@ export default function ProPage() {
                 {webRenewalDisclosure(PRO_PLANS.monthly.price, PRO_PLANS.yearly.price)}
               </p>
               <p className="m-0 mt-1 text-center text-[10px] font-extrabold">
-                <a href="/terms" style={{ color: '#7c3aed' }}>Terms of Service</a>
+                <a href="/terms" className="text-[#7c3aed] [[data-theme=dark]_&]:text-[#c4a5ff]">Terms of Service</a>
                 <span aria-hidden="true" style={{ color: 'var(--color-text-muted)' }}> · </span>
-                <a href="/privacy" style={{ color: '#7c3aed' }}>Privacy Policy</a>
+                <a href="/privacy" className="text-[#7c3aed] [[data-theme=dark]_&]:text-[#c4a5ff]">Privacy Policy</a>
               </p>
               {/* T4 (docs/FINISH_SPEC.md): the gift area — O3 with the crowned gift box on the gold card. */}
               <GiftProCard className="mt-5">

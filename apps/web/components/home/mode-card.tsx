@@ -250,10 +250,15 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
       // Still too wide at the floor (a very narrow screen): the ellipsis takes over (never wraps).
     };
     fit();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
+    // Refit once the web font is in: measured in the narrower fallback, a name that "fit" overflows
+    // (an ellipsis) when Nunito Black swaps in, and the width doesn't change so the observer stays quiet.
+    let live = true;
+    const refit = () => { if (live) { lastWidth = -1; fit(); } };
+    document.fonts?.ready.then(refit);
+    document.fonts?.addEventListener?.('loadingdone', refit);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
+    ro?.observe(el);
+    return () => { live = false; ro?.disconnect(); document.fonts?.removeEventListener?.('loadingdone', refit); };
   }, [children]);
   return (
     <div

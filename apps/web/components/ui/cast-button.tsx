@@ -113,7 +113,9 @@ export function CastLabel({ children, color, ariaHidden = false }: { children: R
       />
     );
   }
-  return <span className="cast-label-live">{children}</span>;
+  // --cast-n (the letter count) lets a long live label in a full-width button shrink to fit
+  // instead of ending in an ellipsis (app/cast-button.css).
+  return <span className="cast-label-live" style={text != null ? ({ ['--cast-n' as string]: text.length } as CSSProperties) : undefined}>{children}</span>;
 }
 
 interface CastLook {

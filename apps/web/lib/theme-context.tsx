@@ -19,6 +19,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('default');
   const [colorblindMode, setColorblindMode] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  // Don't write the defaults back before the stored values are read: under React
+  // StrictMode (dev) the write-back effects ran first and the remount then read
+  // 'default', so a saved Dark theme never applied locally.
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('wordle-duel-theme');
@@ -29,19 +33,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     const storedMotion = localStorage.getItem('wordle-duel-reduced-motion');
     if (storedMotion) setReducedMotion(storedMotion === 'true');
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
+    if (!loaded) return;
     localStorage.setItem('wordle-duel-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+  }, [theme, loaded]);
 
   useEffect(() => {
+    if (!loaded) return;
     localStorage.setItem('wordle-duel-colorblind', String(colorblindMode));
     document.documentElement.setAttribute('data-colorblind', String(colorblindMode));
-  }, [colorblindMode]);
+  }, [colorblindMode, loaded]);
 
   useEffect(() => {
+    if (!loaded) return;
     localStorage.setItem('wordle-duel-reduced-motion', String(reducedMotion));
     // Drive the global [data-reduced-motion] kill-switch in globals.css. (The
     // old --transition-duration var wasn't referenced anywhere, so the toggle
@@ -52,7 +60,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       document.documentElement.style.removeProperty('--transition-duration');
     }
-  }, [reducedMotion]);
+  }, [reducedMotion, loaded]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion }}>
