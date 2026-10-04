@@ -22,6 +22,13 @@ import WordociousCore
 // shot per process on a fresh install, waits, and screenshots.
 enum StoreDemo {
     static let active = ProcessInfo.processInfo.arguments.contains("-storeDemo")
+    /// `-storeDemoFree`: the same player as a FREE signed-in account (no Pro, no Pro frame on the
+    /// profile), so the free-tier gates, Go Pro prompts and paywalls can be shot.
+    static let free = ProcessInfo.processInfo.arguments.contains("-storeDemoFree")
+    /// `-storeAvatarKinds`: the leaderboard leaders cover every avatar kind core `resolveAvatar`
+    /// draws — #1 a custom PHOTO (a drawn test picture served for the avatars bucket URL, never a
+    /// real photo), #2 a cast pick, #3 WordWiz's built mascot, #4 a seeded default. Off for store shots.
+    static let avatarKinds = ProcessInfo.processInfo.arguments.contains("-storeAvatarKinds")
     static var shot: String? {
         let a = ProcessInfo.processInfo.arguments
         guard let i = a.firstIndex(of: "-storeShot"), i + 1 < a.count else { return nil }
@@ -85,6 +92,45 @@ enum StoreDemo {
     ]
 
     static var everyone: [Person] { [me] + people }
+
+    // MARK: Avatar kinds (-storeAvatarKinds)
+
+    static let photoPath = "/storage/v1/object/public/avatars/store-demo/lexiloop.png"
+    static func photoUrl(_ p: Person) -> String? {
+        guard avatarKinds, p.id == people[0].id else { return nil }
+        return SupabaseConfig.url.absoluteString + photoPath
+    }
+    static func castId(_ p: Person) -> String? { avatarKinds && p.id == people[1].id ? "r" : nil }
+    /// The saved builder config: a photo keeps its mascot (display = photo), a cast pick and a
+    /// seeded default have none.
+    static func config(_ p: Person) -> [String: String] {
+        guard avatarKinds else { return p.avatar }
+        if p.id == people[0].id { var c = p.avatar; c["display"] = "photo"; return c }
+        if p.id == people[1].id || p.id == people[3].id { return [:] }
+        return p.avatar
+    }
+    static func frame(_ p: Person) -> String { config(p)["frame"] ?? "none" }
+    static func json(_ v: String?) -> Any { v.map { $0 as Any } ?? NSNull() }
+
+    /// The test picture behind the demo photo URL: a drawn sunset landscape (no real person).
+    static let testPhoto: Data = {
+        let size = CGSize(width: 256, height: 256)
+        let img = UIGraphicsImageRenderer(size: size).image { ctx in
+            let cg = ctx.cgContext
+            let sky = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                 colors: [UIColor(red: 0.98, green: 0.62, blue: 0.42, alpha: 1).cgColor,
+                                          UIColor(red: 0.55, green: 0.42, blue: 0.85, alpha: 1).cgColor] as CFArray,
+                                 locations: [0, 1])!
+            cg.drawLinearGradient(sky, start: CGPoint(x: 0, y: 256), end: .zero, options: [])
+            UIColor(red: 1, green: 0.86, blue: 0.45, alpha: 1).setFill()
+            cg.fillEllipse(in: CGRect(x: 88, y: 70, width: 80, height: 80))
+            UIColor(red: 0.30, green: 0.55, blue: 0.40, alpha: 1).setFill()
+            cg.fillEllipse(in: CGRect(x: -60, y: 160, width: 260, height: 200))
+            UIColor(red: 0.22, green: 0.44, blue: 0.33, alpha: 1).setFill()
+            cg.fillEllipse(in: CGRect(x: 90, y: 180, width: 260, height: 200))
+        }
+        return img.pngData() ?? Data()
+    }()
     static func person(_ id: String) -> Person? { everyone.first { $0.id.lowercased() == id.lowercased() } }
 
     // MARK: Boot
@@ -190,6 +236,10 @@ enum StoreDemoData {
                                "created_at": StoreDemo.iso(Date(timeIntervalSinceNow: -86_400 * 300)),
                                "updated_at": StoreDemo.iso(Date()), "app_metadata": [:], "user_metadata": [:]]), [:])
         }
+        // -storeAvatarKinds: the demo photo (a drawn test picture, never a real user's photo).
+        if method == "GET", path == StoreDemo.photoPath {
+            return (200, StoreDemo.testPhoto, ["Content-Type": "image/png"])
+        }
         // Writes never leave the device: a bare success.
         let isRPC = path.contains("/rest/v1/rpc/")
         if method != "GET" && method != "HEAD" && !isRPC && !(path.hasPrefix("/api/") && method == "GET") {
@@ -244,8 +294,8 @@ enum StoreDemoData {
         let created: String = StoreDemo.iso(Date(timeIntervalSinceNow: -86_400 * 300))
         let now: String = StoreDemo.iso(Date())
         var r: [String: Any] = [:]
-        r["id"] = p.id; r["username"] = p.name; r["avatar_url"] = NSNull(); r["is_pro"] = isMe
-        r["pro_expires_at"] = StoreDemo.iso(Date(timeIntervalSinceNow: 86_400 * 200))
+        r["id"] = p.id; r["username"] = p.name; r["avatar_url"] = StoreDemo.json(StoreDemo.photoUrl(p)); r["is_pro"] = isMe && !StoreDemo.free
+        r["pro_expires_at"] = isMe && StoreDemo.free ? NSNull() : StoreDemo.iso(Date(timeIntervalSinceNow: 86_400 * 200))
         r["is_banned"] = false; r["is_admin"] = false; r["role"] = NSNull(); r["has_onboarded"] = true
         r["level"] = p.level; r["xp"] = p.level * 1450; r["total_wins"] = wins; r["total_losses"] = 64
         r["current_streak"] = p.streak; r["best_streak"] = best
@@ -255,7 +305,8 @@ enum StoreDemoData {
         r["created_at"] = created; r["pro_prompt_shown"] = true
         r["bio"] = "Daily Sweep or bust."; r["featured_achievement"] = NSNull(); r["accent_color"] = NSNull()
         r["favorite_mode"] = "DUEL"; r["avatar_emoji"] = NSNull(); r["is_private"] = false; r["notification_prefs"] = NSNull()
-        r["avatar_cast_id"] = NSNull(); r["avatar_frame"] = p.avatar["frame"] ?? "none"; r["avatar_config"] = p.avatar
+        r["avatar_cast_id"] = StoreDemo.json(StoreDemo.castId(p)); r["avatar_frame"] = StoreDemo.frame(p)
+        r["avatar_config"] = StoreDemo.config(p)
         return r
     }
 
@@ -288,9 +339,9 @@ enum StoreDemoData {
             let guesses: Int = boards == 1 ? 3 + i / 3 : boards + 4 + i / 2
             let secs: Int = 48 + i * 19 + (i % 3) * 7
             var prof: [String: Any] = [:]
-            prof["username"] = p.name; prof["avatar_url"] = NSNull(); prof["avatar_emoji"] = NSNull()
-            prof["accent_color"] = NSNull(); prof["avatar_config"] = p.avatar; prof["avatar_cast_id"] = NSNull()
-            prof["avatar_frame"] = p.avatar["frame"] ?? "none"
+            prof["username"] = p.name; prof["avatar_url"] = StoreDemo.json(StoreDemo.photoUrl(p)); prof["avatar_emoji"] = NSNull()
+            prof["accent_color"] = NSNull(); prof["avatar_config"] = StoreDemo.config(p)
+            prof["avatar_cast_id"] = StoreDemo.json(StoreDemo.castId(p)); prof["avatar_frame"] = StoreDemo.frame(p)
             var r: [String: Any] = [:]
             r["user_id"] = p.id; r["composite_score"] = Double(score); r["guess_count"] = guesses
             r["time_seconds"] = Double(secs); r["boards_solved"] = boards; r["total_boards"] = boards
@@ -387,8 +438,9 @@ enum StoreDemoData {
         let seen: Date = online ? Date() : Date(timeIntervalSinceNow: -60 * 47)
         let past: [Int] = [p.points - 140, p.points - 90]
         var r: [String: Any] = [:]
-        r["id"] = p.id; r["username"] = p.name; r["avatar_url"] = NSNull(); r["avatar_config"] = p.avatar
-        r["avatar_frame"] = p.avatar["frame"] ?? "none"; r["level"] = p.level
+        r["id"] = p.id; r["username"] = p.name; r["avatar_url"] = StoreDemo.json(StoreDemo.photoUrl(p))
+        r["avatar_config"] = StoreDemo.config(p); r["avatar_cast_id"] = StoreDemo.json(StoreDemo.castId(p))
+        r["avatar_frame"] = StoreDemo.frame(p); r["level"] = p.level
         r["since"] = StoreDemo.iso(Date(timeIntervalSinceNow: -86_400 * 120))
         r["streak"] = p.streak; r["playedToday"] = min(9, p.points / 280); r["weekPoints"] = p.points
         r["todayPoints"] = p.points / 6; r["lastWeekPoints"] = p.points - 140; r["pastWeekPoints"] = past
@@ -417,7 +469,7 @@ enum StoreDemoData {
         let p = StoreDemo.people
         func ev(_ i: Int, _ who: StoreDemo.Person, _ minsAgo: Double, _ type: String, _ extra: [String: Any]) -> [String: Any] {
             var e: [String: Any] = [:]
-            e["id"] = "demo-\(i)"; e["userId"] = who.id; e["username"] = who.name; e["avatar_url"] = NSNull()
+            e["id"] = "demo-\(i)"; e["userId"] = who.id; e["username"] = who.name; e["avatar_url"] = StoreDemo.json(StoreDemo.photoUrl(who))
             e["avatar_emoji"] = NSNull(); e["me"] = who.id == StoreDemo.meId; e["day"] = StoreDemo.today
             e["at"] = StoreDemo.iso(Date(timeIntervalSinceNow: -60 * minsAgo)); e["type"] = type
             extra.forEach { e[$0] = $1 }
@@ -505,8 +557,9 @@ enum StoreDemoDriver {
     /// Every cast member's look in the avatar directory (screens that draw a player by name).
     private static func recordCast() {
         for p in StoreDemo.everyone {
-            AvatarDirectory.shared.record(userId: p.id, username: p.name, url: nil, config: AvatarConfigRaw(fields: p.avatar),
-                                          castId: nil, frame: p.avatar["frame"], accent: nil)
+            AvatarDirectory.shared.record(userId: p.id, username: p.name, url: StoreDemo.photoUrl(p),
+                                          config: AvatarConfigRaw(fields: StoreDemo.config(p)),
+                                          castId: StoreDemo.castId(p), frame: StoreDemo.frame(p), accent: nil)
         }
     }
 
@@ -529,7 +582,7 @@ private struct StoreDemoMascotPage: View {
         ScrollView {
             VStack(spacing: 12) {
                 HeadingArtView(.mascot, height: 44, maxWidth: 340)
-                MascotBuilderView(initial: "W", config: AvatarCatalog.validate(raw: AvatarConfigRaw(fields: StoreDemo.me.avatar)), level: StoreDemo.me.level, isPro: true)
+                MascotBuilderView(initial: "W", config: AvatarCatalog.validate(raw: AvatarConfigRaw(fields: StoreDemo.me.avatar)), level: StoreDemo.me.level, isPro: !StoreDemo.free)
             }
             .padding(16)
         }
