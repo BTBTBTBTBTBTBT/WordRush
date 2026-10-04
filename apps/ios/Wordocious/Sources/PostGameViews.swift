@@ -679,6 +679,9 @@ struct NextDailyCTA: View {
         .task { await completions.load() }
     }
 
+    /// Share rides the Leaderboard row once the sweep is done (no Next daily).
+    private var ridesWithShare: Bool { share != nil && nextMode == nil }
+
     /// §214 (Lindsay): straight from the finish line to the scoreboard — a
     /// capsule in the mode's accent that lands on this mode's daily board.
     @ViewBuilder private var viewLeaderboard: some View {
@@ -695,10 +698,12 @@ struct NextDailyCTA: View {
                                                     userInfo: [HomeNav.requestedAtKey: at])
                 }
             } label: {
-                // §B6 / §A8: the purple candy button with the 3D trophy.
-                CandyLabel(title: share != nil && nextMode == nil ? "Leaderboard" : "\(mode.title) Leaderboard") { Icon3D(.trophy, size: 26) }
+                // §B6 / §A8: the purple candy button with the 3D trophy. BJ18: beside Share (the
+                // sweep is done) it is the trophy on the short RANKS label at Share's medium cap
+                // height, so the two keep ONE row at phone width (the words stay the a11y label).
+                CandyLabel(title: ridesWithShare ? "Ranks" : "\(mode.title) Leaderboard") { Icon3D(.trophy, size: 26) }
             }
-            .buttonStyle(CastButtonStyle(size: compact ? .medium : .large))
+            .buttonStyle(CastButtonStyle(size: compact || ridesWithShare ? .medium : .large))
             .accessibilityLabel("View \(mode.title) Leaderboard")
         }
     }

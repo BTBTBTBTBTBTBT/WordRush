@@ -84,7 +84,7 @@ for attempt in 1 2 3; do
 done
 sleep 1
 kill "$AGPID" 2>/dev/null || true
-printf '\nAttributeGraph cycles logged during the run: %s\n' "$(grep -c 'cycle detected' "$AGLOG" || true)" >> "build/perf/perf-tour-$LABEL.md"
+printf '\nAttributeGraph cycles logged during the run: %s\n' "$(grep -v '^Filtering' "$AGLOG" | grep -c 'cycle detected' || true)" >> "build/perf/perf-tour-$LABEL.md"
 cat "build/perf/perf-tour-$LABEL.md"
 echo
 echo "report: apps/ios/build/perf/perf-tour-$LABEL.md"

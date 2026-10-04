@@ -435,7 +435,7 @@ struct CastShowcaseHost: View {
                         }
                         CastButtonRow {
                             FinishedShareCTA(nextGame: "Classic", onShare: { _ in })
-                            Button {} label: { CandyLabel(title: "Leaderboard") }
+                            Button {} label: { CandyLabel(title: "Ranks") { Icon3D(.trophy, size: 26) } }
                                 .buttonStyle(CastButtonStyle(color: .purple, size: .medium))
                         }
                         HStack(alignment: .top, spacing: 10) {
