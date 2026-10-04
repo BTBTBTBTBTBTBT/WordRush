@@ -379,7 +379,7 @@ struct UnlimitedKeepPlayingCard: View {
                         .font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xA2560C))
                     Text("Unlimited \(game)").font(Brand.font(16, .black)).foregroundStyle(FinishInk.heading)
                         .lineLimit(1).minimumScaleFactor(0.7)
-                    Text(upsell ? "Fresh puzzles anytime with Pro" : "Fresh puzzles, no waiting")
+                    Text(upsell ? "Endless puzzles with Pro" : "Fresh puzzles, no waiting")
                         .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                         .lineLimit(1).minimumScaleFactor(0.8)
                 }

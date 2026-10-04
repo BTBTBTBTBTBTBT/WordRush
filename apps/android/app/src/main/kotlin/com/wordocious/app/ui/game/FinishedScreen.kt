@@ -688,7 +688,7 @@ fun UnlimitedCard(
                     color = if (dark) WTheme.text else FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    if (upsell) "Fresh puzzles anytime with Pro" else "Fresh puzzles, no waiting", fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                    if (upsell) "Endless puzzles with Pro" else "Fresh puzzles, no waiting", fontSize = 11.sp, fontWeight = FontWeight.Bold,
                     color = if (dark) WTheme.textMuted else FinishInk.muted, maxLines = 1,
                 )
             }

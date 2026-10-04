@@ -249,7 +249,7 @@ export function UnlimitedCard({ currentMode, onNewPuzzle, className = '', compac
             {newPuzzle ? 'Keep going' : 'Keep playing'}
           </div>
           <div className="text-[14px] font-black leading-tight truncate" style={{ color: 'var(--color-text)' }}>Unlimited {mode.title}</div>
-          <div className="text-[11px] font-bold leading-tight" style={{ color: 'var(--color-text-muted)' }}>{upsell ? 'Fresh puzzles anytime with Pro' : 'Fresh puzzles, no waiting'}</div>
+          <div className="text-[11px] font-bold leading-tight" style={{ color: 'var(--color-text-muted)' }}>{upsell ? 'Endless puzzles with Pro' : 'Fresh puzzles, no waiting'}</div>
           {otherGames && <div className="mt-0.5">{otherGames}</div>}
         </div>
         {action('md')}
