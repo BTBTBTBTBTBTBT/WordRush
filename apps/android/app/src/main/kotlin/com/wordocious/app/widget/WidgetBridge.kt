@@ -132,12 +132,23 @@ object WidgetBridge {
                 puzzlesSweepStreak = rows?.puzzlesSweep, puzzlesFlawlessStreak = rows?.puzzlesFlawless,
                 rank = cachedRank(),
             )
+            val encoded = json.encodeToString(Snapshot.serializer(), snap)
+            // FINISH_SPEC BJ3 (iOS parity): Home refetches on every return, and an
+            // unchanged snapshot used to rewrite the prefs and re-render every placed
+            // widget (RemoteViews + bitmap work) each time. Same JSON → nothing to do.
+            synchronized(this) {
+                if (encoded == lastWritten) return@runCatching
+                lastWritten = encoded
+            }
             ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putString(SNAPSHOT_KEY, json.encodeToString(Snapshot.serializer(), snap))
+                .putString(SNAPSHOT_KEY, encoded)
                 .apply()
             push(ctx)
         }
     }
+
+    /** BJ3: the last snapshot JSON handed to the widget this process. */
+    private var lastWritten: String? = null
 
     /**
      * Today's Daily Sweep rank from the leaderboard's own disk cache (no network: the
