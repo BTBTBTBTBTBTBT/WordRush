@@ -106,17 +106,12 @@ export function Landing() {
   const { enterGuest } = useAuth();
   if (showLogin) return <LoginScreen />;
 
-  const wordmarkStyle = {
-    backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-    WebkitBackgroundClip: 'text' as const,
-    WebkitTextFillColor: 'transparent' as const,
-  };
-
   return (
     <div className="min-h-screen overflow-y-auto" style={{ background: softBackground('#7c3aed', 0.06) }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-5 py-4 max-w-3xl mx-auto">
-        <span className="text-2xl font-black tracking-tight" style={wordmarkStyle}>WORDOCIOUS</span>
+      {/* Founder 10-03 (brand once): the cast below spells WORDOCIOUS — no header wordmark, no
+          gradient heading repeating it (iOS: the cast header, then the WELCOME card). */}
+      <header className="flex items-center justify-end px-5 py-4 max-w-3xl mx-auto">
         <CastButton color="purple" size="sm" onClick={() => setShowLogin(true)}>
           Sign In
         </CastButton>
@@ -137,7 +132,7 @@ export function Landing() {
           maxWidth={headlineMaxWidth(...ART_SIZE['art-titlecast-welcome'])}
           className="mb-3"
         />
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3" style={wordmarkStyle}>WORDOCIOUS</h1>
+        <h1 className="sr-only">Wordocious</h1>
         <p className="text-base font-bold mb-2" style={{ color: 'var(--color-text)' }}>
           Daily word games. Eight on the home screen, ten more behind one tile.
         </p>

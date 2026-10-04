@@ -84,7 +84,7 @@ export function modeCardState(args: {
  * card hugs it: 66 tall. The VS Battle card reuses the surface, trim and padding (§21.5).
  */
 export const MODE_CARD = {
-  radius: 16, band: TRIM.band, icon: 40, name: 17, nameMin: 11, desc: 13,
+  radius: 16, band: TRIM.band, icon: 40, name: 17, nameMin: 11, nameMinLast: 10.5, desc: 13,
   titleLine: 21, descGap: 4, descLine: 16, badge: 22, padX: 10, padY: 9, padTop: 7, height: 66,
 } as const;
 
@@ -243,10 +243,18 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
       lastWidth = width;
       let size: number = MODE_CARD.name;
       el.style.fontSize = `${size}px`;
+      el.style.letterSpacing = '';
       while (size > MODE_CARD.nameMin && el.scrollWidth > width + 0.5) {
         size -= 0.5;
         el.style.fontSize = `${size}px`;
       }
+      // Founder 10-03 (ProperNoundle 1 px over its 80 px slot at the floor): a touch tighter
+      // tracking, then a 10.5 px last step, before an ellipsis may ever show.
+      for (const ls of ['-0.01em', '-0.02em']) {
+        if (el.scrollWidth <= width + 0.5) break;
+        el.style.letterSpacing = ls;
+      }
+      if (el.scrollWidth > width + 0.5) el.style.fontSize = `${MODE_CARD.nameMinLast}px`;
       // Still too wide at the floor (a very narrow screen): the ellipsis takes over (never wraps).
     };
     fit();
