@@ -118,13 +118,17 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     // placeholder + Sign in (A8: the large purple candy button) instead of the live board.
     if (!isAuthenticated) {
         // FINISH_SPEC BI23: O2 hosts the signed-out pitch with a dimmed mini podium.
-        GuestPitch(
-            hosts = listOf(Mascots.leaderboard), title = "Climb the boards",
-            subtitle = "Sign in to see today's rankings and earn medals.",
-            colors = GuestPitchContent.leaderboardColors, preview = GuestPreview.Podium,
-            onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,
-            modifier = Modifier.pageBackground(PageTint.LEADERBOARD),
-        )
+        // BJ16 quick win: the LEADERBOARD page title above the pitch.
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().pageBackground(PageTint.LEADERBOARD)) {
+            PageHeadline(TitleArt.LEADERBOARD, Modifier.padding(top = 4.dp), bleed = 16.dp)
+            GuestPitch(
+                hosts = listOf(Mascots.leaderboard), title = "Climb the boards",
+                subtitle = "Sign in to see today's rankings and earn medals.",
+                colors = GuestPitchContent.leaderboardColors, preview = GuestPreview.Podium,
+                onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,
+                modifier = Modifier.weight(1f),
+            )
+        }
         return
     }
 

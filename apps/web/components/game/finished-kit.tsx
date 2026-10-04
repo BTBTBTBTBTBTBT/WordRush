@@ -1,6 +1,6 @@
 'use client';
 
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { HeadingArt } from '@/components/ui/heading-art';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -68,7 +68,8 @@ export function ResultStrip({ won, guesses, guessLabel = 'guesses', time, points
     {/* One-screen audit: on short phones (< 740 tall, the SE) the headline yields its ~29 px to the board. */}
     {headline !== null && (
       <div className="w-full [@media(max-height:739.98px)]:hidden">
-        <LiveHeadline text={headline ?? (won ? 'SOLVED!' : 'NOT TODAY')} palette={won ? 'celebrate' : 'menu'} size={20} level={2} />
+        {/* BJ16: SOLVED! / NOT TODAY lettering by result (the chips carry the counts; the text stays the label). */}
+        <HeadingArt slug={won ? 'solved' : 'nottoday'} label={headline ?? (won ? 'Solved!' : 'Not today')} height={36} />
       </div>
     )}
     <div className="w-full flex items-center justify-center gap-1.5 flex-nowrap overflow-x-auto" style={{ scrollbarWidth: 'none' }}>

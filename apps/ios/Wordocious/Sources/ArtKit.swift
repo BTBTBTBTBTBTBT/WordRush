@@ -811,3 +811,270 @@ enum ShareArt {
         }
     }
 }
+
+// MARK: - FINISH_SPEC BJ16 heading lettering (no plain-text menu headings)
+
+/// `art-titlecast-<slug>`: the 59 cast-color heading titles (docs/design/brand/TITLE-INVENTORY.md) drawn
+/// in place of every sheet / popup / page heading. Drawn at its display size through `ArtThumbs` (never
+/// the 1080 px source); the popup / sheet ones are pre-decoded at launch (`HeadingArt.prewarm`, AppWarmup)
+/// so a title never decodes on the frame that presents it. The text stays the VoiceOver label.
+enum HeadingArt: String, CaseIterable {
+    case solved
+    case nottoday
+    case share
+    case sweep
+    case overview
+    case shields
+    case savestreak
+    case streaksaved
+    case playedtoday
+    case vsused
+    case achievement
+    case letsplay
+    case invite
+    case editprofile
+    case mascot
+    case bots
+    case challenge
+    case findingrival
+    case matchfound
+    case welcomeback
+    case jointhefun
+    case resetpassword
+    case makeprofile
+    case username
+    case yourein
+    case tourDaily = "tour-daily"
+    case tourScore = "tour-score"
+    case tourStreak = "tour-streak"
+    case tourTogether = "tour-together"
+    case nudge
+    case invitesent
+    case newfriends
+    case giftpro
+    case prounlocked
+    case invited
+    case yourepro
+    case welcomepro
+    case freeweek
+    case properk
+    case newpassword
+    case gauntletcleared
+    case laddercleared
+    case alreadyplayed
+    case levelup
+    case archetypes
+    case h2h
+    case trophycase
+    case podium
+    case streakcal
+    case support
+    case about
+    case deleteaccount
+    case profile
+    case privatematch
+    case oops
+    case notfound
+    case rotate
+    case dailychallenge
+    case onastreak
+
+    var asset: String { "art-titlecast-\(rawValue)" }
+
+    /// The words the art draws (its accessibility label and the text fallback).
+    var label: String {
+        switch self {
+        case .solved: return "Solved!"
+        case .nottoday: return "Not Today"
+        case .share: return "Share"
+        case .sweep: return "Daily Sweep"
+        case .overview: return "Overview"
+        case .shields: return "Shields"
+        case .savestreak: return "Save Your Streak!"
+        case .streaksaved: return "Streak Saved!"
+        case .playedtoday: return "Played Today"
+        case .vsused: return "Daily VS Used"
+        case .achievement: return "Achievement Unlocked!"
+        case .letsplay: return "Let's Play!"
+        case .invite: return "Invite a Friend"
+        case .editprofile: return "Edit Profile"
+        case .mascot: return "Make Your Mascot"
+        case .bots: return "Bots"
+        case .challenge: return "Challenge"
+        case .findingrival: return "Finding a Rival"
+        case .matchfound: return "Match Found!"
+        case .welcomeback: return "Welcome Back!"
+        case .jointhefun: return "Join the Fun!"
+        case .resetpassword: return "Reset Password"
+        case .makeprofile: return "Make Your Profile"
+        case .username: return "Pick a Username"
+        case .yourein: return "You're In!"
+        case .tourDaily: return "Daily Games"
+        case .tourScore: return "Score Big"
+        case .tourStreak: return "Keep Your Streak"
+        case .tourTogether: return "Play Together"
+        case .nudge: return "Nudge!"
+        case .invitesent: return "Invite Sent!"
+        case .newfriends: return "New Friends!"
+        case .giftpro: return "Gift a Week of Pro"
+        case .prounlocked: return "Pro Unlocked!"
+        case .invited: return "You're Invited!"
+        case .yourepro: return "You're Pro"
+        case .welcomepro: return "Welcome to Pro!"
+        case .freeweek: return "Free Week of Pro!"
+        case .properk: return "Pro Perk"
+        case .newpassword: return "New Password"
+        case .gauntletcleared: return "Gauntlet Cleared!"
+        case .laddercleared: return "Ladder Cleared!"
+        case .alreadyplayed: return "Already Played"
+        case .levelup: return "Level Up!"
+        case .archetypes: return "Archetypes"
+        case .h2h: return "Head to Head"
+        case .trophycase: return "Trophy Case"
+        case .podium: return "Podium"
+        case .streakcal: return "Streak Calendar"
+        case .support: return "Support"
+        case .about: return "About"
+        case .deleteaccount: return "Delete Account"
+        case .profile: return "Profile"
+        case .privatematch: return "Private Match"
+        case .oops: return "Oops!"
+        case .notfound: return "Not Found"
+        case .rotate: return "Rotate Your Phone"
+        case .dailychallenge: return "Daily Challenge"
+        case .onastreak: return "On a Streak!"
+        }
+    }
+
+    /// Width ÷ height of the shipped image (web lib/art.ts ART_SIZE).
+    var aspect: CGFloat {
+        switch self {
+        case .solved: return 820.0 / 216.0
+        case .nottoday: return 1020.0 / 198.0
+        case .share: return 661.0 / 190.0
+        case .sweep: return 1029.0 / 172.0
+        case .overview: return 975.0 / 204.0
+        case .shields: return 839.0 / 204.0
+        case .savestreak: return 1080.0 / 133.0
+        case .streaksaved: return 1080.0 / 164.0
+        case .playedtoday: return 916.0 / 161.0
+        case .vsused: return 932.0 / 162.0
+        case .achievement: return 947.0 / 262.0
+        case .letsplay: return 785.0 / 136.0
+        case .invite: return 1080.0 / 139.0
+        case .editprofile: return 907.0 / 160.0
+        case .mascot: return 1080.0 / 106.0
+        case .bots: return 951.0 / 389.0
+        case .challenge: return 901.0 / 191.0
+        case .findingrival: return 1080.0 / 167.0
+        case .matchfound: return 1080.0 / 182.0
+        case .welcomeback: return 1080.0 / 170.0
+        case .jointhefun: return 1080.0 / 201.0
+        case .resetpassword: return 1080.0 / 159.0
+        case .makeprofile: return 1080.0 / 134.0
+        case .username: return 1080.0 / 137.0
+        case .yourein: return 807.0 / 191.0
+        case .tourDaily: return 915.0 / 162.0
+        case .tourScore: return 742.0 / 163.0
+        case .tourStreak: return 1080.0 / 142.0
+        case .tourTogether: return 1080.0 / 163.0
+        case .nudge: return 760.0 / 197.0
+        case .invitesent: return 1080.0 / 182.0
+        case .newfriends: return 1080.0 / 168.0
+        case .giftpro: return 1080.0 / 120.0
+        case .prounlocked: return 958.0 / 165.0
+        case .invited: return 990.0 / 160.0
+        case .yourepro: return 774.0 / 149.0
+        case .welcomepro: return 1066.0 / 148.0
+        case .freeweek: return 1080.0 / 125.0
+        case .properk: return 886.0 / 187.0
+        case .newpassword: return 1080.0 / 149.0
+        case .gauntletcleared: return 1080.0 / 117.0
+        case .laddercleared: return 1080.0 / 116.0
+        case .alreadyplayed: return 1080.0 / 117.0
+        case .levelup: return 1080.0 / 293.0
+        case .archetypes: return 1052.0 / 164.0
+        case .h2h: return 953.0 / 204.0
+        case .trophycase: return 1001.0 / 211.0
+        case .podium: return 654.0 / 188.0
+        case .streakcal: return 1017.0 / 163.0
+        case .support: return 877.0 / 204.0
+        case .about: return 683.0 / 208.0
+        case .deleteaccount: return 910.0 / 156.0
+        case .profile: return 758.0 / 190.0
+        case .privatematch: return 1080.0 / 130.0
+        case .oops: return 599.0 / 167.0
+        case .notfound: return 936.0 / 158.0
+        case .rotate: return 1080.0 / 96.0
+        case .dailychallenge: return 1080.0 / 128.0
+        case .onastreak: return 1080.0 / 184.0
+        }
+    }
+
+    /// Sheet / popup heading height (BJ16: 44–56 pt). Two-line art (aspect < 3.2) draws taller so its
+    /// letters match a one-line title's.
+    static let popupHeight: CGFloat = 48
+    static let maxWidth: CGFloat = 300
+
+    /// The box the art fills at `height` (≤ `maxWidth` wide), aspect kept.
+    func size(height: CGFloat, maxWidth: CGFloat) -> CGSize {
+        let h = aspect < 3.2 ? height * 1.3 : height
+        let w = min(maxWidth, h * aspect)
+        return CGSize(width: w, height: w / aspect)
+    }
+
+    /// The titles that present on a tap (popups, sheets, result strips): decoded at launch, off main.
+    static let warm: [HeadingArt] = [.solved, .nottoday, .share, .sweep, .shields, .savestreak, .streaksaved, .playedtoday, .vsused, .achievement, .letsplay, .invite, .editprofile, .mascot, .findingrival, .matchfound, .nudge, .invitesent, .newfriends, .giftpro, .prounlocked, .invited, .welcomepro, .freeweek, .properk, .gauntletcleared, .laddercleared, .alreadyplayed, .levelup, .oops]
+
+    /// BJ16: pre-decode the tap-presented titles at their display size on a utility thread.
+    static func prewarm() {
+        let items = warm.map { art -> (String, CGFloat) in
+            let s = art.size(height: popupHeight, maxWidth: maxWidth)
+            return (art.asset, max(s.width, s.height))
+        }
+        DispatchQueue.global(qos: .utility).async {
+            for (name, _) in items { _ = ArtAsset.exists(name) }
+        }
+        ArtThumbs.prewarm(items)
+    }
+}
+
+/// BJ16: a heading drawn as its cast-color lettering, centered, `height` tall (≤ `maxWidth` wide).
+/// Falls back to bold caps text if the image set is missing.
+struct HeadingArtView: View {
+    let art: HeadingArt
+    var height: CGFloat = HeadingArt.popupHeight
+    var maxWidth: CGFloat = HeadingArt.maxWidth
+    var label: String? = nil
+    var motion = true
+    var alignment: Alignment = .center
+
+    init(_ art: HeadingArt, height: CGFloat = HeadingArt.popupHeight, maxWidth: CGFloat = HeadingArt.maxWidth,
+         label: String? = nil, motion: Bool = true, alignment: Alignment = .center) {
+        self.alignment = alignment
+        self.art = art
+        self.height = height
+        self.maxWidth = maxWidth
+        self.label = label
+        self.motion = motion
+    }
+
+    var body: some View {
+        let box = art.size(height: height, maxWidth: maxWidth)
+        Group {
+            if ArtAsset.exists(art.asset) {
+                let img = ArtThumbs.image(art.asset, points: max(box.width, box.height))
+                    .resizable().interpolation(.high).scaledToFit()
+                    .frame(maxWidth: box.width, maxHeight: box.height)
+                if motion { img.titleArtMotion(float: false) } else { img }
+            } else {
+                Text(art.label.uppercased()).font(Brand.font(18, .black)).tracking(0.4)
+                    .foregroundStyle(FinishInk.heading).multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: alignment)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label ?? art.label)
+        .accessibilityAddTraits(.isHeader)
+    }
+}

@@ -10,6 +10,7 @@ import { alphaHex } from '@/lib/soft-surface';
 import { BotFigure, VS_ACCENT, VsCard, VsModeTile, vsCard } from './vs-ui';
 import { CastLoader } from '@/components/ui/cast-loader';
 
+import { HeadingArt } from '@/components/ui/heading-art';
 // Live search (VS overhaul §6) — never a dead end. A ring timer counts up
 // while we look for a person; a bot steps in at 0:15 unless the player taps
 // KEEP WAITING (PLAY NOW stays). If a person joins first, they get the person.
@@ -113,7 +114,8 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
 
       <div className="space-y-1">
         <div className="text-[11px] font-black" style={{ color: VS.ink, letterSpacing: 1.2 }}>SEARCHING</div>
-        <h1 className="text-[22px] font-black" style={{ color: VS.deep }}>LOOKING FOR A RIVAL</h1>
+        {/* BJ16: the FINDING A RIVAL lettering, not plain text. */}
+        <HeadingArt slug="findingrival" as="h1" label="Looking for a rival" height={40} maxWidth={320} />
         <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>{waitingLine}</p>
       </div>
 

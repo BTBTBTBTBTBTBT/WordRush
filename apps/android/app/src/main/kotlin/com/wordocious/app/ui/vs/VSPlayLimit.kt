@@ -98,7 +98,9 @@ fun VsLimitWindow(
         ) {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 VsCastPose(pose.first, pose.second, 112.dp)
-                Text(
+                // BJ16: the DAILY VS USED lettering, not plain text.
+                if (title == "DAILY VS USED") com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.VSUSED)
+                else Text(
                     title, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF78350F),
                     modifier = Modifier.semantics { heading() },
                 )

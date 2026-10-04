@@ -108,6 +108,8 @@ struct MenuScaffold<Content: View>: View {
     var host: MascotID? = nil
     /// ART_SPEC §2: the whole-cast title art in place of the text title + host.
     var art: ArtTitleName? = nil
+    /// FINISH_SPEC BJ16: a heading lettering (art-titlecast-<slug>) in place of the text title.
+    var heading: HeadingArt? = nil
     var onBack: (() -> Void)? = nil
     /// Close action when the scaffold is NOT hosted in a presentation (the More Games
     /// morph panel); nil → the environment dismiss.
@@ -117,11 +119,12 @@ struct MenuScaffold<Content: View>: View {
     @State private var helpOpen = false
     let content: () -> Content
 
-    init(_ title: String, host: MascotID? = nil, art: ArtTitleName? = nil, onBack: (() -> Void)? = nil,
+    init(_ title: String, host: MascotID? = nil, art: ArtTitleName? = nil, heading: HeadingArt? = nil, onBack: (() -> Void)? = nil,
          onClose: (() -> Void)? = nil, help: MenuHelp = .none, @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.host = host
         self.art = art
+        self.heading = heading
         self.onBack = onBack
         self.onClose = onClose
         self.help = help
@@ -141,7 +144,10 @@ struct MenuScaffold<Content: View>: View {
                 }
             }
             .padding(.horizontal, 6).padding(.top, 6)
-            if let art, ArtAsset.exists(art.assetName) || art != .menu {
+            if let heading {
+                HeadingArtView(heading, height: InfoPageStyle.titleHeight, label: title)
+                    .padding(.horizontal, 16).padding(.bottom, 6)
+            } else if let art, ArtAsset.exists(art.assetName) || art != .menu {
                 PageHeadline(art, bleed: 0, maxHeight: InfoPageStyle.titleHeight)
                     .padding(.bottom, 6)
             } else if art == .menu {

@@ -392,6 +392,8 @@ export default function StatsPage() {
       <PageBackground tint="stats" className="min-h-screen flex flex-col pb-24">
         <AppHeader />
         <main className="flex flex-1 flex-col max-w-md mx-auto w-full">
+          {/* BJ16 quick win: the STATS page title above the pitch. */}
+          <PageHeadline name="art-titlecast-stats" label="Stats" className="pt-1" />
           <GuestPitch
             hosts={[PAGE_HOSTS.stats]}
             title="Your stats live here"

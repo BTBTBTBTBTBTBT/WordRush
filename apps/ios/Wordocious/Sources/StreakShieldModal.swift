@@ -98,9 +98,7 @@ struct StreakShieldModal: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(streak) day streak")
-                Text("DON'T LOSE YOUR STREAK!").font(Brand.font(18, .black)).tracking(0.4)
-                    .foregroundStyle(FinishInk.heading)
-                    .multilineTextAlignment(.center)
+                HeadingArtView(.savestreak)   // BJ16: lettering, not plain text
                 Text("Your \(streak)-day streak ends if you don't play today.")
                     .font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
@@ -170,7 +168,7 @@ struct StreakShieldModal: View {
             .background(Self.header)
             .clipped()
             VStack(spacing: 8) {
-                Text("STREAK SAVED!").font(Brand.font(22, .black)).tracking(0.4).foregroundStyle(FinishInk.heading)
+                HeadingArtView(.streaksaved, height: 52)   // BJ16
                 HStack(spacing: 8) {
                     Icon3D(.flame, size: 26)
                     Text("\(streak)").softNumber(30)

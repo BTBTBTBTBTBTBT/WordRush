@@ -195,8 +195,10 @@ struct FriendsQuickPlaySheet: View {
         return HStack(spacing: 12) {
             FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 48, online: online, ring: false)
             VStack(alignment: .leading, spacing: 2) {
-                Text("PLAY WITH @\(f.username.uppercased())").font(Brand.font(17, .black)).tracking(0.3)
-                    .foregroundStyle(FriendsInk.bannerHead).lineLimit(1).minimumScaleFactor(0.7)
+                // BJ16: the LET'S PLAY! lettering; the friend's @name rides under it.
+                HeadingArtView(.letsplay, height: 28, maxWidth: 170, label: "Play with \(f.username)", alignment: .leading)
+                Text("@\(f.username)").font(Brand.font(14, .black)).foregroundStyle(FriendsInk.bannerHead)
+                    .lineLimit(1).minimumScaleFactor(0.7).accessibilityHidden(true)
                 if let p = f.presenceLine() {
                     Text(p).font(Brand.font(12, .heavy)).foregroundStyle(online ? FriendsKit.green : FriendsInk.muted).lineLimit(1)
                 }

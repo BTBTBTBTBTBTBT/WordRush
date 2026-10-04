@@ -89,7 +89,7 @@ fun VsBotsPage(
         AuthService.userId?.let { best = MatchStatsService.ghostBestRun(it, playMode.name) }
     }
     Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
-        VsNavBar("BOTS", onBack = onBack) { VsModeChip(playMode) }
+        VsNavBar("BOTS", onBack = onBack, heading = com.wordocious.app.ui.Heading.BOTS) { VsModeChip(playMode) }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -124,7 +124,7 @@ fun VsBotsPage(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                                 LadderTrophy(26.dp)
-                                Text("LADDER CLEARED!", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color(0xFF78350F), modifier = Modifier.semantics { heading() })
+                                com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.LADDERCLEARED, height = 30.dp, maxWidth = 260.dp)   // BJ16
                             }
                             Text("You beat all ten bots. Webster’s still up for a rematch any time.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinishInk.muted)
                         }

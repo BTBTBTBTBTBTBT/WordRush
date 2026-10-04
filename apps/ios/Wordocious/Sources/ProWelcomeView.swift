@@ -344,10 +344,10 @@ struct ProWelcomeView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
                     crownStage
-                    OutlinedText(text: headline, size: 30, fill: Color(hex: 0xFFD166), width: 2)
-                        .minimumScaleFactor(0.5)
+                    // BJ16: WELCOME TO PRO! / FREE WEEK OF PRO! lettering, not outlined text.
+                    HeadingArtView(presentation.kind == .gift ? .freeweek : .welcomepro, height: 52, maxWidth: 340,
+                                   label: headline.capitalized)
                         .padding(.horizontal, 8)
-                        .accessibilityAddTraits(.isHeader)
                     Text(thanks)
                         .font(Brand.font(15, .bold)).foregroundStyle(FinishInk.heading)
                         .multilineTextAlignment(.center)

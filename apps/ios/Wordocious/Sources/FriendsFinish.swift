@@ -266,8 +266,7 @@ struct FriendsInviteSentCard: View {
     var body: some View {
         VStack(spacing: 10) {
             FriendsSceneArt(asset: "art-scene-invite-sent", height: 120)
-            Text("INVITE SENT!").softNumber(26, color: FinishInk.softNumber).tracking(0.6)
-                .accessibilityAddTraits(.isHeader)
+            HeadingArtView(.invitesent)   // BJ16
             if let name { FriendsGlossyPill(text: "@\(name)") }
             if let line {
                 Text(line).font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
@@ -304,7 +303,7 @@ struct FriendsNewFriendsCard: View {
             FriendsSceneArt(asset: "art-scene-friends-match", height: 150)
                 .frame(maxWidth: .infinity)
                 .overlay { FriendsHeartBurst() }
-            Text("NEW FRIENDS!").softNumber(26, color: FinishInk.softNumber).tracking(0.6)
+            HeadingArtView(.newfriends)   // BJ16
                 .accessibilityAddTraits(.isHeader)
             HStack(spacing: 10) {
                 if let me {

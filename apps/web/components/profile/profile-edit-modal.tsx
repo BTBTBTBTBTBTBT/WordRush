@@ -31,6 +31,7 @@ import { GameSquare } from '@/components/ui/game-tile';
 import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { ACCENT_COLORS, resolveAccent } from '@/lib/profile-personalization';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 interface Props {
   open: boolean;
@@ -224,7 +225,8 @@ export function ProfileEditModal({ open, onClose }: Props) {
           <div className="flex items-center gap-2 mb-3 pr-9">
             {/* A7: O2, the star, strutting beside the title (a secondary spot). */}
             <PoseArt pose="art-pose-o2-strut" size={44} />
-            <h2 className="text-lg font-black uppercase text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>{view === 'mascot' ? 'Make your mascot' : 'Edit Profile'}</h2>
+            {/* BJ16: the view's heading lettering, not plain text. */}
+            <HeadingArt key={view} slug={view === 'mascot' ? 'mascot' : 'editprofile'} as="h2" height={36} maxWidth={230} align="left" />
           </div>
 
           {view === 'mascot' && draft ? (

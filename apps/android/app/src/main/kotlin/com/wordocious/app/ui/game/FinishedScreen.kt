@@ -305,10 +305,10 @@ fun ResultStrip(
     // the board instead — the chips already carry the result.
     val roomy = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp >= STRIP_HEADLINE_MIN_SCREEN_DP
     if (headline != null && roomy) {
-        com.wordocious.app.ui.LiveHeadline(
-            headline,
-            if (won) com.wordocious.app.ui.HeadlinePalette.CELEBRATION else com.wordocious.app.ui.HeadlinePalette.STATS,
-            Modifier.fillMaxWidth(), maxSize = 20.sp, minSize = 13.sp, maxLines = 1,
+        // BJ16: SOLVED! / NOT TODAY lettering by result (the chips carry the counts).
+        com.wordocious.app.ui.HeadingArt(
+            if (won) com.wordocious.app.ui.Heading.SOLVED else com.wordocious.app.ui.Heading.NOTTODAY,
+            height = 36.dp, contentDescription = headline,
         )
     }
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

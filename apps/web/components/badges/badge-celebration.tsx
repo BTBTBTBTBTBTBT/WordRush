@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { HeadingArt } from '@/components/ui/heading-art';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
 import { ART_SIZE, artSrc, badgeSrc, poseArt } from '@/lib/art';
 import { ACHIEVEMENTS } from '@/lib/achievement-service';
@@ -133,7 +133,7 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
               <div className="badge-lettering" style={{ fontSize: 30 }}>{headline}</div>
             </div>
           ) : (
-            <LiveHeadline text="Achievement unlocked!" palette="celebrate" size={24} level={2} className="mt-1" />
+            <HeadingArt slug="achievement" height={44} className="mt-1" />
           )}
 
           <h2 className="m-0 mt-2 soft-num soft-num-auto leading-tight" style={{ fontSize: 26 }}>{title}</h2>

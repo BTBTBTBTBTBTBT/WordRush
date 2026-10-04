@@ -199,11 +199,9 @@ private fun GauntletHeroCard(
                 }
             }
         }
-        Text(
-            if (won) "GAUNTLET CLEARED!" else "SO CLOSE!",
-            style = softNumberStyle(if (won) 28.sp else 30.sp), textAlign = TextAlign.Center, letterSpacing = 0.5.sp,
-            modifier = Modifier.fillMaxWidth().semantics { heading() },
-        )
+        // BJ16: GAUNTLET CLEARED! / SO CLOSE! as lettering art.
+        if (won) com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.GAUNTLETCLEARED, height = 40.dp, maxWidth = 340.dp)
+        else com.wordocious.app.ui.MomentTitle(com.wordocious.app.ui.MomentArt.SO_CLOSE, maxHeight = 60.dp)
         StarRow(GauntletLook.starRow(total, cleared), cleared, total)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FinishStatPill("$cleared/$total", "Stages", Color(0xFFF5A524), Color(0xFFA2560C), Modifier.weight(1f)) {

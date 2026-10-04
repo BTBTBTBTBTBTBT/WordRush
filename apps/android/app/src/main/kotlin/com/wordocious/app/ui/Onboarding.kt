@@ -498,7 +498,8 @@ private fun WelcomeStep(replay: Boolean) {
                 }
             }
             Spacer(Modifier.height(20.dp))
-            OnboardLettering("Welcome to Wordocious!")
+            // BJ16 quick win: the WELCOME! lettering (TalkBack keeps the full line).
+            PageHeadline(TitleArt.WELCOME.res, "Welcome to Wordocious!", maxHeight = 72.dp)
             Spacer(Modifier.height(10.dp))
             OnboardLine("Daily word games, a cast of friends, and bragging rights.")
             Spacer(Modifier.height(28.dp))
@@ -522,13 +523,13 @@ private fun WelcomeStep(replay: Boolean) {
 
 // ── 2 QUICK TOUR ─────────────────────────────────────────────────────────────────
 
-private data class TourCard(@DrawableRes val art: Int, val title: String, val line: String)
+private data class TourCard(@DrawableRes val art: Int, val title: String, val line: String, val heading: Heading)
 
 private val TOUR = listOf(
-    TourCard(R.drawable.art_scene_onboard_tiles, "Daily games", "New puzzles every day. Guess the word, solve the board."),
-    TourCard(R.drawable.art_scene_onboard_score, "Score big", "Fewer guesses and faster times earn more points."),
-    TourCard(R.drawable.art_scene_shield_guard, "Keep your streak", "Play daily to grow your streak. Shields save it."),
-    TourCard(R.drawable.art_scene_friends_match, "Play together", "Race friends, react, and battle the cast."),
+    TourCard(R.drawable.art_scene_onboard_tiles, "Daily games", "New puzzles every day. Guess the word, solve the board.", Heading.TOUR_DAILY),
+    TourCard(R.drawable.art_scene_onboard_score, "Score big", "Fewer guesses and faster times earn more points.", Heading.TOUR_SCORE),
+    TourCard(R.drawable.art_scene_shield_guard, "Keep your streak", "Play daily to grow your streak. Shields save it.", Heading.TOUR_STREAK),
+    TourCard(R.drawable.art_scene_friends_match, "Play together", "Race friends, react, and battle the cast.", Heading.TOUR_TOGETHER),
 )
 
 /** AO step 2: four swipe cards, one sentence each, with their own card dots. */
@@ -604,7 +605,7 @@ private fun TourPage(index: Int) {
     OnboardBody { h ->
         SceneArtPop(card.art, (h * 0.5f).coerceAtMost(340.dp), delayMs = 60L)
         Spacer(Modifier.height(16.dp))
-        OnboardLettering(card.title)
+        HeadingArt(card.heading, height = 52.dp, maxWidth = 340.dp)   // BJ16
         Spacer(Modifier.height(10.dp))
         OnboardLine(card.line)
     }

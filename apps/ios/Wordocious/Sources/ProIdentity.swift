@@ -273,11 +273,7 @@ struct ProMemberSheet: View {
                 ProCrownSprite(size: 74)
                     .rotationEffect(.degrees(-8))
                     .shadow(color: ProGold.accent.opacity(0.45), radius: 10, x: 0, y: 4)
-                Text("You're Pro")
-                    .font(Brand.font(28, .black))
-                    .foregroundStyle(FinishInk.number)
-                    .shadow(color: .white.opacity(Theme.isDark ? 0 : 0.8), radius: 0, x: 0, y: 2)
-                    .accessibilityAddTraits(.isHeader)
+                HeadingArtView(.yourepro, height: 44)   // BJ16
                 VStack(spacing: 4) {
                     Text(info.plan).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
                     if let line = info.dateLine {

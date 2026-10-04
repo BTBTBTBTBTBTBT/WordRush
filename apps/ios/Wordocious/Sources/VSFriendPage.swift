@@ -37,7 +37,7 @@ struct VSFriendPage: View {
 
     private var page: some View {
         VStack(spacing: 0) {
-            VSNavBar(title: "CHALLENGE", onBack: { dismiss() }) { VSModeChip(mode: mode).padding(.trailing, 6) }
+            VSNavBar(title: "CHALLENGE", heading: .challenge, onBack: { dismiss() }) { VSModeChip(mode: mode).padding(.trailing, 6) }
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     segmented

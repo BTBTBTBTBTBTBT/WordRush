@@ -135,7 +135,7 @@ fun ShareVariantSheet(onPick: (Boolean) -> Unit, onDismiss: () -> Unit) {
         containerColor = accentWash(Color(0xFF7C3AED), 0.08f), dragHandle = null,
     ) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
-        PageHeader("SHARE", onClose = onDismiss, titleSize = 20.sp, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp))
+        PageHeader("SHARE", heading = Heading.SHARE, onClose = onDismiss, titleSize = 20.sp, contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp))
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ShareVariantRow(Icons.Filled.VisibilityOff, Color(0xFF7C3AED), "No spoilers", "Colors only") { onPick(false) }
             ShareVariantRow(Icons.Filled.Visibility, Color(0xFFEC4899), "Full results", "Letters revealed") { onPick(true) }

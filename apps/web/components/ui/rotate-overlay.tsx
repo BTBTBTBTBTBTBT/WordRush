@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 export function RotateOverlay() {
   const [show, setShow] = useState(false);
@@ -36,12 +37,8 @@ export function RotateOverlay() {
       >
         <div style={{ width: '100%', height: '100%', borderRadius: 7, background: 'rgba(255,255,255,0.88)' }} />
       </div>
-      <h2
-        className="text-2xl font-black text-transparent bg-clip-text text-center"
-        style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
-      >
-        Rotate Your Phone
-      </h2>
+      {/* BJ16: the ROTATE YOUR PHONE lettering. */}
+      <HeadingArt slug="rotate" as="h2" height={36} maxWidth={320} />
       <p
         className="text-sm font-bold text-center max-w-xs"
         style={{ color: 'var(--color-text-muted)' }}

@@ -114,7 +114,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
             // Header row: gradient title + close.
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
-                    PageTitleText("INVITE A FRIEND", fontSize = 24.sp)
+                    HeadingArt(Heading.INVITE, height = 34.dp, maxWidth = 260.dp, alignment = Alignment.CenterStart)   // BJ16
                     Text(
                         "Pick a mode, then send a link or a username invite.",
                         fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,

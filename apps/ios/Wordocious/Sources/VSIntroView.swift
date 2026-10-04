@@ -109,7 +109,7 @@ struct VSMatchIntroView: View {
     private var window: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Text("MATCH FOUND").font(Brand.font(16, .black)).tracking(0.4).foregroundStyle(headInk)
+                HeadingArtView(.matchfound, height: 30, maxWidth: 200, alignment: .leading)   // BJ16
                 Spacer(minLength: 6)
                 VSModeChip(mode: mode)
             }

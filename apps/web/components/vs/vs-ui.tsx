@@ -14,6 +14,7 @@ import { VS, modeColor, modeTitle } from '@/lib/vs-lobby';
 import { SOFT, alphaHex, cardBarStyle, overAlpha, softMix, softShadow } from '@/lib/soft-surface';
 import { botArt, type BotPose } from '@/lib/bot/bot-personas';
 
+import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
 // Shared pieces of the VS screens (VS overhaul, spec docs/VS_REDESIGN_SPEC.md
 // §0; finishing build docs/FINISH_SPEC.md D3): the real mode icons from the
 // home cards, the mode chip, section labels, the teal nav, the tinted VS cards
@@ -95,12 +96,17 @@ export function SectionLabel({ children, right }: { children: React.ReactNode; r
  * the bare 3D back glyph, the gradient caps title, the host when no banner
  * below carries it, and a right slot.
  */
-export function VsNav({ title, onBack, right, host, art, artLabel }: {
+export function VsNav({ title, onBack, right, host, art, artLabel, heading }: {
   title: string; onBack: () => void; right?: React.ReactNode; host?: MascotId;
   /** Whole-cast title art in place of the text title (docs/ART_SPEC.md §2). */
   art?: TitleArtName; artLabel?: string;
 }) {
+  /** FINISH_SPEC BJ16: a heading lettering (art-titlecast-<slug>) in place of the text title. */
+  heading?: HeadingSlug;
   return <PageHeader title={title} art={art} artLabel={artLabel} accent="vs" back={{ onClick: onBack }} host={host} right={right} />;
+  if (heading) {
+    return <PageHeader title={<HeadingArt slug={heading} height={36} maxWidth={240} />} titleTag="div" accent="vs" back={{ onClick: onBack }} right={right} />;
+  }
 }
 
 // ── A1 tinted surfaces (light-pinned: VS pages are light-only) ──────────────

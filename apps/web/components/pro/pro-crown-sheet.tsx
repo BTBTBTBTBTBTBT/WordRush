@@ -7,6 +7,7 @@ import { PopupBar, POPUP_ACCENT, popupCard, softRow, SoftSectionLabel } from '@/
 import { badgeSrc } from '@/lib/art';
 import { proRenewalLabel } from '@/lib/pro-crown';
 import { ManageSubscriptionRows, useStripePortal } from '@/components/pro/manage-subscription';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 // FINISH_SPEC AA1: tapping the crown W wears in the living cast header opens
 // this small "You're Pro" sheet — the plan, the renewal date (what the
@@ -48,8 +49,9 @@ export function ProCrownSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             className="mx-auto select-none pointer-events-none art-pop"
             style={{ width: 64, height: 64, transform: 'rotate(-8deg)', filter: 'drop-shadow(0 4px 6px rgba(180, 83, 9, 0.3))' }}
           />
-          <DialogTitle className="m-0 mt-1 text-lg font-black" style={{ color: 'var(--color-text)' }}>
-            You&apos;re Pro
+          {/* BJ16: the YOU'RE PRO lettering. */}
+          <DialogTitle className="m-0 mt-1">
+            <HeadingArt slug="yourepro" bare height={44} />
           </DialogTitle>
           <DialogDescription className="m-0 mt-0.5 text-[12px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Thanks for supporting Wordocious. Every Pro perk is yours.

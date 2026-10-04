@@ -6,6 +6,7 @@ import { LiveHeadline } from '@/components/ui/live-headline';
 import { gameTitleArtForDbKey, gameTitleArtLabel } from '@/lib/art';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { pickerKeyForView, viewForPickerKey, type StatsState } from '@/lib/stats-view';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 // The Stats tab's game picker (docs/FINISH_SPEC.md C3, founder): the SAME
 // picker window as the Leaderboard (components/ui/game-picker.tsx) in the
@@ -39,10 +40,11 @@ function SelectedTitle({ pickerKey }: { pickerKey: string | null }) {
     <div key={pickerKey ?? 'overview'} className="intro-pop w-full flex justify-center" style={{ minHeight: 48 }}>
       {art ? (
         <ArtTitle name={art} label={gameTitleArtLabel(art)} maxHeight={48} maxWidth={320} as="div" level={2} priority={false} motion="none" />
-      ) : pickerKey ? (
-        <LiveHeadline text={meta?.title ?? 'Daily Sweep'} accent={meta?.accentHex ?? '#7c3aed'} size={26} level={2} />
+      ) : pickerKey && meta ? (
+        <LiveHeadline text={meta.title} accent={meta.accentHex ?? '#7c3aed'} size={26} level={2} />
       ) : (
-        <LiveHeadline text="Overview" palette="stats" size={26} level={2} />
+        // BJ16: OVERVIEW / DAILY SWEEP lettering, not live text.
+        <HeadingArt slug={pickerKey ? 'sweep' : 'overview'} height={40} maxWidth={280} pop={false} />
       )}
     </div>
   );

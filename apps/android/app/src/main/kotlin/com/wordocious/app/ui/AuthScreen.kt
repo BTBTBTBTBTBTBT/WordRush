@@ -144,13 +144,10 @@ fun AuthScreen(
             // left-aligned against a centered wordmark and centered everything
             // else. Center it explicitly rather than centering the whole Column,
             // which would drag the field labels off their leading edge.
-            Text(
-                when (mode) { "signin" -> "WELCOME BACK!"; "signup" -> "JOIN THE FUN!"; else -> "RESET PASSWORD" },
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Black,
-                color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+            // BJ16: the mode's heading lettering, not plain text.
+            HeadingArt(
+                when (mode) { "signin" -> Heading.WELCOMEBACK; "signup" -> Heading.JOINTHEFUN; else -> Heading.RESETPASSWORD },
+                height = 44.dp,
             )
 
             if (mode == "reset") {

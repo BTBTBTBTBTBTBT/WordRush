@@ -54,7 +54,7 @@ struct EditProfileView: View {
             HStack {
                 HeaderCircleButton(.symbol("xmark"), size: 32, label: "Cancel") { dismiss() }
                 Spacer()
-                PageTitle("EDIT PROFILE", size: 18)
+                HeadingArtView(.editprofile, height: 40, maxWidth: 220)   // BJ16
                 Spacer()
                 // §A8: Save is a small candy button.
                 Button { save() } label: { CandyLabel(title: saving ? "Saving…" : "Save") }

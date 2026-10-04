@@ -777,7 +777,7 @@ private fun AchievementUnlockPopup(key: String, waiting: Int, onNice: () -> Unit
         AchievementPresenters(key) {
             BadgeStage(def?.icon, 120.dp, accent, key = def?.key ?: key, category = def?.category)
         }
-        LiveHeadline("ACHIEVEMENT UNLOCKED!", HeadlinePalette.CELEBRATION, Modifier.fillMaxWidth(), maxSize = 20.sp, minSize = 13.sp, maxLines = 1)
+        HeadingArt(Heading.ACHIEVEMENT, height = 44.dp)   // BJ16: lettering, not live text
         Text(name, style = softNumberStyle(26.sp), textAlign = TextAlign.Center)
         def?.description?.let {
             Text(
@@ -862,7 +862,7 @@ private fun LevelUpPopup(level: Int, waiting: Int, onNice: () -> Unit) {
     val accent = TierInk.accent(tier)
     BadgePopupFrame(accent, paneTitle = "Level up: level $level, ${tier.label}", waiting = waiting, onNice = onNice) {
         BadgeStage(null, 132.dp, accent, res = BadgeArt.level(tier))
-        Text("LEVEL UP!", style = softNumberStyle(15.sp), letterSpacing = 1.2.sp, textAlign = TextAlign.Center, maxLines = 1)
+        HeadingArt(Heading.LEVELUP, height = 34.dp)   // BJ16: lettering, not plain text
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Level", fontSize = 22.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else FinishInk.heading)
             SoftNumber("$level", 26.sp)

@@ -113,7 +113,8 @@ fun StreakShieldModal(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f).padding(end = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            HeaderTitle("DON'T LOSE YOUR STREAK!")
+                            // BJ16: the SAVE YOUR STREAK! lettering, not plain text.
+                            HeadingArt(Heading.SAVESTREAK, height = 44.dp, alignment = Alignment.CenterStart)
                             Text(
                                 "Your $streak-day streak ends if you don't play today.",
                                 fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = Color.White.copy(alpha = 0.92f),
@@ -204,11 +205,7 @@ private fun SavedBeat(streak: Int, shieldsAfter: Int) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(
-                "STREAK SAVED!", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp,
-                color = if (WTheme.isDark) WTheme.text else FinishInk.heading,
-                modifier = Modifier.semantics { heading() },
-            )
+            HeadingArt(Heading.STREAKSAVED, height = 52.dp)   // BJ16
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon3D(Icon3DName.FLAME, 26.dp)
                 SoftNumber("$streak", 30.sp)

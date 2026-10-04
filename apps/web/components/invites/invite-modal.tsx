@@ -20,6 +20,7 @@ import { BRAND_ACCENT, cardBarStyle, softBackground, softBorder } from '@/lib/so
 import { InviteCodeTiles, InviteSentCard } from '@/components/friends/invite-screens';
 import { codeFromInviteUrl } from '@/lib/invite-screens';
 import { FeedbackPill } from '@/components/game/feedback-toast';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 // The VS invite window (G5, docs/FINISH_SPEC.md): a lavender-washed sheet with
 // the brand top bar (A1; the washes follow the theme's card base), I with the
@@ -214,12 +215,8 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
 
         {/* Branded title — matches the gradient treatment used for the
             site wordmark and mode headers. */}
-        <h2
-          className="text-2xl font-black text-transparent bg-clip-text mb-1"
-          style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
-        >
-          Invite a friend
-        </h2>
+        {/* BJ16: the INVITE A FRIEND lettering, not plain text. */}
+        <HeadingArt slug="invite" as="h2" height={34} maxWidth={260} align="left" className="mb-1" />
         <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Pick a mode, then send a link or a username invite.
         </p>

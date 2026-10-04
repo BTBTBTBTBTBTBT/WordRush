@@ -458,13 +458,17 @@ fun ProfileScreen(
     if (isGuest) {
         // FINISH_SPEC BI23: D hosts the signed-out pitch, centered in the space under the
         // pinned AppHeader (iOS / web parity) — no grey icon, no boxed card.
-        GuestPitch(
-            hosts = listOf(Mascots.stats), title = "Your stats live here",
-            subtitle = "Sign in to track your stats, streaks and every game's history.",
-            colors = GuestPitchContent.statsColors, preview = GuestPreview.Chips(GuestPitchContent.statsChips),
-            onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,
-            modifier = Modifier.pageBackground(PageTint.STATS),
-        )
+        // BJ16 quick win: the STATS page title above the pitch.
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().pageBackground(PageTint.STATS)) {
+            PageHeadline(TitleArt.STATS, Modifier.padding(top = 4.dp), bleed = 16.dp)
+            GuestPitch(
+                hosts = listOf(Mascots.stats), title = "Your stats live here",
+                subtitle = "Sign in to track your stats, streaks and every game's history.",
+                colors = GuestPitchContent.statsColors, preview = GuestPreview.Chips(GuestPitchContent.statsChips),
+                onSignIn = { onSignIn?.invoke() ?: AuthService.exitGuest() }, onPlay = onGoHome,
+                modifier = Modifier.weight(1f),
+            )
+        }
         return
     }
     LazyColumn(

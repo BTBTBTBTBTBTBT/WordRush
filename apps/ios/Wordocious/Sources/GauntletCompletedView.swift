@@ -398,10 +398,14 @@ struct GauntletResultsView: View {
 
     @ViewBuilder private var title: some View {
         // §Q: the headline in soft-number ink (no gradient digit art).
-        Text(won ? "GAUNTLET CLEARED!" : "SO CLOSE!")
-            .softNumber(30)
-            .multilineTextAlignment(.center)
-            .lineLimit(1).minimumScaleFactor(0.6)
+        // BJ16: GAUNTLET CLEARED! / SO CLOSE! as lettering art (text fallback if missing).
+        if won {
+            HeadingArtView(.gauntletcleared, height: 40, maxWidth: 340)
+        } else {
+            MomentLettering(.soclose, maxWidth: 220, maxHeight: 60) {
+                Text("SO CLOSE!").softNumber(30).lineLimit(1).minimumScaleFactor(0.6)
+            }
+        }
     }
 
     private func statCard(_ icon: String, _ color: Color, _ value: String, _ label: String) -> some View {

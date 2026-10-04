@@ -15,6 +15,7 @@ import { prefersReducedMotion } from '@/lib/motion';
 import { SOFT_INK, alphaHex, darken, softMix, softPill } from '@/lib/soft-surface';
 import { GIFT_DAYS, GIFT_SLOTS, codeTiles } from '@/lib/invite-screens';
 
+import { HeadingArt } from '@/components/ui/heading-art';
 // The friend-invite + gift-a-week-of-Pro screens (docs/FINISH_SPEC.md T1–T4),
 // shared by the invite sheet, the Friends tab, the join landing, the referral
 // redeemer and the Pro page: tinted cards with their top bar (A1), the new
@@ -203,7 +204,8 @@ export function InviteSentCard({ name, code, note, onSendAnother, sendAnotherDis
   const body = (
     <div className="flex flex-col items-center text-center gap-2.5 px-4 pt-3 pb-4" role="status">
       <SceneArt name="art-scene-invite-sent" height={118} spring />
-      <Lettering size={28}>{title}</Lettering>
+      {/* BJ16: the INVITE SENT! lettering (other titles keep the live lettering). */}
+      {title === 'Invite sent!' ? <HeadingArt slug="invitesent" as="h2" /> : <Lettering size={28}>{title}</Lettering>}
       {name && <GlossyPill accent={INVITE_ACCENT}>{name}</GlossyPill>}
       {code && <InviteCodeTiles code={code} tile={26} />}
       {note && <p className="m-0 text-[11.5px] font-bold" style={{ color: SOFT_INK.label }}>{note}</p>}
@@ -407,7 +409,7 @@ export function NewFriendsModal({ me, friend, onChallenge, onSeeFriends, onClose
         <HeartBurst />
       </div>
       <div className="flex flex-col items-center text-center gap-2 px-5 pb-5 pt-1">
-        <Lettering id="new-friends-title" size={32}>New friends!</Lettering>
+        <HeadingArt id="new-friends-title" slug="newfriends" as="h2" />
         <div className="flex items-end justify-center gap-3 pt-1">
           <figure className="m-0 flex flex-col items-center gap-1 min-w-0" style={{ width: 96 }}>
             <PersonAvatar person={me} size={52} />
@@ -440,7 +442,8 @@ export function ProUnlockedBody({ onStart, startHref, note, titleId }: { onStart
         <div aria-hidden="true" className="absolute celebrate-glow" style={{ inset: '8% -10%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255, 209, 102, 0.55), rgba(245, 165, 36, 0) 68%)' }} />
         <SceneArt name="art-scene-pro-crown" height={140} spring priority className="relative mb-2" />
       </div>
-      <Lettering as="h1" id={titleId} size={30}>Pro unlocked!</Lettering>
+      {/* BJ16: the PRO UNLOCKED! lettering. */}
+      <HeadingArt id={titleId} slug="prounlocked" as="h1" />
       <p className="m-0 mt-1.5 text-sm font-black" style={{ color: SOFT_INK.title }}>{GIFT_DAYS} days of Pro are yours!</p>
       {note && <p className="m-0 mt-1 text-xs font-bold" style={{ color: SOFT_INK.label }}>{note}</p>}
       <div className="w-full mt-4">
@@ -504,7 +507,7 @@ export function GiftProCard({ giftsLeft, slots = GIFT_SLOTS, onSend, sendHref, s
       <div className="p-3 space-y-2.5">
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0 space-y-1.5">
-            <Lettering as="h2" size={18}>Gift a week of Pro</Lettering>
+            <HeadingArt slug="giftpro" as="h2" height={26} maxWidth={230} align="left" />
             <div className="flex flex-wrap items-center gap-2">
               <SevenDaysBadge />
               {giftsLeft != null && (

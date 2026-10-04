@@ -155,7 +155,8 @@ private fun JoinState(@DrawableRes art: Int, title: String, line: String?, cta: 
     InviteCard(Modifier.fillMaxWidth(), accent = if (color == CandyColor.AMBER) GIFT_GOLD else INVITE_ACCENT) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SceneArtPop(art, height = 112.dp)
-            InviteLettering(title, 22.sp)
+            // BJ16: PRO UNLOCKED! as lettering (the other states keep the live lettering).
+            if (title == "Pro unlocked!") HeadingArt(Heading.PROUNLOCKED) else InviteLettering(title, 22.sp)
             if (line != null) {
                 Text(line, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center)
             }

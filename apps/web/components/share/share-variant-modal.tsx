@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { X, EyeOff, Eye } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { BRAND_ACCENT, softBackground, softBorder } from '@/lib/soft-surface';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 export type ShareVariant = 'clean' | 'full';
 
@@ -99,12 +100,8 @@ export function ShareVariantHost() {
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <h2
-            className="text-xl font-black uppercase text-transparent bg-clip-text"
-            style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
-          >
-            Share
-          </h2>
+          {/* BJ16: the SHARE lettering, not plain text. */}
+          <HeadingArt slug="share" as="h2" height={44} align="left" />
           <HeaderBack kind="close" onClick={() => settle(null)} size={32} />
         </div>
 

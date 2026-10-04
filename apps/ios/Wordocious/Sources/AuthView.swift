@@ -70,8 +70,9 @@ struct AuthView: View {
 
     private var card: some View {
         VStack(spacing: 16) {   // web card space-y-4 between header / social / divider / form
-            Text(mode == .signin ? "WELCOME BACK!" : mode == .signup ? "JOIN THE FUN!" : "RESET PASSWORD")
-                .font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
+            // BJ16: the mode's heading lettering, not plain text.
+            HeadingArtView(mode == .signin ? .welcomeback : mode == .signup ? .jointhefun : .resetpassword, height: 44)
+                .id(mode)
 
             if mode == .reset {
                 Text("Enter your email and we'll send you a link to set a new password. Works for Google and Apple accounts too.")

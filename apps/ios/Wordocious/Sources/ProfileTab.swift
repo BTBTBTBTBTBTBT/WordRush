@@ -476,10 +476,14 @@ struct ProfileTab: View {
     /// FINISH_SPEC BI23: D hosts the signed-out pitch, centered BELOW the pinned header
     /// (the old body was content-sized, so header + pitch centered together mid-screen).
     private var signedOut: some View {
+        // BJ16 quick win: the STATS page title above the pitch (never a page without its lettering).
+        VStack(spacing: 0) {
+        PageHeadline(.stats, bleed: 12).padding(.top, 4)
         GuestPitch(hosts: [Mascots.stats], title: "Your stats live here",
                    subtitle: "Sign in to track your stats, streaks and every game's history.",
                    colors: [Color(hex: 0x2563EB), Color(hex: 0x8B5CF6)],
                    preview: .chips(GuestPitch.statsChips), onSignIn: { showAuth = true })
+        }
             .softSheet(isPresented: $showAuth) { AuthView() }
     }
 
@@ -1014,6 +1018,9 @@ struct ProfileTab: View {
             // Any game with its lettering art (word games and Puzzles alike).
             GameTitleArtView(asset: "art-game-\(g.id)", label: g.shareLabel, maxHeight: 48, minHeight: 40)
                 .padding(.horizontal, 8)
+        } else if sel.game == nil || sel.game == GamePicker.sweep {
+            // BJ16: OVERVIEW / DAILY SWEEP lettering, not live text.
+            HeadingArtView(sel.game == nil ? .overview : .sweep, height: 40, maxWidth: 280, motion: false)
         } else {
             LiveHeadline(text: pickerTitle.uppercased(),
                          palette: sel.game == nil ? .stats : .accent(pickerHeadAccent),

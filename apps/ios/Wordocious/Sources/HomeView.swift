@@ -1018,8 +1018,11 @@ struct ModeLimitModal: View {
                 } else {
                     Icon3D(.lock, size: 52).padding(.bottom, 12)
                 }
-                Text("\(mode.title) — Played Today").font(Brand.font(18, .black)).foregroundStyle(FinishInk.heading)
+                // BJ16: the PLAYED TODAY lettering; the game's name rides under it.
+                HeadingArtView(.playedtoday, label: "\(mode.title) — Played Today")
+                Text(mode.title.uppercased()).font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center).padding(.bottom, 4)
+                    .accessibilityHidden(true)
                 Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center).padding(.bottom, 16)

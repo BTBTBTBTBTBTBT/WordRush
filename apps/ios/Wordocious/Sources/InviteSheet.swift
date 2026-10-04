@@ -43,9 +43,7 @@ struct InviteSheet: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
                         if ArtScene.invite.isAvailable { SceneArt(.invite, height: 110).padding(.bottom, 4) }
-                        Text("INVITE A FRIEND")
-                            .font(Brand.font(24, .black))
-                            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                        HeadingArtView(.invite, height: 34, maxWidth: 260, alignment: .leading)   // BJ16
                         Text("Pick a mode, then send a link or a username invite.")
                             .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     }

@@ -412,7 +412,7 @@ struct AchievementUnlockPopup: View {
 
                 if !isLevel {
                     // BF2: the gold live lettering, the NAME big, the PURPOSE line.
-                    LiveHeadline(text: "ACHIEVEMENT UNLOCKED!", palette: .celebration, size: 22, maxLines: 1, minimumScale: 0.6)
+                    HeadingArtView(.achievement, height: 44)   // BJ16: lettering (two lines), not live text
                     VStack(spacing: 6) {
                         Text(achievementName).softNumber(26)
                             .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)

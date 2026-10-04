@@ -125,6 +125,8 @@ fun VsNavBar(
     host: com.wordocious.app.ui.MascotId? = null,
     /** The whole-cast title art (ART_SPEC §2), replacing the text title. */
     art: com.wordocious.app.ui.TitleArt? = null,
+    /** FINISH_SPEC BJ16: a heading lettering (art-titlecast-<slug>) in place of the text title. */
+    heading: com.wordocious.app.ui.Heading? = null,
     right: @Composable RowScope.() -> Unit = {},
 ) {
     com.wordocious.app.ui.PageHeader(
@@ -136,6 +138,7 @@ fun VsNavBar(
         titleSize = 20.sp,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         art = art,
+        heading = heading,
         actions = right,
     )
 }

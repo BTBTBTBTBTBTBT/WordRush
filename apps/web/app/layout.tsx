@@ -26,6 +26,7 @@ import { ColdStartIntro } from '@/components/providers/cold-start-intro';
 import { SPLASH } from '@/lib/intro';
 import { SquishHost } from '@/components/ui/squish-host';
 import { CastArtWarmup } from '@/components/ui/cast-art-warmup';
+import { HeadingArtWarmup } from '@/components/ui/heading-art';
 import { MotionPause } from '@/components/providers/motion-pause';
 import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
@@ -166,6 +167,7 @@ export default function RootLayout({
         <SquishHost />
         <MotionPause />
         <CastArtWarmup />
+        <HeadingArtWarmup />
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>

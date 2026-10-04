@@ -119,11 +119,7 @@ struct InvitePanelView: View {
             HStack(alignment: .top, spacing: 10) {
                 FriendsSceneArt(asset: "art-scene-gift-pro", height: 72, maxWidth: 80)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("GIFT A WEEK OF PRO")
-                        .font(Brand.font(17, .black)).tracking(0.3)
-                        .foregroundStyle(Theme.isDark ? Color(hex: 0xFCD34D) : Color(hex: 0x8A4A12))
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                        .accessibilityAddTraits(.isHeader)
+                    HeadingArtView(.giftpro, height: 26, maxWidth: 230, alignment: .leading)   // BJ16
                     HStack(spacing: 8) {
                         HStack(spacing: 4) {
                             Text("7").softNumber(18)

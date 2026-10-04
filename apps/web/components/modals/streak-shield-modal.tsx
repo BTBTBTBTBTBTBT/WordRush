@@ -15,6 +15,7 @@ import { ART_SIZE, artSrc } from '@/lib/art';
 import { softPill } from '@/lib/soft-surface';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { feedback } from '@/lib/sound-events';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 const PURPLE = '#7c3aed';
 /** The shield popups' purple header (components/ui/streak-popups.tsx ShieldPopup). */
@@ -128,7 +129,7 @@ export function StreakShieldModal({
               <div className="animate-fade-in-scale">
                 <div className="flex flex-col items-center px-6 pt-6 pb-5" style={{ background: HEADER }}>
                   {art(150, true)}
-                  <h2 className="mt-3 font-black text-white" style={{ fontSize: 24, letterSpacing: 0.4, textShadow: '0 2px 0 rgba(46, 16, 101, 0.35)' }}>STREAK SAVED!</h2>
+                  <HeadingArt slug="streaksaved" as="h2" height={52} className="mt-3" />
                 </div>
                 <div className="flex items-center justify-center gap-2 px-6 py-5 text-[13px] font-bold" style={{ color: 'var(--color-text)' }}>
                   <span>Your <SoftNum size={18} className="soft-num-auto">{streak}</SoftNum>-day streak is safe</span>
@@ -151,7 +152,7 @@ export function StreakShieldModal({
                     <span className="text-[11px] font-black text-left leading-tight" style={{ letterSpacing: 1.2, color: '#a2560c' }}>DAY<br />STREAK</span>
                   </div>
 
-                  <h2 className="font-black" style={{ fontSize: 18, letterSpacing: 0.4, color: 'var(--color-text)' }}>DON&apos;T LOSE YOUR STREAK!</h2>
+                  <HeadingArt slug="savestreak" as="h2" />
                   <p className="text-[13px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
                     Your {streak}-day streak ends if you don&apos;t play today.
                   </p>

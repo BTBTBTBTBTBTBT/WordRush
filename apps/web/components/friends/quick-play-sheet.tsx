@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Radio, Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { PageTitleText } from '@/components/ui/page-header';
+import { HeadingArt } from '@/components/ui/heading-art';
 import { COIN_STAKES, FRIENDLY_KINDS, FRIENDLY_TITLES, presenceLine, type FriendlyKind } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { challengeFriend, type FriendProfile } from '@/lib/friends-service';
@@ -93,7 +93,9 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
       <div className="flex items-center gap-3 mb-4">
         <FriendAvatar name={friend.username} url={friend.avatar_url} emoji={friend.avatar_emoji} size={48} online={on} pulse={on} />
         <div className="flex-1 min-w-0">
-          <PageTitleText accent="friends" size={17} className="block truncate">PLAY WITH @{friend.username}</PageTitleText>
+          {/* BJ16: the LET'S PLAY! lettering; the friend's @name rides under it. */}
+          <HeadingArt slug="letsplay" label={`Play with ${friend.username}`} height={28} maxWidth={170} align="left" />
+          <div aria-hidden="true" className="text-[14px] font-black truncate" style={{ color: FR.label }}>@{friend.username}</div>
           {presence && <div className="text-[11.5px] font-extrabold truncate" style={{ color: on ? FR.online : FR.label }}>{presence}</div>}
           {rivalry && <div className="text-[11px] font-bold truncate" style={{ color: FR.label }}>{rivalry}</div>}
         </div>

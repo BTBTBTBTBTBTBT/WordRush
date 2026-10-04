@@ -379,7 +379,7 @@ struct VSChallengeRaceView: View {
                 .toolbar(.hidden, for: .navigationBar)
             default:
                 VStack(spacing: 0) {
-                    VSNavBar(title: "CHALLENGE", onBack: { dismiss() }) { EmptyView() }
+                    VSNavBar(title: "CHALLENGE", heading: .challenge, onBack: { dismiss() }) { EmptyView() }
                     ScrollView { content.padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 32) }
                 }
                 .pageBackground(.vs, lightOnly: true)

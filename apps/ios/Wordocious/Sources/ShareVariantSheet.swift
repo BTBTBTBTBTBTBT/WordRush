@@ -18,7 +18,7 @@ struct ShareVariantSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        MenuScaffold("Share") {
+        MenuScaffold("Share", heading: .share) {   // BJ16
             VStack(spacing: 8) {
                 Button { selection = false; dismiss() } label: {
                     row(icon: "eye.slash.fill", accent: Color(hex: 0x7C3AED),

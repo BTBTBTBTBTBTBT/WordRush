@@ -346,7 +346,7 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
     // friend (the matchmaker buckets both by the same code). No bot steps in.
     if (inviteCode != null) {
         Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
-            VsNavBar("PRIVATE MATCH", onBack = onHome) { VsModeChip(vm.mode) }
+            VsNavBar("PRIVATE MATCH", onBack = onHome, heading = com.wordocious.app.ui.Heading.PRIVATEMATCH) { VsModeChip(vm.mode) }
             Column(
                 Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1612,7 +1612,8 @@ private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, on
                         .padding(start = 14.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Text("ALREADY PLAYED", fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep, modifier = Modifier.semantics { heading() })
+                    // BJ16: the ALREADY PLAYED lettering, not plain text.
+                    com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.ALREADYPLAYED, height = 28.dp, maxWidth = 220.dp, alignment = Alignment.CenterStart)
                     // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight), soft (A2).
                     var cdTick by remember { mutableStateOf(0) }
                     LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); cdTick++ } }

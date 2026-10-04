@@ -25,6 +25,7 @@ function InviteArt({ who }: { who: 'w' | 'o3' }) {
   return <img src={who === 'w' ? poseSrc('w', 'point') : poseSrc('o3', 'sneak')} alt="" aria-hidden="true" width={76} height={76} draggable={false} className="mx-auto mb-2" style={{ width: 76, height: 76, objectFit: 'contain' }} />;
 }
 import { PageBackground } from '@/components/ui/page-background';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 export default function JoinInvitePage() {
   const params = useParams();
@@ -115,7 +116,8 @@ export default function JoinInvitePage() {
   return centered(
     <>
       <InviteArt who="w" />
-      <h1 className="text-lg font-black" style={{ color: 'var(--color-text)' }}>You're invited!</h1>
+      {/* BJ16: the YOU'RE INVITED! lettering. */}
+      <HeadingArt slug="invited" as="h1" />
       <p className="text-xs font-bold mt-1 mb-4" style={{ color: 'var(--color-text-muted)' }}>
         {inviterName ? <>@{inviterName} </> : <>Someone </>}
         wants to play <span style={{ color: 'var(--color-text)' }}>{(invite && MODE_BY_DBKEY[invite.game_mode]?.title) ?? invite?.game_mode}</span> against you.

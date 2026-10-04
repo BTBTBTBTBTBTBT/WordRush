@@ -34,6 +34,7 @@ enum AppWarmup {
         PodiumView.prewarm()
         CastArt.prewarm()          // BJ15: cast button skins + art labels, decoded + pre-scaled off main
         HomeHostMascot.prewarm()   // BJ6: the Good Morning host's pose, before Home paints
+        HeadingArt.prewarm()       // BJ16: popup / sheet heading lettering at display size, off main
         Task { @MainActor in WidgetAvatarSnapshot.start() }   // BI13c: the player's look for the widget
         Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: 2_000_000_000)

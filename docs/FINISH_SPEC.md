@@ -1641,3 +1641,22 @@ onboarding / welcome / auth, sweep + achievement + streak-shield popups, mode-li
 buttons, toggles, segmented controls, system sheets, and the web friends/VS files with other agents' uncommitted work
 (next pass). DEBUG iOS: `-bj15Screen finish|pro|invite|gopro` presents that screen (gopro = the Settings Go Pro card + every
 color, light and dark) for headless screenshots.
+BJ16. No plain-text menu headings (59 titles wired) (founder 10-03: "There shouldn't be any plain text menus"). The 59
+cast-color heading titles (docs/design/brand/TITLE-INVENTORY.md, shipped ×3 as art-titlecast-<slug>) get ONE shared
+component per platform: iOS `HeadingArt` enum + `HeadingArtView` (ArtKit.swift), Android `Heading` enum + `HeadingArt`
+(ui/HeadingArt.kt), web `HeadingArt` + `HEADING_ART` (components/ui/heading-art.tsx). Size rule: popup / sheet titles 48 tall
+(≤ 300 wide), two-line art (aspect < 3.2) × 1.3 so its letters match; nav bars 36, strips 26–36; the words stay the a11y
+label (heading trait / role). Dynamic headings pick art per state (SOLVED! / NOT TODAY by result; WELCOME BACK! / JOIN THE
+FUN! / RESET PASSWORD by auth mode; WELCOME TO PRO! / FREE WEEK OF PRO!; OVERVIEW / DAILY SWEEP) and keep the dynamic part
+as a small sub-line (PLAYED TODAY + the game, LET'S PLAY! + @name, PRO PERK + the reason). Shared chrome gained a `heading`
+slot: iOS MenuScaffold + VSNavBar, Android PageHeader + VsNavBar, web VsNav. Perf: drawn at display size (iOS ArtThumbs,
+Android HeadingArtCache = inSampleSize + exact-pixel scale in its own 8 MB LRU, web plain <img> of the shipped webp); the
+tap-presented titles are pre-decoded off the presenting frame — iOS HeadingArt.prewarm (AppWarmup), Android
+HeadingArtCache.prewarm (App.onCreate, IO), web <HeadingArtWarmup/> (root layout, idle, 6 per slice). Tour titles: iOS
+aligns to web / Android (DAILY GAMES, SCORE BIG, KEEP YOUR STREAK, PLAY TOGETHER). Quick wins: WELCOME! on the first-run
+welcome, GO PRO on the reason-less Go Pro popup (web), STATS / LEADERBOARD above the signed-out pitch, VS BATTLE on the
+Android live-search nav, SO CLOSE! on the Gauntlet loss. Not wired yet (no live heading found / card or section labels, next
+pass): shields (a small section label in the header streak popup), header streak / flawless popups (art-moment-streak /
+-flawless), Strategy "VS", nudge, archetypes, h2h, trophycase, podium, streakcal, support, about, deleteaccount, profile,
+oops, notfound, dailychallenge, onastreak, newpassword, iOS level-up popup, the VS countdown "MATCH FOUND", Edit Profile's
+MAKE YOUR MASCOT section card, web Leaderboard signed-out title.

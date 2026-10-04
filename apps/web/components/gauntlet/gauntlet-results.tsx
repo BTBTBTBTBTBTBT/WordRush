@@ -17,11 +17,13 @@ import { LetterTile, tileLook } from '@/components/game/letter-tile';
 import { miniBoardFrame } from '@/components/game/multi-board';
 import { modeTrayAccent } from '@/lib/tray-fit';
 import { SoftNum } from '@/components/ui/soft-number';
+import { MomentArt } from '@/components/ui/art-title';
 import { accentInk, alphaHex, cardBarStyle, darken, softCard, softPill } from '@/lib/soft-surface';
 import { GameTray } from '@/components/ui/game-tray';
 import { Confetti } from '@/components/effects/confetti';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { GAUNTLET_ACCENT, GAUNTLET_LOST_POSES, starRow } from '@/lib/gauntlet-look';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 const CHAMPION = 'art-scene-gauntlet-champion' as const;
 
@@ -222,9 +224,12 @@ export function GauntletResults({
                   </div>
                 </div>
               )}
-              <h1 className="m-0 shrink-0 animate-fade-in-up">
-                <SoftNum size={28} as="div" className="soft-num-auto" style={{ letterSpacing: '0.02em' }}>{won ? 'GAUNTLET CLEARED!' : 'SO CLOSE!'}</SoftNum>
-              </h1>
+              {/* BJ16: GAUNTLET CLEARED! / SO CLOSE! as lettering art. */}
+              {won ? (
+                <HeadingArt slug="gauntletcleared" as="h1" height={40} maxWidth={340} className="shrink-0" />
+              ) : (
+                <MomentArt moment="soclose" as="h1" maxHeight={60} className="shrink-0" />
+              )}
               {/* The 5-star row: one per cleared stage (filled gold), the rest soft gray. */}
               <div className="shrink-0 flex items-center justify-center gap-1" role="img" aria-label={`${stagesCompleted} of ${stages.length || 5} stages cleared`}>
                 {starRow(stages.length || 5, stagesCompleted).map((on, i) => <Star key={i} on={on} index={i} size={26} />)}

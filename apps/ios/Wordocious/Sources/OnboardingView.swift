@@ -264,11 +264,9 @@ struct OnboardingWelcome: View {
                     OnboardingCastRow(size: 34)
                 }
             }
-            Text("WELCOME TO WORDOCIOUS!")
-                .font(Brand.font(34, .black)).foregroundStyle(FinishInk.number)
-                .shadow(color: .white.opacity(Theme.isDark ? 0 : 0.85), radius: 0, x: 0, y: 2)
-                .multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.6)
-                .accessibilityAddTraits(.isHeader)
+            // BJ16 quick win: the WELCOME! lettering (label keeps the full line).
+            ArtTitle(.welcome, maxWidth: 260, label: "Welcome to Wordocious!")
+                .frame(maxHeight: 72)
             Text("Daily word games, a cast of friends, and bragging rights.")
                 .font(Brand.font(16, .bold)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
@@ -382,10 +380,7 @@ struct OnboardingUsername: View {
         VStack(spacing: 16) {
             Spacer(minLength: 8)
             PoseImage(.w, "point", height: 120)
-            Text("PICK A USERNAME")
-                .font(Brand.font(30, .black)).foregroundStyle(FinishInk.number)
-                .multilineTextAlignment(.center).lineLimit(1).minimumScaleFactor(0.6)
-                .accessibilityAddTraits(.isHeader)
+            HeadingArtView(.username, height: 48, maxWidth: 340)   // BJ16
             Text("It's how friends find you and how you show up on the leaderboards.")
                 .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
@@ -675,10 +670,7 @@ struct OnboardingAllSet: View {
                             .opacity(landed ? 1 : 0)
                     }
                 }
-                Text("YOU'RE IN!")
-                    .font(Brand.font(40, .black)).foregroundStyle(FinishInk.number)
-                    .shadow(color: .white.opacity(Theme.isDark ? 0 : 0.85), radius: 0, x: 0, y: 2)
-                    .accessibilityAddTraits(.isHeader)
+                HeadingArtView(.yourein, height: 56)   // BJ16
                 Text("Meet the gang. Your first puzzle is ready.")
                     .font(Brand.font(16, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center)
@@ -717,7 +709,8 @@ struct OnboardingCard: View {
         }
     }
 
-    private var headline: String { ["DAILY GAMES", "SCORE + LEADERBOARDS", "STREAKS + SHIELDS", "FRIENDS + VS"][index] }
+    /// BJ16: the tour titles align to web / Android (DAILY GAMES, SCORE BIG, KEEP YOUR STREAK, PLAY TOGETHER).
+    private var heading: HeadingArt { [HeadingArt.tourDaily, .tourScore, .tourStreak, .tourTogether][min(max(index, 0), 3)] }
 
     private var line: String {
         switch index {
@@ -746,13 +739,7 @@ struct OnboardingCard: View {
                 .scaleEffect(shown ? 1 : 0.6, anchor: .bottom)
                 .opacity(shown ? 1 : 0)
 
-                Text(headline)
-                    .font(Brand.font(36, .black))
-                    .foregroundStyle(FinishInk.number)
-                    .shadow(color: .white.opacity(Theme.isDark ? 0 : 0.85), radius: 0, x: 0, y: 2)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(1).minimumScaleFactor(0.55)
-                    .accessibilityAddTraits(.isHeader)
+                HeadingArtView(heading, height: 52, maxWidth: 340)   // BJ16: lettering, not plain text
 
                 Text(line)
                     .font(Brand.font(16, .bold))

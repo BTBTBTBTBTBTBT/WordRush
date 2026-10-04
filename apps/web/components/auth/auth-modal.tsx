@@ -8,6 +8,7 @@ import { validateUsername } from '@wordle-duel/core';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
 import { PoseArt, barCard, softInput, softNotice } from '@/components/ui/soft-popup';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 interface AuthModalProps {
   open: boolean;
@@ -91,9 +92,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <PoseArt pose="art-pose-i-cheer" size={40} />
-            <span className="font-black" style={{ color: 'var(--color-text)' }}>
-              {mode === 'signin' ? 'Welcome Back!' : 'Join the Fun!'}
-            </span>
+            {/* BJ16: the mode's heading lettering, not plain text. */}
+            <HeadingArt key={mode} slug={mode === 'signin' ? 'welcomeback' : 'jointhefun'} as="div" bare height={40} maxWidth={240} align="left" style={{ flex: 1 }} />
           </DialogTitle>
         </DialogHeader>
 

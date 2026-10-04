@@ -12,6 +12,7 @@ import { PoseArt, barCard, softInput, softNotice } from '@/components/ui/soft-po
 import { ART_SIZE } from '@/lib/art';
 import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
 import { softBackground } from '@/lib/soft-surface';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -140,9 +141,8 @@ export function LoginScreen() {
           className="p-6 pt-7 space-y-4"
           style={barCard()}
         >
-          <h2 className="text-lg font-black text-center" style={{ color: 'var(--color-text)' }}>
-            {mode === 'signin' ? 'Welcome Back!' : mode === 'signup' ? 'Join the Fun!' : 'Reset Password'}
-          </h2>
+          {/* BJ16: the mode's heading lettering, not plain text. */}
+          <HeadingArt key={mode} slug={mode === 'signin' ? 'welcomeback' : mode === 'signup' ? 'jointhefun' : 'resetpassword'} as="h2" height={44} />
 
           {mode === 'reset' && (
             <p className="text-xs font-bold text-center" style={{ color: 'var(--color-text-muted)' }}>

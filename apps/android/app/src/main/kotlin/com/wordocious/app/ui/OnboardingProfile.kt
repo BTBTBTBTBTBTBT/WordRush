@@ -137,7 +137,7 @@ internal fun ProfileStep() {
             // A7: O1 cheering hosts this one (W coaches the mascot step).
             CastPose(MascotId.O1, "cheer", 150.dp)
             Spacer(Modifier.height(16.dp))
-            OnboardLettering("Make your profile")
+            HeadingArt(Heading.MAKEPROFILE, height = 48.dp, maxWidth = 340.dp)   // BJ16
             Spacer(Modifier.height(10.dp))
             OnboardLine("Save your streaks, climb the leaderboards, and race your friends.")
             Spacer(Modifier.height(28.dp))
@@ -223,7 +223,7 @@ internal fun UsernameStep(profile: Profile?) {
             // A7: D with his notes — a different host from the profile intro's O1.
             CastPose(MascotId.D, "notes", 120.dp)
             Spacer(Modifier.height(12.dp))
-            OnboardLettering("Pick a username")
+            HeadingArt(Heading.USERNAME, height = 48.dp, maxWidth = 340.dp)   // BJ16
             Spacer(Modifier.height(8.dp))
             OnboardLine("It's how you show up on leaderboards and to friends.")
             Spacer(Modifier.height(20.dp))

@@ -294,7 +294,8 @@ fun InviteSentCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             SceneArtPop(R.drawable.art_scene_invite_sent, height = 118.dp)
-            InviteLettering(title, 28.sp, light = light)
+            // BJ16: the INVITE SENT! lettering (other titles keep the live lettering).
+            if (title == "Invite sent!") HeadingArt(Heading.INVITESENT) else InviteLettering(title, 28.sp, light = light)
             if (name != null) GlossyPill(name, Modifier.widthIn(max = 260.dp))
             if (code != null) InviteCodeTiles(code, Modifier.fillMaxWidth(), tile = 26.dp)
             if (note != null) {
@@ -471,7 +472,7 @@ fun NewFriendsCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                InviteLettering("New friends!", 32.sp, light = light)
+                HeadingArt(Heading.NEWFRIENDS)   // BJ16
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     AvatarFigure(me, me.name, light)
                     HeartGlyph(26.dp, Modifier.padding(bottom = 24.dp))
@@ -577,7 +578,7 @@ fun GiftProCard(
     ) {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                InviteLettering("Gift a week of Pro", 18.sp, light = light, textAlign = TextAlign.Start)
+                HeadingArt(Heading.GIFTPRO, height = 26.dp, maxWidth = 230.dp, alignment = Alignment.CenterStart)   // BJ16
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     SevenDaysBadge(light = light)
                     if (giftsLeft != null) GiftsLeftBadge(giftsLeft, slots = slots, light = light)

@@ -140,7 +140,7 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
     ) {
         // A7: the page host (S) steps aside when Scoot is the bot waiting on this screen.
         val botMascot = vsBotMascot(bot.artId)
-        VsNavBar("VS BATTLE", onBack = onCancel, host = com.wordocious.app.ui.Mascots.vs.takeIf { it != botMascot }) { VsModeChip(vm.mode) }
+        VsNavBar("VS BATTLE", onBack = onCancel, art = com.wordocious.app.ui.TitleArt.VSBATTLE, host = com.wordocious.app.ui.Mascots.vs.takeIf { it != botMascot }) { VsModeChip(vm.mode) }
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -148,10 +148,8 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
         ) {
             RingTimer(elapsedSec * 1000L) { frameMs.longValue }
             VsCapsLabel("SEARCHING", color = VsTeal.label, fontSize = 11.sp)
-            Text(
-                "LOOKING FOR A RIVAL", fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsTeal.deep,
-                textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
-            )
+            // BJ16: the FINDING A RIVAL lettering, not plain text.
+            com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.FINDINGRIVAL, height = 40.dp, maxWidth = 320.dp, contentDescription = "Looking for a rival")
             val n = waiting ?: 0
             if (n > 0) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 VsNumber("$n", 16.sp)

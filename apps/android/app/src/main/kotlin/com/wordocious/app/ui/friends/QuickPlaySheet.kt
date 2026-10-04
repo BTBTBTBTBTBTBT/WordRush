@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -154,9 +155,15 @@ fun QuickPlaySheet(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             FriendFace(friend.username, friend.avatarUrl, friend.avatarEmoji, 48.dp, online = on, userId = friend.id)
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                // BJ16: the LET'S PLAY! lettering; the friend's @name rides under it.
+                                com.wordocious.app.ui.HeadingArt(
+                                    com.wordocious.app.ui.Heading.LETSPLAY, height = 28.dp, maxWidth = 170.dp,
+                                    contentDescription = "Play with ${friend.username}", alignment = Alignment.CenterStart,
+                                )
                                 Text(
-                                    "PLAY WITH @${friend.username.uppercase()}", fontSize = 17.sp, fontWeight = FontWeight.Black,
+                                    "@${friend.username}", fontSize = 14.sp, fontWeight = FontWeight.Black,
                                     color = FriendsPink.ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.clearAndSetSemantics { },
                                 )
                                 presenceLine(friend.lastSeenMs, friend.activity, now)?.let {
                                     Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (on) FriendsPink.green else FriendsPink.label, maxLines = 1)

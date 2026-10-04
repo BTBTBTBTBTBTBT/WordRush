@@ -323,9 +323,13 @@ struct VSGameView: View {
                     .padding(.top, vm.inviteCode == nil ? 36 : 4)
                 VStack(spacing: 6) {
                     Text("SEARCHING").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(VsLobbyKit.ink)
-                    Text(vm.inviteCode == nil ? "LOOKING FOR A RIVAL" : "WAITING FOR YOUR FRIEND")
-                        .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.titleInk)
-                        .multilineTextAlignment(.center)
+                    if vm.inviteCode == nil {
+                        HeadingArtView(.findingrival, height: 40, maxWidth: 320, label: "Looking for a rival")   // BJ16
+                    } else {
+                        Text("WAITING FOR YOUR FRIEND")
+                            .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                            .multilineTextAlignment(.center)
+                    }
                     if vm.inviteCode == nil {
                         Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                             .multilineTextAlignment(.center)
@@ -1788,7 +1792,7 @@ private struct DailyVsAlreadyPlayed: View {
             HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("TODAY’S DAILY BATTLE").font(Brand.font(10, .black)).tracking(1).foregroundStyle(VsLobbyKit.ink)
-                    Text("ALREADY PLAYED").font(Brand.font(18, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+                    HeadingArtView(.alreadyplayed, height: 28, maxWidth: 220, alignment: .leading)   // BJ16
                 }
                 Spacer(minLength: 6)
                 // Today's daily VS outcome as moment lettering (ART_SPEC §6/§10: YOU WIN! /

@@ -244,6 +244,9 @@ fun StatsPickerTitle(key: String?) {
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                     modifier = Modifier.fillMaxHeight(),
                 )
+            } else if (key == null || key == RAIL_SWEEP) {
+                // BJ16: OVERVIEW / DAILY SWEEP lettering, not live text.
+                HeadingArt(if (key == null) Heading.OVERVIEW else Heading.SWEEP, height = 40.dp, maxWidth = 280.dp, contentDescription = label)
             } else {
                 LiveHeadline(label.uppercase(), HeadlinePalette.STATS, Modifier.fillMaxWidth(), maxSize = 24.sp, minSize = 14.sp, maxLines = 1)
             }

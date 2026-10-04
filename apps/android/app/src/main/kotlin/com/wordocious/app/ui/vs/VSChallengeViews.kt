@@ -498,7 +498,7 @@ fun ChallengeRouteScreen(
         return
     }
     Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
-        VsNavBar("CHALLENGE", onBack = onHome) { if (c != null) VsModeChip(mode) }
+        VsNavBar("CHALLENGE", onBack = onHome, heading = com.wordocious.app.ui.Heading.CHALLENGE) { if (c != null) VsModeChip(mode) }
         Column(
             Modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally,

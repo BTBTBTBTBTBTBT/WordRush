@@ -218,8 +218,8 @@ struct FinishedCompactHeader: View {
             .padding(.horizontal, 54)
             .padding(.top, 4)
             // FINISH_SPEC §AR: the result strip's headline in live lettering.
-            LiveHeadline(text: stripHeadline, palette: .home, size: 20, maxLines: 1, minimumScale: 0.6, animated: !prebuilding,
-                         entranceDelay: FinishMotion.afterCard)
+            // BJ16: SOLVED! / NOT TODAY lettering by result (the chips carry the counts; the text stays the label).
+            HeadingArtView(won ? .solved : .nottoday, height: 36, label: stripHeadline, motion: !prebuilding)
                 // BJ2: built hidden under the win card, it pops in once revealed.
                 .id(prebuilding)
                 .padding(.horizontal, 12)

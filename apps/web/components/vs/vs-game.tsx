@@ -83,6 +83,7 @@ import { VsProperNoundle } from './vs-propernoundle';
 import { FeedbackPill } from '@/components/game/feedback-toast';
 
 interface VsGameProps {
+import { HeadingArt } from '@/components/ui/heading-art';
   mode: GameMode;
   /**
    * Private-match invite code. When present, joinQueue routes through
@@ -2419,9 +2420,8 @@ function DailyVsAlreadyPlayed({
           <div className="text-[11px] font-black uppercase" style={{ color: VS.ink, letterSpacing: 1.2 }}>
             Today&apos;s VS puzzle
           </div>
-          <h1 className="text-[26px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>
-            Already played
-          </h1>
+          {/* BJ16: the ALREADY PLAYED lettering, not plain text. */}
+          <HeadingArt slug="alreadyplayed" as="h1" height={32} maxWidth={300} />
         </div>
 
         {/* Today's outcome as YOU WIN! / YOU LOSE lettering, ≈28 tall

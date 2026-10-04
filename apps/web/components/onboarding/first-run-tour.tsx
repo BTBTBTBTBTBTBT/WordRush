@@ -34,6 +34,8 @@ import {
 } from '@/lib/onboarding';
 import { UsernameStep } from './username-step';
 import { MascotCoach } from './mascot-coach';
+import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
+import { ArtTitle } from '@/components/ui/art-title';
 
 // First-run welcome + guided profile setup (docs/FINISH_SPEC.md AO, which
 // supersedes W). After the cold-start intro, ONLY for brand-new players
@@ -61,14 +63,16 @@ type SceneName = 'art-scene-onboard-tiles' | 'art-scene-onboard-score' | 'art-sc
 interface Card {
   art: SceneName;
   title: string;
+  /** BJ16: the title's lettering. */
+  heading: HeadingSlug;
   line: string;
 }
 
 const CARDS: Card[] = [
-  { art: 'art-scene-onboard-tiles', title: 'DAILY GAMES', line: 'New puzzles every day. Guess the word, solve the board.' },
-  { art: 'art-scene-onboard-score', title: 'SCORE BIG', line: 'Fewer guesses and faster times earn more points.' },
-  { art: 'art-scene-shield-guard', title: 'KEEP YOUR STREAK', line: 'Play daily to grow your streak. Shields save it.' },
-  { art: 'art-scene-friends-match', title: 'PLAY TOGETHER', line: 'Race friends, react, and battle the cast.' },
+  { art: 'art-scene-onboard-tiles', title: 'DAILY GAMES', heading: 'tour-daily', line: 'New puzzles every day. Guess the word, solve the board.' },
+  { art: 'art-scene-onboard-score', title: 'SCORE BIG', heading: 'tour-score', line: 'Fewer guesses and faster times earn more points.' },
+  { art: 'art-scene-shield-guard', title: 'KEEP YOUR STREAK', heading: 'tour-streak', line: 'Play daily to grow your streak. Shields save it.' },
+  { art: 'art-scene-friends-match', title: 'PLAY TOGETHER', heading: 'tour-together', line: 'Race friends, react, and battle the cast.' },
 ];
 
 /** Load-then-show for art that may not be shipped yet (hidden cleanly when missing). */
@@ -82,14 +86,6 @@ function useArtReady(name: string): boolean {
     return () => { live = false; };
   }, [name]);
   return ready;
-}
-
-function Headline({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="soft-num soft-num-auto m-0 text-center leading-none" style={{ fontSize: 32, letterSpacing: '0.03em' }}>
-      {children}
-    </h2>
-  );
 }
 
 function Line({ children }: { children: React.ReactNode }) {
@@ -149,7 +145,7 @@ function TourCard({ card, index, active, artRef }: { card: Card; index: number; 
           style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '40vh' }}
         />
       </div>
-      <Headline>{card.title}</Headline>
+      <HeadingArt slug={card.heading} as="h2" height={52} maxWidth={340} />
       <Line>{card.line}</Line>
     </div>
   );
@@ -475,7 +471,8 @@ export function FirstRunTour() {
               ) : (
                 <div className="w-full" style={{ maxWidth: 440 }} aria-hidden="true"><CastHeader /></div>
               )}
-              <Headline>WELCOME TO WORDOCIOUS!</Headline>
+              {/* BJ16 quick win: the WELCOME! lettering (the full line stays the label). */}
+              <ArtTitle name="art-titlecast-welcome" label="Welcome to Wordocious!" as="h2" maxHeight={72} />
               <Line>Daily word games, a cast of friends, and bragging rights.</Line>
               <CastButton size="lg" color="purple" icon="arrow" onClick={() => goStep('tour')} className="mt-2" style={{ minWidth: 220 }}>
                 Let&apos;s go!
@@ -526,7 +523,7 @@ export function FirstRunTour() {
               <div className="w-full flex flex-col items-center gap-4" style={{ maxWidth: 400 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={artSrc('art-pose-w-wave')} alt="" aria-hidden width={120} height={120} draggable={false} style={{ width: 120, height: 120 }} />
-                <Headline>MAKE YOUR PROFILE</Headline>
+                <HeadingArt slug="makeprofile" as="h2" height={48} maxWidth={340} />
                 {signedInReady ? (
                   <UsernameStep profileId={p!.id} current={String(p!.username ?? '')} refreshProfile={refreshProfile} onSaved={() => goStep('mascot')} />
                 ) : user ? (
@@ -554,7 +551,7 @@ export function FirstRunTour() {
             <StepIn reduced={reduced} className="flex-1 min-h-0 flex flex-col" key="mascot">
               <div ref={builderRef} className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
                 <div className="mx-auto w-full flex flex-col items-center gap-3" style={{ maxWidth: 440 }}>
-                  <Headline>MAKE YOUR MASCOT</Headline>
+                  <HeadingArt slug="mascot" as="h2" height={44} maxWidth={340} />
                   {draft && p ? (
                     <div className="w-full">
                       <MascotBuilder
@@ -595,7 +592,7 @@ export function FirstRunTour() {
               ) : (
                 <CastWithYou you={p ? look.config : null} initial={look.initial} reduced={reduced} />
               )}
-              <Headline>YOU&apos;RE IN!</Headline>
+              <HeadingArt slug="yourein" as="h2" height={56} />
               <Line>Meet the gang. Your first puzzle is ready.</Line>
               <CastButton size="lg" color="purple" icon="play" onClick={() => finish(playHref)} className="mt-2" style={{ minWidth: 240 }}>
                 Play today&apos;s Classic

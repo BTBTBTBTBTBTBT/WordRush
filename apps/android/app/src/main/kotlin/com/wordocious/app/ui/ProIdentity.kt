@@ -265,11 +265,7 @@ fun YoureProSheet(onDismiss: () -> Unit) {
                 modifier = Modifier.size(84.dp).clearAndSetSemantics { },
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    "You're Pro", fontSize = 22.sp, fontWeight = FontWeight.Black, fontFamily = Nunito,
-                    color = if (dark) WTheme.text else FinishInk.heading,
-                    modifier = Modifier.semantics { heading() },
-                )
+                HeadingArt(Heading.YOUREPRO, height = 36.dp, maxWidth = 200.dp, modifier = Modifier.weight(1f, fill = false))   // BJ16
                 ProCrownSprite(26.dp)
             }
             ProFacts(profile, dark)

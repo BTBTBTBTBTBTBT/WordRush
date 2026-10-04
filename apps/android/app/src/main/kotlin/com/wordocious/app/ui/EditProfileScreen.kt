@@ -288,7 +288,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         // The shared page header (HEADER_SPEC §4): Cancel is the bare close control; Save
         // is a small purple candy button on the right (A8).
-        PageHeader("EDIT PROFILE", onBack = onDone, backAsClose = true, backLabel = "Cancel", titleSize = 18.sp) {
+        PageHeader("EDIT PROFILE", heading = Heading.EDITPROFILE, onBack = onDone, backAsClose = true, backLabel = "Cancel", titleSize = 18.sp) {
             CandyButton(
                 if (saving) "Saving…" else "Save", color = CandyColor.PURPLE, size = CandySize.SMALL,
                 onClick = {

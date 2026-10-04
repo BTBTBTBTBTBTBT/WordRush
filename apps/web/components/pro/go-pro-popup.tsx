@@ -18,6 +18,8 @@ import { ART_SIZE, artSrc } from '@/lib/art';
 import { softShadow } from '@/lib/soft-surface';
 import { feedback } from '@/lib/sound-events';
 import { CHECKOUT_HANDOFF_LINE, webRenewalDisclosure } from '@/lib/payment/subscription-copy';
+import { HeadingArt } from '@/components/ui/heading-art';
+import { ArtTitle } from '@/components/ui/art-title';
 
 // The redesigned Go Pro popup (docs/FINISH_SPEC.md G1, R3): W crowned with
 // the golden star, the plan picker (Yearly preselected, Monthly), and one
@@ -115,9 +117,15 @@ export function GoProPopupHost() {
           <HeaderBack kind="close" onClick={close} size={32} label="Close" className="absolute top-3 right-2 z-10" />
           <div className="px-4 pt-2 pb-4 text-center">
             <Image src={artSrc(CROWN)} alt="" aria-hidden width={cw} height={ch} sizes="120px" draggable={false} className="mx-auto select-none pointer-events-none art-pop" style={{ height: 118, width: 'auto', filter: 'drop-shadow(0 6px 10px rgba(180, 83, 9, 0.25))' }} />
-            <h2 className="m-0 mt-1 text-lg font-black" style={{ color: 'var(--color-text)' }}>
-              {req.reason ? `${req.reason} is a Pro perk` : 'Go Pro'}
-            </h2>
+            {/* BJ16: PRO PERK lettering with the reason under it, or the GO PRO lettering. */}
+            {req.reason ? (
+              <>
+                <HeadingArt slug="properk" as="h2" label={`${req.reason} is a Pro perk`} className="mt-1" />
+                <p aria-hidden="true" className="m-0 text-[13px] font-black" style={{ color: 'var(--color-text)' }}>{req.reason}</p>
+              </>
+            ) : (
+              <ArtTitle name="art-titlecast-gopro" label="Go Pro" as="h2" maxHeight={48} className="mt-1" />
+            )}
             <p className="m-0 mt-0.5 text-[12px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
               Fresh puzzles in every game, no waiting, no ads.
             </p>

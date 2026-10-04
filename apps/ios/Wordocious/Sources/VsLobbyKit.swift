@@ -572,10 +572,19 @@ struct VSNavBar<Trailing: View>: View {
     var host: MascotID? = Mascots.vs
     /// ART_SPEC §2: the whole-cast title art in place of the text title + host.
     var art: ArtTitleName? = nil
+    /// FINISH_SPEC BJ16: a heading lettering (art-titlecast-<slug>) in place of the text title.
+    var heading: HeadingArt? = nil
     let onBack: () -> Void
     @ViewBuilder var trailing: () -> Trailing
     var body: some View {
-        if let art {
+        if let heading {
+            HStack(spacing: 8) {
+                HeaderCircleButton(.symbol("chevron.left"), label: "Back", action: onBack)
+                HeadingArtView(heading, height: 36, maxWidth: 240, label: title.capitalized)
+                trailing()
+            }
+            .padding(.horizontal, 10).padding(.top, 4).frame(minHeight: 48)
+        } else if let art {
             // The art takes the row's middle; the back circle and trailing slot sit beside it.
             HStack(spacing: 8) {
                 HeaderCircleButton(.symbol("chevron.left"), label: "Back", action: onBack)

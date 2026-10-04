@@ -332,7 +332,7 @@ internal fun AllSetStep(profile: Profile?, guest: Boolean) {
                     }
                 }
                 Spacer(Modifier.height(22.dp))
-                OnboardLettering("You're in!", 40.sp)
+                HeadingArt(Heading.YOUREIN, height = 56.dp)   // BJ16
                 Spacer(Modifier.height(10.dp))
                 OnboardLine("Meet the gang. Your first puzzle is ready.")
                 Spacer(Modifier.height(28.dp))

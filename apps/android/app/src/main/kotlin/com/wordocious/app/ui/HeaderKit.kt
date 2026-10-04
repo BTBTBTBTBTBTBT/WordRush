@@ -231,6 +231,8 @@ fun PageHeader(
     art: TitleArt? = null,
     /** AR / AS1: draw [title] in the live lettering with this palette (never plain text). */
     live: HeadlinePalette? = null,
+    /** FINISH_SPEC BJ16: a heading lettering (art-titlecast-<slug>) in place of the text title. */
+    heading: Heading? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
@@ -241,7 +243,11 @@ fun PageHeader(
         if (onBack != null) HeaderBackButton(onBack, close = backAsClose, contentDescription = backLabel)
         // Title + host share ONE weighted cell (a second weighted spacer would cap
         // the title at half the leftover width; see AppHeader's history).
-        if (art != null) {
+        if (heading != null) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                HeadingArt(heading, height = 44.dp, contentDescription = title.lowercase().replaceFirstChar { it.titlecase() })
+            }
+        } else if (art != null) {
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 PageTitleArt(art)
             }

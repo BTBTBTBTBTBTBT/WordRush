@@ -13,6 +13,7 @@ import { POPUP_ACCENT, POPUP_DIM, PopupBar, popupCard } from '@/components/ui/so
 import { softPill } from '@/lib/soft-surface';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 interface ModeLimitModalProps {
   open: boolean;
@@ -69,9 +70,9 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle, unlimite
               <div className="flex justify-center mb-2">
                 <ArtScene scene={PAGE_SCENES.allDone} className="art-pop" />
               </div>
-              <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>
-                {modeName} — Played Today
-              </h2>
+              {/* BJ16: the PLAYED TODAY lettering; the game's name rides under it. */}
+              <HeadingArt slug="playedtoday" as="h2" label={`${modeName} — Played Today`} />
+              <p aria-hidden="true" className="text-xs font-black uppercase mb-1" style={{ color: 'var(--color-text-muted)', letterSpacing: 0.6 }}>{modeName}</p>
               <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
                 You've used your free play of {modeName} for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.
               </p>

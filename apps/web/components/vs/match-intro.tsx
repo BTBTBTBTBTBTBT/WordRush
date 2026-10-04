@@ -9,6 +9,7 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { botPersona } from '@/lib/bot/bot-personas';
 import { alphaHex } from '@/lib/soft-surface';
 import { BotFigure, GhostAvatar, ModeChip, VS_ACCENT, VsPill, vsCard } from './vs-ui';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 export interface IntroPlayer {
   username: string;
@@ -179,7 +180,8 @@ export function MatchIntro({ me, opponent, headToHead, mode, onDone }: MatchIntr
           {/* The top bar: your color, then theirs. */}
           <div aria-hidden="true" style={{ height: 10, background: `linear-gradient(90deg, ${VS_ACCENT} 0%, ${VS_ACCENT} 50%, ${theirs} 50%, ${theirs} 100%)` }} />
           <div className="flex items-center justify-center gap-2" style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.5)' }}>
-            <span className="text-[12px] font-black uppercase" style={{ color: VS.ink, letterSpacing: 1.4 }}>Match found</span>
+            {/* BJ16: the MATCH FOUND! lettering, not a caps label. */}
+            <HeadingArt slug="matchfound" height={26} maxWidth={170} />
             {mode && <ModeChip mode={mode} />}
           </div>
           <div className="flex items-center gap-1 px-3" style={{ padding: '20px 10px 18px' }}>

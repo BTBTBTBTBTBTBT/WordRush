@@ -26,7 +26,7 @@ struct VSBotsView: View {
         VStack(spacing: 0) {
             // No host beside the title: every cast member appears on the ladder
             // below (§A7 — never the same character image twice on one screen).
-            VSNavBar(title: "BOTS", host: nil, onBack: { dismiss() }) { VSModeChip(mode: mode).padding(.trailing, 6) }
+            VSNavBar(title: "BOTS", host: nil, heading: .bots, onBack: { dismiss() }) { VSModeChip(mode: mode).padding(.trailing, 6) }
             ScrollView {
                 // BJ7: 12 between sections.
                 VStack(alignment: .leading, spacing: 12) {
@@ -156,7 +156,7 @@ struct VSBotsView: View {
             } else {
                 Icon3D(.trophy, size: 56)
             }
-            Text("LADDER CLEARED!").font(Brand.font(18, .black)).tracking(0.5).foregroundStyle(VsLobbyKit.titleInk)
+            HeadingArtView(.laddercleared, height: 34, maxWidth: 300)   // BJ16
             Text("All ten beaten — even the boss. Keep any rung for practice.")
                 .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk).multilineTextAlignment(.center)
         }

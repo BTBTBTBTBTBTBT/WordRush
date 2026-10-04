@@ -329,7 +329,18 @@ private fun ProWelcomeScreen(req: ProWelcome.Request, onPlay: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SceneArtPop(R.drawable.art_scene_pro_crown, height = 176.dp, glow = Color(0xFFFFE08A), delayMs = 120L)
-                GoldLettering(
+                // BJ16: WELCOME TO PRO! / FREE WEEK OF PRO! lettering (other headlines keep the gold lettering).
+                val headingArt = when {
+                    headline.contains("FREE WEEK OF PRO") -> Heading.FREEWEEK
+                    headline == "WELCOME TO PRO!" -> Heading.WELCOMEPRO
+                    else -> null
+                }
+                if (headingArt != null) HeadingArt(
+                    headingArt,
+                    Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    height = 52.dp, maxWidth = 340.dp,
+                    contentDescription = headline.lowercase().replaceFirstChar { it.titlecase() },
+                ) else GoldLettering(
                     headline,
                     Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
                         heading()

@@ -118,7 +118,11 @@ fun MatchIntro(
                 ) {
                     VsModeChip(mode)
                     Spacer(Modifier.weight(1f))
-                    VsCapsLabel("MATCH FOUND", color = VsTeal.ink, fontSize = 11.sp, modifier = Modifier.semantics { heading() })
+                    // BJ16: the MATCH FOUND! lettering, not a caps label.
+                    com.wordocious.app.ui.HeadingArt(
+                        com.wordocious.app.ui.Heading.MATCHFOUND, Modifier.weight(1f), height = 28.dp, maxWidth = 180.dp,
+                        alignment = Alignment.CenterEnd,
+                    )
                 }
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 22.dp),

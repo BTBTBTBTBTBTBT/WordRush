@@ -1,6 +1,7 @@
 package com.wordocious.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.runtime.setValue
@@ -98,10 +99,12 @@ fun ModeLimitModal(
                     // R3: U floating with her loop of candy tiles (slow wobble, still with Reduce Motion).
                     com.wordocious.app.ui.game.UnlimitedLoopArt(128.dp)
                     Spacer(Modifier.height(8.dp))
+                    // BJ16: the PLAYED TODAY lettering; the game's name rides under it.
+                    HeadingArt(Heading.PLAYEDTODAY, contentDescription = "$modeName — Played Today")
                     Text(
-                        "$modeName — Played Today", fontSize = 19.sp, fontWeight = FontWeight.Black,
-                        color = if (dark) WTheme.text else FinishInk.heading, textAlign = TextAlign.Center,
-                        modifier = Modifier.semantics { heading() },
+                        modeName.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+                        color = if (dark) WTheme.textMuted else FinishInk.muted, textAlign = TextAlign.Center,
+                        modifier = Modifier.clearAndSetSemantics { },
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(

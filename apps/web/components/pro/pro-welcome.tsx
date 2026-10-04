@@ -31,6 +31,7 @@ import {
   type ProWelcomeKind,
   type ProWelcomeSignal,
 } from '@/lib/pro-welcome';
+import { HeadingArt } from '@/components/ui/heading-art';
 
 // "Welcome to Pro" (docs/FINISH_SPEC.md AP): the one-time full-screen moment
 // after a player's FIRST Pro purchase (the Stripe return, ?purchase=success)
@@ -45,7 +46,6 @@ import {
 // Mounted once in app/layout.tsx.
 
 const GOLD = '#f5a524';
-const GOLD_TEXT = 'linear-gradient(180deg, #ffe08a 0%, #ffc233 45%, #f5a524 70%, #f97316 100%)';
 const CROWN = 'art-scene-pro-crown' as const;
 const SHIELD = 'art-scene-shield-guard' as const;
 /** Gold first, then the cast's candy colors. */
@@ -240,25 +240,8 @@ export function ProWelcome({ kind, shields, name, onClose }: {
           className="mx-auto select-none pointer-events-none rp-spring"
           style={{ height: 170, width: 'auto', filter: 'drop-shadow(0 10px 16px rgba(180, 83, 9, 0.3))' }}
         />
-        <h1
-          id="pro-welcome-title"
-          className="m-0 mt-2 rp-pop"
-          style={{
-            fontWeight: 900,
-            fontSize: kind === 'gift' ? 30 : 36,
-            lineHeight: 1.05,
-            letterSpacing: '0.01em',
-            background: GOLD_TEXT,
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            color: 'transparent',
-            WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 2px 0 #a24b0e) drop-shadow(0 5px 10px rgba(180, 83, 9, 0.3))',
-            animationDelay: '220ms',
-          }}
-        >
-          {headline}
-        </h1>
+        {/* BJ16: WELCOME TO PRO! / FREE WEEK OF PRO! lettering, not gradient text. */}
+        <HeadingArt id="pro-welcome-title" slug={kind === 'gift' ? 'freeweek' : 'welcomepro'} label={headline} height={52} maxWidth={340} as="h1" pop={false} className="mt-2 rp-pop" style={{ animationDelay: '220ms' }} />
         <p id="pro-welcome-line" className="m-0 mt-2 text-sm font-bold" style={{ color: 'var(--color-text-secondary)' }}>
           {proWelcomeLine(name)}
         </p>

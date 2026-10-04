@@ -563,7 +563,7 @@ struct VSLobbyView: View {
                         Image("swords").renderingMode(.template).resizable().scaledToFit()
                             .frame(width: 44, height: 44).foregroundStyle(Theme.textMuted)
                     }
-                    Text("Daily VS Used").font(Brand.font(18, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                    HeadingArtView(.vsused)   // BJ16
                     Text("You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.")
                         .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                         .multilineTextAlignment(.center)

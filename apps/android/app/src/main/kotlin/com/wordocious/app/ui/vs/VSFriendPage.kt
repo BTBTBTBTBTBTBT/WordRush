@@ -83,7 +83,7 @@ fun VsFriendPage(
     }
     if (showInvite) InviteSheet { showInvite = false }
     Column(Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true)) {
-        VsNavBar("CHALLENGE", onBack = onBack) { VsModeChip(mode) }
+        VsNavBar("CHALLENGE", onBack = onBack, heading = com.wordocious.app.ui.Heading.CHALLENGE) { VsModeChip(mode) }
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),

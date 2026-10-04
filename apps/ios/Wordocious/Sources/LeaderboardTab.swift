@@ -277,10 +277,14 @@ struct LeaderboardTab: View {
 
     /// FINISH_SPEC BI23: O2 hosts the signed-out pitch, centered BELOW the pinned header.
     private var signedOut: some View {
+        // BJ16 quick win: the LEADERBOARD page title above the pitch.
+        VStack(spacing: 0) {
+        PageHeadline(.leaderboard, bleed: 12).padding(.top, 4)
         GuestPitch(hosts: [Mascots.leaderboard], title: "Climb the boards",
                    subtitle: "Sign in to see today's rankings and earn medals.",
                    colors: [Color(hex: 0xF59E0B), Color(hex: 0xEA580C)],
                    preview: .podium, onSignIn: { showAuth = true })
+        }
             .softSheet(isPresented: $showAuth) { AuthView() }
     }
 
