@@ -1,0 +1,82 @@
+{
+ "w": {
+  "faceRegionDiff": 1.393,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.664,
+  "costumePx": 115438,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Vampire: black cape with red lining and stand-up collar BEHIND him, a red gem clasp at the neck."
+ },
+ "o1": {
+  "faceRegionDiff": 0.0,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.49,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Pumpkin: green stem + curly vine on top of his head; his own purple pom-poms and four arms untouched."
+ },
+ "r": {
+  "faceRegionDiff": 0.0,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.619,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Ghost: the sheet drapes around him from behind; his nightcap and sleepy face stay on top."
+ },
+ "d": {
+  "faceRegionDiff": 0.0,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.343,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Wizard: starry hat with a gold band, starry robe behind him; glasses, pencil and face untouched."
+ },
+ "o2": {
+  "faceRegionDiff": 0.0,
+  "featuresUntouched": 0.9982,
+  "alignIoU": 0.641,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Witch: black witch hat UNDER her heart sunglasses, purple-lined cape behind her."
+ },
+ "c": {
+  "faceRegionDiff": 0.0,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.391,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Space explorer: antennae headband with glowing green bulbs; the C mouth and snaggleteeth untouched."
+ },
+ "i": {
+  "faceRegionDiff": 1.265,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.04,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Scarecrow: patched straw hat with his sprout poking through it."
+ },
+ "o3": {
+  "faceRegionDiff": 0.456,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.259,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Mummy: the night-1 bandages fitted onto the canonical O, clipped to his body; the cyclops eye and tongue untouched."
+ },
+ "u": {
+  "faceRegionDiff": 0.0,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.712,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Fairy: translucent wings behind him (from the night-1 art); still floating cross-legged, eyes closed."
+ },
+ "s": {
+  "faceRegionDiff": 0.0,
+  "featuresUntouched": 1.0,
+  "alignIoU": 0.797,
+  "costumePx": 0,
+  "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
+  "caption": "Black cat (the approved layered alternate, swapped in for the skeleton: a bone suit has to cover his body, which breaks the face/letter rule): cat-ear headband above his own headband, curly tail with an orange bow."
+ }
+}
