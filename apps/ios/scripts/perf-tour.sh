@@ -12,6 +12,8 @@
 # --loops    run the tour N times in one launch (one table per loop)
 # --label    suffix for the copied report (default: a timestamp)
 # --flag X   pass `-perfFlag X` (a DEBUG A/B switch a measurement reads; repeatable)
+# --demo     also pass `-storeDemo` (the canned signed-in WordWiz, no network): the dress-up
+#            steps (Stage / Dressing Room / Title Shelves) run only when signed in
 #
 # Headless on the booted dev simulator (PERF_UDID picks one); never opens Simulator.app
 # and never creates a device. The app exits itself cleanly after the report (no crash
@@ -29,6 +31,7 @@ while [ $# -gt 0 ]; do
     --loops) LOOPS="$2"; shift ;;
     --label) LABEL="$2"; shift ;;
     --flag) FLAGS+=(-perfFlag "$2"); shift ;;
+    --demo) FLAGS+=(-storeDemo) ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
   shift

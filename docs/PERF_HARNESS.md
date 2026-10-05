@@ -10,7 +10,14 @@ touches UI, and paste the two tables into the change's notes.
 apps/ios/scripts/perf-tour.sh --build                 # build Perf + run the whole tour
 apps/ios/scripts/perf-tour.sh --only octo,quad        # re-run just some surfaces
 apps/ios/scripts/perf-tour.sh --loops 2 --label after # cold + warm tables, named report
+apps/ios/scripts/perf-tour.sh --demo --only dress,noundle,season,toggle --loops 2   # 2.7.1 surfaces, signed in
 ```
+
+- **2.7.1 steps:** `toggle.flips` (Settings candy switches), `season.*` (the Halloween preview on:
+  Home scroll, Leaderboard, then off), `dress.*` (Stage open/close, Dressing Room tabs + mascot hop,
+  Title Shelves open/scroll/close) and `noundle.*` (ProperNoundle clue card open/close). The dress
+  steps run only signed in: `--demo` adds `-storeDemo` (the canned WordWiz, no network; its title
+  catalog is a slice, 10 per shelf).
 
 - **Code:** `apps/ios/Wordocious/Sources/PerfTour.swift`, entirely inside `#if DEBUG`.
   Hooks elsewhere are DEBUG-only one-liners: the app delegate boots it

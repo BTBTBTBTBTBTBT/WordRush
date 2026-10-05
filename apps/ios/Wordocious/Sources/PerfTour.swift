@@ -46,6 +46,11 @@ enum PerfTour {
         case wordDetail(Int)
         /// BJ14: zoom an OctoWord mini board in (index) / back out (nil).
         case zoomBoard(Int?)
+        /// 2.7.1 gate: the Dressing Room's tab (MascotBuilder) and its mascot hop.
+        case builderTab(MascotBuilderTab)
+        case builderHop
+        /// 2.7.1 gate: ProperNoundle's whole-clue card open / closed.
+        case noundleClue(Bool)
     }
 
     enum Sheet: String, Identifiable { case settings, help, strategy, words, quickPlay; var id: String { rawValue } }
@@ -88,7 +93,7 @@ enum PerfTour {
         PerfMonitor.shared.begin("launch.intro")
         // A fresh perf simulator lands on the app, not the sign-in gate / first-run flow.
         UserDefaults.standard.set(true, forKey: Onboarding.flagKey)
-        if !AuthService.hadPersistedSession { AuthService.shared.isGuest = true }
+        if !AuthService.hadPersistedSession, !StoreDemo.active { AuthService.shared.isGuest = true }
         Task { @MainActor in await PerfTourDriver.run() }
     }
 
@@ -422,7 +427,46 @@ enum PerfTourDriver {
             await PerfDrive.scroll(to: 1)
             await PerfDrive.scroll(to: 0)
         }
+        await step("toggle.flips", hold: 0.6) {
+            // The candy switches in Settings (Colorblind / Reduced Motion), flipped and flipped back.
+            let tm = ThemeManager.shared
+            await PerfDrive.scroll(to: 0.45)
+            for _ in 0..<2 { tm.colorblind.toggle(); await PerfDrive.sleep(0.6) }
+            for _ in 0..<2 { tm.reducedMotion.toggle(); await PerfDrive.sleep(0.6) }
+        }
         await step("settings.close", hold: 0.9) { PerfTour.send(.sheet(nil)) }
+
+        // MARK: Season preview (Halloween on vs off), Home scroll
+        await step("season.on", hold: 1.2) {
+            UserDefaults.standard.set("halloween", forKey: CastSkin.debugKey); CastSkin.invalidate()
+        }
+        await step("season.homeScrollDown") { await PerfDrive.scroll(to: 1) }
+        await step("season.homeScrollUp") { await PerfDrive.scroll(to: 0) }
+        await step("season.toLeaderboard", hold: 1.2) { PerfTour.send(.selectTab(.leaderboard)) }
+        await step("season.leaderboardScroll") { await PerfDrive.scroll(to: 1); await PerfDrive.scroll(to: 0) }
+        await step("season.toHome", hold: 1.2) { PerfTour.send(.selectTab(.home)) }
+        await step("season.off", hold: 1.2) {
+            UserDefaults.standard.removeObject(forKey: CastSkin.debugKey); CastSkin.invalidate()
+        }
+
+        // MARK: Dress-up (the Stage, the Dressing Room, the Title Shelves; signed-in only: `--demo`)
+        if AuthService.shared.profile != nil, !AuthService.shared.isGuest {
+            await step("dress.stageOpen", hold: 1.4) { DressUp.shared.open() }
+            await step("dress.stageClose", hold: 1.0) { DressUp.shared.request = nil }
+            await step("dress.roomOpen", hold: 1.4) { DressUp.shared.open(.room(.body)) }
+            await step("dress.roomTabs", hold: 0.6) {
+                for t in [MascotBuilderTab.color, .eyes, .hats, .extras, .backdrop, .frame, .body] {
+                    PerfTour.send(.builderTab(t)); await PerfDrive.sleep(0.55)
+                }
+            }
+            await step("dress.hop", hold: 0.8) {
+                for _ in 0..<3 { PerfTour.send(.builderHop); await PerfDrive.sleep(0.7) }
+            }
+            await step("dress.roomClose", hold: 1.0) { DressUp.shared.request = nil }
+            await step("dress.titlesOpen", hold: 1.4) { DressUp.shared.open(.titles) }
+            await step("dress.titlesScroll") { await PerfDrive.scroll(to: 1); await PerfDrive.scroll(to: 0) }
+            await step("dress.titlesClose", hold: 1.0) { DressUp.shared.request = nil }
+        }
         await step("help.open", hold: 1.2) { PerfTour.send(.sheet(.help)) }
         await step("help.close", hold: 0.9) { PerfTour.send(.sheet(nil)) }
         await step("popup.open", hold: 1.2) { HeaderPopups.shared.toggle(.flawless) }
@@ -546,6 +590,13 @@ enum PerfTourDriver {
                 await PerfDrive.sleep(0.3)
                 await PerfDrive.type("ROUTE")
             }
+        }
+
+        await game("noundle", dbKey: "PROPERNOUNDLE") {
+            await step("noundle.clueOpen", hold: 1.6) { PerfTour.send(.noundleClue(true)) }
+            await step("noundle.clueClose", hold: 0.9) { PerfTour.send(.noundleClue(false)) }
+            await step("noundle.clueReopen", hold: 0.9) { PerfTour.send(.noundleClue(true)) }
+            await step("noundle.clueClose2", hold: 0.9) { PerfTour.send(.noundleClue(false)) }
         }
 
         // MARK: VS + pocket games

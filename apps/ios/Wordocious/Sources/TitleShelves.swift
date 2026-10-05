@@ -38,6 +38,9 @@ struct TitleShelvesView: View {
     @State private var query = ""
     @State private var hint = "Tap a badge to try it on."
     @State private var hop = 0
+    /// BI25 pattern (Settings): the shelves build after the slide-up lands, never on the presenting
+    /// frame (2.7.1 gate: ~30 badge decodes + grays there stalled the open 0.7–1.1 s cold).
+    @State private var settled = false
 
     init(username: String, mascot: AvatarConfig, initial: String, accent: Color = Color(hex: 0x6D28D9),
          unlockedDates: [String: String], selected: String?, onPick: @escaping (String?) -> Void) {
@@ -80,36 +83,44 @@ struct TitleShelvesView: View {
             plate.padding(.horizontal, 14).padding(.top, 10)
             search.padding(.horizontal, 14).padding(.top, 8)
             ScrollView(showsIndicators: false) {
-                LazyVStack(alignment: .leading, spacing: 4) {
-                    let recent = TitleShelfRules.recent(visible, dates: unlockedDates).filter(matches)
-                    if !recent.isEmpty { shelf("Recently earned", count: nil, recent) }
-                    ForEach(TitleShelfRules.shelves, id: \.id) { s in
-                        let all = visible.filter { $0.category == s.id }
-                        let list = (all.filter(earned) + all.filter { !earned($0) }).filter(matches)
-                        if !list.isEmpty { shelf(s.label, count: "\(all.filter(earned).count) / \(all.count)", list) }
-                    }
-                    if visible.isEmpty {
-                        // Never a bare screen: the bundled catalog makes this rare (a broken install / cache).
-                        VStack(spacing: 8) {
-                            PoseImage(.d, "skeptic", height: 70)
-                            Text("Your titles are on their way").font(Brand.font(14, .black)).foregroundStyle(ink)
-                            Button { Task { await catalog.load(force: true) } } label: { CandyLabel(title: "Try again") }
-                                .buttonStyle(CastButtonStyle(color: .purple, size: .small, fullWidth: false))
-                        }
-                        .frame(maxWidth: .infinity).padding(.top, 30)
-                    } else if visible.filter(matches).isEmpty {
-                        VStack(spacing: 6) {
-                            PoseImage(.d, "skeptic", height: 70)
-                            Text("No title matches \"\(query)\"").font(Brand.font(13, .black)).foregroundStyle(ink)
-                        }
-                        .frame(maxWidth: .infinity).padding(.top, 24)
-                    }
-                }
-                .padding(.bottom, 30)
+                if settled { shelves.transition(.opacity) }
             }
         }
         .background((Theme.isDark ? Theme.surface : Color(hex: 0xF6F0FF)).ignoresSafeArea())
+        .task {
+            try? await Task.sleep(nanoseconds: 380_000_000)
+            withAnimation(.easeOut(duration: 0.2)) { settled = true }
+        }
         .task { await catalog.load() }
+    }
+
+    private var shelves: some View {
+        LazyVStack(alignment: .leading, spacing: 4) {
+            let recent = TitleShelfRules.recent(visible, dates: unlockedDates).filter(matches)
+            if !recent.isEmpty { shelf("Recently earned", count: nil, recent) }
+            ForEach(TitleShelfRules.shelves, id: \.id) { s in
+                let all = visible.filter { $0.category == s.id }
+                let list = (all.filter(earned) + all.filter { !earned($0) }).filter(matches)
+                if !list.isEmpty { shelf(s.label, count: "\(all.filter(earned).count) / \(all.count)", list) }
+            }
+            if visible.isEmpty {
+                // Never a bare screen: the bundled catalog makes this rare (a broken install / cache).
+                VStack(spacing: 8) {
+                    PoseImage(.d, "skeptic", height: 70)
+                    Text("Your titles are on their way").font(Brand.font(14, .black)).foregroundStyle(ink)
+                    Button { Task { await catalog.load(force: true) } } label: { CandyLabel(title: "Try again") }
+                        .buttonStyle(CastButtonStyle(color: .purple, size: .small, fullWidth: false))
+                }
+                .frame(maxWidth: .infinity).padding(.top, 30)
+            } else if visible.filter(matches).isEmpty {
+                VStack(spacing: 6) {
+                    PoseImage(.d, "skeptic", height: 70)
+                    Text("No title matches \"\(query)\"").font(Brand.font(13, .black)).foregroundStyle(ink)
+                }
+                .frame(maxWidth: .infinity).padding(.top, 24)
+            }
+        }
+        .padding(.bottom, 30)
     }
 
     private var plate: some View {
@@ -166,7 +177,9 @@ struct TitleShelvesView: View {
             }
             .padding(.horizontal, 16).padding(.top, 10)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 4) {
+                // Lazy: a shelf holds up to ~94 badges; only the on-screen ones build (2.7.1 gate: the eager
+                // row decoded every badge on the opening frame, a ~1 s stall on the Title Shelves open).
+                LazyHStack(alignment: .top, spacing: 4) {
                     ForEach(list) { d in badge(d) }
                 }
                 .padding(.horizontal, 10).padding(.top, 4)

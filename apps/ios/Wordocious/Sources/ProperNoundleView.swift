@@ -451,6 +451,12 @@ struct ProperNoundleView: View {
         .noundleFullClue(vm.isFinished ? nil : vm.clue, isPresented: $showFullClue)
         // The clue opens as soon as it lands (a restored session's clue doesn't pop).
         .onChange(of: vm.clue) { c in if c != nil, !vm.isFinished { showFullClue = true } }
+        #if DEBUG
+        .onPerfTour { c in
+            guard case .noundleClue(let open) = c else { return }
+            if !open { showFullClue = false } else if vm.clue == nil { vm.revealClue() } else { showFullClue = true }
+        }
+        #endif
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }

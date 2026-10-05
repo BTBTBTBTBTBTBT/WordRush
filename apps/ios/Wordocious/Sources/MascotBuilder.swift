@@ -257,6 +257,15 @@ struct MascotBuilderView: View {
         }
         .onChange(of: tab) { MascotNew.markSeen($0) }
         .onAppear { MascotNew.markSeen(tab) }
+        #if DEBUG
+        .onPerfTour { c in
+            switch c {
+            case .builderTab(let t): tab = t
+            case .builderHop: hopToken += 1
+            default: break
+            }
+        }
+        #endif
         .softSheet(isPresented: $showPro) { ProView() }
     }
 

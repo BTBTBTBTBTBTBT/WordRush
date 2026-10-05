@@ -33,6 +33,9 @@ enum StoreDemo {
     /// (the seeded mascot → the Home "Make me yours!" host). Dress-up captures (10-05).
     static let photoMe = ProcessInfo.processInfo.arguments.contains("-storeDemoPhoto")
     static let plainMe = ProcessInfo.processInfo.arguments.contains("-storeDemoPlain")
+    /// `-storeDemoAdmin`: WordWiz is an admin (`is_admin`), so Settings shows the ADMIN Season preview
+    /// picker (2.7.1 gate captures). DEBUG only, like the rest of the demo.
+    static let admin = ProcessInfo.processInfo.arguments.contains("-storeDemoAdmin")
     static var shot: String? {
         let a = ProcessInfo.processInfo.arguments
         guard let i = a.firstIndex(of: "-storeShot"), i + 1 < a.count else { return nil }
@@ -329,7 +332,7 @@ enum StoreDemoData {
         var r: [String: Any] = [:]
         r["id"] = p.id; r["username"] = p.name; r["avatar_url"] = StoreDemo.json(StoreDemo.photoUrl(p)); r["is_pro"] = isMe && !StoreDemo.free
         r["pro_expires_at"] = isMe && StoreDemo.free ? NSNull() : StoreDemo.iso(Date(timeIntervalSinceNow: 86_400 * 200))
-        r["is_banned"] = false; r["is_admin"] = false; r["role"] = NSNull(); r["has_onboarded"] = true
+        r["is_banned"] = false; r["is_admin"] = isMe && StoreDemo.admin; r["role"] = NSNull(); r["has_onboarded"] = true
         r["level"] = p.level; r["xp"] = p.level * 1450; r["total_wins"] = wins; r["total_losses"] = 64
         r["current_streak"] = p.streak; r["best_streak"] = best
         r["daily_login_streak"] = p.streak; r["best_daily_login_streak"] = best
@@ -566,6 +569,12 @@ enum StoreDemoDriver {
                                              headToHead: HeadToHeadRecord(myWins: 7, theirWins: 5, draws: 0), onDone: {})),
                     full: true)
         case "mascot": present(AnyView(StoreDemoMascotPage()))
+        // Settings scrolled to the bottom (with `-storeDemoAdmin`: the ADMIN Season preview picker).
+        case "settings":
+            for _ in 0..<60 where AuthService.shared.profile == nil { await PerfDrive.sleep(0.1) }
+            PerfTour.send(.sheet(.settings))
+            await PerfDrive.sleep(1.8)
+            await PerfDrive.scroll(to: 1)
         // 10-05 dress-up captures: the Stage, the Dressing Room per tab, the Title Shelves, the party-hat offer.
         case "stage": DressUp.shared.resetForDemo(); DressUp.shared.open()
         case "titles": DressUp.shared.resetForDemo(); DressUp.shared.open(.titles)

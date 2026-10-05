@@ -105,6 +105,12 @@ struct EditProfileView: View {
                 unlockedDates = await AchievementService.fetchUnlockedDates(userId: uid)
                 unlocked = Set(unlockedDates.keys)
             }
+            // 2.7.1 gate: the Title Shelves' badges (50 pt, locked ones pre-grayed) decode off the main
+            // thread while the Stage is up, so "Wear it" opens the shelves without a decode stall.
+            let earned = unlocked
+            BadgeArt.prewarm(catalog.all.filter { !($0.hidden ?? false) }.map {
+                (name: BadgeArt.achievementAsset(key: $0.key, icon: $0.icon, category: $0.category), gray: !earned.contains($0.key))
+            }, points: 50)
         }
         .onChange(of: photoItem) { item in
             guard let item else { return }
