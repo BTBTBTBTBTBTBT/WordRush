@@ -6,6 +6,7 @@
 // Android ui/Mascots.kt in step with it.
 
 import { MODES } from './modes.generated';
+import { artOverride } from './art-override';
 
 export type MascotId = 'w' | 'o1' | 'r' | 'd' | 'o2' | 'c' | 'i' | 'o3' | 'u' | 's';
 
@@ -19,7 +20,7 @@ export const MASCOT_LETTER: Record<MascotId, string> = {
 
 /** Public path of a character's art (512 px, transparent). */
 export function mascotSrc(id: MascotId): string {
-  return `/mascots/${id}.png`;
+  return artOverride(`mascot-${id}`) ?? `/mascots/${id}.png`;
 }
 
 /** §1 + §6: one host per page or place. */
