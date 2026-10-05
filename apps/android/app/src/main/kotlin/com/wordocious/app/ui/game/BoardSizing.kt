@@ -49,6 +49,29 @@ object BoardSizing {
         )
     }
 
+    /** [fillRows]' result: the tile width, the (possibly taller) tile height and the row gap, in dp. */
+    data class Rows(val tileW: Float, val tileH: Float, val rowGap: Float)
+
+    /**
+     * Width-bound boards (ProperNoundle's long answers: ten tiles across a phone) used to
+     * leave the spare HEIGHT as dead bands above and below (founder, 2026-10-05: "always fix
+     * empty space issues"). Given the tile WIDTH the row allows, spend that height: tiles
+     * grow taller (up to [maxRatio] × the width), then the row gaps grow (up to [maxGapRatio]
+     * × the tile height). Height-bound boards stay square. Mirrors iOS BoardSizing.fillRows
+     * and web lib/board-fit.ts fillRows.
+     */
+    fun fillRows(tileW: Float, availH: Float, rows: Int, gap: Float, maxRatio: Float = 1.25f, maxGapRatio: Float = 0.5f): Rows {
+        val r = rows.coerceAtLeast(1)
+        if (availH <= 0f) return Rows(tileW, tileW, gap)
+        val h = availH * HEIGHT_FRACTION
+        val byH = (h - (r - 1) * gap) / r
+        if (byH <= tileW) { val t = kotlin.math.floor(byH).coerceAtLeast(1f); return Rows(t, t, gap) }
+        val tileH = kotlin.math.floor(minOf(tileW * maxRatio, byH))
+        val spare = if (r > 1) (h - r * tileH) / (r - 1) else gap
+        val rowGap = kotlin.math.floor(minOf(maxOf(gap, spare), maxOf(gap, tileH * maxGapRatio)))
+        return Rows(tileW, tileH, rowGap)
+    }
+
     /**
      * A multi-board grid ([boardCols] × [boardRows] boards, each [tileCols] × [tileRows]
      * tiles with [tileGap] between, plus [boardChrome] dp of padding / border / gutter per

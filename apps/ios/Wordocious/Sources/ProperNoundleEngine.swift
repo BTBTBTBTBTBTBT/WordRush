@@ -112,6 +112,13 @@ enum ProperNoundle {
     /// player and the web/server opponent were handed DIFFERENT puzzles and
     /// raced different words. The puzzle JSON is byte-identical across platforms,
     /// so matching the hash yields the same index → the same puzzle.
+    #if DEBUG
+    /// Layout checks only (`-pnAnswerLength N`): the first bank puzzle whose answer has N letters.
+    static func debugPuzzle(letters n: Int) -> NPuzzle? {
+        all.first { wordGroups($0.display).reduce(0, +) == n }
+    }
+    #endif
+
     static func puzzle(forSeed seed: String) -> NPuzzle? {
         guard !all.isEmpty else { return nil }
         var hash: Int32 = 0

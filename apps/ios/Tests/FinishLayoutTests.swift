@@ -209,4 +209,22 @@ final class CrosswordFitTests: XCTestCase {
         XCTAssertEqual(cell(355, 100), CrosswordFit.minCell)
         XCTAssertEqual(CrosswordFit.cell(columns: 0, rows: 0, width: 0, height: 0), CrosswordFit.minCell)
     }
+
+    // ProperNoundle long answers (founder 2026-10-05: no dead bands): width-bound rows spend the spare height.
+    func testFillRowsSpendsSpareHeight() {
+        // 10 tiles across a phone: 31-wide tiles, 340 high for 6 rows.
+        let f = BoardSizing.fillRows(tileWidth: 31, height: 340, rows: 6, gap: 4)
+        XCTAssertEqual(f.tileWidth, 31)
+        XCTAssertEqual(f.tileHeight, floor(31 * 1.25))          // taller, capped at 1.25:1
+        XCTAssertGreaterThan(f.rowGap, 4)                          // then roomier rows
+        XCTAssertLessThanOrEqual(f.rowGap, floor(f.tileHeight * 0.5))
+        let used = 6 * f.tileHeight + 5 * f.rowGap
+        XCTAssertGreaterThan(used, 340 * 0.98 - 12)                // no dead band
+        // Height-bound (5 tiles): square, unchanged rule.
+        let sq = BoardSizing.fillRows(tileWidth: 64, height: 300, rows: 6, gap: 4)
+        XCTAssertEqual(sq.tileWidth, sq.tileHeight)
+        XCTAssertEqual(sq.rowGap, 4)
+        // No height given: square.
+        XCTAssertEqual(BoardSizing.fillRows(tileWidth: 40, height: nil, rows: 6, gap: 4).tileHeight, 40)
+    }
 }

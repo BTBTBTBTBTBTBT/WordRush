@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD_FIT, CROSSWORD_FIT, crosswordCell, crosswordCellFonts, fitBoard, fitBoardGrid, tileFontPx } from './board-fit';
+import { BOARD_FIT, CROSSWORD_FIT, crosswordCell, crosswordCellFonts, fitBoard, fitBoardGrid, tileFontPx, fillRows } from './board-fit';
 
 // FINISH_SPEC B5: one board-sizing rule for every game.
 
@@ -121,5 +121,22 @@ describe('crosswordCell', () => {
     const small = crosswordCellFonts(14);
     expect(small.letter).toBe(8);
     expect(small.number).toBe(5);
+  });
+});
+
+// ProperNoundle long answers (founder, 2026-10-05: "always fix empty space issues").
+describe('fillRows (width-bound rows spend the spare height)', () => {
+  it('ten tiles across a phone: taller tiles (≤ 1.25:1), then roomier rows, no dead band', () => {
+    const f = fillRows({ tileWidth: 31, height: 340, rows: 6, gap: 5 });
+    expect(f.tileWidth).toBe(31);
+    expect(f.tileHeight).toBe(Math.floor(31 * 1.25));
+    expect(f.rowGap).toBeGreaterThan(5);
+    expect(f.rowGap).toBeLessThanOrEqual(Math.floor(f.tileHeight * 0.5));
+    expect(6 * f.tileHeight + 5 * f.rowGap).toBeGreaterThanOrEqual(340 - 20);  // ≤ 10 px each side
+  });
+  it('height-bound (five tiles) stays square with the normal gap', () => {
+    const f = fillRows({ tileWidth: 56, height: 300, rows: 6, gap: 5 });
+    expect(f.tileHeight).toBe(f.tileWidth);
+    expect(f.rowGap).toBe(5);
   });
 });

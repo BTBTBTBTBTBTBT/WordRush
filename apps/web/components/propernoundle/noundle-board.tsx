@@ -5,7 +5,7 @@ import { Guess, TileState } from './types';
 import { normalizeString } from './game-logic';
 import { LetterTile, type TileLook } from '@/components/game/letter-tile';
 import { REVEAL } from '@/lib/tile-motion';
-import { fitBoard, tileFontPx } from '@/lib/board-fit';
+import { fitBoard, fillRows, tileFontPx } from '@/lib/board-fit';
 import { GameTray } from '@/components/ui/game-tray';
 import { modeTrayAccent, trayChrome } from '@/lib/tray-fit';
 
@@ -41,6 +41,7 @@ function Tile({
   index,
   shouldFlip = false,
   size = 56,
+  height,
   shake = false,
   outIndex = 0,
 }: {
@@ -49,6 +50,8 @@ function Tile({
   index: number;
   shouldFlip?: boolean;
   size?: number;
+  /** Taller-than-square tiles on width-bound boards (fillRows); defaults to `size`. */
+  height?: number;
   shake?: boolean;
   outIndex?: number;
 }) {
@@ -60,7 +63,7 @@ function Tile({
       flipIndex={hasFlip ? index : undefined}
       bad={shake && !!letter}
       outIndex={outIndex}
-      style={{ width: size, height: size, ['--gt-font' as string]: `${tileFontPx(size)}px` }}
+      style={{ width: size, height: height ?? size, ['--gt-font' as string]: `${tileFontPx(size)}px` }}
     />
   );
 }
@@ -81,6 +84,8 @@ export default memo(function NoundleBoard({
   const [lastGuessCount, setLastGuessCount] = useState(guesses.length);
   const [shouldFlipRow, setShouldFlipRow] = useState(-1);
   const [tileSize, setTileSize] = useState(48);
+  const [tileHeight, setTileHeight] = useState(48);
+  const [rowGap, setRowGap] = useState(TILE_GAP);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,9 +121,13 @@ export default memo(function NoundleBoard({
     const calculateTileSize = () => {
       const totalTiles = wordGroups.reduce((sum, count) => sum + count, 0);
       // FINISH_SPEC L: the rows sit on the game tray, so its chrome comes out of the area.
+      // The widest tile the row allows (height left open), then fillRows spends the spare
+      // height — taller tiles up to 1.25:1, then roomier rows — so a long answer leaves no
+      // dead band above and below the board (founder, 2026-10-05).
+      const availH = el.clientHeight - CHROME.top - CHROME.bottom;
       const fit = fitBoard({
         width: el.clientWidth - 2 * CHROME.x,
-        height: el.clientHeight - CHROME.top - CHROME.bottom,
+        height: 100000,
         cols: totalTiles,
         rows: maxGuesses,
         gap: TILE_GAP,
@@ -126,7 +135,10 @@ export default memo(function NoundleBoard({
         maxTile: 56,
         extraWidth: (wordGroups.length - 1) * (WORD_GAP - TILE_GAP),
       });
-      setTileSize(Math.max(fit?.tile ?? 16, 16));
+      const rowsFit = fillRows({ tileWidth: Math.max(fit?.tile ?? 16, 16), height: availH, rows: maxGuesses, gap: TILE_GAP });
+      setTileSize(Math.max(rowsFit.tileWidth, 16));
+      setTileHeight(Math.max(rowsFit.tileHeight, 16));
+      setRowGap(rowsFit.rowGap);
     };
 
     const ro = new ResizeObserver(calculateTileSize);
@@ -160,6 +172,7 @@ export default memo(function NoundleBoard({
                     index={currentIndex}
                     shouldFlip={shouldFlip}
                     size={tileSize}
+                    height={tileHeight}
                   />
                 );
               })}
@@ -189,6 +202,7 @@ export default memo(function NoundleBoard({
                     state={tiles[currentIndex] ? 'tbd' : 'empty'}
                     index={currentIndex}
                     size={tileSize}
+                    height={tileHeight}
                     shake={applyShake}
                     outIndex={totalTiles - 1 - currentIndex}
                   />
@@ -213,6 +227,7 @@ export default memo(function NoundleBoard({
                     state="empty"
                     index={currentIndex}
                     size={tileSize}
+                    height={tileHeight}
                   />
                 );
               })}
@@ -230,7 +245,7 @@ export default memo(function NoundleBoard({
   return (
     <div ref={containerRef} className="flex flex-col w-full h-full justify-center items-center">
       <GameTray accent={accent} state={won ? 'won' : lost ? 'lost' : 'playing'} className="w-fit max-w-full">
-        <div className="flex flex-col" style={{ gap: TILE_GAP }}>
+        <div className="flex flex-col" style={{ gap: rowGap }}>
           {Array(maxGuesses)
             .fill(0)
             .map((_, i) => renderRow(i))}

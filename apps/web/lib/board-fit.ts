@@ -68,6 +68,27 @@ export function fitBoard({
   return { tile, w: tile * cols + gap * (cols - 1) + extraWidth, h: tile * rows + gap * (rows - 1), gap };
 }
 
+/**
+ * Width-bound boards (ProperNoundle's long answers: ten tiles across a phone) used to leave
+ * the spare HEIGHT as dead bands above and below (founder, 2026-10-05: "always fix empty
+ * space issues"). Given the tile WIDTH the row allows, spend that height: tiles grow taller
+ * (up to `maxRatio` × the width), then the row gaps grow (up to `maxGapRatio` × the tile
+ * height). Height-bound boards stay square. Mirrors iOS BoardSizing.fillRows and Android
+ * BoardSizing.fillRows.
+ */
+export function fillRows({ tileWidth, height, rows, gap, maxRatio = 1.25, maxGapRatio = 0.5 }: {
+  tileWidth: number; height: number; rows: number; gap: number; maxRatio?: number; maxGapRatio?: number;
+}): { tileWidth: number; tileHeight: number; rowGap: number } {
+  const r = Math.max(1, rows);
+  if (!(height > 0)) return { tileWidth, tileHeight: tileWidth, rowGap: gap };
+  const byH = (height - (r - 1) * gap) / r;
+  if (byH <= tileWidth) { const t = Math.max(1, Math.floor(byH)); return { tileWidth: t, tileHeight: t, rowGap: gap }; }
+  const tileHeight = Math.floor(Math.min(tileWidth * maxRatio, byH));
+  const spare = r > 1 ? (height - r * tileHeight) / (r - 1) : gap;
+  const rowGap = Math.floor(Math.min(Math.max(gap, spare), Math.max(gap, tileHeight * maxGapRatio)));
+  return { tileWidth, tileHeight, rowGap };
+}
+
 export interface GridFitInput {
   width: number;
   height: number;

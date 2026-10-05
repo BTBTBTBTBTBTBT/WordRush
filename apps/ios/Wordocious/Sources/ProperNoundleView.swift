@@ -96,6 +96,9 @@ final class ProperNoundleVM: ObservableObject {
         self.isDaily = (seed == nil && !isVersus)
         self.gameSeed = seed
         puzzle = seed.flatMap { ProperNoundle.puzzle(forSeed: $0) } ?? ProperNoundle.dailyPuzzle()
+        #if DEBUG
+        if let n = PerfTour.argument("-pnAnswerLength").flatMap(Int.init), let p = ProperNoundle.debugPuzzle(letters: n) { puzzle = p }
+        #endif
         // Resume an in-progress / completed session for this exact puzzle so
         // guesses + hints survive leaving and returning (web parity:
         // propernoundle-game.tsx daily/practice localStorage restore). VS never
@@ -805,21 +808,24 @@ struct NoundleBoard: View {
         let total = groups.reduce(0, +)
         let gap: CGFloat = 4, groupGap: CGFloat = 14
         let rows = max(1, vm.maxGuesses)
-        let tile = floor(CGFloat(BoardSizing.fitTile(
+        // The widest tile the row allows; then fillRows spends the spare height (taller tiles
+        // up to 1.25:1, then roomier rows) so a long answer leaves no dead band (2026-10-05).
+        let tileW = floor(CGFloat(BoardSizing.fitTile(
             widthUnits: Double(max(1, total)),
             fixedWidth: Double(gap * CGFloat(max(0, total - groups.count)) + groupGap * CGFloat(max(0, groups.count - 1))),
-            heightUnits: Double(rows), fixedHeight: Double(gap * CGFloat(rows - 1)),
-            width: Double(width), height: height.map(Double.init), maxTile: 64)))
-        return VStack(spacing: gap) {
+            heightUnits: Double(rows), fixedHeight: 0,
+            width: Double(width), height: nil, maxTile: 64)))
+        let fit = BoardSizing.fillRows(tileWidth: Double(tileW), height: height.map(Double.init), rows: rows, gap: Double(gap))
+        return VStack(spacing: CGFloat(fit.rowGap)) {
             ForEach(0..<vm.maxGuesses, id: \.self) { row in
-                rowView(row, groups: groups, tile: tile, gap: gap, groupGap: groupGap)
+                rowView(row, groups: groups, tile: CGFloat(fit.tileWidth), tileHeight: CGFloat(fit.tileHeight), gap: gap, groupGap: groupGap)
             }
         }
         .modifier(NoundleTrayChrome(on: tray, state: vm.isFinished ? (vm.status == .won ? .won : .lost) : .normal))
     }
 
     @ViewBuilder
-    private func rowView(_ row: Int, groups: [Int], tile: CGFloat, gap: CGFloat, groupGap: CGFloat) -> some View {
+    private func rowView(_ row: Int, groups: [Int], tile: CGFloat, tileHeight: CGFloat, gap: CGFloat, groupGap: CGFloat) -> some View {
         let committed = row < vm.guesses.count
         let isCurrent = row == vm.guesses.count && !vm.isFinished
         let letters: [Character] = committed ? Array(vm.guesses[row].word) : (isCurrent ? Array(vm.input) : [])
@@ -832,7 +838,7 @@ struct NoundleBoard: View {
                         let idx = start + ci
                         let ch = idx < letters.count ? String(letters[idx]).uppercased() : ""
                         let st = states != nil && idx < states!.count ? states![idx] : .empty
-                        nTile(ch, st, size: tile)
+                        nTile(ch, st, size: tile, height: tileHeight)
                     }
                 }
             }
@@ -840,7 +846,7 @@ struct NoundleBoard: View {
     }
 
     /// FINISH_SPEC §B1: the same glossy tiles as every word game.
-    private func nTile(_ letter: String, _ state: NTile, size: CGFloat) -> some View {
+    private func nTile(_ letter: String, _ state: NTile, size: CGFloat, height: CGFloat) -> some View {
         let face: GlossyFace = {
             switch state {
             case .correct: return .correct
@@ -850,8 +856,8 @@ struct NoundleBoard: View {
             case .empty: return letter.isEmpty ? .empty : .typed
             }
         }()
-        return GlossyTile(face: face, letter: letter, width: size)
-            .modifier(TypePop(letter: state == .empty ? letter : "", size: CGSize(width: size, height: size)))
+        return GlossyTile(face: face, letter: letter, width: size, height: height)
+            .modifier(TypePop(letter: state == .empty ? letter : "", size: CGSize(width: size, height: height)))
     }
 }
 

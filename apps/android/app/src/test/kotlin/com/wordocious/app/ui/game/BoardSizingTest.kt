@@ -90,4 +90,20 @@ class BoardSizingTest {
         assertEquals(BoardSizing.CROSSWORD_MIN_CELL, xw(340f, 100f), eps)
         assertTrue(xw(340f, 258f, cols = 7, rows = 7) > xw(340f, 258f))
     }
+
+    // ProperNoundle long answers (founder 2026-10-05: no dead bands): width-bound rows spend the spare height.
+    @Test fun fillRows_tenTilesAcrossAPhone_tallerTilesThenRoomierRows() {
+        val f = BoardSizing.fillRows(tileW = 31f, availH = 340f, rows = 6, gap = 5f)
+        assertEquals(31f, f.tileW, 0.01f)
+        assertEquals(kotlin.math.floor(31f * 1.25f), f.tileH, 0.01f)
+        assertTrue(f.rowGap > 5f)
+        assertTrue(f.rowGap <= kotlin.math.floor(f.tileH * 0.5f))
+        assertTrue(6 * f.tileH + 5 * f.rowGap >= 340f * BoardSizing.HEIGHT_FRACTION - 20f)
+    }
+
+    @Test fun fillRows_heightBound_staysSquare() {
+        val f = BoardSizing.fillRows(tileW = 64f, availH = 300f, rows = 6, gap = 5f)
+        assertEquals(f.tileW, f.tileH, 0.01f)
+        assertEquals(5f, f.rowGap, 0.01f)
+    }
 }

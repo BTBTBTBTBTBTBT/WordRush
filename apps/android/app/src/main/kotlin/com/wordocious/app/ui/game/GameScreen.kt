@@ -1163,19 +1163,27 @@ internal fun SingleBoard(
         // L: the tray's padding + lip come out of the space the tiles may use.
         val chromeW = if (tray) GameTrayStyle.PADDING.value * 2 else 0f
         val chromeH = if (tray) GameTrayStyle.PADDING.value * 2 + GameTrayStyle.LIP.value else 0f
+        // ProperNoundle (wordGroups set): the widest tile the row allows, then fillRows spends
+        // the spare height — taller tiles up to 1.25:1, then roomier rows — so a long answer
+        // leaves no dead band (founder, 2026-10-05). Every other game keeps square tiles.
+        val pnFill = wordGroups != null
+        val availH = (maxHeight.value - chromeH).coerceAtLeast(0f)
         val fit = BoardSizing.fitSquare(
-            availW = (maxWidth.value - chromeW).coerceAtLeast(0f), availH = (maxHeight.value - chromeH).coerceAtLeast(0f),
+            availW = (maxWidth.value - chromeW).coerceAtLeast(0f), availH = if (pnFill) 100_000f else availH,
             cols = wordLen, rows = rows, gap = gap.value, extraWidth = extraGroupGap.value,
         )
-        val tile = fit.cellW
+        val rowsFit = if (pnFill) BoardSizing.fillRows(fit.cellW, availH, rows, gap.value) else BoardSizing.Rows(fit.cellW, fit.cellW, gap.value)
+        val tile = rowsFit.tileW
+        val boardW = tile * wordLen + gap.value * (wordLen - 1) + extraGroupGap.value
+        val boardH = rowsFit.tileH * rows + rowsFit.rowGap * (rows - 1)
         // Letter = 0.56 of the tile (game-kit.html), as a DP count: TileView converts it
         // through density WITHOUT the user's fontScale (the tile doesn't font-scale).
         val tileFontDp = (tile * 0.56f).coerceIn(4f, 40f)
 
         Box(if (tray) Modifier.gameTray(accent, trayState) else Modifier) {
         Column(
-            modifier = Modifier.size(fit.width.dp, fit.height.dp),
-            verticalArrangement = Arrangement.spacedBy(gap),
+            modifier = Modifier.size(boardW.dp, boardH.dp),
+            verticalArrangement = Arrangement.spacedBy(rowsFit.rowGap.dp),
         ) {
             // Submitted rows
             for (rowIdx in 0 until board.guesses.size) {
@@ -1202,6 +1210,7 @@ internal fun SingleBoard(
                         flipDelay = if (isLastSubmitted || (isFreshHint && letter.isNotEmpty())) col * TileMotion.FLIP_STAGGER_MS else null,
                         fontSize = tileFontDp,
                         modifier = Modifier.weight(1f),
+                        square = !pnFill,
                         celebrate = celebrate,
                         celebrateDelay = TileMotion.revealMs(wordLen) +
                             col * (if (celebrate == TileCelebration.HOP) TileMotion.HOP_STAGGER_MS else 60),
@@ -1219,6 +1228,7 @@ internal fun SingleBoard(
                         isInvalid = (isInvalid || clearing) && letter.isNotEmpty(),
                         fontSize = tileFontDp,
                         modifier = Modifier.weight(1f),
+                        square = !pnFill,
                         clearProgress = clearOf(col),
                     )
                 }
@@ -1229,10 +1239,10 @@ internal fun SingleBoard(
                 if (groups == null) {
                     // BJ14: an unplayed row is ONE Canvas (the same drawGameTile paint as
                     // TileView's empty face), not wordLen animated TileView composables.
-                    EmptyTileRow(wordLen, Modifier.weight(1f).fillMaxWidth())
+                    EmptyTileRow(wordLen, Modifier.weight(1f).fillMaxWidth(), fillHeight = pnFill)
                 } else {
                     BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) {
-                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, modifier = Modifier.weight(1f))
+                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, modifier = Modifier.weight(1f), square = !pnFill)
                     }
                 }
             }
@@ -1247,12 +1257,12 @@ internal fun SingleBoard(
  * the same [drawGameTile] look.
  */
 @Composable
-private fun EmptyTileRow(count: Int, modifier: Modifier = Modifier) {
+private fun EmptyTileRow(count: Int, modifier: Modifier = Modifier, fillHeight: Boolean = false) {
     val look = TileLooks.of(TileFace.EMPTY, WTheme.colorblind, WTheme.isDark)
     androidx.compose.foundation.Canvas(modifier) {
         val gap = BOARD_TILE_GAP.toPx()
         val cellW = (size.width - gap * (count - 1)) / count
-        val tileH = minOf(cellW, size.height)
+        val tileH = if (fillHeight) size.height else minOf(cellW, size.height)
         for (col in 0 until count) {
             val left = col * (cellW + gap)
             inset(left, 0f, size.width - left - cellW, size.height - tileH) { drawGameTile(look) }

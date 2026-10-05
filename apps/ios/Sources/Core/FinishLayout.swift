@@ -50,6 +50,27 @@ public enum BoardSizing {
         return min(maxTile, max(minTile, tile))
     }
 
+    /// Width-bound boards (ProperNoundle's long answers: ten tiles across a phone) used to
+    /// leave the spare HEIGHT as dead bands above and below (founder, 2026-10-05: "always fix
+    /// empty space issues"). Given the tile WIDTH the row allows, this spends that height:
+    /// tiles grow taller (up to `maxRatio` × the width), then the row gaps grow (up to
+    /// `maxGapRatio` × the tile height). When height is the binding side the tile stays
+    /// square (`tileHeight == tileWidth` capped by the height). Mirrors web
+    /// lib/board-fit.ts `fillRows` and Android BoardSizing.fillRows.
+    public static func fillRows(tileWidth: Double, height: Double?, rows: Int, gap: Double,
+                                heightFill: Double = BoardSizing.heightFill,
+                                maxRatio: Double = 1.25, maxGapRatio: Double = 0.5) -> (tileWidth: Double, tileHeight: Double, rowGap: Double) {
+        let r = Double(max(1, rows))
+        guard let h0 = height, h0.isFinite, h0 > 0 else { return (tileWidth, tileWidth, gap) }
+        let h = h0 * heightFill
+        let byH = (h - (r - 1) * gap) / r
+        if byH <= tileWidth { let t = max(1, floor(byH)); return (t, t, gap) }
+        let tileH = floor(min(tileWidth * maxRatio, byH))
+        let spare = r > 1 ? (h - r * tileH) / (r - 1) : gap
+        let rowGap = floor(min(max(gap, spare), max(gap, tileH * maxGapRatio)))
+        return (tileWidth, tileH, rowGap)
+    }
+
     /// The largest SQUARE tile for a `columns` × `rows` grid whose gaps are
     /// `gapRatio` × the tile.
     public static func squareTile(columns: Int, rows: Int, width: Double, height: Double?,
