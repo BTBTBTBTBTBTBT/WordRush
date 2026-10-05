@@ -575,25 +575,22 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords)
                 Spacer(Modifier.height(LB_CARD_GAP))
             }
-            // AS4 / AU2 (founder 10-02): headline (≤ 110 dp) · the one-row picker · YOUR rank
-            // row · the standings (podium on arrival) · then the play row, your board, yesterday.
-            // §2.3 / C2: ONE result card — crown + your rank (true total; shows even when you
-            // sit outside the visible top 50), how you solved it, your points. For SWEEP this
-            // is your daily-sweep rank.
-            (if (isSweep) sweepRank else userRank)?.let { rank ->
-                item(key = "result") {
-                    val myPoints = if (isSweep) mySweep?.totalScore
-                        else myEntry?.compositeScore ?: completions[selectedMode]?.score
-                    val solved = if (isSweep) mySweep?.let { sweepSolvedLine(it.isFlawless, it.modesWon, it.totalTime, com.wordocious.app.todayLocalDate()) }
-                    else myEntry?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds, it.boardsSolved, it.totalBoards) }
-                        ?: completions[selectedMode]?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds) }
-                    // AU2: ONE compact row ("#2 of 5 · 2,005 pts · 4 guesses · 48s" + the check).
-                    CompactRankRow(
-                        rank = rank.rank, total = rank.totalPlayers, mode = selectedMode,
-                        friends = friendsOnly && !isSweep, points = myPoints, solvedLine = solved,
+            // Founder 10-05: the game card (title art · N today · Play / View board) sits
+            // RIGHT under the picker, so a tile tap reads at once which game's board this is.
+            // Fixed height + pre-decoded art: it swaps in place, the board never jumps.
+            // The Sweep board has no single mode to play, so its card carries the ranking explanation.
+            item(key = "play") {
+                if (isSweep) {
+                    SweepInfoCard(sweepers = playerCount)
+                } else {
+                    ModeInfoCard(
+                        modeId = selectedMode, players = playerCount,
+                        // iOS: cached completions answer instantly; the rank confirms.
+                        played = completions[selectedMode] != null || userRank != null,
+                        onPlay = onPlay,
                     )
-                    Spacer(Modifier.height(LB_CARD_GAP))
                 }
+                Spacer(Modifier.height(LB_CARD_GAP))
             }
             // §2.4 TODAY'S BOARD: label + Everyone | Friends + the bare 3D share icon.
             item(key = "board-head") {
@@ -651,7 +648,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             // BJ4: the Sweep board's leaders on the podium too (gold stage).
                             val sp = boardPodium(sweepEntries.indices.map { it + 1 })
                             BoardPodium(
-                                sweepPodiumSpots(sweepEntries.take(sp.filled), userId, sweepScoreLabels, onOpenProfile),
+                                sweepPodiumSpots(sweepEntries.take(sp.filled), userId, sweepScoreLabels, onOpenProfile, sweepDetails, com.wordocious.app.todayLocalDate()),
                                 sp.open, PODIUM_SWEEP_GOLD,
                             )
                             sweepEntries.drop(sp.filled).forEachIndexed { i, entry ->
@@ -719,7 +716,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             } else null
                         }
                         BoardPodium(
-                            lbPodiumSpots(entries.take(layout.filled), userId, lbScoreLabels, onOpenProfile, tauntOf),
+                            lbPodiumSpots(entries.take(layout.filled), userId, lbScoreLabels, onOpenProfile, tauntOf, mode = selectedMode),
                             layout.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED),
                         )
                         val podium = layout.filled > 0
@@ -772,23 +769,27 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     }
                 }
             }
-            // AU2: the play / view-board row and the rest sit BELOW the standings.
-            // §2.1 Play card for the selected game. The Sweep board has no single mode to
-            // play, so its card carries the ranking explanation.
-            item(key = "play") {
-                Spacer(Modifier.height(LB_CARD_GAP))
-                if (isSweep) {
-                    SweepInfoCard(sweepers = playerCount)
-                } else {
-                    ModeInfoCard(
-                        modeId = selectedMode, players = playerCount,
-                        // iOS: cached completions answer instantly; the rank confirms.
-                        played = completions[selectedMode] != null || userRank != null,
-                        onPlay = onPlay,
+            // Founder 10-05: headline · picker · the game card · the standings · then YOUR rank
+            // row with your board under it (where the game card used to be) · yesterday.
+            // §2.3 / C2: ONE result card — crown + your rank (true total; shows even when you
+            // sit outside the visible top 50), how you solved it, your points. For SWEEP this
+            // is your daily-sweep rank.
+            (if (isSweep) sweepRank else userRank)?.let { rank ->
+                item(key = "result") {
+                    val myPoints = if (isSweep) mySweep?.totalScore
+                        else myEntry?.compositeScore ?: completions[selectedMode]?.score
+                    val solved = if (isSweep) mySweep?.let { sweepSolvedLine(it.isFlawless, it.modesWon, it.totalTime, com.wordocious.app.todayLocalDate()) }
+                    else myEntry?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds, it.boardsSolved, it.totalBoards) }
+                        ?: completions[selectedMode]?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds) }
+                    // AU2: ONE compact row ("#2 of 5 · 2,005 pts · 4 guesses · 48s" + the check).
+                    Spacer(Modifier.height(LB_CARD_GAP))
+                    CompactRankRow(
+                        rank = rank.rank, total = rank.totalPlayers, mode = selectedMode,
+                        friends = friendsOnly && !isSweep, points = myPoints, solvedLine = solved,
                     )
                 }
-                Spacer(Modifier.height(LB_CARD_GAP))
             }
+            item(key = "result-gap") { Spacer(Modifier.height(LB_CARD_GAP)) }
             // §2.2 Your board for this mode (the replay, collapsible), tinted, under the result.
             if (!isSweep) {
                 item(key = "completed-$selectedMode") {
@@ -870,7 +871,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 // BJ4: yesterday's sweep leaders on the podium (gold stage).
                                 val ysp = boardPodium(yesterdaySweep.mapIndexed { i, e -> e.rank.toInt().takeIf { it > 0 } ?: (i + 1) })
                                 BoardPodium(
-                                    sweepPodiumSpots(yesterdaySweep.take(ysp.filled), userId, ySweepScoreLabels, onOpenProfile),
+                                    sweepPodiumSpots(yesterdaySweep.take(ysp.filled), userId, ySweepScoreLabels, onOpenProfile, ySweepDetails, com.wordocious.app.yesterdayLocalDate()),
                                     ysp.open, PODIUM_SWEEP_GOLD,
                                 )
                                 yesterdaySweep.drop(ysp.filled).forEachIndexed { i, e ->
@@ -893,7 +894,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             // (founder ask, Aug 11): profile taps, guesses + time, W/L column.
                             val yl = boardPodium(yesterday.indices.map { LeaderboardService.competitionRank(yesterday, it) })
                             BoardPodium(
-                                lbPodiumSpots(yesterday.take(yl.filled), userId, yLbScoreLabels, onOpenProfile),
+                                lbPodiumSpots(yesterday.take(yl.filled), userId, yLbScoreLabels, onOpenProfile, mode = selectedMode),
                                 yl.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED),
                             )
                             yesterday.drop(yl.filled).forEachIndexed { j, e ->
@@ -970,8 +971,11 @@ internal fun lbPodiumSpots(
     leaders: List<LeaderboardService.LeaderboardEntry>, userId: String?, labels: Map<Double, String>,
     onOpenProfile: (String) -> Unit,
     tauntOf: ((LeaderboardService.LeaderboardEntry) -> (() -> Unit)?)? = null,
+    /** Founder 10-05: the board's mode → each place shows the rows' detail line (null = none). */
+    mode: String? = null,
 ): List<BoardPodiumSpot> = leaders.mapIndexed { i, e ->
     BoardPodiumSpot(
+        detail = mode?.let { rowDetail(e, it) },
         place = i + 1,
         name = if (e.userId == userId) "You" else (e.username ?: "Player"),
         points = labels[e.compositeScore] ?: formatScore(e.compositeScore),
@@ -987,8 +991,12 @@ internal fun lbPodiumSpots(
 internal fun sweepPodiumSpots(
     leaders: List<LeaderboardService.SweepEntry>, userId: String?, labels: Map<Double, String>,
     onOpenProfile: (String) -> Unit,
+    /** Founder 10-05: the Sweep rows' detail line under each place (null day = none). */
+    details: Map<String, LeaderboardService.SweepDetails> = emptyMap(),
+    day: String? = null,
 ): List<BoardPodiumSpot> = leaders.mapIndexed { i, e ->
     BoardPodiumSpot(
+        detail = day?.let { sweepStatsLine(e, details[e.userId], it) },
         place = i + 1,
         name = if (e.userId == userId) "You" else (e.username ?: "Player"),
         points = labels[e.totalScore] ?: formatScore(e.totalScore),
@@ -1263,7 +1271,7 @@ internal fun SweepRow(
  *  Aug 18). The segments appear only once details land. §227: spelled out —
  *  the founder read "2h" as HOURS; the pill moved off this line so the words
  *  have the width (iOS sweepStatsLine parity). */
-private fun sweepStatsLine(entry: LeaderboardService.SweepEntry, details: LeaderboardService.SweepDetails?, day: String): String = buildString {
+internal fun sweepStatsLine(entry: LeaderboardService.SweepEntry, details: LeaderboardService.SweepDetails?, day: String): String = buildString {
     // The denominator is that day's sweep-era size (Stage 9: 8 today, 9 before).
     append("${fmtTime(entry.totalTime)} · ${entry.modesWon}/${com.wordocious.app.ModeGen.requiredSweepCount(day)}")
     if (details != null) {
@@ -1456,7 +1464,7 @@ internal fun GhostFriendRow(
 /** Row detail: "{guesses} Guesses · m s [· bs/tb] [· hint label]". Mirrors web.
  *  The guess stat reads through the mode's semantics (ModeStats.guessRowLabel,
  *  More Games §18): "0 Mistakes", "5 Checks", "Par", "+2 over par", "Hubbub". */
-private fun rowDetail(
+internal fun rowDetail(
     entry: LeaderboardService.LeaderboardEntry,
     mode: String,
     /** Records rows omit the hints segment — iOS shows it on the Leaderboard only. */

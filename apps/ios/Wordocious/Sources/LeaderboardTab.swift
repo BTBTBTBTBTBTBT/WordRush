@@ -179,9 +179,15 @@ struct LeaderboardTab: View {
         return HStack(spacing: 8) {
             if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 26) }
             if let titleArt {
-                GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 30, maxWidth: 130,
-                                 alignment: .leading)
-                    .fixedSize()
+                // Drawn from the display-size cache (LeaderboardArt.prewarm decodes every
+                // game's title off main at launch) with no pop-in, so a picker tap swaps
+                // the art in the same frame.
+                let size = LeaderboardArt.cardTitleSize(titleArt.asset)
+                ArtThumbs.image(titleArt.asset, points: LeaderboardArt.cardTitlePoints)
+                    .resizable().interpolation(.high).scaledToFit()
+                    .frame(width: size.width, height: size.height)
+                    .accessibilityLabel(titleArt.label)
+                    .accessibilityAddTraits(.isHeader)
             } else {
                 Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
                     .lineLimit(1).minimumScaleFactor(0.7)
@@ -219,6 +225,9 @@ struct LeaderboardTab: View {
             .layoutPriority(2)
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
+        // One fixed height for every game (the art slot is ≤ 30 pt, the pill sets the row),
+        // so switching games never nudges the board below.
+        .frame(minHeight: LeaderboardArt.cardHeight)
         .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)], radius: 16, barHeight: 4)
         .gameLaunchSource("lb:play", color: accent.wash(0.10), radius: 16)
     }
@@ -386,7 +395,7 @@ struct LeaderboardTab: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
             .lbCard()
         } else {
-            sweepPodiumBoard(sweepEntries, labels: sweepScoreLabels) { sweepRow(rank: $0.rank, entry: $0) }
+            sweepPodiumBoard(sweepEntries, labels: sweepScoreLabels, details: sweepDetails, day: LeaderboardService.todayLocal()) { sweepRow(rank: $0.rank, entry: $0) }
         }
 
         sweepCtaCard
@@ -418,7 +427,7 @@ struct LeaderboardTab: View {
                                 scene: .asleep, artHeight: 90)
                     .lbCard()
             } else {
-                sweepPodiumBoard(yesterdaySweep, labels: ySweepScoreLabels) { yesterdaySweepRow($0) }
+                sweepPodiumBoard(yesterdaySweep, labels: ySweepScoreLabels, details: ySweepDetails, day: LeaderboardService.yesterdayLocal()) { yesterdaySweepRow($0) }
             }
         }
     }
@@ -458,11 +467,11 @@ struct LeaderboardTab: View {
     }
 
     @ViewBuilder private var perModeBoard: some View {
-        // FINISH_SPEC §AS4: what matters first — YOUR result / rank, then the
-        // standings; the compact play row and the rest follow.
-        // §C2: ONE result card — your rank, how you solved it and your points, with the
-        // completed-daily dropdown as its footer. Nothing known yet → the dropdown alone.
-        modeResult
+        // Founder 10-05: the game card (title art · N today · Play / View board) sits
+        // RIGHT under the picker, so a tile tap reads at once which game's board this is
+        // (it swaps in place: pre-decoded art, fixed height, no layout jump). The result
+        // card (your rank + the completed-daily dropdown) moved below the standings.
+        playCtaCard
 
         HStack(alignment: .center, spacing: 8) {
             LbSectionLabel("TODAY\u{2019}S BOARD")
@@ -534,8 +543,9 @@ struct LeaderboardTab: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.top, -6).padding(.trailing, 4)
 
-        // §AS4: the game + Play / View board as ONE compact row under the standings.
-        playCtaCard
+        // §C2: ONE result card — your rank, how you solved it and your points, with the
+        // completed-daily dropdown as its footer. Nothing known yet → the dropdown alone.
+        modeResult
 
         yesterdayToggle.overlay(alignment: .trailing) {
             // Settled-podium share — only once the dropdown is open with rows.
@@ -641,24 +651,27 @@ struct LeaderboardTab: View {
         return PodiumEntry(id: e.userId, name: isMe ? "You" : e.username, username: e.username,
                            accentHex: e.profiles.accentColor, emoji: e.profiles.avatarEmoji,
                            value: labels[e.compositeScore] ?? formatScore(e.compositeScore),
-                           avatarUrl: e.profiles.avatarUrl, rank: rank, bell: bell)
+                           avatarUrl: e.profiles.avatarUrl, rank: rank, bell: bell, detail: detail(e))
     }
 
     /// One podium place from a Sweep row.
-    private func sweepPodiumEntry(_ e: SweepEntry, labels: [Double: String]) -> PodiumEntry {
+    private func sweepPodiumEntry(_ e: SweepEntry, labels: [Double: String],
+                                  details: [String: LeaderboardService.SweepDetails], day: String) -> PodiumEntry {
         let isMe = e.userId.lowercased() == auth.profile?.id.lowercased()
         return PodiumEntry(id: e.userId, name: isMe ? "You" : e.username, username: e.username,
                            value: labels[e.totalScore] ?? formatScore(e.totalScore),
-                           avatarUrl: e.avatarUrl, rank: e.rank)
+                           avatarUrl: e.avatarUrl, rank: e.rank,
+                           detail: sweepStatsLine(e, details: details[e.userId], day: day))
     }
 
     /// BJ4: a Sweep board (today / yesterday) with its leaders on the gold stage.
     @ViewBuilder private func sweepPodiumBoard(_ rows: [SweepEntry], labels: [Double: String],
+                                               details: [String: LeaderboardService.SweepDetails], day: String,
                                                row: @escaping (SweepEntry) -> some View) -> some View {
         let layout = PodiumLayout.layout(rows.map(\.rank))
         VStack(spacing: 0) {
             if layout.filled > 0 {
-                PodiumView(entries: rows.prefix(layout.filled).map { sweepPodiumEntry($0, labels: labels) },
+                PodiumView(entries: rows.prefix(layout.filled).map { sweepPodiumEntry($0, labels: labels, details: details, day: day) },
                            open: layout.open, stage: GamePicker.sweepAccent,
                            onTap: { path.append($0.id) })
             }
@@ -869,17 +882,7 @@ struct LeaderboardTab: View {
         .presentationDetents([.medium])
     }
 
-    private func detail(_ e: LeaderboardEntry) -> String {
-        // Web parity: time as "Ns" / "Nm Ns" (formatTime in app/daily/page.tsx), not M:SS.
-        let t = formatShortTime(Int(e.timeSeconds))
-        // Through the mode's guess semantics (ModeStats.guessRowLabel, web daily
-        // page parity): "4 Guesses", "0 Mistakes", "5 Checks", "Par", "Hubbub".
-        let meta = ModeGen.byDbKey(mode.rawValue)
-        var s = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)) · \(t)"
-        if e.totalBoards > 1 { s += " · \(e.boardsSolved)/\(e.totalBoards)" }
-        if HINT_BEARING_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
-        return s
-    }
+    private func detail(_ e: LeaderboardEntry) -> String { lbDetailLine(e, mode: mode) }
 
     /// A sweep-board row — the per-mode row shell (§C2a): rank, avatar, name over
     /// "total time · X/9 · guesses · hints" + the dot strip with the FLAWLESS/SWEEP
@@ -1160,6 +1163,19 @@ let HINT_BEARING_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE", "SUD
 // board) so Records' daily-sweep rows render the identical line — the web
 // twin lives in components/leaderboard/sweep-mode-dots.tsx for the same
 // reason (founder ask, Aug 24: Records must match).
+/// A board row's detail line (the Leaderboard + Records rows AND the podium places, so the
+/// wording matches exactly): web parity "Ns"/"Nm Ns" time, the mode's guess semantics
+/// (ModeStats.guessRowLabel: "4 Guesses", "0 Mistakes", "5 Checks", "Par"), the multi-board
+/// fraction and hints on the hint-bearing modes (§254).
+func lbDetailLine(_ e: LeaderboardEntry, mode: GameMode) -> String {
+    let t = formatShortTime(Int(e.timeSeconds))
+    let meta = ModeGen.byDbKey(mode.rawValue)
+    var s = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: e.guessCount)) · \(t)"
+    if e.totalBoards > 1 { s += " · \(e.boardsSolved)/\(e.totalBoards)" }
+    if HINT_BEARING_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
+    return s
+}
+
 func sweepStatsLine(_ entry: SweepEntry, details: LeaderboardService.SweepDetails?, day: String) -> String {
     // §227: full words — the founder read "2h" as hours-since-completion.
     // Room comes from the pill living on the dots row, not this line.

@@ -21,7 +21,7 @@ struct LeaderboardBannerView: View {
         // FINISH_SPEC §AU2 / BB3: a compact top so the podium shows on arrival — the
         // day title ≤ 90 pt and the compact two-row picker grid.
         VStack(spacing: 6) {
-            LeaderboardHeadline(bleed: bleed, maxHeight: 78)   // BJ7: was 90
+            LeaderboardHeadline(bleed: bleed)   // founder 10-05: the big day title (LeaderboardArt.dayCap)
             GamePickerCard(selection: isSweep ? GamePicker.sweep : selected.rawValue,
                            accent: LbStyle.gold, ink: Self.ink, compact: true,
                            onSelect: select) {
@@ -79,31 +79,31 @@ struct LeaderboardBannerView: View {
     }
 }
 
-/// §A6: the day's title as the Leaderboard headline — no box, no float, no host
-/// beside it. Re-reads the title each minute so it flips at local midnight.
+/// §A6 + founder 10-05 ("fill out this space beautifully"): the day's title as the
+/// Leaderboard headline, BIG — the day art (lettering + its host) at up to
+/// `LeaderboardArt.dayCap` tall, centered, and in a season ONE prop on EACH side
+/// (never a lone prop on one side). Holidays: the whole-cast LEADERBOARD art with the
+/// holiday title as a small caps line under it. Art is pre-decoded (LeaderboardArt.prewarm)
+/// and never pops in. Re-reads the title each minute so it flips at local midnight.
 struct LeaderboardHeadline: View {
     var bleed: CGFloat = 16
-    /// §AU2: the Leaderboard caps the day title (nil = the style's cap).
+    /// Kept for callers; the band height is `LeaderboardArt.dayCap`.
     var maxHeight: CGFloat? = nil
 
     var body: some View {
         TimelineView(.everyMinute) { _ in
             let title = LeaderboardBannerView.todayTitle()
+            let props = CastSkin.dayProps()
             if let art = DayTitleArt.forTitle(title) {
-                // FINISH_SPEC §N1: the day title keeps its host, capped at ≈58% width / 150 pt.
-                PageHeadline(asset: art.asset, label: art.label, style: .day, bleed: bleed, maxHeight: maxHeight)
-                    // FINISH_SPEC §X: in season, a small Halloween prop beside the day title
-                    // (nothing out of season or when the prop art doesn't ship).
-                    .overlay(alignment: .bottomTrailing) {
-                        SeasonDayProp(size: 44).padding(.trailing, UIScreen.main.bounds.width * 0.1)
-                    }
+                DayHeadlineArt(asset: art.asset, label: art.label, cap: LeaderboardArt.dayCap, props: props)
             } else if ArtAsset.exists(ArtTitleName.leaderboard.assetName) {
                 // ART_SPEC §8: a holiday shows the whole cast around LEADERBOARD with
                 // the holiday title ("<HOLIDAY> HEROES") as a small caps line under it.
                 VStack(spacing: 2) {
-                    PageHeadline(.leaderboard, bleed: bleed, maxHeight: maxHeight.map { $0 * 0.6 })
+                    DayHeadlineArt(asset: ArtTitleName.leaderboard.assetName, label: "Leaderboard",
+                                   cap: LeaderboardArt.holidayCap, props: props)
                     Text(title)
-                        .font(Brand.font(13, .black)).tracking(1.4)
+                        .font(Brand.font(14, .black)).tracking(1.4)
                         .foregroundStyle(Theme.isDark ? Theme.textSecondary : Color(hex: 0x8A4A12))
                         .lineLimit(1).minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity)
@@ -114,6 +114,124 @@ struct LeaderboardHeadline: View {
                 PageHeadline(asset: ArtTitleName.leaderboard.assetName, label: title, bleed: bleed)
             }
         }
+    }
+}
+
+/// The day / holiday art centered at up to `cap` tall (as wide as its aspect allows,
+/// ≤ 88% of the row), with the season's two props flanking it symmetrically.
+private struct DayHeadlineArt: View {
+    let asset: String
+    let label: String
+    let cap: CGFloat
+    let props: (left: String, right: String)?
+
+    var body: some View {
+        DayHeadlineLayout(aspect: ArtAsset.aspect(asset) ?? 1.6, cap: cap,
+                          prop: props == nil ? 0 : LeaderboardArt.propSize) {
+            Image(uiImage: LeaderboardArt.decoded(asset) ?? UIImage())
+                .resizable().interpolation(.high).scaledToFit()
+                .shadow(color: Color(hex: 0x28145A).opacity(0.14), radius: 6, x: 0, y: 4)
+                .accessibilityLabel(label)
+                .accessibilityAddTraits(.isHeader)
+            if let props {
+                prop(props.left, angle: -10)
+                prop(props.right, angle: 10)
+            }
+        }
+    }
+
+    private func prop(_ name: String, angle: Double) -> some View {
+        ArtThumbs.image(name, points: LeaderboardArt.propSize)
+            .resizable().interpolation(.high).scaledToFit()
+            .rotationEffect(.degrees(angle))
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
+    }
+}
+
+/// Places the headline art (subview 0) centered at the top, as big as `cap` and the
+/// row allow (keeping room for a prop + gap on each side when there are props), and
+/// the props (subviews 1, 2) mirrored left / right of it, level with the lettering.
+private struct DayHeadlineLayout: Layout {
+    let aspect: CGFloat
+    let cap: CGFloat
+    let prop: CGFloat
+    private let gap: CGFloat = 6
+
+    private func art(_ width: CGFloat) -> CGSize {
+        let side = prop > 0 ? 2 * (prop + gap) : 0
+        let w = max(1, min(width * 0.88, width - side))
+        let h = min(cap, w / aspect)
+        return CGSize(width: h * aspect, height: h)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? 370
+        return CGSize(width: width, height: art(width).height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let a = art(bounds.width)
+        guard let first = subviews.first else { return }
+        first.place(at: CGPoint(x: bounds.midX, y: bounds.minY), anchor: .top,
+                    proposal: ProposedViewSize(width: a.width, height: a.height))
+        guard subviews.count >= 3, prop > 0 else { return }
+        // Level with the lettering (the art's lower half), just outside the art.
+        let y = bounds.minY + a.height * 0.62
+        let off = a.width / 2 + gap + prop / 2
+        let p = ProposedViewSize(width: prop, height: prop)
+        subviews[1].place(at: CGPoint(x: bounds.midX - off, y: y), anchor: .center, proposal: p)
+        subviews[2].place(at: CGPoint(x: bounds.midX + off, y: y), anchor: .center, proposal: p)
+    }
+}
+
+/// The Leaderboard top's art sizes + launch-time decode (no pop-in, no main-thread decode).
+enum LeaderboardArt {
+    /// The day title's height cap (founder 10-05: was 78 — "still is very small").
+    static let dayCap: CGFloat = 124
+    /// The holiday LEADERBOARD art's cap (a wide 4:1 banner).
+    static let holidayCap: CGFloat = 80
+    /// One season prop per side.
+    static let propSize: CGFloat = 50
+    /// The game card's title art: ≤ 30 pt tall, ≤ 130 pt wide; drawn from the 130 pt bucket.
+    static let cardTitlePoints: CGFloat = 130
+    /// The game card's fixed height (the small candy pill + padding).
+    static let cardHeight: CGFloat = 46
+
+    static func cardTitleSize(_ asset: String) -> CGSize {
+        let a = ArtAsset.aspect(asset) ?? 4
+        let h = min(30, cardTitlePoints / a)
+        return CGSize(width: h * a, height: h)
+    }
+
+    private static let lock = NSLock()
+    private static var images: [String: UIImage] = [:]
+
+    /// The full-size art, decoded for display (cached; decodes on the spot on a miss).
+    static func decoded(_ name: String) -> UIImage? {
+        lock.lock()
+        if let hit = images[name] { lock.unlock(); return hit }
+        lock.unlock()
+        guard let img = UIImage(named: name) else { return nil }
+        let ready = img.preparingForDisplay() ?? img
+        lock.lock(); images[name] = ready; lock.unlock()
+        return ready
+    }
+
+    /// Launch: today's (and tomorrow's) day art + the holiday art decoded off main, the
+    /// season props and every game card title pre-scaled into ArtThumbs.
+    @MainActor static func prewarm() {
+        let days = ArtTitleLabels.dayOrder.map { "art-day-\($0)" }
+        let today = Calendar.current.component(.weekday, from: Date()) - 1   // Sunday = 0
+        let names = [days[today % 7], days[(today + 1) % 7], ArtTitleName.leaderboard.assetName]
+        DispatchQueue.global(qos: .utility).async { for n in names { _ = decoded(n) } }
+        var items: [(String, CGFloat)] = CastSkin.halloweenPropAssets.map { ($0, propSize) }
+        for m in homeModes + moreModes {
+            if let gm = m.mode ?? m.dbKey.flatMap({ GameMode(rawValue: $0) }), let t = GameTitleArt.forMode(gm) {
+                items.append((t.asset, cardTitlePoints))
+            }
+        }
+        ArtThumbs.prewarm(items)
     }
 }
 

@@ -71,6 +71,8 @@ data class BoardPodiumSpot(
     val onClick: (() -> Unit)? = null,
     /** Friends board: the taunt bell under the name (null = none). */
     val onTaunt: (() -> Unit)? = null,
+    /** Founder 10-05: how they got the points — the board rows' detail line ("4 Guesses · 1m 45s"). */
+    val detail: String? = null,
 )
 
 /** BJ4: the podium split for a board's competition ranks (score-desc order). */
@@ -228,8 +230,8 @@ fun BoardPodium(
             Column(
                 Modifier.weight(1f).then(
                     when {
-                        s?.onClick != null -> Modifier.squishClickable(label = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}") { s.onClick.invoke() }
-                        s != null -> Modifier.semantics(mergeDescendants = true) { contentDescription = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}" }
+                        s?.onClick != null -> Modifier.squishClickable(label = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}${s.detail?.let { ", $it" } ?: ""}") { s.onClick.invoke() }
+                        s != null -> Modifier.semantics(mergeDescendants = true) { contentDescription = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}${s.detail?.let { ", $it" } ?: ""}" }
                         place in open -> Modifier.semantics(mergeDescendants = true) {
                             contentDescription = "${podiumPlaceWord(place)} place, open spot"
                         }
@@ -253,7 +255,17 @@ fun BoardPodium(
                         color = if (dark) WTheme.text else FinishInk.heading,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                     )
-                    SoftNumber(s.points, 13.sp)
+                    // Points stay the headline (#1 a touch larger), then ONE muted detail line,
+                    // shrink-to-fit, never wrapping into the pedestal.
+                    SoftNumber(s.points, if (place == 1) 14.5.sp else 13.sp)
+                    s.detail?.takeIf { it.isNotEmpty() }?.let { d ->
+                        FitText(
+                            d, 10.sp, Modifier.fillMaxWidth().padding(top = 0.dp).offset(y = (-2).dp),
+                            color = (if (dark) WTheme.textMuted else LB_SUB_INK).copy(alpha = if (place == 1) 1f else 0.85f),
+                            fontWeight = if (place == 1) FontWeight.ExtraBold else FontWeight.Bold,
+                            textAlign = TextAlign.Center, minScale = 0.6f,
+                        )
+                    }
                     // Friends board: the taunt bell stays reachable for friends on the podium.
                     s.onTaunt?.let { taunt ->
                         SoftControl(Icon3DName.BELL, "Taunt ${s.name}", taunt, iconSize = 16.dp)

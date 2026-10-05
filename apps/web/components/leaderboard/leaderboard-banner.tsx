@@ -7,12 +7,12 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { PageHeadline } from '@/components/ui/page-headline';
-import { DAY_HEADLINE } from '@/lib/headline';
+import { DAY_HEADLINE, DAY_PROP_SIZE, PAGE_HEADLINE, dayPropPair, headlineMaxWidth } from '@/lib/headline';
 import { GamePicker } from '@/components/ui/game-picker';
-import { dayArtName } from '@/lib/art';
+import { ART_SIZE, dayArtName, type ArtName } from '@/lib/art';
 import { softPill } from '@/lib/soft-surface';
 import { LB_GOLD } from './board-rows';
-import { useSeason, halloweenPropSrc } from '@/lib/season';
+import { useSeason, halloweenPropSrc, HALLOWEEN_PROPS } from '@/lib/season';
 import { SeasonArt } from '@/components/ui/season-art';
 
 // The Leaderboard top (docs/FINISH_SPEC.md A6, C2, C2b; mockup
@@ -64,25 +64,39 @@ export function HeaderChipLink({ href, children }: { href: string; children: Rea
 }
 
 /**
- * FINISH_SPEC X: during Halloween the day title wears small props (a pumpkin
- * at its lower left, a bat at its upper right). The prop art isn't shipped
- * yet: each slot renders nothing until its file exists.
+ * FINISH_SPEC X + founder 10-05: during Halloween the day title wears ONE prop on
+ * EACH side (two different props, by the day of the year — never a lone prop on one
+ * side), level with the lettering, just outside the art (`artW` = the art's drawn width).
  */
-function HalloweenDayProps() {
+function HalloweenDayProps({ today, artW }: { today: string; artW: number }) {
+  const d = new Date(today + 'T00:00:00');
+  const doy = Math.round((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86_400_000);
+  const pair = dayPropPair(HALLOWEEN_PROPS, doy);
+  if (!pair) return null;
+  const off = `calc(50% + ${artW / 2 + 6}px)`;
+  const base: React.CSSProperties = {
+    top: '62%', width: DAY_PROP_SIZE, height: DAY_PROP_SIZE, objectFit: 'contain',
+    filter: 'drop-shadow(0 3px 4px rgba(76, 29, 149, 0.2))',
+  };
   return (
     <>
-      <SeasonArt
-        src={halloweenPropSrc('pumpkin')}
-        className="absolute art-pop"
-        style={{ left: '3%', bottom: 10, width: 'min(14%, 64px)', height: 'auto', filter: 'drop-shadow(0 3px 4px rgba(76, 29, 149, 0.2))' }}
-      />
-      <SeasonArt
-        src={halloweenPropSrc('bat')}
-        className="absolute art-pop"
-        style={{ right: '3%', top: 0, width: 'min(12%, 56px)', height: 'auto', filter: 'drop-shadow(0 3px 4px rgba(76, 29, 149, 0.2))' }}
-      />
+      <SeasonArt src={halloweenPropSrc(pair[0])} className="absolute pointer-events-none"
+        style={{ ...base, right: off, transform: 'translateY(-50%) rotate(-10deg)' }} />
+      <SeasonArt src={halloweenPropSrc(pair[1])} className="absolute pointer-events-none"
+        style={{ ...base, left: off, transform: 'translateY(-50%) rotate(10deg)' }} />
     </>
   );
+}
+
+/** The day art's drawn width under DAY_HEADLINE on a ~370 px phone column, leaving a prop + gap per side. */
+const PROP_ROOM = 2 * (DAY_PROP_SIZE + 6);
+function dayArtW(art: ArtName): number {
+  const [w, h] = ART_SIZE[art];
+  return Math.min(headlineMaxWidth(w, h, DAY_HEADLINE), 370 - PROP_ROOM);
+}
+function dayArtH(art: ArtName): number {
+  const [w, h] = ART_SIZE[art];
+  return Math.round((dayArtW(art) * h) / w);
 }
 
 interface Props {
@@ -107,10 +121,11 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
     <>
       {art ? (
         // One designed graphic per weekday, its host drawn in.
-        season === 'halloween' ? (
-          <div className="relative">
-            <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-2" />
-            <HalloweenDayProps />
+        season === 'halloween' && today ? (
+          <div className="relative mb-2">
+            {/* Room for a prop + gap on each side: the art narrows (never shrinks the props). */}
+            <PageHeadline name={art} label={title} rule={DAY_HEADLINE} maxHeight={dayArtH(art)} />
+            <HalloweenDayProps today={today} artW={dayArtW(art)} />
           </div>
         ) : (
           <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-2" />
@@ -120,11 +135,11 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
           <PageHeadline name="art-titlecast-leaderboard" label="Leaderboard" as="div" />
           {/* FINISH_SPEC AR: the holiday title in live lettering (gold → amber). */}
           <LiveHeadline text={title} palette="leaderboard" size={18} level={2} />
-          {season === 'halloween' && <HalloweenDayProps />}
+          {season === 'halloween' && today && <HalloweenDayProps today={today} artW={headlineMaxWidth(...ART_SIZE['art-titlecast-leaderboard'], PAGE_HEADLINE)} />}
         </h1>
       ) : (
         // Until the local day is known, hold the headline's slot so it doesn't jump.
-        <div aria-hidden="true" className="mb-3" style={{ height: 'min(34vw, 90px)' }} />
+        <div aria-hidden="true" className="mb-3" style={{ height: DAY_HEADLINE.maxHeight }} />
       )}
 
       <GamePicker

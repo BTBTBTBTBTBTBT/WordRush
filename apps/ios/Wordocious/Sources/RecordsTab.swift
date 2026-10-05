@@ -339,21 +339,7 @@ struct RecordsBoardRow: View {
     let isMe: Bool
     let score: String
 
-    private var line: String {
-        // Web parity: "Ns"/"Nm Ns" time + multi-board fraction + a Win/Loss pill.
-        let t = formatShortTime(Int(entry.timeSeconds))
-        // Through the mode's guess semantics (ModeStats.guessRowLabel — the same
-        // call the daily leaderboard row in ProfileTab makes): "0 Mistakes", "Par".
-        let meta = ModeGen.byDbKey(mode.rawValue)
-        var line = "\(WordociousCore.ModeStats.guessRowLabel(semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1, guessCount: entry.guessCount)) · \(t)"
-        if entry.totalBoards > 1 { line += " · \(entry.boardsSolved)/\(entry.totalBoards)" }
-        // §254: hints ride this row exactly as on the daily leaderboard row
-        // (ProfileTab) — the founder wants the two pages to match.
-        if HINT_BEARING_MODES.contains(mode.rawValue), let h = entry.hintsUsed {
-            line += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints"
-        }
-        return line
-    }
+    private var line: String { lbDetailLine(entry, mode: mode) }
 
     var body: some View {
         // §C2a: the W / L badge in its own column immediately left of the points.
@@ -823,7 +809,8 @@ struct YesterdayPodiumCard: View {
                                                 username: e.username, accentHex: e.profiles.accentColor,
                                                 emoji: e.profiles.avatarEmoji,
                                                 value: podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore),
-                                                avatarUrl: e.profiles.avatarUrl, rank: ranks[i])
+                                                avatarUrl: e.profiles.avatarUrl, rank: ranks[i],
+                                                detail: lbDetailLine(e, mode: mode))
                                 }, open: layout.open, stage: ModeStyle.accent(mode), onTap: { e in openProfile?(e.id) })
                             }
                             ForEach(Array(top3.enumerated().dropFirst(start)), id: \.element.id) { i, e in

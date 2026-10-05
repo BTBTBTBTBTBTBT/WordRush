@@ -67,6 +67,20 @@ enum CastSkin {
         return available[day % available.count]
     }
 
+    /// Every Halloween prop's image set name (shipped or not; for prewarm).
+    static var halloweenPropAssets: [String] { halloweenProps.map { "art-halloween-prop-\($0)" } }
+
+    /// Founder 10-05: the day title's props come in a PAIR — one per side, never a lone
+    /// prop on one side. Two different props (picked by the day of the year among those
+    /// that ship); nil out of season or when fewer than two ship.
+    static func dayProps(_ date: Date = Date()) -> (left: String, right: String)? {
+        guard season == .halloween else { return nil }
+        let available = halloweenPropAssets.filter(ArtAsset.exists)
+        guard available.count >= 2 else { return nil }
+        let day = Calendar(identifier: .gregorian).ordinality(of: .day, in: .year, for: date) ?? 0
+        return (available[day % available.count], available[(day + 1) % available.count])
+    }
+
     /// The seasonal Home banner art (`art-scene-banner-halloween`), nil out of season
     /// or when it doesn't ship.
     static var bannerArt: String? {

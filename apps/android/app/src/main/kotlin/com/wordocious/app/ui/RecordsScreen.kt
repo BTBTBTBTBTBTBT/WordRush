@@ -397,7 +397,7 @@ private fun DailyRecordsTab(
                     val sweepScoreLabels = tieAwareScoreLabels(sweepEntries.map { it.totalScore })
                     // BJ4: the leaders on the podium (gold stage), the rest below from #4.
                     val sp = boardPodium(sweepEntries.indices.map { it + 1 })
-                    BoardPodium(sweepPodiumSpots(sweepEntries.take(sp.filled), userId, sweepScoreLabels, onOpenProfile), sp.open, PODIUM_SWEEP_GOLD)
+                    BoardPodium(sweepPodiumSpots(sweepEntries.take(sp.filled), userId, sweepScoreLabels, onOpenProfile, sweepDetails, com.wordocious.app.todayLocalDate()), sp.open, PODIUM_SWEEP_GOLD)
                     sweepEntries.drop(sp.filled).forEachIndexed { j, entry ->
                         val i = sp.filled + j
                         // §232: pass the per-user details + day so the words-not-
@@ -430,7 +430,7 @@ private fun DailyRecordsTab(
                 )
                 // BJ4: the leaders on the podium (Everyone AND Friends, Solo AND VS), the rest below.
                 val layout = boardPodium(entries.indices.map { it + 1 })
-                BoardPodium(lbPodiumSpots(entries.take(layout.filled), userId, lbScoreLabels, onOpenProfile), layout.open, accent)
+                BoardPodium(lbPodiumSpots(entries.take(layout.filled), userId, lbScoreLabels, onOpenProfile, mode = selectedMode), layout.open, accent)
                 entries.drop(layout.filled).forEachIndexed { j, entry ->
                     val i = layout.filled + j
                     LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, onOpenProfile = onOpenProfile, showHints = true, scoreLabel = lbScoreLabels[entry.compositeScore], index = j, topRule = j > 0)
@@ -559,7 +559,7 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
             // BJ4: yesterday's leaders on the podium, any rest below.
             val yl = boardPodium(top3.indices.map { LeaderboardService.competitionRank(top3, it) })
             BoardPodium(
-                lbPodiumSpots(top3.take(yl.filled), userId, podiumScoreLabels, onOpenProfile), yl.open,
+                lbPodiumSpots(top3.take(yl.filled), userId, podiumScoreLabels, onOpenProfile, mode = mode), yl.open,
                 modeCardForKey(mode)?.accent ?: Color(0xFF7C3AED),
             )
             top3.drop(yl.filled).forEachIndexed { j, e ->

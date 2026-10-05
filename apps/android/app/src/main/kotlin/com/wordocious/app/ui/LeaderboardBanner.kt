@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,11 +67,16 @@ internal fun LeaderboardHeadline(bleed: Dp) {
     val title = remember(day) { leaderboardTitle(day, holiday) }
     val dayArt = remember(day) { dayTitleArtRes(day, holiday) }
     when {
-        // X: in the Halloween season, small props (pumpkin, bat) flank the day title when shipped.
+        // X + founder 10-05: in the Halloween season ONE prop on EACH side of the (big) day
+        // title — two different props by the day of the year, level with the lettering,
+        // mirrored. Never a lone prop on one side.
         dayArt != null -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            PageHeadline(dayArt, titleCaseLabel(title), bleed = bleed, maxHeight = LB_TITLE_MAX) // AU2
-            HalloweenPropSlot("pumpkin", 40.dp, Modifier.align(Alignment.BottomStart).padding(start = 8.dp))
-            HalloweenPropSlot("bat", 34.dp, Modifier.align(Alignment.TopEnd).padding(end = 8.dp))
+            PageHeadline(dayArt, titleCaseLabel(title), bleed = bleed, maxHeight = LB_TITLE_MAX)
+            val doy = remember(day) { java.time.LocalDate.parse(day).dayOfYear }
+            val left = DAY_PROPS[doy % DAY_PROPS.size]
+            val right = DAY_PROPS[(doy + 1) % DAY_PROPS.size]
+            HalloweenPropSlot(left, DAY_PROP, Modifier.align(Alignment.CenterStart).padding(start = 14.dp).offset(y = 16.dp).rotate(-10f))
+            HalloweenPropSlot(right, DAY_PROP, Modifier.align(Alignment.CenterEnd).padding(end = 14.dp).offset(y = 16.dp).rotate(10f))
         }
         !holiday.isNullOrBlank() -> Column(
             Modifier.fillMaxWidth().clearAndSetSemantics {
@@ -79,7 +86,7 @@ internal fun LeaderboardHeadline(bleed: Dp) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            PageHeadline(com.wordocious.app.R.drawable.art_titlecast_leaderboard, "Leaderboard", bleed = bleed, maxHeight = LB_TITLE_MAX - 18.dp)
+            PageHeadline(com.wordocious.app.R.drawable.art_titlecast_leaderboard, "Leaderboard", bleed = bleed, maxHeight = 80.dp)
             Text(
                 title.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.14.em,
                 color = if (WTheme.isDark) WTheme.textSecondary else LB_LABEL, maxLines = 1, textAlign = TextAlign.Center,
@@ -122,8 +129,12 @@ internal fun LeaderboardPicker(
     )
 }
 
-/** AU2 the Leaderboard day title's height cap. */
-private val LB_TITLE_MAX = 78.dp // BJ7 (BB3 was 90, before that 110)
+/** The Leaderboard day title's height cap (founder 10-05: 78 was "still very small"; iOS LeaderboardArt.dayCap). */
+private val LB_TITLE_MAX = 124.dp
+
+/** The Halloween day-title props (one per side) and their size (iOS CastSkin.dayProps parity). */
+private val DAY_PROPS = listOf("pumpkin", "bat", "candy", "ghost")
+private val DAY_PROP = 50.dp
 
 /** "OCT 2 · RESETS IN 12:41:17" — reads the ticking clock in its own scope so only it recomposes. */
 @Composable

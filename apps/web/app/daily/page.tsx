@@ -774,35 +774,40 @@ export default function DailyPage() {
 
         <div className="page-grid-2">
         <div>
-        {/* AU2: YOUR result as ONE compact row ("#2 of 5 · 2,005 PTS · 4 guesses · 48s"
-            + the completed check) — no repeated headline — then the board right away. */}
-        {showResult && (
-          <CompactResultRow
-            line={compactRankLine({
-              rank: userRank?.rank ?? null,
-              total: userRank?.totalPlayers ?? null,
-              friends: friendsOnly && !isSweep,
-              points: resultPoints,
-              semantics: modeMeta?.guessSemantics,
-              guessBase: modeMeta?.guessBase,
-              guesses: myCompletion?.guesses ?? myEntry?.guess_count ?? null,
-              timeSeconds: myCompletion?.timeSeconds ?? myEntry?.time_seconds ?? null,
-              detail: isSweep ? mySolved : null,
-            })}
-            won={isSweep ? (mySweepEntry ? true : null) : myCompletion ? myCompletion.won : myEntry ? !!myEntry.completed : null}
-            delta={
-              userRank ? (
-                <RankDeltaBadge
-                  mode={selectedMode}
-                  playType="solo"
-                  // The friends board keeps its own rank history (SWEEP is always global).
-                  pageKey={friendsOnly && user && !isSweep ? 'daily-friends' : 'daily'}
-                  currentRank={userRank.rank}
-                />
-              ) : null
-            }
-          />
-        )}
+        {/* Founder 10-05: the game card sits RIGHT under the picker, so a tile tap reads at
+            once which game's board this is — small art, one line, a small candy button (PLAY
+            before today's daily, VIEW BOARD after). Fixed height: switching games never moves the board. */}
+        <div className="relative overflow-hidden mb-3" style={softCard(color, { radius: 16 })}>
+          <div aria-hidden="true" style={cardBarStyle(color)} />
+          <div className="flex items-center gap-2.5" style={{ padding: '7px 10px 8px', minHeight: 46 }}>
+            <GameArt
+              id={isSweep ? 'sweep' : mode.id}
+              size={30}
+              fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+            />
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
+              <span className="font-black truncate" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
+              <span aria-hidden="true">·</span>
+              <Users className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {/* §223: the sweep board ranks by total points across all modes. */}
+                {isSweep ? `${playerCount} swept · ranked by points` : `${playerCount} today`}
+              </span>
+            </div>
+            {/* Sweep isn't a playable puzzle — no Play button. */}
+            {!isSweep && (
+              <CandyButton
+                size="sm"
+                color="purple"
+                icon={playedSelected ? 'eye' : 'play'}
+                onClick={handlePlayDaily}
+                className="shrink-0"
+              >
+                {playedSelected ? 'View board' : 'Play'}
+              </CandyButton>
+            )}
+          </div>
+        </div>
 
         {/* TODAY'S BOARD — daily games only (the Play card says so), so an
             Unlimited session never shows here. */}
@@ -912,39 +917,35 @@ export default function DailyPage() {
         </div>
 
         <div>
-        {/* AS4 + AU2: the play card as one compact row, below the standings — small art, one line, a small
-            candy button (PLAY before today's daily, VIEW BOARD after). */}
-        <div className="relative overflow-hidden mb-3" style={softCard(color, { radius: 16 })}>
-          <div aria-hidden="true" style={cardBarStyle(color)} />
-          <div className="flex items-center gap-2.5" style={{ padding: '7px 10px 8px' }}>
-            <GameArt
-              id={isSweep ? 'sweep' : mode.id}
-              size={30}
-              fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
-            />
-            <div className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
-              <span className="font-black truncate" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
-              <span aria-hidden="true">·</span>
-              <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">
-                {/* §223: the sweep board ranks by total points across all modes. */}
-                {isSweep ? `${playerCount} swept · ranked by points` : `${playerCount} today`}
-              </span>
-            </div>
-            {/* Sweep isn't a playable puzzle — no Play button. */}
-            {!isSweep && (
-              <CandyButton
-                size="sm"
-                color="purple"
-                icon={playedSelected ? 'eye' : 'play'}
-                onClick={handlePlayDaily}
-                className="shrink-0"
-              >
-                {playedSelected ? 'View board' : 'Play'}
-              </CandyButton>
-            )}
-          </div>
-        </div>
+        {/* AU2: YOUR result as ONE compact row ("#2 of 5 · 2,005 PTS · 4 guesses · 48s"
+            + the completed check); founder 10-05: under the standings, with your board under it. */}
+        {showResult && (
+          <CompactResultRow
+            line={compactRankLine({
+              rank: userRank?.rank ?? null,
+              total: userRank?.totalPlayers ?? null,
+              friends: friendsOnly && !isSweep,
+              points: resultPoints,
+              semantics: modeMeta?.guessSemantics,
+              guessBase: modeMeta?.guessBase,
+              guesses: myCompletion?.guesses ?? myEntry?.guess_count ?? null,
+              timeSeconds: myCompletion?.timeSeconds ?? myEntry?.time_seconds ?? null,
+              detail: isSweep ? mySolved : null,
+            })}
+            won={isSweep ? (mySweepEntry ? true : null) : myCompletion ? myCompletion.won : myEntry ? !!myEntry.completed : null}
+            delta={
+              userRank ? (
+                <RankDeltaBadge
+                  mode={selectedMode}
+                  playType="solo"
+                  // The friends board keeps its own rank history (SWEEP is always global).
+                  pageKey={friendsOnly && user && !isSweep ? 'daily-friends' : 'daily'}
+                  currentRank={userRank.rank}
+                />
+              ) : null
+            }
+          />
+        )}
 
         {/* Your finished board (§254), collapsible under the result — per-mode
             only; Sweep has no board. */}

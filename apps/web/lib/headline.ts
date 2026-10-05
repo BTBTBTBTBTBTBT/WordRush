@@ -25,7 +25,17 @@ export const HEADLINE: HeadlineRule = { widthPct: 62, maxWidth: 300, maxHeight: 
 export const PAGE_HEADLINE: HeadlineRule = { ...HEADLINE, maxHeight: 52 };
 /** The Leaderboard day title (one host drawn in). */
 /** AU2 + BB3: ≤ 90 tall (was 150) so the podium shows on arrival under the two-row picker; BJ7: ≤ 78. */
-export const DAY_HEADLINE: HeadlineRule = { widthPct: 58, maxWidth: 360, maxHeight: 78 };
+/** Founder 10-05 ("still is very small … fill out the space beautifully"): ≤ 124 tall, up to 88% wide. iOS LeaderboardArt.dayCap / Android LB_TITLE_MAX match. */
+export const DAY_HEADLINE: HeadlineRule = { widthPct: 88, maxWidth: 360, maxHeight: 124 };
+
+/** The Halloween day-title props: ONE per side (never a lone prop), each this wide (px). */
+export const DAY_PROP_SIZE = 50;
+
+/** The pair of season props for a day (two different ones, by day of the year) — mirrors iOS CastSkin.dayProps. */
+export function dayPropPair<T>(props: readonly T[], dayOfYear: number): [T, T] | null {
+  if (props.length < 2) return null;
+  return [props[dayOfYear % props.length], props[(dayOfYear + 1) % props.length]];
+}
 
 /** The widest an art of `w`×`h` may draw under a rule: the width cap, or the width at which it hits the height cap. */
 export function headlineMaxWidth(w: number, h: number, rule: HeadlineRule = HEADLINE): number {

@@ -435,6 +435,10 @@ struct PodiumEntry: Identifiable {
     var rank: Int? = nil
     /// The Friends board's taunt bell under the name (BJ4: friends stand on the podium too).
     var bell: (() -> Void)? = nil
+    /// Founder 10-05: how the player got their points — the SAME detail line the board
+    /// rows under the podium use ("4 Guesses · 1m 45s", "0 Mistakes · 3m 2s · No hints");
+    /// one small muted line under the points. Nil = none (the Friends race: points only).
+    var detail: String? = nil
 }
 
 /// FINISH_SPEC §C2 / §C4 / BJ4: the top-three podium — the players' avatars on gold /
@@ -495,10 +499,19 @@ struct PodiumView: View {
                     .font(Brand.font(compact ? 12 : 13, .black))
                     .foregroundStyle(lightOnly ? FinishInk.title : FinishInk.heading)
                     .lineLimit(1).minimumScaleFactor(0.7)
+                // Points stay the headline number (#1 a touch larger), then one muted
+                // detail line (single line, shrink-to-fit, never wraps into the step).
                 Text(e.value)
-                    .font(Brand.font(compact ? 11 : 12, .heavy)).monospacedDigit()
+                    .font(Brand.font((compact ? 11 : 12) + (first ? 1.5 : 0), .heavy)).monospacedDigit()
                     .foregroundStyle(lightOnly ? FinishInk.muted : FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.7)
+                if let d = e.detail, !d.isEmpty {
+                    Text(d)
+                        .font(Brand.font(compact ? 9 : 10, first ? .heavy : .bold)).monospacedDigit()
+                        .foregroundStyle((lightOnly ? FinishInk.muted : FinishInk.secondary).opacity(first ? 0.95 : 0.8))
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                        .padding(.top, -2)
+                }
             }
             VStack(spacing: 4) {
                 Group {
@@ -509,7 +522,7 @@ struct PodiumView: View {
                     }
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Place \(e.rank ?? place): \(e.name), \(e.value)")
+                .accessibilityLabel("Place \(e.rank ?? place): \(e.name), \(e.value)\(e.detail.map { ", \($0)" } ?? "")")
                 if let bell = e.bell {
                     Button(action: bell) {
                         Icon3D(.bell, size: 16).frame(width: 30, height: 24).contentShape(Rectangle())
