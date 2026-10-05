@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   approvedByAll, filterByReview, indexReviews, matchesReview, parseFeedbackBody, parseFeedbackQuery, parseResolveBody,
-  parseReviewBody, pendingReviewers, reviewChips, reviewStatus, scopeLabel, type ArtReview, type ArtReviewer,
+  BATCH_MAX, parseBatchReviewBody, parseReviewBody, pendingReviewers, reviewChips, reviewStatus, scopeLabel, type ArtReview, type ArtReviewer,
   type ReviewContext, type ReviewDecision,
 } from './art-review';
 import type { ArtStatus } from './art-library';
@@ -111,12 +111,23 @@ describe('review filters', () => {
 
 describe('request parsing', () => {
   it('parseReviewBody', () => {
-    expect(parseReviewBody({ asset_id: 'x', decision: 'approve' })).toEqual({ asset_id: 'x', decision: 'approve', note: null });
-    expect(parseReviewBody({ asset_id: 'x', decision: 'changes', note: '  warmer  ' })).toEqual({ asset_id: 'x', decision: 'changes', note: 'warmer' });
+    expect(parseReviewBody({ asset_id: 'x', decision: 'approve' })).toEqual({ asset_id: 'x', decision: 'approve', note: null, feedback: false });
+    expect(parseReviewBody({ asset_id: 'x', decision: 'changes', note: '  warmer  ' })).toEqual({ asset_id: 'x', decision: 'changes', note: 'warmer', feedback: false });
+    expect(parseReviewBody({ asset_id: 'x', decision: 'reject', note: 'too dark', feedback: true })).toEqual({ asset_id: 'x', decision: 'reject', note: 'too dark', feedback: true });
+    expect(parseReviewBody({ asset_id: 'x', decision: 'changes', note: '  ', feedback: true })).toHaveProperty('error');
+    expect(parseReviewBody({ asset_id: 'x', decision: 'changes', note: 'a', feedback: 'yes' })).toHaveProperty('error');
     expect(parseReviewBody({ asset_id: 'x', decision: 'approved' })).toHaveProperty('error');
     expect(parseReviewBody({ decision: 'approve' })).toHaveProperty('error');
     expect(parseReviewBody({ asset_id: 'x', decision: 'reject', note: 3 })).toHaveProperty('error');
     expect(parseReviewBody(null)).toHaveProperty('error');
+  });
+  it('parseBatchReviewBody', () => {
+    expect(parseBatchReviewBody({ asset_ids: ['a', 'b', 'a'], decision: 'approve' })).toEqual({ asset_ids: ['a', 'b'], decision: 'approve' });
+    expect(parseBatchReviewBody({ asset_ids: [], decision: 'approve' })).toHaveProperty('error');
+    expect(parseBatchReviewBody({ asset_ids: ['a', 3], decision: 'approve' })).toHaveProperty('error');
+    expect(parseBatchReviewBody({ asset_ids: ['a'], decision: 'reject' })).toHaveProperty('error');
+    expect(parseBatchReviewBody({ asset_ids: Array.from({ length: BATCH_MAX + 1 }, (_, i) => `a${i}`), decision: 'approve' })).toHaveProperty('error');
+    expect(parseBatchReviewBody(null)).toHaveProperty('error');
   });
   it('parseFeedbackQuery', () => {
     expect(parseFeedbackQuery(new URLSearchParams('asset_id=a/b'))).toEqual({ asset_id: 'a/b' });

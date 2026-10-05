@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Ban, Check, CheckCheck, MessageSquareText, PencilLine, Send } from 'lucide-react';
+import { Ban, Check, CheckCheck, MessageSquareText, PencilLine, Send, X } from 'lucide-react';
 import {
-  scopeLabel, type ArtFeedback, type ArtReview, type ArtReviewer, type ReviewChip, type ReviewDecision, type ReviewFilter,
+  scopeLabel, type ArtFeedback, type ArtReview, type ArtReviewer, type ReviewDecision,
 } from '@/lib/admin/art-review';
 
 // admin > Art Library: the two-approver review pieces (reviewer discs, the
@@ -73,34 +73,109 @@ export function ReviewerDiscs({ reviewers, reviews }: { reviewers: readonly ArtR
   );
 }
 
-/* --------------------------------------------------------- Review chip row */
+/* ------------------------------------------------------ tile: inline review */
 
-export function ReviewChipRow({ chips, value, onPick }: {
-  chips: ReviewChip[]; value: ReviewFilter | null; onPick: (v: ReviewFilter | null) => void;
+/**
+ * The review row under every tile: Approve, Reject and Comment, no click-in needed. Reject and Comment open a
+ * small "What should change?" box on the tile; Save records the call (reject, or changes for a comment) and
+ * files the note as feedback in one go. The page applies it optimistically with an Undo.
+ */
+export function TileActions({ mine, shipped = false, onApprove, onNote }: {
+  /** The viewer's current call on this piece. */
+  mine: ReviewDecision | null;
+  /** Shipped art: no approve / reject (they would not change it), but a comment still files feedback. */
+  shipped?: boolean;
+  onApprove: () => void;
+  onNote: (decision: 'reject' | 'changes', note: string) => void;
 }) {
-  if (!chips.length) return null;
-  return (
-    <div className="flex items-center gap-2 min-w-0">
-      <span className="w-[68px] shrink-0 text-[10px] font-black text-gray-400 uppercase tracking-wide">Review</span>
-      <div className="flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex gap-1.5 w-max pr-2">
-          {chips.map((c) => {
-            const on = value === c.value;
-            return (
-              <button
-                key={c.value}
-                onClick={() => onPick(on ? null : c.value)}
-                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-extrabold whitespace-nowrap transition ${
-                  on ? 'bg-purple-600 text-white shadow-sm' : 'bg-purple-50 text-purple-800 hover:bg-purple-100'
-                }`}
-              >
-                {c.label}
-                <span className={`tabular-nums ${on ? 'text-purple-200' : 'text-purple-400'}`}>{c.count.toLocaleString('en-US')}</span>
-              </button>
-            );
-          })}
+  const [compose, setCompose] = useState<null | 'reject' | 'changes'>(null);
+  const [text, setText] = useState('');
+  if (compose) {
+    const save = () => {
+      const t = text.trim();
+      if (!t) return;
+      onNote(compose, t);
+      setCompose(null);
+      setText('');
+    };
+    return (
+      <div className={`mt-1.5 rounded-xl p-1.5 space-y-1.5 ${compose === 'reject' ? 'bg-rose-50' : 'bg-amber-50'}`}>
+        <p className={`px-1 text-[10px] font-black uppercase tracking-wide ${compose === 'reject' ? 'text-rose-600' : 'text-amber-700'}`}>
+          {compose === 'reject' ? 'Reject' : 'Ask for changes'}
+        </p>
+        <textarea
+          autoFocus
+          rows={2}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+            if (e.key === 'Escape') setCompose(null);
+          }}
+          placeholder="What should change?"
+          className="block w-full resize-none rounded-lg bg-white px-2 py-1.5 text-[13px] font-semibold text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-purple-300"
+        />
+        <div className="flex gap-1.5">
+          <button
+            onClick={save}
+            disabled={!text.trim()}
+            className={`flex-1 h-9 rounded-lg text-xs font-extrabold text-white shadow-sm disabled:opacity-40 ${compose === 'reject' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-amber-500 hover:bg-amber-600'}`}
+          >
+            Save
+          </button>
+          <button
+            onClick={() => { setCompose(null); setText(''); }}
+            aria-label="Cancel"
+            className="w-9 h-9 shrink-0 rounded-lg bg-white text-gray-500 hover:text-gray-700 flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
+    );
+  }
+  const soft = 'h-10 rounded-xl flex items-center justify-center transition active:scale-95';
+  if (shipped) {
+    return (
+      <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+        <p className="col-span-2 h-10 rounded-xl bg-purple-50 text-purple-700 text-xs font-extrabold flex items-center justify-center gap-1">
+          <Check className="w-4 h-4" strokeWidth={3} /> Shipped
+        </p>
+        <button onClick={() => setCompose('changes')} aria-label="Comment" title="Comment" className={`${soft} bg-purple-50 text-purple-700 hover:bg-purple-100`}>
+          <MessageSquareText className="w-[18px] h-[18px]" strokeWidth={2.5} />
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+      <button
+        onClick={onApprove}
+        aria-label="Approve"
+        aria-pressed={mine === 'approve'}
+        title="Approve"
+        className={`${soft} ${mine === 'approve' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}
+      >
+        <Check className="w-5 h-5" strokeWidth={3} />
+      </button>
+      <button
+        onClick={() => setCompose('reject')}
+        aria-label="Reject with a note"
+        aria-pressed={mine === 'reject'}
+        title="Reject"
+        className={`${soft} ${mine === 'reject' ? 'bg-rose-500 text-white shadow-sm' : 'bg-rose-50 text-rose-600 hover:bg-rose-100'}`}
+      >
+        <X className="w-5 h-5" strokeWidth={3} />
+      </button>
+      <button
+        onClick={() => setCompose('changes')}
+        aria-label="Comment (ask for changes)"
+        aria-pressed={mine === 'changes'}
+        title="Comment"
+        className={`${soft} ${mine === 'changes' ? 'bg-amber-400 text-white shadow-sm' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'}`}
+      >
+        <MessageSquareText className="w-[18px] h-[18px]" strokeWidth={2.5} />
+      </button>
     </div>
   );
 }

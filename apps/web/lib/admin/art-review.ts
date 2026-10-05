@@ -158,13 +158,33 @@ export const SCOPE_RE = /^[a-z][a-z0-9-]{0,31}:[A-Za-z0-9._/-]{1,120}$/;
 
 const clean = (s: string, max: number) => (s.trim() ? s.trim().slice(0, max) : null);
 
-/** Validate a POST /api/admin/art/review body. */
-export function parseReviewBody(body: unknown): { asset_id: string; decision: ReviewDecision; note: string | null } | { error: string } {
-  const b = (body ?? {}) as { asset_id?: unknown; decision?: unknown; note?: unknown };
+/**
+ * Validate a POST /api/admin/art/review body. `feedback: true` also files the note as an art_feedback row on
+ * the asset (the tile's inline "What should change?" box), so it needs a note.
+ */
+export function parseReviewBody(body: unknown): { asset_id: string; decision: ReviewDecision; note: string | null; feedback: boolean } | { error: string } {
+  const b = (body ?? {}) as { asset_id?: unknown; decision?: unknown; note?: unknown; feedback?: unknown };
   if (typeof b.asset_id !== 'string' || !b.asset_id.trim()) return { error: 'asset_id is required' };
   if (!isReviewDecision(b.decision)) return { error: "decision must be 'approve', 'reject' or 'changes'" };
   if (b.note !== undefined && b.note !== null && typeof b.note !== 'string') return { error: 'note must be a string' };
-  return { asset_id: b.asset_id, decision: b.decision, note: typeof b.note === 'string' ? clean(b.note, NOTE_MAX) : null };
+  if (b.feedback !== undefined && typeof b.feedback !== 'boolean') return { error: 'feedback must be true or false' };
+  const note = typeof b.note === 'string' ? clean(b.note, NOTE_MAX) : null;
+  if (b.feedback === true && !note) return { error: 'feedback needs a note' };
+  return { asset_id: b.asset_id, decision: b.decision, note, feedback: b.feedback === true };
+}
+
+/** At most this many pieces per POST /api/admin/art/review/batch (the page chunks bigger sections). */
+export const BATCH_MAX = 200;
+
+/** Validate a POST /api/admin/art/review/batch body: { asset_ids: string[], decision: 'approve' }. */
+export function parseBatchReviewBody(body: unknown): { asset_ids: string[]; decision: 'approve' } | { error: string } {
+  const b = (body ?? {}) as { asset_ids?: unknown; decision?: unknown };
+  if (!Array.isArray(b.asset_ids) || !b.asset_ids.length || !b.asset_ids.every((x) => typeof x === 'string' && x.trim())) {
+    return { error: 'asset_ids must be a non-empty array of ids' };
+  }
+  if (b.asset_ids.length > BATCH_MAX) return { error: `at most ${BATCH_MAX} asset_ids per request` };
+  if (b.decision !== 'approve') return { error: "decision must be 'approve'" };
+  return { asset_ids: Array.from(new Set(b.asset_ids as string[])), decision: 'approve' };
 }
 
 export type FeedbackQuery = { asset_id: string } | { scope: string } | { open: true };

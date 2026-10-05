@@ -25,11 +25,17 @@ function previewUrl(target: { asset?: string; season?: string }, live: boolean, 
  * phone frames with one light/dark switch. Side by side when there is room; on a phone one at a time with a
  * TODAY / PREVIEW toggle. Seasonal pieces also get "Preview whole season" (Home + a game + the Leaderboard).
  */
-export function PreviewPanel({ asset, after }: { asset: ArtAsset; after?: (scope: string) => React.ReactNode }) {
+export function PreviewPanel({ asset, after, initial = null }: {
+  asset: ArtAsset;
+  after?: (scope: string) => React.ReactNode;
+  /** Open straight onto this comparison ("See it in the app" on a section header). */
+  initial?: null | 'piece' | 'season';
+}) {
   const plan = planFor(asset);
-  const [open, setOpen] = useState<null | 'piece' | 'season'>(null);
+  const start = initial === 'season' && !asset.season ? 'piece' : initial;
+  const [open, setOpen] = useState<null | 'piece' | 'season'>(start);
   const [theme, setTheme] = useState<Theme>('light');
-  useEffect(() => { setOpen(null); }, [asset.id]);
+  useEffect(() => { setOpen(start); }, [asset.id, start]);
 
   const mapped = plan.surface !== 'none';
   return (
@@ -148,6 +154,91 @@ function Compare({ target, theme }: { target: { asset?: string; season?: string 
           </figure>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------ Before & After pair */
+
+/** True while the element is within `margin` of the admin scroll area (<main>); false again once it leaves. */
+function useNearViewport<T extends HTMLElement>(margin = 500): [React.RefObject<T>, boolean] {
+  const ref = useRef<T>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => setNear(entries.some((e) => e.isIntersecting)), {
+      root: el.closest('main'),
+      rootMargin: `${margin}px 0px`,
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [margin]);
+  return [ref, near];
+}
+
+/**
+ * Before & After on a tile: a small "Today" phone (live, what players see now) next to "With this art". The
+ * frames mount only near the viewport and unmount when scrolled far away, so a long section stays light.
+ * Pieces with no in-app surface show `fallback` (the plain image) with "No in-app preview".
+ */
+export function MiniCompare({ asset, fallback, onOpen }: { asset: ArtAsset; fallback: React.ReactNode; onOpen: () => void }) {
+  const plan = planFor(asset);
+  const [ref, near] = useNearViewport<HTMLDivElement>();
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, [ref]);
+  const gap = 6;
+  const frameW = Math.max(0, (width - gap) / 2 - 8);
+  const scale = frameW / PHONE_W;
+  const frameH = PHONE_H * scale;
+
+  if (plan.surface === 'none') {
+    return (
+      <div ref={ref} className="min-w-0">
+        <button onClick={onOpen} className="relative block w-full aspect-[2/1.6] rounded-xl overflow-hidden shadow-sm">
+          {fallback}
+        </button>
+        <p className="mt-1 text-center text-[10px] font-black text-gray-400 uppercase tracking-wide">No in-app preview</p>
+      </div>
+    );
+  }
+  const frames = [
+    { id: 'today', label: 'Today', live: true },
+    { id: 'with', label: 'With this art', live: false },
+  ];
+  return (
+    <div ref={ref} className="min-w-0 grid grid-cols-2" style={{ gap }}>
+      {frames.map((f) => (
+        <figure key={f.id} className="m-0 min-w-0 flex flex-col items-center gap-1">
+          <figcaption className={`text-[10px] font-black uppercase tracking-wide ${f.live ? 'text-gray-400' : 'text-purple-600'}`}>{f.label}</figcaption>
+          <button
+            onClick={onOpen}
+            aria-label={`${f.label}: open ${asset.title}`}
+            className={`relative overflow-hidden rounded-[18px] p-[4px] shadow-sm ${f.live ? 'bg-gray-300' : 'bg-purple-600'}`}
+            style={{ width: frameW + 8, height: frameH + 8 }}
+          >
+            <div className="relative overflow-hidden rounded-[14px] bg-white" style={{ width: frameW, height: frameH }}>
+              {near && width > 0 ? (
+                <iframe
+                  title={`${f.label}: ${asset.title}`}
+                  src={previewUrl({ asset: asset.id }, f.live, 'light')}
+                  tabIndex={-1}
+                  style={{ width: PHONE_W, height: PHONE_H, transform: `scale(${scale})`, transformOrigin: '0 0', border: 0, pointerEvents: 'none' }}
+                />
+              ) : (
+                <div className="absolute inset-0 animate-pulse bg-purple-50" />
+              )}
+            </div>
+          </button>
+        </figure>
+      ))}
     </div>
   );
 }

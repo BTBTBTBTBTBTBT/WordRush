@@ -1,0 +1,46 @@
+{
+  "halloween": {
+    "art-halloween-w": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-r": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-d": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-i": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-c": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-u": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-s": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-o1": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-o2": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-o3": {
+      "where": "Home cast header, cold-start intro and landing, loading screen, share image"
+    },
+    "art-halloween-prop-pumpkin": {
+      "where": "Leaderboard day title, one prop on each side"
+    },
+    "art-halloween-prop-bat": {
+      "where": "Leaderboard day title, one prop on each side"
+    },
+    "art-halloween-prop-candy": {
+      "where": "Leaderboard day title, one prop on each side"
+    },
+    "art-halloween-prop-ghost": {
+      "where": "Leaderboard day title, one prop on each side"
+    }
+  }
+}
