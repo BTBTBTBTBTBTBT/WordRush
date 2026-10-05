@@ -31,13 +31,28 @@ Status per asset in manifest.json: `draft` → `approved` (founder) → `shipped
 |---|---|---|
 | halloween | Oct 17 – Nov 1 (live in the registry) | vampire, pumpkin, ghost, wizard, witch, alien, scarecrow, mummy, fairy, skeleton |
 | thanksgiving | Nov 16 – 27 (US, 4th Thu) | pilgrim hats, turkey, pie chef, harvest scarf, corn |
-| winter-holidays | Dec 1 – 26 | Santa hat, elf, reindeer, snowman, gingerbread, ugly sweater, menorah-friendly winter (keep inclusive) |
+| winter-holidays | Dec 1 – 26 | Christmas + Hanukkah + a sprinkle of Kwanzaa (founder 10-05, see below): Santa hat, elf, reindeer, snowman, gingerbread, ugly sweater, Hanukkah sweater, dreidel, gelt, latkes, menorah glow, kinara glow |
 | new-year | Dec 27 – Jan 2 | party hats, confetti, noisemakers, disco ball, countdown |
 | valentines | Feb 7 – 14 | hearts, cupid, love letters, roses |
 | st-patricks | Mar 10 – 17 | leprechaun hat, clover, rainbow, pot of gold |
 | spring-easter | Easter −7 days → Easter | bunny ears, eggs, chicks, flowers |
 | fourth-of-july | Jun 28 – Jul 4 | stars & stripes, fireworks, picnic |
 | back-to-school | Aug 15 – Sep 5 | backpacks, pencils, glasses |
+
+## Winter holidays are inclusive (founder 10-05)
+"I want the season theme to have Hanukkah elements in it, as well, not just Christmas. Even a few Kwanzaa elements
+sprinkled in." Every winter-holidays batch (cast, titles, props, walls, extras, social posts) mixes all three:
+- **Christmas:** Santa hats, elves, reindeer, stockings, gingerbread, ugly sweaters, trees, ornaments.
+- **Hanukkah (a real share, not a token):** a menorah/hanukkiah with nine branches (the raised center shamash) and the
+  right candle count for the night shown, dreidels with correct Hebrew letters (nun, gimel, hei, shin), chocolate gelt,
+  latkes, sufganiyot (jelly doughnuts), blue + white + silver palettes, a Star of David only as a quiet decoration.
+  Dates move every year (Kislev 25 for 8 nights; 2026 starts the evening of Dec 4; check each year).
+- **Kwanzaa (sprinkled in):** the kinara with seven candles (three red on the left, one black in the center, three green
+  on the right), the mkeka mat, ears of corn (muhindi), the unity cup (kikombe cha umoja), red + black + green accents,
+  kente-inspired patterns as trim. Kwanzaa runs Dec 26 – Jan 1, so it also gets a light touch in the new-year window.
+- **Respect rules:** objects, food, light and color, never religious garments as mascot costumes (no kippah, tallit,
+  etc. on the cast); no caricature; candles and letters drawn correctly (ask ChatGPT for accuracy and check every
+  sheet); greetings like "Happy Hanukkah" / "Happy Kwanzaa" / "Happy Holidays" alongside "Merry Christmas".
 
 ## Costumes are LAYERED (founder 10-04)
 The cast member is always the canonical approved pixels (`cast/hero/<id>.png`). ChatGPT draws only the costume
