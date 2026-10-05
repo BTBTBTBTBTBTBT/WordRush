@@ -1034,7 +1034,10 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
             // Founder-approved clarity (iOS parity): this board ranks DAILY games only.
             Text(
                 "${card?.title ?: modeTitleForKey(modeId)} · $players player${if (players != 1) "s" else ""} today · daily only",
-                fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = lbSubInk(), maxLines = 1,
+                // Two lines allowed (2026-10-05, 720-wide check): on a narrow phone, or with a long
+                // title (Crosswordocious), one line cut "daily only" to "dail…", the very words
+                // this line exists to say. Normal widths still fit on one line.
+                fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.ExtraBold, color = lbSubInk(), maxLines = 2,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
             card?.engineMode?.let { gm ->

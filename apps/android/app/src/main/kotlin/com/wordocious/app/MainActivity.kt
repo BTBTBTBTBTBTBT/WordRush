@@ -227,7 +227,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     when {
-                        isAuthenticated || isGuest || (isLoading && hadSession) -> {
+                        com.wordocious.app.data.AuthSessionPolicy.showsApp(isAuthenticated, isGuest, isLoading, hadSession) -> {
                             val profile by AuthService.profile.collectAsState()
                             Box(Modifier.fillMaxSize()) {
                                 MainScreen()

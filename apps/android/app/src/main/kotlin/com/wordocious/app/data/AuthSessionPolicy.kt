@@ -69,4 +69,17 @@ object AuthSessionPolicy {
     fun retryDelaySeconds(attempt: Int): Int = RETRY_SECONDS.getOrElse(attempt.coerceAtLeast(0)) { 60 }
 
     private val RETRY_SECONDS = listOf(5, 15, 30, 60)
+
+    // ── Guest mode across process / activity recreation (2026-10-05) ──
+
+    /** Whether a cold start (or a recreated process) brings guest mode back: the player
+     *  chose "Play without an account" and nothing signed in since. A device that last ran
+     *  signed in restores that session instead; the guest flag never outranks it. */
+    fun restoresGuest(storedGuestFlag: Boolean, hadSignedInSession: Boolean): Boolean =
+        storedGuestFlag && !hadSignedInSession
+
+    /** MainActivity's gate: the app shell (not the sign-in screen) is shown for a signed-in
+     *  player, a guest, or while the last signed-in session is still restoring. */
+    fun showsApp(isAuthenticated: Boolean, isGuest: Boolean, isLoading: Boolean, hadSession: Boolean): Boolean =
+        isAuthenticated || isGuest || (isLoading && hadSession)
 }

@@ -127,6 +127,17 @@ fun modeCardFor(mode: GameMode): ModeCard? = MODE_CARDS.firstOrNull { it.engineM
  *  `MODE_CARDS.firstOrNull { it.dbKey == … }` alone would miss it). */
 val ALL_CARDS: List<ModeCard> get() = MODE_CARDS + MORE_CARDS
 
+/** The catalog card with this [id] (the saved form of an open game across recreation). */
+fun modeCardById(id: String?): ModeCard? = id?.let { k -> ALL_CARDS.firstOrNull { it.id == k } }
+
+/** rememberSaveable support for the open game: a ModeCard holds a Color and is not
+ *  Bundle-safe, so it is saved as its catalog id and looked up again on restore. */
+val ModeCardSaver: androidx.compose.runtime.saveable.Saver<ModeCard?, String> =
+    androidx.compose.runtime.saveable.Saver(
+        save = { it?.id },
+        restore = { modeCardById(it) },
+    )
+
 /** The card for a daily_results/matches `game_mode` key, wherever it lives. */
 fun modeCardForKey(dbKey: String?): ModeCard? = dbKey?.let { k -> ALL_CARDS.firstOrNull { it.dbKey == k } }
 

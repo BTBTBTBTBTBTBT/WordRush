@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -321,20 +322,25 @@ private fun Modifier.hiddenTab(showing: () -> Boolean = { false }): Modifier = t
 
 @Composable
 fun MainScreen() {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    var activeGame by remember { mutableStateOf<ModeCard?>(null) }
+    // 2026-10-05 (configuration changes): the shell's navigation is SAVED state, not plain
+    // remember — rotation, fold/unfold, split-screen, a dark-mode or font-scale switch all
+    // recreate the activity, and with `remember` they dropped the player back on Home in the
+    // middle of a game. The game's board itself survives through its ViewModel/GamePersistence;
+    // this keeps the route to it. ModeCard is restored by catalog id (ModeCardSaver).
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var activeGame by rememberSaveable(stateSaver = ModeCardSaver) { mutableStateOf<ModeCard?>(null) }
     // Explicit seed for the active game — non-null only for Pro Unlimited (a fresh
     // non-daily seed); null falls back to today's daily seed.
-    var activeSeed by remember { mutableStateOf<String?>(null) }
+    var activeSeed by rememberSaveable { mutableStateOf<String?>(null) }
     // Home redesign (founder, 2026-10-01): the More Games sheet is gone (its games are
     // Home's PUZZLES section). Home stays composed under a game (2026-09-29), so leaving
     // a Puzzles game lands back at the same scroll position, where the sheet used to reopen.
     // BJ9: the game fades (its layer), then the shell shrinks back into its card.
     val exitGame: () -> Unit = { GameMotion.close { activeGame = null; activeSeed = null } }
-    var showSettings by remember { mutableStateOf(false) }
-    var showSignIn by remember { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showSignIn by rememberSaveable { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
-    var infoRoute by remember { mutableStateOf<String?>(null) }
+    var infoRoute by rememberSaveable { mutableStateOf<String?>(null) }
     // VS flow: lobby (true) → active match (mode, isDaily).
     var vsLobby by remember { mutableStateOf(false) }
     // The lobby page to open on (VS overhaul: CHALLENGE BACK lands on the Friend page).
@@ -343,15 +349,15 @@ fun MainScreen() {
     // A challenge code to race (/vs/challenge/<code>: lobby card, code field, push, app link).
     var vsChallengeCode by remember { mutableStateOf<String?>(null) }
     // A Friends pocket game on screen (Friends overhaul §4; push url /friends/games/<id>).
-    var friendlyGameId by remember { mutableStateOf<String?>(null) }
+    var friendlyGameId by rememberSaveable { mutableStateOf<String?>(null) }
     // Bumped to open Stats → All-time → VS (the lobby's Rivals "See all").
     var statsVsJump by remember { mutableIntStateOf(0) }
     // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
-    var publicProfileId by remember { mutableStateOf<String?>(null) }
+    var publicProfileId by rememberSaveable { mutableStateOf<String?>(null) }
     // Records overlay (D1, 2026-09-26): Records left the tab bar; until D2 folds
     // its rows into Stats it opens from the Stats page's RECORDS row, pushed
     // in-tab like the public profile.
-    var showRecords by remember { mutableStateOf(false) }
+    var showRecords by rememberSaveable { mutableStateOf(false) }
     // Warm-resume day rollover (founder-approved UX, iOS WordociousApp parity):
     // if the LOCAL day changed while backgrounded, reset the landing surface
     // exactly like a cold start — Home tab, Daily toggle (App.onCreate resets

@@ -330,6 +330,11 @@ fun Modifier.typePop(ch: String): Modifier = composed {
                 0.55f at 0
                 1.07f at (TileMotion.TYPE_MS * 0.55f).toInt()
             })
+        } else if (pop.value != 1f) {
+            // 2026-10-05 (Letter Ladder, 720x1280): a row that clears while a pop is still in
+            // flight (fast typing straight into ENTER) cancelled the animation mid-keyframe and
+            // nothing ever finished it, so the emptied tiles sat shrunken at ~0.6x. Settle it.
+            pop.snapTo(1f)
         }
     }
     this.graphicsLayer { scaleX = pop.value; scaleY = pop.value }

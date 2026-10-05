@@ -103,8 +103,18 @@ object AuthService {
         // Guest is its own save owner — never inherit the boards of whoever was
         // signed in on this device before.
         claimSavesFor("guest")
-        _isGuest.value = true
+        setGuest(true)
     }
+
+    /** 2026-10-05: guest mode is PERSISTED (web parity: localStorage 'wordocious-guest').
+     *  It used to live only in memory, so anything that rebuilt the process (Android
+     *  reclaiming a backgrounded app, a configuration change that restarted it, an
+     *  update) dropped a guest back on the sign-in screen. Every write goes through here. */
+    private fun setGuest(on: Boolean) {
+        _isGuest.value = on
+        SettingsPref.set(GUEST_MODE, on)
+    }
+    const val GUEST_MODE = "guest-mode"
 
     private const val LAST_OWNER = "last-save-owner"
 
@@ -138,7 +148,7 @@ object AuthService {
     }
     /** Leave guest mode → the MainActivity gate shows AuthScreen so the guest
      *  can sign in (used by the "Sign in" prompts on account-only surfaces). */
-    fun exitGuest() { _isGuest.value = false }
+    fun exitGuest() { setGuest(false) }
 
     /**
      * Mirror the values the header paints so the NEXT launch can paint them
@@ -221,6 +231,11 @@ object AuthService {
 
     /** Restore session from local storage on app start. */
     fun initialize() {
+        // A persisted guest choice comes back at once (no sign-in flash); a session that
+        // restores below supersedes it (setGuest(false) on every signed-in path).
+        if (AuthSessionPolicy.restoresGuest(SettingsPref.get(GUEST_MODE, false), hadPersistedSession())) {
+            _isGuest.value = true
+        }
         // §241 (founder, on iOS but same window here): the profile row lands a
         // beat after a cold start; paint the last known row immediately and let
         // the real fetch overwrite it. Reverted below if no session restores.
@@ -236,7 +251,7 @@ object AuthService {
                     // loadProfile claims save ownership for this user; false = banned (it
                     // already signed out).
                     if (loadProfile(user.id)) {
-                        _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                        _isAuthenticated.value = true; setGuest(false); SettingsPref.set(HAD_SESSION, true)
                     }
                 } else {
                     // 2026-10-03 (the outage sign-out): "no current user" is NOT "no session".
@@ -258,7 +273,7 @@ object AuthService {
                     when {
                         // The probe refreshed it.
                         restored != null -> if (loadProfile(restored.id)) {
-                            _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                            _isAuthenticated.value = true; setGuest(false); SettingsPref.set(HAD_SESSION, true)
                         }
                         AuthSessionPolicy.keepsUserSignedIn(outcome, hasStoredSession = stored != null) -> keepSignedInOffline()
                         outcome == AuthSessionPolicy.Outcome.REVOKED -> signOut(callServer = false)
@@ -312,7 +327,7 @@ object AuthService {
     private fun keepSignedInOffline() {
         recovering = true
         _isAuthenticated.value = true
-        _isGuest.value = false
+        setGuest(false)
         SettingsPref.set(HAD_SESSION, true)
         // A no-op while the library's own retry loop runs (RefreshFailure); otherwise this
         // is the next try of the stored session.
@@ -362,7 +377,7 @@ object AuthService {
                             recovering = false
                             val uid = st.session.user?.id ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
                             if (uid != null && loadProfile(uid)) {
-                                _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                                _isAuthenticated.value = true; setGuest(false); SettingsPref.set(HAD_SESSION, true)
                             }
                         }
                     }
@@ -488,7 +503,7 @@ object AuthService {
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
             if (!loadProfile(user.id)) return "This account has been suspended."
-            _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+            _isAuthenticated.value = true; setGuest(false); SettingsPref.set(HAD_SESSION, true)
             null
         } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
             // A real dismissal is silent by design. But Play Services ALSO
@@ -584,7 +599,7 @@ object AuthService {
                 val uid = client.auth.currentUserOrNull()?.id ?: return@launch
                 if (!loadProfile(uid)) return@launch   // suspended account
                 _isAuthenticated.value = true
-                _isGuest.value = false
+                setGuest(false)
                 SettingsPref.set(HAD_SESSION, true)
             }
         }
@@ -691,7 +706,7 @@ object AuthService {
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
             if (!loadProfile(user.id)) return "This account has been suspended."
-            _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+            _isAuthenticated.value = true; setGuest(false); SettingsPref.set(HAD_SESSION, true)
             null
         } catch (e: Exception) {
             e.message?.take(120) ?: "Sign in failed"
@@ -748,7 +763,7 @@ object AuthService {
             when {
                 user != null -> {
                     if (!loadProfile(user.id)) return SignUpOutcome.Failed("This account has been suspended.")
-                    _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                    _isAuthenticated.value = true; setGuest(false); SettingsPref.set(HAD_SESSION, true)
                     SignUpOutcome.SignedIn
                 }
                 // Email confirmation is ON, so there is no session yet. The
@@ -797,7 +812,7 @@ object AuthService {
         _linkNotice.value = null
         SettingsPref.remove(PENDING_LINK)
         _isAuthenticated.value = false
-        _isGuest.value = false
+        setGuest(false)
         SettingsPref.set(HAD_SESSION, false)
         SettingsPref.set(CACHED_DAILY_STREAK, 0)
         SettingsPref.set(CACHED_SHIELDS, -1)
