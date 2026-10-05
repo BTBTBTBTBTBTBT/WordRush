@@ -127,7 +127,7 @@ export default function ArtLibraryPage() {
 
   const [view, setView] = useState<'all' | 'picks'>('all');
   const [filters, setFilters] = useState<ArtFilters>(EMPTY_FILTERS);
-  const [sort, setSort] = useState<ArtSort>('newest');
+  const [sort, setSort] = useState<ArtSort>('featured');
   const [limit, setLimit] = useState(PAGE_SIZE);
   const [lightbox, setLightbox] = useState<{ ids: string[]; index: number } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -206,6 +206,8 @@ export default function ArtLibraryPage() {
   };
 
   const loaded = !!data && !loading;
+  // Total in scope: finished art, plus working files when they are shown.
+  const shownTotal = useMemo(() => (filters.working ? assets.length : assets.filter((a) => a.stage !== 'working').length), [assets, filters.working]);
   const anyFilter = filters.type || filters.season || filters.character || filters.status || filters.q.trim();
 
   return (
@@ -221,7 +223,7 @@ export default function ArtLibraryPage() {
           value={view}
           onChange={setView}
           options={[
-            { value: 'all', label: 'All art', count: assets.length },
+            { value: 'all', label: 'All art', count: shownTotal },
             { value: 'picks', label: 'Founder picks', count: pickCount },
           ]}
         />
@@ -245,7 +247,7 @@ export default function ArtLibraryPage() {
         />
       ) : (
         <>
-          <Filters assets={assets} filters={filters} onFacet={setFacet} onQuery={(q) => setFilters((f) => ({ ...f, q }))} sort={sort} onSort={setSort} />
+          <Filters assets={assets} filters={filters} onFacet={setFacet} onQuery={(q) => setFilters((f) => ({ ...f, q }))} onWorking={(working) => setFilters((f) => ({ ...f, working }))} sort={sort} onSort={setSort} />
 
           {(filters.type == null || filters.type === 'animation') && (
             <AnimationStrip
@@ -259,7 +261,7 @@ export default function ArtLibraryPage() {
           <div className="flex items-baseline justify-between gap-2 px-0.5">
             <p className="text-xs font-extrabold text-gray-400 uppercase tracking-wide">
               {list.length.toLocaleString()} {list.length === 1 ? 'asset' : 'assets'}
-              {anyFilter ? ` of ${assets.length.toLocaleString()}` : ''}
+              {anyFilter ? ` of ${shownTotal.toLocaleString()}` : ''}
             </p>
             {anyFilter && (
               <button onClick={() => setFilters(EMPTY_FILTERS)} className="text-xs font-extrabold text-purple-700 hover:text-purple-900">
@@ -356,11 +358,12 @@ function SoftButton({ onClick, children, tone = 'purple', disabled }: {
   );
 }
 
-function Filters({ assets, filters, onFacet, onQuery, sort, onSort }: {
+function Filters({ assets, filters, onFacet, onQuery, onWorking, sort, onSort }: {
   assets: ArtAsset[];
   filters: ArtFilters;
   onFacet: (facet: ArtFacet, value: string | null) => void;
   onQuery: (q: string) => void;
+  onWorking: (on: boolean) => void;
   sort: ArtSort;
   onSort: (s: ArtSort) => void;
 }) {
@@ -381,12 +384,39 @@ function Filters({ assets, filters, onFacet, onQuery, sort, onSort }: {
             </button>
           )}
         </label>
-        <Segmented value={sort} onChange={onSort} options={[{ value: 'newest', label: 'Newest' }, { value: 'az', label: 'A to Z' }]} />
+        <Segmented value={sort} onChange={onSort} options={[{ value: 'featured', label: 'Featured' }, { value: 'newest', label: 'Newest' }, { value: 'az', label: 'A to Z' }]} />
       </div>
       {(['type', 'season', 'character', 'status'] as const).map((facet) => (
         <ChipRow key={facet} facet={facet} assets={assets} filters={filters} onPick={(v) => onFacet(facet, v)} />
       ))}
+      <WorkingToggle assets={assets} filters={filters} onChange={onWorking} />
     </div>
+  );
+}
+
+/** Working files (rig parts, raw captures, keyed copies, pieces, retired art) stay out of the grid until asked for. */
+function WorkingToggle({ assets, filters, onChange }: { assets: ArtAsset[]; filters: ArtFilters; onChange: (on: boolean) => void }) {
+  const hidden = useMemo(
+    () => filterAssets(assets, { ...filters, working: true }).filter((a) => a.stage === 'working').length,
+    [assets, filters],
+  );
+  if (!hidden && !filters.working) return null;
+  const on = filters.working;
+  return (
+    <button
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      className="flex items-center gap-2.5 pt-1 text-left"
+    >
+      <span className={`relative w-9 h-5 shrink-0 rounded-full transition-colors ${on ? 'bg-purple-600' : 'bg-purple-100'}`}>
+        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${on ? 'left-[18px]' : 'left-0.5'}`} />
+      </span>
+      <span className="text-xs font-extrabold text-purple-800">
+        Show working files <span className="font-bold text-purple-400 tabular-nums">{hidden.toLocaleString('en-US')}</span>
+      </span>
+      <span className="hidden sm:inline text-[11px] font-semibold text-gray-400">rig parts, raw captures, keyed copies, pieces, retired art</span>
+    </button>
   );
 }
 

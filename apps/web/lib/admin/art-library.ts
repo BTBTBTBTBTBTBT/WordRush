@@ -5,6 +5,8 @@
  * Supabase: the page and the routes both import from here and the tests pin it.
  */
 
+export type ArtStage = 'final' | 'working';
+
 export const ART_STATUSES = ['draft', 'approved', 'rejected', 'shipped'] as const;
 export type ArtStatus = (typeof ART_STATUSES)[number];
 
@@ -19,6 +21,8 @@ export interface ArtAsset {
   season: string | null;
   character: string | null;
   status: ArtStatus;
+  /** final = the art itself; working = what it is made from (rig parts, raw, keyed copies, pieces, retired). */
+  stage: ArtStage;
   title: string;
   caption: string | null;
   width: number | null;
@@ -43,11 +47,14 @@ export interface ArtFilters {
   status: ArtStatus | null;
   /** Free-text search over title, caption, path and id. */
   q: string;
+  /** Show working files too (off by default: the library opens on finished art). */
+  working: boolean;
 }
 
-export const EMPTY_FILTERS: ArtFilters = { type: null, season: null, character: null, status: null, q: '' };
+export const EMPTY_FILTERS: ArtFilters = { type: null, season: null, character: null, status: null, q: '', working: false };
 
-export type ArtSort = 'newest' | 'az';
+/** featured (default): season art awaiting a call, then the newest finished pieces. */
+export type ArtSort = 'featured' | 'newest' | 'az';
 
 export type ArtMedia = 'image' | 'html' | 'audio' | 'other';
 
@@ -85,6 +92,7 @@ function matchesQuery(a: ArtAsset, q: string): boolean {
 
 /** True when `a` passes every active filter except `skip` (for facet counts). */
 function passes(a: ArtAsset, f: ArtFilters, skip?: ArtFacet): boolean {
+  if (!f.working && a.stage === 'working') return false;
   for (const facet of ART_FACETS) {
     if (facet === skip) continue;
     const want = f[facet];
@@ -125,13 +133,29 @@ export function facetCounts(assets: readonly ArtAsset[], f: ArtFilters, facet: A
 /** Newest first (created_at desc, then id), or A to Z by title (then id). */
 /** 1 for working pieces (rig layers, raw captures, explorations), else 0. */
 const WORK_KINDS = new Set(['layers', 'raw', 'rig', 'explorations', 'options']);
-function workRank(a: Pick<ArtAsset, 'kind'>): number {
-  return a.kind && WORK_KINDS.has(a.kind) ? 1 : 0;
+function workRank(a: Pick<ArtAsset, 'kind' | 'stage'>): number {
+  return a.stage === 'working' || (a.kind && WORK_KINDS.has(a.kind)) ? 1 : 0;
+}
+
+/** Seasons in calendar order from the fall (the next one up first); unknown seasons after. */
+const SEASON_ORDER = ['halloween', 'thanksgiving', 'winter-holidays', 'new-year', 'valentines', 'st-patricks', 'spring-easter', 'fourth-of-july', 'back-to-school'];
+function seasonRank(a: Pick<ArtAsset, 'season'>): number {
+  const i = a.season ? SEASON_ORDER.indexOf(a.season) : -1;
+  return i < 0 ? SEASON_ORDER.length : i;
+}
+
+/** Featured order: approved season art, then draft season art (the founder's open calls), then the rest. */
+function featuredRank(a: Pick<ArtAsset, 'season' | 'status'>): number {
+  if (!a.season) return 2;
+  return a.status === 'approved' ? 0 : a.status === 'draft' ? 1 : 2;
 }
 
 export function sortAssets(assets: readonly ArtAsset[], sort: ArtSort): ArtAsset[] {
   const out = assets.slice();
-  if (sort === 'az') {
+  if (sort === 'featured') {
+    out.sort((a, b) => featuredRank(a) - featuredRank(b) || seasonRank(a) - seasonRank(b) || workRank(a) - workRank(b)
+      || (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : a.id.localeCompare(b.id)));
+  } else if (sort === 'az') {
     out.sort((a, b) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
   } else {
     // Same day: finished art first (working pieces like rig layers and raw captures last), then by path.
