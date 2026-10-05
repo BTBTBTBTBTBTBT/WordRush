@@ -85,13 +85,14 @@ describe('Halloween skin framing', () => {
       expect(y1).toBeLessThanOrEqual(SKIN_ART_SIZE);
       const a = castArt(id, 'halloween').aspect;
       expect(a).toBeGreaterThan(0.6);
-      expect(a).toBeLessThan(1.1);
+      // 10-05 layered skins: W's cape and U's wings make them wider than tall (W 1.19, U 1.26).
+      expect(a).toBeLessThan(1.3);
     }
   });
 
   it('lays the 320 px skin so only its box shows', () => {
-    // c: box 216 × 307 at (52, 6).
-    expect(castArt('c', 'halloween').layout).toEqual({ width: '148.148%', left: '-24.074%', top: '-1.954%' });
+    // c: box 254 × 307 at (33, 6).
+    expect(castArt('c', 'halloween').layout).toEqual({ width: '125.984%', left: '-12.992%', top: '-1.954%' });
   });
 
   it('falls back to the hero art outside the season', () => {
@@ -122,8 +123,9 @@ describe('share wordmark reflow', () => {
     const last = skin.slots[skin.slots.length - 1];
     expect((left + last.x + last.w) / 2).toBeCloseTo(540, 6);
     expect(last.x + last.w - left).toBeCloseTo(skin.rowW, 6);
-    // The skins are a little slimmer overall than the heroes: never wider than the card's row.
-    expect(skin.rowW).toBeLessThanOrEqual(row.rowW + 1);
+    // 10-05 layered skins (W's cape, U's wings) run ~1% wider than the heroes: within 2% of the card's
+    // row, i.e. still well inside the card's side margins (the row is 90% of the card).
+    expect(skin.rowW).toBeLessThanOrEqual(row.rowW * 1.02);
   });
 
   it('is the identity for the hero aspects', () => {

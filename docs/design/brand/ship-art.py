@@ -140,10 +140,13 @@ BADGES_DIR = os.path.join(HERE, 'badges')   # achievement + level badges (founde
 for f in sorted(os.listdir(BADGES_DIR)) if os.path.isdir(BADGES_DIR) else []:
     if f.endswith('.png'):
         ship('art-badge-' + f[:-4], square(os.path.join(BADGES_DIR, f), 256, 0.03)); n += 1
-HALLOWEEN_DIR = os.path.join(HERE, 'cast', 'halloween')   # seasonal cast skins (founder 10-02)
-for f in sorted(os.listdir(HALLOWEEN_DIR)) if os.path.isdir(HALLOWEEN_DIR) else []:
-    if f.endswith('.png'):
-        ship('art-halloween-' + f[:-4], square(os.path.join(HALLOWEEN_DIR, f), 320, 0.02)); n += 1
+# Seasonal cast skins (founder 10-02). 10-05: the on-model LAYERED header figures (seasons/halloween/header/
+# build-header.py: the canonical hero + the costume, face/letter untouched) replace the off-model 10-02 ChatGPT
+# redraws (cast/halloween/<id>.png, kept for reference). Same 320² square framing (trim, 2% margin, centered).
+HALLOWEEN_DIR = os.path.join(HERE, 'seasons', 'halloween', 'header')
+for cid in ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']:
+    if os.path.exists(os.path.join(HALLOWEEN_DIR, f'{cid}.png')):
+        ship('art-halloween-' + cid, square(os.path.join(HALLOWEEN_DIR, f'{cid}.png'), 320, 0.02)); n += 1
 ship('art-bg-tiles', Image.open(os.path.join(HERE, 'backgrounds', 'tile-pattern.png')).convert('RGBA')); n += 1
 # every cast pose on its own (founder 10-02 build: popups, share footers, VS, empty states)
 POSES_DIR = os.path.join(HERE, 'poses')

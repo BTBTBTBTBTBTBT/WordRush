@@ -117,18 +117,19 @@ export const SKIN_ART_SIZE = 320;
  * box [x0, y0, x1, y1] (measured from the shipped webp files, alpha > 8).
  * The skins aren't trimmed like the hero mascots; drawing each one cut to its
  * box keeps the row reading WORDOCIOUS edge to edge at one height.
+ * 10-05: re-measured for the on-model layered skins (seasons/halloween/header/).
  */
 export const HALLOWEEN_TRIM: Record<MascotId, TrimBox> = {
-  w: [6, 10, 313, 310],
-  o1: [11, 6, 308, 313],
-  r: [26, 6, 294, 313],
-  d: [24, 6, 296, 313],
-  o2: [23, 6, 296, 313],
-  c: [52, 6, 268, 313],
-  i: [41, 6, 278, 313],
-  o3: [6, 11, 313, 309],
-  u: [13, 6, 307, 313],
-  s: [36, 6, 284, 313],
+  w: [6, 31, 313, 289],
+  o1: [6, 9, 313, 310],
+  r: [21, 6, 298, 313],
+  d: [36, 6, 283, 313],
+  o2: [45, 6, 274, 313],
+  c: [33, 6, 287, 313],
+  i: [59, 6, 261, 313],
+  o3: [8, 6, 311, 313],
+  u: [6, 38, 313, 281],
+  s: [19, 6, 300, 313],
 };
 
 /** One cast member's art for a season: the image, its square size and art box. */

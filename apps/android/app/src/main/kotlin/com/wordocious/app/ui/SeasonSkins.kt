@@ -70,20 +70,21 @@ object SeasonSkins {
 
     /**
      * X the Halloween costumes trimmed to their opaque bounds (alpha > 8, measured with
-     * PIL on the shipped 320² files), in 320-px source coordinates.
+     * PIL on the shipped 320² files; re-measured 10-05 for the on-model layered skins), in
+     * 320-px source coordinates.
      */
     const val HALLOWEEN_SOURCE = 320
     val halloweenCrops: Map<MascotId, CastCrops.Crop> = mapOf(
-        MascotId.W to CastCrops.Crop(6, 10, 313, 310),
-        MascotId.O1 to CastCrops.Crop(11, 6, 308, 313),
-        MascotId.R to CastCrops.Crop(26, 6, 294, 313),
-        MascotId.D to CastCrops.Crop(24, 6, 296, 313),
-        MascotId.O2 to CastCrops.Crop(23, 6, 296, 313),
-        MascotId.C to CastCrops.Crop(52, 6, 268, 313),
-        MascotId.I to CastCrops.Crop(41, 6, 278, 313),
-        MascotId.O3 to CastCrops.Crop(6, 11, 313, 309),
-        MascotId.U to CastCrops.Crop(13, 6, 307, 313),
-        MascotId.S to CastCrops.Crop(36, 6, 284, 313),
+        MascotId.W to CastCrops.Crop(6, 31, 313, 289),
+        MascotId.O1 to CastCrops.Crop(6, 9, 313, 310),
+        MascotId.R to CastCrops.Crop(21, 6, 298, 313),
+        MascotId.D to CastCrops.Crop(36, 6, 283, 313),
+        MascotId.O2 to CastCrops.Crop(45, 6, 274, 313),
+        MascotId.C to CastCrops.Crop(33, 6, 287, 313),
+        MascotId.I to CastCrops.Crop(59, 6, 261, 313),
+        MascotId.O3 to CastCrops.Crop(8, 6, 311, 313),
+        MascotId.U to CastCrops.Crop(6, 38, 313, 281),
+        MascotId.S to CastCrops.Crop(19, 6, 300, 313),
     )
 
     @DrawableRes
