@@ -1,0 +1,738 @@
+{
+ "acc:chain": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "pear",
+   "star",
+   "tall"
+  ],
+  "fails": {}
+ },
+ "acc:bubbletea": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:cape": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:supercape": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:backpack": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:guitar": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:mug": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:sneakers": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "brows:happy": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:book": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:pencil-big": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:balloon": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:trophy": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:magnifier": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:flashlight": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:umbrella": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:icecream": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:spatula": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:mic": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:wand-star": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:bandana": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:belt": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:apron": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:lei": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:cape-drape": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:boots": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:slippers": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:skates": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:bird": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:kitten": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:puppy": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:snail": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "brows:worried": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "brows:determined": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "brows:surprised": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "brows:cheeky": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "brows:sleepy": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:sweat": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:tear": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:steam": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "acc:heart": {
+  "field": null,
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ }
+}

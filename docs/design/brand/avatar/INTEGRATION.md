@@ -54,7 +54,28 @@ honest for them.
 - On narrow bodies (tall, bean, pear) the straps slide outward and get thinner, so they never touch the eyes.
 - The body casts a shadow on the pack, and the straps cast a contact shadow on the body.
 
-## How it ships (proposal, not applied)
+## Shipped (10-05, manifest v3)
+Founder 10-05: "make sure the new items … are inclusive in the new build so long as they don't look bolted on."
+`integration/ship-integrated.py` builds every rebuilt + new part on all 12 bodies with this rig, fit-checks it, and
+bakes everything the rules need into PER-BODY LAYER ART, so the three renderers only draw rects:
+- `avatar-parts.json` v3: `items[key].pieces[body] = [[layer, x, y, w, h], …]` → art
+  `art-av-<kind>-<id>-<body>-<layer>`; a body missing from the map has no room (the chain on wide + mini) and draws
+  nothing. `bodies.<id>` carry `hands`, `shoulderY`, `wrap`, `floor`; eyes carry `inkTop` (brows clear tall eyes).
+- Layers: `back` (clipped outside the silhouette, AO baked) · body · pattern · `under` (apron / belt on short
+  bodies, + contact shadow) · LETTER (`AvatarLayout.letterIndex`) · cheeks · eyes · `brows` · nose · mouth · face ·
+  `wrap` (straps, scarves, cords, collars + shadow, face/letter guarded) · `held` (+ shadow) · head · neckFront ·
+  `feet` · `pet` · `extra`.
+- The hand-over layer is baked: a held item / strap is cut away inside the hand ellipse, so the body's own hand
+  (with its color and pattern) shows on top: the fist covers the handle, straps tuck under the arms.
+- New config fields `held`, `wrap`, `feet`, `pet`, `brows`, `extra` (missing = none; only worn ones are written).
+  The 7 rebuilt parts keep their ids (backpack, scarf, chain, bubbletea, guitar, cape, supercape).
+- Gate: fit-check passes on every body; contact sheets of the SHIPPED art (`integration/contact-integrated.py`,
+  `integration/out/shipped/`) were reviewed. Dropped: the necktie (no room for the blade: a knot behind the letter or
+  a sideways second bow tie) and the sash (the face guard pushes it onto the letter band: a stripe across the
+  letter). Fixed: sneakers (the upper + laces, not white soles), boots (wider), the shoe keying fringe, sleepy
+  brows (relaxed, never slanting in like angry brows).
+
+## How it ships (the 10-04 proposal, superseded by the section above)
 The data needs four additions to `avatar-parts.json`, sketched in `new/proposal-avatar-parts.json`:
 1. `bodies.<id>.hands`: the L/R ellipses (`integration/rig.py` `HANDS`).
 2. `bodies.<id>.wrap`: the wrap line (y plus thickness per x sample).

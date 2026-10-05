@@ -1,5 +1,8 @@
 # Mascot maker: new additions queue
 
+**SHIPPED 10-05 (manifest v3, ×3 platforms):** 35 of 37 options (tie + sash dropped in the visual review) + the 7
+rebuilt parts, via `../integration/ship-integrated.py`; see `../INTEGRATION.md` "Shipped".
+
 **Status 10-05: DRAWN AND BUILT (proposals).** Every piece below was drawn in ChatGPT on 10-05 (sheets in `raw/`,
 split by `split.py` into `pieces/`), built with `../integration/new_pieces.py` + `build_new.py`, and fit-checked on
 all 12 bodies (`../integration/fit-new.json`: 37 options, 0 failures). They are shown in `../options.html`,
