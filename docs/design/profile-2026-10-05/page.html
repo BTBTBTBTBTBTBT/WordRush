@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edit Profile Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f2fd; --ink:#2a1a4f; --muted:#6b5c8f; --soft:#ece4fb; --line:rgba(91,60,150,.12);
+  --accent:#7c3aed; --pink:#db2777; --gold:#d97706; --rec:#059669; --card:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15102a; --ink:#efe9ff; --muted:#a99ccf; --soft:#221a40; --line:rgba(200,180,255,.14);
+    --accent:#a78bfa; --pink:#f472b6; --gold:#fbbf24; --rec:#34d399; --card:#1d1636;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15102a; --ink:#efe9ff; --muted:#a99ccf; --soft:#221a40; --line:rgba(200,180,255,.14);
+  --accent:#a78bfa; --pink:#f472b6; --gold:#fbbf24; --rec:#34d399; --card:#1d1636;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Nunito,ui-rounded,system-ui,sans-serif;font-weight:700;line-height:1.45}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 16px 80px}
+h1{font-size:30px;font-weight:900;margin:0 0 6px;letter-spacing:-.3px}
+h2{font-size:22px;font-weight:900;margin:56px 0 6px}
+h3{font-size:17px;font-weight:900;margin:0}
+p{margin:6px 0}
+.lede{color:var(--muted);max-width:760px}
+.toc{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.toc a{color:var(--accent);text-decoration:none;background:var(--soft);padding:6px 12px;border-radius:999px;font-size:13px}
+.tldr{margin:18px 0 0;padding:14px 16px;border-radius:16px;background:var(--soft);max-width:860px}
+.tldr b{color:var(--accent)}
+.sub{color:var(--muted);font-size:14px;max-width:780px}
+.tag{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.6px;text-transform:uppercase;padding:3px 9px;border-radius:999px;vertical-align:middle}
+.tag.rec{background:var(--rec);color:#fff}
+.tag.s{background:#dcfce7;color:#166534}.tag.m{background:#fef3c7;color:#92400e}.tag.l{background:#fee2e2;color:#991b1b}
+.tag.ill{background:var(--soft);color:var(--muted)}
+.tag.real{background:#ede9fe;color:#5b21b6}
+/* audit */
+.shots{display:flex;gap:14px;overflow-x:auto;padding:12px 2px 16px;scroll-snap-type:x mandatory}
+.shot{flex:0 0 220px;scroll-snap-align:start}
+.shot img{width:100%;border-radius:22px;display:block;box-shadow:0 6px 20px rgba(60,30,120,.18)}
+.shot .cap{font-size:12px;color:var(--muted);margin-top:8px}
+.shot .cap b{color:var(--ink)}
+.audit{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:6px 28px;margin-top:8px}
+.audit h4{margin:14px 0 4px;font-size:13px;letter-spacing:.8px;text-transform:uppercase;color:var(--accent)}
+.audit ul{margin:0;padding-left:18px}
+.audit li{margin:5px 0;font-size:14px}
+.audit li i{font-style:normal;color:var(--muted)}
+/* options */
+.opt{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+.opt-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.opt-row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:14px}
+.col{flex:0 0 auto}
+.col .lbl{font-size:12px;color:var(--muted);margin:0 0 8px;display:flex;gap:6px;align-items:center}
+.gptimg{width:300px;border-radius:30px;display:block;box-shadow:0 10px 30px rgba(60,30,120,.22)}
+.notes{flex:1 1 260px;min-width:240px;font-size:14px}
+.notes ul{padding-left:18px;margin:6px 0}
+.notes li{margin:5px 0}
+.notes .eff{margin-top:10px;color:var(--muted);font-size:13px}
+/* phone sketches (always the app's light look) */
+.phone{width:300px;height:650px;border-radius:34px;overflow:hidden;position:relative;box-shadow:0 10px 30px rgba(60,30,120,.22);background:#efe7fb;color:#2a1a4f}
+.scr{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:linear-gradient(180deg,#ece4fb 0%,#f5e6f3 100%);scrollbar-width:none}
+.scr::-webkit-scrollbar{display:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 6px;position:relative;z-index:3}
+.topbar .x{width:28px;text-align:center;color:#6d28d9;font-weight:900;font-size:18px}
+.topbar img{height:30px}
+.pill-save{font-size:11px;font-weight:900;color:#fff;background:linear-gradient(#8b5cf6,#6d28d9);padding:6px 11px;border-radius:999px;box-shadow:0 3px 0 #4c1d95,inset 0 1px 0 rgba(255,255,255,.4)}
+.stage{position:relative;height:250px;margin:0 0 0;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;transition:background .35s}
+.stage.tall{height:300px;border-radius:0 0 28px 28px}
+.stage.tall .topbar{position:absolute;left:0;right:0;top:0}
+.stage.tall .mascot{width:200px;height:200px;margin-bottom:22px}
+.stage.tall .bubble{top:74px}
+.stage .spot{position:absolute;bottom:18px;left:50%;width:210px;height:44px;margin-left:-105px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,255,255,.85),rgba(255,255,255,.25) 60%,transparent 72%)}
+.mascot{position:relative;width:180px;height:180px;margin-bottom:26px;cursor:pointer;transform-origin:50% 100%;animation:breathe 3.4s ease-in-out infinite}
+.mascot img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.mascot .m1{opacity:0;animation:blink 4.6s infinite}
+.mascot.hop{animation:hop .55s cubic-bezier(.3,1.6,.5,1)}
+.mascot.hop .m1{opacity:1;animation:none}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.018,.982) translateY(1px)}}
+@keyframes blink{0%,91%{opacity:0}92%,95%{opacity:1}96%,100%{opacity:0}}
+@keyframes hop{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-22px) scale(.97,1.04)}60%{transform:translateY(0) scale(1.05,.95)}100%{transform:translateY(0) scale(1)}}
+@media (prefers-reduced-motion: reduce){.mascot,.mascot .m1{animation:none}}
+.bubble{position:absolute;right:14px;top:34px;background:#fff;color:#6d28d9;font-size:12px;font-weight:900;padding:7px 11px;border-radius:14px;box-shadow:0 4px 12px rgba(80,40,160,.18)}
+.bubble:after{content:"";position:absolute;left:10px;bottom:-6px;border:7px solid transparent;border-top-color:#fff;border-bottom:0}
+.plate{text-align:center;margin-top:8px;position:relative;z-index:2}
+.plate .nm{font-size:22px;font-weight:900;color:#6d28d9;line-height:1.1}
+.ribbon{display:inline-block;position:relative;margin-top:5px;padding:4px 22px 5px;font-size:12px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#7c2d12;background:linear-gradient(#fde68a,#f59e0b);clip-path:polygon(0 0,100% 0,94% 50%,100% 100%,0 100%,6% 50%);white-space:nowrap;max-width:240px;overflow:hidden;cursor:pointer}
+.ribbon.big{font-size:14px;padding:6px 26px 7px;max-width:250px}
+.ctarow{display:flex;gap:10px;justify-content:center;align-items:center;margin:14px 14px 6px}
+.candy{border:0;font-family:inherit;font-weight:900;font-size:14px;letter-spacing:.3px;color:#fff;padding:12px 18px;border-radius:999px;background:linear-gradient(#f472b6,#db2777);box-shadow:0 4px 0 #9d174d,inset 0 2px 0 rgba(255,255,255,.45);text-shadow:0 1px 0 rgba(0,0,0,.18);cursor:pointer;flex:1}
+.rbtn{width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;box-shadow:0 3px 0 rgba(0,0,0,.22),inset 0 2px 0 rgba(255,255,255,.45)}
+.rbtn.teal{background:linear-gradient(#2dd4bf,#0d9488)}.rbtn.gold{background:linear-gradient(#fcd34d,#f59e0b)}.rbtn.pink{background:linear-gradient(#f9a8d4,#ec4899)}
+.rbtn svg{width:22px;height:22px}
+.sec{padding:8px 16px 2px}
+.sec .k{font-size:10px;font-weight:900;letter-spacing:1.2px;color:#7a6aa6;text-transform:uppercase;margin-bottom:6px}
+.sw{display:flex;gap:9px;justify-content:center}
+.sw i{width:30px;height:30px;border-radius:50%;cursor:pointer;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7),0 2px 5px rgba(60,30,120,.18);transition:transform .15s}
+.sw i.on{transform:scale(1.12);box-shadow:inset 0 0 0 2px #fff,0 0 0 3px #f59e0b,0 2px 6px rgba(60,30,120,.25)}
+.fr{display:flex;gap:8px;justify-content:center}
+.fr span{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;cursor:pointer;background:rgba(255,255,255,.55)}
+.fr span img{width:30px;height:30px}
+.fr span.on{background:#fff;box-shadow:0 0 0 2px #a78bfa}
+.fr span em{font-style:normal;font-size:9px;color:#7a6aa6;font-weight:900}
+.rows{padding:6px 14px 18px}
+.r{display:flex;align-items:center;gap:10px;padding:9px 4px}
+.r + .r{border-top:1px solid rgba(124,58,237,.08)}
+.r .k{flex:0 0 78px;font-size:10px;font-weight:900;letter-spacing:1px;color:#7a6aa6;text-transform:uppercase}
+.r .v{flex:1;font-size:14px;font-weight:800;color:#2a1a4f;display:flex;align-items:center;gap:6px;min-width:0}
+.r .v .chev{margin-left:auto;color:#a78bfa;font-weight:900}
+.r .v .gold{background:linear-gradient(#fef3c7,#fde68a);color:#92400e;border-radius:999px;padding:2px 10px;font-size:12px}
+.r .v img{width:22px;height:22px}
+.seg{display:flex;background:rgba(124,58,237,.1);border-radius:999px;padding:3px;flex:1}
+.seg span{flex:1;text-align:center;font-size:12px;font-weight:900;padding:5px 0;border-radius:999px;color:#6d28d9;cursor:pointer}
+.seg span.on{background:linear-gradient(#8b5cf6,#6d28d9);color:#fff}
+.tog{width:38px;height:22px;border-radius:999px;background:rgba(124,58,237,.18);position:relative;margin-left:auto;cursor:pointer}
+.tog:after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .2s}
+.tog.on{background:#7c3aed}.tog.on:after{left:19px}
+.dots{display:flex;gap:6px}
+.dots i{width:14px;height:14px;border-radius:50%}
+/* dressing room */
+.dr .stage{height:270px;position:sticky;top:0;z-index:2;border-radius:0 0 26px 26px}
+.dr .topbar{position:absolute;left:0;right:0;top:0}
+.dr .side{position:absolute;left:12px;top:70px;display:flex;flex-direction:column;gap:9px;z-index:3}
+.dr .side .rbtn{width:38px;height:38px}
+.dr .np{position:absolute;right:12px;top:92px;text-align:center;z-index:3}
+.dr .np .nm{color:#fff;font-weight:900;font-size:17px;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+.dr .np .ribbon{font-size:10px;padding:3px 16px 4px}
+.dr .mascot{width:170px;height:170px;margin-bottom:22px}
+.tabs{display:flex;gap:1px;padding:12px 6px 6px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs span{flex:1 1 0;min-width:0;text-align:center;font-size:8.5px;font-weight:900;color:#6b5c8f;cursor:pointer;padding-bottom:4px}
+.tabs span b{display:grid;place-items:center;width:32px;height:32px;margin:0 auto 3px;border-radius:14px;background:rgba(255,255,255,.6)}
+.tabs span b img{width:25px;height:25px;object-fit:contain}
+.tabs span.on{color:#6d28d9}
+.tabs span.on b{background:#fff;box-shadow:0 4px 14px rgba(124,58,237,.35)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 12px 80px}
+.grid span{aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.65);display:grid;place-items:center;cursor:pointer;position:relative;transition:transform .12s}
+.grid span:active{transform:scale(.94)}
+.grid span img{width:72%;height:72%;object-fit:contain}
+.grid span.on{background:#fff;box-shadow:0 0 0 3px #f59e0b,0 4px 14px rgba(245,158,11,.4)}
+.grid span .pro{position:absolute;right:-2px;bottom:2px;font-size:8px;font-weight:900;color:#78350f;background:linear-gradient(#fde68a,#f59e0b);padding:1px 5px;border-radius:999px}
+.grid span .new{position:absolute;right:0;top:0;font-size:8px;font-weight:900;color:#fff;background:#ec4899;padding:1px 5px;border-radius:999px}
+.grid span .none{font-size:11px;font-weight:900;color:#7a6aa6}
+.sheet{position:sticky;bottom:0;background:#fbf8ff;border-radius:22px 22px 0 0;box-shadow:0 -6px 20px rgba(80,40,160,.14);padding:6px 16px 12px;z-index:4}
+.sheet .grab{width:40px;height:4px;border-radius:4px;background:#c4b5fd;margin:2px auto 6px}
+.sheet .r{padding:5px 2px}
+/* title pickers */
+.letter{display:inline-block;font-size:27px;font-weight:900;letter-spacing:.5px;color:#fbbf24;-webkit-text-stroke:6px #6d28d9;paint-order:stroke fill;text-shadow:0 3px 0 #4c1d95;line-height:1.2}
+.tp .head{text-align:center;padding:14px 0 4px}
+.tp .head img{height:34px}
+.tp .plate2{display:flex;align-items:center;gap:6px;margin:6px 14px 8px;padding:6px 10px 6px 4px;border-radius:20px;background:linear-gradient(120deg,rgba(255,255,255,.75),rgba(237,233,254,.6))}
+.tp .plate2 img{width:78px;height:78px;object-fit:contain}
+.tp .plate2 .nm{font-size:20px;font-weight:900;color:#6d28d9;line-height:1.1}
+.tp .hint{font-size:11px;color:#7a6aa6;min-height:16px;margin-top:3px}
+.search{margin:2px 14px 4px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.75);border-radius:999px;padding:7px 12px}
+.search input{border:0;background:transparent;font-family:inherit;font-weight:800;font-size:13px;color:#2a1a4f;outline:none;width:100%}
+.shelf{padding:8px 0 2px}
+.shelf .sh{display:flex;justify-content:space-between;padding:0 16px;font-size:10px;font-weight:900;letter-spacing:1.2px;color:#6d28d9;text-transform:uppercase}
+.shelf .sh em{font-style:normal;color:#9b8cc4}
+.shelf .row{display:flex;gap:4px;overflow-x:auto;padding:6px 10px 2px;scrollbar-width:none}
+.shelf .row::-webkit-scrollbar{display:none}
+.bdg{flex:0 0 66px;text-align:center;cursor:pointer;position:relative}
+.bdg img{width:54px;height:54px;display:block;margin:0 auto;transition:transform .12s}
+.bdg div{font-size:10px;font-weight:800;line-height:1.15;color:#3b2a66;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bdg.lock img{filter:grayscale(1) brightness(1.15);opacity:.42}
+.bdg.lock div{color:#a99ccf}
+.bdg.lock:after{content:"";position:absolute;left:50%;top:18px;margin-left:-8px;width:16px;height:16px;background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='4' y='10' width='16' height='12' rx='3' fill='%238b7fb3'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3' stroke='%238b7fb3' stroke-width='2.6' fill='none'/%3E%3C/svg%3E")}
+.bdg.on img{transform:scale(1.08);filter:drop-shadow(0 0 7px rgba(245,158,11,.9))}
+.bdg.on div{color:#b45309}
+.rack .stage{height:200px}
+.rack .mascot{width:132px;height:132px;margin-bottom:20px}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters span{flex:0 0 auto;font-size:11px;font-weight:900;color:#6d28d9;background:rgba(255,255,255,.7);padding:5px 11px;border-radius:999px;cursor:pointer}
+.filters span.on{background:linear-gradient(#8b5cf6,#6d28d9);color:#fff}
+.rlist{padding:4px 14px 24px;display:flex;flex-direction:column;gap:7px}
+.rb{display:flex;align-items:center;gap:8px;height:40px;padding:0 18px 0 6px;color:#fff;font-weight:900;font-size:12.5px;letter-spacing:.4px;text-transform:uppercase;clip-path:polygon(0 0,100% 0,96% 50%,100% 100%,0 100%);cursor:pointer;transition:transform .15s,filter .15s;white-space:nowrap;overflow:hidden}
+.rb img{width:32px;height:32px;flex:0 0 auto}
+.rb span{overflow:hidden;flex:1}
+.rb.on{transform:translateX(6px);filter:drop-shadow(0 0 6px rgba(245,158,11,.9)) brightness(1.06)}
+.rb.lock{background:linear-gradient(#e9e5f3,#cfc8e3)!important;color:#8b7fb3}
+.rb.lock img{filter:grayscale(1);opacity:.5}
+.rb small{font-size:10px;margin-left:auto;color:#8b7fb3}
+/* idea cards */
+.ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:14px}
+.idea{background:var(--card);border-radius:20px;padding:12px;box-shadow:0 4px 16px rgba(60,30,120,.10)}
+.idea .mini{height:150px;border-radius:14px;background:linear-gradient(180deg,#ece4fb,#f5e6f3);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#2a1a4f}
+.idea h3{margin:10px 0 2px;display:flex;align-items:center;gap:8px}
+.idea h3 .n{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;display:grid;place-items:center;flex:0 0 auto}
+.idea p{font-size:13px;color:var(--muted);margin:2px 0 6px}
+.mini .mb{position:absolute;background:#fff;color:#6d28d9;font-size:11px;font-weight:900;padding:5px 9px;border-radius:12px;box-shadow:0 3px 10px rgba(80,40,160,.18)}
+.mini .card{background:rgba(255,255,255,.85);border-radius:16px;padding:10px;display:flex;align-items:center;gap:10px;width:86%}
+.mini .fav{position:relative;width:58px;height:58px}
+.mini .fav img{position:absolute;inset:0;width:100%;height:100%}
+.chip-dress{position:absolute;right:-8px;bottom:-6px;background:linear-gradient(#f472b6,#db2777);color:#fff;font-size:8.5px;font-weight:900;padding:3px 6px;border-radius:999px;box-shadow:0 2px 0 #9d174d}
+.dot{position:absolute;width:12px;height:12px;border-radius:50%;background:#ec4899;border:2px solid #fff}
+.foot{margin-top:56px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+.foot code{font-size:12px}
+.themebtn{position:fixed;right:14px;bottom:14px;background:var(--card);color:var(--ink);border:0;border-radius:999px;padding:8px 12px;font-family:inherit;font-weight:900;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer}
+@media (max-width:700px){
+  .opt-row{justify-content:center}
+  .notes{flex-basis:100%}
+  h1{font-size:25px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Edit Profile, the mascot maker and featured titles</h1>
+  <p class="lede">Design options for the founder's 10-05 notes: the mascot maker is hidden behind the pencil, the featured-title list is a long scroll, and Edit Profile needs to look better. Nothing here is built. ChatGPT mockups are illustrative. Phones marked "real assets" are working HTML that uses the app's own mascot renders, lettering and badge art, so they show what can actually be built. Tap them.</p>
+  <div class="toc"><a href="#audit">1 · Audit</a><a href="#edit">2 · Edit Profile</a><a href="#titles">3 · Featured title</a><a href="#draw">4 · Getting players to the maker</a></div>
+  <div class="tldr"><b>Recommendation:</b> make your mascot the hero of Edit Profile (<b>A · The Stage</b>), with a big "Make your mascot" button that opens a full-screen <b>Dressing Room</b> (B) where the stage stays pinned while you pick parts. Replace the title chip wall with the <b>Title Shelves</b> picker, which shows a live name plate. Then open the maker from four places: tapping your own avatar anywhere, a "Make me yours!" Home host, a one-time nudge after your first win, and parts you earn from achievements.</div>
+
+  <!-- ───────────── 1 AUDIT ───────────── -->
+  <h2 id="audit">1 · Audit of today's page (iOS 2.7, demo account)</h2>
+  <p class="sub">Screenshots from the iOS Simulator using the signed-in <code>-storeDemo</code> player WordWiz. Scroll sideways.</p>
+  <div class="shots">
+    <div class="shot"><img data-a="cur-01-stats" alt="Stats player card"><div class="cap"><b>Stats card.</b> The pencil (top right) is the only way in. Tapping the avatar does nothing.</div></div>
+    <div class="shot"><img data-a="cur-02-edit-top" alt="Edit Profile top"><div class="cap"><b>Edit Profile, top.</b> The mascot appears twice: a 64 pt preview and a 180 pt stage. The pink button between them says CHANGE PHOTO.</div></div>
+    <div class="shot"><img data-a="cur-03b-builder" alt="Mascot builder"><div class="cap"><b>The maker.</b> It starts about half a screen down. Hats, Extras, Backdrop and Frame are off the right edge of the tab row.</div></div>
+    <div class="shot"><img data-a="cur-05-hats" alt="Hats grid"><div class="cap"><b>Picking a hat.</b> The stage has scrolled away, so you choose from 48 gold-framed thumbnails without seeing your mascot.</div></div>
+    <div class="shot"><img data-a="cur-04a-mid" alt="Sections"><div class="cap"><b>Sections.</b> There are two SAVE buttons. Seven bordered cards follow. The featured-title empty state is one line of plain text.</div></div>
+    <div class="shot"><img data-a="cur-04-edit-3" alt="Privacy and socials"><div class="cap"><b>Bottom.</b> Six tall social fields (about 40% of a screen), a generic globe icon, and a leaning C at the end.</div></div>
+    <div class="shot"><img data-a="cur-06-home" alt="Home host"><div class="cap"><b>Home host.</b> Your mascot already hosts Home when it's customized. Players without a custom look see W instead, and nothing invites them to make one.</div></div>
+  </div>
+  <div class="audit">
+    <div>
+      <h4>Hidden</h4>
+      <ul>
+        <li>The <b>only door</b> to the maker is an 18 pt pencil glyph next to Share on the Stats card. Web and Android use a round candy pencil, the same idea. Nothing outside Edit Profile mentions a mascot.</li>
+        <li>Tapping <b>your own avatar</b> on the Stats card, the podium, leaderboard rows or Friends does nothing.</li>
+        <li>Inside, the maker starts below the fold. It's preceded by a preview card and a "Change Photo" button, which pushes photos ahead of mascots.</li>
+        <li>4 of the 11 category tabs (Hats, Extras, Backdrop, Frame) are off-screen. Hats is the most fun tab and is never seen first.</li>
+        <li>Featured titles: the demo has none, so the section is one plain sentence. That's an unfinished state under the no-placeholder rule.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Weak</h4>
+      <ul>
+        <li>The <b>stage scrolls away</b> once you open a tab. You choose hats from small thumbnails and never see the hop on your real mascot.</li>
+        <li>Every option tile repeats the current gold frame and backdrop, which puts about 48 gold frames on screen. The frame is louder than the hat you're choosing.</li>
+        <li><b>Two SAVE buttons</b>, one in the header and one in the builder, with no clue which saves what.</li>
+        <li>The mascot stands still. It doesn't idle, blink, or react to a tap. The cast rigs already do all three.</li>
+        <li>Accent color only tints your username, yet takes a full card. It overlaps with mascot color and backdrop.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Bloated</h4>
+      <ul>
+        <li><b>Seven bordered section cards</b> (Username, Bio, Accent, Title, Favorite, Privacy, Socials), each with a colored top bar. That's against the no-bordered-boxes and compact rules.</li>
+        <li>Socials are six always-open text fields, the tallest block on the page, for something few players fill in.</li>
+        <li>Title chips: the catalog has __NCAT__ visible achievements, and names run up to 27 characters ("Pure Crosswordocious Master"). An active player gets a wall of near-identical star chips in no order, with no icon, no grouping and no preview.</li>
+        <li>Privacy is a full card plus two lines of helper text for a single toggle.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Off-brand</h4>
+      <ul>
+        <li>The plain SF/Lucide pencil, the globe, the generic <code>star.fill</code> on every title chip, and the plain-text empty state. The app already has 117 glossy badge artworks (<code>art-ach-*</code>) that titles could wear.</li>
+        <li>The title shows as a small star pill. It should read as a ribbon that belongs to the name plate.</li>
+        <li>The leaning C at the bottom is decoration on a dead end. The cast belongs where it does a job.</li>
+        <li>Spotted on the side: the scarf covers the letter on the Chunky body (see the orange render in §4, idea 4). That breaks the mascot-maker rule against covering the face or letter.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ───────────── 2 EDIT PROFILE ───────────── -->
+  <h2 id="edit">2 · Edit Profile redesign</h2>
+  <p class="sub">Every option keeps everything the page has today: mascot, photo or mascot toggle, name, username, bio, frame, backdrop, featured title, favorite game, privacy, socials and accent color. The rows hug their content and nothing sits in a bordered card.</p>
+
+  <div class="opt">
+    <div class="opt-head"><h3>A · The Stage</h3><span class="tag rec">Recommended</span><span class="tag m">Effort M ×3</span></div>
+    <div class="opt-row">
+      <div class="col"><div class="lbl"><span class="tag ill">ChatGPT mockup · illustrative</span></div><img class="gptimg" data-a="gpt-edit-A" alt="ChatGPT mockup A"></div>
+      <div class="col"><div class="lbl"><span class="tag real">Real assets · tap the mascot, swatches, toggle</span></div>
+        <div class="phone"><div class="scr" id="pA">
+          <div class="stage tall" id="stageA">
+            <div class="topbar"><span class="x">✕</span><img data-a="art-titlecast-editprofile" alt="Edit Profile"><span class="pill-save">SAVE</span></div>
+            <div class="spot"></div>
+            <div class="mascot" data-tap><img class="m0" data-a="r-wiz"><img class="m1" data-a="r-wiz-blink"></div>
+            <div class="bubble">Dress me up!</div>
+          </div>
+          <div class="plate"><div class="nm">WordWiz</div><div class="ribbon fit" title="Opens the title picker">Speed Demon</div></div>
+          <div class="ctarow"><button class="candy">✦ MAKE YOUR MASCOT</button><button class="rbtn teal" aria-label="Randomize"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff"/><circle cx="8" cy="8" r="1.8" fill="#0f766e"/><circle cx="16" cy="16" r="1.8" fill="#0f766e"/><circle cx="12" cy="12" r="1.8" fill="#0f766e"/><circle cx="16" cy="8" r="1.8" fill="#0f766e"/><circle cx="8" cy="16" r="1.8" fill="#0f766e"/></svg></button></div>
+          <div class="sec"><div class="k">Backdrop</div><div class="sw" data-stage="stageA"></div></div>
+          <div class="sec"><div class="k">Frame <span style="font-weight:800;letter-spacing:0;text-transform:none">· how you look in lists</span></div><div class="fr">
+            <span class="on"><em>None</em></span><span><img data-a="art-frame-bronze"></span><span><img data-a="art-frame-silver"></span><span><img data-a="art-frame-gold"></span><span><img data-a="art-frame-platinum"></span><span><img data-a="art-frame-diamond"></span></div></div>
+          <div class="rows">
+            <div class="r"><div class="k">Show</div><div class="v"><div class="seg"><span class="on">My mascot</span><span>My photo</span></div></div></div>
+            <div class="r"><div class="k">Username</div><div class="v">WordWiz</div></div>
+            <div class="r"><div class="k">Bio</div><div class="v" style="font-weight:700">Daily Sweep or bust.</div></div>
+            <div class="r"><div class="k">Title</div><div class="v"><span class="gold">Speed Demon</span><span class="chev">›</span></div></div>
+            <div class="r"><div class="k">Favorite</div><div class="v"><img data-a="game-practice">Classic<span class="chev">›</span></div></div>
+            <div class="r"><div class="k">Name color</div><div class="v"><div class="dots"><i style="background:#7c3aed;box-shadow:0 0 0 2px #fff,0 0 0 4px #7c3aed"></i><i style="background:#2563eb"></i><i style="background:#0d9488"></i><i style="background:#059669"></i><i style="background:#d97706"></i><i style="background:#ec4899"></i><i style="background:#dc2626"></i><i style="background:#475569"></i></div></div></div>
+            <div class="r"><div class="k">Private</div><div class="v" style="font-size:12px;color:#7a6aa6;font-weight:700">Hide words &amp; history<div class="tog"></div></div></div>
+            <div class="r"><div class="k">Socials</div><div class="v" style="color:#7a6aa6">Add links<span class="chev">›</span></div></div>
+          </div>
+        </div></div>
+      </div>
+      <div class="notes">
+        <p><b>Your mascot is the page.</b> The top half is a stage with your real mascot at about 180 pt, standing on your chosen backdrop without a frame. It breathes and blinks, and a tap makes it hop and grin (the cast-rig idea, done with the maker's own layers). The duplicate 64 pt preview card goes away.</p>
+        <ul>
+          <li>The name plate sits under the stage: your name plus your title as a gold <b>ribbon</b> instead of a star pill. Tapping the ribbon opens the title picker (§3).</li>
+          <li>One loud button, <b>MAKE YOUR MASCOT</b>, with Randomize beside it. It opens the Dressing Room (B) full screen.</li>
+          <li>Backdrop and Frame become one-tap swatch rows here, the quick wins. Frame previews how you look in lists.</li>
+          <li>Everything else becomes quiet rows with a label on the left and the value on the right. Socials, Privacy and Favorite open small sheets, so nothing stays open while empty.</li>
+          <li>One SAVE, top right. Change Photo moves into the "Show: My mascot | My photo" switch, which offers to pick a photo when you have none.</li>
+          <li>Accent color stays, compressed into one "Name color" dot row.</li>
+        </ul>
+        <p class="eff">Effort M per platform: a layout rewrite of EditProfileView, EditProfileScreen and profile-edit-modal. The builder is reused as-is inside B. No new data.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><h3>B · The Dressing Room</h3><span class="tag ill">pairs with A</span><span class="tag m">Effort M ×3</span></div>
+    <div class="opt-row">
+      <div class="col"><div class="lbl"><span class="tag ill">ChatGPT mockup · illustrative</span></div><img class="gptimg" data-a="gpt-edit-B" alt="ChatGPT mockup B"></div>
+      <div class="col"><div class="lbl"><span class="tag real">Real assets · tap a hat (real renders)</span></div>
+        <div class="phone dr"><div class="scr" id="pB">
+          <div class="stage" id="stageB" style="background:radial-gradient(1.5px 1.5px at 20% 30%,#fde68a 60%,transparent),radial-gradient(1.5px 1.5px at 70% 18%,#fff 60%,transparent),radial-gradient(1px 1px at 85% 55%,#fde68a 60%,transparent),radial-gradient(1.5px 1.5px at 35% 62%,#fff 60%,transparent),radial-gradient(1px 1px at 55% 40%,#fff 60%,transparent),radial-gradient(1px 1px at 12% 75%,#fff 60%,transparent),linear-gradient(180deg,#1e1b4b,#4c1d95 85%,#7c3aed)">
+            <div class="topbar"><span class="x" style="color:#fff">✕</span><img data-a="art-titlecast-mascot" alt="Make your mascot" style="height:17px"><span class="pill-save">SAVE</span></div>
+            <div class="side">
+              <button class="rbtn teal" aria-label="Randomize"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff"/><circle cx="8" cy="8" r="1.8" fill="#0f766e"/><circle cx="16" cy="16" r="1.8" fill="#0f766e"/><circle cx="12" cy="12" r="1.8" fill="#0f766e"/></svg></button>
+              <button class="rbtn gold" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 7 4 12l5 5" stroke="#7c2d12" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12h9a5 5 0 0 1 0 10h-2" stroke="#7c2d12" stroke-width="3" fill="none" stroke-linecap="round"/></svg></button>
+              <button class="rbtn pink" aria-label="Use photo"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="4" fill="#fff"/><circle cx="12" cy="13.5" r="3.4" fill="#db2777"/><rect x="8" y="4" width="8" height="4" rx="2" fill="#fff"/></svg></button>
+            </div>
+            <div class="np"><div class="nm">WordWiz</div><div class="ribbon fit">Word Nerd</div></div>
+            <div class="spot" style="background:radial-gradient(ellipse at center,rgba(196,181,253,.7),rgba(167,139,250,.2) 60%,transparent 72%)"></div>
+            <div class="mascot" data-tap><img class="m0" id="hatImg" data-a="r-hat-wizard"></div>
+          </div>
+          <div class="tabs">
+            <span><b><img data-a="r-plain"></b>Body</span>
+            <span><b><svg viewBox="0 0 24 24" width="22"><circle cx="8" cy="9" r="4" fill="#ec4899"/><circle cx="16" cy="9" r="4" fill="#f59e0b"/><circle cx="12" cy="16" r="4" fill="#0d9488"/></svg></b>Color</span>
+            <span><b><img data-a="art-av-eyes-sparkly"></b>Eyes</span>
+            <span><b><img data-a="art-av-mouth-grin"></b>Mouth</span>
+            <span class="on"><b><img data-a="acc-wizard"></b>Hats</span>
+            <span><b><img data-a="art-av-acc-cape"></b>Extras</span>
+            <span><b><i style="width:20px;height:20px;border-radius:50%;background:linear-gradient(#f9a8d4,#a5b4fc)"></i></b>Backdrop</span>
+            <span><b><img data-a="art-frame-gold"></b>Frame</span>
+          </div>
+          <div class="grid" id="hatGrid"></div>
+          <div class="sheet"><div class="grab"></div>
+            <div class="r"><div class="k">Name</div><div class="v">WordWiz<span class="chev">›</span></div></div>
+            <div class="r"><div class="k">Title</div><div class="v"><span class="gold">Word Nerd</span><span class="chev">›</span></div></div>
+          </div>
+        </div></div>
+      </div>
+      <div class="notes">
+        <p><b>The maker gets its own room.</b> MAKE YOUR MASCOT (from A, or any of the doors in §4) opens this full screen. The stage stays <b>pinned</b> while you scroll options, and every tap shows on your real mascot right away. This fixes the scroll-away problem.</p>
+        <ul>
+          <li>Option tiles show <b>only the part</b> (the hat itself on a soft circle), not your whole mascot in a gold frame. That's calmer and easier to scan.</li>
+          <li>Category tabs are small icons drawn from the parts themselves. All 8 fit, with no hidden overflow. Pattern, Nose and Cheeks join Eyes and Mouth under a "Face" tab.</li>
+          <li>Randomize, Undo and Photo sit in a quiet column on the stage, so the old bottom Randomize/Save pair goes and only one SAVE remains.</li>
+          <li><b>NEW</b> and <b>PRO</b> tags live on the tiles. NEW feeds the "new parts" door in §4.</li>
+          <li>Onboarding already uses this builder (<code>MascotBuilderMode.onboarding</code>), so the new room upgrades that flow too.</li>
+        </ul>
+        <p class="eff">Effort M per platform: re-host MascotBuilderView in a full-screen sheet with a sticky stage, and change the tile renderer to show the part only.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────── 3 TITLES ───────────── -->
+  <h2 id="titles">3 · Featured title picker</h2>
+  <p class="sub">Today's list is one flat grid of every unlocked title, each a star chip. Both options below wear the app's real badge art and preview the title on your name plate live. Long names (up to 27 characters) shrink to fit the ribbon instead of wrapping.</p>
+
+  <div class="opt">
+    <div class="opt-head"><h3>T1 · Title Shelves</h3><span class="tag rec">Recommended</span><span class="tag s">Effort S–M ×3</span></div>
+    <div class="opt-row">
+      <div class="col"><div class="lbl"><span class="tag ill">ChatGPT mockup · illustrative names/icons</span></div><img class="gptimg" data-a="gpt-title-A" alt="ChatGPT title mockup A"></div>
+      <div class="col"><div class="lbl"><span class="tag real">Real badge art + live catalog · tap, search</span></div>
+        <div class="phone tp"><div class="scr">
+          <div class="head"><span class="letter">PICK YOUR TITLE</span></div>
+          <div class="plate2"><img data-a="r-wiz"><div style="min-width:0;flex:1"><div class="nm">WordWiz</div><div class="ribbon fit" id="t1rib">Gauntlet God</div><div class="hint" id="t1hint">Tap any badge to try it on.</div></div></div>
+          <div class="search"><svg viewBox="0 0 24 24" width="15"><circle cx="10.5" cy="10.5" r="6.5" stroke="#8b7fb3" stroke-width="2.6" fill="none"/><path d="m16 16 5 5" stroke="#8b7fb3" stroke-width="2.6" stroke-linecap="round"/></svg><input id="t1q" placeholder="Search your titles"></div>
+          <div id="t1shelves"></div>
+          <div style="height:20px"></div>
+        </div></div>
+      </div>
+      <div class="notes">
+        <p><b>Grouped, visual, and you see it on you.</b></p>
+        <ul>
+          <li>A live <b>name plate</b> at the top shows your mascot, name and the ribbon. Tapping a badge tries it on right away, and Done keeps it.</li>
+          <li><b>Recently earned</b> comes first, since it's what you most likely want to show off.</li>
+          <li>Shelves follow the catalog's categories (Skill, Streaks, Firsts, Puzzles, VS, Friends…) and each shows a <b>count</b> such as "12 / 94". Every shelf scrolls sideways, so the sheet stays about one screen tall no matter how many titles you own.</li>
+          <li><b>Locked titles show dimmed</b> with a lock. Tapping one shows how to earn it ("Win 30 days in a row"), which turns the picker into a goal list.</li>
+          <li>Search filters across every shelf.</li>
+          <li>It opens from the ribbon on the name plate (A), from the Title row, and from the "Achievement unlocked!" moment ("Wear it").</li>
+        </ul>
+        <p class="eff">Effort S–M: uses the existing catalog (<code>/api/achievements</code> category + icon), unlocked keys and <code>art-ach-*</code> art. 65 of the 181 visible titles have no badge art yet, so they fall back to their category's art. One new sheet on each platform.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="opt">
+    <div class="opt-head"><h3>T2 · Ribbon Rack</h3><span class="tag s">Effort S ×3</span></div>
+    <div class="opt-row">
+      <div class="col"><div class="lbl"><span class="tag ill">ChatGPT mockup · illustrative</span></div><img class="gptimg" data-a="gpt-title-B" alt="ChatGPT title mockup B"></div>
+      <div class="col"><div class="lbl"><span class="tag real">Real assets · filter + tap a ribbon</span></div>
+        <div class="phone tp rack"><div class="scr">
+          <div class="stage" style="background:linear-gradient(180deg,#f9a8d4,#a5b4fc)"><div class="spot"></div><div class="mascot" data-tap><img class="m0" data-a="r-wiz"><img class="m1" data-a="r-wiz-blink"></div></div>
+          <div class="plate"><div class="nm">WordWiz</div><div class="ribbon big fit" id="t2rib">Gauntlet God</div></div>
+          <div class="filters" id="t2f"></div>
+          <div class="rlist" id="t2list"></div>
+        </div></div>
+      </div>
+      <div class="notes">
+        <p><b>Every title is a ribbon, the same object you wear.</b> A filter row replaces the shelves. The list shows earned titles first and the next few locked ones with progress at the end.</p>
+        <ul>
+          <li>Ribbons are colored by category, so a long list still reads in bands.</li>
+          <li>Simpler to build than T1, but taller: an 80-title player still scrolls. T1 handles that better.</li>
+        </ul>
+        <p class="eff">Effort S: one list and one ribbon component, both reused by the name plate everywhere (Stats card, public profile, VS intro).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────── 4 DRAW ───────────── -->
+  <h2 id="draw">4 · Getting players to the maker (clever, not naggy)</h2>
+  <p class="sub">Eight picks, ranked. Every mini mock uses real mascot renders. Each nudge appears once or until you've customized, and never on top of a game. My suggested first batch is 1, 2 and 5 (all S), then 3 and 4.</p>
+  <div class="ideas">
+    <div class="idea"><div class="mini">
+        <div class="card"><div class="fav" style="background:linear-gradient(#f9a8d4,#a5b4fc);border-radius:14px"><img data-a="r-wiz" style="inset:6px;width:46px;height:46px"><img data-a="art-frame-gold"><span class="chip-dress">DRESS UP</span></div><div><div style="font-weight:900;font-size:15px;color:#6d28d9">WordWiz</div><div class="ribbon" style="font-size:9px;padding:2px 14px 3px">Speed Demon</div></div></div>
+      </div>
+      <h3><span class="n">1</span>Your avatar is the door <span class="tag s">S</span></h3>
+      <p>Tapping your own avatar anywhere (Stats card, podium "You", leaderboard row, Friends) opens the Dressing Room. On the Stats card, a small "Dress up" candy tag on the avatar replaces the pencil.</p></div>
+
+    <div class="idea"><div class="mini">
+        <img data-a="r-plain" style="height:120px;margin-right:40px">
+        <span class="mb" style="right:22px;top:26px">Make me yours!</span>
+      </div>
+      <h3><span class="n">2</span>"Make me yours!" Home host <span class="tag s">S</span></h3>
+      <p>Players without a custom look see their own plain seeded mascot as the Home host, not W, with a "Make me yours!" bubble. A tap opens the maker. It goes away after the first save, the same way today's host already switches to your mascot.</p></div>
+
+    <div class="idea"><div class="mini" style="gap:8px">
+        <img data-a="ach-gauntlet_god" style="height:58px"><span style="font-size:22px;color:#a78bfa;font-weight:900">→</span><img data-a="r-crown" style="height:112px">
+        <span class="mb" style="left:10px;top:10px;background:#fde68a;color:#92400e">Unlocked: Crown</span>
+      </div>
+      <h3><span class="n">3</span>Earn your wardrobe <span class="tag m">M</span></h3>
+      <p>Achievements unlock parts: Gauntlet God gives a crown, a 30-day streak gives flame shoes, Dress Up gives a party hat. Locked parts in the maker say how to get them, and the "Achievement unlocked!" screen shows the item already on you.</p></div>
+
+    <div class="idea"><div class="mini" style="gap:6px">
+        <img data-a="r-santa" style="height:112px"><img data-a="r-orange" style="height:100px">
+        <span class="mb" style="left:10px;top:10px;background:#ec4899;color:#fff">NEW · Winter</span>
+      </div>
+      <h3><span class="n">4</span>"New in the closet" drops <span class="tag m">M</span></h3>
+      <p>When parts ship (the Winter Holidays library is already drawn), a pink dot appears on your avatar and NEW tags appear in the maker. Seasonal sets come and go, which gives players a reason to come back. (The scarf covering the letter here is the fit bug from the audit.)</p></div>
+
+    <div class="idea"><div class="mini">
+        <img data-a="r-hat-party" style="height:118px">
+        <span class="mb" style="right:10px;top:40px">First win! Party hat?</span>
+        <span style="position:absolute;left:12px;top:12px;font-size:10px;color:#7a6aa6;font-weight:900">once, on the finish screen</span>
+      </div>
+      <h3><span class="n">5</span>Celebrate with me <span class="tag s">S</span></h3>
+      <p>Once only: after a player's first win, the finish screen shows their mascot cheering with "Want a party hat for that?" Tapping Yes opens the room on Hats with the party hat already on.</p></div>
+
+    <div class="idea"><div class="mini">
+        <div style="width:150px;height:120px;border-radius:14px;background:linear-gradient(160deg,#f9a8d4,#a5b4fc);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:6px;box-shadow:0 6px 16px rgba(80,40,160,.25)">
+          <img data-a="r-wiz" style="height:74px"><div style="font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.3)">WordWiz</div><div style="font-size:7px;color:#fff;font-weight:900;letter-spacing:1px">WORDOCIOUS.COM</div></div>
+      </div>
+      <h3><span class="n">6</span>Show-off card <span class="tag m">M</span></h3>
+      <p>Saving in the maker offers "Share my mascot": a card with your mascot on its backdrop, your name, your title ribbon and wordocious.com. It reuses the share-image pipeline the profile card uses.</p></div>
+
+    <div class="idea"><div class="mini" style="gap:4px">
+        <img data-a="r-lexi" style="height:104px">
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><span style="font-size:11px;font-weight:900;color:#6d28d9">LexiLoop</span><span class="candy" style="flex:0;font-size:10px;padding:6px 10px">Try her crown</span></div>
+      </div>
+      <h3><span class="n">7</span>Copy the look <span class="tag m">M</span></h3>
+      <p>Tapping a friend's mascot (Friends, podium, VS intro) shows their mascot big with a "Try her flower crown" button, which puts that one part on yours in the room. Friends end up showing off parts for each other.</p></div>
+
+    <div class="idea"><div class="mini">
+        <div class="mascot" data-tap style="width:120px;height:120px;margin:0"><img class="m0" data-a="r-wiz"><img class="m1" data-a="r-wiz-blink"></div>
+        <span class="mb" style="right:12px;top:14px">tap me</span>
+      </div>
+      <h3><span class="n">8</span>A mascot that's alive <span class="tag m">M</span></h3>
+      <p>Your mascot breathes, blinks and laughs when tapped wherever it's big (Home host, Edit stage, finish screens). It's the cast-rig engine applied to the maker's layers, since eyes and mouth are already separate parts. Players poke things that react.</p></div>
+  </div>
+  <p class="sub" style="margin-top:14px"><b>Considered, not picked:</b> a profile-completion meter (feels naggy and doesn't fit a game), and a re-run of the onboarding builder for existing players (idea 2 does the same job without blocking anyone).</p>
+
+  <div class="foot">
+    <p><b>About the images.</b> ChatGPT mockups (free ChatGPT, founder's browser, 10-05) are illustrative: the cast drawn there and the title names and icons are approximations, and the shipped app always uses real renders. Everything in the "real assets" phones is real: mascot renders come from <code>packages/core</code> <code>avatarLayout</code> through <code>docs/design/brand/avatar/avatar_draw.py</code> (the apps' own recipe), the blink frame is the real "happy" eyes part, and the lettering, badges, frames and parts come from <code>apps/web/public/art</code>. Titles come from the live <code>/api/achievements</code> catalog. Each pick ships on iOS, Android and web together.</p>
+    <p>Rebuild: <code>python3 docs/design/profile-2026-10-05/build.py</code>. Design only: no app code changed.</p>
+  </div>
+</div>
+<button class="themebtn" id="themebtn">Light / dark</button>
+<script>
+/*__ASSETS__*/
+/*__TITLES__*/
+document.querySelectorAll('[data-a]').forEach(e=>{const s=A[e.dataset.a]; if(s) e.src=s;});
+// theme toggle (per-viewer convenience)
+(function(){const r=document.documentElement;let t=null;try{t=localStorage.getItem('pf-theme')}catch(e){}
+ if(t) r.dataset.theme=t;
+ document.getElementById('themebtn').onclick=()=>{const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark';try{localStorage.setItem('pf-theme',r.dataset.theme)}catch(e){}};})();
+// fit ribbon text
+function fit(el){let s=parseFloat(getComputedStyle(el).fontSize);el.style.fontSize='';s=parseFloat(getComputedStyle(el).fontSize);while(el.scrollWidth>el.clientWidth+1&&s>8){s-=.5;el.style.fontSize=s+'px';}}
+function fitAll(){document.querySelectorAll('.fit').forEach(fit)}
+// tap to hop
+document.addEventListener('click',e=>{const m=e.target.closest('[data-tap]');if(!m)return;m.classList.remove('hop');void m.offsetWidth;m.classList.add('hop');setTimeout(()=>m.classList.remove('hop'),600);});
+// backdrops (core AVATAR_BACKDROPS)
+const BD=[['cottoncandy','linear-gradient(180deg,#f9a8d4,#a5b4fc)'],['sunset','linear-gradient(180deg,#fb923c,#ec4899)'],['aurora','linear-gradient(160deg,#34d399,#8b5cf6,#0ea5e9)'],['mint','#dcfce7'],['lemon','#fef9c3'],['night','radial-gradient(1.5px 1.5px at 20% 30%,#fde68a 60%,transparent),radial-gradient(1.5px 1.5px at 75% 22%,#fff 60%,transparent),radial-gradient(1px 1px at 55% 50%,#fff 60%,transparent),#1e1b4b'],['sunburst','repeating-conic-gradient(from 0deg at 50% 100%,#fde68a 0 10deg,#f59e0b 10deg 20deg)']];
+document.querySelectorAll('.sw[data-stage]').forEach(row=>{const st=document.getElementById(row.dataset.stage);BD.forEach(([id,bg],i)=>{const d=document.createElement('i');d.style.background=bg;d.title=id;if(!i){d.className='on';st.style.background=bg;}d.onclick=()=>{row.querySelectorAll('i').forEach(x=>x.classList.remove('on'));d.classList.add('on');st.style.background=bg;};row.appendChild(d);});});
+// segmented + toggles + frames
+document.querySelectorAll('.seg').forEach(s=>s.querySelectorAll('span').forEach(x=>x.onclick=()=>{s.querySelectorAll('span').forEach(y=>y.classList.remove('on'));x.classList.add('on');}));
+document.querySelectorAll('.tog').forEach(t=>t.onclick=()=>t.classList.toggle('on'));
+document.querySelectorAll('.fr').forEach(f=>f.querySelectorAll('span').forEach(x=>x.onclick=()=>{f.querySelectorAll('span').forEach(y=>y.classList.remove('on'));x.classList.add('on');}));
+// dressing room hats (real renders per hat)
+(function(){const g=document.getElementById('hatGrid'),img=document.getElementById('hatImg');const PRO={tophat:1,astronaut:1},NEW={santa:1};
+ HATS.forEach(h=>{const s=document.createElement('span');if(h==='wizard')s.className='on';
+  s.innerHTML=h==='none'?'<span class="none">None</span>':'<img alt="'+h+'" src="'+A['acc-'+h]+'">'+(PRO[h]?'<i class="pro">PRO</i>':'')+(NEW[h]?'<i class="new">NEW</i>':'');
+  s.onclick=()=>{g.querySelectorAll('span.on').forEach(y=>y.classList.remove('on'));s.classList.add('on');img.src=A['r-hat-'+h];const m=img.parentElement;m.classList.remove('hop');void m.offsetWidth;m.classList.add('hop');};
+  g.appendChild(s);});})();
+// T1 shelves
+(function(){const box=document.getElementById('t1shelves'),rib=document.getElementById('t1rib'),hint=document.getElementById('t1hint'),q=document.getElementById('t1q');
+ const by=k=>TITLES.find(t=>t.k===k);let sel='gauntlet_god';
+ function badge(t){const d=document.createElement('div');d.className='bdg'+(t.e?'':' lock')+(t.k===sel?' on':'');d.dataset.k=t.k;d.innerHTML='<img src="'+A['ach-'+t.k]+'" alt=""><div>'+t.n+'</div>';
+  d.onclick=()=>{if(!t.e){hint.textContent='Locked · '+(t.d||'Keep playing');return;}sel=t.k;rib.textContent=t.n;fit(rib);hint.textContent=t.d;box.querySelectorAll('.bdg').forEach(b=>b.classList.toggle('on',b.dataset.k===sel));};return d;}
+ function render(){const f=q.value.trim().toLowerCase();box.innerHTML='';
+  const shelf=(label,list,count)=>{if(!list.length)return;const s=document.createElement('div');s.className='shelf';s.innerHTML='<div class="sh"><span>'+label+'</span><em>'+(count||'')+'</em></div>';const r=document.createElement('div');r.className='row';list.forEach(t=>r.appendChild(badge(t)));s.appendChild(r);box.appendChild(s);};
+  const m=t=>!f||t.n.toLowerCase().includes(f);
+  shelf('Recently earned',RECENT.map(by).filter(Boolean).filter(m));
+  shelf('Up next',TITLES.filter(t=>!t.e).slice(0,6).filter(m),'tap for how');
+  SHELVES.forEach(([c,l])=>{const all=TITLES.filter(t=>t.c===c);const earned=all.filter(t=>t.e);const list=earned.concat(all.filter(t=>!t.e)).filter(m);shelf(l,list,(CC[c]||[earned.length,all.length]).join(' / '));});}
+ q.oninput=render;render();})();
+// T2 ribbon rack
+(function(){const COL={skill:'linear-gradient(#a78bfa,#7c3aed)',consistency:'linear-gradient(#fb923c,#ea580c)',beginner:'linear-gradient(#2dd4bf,#0d9488)',puzzles:'linear-gradient(#60a5fa,#2563eb)',social:'linear-gradient(#f472b6,#db2777)',friends:'linear-gradient(#f9a8d4,#ec4899)',collection:'linear-gradient(#fcd34d,#d97706)',mascot:'linear-gradient(#c084fc,#9333ea)',pocket:'linear-gradient(#4ade80,#16a34a)',bots:'linear-gradient(#94a3b8,#475569)',streaks:'linear-gradient(#818cf8,#4f46e5)',seasonal:'linear-gradient(#fb923c,#c2410c)'};
+ const F=[['all','All'],['skill','Skill'],['consistency','Streaks'],['puzzles','Puzzles'],['social','VS'],['friends','Friends'],['mascot','Mascot']];
+ const fb=document.getElementById('t2f'),list=document.getElementById('t2list'),rib=document.getElementById('t2rib');let cur='all',sel='gauntlet_god';
+ F.forEach(([k,l])=>{const s=document.createElement('span');s.textContent=l;if(k===cur)s.className='on';s.onclick=()=>{cur=k;fb.querySelectorAll('span').forEach(x=>x.classList.toggle('on',x===s));render();};fb.appendChild(s);});
+ function render(){list.innerHTML='';const pool=TITLES.filter(t=>cur==='all'||t.c===cur);const earned=pool.filter(t=>t.e).sort((a,b)=>{const ia=RECENT.indexOf(a.k),ib=RECENT.indexOf(b.k);return (ia<0?99:ia)-(ib<0?99:ib)}).slice(0,cur==='all'?14:40);const locked=pool.filter(t=>!t.e).slice(0,2);
+  earned.concat(locked).forEach(t=>{const d=document.createElement('div');d.className='rb'+(t.e?'':' lock')+(t.k===sel?' on':'');d.style.background=COL[t.c]||COL.skill;d.innerHTML='<img src="'+A['ach-'+t.k]+'" alt=""><span>'+t.n+'</span>'+(t.e?'':'<small>locked</small>');
+   if(t.e)d.onclick=()=>{sel=t.k;rib.textContent=t.n;fit(rib);list.querySelectorAll('.rb').forEach(x=>x.classList.remove('on'));d.classList.add('on');};list.appendChild(d);});
+  list.querySelectorAll('.rb span').forEach(sp=>{let s=12.5;while(sp.scrollWidth>sp.clientWidth+1&&s>8){s-=.5;sp.style.fontSize=s+'px';}});}
+ render();})();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitAll);fitAll();
+</script>
+</body>
+</html>
