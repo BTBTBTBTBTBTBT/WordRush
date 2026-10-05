@@ -32,6 +32,12 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     ],
   },
   {
+    title: 'Design',
+    items: [
+      { href: '/admin/art', label: 'Art Library', icon: Palette, blurb: 'Review art with JP: side-by-side previews, approvals, feedback' },
+    ],
+  },
+  {
     title: 'Players',
     items: [
       { href: '/admin/users', label: 'Users', icon: Users, blurb: 'Search players, Pro, bans, achievements' },
@@ -89,7 +95,6 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { href: '/admin/banks', label: 'Content Banks', icon: Library, blurb: 'Puzzle bank runway per game' },
       { href: '/admin/seasons', label: 'Seasons', icon: Ghost, blurb: 'Halloween status and preview' },
       { href: '/admin/push-copy', label: 'Push Copy', icon: MessageSquareText, blurb: 'Preview every push message' },
-      { href: '/admin/art', label: 'Art Library', icon: Palette, blurb: 'Every design asset: browse, approve, download' },
     ],
   },
   {
