@@ -314,15 +314,8 @@ fun HomeScreen(
                 if (!isPro && !unlimitedMode && played) limitModal = card
                 else onSelectMode(card, unlimitedMode && card.engineMode != null)
             }
-            // X: the Halloween Home banner art (only in season and once the art ships), above the
-            // banner in both modes so the Daily ⇄ Unlimited switch never moves anything (Z).
-            HalloweenBannerSlot { res ->
-                androidx.compose.foundation.Image(
-                    androidx.compose.ui.res.painterResource(res), contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.FillWidth,
-                )
-            }
+            // X: the season's Home banner art now sits INSIDE the banner card's scene band
+            // (HomeBannerView, iOS / web parity), not full width above it.
             HomeBannerView(
                 word = BannerRow(wordCards, progress(wordKeys), wordStreaks, wordKeys.sumOf { unlimitedCounts[it] ?: 0 }),
                 puzzles = BannerRow(puzzleCards, progress(puzzleKeys), puzzleStreaks, puzzleKeys.sumOf { unlimitedCounts[it] ?: 0 }),

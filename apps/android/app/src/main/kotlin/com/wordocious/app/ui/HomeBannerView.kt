@@ -253,6 +253,15 @@ fun HomeBannerView(
                     )
                 }
             }
+            // Season preview: no celebration today → the season's Home banner art (registry `banner`)
+            // under the headline strip, fit, at most 104 dp tall (iOS / web parity), never cropped.
+            if (bandTier == BannerTier.NONE) HalloweenBannerSlot { res ->
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(res), contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 4.dp, bottom = 6.dp, start = 10.dp, end = 10.dp).clearAndSetSemantics { },
+                )
+            }
             // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
             // BJ6 round 3: the two progress rows sit in one subtle lavender tint band (two zones).
             val tileSlots = maxOf(10, word.cards.size, puzzles.cards.size)
