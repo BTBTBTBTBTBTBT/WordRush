@@ -28,7 +28,8 @@ class MascotBuilderLogicTest {
         assertEquals(10, MascotBuilderLogic.options(BuilderTab.PRESETS).size)
         // The full catalogs (round 2): 33 hats + None, 9 face + 11 neck/back extras + None, auto + 18 backdrops.
         assertEquals(34, MascotBuilderLogic.options(BuilderTab.HATS).size)
-        assertEquals(21, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)
+        // None + 9 faces + 11 neck items + the 10-05 integrated parts (12 held, 5 wraps, 4 shoes, 4 buddies, 6 brows, 4 extras)
+        assertEquals(21 + 35, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)
         assertEquals(19, MascotBuilderLogic.options(BuilderTab.BACKDROP).size)
         assertEquals("none", MascotBuilderLogic.options(BuilderTab.HATS).first().id)
         assertEquals("auto", MascotBuilderLogic.options(BuilderTab.BACKDROP).first().id)
@@ -84,6 +85,7 @@ class MascotBuilderLogicTest {
         val pro = listOf(
             BuilderOption("head", "crown"), BuilderOption("head", "halo"), BuilderOption("head", "tiara"),
             BuilderOption("neck", "wings"), BuilderOption("neck", "chain"),
+            BuilderOption("held", "wand-star"), BuilderOption("wrap", "cape-drape"),
             BuilderOption("bg", "aurora"), BuilderOption("bg", "galaxy"),
             BuilderOption("frame", "diamond"), BuilderOption("frame", "pro"),
         )

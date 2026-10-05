@@ -142,7 +142,7 @@ fun DressingRoom(
                 opts.chunked(5).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { o ->
-                            PartTile(o, look, isPro, level, newTag = o.slot + ":" + o.id in DressUp.newIds && tab !in seen, modifier = Modifier.weight(1f)) {
+                            PartTile(o, look, isPro, level, newTag = (o.slot + ":" + o.id in DressUp.newIds || MascotBuilderLogic.isNew(o)) && tab !in seen, modifier = Modifier.weight(1f)) {
                                 if (MascotBuilderLogic.proLocked(o, isPro)) paywallFor = o
                                 else if (!MascotBuilderLogic.tierLocked(o, level)) {
                                     note = MascotBuilderLogic.conflict(look, o)?.let { (_, id) -> "That doesn't fit with ${id.replaceFirstChar { it.uppercase() }}, so it came off" }
@@ -224,7 +224,7 @@ private fun PartTile(o: BuilderOption, look: AvatarConfig, isPro: Boolean, level
                         "frame" -> if (o.id == MascotBuilderLogic.NONE) NoneLabel() else AvatarSquareFrame(o.id, 40.dp)
                         "extras" -> NoneLabel()
                         else -> {
-                            val kind = when (o.slot) { "eyes" -> "eyes"; "mouth" -> "mouth"; "nose" -> "nose"; "cheeks" -> "cheeks"; else -> "acc" }
+                            val kind = when (o.slot) { "eyes" -> "eyes"; "mouth" -> "mouth"; "nose" -> "nose"; "cheeks" -> "cheeks"; "brows" -> "brows"; else -> "acc" }
                             val id = if (o.id == MascotBuilderLogic.NONE) 0 else MascotComposer.drawableId(ctx, "art_av_${kind}_${o.id.replace('-', '_')}")
                             if (id != 0) Image(painterResource(id), null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
                             else if (o.id == MascotBuilderLogic.NONE) NoneLabel()

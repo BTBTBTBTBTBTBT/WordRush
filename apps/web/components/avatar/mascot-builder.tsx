@@ -13,7 +13,7 @@ import { softBackground, softBorder, softMix } from '@/lib/soft-surface';
 import { AVATAR_CAST_IDS, AVATAR_CAST_NAME } from '@/lib/avatar-cast';
 import { MASCOT_LETTER } from '@/lib/mascots';
 import {
-  BUILDER_TABS, FRAME_UNLOCK_LEVEL, SWATCH_FIELDS, SWATCH_ROWS, avatarConfigKey, avatarOptionIds, avatarOptionLabel, avatarProOnly,
+  BUILDER_TABS, FRAME_UNLOCK_LEVEL, INTEGRATED_SECTIONS, SWATCH_FIELDS, SWATCH_ROWS, avatarConfigKey, avatarOptionIds, avatarOptionLabel, avatarProOnly,
   effectiveAvatarFrame, frameLevelLocked, randomAvatar, swatchCss, type BuilderField, type BuilderTab,
 } from '@/lib/avatar-render';
 import { MascotAvatar } from './mascot-avatar';
@@ -69,7 +69,7 @@ const TAB_FIELDS: Record<BuilderTab, Array<{ field: BuilderField; heading?: stri
   cheeks: [{ field: 'cheeks' }],
   mouth: [{ field: 'mouth' }],
   head: [{ field: 'head' }, { field: 'accColor', heading: 'Accessory color' }],
-  extras: [{ field: 'face', heading: 'Face' }, { field: 'neck', heading: 'Neck and back' }, { field: 'accColor', heading: 'Accessory color' }],
+  extras: [{ field: 'face', heading: 'Face' }, { field: 'neck', heading: 'Neck and back' }, ...INTEGRATED_SECTIONS, { field: 'accColor', heading: 'Accessory color' }],
   bg: [{ field: 'bg' }],
   frame: [{ field: 'frame' }],
 };
@@ -83,7 +83,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
     const t = window.setTimeout(() => setNote(null), 2600);
     return () => window.clearTimeout(t);
   }, [note]);
-  const PART_FIELDS: readonly string[] = ['eyes', 'nose', 'cheeks', 'mouth', 'head', 'face', 'neck'];
+  const PART_FIELDS: readonly string[] = ['eyes', 'nose', 'cheeks', 'mouth', 'head', 'face', 'neck', 'held', 'wrap', 'feet', 'pet', 'brows', 'extra'];
   const stageRef = React.useRef<HTMLSpanElement>(null);
   const key = avatarConfigKey(value);
   const first = React.useRef(true);

@@ -55,7 +55,14 @@ object MascotBuilderLogic {
     /** True while a white (tintable) accessory is worn: the accessory color row shows. */
     fun tintableWorn(c: AvatarConfig): Boolean = c.head in AvatarOptions.TINTABLE || c.neck in AvatarOptions.TINTABLE
 
-    private val PART_SLOTS = setOf("eyes", "nose", "cheeks", "mouth", "head", "face", "neck")
+    private val PART_SLOTS = setOf("eyes", "nose", "cheeks", "mouth", "head", "face", "neck") + INTEGRATED_SLOTS
+
+    /** 10-05 integrated parts (core AvatarOptions.INTEGRATED): held / wrap / feet / pet / brows / extra. */
+    val INTEGRATED_SLOTS: Set<String> get() = AvatarOptions.INTEGRATED.map { it.first }.toSet()
+
+    /** The maker's NEW tag: the 10-05 additions + the 7 rebuilt parts (AvatarOptions.NEW_PARTS). */
+    fun isNew(o: BuilderOption): Boolean = o.id != NONE && (o.slot in INTEGRATED_SLOTS || o.slot == "neck") &&
+        (if (o.slot == "brows") "brows:${o.id}" else o.id) in AvatarOptions.NEW_PARTS
 
     /** The (slot, id) a pick would swap out (it doesn't fit with it), else null. */
     fun conflict(config: AvatarConfig, o: BuilderOption): Pair<String, String>? {
@@ -78,7 +85,9 @@ object MascotBuilderLogic {
             AvatarOptions.HEADS.filter { it != NONE }.map { BuilderOption("head", it) }
         BuilderTab.EXTRAS -> listOf(BuilderOption("extras", NONE)) +
             AvatarOptions.FACES.filter { it != NONE }.map { BuilderOption("face", it) } +
-            AvatarOptions.NECKS.filter { it != NONE }.map { BuilderOption("neck", it) }
+            AvatarOptions.NECKS.filter { it != NONE }.map { BuilderOption("neck", it) } +
+            // 10-05 integrated parts ride in Extras until the Dressing Room gives them their own tabs
+            AvatarOptions.INTEGRATED.flatMap { (slot, ids) -> ids.filter { it != NONE }.map { BuilderOption(slot, it) } }
         BuilderTab.BACKDROP -> AvatarOptions.BACKDROP_IDS.map { BuilderOption("bg", it) }
         BuilderTab.FRAME -> listOf(BuilderOption("frame", NONE)) +
             AvatarOptions.FRAMES.filter { it != NONE }.map { BuilderOption("frame", it) }
@@ -99,9 +108,9 @@ object MascotBuilderLogic {
             "pattern" -> config.copy(pattern = o.id)
             "patternColor" -> config.copy(patternColor = o.id)
             "accColor" -> config.copy(accColor = o.id)
-            "eyes", "nose", "cheeks", "mouth", "head", "face", "neck" ->
+            "eyes", "nose", "cheeks", "mouth", "head", "face", "neck", "held", "wrap", "feet", "pet", "brows", "extra" ->
                 fit?.let { AvatarFit.applyPick(config, o.slot, o.id, it) } ?: AvatarFit.setting(config, o.slot, o.id)
-            "extras" -> config.copy(face = NONE, neck = NONE)
+            "extras" -> config.copy(face = NONE, neck = NONE, held = NONE, wrap = NONE, feet = NONE, pet = NONE, brows = NONE, extra = NONE)
             "bg" -> config.copy(bg = o.id)
             "frame" -> config.copy(frame = o.id)
             else -> config
@@ -109,7 +118,7 @@ object MascotBuilderLogic {
         return if (o.slot == "frame") c else c.copy(display = AvatarOptions.DISPLAY_MASCOT)
     }
 
-    private val TOGGLE_SLOTS = setOf("head", "face", "neck")
+    private val TOGGLE_SLOTS = setOf("head", "face", "neck", "held", "wrap", "feet", "pet", "brows", "extra")
 
     /** What a tap does: picking the worn hat / extra again takes it off; everything else applies. */
     fun tap(config: AvatarConfig, o: BuilderOption): AvatarConfig =
@@ -131,7 +140,8 @@ object MascotBuilderLogic {
         "head" -> config.head == o.id
         "face" -> config.face == o.id
         "neck" -> config.neck == o.id
-        "extras" -> config.face == NONE && config.neck == NONE
+        "held", "wrap", "feet", "pet", "brows", "extra" -> AvatarFit.value(config, o.slot) == o.id
+        "extras" -> config.face == NONE && config.neck == NONE && INTEGRATED_SLOTS.all { AvatarFit.value(config, it) == NONE }
         "bg" -> config.bg == o.id
         "frame" -> config.frame == o.id
         else -> false

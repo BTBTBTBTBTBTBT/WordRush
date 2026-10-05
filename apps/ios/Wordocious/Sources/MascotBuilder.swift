@@ -51,6 +51,11 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
 /// Parts that wear the pink NEW tag in the maker until the player has visited their tab once.
 enum MascotNew {
     static let ids: Set<String> = ["head:santa", "head:witch", "neck:scarf", "neck:bubbletea", "neck:guitar", "neck:fairywings"]
+    /// The 10-05 additions + the 7 rebuilt parts (WordociousCore AvatarCatalog.newParts).
+    static func integrated(slot: String, value: String) -> Bool {
+        guard value != "none", ["held", "wrap", "feet", "pet", "brows", "extra", "neck"].contains(slot) else { return false }
+        return AvatarCatalog.newParts.contains(slot == "brows" ? "brows:\(value)" : value)
+    }
     private static func key(_ t: MascotBuilderTab) -> String { "wd_mascot_new_seen_v1:\(t.artId)" }
     static func seen(_ t: MascotBuilderTab) -> Bool { UserDefaults.standard.bool(forKey: key(t)) }
     static func markSeen(_ t: MascotBuilderTab) { UserDefaults.standard.set(true, forKey: key(t)) }
@@ -127,6 +132,27 @@ enum MascotOptionNames {
         case "bubbletea": return "Bubble tea"
         case "supercape": return "Hero cape"
         case "fairywings": return "Fairy wings"
+        // 10-05 integrated parts
+        case "mug": return "Coffee mug"
+        case "pencil-big": return "Big pencil"
+        case "magnifier": return "Magnifier"
+        case "icecream": return "Ice cream"
+        case "mic": return "Microphone"
+        case "wand-star": return "Star wand"
+        case "apron": return "Chef apron"
+        case "lei": return "Flower lei"
+        case "cape-drape": return "Drape cape"
+        case "sneakers": return "High-tops"
+        case "boots": return "Rain boots"
+        case "slippers": return "Bunny slippers"
+        case "skates": return "Roller skates"
+        case "snail": return "Snail"
+        case "worried": return "Worried"
+        case "surprised": return "Surprised"
+        case "cheeky": return "Cheeky"
+        case "sweat": return "Sweat drop"
+        case "tear": return "Happy tear"
+        case "steam": return "Steam puff"
         case "tiedye": return "Tie-dye"
         case "colorblock": return "Color block"
         case "babyblue": return "Baby blue"
@@ -339,7 +365,7 @@ struct MascotBuilderView: View {
         guard !seenNew.contains(t) else { return false }
         switch t {
         case .hats: return MascotNew.ids.contains { $0.hasPrefix("head:") }
-        case .extras: return MascotNew.ids.contains { $0.hasPrefix("neck:") || $0.hasPrefix("face:") }
+        case .extras: return true   // the 10-05 integrated parts (held / wraps / shoes / buddies / brows / extras)
         default: return false
         }
     }
@@ -510,6 +536,11 @@ struct MascotBuilderView: View {
                 grid(AvatarCatalog.faces.map { Option(slot: "face", value: $0) })
                 FinishLabel("NECK + BACK")
                 grid(AvatarCatalog.necks.map { Option(slot: "neck", value: $0) })
+                // 10-05 integrated parts ride in Extras until the Dressing Room gives them their own tabs
+                ForEach(AvatarCatalog.integratedFields, id: \.field) { f in
+                    FinishLabel(Self.integratedHeading[f.field] ?? f.field.uppercased())
+                    grid(f.options.map { Option(slot: f.field, value: $0) })
+                }
                 accColorSection
             }
         case .backdrop: grid(AvatarCatalog.backdropIds.map { Option(slot: "bg", value: $0) })
@@ -598,6 +629,10 @@ struct MascotBuilderView: View {
         }
     }
 
+    /// Section headings for the 10-05 integrated parts (in the Extras tab).
+    static let integratedHeading: [String: String] = ["held": "IN HAND", "wrap": "WRAPS", "feet": "SHOES", "pet": "BUDDIES",
+                                                      "brows": "BROWS", "extra": "FACE EXTRAS"]
+
     private func applied(_ o: Option) -> AvatarConfig {
         var c = config
         switch o.slot {
@@ -610,7 +645,7 @@ struct MascotBuilderView: View {
             if o.value != "solid" && c.patternColor == c.color { c.patternColor = Self.contrast(for: c.color) }
         case "patternColor": c.patternColor = o.value
         case "accColor": c.accColor = o.value
-        case "eyes", "nose", "cheeks", "mouth", "head", "face", "neck":
+        case "eyes", "nose", "cheeks", "mouth", "head", "face", "neck", "held", "wrap", "feet", "pet", "brows", "extra":
             // the fit system: a pick that doesn't fit with something worn swaps it out
             if let fit = MascotParts.fit { c = AvatarFit.applyPick(c, field: o.slot, id: o.value, manifest: fit) }
         case "bg": c.bg = o.value
@@ -644,6 +679,7 @@ struct MascotBuilderView: View {
         case "head": return config.head == o.value
         case "face": return config.face == o.value
         case "neck": return config.neck == o.value
+        case "held", "wrap", "feet", "pet", "brows", "extra": return AvatarFit.value(config, o.slot) == o.value
         case "bg": return config.bg == o.value
         case "frame": return config.frame == o.value
         default: return false
@@ -654,6 +690,8 @@ struct MascotBuilderView: View {
         switch o.slot {
         case "head": return AvatarCatalog.isProOnly(head: o.value)
         case "neck": return AvatarCatalog.isProOnly(neck: o.value)
+        case "held": return AvatarCatalog.proOnlyHeld.contains(o.value)
+        case "wrap": return AvatarCatalog.proOnlyWraps.contains(o.value)
         case "frame": return AvatarCatalog.isProOnly(frame: o.value)
         case "bg": return AvatarCatalog.isProOnly(bg: o.value)
         default: return false
@@ -684,7 +722,8 @@ struct MascotBuilderView: View {
             case "cheeks": return "cheeks"
             case "mouth": return "mouth"
             case "head": return "hat"
-            case "face", "neck": return "extra"
+            case "face", "neck", "held", "wrap", "feet", "pet", "extra": return "extra"
+            case "brows": return "brows"
             case "bg": return "backdrop"
             case "frame": return "frame"
             default: return ""
@@ -702,7 +741,7 @@ struct MascotBuilderView: View {
         let on = isSelected(o)
         let proLocked = isProOnly(o) && !isPro
         let tier = tierLock(o)
-        let isNew = MascotNew.ids.contains("\(o.slot):\(o.value)") && !seenNew.contains(tab)
+        let isNew = (MascotNew.ids.contains("\(o.slot):\(o.value)") || MascotNew.integrated(slot: o.slot, value: o.value)) && !seenNew.contains(tab)
         let dark = Theme.isDark
         return Button {
             if tier != nil { return }
@@ -849,7 +888,7 @@ struct PartThumb: View {
                 MascotFrame(frame: value, size: 40)
             }
         default:
-            let kind = ["eyes": "eyes", "mouth": "mouth", "nose": "nose", "cheeks": "cheeks"][slot] ?? "acc"
+            let kind = ["eyes": "eyes", "mouth": "mouth", "nose": "nose", "cheeks": "cheeks", "brows": "brows"][slot] ?? "acc"
             if value == "none" {
                 Text("None").font(Brand.font(10, .black)).foregroundStyle(FinishInk.secondary)
             } else if let name = MascotParts.art(kind, value) {
