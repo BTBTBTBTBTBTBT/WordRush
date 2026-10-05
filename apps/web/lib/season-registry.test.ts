@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SEASON_IDS, SEASON_WINDOWS } from '@wordle-duel/core';
 import { SEASON_ART_SIZE, SEASON_REGISTRY, seasonBanner, seasonalTitle, seasonalWall, slotLookup } from './season-kit';
-import { parseSeasonParam, parseStoredSeason } from './season';
+import { HALLOWEEN_TRIM, castArt, parseSeasonParam, parseStoredSeason, seasonOfSrc } from './season';
 
 // The season registry (docs/design/brand/seasons/README.md "How to add a season"): one JSON shared
 // by the three apps, the same ids as core SEASON_WINDOWS, every slot pointing at real shipped art.
@@ -54,5 +54,13 @@ describe('season registry', () => {
       expect(parseStoredSeason(id)).toBe(id);
     }
     expect(parseStoredSeason('xmas')).toBeNull();
+  });
+
+  it('frames the cast skins from the registry boxes (the same boxes the row always used)', () => {
+    const h = SEASON_REGISTRY.find((s) => s.id === 'halloween')!;
+    expect(h.slots.castTrim).toEqual(HALLOWEEN_TRIM);
+    expect(castArt('w', 'halloween').src).toContain('/art-halloween-w');
+    expect(seasonOfSrc('/art/art-halloween-o1.webp')).toBe('halloween');
+    expect(seasonOfSrc('/art/mascot-o1.webp')).toBeNull();
   });
 });

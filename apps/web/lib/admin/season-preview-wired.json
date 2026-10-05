@@ -41,6 +41,141 @@
     },
     "art-halloween-prop-ghost": {
       "where": "Leaderboard day title, one prop on each side"
+    },
+    "seasons/halloween/titles/dailies": {
+      "where": "Home DAILIES section title"
+    },
+    "seasons/halloween/titles/puzzles": {
+      "where": "Home PUZZLES section title"
+    },
+    "seasons/halloween/titles/page-friends": {
+      "where": "Friends page title"
+    },
+    "seasons/halloween/titles/page-leaderboard": {
+      "where": "Leaderboard page title (holiday days and share cards)"
+    },
+    "seasons/halloween/titles/page-stats": {
+      "where": "Stats page title"
+    },
+    "seasons/halloween/titles/page-wordoftheday": {
+      "where": "Word of the Day title"
+    },
+    "seasons/halloween/titles/game-classic": {
+      "where": "Classic game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-classicsix": {
+      "where": "Six game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-classicseven": {
+      "where": "Seven game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-quadword": {
+      "where": "QuadWord game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-octoword": {
+      "where": "OctoWord game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-succession": {
+      "where": "Succession game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-deliverance": {
+      "where": "Deliverance game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-gauntlet": {
+      "where": "Gauntlet game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-propernoundle": {
+      "where": "ProperNoundle game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-sudocious": {
+      "where": "Sudocious game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-muddle": {
+      "where": "Muddle game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-hubbub": {
+      "where": "Hubbub game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-crosswordocious": {
+      "where": "Crosswordocious game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-kindred": {
+      "where": "Kindred game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-letterladder": {
+      "where": "Letter Ladder game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-codebreaker": {
+      "where": "Codebreaker game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-spyglass": {
+      "where": "Spyglass game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/titles/game-starsweep": {
+      "where": "Starsweep game header title, its Leaderboard / Stats / guide cards"
+    },
+    "seasons/halloween/walls/wall-home": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), dark mode"
+    },
+    "seasons/halloween/walls/wall-home-wide": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), dark mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-home-light": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), light mode"
+    },
+    "seasons/halloween/walls/wall-home-light-wide": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), light mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-leaderboard": {
+      "where": "Leaderboard and Records wallpaper, dark mode"
+    },
+    "seasons/halloween/walls/wall-leaderboard-wide": {
+      "where": "Leaderboard and Records wallpaper, dark mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-leaderboard-light": {
+      "where": "Leaderboard and Records wallpaper, light mode"
+    },
+    "seasons/halloween/walls/wall-leaderboard-light-wide": {
+      "where": "Leaderboard and Records wallpaper, light mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-stats": {
+      "where": "Stats wallpaper, dark mode"
+    },
+    "seasons/halloween/walls/wall-stats-wide": {
+      "where": "Stats wallpaper, dark mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-stats-light": {
+      "where": "Stats wallpaper, light mode"
+    },
+    "seasons/halloween/walls/wall-stats-light-wide": {
+      "where": "Stats wallpaper, light mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-friends": {
+      "where": "Friends wallpaper, dark mode"
+    },
+    "seasons/halloween/walls/wall-friends-wide": {
+      "where": "Friends wallpaper, dark mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-friends-light": {
+      "where": "Friends wallpaper, light mode"
+    },
+    "seasons/halloween/walls/wall-friends-light-wide": {
+      "where": "Friends wallpaper, light mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-games": {
+      "where": "every solo game screen and VS wallpaper, dark mode"
+    },
+    "seasons/halloween/walls/wall-games-wide": {
+      "where": "every solo game screen and VS wallpaper, dark mode, desktop web"
+    },
+    "seasons/halloween/walls/wall-games-light": {
+      "where": "every solo game screen and VS wallpaper, light mode"
+    },
+    "seasons/halloween/walls/wall-games-light-wide": {
+      "where": "every solo game screen and VS wallpaper, light mode, desktop web"
+    },
+    "scenes/banner-halloween": {
+      "where": "Home banner art under the greeting (when today has no Sweep / Flawless celebration)"
     }
   }
 }
