@@ -910,7 +910,7 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-react-wow': [256, 256],
   'art-scene-achievement': [1200, 519],
   'art-scene-all-set': [1200, 381],
-  'art-scene-banner-halloween': [905, 570],
+  'art-scene-banner-halloween': [902, 570],
   'art-gopro-sign-w': [480, 467],
   'art-gopro-sign-o1': [480, 452],
   'art-gopro-sign-r': [480, 408],

@@ -10,6 +10,7 @@ import {
   gameTintForDbKey, gameToastTop, mixOver, GAME_TITLE_TOP, WALL_OVERLAY, gameWallForDbKey, pageWall, wideWallSrc,
   type WallArtName, POSE_ART, POSE_ART_NAMES, POSE_SIZE, poseArt, poseSrc, GOPRO_SIGN_CAST, goProSignOfDay,
 } from './art';
+import { SEASON_ART_SIZE } from './season-kit';
 import { CAST } from './mascots';
 import { MODES } from './modes.generated';
 
@@ -94,7 +95,9 @@ describe('second pass (§6–§9)', () => {
   it('lists every art-* file in public/art (none shipped without a recorded size)', () => {
     const files = fs.readdirSync(pub('/art')).filter((f) => f.startsWith('art-') && f.endsWith('.webp'));
     // wallpaper `-wide` twins (desktop only) are checked with their portrait wallpaper below
-    for (const f of files) expect(Object.keys(ART_SIZE), f).toContain(f.replace(/\.webp$/, '').replace(/^(art-wall-.+)-wide$/, '$1'));
+    // seasonal titles / walls / banner carry their sizes in season-art.generated.json (SEASON_ART_SIZE)
+    const known = [...Object.keys(ART_SIZE), ...Object.keys(SEASON_ART_SIZE)];
+    for (const f of files) expect(known, f).toContain(f.replace(/\.webp$/, '').replace(/^(art-wall-.+)-wide$/, '$1'));
   });
 
   it('has moment lettering for every label (§6), ≈900 wide and wider than tall', () => {
