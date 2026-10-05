@@ -8,6 +8,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Art Library local-screenshot bypass (see lib/admin/art-auth.ts): `next dev`
+  // with ART_LIBRARY_DEV_ADMIN=1 opens /admin/art without a session. The literal
+  // NODE_ENV check compiles this out of production builds.
+  if (
+    process.env.NODE_ENV === 'development' &&
+    process.env.ART_LIBRARY_DEV_ADMIN === '1' &&
+    request.nextUrl.pathname.startsWith('/admin/art')
+  ) {
+    return NextResponse.next();
+  }
+
   // Allow /api/admin routes to pass through — they have their own verifyAdmin check
   if (request.nextUrl.pathname.startsWith('/api/admin')) {
     return NextResponse.next();

@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, TrendingUp, Users, UserPlus, Shield, CalendarCheck, Gamepad2, Puzzle, SpellCheck, Swords,
   HeartHandshake, Trophy, Smile, CreditCard, DollarSign, Gift, Megaphone, BellRing, ToggleLeft, Library,
-  Ghost, MessageSquareText, Activity, Rocket, BookOpen, type LucideIcon,
+  Ghost, MessageSquareText, Activity, Rocket, BookOpen, Palette, type LucideIcon,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -89,6 +89,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { href: '/admin/banks', label: 'Content Banks', icon: Library, blurb: 'Puzzle bank runway per game' },
       { href: '/admin/seasons', label: 'Seasons', icon: Ghost, blurb: 'Halloween status and preview' },
       { href: '/admin/push-copy', label: 'Push Copy', icon: MessageSquareText, blurb: 'Preview every push message' },
+      { href: '/admin/art', label: 'Art Library', icon: Palette, blurb: 'Every design asset: browse, approve, download' },
     ],
   },
   {
