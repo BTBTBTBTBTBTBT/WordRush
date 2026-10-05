@@ -956,7 +956,7 @@ export function FriendsPanel() {
         const shields = (profile as { streak_shields?: number } | null)?.streak_shields ?? 0;
         const rows: FamilyMenuAction[] = [
           { id: 'profile', title: 'View profile', icon: 'eye', run: () => router.push(`/profile/${f.id}`) },
-          { id: 'play', title: 'Play a quick game', icon: 'play', tint: FAMILY_MENU_INK.pink, run: () => openPlay(f) },
+          { id: 'play', title: 'Play a game', icon: 'play', tint: FAMILY_MENU_INK.pink, run: () => openPlay(f) },
           { id: 'taunt', title: 'Taunt', icon: <Icon3D name="bell" size={28} />, tint: FAMILY_MENU_INK.amber, label: `Taunt ${f.username}`, run: () => setTauntTarget(f) },
           { id: 'challenge', title: 'Challenge', icon: <UiIcon name="swords" size={28} />, disabled: challenging !== null, label: `Challenge ${f.username} to a VS Battle`, run: () => { void challenge(f); } },
           ...(isNewFriend(f) ? [{ id: 'hi', title: 'Say hi', icon: 'sparkles', tint: FAMILY_MENU_INK.pink, label: `Say hi to ${f.username}`, run: () => { void sayHi(f); } } as FamilyMenuAction] : []),

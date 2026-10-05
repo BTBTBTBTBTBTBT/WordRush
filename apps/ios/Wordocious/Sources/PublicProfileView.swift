@@ -220,15 +220,15 @@ struct PublicProfileView: View {
     /// The More menu's rows: Report, then Block / Unblock (all three keep their confirmation steps).
     private func moderationMenuModel() -> FamilyActionMenuModel {
         var rows: [FamilyMenuAction] = [
-            FamilyMenuAction(id: "report", title: "Report User", icon: .clay("flag"), danger: true,
+            FamilyMenuAction(id: "report", title: "Report user", icon: .clay("flag"), danger: true,
                              accessibility: "Report this user") { showReportDialog = true },
         ]
         if ModerationService.isBlocked(userId) {
-            rows.append(FamilyMenuAction(id: "unblock", title: "Unblock User", icon: .clay("check"), tint: FamilyMenuInk.teal) {
+            rows.append(FamilyMenuAction(id: "unblock", title: "Unblock user", icon: .clay("check"), tint: FamilyMenuInk.teal) {
                 Task { await ModerationService.unblock(userId: userId); moderationToast = "User unblocked" }
             })
         } else {
-            rows.append(FamilyMenuAction(id: "block", title: "Block User", icon: .clay("xmark"), danger: true,
+            rows.append(FamilyMenuAction(id: "block", title: "Block user", icon: .clay("xmark"), danger: true,
                                          accessibility: "Block this user") { showBlockConfirm = true })
         }
         let name = profile?.username

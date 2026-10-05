@@ -236,9 +236,9 @@ fun FamilyActionMenuDemo(kind: String) {
         "photo" -> FamilyActionMenu(
             title = "Change Photo", subtitle = "A new photo or one from your library", onDismiss = close,
             actions = listOf(
-                FamilyMenuAction("camera", "Take Photo", FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoCamera)) {},
-                FamilyMenuAction("library", "Choose from Library", FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoLibrary), FamilyMenuInk.TEAL) {},
-                FamilyMenuAction("remove", "Remove Photo", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true) {},
+                FamilyMenuAction("camera", "Take photo", FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoCamera)) {},
+                FamilyMenuAction("library", "Choose from library", FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoLibrary), FamilyMenuInk.TEAL) {},
+                FamilyMenuAction("remove", "Remove photo", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true) {},
             ),
         )
         else -> FamilyActionMenu(

@@ -241,11 +241,11 @@ fun EditProfileScreen(onDone: () -> Unit) {
             subtitle = "A new photo or one from your library",
             onDismiss = { showPhotoChoice = false },
             actions = buildList {
-                add(com.wordocious.app.ui.FamilyMenuAction("camera", "Take Photo",
+                add(com.wordocious.app.ui.FamilyMenuAction("camera", "Take photo",
                     com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoCamera)) {
                     cameraLauncher.launch(cameraUri)
                 })
-                add(com.wordocious.app.ui.FamilyMenuAction("library", "Choose from Library",
+                add(com.wordocious.app.ui.FamilyMenuAction("library", "Choose from library",
                     com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoLibrary),
                     com.wordocious.app.ui.FamilyMenuInk.TEAL) {
                     picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -253,7 +253,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 // iOS offers Remove Photo whenever an avatar_url exists —
                 // without it an uploaded photo can never be cleared.
                 if (currentAvatar != null) {
-                    add(com.wordocious.app.ui.FamilyMenuAction("remove", "Remove Photo",
+                    add(com.wordocious.app.ui.FamilyMenuAction("remove", "Remove photo",
                         com.wordocious.app.ui.FamilyMenuIcon.Clay(com.wordocious.app.ui.FamIcon.XMARK), danger = true) {
                         val uid = AuthService.userId ?: return@FamilyMenuAction
                         scope.launch {

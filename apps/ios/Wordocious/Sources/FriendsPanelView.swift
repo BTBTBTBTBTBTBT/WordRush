@@ -658,7 +658,7 @@ struct FriendsPanelView: View {
     /// The friend row's long-press menu (the old context menu's rows, in order).
     private func friendMenuModel(_ f: FriendsService.FriendProfile) -> FamilyActionMenuModel {
         var rows: [FamilyMenuAction] = [
-            FamilyMenuAction(id: "profile", title: "View Profile", icon: .clay("eye")) { profileTarget = f.id },
+            FamilyMenuAction(id: "profile", title: "View profile", icon: .clay("eye")) { profileTarget = f.id },
             FamilyMenuAction(id: "play", title: "Play a game", icon: .clay("play"), tint: FamilyMenuInk.pink) {
                 quickPlay = QuickPlay(friend: f, kind: .rps)
             },

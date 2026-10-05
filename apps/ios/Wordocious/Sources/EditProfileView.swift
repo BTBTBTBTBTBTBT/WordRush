@@ -669,12 +669,12 @@ struct EditProfileView: View {
     private func photoMenuModel() -> FamilyActionMenuModel {
         var rows: [FamilyMenuAction] = []
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            rows.append(FamilyMenuAction(id: "camera", title: "Take Photo", icon: .symbol("camera.fill")) { showCamera = true })
+            rows.append(FamilyMenuAction(id: "camera", title: "Take photo", icon: .symbol("camera.fill")) { showCamera = true })
         }
-        rows.append(FamilyMenuAction(id: "library", title: "Choose from Library", icon: .symbol("photo.on.rectangle"),
+        rows.append(FamilyMenuAction(id: "library", title: "Choose from library", icon: .symbol("photo.on.rectangle"),
                                      tint: FamilyMenuInk.teal) { showLibraryPicker = true })
         if auth.profile?.avatarUrl != nil {
-            rows.append(FamilyMenuAction(id: "remove", title: "Remove Photo", icon: .clay("xmark"), danger: true) {
+            rows.append(FamilyMenuAction(id: "remove", title: "Remove photo", icon: .clay("xmark"), danger: true) {
                 Task { await removeAvatar() }
             })
         }
