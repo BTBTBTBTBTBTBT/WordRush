@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { applyAllSolutionSwaps } from '@wordle-duel/core';
+import { CONTENT_RELEASE_DATE } from './content-release-date.mjs';
 
 /**
  * Puzzle CONTENT is American English too — answers, hidden words, categories,
@@ -24,7 +25,8 @@ import { applyAllSolutionSwaps } from '@wordle-duel/core';
 const ROOT = join(__dirname, '..');
 const DATA = join(ROOT, 'data');
 const read = (f: string) => JSON.parse(readFileSync(join(DATA, f), 'utf8'));
-const CUTOVER = '2026-10-06';
+// First unseen daily: the next coordinated release (one constant for the guard and every repair script).
+const CUTOVER = CONTENT_RELEASE_DATE;
 const EPOCH = '2026-09-23';
 const FROM = Math.round((Date.parse(`${CUTOVER}T00:00:00Z`) - Date.parse(`${EPOCH}T00:00:00Z`)) / 86400000);
 
@@ -52,47 +54,29 @@ const OFF_THEME: Record<string, string[]> = {
   raingear: ['PUDDLE', 'SOGGY', 'WATERPROOF', 'SPLASH', 'DRIZZLE', 'DOWNPOUR', 'DRIPPING', 'STORM', 'FORECAST', 'CLOUD', 'ZIPPER', 'COLLAR', 'LINING', 'CANOPY', 'TOGGLE'],
   babyclothes: ['RATTLE', 'PACIFIER', 'STROLLER', 'BLANKET', 'TINY'],
 };
-/** Spyglass: obscure, jargon or split-phrase halves no player connects to the title (any theme). */
-const OBSCURE = new Set(`TOGGLE CAIRN LIANA DESCANT ZEPHYR ISOBAR CELSIUS ANVIL LEVERET CYGNET FARRIER KNEELER CRUMBCOAT TENON MORTISE
-  DIATOM HEELTAP HATPIN SINGLET TRILBY CLOCHE BOATER BROGUE CATHERINEWHEEL COWSLIP HIDE GUINEA SLEEPING DINING LINING
-  STARTING FLASHING FRESH CLIMBING SPRINGER PUNCTURE GEARBOX CARRIAGE KILT HEDGEROW THATCH PUB`.trim().split(/\s+/));
+/** Obscure or jargon words no player connects to a theme (any game). */
+const OBSCURE_WORDS = new Set(`TOGGLE CAIRN LIANA DESCANT ZEPHYR ISOBAR CELSIUS ANVIL LEVERET CYGNET FARRIER KNEELER CRUMBCOAT TENON MORTISE
+  DIATOM HEELTAP HATPIN SINGLET TRILBY CLOCHE BOATER BROGUE CATHERINEWHEEL COWSLIP PUNCTURE GEARBOX CARRIAGE KILT HEDGEROW THATCH PUB`.trim().split(/\s+/));
+/** Common words that only failed as Spyglass split-phrase halves (SLEEPING bag, GUINEA pig) — fine elsewhere. */
+const PHRASE_HALVES = new Set(`HIDE GUINEA SLEEPING DINING LINING STARTING FLASHING FRESH CLIMBING SPRINGER`.trim().split(/\s+/));
+/** Spyglass: obscure, jargon or split-phrase halves (any theme). */
+const OBSCURE = new Set([...OBSCURE_WORDS, ...PHRASE_HALVES]);
 
 /** Known exceptions: `${game}:${id}:${WORD}` → why. Ids pin the puzzle so a new one never rides in. */
 const ALLOW: Record<string, string> = {
   'crossword:cw-uplpfw:PLOUGH': 'clue says "spelled the British way" (bible, 2026-09-24)',
   'crossword:cw-hmxt00:PLOUGH': 'clue says "spelled the British way"',
   'kindred:gr-hzu5x7:GREY': '___hound (GREYHOUND)',
-  'kindred:gr-g5g39s:SPANNER': 'Hidden PAN wordplay — needs a swap (report 2026-10-05)',
-  'hubbub:hb0045:ENROLMENT': 'pangram — the letter set is built on it; regenerating is a bank change',
-  'hubbub:hb0167:YOGHURT': 'pangram',
-  'hubbub:hb0384:MOTORWAY': 'pangram',
-  'hubbub:hb0514:CALIBRE': 'pangram',
-  'hubbub:hb0519:HONOURED': 'pangram',
-  'muddle:md-4sccue:PETROL': 'scrambled word (circled letters feed SHELF LIFE) — needs a re-scramble',
-  'muddle:md-lziusb:PETROL': 'scrambled word — needs a re-scramble',
-  'ladder:ld0176:BLOKE': 'ladder start/end — needs a new path (report 2026-10-05)',
-  'ladder:ld0268:BLOKE': 'ladder end',
-  'ladder:ld0318:BLOKE': 'ladder start',
-  'ladder:ld0540:BLOKE': 'ladder start (Unlimited)',
   'crossword:cw-8dyxbz:TROUSERS': 'answer in the grid; clue now "Dress pants, also called ____"',
   'crossword:cw-shifet:TROUSERS': 'answer in the grid; clue now "Dress pants, also called ____"',
   'crossword:cw-3es5ch:TROUSERS': 'answer in the grid; clue now "Dress pants, also called ____"',
 };
 /**
- * Found by the 2026-10-05 audit and NOT yet fixed (each needs a group swap, an answer
- * re-scramble or a regenerated grid). The guard still fails on anything new; delete a
- * line when its fix lands. Keys: game:id:WORD, game:id:"phrase", kindred:id:HIDDEN:WORD.
+ * Audit leftovers not fixed yet. EMPTY since 2026-10-05 (every Kindred, Ladder, Muddle and Hubbub
+ * finding landed); keep it empty — a new finding gets fixed, or an ALLOW line with its reason.
+ * Keys: game:id:WORD, game:id:"phrase", kindred:id:HIDDEN:WORD.
  */
-const PENDING = new Set<string>([
-  'kindred:gr-sjdt3a:JUMPER', 'kindred:gr-kij6yu:BOLLARD', 'kindred:gr-6elxjg:QUEUE', 'kindred:gr-w8ij3o:FORTNIGHT', 'kindred:gr-ix2fsc:SPANNER',
-  'kindred:gr-3xrc80:BUSKER', 'kindred:gr-vn9qq1:ANORAK', 'kindred:gr-xx9wuv:HUMBUG', 'kindred:gr-jsa2s5:MATHS', 'kindred:gr-yjas24:STOAT',
-  'kindred:gr-7ocjqk:QUAY', 'kindred:gr-kjekro:TERRAPIN', 'kindred:gr-azuyju:HUMBUG', 'kindred:gr-yxacxc:CRISPS', 'kindred:gr-m83h5d:DUVET',
-  'kindred:gr-cd53an:BLOKE', 'kindred:gr-uh3zns:QUAY', 'kindred:gr-142114:ROUNDABOUT', 'kindred:gr-x9tgvl:DUVET',
-  'kindred:gr-5y4jwr:HIDDEN:ULTIMATE', 'kindred:gr-5y4jwr:HIDDEN:INTIMATE', 'kindred:gr-spyvr:HIDDEN:CANVAS', 'kindred:gr-p141zt:HIDDEN:BREAD',
-  'kindred:gr-24jv4v:HIDDEN:BOULDER', 'kindred:gr-k00e4p:HIDDEN:DIALECT', 'kindred:gr-k00e4p:HIDDEN:INTELLECT',
-  'muddle:md-84c132:PETROL',
-  'muddle:md-j8k9z6:NEWSAGENT', 'muddle:md-j8k9z6:"PAPER ROUND"', 
-]);
+const PENDING = new Set<string>([]);
 const ok = (key: string) => Boolean(ALLOW[key]) || PENDING.has(key);
 
 type Hit = string;
@@ -158,8 +142,30 @@ describe('American English in puzzle content (unseen puzzles)', () => {
     expect(hits, hits.slice(0, 30).join('\n')).toEqual([]);
   });
 
+  // Letter Ladder accepts only data/ladder-words.json (tester Doug, 2026-10-05: THAVE, "a rare British
+  // dialect word", was accepted as a rung). Rebuild with scripts/ladder/build-ladder-words.mjs.
+  it('Letter Ladder accept list: common American words only, and every unseen ladder solvable in par on it', () => {
+    const list = read('ladder-words.json') as string[];
+    const set = new Set(list);
+    const bad = list.filter((w) => BRIT_SPELLINGS.has(w) || BRIT_WORDS.has(w) || OBSCURE_WORDS.has(w) || !/^[A-Z]{5}$/.test(w));
+    expect(bad, 'British / obscure / malformed words in ladder-words.json').toEqual([]);
+    for (const w of ['THAVE', 'BLOKE', 'QUEUE', 'LITRE', 'PENCE']) expect(set.has(w), w).toBe(false);
+    expect(list.length).toBeGreaterThan(2000);
+    const adj = (w: string) => { const out: string[] = []; for (let i = 0; i < 5; i++) for (let c = 65; c <= 90; c++) { const v = w.slice(0, i) + String.fromCharCode(c) + w.slice(i + 1); if (v !== w && set.has(v)) out.push(v); } return out; };
+    const dist = (s: string, e: string) => { const d = new Map([[s, 0]]); let f = [s]; while (f.length && !d.has(e)) { const n: string[] = []; for (const u of f) for (const v of adj(u)) if (!d.has(v)) { d.set(v, d.get(u)! + 1); n.push(v); } f = n; } return d.get(e); };
+    const hits: string[] = [];
+    for (const p of unseen(read('ladder-puzzles.json')) as { id: string; start: string; end: string; par: number; path: string[] }[]) {
+      const off = p.path.filter((w) => !set.has(w));
+      if (off.length) hits.push(`ladder ${p.id}: path word(s) not on the list: ${off.join(' ')}`);
+      if (dist(p.start, p.end) !== p.par) hits.push(`ladder ${p.id}: ${p.start}→${p.end} is not ${p.par} steps on the list`);
+    }
+    expect(hits, hits.join('\n')).toEqual([]);
+  });
+
   // Classic / Six / Seven answers change only through a dated answer swap (solution-swaps.ts). Swap batch 3
   // (founder 2026-10-05) takes every British answer out, so the pools AS DEALT once every batch is live hold none.
+  it('PENDING stays empty', () => { expect([...PENDING]).toEqual([]); });
+
   it('no British Classic / Six / Seven answers once every swap batch is live', () => {
     const extra = new Set(['SULPHUR', 'MOULDED', 'CHEQUE', 'ADVERT', 'PENCE', 'DRAUGHT', 'QUEUING', 'CRUMPET']);
     const found = ['solutions.json', 'solutions-6.json', 'solutions-7.json']

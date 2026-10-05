@@ -1,6 +1,6 @@
 {
   "hub": {
-    "h": "1736dcd83c",
+    "h": "9347a90615",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 400,
@@ -51,7 +51,7 @@
     "extra": 150
   },
   "scramble": {
-    "h": "ceeca96ac9",
+    "h": "bdcfdd09c5",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 365,
@@ -88,7 +88,7 @@
     }
   },
   "groups": {
-    "h": "8e73611357",
+    "h": "6093b2a59b",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 380,
@@ -162,7 +162,7 @@
     }
   },
   "ladder": {
-    "h": "4319bcfbcb",
+    "h": "61dd0e774d",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 400,

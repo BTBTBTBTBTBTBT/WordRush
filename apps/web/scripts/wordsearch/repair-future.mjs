@@ -2,7 +2,7 @@
 // PUDDLE/SOGGY/WATERPROOF are not gear, WELLIES is British, TOGGLE needs explaining).
 //
 // The bank is APPEND-ONLY once shipped, so this never rebuilds it. It walks the dailies from
-// --from (default: tomorrow of the audit, 2026-10-06) plus the whole Unlimited pool and, for each
+// --from (default: CONTENT_RELEASE_DATE, scripts/content-release-date.mjs) plus the whole Unlimited pool and, for each
 // puzzle whose theme pool (apps/web/data/wordsearch-themes.json) no longer carries one of its
 // words, swaps only those words for fresh pool members and re-lays the grid with the builder's
 // own layout rules (four forward directions, each word exactly once, no blocked term in any
@@ -11,7 +11,7 @@
 // Variety rules still hold: no word within 45 days of itself across ALL dailies, no word inside
 // another word in the same ten.
 //
-//   node apps/web/scripts/wordsearch/repair-future.mjs [--from=2026-10-06] [--dry]
+//   node apps/web/scripts/wordsearch/repair-future.mjs [--from=YYYY-MM-DD] [--dry]
 //
 // Bundled bank: after running, copy apps/web/data/wordsearch-puzzles.json to the iOS Resources
 // + Tests/Fixtures and Android resources (word-list-sync.test.ts pins all four copies).
@@ -19,9 +19,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DATA, readJSON, rngFor, below, shuffle, neverAnswer, wordset } from '../more-games/lib.mjs';
 import { nearWords } from './add-near.mjs';
+import { CONTENT_RELEASE_DATE } from '../content-release-date.mjs';
 
 const argv = process.argv.slice(2);
-const FROM = (argv.find((a) => a.startsWith('--from=')) || '--from=2026-10-06').split('=')[1];
+const FROM = (argv.find((a) => a.startsWith('--from=')) || `--from=${CONTENT_RELEASE_DATE}`).split('=')[1];
 const DRY = argv.includes('--dry');
 const N = 10, WORDS = 10, WORD_GAP = 45;
 const DIRS = { E: [0, 1], S: [1, 0], SE: [1, 1], NE: [-1, 1] };
