@@ -97,7 +97,7 @@ export function VsBots() {
                 <BotFigure id={bodPersona.id} pose={botOfDayPose(bodResult)} size={80} />
                 <div className="flex-1 min-w-0 space-y-1 pt-1">
                   <div className="font-black leading-tight" style={{ fontSize: 20, color: VS.deep }}>{bod.name}</div>
-                  <div className="text-[11.5px] font-extrabold" style={{ color: '#4b5563' }}>{bod.tier} · {bod.line}</div>
+                  <div className="text-[11.5px] font-extrabold" style={{ color: 'var(--vs-sub, #4b5563)' }}>{bod.tier} · {bod.line}</div>
                   {bodLine && <BotSpeech text={bodLine} accent={bodPersona.color} />}
                 </div>
               </div>
@@ -131,17 +131,17 @@ export function VsBots() {
               <VsCard accent="#7c3aed">
                 <div className="flex flex-col items-center gap-1 px-3 pb-3 pt-1">
                   <ArtScene scene="ladder-cleared" height={140} maxWidthPct={70} />
-                  <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.5 }}>
+                  <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: 'var(--vs-purple-ink, #4c1d95)', letterSpacing: 0.5 }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={30} height={30} loading="lazy" style={{ width: 30, height: 30 }} /> Ladder cleared
                   </span>
-                  <span className="text-[11.5px] font-extrabold" style={{ color: '#4b5563' }}>All ten bots beaten. Webster salutes you!</span>
+                  <span className="text-[11.5px] font-extrabold" style={{ color: 'var(--vs-sub, #4b5563)' }}>All ten bots beaten. Webster salutes you!</span>
                 </div>
               </VsCard>
             ) : (
               <div className="flex items-center gap-3 px-3 py-2" style={vsCard(VS_ACCENT, { radius: 14 })}>
                 <SoftNum size={24}>{cleared}<span style={{ fontSize: 15 }}>/{LADDER_BOTS.length}</span></SoftNum>
-                <span className="flex-1 min-w-0 text-[11.5px] font-extrabold" style={{ color: '#4b5563' }}>
+                <span className="flex-1 min-w-0 text-[11.5px] font-extrabold" style={{ color: 'var(--vs-sub, #4b5563)' }}>
                   rungs cleared · win {LADDER_CLEAR_RUN} in a row to climb
                 </span>
                 {/* The prize at the top: the ladder trophy. */}
@@ -185,7 +185,7 @@ export function VsBots() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             {persona.rung === LADDER_BOTS.length && <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={18} height={18} loading="lazy" style={{ width: 18, height: 18 }} />}
                           </span>
-                          <span className="block text-[11px] font-extrabold truncate mt-1" style={{ color: '#4b5563' }}>
+                          <span className="block text-[11px] font-extrabold truncate mt-1" style={{ color: 'var(--vs-sub, #4b5563)' }}>
                             {bot.line} · <span style={{ color: isNext ? darken(persona.color, 0.35) : VS.label }}>{r.line}</span>
                           </span>
                           {isNext && (
@@ -220,7 +220,7 @@ export function VsBots() {
                   <GhostAvatar name={me?.username ?? 'You'} emoji={me?.avatar_emoji} accent={me?.accent_color} size={40} />
                   <span className="flex-1 min-w-0">
                     <span className="block text-[14px] font-black" style={{ color: VS.deep }}>Your Ghost</span>
-                    <span className="block text-[11px] font-bold truncate mt-1" style={{ color: '#4b5563' }}>
+                    <span className="block text-[11px] font-bold truncate mt-1" style={{ color: 'var(--vs-sub, #4b5563)' }}>
                       {ghost ? `Your best ${modeTitle(mode)}: ${ghost.guessCount} guesses · ${vsClock(ghost.timeMs)}` : 'Race a replay of your best run'}
                     </span>
                   </span>

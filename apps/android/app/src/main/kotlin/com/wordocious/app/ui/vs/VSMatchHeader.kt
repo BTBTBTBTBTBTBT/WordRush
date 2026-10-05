@@ -107,6 +107,6 @@ fun VsCalloutPill(
     ) {
         if (pose != null) VsCastPose(pose.first, pose.second, 30.dp)
         else Box(Modifier.size(7.dp).clip(CircleShape).background(accent))
-        Text(text, fontSize = 12.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, maxLines = 2)
+        Text(text, fontSize = 12.sp, fontWeight = FontWeight.Black, color = VsInk.heading, maxLines = 2)
     }
 }

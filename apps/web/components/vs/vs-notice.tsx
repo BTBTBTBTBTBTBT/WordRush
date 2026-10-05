@@ -53,7 +53,7 @@ export function VsNotice({ accent, avatar, pose, headline, detail, action, actio
         {avatar}
         <span className="flex-1 min-w-0">
           <span className="block text-[12.5px] font-black uppercase truncate" style={{ color: darken(accent, 0.4), letterSpacing: 0.4 }}>{headline}</span>
-          {detail && <span className="flex flex-wrap items-baseline gap-x-1 text-[11.5px] font-bold mt-1" style={{ color: '#4b5563' }}>{detail}</span>}
+          {detail && <span className="flex flex-wrap items-baseline gap-x-1 text-[11.5px] font-bold mt-1" style={{ color: 'var(--vs-sub, #4b5563)' }}>{detail}</span>}
         </span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={artSrc(pose)} alt="" aria-hidden="true" width={40} height={40} draggable={false} className="shrink-0" style={{ width: 40, height: 40, objectFit: 'contain', marginTop: -4, marginBottom: -4 }} />

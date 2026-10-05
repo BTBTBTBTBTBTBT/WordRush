@@ -84,13 +84,15 @@ val VS_RESULT_ACCENT = Color(0xFF7C3AED)
 val VS_GOLD_ACCENT = Color(0xFFF59E0B)
 
 /** A1 the always-light wash of [accent] (VS pages never turn dark). */
-fun vsWash(accent: Color = VS_ACCENT, amount: Float = Wash.CARD): Color = Wash.mix(accent, amount)
+fun vsWash(accent: Color = VS_ACCENT, amount: Float = Wash.CARD): Color =
+    WTheme.season?.takeIf { it.dark && it.card != null }?.wash(accent, amount * 0.5f) ?: Wash.mix(accent, amount)
 
-/** A1 the always-light 1.5 dp line of [accent]. */
-fun vsLine(accent: Color = VS_ACCENT, amount: Float = Wash.LINE): Color = Wash.mix(accent, amount)
+/** A1 the always-light 1.5 dp line of [accent] (a dark season: the accent over its night glass). */
+fun vsLine(accent: Color = VS_ACCENT, amount: Float = Wash.LINE): Color =
+    WTheme.season?.takeIf { it.dark && it.card != null }?.wash(accent, amount) ?: Wash.mix(accent, amount)
 
-/** A label ink for [accent] on its wash (the accent darkened ~45%). */
-fun vsInk(accent: Color): Color = com.wordocious.app.ui.darkenInk(accent)
+/** A label ink for [accent] on its wash (the accent darkened ~45%; a dark season: a light pastel of it). */
+fun vsInk(accent: Color): Color = if (vsDarkSeason) Wash.mix(accent, 0.45f) else com.wordocious.app.ui.darkenInk(accent)
 
 /**
  * A1 a tinted VS card: the wash, the 1.5 dp line, the game-card top bar ([bar] =
@@ -131,35 +133,37 @@ fun Modifier.vsRow(accent: Color = VS_ACCENT, corner: Dp = 14.dp, selected: Bool
         )
         .shadow(3.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
         .clip(shape)
-        .background(Wash.mix(a, if (selected) Wash.SELECTED else amount))
-        .border(if (selected) 2.dp else 1.5.dp, if (selected) a else Wash.mix(a, Wash.LINE), shape)
+        .background(vsWash(a, if (selected) Wash.SELECTED else amount))
+        .border(if (selected) 2.dp else 1.5.dp, if (selected) a else vsLine(a, Wash.LINE), shape)
 }
 
 /** A1 a tinted pill (`.pill`): wash, line and a 4 dp accent band inset across the top — always light. */
 fun Modifier.vsPill(accent: Color = VS_ACCENT, corner: Dp = 12.dp, amount: Float = 0.12f): Modifier {
     val shape = RoundedCornerShape(corner)
     return this.clip(shape)
-        .background(Wash.mix(accent, amount))
+        .background(vsWash(accent, amount))
         .drawWithContent {
             drawContent()
             drawRect(accent, Offset.Zero, Size(size.width, 4.dp.toPx()))
         }
-        .border(1.5.dp, Wash.mix(accent, 0.30f), shape)
+        .border(1.5.dp, vsLine(accent, 0.30f), shape)
 }
 
 /** A2 a soft number on a light VS surface (Nunito Black, #3b1a78, tnum, soft white highlight). */
 @Composable
-fun VsNumber(text: String, fontSize: TextUnit, modifier: Modifier = Modifier, color: Color = FinishInk.softNumber) {
+fun VsNumber(text: String, fontSize: TextUnit, modifier: Modifier = Modifier, color: Color = VsInk.softNumber) {
     val px = LocalDensity.current.density
     Text(
         text, modifier = modifier, maxLines = 1, softWrap = false,
-        style = softNumberStyle(fontSize, color).copy(shadow = Shadow(Color.White.copy(alpha = 0.8f), Offset(0f, 1f * px), 0f)),
+        style = softNumberStyle(fontSize, color).copy(
+            shadow = if (vsDarkSeason) Shadow(Color(0x804C1D95), Offset(0f, 1f * px), 3f * px) else Shadow(Color.White.copy(alpha = 0.8f), Offset(0f, 1f * px), 0f),
+        ),
     )
 }
 
 /** A caps label on a light VS surface (11 sp Black, .1em) in [color]. */
 @Composable
-fun VsCapsLabel(text: String, modifier: Modifier = Modifier, color: Color = FinishInk.label, fontSize: TextUnit = 10.sp) {
+fun VsCapsLabel(text: String, modifier: Modifier = Modifier, color: Color = VsInk.label, fontSize: TextUnit = 10.sp) {
     Text(
         text, fontSize = fontSize, fontWeight = FontWeight.Black, letterSpacing = 0.1.em, color = color,
         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = modifier,
@@ -188,7 +192,7 @@ fun VsStatTile(
         VsNumber(value, valueSize)
         VsCapsLabel(label, color = vsInk(accent))
         if (sub != null) {
-            Text(sub, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = FinishInk.muted, maxLines = 2)
+            Text(sub, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = VsInk.muted, maxLines = 2)
         }
     }
 }
@@ -264,7 +268,7 @@ fun VsGhostTile(size: Dp, modifier: Modifier = Modifier) {
         com.wordocious.app.ui.LetterTileAvatar(
             p.username, size, Modifier.alpha(0.45f), accentHex = p.accentColor, emoji = p.avatarEmoji,
         )
-        Box(Modifier.matchParentSize().border(1.5.dp, FinishInk.label.copy(alpha = 0.35f), com.wordocious.app.ui.letterTileShape(size)))
+        Box(Modifier.matchParentSize().border(1.5.dp, VsInk.label.copy(alpha = 0.35f), com.wordocious.app.ui.letterTileShape(size)))
     }
 }
 
@@ -300,15 +304,15 @@ fun VsBanterBubble(text: String?, botName: String, accent: Color = VS_ACCENT, mo
             Modifier.widthIn(max = 300.dp)
                 .shadow(4.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
                 .clip(shape)
-                .background(Wash.mix(accent, 0.16f))
-                .border(1.5.dp, Wash.mix(accent, 0.40f), shape)
+                .background(vsWash(accent, 0.16f))
+                .border(1.5.dp, vsWash(accent, 0.40f), shape)
                 .padding(start = 12.dp, end = 12.dp, top = 7.dp + 7.dp, bottom = 7.dp)
                 .semantics {
                     liveRegion = LiveRegionMode.Polite
                     contentDescription = "$botName says $line"
                 },
         ) {
-            Text(line, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = FinishInk.heading, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(line, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = VsInk.heading, maxLines = 3, overflow = TextOverflow.Ellipsis)
         }
     }
 }

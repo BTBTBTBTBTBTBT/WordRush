@@ -60,22 +60,26 @@ import com.wordocious.core.RpsPick
 // by the Friends tab, the banner, the quick-play sheet and the game screens.
 
 object FriendsPink {
-    val ink = Color(0xFF831843)
-    val mid = Color(0xFF9D174D)
+    // Season surfaces (a dark `tone`): the Friends cards take the season's night glass, so each
+    // fixed ink swaps to a light twin (iOS FriendsInk parity). Preview off = the mockup inks.
+    private val night: Boolean get() = com.wordocious.app.ui.vs.vsDarkSeason
+    private val season get() = com.wordocious.app.ui.theme.WTheme.season
+    val ink: Color get() = if (night) Color(0xFFF9A8D4) else Color(0xFF831843)
+    val mid: Color get() = if (night) Color(0xFFF472B6) else Color(0xFF9D174D)
     val solid = Color(0xFFDB2777)
-    val soft = Color(0xFFFCE7F3)
+    val soft: Color get() = if (night) friendsWash(Color(0xFFEC4899), 0.16f) else Color(0xFFFCE7F3)
     val titleGradient = listOf(Color(0xFFDB2777), Color(0xFF7C3AED))
     val green = Color(0xFF10B981)
-    val flameInk = Color(0xFFC2410C)
+    val flameInk: Color get() = if (night) Color(0xFFFDBA74) else Color(0xFFC2410C)
     val flame = Color(0xFFF59E0B)
-    val page = Color(0xFFF8F7FF)
-    val label = Color(0xFF6B7280)
-    val sub = Color(0xFF4B5563)
-    val lavender = Color(0xFFEDE9FE)
+    val page: Color get() = if (night) season?.card ?: Color(0xFF1C0F30) else Color(0xFFF8F7FF)
+    val label: Color get() = if (night) season?.textMuted ?: Color(0xFFC8B6E2) else Color(0xFF6B7280)
+    val sub: Color get() = if (night) season?.textSecondary ?: Color(0xFFDCCDF2) else Color(0xFF4B5563)
+    val lavender: Color get() = if (night) friendsWash(Color(0xFF7C3AED), 0.16f) else Color(0xFFEDE9FE)
     /** FINISH_SPEC C4 inks (stats-friends-polish mockup). */
-    val labelInk = Color(0xFF8A2D63)
-    val heading = Color(0xFF2A1650)
-    val muted = Color(0xFF6F5F8F)
+    val labelInk: Color get() = if (night) Color(0xFFF9A8D4) else Color(0xFF8A2D63)
+    val heading: Color get() = if (night) season?.text ?: Color(0xFFF7EEFF) else Color(0xFF2A1650)
+    val muted: Color get() = if (night) season?.textMuted ?: Color(0xFFC8B6E2) else Color(0xFF6F5F8F)
     /** The online dot (#22c55e). */
     val online = Color(0xFF22C55E)
 }
@@ -147,10 +151,10 @@ fun FriendsLabel(text: String, modifier: Modifier = Modifier, color: Color = Fri
  * A1 the Friends page's fixed-light wash of [accent] (the Friends tab stays light in
  * every theme, like its wallpaper).
  */
-fun friendsWash(accent: Color, amount: Float = Wash.CARD): Color = Wash.mix(accent, amount)
+fun friendsWash(accent: Color, amount: Float = Wash.CARD): Color = com.wordocious.app.ui.vs.vsWash(accent, amount)
 
 /** A1 the matching fixed-light 1.5 dp line. */
-fun friendsLine(accent: Color, amount: Float = Wash.LINE): Color = Wash.mix(accent, amount)
+fun friendsLine(accent: Color, amount: Float = Wash.LINE): Color = com.wordocious.app.ui.vs.vsLine(accent, amount)
 
 /**
  * A1 a Friends card: the page's pink wash (or [accent]'s) with a 1.5 dp line, radius
@@ -285,7 +289,7 @@ fun FlameCount(text: String, modifier: Modifier = Modifier, size: Dp = 14.dp) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
         com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.FLAME, size)
         // A2: the count in the soft-number style (fixed light: the Friends tab).
-        Text(text, style = softNumberStyle(12.sp, FinishInk.softNumber), maxLines = 1)
+        Text(text, style = softNumberStyle(12.sp, com.wordocious.app.ui.vs.VsInk.softNumber), maxLines = 1)
     }
 }
 

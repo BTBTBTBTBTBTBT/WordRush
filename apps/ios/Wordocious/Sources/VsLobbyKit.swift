@@ -7,16 +7,24 @@ import WordociousCore
 /// bot art, mode chips). The words come from VsLobby (WordociousCore).
 enum VsLobbyKit {
     // §0 palette — VS accent is teal; results screens use the home purple.
-    static let ink = Color(hex: 0x0F766E)
-    static let soft = Color(hex: 0xCCFBF1)
-    static let deep = Color(hex: 0x134E4A)
+    // Season surfaces (SeasonKit, a dark `tone`): the VS pages are light-only, but under a dark
+    // season their cards take the season's night glass, so every fixed ink swaps to its light
+    // twin (the season's own text tokens). Off season / preview off = the light inks, unchanged.
+    static var darkSeason: Bool { SeasonKit.surfaces?.dark == true }
+    private static func inked(_ light: UInt, _ season: Color?) -> Color {
+        darkSeason ? (season ?? Color(hex: 0xF7EEFF)) : Color(hex: light)
+    }
+
+    static var ink: Color { darkSeason ? Color(hex: 0x2DD4BF) : Color(hex: 0x0F766E) }
+    static var soft: Color { darkSeason ? Color(hex: 0x134E4A) : Color(hex: 0xCCFBF1) }
+    static var deep: Color { darkSeason ? Color(hex: 0x99F6E4) : Color(hex: 0x134E4A) }
     static let titleGradient = [Color(hex: 0x0D9488), Color(hex: 0x0891B2)]
-    static let page = Color(hex: 0xF8F7FF)
-    static let label = Color(hex: 0x6B7280)
-    static let sub = Color(hex: 0x4B5563)
+    static var page: Color { darkSeason ? (SeasonKit.surfaces?.card ?? Color(hex: 0x1C0F30)) : Color(hex: 0xF8F7FF) }
+    static var label: Color { inked(0x6B7280, SeasonKit.surfaces?.textMuted) }
+    static var sub: Color { inked(0x4B5563, SeasonKit.surfaces?.textSecondary) }
     static let purple = Color(hex: 0x7C3AED)
-    static let purpleInk = Color(hex: 0x4C1D95)
-    static let purpleSub = Color(hex: 0x6D28D9)
+    static var purpleInk: Color { inked(0x4C1D95, SeasonKit.surfaces?.text) }
+    static var purpleSub: Color { darkSeason ? Color(hex: 0xC4B5FD) : Color(hex: 0x6D28D9) }
 
     /// The nine VS modes in lobby-strip order (VsLobby.modeOrder).
     static let modes: [GameMode] = VsLobby.modeOrder.compactMap { GameMode(rawValue: $0) }
@@ -166,10 +174,10 @@ enum VsLobbyKit {
     // MARK: FINISH_SPEC §D3 — the cast in the VS look
 
     /// §A2 soft-number ink (VS pages are drawn light in every theme).
-    static let numberInk = Color(hex: 0x3B1A78)
+    static var numberInk: Color { inked(0x3B1A78, SeasonKit.surfaces?.text) }
     /// The card heading ink on tinted cards.
-    static let titleInk = Color(hex: 0x2A1650)
-    static let mutedInk = Color(hex: 0x6F5F8F)
+    static var titleInk: Color { inked(0x2A1650, SeasonKit.surfaces?.text) }
+    static var mutedInk: Color { inked(0x6F5F8F, SeasonKit.surfaces?.textMuted) }
     /// The boss rung / trophy gold.
     static let gold = Color(hex: 0xF5A524)
     static let slate = Color(hex: 0x64748B)
@@ -203,6 +211,15 @@ enum VsLobbyKit {
     static func castId(_ id: CpuIdentity?) -> String? { id?.persona?.id }
 }
 
+extension Color {
+    /// The VS pages' soft wash: `self` over white (the light look), or — under a dark season —
+    /// `self` over the season's night glass, a little stronger so chips and rows still read.
+    func vsWash(_ amount: Double) -> Color {
+        guard VsLobbyKit.darkSeason, let card = SeasonKit.surfaces?.card else { return wash(amount) }
+        return mixed(over: card, min(1, amount * 1.8))
+    }
+}
+
 // MARK: - §A1 / §A2 VS surfaces (light in every theme — the VS pages are light-only)
 
 extension View {
@@ -221,8 +238,8 @@ extension View {
         self.font(Brand.font(size, .black))
             .monospacedDigit()
             .foregroundStyle(color)
-            .shadow(color: .white.opacity(0.8), radius: 0, x: 0, y: 1)
-            .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: max(2, size * 0.12), x: 0, y: max(1, size * 0.08))
+            .shadow(color: VsLobbyKit.darkSeason ? .clear : .white.opacity(0.8), radius: 0, x: 0, y: 1)
+            .shadow(color: Color(hex: 0x4C1D95).opacity(VsLobbyKit.darkSeason ? 0.5 : 0.18), radius: max(2, size * 0.12), x: 0, y: max(1, size * 0.08))
     }
 
     /// §A1 a small stat / icon tile on the VS pages: the 13% wash (22% `strong`),
@@ -233,19 +250,19 @@ extension View {
             .padding(.top, 2)
             .background {
                 ZStack(alignment: .top) {
-                    shape.fill(accent.wash(strong ? 0.22 : 0.13))
+                    shape.fill(accent.vsWash(strong ? 0.22 : 0.13))
                     accent.frame(height: 4)
                 }
                 .clipShape(shape)
             }
-            .overlay(shape.stroke(accent.wash(strong ? 0.5 : 0.34), lineWidth: strong ? 2 : 1.5).allowsHitTesting(false))
+            .overlay(shape.stroke(accent.vsWash(strong ? 0.5 : 0.34), lineWidth: strong ? 2 : 1.5).allowsHitTesting(false))
             .shadow(color: accent.opacity(0.14), radius: 5, x: 0, y: 3)
     }
 
     /// The soft striped list row on a light VS card.
     func vsStripedRow(_ index: Int, accent: Color = VsLobbyKit.ink) -> some View {
         self
-            .background(index % 2 == 0 ? accent.wash(0.10).opacity(0.75) : Color.clear)
+            .background(index % 2 == 0 ? accent.vsWash(0.10).opacity(0.75) : Color.clear)
             .overlay(alignment: .top) {
                 if index > 0 { Rectangle().fill(accent.opacity(0.10)).frame(height: 1) }
             }
@@ -260,7 +277,17 @@ private struct VSTintedCard: ViewModifier {
     var tint: Double
     var line: Double
 
+    @ViewBuilder
     func body(content: Content) -> some View {
+        if VsLobbyKit.darkSeason, let look = SeasonKit.surfaces, look.cardFill != nil {
+            // A dark season: the same night glass as every other page card (TintedCard).
+            content.tintedCard(accent: accent, bar: bar, radius: radius, barHeight: barHeight, tint: tint, line: line)
+        } else {
+            lightCard(content: content)
+        }
+    }
+
+    private func lightCard(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         return VStack(spacing: 0) {
             if let bar {
@@ -270,9 +297,9 @@ private struct VSTintedCard: ViewModifier {
             }
             content
         }
-        .background(shape.fill(accent.wash(tint)))
+        .background(shape.fill(accent.vsWash(tint)))
         .clipShape(shape)
-        .overlay(shape.stroke(accent.wash(line), lineWidth: 1.5).allowsHitTesting(false))
+        .overlay(shape.stroke(accent.vsWash(line), lineWidth: 1.5).allowsHitTesting(false))
         .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)
     }
 }
@@ -332,13 +359,13 @@ struct VSBanterBubble: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 14).padding(.vertical, 9)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(accent.wash(0.12))
+                RoundedRectangle(cornerRadius: 16, style: .continuous).fill(accent.vsWash(0.12))
             )
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(accent.wash(0.34), lineWidth: 1.5))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(accent.vsWash(0.34), lineWidth: 1.5))
             .overlay(alignment: tailUp ? .top : .leading) {
                 VSBubbleTail()
-                    .fill(accent.wash(0.12))
-                    .overlay(VSBubbleTail().stroke(accent.wash(0.34), lineWidth: 1.5))
+                    .fill(accent.vsWash(0.12))
+                    .overlay(VSBubbleTail().stroke(accent.vsWash(0.34), lineWidth: 1.5))
                     .frame(width: 14, height: 8)
                     .rotationEffect(.degrees(tailUp ? 0 : -90))
                     .offset(x: tailUp ? 0 : -10, y: tailUp ? -7 : 0)
@@ -410,18 +437,29 @@ private struct VSCardSurface: ViewModifier {
     var bar: Bool = false
     @Environment(\.pageTint) private var tint
 
+    @ViewBuilder
     func body(content: Content) -> some View {
+        if VsLobbyKit.darkSeason {
+            // A dark season: the night glass every page card wears (TintedCard), no outline.
+            content.tintedCard(accent: tint.accent, bar: bar ? [tint.accent.vsWash(0.75), tint.accent] : nil,
+                               radius: radius, barHeight: 8)
+        } else {
+            lightCard(content: content)
+        }
+    }
+
+    private func lightCard(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         return VStack(spacing: 0) {
             if bar {
-                LinearGradient(colors: [tint.accent.wash(0.75), tint.accent], startPoint: .leading, endPoint: .trailing)
+                LinearGradient(colors: [tint.accent.vsWash(0.75), tint.accent], startPoint: .leading, endPoint: .trailing)
                     .frame(height: 8)
             }
             content
         }
-        .background(shape.fill(tint.accent.wash(0.08)))
+        .background(shape.fill(tint.accent.vsWash(0.08)))
         .clipShape(shape)
-        .overlay(shape.stroke(tint.accent.wash(0.26), lineWidth: 1.5).allowsHitTesting(false))
+        .overlay(shape.stroke(tint.accent.vsWash(0.26), lineWidth: 1.5).allowsHitTesting(false))
         .pageCardShadow()
     }
 }
@@ -439,13 +477,13 @@ struct BotArtCircle: View {
         } else {
             let m = VsLobbyKit.mascot(fromArt: art)
             ZStack {
-                Circle().fill(background ?? m.map { VsLobbyKit.castColor($0).wash(0.18) } ?? VsLobbyKit.soft)
+                Circle().fill(background ?? m.map { VsLobbyKit.castColor($0).vsWash(0.18) } ?? VsLobbyKit.soft)
                 Image(art).resizable().interpolation(.high).scaledToFit()
                     .padding(size * 0.06)
             }
             .frame(width: size, height: size)
             .clipShape(Circle())
-            .overlay(Circle().strokeBorder((m.map { VsLobbyKit.castColor($0) } ?? VsLobbyKit.ink).wash(0.4),
+            .overlay(Circle().strokeBorder((m.map { VsLobbyKit.castColor($0) } ?? VsLobbyKit.ink).vsWash(0.4),
                                            lineWidth: background == Color.clear ? 0 : 1.5))
             .accessibilityHidden(true)
         }
@@ -501,11 +539,11 @@ struct VSModeGlyphTile: View {
                 shape.fill(accent).shadow(color: accent.opacity(0.6), radius: 5)
             } else {
                 ZStack(alignment: .top) {
-                    shape.fill(accent.wash(0.13))
+                    shape.fill(accent.vsWash(0.13))
                     accent.frame(height: max(2, size * 0.09))
                 }
                 .clipShape(shape)
-                .overlay(shape.stroke(accent.wash(0.34), lineWidth: 1.2))
+                .overlay(shape.stroke(accent.vsWash(0.34), lineWidth: 1.2))
                 .shadow(color: accent.opacity(0.16), radius: 3, y: 2)
             }
             if let h = VsLobbyKit.home(mode) {
@@ -627,7 +665,7 @@ struct SearchRing: View {
                 .stroke(VsLobbyKit.ink, style: StrokeStyle(lineWidth: 9, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .frame(width: 118, height: 118)
-            Circle().fill(VsLobbyKit.ink.wash(0.10)).frame(width: 104, height: 104)
+            Circle().fill(VsLobbyKit.ink.vsWash(0.10)).frame(width: 104, height: 104)
             Text("\(secs / 60):\(String(format: "%02d", secs % 60))")
                 .vsNumber(30)
         }

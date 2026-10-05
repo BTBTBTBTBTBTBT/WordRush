@@ -10,12 +10,12 @@ import type { CpuKind } from './adapters/bot-match-service';
 
 /** The VS accent (spec §0). */
 export const VS = {
-  ink: '#0f766e',
-  soft: '#ccfbf1',
-  deep: '#134e4a',
+  ink: 'var(--vs-ink, #0f766e)',
+  soft: 'var(--vs-soft, #ccfbf1)',
+  deep: 'var(--vs-deep, #134e4a)',
   title: 'linear-gradient(90deg, #0d9488, #0891b2)',
-  page: '#f8f7ff',
-  label: '#6b7280',
+  page: 'var(--vs-page, #f8f7ff)',
+  label: 'var(--vs-label, #6b7280)',
   // §11 (docs/ART_SPEC.md): the page's tinted shadow on a PageBackground, else the old one.
   cardShadow: 'var(--page-card-shadow, 0 2px 10px rgba(76,29,149,0.07))',
 } as const;

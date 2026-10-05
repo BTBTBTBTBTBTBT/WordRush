@@ -10,23 +10,28 @@ import WordociousCore
 
 /// The Friends phone's fixed inks (mockup values).
 enum FriendsInk {
+    // Season surfaces (a dark `tone`): the Friends cards take the season's night glass, so each
+    // fixed ink swaps to a light twin. Off season / preview off = the mockup inks, unchanged.
+    static var dark: Bool { SeasonKit.surfaces?.dark == true }
+    private static func ink(_ light: UInt, _ night: UInt) -> Color { Color(hex: dark ? night : light) }
+
     /// Card headings / names (#2a1650).
-    static let heading = Color(hex: 0x2A1650)
+    static var heading: Color { dark ? (SeasonKit.surfaces?.text ?? Color(hex: 0xF7EEFF)) : Color(hex: 0x2A1650) }
     /// Small lines under names (#6f5f8f / rows #7a6a95).
-    static let muted = Color(hex: 0x6F5F8F)
-    static let rowSub = Color(hex: 0x7A6A95)
+    static var muted: Color { dark ? (SeasonKit.surfaces?.textMuted ?? Color(hex: 0xC8B6E2)) : Color(hex: 0x6F5F8F) }
+    static var rowSub: Color { dark ? (SeasonKit.surfaces?.textMuted ?? Color(hex: 0xC8B6E2)) : Color(hex: 0x7A6A95) }
     /// The race banner's headline + clock (pink card).
-    static let bannerHead = Color(hex: 0x7A1F55)
-    static let bannerLabel = Color(hex: 0xB0306F)
-    static let faces = Color(hex: 0x8A4A6E)
+    static var bannerHead: Color { ink(0x7A1F55, 0xFBCFE8) }
+    static var bannerLabel: Color { ink(0xB0306F, 0xF9A8D4) }
+    static var faces: Color { ink(0x8A4A6E, 0xF5D0FE) }
     /// Section labels on the pink wallpaper.
-    static let section = Color(hex: 0x8A2D63)
+    static var section: Color { ink(0x8A2D63, 0xF9A8D4) }
     /// The gold card's label.
-    static let gold = Color(hex: 0x8A4A12)
+    static var gold: Color { ink(0x8A4A12, 0xFCD34D) }
     /// The lavender card's label.
-    static let lavender = Color(hex: 0x5B3C96)
+    static var lavender: Color { ink(0x5B3C96, 0xC4B5FD) }
     /// Race chip text.
-    static let chip = Color(hex: 0x5A2342)
+    static var chip: Color { ink(0x5A2342, 0xFBCFE8) }
 
     static let pink = Color(hex: 0xEC4899)
     static let amber = Color(hex: 0xF59E0B)
@@ -59,7 +64,7 @@ struct FriendsCardChrome: ViewModifier {
     var followsDark = false
 
     @ViewBuilder func body(content: Content) -> some View {
-        if followsDark && Theme.isDark {
+        if (followsDark && Theme.isDark) || FriendsInk.dark {
             content.tintedCard(accent: accent, bar: bar, radius: radius, barHeight: barHeight, tint: tint, line: line)
         } else {
             let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -90,7 +95,7 @@ extension View {
     /// The soft striped row on a light Friends card (mockup `.frow`): every other
     /// row a faint wash of the card's accent, a hairline between rows.
     func friendsStripe(_ index: Int, accent: Color = FriendsInk.purple, divider: Bool = true) -> some View {
-        background(index % 2 == 1 ? accent.wash(0.10).opacity(0.7) : Color.clear)
+        background(index % 2 == 1 ? accent.vsWash(0.10).opacity(0.7) : Color.clear)
             .overlay(alignment: .top) {
                 if divider && index > 0 {
                     Rectangle().fill(accent.opacity(0.10)).frame(height: 1).allowsHitTesting(false)
@@ -100,8 +105,8 @@ extension View {
 
     /// §A1 small light chip: a 12% wash of the accent with a 30% border.
     func friendsChip(_ accent: Color, strong: Bool = false) -> some View {
-        background(Capsule().fill(accent.wash(strong ? 0.24 : 0.12)))
-            .overlay(Capsule().stroke(strong ? accent : accent.wash(0.32), lineWidth: strong ? 2 : 1.5))
+        background(Capsule().fill(accent.vsWash(strong ? 0.24 : 0.12)))
+            .overlay(Capsule().stroke(strong ? accent : accent.vsWash(0.32), lineWidth: strong ? 2 : 1.5))
     }
 }
 

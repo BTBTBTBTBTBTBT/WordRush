@@ -126,7 +126,7 @@ fun VsBotsPage(
                                 LadderTrophy(26.dp)
                                 com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.LADDERCLEARED, height = 30.dp, maxWidth = 260.dp)   // BJ16
                             }
-                            Text("You beat all ten bots. Webster’s still up for a rematch any time.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinishInk.muted)
+                            Text("You beat all ten bots. Webster’s still up for a rematch any time.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsInk.muted)
                         }
                     }
                 }
@@ -157,7 +157,7 @@ fun VsBotsPage(
                 ) {
                     VsGhostTile(40.dp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Your Ghost · Beat your best", fontSize = 14.sp, fontWeight = FontWeight.Black, color = FinishInk.heading)
+                        Text("Your Ghost · Beat your best", fontSize = 14.sp, fontWeight = FontWeight.Black, color = VsInk.heading)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("Best ${vsModeName(playMode)}:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
                             VsNumber("$g", 13.sp)
@@ -260,7 +260,7 @@ private fun LadderRow(rung: Int, id: String, state: RungState, line: String, loc
         Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 VsNumber("$rung", 12.sp, color = vsInk(accent))
-                Text("$name · $tier", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                Text("$name · $tier", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                 // The boss rung holds the ladder trophy.
                 if (boss) LadderTrophy(18.dp)
             }

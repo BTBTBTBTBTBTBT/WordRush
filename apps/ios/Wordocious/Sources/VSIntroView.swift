@@ -201,8 +201,8 @@ struct VSMatchIntroView: View {
             .font(Brand.font(10, .black)).foregroundStyle(VsLobbyKit.titleInk)
             .lineLimit(1).minimumScaleFactor(0.7)
             .padding(.horizontal, 9).padding(.vertical, 3)
-            .background(Capsule().fill(accent.wash(0.16)))
-            .overlay(Capsule().stroke(accent.wash(0.4), lineWidth: 1))
+            .background(Capsule().fill(accent.vsWash(0.16)))
+            .overlay(Capsule().stroke(accent.vsWash(0.4), lineWidth: 1))
     }
 }
 
@@ -263,10 +263,10 @@ struct VSCalloutPill: View {
         .padding(.leading, 8).padding(.trailing, 14).padding(.vertical, 7)
         // §A1 / §BI9: the calm candy pill — a soft teal wash, its rim and a bottom lip.
         .background(ZStack {
-            Capsule().fill(VsLobbyKit.ink.wash(0.38)).offset(y: 2.5)
-            Capsule().fill(LinearGradient(colors: [VsLobbyKit.ink.wash(0.06), VsLobbyKit.ink.wash(0.16)],
+            Capsule().fill(VsLobbyKit.ink.vsWash(0.38)).offset(y: 2.5)
+            Capsule().fill(LinearGradient(colors: [VsLobbyKit.ink.vsWash(0.06), VsLobbyKit.ink.vsWash(0.16)],
                                           startPoint: .top, endPoint: .bottom))
-            Capsule().strokeBorder(VsLobbyKit.ink.wash(0.45), lineWidth: 1.5)
+            Capsule().strokeBorder(VsLobbyKit.ink.vsWash(0.45), lineWidth: 1.5)
         })
         .padding(.horizontal, 24)
         .transition(.move(edge: .top).combined(with: .opacity))

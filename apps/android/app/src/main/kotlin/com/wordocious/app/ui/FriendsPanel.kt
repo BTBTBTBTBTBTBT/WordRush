@@ -734,7 +734,7 @@ private fun WeeklyRaceSection(version: Int, onOpenProfile: (String) -> Unit) {
 // ── YOUR FRIENDS ───────────────────────────────────────────────────────────
 
 /** C4 the friends list's lavender (stats-friends-polish: #f6f0ff / #e4d6ff). */
-private val LIST_TINT = Color(0xFFF6F0FF)
+private val LIST_TINT: Color get() = if (com.wordocious.app.ui.vs.vsDarkSeason) WTheme.season?.cardFill ?: Color(0xEB1C0F30) else Color(0xFFF6F0FF)
 private val LIST_LINE = Color(0xFFE4D6FF)
 
 @Composable
@@ -776,7 +776,7 @@ private fun YourFriendsSection(
         ) {
             FriendsLabel(
                 if (friends.isEmpty()) "YOUR FRIENDS" else "YOUR FRIENDS · ${friends.size}",
-                Modifier.weight(1f), color = FinishInk.label,
+                Modifier.weight(1f), color = com.wordocious.app.ui.vs.VsInk.label,
             )
             if (slackers.isNotEmpty()) {
                 CastButton(
@@ -851,7 +851,7 @@ private fun YourFriendsSection(
                                 ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today"
                             Text(
                                 line, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                                color = if (on) FriendsPink.green else Color(0xFF7A6A95), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                color = if (on) FriendsPink.green else if (com.wordocious.app.ui.vs.vsDarkSeason) FriendsPink.muted else Color(0xFF7A6A95), maxLines = 1, overflow = TextOverflow.Ellipsis,
                             )
                         }
                         (f.friendStreak ?: 0).takeIf { it > 0 }?.let { Box(Modifier.heightIn(min = 34.dp), contentAlignment = Alignment.Center) { FlameCount("$it") } }
@@ -927,7 +927,7 @@ private fun MiniChip(text: String, ink: Color, tint: Color, icon3d: Icon3DName? 
 @Composable
 private fun CountPill(n: Int) {
     Text(
-        "$n", style = softNumberStyle(12.sp, FinishInk.softNumber), maxLines = 1,
+        "$n", style = softNumberStyle(12.sp, com.wordocious.app.ui.vs.VsInk.softNumber), maxLines = 1,
         modifier = Modifier.lightTintedPill(FRIENDS_CARD_ACCENT, 50.dp).padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 1.dp),
     )
 }
@@ -969,7 +969,7 @@ private fun PocketGameCard(kind: com.wordocious.core.FriendlyKind, modifier: Mod
 }
 
 /** A1 the Friends sheets / dialogs / menus: a soft pink wash instead of white. */
-internal val FRIENDS_SHEET = Color(0xFFFFF3F9)
+internal val FRIENDS_SHEET: Color get() = if (com.wordocious.app.ui.vs.vsDarkSeason) WTheme.season?.card ?: Color(0xFF1C0F30) else Color(0xFFFFF3F9)
 
 // ── Add by username + share link ───────────────────────────────────────────
 

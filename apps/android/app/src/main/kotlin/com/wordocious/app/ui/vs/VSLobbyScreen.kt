@@ -442,7 +442,7 @@ private fun IncomingCard(c: VsChallengeService.ChallengeView, onRace: () -> Unit
     ) {
         Text(
             "CHALLENGE FROM @${c.challenger.username.uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
-            letterSpacing = 0.4.sp, color = FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            letterSpacing = 0.4.sp, color = VsInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(vsModeName(m), fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub, maxLines = 1)
@@ -482,10 +482,10 @@ private fun GoProCard(onGoPro: () -> Unit) {
     VsTintedCard(Modifier.fillMaxWidth(), accent = VS_GOLD_ACCENT, corner = 18.dp, contentPadding = PaddingValues(12.dp)) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("GO PRO FOR ALL OF VS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF78350F))
+                Text("GO PRO FOR ALL OF VS", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = if (vsDarkSeason) Color(0xFFFCD34D) else Color(0xFF78350F))
                 Text(
                     "All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.",
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinishInk.muted,
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsInk.muted,
                 )
             }
             androidx.compose.foundation.Image(

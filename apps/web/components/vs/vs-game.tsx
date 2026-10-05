@@ -1381,7 +1381,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           <VsCard>
             <div className="p-5 text-center space-y-3">
               <div className="text-[16px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>Sign in to play VS</div>
-              <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>
+              <p className="text-[13px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>
                 VS Battle pits you against a live opponent and records your results — it needs an account.
               </p>
               <CastButton screen="blue" color="teal" size="lg" block onClick={exitGuest}>Sign in</CastButton>
@@ -1453,7 +1453,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   // count hits 0 the server ends the match itself (match_ended, forfeit).
   const disconnectBannerEl = disconnectGrace !== null ? (
     <div className="absolute left-0 right-0 text-center z-40 pointer-events-none px-4" style={{ top: 'calc(env(safe-area-inset-top) + 56px)' }}>
-      <span className="inline-block text-xs font-extrabold px-4 py-2 rounded-full animate-fade-in-up" style={{ background: '#fef3c7', color: '#92400e', boxShadow: '0 4px 14px rgba(146,64,14,0.12)' }}>
+      <span className="inline-block text-xs font-extrabold px-4 py-2 rounded-full animate-fade-in-up" style={{ background: '#fef3c7', color: 'var(--vs-amber-ink, #92400e)', boxShadow: '0 4px 14px rgba(146,64,14,0.12)' }}>
         {disconnectGrace > 0
           ? `Opponent lost connection — you win in ${disconnectGrace}s…`
           : 'Opponent lost connection — claiming your win…'}
@@ -1520,7 +1520,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             <BotPoseAvatar id={today.id} pose="waiting" accent={today.color} size={34} />
             <span className="min-w-0">
               <span className="block text-[11.5px] font-black" style={{ color: VS.deep }}>Bot of the Day</span>
-              <span className="block text-[10.5px] font-bold truncate" style={{ color: '#4b5563' }}>{today.name} · same puzzle for all</span>
+              <span className="block text-[10.5px] font-bold truncate" style={{ color: 'var(--vs-sub, #4b5563)' }}>{today.name} · same puzzle for all</span>
             </span>
           </button>
           <button
@@ -1534,7 +1534,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             <GhostAvatar name={me?.username ?? 'You'} emoji={me?.avatar_emoji} accent={me?.accent_color} size={32} />
             <span className="min-w-0">
               <span className="block text-[11.5px] font-black" style={{ color: VS.deep }}>Your Ghost</span>
-              <span className="block text-[10.5px] font-bold truncate" style={{ color: '#4b5563' }}>{ghostRun ? 'Beat your best run' : 'Win this mode once'}</span>
+              <span className="block text-[10.5px] font-bold truncate" style={{ color: 'var(--vs-sub, #4b5563)' }}>{ghostRun ? 'Beat your best run' : 'Win this mode once'}</span>
             </span>
           </button>
         </div>
@@ -1564,7 +1564,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             <span className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.3 }}>
               {opts.title} {opts.locked && <Icon3D name="lock" size={17} />}
             </span>
-            <span className="block text-[12px] font-bold" style={{ color: '#4b5563' }}>{opts.sub}</span>
+            <span className="block text-[12px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>{opts.sub}</span>
           </span>
         </span>
       </button>
@@ -1700,7 +1700,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                   Private match
                 </div>
                 <SoftNum size={30} as="div" style={{ letterSpacing: 6 }}>{inviteCode}</SoftNum>
-                <p className="text-xs font-bold" style={{ color: '#4b5563' }}>
+                <p className="text-xs font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>
                   Share this code — the match starts when your friend joins.
                 </p>
                 <button
@@ -1936,7 +1936,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {matchResult && ladderMoment?.final && (
             <div className="flex flex-col items-center gap-1 animate-fade-in-scale">
               <ArtScene scene="ladder-cleared" height={170} maxWidthPct={70} />
-              <p className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.5 }}>
+              <p className="flex items-center gap-1.5 text-[15px] font-black uppercase" style={{ color: 'var(--vs-purple-ink, #4c1d95)', letterSpacing: 0.5 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={medalSrc('trophy')} alt="" aria-hidden="true" width={28} height={28} style={{ width: 28, height: 28 }} /> Ladder cleared!
               </p>
@@ -1980,7 +1980,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 <InitialAvatar name={oppName} url={opponentInfo?.avatarUrl ?? null} userId={opponentInfo?.userId} config={opponentInfo?.avatarConfig} castId={opponentInfo?.avatarCastId} pro={opponentInfo?.isPro} size={34} />
                 <div className="flex-1 min-w-0">
                   <div className="text-[10px] font-black uppercase truncate" style={{ color: VS.label, letterSpacing: 0.8 }}>You and {oppName}</div>
-                  <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{headToHeadLine(oppName, headToHead)}</div>
+                  <div className="text-[14px] font-black" style={{ color: 'var(--vs-purple-ink, #4c1d95)' }}>{headToHeadLine(oppName, headToHead)}</div>
                 </div>
               </div>
             </VsCard>
@@ -1990,7 +1990,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {rematchState === 'received' && (
             <VsCard accent="#7c3aed" className="animate-fade-in-up">
               <div className="p-4 text-center space-y-3">
-                <p className="text-[14px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>{oppName} wants a rematch!</p>
+                <p className="text-[14px] font-black uppercase" style={{ color: 'var(--vs-purple-ink, #4c1d95)', letterSpacing: 0.4 }}>{oppName} wants a rematch!</p>
                 <div className="flex gap-2.5">
                   <CandyButton color="peach" size="md" className="flex-1" onClick={handleDeclineRematch}>Decline</CandyButton>
                   <CastButton screen="blue" color="teal" size="md" className="flex-1" icon="replay" onClick={handleRematch}>Accept</CastButton>
@@ -2002,7 +2002,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {/* Actions (A8 candy): teal REMATCH / RUN IT BACK, peach HOME + SHARE. */}
           <div className="space-y-2.5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             {rematchState === 'declined' ? (
-              <div className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2" style={{ ...vsCard('#64748b', { radius: 999, shadow: false }), color: '#475569' }}>
+              <div className="w-full py-3 text-[14px] font-black uppercase flex items-center justify-center gap-2" style={{ ...vsCard('#64748b', { radius: 999, shadow: false }), color: 'var(--vs-label, #475569)' }}>
                 <X className="w-4 h-4" aria-hidden="true" /> No rematch
               </div>
             ) : rematchState === 'offered' ? (
@@ -2030,7 +2030,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
           {isCpu && (
             <div className="text-center space-y-1">
               {(cpuSession.wins + cpuSession.losses) > 0 && (
-                <p className="flex items-baseline justify-center gap-1 text-[12px] font-black uppercase" style={{ color: '#4c1d95', letterSpacing: 0.4 }}>
+                <p className="flex items-baseline justify-center gap-1 text-[12px] font-black uppercase" style={{ color: 'var(--vs-purple-ink, #4c1d95)', letterSpacing: 0.4 }}>
                   This session — You <SoftNum size={17}>{cpuSession.wins}</SoftNum> · Bots <SoftNum size={17}>{cpuSession.losses}</SoftNum>
                 </p>
               )}
@@ -2038,7 +2038,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 // STREAK! lettering over the milestone (docs/ART_SPEC.md §6).
                 <div className="flex flex-col items-center gap-0.5">
                   <MomentArt moment="streak" as="div" level={2} maxHeight={56} widthPct={60} />
-                  <p className="flex items-baseline gap-1 text-[13px] font-black" style={{ color: '#b45309' }}><SoftNum size={20}>{cpuMilestone}</SoftNum>-win bot streak</p>
+                  <p className="flex items-baseline gap-1 text-[13px] font-black" style={{ color: 'var(--vs-amber-ink, #b45309)' }}><SoftNum size={20}>{cpuMilestone}</SoftNum>-win bot streak</p>
                 </div>
               ) : cpuStreak > 0 ? (
                 <p className="flex items-center justify-center gap-1 text-[11.5px] font-extrabold" style={{ color: VS.label }}>
@@ -2194,7 +2194,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               )}
               <div className="flex-1 min-w-0">
                 <div className="text-[14px] font-black truncate" style={{ color: VS.deep }}>{oppName}</div>
-                <div className="flex items-baseline gap-1 text-[11.5px] font-bold" style={{ color: '#4b5563' }}>
+                <div className="flex items-baseline gap-1 text-[11.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>
                   <SoftNum size={15}>{opponentProgress.attempts}</SoftNum> {opponentProgress.attempts === 1 ? 'guess' : 'guesses'}
                   <span aria-hidden="true">·</span> <SoftNum size={15}>{clockStr}</SoftNum>
                   {gStage ? <><span aria-hidden="true">·</span> Stage <SoftNum size={15}>{opponentStage + 1}/5</SoftNum></> : liveTotalBoards > 1 ? <><span aria-hidden="true">·</span> <SoftNum size={15}>{opponentProgress.boardsSolved}/{liveTotalBoards}</SoftNum> boards</> : null}
@@ -2487,12 +2487,12 @@ function DailyVsAlreadyPlayed({
           className="inline-flex items-baseline gap-1.5 px-4 py-2 animate-fade-in-up"
           style={{ ...vsCard('#7c3aed', { radius: 999 }), animationDelay: '0.25s' }}
         >
-          <span className="text-xs font-black" style={{ color: '#6d28d9' }}>Next daily VS in</span>
+          <span className="text-xs font-black" style={{ color: 'var(--vs-purple-sub, #6d28d9)' }}>Next daily VS in</span>
           <SoftNum size={16}>{countdown}</SoftNum>
         </div>
 
         {/* Pro: prompt unlimited VS. Freemium: upsell to Pro. */}
-        <p className="text-[12.5px] font-bold px-2 animate-fade-in" style={{ color: '#4b5563', animationDelay: '0.35s' }}>
+        <p className="text-[12.5px] font-bold px-2 animate-fade-in" style={{ color: 'var(--vs-sub, #4b5563)', animationDelay: '0.35s' }}>
           {isPro
             ? 'Want more? Jump into unlimited VS battles with fresh puzzles.'
             : 'Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.'}

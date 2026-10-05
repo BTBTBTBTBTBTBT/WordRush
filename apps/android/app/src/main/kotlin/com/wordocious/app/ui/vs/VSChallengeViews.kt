@@ -308,7 +308,7 @@ fun ChallengeResultView(
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
                             VsNumber("+$xp", 13.sp)
-                            VsCapsLabel("XP", color = Color(0xFF92400E))
+                            VsCapsLabel("XP", color = if (vsDarkSeason) Color(0xFFFCD34D) else Color(0xFF92400E))
                         }
                     }
                 } else null,

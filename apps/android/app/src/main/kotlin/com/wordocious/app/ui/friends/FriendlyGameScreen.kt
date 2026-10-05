@@ -408,7 +408,7 @@ private fun ScoreSide(label: String, name: String, url: String?, emoji: String?,
         FriendFace(name, url, emoji, 44.dp, online = online, accentHex = accentHex)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = DEEP, maxLines = 1, overflow = TextOverflow.Ellipsis)
         // A2: the score as a soft number.
-        if (score != null) com.wordocious.app.ui.SoftNumber("$score", 30.sp, color = com.wordocious.app.ui.FinishInk.softNumber)
+        if (score != null) com.wordocious.app.ui.SoftNumber("$score", 30.sp, color = com.wordocious.app.ui.vs.VsInk.softNumber)
     }
 }
 

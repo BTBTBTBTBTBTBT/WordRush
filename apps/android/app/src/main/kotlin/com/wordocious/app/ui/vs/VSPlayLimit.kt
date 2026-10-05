@@ -104,7 +104,7 @@ fun VsLimitWindow(
                     title, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = Color(0xFF78350F),
                     modifier = Modifier.semantics { heading() },
                 )
-                Text(body, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinishInk.muted, textAlign = TextAlign.Center)
+                Text(body, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsInk.muted, textAlign = TextAlign.Center)
                 var tick by remember { mutableStateOf(0) }
                 LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
                 @Suppress("UNUSED_EXPRESSION") tick

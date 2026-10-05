@@ -105,7 +105,7 @@ fun VsOpponentBar(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(
-                    name, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = FinishInk.heading,
+                    name, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = VsInk.heading,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
                 )
                 if (opponent.solved) com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 13.dp, contentDescription = "Solved")

@@ -212,7 +212,7 @@ struct VSChallengeResultView: View {
                     Text("XP").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x92400E))
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Capsule().fill(VsLobbyKit.gold.wash(0.22)))
+                .background(Capsule().fill(VsLobbyKit.gold.vsWash(0.22)))
                 .accessibilityElement(children: .combine)
             }
         }

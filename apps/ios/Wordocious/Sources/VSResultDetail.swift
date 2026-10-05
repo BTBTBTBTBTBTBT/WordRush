@@ -142,8 +142,8 @@ struct VSShareCardView: View {
                 .font(Brand.fixedFont(28, .black)).foregroundStyle(ShareInk.heading)
         }
         .padding(.horizontal, 20).frame(height: 56)
-        .background(Capsule().fill(tone.wash(0.16)))
-        .overlay(Capsule().strokeBorder(tone.wash(0.45), lineWidth: 3))
+        .background(Capsule().fill(tone.vsWash(0.16)))
+        .overlay(Capsule().strokeBorder(tone.vsWash(0.45), lineWidth: 3))
     }
 
     private func fmt(_ s: Double) -> String { String(format: "%.2f", s) }
@@ -562,7 +562,7 @@ struct VSComparisonBars: View {
         HStack(spacing: 8) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(VsLobbyKit.purple.wash(0.14))
+                    Capsule().fill(VsLobbyKit.purple.vsWash(0.14))
                     Capsule().fill(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
                         .frame(width: geo.size.width * max(0.06, pct))
                         .animation(Theme.animation(.easeInOut(duration: 0.6)), value: pct)

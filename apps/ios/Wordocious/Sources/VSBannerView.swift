@@ -70,7 +70,7 @@ struct VSBannerView: View {
             .padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 0)
             .frame(maxWidth: .infinity)
             .background(
-                RadialGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0)],
+                RadialGradient(colors: VsLobbyKit.darkSeason ? [(SeasonKit.surfaces?.glow ?? .orange).opacity(0.28), .clear] : [Color.white.opacity(0.55), Color.white.opacity(0)],
                                center: .center, startRadius: 10, endRadius: 190)
             )
             .allowsHitTesting(false)
@@ -161,7 +161,7 @@ struct VSBannerView: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         // BI23 / BJ7: a soft fill, no outline.
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(accent.wash(0.16)))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(accent.vsWash(0.16)))
     }
 }
 
@@ -206,7 +206,7 @@ struct VSDayTile: View {
             .frame(maxWidth: .infinity)
             .background {
                 ZStack(alignment: .top) {
-                    shape.fill(tone.wash(result == .open ? 0.16 : 0.22))
+                    shape.fill(tone.vsWash(result == .open ? 0.16 : 0.22))
                     tone.frame(height: 4)
                 }
                 .clipShape(shape)
@@ -230,7 +230,7 @@ struct VSDayTile: View {
             Image("swords").renderingMode(.template).resizable().scaledToFit()
                 .frame(width: 15, height: 15).foregroundStyle(accent)
                 .frame(width: 30, height: 30)
-                .background(RoundedRectangle(cornerRadius: 9).fill(accent.wash(0.2)))
+                .background(RoundedRectangle(cornerRadius: 9).fill(accent.vsWash(0.2)))
         case .bot(let art):
             // The host bot in character (its hero image).
             if ArtAsset.exists(art) {

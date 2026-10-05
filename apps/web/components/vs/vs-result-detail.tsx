@@ -80,7 +80,7 @@ export function logSolved(guessLog: OpponentGuessLogEntry[], solutions: string[]
 /** The result screens' soft white card (VS polish §2: no outline borders). */
 /** FINISH_SPEC A1 / WHITE_AUDIT lever 2: a lavender wash, never plain white. */
 const RESULT_CARD: React.CSSProperties = {
-  background: `linear-gradient(${alphaHex('#7c3aed', 0.09)}, ${alphaHex('#7c3aed', 0.09)}), #ffffff`,
+  background: `linear-gradient(${alphaHex('#7c3aed', 0.09)}, ${alphaHex('#7c3aed', 0.09)}), var(--vs-card-base, #ffffff)`,
   border: `1.5px solid ${alphaHex('#7c3aed', overAlpha(0.28, 0.09))}`,
   borderRadius: 14,
   boxShadow: '0 2px 10px rgba(76,29,149,0.07)',
@@ -157,13 +157,13 @@ export function VsResultWindow({ modeIcon, sub, why, me, opponent, outcome }: {
             // AN5 / AN6: the player's photo (rounded square) or their mascot.
             <PlayerAvatar name={p.name} userId={p.userId} url={p.avatarUrl} accent={p.accent} config={p.avatarConfig} pro={p.pro} size={22} />
           )}
-          <span className="text-[11px] font-black uppercase truncate" style={{ color: '#4c1d95', letterSpacing: 0.6 }}>{p.name}</span>
+          <span className="text-[11px] font-black uppercase truncate" style={{ color: 'var(--vs-purple-ink, #4c1d95)', letterSpacing: 0.6 }}>{p.name}</span>
         </div>
         {/* A2: the score as a soft number (the losing side a touch quieter). */}
         <SoftNum size={34} style={{ lineHeight: 1.05, opacity: winner || outcome === 'draw' ? 1 : 0.6 }}>
           {p.score.toFixed(2)}
         </SoftNum>
-        <span className="text-[10px] font-bold tabular-nums" style={{ color: '#6d28d9' }}>
+        <span className="text-[10px] font-bold tabular-nums" style={{ color: 'var(--vs-purple-sub, #6d28d9)' }}>
           {p.guesses} {p.guesses === 1 ? 'guess' : 'guesses'} + {timePenalty.toFixed(2)} time
         </span>
         <SoftNum size={14}>{clock(p.timeMs)}</SoftNum>
@@ -185,9 +185,9 @@ export function VsResultWindow({ modeIcon, sub, why, me, opponent, outcome }: {
         <MomentArt moment={resultMoment(outcome)} as="div" level={2} />
         <span className="flex items-center justify-center gap-1.5">
           <span className="flex items-center justify-center shrink-0" style={{ width: 16, height: 16 }}>{modeIcon}</span>
-          <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: '#6d28d9' }}>{sub}</span>
+          <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: 'var(--vs-purple-sub, #6d28d9)' }}>{sub}</span>
         </span>
-        {why && <span className="text-[11.5px] font-bold" style={{ color: '#5b21b6' }}>{why}</span>}
+        {why && <span className="text-[11.5px] font-bold" style={{ color: 'var(--vs-purple-ink, #5b21b6)' }}>{why}</span>}
       </div>
       <div className="relative flex">
         {column(me, outcome === 'win')}

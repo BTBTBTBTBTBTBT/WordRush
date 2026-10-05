@@ -201,7 +201,7 @@ struct ActivityFeedView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {
                     if let score {
-                        Text(score).softNumber(14, color: FinishInk.softNumber)
+                        Text(score).softNumber(14, color: VsLobbyKit.numberInk)
                     }
                     Text(Self.dayLabel(e.day, today: today)).font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.rowSub)
                 }
@@ -335,7 +335,7 @@ struct ActivityFeedView: View {
         Button(action: action) {
             HStack(spacing: 3) {
                 ReactionGlyph(key: key, size: 16, framed: false)
-                Text("\(count)").softNumber(11, color: FinishInk.softNumber)
+                Text("\(count)").softNumber(11, color: VsLobbyKit.numberInk)
             }
             .padding(.horizontal, 7).frame(minHeight: 22)
             .friendsChip(FriendsInk.pink, strong: mine)
@@ -368,7 +368,7 @@ struct ActivityFeedView: View {
                         ReactionGlyph(key: o.key, size: 30)
                             .reactionPop(at: poppedAt["\(e.id):\(o.key)"] ?? 0)
                         if count > 0 {
-                            Text("\(count)").softNumber(12, color: FinishInk.softNumber)
+                            Text("\(count)").softNumber(12, color: VsLobbyKit.numberInk)
                         }
                     }
                     .padding(.horizontal, 4)

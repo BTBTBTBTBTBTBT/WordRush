@@ -49,7 +49,7 @@ function TodayTile({ label, icon, result, line, onOpen }: {
   // A1: the open tile takes the VS teal wash (never plain white); won = solid teal, else slate.
   const style: React.CSSProperties = open
     // BJ7: no outline — the wash + top bar carry it.
-    ? { background: `linear-gradient(${alphaHex(VS_ACCENT, 0.16)}, ${alphaHex(VS_ACCENT, 0.16)}), #ffffff`, boxShadow: `inset 0 4px 0 ${VS_ACCENT}` }
+    ? { background: `linear-gradient(${alphaHex(VS_ACCENT, 0.16)}, ${alphaHex(VS_ACCENT, 0.16)}), var(--vs-card-base, #ffffff)`, boxShadow: `inset 0 4px 0 ${VS_ACCENT}` }
     : won
     ? { background: VS.ink, boxShadow: '0 0 10px rgba(15,118,110,0.55)' }
     : { background: '#94a3b8' };

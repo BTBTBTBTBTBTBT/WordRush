@@ -106,7 +106,7 @@ export function VsFriend() {
             <div className="p-4 space-y-3 text-center">
               <Icon3D name="crown" size={28} className="mx-auto" />
               <div className="text-[15px] font-black" style={{ color: VS.deep }}>Challenging friends is Pro</div>
-              <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>Answering a challenge is free. Go Pro to send your own runs and invite friends live.</p>
+              <p className="text-[12.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>Answering a challenge is free. Go Pro to send your own runs and invite friends live.</p>
               <CastButton screen="blue" color="purple" size="lg" block onClick={() => router.push('/pro')}>SEE PRO</CastButton>
             </div>
           </VsCard>
@@ -147,7 +147,7 @@ export function VsFriend() {
                       >
                         <InitialAvatar name={f.username} url={f.avatar_url} userId={f.id} config={f.avatar_config} castId={f.avatar_cast_id} pro={f.is_pro} level={f.level} size={34} />
                         <span className="flex-1 min-w-0">
-                          <span className="block text-[13px] font-black truncate" style={{ color: '#1f2937' }}>@{f.username}</span>
+                          <span className="block text-[13px] font-black truncate" style={{ color: 'var(--vs-title, #1f2937)' }}>@{f.username}</span>
                           <span className="block text-[11px] font-bold truncate" style={{ color: (f.h2hW ?? 0) > (f.h2hL ?? 0) ? VS.ink : VS.label }}>
                             {friendLine(f.h2hW ?? 0, f.h2hL ?? 0)}
                           </span>
@@ -166,7 +166,7 @@ export function VsFriend() {
                     <span className="flex items-center justify-center shrink-0 rounded-full" style={{ width: 34, height: 34, background: VS.soft }}>
                       <LinkIcon className="w-4 h-4" style={{ color: VS.ink }} />
                     </span>
-                    <span className="flex-1 text-[13px] font-black" style={{ color: '#1f2937' }}>Send a link instead</span>
+                    <span className="flex-1 text-[13px] font-black" style={{ color: 'var(--vs-title, #1f2937)' }}>Send a link instead</span>
                     {checkCircle(link)}
                   </button>
                 </div>
@@ -178,7 +178,7 @@ export function VsFriend() {
             ) : (
               <VsCard>
                 <div className="p-4 space-y-3">
-                  <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>
+                  <p className="text-[12.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>
                     Play at the same time: send a private match link or invite by @username. The match starts when your friend joins.
                   </p>
                   <div className="flex gap-2">

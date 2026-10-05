@@ -201,7 +201,7 @@ private fun TodayTile(title: String, tile: VsTodayTile, modifier: Modifier, onCl
             else VsIconSquare(accent) { icon() }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 VsCapsLabel(title, color = vsInk(accent), fontSize = 9.5.sp)
-                Text(tile.line, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(tile.line, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = VsInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         when (tile.result) {

@@ -17,20 +17,20 @@ import { rankToday, type RaceRow } from './todays-race';
 // ── Look (spec §0) ──────────────────────────────────────────────────────────
 
 export const FR = {
-  ink: '#831843',
-  mid: '#9d174d',
+  ink: 'var(--fr-pink-ink, #831843)',
+  mid: 'var(--fr-mid, #9d174d)',
   solid: '#db2777',
   soft: '#fce7f3',
   title: 'linear-gradient(90deg, #db2777, #7c3aed)',
   online: '#10b981',
-  page: '#f8f7ff',
-  label: '#6b7280',
-  text: '#1f2937',
+  page: 'var(--fr-page, #f8f7ff)',
+  label: 'var(--fr-label, #6b7280)',
+  text: 'var(--fr-text, #1f2937)',
   // §11 (docs/ART_SPEC.md): the page's tinted shadow on a PageBackground, else the old one.
   cardShadow: 'var(--page-card-shadow, 0 2px 10px rgba(76,29,149,0.07))',
-  flame: '#c2410c',
+  flame: 'var(--fr-flame, #c2410c)',
   flameFill: '#f59e0b',
-  teal: '#0f766e',
+  teal: 'var(--fr-teal, #0f766e)',
   tealSoft: '#ccfbf1',
 } as const;
 

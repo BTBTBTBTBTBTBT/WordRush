@@ -291,7 +291,7 @@ struct FriendlyGameScreen: View {
                 }
                 if let score {
                     // §A2: the score as a soft number.
-                    Text("\(score)").softNumber(34, color: leading ? FinishInk.softNumber : Color(hex: 0x78350F))
+                    Text("\(score)").softNumber(34, color: leading ? VsLobbyKit.numberInk : (FriendsInk.dark ? Color(hex: 0xFCD34D) : Color(hex: 0x78350F)))
                         .contentTransition(.numericText())
                 }
             }
@@ -884,8 +884,8 @@ struct FriendlyGameScreen: View {
             }
             Spacer(minLength: 6)
             HStack(spacing: 0) {
-                Text("+").font(Brand.font(12, .black)).foregroundStyle(FinishInk.softNumber)
-                Text("\(w.points)").softNumber(14, color: FinishInk.softNumber)
+                Text("+").font(Brand.font(12, .black)).foregroundStyle(VsLobbyKit.numberInk)
+                Text("\(w.points)").softNumber(14, color: VsLobbyKit.numberInk)
             }
             .padding(.horizontal, 9).frame(minHeight: 26)
             .friendsChip(side)

@@ -174,7 +174,7 @@ struct FriendsBannerView: View {
                         HStack(spacing: 3) {
                             FlameMark(size: 11)
                             Text("\(b.username.uppercased()) \(n) DAY\(n == 1 ? "" : "S")")
-                                .font(Brand.font(10, .black)).tracking(0.4).foregroundStyle(Color(hex: 0xC2410C))
+                                .font(Brand.font(10, .black)).tracking(0.4).foregroundStyle(FriendsInk.dark ? Color(hex: 0xFDBA74) : Color(hex: 0xC2410C))
                                 .lineLimit(1).minimumScaleFactor(0.7)
                         }
                         .accessibilityLabel("\(n)-day friend streak with \(b.username)")
@@ -203,12 +203,12 @@ struct FriendsBannerView: View {
                                                          startPoint: .top, endPoint: .bottom)))
             Text(r.me ? "YOU" : r.username.uppercased()).font(Brand.font(12, .black))
                 .foregroundStyle(FriendsInk.chip).lineLimit(1).minimumScaleFactor(0.7)
-            Text(r.points.formatted()).softNumber(12, color: FinishInk.softNumber)
+            Text(r.points.formatted()).softNumber(12, color: VsLobbyKit.numberInk)
                 .lineLimit(1).fixedSize()
         }
         .padding(.leading, 4).padding(.trailing, 10).frame(minHeight: 28)
-        .background(Capsule().fill(Color.white.opacity(0.72)))
-        .overlay(Capsule().stroke(r.me ? FriendsKit.solid : FriendsInk.pink.wash(0.3), lineWidth: r.me ? 2 : 1))
+        .background(Capsule().fill(FriendsInk.dark ? (SeasonKit.surfaces?.raised ?? Color(hex: 0x2C1846)) : Color.white.opacity(0.72)))
+        .overlay(Capsule().stroke(r.me ? FriendsKit.solid : FriendsInk.pink.vsWash(0.3), lineWidth: r.me ? 2 : 1))
         .frame(maxWidth: 130)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(r.me ? "You" : r.username), place \(r.rank), \(r.points) points")

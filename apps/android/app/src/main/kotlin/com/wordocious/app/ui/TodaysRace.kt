@@ -94,9 +94,10 @@ internal fun racePts(n: Int): String = String.format(java.util.Locale.US, "%,d",
 
 private val PURPLE = Color(0xFF7C3AED)
 private val PINK = Color(0xFFEC4899)
-/** Fixed-light inks: the race lives on the Friends tab's pink sheet in every theme. */
-private val INK = Color(0xFF2A1650)
-private val INK_MUTED = Color(0xFF6F5F8F)
+/** Fixed-light inks: the race lives on the Friends tab's pink sheet in every theme (a dark season: light twins). */
+private val INK: Color get() = com.wordocious.app.ui.friends.FriendsPink.heading
+private val INK_MUTED: Color get() = com.wordocious.app.ui.friends.FriendsPink.muted
+private val RACE_NUMBER: Color get() = if (com.wordocious.app.ui.vs.vsDarkSeason) com.wordocious.app.ui.vs.VsInk.softNumber else FinishInk.softNumber
 
 /**
  * The card body. Renders nothing without a signed-in profile or friends.
@@ -158,7 +159,7 @@ fun TodaysRaceCard(
                             contentAlignment = Alignment.Center,
                         ) { Text("${r.rank}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White) }
                     } else {
-                        Text("${r.rank}", style = softNumberStyle(13.sp, FinishInk.softNumber))
+                        Text("${r.rank}", style = softNumberStyle(13.sp, RACE_NUMBER))
                     }
                 }
                 // The row opens the friend's profile; your own row goes nowhere.
@@ -185,7 +186,7 @@ fun TodaysRaceCard(
                         )
                         if (r.points > 0) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(racePts(r.points), style = softNumberStyle(13.sp, FinishInk.softNumber), maxLines = 1)
+                                Text(racePts(r.points), style = softNumberStyle(13.sp, RACE_NUMBER), maxLines = 1)
                                 Text(
                                     "pts · ${r.played}/$sweepSize dailies", fontSize = 10.sp, fontWeight = FontWeight.Bold,
                                     color = INK_MUTED, fontFamily = Nunito, maxLines = 1, overflow = TextOverflow.Ellipsis,

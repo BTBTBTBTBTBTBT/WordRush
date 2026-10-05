@@ -62,27 +62,45 @@ import com.wordocious.core.GameMode
 // screens switch to the home's purple (§5). Shared by the lobby, banner, Friend
 // and Bots pages, the live search and the challenge screens.
 
+/**
+ * Season surfaces (WTheme.season, a dark `tone`): the VS pages are light-only, but under a dark
+ * season their cards wear the season's night glass (TintedCard), so the fixed inks swap to their
+ * light twins (the season's own text tokens). Off season / preview off = the light inks, unchanged.
+ */
+val vsDarkSeason: Boolean get() = com.wordocious.app.ui.theme.WTheme.season?.dark == true
+
+private fun seasonInk(light: Long, season: Color?): Color =
+    if (vsDarkSeason) season ?: Color(0xFFF7EEFF) else Color(light)
+
 /** VS teal (§0) plus the shared page/label tones. */
 object VsTeal {
-    val ink = Color(0xFF0F766E)
-    val soft = Color(0xFFCCFBF1)
-    val deep = Color(0xFF134E4A)
+    val ink: Color get() = if (vsDarkSeason) Color(0xFF2DD4BF) else Color(0xFF0F766E)
+    val soft: Color get() = if (vsDarkSeason) Color(0xFF134E4A) else Color(0xFFCCFBF1)
+    val deep: Color get() = if (vsDarkSeason) Color(0xFF99F6E4) else Color(0xFF134E4A)
     val titleGradient = listOf(Color(0xFF0D9488), Color(0xFF0891B2))
-    val page = Color(0xFFF8F7FF)
-    val label = Color(0xFF6B7280)
-    val sub = Color(0xFF4B5563)
+    val page: Color get() = if (vsDarkSeason) com.wordocious.app.ui.theme.WTheme.season?.card ?: Color(0xFF1C0F30) else Color(0xFFF8F7FF)
+    val label: Color get() = seasonInk(0xFF6B7280, com.wordocious.app.ui.theme.WTheme.season?.textMuted)
+    val sub: Color get() = seasonInk(0xFF4B5563, com.wordocious.app.ui.theme.WTheme.season?.textSecondary)
     val grey = Color(0xFF9CA3AF)
+}
+
+/** The finishing kit's fixed inks as the VS pages use them (FinishInk, light twins under a dark season). */
+object VsInk {
+    val heading: Color get() = seasonInk(0xFF2A1650, com.wordocious.app.ui.theme.WTheme.season?.text)
+    val label: Color get() = if (vsDarkSeason) Color(0xFFC4B5FD) else Color(0xFF5B3C96)
+    val muted: Color get() = seasonInk(0xFF6F5F8F, com.wordocious.app.ui.theme.WTheme.season?.textMuted)
+    val softNumber: Color get() = seasonInk(0xFF3B1A78, com.wordocious.app.ui.theme.WTheme.season?.text)
 }
 
 /** The home palette the result screens use (§5). */
 object VsPurple {
     val ink = Color(0xFF7C3AED)
-    val deep = Color(0xFF4C1D95)
-    val mid = Color(0xFF6D28D9)
-    val won = Color(0xFFEBD6FD)
-    val plain = Color(0xFFE2E6FF)
-    val draw = Color(0xFFECE8FF)
-    val soft = Color(0xFFEDE9FE)
+    val deep: Color get() = seasonInk(0xFF4C1D95, com.wordocious.app.ui.theme.WTheme.season?.text)
+    val mid: Color get() = if (vsDarkSeason) Color(0xFFC4B5FD) else Color(0xFF6D28D9)
+    val won: Color get() = if (vsDarkSeason) vsWash(ink, 0.30f) else Color(0xFFEBD6FD)
+    val plain: Color get() = if (vsDarkSeason) vsWash(Color(0xFF6366F1), 0.12f) else Color(0xFFE2E6FF)
+    val draw: Color get() = if (vsDarkSeason) vsWash(ink, 0.16f) else Color(0xFFECE8FF)
+    val soft: Color get() = if (vsDarkSeason) vsWash(ink, 0.16f) else Color(0xFFEDE9FE)
 }
 
 /** Display name for a VS mode ("Classic", "QuadWord", "Six"…). */
@@ -102,7 +120,7 @@ fun Modifier.vsCard(radius: Dp = 14.dp, accent: Color = VS_ACCENT): Modifier =
     this.pageCardShadow(radius) { shadow(4.dp, RoundedCornerShape(radius), ambientColor = Color(0x124C1D95), spotColor = Color(0x124C1D95)) }
         .clip(RoundedCornerShape(radius))
         .background(vsWash(accent))
-        .border(1.5.dp, vsLine(accent), RoundedCornerShape(radius))
+        .then(if (vsDarkSeason) Modifier else Modifier.border(1.5.dp, vsLine(accent), RoundedCornerShape(radius)))
 
 /** A1 a tinted VS card with the game-card top bar. */
 @Composable

@@ -7,15 +7,16 @@ import WordociousCore
 /// `#f8f7ff` page, caps 900 headlines, 11/900 gray section labels, white cards
 /// (radius 14, soft shadow, no borders), one shimmer.
 enum FriendsKit {
-    static let ink = Color(hex: 0x831843)
-    static let mid = Color(hex: 0x9D174D)
+    static var ink: Color { FriendsInk.dark ? Color(hex: 0xF9A8D4) : Color(hex: 0x831843) }
+    static var mid: Color { FriendsInk.dark ? Color(hex: 0xF472B6) : Color(hex: 0x9D174D) }
     static let solid = Color(hex: 0xDB2777)
     static let soft = Color(hex: 0xFCE7F3)
     static let titleGradient = [Color(hex: 0xDB2777), Color(hex: 0x7C3AED)]
     static let green = Color(hex: 0x10B981)
-    static let page = VsLobbyKit.page
-    static let label = VsLobbyKit.label
-    static let sub = VsLobbyKit.sub
+    // The VS page inks (light twins under a dark season, like the Friends inks).
+    static var page: Color { VsLobbyKit.page }
+    static var label: Color { VsLobbyKit.label }
+    static var sub: Color { VsLobbyKit.sub }
     /// Our tiles: purple = right / you, amber = present / them, slate = absent.
     static let purple = Color(hex: 0x7C3AED)
     static let amber = Color(hex: 0xF59E0B)

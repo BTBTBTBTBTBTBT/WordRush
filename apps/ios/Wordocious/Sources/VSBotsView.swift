@@ -92,7 +92,7 @@ struct VSBotsView: View {
                     Text(streak == 1 ? "day" : "days").font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Capsule().fill(Color(hex: 0xF97316).wash(0.16)))
+                .background(Capsule().fill(Color(hex: 0xF97316).vsWash(0.16)))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(streak) \(streak == 1 ? "day" : "days") in a row")
                 Spacer(minLength: 4)
@@ -108,12 +108,12 @@ struct VSBotsView: View {
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .padding(.horizontal, 12).frame(minHeight: 34)
-                    .background(Capsule().fill((result == .won ? VsLobbyKit.purple : VsLobbyKit.slate).wash(0.18)))
+                    .background(Capsule().fill((result == .won ? VsLobbyKit.purple : VsLobbyKit.slate).vsWash(0.18)))
                 }
             }
             .padding(.horizontal, 12).padding(.top, 4).padding(.bottom, 10)
         }
-        .vsTinted(color, bar: [color.wash(0.7), color], barHeight: 6, tint: 0.10, line: 0.32)
+        .vsTinted(color, bar: [color.vsWash(0.7), color], barHeight: 6, tint: 0.10, line: 0.32)
     }
 
     // MARK: - THE LADDER (ten cast rungs)
@@ -192,7 +192,7 @@ struct VSBotsView: View {
                     Text(p.name).font(Brand.font(15, .black)).foregroundStyle(VsLobbyKit.titleInk)
                     if boss { Text("BOSS").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0x92400E))
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Capsule().fill(VsLobbyKit.gold.wash(0.3))) }
+                        .background(Capsule().fill(VsLobbyKit.gold.vsWash(0.3))) }
                 }
                 // "Easy going · Solves in 6" ("Matches your form" for Umi) · the rung's line.
                 (Text(p.tierLine).font(Brand.font(11, .heavy)).foregroundColor(color == VsLobbyKit.gold ? Color(hex: 0xB45309) : color)
@@ -204,7 +204,7 @@ struct VSBotsView: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         // BJ7: the next rung reads by its deeper wash + thicker bar (no outer ring).
-        .vsTinted(color, bar: r.state == .next || boss ? [color.wash(0.7), color] : [color],
+        .vsTinted(color, bar: r.state == .next || boss ? [color.vsWash(0.7), color] : [color],
                   radius: 18, barHeight: r.state == .next ? 5 : 4,
                   tint: r.state == .next ? 0.20 : 0.09, line: r.state == .next ? 0.5 : 0.28)
         .opacity(locked ? 0.55 : 1)
@@ -261,7 +261,7 @@ struct VSBotsView: View {
                         VSCandyTag(title: "Race it", variant: .teal, showLock: !isPro)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 10)
-                    .vsTinted(VsLobbyKit.purple, bar: [VsLobbyKit.purple.wash(0.5)], radius: 18, barHeight: 4, tint: 0.07)
+                    .vsTinted(VsLobbyKit.purple, bar: [VsLobbyKit.purple.vsWash(0.5)], radius: 18, barHeight: 4, tint: 0.07)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.squish)

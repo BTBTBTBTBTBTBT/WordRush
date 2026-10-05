@@ -147,7 +147,7 @@ struct VSFriendPage: View {
                 check(on)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 12).fill(on ? VsLobbyKit.ink.wash(0.16) : Color.clear))
+            .background(RoundedRectangle(cornerRadius: 12).fill(on ? VsLobbyKit.ink.vsWash(0.16) : Color.clear))
             .background(RoundedRectangle(cornerRadius: 12).strokeBorder(on ? VsLobbyKit.ink : .clear, lineWidth: 2))
             .contentShape(Rectangle())
         }
@@ -160,14 +160,14 @@ struct VSFriendPage: View {
             HStack(spacing: 12) {
                 Image(systemName: "link").font(.system(size: 14, weight: .bold)).foregroundStyle(VsLobbyKit.ink)
                     .frame(width: 36, height: 36)
-                    .background(Circle().fill(VsLobbyKit.ink.wash(0.18)))
-                    .overlay(Circle().stroke(VsLobbyKit.ink.wash(0.4), lineWidth: 1))
+                    .background(Circle().fill(VsLobbyKit.ink.vsWash(0.18)))
+                    .overlay(Circle().stroke(VsLobbyKit.ink.vsWash(0.4), lineWidth: 1))
                 Text("Send a link instead").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk)
                 Spacer(minLength: 4)
                 check(link)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 12).fill(link ? VsLobbyKit.ink.wash(0.16) : Color.clear))
+            .background(RoundedRectangle(cornerRadius: 12).fill(link ? VsLobbyKit.ink.vsWash(0.16) : Color.clear))
             .background(RoundedRectangle(cornerRadius: 12).strokeBorder(link ? VsLobbyKit.ink : .clear, lineWidth: 2))
             .contentShape(Rectangle())
         }
@@ -177,8 +177,8 @@ struct VSFriendPage: View {
 
     private func check(_ on: Bool) -> some View {
         ZStack {
-            Circle().fill(on ? Color.clear : VsLobbyKit.ink.wash(0.08))
-            Circle().strokeBorder(on ? VsLobbyKit.ink : VsLobbyKit.ink.wash(0.4), lineWidth: 2)
+            Circle().fill(on ? Color.clear : VsLobbyKit.ink.vsWash(0.08))
+            Circle().strokeBorder(on ? VsLobbyKit.ink : VsLobbyKit.ink.vsWash(0.4), lineWidth: 2)
             if on {
                 Circle().fill(VsLobbyKit.ink)
                 Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(.white)
@@ -198,7 +198,7 @@ struct VSFriendPage: View {
             playing = VSIntent.SendTarget(friendIds: ids, link: link)
         }
         .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 16)
-        .background(PageTint.vs.stops(dark: false)[2].opacity(0.96).ignoresSafeArea(edges: .bottom))
+        .background((VsLobbyKit.darkSeason ? VsLobbyKit.page : PageTint.vs.stops(dark: false)[2]).opacity(0.96).ignoresSafeArea(edges: .bottom))
     }
 
     // MARK: LIVE NOW

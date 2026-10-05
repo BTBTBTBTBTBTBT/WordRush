@@ -441,7 +441,7 @@ struct FriendsPanelView: View {
                                     .font(Brand.font(12, .black)).lineLimit(1)
                                     .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsInk.heading)
                                 Spacer(minLength: 4)
-                                Text(e.pts.formatted()).softNumber(13, color: FinishInk.softNumber)
+                                Text(e.pts.formatted()).softNumber(13, color: VsLobbyKit.numberInk)
                                     .fixedSize()
                                 Text("pts").font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
                             }

@@ -32,7 +32,7 @@ export function MiniBoard({ mode, side, solutions }: { mode: string; side: SideR
   const sq = { width: 16, height: 16, borderRadius: 4 } as const;
   if (SINGLE_BOARD.has(mode) && solutions[0]) {
     const rows = side.guessLog.slice(0, 8);
-    if (rows.length === 0) return <div className="text-[10px] font-black" style={{ color: '#9ca3af' }}>NO GUESSES</div>;
+    if (rows.length === 0) return <div className="text-[10px] font-black" style={{ color: 'var(--vs-label, #9ca3af)' }}>NO GUESSES</div>;
     return (
       <div className="flex flex-col" style={{ gap: 3 }}>
         {rows.map((g, r) => (
@@ -93,13 +93,13 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
   const margin = vsMargin(me.run, them.run);
   const column = (label: string, side: SideRun, winner: boolean) => (
     <div className="flex-1 flex flex-col items-center gap-2" style={{ padding: '12px 8px 14px' }}>
-      <span className="flex items-center gap-1 text-[10px] font-black uppercase truncate max-w-full" style={{ color: '#4c1d95', letterSpacing: 0.8 }}>
+      <span className="flex items-center gap-1 text-[10px] font-black uppercase truncate max-w-full" style={{ color: 'var(--vs-purple-ink, #4c1d95)', letterSpacing: 0.8 }}>
         {winner && <Icon3D name="trophy" size={14} className="shrink-0" />}
         {label}
       </span>
       <MiniBoard mode={mode} side={side} solutions={solutions} />
       <SoftNum size={24} style={{ lineHeight: 1.1 }}>{vsClock(side.run.timeMs)}</SoftNum>
-      <span className="text-[10px] font-black" style={{ color: '#6d28d9', letterSpacing: 0.6 }}>{solvedLine(side.run)}</span>
+      <span className="text-[10px] font-black" style={{ color: 'var(--vs-purple-sub, #6d28d9)', letterSpacing: 0.6 }}>{solvedLine(side.run)}</span>
     </div>
   );
   const h2hText = h2h ? h2hLine(h2h.myWins, h2h.theirWins).text : null;
@@ -127,10 +127,10 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
               <MomentArt moment={resultMoment(outcome)} as="div" level={3} widthPct={85} className="flex-1 min-w-0" />
               <span className="absolute right-0 top-1/2 -translate-y-1/2"><HeaderGlyph icon="share" label="Share the result" onClick={onShare} /></span>
             </div>
-            <span className="text-center font-black" style={{ fontSize: 12.5, letterSpacing: 0.4, lineHeight: 1.2, color: '#4c1d95' }}>{challengeHeadline(outcome, them.name)}</span>
+            <span className="text-center font-black" style={{ fontSize: 12.5, letterSpacing: 0.4, lineHeight: 1.2, color: 'var(--vs-purple-ink, #4c1d95)' }}>{challengeHeadline(outcome, them.name)}</span>
             <div className="flex items-center gap-1.5">
               <ModeGlyph mode={mode} />
-              <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: '#6d28d9' }}>
+              <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: 'var(--vs-purple-sub, #6d28d9)' }}>
                 {modeTitle(mode).toUpperCase()} · SAME PUZZLE · {margin}
               </span>
             </div>
@@ -142,7 +142,7 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
         </div>
 
         {note && (
-          <p className="text-center text-[12px] font-bold" style={{ color: '#6d28d9' }}>{note}</p>
+          <p className="text-center text-[12px] font-bold" style={{ color: 'var(--vs-purple-sub, #6d28d9)' }}>{note}</p>
         )}
 
         {(h2hText || xp) && (
@@ -150,11 +150,11 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
             <div className="flex items-center gap-3 p-3">
               <InitialAvatar name={them.name} url={them.avatarUrl} userId={them.userId} config={them.avatarConfig} castId={them.castId} pro={them.pro} size={36} />
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] font-black uppercase truncate" style={{ color: '#6b7280', letterSpacing: 0.8 }}>YOU AND @{them.name}</div>
-                {h2hText && <div className="text-[14px] font-black" style={{ color: '#4c1d95' }}>{h2hText}</div>}
+                <div className="text-[10px] font-black uppercase truncate" style={{ color: 'var(--vs-label, #6b7280)', letterSpacing: 0.8 }}>YOU AND @{them.name}</div>
+                {h2hText && <div className="text-[14px] font-black" style={{ color: 'var(--vs-purple-ink, #4c1d95)' }}>{h2hText}</div>}
               </div>
               {xp ? (
-                <span className="shrink-0 flex items-baseline gap-0.5 px-2.5 py-1 text-[11px] font-black rounded-full" style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', color: '#92400e' }}>+<SoftNum size={14}>{xp}</SoftNum> XP</span>
+                <span className="shrink-0 flex items-baseline gap-0.5 px-2.5 py-1 text-[11px] font-black rounded-full" style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', color: 'var(--vs-amber-ink, #92400e)' }}>+<SoftNum size={14}>{xp}</SoftNum> XP</span>
               ) : null}
             </div>
           </VsCard>
@@ -162,7 +162,7 @@ export function ChallengeResult({ mode, outcome, me, them, solutions, h2h, xp, n
 
         <div className="space-y-1">
           <CastButton screen="blue" color="purple" size="lg" block icon="replay" onClick={onChallengeBack}>CHALLENGE BACK</CastButton>
-          <p className="text-center text-[11px] font-bold" style={{ color: '#6d28d9' }}>New puzzle, {them.name} races you</p>
+          <p className="text-center text-[11px] font-bold" style={{ color: 'var(--vs-purple-sub, #6d28d9)' }}>New puzzle, {them.name} races you</p>
         </div>
         <CandyButton color="peach" size="md" block onClick={onHome}>VS HOME</CandyButton>
       </div>
@@ -195,16 +195,16 @@ export function ChallengeSent({ mode, run, guessLog, solutions, code, link, erro
           <div className="relative flex flex-col gap-1" style={{ padding: '12px 12px 10px', background: 'rgba(255,255,255,0.5)' }}>
             <div className="flex items-center gap-1.5">
               <Swords className="w-[18px] h-[18px] shrink-0" style={{ color: '#7c3aed' }} />
-              <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, color: '#4c1d95' }}>{error ? 'CHALLENGE NOT SENT' : 'CHALLENGE SENT!'}</span>
+              <span className="font-black" style={{ fontSize: 16, letterSpacing: 0.4, color: 'var(--vs-purple-ink, #4c1d95)' }}>{error ? 'CHALLENGE NOT SENT' : 'CHALLENGE SENT!'}</span>
             </div>
-            <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: '#6d28d9' }}>
+            <span className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: 'var(--vs-purple-sub, #6d28d9)' }}>
               {error ?? challengeSentSub(mode, run)}
             </span>
           </div>
           <div className="relative flex flex-col items-center gap-2" style={{ padding: '16px 12px' }}>
             <MiniBoard mode={mode} side={{ run, guessLog }} solutions={solutions} />
             <SoftNum size={26}>{vsClock(run.timeMs)}</SoftNum>
-            {code && <span className="flex items-baseline gap-1.5 text-[11px] font-black" style={{ color: '#6d28d9', letterSpacing: 2 }}>CODE <SoftNum size={15} style={{ letterSpacing: 2 }}>{code}</SoftNum></span>}
+            {code && <span className="flex items-baseline gap-1.5 text-[11px] font-black" style={{ color: 'var(--vs-purple-sub, #6d28d9)', letterSpacing: 2 }}>CODE <SoftNum size={15} style={{ letterSpacing: 2 }}>{code}</SoftNum></span>}
           </div>
         </div>
         {link && code && !error && (

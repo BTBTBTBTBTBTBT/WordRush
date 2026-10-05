@@ -84,6 +84,27 @@ class MainActivity : ComponentActivity() {
             } })
             return
         }
+        // DEBUG only: `--es dressDemo vs|vsfriend|vsbots|friends` shows the VS lobby (its Friend / Bots page) or the
+        // Friends tab for the signed-in Pro demo player (season surface checks, 10-05; pair with `--es dressSeason halloween`).
+        val friendsDemo = com.wordocious.app.ui.DressDemo.isFriends(intent?.getStringExtra("dressDemo"))
+        (com.wordocious.app.ui.DressDemo.vsPage(intent?.getStringExtra("dressDemo")) ?: if (friendsDemo) com.wordocious.app.ui.vs.VsLobbyPage.Main else null)?.let { page ->
+            com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage)
+            com.wordocious.app.data.ThemePref.load()
+            setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
+                WordociousTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                        Box(Modifier.fillMaxSize().navigationBarsPadding()) {
+                            if (friendsDemo) com.wordocious.app.ui.FriendsScreen()
+                            else com.wordocious.app.ui.vs.VSLobbyScreen(
+                                initialPage = page, onPlay = {}, onEnterInvite = { _, _ -> }, onOpenChallenge = {},
+                                onSeeRivals = {}, onGoPro = {}, onClose = { finish() },
+                            )
+                        }
+                    }
+                }
+            } })
+            return
+        }
         // DEBUG only: `--es dressDemo settings` shows Settings for the demo player as an admin (Season preview picker).
         if (com.wordocious.app.ui.DressDemo.isSettings(intent?.getStringExtra("dressDemo"))) {
             com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage, admin = true)

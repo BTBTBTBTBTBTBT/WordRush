@@ -185,7 +185,7 @@ private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Lon
             }
         }
         Text(
-            player.username.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = FinishInk.heading,
+            player.username.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = VsInk.heading,
             maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
         )
         if (botId != null && botId != com.wordocious.core.BotCast.GHOST_ID) {
@@ -252,7 +252,7 @@ private fun H2HLine(text: String) {
         if (!WTheme.reducedMotion) { delay(850); progress.animateTo(1f, tween(450)) }
     }
     Text(
-        text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = FinishInk.heading, textAlign = TextAlign.Center,
+        text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = VsInk.heading, textAlign = TextAlign.Center,
         modifier = Modifier.vsPill(VS_ACCENT, 12.dp).padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 5.dp).graphicsLayer {
             translationY = (1f - progress.value) * 10.dp.toPx()
             alpha = progress.value

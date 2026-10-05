@@ -156,7 +156,7 @@ fun VsFriendPage(
                         PickRow(on, index = i, label = "@${f.username}, $h2h", onClick = { picked = if (on) picked - id else picked + id }) {
                             VsAvatar(f.username, f.avatarUrl, size = 38.dp, borderColor = Color.Transparent, userId = f.id)
                             Column(Modifier.weight(1f)) {
-                                Text("@${f.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, maxLines = 1)
+                                Text("@${f.username}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsInk.heading, maxLines = 1)
                                 Text(h2h, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, maxLines = 1)
                             }
                         }
@@ -166,7 +166,7 @@ fun VsFriendPage(
                     Box(Modifier.size(38.dp).miniGameCard(VS_ACCENT, 10.dp), Alignment.Center) {
                         Icon(Icons.Filled.Link, null, tint = VsTeal.ink, modifier = Modifier.size(18.dp).padding(top = 2.dp))
                     }
-                    Text("Send a link instead", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinishInk.heading, modifier = Modifier.weight(1f))
+                    Text("Send a link instead", fontSize = 13.sp, fontWeight = FontWeight.Black, color = VsInk.heading, modifier = Modifier.weight(1f))
                 }
                 val n = picked.size
                 val cta = when {

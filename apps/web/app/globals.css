@@ -841,6 +841,59 @@ html[data-season-tone="dark"] .tab-dock {
   --tab-ink-off: #c8b6e2;
   --tab-pill: #f97316;
 }
+/* Season surfaces, dark tone, on the light-only VS pages: the page root pins the light theme
+   tokens inline (VS_LIGHT_VARS); under a dark season they inherit the season's night glass + inks
+   from the document instead, and the VS fixed inks (--vs-*, light fallbacks in the components)
+   swap to their light twins. Preview off / out of season: nothing here applies. */
+html[data-season-tone="dark"] [data-page-tint="vs"] {
+  --color-bg: inherit !important;
+  --color-surface: inherit !important;
+  --color-card-base: inherit !important;
+  --color-border: inherit !important;
+  --color-border-light: inherit !important;
+  --color-text: inherit !important;
+  --color-text-muted: inherit !important;
+  --color-text-secondary: inherit !important;
+  --color-surface-hover: inherit !important;
+  --color-surface-alt: inherit !important;
+  --color-border-alt: inherit !important;
+  --color-divider: inherit !important;
+  --vs-card-base: var(--color-card-base);
+  --vs-title: var(--color-text);
+  --vs-sub: var(--color-text-secondary);
+  --vs-label: var(--color-text-muted);
+  --vs-purple-ink: var(--color-text);
+  --vs-purple-sub: #c4b5fd;
+  --vs-amber-ink: #fcd34d;
+  --vs-ink: #2dd4bf;
+  --vs-deep: #99f6e4;
+  --vs-soft: #134e4a;
+  --vs-page: var(--color-surface);
+}
+/* The same on the light-only Friends pages (LIGHT_CARD_BASE pins the white card base): the night
+   glass + the Friends inks' light twins (--fr-*, light fallbacks in lib/friends-look + friends-play). */
+html[data-season-tone="dark"] [data-page-tint="friends"] {
+  --color-card-base: inherit !important;
+  --fr-season-card: var(--color-card-base);
+  --fr-season-line: transparent;
+  --fr-stripe: rgba(255, 255, 255, 0.05);
+  --fr-ink: var(--color-text);
+  --fr-sub: var(--color-text-muted);
+  --fr-row-sub: var(--color-text-muted);
+  --fr-banner-ink: #fbcfe8;
+  --fr-banner-clock: #f9a8d4;
+  --fr-banner-sub: #f5d0fe;
+  --fr-chip-ink: #fbcfe8;
+  --fr-gold-ink: #fcd34d;
+  --fr-play-label: #f9a8d4;
+  --fr-pink-ink: #f9a8d4;
+  --fr-mid: #f472b6;
+  --fr-label: var(--color-text-muted);
+  --fr-text: var(--color-text);
+  --fr-page: var(--color-surface);
+  --fr-flame: #fdba74;
+  --fr-teal: #5eead4;
+}
 /* Content ends above the docked bar (A4): never less than the page's own
    bottom padding, and at least the bar's room (--bottom-nav-h, published by
    BottomNav) plus 16 px while a tab bar is on screen. */

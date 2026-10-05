@@ -48,6 +48,20 @@ object DressDemo {
         earned.mapIndexed { i, k -> k to now.minusSeconds((i + 1) * 3L * 86_400).toString() }.toMap()
     }
 
+    /** `--es dressDemo vs|vsfriend|vsbots`: the VS lobby page for the demo player (null = not a VS demo). */
+    fun vsPage(extra: String?): com.wordocious.app.ui.vs.VsLobbyPage? {
+        if (!BuildConfig.DEBUG) return null
+        return when (extra) {
+            "vs" -> com.wordocious.app.ui.vs.VsLobbyPage.Main
+            "vsfriend" -> com.wordocious.app.ui.vs.VsLobbyPage.Friend()
+            "vsbots" -> com.wordocious.app.ui.vs.VsLobbyPage.Bots
+            else -> null
+        }
+    }
+
+    /** `--es dressDemo friends`: the Friends tab for the demo player. */
+    fun isFriends(extra: String?): Boolean = BuildConfig.DEBUG && extra == "friends"
+
     /** `--es dressDemo settings`: Settings for the same demo player as an admin (the DEVELOPER Season preview picker). */
     fun isSettings(extra: String?): Boolean = BuildConfig.DEBUG && extra == "settings"
 

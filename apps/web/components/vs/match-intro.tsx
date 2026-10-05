@@ -103,10 +103,10 @@ function PlayerCard({ player, side }: { player: IntroPlayer; side: 'left' | 'rig
         {player.username}
       </div>
       {player.tag && (
-        <div className="text-[10.5px] font-extrabold text-center" style={{ color: '#4b5563' }}>{player.tag}</div>
+        <div className="text-[10.5px] font-extrabold text-center" style={{ color: 'var(--vs-sub, #4b5563)' }}>{player.tag}</div>
       )}
       {player.level != null && (
-        <div className="inline-flex items-baseline gap-1 px-2 py-0.5 text-[10px] font-black" style={{ ...vsCard('#7c3aed', { radius: 999, shadow: false }), color: '#6d28d9' }}>
+        <div className="inline-flex items-baseline gap-1 px-2 py-0.5 text-[10px] font-black" style={{ ...vsCard('#7c3aed', { radius: 999, shadow: false }), color: 'var(--vs-purple-sub, #6d28d9)' }}>
           LV <SoftNum size={13}>{player.level}</SoftNum>
         </div>
       )}
@@ -174,7 +174,7 @@ export function MatchIntro({ me, opponent, headToHead, mode, onDone }: MatchIntr
           className="relative overflow-hidden"
           style={{
             ...vsCard(VS_ACCENT, { radius: 20 }),
-            background: `linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 55%), linear-gradient(90deg, ${alphaHex(VS_ACCENT, 0.16)} 0%, ${alphaHex(VS_ACCENT, 0.16)} 50%, ${alphaHex(theirs, 0.16)} 50%, ${alphaHex(theirs, 0.16)} 100%), #ffffff`,
+            background: `linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0) 55%), linear-gradient(90deg, ${alphaHex(VS_ACCENT, 0.16)} 0%, ${alphaHex(VS_ACCENT, 0.16)} 50%, ${alphaHex(theirs, 0.16)} 50%, ${alphaHex(theirs, 0.16)} 100%), var(--vs-card-base, #ffffff)`,
           }}
         >
           {/* The top bar: your color, then theirs. */}
@@ -194,7 +194,7 @@ export function MatchIntro({ me, opponent, headToHead, mode, onDone }: MatchIntr
           {opponent && headToHead && (
             <div
               className="text-[14px] font-black pb-4"
-              style={{ color: '#4c1d95', animation: 'vs-h2h-in 0.45s ease-out 0.85s both' }}
+              style={{ color: 'var(--vs-purple-ink, #4c1d95)', animation: 'vs-h2h-in 0.45s ease-out 0.85s both' }}
             >
               {headToHeadLine(opp.username, headToHead)}
             </div>

@@ -7,18 +7,18 @@ import { POSE_ART_NAMES } from './art';
 import { SOFT, softMix } from './soft-surface';
 
 describe('frSurface (A1 on the light-only Friends page)', () => {
-  it('mixes the accent over white, never the theme card base', () => {
+  it('mixes the accent over white (never the theme card base); a dark season swaps the night glass in', () => {
     const s = frSurface(FR_LOOK.pink);
-    expect(s.background).toBe(softMix(FR_LOOK.pink, SOFT.tint));
-    expect(String(s.background)).not.toContain('var(');
-    expect(s.border).toBe(`1.5px solid ${softMix(FR_LOOK.pink, SOFT.line)}`);
+    expect(s.background).toBe(`var(--fr-season-card, ${softMix(FR_LOOK.pink, SOFT.tint)})`);
+    expect(String(s.background)).not.toContain('--color-card-base');
+    expect(s.border).toBe(`1.5px solid var(--fr-season-line, ${softMix(FR_LOOK.pink, SOFT.line)})`);
     expect(s.borderRadius).toBe(20);
     expect(s.boxShadow).toBe(FR_LOOK.shadow);
   });
 
   it('takes a share, radius, and drops the shadow / border on request', () => {
     const s = frSurface('#7c3aed', { share: 0.24, radius: 12, shadow: false, border: false });
-    expect(s.background).toBe(softMix('#7c3aed', 0.24));
+    expect(s.background).toBe(`var(--fr-season-card, ${softMix('#7c3aed', 0.24)})`);
     expect(s.borderRadius).toBe(12);
     expect(s.boxShadow).toBeUndefined();
     expect(s.border).toBeUndefined();
@@ -33,9 +33,9 @@ describe('frSurface (A1 on the light-only Friends page)', () => {
 describe('rowStripe', () => {
   it('stripes every other row', () => {
     expect(rowStripe(0)).toBeUndefined();
-    expect(rowStripe(1)).toBe('#ffffff73');
+    expect(rowStripe(1)).toBe('var(--fr-stripe, #ffffff73)');
     expect(rowStripe(2)).toBeUndefined();
-    expect(rowStripe(3)).toBe('#ffffff73');
+    expect(rowStripe(3)).toBe('var(--fr-stripe, #ffffff73)');
   });
 });
 

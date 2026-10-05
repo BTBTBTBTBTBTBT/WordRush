@@ -6,7 +6,9 @@ import type { PoseArtName } from './art';
 // docs/design/brand/mockups/stats-friends-polish.html, the Friends phone).
 // The page pins the light look (PageBackground scheme="light"), so its washes
 // are opaque mixes over WHITE — never the dark card base — and its inks stay
-// the mockup's dark purples in every theme. Pure, no hooks.
+// the mockup's dark purples in every theme. Under a dark season the page's CSS
+// variables (--fr-*, globals.css) swap in the night glass and light inks; the
+// values here are the light fallbacks. Pure, no hooks.
 
 /** The Friends page palette (mockup values). */
 export const FR_LOOK = {
@@ -20,15 +22,15 @@ export const FR_LOOK = {
   goldBar: 'linear-gradient(90deg, #f5a524, #ffd166)',
   /** The friends list: a purple → pink bar. */
   lavenderBar: 'linear-gradient(90deg, #a855f7, #ec4899)',
-  bannerInk: '#7a1f55',
-  bannerClock: '#b0306f',
-  bannerSub: '#8a4a6e',
-  chipInk: '#5a2342',
-  goldInk: '#8a4a12',
-  playLabel: '#8a2d63',
-  ink: '#2a1650',
-  sub: '#6f5f8f',
-  rowSub: '#7a6a95',
+  bannerInk: 'var(--fr-banner-ink, #7a1f55)',
+  bannerClock: 'var(--fr-banner-clock, #b0306f)',
+  bannerSub: 'var(--fr-banner-sub, #8a4a6e)',
+  chipInk: 'var(--fr-chip-ink, #5a2342)',
+  goldInk: 'var(--fr-gold-ink, #8a4a12)',
+  playLabel: 'var(--fr-play-label, #8a2d63)',
+  ink: 'var(--fr-ink, #2a1650)',
+  sub: 'var(--fr-sub, #6f5f8f)',
+  rowSub: 'var(--fr-row-sub, #7a6a95)',
   /** The mockup's card shadow. */
   shadow: '0 8px 20px rgba(60, 30, 110, 0.10)',
 } as const;
@@ -42,8 +44,9 @@ export function frSurface(accent: string, { share = SOFT.tint, radius = 20, shad
   share?: number; radius?: number; shadow?: boolean; border?: boolean;
 } = {}): CSSProperties {
   return {
-    background: softMix(accent, share),
-    border: border ? `1.5px solid ${softMix(accent, SOFT.line)}` : undefined,
+    // A dark season (globals.css, html[data-season-tone="dark"]) swaps in the night glass, no line.
+    background: `var(--fr-season-card, ${softMix(accent, share)})`,
+    border: border ? `1.5px solid var(--fr-season-line, ${softMix(accent, SOFT.line)})` : undefined,
     borderRadius: radius,
     boxShadow: shadow ? FR_LOOK.shadow : undefined,
   };
@@ -56,7 +59,7 @@ export function frBar(background: string, height: number = SOFT.bar): CSSPropert
 
 /** The soft white stripe on every other row of a tinted list (mockup `.frow:nth-child(even)`). */
 export function rowStripe(index: number): string | undefined {
-  return index % 2 === 1 ? alphaHex('#ffffff', 0.45) : undefined;
+  return index % 2 === 1 ? `var(--fr-stripe, ${alphaHex('#ffffff', 0.45)})` : undefined;
 }
 
 /** Medal colors (the Leaderboard podium's gold / silver / bronze). */

@@ -168,7 +168,7 @@ struct VSLobbyView: View {
                         .font(Brand.font(11, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Capsule().fill(VsLobbyKit.ink.wash(0.16)))
+                .background(Capsule().fill(VsLobbyKit.ink.vsWash(0.16)))
                 .accessibilityElement(children: .combine)
                 .padding(.trailing, 8)
             }
@@ -285,7 +285,7 @@ struct VSLobbyView: View {
                 } else {
                     icon
                         .frame(width: 30, height: 30)
-                        .background(RoundedRectangle(cornerRadius: 9).fill(accent.wash(0.24)))
+                        .background(RoundedRectangle(cornerRadius: 9).fill(accent.vsWash(0.24)))
                 }
                 Spacer(minLength: 0)
                 if locked { VSLockBadge() }
@@ -297,7 +297,7 @@ struct VSLobbyView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .vsTinted(accent, bar: [accent.wash(0.7), accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.32)
+        .vsTinted(accent, bar: [accent.vsWash(0.7), accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.32)
     }
 
     private var liveTile: some View {
@@ -488,7 +488,7 @@ struct VSLobbyView: View {
                     .foregroundStyle(VsLobbyKit.numberInk)
                     .padding(.horizontal, 12).frame(height: 42)
                     // BI23 / BJ7: a soft filled field, no outline.
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(VsLobbyKit.ink.wash(0.16)))
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(VsLobbyKit.ink.vsWash(0.16)))
                 Button { joinWithCode() } label: {
                     CandyLabel(title: "Join") {
                         if joining { ProgressView().controlSize(.small).tint(.white) }
@@ -570,7 +570,7 @@ struct VSLobbyView: View {
                         Text(countdown).vsNumber(16)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 7)
-                    .background(Capsule().fill(VsLobbyKit.purple.wash(0.12)))
+                    .background(Capsule().fill(VsLobbyKit.purple.vsWash(0.12)))
                     .accessibilityElement(children: .combine)
                     NavigationLink { ProView() } label: {
                         CandyLabel(title: "Go Pro")   // the GO PRO lettering says it: no small crown

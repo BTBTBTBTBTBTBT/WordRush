@@ -398,7 +398,7 @@ struct VSGameView: View {
             }
         }
         .padding(16).frame(maxWidth: 380)
-        .vsTinted(accent, bar: [accent.wash(0.7), accent], tint: 0.10, line: 0.32)
+        .vsTinted(accent, bar: [accent.vsWash(0.7), accent], tint: 0.10, line: 0.32)
     }
 
     /// Private-match invite panel shown on the queue screen — the code + a
@@ -449,7 +449,7 @@ struct VSGameView: View {
                     VSTagPill(size: 12)
                 }
                 ZStack {
-                    Circle().fill(accent.wash(0.14)).frame(width: 150, height: 150)
+                    Circle().fill(accent.vsWash(0.14)).frame(width: 150, height: 150)
                     // A ring that pops on each tick, so the number pulses out of
                     // a burst instead of just swapping.
                     Circle().stroke(accent, lineWidth: 4)
@@ -704,7 +704,7 @@ struct VSGameView: View {
             }
             .padding(12)
         }
-        .vsTinted(oppAccent, bar: [oppAccent.wash(0.7), oppAccent], tint: 0.10, line: 0.3)
+        .vsTinted(oppAccent, bar: [oppAccent.vsWash(0.7), oppAccent], tint: 0.10, line: 0.3)
     }
 
     /// YOUR RESULT in the soft card style: guesses, time, solved / boards.
@@ -1098,7 +1098,7 @@ struct VSGameView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 14).padding(.vertical, 12).frame(maxWidth: .infinity)
-        .vsTinted(oppAccent, bar: [oppAccent.wash(0.6), oppAccent], radius: 18, barHeight: 6, tint: 0.08)
+        .vsTinted(oppAccent, bar: [oppAccent.vsWash(0.6), oppAccent], radius: 18, barHeight: 6, tint: 0.08)
     }
 
     @ViewBuilder private var rematchSection: some View {
@@ -1126,8 +1126,8 @@ struct VSGameView: View {
             case .declined:
                 Text("NO REMATCH").font(Brand.font(14, .black)).tracking(0.6).foregroundStyle(VsLobbyKit.mutedInk)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(Capsule().fill(VsLobbyKit.slate.wash(0.14)))
-                    .overlay(Capsule().stroke(VsLobbyKit.slate.wash(0.34), lineWidth: 1.5))
+                    .background(Capsule().fill(VsLobbyKit.slate.vsWash(0.14)))
+                    .overlay(Capsule().stroke(VsLobbyKit.slate.vsWash(0.34), lineWidth: 1.5))
             case .offered:
                 // The candy REMATCH, pressed and waiting (not tappable).
                 Button(action: {}) {
@@ -1251,8 +1251,8 @@ struct VSGameView: View {
         Text(text).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xB91C1C))
             .multilineTextAlignment(.center)
             .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(Capsule().fill(Color(hex: 0xF0435F).wash(0.12)))
-            .overlay(Capsule().stroke(Color(hex: 0xF0435F).wash(0.34), lineWidth: 1.5))
+            .background(Capsule().fill(Color(hex: 0xF0435F).vsWash(0.12)))
+            .overlay(Capsule().stroke(Color(hex: 0xF0435F).vsWash(0.34), lineWidth: 1.5))
     }
 }
 
@@ -1413,8 +1413,8 @@ struct VSOpponentStrip: View {
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(accent.wash(0.2))
-                        Capsule().fill(LinearGradient(colors: [accent.wash(0.7), accent], startPoint: .leading, endPoint: .trailing))
+                        Capsule().fill(accent.vsWash(0.2))
+                        Capsule().fill(LinearGradient(colors: [accent.vsWash(0.7), accent], startPoint: .leading, endPoint: .trailing))
                             .frame(width: geo.size.width * progress)
                     }
                 }
@@ -1624,8 +1624,8 @@ private struct GauntletSpectatorView: View {
                 TypingDots(dotSize: 4)
             }
             .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(VsLobbyKit.ink.wash(0.14)))
-            .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.34), lineWidth: 1))
+            .background(Capsule().fill(VsLobbyKit.ink.vsWash(0.14)))
+            .overlay(Capsule().stroke(VsLobbyKit.ink.vsWash(0.34), lineWidth: 1))
         case .locked:
             Icon3D(.lock, size: 14) // ART_SPEC §5
         }
@@ -1689,7 +1689,7 @@ private struct OpponentTile: View {
         switch state {
         case .correct, .present, .absent: return Theme.tileColor(for: state ?? .empty)
         // §A1: an empty cell is a soft lilac wash, never flat gray / white.
-        default: return Color(hex: 0x7C3AED).wash(0.12)
+        default: return Color(hex: 0x7C3AED).vsWash(0.12)
         }
     }
 }
@@ -1833,8 +1833,8 @@ private struct DailyVsAlreadyPlayed: View {
                         Text(cd(s)).vsNumber(15)
                     }
                     .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(Capsule().fill(VsLobbyKit.ink.wash(0.12)))
-                    .overlay(Capsule().stroke(VsLobbyKit.ink.wash(0.32), lineWidth: 1.5))
+                    .background(Capsule().fill(VsLobbyKit.ink.vsWash(0.12)))
+                    .overlay(Capsule().stroke(VsLobbyKit.ink.vsWash(0.32), lineWidth: 1.5))
                     .accessibilityElement(children: .combine)
                 }
             }

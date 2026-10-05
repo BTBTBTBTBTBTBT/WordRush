@@ -253,11 +253,11 @@ fun VSGameScreen(
                         com.wordocious.app.ui.game.ToneCoin(com.wordocious.app.ui.game.FeedbackToast.Tone.ERROR, 20.dp, glyph = Icons.Filled.WifiOff)
                         Text(
                             "${vm.opponentName} disconnected — you win by forfeit in",
-                            fontSize = 12.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.FinishInk.heading,
+                            fontSize = 12.sp, fontWeight = FontWeight.Black, color = VsInk.heading,
                             modifier = Modifier.weight(1f, fill = false),
                         )
                         VsNumber("${secs}s", 15.sp)
-                        Text("unless they return", fontSize = 12.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.FinishInk.heading)
+                        Text("unless they return", fontSize = 12.sp, fontWeight = FontWeight.Black, color = VsInk.heading)
                     }
                 }
             }
@@ -958,7 +958,7 @@ private fun WaitingScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                         }
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(oppName, fontSize = 14.sp, fontWeight = FontWeight.Black, color = com.wordocious.app.ui.FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(oppName, fontSize = 14.sp, fontWeight = FontWeight.Black, color = VsInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         val attempts = vm.opponent.attempts
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                             VsNumber("$attempts", 14.sp)
@@ -1158,7 +1158,7 @@ private fun GauntletSpectatorStage(idx: Int, opponent: OpponentProgressState, wo
                     VsNumber("${idx + 1}", 13.sp)
                 }
             }
-            Text(stage.name.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = if (locked) VsTeal.label else com.wordocious.app.ui.FinishInk.heading)
+            Text(stage.name.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = if (locked) VsTeal.label else VsInk.heading)
             Spacer(Modifier.weight(1f))
             when {
                 cleared -> VsCapsLabel("CLEARED", color = vsInk(accent))

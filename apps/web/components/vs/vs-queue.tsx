@@ -118,7 +118,7 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
         <div className="text-[11px] font-black" style={{ color: VS.ink, letterSpacing: 1.2 }}>SEARCHING</div>
         {/* BJ16: the FINDING A RIVAL lettering, not plain text. */}
         <HeadingArt slug="findingrival" as="h1" label="Looking for a rival" height={40} maxWidth={320} />
-        <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>{waitingLine}</p>
+        <p className="text-[13px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>{waitingLine}</p>
       </div>
 
       {children}
@@ -133,7 +133,7 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
                 <div className="text-[14px] font-black" style={{ color: VS.deep }}>
                   {keepWaiting ? 'We’ll keep looking' : `${stepIn.name} steps in at 0:${String(STEP_IN_SECONDS).padStart(2, '0')}`}
                 </div>
-                <div className="text-[11.5px] font-bold" style={{ color: '#4b5563' }}>If a person joins first, you get them.</div>
+                <div className="text-[11.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>If a person joins first, you get them.</div>
               </div>
             </div>
             {!keepWaiting && (
@@ -209,7 +209,7 @@ export function VsStartingScreen({ title, sub, mode, figure }: {
       {mode && <VsModeTile mode={mode} size={48} icon={24} />}
       {figure ?? <CastLoader />}
       <h1 className="text-[20px] font-black uppercase" style={{ color: VS.deep, letterSpacing: 0.4 }}>{title}</h1>
-      {sub && <p className="text-[13px] font-bold" style={{ color: '#4b5563' }}>{sub}</p>}
+      {sub && <p className="text-[13px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>{sub}</p>}
     </div>
   );
 }

@@ -132,7 +132,7 @@ struct FriendsQuickPlaySheet: View {
     private static var pickerSource: [FriendsService.FriendProfile] { FriendsService.friends }
 
     /// The calm lavender picker sheet (mockup option 1).
-    private static let pickerSheet = Color(hex: 0xF4F0FF)
+    private static var pickerSheet: Color { FriendsInk.dark ? (SeasonKit.surfaces?.card ?? Color(hex: 0x1C0F30)) : Color(hex: 0xF4F0FF) }
 
     /// Opens tall enough for the header + two full rows of tiles.
     private static var pickerDetent: PresentationDetent {

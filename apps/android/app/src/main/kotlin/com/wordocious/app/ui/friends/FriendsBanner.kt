@@ -141,7 +141,7 @@ fun FriendsBannerView(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             FriendsLabel("ON NOW", color = BANNER_INK)
                             Spacer(Modifier.weight(1f))
-                            if (online.isNotEmpty()) Text("${online.size}", style = softNumberStyle(13.sp, FinishInk.softNumber))
+                            if (online.isNotEmpty()) Text("${online.size}", style = softNumberStyle(13.sp, com.wordocious.app.ui.vs.VsInk.softNumber))
                         }
                         if (online.isEmpty()) {
                             Text(
@@ -197,11 +197,13 @@ fun FriendsBannerView(
 }
 
 /** The banner's card inks (stats-friends-polish `.banner`). */
-private val BANNER_TINT = Color(0xFFFFF0F7)
-private val BANNER_LINE = Color(0xFFFFD3E7)
-private val BANNER_HEAD = Color(0xFF7A1F55)
-private val BANNER_INK = Color(0xFFB0306F)
-private val BANNER_FACES = Color(0xFF8A4A6E)
+// A dark season (iOS FriendsInk parity): the night glass and the light twins of the banner inks.
+private val night: Boolean get() = com.wordocious.app.ui.vs.vsDarkSeason
+private val BANNER_TINT: Color get() = if (night) com.wordocious.app.ui.theme.WTheme.season?.cardFill ?: Color(0xEB1C0F30) else Color(0xFFFFF0F7)
+private val BANNER_LINE: Color get() = if (night) Color.Transparent else Color(0xFFFFD3E7)
+private val BANNER_HEAD: Color get() = if (night) Color(0xFFFBCFE8) else Color(0xFF7A1F55)
+private val BANNER_INK: Color get() = if (night) Color(0xFFF9A8D4) else Color(0xFFB0306F)
+private val BANNER_FACES: Color get() = if (night) Color(0xFFF5D0FE) else Color(0xFF8A4A6E)
 
 /** "Doug is in Gauntlet" / "Doug is on now" (+ "+2 more") beside the ON NOW faces. */
 internal fun onNowLine(online: List<FriendsService.FriendProfile>): String {
@@ -229,9 +231,9 @@ private fun RaceChip(r: RaceRow, modifier: Modifier) {
         Column(Modifier.weight(1f)) {
             Text(
                 if (r.me) "YOU" else r.username.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black,
-                color = Color(0xFF5A2342), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                color = if (night) Color(0xFFFBCFE8) else Color(0xFF5A2342), maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
-            Text(racePts(r.points), style = softNumberStyle(13.sp, FinishInk.softNumber), maxLines = 1)
+            Text(racePts(r.points), style = softNumberStyle(13.sp, com.wordocious.app.ui.vs.VsInk.softNumber), maxLines = 1)
         }
     }
 }

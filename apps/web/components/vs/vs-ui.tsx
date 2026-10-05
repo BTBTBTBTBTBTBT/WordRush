@@ -121,7 +121,7 @@ export function vsCard(accent: string = VS_ACCENT, { selected = false, radius = 
   const share = selected ? SOFT.strong : SOFT.tint;
   const wash = alphaHex(accent, share);
   return {
-    background: `linear-gradient(${wash}, ${wash}), #ffffff`,
+    background: `linear-gradient(${wash}, ${wash}), var(--vs-card-base, #ffffff)`,
     border: selected ? `2px solid ${accent}` : `1.5px solid ${alphaHex(accent, overAlpha(SOFT.line, share))}`,
     borderRadius: radius,
     boxShadow: shadow ? softShadow(accent, selected ? 0.2 : 0.12) : undefined,
@@ -132,7 +132,7 @@ export function vsCard(accent: string = VS_ACCENT, { selected = false, radius = 
 export function vsIconTile(accent: string, radius = 10): React.CSSProperties {
   const wash = alphaHex(accent, SOFT.tint);
   return {
-    background: `linear-gradient(${wash}, ${wash}), #ffffff`,
+    background: `linear-gradient(${wash}, ${wash}), var(--vs-card-base, #ffffff)`,
     border: `1.5px solid ${alphaHex(accent, overAlpha(SOFT.line, SOFT.tint))}`,
     borderRadius: radius,
     boxShadow: `inset 0 ${SOFT.iconBar}px 0 ${accent}, 0 3px 8px ${alphaHex(accent, 0.2)}`,
@@ -229,7 +229,7 @@ export function BotSpeech({ text, accent = VS_ACCENT, side = 'left' }: { text: s
   return (
     <span
       className="relative inline-block text-[12.5px] font-extrabold px-3 py-2 text-left"
-      style={{ background: `linear-gradient(${wash}, ${wash}), #ffffff`, border: `1.5px solid ${alphaHex(accent, 0.4)}`, borderRadius: 14, color: VS.deep, boxShadow: softShadow(accent, 0.14, 10, 3) }}
+      style={{ background: `linear-gradient(${wash}, ${wash}), var(--vs-card-base, #ffffff)`, border: `1.5px solid ${alphaHex(accent, 0.4)}`, borderRadius: 14, color: VS.deep, boxShadow: softShadow(accent, 0.14, 10, 3) }}
     >
       {text}
       <span

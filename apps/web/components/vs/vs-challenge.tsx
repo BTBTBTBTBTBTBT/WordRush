@@ -64,7 +64,7 @@ export function VsChallenge({ code }: { code: string }) {
     return centered(
       <>
         <div className="text-[16px] font-black" style={{ color: VS.deep }}>Sign in to race</div>
-        <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>A friend challenged you to race their Wordocious run. Sign in (or create a free account) to play.</p>
+        <p className="text-[12.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>A friend challenged you to race their Wordocious run. Sign in (or create a free account) to play.</p>
         <CastLink screen="blue" href={`/?returnTo=${encodeURIComponent(`/vs/challenge/${code}`)}`} color="teal" size="lg" block>Sign in</CastLink>
       </>,
     );
@@ -123,10 +123,10 @@ export function VsChallenge({ code }: { code: string }) {
       <>
         <div className="text-[16px] font-black" style={{ color: VS.deep }}>Your challenge</div>
         <ModeChip mode={challenge.gameMode} />
-        <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>{raceTarget(challenge.run)} · code {challenge.code}</p>
+        <p className="text-[12.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>{raceTarget(challenge.run)} · code {challenge.code}</p>
         <div className="text-left space-y-1.5">
           {mineSent && mineSent.results.length > 0 ? mineSent.results.map((r, i) => (
-            <div key={i} className="flex items-center justify-between text-[12.5px] font-extrabold" style={{ color: '#1f2937' }}>
+            <div key={i} className="flex items-center justify-between text-[12.5px] font-extrabold" style={{ color: 'var(--vs-title, #1f2937)' }}>
               <span>@{r.username}</span>
               <span style={{ color: VS.ink }}>{sentStatus({ results: [r] }).replace(`@${r.username} `, '')}</span>
             </div>
@@ -180,7 +180,7 @@ export function VsChallenge({ code }: { code: string }) {
           ) : (
             <div className="text-[20px] font-black" style={{ color: VS.deep }}>{raceTarget(challenge.run)}</div>
           )}
-          <p className="text-[12.5px] font-bold" style={{ color: '#4b5563' }}>Same puzzle. {name}’s pace plays out beside you.</p>
+          <p className="text-[12.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>Same puzzle. {name}’s pace plays out beside you.</p>
           <TealButton size="lg" block icon="play" onClick={() => setStarted(true)}>Start</TealButton>
           <div className="flex justify-center">
             <CandyButton color="peach" size="sm" onClick={() => router.push('/vs')}>Not now</CandyButton>

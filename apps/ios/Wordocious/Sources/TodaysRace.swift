@@ -134,7 +134,7 @@ struct TodaysRaceCard: View {
                     .foregroundStyle(r.me ? Self.purple : FriendsInk.heading).lineLimit(1)
                 if r.points > 0 {
                     HStack(spacing: 3) {
-                        Text(r.points.formatted()).softNumber(12, color: FinishInk.softNumber)
+                        Text(r.points.formatted()).softNumber(12, color: VsLobbyKit.numberInk)
                         Text("pts · \(r.played)/\(DailyCompletionsStore.totalDailyModes) dailies")
                             .font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.rowSub)
                     }
