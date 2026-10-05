@@ -9,7 +9,14 @@ import org.junit.Test
 
 class PrefillFixtureTest {
 
-    @Before fun setup() = DictionaryLoader.ensureLoaded()
+    // The fixture is generated with "today" pinned to 2026-09-01 (gen-parity-fixtures.ts),
+    // and the pool below is UNDATED, so it gates on wall-clock UTC: without the pin, every
+    // run on/after a swap cutover (2026-10-05: JAPAN→ALOOF) dealt the swapped pool and the
+    // test failed by date, not by a code change. Pin it like SeedFixtureTest and iOS do.
+    @Before fun setup() {
+        DictionaryLoader.ensureLoaded()
+        GameDictionary.todayOverrideForTests = "2026-09-01"
+    }
 
     private fun loadFixture(name: String): String =
         javaClass.classLoader!!.getResource("fixtures/$name")!!.readText()
