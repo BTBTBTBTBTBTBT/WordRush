@@ -558,6 +558,8 @@ private struct BottomNav: View {
 
     /// The bar's tint for the page on screen (game-kit.html `.tabbar`).
     private var tint: [Color] {
+        // Season surfaces: the season's night plum (raised -> card), so the bar belongs to the wall.
+        if let look = SeasonKit.surfaces, let card = look.card { return [look.raised ?? card, card] }
         if Theme.isDark { return [Color(hex: 0x221A38), Color(hex: 0x181028)] }
         switch selection {
         case .home: return [Color(hex: 0xF7F1FF), Color(hex: 0xECE0FF)]
@@ -571,7 +573,7 @@ private struct BottomNav: View {
     private var bar: some View {
         LinearGradient(colors: tint, startPoint: .top, endPoint: .bottom)
             .overlay(alignment: .top) {
-                Rectangle().fill(Color(hex: 0x7C3AED).opacity(0.14)).frame(height: 1)
+                Rectangle().fill(SeasonKit.surfaces?.card != nil ? Color(hex: 0xF97316).opacity(0.22) : Color(hex: 0x7C3AED).opacity(0.14)).frame(height: 1)
             }
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.08), radius: 8, x: 0, y: -6)
             .animation(Theme.animation(.easeInOut(duration: 0.2)), value: selection)
@@ -602,11 +604,12 @@ private struct BottomNav: View {
                     }
                 Text(label)
                     .font(Brand.font(11, active ? .black : .heavy))
-                    .foregroundStyle(active ? Color(hex: 0x6D28D9) : (Theme.isDark ? Theme.textMuted : Color(hex: 0x8A78AD)))
+                    .foregroundStyle(active ? (SeasonKit.surfaces?.card != nil ? Color(hex: 0xFDBA74) : Color(hex: 0x6D28D9))
+                                     : (Theme.isDark ? Theme.textMuted : Color(hex: 0x8A78AD)))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 // The selected tab's underline pill (a clear slot otherwise, so no tab shifts).
-                Capsule().fill(active ? Color(hex: 0x7C3AED) : .clear)
+                Capsule().fill(active ? (SeasonKit.surfaces?.card != nil ? Color(hex: 0xF97316) : Color(hex: 0x7C3AED)) : .clear)
                     .frame(width: 22, height: 3)
                     .padding(.top, 1)
             }

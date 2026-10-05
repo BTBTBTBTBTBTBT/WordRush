@@ -114,65 +114,35 @@
     "seasons/halloween/titles/game-starsweep": {
       "where": "Starsweep game header title, its Leaderboard / Stats / guide cards"
     },
-    "seasons/halloween/walls/wall-home": {
-      "where": "Home wallpaper (Settings, Pro and help pages too), dark mode"
+    "seasons/halloween/walls/midnight/wall-home": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), light and dark mode (the same night sky in both)"
     },
-    "seasons/halloween/walls/wall-home-wide": {
-      "where": "Home wallpaper (Settings, Pro and help pages too), dark mode, desktop web"
+    "seasons/halloween/walls/midnight/wall-home-wide": {
+      "where": "Home wallpaper (Settings, Pro and help pages too), light and dark mode, desktop web"
     },
-    "seasons/halloween/walls/wall-home-light": {
-      "where": "Home wallpaper (Settings, Pro and help pages too), light mode"
+    "seasons/halloween/walls/midnight/wall-leaderboard": {
+      "where": "Leaderboard and Records wallpaper, light and dark mode (the same night sky in both)"
     },
-    "seasons/halloween/walls/wall-home-light-wide": {
-      "where": "Home wallpaper (Settings, Pro and help pages too), light mode, desktop web"
+    "seasons/halloween/walls/midnight/wall-leaderboard-wide": {
+      "where": "Leaderboard and Records wallpaper, light and dark mode, desktop web"
     },
-    "seasons/halloween/walls/wall-leaderboard": {
-      "where": "Leaderboard and Records wallpaper, dark mode"
+    "seasons/halloween/walls/midnight/wall-stats": {
+      "where": "Stats wallpaper, light and dark mode (the same night sky in both)"
     },
-    "seasons/halloween/walls/wall-leaderboard-wide": {
-      "where": "Leaderboard and Records wallpaper, dark mode, desktop web"
+    "seasons/halloween/walls/midnight/wall-stats-wide": {
+      "where": "Stats wallpaper, light and dark mode, desktop web"
     },
-    "seasons/halloween/walls/wall-leaderboard-light": {
-      "where": "Leaderboard and Records wallpaper, light mode"
+    "seasons/halloween/walls/midnight/wall-friends": {
+      "where": "Friends wallpaper, light and dark mode (the same night sky in both)"
     },
-    "seasons/halloween/walls/wall-leaderboard-light-wide": {
-      "where": "Leaderboard and Records wallpaper, light mode, desktop web"
+    "seasons/halloween/walls/midnight/wall-friends-wide": {
+      "where": "Friends wallpaper, light and dark mode, desktop web"
     },
-    "seasons/halloween/walls/wall-stats": {
-      "where": "Stats wallpaper, dark mode"
+    "seasons/halloween/walls/midnight/wall-games": {
+      "where": "every solo game screen and VS wallpaper, light and dark mode (the same night sky in both)"
     },
-    "seasons/halloween/walls/wall-stats-wide": {
-      "where": "Stats wallpaper, dark mode, desktop web"
-    },
-    "seasons/halloween/walls/wall-stats-light": {
-      "where": "Stats wallpaper, light mode"
-    },
-    "seasons/halloween/walls/wall-stats-light-wide": {
-      "where": "Stats wallpaper, light mode, desktop web"
-    },
-    "seasons/halloween/walls/wall-friends": {
-      "where": "Friends wallpaper, dark mode"
-    },
-    "seasons/halloween/walls/wall-friends-wide": {
-      "where": "Friends wallpaper, dark mode, desktop web"
-    },
-    "seasons/halloween/walls/wall-friends-light": {
-      "where": "Friends wallpaper, light mode"
-    },
-    "seasons/halloween/walls/wall-friends-light-wide": {
-      "where": "Friends wallpaper, light mode, desktop web"
-    },
-    "seasons/halloween/walls/wall-games": {
-      "where": "every solo game screen and VS wallpaper, dark mode"
-    },
-    "seasons/halloween/walls/wall-games-wide": {
-      "where": "every solo game screen and VS wallpaper, dark mode, desktop web"
-    },
-    "seasons/halloween/walls/wall-games-light": {
-      "where": "every solo game screen and VS wallpaper, light mode"
-    },
-    "seasons/halloween/walls/wall-games-light-wide": {
-      "where": "every solo game screen and VS wallpaper, light mode, desktop web"
+    "seasons/halloween/walls/midnight/wall-games-wide": {
+      "where": "every solo game screen and VS wallpaper, light and dark mode, desktop web"
     },
     "scenes/banner-halloween": {
       "where": "Home banner art under the greeting (when today has no Sweep / Flawless celebration)"

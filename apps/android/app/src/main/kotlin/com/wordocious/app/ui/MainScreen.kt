@@ -205,12 +205,13 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                 Text(
                     tab.label, fontSize = 11.sp, maxLines = 1, modifier = Modifier.clearAndSetSemantics { },
                     fontWeight = if (active) FontWeight.Black else FontWeight.ExtraBold,
-                    color = if (active) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.textMuted else Color(0xFF8A78AD),
+                    color = if (active) (if (WTheme.season?.card != null) Color(0xFFFDBA74) else Color(0xFF6D28D9))
+                        else if (WTheme.isDark) WTheme.textMuted else Color(0xFF8A78AD),
                 )
                 // The selected tab's 3 dp purple underline pill under its label.
                 Box(
                     Modifier.size(width = 22.dp, height = 3.dp).clip(CircleShape)
-                        .background(if (active) HeaderInk.tabSelected else Color.Transparent),
+                        .background(if (!active) Color.Transparent else if (WTheme.season?.card != null) Color(0xFFF97316) else HeaderInk.tabSelected),
                 )
             }
         }
@@ -222,6 +223,8 @@ internal data class TabBarLook(val top: Color, val bottom: Color, val line: Colo
 
 /** A4 the docked bar's look for the selected [tab] (dark mode: the dark surface). */
 internal fun tabBarLook(tab: Int): TabBarLook {
+    // Season surfaces: the season's night plum (raised -> card) with a faint orange line (iOS / web parity).
+    WTheme.season?.card?.let { card -> return TabBarLook(WTheme.season?.raised ?: card, card, Color(0x38F97316)) }
     if (WTheme.isDark) return TabBarLook(WTheme.surface, WTheme.bg, WTheme.border)
     return when (tab) {
         1 -> TabBarLook(Color(0xFFFFF8EA), Color(0xFFFFEBC9), Color(0x33F59E0B))   // Leaderboard: warm

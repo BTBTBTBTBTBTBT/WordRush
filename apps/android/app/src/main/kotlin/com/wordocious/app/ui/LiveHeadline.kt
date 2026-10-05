@@ -90,22 +90,29 @@ object HeadlineTokens {
  * AR the palettes: the main fill (top → bottom), the extrusion shade, the name accent and the
  * outline (gold; cream on the gold palettes so the outline still reads — iOS parity).
  */
-enum class HeadlinePalette(
+data class HeadlinePalette(
     val top: Color, val bottom: Color, val deep: Color, val nameTop: Color, val nameBottom: Color,
     val outline: Color = Color(0xFFF5C542),
 ) {
-    /** Home banner: purple → magenta. */
-    HOME(Color(0xFF8B5CF6), Color(0xFFD946EF), Color(0xFF4C1D95), Color(0xFFF472B6), Color(0xFFF97316)),
-    /** Friends race: pink → orange. */
-    FRIENDS(Color(0xFFF472B6), Color(0xFFF97316), Color(0xFF9D174D), Color(0xFFA855F7), Color(0xFF7C3AED)),
-    /** Leaderboard / Records: gold → amber. */
-    LEADERBOARD(Color(0xFFFCD34D), Color(0xFFF59E0B), Color(0xFF92400E), Color(0xFFA855F7), Color(0xFF7C3AED), OUTLINE_CREAM),
-    /** VS: teal → blue. */
-    VS(Color(0xFF2DD4BF), Color(0xFF3B82F6), Color(0xFF1E3A8A), Color(0xFFF472B6), Color(0xFFEC4899)),
-    /** Stats: blue → violet. */
-    STATS(Color(0xFF60A5FA), Color(0xFF8B5CF6), Color(0xFF312E81), Color(0xFFF472B6), Color(0xFFEC4899)),
-    /** Celebrations (DOUBLE SWEEP!, FLAWLESS, finish strips): gold. */
-    CELEBRATION(Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFB45309), Color(0xFFA855F7), Color(0xFF7C3AED), OUTLINE_CREAM),
+    companion object {
+        /** Home banner: purple → magenta. */
+        val HOME = HeadlinePalette(Color(0xFF8B5CF6), Color(0xFFD946EF), Color(0xFF4C1D95), Color(0xFFF472B6), Color(0xFFF97316))
+        /** Friends race: pink → orange. */
+        val FRIENDS = HeadlinePalette(Color(0xFFF472B6), Color(0xFFF97316), Color(0xFF9D174D), Color(0xFFA855F7), Color(0xFF7C3AED))
+        /** Leaderboard / Records: gold → amber. */
+        val LEADERBOARD = HeadlinePalette(Color(0xFFFCD34D), Color(0xFFF59E0B), Color(0xFF92400E), Color(0xFFA855F7), Color(0xFF7C3AED), OUTLINE_CREAM)
+        /** VS: teal → blue. */
+        val VS = HeadlinePalette(Color(0xFF2DD4BF), Color(0xFF3B82F6), Color(0xFF1E3A8A), Color(0xFFF472B6), Color(0xFFEC4899))
+        /** Stats: blue → violet. */
+        val STATS = HeadlinePalette(Color(0xFF60A5FA), Color(0xFF8B5CF6), Color(0xFF312E81), Color(0xFFF472B6), Color(0xFFEC4899))
+        /** Celebrations (DOUBLE SWEEP!, FLAWLESS, finish strips): gold. */
+        val CELEBRATION = HeadlinePalette(Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFB45309), Color(0xFFA855F7), Color(0xFF7C3AED), OUTLINE_CREAM)
+
+        /** A season's hero greeting lettering (registry surfaces `headline`: top, bottom, deep,
+         *  nameTop, nameBottom; gold outline). iOS SeasonKit.Look.headlinePalette. */
+        fun season(h: List<Color>?): HeadlinePalette? =
+            h?.takeIf { it.size == 5 }?.let { HeadlinePalette(it[0], it[1], it[2], it[3], it[4]) }
+    }
 }
 
 private val OUTLINE_CREAM = Color(0xFFFFF7D6)

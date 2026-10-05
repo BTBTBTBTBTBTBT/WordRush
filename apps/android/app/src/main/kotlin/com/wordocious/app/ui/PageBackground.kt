@@ -221,6 +221,9 @@ private fun Modifier.wallpaperBackground(
     val shown = seasonal ?: res
     val wall: ImageBitmap? = remember(shown) { shown?.let { Wallpapers.get(context, it) } }
     val tiles = if (seasonal != null) null else tiles
+    // Season surfaces: the season wall is the finished backdrop (a dark-tone wall is already night
+    // art) — no dark dim, no top wash (iOS ArtKit parity). The contrast veil still applies.
+    val finished = seasonal != null && WTheme.season != null
     val highContrast = rememberHighContrast()
     var origin by remember { mutableStateOf(Offset.Zero) }
     var rootSize by remember { mutableStateOf(Size.Zero) }
@@ -254,7 +257,7 @@ private fun Modifier.wallpaperBackground(
             }
             if (tiles != null) with(BackdropTiles) { drawBackdropTiles(tiles, accent, root, origin, measurer) }
             // N2: a very soft fade under the header so the cast sits on calm color.
-            if (topFade) {
+            if (topFade && !finished) {
                 val top = -origin.y
                 val depth = HEADER_FADE_DEPTH.toPx()
                 if (top + depth > 0f) {
@@ -265,7 +268,7 @@ private fun Modifier.wallpaperBackground(
                     )
                 }
             }
-            if (isDark) drawRect(NIGHT, alpha = darkDim)
+            if (isDark && !finished) drawRect(NIGHT, alpha = darkDim)
             if (highContrast) {
                 if (isDark) drawRect(NIGHT, alpha = CONTRAST_VEIL_DARK) else drawRect(Color.White, alpha = CONTRAST_VEIL_LIGHT)
             }

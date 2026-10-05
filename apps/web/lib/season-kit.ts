@@ -62,7 +62,6 @@ export interface SeasonEntry {
   palette: SeasonPalette;
   slots: SeasonSlots;
   surfaces?: SeasonSurfaces;
-  surfaceVariants?: Record<string, SeasonSurfaces>;
 }
 
 export const SEASON_REGISTRY: readonly SeasonEntry[] = (registryJson as unknown as { seasons: SeasonEntry[] }).seasons;
@@ -132,14 +131,21 @@ export function seasonLabel(id: string): string {
 // ── Season surfaces ─────────────────────────────────────────────────────────
 
 /**
- * The season's surfaces for a preview choice: '' / null = the registry's `surfaces`, a
- * `surfaceVariants` id (e.g. 'parchment'), or 'off'. Null = the normal look.
+ * The season's surfaces: the registry's `surfaces`, unless the DEBUG choice is 'off'. Null = the
+ * normal look.
  */
 export function seasonSurfaces(season: string | null | undefined, choice?: string | null): SeasonSurfaces | null {
   const s = seasonEntry(season);
   if (!s || choice === 'off') return null;
-  if (choice && s.surfaceVariants?.[choice]) return s.surfaceVariants[choice];
   return s.surfaces ?? null;
+}
+
+/** The hero greeting's lettering in the season's colors (registry `headline`: top, bottom, deep,
+ *  nameTop, nameBottom); null = the normal palette. iOS SeasonKit.Look.headlinePalette. */
+export function seasonHeadlineSpec(s: SeasonSurfaces | null | undefined): { top: string; bottom: string; deep: string; nameTop: string; nameBottom: string } | null {
+  const h = s?.headline;
+  if (!h || h.length !== 5) return null;
+  return { top: h[0], bottom: h[1], deep: h[2], nameTop: h[3], nameBottom: h[4] };
 }
 
 function rgba(hex: string, a: number): string {

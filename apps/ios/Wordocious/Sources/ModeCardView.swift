@@ -117,6 +117,7 @@ struct GameCardChrome: ViewModifier {
     var done: Bool = false
     var locked: Bool = false
 
+    @ViewBuilder
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: Self.radius)
         // FINISH_SPEC §A1: no plain white — the card takes a soft wash of its own
@@ -125,7 +126,7 @@ struct GameCardChrome: ViewModifier {
         // Season surfaces: the season's translucent card (the wall glows through), its glow for
         // the lift, drawn ONCE (under the clip) so the opacity doesn't stack.
         if let look = SeasonKit.surfaces, let seasonFill = look.cardFill {
-            return AnyView(VStack(spacing: 0) {
+            VStack(spacing: 0) {
                 Color.clear.frame(height: Self.band)
                 content
             }
@@ -135,21 +136,22 @@ struct GameCardChrome: ViewModifier {
             })
             .clipShape(shape)
             .background(shape.fill(seasonFill)
-                .shadow(color: (look.glow ?? bar).opacity(look.dark ? 0.30 : 0.22), radius: 10, x: 0, y: look.dark ? 0 : 4)))
+                .shadow(color: (look.glow ?? bar).opacity(look.dark ? 0.30 : 0.22), radius: 10, x: 0, y: look.dark ? 0 : 4))
+        } else {
+            let fill: Color = dark ? Theme.surface : bar.wash(done ? 0.16 : 0.10)
+            VStack(spacing: 0) {
+                Color.clear.frame(height: Self.band)
+                content
+            }
+            .background(ZStack(alignment: .top) {
+                shape.fill(fill)
+                if dark && done { shape.fill(bar.opacity(0.06)) }
+                CardTrim(color: bar, locked: locked)
+            })
+            .clipShape(shape)
+            // ART_SPEC §11: an opaque base carrying the page-tinted lift, outside the clip.
+            .background(shape.fill(fill).pageCardShadow())
         }
-        let fill: Color = dark ? Theme.surface : bar.wash(done ? 0.16 : 0.10)
-        return AnyView(VStack(spacing: 0) {
-            Color.clear.frame(height: Self.band)
-            content
-        }
-        .background(ZStack(alignment: .top) {
-            shape.fill(fill)
-            if dark && done { shape.fill(bar.opacity(0.06)) }
-            CardTrim(color: bar, locked: locked)
-        })
-        .clipShape(shape)
-        // ART_SPEC §11: an opaque base carrying the page-tinted lift, outside the clip.
-        .background(shape.fill(fill).pageCardShadow()))
     }
 }
 

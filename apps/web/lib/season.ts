@@ -113,7 +113,7 @@ export function readSeasonOverride(): SeasonOverride | null {
   }
 }
 
-/** The admin surfaces preview: `?surfaces=parchment|off` (remembered for the session; '' = registry default). */
+/** DEBUG: `?surfaces=off` turns the season's surfaces off (wall + art stay) for a perf / contrast A/B (remembered for the session; '' = on). */
 export const SURFACES_PARAM = 'surfaces';
 export const SURFACES_PREVIEW_KEY = 'wordocious-season-surfaces';
 

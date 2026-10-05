@@ -39,7 +39,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     localStorage.setItem('wordle-duel-theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
+    // Season surfaces with a dark tone (SeasonDocument, html[data-season-tone="dark"]) wear the dark
+    // theme while the season shows (iOS ThemeManager parity); the stored choice is untouched.
+    const seasonDark = document.documentElement.getAttribute('data-season-tone') === 'dark';
+    document.documentElement.setAttribute('data-theme', seasonDark ? 'dark' : theme);
   }, [theme, loaded]);
 
   useEffect(() => {

@@ -455,13 +455,14 @@ struct TintedCard: ViewModifier {
     var tint: Double = 0.08
     var line: Double = 0.24
 
+    @ViewBuilder
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         let dark = Theme.isDark
         // Season surfaces: the season's translucent card, a faint accent tint, no outline, the
         // season glow as the lift; drawn once so the opacity doesn't stack.
         if let look = SeasonKit.surfaces, let seasonFill = look.cardFill {
-            return AnyView(VStack(spacing: 0) {
+            VStack(spacing: 0) {
                 if let bar {
                     LinearGradient(colors: bar.count > 1 ? bar : [bar.first ?? accent, bar.first ?? accent],
                                    startPoint: .leading, endPoint: .trailing)
@@ -472,27 +473,28 @@ struct TintedCard: ViewModifier {
             .background(shape.fill(accent.opacity(look.dark ? 0.07 : 0.05)))
             .clipShape(shape)
             .background(shape.fill(seasonFill)
-                .shadow(color: (look.glow ?? accent).opacity(look.dark ? 0.26 : 0.18), radius: 10, x: 0, y: look.dark ? 0 : 6)))
-        }
-        return AnyView(VStack(spacing: 0) {
-            if let bar {
-                LinearGradient(colors: bar.count > 1 ? bar : [bar.first ?? accent, bar.first ?? accent],
-                               startPoint: .leading, endPoint: .trailing)
-                    .frame(height: barHeight)
+                .shadow(color: (look.glow ?? accent).opacity(look.dark ? 0.26 : 0.18), radius: 10, x: 0, y: look.dark ? 0 : 6))
+        } else {
+            VStack(spacing: 0) {
+                if let bar {
+                    LinearGradient(colors: bar.count > 1 ? bar : [bar.first ?? accent, bar.first ?? accent],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(height: barHeight)
+                }
+                content
             }
-            content
+            .background(ZStack {
+                shape.fill(dark ? Theme.surface : accent.wash(tint))
+                if dark { shape.fill(accent.opacity(0.08)) }
+            })
+            .clipShape(shape)
+            .overlay(shape.stroke(dark ? accent.opacity(0.35) : accent.wash(line), lineWidth: 1.5))
+            // §AQ2: the soft shadow is cast by ONE plain shape under the card, not by the
+            // whole card's content (a content shadow re-rasterizes every text run and
+            // icon in an offscreen pass each frame while a list scrolls).
+            .background(shape.fill(dark ? Theme.surface : accent.wash(tint))
+                .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8))
         }
-        .background(ZStack {
-            shape.fill(dark ? Theme.surface : accent.wash(tint))
-            if dark { shape.fill(accent.opacity(0.08)) }
-        })
-        .clipShape(shape)
-        .overlay(shape.stroke(dark ? accent.opacity(0.35) : accent.wash(line), lineWidth: 1.5))
-        // §AQ2: the soft shadow is cast by ONE plain shape under the card, not by the
-        // whole card's content (a content shadow re-rasterizes every text run and
-        // icon in an offscreen pass each frame while a list scrolls).
-        .background(shape.fill(dark ? Theme.surface : accent.wash(tint))
-            .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)))
     }
 }
 

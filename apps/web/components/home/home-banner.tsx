@@ -6,8 +6,8 @@ import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { LiveHeadline } from '@/components/ui/live-headline';
-import { useSeason } from '@/lib/season';
-import { seasonBanner } from '@/lib/season-kit';
+import { readSurfacesChoice, useSeason } from '@/lib/season';
+import { seasonBanner, seasonHeadlineSpec, seasonSurfaces } from '@/lib/season-kit';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
 import { alphaHex, softBorder } from '@/lib/soft-surface';
@@ -26,7 +26,7 @@ import { HomeHost } from '@/components/home/home-host';
 import { homeHostHidden } from '@/lib/home-host';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
 import { HomeClock } from '@/components/home/home-clock';
-import { trimPath } from '@/lib/card-trim';
+import { seasonTrimStops, trimPath } from '@/lib/card-trim';
 import { headlineRowHeight, homeHeadlineLayout } from '@/lib/home-headline';
 
 // The home banner (founder-approved home redesign, 2026-10-01; spec:
@@ -223,11 +223,25 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const topColor = wTier === 'none' ? alphaHex('#7c3aed', 0.12) : TIER_WASH[wTier];
   const bottomColor = pTier === 'none' ? alphaHex('#4f46e5', 0.15) : TIER_WASH[pTier];
   // BJ6 round 3 flair: a very soft diagonal sheen over the fill (static).
-  const background = unlimited
+  const normalBackground = unlimited
     ? `${CARD_SHEEN}, linear-gradient(135deg, ${alphaHex('#ec4899', 0.14)}, ${alphaHex('#8b5cf6', 0.14)}), var(--color-card-base, #ffffff)`
     : `${CARD_SHEEN}, linear-gradient(135deg, rgba(255,255,255,var(--banner-gloss, 0.35)), rgba(255,255,255,0) 55%), linear-gradient(180deg, ${topColor} 0%, ${topColor} 52%, ${bottomColor} 72%, ${bottomColor} 100%), var(--color-card-base, #ffffff)`;
   const subInk = double ? 'var(--banner-ink-gold, #92400e)' : 'var(--banner-ink, #6d28d9)';
-  const shimmer = !unlimited && (wTier !== 'none' || pTier !== 'none');
+  // Season surfaces (iOS SeasonHeroBackdrop): the hero's own translucent fill (the wall glows
+  // through), a soft glow behind the banner art, the season's drip cap and a corner cobweb; no
+  // tier washes, frost, sheen, confetti or shimmer. Static gradients only (no blur).
+  const season = useSeason();
+  const look = useMemo(() => {
+    const s = seasonSurfaces(season, readSurfacesChoice());
+    return s && (s.hero || s.card) ? s : null;
+  }, [season]);
+  const headSpec = useMemo(() => seasonHeadlineSpec(look), [look]);
+  const background = look
+    ? `${look.bannerGlow ? (look.tone === 'dark'
+        ? 'radial-gradient(circle 190px at 50% 46%, var(--season-banner-glow), transparent)'
+        : 'radial-gradient(ellipse at center, transparent 42%, var(--season-banner-glow) 78%)') + ', ' : ''}var(--season-hero-fill)`
+    : normalBackground;
+  const shimmer = !look && !unlimited && (wTier !== 'none' || pTier !== 'none');
   // The art frame belongs to the day (a swept / flawless Daily), not to the mode.
   const tierArt = slots.frame === 'art' && dailyTier !== 'none' ? TIER_ART[dailyTier] : null;
   const frameAccent = tierArt ? (unlimited ? UNLIMITED_PEACH : tierArt.accent) : null;
@@ -235,7 +249,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // centered row under the headline strip (art-scene-banner-halloween; the row
   // collapses if the file is missing). Same in both modes, so the
   // Daily/Unlimited switch never moves anything; a tier's art wins.
-  const season = useSeason();
   const host = useHomeHost();
   useNudgeVersion();
   const invite = host.choice.kind === 'w' && host.seeded && host.userId && !nudgeDone('host', host.userId) ? host.seeded : null;
@@ -315,16 +328,17 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         // §18.4: radius 22, the full content width.
         borderRadius: 22, background,
         ...(frameAccent ? { border: softBorder(frameAccent, 0.2) } : null),
-        boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : onPageShadow('0 4px 14px rgba(76,29,149,0.08)'),
+        boxShadow: double ? '0 0 26px rgba(245,158,11,0.8)' : look?.glow ? '0 0 12px var(--season-glow)' : onPageShadow('0 4px 14px rgba(76,29,149,0.08)'),
       }}
     >
+      {look?.cobweb && <SeasonCobweb />}
       {/* G4: the swept / flawless banner's own top bar (gold / pink). BJ6 round 3: a host day
           wears the brand candy frosting cap instead (the game cards' trim, purple → pink). */}
       {tierArt
         ? <div aria-hidden="true" className="relative" style={{ height: slots.topBar, background: unlimited ? UNLIMITED_BAR : tierArt.bar, transition: 'background 160ms ease-out' }} />
-        : <BrandCap height={slots.topBar} />}
+        : <BrandCap height={slots.topBar} season={!!look?.cap} />}
       {/* BJ6 round 3 flair: a few tiny cast-color confetti dots in the empty top corners, mirrored. */}
-      <CornerConfetti top={slots.topBar} />
+      {!look && <CornerConfetti top={slots.topBar} />}
       {shimmer && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <div
@@ -342,7 +356,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       {/* BJ6 symmetric hero (founder 10-03): the host stands centered on the card's top edge
           (drawn beside the card, below); its lower 44 px sit in the strip's top padding, and
           the headline / switch / meta line center under it — the card mirrors on its center line. */}
-      <div className="banner-frost relative flex flex-col" style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
+      <div className={`${look ? '' : 'banner-frost '}relative flex flex-col`} style={{ gap: BANNER_SLOT.stripGap, padding: `${slots.stripTop}px 12px ${BANNER_SLOT.stripBottom}px` }}>
       <div className="flex items-center gap-1">
       <div className="flex-1 min-w-0">
         <div className="relative flex items-start">
@@ -366,6 +380,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
                           text={line}
                           names={headLayout.lines.length === 1 && name ? [name] : undefined}
                           palette={gold ? 'leaderboard' : double ? 'celebrate' : 'home'}
+                          spec={double ? null : headSpec}
                           size={headLayout.size}
                           level={2}
                           style={{ whiteSpace: 'nowrap', display: 'inline-block', width: 'auto' }}
@@ -458,7 +473,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         </div>
       )}
       {/* BJ6 round 3 flair: the two progress rows sit in one soft lavender band — the card reads as two zones. */}
-      <div className="relative" style={{ background: ROWS_BAND }}>
+      <div className="relative" style={{ background: look?.raised ? 'color-mix(in srgb, var(--color-surface-alt) 45%, transparent)' : ROWS_BAND }}>
       <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px ${BANNER_SLOT.rowPadX}px ${BANNER_SLOT.wordPadBottom}px` }}>
         {row(word, wTier, 'WORDOCIOUS')}
       </div>
@@ -510,11 +525,50 @@ const CARD_SHEEN = 'linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,25
 const ROWS_BAND = 'rgba(167, 139, 250, 0.10)';
 const BRAND_FROM = '#7C3AED';
 const BRAND_TO = '#EC4899';
+const BRAND_MID = '#A855F7';
+
+/** Season surfaces: a small cobweb in the hero's top-trailing corner (iOS CobwebShape): five
+ *  threads fanning down and left, joined by three sagging rings. Static SVG, one stroke. */
+const COBWEB_PATH = (() => {
+  const len = 58;
+  const a = [90, 112, 135, 158, 180].map((d) => (d * Math.PI) / 180);
+  const pt = (t: number, d: number) => `${(len + Math.cos(t) * d).toFixed(2)} ${(Math.sin(t) * d).toFixed(2)}`;
+  let p = a.map((t) => `M${len} 0L${pt(t, len)}`).join('');
+  for (const f of [0.32, 0.58, 0.84]) {
+    const d = len * f;
+    p += `M${pt(a[0], d)}`;
+    for (let i = 1; i < a.length; i++) p += `Q${pt((a[i - 1] + a[i]) / 2, d * 0.8)} ${pt(a[i], d)}`;
+  }
+  return p;
+})();
+
+function SeasonCobweb() {
+  return (
+    <svg aria-hidden="true" className="absolute pointer-events-none" style={{ top: 0, right: 0, zIndex: 0 }} width={58} height={58} viewBox="0 0 58 58">
+      <path d={COBWEB_PATH} fill="none" stroke="var(--season-cobweb)" strokeWidth={0.9} strokeLinecap="round" />
+    </svg>
+  );
+}
 const CAP_TRIM = { viewW: 360, drip: 4, bumps: 16 } as const;
 
 /** The brand candy frosting cap (the game cards' trim shape, purple → pink, with a glossy lip). */
-function BrandCap({ height }: { height: number }) {
+function BrandCap({ height, season = false }: { height: number; season?: boolean }) {
   const gid = `bcap${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  if (season) {
+    // Season surfaces: the season's drip stops top → bottom (lip, body with the brand pink mixed in, base).
+    return (
+      <div aria-hidden="true" className="relative pointer-events-none" style={{ height, zIndex: 1 }}>
+        <svg className="absolute inset-x-0 top-0 block" width="100%" height={height + CAP_TRIM.drip} viewBox={`0 0 ${CAP_TRIM.viewW} ${height + CAP_TRIM.drip}`} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={`${gid}s`} x1="0" y1="0" x2="0" y2="1">
+              {seasonTrimStops(BRAND_MID).map(([o, c]) => <stop key={o} offset={o} style={{ stopColor: c }} />)}
+            </linearGradient>
+          </defs>
+          <path d={trimPath(CAP_TRIM.viewW, height, CAP_TRIM.drip, CAP_TRIM.bumps)} fill={`url(#${gid}s)`} />
+        </svg>
+      </div>
+    );
+  }
   return (
     <div aria-hidden="true" className="relative pointer-events-none" style={{ height, zIndex: 1 }}>
       <svg className="absolute inset-x-0 top-0 block" width="100%" height={height + CAP_TRIM.drip} viewBox={`0 0 ${CAP_TRIM.viewW} ${height + CAP_TRIM.drip}`} preserveAspectRatio="none">

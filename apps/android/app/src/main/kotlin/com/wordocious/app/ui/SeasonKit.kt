@@ -42,7 +42,6 @@ object SeasonKit {
         val props: List<String>,
         val banner: String?,
         val surfaces: com.wordocious.app.ui.theme.SeasonSurfaces? = null,
-        val surfaceVariants: Map<String, com.wordocious.app.ui.theme.SeasonSurfaces> = emptyMap(),
     )
 
     @Volatile private var loaded: List<Entry>? = null
@@ -76,7 +75,6 @@ object SeasonKit {
                 props = (slots["props"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList(),
                 banner = str(slots, "banner"),
                 surfaces = (s["surfaces"] as? JsonObject)?.let(::parseSurfaces),
-                surfaceVariants = (s["surfaceVariants"] as? JsonObject)?.mapValues { parseSurfaces(it.value.jsonObject) } ?: emptyMap(),
             )
         }
     }
@@ -96,14 +94,14 @@ object SeasonKit {
         )
     }
 
-    /** Admin surfaces preview key (same as iOS): absent = the registry's `surfaces`, a `surfaceVariants` id, or "off". */
+    /** DEBUG surfaces key (same as iOS): "off" turns the season's surfaces off (wall + art stay) for a perf / contrast A/B. */
     const val SURFACES_KEY = "debug-season-surfaces"
 
     /** The season's windows for [season] and a preview [choice] (pure). */
     fun surfacesFor(context: Context, season: String?, choice: String?): com.wordocious.app.ui.theme.SeasonSurfaces? {
         val e = entry(context, season) ?: return null
         if (choice == "off") return null
-        return choice?.takeIf { it.isNotBlank() }?.let { e.surfaceVariants[it] } ?: e.surfaces
+        return e.surfaces
     }
 
     /** Hands the active season's windows to the theme (WTheme.season + its palette). */

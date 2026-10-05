@@ -84,7 +84,8 @@ import com.wordocious.core.unlimitedGroupStatus
 private val TIER_SWEEP = Color(0xFFEBD6FD)
 private val TIER_FLAWLESS = Color(0xFFFDE68A)
 private fun tierInk(t: BannerTier): Color = when (t) {
-    BannerTier.NONE -> Color(0xFF6D28D9)
+    // Season surfaces: the season's secondary ink (iOS tierInk parity).
+    BannerTier.NONE -> com.wordocious.app.ui.theme.WTheme.season?.textSecondary ?: Color(0xFF6D28D9)
     BannerTier.SWEEP -> Color(0xFF7E22CE)
     BannerTier.FLAWLESS -> Color(0xFF92400E)
 }
@@ -715,9 +716,10 @@ private fun BannerHeadlineLayer(
                     LiveHeadline(
                         line,
                         when {
-                            gold -> HeadlinePalette.LEADERBOARD
                             double -> HeadlinePalette.CELEBRATION
-                            else -> HeadlinePalette.HOME
+                            // Season surfaces: the greeting takes the season's lettering (iOS parity).
+                            else -> HeadlinePalette.season(WTheme.season?.headline)
+                                ?: if (gold) HeadlinePalette.LEADERBOARD else HeadlinePalette.HOME
                         },
                         Modifier.weight(1f),
                         // A gold name line is the name itself (no second accent inside it).

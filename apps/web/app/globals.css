@@ -188,6 +188,11 @@
 [data-theme="dark"] [data-page-scheme="auto"] > .page-bg::after {
   opacity: var(--page-wall-dim, 0.58);
 }
+/* Season surfaces: the season wall is the finished backdrop (a dark-tone wall is already night art),
+   so no dark-mode dim over it (iOS ArtKit / Android PageBackground parity); more contrast keeps its veil. */
+@media not (prefers-contrast: more) {
+  html[data-season-tone] [data-page-scheme="auto"] > .page-bg:has(> .season-wall)::after { opacity: 0; }
+}
 /* Reduce transparency / more contrast: keep the wallpaper, lay 20% white
    (light) / 70% dark over it (lib/art.ts WALL_OVERLAY). */
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
@@ -824,6 +829,17 @@
   --tab-pill-ring: #222240;
   border-top-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.35);
+}
+/* Season surfaces, dark tone (haunted glass): the dock takes the season's night plum (the card /
+   raised stops) with a faint orange top line, so the bar belongs to the night wall. */
+html[data-season-tone="dark"] .tab-dock {
+  --tab-dock-1: var(--color-surface-alt, #2c1846);
+  --tab-dock-2: var(--color-surface, #1c0f30);
+  --tab-pill-ring: var(--color-surface, #1c0f30);
+  border-top-color: rgba(249, 115, 22, 0.22);
+  --tab-ink-on: #fdba74;
+  --tab-ink-off: #c8b6e2;
+  --tab-pill: #f97316;
 }
 /* Content ends above the docked bar (A4): never less than the page's own
    bottom padding, and at least the bar's room (--bottom-nav-h, published by

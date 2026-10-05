@@ -51,11 +51,20 @@ export function SeasonDocument() {
     const p = seasonPalette(season);
     // Season surfaces: the windows' CSS variables + html[data-season-tone].
     for (const k of SURFACE_CSS_VARS) root.style.removeProperty(k);
+    const wasDark = root.getAttribute('data-season-tone') === 'dark';
     root.removeAttribute('data-season-tone');
     const surfaces = seasonSurfaces(season, readSurfacesChoice());
     if (surfaces) {
       for (const [k, v] of Object.entries(surfaceCssVars(surfaces))) root.style.setProperty(k, v);
       root.setAttribute('data-season-tone', surfaces.tone ?? 'light');
+    }
+    // A dark tone wears the dark theme while the season shows (iOS ThemeManager: tone dark flips
+    // isDark — light ink, the dark tab bar / sheets); leaving it restores the stored theme.
+    if (surfaces?.tone === 'dark') root.setAttribute('data-theme', 'dark');
+    else if (wasDark) {
+      let stored: string | null = null;
+      try { stored = localStorage.getItem('wordle-duel-theme'); } catch { stored = null; }
+      root.setAttribute('data-theme', stored || 'default');
     }
     if (!season || !p) {
       root.removeAttribute('data-season');

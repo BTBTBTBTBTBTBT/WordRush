@@ -34,7 +34,6 @@ enum SeasonKit {
         let palette: Palette
         let slots: Slots
         let surfaces: Surfaces?
-        let surfaceVariants: [String: Surfaces]?
     }
 
     /// The season's windows (registry `surfaces`): the page cards, the Home hero card, the game
@@ -118,8 +117,8 @@ enum SeasonKit {
         }
     }
 
-    /// UserDefaults key of the admin surfaces preview: absent = the registry's `surfaces`, a
-    /// `surfaceVariants` id (e.g. "parchment"), or "off". Read at launch (the theme root
+    /// DEBUG UserDefaults key: "off" turns the season's surfaces off (the wall + art stay) for an
+    /// A/B of perf or contrast; absent = the registry's `surfaces`. Read at launch (the theme root
     /// rebuilds then), so flipping it takes a relaunch.
     static let surfacesKey = "debug-season-surfaces"
     private static let surfacesChoice = UserDefaults.standard.string(forKey: surfacesKey) ?? ""
@@ -133,8 +132,7 @@ enum SeasonKit {
         if let c = lookCache, c.id == entry?.id { return c.look }
         var look: Look?
         if let entry, surfacesChoice != "off" {
-            let s = surfacesChoice.isEmpty ? entry.surfaces : (entry.surfaceVariants?[surfacesChoice] ?? entry.surfaces)
-            look = s.map(Look.init)
+            look = entry.surfaces.map(Look.init)
         }
         lookCache = (entry?.id, look)
         return look

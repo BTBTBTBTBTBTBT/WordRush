@@ -132,7 +132,7 @@ export function BottomNav() {
             </span>
             <span
               className={`text-[11px] transition-colors ${isActive ? 'font-black' : 'font-extrabold'}`}
-              style={{ color: isActive ? '#6d28d9' : '#8a78ad' }}
+              style={{ color: isActive ? 'var(--tab-ink-on, #6d28d9)' : 'var(--tab-ink-off, #8a78ad)' }}
             >
               {item.label}
             </span>
@@ -140,7 +140,7 @@ export function BottomNav() {
             <span
               aria-hidden="true"
               className="block rounded-full"
-              style={{ width: 22, height: 3, background: '#7c3aed', opacity: isActive ? 1 : 0 }}
+              style={{ width: 22, height: 3, background: 'var(--tab-pill, #7c3aed)', opacity: isActive ? 1 : 0 }}
             />
           </Link>
         );
