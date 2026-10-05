@@ -9,6 +9,8 @@ import androidx.core.view.WindowCompat
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Surface
@@ -50,6 +52,24 @@ class MainActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         // DEBUG only: `--es dressDemo stage|titles|room-<tab>` shows Edit Profile for a local demo player (ui/DressDemo).
+        com.wordocious.app.ui.DressDemo.applySeason(intent?.getStringExtra("dressSeason"))
+        com.wordocious.app.ui.DressDemo.parseLook(intent?.getStringExtra("dressLook"))
+        // DEBUG only: `--es dressDemo nudge` shows the Home seasonal nudge card for the demo player (10-05).
+        if (com.wordocious.app.ui.DressDemo.isNudge(intent?.getStringExtra("dressDemo"))) {
+            com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage)
+            com.wordocious.app.ui.DressUp.resetForDemo()
+            com.wordocious.app.data.ThemePref.load()
+            setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
+                WordociousTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                        Box(Modifier.fillMaxSize().navigationBarsPadding().statusBarsPadding().then(Modifier.padding(16.dp))) {
+                            com.wordocious.app.ui.SeasonDressOffer()
+                        }
+                    }
+                }
+            } })
+            return
+        }
         com.wordocious.app.ui.DressDemo.door(intent?.getStringExtra("dressDemo"))?.let { door ->
             com.wordocious.app.ui.DressDemo.start(door)
             com.wordocious.app.data.ThemePref.load()
@@ -64,6 +84,7 @@ class MainActivity : ComponentActivity() {
             } })
             return
         }
+        if (intent?.getStringExtra("dressDemo") == "btnharness") { setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent { WordociousTheme { com.wordocious.app.ui.BtnHarnessTemp() } } }); return }   // TEMP-BTN-HARNESS
         // DEBUG only: `--es dressDemo settings` shows Settings for the demo player as an admin (Season preview picker).
         if (com.wordocious.app.ui.DressDemo.isSettings(intent?.getStringExtra("dressDemo"))) {
             com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage, admin = true)

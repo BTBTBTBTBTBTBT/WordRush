@@ -1,6 +1,7 @@
 'use client';
 
-import { PartyHatOffer } from '@/components/profile/dress-up';
+import { PartyHatOffer, SeasonDressOffer } from '@/components/profile/dress-up';
+import { DevDressRoom } from '@/components/profile/profile-edit-modal';
 import { BANNER_SLOT } from '@/lib/stationary-layout';
 import { afterIntro } from '@/lib/intro';
 import { homeCardTapBlocked } from '@/lib/nav-home';
@@ -443,6 +444,9 @@ export default function HomePage() {
         />
         {/* 10-05 door 3: the one-time "Party hat?" card after the first win. */}
         <PartyHatOffer />
+        {/* 10-05: the one-time seasonal "Dress up for Halloween?" card (once per season). */}
+        <SeasonDressOffer />
+        <DevDressRoom />
         </div>
         {/* Desktop website only (hidden below 1024 px): today's progress beside the banner. */}
         <div className="dk-only">

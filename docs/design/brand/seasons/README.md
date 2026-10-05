@@ -106,3 +106,28 @@ One registry drives all three apps; a new season is ART + DATA, no code. Hallowe
    web also takes `?season=<id>`). Founder + JP look at every screen and leave feedback in admin > Art Library.
 7. **Approve** in the Art Library (both reviewers). The season then switches on by itself on its window's first
    local day; Off (by date) in the picker returns to the calendar.
+8. **Mascot-maker items (10-05, optional).** Seasonal Dressing Room parts are ART + DATA too:
+   - Art: costume pieces on transparent PNGs in `<season>/extras/av-*.png`, `<season>/pieces/` or `<season>/props/`
+     (hats, back pieces, wraps, held items, buddies). No new ChatGPT work is needed when the season already has them.
+   - Data: add a row per item to `SEASONAL` in `../avatar/integration/ship-seasonal.py` (field: head / neck / wrap /
+     held / pet; the source file; a builder: hat spec, `back_wings`, `tail`, `collar`, `held_item`, `buddy`), add the
+     season's pill hue to `TAG_HUE`, and append the ids to their catalogs in `packages/core/src/avatar-config.ts`
+     (`AVATAR_HEADS` / `AVATAR_NECKS` / `AVATAR_WRAPS` / `AVATAR_HELD` / `AVATAR_PETS`; ids are global across `acc:`
+     parts) and the Swift (`AvatarConfig.swift`) + Kotlin (`AvatarConfig.kt`) twins, plus web labels (`avatar-render.ts`
+     LABELS).
+   - Ship: `python3 docs/design/brand/avatar/integration/ship-seasonal.py` bakes every non-hat item PER BODY through the
+     integration rig (front/back split, contact shadow, hand-over, face + letter guards, fit check: a body that fails
+     gets no pieces), writes `season: "<id>"` on each item in the three avatar-parts.json copies, the tile icons, the
+     shelf tag `art-dress-tag-<season>` (web / Android / iOS) and `fit-seasonal.json`.
+   - Look: render every item on all 12 bodies through the core layout (`dump-layout.ts` + `avatar_draw.render`, as
+     audit.py does) and drop anything that reads pasted on (add it to `DROPPED` with the reason; rerun).
+   - Then `apps/server/node_modules/.bin/tsx packages/core/scripts/gen-parity-fixtures.ts` and the tests (core vitest,
+     web vitest, iOS `swift test`, Android `:core:test` + `testDebugUnitTest`; catalog-size tests count the new ids).
+   No app code changes: core `avatar-season.ts` (Swift `AvatarSeason`, Kotlin `AvatarSeason`) derives the shelf from the
+   parts' `season` field. The shelf (first tab, the season's first hat as its icon, "<Season>" label) shows during the
+   window or the admin Season preview; tiles wear the season tag; items are free; a SAVED seasonal item stays on the
+   mascot (and in its tab) after the season; unsaved ones hide until next year; Randomize skips them out of season;
+   Home shows "Dress up for <Season>?" once per season per year to players not already wearing one (Yes opens the
+   shelf). Check it: iOS `-storeDemo -storeShot room-season -debug-season <id>` (`hostplain` for the nudge,
+   `-storeDemoLook head=<id>` for a saved look); Android `--es dressDemo room-season|nudge --es dressSeason <id>|off
+   --es dressLook head=<id>`; web (dev) `/?season=<id>&dressDemo=room-season|nudge&dressLook=head=<id>`.

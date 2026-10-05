@@ -47,6 +47,8 @@ public struct AvatarManifest: Decodable {
         public var pieces: [String: [Piece]]?
         /// Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes).
         public var inkTop: Double?
+        /// Seasonal parts (AvatarSeason): the season-registry id it belongs to; shown in season or when saved.
+        public var season: String?
     }
     /// One per-body piece of an integrated part, decoded from `[layer, x, y, w, h]`.
     public struct Piece: Decodable {

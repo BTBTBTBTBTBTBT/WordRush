@@ -1,0 +1,6047 @@
+{
+  "available": [
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "witch"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "neck",
+        "id": "batwings"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "held",
+        "id": "candypail"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": false
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-16",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-17",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-10-31",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2026-11-02",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": null,
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": null,
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "head": "pumpkinhat"
+      },
+      "available": true
+    },
+    {
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "date": "2027-03-01",
+      "preview": "none",
+      "saved": {
+        "pet": "ghost",
+        "neck": "batwings"
+      },
+      "available": true
+    }
+  ],
+  "seasons": [
+    {
+      "field": "head",
+      "id": "pumpkinhat",
+      "season": "halloween"
+    },
+    {
+      "field": "head",
+      "id": "witch",
+      "season": null
+    },
+    {
+      "field": "neck",
+      "id": "batwings",
+      "season": "halloween"
+    },
+    {
+      "field": "wrap",
+      "id": "vampirecollar",
+      "season": "halloween"
+    },
+    {
+      "field": "held",
+      "id": "candypail",
+      "season": "halloween"
+    },
+    {
+      "field": "pet",
+      "id": "ghost",
+      "season": "halloween"
+    },
+    {
+      "field": "pet",
+      "id": "kitten",
+      "season": null
+    },
+    {
+      "field": "head",
+      "id": "none",
+      "season": null
+    }
+  ],
+  "active": [
+    {
+      "date": "2026-10-16",
+      "preview": null,
+      "season": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "none",
+      "season": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": null,
+      "season": "halloween"
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "none",
+      "season": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": null,
+      "season": "halloween"
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "none",
+      "season": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": null,
+      "season": "halloween"
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "none",
+      "season": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": null,
+      "season": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "season": "halloween"
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "none",
+      "season": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": null,
+      "season": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "season": "halloween"
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "none",
+      "season": null
+    }
+  ],
+  "shelf": {
+    "halloween": [
+      {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      {
+        "field": "head",
+        "id": "candycornhat"
+      },
+      {
+        "field": "head",
+        "id": "witchnight"
+      },
+      {
+        "field": "head",
+        "id": "batears"
+      },
+      {
+        "field": "neck",
+        "id": "batwings"
+      },
+      {
+        "field": "neck",
+        "id": "cattail"
+      },
+      {
+        "field": "wrap",
+        "id": "vampirecollar"
+      },
+      {
+        "field": "held",
+        "id": "candypail"
+      },
+      {
+        "field": "pet",
+        "id": "bat"
+      },
+      {
+        "field": "pet",
+        "id": "ghost"
+      },
+      {
+        "field": "pet",
+        "id": "blackcat"
+      }
+    ],
+    "none": [],
+    "unknown": []
+  },
+  "wears": [
+    {
+      "config": null,
+      "season": null,
+      "wears": false
+    },
+    {
+      "config": null,
+      "season": "halloween",
+      "wears": false
+    },
+    {
+      "config": null,
+      "season": "thanksgiving",
+      "wears": false
+    },
+    {
+      "config": {},
+      "season": null,
+      "wears": false
+    },
+    {
+      "config": {},
+      "season": "halloween",
+      "wears": false
+    },
+    {
+      "config": {},
+      "season": "thanksgiving",
+      "wears": false
+    },
+    {
+      "config": {
+        "head": "witch"
+      },
+      "season": null,
+      "wears": false
+    },
+    {
+      "config": {
+        "head": "witch"
+      },
+      "season": "halloween",
+      "wears": false
+    },
+    {
+      "config": {
+        "head": "witch"
+      },
+      "season": "thanksgiving",
+      "wears": false
+    },
+    {
+      "config": {
+        "head": "pumpkinhat"
+      },
+      "season": null,
+      "wears": true
+    },
+    {
+      "config": {
+        "head": "pumpkinhat"
+      },
+      "season": "halloween",
+      "wears": true
+    },
+    {
+      "config": {
+        "head": "pumpkinhat"
+      },
+      "season": "thanksgiving",
+      "wears": false
+    },
+    {
+      "config": {
+        "pet": "blackcat"
+      },
+      "season": null,
+      "wears": true
+    },
+    {
+      "config": {
+        "pet": "blackcat"
+      },
+      "season": "halloween",
+      "wears": true
+    },
+    {
+      "config": {
+        "pet": "blackcat"
+      },
+      "season": "thanksgiving",
+      "wears": false
+    },
+    {
+      "config": {
+        "held": "mug",
+        "wrap": "vampirecollar"
+      },
+      "season": null,
+      "wears": true
+    },
+    {
+      "config": {
+        "held": "mug",
+        "wrap": "vampirecollar"
+      },
+      "season": "halloween",
+      "wears": true
+    },
+    {
+      "config": {
+        "held": "mug",
+        "wrap": "vampirecollar"
+      },
+      "season": "thanksgiving",
+      "wears": false
+    }
+  ],
+  "nudge": [
+    {
+      "date": "2026-10-16",
+      "preview": null,
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": null,
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": null,
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": null,
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "halloween",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "none",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "none",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "none",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-16",
+      "preview": "none",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": null,
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-17",
+      "preview": null,
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": null,
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": null,
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "halloween",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "none",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "none",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "none",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-17",
+      "preview": "none",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": null,
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-31",
+      "preview": null,
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": null,
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": null,
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "halloween",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "none",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "none",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "none",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-10-31",
+      "preview": "none",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": null,
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-11-01",
+      "preview": null,
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": null,
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": null,
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "halloween",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "none",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "none",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "none",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-01",
+      "preview": "none",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": null,
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": null,
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": null,
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": null,
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "halloween",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "none",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "none",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "none",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2026-11-02",
+      "preview": "none",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": null,
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": null,
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": null,
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": null,
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": "halloween"
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "halloween",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": "halloween"
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "none",
+      "config": {
+        "head": "none"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "none",
+      "config": {
+        "head": "witchnight"
+      },
+      "seen": [],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "none",
+      "config": {
+        "head": "party"
+      },
+      "seen": [
+        "halloween-2026"
+      ],
+      "due": null
+    },
+    {
+      "date": "2027-03-01",
+      "preview": "none",
+      "config": null,
+      "seen": [
+        "halloween-2025"
+      ],
+      "due": null
+    }
+  ],
+  "keys": [
+    {
+      "season": "halloween",
+      "date": "2026-10-20",
+      "key": "halloween-2026",
+      "tag": "HALLOWEEN"
+    },
+    {
+      "season": "winter-holidays",
+      "date": "2027-12-03",
+      "key": "winter-holidays-2027",
+      "tag": "WINTER HOLIDAYS"
+    }
+  ]
+}

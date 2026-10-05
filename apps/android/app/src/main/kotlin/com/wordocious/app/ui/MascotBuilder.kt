@@ -146,7 +146,7 @@ fun MascotBuilder(
             Modifier.builderAnchor("tabs", anchor).fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            BuilderTab.entries.forEach { t -> BuilderChip(t.label, t == tab) { tab = t } }
+            BuilderTab.entries.filter { it != BuilderTab.SEASON }.forEach { t -> BuilderChip(t.label, t == tab) { tab = t } }
         }
 
         // The option grid for the tab: 4 across, each tile the mascot wearing that option.

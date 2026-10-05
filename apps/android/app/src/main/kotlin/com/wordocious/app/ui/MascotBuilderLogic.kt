@@ -6,6 +6,8 @@ import com.wordocious.core.AvatarFit
 import com.wordocious.core.AvatarFitManifest
 import com.wordocious.core.AvatarOptions
 import com.wordocious.core.AvatarPresets
+import com.wordocious.core.AvatarPart
+import com.wordocious.core.AvatarSeason
 import com.wordocious.core.LevelTier
 import com.wordocious.core.enforceAvatarPro
 import com.wordocious.core.validateAvatar
@@ -31,6 +33,8 @@ enum class BuilderTab(val label: String) {
     EXTRAS("Extras"),
     BACKDROP("Backdrop"),
     FRAME("Frame"),
+    /** 10-05: the season's shelf (core AvatarSeason), first in the room's row while a season is on. */
+    SEASON("Season"),
 }
 
 /**
@@ -45,6 +49,23 @@ object MascotBuilderLogic {
 
     /** The fit manifest (set by the screen from the bundled avatar-parts.json): conflicting picks swap out. */
     @Volatile var fit: AvatarFitManifest? = null
+
+    /** 10-05 seasonal items: the active season (the admin preview, else the calendar's; set by the screen). */
+    @Volatile var season: String? = null
+    /** The look the room opened on (the saved look): its seasonal parts stay offered after their season. */
+    @Volatile var saved: AvatarConfig? = null
+
+    /** May the maker show this option? Seasonal parts: in season, or when the saved look wears them (core isPartAvailable). */
+    fun available(o: BuilderOption, keepSaved: Boolean = true): Boolean {
+        val m = fit ?: return true
+        return AvatarSeason.isPartAvailable(AvatarPart(o.slot, o.id), AvatarSeason.today(), season ?: "none", if (keepSaved) saved else null, m)
+    }
+
+    /** The season an option belongs to (its tile wears the season tag), else null. */
+    fun seasonOf(o: BuilderOption): String? = fit?.let { AvatarSeason.partSeason(o.slot, o.id, it) }
+
+    /** The season's shelf (hats first). */
+    fun shelf(): List<BuilderOption> = fit?.let { m -> AvatarSeason.shelf(season, m).map { BuilderOption(it.field, it.id) } } ?: emptyList()
 
     /** The swatch slots (glossy round grid, grouped by row). */
     val SWATCH_SLOTS = setOf("color", "patternColor", "accColor")
@@ -61,7 +82,7 @@ object MascotBuilderLogic {
     val INTEGRATED_SLOTS: Set<String> get() = AvatarOptions.INTEGRATED.map { it.first }.toSet()
 
     /** The maker's NEW tag: the 10-05 additions + the 7 rebuilt parts (AvatarOptions.NEW_PARTS). */
-    fun isNew(o: BuilderOption): Boolean = o.id != NONE && (o.slot in INTEGRATED_SLOTS || o.slot == "neck") &&
+    fun isNew(o: BuilderOption): Boolean = o.id != NONE && seasonOf(o) == null && (o.slot in INTEGRATED_SLOTS || o.slot == "neck") &&
         (if (o.slot == "brows") "brows:${o.id}" else o.id) in AvatarOptions.NEW_PARTS
 
     /** The (slot, id) a pick would swap out (it doesn't fit with it), else null. */
@@ -82,15 +103,17 @@ object MascotBuilderLogic {
         BuilderTab.CHEEKS -> AvatarOptions.CHEEKS.map { BuilderOption("cheeks", it) }
         BuilderTab.MOUTH -> (listOf(NONE) + AvatarOptions.MOUTHS).map { BuilderOption("mouth", it) }
         BuilderTab.HATS -> listOf(BuilderOption("head", NONE)) +
-            AvatarOptions.HEADS.filter { it != NONE }.map { BuilderOption("head", it) }
+            AvatarOptions.HEADS.filter { it != NONE }.map { BuilderOption("head", it) }.filter { available(it) }
         BuilderTab.EXTRAS -> listOf(BuilderOption("extras", NONE)) +
             AvatarOptions.FACES.filter { it != NONE }.map { BuilderOption("face", it) } +
-            AvatarOptions.NECKS.filter { it != NONE }.map { BuilderOption("neck", it) } +
+            AvatarOptions.NECKS.filter { it != NONE }.map { BuilderOption("neck", it) }.filter { available(it) } +
             // 10-05 integrated parts ride in Extras until the Dressing Room gives them their own tabs
             AvatarOptions.INTEGRATED.flatMap { (slot, ids) -> ids.filter { it != NONE }.map { BuilderOption(slot, it) } }
+                .filter { available(it) }
         BuilderTab.BACKDROP -> AvatarOptions.BACKDROP_IDS.map { BuilderOption("bg", it) }
         BuilderTab.FRAME -> listOf(BuilderOption("frame", NONE)) +
             AvatarOptions.FRAMES.filter { it != NONE }.map { BuilderOption("frame", it) }
+        BuilderTab.SEASON -> shelf()
     }
 
     /**
@@ -192,7 +215,8 @@ object MascotBuilderLogic {
      */
     fun randomize(current: AvatarConfig, isPro: Boolean, level: Int, random: Random = Random.Default): AvatarConfig {
         fun <T> List<T>.any(r: Random): T = this[r.nextInt(size)]
-        fun wearable(slot: String, ids: List<String>) = ids.filter { it != NONE && canWear(BuilderOption(slot, it), isPro, level) }
+        // seasonal parts only while their season is on (never a saved-only pick)
+        fun wearable(slot: String, ids: List<String>) = ids.filter { it != NONE && canWear(BuilderOption(slot, it), isPro, level) && available(BuilderOption(slot, it), keepSaved = false) }
         val kept = sanitize(current, isPro, level)
         val colors = AvatarOptions.COLORS.filter { isPro || !AvatarOptions.isProOnly("color", it) }
         repeat(8) {

@@ -7,7 +7,7 @@
 
 import * as React from 'react';
 import type { AvatarConfig } from '@wordle-duel/core';
-import { avatarColorHex, avatarPickConflict } from '@wordle-duel/core';
+import { avatarColorHex, avatarPickConflict, seasonNudgeDue, seasonNudgeKey, seasonalShelf } from '@wordle-duel/core';
 
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { artSrc } from '@/lib/art';
@@ -15,6 +15,9 @@ import { avatarBackdrop } from '@/lib/avatar-render';
 import { prefersReducedMotion } from '@/lib/motion';
 import { feedback } from '@/lib/sound-events';
 import { useAuth } from '@/lib/auth-context';
+import { useSeason } from '@/lib/season';
+import { usePlayerAvatar } from '@/components/avatar/player-avatar';
+import { RoundIconButton } from '@/components/ui/family-button';
 
 export type DressDoor =
   | { kind: 'stage' }
@@ -42,6 +45,21 @@ export function doorFromUrl(): DressDoor | null {
   const raw = new URLSearchParams(window.location.search).get('dress');
   if (!raw) return null;
   try { return JSON.parse(raw) as DressDoor; } catch { return { kind: 'stage' }; }
+}
+
+/**
+ * DEV only (iOS `-storeShot`, Android `--es dressDemo` parity; never in production builds): `?dressDemo=room-<tab>|stage|nudge`
+ * opens the Dressing Room / the Stage / the seasonal Home nudge for a GUEST (nothing saves), `?dressLook=k=v,k=v`
+ * overrides the look it opens on (e.g. a seasonal item saved last season). Pair with `?season=halloween|none`.
+ */
+export function devDressDemo(): { door: DressDoor | null; nudge: boolean; look: Record<string, string> } | null {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null;
+  const q = new URLSearchParams(window.location.search);
+  const d = q.get('dressDemo');
+  if (!d) return null;
+  const look = Object.fromEntries((q.get('dressLook') ?? '').split(',').map((kv) => kv.split('=')).filter((p) => p.length === 2));
+  const door: DressDoor | null = d === 'stage' ? { kind: 'stage' } : d.startsWith('room-') ? { kind: 'room', tab: d.slice(5) } : null;
+  return { door, nudge: d === 'nudge', look };
 }
 
 /** Listens for openDressUp anywhere and hands the door to the caller (the Edit Profile host). */
@@ -327,6 +345,45 @@ export function PartyHatOffer() {
       </div>
       <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'partyhat' }); }}><span className="candy-label">Yes!</span></button>
       <button type="button" aria-label="No thanks" onClick={done} className="w-8 h-9 flex items-center justify-center font-black text-xs" style={{ color: '#7a6aa6' }}>✕</button>
+    </div>
+  );
+}
+
+/**
+ * The one-time seasonal nudge (10-05, the party-hat card's pattern): first Home open in a season with a mascot shelf
+ * ("Dress up for Halloween?"), only for players not already wearing one of its parts. Yes opens the Dressing Room on
+ * the seasonal shelf; Yes or × end it for this season (it comes back next year). core seasonNudgeDue.
+ */
+const seasonSeenKey = (uid: string) => `wd_dressup_season_v1:${uid.toLowerCase()}`;
+function seasonSeen(uid: string): string[] {
+  try { const v = JSON.parse(localStorage.getItem(seasonSeenKey(uid)) ?? '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+export function SeasonDressOffer() {
+  const { user, profile } = useAuth();
+  useNudgeVersion();
+  const season = useSeason();
+  const demo = devDressDemo()?.nudge ? 'dev-demo' : null;   // DEV ?dressDemo=nudge: the card for a guest
+  const uid = user ? profile?.id ?? null : demo;
+  const own = usePlayerAvatar({ name: profile?.username ?? null, userId: user ? uid : null });
+  if (!uid || !season) return null;
+  const due = seasonNudgeDue(new Date(), season, own.config, seasonSeen(uid));
+  if (!due) return null;
+  const shelf = seasonalShelf(due);
+  const title = due.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const done = () => {
+    try { localStorage.setItem(seasonSeenKey(uid), JSON.stringify([...seasonSeen(uid), seasonNudgeKey(due, new Date())])); } catch { /* private mode */ }
+    window.dispatchEvent(new Event(NUDGE_EVENT));
+  };
+  return (
+    <div className="flex items-center gap-2 pl-2 pr-0.5 py-2 rounded-[18px]" style={{ background: 'linear-gradient(90deg, #ffedd5, #ede9fe)' }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={artSrc(`art-av-acc-${shelf[0]?.id ?? 'pumpkinhat'}`)} alt="" aria-hidden="true" draggable={false} style={{ height: 40, width: 40, objectFit: 'contain' }} />
+      <div className="flex-1 min-w-0">
+        {/* 14 px so "Dress up for Halloween?" fits a 390 px phone beside Yes + × */}
+        <div className="text-[14px] font-black truncate tracking-[-0.2px]" style={{ color: '#6d28d9' }}>Dress up for {title}?</div>
+        <div className="text-[11px] font-bold truncate" style={{ color: '#7a6aa6' }}>Free looks for the season.</div>
+      </div>
+      <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'room', tab: 'season' }); }}><span className="candy-label">Yes!</span></button>
     </div>
   );
 }

@@ -12,6 +12,9 @@ import kotlinx.serialization.json.JsonObject
  * screens can be checked on the emulator without signing in. No session, no network reads or writes:
  *   adb shell am start -n com.wordocious.app/.MainActivity --es dressDemo stage      (or titles, room-hats, room-eyes…)
  *   adb shell am start -n com.wordocious.app/.MainActivity --es dressDemo settings   (Settings as an admin: Season preview)
+ *   10-05 seasonal items: `--es dressDemo room-season` (the shelf), `--es dressDemo nudge` (the Home "Dress up for
+ *   Halloween?" card), `--es dressSeason halloween|off` (sets the admin preview), `--es dressLook head=pumpkinhat,…`
+ *   (overrides WordWiz's saved look, e.g. a seasonal item saved last season).
  * MainActivity renders only Edit Profile for it; release builds ignore the extra (BuildConfig.DEBUG).
  */
 object DressDemo {
@@ -48,6 +51,22 @@ object DressDemo {
     /** `--es dressDemo settings`: Settings for the same demo player as an admin (the DEVELOPER Season preview picker). */
     fun isSettings(extra: String?): Boolean = BuildConfig.DEBUG && extra == "settings"
 
+    /** `--es dressDemo nudge`: the Home seasonal nudge card alone, for the demo player. */
+    fun isNudge(extra: String?): Boolean = BuildConfig.DEBUG && extra == "nudge"
+
+    /** `--es dressSeason halloween|off`: the admin Season preview (persisted, like the Settings picker). */
+    fun applySeason(extra: String?) {
+        if (!BuildConfig.DEBUG || extra.isNullOrBlank()) return
+        SeasonSkins.pick(if (extra == "off") null else extra)
+    }
+
+    /** `--es dressLook k=v,k=v`: overrides on WordWiz's saved look. */
+    var lookOverrides: Map<String, String> = emptyMap()
+    fun parseLook(extra: String?) {
+        if (!BuildConfig.DEBUG || extra.isNullOrBlank()) return
+        lookOverrides = extra.split(',').mapNotNull { kv -> kv.split('=', limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
+    }
+
     fun start(door: DressDoor, admin: Boolean = false) {
         if (!BuildConfig.DEBUG) return
         active = true
@@ -55,7 +74,7 @@ object DressDemo {
             "v" to "1", "body" to "classic", "color" to "purple", "pattern" to "sparkle", "patternColor" to "lilac",
             "eyes" to "sparkly", "nose" to "button", "cheeks" to "blush", "mouth" to "grin", "head" to "wizard",
             "face" to "none", "neck" to "cape", "accColor" to "default", "frame" to "gold", "bg" to "cottoncandy", "display" to "mascot",
-        )
+        ) + lookOverrides
         AuthService.debugDemoProfile(
             Profile(
                 id = "5d0e0000-0000-4000-8000-000000000001", username = "WordWiz", level = 24, isPro = true,

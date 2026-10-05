@@ -1,0 +1,689 @@
+{
+ "pumpkinhat": {
+  "field": "head",
+  "season": "halloween",
+  "bodies": "all (head slot)",
+  "fails": {}
+ },
+ "candycornhat": {
+  "field": "head",
+  "season": "halloween",
+  "bodies": "all (head slot)",
+  "fails": {}
+ },
+ "witchnight": {
+  "field": "head",
+  "season": "halloween",
+  "bodies": "all (head slot)",
+  "fails": {}
+ },
+ "batears": {
+  "field": "head",
+  "season": "halloween",
+  "bodies": "all (head slot)",
+  "fails": {}
+ },
+ "batwings": {
+  "field": "neck",
+  "season": "halloween",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {},
+  "metrics": {
+   "classic": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.56,
+    "back_visible": 0.402,
+    "bodyScale": 0.622
+   },
+   "tall": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.328,
+    "back_visible": 0.409,
+    "bodyScale": 0.95
+   },
+   "wide": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.537,
+    "back_visible": 0.556,
+    "bodyScale": 0.622
+   },
+   "blob": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.511,
+    "back_visible": 0.472,
+    "bodyScale": 0.622
+   },
+   "bean": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.453,
+    "back_visible": 0.362,
+    "bodyScale": 0.825
+   },
+   "star": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.559,
+    "back_visible": 0.409,
+    "bodyScale": 0.622
+   },
+   "drop": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.492,
+    "back_visible": 0.447,
+    "bodyScale": 0.725
+   },
+   "pear": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.475,
+    "back_visible": 0.274,
+    "bodyScale": 0.95
+   },
+   "cloud": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.509,
+    "back_visible": 0.577,
+    "bodyScale": 0.622
+   },
+   "chunky": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.551,
+    "back_visible": 0.405,
+    "bodyScale": 0.622
+   },
+   "mini": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.495,
+    "back_visible": 0.545,
+    "bodyScale": 0.834
+   },
+   "hex": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.483,
+    "back_visible": 0.538,
+    "bodyScale": 0.622
+   }
+  }
+ },
+ "cattail": {
+  "field": "neck",
+  "season": "halloween",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {},
+  "metrics": {
+   "classic": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.436,
+    "back_visible": 0.072,
+    "bodyScale": 0.883
+   },
+   "tall": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.268,
+    "back_visible": 0.177,
+    "bodyScale": 0.96
+   },
+   "wide": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.559,
+    "back_visible": 0.042,
+    "bodyScale": 0.926
+   },
+   "blob": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.408,
+    "back_visible": 0.086,
+    "bodyScale": 0.885
+   },
+   "bean": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.443,
+    "back_visible": 0.111,
+    "bodyScale": 0.96
+   },
+   "star": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.546,
+    "back_visible": 0.072,
+    "bodyScale": 0.896
+   },
+   "drop": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.235,
+    "back_visible": 0.156,
+    "bodyScale": 0.96
+   },
+   "pear": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.18,
+    "back_visible": 0.17,
+    "bodyScale": 0.96
+   },
+   "cloud": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.483,
+    "back_visible": 0.067,
+    "bodyScale": 0.91
+   },
+   "chunky": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.405,
+    "back_visible": 0.077,
+    "bodyScale": 0.877
+   },
+   "mini": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.209,
+    "back_visible": 0.101,
+    "bodyScale": 1.159
+   },
+   "hex": {
+    "face": 0.0,
+    "letter": 0.0,
+    "back_hidden": 0.628,
+    "back_visible": 0.054,
+    "bodyScale": 0.954
+   }
+  }
+ },
+ "vampirecollar": {
+  "field": "wrap",
+  "season": "halloween",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {},
+  "metrics": {
+   "classic": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.999,
+    "back_hidden": 0.824,
+    "back_visible": 0.13,
+    "bodyScale": 0.904
+   },
+   "tall": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.995,
+    "back_hidden": 0.653,
+    "back_visible": 0.173,
+    "bodyScale": 0.96
+   },
+   "wide": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 1.0,
+    "back_hidden": 0.656,
+    "back_visible": 0.334,
+    "bodyScale": 0.904
+   },
+   "blob": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.993,
+    "back_hidden": 0.768,
+    "back_visible": 0.181,
+    "bodyScale": 0.904
+   },
+   "bean": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.979,
+    "back_hidden": 0.804,
+    "back_visible": 0.11,
+    "bodyScale": 0.96
+   },
+   "star": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.985,
+    "back_hidden": 0.734,
+    "back_visible": 0.199,
+    "bodyScale": 0.904
+   },
+   "drop": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.994,
+    "back_hidden": 0.698,
+    "back_visible": 0.247,
+    "bodyScale": 0.96
+   },
+   "pear": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.976,
+    "back_hidden": 0.669,
+    "back_visible": 0.227,
+    "bodyScale": 0.96
+   },
+   "cloud": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 1.0,
+    "back_hidden": 0.659,
+    "back_visible": 0.324,
+    "bodyScale": 0.904
+   },
+   "chunky": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.99,
+    "back_hidden": 0.812,
+    "back_visible": 0.137,
+    "bodyScale": 0.904
+   },
+   "mini": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 1.0,
+    "back_hidden": 0.598,
+    "back_visible": 0.412,
+    "bodyScale": 1.114
+   },
+   "hex": {
+    "face": 0.0,
+    "letter": 0.0,
+    "seat": 0.985,
+    "back_hidden": 0.723,
+    "back_visible": 0.233,
+    "bodyScale": 0.904
+   }
+  }
+ },
+ "candypail": {
+  "field": "held",
+  "season": "halloween",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {},
+  "metrics": {
+   "classic": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.036,
+    "bodyScale": 0.86
+   },
+   "tall": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.036,
+    "bodyScale": 0.94
+   },
+   "wide": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.036,
+    "bodyScale": 0.86
+   },
+   "blob": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.036,
+    "bodyScale": 0.855
+   },
+   "bean": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.033,
+    "bodyScale": 0.96
+   },
+   "star": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.041,
+    "bodyScale": 0.903
+   },
+   "drop": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.039,
+    "bodyScale": 0.935
+   },
+   "pear": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.039,
+    "bodyScale": 0.935
+   },
+   "cloud": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.039,
+    "bodyScale": 0.867
+   },
+   "chunky": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.036,
+    "bodyScale": 0.86
+   },
+   "mini": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.039,
+    "bodyScale": 1.121
+   },
+   "hex": {
+    "face": 0.0,
+    "letter": 0.0,
+    "grip": 0.036,
+    "bodyScale": 0.86
+   }
+  }
+ },
+ "bat": {
+  "field": "pet",
+  "season": "halloween",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {},
+  "metrics": {
+   "classic": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.837
+   },
+   "tall": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.919
+   },
+   "wide": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.824
+   },
+   "blob": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.852
+   },
+   "bean": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.946
+   },
+   "star": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.785
+   },
+   "drop": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.96
+   },
+   "pear": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.96
+   },
+   "cloud": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.83
+   },
+   "chunky": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.841
+   },
+   "mini": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 1.081
+   },
+   "hex": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.864
+   }
+  }
+ },
+ "ghost": {
+  "field": "pet",
+  "season": "halloween",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {},
+  "metrics": {
+   "classic": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.793
+   },
+   "tall": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.96
+   },
+   "wide": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.782
+   },
+   "blob": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.799
+   },
+   "bean": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.96
+   },
+   "star": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.842
+   },
+   "drop": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.907
+   },
+   "pear": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.96
+   },
+   "cloud": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.788
+   },
+   "chunky": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.802
+   },
+   "mini": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.993
+   },
+   "hex": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.817
+   }
+  }
+ },
+ "blackcat": {
+  "field": "pet",
+  "season": "halloween",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {},
+  "metrics": {
+   "classic": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.822
+   },
+   "tall": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.957
+   },
+   "wide": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.825
+   },
+   "blob": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.831
+   },
+   "bean": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.957
+   },
+   "star": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.822
+   },
+   "drop": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.91
+   },
+   "pear": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.923
+   },
+   "cloud": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.832
+   },
+   "chunky": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.816
+   },
+   "mini": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.988
+   },
+   "hex": {
+    "face": 0.0,
+    "letter": 0.0,
+    "bodyScale": 0.84
+   }
+  }
+ }
+}

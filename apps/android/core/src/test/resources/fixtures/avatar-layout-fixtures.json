@@ -7824,6 +7824,985 @@
             ]
           ]
         }
+      },
+      "acc:pumpkinhat": {
+        "w": 1.02,
+        "anchor": [
+          0.5,
+          0.86
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.14,
+        "aspect": 0.7526,
+        "season": "halloween"
+      },
+      "acc:candycornhat": {
+        "w": 0.72,
+        "anchor": [
+          0.5,
+          0.9
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.1,
+        "aspect": 1.2161,
+        "season": "halloween"
+      },
+      "acc:witchnight": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.86
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.14,
+        "aspect": 0.8099,
+        "season": "halloween"
+      },
+      "acc:batears": {
+        "w": 1.04,
+        "anchor": [
+          0.5,
+          0.85
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.15,
+        "aspect": 0.6484,
+        "season": "halloween"
+      },
+      "acc:batwings": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "aspect": 1,
+        "slot": "back",
+        "layer": "back",
+        "season": "halloween",
+        "pieces": {
+          "classic": [
+            [
+              "back",
+              -0.225,
+              0.15,
+              1.4484,
+              0.6328
+            ]
+          ],
+          "tall": [
+            [
+              "back",
+              0.0219,
+              0.1031,
+              0.9484,
+              0.4125
+            ]
+          ],
+          "wide": [
+            [
+              "back",
+              -0.225,
+              0.2922,
+              1.4484,
+              0.6672
+            ]
+          ],
+          "blob": [
+            [
+              "back",
+              -0.2266,
+              0.1437,
+              1.4484,
+              0.6328
+            ]
+          ],
+          "bean": [
+            [
+              "back",
+              0.0063,
+              0.1094,
+              1.0922,
+              0.475
+            ]
+          ],
+          "star": [
+            [
+              "back",
+              -0.225,
+              0.1313,
+              1.4484,
+              0.6328
+            ]
+          ],
+          "drop": [
+            [
+              "back",
+              -0.1234,
+              0.2219,
+              1.2422,
+              0.5422
+            ]
+          ],
+          "pear": [
+            [
+              "back",
+              0.025,
+              0.2031,
+              0.9484,
+              0.3125
+            ]
+          ],
+          "cloud": [
+            [
+              "back",
+              -0.225,
+              0.2453,
+              1.4484,
+              0.6328
+            ]
+          ],
+          "chunky": [
+            [
+              "back",
+              -0.2266,
+              0.1172,
+              1.4484,
+              0.6328
+            ]
+          ],
+          "mini": [
+            [
+              "back",
+              -0.0437,
+              0.4031,
+              1.0813,
+              0.4734
+            ]
+          ],
+          "hex": [
+            [
+              "back",
+              -0.2281,
+              0.1516,
+              1.4484,
+              0.6328
+            ]
+          ]
+        }
+      },
+      "acc:cattail": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "aspect": 1,
+        "slot": "back",
+        "layer": "back",
+        "season": "halloween",
+        "pieces": {
+          "classic": [
+            [
+              "back",
+              0.8656,
+              0.3125,
+              0.1844,
+              0.5062
+            ]
+          ],
+          "tall": [
+            [
+              "back",
+              0.6844,
+              0.2531,
+              0.2281,
+              0.5594
+            ]
+          ],
+          "wide": [
+            [
+              "back",
+              0.8766,
+              0.4453,
+              0.1266,
+              0.3812
+            ]
+          ],
+          "blob": [
+            [
+              "back",
+              0.8266,
+              0.2953,
+              0.2219,
+              0.5234
+            ]
+          ],
+          "bean": [
+            [
+              "back",
+              0.7531,
+              0.2531,
+              0.2016,
+              0.5594
+            ]
+          ],
+          "star": [
+            [
+              "back",
+              0.8828,
+              0.2766,
+              0.1703,
+              0.5594
+            ]
+          ],
+          "drop": [
+            [
+              "back",
+              0.7438,
+              0.2531,
+              0.2687,
+              0.5594
+            ]
+          ],
+          "pear": [
+            [
+              "back",
+              0.7375,
+              0.2531,
+              0.275,
+              0.5594
+            ]
+          ],
+          "cloud": [
+            [
+              "back",
+              0.8359,
+              0.3719,
+              0.1844,
+              0.45
+            ]
+          ],
+          "chunky": [
+            [
+              "back",
+              0.8594,
+              0.3047,
+              0.1984,
+              0.5141
+            ]
+          ],
+          "mini": [
+            [
+              "back",
+              0.7562,
+              0.4797,
+              0.1719,
+              0.3484
+            ]
+          ],
+          "hex": [
+            [
+              "back",
+              0.7891,
+              0.3156,
+              0.1859,
+              0.5031
+            ]
+          ]
+        }
+      },
+      "acc:vampirecollar": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "aspect": 1,
+        "slot": "back",
+        "layer": "wrap",
+        "season": "halloween",
+        "pieces": {
+          "classic": [
+            [
+              "back",
+              0,
+              0.1156,
+              1,
+              0.6438
+            ],
+            [
+              "wrap",
+              0.0281,
+              0.5625,
+              0.9422,
+              0.0734
+            ]
+          ],
+          "tall": [
+            [
+              "back",
+              0.1688,
+              0.1453,
+              0.6594,
+              0.4156
+            ],
+            [
+              "wrap",
+              0.3094,
+              0.4109,
+              0.3781,
+              0.075
+            ]
+          ],
+          "wide": [
+            [
+              "back",
+              -0.0016,
+              0.2234,
+              1,
+              0.6438
+            ],
+            [
+              "wrap",
+              0.0437,
+              0.675,
+              0.9187,
+              0.0656
+            ]
+          ],
+          "blob": [
+            [
+              "back",
+              -0.0016,
+              0.1156,
+              1,
+              0.6438
+            ],
+            [
+              "wrap",
+              0.025,
+              0.5609,
+              0.9469,
+              0.0766
+            ]
+          ],
+          "bean": [
+            [
+              "back",
+              0.1047,
+              0.125,
+              0.7734,
+              0.4953
+            ],
+            [
+              "wrap",
+              0.1594,
+              0.4547,
+              0.6703,
+              0.075
+            ]
+          ],
+          "star": [
+            [
+              "back",
+              0,
+              0.075,
+              1,
+              0.6438
+            ],
+            [
+              "wrap",
+              0.0516,
+              0.5219,
+              0.9,
+              0.0734
+            ]
+          ],
+          "drop": [
+            [
+              "back",
+              0.0375,
+              0.1688,
+              0.9234,
+              0.5938
+            ],
+            [
+              "wrap",
+              0.0969,
+              0.5781,
+              0.8047,
+              0.0703
+            ]
+          ],
+          "pear": [
+            [
+              "back",
+              0.0813,
+              0.1531,
+              0.8375,
+              0.5359
+            ],
+            [
+              "wrap",
+              0.1406,
+              0.5172,
+              0.7266,
+              0.0719
+            ]
+          ],
+          "cloud": [
+            [
+              "back",
+              -0.0016,
+              0.1875,
+              1,
+              0.6438
+            ],
+            [
+              "wrap",
+              0.0297,
+              0.6391,
+              0.9391,
+              0.0656
+            ]
+          ],
+          "chunky": [
+            [
+              "back",
+              0,
+              0.0906,
+              1,
+              0.6438
+            ],
+            [
+              "wrap",
+              0.0266,
+              0.5359,
+              0.9453,
+              0.0766
+            ]
+          ],
+          "mini": [
+            [
+              "back",
+              0.0938,
+              0.3344,
+              0.8094,
+              0.5203
+            ],
+            [
+              "wrap",
+              0.15,
+              0.6891,
+              0.6984,
+              0.0656
+            ]
+          ],
+          "hex": [
+            [
+              "back",
+              -0.0016,
+              0.1141,
+              1,
+              0.6438
+            ],
+            [
+              "wrap",
+              0.0344,
+              0.5594,
+              0.9328,
+              0.0766
+            ]
+          ]
+        }
+      },
+      "acc:candypail": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "aspect": 1,
+        "slot": "back",
+        "layer": "held",
+        "season": "halloween",
+        "pieces": {
+          "classic": [
+            [
+              "held",
+              0.7359,
+              0.5563,
+              0.3422,
+              0.3953
+            ]
+          ],
+          "tall": [
+            [
+              "held",
+              0.6141,
+              0.575,
+              0.3672,
+              0.4156
+            ]
+          ],
+          "wide": [
+            [
+              "held",
+              0.7359,
+              0.6266,
+              0.3422,
+              0.3937
+            ]
+          ],
+          "blob": [
+            [
+              "held",
+              0.7203,
+              0.5797,
+              0.3641,
+              0.4203
+            ]
+          ],
+          "bean": [
+            [
+              "held",
+              0.6719,
+              0.5188,
+              0.3141,
+              0.3672
+            ]
+          ],
+          "star": [
+            [
+              "held",
+              0.7016,
+              0.5766,
+              0.3422,
+              0.3937
+            ]
+          ],
+          "drop": [
+            [
+              "held",
+              0.65,
+              0.5844,
+              0.3563,
+              0.4094
+            ]
+          ],
+          "pear": [
+            [
+              "held",
+              0.6406,
+              0.5844,
+              0.3563,
+              0.4094
+            ]
+          ],
+          "cloud": [
+            [
+              "held",
+              0.7266,
+              0.6266,
+              0.3422,
+              0.3937
+            ]
+          ],
+          "chunky": [
+            [
+              "held",
+              0.7359,
+              0.5422,
+              0.3422,
+              0.4
+            ]
+          ],
+          "mini": [
+            [
+              "held",
+              0.5906,
+              0.6703,
+              0.3641,
+              0.4203
+            ]
+          ],
+          "hex": [
+            [
+              "held",
+              0.7359,
+              0.5922,
+              0.3422,
+              0.3937
+            ]
+          ]
+        }
+      },
+      "acc:bat": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "aspect": 1,
+        "slot": "back",
+        "layer": "pet",
+        "season": "halloween",
+        "pieces": {
+          "classic": [
+            [
+              "pet",
+              -0.1078,
+              0.1,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "tall": [
+            [
+              "pet",
+              0.0719,
+              -0.0141,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "wide": [
+            [
+              "pet",
+              -0.125,
+              0.3047,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "blob": [
+            [
+              "pet",
+              -0.0891,
+              0.1156,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "bean": [
+            [
+              "pet",
+              0.0672,
+              0.0141,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "star": [
+            [
+              "pet",
+              -0.1938,
+              0.0406,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "drop": [
+            [
+              "pet",
+              -0.0203,
+              0.1094,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "pear": [
+            [
+              "pet",
+              0.0688,
+              0.0281,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "cloud": [
+            [
+              "pet",
+              -0.1172,
+              0.3031,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "chunky": [
+            [
+              "pet",
+              -0.1031,
+              0.0875,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "mini": [
+            [
+              "pet",
+              0.0141,
+              0.3969,
+              0.3969,
+              0.2219
+            ]
+          ],
+          "hex": [
+            [
+              "pet",
+              -0.075,
+              0.1219,
+              0.3969,
+              0.2219
+            ]
+          ]
+        }
+      },
+      "acc:ghost": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "aspect": 1,
+        "slot": "back",
+        "layer": "pet",
+        "season": "halloween",
+        "pieces": {
+          "classic": [
+            [
+              "pet",
+              0.8406,
+              0.275,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "tall": [
+            [
+              "pet",
+              0.5734,
+              0.1313,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "wide": [
+            [
+              "pet",
+              0.8578,
+              0.4188,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "blob": [
+            [
+              "pet",
+              0.8328,
+              0.2703,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "bean": [
+            [
+              "pet",
+              0.6453,
+              0.1641,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "star": [
+            [
+              "pet",
+              0.7906,
+              0.2578,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "drop": [
+            [
+              "pet",
+              0.7656,
+              0.3063,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "pear": [
+            [
+              "pet",
+              0.675,
+              0.2313,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "cloud": [
+            [
+              "pet",
+              0.8484,
+              0.3719,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "chunky": [
+            [
+              "pet",
+              0.8281,
+              0.2437,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "mini": [
+            [
+              "pet",
+              0.7328,
+              0.4562,
+              0.3266,
+              0.2687
+            ]
+          ],
+          "hex": [
+            [
+              "pet",
+              0.8078,
+              0.2781,
+              0.3266,
+              0.2687
+            ]
+          ]
+        }
+      },
+      "acc:blackcat": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "aspect": 1,
+        "slot": "back",
+        "layer": "pet",
+        "season": "halloween",
+        "pieces": {
+          "classic": [
+            [
+              "pet",
+              0.8266,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "tall": [
+            [
+              "pet",
+              0.7109,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "wide": [
+            [
+              "pet",
+              0.8219,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "blob": [
+            [
+              "pet",
+              0.8141,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "bean": [
+            [
+              "pet",
+              0.7734,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "star": [
+            [
+              "pet",
+              0.8422,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "drop": [
+            [
+              "pet",
+              0.7875,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "pear": [
+            [
+              "pet",
+              0.7812,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "cloud": [
+            [
+              "pet",
+              0.8125,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "chunky": [
+            [
+              "pet",
+              0.8344,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "mini": [
+            [
+              "pet",
+              0.7625,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ],
+          "hex": [
+            [
+              "pet",
+              0.8031,
+              0.65,
+              0.3,
+              0.3219
+            ]
+          ]
+        }
       }
     },
     "conflicts": [
@@ -7931,6 +8910,22 @@
           "fairywings",
           "backpack"
         ]
+      },
+      {
+        "a": "wrap",
+        "aIds": [
+          "vampirecollar"
+        ],
+        "b": "neck",
+        "bIds": [
+          "scarf",
+          "chain",
+          "bowtie",
+          "medal",
+          "cape",
+          "supercape",
+          "backpack"
+        ]
       }
     ],
     "art": [
@@ -8011,6 +9006,33 @@
       "art-av-acc-bandana-star-wrap",
       "art-av-acc-bandana-tall-wrap",
       "art-av-acc-bandana-wide-wrap",
+      "art-av-acc-bat",
+      "art-av-acc-bat-bean-pet",
+      "art-av-acc-bat-blob-pet",
+      "art-av-acc-bat-chunky-pet",
+      "art-av-acc-bat-classic-pet",
+      "art-av-acc-bat-cloud-pet",
+      "art-av-acc-bat-drop-pet",
+      "art-av-acc-bat-hex-pet",
+      "art-av-acc-bat-mini-pet",
+      "art-av-acc-bat-pear-pet",
+      "art-av-acc-bat-star-pet",
+      "art-av-acc-bat-tall-pet",
+      "art-av-acc-bat-wide-pet",
+      "art-av-acc-batears",
+      "art-av-acc-batwings",
+      "art-av-acc-batwings-bean-back",
+      "art-av-acc-batwings-blob-back",
+      "art-av-acc-batwings-chunky-back",
+      "art-av-acc-batwings-classic-back",
+      "art-av-acc-batwings-cloud-back",
+      "art-av-acc-batwings-drop-back",
+      "art-av-acc-batwings-hex-back",
+      "art-av-acc-batwings-mini-back",
+      "art-av-acc-batwings-pear-back",
+      "art-av-acc-batwings-star-back",
+      "art-av-acc-batwings-tall-back",
+      "art-av-acc-batwings-wide-back",
       "art-av-acc-beanie",
       "art-av-acc-bearears",
       "art-av-acc-belt",
@@ -8049,6 +9071,19 @@
       "art-av-acc-bird-star-pet",
       "art-av-acc-bird-tall-pet",
       "art-av-acc-bird-wide-pet",
+      "art-av-acc-blackcat",
+      "art-av-acc-blackcat-bean-pet",
+      "art-av-acc-blackcat-blob-pet",
+      "art-av-acc-blackcat-chunky-pet",
+      "art-av-acc-blackcat-classic-pet",
+      "art-av-acc-blackcat-cloud-pet",
+      "art-av-acc-blackcat-drop-pet",
+      "art-av-acc-blackcat-hex-pet",
+      "art-av-acc-blackcat-mini-pet",
+      "art-av-acc-blackcat-pear-pet",
+      "art-av-acc-blackcat-star-pet",
+      "art-av-acc-blackcat-tall-pet",
+      "art-av-acc-blackcat-wide-pet",
       "art-av-acc-book",
       "art-av-acc-book-bean-held",
       "art-av-acc-book-blob-held",
@@ -8092,6 +9127,20 @@
       "art-av-acc-bubbletea-wide-held",
       "art-av-acc-bucket",
       "art-av-acc-bunnyears",
+      "art-av-acc-candycornhat",
+      "art-av-acc-candypail",
+      "art-av-acc-candypail-bean-held",
+      "art-av-acc-candypail-blob-held",
+      "art-av-acc-candypail-chunky-held",
+      "art-av-acc-candypail-classic-held",
+      "art-av-acc-candypail-cloud-held",
+      "art-av-acc-candypail-drop-held",
+      "art-av-acc-candypail-hex-held",
+      "art-av-acc-candypail-mini-held",
+      "art-av-acc-candypail-pear-held",
+      "art-av-acc-candypail-star-held",
+      "art-av-acc-candypail-tall-held",
+      "art-av-acc-candypail-wide-held",
       "art-av-acc-cap",
       "art-av-acc-cape",
       "art-av-acc-cape-bean-back",
@@ -8144,6 +9193,19 @@
       "art-av-acc-cape-wide-back",
       "art-av-acc-cape-wide-wrap",
       "art-av-acc-catears",
+      "art-av-acc-cattail",
+      "art-av-acc-cattail-bean-back",
+      "art-av-acc-cattail-blob-back",
+      "art-av-acc-cattail-chunky-back",
+      "art-av-acc-cattail-classic-back",
+      "art-av-acc-cattail-cloud-back",
+      "art-av-acc-cattail-drop-back",
+      "art-av-acc-cattail-hex-back",
+      "art-av-acc-cattail-mini-back",
+      "art-av-acc-cattail-pear-back",
+      "art-av-acc-cattail-star-back",
+      "art-av-acc-cattail-tall-back",
+      "art-av-acc-cattail-wide-back",
       "art-av-acc-chain",
       "art-av-acc-chain-bean-wrap",
       "art-av-acc-chain-blob-wrap",
@@ -8177,6 +9239,19 @@
       "art-av-acc-flashlight-wide-held",
       "art-av-acc-flower",
       "art-av-acc-flowercrown",
+      "art-av-acc-ghost",
+      "art-av-acc-ghost-bean-pet",
+      "art-av-acc-ghost-blob-pet",
+      "art-av-acc-ghost-chunky-pet",
+      "art-av-acc-ghost-classic-pet",
+      "art-av-acc-ghost-cloud-pet",
+      "art-av-acc-ghost-drop-pet",
+      "art-av-acc-ghost-hex-pet",
+      "art-av-acc-ghost-mini-pet",
+      "art-av-acc-ghost-pear-pet",
+      "art-av-acc-ghost-star-pet",
+      "art-av-acc-ghost-tall-pet",
+      "art-av-acc-ghost-wide-pet",
       "art-av-acc-grad",
       "art-av-acc-guitar",
       "art-av-acc-guitar-bean-held",
@@ -8309,6 +9384,7 @@
       "art-av-acc-pirate",
       "art-av-acc-pombeanie",
       "art-av-acc-propeller",
+      "art-av-acc-pumpkinhat",
       "art-av-acc-puppy",
       "art-av-acc-puppy-bean-pet",
       "art-av-acc-puppy-blob-pet",
@@ -8497,6 +9573,31 @@
       "art-av-acc-umbrella-star-held",
       "art-av-acc-umbrella-tall-held",
       "art-av-acc-umbrella-wide-held",
+      "art-av-acc-vampirecollar",
+      "art-av-acc-vampirecollar-bean-back",
+      "art-av-acc-vampirecollar-bean-wrap",
+      "art-av-acc-vampirecollar-blob-back",
+      "art-av-acc-vampirecollar-blob-wrap",
+      "art-av-acc-vampirecollar-chunky-back",
+      "art-av-acc-vampirecollar-chunky-wrap",
+      "art-av-acc-vampirecollar-classic-back",
+      "art-av-acc-vampirecollar-classic-wrap",
+      "art-av-acc-vampirecollar-cloud-back",
+      "art-av-acc-vampirecollar-cloud-wrap",
+      "art-av-acc-vampirecollar-drop-back",
+      "art-av-acc-vampirecollar-drop-wrap",
+      "art-av-acc-vampirecollar-hex-back",
+      "art-av-acc-vampirecollar-hex-wrap",
+      "art-av-acc-vampirecollar-mini-back",
+      "art-av-acc-vampirecollar-mini-wrap",
+      "art-av-acc-vampirecollar-pear-back",
+      "art-av-acc-vampirecollar-pear-wrap",
+      "art-av-acc-vampirecollar-star-back",
+      "art-av-acc-vampirecollar-star-wrap",
+      "art-av-acc-vampirecollar-tall-back",
+      "art-av-acc-vampirecollar-tall-wrap",
+      "art-av-acc-vampirecollar-wide-back",
+      "art-av-acc-vampirecollar-wide-wrap",
       "art-av-acc-viking",
       "art-av-acc-wand-star",
       "art-av-acc-wand-star-bean-held",
@@ -8513,6 +9614,7 @@
       "art-av-acc-wand-star-wide-held",
       "art-av-acc-wings",
       "art-av-acc-witch",
+      "art-av-acc-witchnight",
       "art-av-acc-wizard",
       "art-av-body-bean",
       "art-av-body-blob",

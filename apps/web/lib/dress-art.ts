@@ -29,6 +29,7 @@ export const DRESS_ART_SIZE: Record<string, readonly [number, number]> = {
   'art-dress-tab-nose': [144, 128],
   'art-dress-tab-pattern': [144, 138],
   'art-dress-tag-dressup': [240, 71],
+  'art-dress-tag-halloween': [444, 150],
   'art-dress-tag-new': [160, 75],
   'art-dress-tag-pro': [180, 83],
   'art-dress-title': [900, 129],

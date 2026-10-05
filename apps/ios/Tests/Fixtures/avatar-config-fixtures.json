@@ -1853,6 +1853,62 @@
         "bg": "auto",
         "display": "mascot"
       }
+    },
+    {
+      "raw": {
+        "head": "pumpkinhat",
+        "neck": "batwings",
+        "wrap": "vampirecollar",
+        "held": "candypail",
+        "pet": "ghost"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "batwings",
+        "held": "candypail",
+        "wrap": "vampirecollar",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "head": "mummywrap",
+        "neck": "cattail",
+        "pet": "blackcat"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "cattail",
+        "pet": "blackcat",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
     }
   ],
   "pro": [

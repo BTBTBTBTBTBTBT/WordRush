@@ -140,6 +140,7 @@ object DressUp {
     /** Demo captures (debug only): start every shot fresh. */
     fun resetForDemo() {
         Nudge.entries.forEach { SettingsPref.remove(key(it)) }
+        SeasonNudge.reset()
         version.value += 1
     }
 
@@ -155,6 +156,7 @@ object DressUp {
         BuilderTab.EXTRAS -> R.drawable.art_dress_tab_extras
         BuilderTab.BACKDROP -> R.drawable.art_dress_tab_backdrop
         BuilderTab.FRAME -> R.drawable.art_dress_tab_frame
+        BuilderTab.SEASON -> R.drawable.art_dress_tab_hats   // the room draws the season's first hat instead
     }
 
     /** The room's tabs, all visible in one row (Cheeks joins Nose, presets sit on the stage). */
@@ -441,6 +443,51 @@ fun PartyHatOffer(modifier: Modifier = Modifier) {
             Modifier.size(34.dp).squishClickable(label = "No thanks", icon = true) { DressUp.finish(DressUp.Nudge.PARTY_HAT) },
             contentAlignment = Alignment.Center,
         ) { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color(0xFF7A6AA6), modifier = Modifier.size(14.dp)) }
+    }
+}
+
+/**
+ * The one-time seasonal nudge (10-05, the party-hat card's pattern): first Home open in a season with a mascot shelf
+ * ("Dress up for Halloween?", core AvatarSeason.nudgeDue). Yes opens the Dressing Room on the seasonal shelf; Yes or
+ * × end it for this season (it comes back next year). Signed-in players not already wearing one of its parts.
+ */
+object SeasonNudge {
+    private fun key() = "wd_dressup_season_v1:${(AuthService.profile.value?.id ?: "guest").lowercase()}"
+    fun seen(): List<String> = SettingsPref.get(key(), "").split(',').filter { it.isNotBlank() }
+    fun finish(season: String) {
+        SettingsPref.set(key(), (seen() + com.wordocious.core.AvatarSeason.nudgeKey(season, com.wordocious.core.AvatarSeason.today())).joinToString(","))
+        DressUp.version.value += 1
+    }
+    fun reset() { SettingsPref.remove(key()) }
+}
+
+@Composable
+fun SeasonDressOffer(modifier: Modifier = Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val v by DressUp.version.collectAsState()
+    val profile by AuthService.profile.collectAsState()
+    val guest by AuthService.isGuest.collectAsState()
+    val season = rememberSeason()
+    val p = profile ?: return
+    if (guest || v < 0) return
+    val fit = MascotComposer.fitManifest(ctx) ?: return
+    val own = MascotAvatars.ownConfig(p)?.let { com.wordocious.core.AvatarSeason.worn(it) }
+    val due = com.wordocious.core.AvatarSeason.nudgeDue(com.wordocious.core.AvatarSeason.today(), season ?: "none", own, SeasonNudge.seen(), fit) ?: return
+    val first = com.wordocious.core.AvatarSeason.shelf(due, fit).firstOrNull()
+    Row(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+            .background(Brush.horizontalGradient(listOf(Color(0xFFFFEDD5), Color(0xFFEDE9FE))))
+            .padding(start = 10.dp, end = 2.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        val icon = first?.let { MascotComposer.drawableId(ctx, "art_av_acc_${it.id}") } ?: 0
+        if (icon != 0) Box(Modifier.width(50.dp), contentAlignment = Alignment.Center) { StageArt(icon, 44.dp) }
+        Column(Modifier.weight(1f)) {
+            androidx.compose.material3.Text("Dress up for ${seasonTitle(due)}?", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9), maxLines = 1)
+            androidx.compose.material3.Text("Free looks for the season.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7A6AA6), maxLines = 1)
+        }
+        CandyButton("Yes!", onClick = { SeasonNudge.finish(due); DressUp.open(DressDoor.Room(BuilderTab.SEASON)) }, color = CandyColor.PINK, size = CandySize.SMALL)
     }
 }
 

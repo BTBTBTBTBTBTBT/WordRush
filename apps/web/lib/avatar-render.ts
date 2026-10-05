@@ -1137,6 +1137,7 @@ const LABELS: Partial<Record<BuilderField, Record<string, string>>> = {
     viking: 'Viking helmet', sweatband: 'Sweatband', cap: 'Baseball cap', beret: 'Beret', minicrown: 'Mini crown', flowercrown: 'Flower crown',
     bucket: 'Bucket hat', santa: 'Santa hat', witch: 'Witch hat', astronaut: 'Space helmet', bigbow: 'Big bow', pombeanie: 'Pom-pom beanie',
     bearears: 'Bear ears', mohawk: 'Mohawk',
+    pumpkinhat: 'Pumpkin hat', candycornhat: 'Candy corn hat', witchnight: 'Midnight witch hat', batears: 'Bat ears',
   },
   face: {
     none: 'Nothing on the face', mustache: 'Mustache', 'heart-glasses': 'Heart shades', monocle: 'Monocle', starglasses: 'Star shades',
@@ -1145,14 +1146,16 @@ const LABELS: Partial<Record<BuilderField, Record<string, string>>> = {
   neck: {
     none: 'Nothing on the neck', cape: 'Cape', wings: 'Wings', bowtie: 'Bow tie', scarf: 'Scarf', chain: 'Gold chain', medal: 'Medal',
     backpack: 'Backpack', bubbletea: 'Bubble tea', guitar: 'Guitar', supercape: 'Hero cape', fairywings: 'Fairy wings',
+    batwings: 'Bat wings', cattail: 'Cat tail',
   },
   held: {
     none: 'Empty hands', mug: 'Coffee mug', book: 'Book', 'pencil-big': 'Big pencil', balloon: 'Balloon', trophy: 'Trophy', magnifier: 'Magnifier',
     flashlight: 'Flashlight', umbrella: 'Umbrella', icecream: 'Ice cream', spatula: 'Spatula', mic: 'Microphone', 'wand-star': 'Star wand',
+    candypail: 'Candy pail',
   },
-  wrap: { none: 'No wrap', bandana: 'Bandana', belt: 'Belt', apron: 'Chef apron', lei: 'Flower lei', 'cape-drape': 'Drape cape' },
+  wrap: { none: 'No wrap', bandana: 'Bandana', belt: 'Belt', apron: 'Chef apron', lei: 'Flower lei', 'cape-drape': 'Drape cape', vampirecollar: 'Vampire collar' },
   feet: { none: 'Bare feet', sneakers: 'High-tops', boots: 'Rain boots', slippers: 'Bunny slippers', skates: 'Roller skates' },
-  pet: { none: 'No buddy', bird: 'Bird on the head', kitten: 'Kitten', puppy: 'Puppy', snail: 'Snail on the shoulder' },
+  pet: { none: 'No buddy', bird: 'Bird on the head', kitten: 'Kitten', puppy: 'Puppy', snail: 'Snail on the shoulder', bat: 'Bat buddy', ghost: 'Ghost buddy', blackcat: 'Black cat' },
   brows: { none: 'No brows', happy: 'Happy brows', worried: 'Worried brows', determined: 'Determined brows', surprised: 'Surprised brows', cheeky: 'Cheeky brow', sleepy: 'Sleepy brows' },
   extra: { none: 'No extra', sweat: 'Sweat drop', tear: 'Happy tear', steam: 'Steam puff', heart: 'Floating heart' },
   accColor: { default: 'Original colors' },
@@ -1212,9 +1215,10 @@ export function frameLevelLocked(frame: AvatarFrame, level: number | null | unde
  * photo / mascot choice; never picks a Pro-only option for a free player.
  * `rng` returns [0, 1) (Math.random in the app; seeded in tests).
  */
-export function randomAvatar(current: AvatarConfig, rng: () => number, { isPro }: { isPro: boolean }): AvatarConfig {
+export function randomAvatar(current: AvatarConfig, rng: () => number, { isPro, available }: { isPro: boolean; available?: (field: string, id: string) => boolean }): AvatarConfig {
+  // `available` (core isPartAvailable): seasonal parts only while their season is on
   const pick = <T extends string>(field: BuilderField, ids: readonly T[]): T => {
-    const ok = ids.filter((id) => isPro || !avatarProOnly(field, id));
+    const ok = ids.filter((id) => (isPro || !avatarProOnly(field, id)) && (!available || available(field, id)));
     return ok[Math.floor(rng() * ok.length) % ok.length];
   };
   const maybe = <T extends string>(field: BuilderField, ids: readonly T[], chanceNone: number): T =>

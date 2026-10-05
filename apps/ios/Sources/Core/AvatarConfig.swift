@@ -210,20 +210,22 @@ public enum AvatarCatalog {
                                "cowboy", "chef", "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara",
                                "viking", "sweatband",
                                "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow",
-                               "pombeanie", "bearears", "mohawk"]
+                               "pombeanie", "bearears", "mohawk",
+                               // seasonal (avatar-parts.json `season`; AvatarSeason decides when they show): Halloween 10-05
+                               "pumpkinhat", "candycornhat", "witchnight", "batears"]
     /// Face extras (AN addendum + round 2).
     public static let faces = ["none", "mustache", "heart-glasses", "monocle", "starglasses", "roundglasses", "eyepatch",
                                "facepaint", "mask", "curlymustache"]
     /// Neck / back extras (AN addendum + round 2). Pro-only: wings, chain.
     public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar",
-                               "supercape", "fairywings"]
+                               "supercape", "fairywings", "batwings", "cattail"]
     /// 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on.
     public static let held = ["none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella",
-                              "icecream", "spatula", "mic", "wand-star"]
+                              "icecream", "spatula", "mic", "wand-star", "candypail"]
     /// Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter).
-    public static let wraps = ["none", "bandana", "belt", "apron", "lei", "cape-drape"]
+    public static let wraps = ["none", "bandana", "belt", "apron", "lei", "cape-drape", "vampirecollar"]
     public static let feet = ["none", "sneakers", "boots", "slippers", "skates"]
-    public static let pets = ["none", "bird", "kitten", "puppy", "snail"]
+    public static let pets = ["none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat"]
     public static let brows = ["none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy"]
     public static let extras = ["none", "sweat", "tear", "steam", "heart"]
     /// The integrated config fields + their options, in the maker's tab order.
@@ -234,7 +236,8 @@ public enum AvatarCatalog {
     /// Parts that carry the maker's NEW tag (the 10-05 additions + the 7 rebuilt parts; brows as "brows:<id>").
     public static let newParts: Set<String> = {
         var out: [String] = []
-        for list in [held, wraps, feet, pets, extras] { out.append(contentsOf: list.dropFirst()) }
+        // the 10-05 integrated additions only (seasonal parts carry their season tag instead)
+        for list in [Array(held.prefix(13)), Array(wraps.prefix(6)), feet, Array(pets.prefix(5)), extras] { out.append(contentsOf: list.dropFirst()) }
         out.append(contentsOf: brows.dropFirst().map { "brows:\($0)" })
         out.append(contentsOf: ["backpack", "scarf", "chain", "bubbletea", "guitar", "cape", "supercape"])
         return Set(out)

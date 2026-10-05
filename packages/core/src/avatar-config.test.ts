@@ -7,8 +7,8 @@ describe('avatar config (FINISH_SPEC AN3)', () => {
     expect(AVATAR_BODIES).toHaveLength(12);
     expect(AVATAR_COLORS).toHaveLength(38);
     expect(AVATAR_COLORS.filter((c) => !c.pro)).toHaveLength(33);
-    expect(AVATAR_HEADS.filter((h) => h !== 'none')).toHaveLength(33);
-    expect([...AVATAR_FACES, ...AVATAR_NECKS].filter((x) => x !== 'none')).toHaveLength(20);
+    expect(AVATAR_HEADS.filter((h) => h !== 'none')).toHaveLength(37);   // 33 + 4 Halloween (10-05)
+    expect([...AVATAR_FACES, ...AVATAR_NECKS].filter((x) => x !== 'none')).toHaveLength(22);   // + bat wings, cat tail
     expect(AVATAR_BACKDROPS).toHaveLength(18);
   });
   it('gives every player a deterministic friendly default in their accent', () => {

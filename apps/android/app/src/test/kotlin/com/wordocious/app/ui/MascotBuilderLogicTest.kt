@@ -19,17 +19,19 @@ class MascotBuilderLogicTest {
 
     @Test fun everyTabHasOptionsAndTheSpecOrder() {
         assertEquals(
-            listOf("Presets", "Body", "Color", "Pattern", "Eyes", "Nose", "Cheeks", "Mouth", "Hats", "Extras", "Backdrop", "Frame"),
+            listOf("Presets", "Body", "Color", "Pattern", "Eyes", "Nose", "Cheeks", "Mouth", "Hats", "Extras", "Backdrop", "Frame", "Season"),
             BuilderTab.entries.map { it.label },
         )
         // Round 2: the Color tab is the glossy swatch grid (SwatchGrid rows), not option tiles.
-        BuilderTab.entries.filter { it != BuilderTab.COLOR }.forEach { assertTrue(it.name, MascotBuilderLogic.options(it).isNotEmpty()) }
+        // (the Season shelf is empty out of season: the room hides its tab then)
+        BuilderTab.entries.filter { it != BuilderTab.COLOR && it != BuilderTab.SEASON }.forEach { assertTrue(it.name, MascotBuilderLogic.options(it).isNotEmpty()) }
         assertEquals(38, com.wordocious.core.AvatarOptions.SWATCHES.size)
         assertEquals(10, MascotBuilderLogic.options(BuilderTab.PRESETS).size)
         // The full catalogs (round 2): 33 hats + None, 9 face + 11 neck/back extras + None, auto + 18 backdrops.
-        assertEquals(34, MascotBuilderLogic.options(BuilderTab.HATS).size)
+        // no fit manifest here: seasons are unknown, so the 4 Halloween hats list too (seasonalPartsFollowTheSeason covers the filter)
+        assertEquals(38, MascotBuilderLogic.options(BuilderTab.HATS).size)
         // None + 9 faces + 11 neck items + the 10-05 integrated parts (12 held, 5 wraps, 4 shoes, 4 buddies, 6 brows, 4 extras)
-        assertEquals(21 + 35, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)
+        assertEquals(21 + 35 + 7, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)   // + 7 Halloween (bat wings, cat tail, collar, pail, 3 buddies)
         assertEquals(19, MascotBuilderLogic.options(BuilderTab.BACKDROP).size)
         assertEquals("none", MascotBuilderLogic.options(BuilderTab.HATS).first().id)
         assertEquals("auto", MascotBuilderLogic.options(BuilderTab.BACKDROP).first().id)
@@ -165,5 +167,29 @@ class MascotBuilderLogicTest {
         }
         assertEquals("No hat", MascotBuilderLogic.fallbackName(BuilderOption("head", "none")))
         assertEquals("Auto", MascotBuilderLogic.fallbackName(BuilderOption("bg", "auto")))
+    }
+
+    /** 10-05 seasonal items: hidden out of season unless saved, on the shelf in season, never randomized out of season. */
+    @Test fun seasonalPartsFollowTheSeason() {
+        val fit = com.wordocious.core.AvatarFitManifest.parse(java.io.File("src/main/assets/avatar-parts.json").readText())!!
+        val before = Triple(MascotBuilderLogic.fit, MascotBuilderLogic.season, MascotBuilderLogic.saved)
+        try {
+            MascotBuilderLogic.fit = fit
+            MascotBuilderLogic.season = null
+            MascotBuilderLogic.saved = null
+            assertFalse(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "pumpkinhat" })
+            assertTrue(MascotBuilderLogic.options(BuilderTab.SEASON).isEmpty())
+            repeat(40) { assertFalse(MascotBuilderLogic.randomize(AvatarConfig(), true, 100).head in setOf("pumpkinhat", "candycornhat", "witchnight", "batears")) }
+            MascotBuilderLogic.saved = AvatarConfig().copy(head = "pumpkinhat")
+            assertTrue(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "pumpkinhat" })
+            assertFalse(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "witchnight" })
+            MascotBuilderLogic.season = "halloween"
+            assertEquals("pumpkinhat", MascotBuilderLogic.options(BuilderTab.SEASON).first().id)
+            assertTrue(MascotBuilderLogic.options(BuilderTab.EXTRAS).any { it.id == "batwings" })
+            assertEquals("halloween", MascotBuilderLogic.seasonOf(BuilderOption("pet", "ghost")))
+            assertFalse(MascotBuilderLogic.isNew(BuilderOption("pet", "ghost")))
+        } finally {
+            MascotBuilderLogic.fit = before.first; MascotBuilderLogic.season = before.second; MascotBuilderLogic.saved = before.third
+        }
     }
 }

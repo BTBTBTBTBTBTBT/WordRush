@@ -23,6 +23,8 @@ enum MascotBuilderMode {
 /// The builder's categories, in tab order.
 enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
     case body, color, pattern, eyes, nose, cheeks, mouth, hats, extras, backdrop, frame
+    /// 10-05: the season's shelf (AvatarSeason), first in the row while a season is on.
+    case season
     var id: String { rawValue }
 
     var title: String {
@@ -38,6 +40,7 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
         case .extras: return "Extras"
         case .backdrop: return "Backdrop"
         case .frame: return "Frame"
+        case .season: return MascotSeasonal.title ?? "Season"
         }
     }
 
@@ -46,6 +49,29 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
 
     /// The tab's ChatGPT icon (art-dress-tab-<id>).
     var artId: String { self == .cheeks ? "nose" : rawValue }
+}
+
+/// 10-05 seasonal items (WordociousCore AvatarSeason): the active season = the admin preview (`debug-season`), else
+/// the calendar's window (CastSkin.season). A seasonal part shows while its season is on, or when the player's saved
+/// look wears it; the shelf leads the room's tabs during the season.
+enum MascotSeasonal {
+    static var season: String? { CastSkin.season?.rawValue }
+    static var title: String? {
+        season.map { $0.split(separator: "-").map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ") }
+    }
+    static var shelf: [AvatarPart] {
+        guard let fit = MascotParts.fit else { return [] }
+        return AvatarSeason.shelf(season, manifest: fit)
+    }
+    static func available(_ field: String, _ id: String, saved: AvatarConfig?) -> Bool {
+        guard let fit = MascotParts.fit else { return true }
+        return AvatarSeason.isPartAvailable(AvatarPart(field: field, id: id), day: AvatarSeason.today(), preview: season ?? "none",
+                                            saved: saved, manifest: fit)
+    }
+    static func partSeason(_ field: String, _ id: String) -> String? {
+        guard let fit = MascotParts.fit else { return nil }
+        return AvatarSeason.partSeason(field: field, id: id, manifest: fit)
+    }
 }
 
 /// Parts that wear the pink NEW tag in the maker until the player has visited their tab once.
@@ -203,6 +229,8 @@ struct MascotBuilderView: View {
     @State private var lastTick = Date.distantPast
     /// "Mask doesn't fit with Round glasses, so it came off" (the fit system swaps conflicting picks).
     @State private var note: String?
+    /// The look the room opened on (the saved look): its seasonal parts stay offered after their season.
+    private let savedLook: AvatarConfig
 
     init(initial: String, config: AvatarConfig, mode: MascotBuilderMode = .profile, hasPhoto: Bool = false,
          level: Int = 1, isPro: Bool = false, saveTitle: String = "Save", saving: Bool = false,
@@ -221,6 +249,7 @@ struct MascotBuilderView: View {
         self.onClose = onClose
         _config = State(initialValue: config)
         _previous = State(initialValue: config)
+        savedLook = config
         _tab = State(initialValue: startTab)
     }
 
@@ -336,7 +365,7 @@ struct MascotBuilderView: View {
     /// All ten tabs in one row: the ChatGPT tab icon over a tiny label; the open tab lifts on a white pad.
     private var iconTabs: some View {
         HStack(spacing: 1) {
-            ForEach(MascotBuilderTab.roomTabs) { t in
+            ForEach((MascotSeasonal.shelf.isEmpty ? [] : [MascotBuilderTab.season]) + MascotBuilderTab.roomTabs) { t in
                 let on = tab == t || (t == .nose && tab == .cheeks)
                 Button { Haptics.tap(); tab = t } label: {
                     VStack(spacing: 2) {
@@ -344,12 +373,16 @@ struct MascotBuilderView: View {
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .fill(on ? Color.white : Color.white.opacity(Theme.isDark ? 0.08 : 0.55))
                                 .shadow(color: Color(hex: 0x7C3AED).opacity(on ? 0.3 : 0), radius: 6, y: 3)
-                            StageArt("art-dress-tab-\(t.artId)", height: 24)
+                            if t == .season, let first = MascotSeasonal.shelf.first {
+                                StageArt("art-av-acc-\(first.id)", height: 24)   // the season's first hat (the pumpkin)
+                            } else {
+                                StageArt("art-dress-tab-\(t.artId)", height: 24)
+                            }
                         }
                         .frame(width: 32, height: 32)
                         Text(t == .extras ? "Extras" : t.title)
                             .font(Brand.font(8.5, .black))
-                            .foregroundStyle(on ? Color(hex: 0x6D28D9) : (Theme.isDark ? Theme.textSecondary : Color(hex: 0x6B5C8F)))
+                            .foregroundStyle(on ? Color(hex: t == .season ? 0xC2410C : 0x6D28D9) : (Theme.isDark ? Theme.textSecondary : Color(hex: 0x6B5C8F)))
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity)
@@ -547,6 +580,13 @@ struct MascotBuilderView: View {
                 }
                 accColorSection
             }
+        case .season:
+            VStack(alignment: .leading, spacing: 8) {
+                grid(MascotSeasonal.shelf.map { Option(slot: $0.field, value: $0.id) })
+                Text("Free for the season. Save a look and it stays yours.")
+                    .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                    .frame(maxWidth: .infinity)
+            }
         case .backdrop: grid(AvatarCatalog.backdropIds.map { Option(slot: "bg", value: $0) })
         case .frame:
             VStack(alignment: .leading, spacing: 8) {
@@ -560,7 +600,8 @@ struct MascotBuilderView: View {
     private func grid(_ opts: [Option]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(opts) { o in tile(o) }
+                // seasonal parts: only while their season is on, or when the saved look wears them
+                ForEach(opts.filter { MascotSeasonal.available($0.slot, $0.value, saved: savedLook) }) { o in tile(o) }
             }
             if let note {
                 Text(note).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x6D28D9))
@@ -745,7 +786,8 @@ struct MascotBuilderView: View {
         let on = isSelected(o)
         let proLocked = isProOnly(o) && !isPro
         let tier = tierLock(o)
-        let isNew = (MascotNew.ids.contains("\(o.slot):\(o.value)") || MascotNew.integrated(slot: o.slot, value: o.value)) && !seenNew.contains(tab)
+        let seasonOf = MascotSeasonal.partSeason(o.slot, o.value)
+        let isNew = seasonOf == nil && (MascotNew.ids.contains("\(o.slot):\(o.value)") || MascotNew.integrated(slot: o.slot, value: o.value)) && !seenNew.contains(tab)
         let dark = Theme.isDark
         return Button {
             if tier != nil { return }
@@ -773,6 +815,7 @@ struct MascotBuilderView: View {
                 .shadow(color: on ? Color(hex: 0xF59E0B).opacity(0.55) : .clear, radius: 6)
                 .overlay(Circle().strokeBorder(on ? Color(hex: 0xF5B82E) : .clear, lineWidth: 3))
                 .overlay(alignment: .topTrailing) { if isNew && !proLocked { StageArt("art-dress-tag-new", height: 15).offset(x: 4, y: -3) } }
+                .overlay(alignment: .topTrailing) { if let seasonOf { StageArt("art-dress-tag-\(seasonOf)", height: 13).offset(x: 8, y: -3) } }
                 .overlay(alignment: .bottomTrailing) { if proLocked { StageArt("art-dress-tag-pro", height: 15).offset(x: 6, y: 2) } }
                 if let tier {
                     Text("Lv \(tier.minLevel)").font(Brand.font(9, .black)).foregroundStyle(FinishInk.secondary)
@@ -825,8 +868,9 @@ struct MascotBuilderView: View {
         func wearable(_ slot: String, _ ids: [String]) -> [String] {
             ids.filter { id in
                 switch slot {
-                case "head": return isPro || !AvatarCatalog.isProOnly(head: id)
-                case "neck": return isPro || !AvatarCatalog.isProOnly(neck: id)
+                // seasonal parts only while their season is on (MascotSeasonal; never a saved-only pick)
+                case "head": return (isPro || !AvatarCatalog.isProOnly(head: id)) && MascotSeasonal.available("head", id, saved: nil)
+                case "neck": return (isPro || !AvatarCatalog.isProOnly(neck: id)) && MascotSeasonal.available("neck", id, saved: nil)
                 case "bg": return isPro || !AvatarCatalog.isProOnly(bg: id)
                 default: return true
                 }

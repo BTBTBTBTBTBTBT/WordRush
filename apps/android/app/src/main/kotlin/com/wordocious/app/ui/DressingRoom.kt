@@ -73,7 +73,11 @@ fun DressingRoom(
     onDone: (AvatarConfig) -> Unit,
 ) {
     val ctx = LocalContext.current
-    remember { MascotBuilderLogic.fit = MascotComposer.fitManifest(ctx); true }
+    remember { MascotBuilderLogic.fit = MascotComposer.fitManifest(ctx); MascotBuilderLogic.saved = config; true }
+    // 10-05 seasonal items: the active season (admin preview first, else the calendar) drives the shelf + filters
+    val season = rememberSeason()
+    MascotBuilderLogic.season = season
+    val shelf = remember(season) { MascotBuilderLogic.shelf() }
     var look by remember { mutableStateOf(config) }
     var tab by remember { mutableStateOf(if (startTab == BuilderTab.PRESETS) BuilderTab.BODY else startTab) }
     val undo = remember { mutableStateListOf<AvatarConfig>() }
@@ -112,7 +116,7 @@ fun DressingRoom(
         }
         // All ten tabs, one row.
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).padding(top = 8.dp)) {
-            DressUp.roomTabs.forEach { t ->
+            ((if (shelf.isEmpty()) emptyList() else listOf(BuilderTab.SEASON)) + DressUp.roomTabs).forEach { t ->
                 val on = tab == t || (t == BuilderTab.NOSE && tab == BuilderTab.CHEEKS)
                 Column(
                     Modifier.weight(1f).squishClickable(label = "${t.label} options" + if (on) ", selected" else "", role = Role.Tab) { tab = t },
@@ -124,13 +128,15 @@ fun DressingRoom(
                             .clip(RoundedCornerShape(12.dp)).background(if (on) Color.White else Color.White.copy(alpha = 0.55f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        StageArt(DressUp.tabArt(t), 24.dp)
+                        val first = shelf.firstOrNull()
+                        val seasonIcon = if (t == BuilderTab.SEASON && first != null) MascotComposer.drawableId(ctx, "art_av_acc_${first.id}") else 0
+                        StageArt(if (seasonIcon != 0) seasonIcon else DressUp.tabArt(t), 24.dp)
                         if (t !in seen && (t == BuilderTab.HATS || t == BuilderTab.EXTRAS)) Box(Modifier.align(Alignment.TopEnd).size(7.dp).clip(CircleShape).background(Color(0xFFEC4899)))
                     }
                     // softWrap off + a hair of negative tracking: "Backdrop" fits its tenth of a 360 dp row (was "Backdro").
-                    Text(t.label, fontSize = 8.5.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, letterSpacing = (-0.25).sp,
+                    Text(if (t == BuilderTab.SEASON) seasonTitle(season) else t.label, fontSize = 8.5.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, letterSpacing = (-0.25).sp,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
-                        color = if (on) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.textSecondary else Color(0xFF6B5C8F))
+                        color = if (on) (if (t == BuilderTab.SEASON) Color(0xFFC2410C) else Color(0xFF6D28D9)) else if (WTheme.isDark) WTheme.textSecondary else Color(0xFF6B5C8F))
                 }
             }
         }
@@ -168,6 +174,11 @@ fun DressingRoom(
                 BuilderTab.HATS, BuilderTab.EXTRAS -> {
                     Grid(MascotBuilderLogic.options(tab))
                     if (MascotBuilderLogic.tintableWorn(look)) { FinishLabel("ACCESSORY COLOR"); SwatchGridPublic("accColor", look, isPro, { change(it) }) { paywallFor = it } }
+                }
+                BuilderTab.SEASON -> {
+                    Grid(shelf)
+                    Text("Free for the season. Save a look and it stays yours.", fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                        color = WTheme.textMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 }
                 else -> Grid(MascotBuilderLogic.options(tab))
             }
@@ -236,6 +247,11 @@ private fun PartTile(o: BuilderOption, look: AvatarConfig, isPro: Boolean, level
                 if (tierLock) StageArt(R.drawable.art_dress_lock, 20.dp)
             }
             if (newTag && !proLock) StageArt(R.drawable.art_dress_tag_new, 15.dp, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-3).dp))
+            // 10-05 seasonal parts wear their season's tag (art_dress_tag_<season>, the NEW / PRO family)
+            MascotBuilderLogic.seasonOf(o)?.let { s ->
+                val tag = MascotComposer.drawableId(ctx, "art_dress_tag_${s.replace('-', '_')}")
+                if (tag != 0) StageArt(tag, 13.dp, Modifier.align(Alignment.TopEnd).offset(x = 8.dp, y = (-3).dp))
+            }
             if (proLock) StageArt(R.drawable.art_dress_tag_pro, 15.dp, Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 2.dp))
         }
         MascotBuilderLogic.frameTier(o)?.takeIf { tierLock }?.let {
@@ -243,6 +259,10 @@ private fun PartTile(o: BuilderOption, look: AvatarConfig, isPro: Boolean, level
         }
     }
 }
+
+/** "Halloween", "Winter Holidays" (the season id, title-cased). */
+internal fun seasonTitle(season: String?): String =
+    season?.split('-')?.joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } } ?: "Season"
 
 @Composable
 private fun NoneLabel() {

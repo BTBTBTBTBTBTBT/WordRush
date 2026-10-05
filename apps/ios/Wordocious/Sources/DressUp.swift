@@ -80,6 +80,7 @@ final class DressUp: ObservableObject {
     /// `-storeDemo` shots reset the nudges so every capture starts fresh.
     func resetForDemo() {
         for n in [Nudge.hostInvite, .partyHat] { UserDefaults.standard.removeObject(forKey: key(n)) }
+        SeasonNudge.resetForDemo()
         version += 1
     }
     #endif
@@ -451,6 +452,63 @@ struct TitleRibbon: View {
             ArtThumbs.image(name, points: height * 1.3).resizable().interpolation(.high)
         } else {
             LinearGradient(colors: [Color(hex: 0xFDE68A), Color(hex: 0xF5B82E)], startPoint: .top, endPoint: .bottom)
+        }
+    }
+}
+
+// MARK: - The one-time seasonal nudge (10-05)
+
+/// First Home open in a season with a mascot shelf (WordociousCore AvatarSeason.nudgeDue): "Dress up for Halloween?",
+/// the party-hat card's pattern. Yes opens the Dressing Room on the seasonal shelf; Yes or x end it for this season
+/// (it comes back next year). Only for signed-in players not already wearing one of the season's parts.
+@MainActor
+enum SeasonNudge {
+    private static func key() -> String { "wd_dressup_season_v1:\((AuthService.shared.profile?.id ?? "guest").lowercased())" }
+    static var seen: [String] { UserDefaults.standard.stringArray(forKey: key()) ?? [] }
+    static func finish(_ season: String) {
+        UserDefaults.standard.set(seen + [AvatarSeason.nudgeKey(season, day: AvatarSeason.today())], forKey: key())
+    }
+    static func due() -> String? {
+        guard let p = AuthService.shared.profile, !AuthService.shared.isGuest, let fit = MascotParts.fit else { return nil }
+        let own = MascotLooks.shared.ownConfig(p).map(AvatarSeason.worn)
+        return AvatarSeason.nudgeDue(day: AvatarSeason.today(), preview: MascotSeasonal.season ?? "none", config: own, seen: seen, manifest: fit)
+    }
+    #if DEBUG
+    static func resetForDemo() { UserDefaults.standard.removeObject(forKey: key()) }
+    #endif
+}
+
+struct SeasonDressOffer: View {
+    @ObservedObject private var dressUp = DressUp.shared
+    @State private var gone = false
+
+    var body: some View {
+        let _ = dressUp.version
+        if !gone, let season = SeasonNudge.due() {
+            let title = MascotSeasonal.title ?? "the season"
+            HStack(spacing: 10) {
+                StageArt("art-av-acc-\(MascotSeasonal.shelf.first?.id ?? "pumpkinhat")", height: 44)
+                    .frame(width: 50)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Dress up for \(title)?").font(Brand.font(15, .black))
+                        .foregroundStyle(Theme.isDark ? Theme.textPrimary : Color(hex: 0x6D28D9))
+                    Text("Free looks for the season.").font(Brand.font(11, .bold))
+                        .foregroundStyle(Theme.isDark ? Theme.textSecondary : Color(hex: 0x7A6AA6))
+                }
+                .lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 4)
+                Button { SeasonNudge.finish(season); gone = true; dressUp.open(.room(.season)) } label: { CandyLabel(title: "Yes!") }
+                    .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
+                FamilyCloseButton(size: 22, label: "No thanks") {   // family 3D X
+                    Haptics.tap(); SeasonNudge.finish(season); withAnimation(.easeOut(duration: 0.2)) { gone = true }
+                }
+                .padding(.vertical, -5)
+            }
+            .padding(.leading, 10).padding(.trailing, 2).padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(LinearGradient(colors: [Color(hex: 0xFFEDD5), Color(hex: 0xEDE9FE)], startPoint: .leading, endPoint: .trailing)
+                    .opacity(Theme.isDark ? 0.16 : 1)))
+            .transition(.opacity)
         }
     }
 }

@@ -44,6 +44,7 @@ import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
+import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
@@ -790,6 +791,9 @@ export function renderAvatarConfigFixtures() {
     { held: 'mug', wrap: 'apron', feet: 'sneakers', pet: 'kitten', brows: 'happy', extra: 'heart' },
     { held: 'sword', wrap: 'tie', feet: 'heels', pet: 'dragon', brows: 'angry', extra: 'fire' },
     { wrap: 'sash', held: 'wand-star' },
+    // 10-05 seasonal parts (Halloween): valid ids all year (a saved look is never stripped)
+    { head: 'pumpkinhat', neck: 'batwings', wrap: 'vampirecollar', held: 'candypail', pet: 'ghost' },
+    { head: 'mummywrap', neck: 'cattail', pet: 'blackcat' },
   ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
   const pro = [true, false].flatMap((isPro) => [
     { isPro, input: { ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) },
@@ -946,6 +950,31 @@ export function renderAchievementRuleFixtures() {
   };
 }
 
+// 10-05 seasonal mascot items: availability (window / preview / saved), the shelf, the Home nudge.
+export function renderAvatarSeasonFixtures() {
+  const parts = [
+    { field: 'head', id: 'pumpkinhat' }, { field: 'head', id: 'witch' }, { field: 'neck', id: 'batwings' }, { field: 'wrap', id: 'vampirecollar' },
+    { field: 'held', id: 'candypail' }, { field: 'pet', id: 'ghost' }, { field: 'pet', id: 'kitten' }, { field: 'head', id: 'none' },
+  ];
+  const dates = ['2026-10-16', '2026-10-17', '2026-10-31', '2026-11-01', '2026-11-02', '2027-03-01'];
+  const previews: Array<string | null> = [null, 'halloween', 'none'];
+  const saved = [null, { head: 'pumpkinhat' }, { pet: 'ghost', neck: 'batwings' }];
+  const available = parts.flatMap((part) => dates.flatMap((date) => previews.flatMap((preview) => saved.map((s) => ({
+    part, date, preview, saved: s, available: isPartAvailable(part, date, preview, s),
+  })))));
+  const seasons = parts.map((p) => ({ ...p, season: avatarPartSeason(p.field, p.id) }));
+  const active = dates.flatMap((date) => previews.map((preview) => ({ date, preview, season: mascotSeason(date, preview) })));
+  const shelf = { halloween: seasonalShelf('halloween'), none: seasonalShelf(null), unknown: seasonalShelf('arbor-day') };
+  const wears = [null, {}, { head: 'witch' }, { head: 'pumpkinhat' }, { pet: 'blackcat' }, { held: 'mug', wrap: 'vampirecollar' }]
+    .flatMap((config) => [null, 'halloween', 'thanksgiving'].map((season) => ({ config, season, wears: wearsSeasonalPart(config, season) })));
+  const nudge = dates.flatMap((date) => previews.flatMap((preview) => [
+    { config: { head: 'none' }, seen: [] as string[] }, { config: { head: 'witchnight' }, seen: [] as string[] },
+    { config: { head: 'party' }, seen: ['halloween-2026'] }, { config: null, seen: ['halloween-2025'] },
+  ].map((c) => ({ date, preview, ...c, due: seasonNudgeDue(date, preview, c.config, c.seen) }))));
+  const keys = [['halloween', '2026-10-20'], ['winter-holidays', '2027-12-03']].map(([s, d]) => ({ season: s, date: d, key: seasonNudgeKey(s, d), tag: seasonTag(s) }));
+  return { available, seasons, active, shelf, wears, nudge, keys };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -972,6 +1001,7 @@ const FILES: Array<[string, unknown]> = [
   ['avatar-resolve-fixtures.json', renderAvatarResolveFixtures()],
   ['podium-layout-fixtures.json', renderPodiumLayoutFixtures()],
   ['avatar-layout-fixtures.json', renderAvatarLayoutFixtures()],
+  ['avatar-season-fixtures.json', renderAvatarSeasonFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

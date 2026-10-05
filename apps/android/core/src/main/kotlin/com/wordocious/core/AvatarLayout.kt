@@ -67,6 +67,8 @@ class AvatarFitManifest(val root: JsonObject) {
         }
         /** Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes). */
         val inkTop: Double? = (o["inkTop"] as? JsonPrimitive)?.doubleOrNull
+        /** Seasonal parts (AvatarSeason): the season-registry id it belongs to; shown in season or when saved. */
+        val season: String? = (o["season"] as? JsonPrimitive)?.content
     }
     data class Piece(val layer: String, val x: Double, val y: Double, val w: Double, val h: Double)
     data class Conflict(val a: String, val aIds: List<String>, val b: String, val bIds: List<String>)

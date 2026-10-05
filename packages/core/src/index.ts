@@ -27,6 +27,7 @@ export * from './level-season';
 export * from './push-copy';
 export * from './avatar-config';
 export * from './avatar-layout';
+export * from './avatar-season';
 export * from './friendly-games';
 export * from './leaderboard-title';
 export * from './podium-layout';

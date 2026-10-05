@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Lock } from 'lucide-react';
-import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPickConflict, castPreset, enforceAvatarPro, type AvatarConfig, type AvatarFrame } from '@wordle-duel/core';
+import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPartSeason, avatarPickConflict, castPreset, enforceAvatarPro, isPartAvailable, seasonalShelf, type AvatarConfig, type AvatarFrame } from '@wordle-duel/core';
 
 import { ProPill } from '@/components/game/finished-kit';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
@@ -19,6 +19,7 @@ import { MascotAvatar } from './mascot-avatar';
 import { DressStage, StageArt, StageClose, backdropCss, warmDressArt } from '@/components/profile/dress-up';
 import { CastButton } from '@/components/ui/cast-button';
 import { artSrc } from '@/lib/art';
+import { useSeason } from '@/lib/season';
 
 /**
  * FINISH_SPEC AN4 (+ addendum): Edit Profile → "Make your mascot". A big live
@@ -42,6 +43,10 @@ export interface MascotBuilderProps {
   saving?: boolean;
   onSave: (config: AvatarConfig) => void;
   onBack: () => void;
+  /** The tab a door opens on ('season' = the seasonal shelf). */
+  initialTab?: string;
+  /** The player's SAVED look: a seasonal part they saved stays offered after its season (never strip a look). */
+  saved?: AvatarConfig | null;
 }
 
 const ACCENT = '#7c3aed';
@@ -74,8 +79,15 @@ const TAB_FIELDS: Record<BuilderTab, Array<{ field: BuilderField; heading?: stri
   frame: [{ field: 'frame' }],
 };
 
-export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl, saving = false, onSave, onBack }: MascotBuilderProps) {
-  const [tab, setTab] = React.useState<BuilderTab>('body');
+export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl, saving = false, onSave, onBack, initialTab, saved }: MascotBuilderProps) {
+  // 10-05 seasonal items (core avatar-season.ts): the season = the admin preview, else the calendar's window.
+  const season = useSeason();
+  const savedRef = React.useRef<AvatarConfig | null>(saved ?? value);
+  const shelf = React.useMemo(() => seasonalShelf(season), [season]);
+  const available = React.useCallback((field: string, id: string) => isPartAvailable({ field, id }, new Date(), season ?? 'none', savedRef.current), [season]);
+  const [tab, setTab] = React.useState<BuilderTab | 'season'>(
+    initialTab === 'season' ? 'season' : (BUILDER_TABS.some((t) => t.id === initialTab) ? initialTab as BuilderTab : 'body'));
+  React.useEffect(() => { if (tab === 'season' && season && shelf.length === 0) setTab('head'); }, [tab, season, shelf.length]);
   /** "Swapped out the heart shades" — a pick that doesn't fit with something worn replaces it (fit system). */
   const [note, setNote] = React.useState<string | null>(null);
   React.useEffect(() => {
@@ -205,6 +217,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
       ? `${label}, unlocks at level ${FRAME_UNLOCK_LEVEL[id as AvatarFrame]}`
       : proLocked ? `${label}, Pro only` : label;
     const swatch = field === 'patternColor';
+    const seasonOf = avatarPartSeason(field, id);
     return (
       <button
         key={`${field}-${id}`}
@@ -231,7 +244,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
           ) : partArt(field, id)}
           {levelLocked && <span className="absolute inset-0 flex items-center justify-center"><StageArt name="art-dress-lock" height={20} /></span>}
         </span>
-        {(NEW_IDS.has(`${field}:${id}`) || avatarOptionIsNew(field, id)) && !proLocked && <StageArt name="art-dress-tag-new" height={15} className="absolute" style={{ top: -3, right: -4 }} />}
+        {seasonOf && <StageArt name={`art-dress-tag-${seasonOf}`} height={13} className="absolute" style={{ top: -3, right: -8 }} />}
+        {!seasonOf && (NEW_IDS.has(`${field}:${id}`) || avatarOptionIsNew(field, id)) && !proLocked && <StageArt name="art-dress-tag-new" height={15} className="absolute" style={{ top: -3, right: -4 }} />}
         {proLocked && <StageArt name="art-dress-tag-pro" height={15} className="absolute" style={{ bottom: -2, right: -6 }} />}
         {levelLocked && <span className="absolute -bottom-3.5 text-[9px] font-black" style={{ color: 'var(--color-text-muted)' }}>Lv {FRAME_UNLOCK_LEVEL[id as AvatarFrame]}</span>}
       </button>
@@ -267,7 +281,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
             <CastButton color="purple" size="s" onClick={() => onSave(enforceAvatarPro(value, isPro))} disabled={saving}>{saving ? 'Saving…' : 'Done'}</CastButton>
           </div>
           <div className="absolute left-3 flex flex-col gap-2.5" style={{ top: 92 }}>
-            {round('Randomize', <DiceGlyph />, ['#5eead4', '#0d9488'], () => onChange(randomAvatar(value, Math.random, { isPro })))}
+            {round('Randomize', <DiceGlyph />, ['#5eead4', '#0d9488'], () => onChange(randomAvatar(value, Math.random, { isPro, available })))}
             {round('Undo', <span className="text-white font-black text-lg leading-none">↶</span>, ['#fde68a', '#f59e0b'], () => {
               const last = history.current.pop();
               if (last) { undoing.current = true; onChange(last); }
@@ -275,6 +289,21 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
           </div>
         </DressStage>
         <div className="flex px-1.5 pt-2 pb-1" role="tablist" aria-label="Mascot parts">
+          {season && shelf.length > 0 && (() => {
+            // The season's shelf, first (its first hat is the tab icon: the pumpkin for Halloween).
+            const on = tab === 'season';
+            const label = season.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            return (
+              <button key="season" type="button" role="tab" aria-selected={on} aria-controls="mascot-tabpanel" id="mascot-tab-season" onClick={() => setTab('season')}
+                className="flex-1 min-w-0 flex flex-col items-center border-0 bg-transparent p-0 cursor-pointer">
+                <span className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: on ? '#ffffff' : 'rgba(255,255,255,0.55)', boxShadow: on ? '0 4px 14px rgba(249,115,22,0.4)' : undefined }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={artSrc(avatarOptionArt(shelf[0].field as BuilderField, shelf[0].id))} alt="" aria-hidden="true" draggable={false} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                </span>
+                <span className="text-[8.5px] font-black whitespace-nowrap tracking-[-0.25px]" style={{ color: on ? '#c2410c' : '#6b5c8f' }}>{label}</span>
+              </button>
+            );
+          })()}
           {ROOM_TABS.map(([id, art, label]) => {
             const on = tab === id || (id === 'nose' && tab === 'cheeks');
             return (
@@ -292,7 +321,16 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
 
       {/* The option grid for the tab: only the part on each tile. */}
       <div id="mascot-tabpanel" role="tabpanel" aria-labelledby={`mascot-tab-${tab}`} className="px-3.5 pb-6">
-        {TAB_FIELDS[tab]
+        {tab === 'season' && (
+          <div key="season">
+            <div className="h-2" />
+            <div className="grid grid-cols-5 gap-2.5" role="group" aria-label="Seasonal">
+              {shelf.map((p) => tile(p.field as BuilderField, p.id))}
+            </div>
+            <p className="text-[11px] font-bold mt-2.5 text-center" style={{ color: 'var(--color-text-muted)' }}>Free for the season. Save a look and it stays yours.</p>
+          </div>
+        )}
+        {tab !== 'season' && TAB_FIELDS[tab]
           // the accessory color row only shows when a white (tintable) accessory is worn
           .filter(({ field }) => field !== 'accColor' || [value.head, value.neck].some((x) => AVATAR_TINTABLE.includes(x)))
           .map(({ field, heading: h }) => (
@@ -302,7 +340,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
               <div role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>{swatchGrid(field)}</div>
             ) : (
               <div className="grid grid-cols-5 gap-2.5" role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>
-                {optionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none')).map((id) => tile(field, id))}
+                {optionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none') && available(field, id)).map((id) => tile(field, id))}
               </div>
             )}
           </div>

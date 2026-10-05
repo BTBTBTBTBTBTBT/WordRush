@@ -333,6 +333,7 @@ fun HomeScreen(
             )
             // 10-05 door 3: the one-time "Party hat?" card after the first win.
             PartyHatOffer(Modifier.padding(top = 8.dp))
+            SeasonDressOffer(Modifier.padding(top = 8.dp))   // 10-05: once per season ("Dress up for Halloween?")
 
             // U2: first-game suggestion for brand-new accounts — signed in with
             // ZERO recorded games (total_wins + total_losses == 0; the profiles

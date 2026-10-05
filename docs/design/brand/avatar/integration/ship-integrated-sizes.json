@@ -303,6 +303,114 @@
 372,
 65
 ],
+"art-av-acc-bat": [
+192,
+101
+],
+"art-av-acc-bat-bean-pet": [
+159,
+89
+],
+"art-av-acc-bat-blob-pet": [
+159,
+89
+],
+"art-av-acc-bat-chunky-pet": [
+159,
+89
+],
+"art-av-acc-bat-classic-pet": [
+159,
+89
+],
+"art-av-acc-bat-cloud-pet": [
+159,
+89
+],
+"art-av-acc-bat-drop-pet": [
+159,
+89
+],
+"art-av-acc-bat-hex-pet": [
+159,
+89
+],
+"art-av-acc-bat-mini-pet": [
+159,
+89
+],
+"art-av-acc-bat-pear-pet": [
+159,
+89
+],
+"art-av-acc-bat-star-pet": [
+159,
+89
+],
+"art-av-acc-bat-tall-pet": [
+159,
+89
+],
+"art-av-acc-bat-wide-pet": [
+159,
+89
+],
+"art-av-acc-batears": [
+384,
+249
+],
+"art-av-acc-batwings": [
+192,
+88
+],
+"art-av-acc-batwings-bean-back": [
+437,
+190
+],
+"art-av-acc-batwings-blob-back": [
+579,
+253
+],
+"art-av-acc-batwings-chunky-back": [
+579,
+253
+],
+"art-av-acc-batwings-classic-back": [
+579,
+253
+],
+"art-av-acc-batwings-cloud-back": [
+579,
+253
+],
+"art-av-acc-batwings-drop-back": [
+497,
+217
+],
+"art-av-acc-batwings-hex-back": [
+579,
+253
+],
+"art-av-acc-batwings-mini-back": [
+432,
+189
+],
+"art-av-acc-batwings-pear-back": [
+379,
+125
+],
+"art-av-acc-batwings-star-back": [
+579,
+253
+],
+"art-av-acc-batwings-tall-back": [
+379,
+165
+],
+"art-av-acc-batwings-wide-back": [
+579,
+267
+],
 "art-av-acc-belt": [
 192,
 163
@@ -438,6 +546,58 @@
 "art-av-acc-bird-wide-pet": [
 84,
 84
+],
+"art-av-acc-blackcat": [
+179,
+192
+],
+"art-av-acc-blackcat-bean-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-blob-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-chunky-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-classic-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-cloud-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-drop-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-hex-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-mini-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-pear-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-star-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-tall-pet": [
+120,
+129
+],
+"art-av-acc-blackcat-wide-pet": [
+120,
+129
 ],
 "art-av-acc-book": [
 109,
@@ -594,6 +754,62 @@
 "art-av-acc-bubbletea-wide-held": [
 92,
 131
+],
+"art-av-acc-candycornhat": [
+384,
+467
+],
+"art-av-acc-candypail": [
+164,
+192
+],
+"art-av-acc-candypail-bean-held": [
+126,
+147
+],
+"art-av-acc-candypail-blob-held": [
+146,
+168
+],
+"art-av-acc-candypail-chunky-held": [
+137,
+160
+],
+"art-av-acc-candypail-classic-held": [
+137,
+158
+],
+"art-av-acc-candypail-cloud-held": [
+137,
+158
+],
+"art-av-acc-candypail-drop-held": [
+142,
+164
+],
+"art-av-acc-candypail-hex-held": [
+137,
+158
+],
+"art-av-acc-candypail-mini-held": [
+146,
+168
+],
+"art-av-acc-candypail-pear-held": [
+142,
+164
+],
+"art-av-acc-candypail-star-held": [
+137,
+158
+],
+"art-av-acc-candypail-tall-held": [
+147,
+166
+],
+"art-av-acc-candypail-wide-held": [
+137,
+158
 ],
 "art-av-acc-cape": [
 640,
@@ -795,6 +1011,58 @@
 367,
 26
 ],
+"art-av-acc-cattail": [
+99,
+192
+],
+"art-av-acc-cattail-bean-back": [
+81,
+224
+],
+"art-av-acc-cattail-blob-back": [
+89,
+209
+],
+"art-av-acc-cattail-chunky-back": [
+79,
+206
+],
+"art-av-acc-cattail-classic-back": [
+74,
+202
+],
+"art-av-acc-cattail-cloud-back": [
+74,
+180
+],
+"art-av-acc-cattail-drop-back": [
+108,
+224
+],
+"art-av-acc-cattail-hex-back": [
+74,
+201
+],
+"art-av-acc-cattail-mini-back": [
+69,
+139
+],
+"art-av-acc-cattail-pear-back": [
+110,
+224
+],
+"art-av-acc-cattail-star-back": [
+68,
+224
+],
+"art-av-acc-cattail-tall-back": [
+91,
+224
+],
+"art-av-acc-cattail-wide-back": [
+51,
+152
+],
 "art-av-acc-chain": [
 384,
 313
@@ -890,6 +1158,58 @@
 "art-av-acc-flashlight-wide-held": [
 79,
 170
+],
+"art-av-acc-ghost": [
+192,
+163
+],
+"art-av-acc-ghost-bean-pet": [
+131,
+108
+],
+"art-av-acc-ghost-blob-pet": [
+131,
+108
+],
+"art-av-acc-ghost-chunky-pet": [
+131,
+108
+],
+"art-av-acc-ghost-classic-pet": [
+131,
+108
+],
+"art-av-acc-ghost-cloud-pet": [
+131,
+108
+],
+"art-av-acc-ghost-drop-pet": [
+131,
+108
+],
+"art-av-acc-ghost-hex-pet": [
+131,
+108
+],
+"art-av-acc-ghost-mini-pet": [
+131,
+108
+],
+"art-av-acc-ghost-pear-pet": [
+131,
+108
+],
+"art-av-acc-ghost-star-pet": [
+131,
+108
+],
+"art-av-acc-ghost-tall-pet": [
+131,
+108
+],
+"art-av-acc-ghost-wide-pet": [
+131,
+108
 ],
 "art-av-acc-guitar": [
 640,
@@ -1358,6 +1678,10 @@
 "art-av-acc-pencil-big-wide-held": [
 61,
 142
+],
+"art-av-acc-pumpkinhat": [
+384,
+289
 ],
 "art-av-acc-puppy": [
 192,
@@ -2031,6 +2355,106 @@
 100,
 344
 ],
+"art-av-acc-vampirecollar": [
+192,
+124
+],
+"art-av-acc-vampirecollar-bean-back": [
+309,
+198
+],
+"art-av-acc-vampirecollar-bean-wrap": [
+268,
+30
+],
+"art-av-acc-vampirecollar-blob-back": [
+400,
+258
+],
+"art-av-acc-vampirecollar-blob-wrap": [
+379,
+31
+],
+"art-av-acc-vampirecollar-chunky-back": [
+400,
+258
+],
+"art-av-acc-vampirecollar-chunky-wrap": [
+378,
+31
+],
+"art-av-acc-vampirecollar-classic-back": [
+400,
+258
+],
+"art-av-acc-vampirecollar-classic-wrap": [
+377,
+29
+],
+"art-av-acc-vampirecollar-cloud-back": [
+400,
+258
+],
+"art-av-acc-vampirecollar-cloud-wrap": [
+376,
+26
+],
+"art-av-acc-vampirecollar-drop-back": [
+369,
+238
+],
+"art-av-acc-vampirecollar-drop-wrap": [
+322,
+28
+],
+"art-av-acc-vampirecollar-hex-back": [
+400,
+258
+],
+"art-av-acc-vampirecollar-hex-wrap": [
+373,
+31
+],
+"art-av-acc-vampirecollar-mini-back": [
+324,
+208
+],
+"art-av-acc-vampirecollar-mini-wrap": [
+279,
+26
+],
+"art-av-acc-vampirecollar-pear-back": [
+335,
+214
+],
+"art-av-acc-vampirecollar-pear-wrap": [
+291,
+29
+],
+"art-av-acc-vampirecollar-star-back": [
+400,
+258
+],
+"art-av-acc-vampirecollar-star-wrap": [
+360,
+29
+],
+"art-av-acc-vampirecollar-tall-back": [
+264,
+166
+],
+"art-av-acc-vampirecollar-tall-wrap": [
+151,
+30
+],
+"art-av-acc-vampirecollar-wide-back": [
+400,
+258
+],
+"art-av-acc-vampirecollar-wide-wrap": [
+368,
+26
+],
 "art-av-acc-wand-star": [
 98,
 192
@@ -2082,6 +2506,10 @@
 "art-av-acc-wand-star-wide-held": [
 124,
 220
+],
+"art-av-acc-witchnight": [
+384,
+311
 ],
 "art-av-brows-cheeky": [
 192,

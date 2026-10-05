@@ -57,6 +57,8 @@ export interface AvatarItemMeta {
   pieces?: Record<string, Array<[string, number, number, number, number]>>;
   /** Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes). */
   inkTop?: number;
+  /** Seasonal parts (avatar-season.ts): the season-registry id it belongs to; shown in season or when saved. */
+  season?: string;
 }
 
 /** The gap a hat keeps above the eyes / glasses (body units). */

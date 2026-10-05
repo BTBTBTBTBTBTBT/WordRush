@@ -32,9 +32,9 @@ import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { ACCENT_COLORS, resolveAccent } from '@/lib/profile-personalization';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { HeadingArt } from '@/components/ui/heading-art';
-import { DressStage, STAGE_SIDE_SLOT, StageClose, TitleRibbon, backdropCss, doorFromUrl, finishNudge, openDressUp, useDressUpRequests, warmDressArt, type DressDoor } from '@/components/profile/dress-up';
+import { DressStage, STAGE_SIDE_SLOT, StageClose, TitleRibbon, backdropCss, devDressDemo, doorFromUrl, finishNudge, openDressUp, useDressUpRequests, warmDressArt, type DressDoor } from '@/components/profile/dress-up';
 import { TitleShelves } from '@/components/profile/title-shelves';
-import { applyAvatarPick } from '@wordle-duel/core';
+import { applyAvatarPick, castPreset, validateAvatar } from '@wordle-duel/core';
 import { randomAvatar } from '@/lib/avatar-render';
 
 interface Props {
@@ -259,6 +259,8 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
               photoUrl={avatarUrl}
               saving={avatarSaving}
               onBack={() => setView('profile')}
+              initialTab={door.kind === 'room' ? door.tab : undefined}
+              saved={ownLook.config}
               onSave={(config) => {
                 // Done returns to the Stage with a soft hop (saved with the one Save).
                 setLookTouched({ ...config, display: look?.display === 'photo' && avatarUrl && door.kind === 'stage' ? 'photo' : 'mascot' });
@@ -406,6 +408,9 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
  * opened with openDressUp() from the Stats card avatar, your own podium place / board row, the Home host
  * and the party-hat offer.
  */
+/** DEV demo: the look the demo room opened on (its "saved" look). */
+const DEMO_SAVED: { current: AvatarConfig | null } = { current: null };
+
 export function DressUpHost() {
   const { user, profile } = useAuth();
   const [door, setDoor] = useState<DressDoor | null>(null);
@@ -418,6 +423,32 @@ export function DressUpHost() {
     if (d) { fromUrl.current = true; setDoor(d); window.history.replaceState(null, '', window.location.pathname); }
   }, [user, profile]);
   return <ProfileEditModal open={door !== null} door={door ?? undefined} onClose={() => setDoor(null)} />;
+}
+
+/**
+ * DEV only (never in production: devDressDemo returns null there): `/?dressDemo=room-<tab>` shows the Dressing Room
+ * for a GUEST on Home (iOS -storeShot room-<tab>, Android --es dressDemo room-<tab> parity); `&dressLook=k=v,…` sets
+ * the look it opens on (= its saved look). Nothing saves.
+ */
+export function DevDressRoom() {
+  const [demoRoom, setDemoRoom] = useState<{ tab: string; look: AvatarConfig } | null>(null);
+  useEffect(() => {
+    const demo = devDressDemo();
+    if (demo?.door?.kind === 'room') setDemoRoom({ tab: demo.door.tab, look: validateAvatar({ ...castPreset('w'), ...demo.look }, castPreset('w')) });
+  }, []);
+  if (demoRoom) {
+    return (
+      <div className="fixed inset-0 z-50 flex justify-center" style={{ background: POPUP_DIM }}>
+        <div className="w-full max-w-sm h-full overflow-y-auto relative" style={{ background: '#f6f0ff' }} role="dialog" aria-modal="true" aria-label="Dressing room (dev demo)">
+          <div className="p-5">
+            <MascotBuilder value={demoRoom.look} onChange={(c) => setDemoRoom({ ...demoRoom, look: c })} initial="W" isPro level={24}
+              onBack={() => setDemoRoom(null)} onSave={() => setDemoRoom(null)} initialTab={demoRoom.tab} saved={DEMO_SAVED.current ??= demoRoom.look} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
 
 export function EditProfileButton({ onClick }: { onClick: () => void }) {

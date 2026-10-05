@@ -29,8 +29,8 @@ final class AvatarConfigTests: XCTestCase {
         XCTAssertEqual(backdrops.map { $0["colors"] as? [String] ?? [] }, AvatarCatalog.backdrops.map(\.colors))
         XCTAssertEqual(AvatarCatalog.backdropIds.first, "auto")
         XCTAssertEqual(AvatarCatalog.bodies.count, 12)
-        XCTAssertEqual(AvatarCatalog.heads.count, 34)
-        XCTAssertEqual(AvatarCatalog.faces.count + AvatarCatalog.necks.count - 2, 20)
+        XCTAssertEqual(AvatarCatalog.heads.count, 38)   // 34 + 4 Halloween (10-05)
+        XCTAssertEqual(AvatarCatalog.faces.count + AvatarCatalog.necks.count - 2, 22)   // + bat wings, cat tail
         XCTAssertEqual(AvatarCatalog.colors.count, 38)
         XCTAssertEqual(AvatarCatalog.patterns.count, 14)
         XCTAssertEqual(AvatarCatalog.cheeks.count, 7)
