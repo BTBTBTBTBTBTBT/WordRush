@@ -2,35 +2,37 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AudioLines, ChevronLeft, ChevronRight, Clapperboard, Download, PackageCheck, Palette, Play,
-  RotateCcw, Search, Star, X,
+  AudioLines, ChevronLeft, ChevronRight, Columns2, Download, LayoutGrid, MessageSquareText, PackageCheck, Palette,
+  RotateCcw, Search, SlidersHorizontal, Smartphone, Star, X,
 } from 'lucide-react';
 import { PageHeader, useAdminData } from '../components/admin-ui';
 import { PreviewPanel } from './preview-panel';
+import { SectionBlock, type SectionMode } from './sections';
+import { CHECKER, FRESH_MS, MediaGlyph, Thumb, useSigner, type Signer } from './thumbs';
 import { artSrc, PAGE_SCENES } from '@/lib/art';
 import {
   EMPTY_FILTERS, facetCounts, facetLabel, filterAssets, formatBytes, groupFounderPicks, heroIdFor, mediaOf,
-  sortAssets, type ArtAsset, type ArtFacet, type ArtFilters, type ArtSort, type ArtStatus, type SignVariant,
+  sortAssets, type ArtAsset, type ArtFacet, type ArtFilters, type ArtStatus,
 } from '@/lib/admin/art-library';
 import {
-  filterByReview, indexReviews, reviewChips, type ArtReview, type ArtReviewer, type ReviewContext, type ReviewDecision,
-  type ReviewFilter, type ReviewIndex,
+  indexReviews, BATCH_MAX, type ArtReview, type ArtReviewer, type ReviewContext, type ReviewDecision,
 } from '@/lib/admin/art-review';
 import {
-  FeedbackThread, OpenFeedbackList, ReviewChipRow, ReviewerDiscs, ReviewPanel, useOpenFeedback,
-} from './review-panel';
+  applyReviews, approveAllPlan, groupSections, matchesTab, REVIEW_TABS, sectionSummary, type ArtSection, type ReviewTab,
+} from '@/lib/admin/art-sections';
+import { FeedbackThread, OpenFeedbackList, ReviewPanel, useOpenFeedback } from './review-panel';
+import { SEASON_PREVIEW_WIRED, seasonTitle, wiredFor } from '@/lib/admin/season-preview-wired';
+import { LiveTag } from './sections';
 
-// admin > Content & Ops > Art Library: every design asset in the private
-// 'art-library' bucket (public.art_assets). Browse with filters, open one to
-// compare a costume with its hero, play animations and sounds, download, and
-// review it. Two reviewers (public.art_reviewers: BMT and JP) both approve
-// before art counts as approved. "Founder picks" = approved but not yet shipped:
-// the to-do list for wiring art into the apps. "Open feedback" = unresolved
-// notes (public.art_feedback) that Claude reads before the next art pass.
+// admin > Content & Ops > Art Library: every design asset in the private 'art-library' bucket
+// (public.art_assets), as SECTIONS by area then sub-type ("Halloween · Costumes", "Buttons · Family"; see
+// lib/admin/art-sections.ts). Sections waiting on the viewer open first (next season first); finished ones
+// sit collapsed. Every tile has Approve / Reject / Comment inline (optimistic, with Undo), each section header
+// has "See it in the app" and "Approve all", and Grid | Before & After switches the tiles between thumbnails
+// and Today vs With-this-art phone frames. Two reviewers (public.art_reviewers: BMT and JP) both approve
+// before art counts as approved. "Founder picks" (approved, not shipped) and "Open feedback" (the notes Claude
+// reads before the next art pass) live in More filters.
 
-const PAGE_SIZE = 60;
-const FRESH_MS = 50 * 60 * 1000; // signed URLs live 1h; refresh after 50 minutes
-const SIGN_BATCH = 120;
 
 const STATUS_LOOK: Record<ArtStatus, { label: string; dot: string; pill: string }> = {
   draft: { label: 'Draft', dot: 'bg-gray-300', pill: 'bg-gray-100 text-gray-600' },
@@ -40,13 +42,6 @@ const STATUS_LOOK: Record<ArtStatus, { label: string; dot: string; pill: string 
 };
 
 const FACET_TITLE: Record<ArtFacet, string> = { type: 'Type', season: 'Season', character: 'Character', status: 'Status' };
-
-/** Soft lavender checkerboard behind transparent art. */
-const CHECKER: React.CSSProperties = {
-  backgroundColor: '#faf7ff',
-  backgroundImage: 'repeating-conic-gradient(#efe8fd 0% 25%, transparent 0% 50%)',
-  backgroundSize: '18px 18px',
-};
 
 const fileUrl = (id: string) => `/api/admin/art/file?id=${encodeURIComponent(id)}`;
 
@@ -81,54 +76,33 @@ function PlayerFrame({ asset }: { asset: ArtAsset }) {
 const shortDate = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
 
-/* ------------------------------------------------------------------ signing */
-
-interface Signer {
-  get: (variant: SignVariant, id: string) => string | null;
-  ensure: (variant: SignVariant, ids: string[]) => void;
-}
-
-/** Signed-URL cache (variant:id -> url), batched requests, 50-minute freshness. */
-function useSigner(): Signer {
-  const cache = useRef(new Map<string, { url: string; at: number }>());
-  const inflight = useRef(new Set<string>());
-  const [, setVersion] = useState(0);
-
-  const get = useCallback((variant: SignVariant, id: string) => {
-    const e = cache.current.get(`${variant}:${id}`);
-    return e ? e.url : null;
-  }, []);
-
-  const ensure = useCallback((variant: SignVariant, ids: string[]) => {
-    const now = Date.now();
-    const need = ids.filter((id) => {
-      const k = `${variant}:${id}`;
-      const e = cache.current.get(k);
-      return !inflight.current.has(k) && (!e || now - e.at > FRESH_MS);
-    });
-    for (let i = 0; i < need.length; i += SIGN_BATCH) {
-      const chunk = need.slice(i, i + SIGN_BATCH);
-      chunk.forEach((id) => inflight.current.add(`${variant}:${id}`));
-      fetch('/api/admin/art/sign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: chunk, variant }),
-      })
-        .then((r) => r.json())
-        .then((j: { urls?: Record<string, string> }) => {
-          const at = Date.now();
-          for (const [id, url] of Object.entries(j.urls ?? {})) cache.current.set(`${variant}:${id}`, { url, at });
-          setVersion((v) => v + 1);
-        })
-        .catch(() => {})
-        .finally(() => chunk.forEach((id) => inflight.current.delete(`${variant}:${id}`)));
-    }
-  }, []);
-
-  return useMemo(() => ({ get, ensure }), [get, ensure]);
-}
-
 /* -------------------------------------------------------------------- page */
+
+const GRID_LIMIT = 30;
+const COMPARE_LIMIT = 9;
+const UNDO_MS = 5000;
+const HINT_KEY = 'art-library.hint.before-after.v1';
+
+type Mode = SectionMode;
+/** The top switch: the review tabs plus "In app preview" (what the season preview toggle shows today). */
+type Tab = ReviewTab | 'preview';
+interface Undo { id: number; message: string; undo: (() => void) | null }
+interface PendingOp { timer: ReturnType<typeof setTimeout>; commit: (keepalive: boolean) => void }
+
+const TAB_LABEL: Record<Tab, { long: string; short: string }> = {
+  preview: { long: 'In app preview', short: 'In app preview' },
+  mine: { long: 'Needs my review', short: 'To review' },
+  all: { long: 'All', short: 'All' },
+  approved: { long: 'Approved', short: 'Approved' },
+  rejected: { long: 'Rejected', short: 'Rejected' },
+};
+
+function readHint(): boolean {
+  try { return window.localStorage.getItem(HINT_KEY) !== 'done'; } catch { return true; }
+}
+function dismissHint() {
+  try { window.localStorage.setItem(HINT_KEY, 'done'); } catch { /* private mode: the hint just shows again */ }
+}
 
 export default function ArtLibraryPage() {
   const { data, error, loading, reload } = useAdminData<{
@@ -140,19 +114,50 @@ export default function ArtLibraryPage() {
     if (data?.assets) setAssets(data.assets);
     if (data?.reviews) setReviews(data.reviews);
   }, [data]);
+  // Preview frames (Before & After, the lightbox) read the library from here instead of refetching it.
+  useEffect(() => {
+    (window as unknown as { __artLibraryAssets?: ArtAsset[] }).__artLibraryAssets = assets;
+  }, [assets]);
+  // ... and sign through one shared cache, so dozens of frames do not each re-sign the same files.
+  useEffect(() => {
+    const cache = new Map<string, { at: number; url: Promise<string | null> }>();
+    const w = window as unknown as { __artLibrarySign?: (ids: string[]) => Promise<Record<string, string>> };
+    w.__artLibrarySign = async (ids) => {
+      const now = Date.now();
+      const need = Array.from(new Set(ids)).filter((id) => { const e = cache.get(id); return !e || now - e.at > FRESH_MS; });
+      for (let i = 0; i < need.length; i += 100) {
+        const chunk = need.slice(i, i + 100);
+        const req = postJson<{ urls?: Record<string, string> }>('/api/admin/art/sign', { ids: chunk, variant: 'full' }).then((j) => j.urls ?? {});
+        req.catch(() => chunk.forEach((id) => cache.delete(id)));
+        for (const id of chunk) cache.set(id, { at: now, url: req.then((u) => u[id] ?? null) });
+      }
+      const out: Record<string, string> = {};
+      await Promise.all(ids.map(async (id) => { const u = await cache.get(id)?.url; if (u) out[id] = u; }));
+      return out;
+    };
+    return () => { delete w.__artLibrarySign; };
+  }, []);
   const reviewers = useMemo(() => data?.reviewers ?? [], [data]);
   const me = data?.me ?? null;
+  const iReview = !!me && reviewers.some((r) => r.profile_id === me);
   const reviewIndex = useMemo(() => indexReviews(reviews), [reviews]);
-  const reviewCtx = useMemo<ReviewContext>(() => ({ index: reviewIndex, reviewers, me }), [reviewIndex, reviewers, me]);
+  const ctx = useMemo<ReviewContext>(() => ({ index: reviewIndex, reviewers, me }), [reviewIndex, reviewers, me]);
   const openFeedback = useOpenFeedback();
 
-  const [view, setView] = useState<'all' | 'picks' | 'feedback'>('all');
-  const [review, setReview] = useState<ReviewFilter | null>(null);
+  const [view, setView] = useState<'sections' | 'picks' | 'feedback'>('sections');
+  const [tab, setTab] = useState<Tab>('all');
+  const [mode, setMode] = useState<Mode>('grid');
   const [filters, setFilters] = useState<ArtFilters>(EMPTY_FILTERS);
-  const [sort, setSort] = useState<ArtSort>('featured');
-  const [limit, setLimit] = useState(PAGE_SIZE);
-  const [lightbox, setLightbox] = useState<{ ids: string[]; index: number } | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [openOverride, setOpenOverride] = useState<Record<string, boolean>>({});
+  const [limits, setLimits] = useState<Record<string, number>>({});
+  const [confirmKey, setConfirmKey] = useState<string | null>(null);
+  /** Pieces reviewed this visit stay in view under "Needs my review" until the tab or filters change. */
+  const [touched, setTouched] = useState<Set<string>>(() => new Set());
+  const [lightbox, setLightbox] = useState<{ ids: string[]; index: number; preview: null | 'piece' | 'season' } | null>(null);
+  const [toast, setToast] = useState<Undo | null>(null);
+  const [hint, setHint] = useState(false);
+  useEffect(() => { setHint(readHint()); }, []);
   const signer = useSigner();
 
   // Re-check freshness every few minutes so long sessions never show expired URLs.
@@ -162,19 +167,49 @@ export default function ArtLibraryPage() {
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => { setLimit(PAGE_SIZE); }, [filters, sort, view, review]);
+  useEffect(() => { setTouched(new Set()); setConfirmKey(null); }, [tab, filters]);
 
   const byId = useMemo(() => new Map(assets.map((a) => [a.id, a])), [assets]);
-  // The Review filter narrows first, so every other chip row counts within it.
-  const reviewed = useMemo(() => filterByReview(assets, review, reviewCtx), [assets, review, reviewCtx]);
-  const chips = useMemo(() => reviewChips(filterAssets(assets, filters), reviewCtx), [assets, filters, reviewCtx]);
-  const list = useMemo(() => sortAssets(filterAssets(reviewed, filters), sort), [reviewed, filters, sort]);
-  const shown = list.slice(0, limit);
+  /** Everything the search, the More filters and the working-files switch allow (the tab narrows further). */
+  const base = useMemo(() => filterAssets(assets, { ...filters, status: null }), [assets, filters]);
+  // "In app preview" lists every wired piece, working files included (the shipped skins are working copies).
+  const wired = useMemo(() => filterAssets(assets, { ...filters, status: null, working: true }).filter((a) => wiredFor(a)), [assets, filters]);
+  const tabCounts = useMemo(() => {
+    const out = { mine: 0, all: base.length, approved: 0, rejected: 0, preview: wired.length } as Record<Tab, number>;
+    for (const a of base) for (const t of ['mine', 'approved', 'rejected'] as const) if (matchesTab(a, t, ctx)) out[t] += 1;
+    return out;
+  }, [base, wired, ctx]);
+  const list = useMemo(
+    // A to Z: an order a review never changes, so a tile never jumps away under the finger.
+    () => sortAssets(tab === 'preview' ? wired : base.filter((a) => matchesTab(a, tab, ctx) || touched.has(a.id)), 'az'),
+    [base, wired, tab, ctx, touched],
+  );
+  const grouped = useMemo(() => groupSections(list, ctx), [list, ctx]);
+
+  // Section order is fixed when the tab or filters change (or the library loads), not on every review, so a
+  // section never jumps away under the finger once it is done: it just collapses where it is.
+  const orderRef = useRef<{ key: string; order: Map<string, number> } | null>(null);
+  const orderKey = JSON.stringify([tab, filters, assets.length > 0, reviewers.length]);
+  if (!orderRef.current || orderRef.current.key !== orderKey) {
+    orderRef.current = { key: orderKey, order: new Map(grouped.map((s, i) => [s.key, i])) };
+  }
+  const sections = useMemo(() => {
+    const order = orderRef.current!.order;
+    const rank = (k: string) => order.get(k) ?? Number.MAX_SAFE_INTEGER;
+    return grouped.slice().sort((a, b) => rank(a.key) - rank(b.key));
+  }, [grouped, orderKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // "In app preview" is shipped art (nothing to review), so its sections open; elsewhere done ones fold.
+  const isOpen = (s: ArtSection) => openOverride[s.key] ?? (tab === 'preview' || !s.done);
+  const limitFor = (s: ArtSection) => limits[s.key] ?? (mode === 'compare' ? COMPARE_LIMIT : GRID_LIMIT);
+
   const picks = useMemo(() => groupFounderPicks(assets), [assets]);
   const pickCount = picks.reduce((n, g) => n + g.assets.length, 0);
-
   const feedbackAssets = (openFeedback.items ?? []).flatMap((f) => (f.asset_id && byId.get(f.asset_id) ? [byId.get(f.asset_id)!] : []));
-  const thumbIds = (view === 'all' ? shown : view === 'picks' ? picks.flatMap((g) => g.assets) : feedbackAssets)
+
+  const thumbIds = (view === 'sections'
+    ? sections.filter(isOpen).flatMap((s) => s.assets.slice(0, limitFor(s)))
+    : view === 'picks' ? picks.flatMap((g) => g.assets) : feedbackAssets)
     .filter((a) => mediaOf(a.mime) === 'image')
     .map((a) => a.id);
   const thumbKey = thumbIds.join('|');
@@ -185,14 +220,122 @@ export default function ArtLibraryPage() {
   const setFacet = (facet: ArtFacet, value: string | null) =>
     setFilters((f) => ({ ...f, [facet]: f[facet] === value ? null : value }));
 
-  const open = (ids: string[], id: string) => setLightbox({ ids, index: Math.max(0, ids.indexOf(id)) });
+  const open = (ids: string[], id: string, preview: null | 'piece' | 'season' = null) =>
+    setLightbox({ ids, index: Math.max(0, ids.indexOf(id)), preview });
 
-  const flash = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast((t) => (t === msg ? null : t)), 3500);
+  const toastSeq = useRef(0);
+  const flash = (message: string, undo: (() => void) | null = null) => {
+    const id = ++toastSeq.current;
+    setToast({ id, message, undo });
+    setTimeout(() => setToast((t) => (t?.id === id ? null : t)), undo ? UNDO_MS : 3500);
   };
 
-  /** Optimistic status change; reverts and explains on failure. */
+  /* ------------------------------------------------ review: optimistic + undo */
+
+  const assetsRef = useRef(assets);
+  assetsRef.current = assets;
+  const reviewsRef = useRef(reviews);
+  reviewsRef.current = reviews;
+  const pending = useRef(new Map<number, PendingOp>());
+
+  // Leaving the page commits anything still inside its undo window.
+  useEffect(() => {
+    const flush = () => {
+      for (const [id, op] of Array.from(pending.current)) {
+        clearTimeout(op.timer);
+        pending.current.delete(id);
+        op.commit(true);
+      }
+    };
+    window.addEventListener('pagehide', flush);
+    return () => { window.removeEventListener('pagehide', flush); flush(); };
+  }, []);
+
+  /**
+   * Apply my call on `ids` now, offer Undo, and send it once the undo window closes. One piece goes to
+   * /review (with the note filed as feedback when there is one); several go to /review/batch in chunks.
+   */
+  const act = (ids: string[], decision: ReviewDecision, note: string | null, message: string) => {
+    if (!me || !ids.length) return;
+    const idSet = new Set(ids);
+    const prevAssets = new Map(assetsRef.current.filter((a) => idSet.has(a.id)).map((a) => [a.id, a]));
+    const prevMine = reviewsRef.current.filter((r) => r.reviewer_id === me && idSet.has(r.asset_id));
+    const next = applyReviews(assetsRef.current, reviewsRef.current, ids, me, decision, note, reviewers);
+    setAssets(next.assets);
+    setReviews(next.reviews);
+    setTouched((t) => new Set([...Array.from(t), ...ids]));
+
+    const revert = () => {
+      setAssets((list) => list.map((a) => prevAssets.get(a.id) ?? a));
+      setReviews((list) => [...list.filter((r) => !(r.reviewer_id === me && idSet.has(r.asset_id))), ...prevMine]);
+    };
+    const merge = (fresh: ArtAsset[], rows: ArtReview[]) => {
+      const freshById = new Map(fresh.map((a) => [a.id, a]));
+      const ids2 = new Set(fresh.map((a) => a.id));
+      setAssets((list) => list.map((a) => freshById.get(a.id) ?? a));
+      setReviews((list) => [...list.filter((r) => !ids2.has(r.asset_id)), ...rows]);
+    };
+    const commit = async (keepalive: boolean) => {
+      try {
+        if (ids.length === 1) {
+          const body = note ? { asset_id: ids[0], decision, note, feedback: true } : { asset_id: ids[0], decision };
+          const j = await postJson<{ asset: ArtAsset; reviews: ArtReview[]; item?: unknown }>('/api/admin/art/review', body, keepalive);
+          merge([j.asset], j.reviews ?? []);
+          if (j.item) openFeedback.reload();
+        } else {
+          for (let i = 0; i < ids.length; i += BATCH_MAX) {
+            const j = await postJson<{ assets: ArtAsset[]; reviews: ArtReview[] }>(
+              '/api/admin/art/review/batch', { asset_ids: ids.slice(i, i + BATCH_MAX), decision: 'approve' }, keepalive,
+            );
+            merge(j.assets ?? [], j.reviews ?? []);
+          }
+        }
+      } catch (e) {
+        revert();
+        flash(`Could not save: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    };
+    const opId = ++toastSeq.current;
+    const timer = setTimeout(() => { pending.current.delete(opId); commit(false); }, UNDO_MS);
+    pending.current.set(opId, { timer, commit });
+    flash(message, () => {
+      clearTimeout(timer);
+      pending.current.delete(opId);
+      revert();
+      setToast(null);
+    });
+  };
+
+  const approveOne = (id: string) => {
+    const mine = me ? reviewIndex.get(id)?.get(me)?.decision : undefined;
+    if (mine === 'approve') return;
+    act([id], 'approve', null, `Approved ${byId.get(id)?.title ?? 'it'}`);
+  };
+  const noteOne = (id: string, decision: 'reject' | 'changes', note: string) =>
+    act([id], decision, note, decision === 'reject' ? `Rejected ${byId.get(id)?.title ?? 'it'} with a note` : `Asked for changes on ${byId.get(id)?.title ?? 'it'}`);
+  const approveSection = (s: ArtSection) => {
+    const plan = approveAllPlan(s.assets, ctx);
+    setConfirmKey(null);
+    if (!plan.ids.length) return;
+    setOpenOverride((o) => { const n = { ...o }; delete n[s.key]; return n; });
+    act(plan.ids, 'approve', null, `Approved ${plan.ids.length} in ${s.label}`);
+  };
+
+  /** Lightbox panel: record my review now (no undo window; the panel shows the result). */
+  const submitReview = async (assetId: string, decision: ReviewDecision, note: string | null): Promise<boolean> => {
+    try {
+      const j = await postJson<{ asset: ArtAsset; reviews: ArtReview[] }>('/api/admin/art/review', { asset_id: assetId, decision, note });
+      setAssets((list) => list.map((a) => (a.id === assetId ? j.asset : a)));
+      setReviews((list) => [...list.filter((x) => x.asset_id !== assetId), ...(j.reviews ?? [])]);
+      setTouched((t) => new Set([...Array.from(t), assetId]));
+      return true;
+    } catch (e) {
+      flash(`Could not save: ${e instanceof Error ? e.message : String(e)}`);
+      return false;
+    }
+  };
+
+  /** Optimistic status change (ship / back to draft); reverts and explains on failure. */
   const decide = async (id: string, status: ArtStatus, note?: string | null) => {
     const before = byId.get(id);
     if (!before) return;
@@ -201,49 +344,19 @@ export default function ArtLibraryPage() {
       ? { ...a, status, decided_at: now, updated_at: now, ...(note !== undefined ? { note } : {}) }
       : a)));
     try {
-      const r = await fetch('/api/admin/art/decide', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(note !== undefined ? { id, status, note } : { id, status }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.asset) throw new Error(j.error ?? `Request failed (${r.status})`);
-      setAssets((list) => list.map((a) => (a.id === id ? (j.asset as ArtAsset) : a)));
+      const j = await postJson<{ asset: ArtAsset }>('/api/admin/art/decide', note !== undefined ? { id, status, note } : { id, status });
+      setAssets((list) => list.map((a) => (a.id === id ? j.asset : a)));
     } catch (e) {
       setAssets((list) => list.map((a) => (a.id === id ? before : a)));
       flash(`Could not save: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
-  /** Record my review; the server recomputes the status (approved only when every reviewer approves). */
-  const submitReview = async (assetId: string, decision: ReviewDecision, note: string | null): Promise<boolean> => {
-    try {
-      const r = await fetch('/api/admin/art/review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ asset_id: assetId, decision, note }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.asset) throw new Error(j.error ?? `Request failed (${r.status})`);
-      setAssets((list) => list.map((a) => (a.id === assetId ? (j.asset as ArtAsset) : a)));
-      setReviews((list) => [...list.filter((x) => x.asset_id !== assetId), ...((j.reviews ?? []) as ArtReview[])]);
-      return true;
-    } catch (e) {
-      flash(`Could not save: ${e instanceof Error ? e.message : String(e)}`);
-      return false;
-    }
-  };
-
   const download = async (id: string) => {
     try {
-      const r = await fetch('/api/admin/art/sign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: [id], variant: 'download' }),
-      });
-      const j = await r.json();
+      const j = await postJson<{ urls?: Record<string, string> }>('/api/admin/art/sign', { ids: [id], variant: 'download' });
       const url = j.urls?.[id];
-      if (!url) throw new Error(j.error ?? 'No link');
+      if (!url) throw new Error('No link');
       window.location.assign(url);
     } catch (e) {
       flash(`Download failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -251,30 +364,17 @@ export default function ArtLibraryPage() {
   };
 
   const loaded = !!data && !loading;
-  // Total in scope: finished art, plus working files when they are shown.
-  const shownTotal = useMemo(() => (filters.working ? assets.length : assets.filter((a) => a.stage !== 'working').length), [assets, filters.working]);
-  const anyFilter = filters.type || filters.season || filters.character || filters.status || filters.q.trim() || review;
-  const clearAll = () => { setFilters(EMPTY_FILTERS); setReview(null); };
+  const moreActive = [filters.type, filters.season, filters.character].filter(Boolean).length + (filters.working ? 1 : 0);
+  const clearAll = () => { setFilters(EMPTY_FILTERS); setTab('all'); };
+  const closeHint = () => { setHint(false); dismissHint(); };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <PageHeader
         title="Art Library"
         icon={Palette}
-        subtitle="Every design asset in one place. Open one to compare, play or download it; BMT and JP both approve the keepers."
+        subtitle="New art by section. Approve, reject or comment right on each piece; BMT and JP both approve the keepers."
       />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Segmented
-          value={view}
-          onChange={setView}
-          options={[
-            { value: 'all', label: 'All art', count: shownTotal },
-            { value: 'picks', label: 'Founder picks', count: pickCount },
-            { value: 'feedback', label: 'Open feedback', count: openFeedback.items?.length },
-          ]}
-        />
-      </div>
 
       {error && !data ? (
         <StateScene
@@ -285,97 +385,191 @@ export default function ArtLibraryPage() {
         />
       ) : !loaded ? (
         <SkeletonGrid />
-      ) : view === 'feedback' ? (
-        <OpenFeedbackList
-          items={openFeedback.items}
-          error={openFeedback.error}
-          onReload={openFeedback.reload}
-          onResolved={openFeedback.drop}
-          onOpenAsset={(id) => open(feedbackAssets.map((a) => a.id), id)}
-          thumb={(id) => {
-            const a = byId.get(id);
-            return a ? <div className="absolute inset-0" style={CHECKER}><Thumb asset={a} signer={signer} size="sm" /></div> : null;
-          }}
-          empty={(
-            <StateScene
-              scene="empty"
-              title="No open feedback"
-              body="Notes left on art, a season or a screen show up here until they are resolved. Claude reads this list before every art pass."
+      ) : view !== 'sections' ? (
+        <>
+          <button onClick={() => setView('sections')} className="inline-flex items-center gap-1 h-9 rounded-xl bg-white shadow-sm px-3 text-sm font-extrabold text-purple-700 hover:bg-purple-50">
+            <ChevronLeft className="w-4 h-4" /> All sections
+          </button>
+          {view === 'feedback' ? (
+            <OpenFeedbackList
+              items={openFeedback.items}
+              error={openFeedback.error}
+              onReload={openFeedback.reload}
+              onResolved={openFeedback.drop}
+              onOpenAsset={(id) => open(feedbackAssets.map((a) => a.id), id)}
+              thumb={(id) => {
+                const a = byId.get(id);
+                return a ? <div className="absolute inset-0" style={CHECKER}><Thumb asset={a} signer={signer} size="sm" /></div> : null;
+              }}
+              empty={(
+                <StateScene
+                  scene="empty"
+                  title="No open feedback"
+                  body="Notes left on art, a season or a screen show up here until they are resolved. Claude reads this list before every art pass."
+                />
+              )}
+              failed={(message) => (
+                <StateScene
+                  scene="offline"
+                  title="Feedback did not load"
+                  body={message}
+                  action={<SoftButton onClick={openFeedback.reload}><RotateCcw className="w-3.5 h-3.5" /> Try again</SoftButton>}
+                />
+              )}
+            />
+          ) : (
+            <FounderPicks
+              groups={picks}
+              signer={signer}
+              onOpen={(id) => open(picks.flatMap((g) => g.assets.map((a) => a.id)), id)}
+              onShip={(id) => decide(id, 'shipped')}
             />
           )}
-          failed={(message) => (
-            <StateScene
-              scene="offline"
-              title="Feedback did not load"
-              body={message}
-              action={<SoftButton onClick={openFeedback.reload}><RotateCcw className="w-3.5 h-3.5" /> Try again</SoftButton>}
-            />
-          )}
-        />
-      ) : view === 'picks' ? (
-        <FounderPicks
-          groups={picks}
-          signer={signer}
-          onOpen={(id) => open(picks.flatMap((g) => g.assets.map((a) => a.id)), id)}
-          onShip={(id) => decide(id, 'shipped')}
-        />
+        </>
       ) : (
         <>
-          <Filters
-            assets={reviewed}
-            filters={filters}
-            onFacet={setFacet}
-            onQuery={(q) => setFilters((f) => ({ ...f, q }))}
-            onWorking={(working) => setFilters((f) => ({ ...f, working }))}
-            sort={sort}
-            onSort={setSort}
-            review={<ReviewChipRow chips={chips} value={review} onPick={setReview} />}
-          />
-
-          {(filters.type == null || filters.type === 'animation') && (
-            <AnimationStrip
-              assets={assets}
-              onOpenCast={() => open(['animation/cast'], 'animation/cast')}
-              onShowAll={() => setFilters((f) => ({ ...f, type: 'animation' }))}
-              showAllActive={filters.type === 'animation'}
-            />
-          )}
-
-          <div className="flex items-baseline justify-between gap-2 px-0.5">
-            <p className="text-xs font-extrabold text-gray-400 uppercase tracking-wide">
-              {list.length.toLocaleString()} {list.length === 1 ? 'asset' : 'assets'}
-              {anyFilter ? ` of ${shownTotal.toLocaleString()}` : ''}
-            </p>
-            {anyFilter && (
-              <button onClick={clearAll} className="text-xs font-extrabold text-purple-700 hover:text-purple-900">
-                Clear filters
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="w-full sm:w-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <Segmented
+                  value={tab}
+                  onChange={setTab}
+                  options={[...REVIEW_TABS.filter((t) => t !== 'mine' || iReview), ...(wired.length ? ['preview' as const] : [])].map((t) => ({
+                    value: t,
+                    label: <><span className="sm:hidden">{TAB_LABEL[t].short}</span><span className="hidden sm:inline">{TAB_LABEL[t].long}</span></>,
+                    count: tabCounts[t],
+                  }))}
+                />
+              </div>
+              <div className="ml-auto">
+                <Segmented
+                  value={mode}
+                  onChange={(m) => { setMode(m); setLimits({}); if (m === 'compare') closeHint(); }}
+                  options={[
+                    { value: 'grid', label: <span className="inline-flex items-center gap-1.5"><LayoutGrid className="w-3.5 h-3.5" />Grid</span> },
+                    { value: 'compare', label: <span className="inline-flex items-center gap-1.5"><Columns2 className="w-3.5 h-3.5" />Before &amp; After</span> },
+                  ]}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="flex-1 min-w-0 h-10 flex items-center gap-2 rounded-xl bg-white shadow-sm px-3 focus-within:ring-2 focus-within:ring-purple-300">
+                <Search className="w-4 h-4 text-purple-400 shrink-0" />
+                <input
+                  value={filters.q}
+                  onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
+                  placeholder="Search art"
+                  className="w-full min-w-0 bg-transparent text-sm font-semibold text-gray-800 placeholder:text-purple-300 outline-none"
+                />
+                {filters.q && (
+                  <button onClick={() => setFilters((f) => ({ ...f, q: '' }))} aria-label="Clear search" className="text-purple-400 hover:text-purple-700">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </label>
+              <button
+                onClick={() => setMoreOpen((o) => !o)}
+                aria-expanded={moreOpen}
+                className={`shrink-0 h-10 inline-flex items-center gap-1.5 rounded-xl px-3 text-sm font-extrabold shadow-sm transition ${
+                  moreOpen || moreActive ? 'bg-purple-600 text-white' : 'bg-white text-purple-700 hover:bg-purple-50'
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                <span className="hidden sm:inline">More filters</span>
+                <span className="sm:hidden">Filters</span>
+                {moreActive > 0 && <span className="tabular-nums text-purple-200">{moreActive}</span>}
               </button>
+            </div>
+            {moreOpen && (
+              <MoreFilters
+                assets={assets}
+                filters={filters}
+                onFacet={setFacet}
+                onWorking={(working) => setFilters((f) => ({ ...f, working }))}
+                onClear={() => setFilters((f) => ({ ...EMPTY_FILTERS, q: f.q }))}
+                picks={pickCount}
+                feedback={openFeedback.items?.length}
+                onView={(v) => { setView(v); setMoreOpen(false); }}
+              />
             )}
           </div>
 
-          {list.length === 0 ? (
+          {hint && mode === 'grid' && (
+            <div className="rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white shadow-sm pl-3 pr-1.5 py-1.5 flex items-center gap-2.5">
+              <Columns2 className="w-5 h-5 shrink-0" />
+              <p className="min-w-0 flex-1 text-[13px] font-bold leading-snug">
+                Tip: switch to Before &amp; After to compare what players see today with the new art.
+              </p>
+              <button onClick={() => { setMode('compare'); setLimits({}); closeHint(); }} className="shrink-0 h-9 rounded-xl bg-white text-purple-700 hover:bg-purple-50 px-3 text-xs font-extrabold">
+                Show me
+              </button>
+              <button onClick={closeHint} aria-label="Dismiss tip" className="shrink-0 w-9 h-9 rounded-xl hover:bg-white/15 flex items-center justify-center">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {(() => {
+            const live = Array.from(new Set(sections.filter((x) => x.season && SEASON_PREVIEW_WIRED[x.season]).map((x) => x.season!)));
+            return live.length > 0 && (
+              <p className="flex items-start gap-2 rounded-xl bg-orange-50 px-3 py-2 text-[13px] font-bold text-orange-900">
+                <Smartphone className="w-4 h-4 mt-0.5 shrink-0 text-orange-500" />
+                <span>
+                  {live.map((x) => `Turn on Settings → Season preview → ${seasonTitle(x)} in the app to see these live.`).join(' ')}
+                  {tab !== 'preview' && (
+                    <button onClick={() => setTab('preview')} className="ml-1.5 font-extrabold text-orange-700 underline underline-offset-2">
+                      What is in it
+                    </button>
+                  )}
+                </span>
+              </p>
+            );
+          })()}
+
+          {sections.length === 0 ? (
             <StateScene
               scene="empty"
-              title={assets.length ? 'Nothing matches these filters' : 'The library is empty'}
-              body={assets.length ? 'Loosen a filter or clear the search to see more art.' : 'Run the art upload and every file will show up here.'}
-              action={assets.length ? <SoftButton onClick={clearAll}>Clear filters</SoftButton> : undefined}
+              title={!assets.length ? 'The library is empty' : tab === 'mine' ? 'Nothing waiting on you' : 'Nothing matches'}
+              body={!assets.length
+                ? 'Run the art upload and every file will show up here.'
+                : tab === 'mine' ? 'Every piece here has your call. New art lands in this list as it is added.' : 'Loosen a filter or clear the search to see more art.'}
+              action={assets.length ? <SoftButton onClick={clearAll}>Show all art</SoftButton> : undefined}
             />
           ) : (
-            <>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3">
-                {shown.map((a) => (
-                  <Tile
-                    key={a.id}
-                    asset={a}
+            <div>
+              {sections.map((s) => {
+                const sOpen = isOpen(s);
+                return (
+                  <SectionBlock
+                    key={s.key}
+                    section={s}
+                    ctx={ctx}
+                    open={sOpen}
+                    mode={mode}
+                    limit={limitFor(s)}
                     signer={signer}
-                    reviewers={reviewers}
-                    reviewIndex={reviewIndex}
-                    onOpen={() => open(list.map((x) => x.id), a.id)}
+                    summary={sectionSummary(s, ctx)}
+                    plan={approveAllPlan(s.assets, ctx)}
+                    confirming={confirmKey === s.key}
+                    iReview={iReview}
+                    actions={{
+                      onToggle: () => setOpenOverride((o) => ({ ...o, [s.key]: !sOpen })),
+                      onMore: () => setLimits((l) => ({ ...l, [s.key]: s.assets.length })),
+                      onOpenAsset: (id) => open(s.assets.map((a) => a.id), id),
+                      onSeeInApp: () => {
+                        const ids = s.assets.filter((a) => mediaOf(a.mime) === 'image').map((a) => a.id);
+                        if (ids.length) open(ids, ids[0], s.season ? 'season' : 'piece');
+                      },
+                      onAskApproveAll: () => setConfirmKey(s.key),
+                      onConfirmApproveAll: () => approveSection(s),
+                      onCancelApproveAll: () => setConfirmKey(null),
+                      onApprove: approveOne,
+                      onNote: noteOne,
+                    }}
                   />
-                ))}
-              </div>
-              {limit < list.length && <Sentinel onHit={() => setLimit((n) => n + PAGE_SIZE)} />}
-            </>
+                );
+              })}
+            </div>
           )}
         </>
       )}
@@ -384,6 +578,7 @@ export default function ArtLibraryPage() {
         <Lightbox
           ids={lightbox.ids}
           index={lightbox.index}
+          preview={lightbox.preview}
           byId={byId}
           signer={signer}
           onIndex={(index) => setLightbox((l) => (l ? { ...l, index } : l))}
@@ -405,12 +600,24 @@ export default function ArtLibraryPage() {
       )}
 
       {toast && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] max-w-[90vw] rounded-xl bg-gray-900 text-white text-sm font-bold px-4 py-2.5 shadow-lg">
-          {toast}
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] w-max max-w-[92vw] rounded-2xl bg-gray-900 text-white shadow-lg pl-4 pr-1.5 py-1.5 flex items-center gap-3">
+          <p className="min-w-0 text-sm font-bold truncate py-1">{toast.message}</p>
+          {toast.undo && (
+            <button onClick={toast.undo} className="shrink-0 h-9 rounded-xl bg-white/15 hover:bg-white/25 px-3 text-sm font-extrabold text-amber-200">
+              Undo
+            </button>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+async function postJson<T>(url: string, body: unknown, keepalive = false): Promise<T> {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j?.error) throw new Error(j?.error ?? `Request failed (${r.status})`);
+  return j as T;
 }
 
 /* ---------------------------------------------------------------- controls */
@@ -418,7 +625,7 @@ export default function ArtLibraryPage() {
 function Segmented<T extends string>({ value, onChange, options }: {
   value: T;
   onChange: (v: T) => void;
-  options: Array<{ value: T; label: string; count?: number }>;
+  options: Array<{ value: T; label: React.ReactNode; count?: number }>;
 }) {
   return (
     <div className="inline-flex rounded-xl bg-purple-100/70 p-1">
@@ -428,10 +635,11 @@ function Segmented<T extends string>({ value, onChange, options }: {
           <button
             key={o.value}
             onClick={() => onChange(o.value)}
-            className={`px-3.5 py-1.5 rounded-lg text-sm font-extrabold transition ${on ? 'bg-white text-purple-700 shadow-sm' : 'text-purple-900/60 hover:text-purple-800'}`}
+            aria-pressed={on}
+            className={`shrink-0 whitespace-nowrap px-3 h-8 rounded-lg text-sm font-extrabold transition ${on ? 'bg-white text-purple-700 shadow-sm' : 'text-purple-900/60 hover:text-purple-800'}`}
           >
             {o.label}
-            {o.count != null && <span className={`ml-1.5 tabular-nums ${on ? 'text-purple-400' : 'text-purple-900/35'}`}>{o.count.toLocaleString()}</span>}
+            {o.count != null && <span className={`ml-1.5 tabular-nums ${on ? 'text-purple-400' : 'text-purple-900/35'}`}>{o.count.toLocaleString('en-US')}</span>}
           </button>
         );
       })}
@@ -459,41 +667,35 @@ function SoftButton({ onClick, children, tone = 'purple', disabled }: {
   );
 }
 
-function Filters({ assets, filters, onFacet, onQuery, onWorking, sort, onSort, review }: {
+/** The "More filters" menu: type, season and character, the working-files switch, and the two side views. */
+function MoreFilters({ assets, filters, onFacet, onWorking, onClear, picks, feedback, onView }: {
   assets: ArtAsset[];
   filters: ArtFilters;
   onFacet: (facet: ArtFacet, value: string | null) => void;
-  onQuery: (q: string) => void;
   onWorking: (on: boolean) => void;
-  sort: ArtSort;
-  onSort: (s: ArtSort) => void;
-  /** The Review chip row (Needs my review / Waiting on ... / Approved by both). */
-  review?: React.ReactNode;
+  onClear: () => void;
+  picks: number;
+  feedback: number | undefined;
+  onView: (v: 'picks' | 'feedback') => void;
 }) {
+  const any = filters.type || filters.season || filters.character || filters.working;
   return (
-    <div className="rounded-2xl bg-white shadow-sm p-3 sm:p-4 space-y-2.5 min-w-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="flex-1 min-w-[180px] flex items-center gap-2 rounded-xl bg-purple-50 px-3 py-2 focus-within:ring-2 focus-within:ring-purple-300">
-          <Search className="w-4 h-4 text-purple-400 shrink-0" />
-          <input
-            value={filters.q}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder="Search title, caption or path"
-            className="w-full min-w-0 bg-transparent text-sm font-semibold text-gray-800 placeholder:text-purple-300 outline-none"
-          />
-          {filters.q && (
-            <button onClick={() => onQuery('')} aria-label="Clear search" className="text-purple-400 hover:text-purple-700">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </label>
-        <Segmented value={sort} onChange={onSort} options={[{ value: 'featured', label: 'Featured' }, { value: 'newest', label: 'Newest' }, { value: 'az', label: 'A to Z' }]} />
-      </div>
-      {(['type', 'season', 'character', 'status'] as const).map((facet) => (
+    <div className="rounded-2xl bg-white shadow-sm p-3 space-y-2.5 min-w-0">
+      {(['type', 'season', 'character'] as const).map((facet) => (
         <ChipRow key={facet} facet={facet} assets={assets} filters={filters} onPick={(v) => onFacet(facet, v)} />
       ))}
-      {review}
       <WorkingToggle assets={assets} filters={filters} onChange={onWorking} />
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-purple-50">
+        <button onClick={() => onView('picks')} className="h-9 inline-flex items-center gap-1.5 rounded-xl bg-purple-50 text-purple-800 hover:bg-purple-100 px-3 text-xs font-extrabold">
+          <Star className="w-3.5 h-3.5" /> Founder picks <span className="tabular-nums text-purple-400">{picks.toLocaleString('en-US')}</span>
+        </button>
+        <button onClick={() => onView('feedback')} className="h-9 inline-flex items-center gap-1.5 rounded-xl bg-purple-50 text-purple-800 hover:bg-purple-100 px-3 text-xs font-extrabold">
+          <MessageSquareText className="w-3.5 h-3.5" /> Open feedback {feedback != null && <span className="tabular-nums text-purple-400">{feedback.toLocaleString('en-US')}</span>}
+        </button>
+        {any && (
+          <button onClick={onClear} className="ml-auto text-xs font-extrabold text-purple-700 hover:text-purple-900">Clear filters</button>
+        )}
+      </div>
     </div>
   );
 }
@@ -568,81 +770,7 @@ function Chip({ on, onClick, label, count, dot }: { on: boolean; onClick: () => 
   );
 }
 
-/* -------------------------------------------------------------------- grid */
-
-function MediaGlyph({ media, size = 'md' }: { media: 'html' | 'audio' | 'other'; size?: 'sm' | 'md' }) {
-  const Icon = media === 'html' ? Play : media === 'audio' ? AudioLines : Palette;
-  const label = media === 'html' ? 'Animation' : media === 'audio' ? 'Sound' : 'File';
-  return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-purple-100 to-purple-200/70">
-      <span className={`${size === 'sm' ? 'w-7 h-7' : 'w-11 h-11'} rounded-full bg-white/90 shadow-sm flex items-center justify-center text-purple-600`}>
-        <Icon className={size === 'sm' ? 'w-3.5 h-3.5' : 'w-5 h-5'} />
-      </span>
-      {size === 'md' && <span className="text-[10px] font-black text-purple-700/80 uppercase tracking-wide">{label}</span>}
-    </div>
-  );
-}
-
-/** A thumbnail that falls back to the full file when the resized render fails. */
-function Thumb({ asset, signer, size = 'md' }: { asset: ArtAsset; signer: Signer; size?: 'sm' | 'md' }) {
-  const [fallback, setFallback] = useState(false);
-  const media = mediaOf(asset.mime);
-  useEffect(() => { if (fallback) signer.ensure('full', [asset.id]); }, [fallback, asset.id, signer]);
-  if (media !== 'image') return <MediaGlyph media={media} size={size} />;
-  const url = fallback ? signer.get('full', asset.id) : signer.get('thumb', asset.id);
-  if (!url) return <div className="absolute inset-0 animate-pulse bg-purple-100/50" />;
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt=""
-      loading="lazy"
-      decoding="async"
-      onError={() => setFallback(true)}
-      className="absolute inset-0 w-full h-full object-contain p-1.5"
-    />
-  );
-}
-
-function Tile({ asset, signer, reviewers, reviewIndex, onOpen }: {
-  asset: ArtAsset; signer: Signer; reviewers: readonly ArtReviewer[]; reviewIndex: ReviewIndex; onOpen: () => void;
-}) {
-  const reviews = reviewIndex.get(asset.id);
-  const look = STATUS_LOOK[asset.status] ?? STATUS_LOOK.draft;
-  return (
-    <button onClick={onOpen} className="group text-left min-w-0" title={asset.path}>
-      <div className="relative aspect-square rounded-xl overflow-hidden shadow-sm transition group-hover:shadow-md group-hover:-translate-y-0.5" style={CHECKER}>
-        <Thumb asset={asset} signer={signer} />
-        {asset.status !== 'draft' && (
-          <span className={`absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full ring-2 ring-white ${look.dot}`} aria-label={look.label} />
-        )}
-      </div>
-      <div className="mt-1 flex items-center gap-1 min-w-0">
-        <p className="min-w-0 flex-1 text-[11px] font-bold text-gray-700 truncate">{asset.title}</p>
-        {(asset.status !== 'shipped' || reviews) && <ReviewerDiscs reviewers={reviewers} reviews={reviews} />}
-      </div>
-    </button>
-  );
-}
-
-function Sentinel({ onHit }: { onHit: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const hit = useRef(onHit);
-  hit.current = onHit;
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // The admin layout scrolls <main>, not the window: observe against it so the margin preloads.
-    const root = el.closest('main');
-    const io = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) hit.current(); }, {
-      root,
-      rootMargin: '800px 0px',
-    });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return <div ref={ref} className="h-6" aria-hidden />;
-}
+/* ------------------------------------------------------------------ states */
 
 function SkeletonGrid() {
   return (
@@ -670,38 +798,6 @@ function StateScene({ scene, title, body, action }: {
       <p className="mt-3 text-base font-black text-gray-900">{title}</p>
       <p className="mt-1 text-sm font-semibold text-gray-500 max-w-sm break-words">{body}</p>
       {action && <div className="mt-4">{action}</div>}
-    </div>
-  );
-}
-
-function AnimationStrip({ assets, onOpenCast, onShowAll, showAllActive }: {
-  assets: ArtAsset[]; onOpenCast: () => void; onShowAll: () => void; showAllActive: boolean;
-}) {
-  const cast = assets.find((a) => a.id === 'animation/cast');
-  const players = assets.filter((a) => a.type === 'animation' && a.mime === 'text/html' && a.id !== 'animation/cast').length;
-  if (!cast && !players) return null;
-  return (
-    <div className="rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white shadow-sm p-3 flex items-center gap-3 min-w-0">
-      <span className="w-10 h-10 shrink-0 rounded-xl bg-white/20 flex items-center justify-center">
-        <Clapperboard className="w-5 h-5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-black truncate">Animations</p>
-        <p className="text-xs font-semibold text-white/80 truncate">
-          {cast ? 'The whole cast moving, live' : 'Rig previews'}
-          {players ? ` · ${players} rig ${players === 1 ? 'preview' : 'previews'}` : ''}
-        </p>
-      </div>
-      {players > 0 && !showAllActive && (
-        <button onClick={onShowAll} className="hidden sm:inline-flex shrink-0 rounded-xl bg-white/15 hover:bg-white/25 px-3 py-2 text-xs font-extrabold">
-          Show rigs
-        </button>
-      )}
-      {cast && (
-        <button onClick={onOpenCast} className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-white text-purple-700 hover:bg-purple-50 px-3 py-2 text-xs font-extrabold shadow-sm">
-          <Play className="w-3.5 h-3.5" /> Play cast
-        </button>
-      )}
     </div>
   );
 }
@@ -787,9 +883,11 @@ function FullImage({ asset, signer, label }: { asset: ArtAsset; signer: Signer; 
   );
 }
 
-function Lightbox({ ids, index, byId, signer, onIndex, onClose, onDecide, onDownload, review, feedback }: {
+function Lightbox({ ids, index, preview = null, byId, signer, onIndex, onClose, onDecide, onDownload, review, feedback }: {
   ids: string[];
   index: number;
+  /** Opened from "See it in the app": the in-app comparison leads, open on this piece or the whole season. */
+  preview?: null | 'piece' | 'season';
   byId: Map<string, ArtAsset>;
   signer: Signer;
   onIndex: (i: number) => void;
@@ -840,6 +938,7 @@ function Lightbox({ ids, index, byId, signer, onIndex, onClose, onDecide, onDown
   }
 
   const look = STATUS_LOOK[asset.status] ?? STATUS_LOOK.draft;
+  const live = wiredFor(asset);
   const tags = [
     facetLabel('type', asset.type),
     asset.kind && facetLabel('type', asset.kind),
@@ -858,7 +957,7 @@ function Lightbox({ ids, index, byId, signer, onIndex, onClose, onDecide, onDown
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
         <div className="relative px-3 sm:px-4">
           {media === 'html' ? (
             <PlayerFrame key={asset.id} asset={asset} />
@@ -903,6 +1002,12 @@ function Lightbox({ ids, index, byId, signer, onIndex, onClose, onDecide, onDown
               ) : null}
               <span className="rounded-full bg-gray-100 text-gray-600 px-2.5 py-0.5 text-[11px] font-extrabold tabular-nums">{formatBytes(asset.bytes)}</span>
             </div>
+            {live && (
+              <p className="flex flex-wrap items-center gap-2 text-xs font-bold text-orange-900">
+                <LiveTag />
+                <span>{live.where}</span>
+              </p>
+            )}
             {(asset.note || asset.decided_at) && (
               <p className="text-xs font-semibold text-gray-500">
                 {asset.decided_at && <span className="font-extrabold">{look.label} {shortDate(asset.decided_at)}</span>}
@@ -932,9 +1037,10 @@ function Lightbox({ ids, index, byId, signer, onIndex, onClose, onDecide, onDown
         </div>
 
         {media === 'image' && (
-          <div className="px-3 sm:px-4 pb-4">
+          <div className={`px-3 sm:px-4 pb-4 ${preview ? 'order-first pt-1' : ''}`}>
             <PreviewPanel
               asset={asset}
+              initial={preview}
               after={(scope) => (
                 <FeedbackThread key={scope} scope={scope} title={scope.startsWith('season:') ? 'Feedback on the whole season' : 'Feedback on this screen'} />
               )}

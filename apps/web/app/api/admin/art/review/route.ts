@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireArtAdmin } from '@/lib/admin/art-auth';
-import { loadReviewers } from '@/lib/admin/art-review-db';
-import { parseReviewBody, reviewStatus, type ArtReview } from '@/lib/admin/art-review';
+import { FEEDBACK_COLUMNS, loadReviewers, withAuthors } from '@/lib/admin/art-review-db';
+import { parseReviewBody, reviewStatus, type ArtFeedback, type ArtReview } from '@/lib/admin/art-review';
 import type { ArtStatus } from '@/lib/admin/art-library';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Record the caller's review of one asset: { asset_id, decision: 'approve'|'reject'|'changes', note? }
- * -> { asset, reviews }. Upserts the caller's art_reviews row (latest decision wins), then recomputes
+ * Record the caller's review of one asset: { asset_id, decision: 'approve'|'reject'|'changes', note?, feedback? }
+ * -> { asset, reviews, item? }. With feedback: true the note is also filed as an art_feedback row on the asset
+ * (the tile's inline "What should change?" box: one tap records the call and the note Claude reads). Upserts the caller's art_reviews row (latest decision wins), then recomputes
  * art_assets.status with reviewStatus (approved only when every art_reviewers row approves; shipped is
  * left alone). Only listed reviewers may review.
  */
@@ -41,6 +42,17 @@ export async function POST(request: NextRequest) {
   );
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
+  let item: ArtFeedback | undefined;
+  if (parsed.feedback && parsed.note) {
+    const { data: fb, error: fbErr } = await admin
+      .from('art_feedback')
+      .insert({ asset_id: parsed.asset_id, scope: null, body: parsed.note, author_id: me })
+      .select(FEEDBACK_COLUMNS)
+      .single();
+    if (fbErr) return NextResponse.json({ error: fbErr.message }, { status: 500 });
+    [item] = await withAuthors(admin, [fb as Omit<ArtFeedback, 'author'>]);
+  }
+
   const { data: rows, error: revErr } = await admin
     .from('art_reviews')
     .select('asset_id, reviewer_id, decision, note, created_at, updated_at')
@@ -50,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   const current = (asset as { status: ArtStatus }).status;
   const next = reviewStatus(current, reviews, reviewerIds);
-  if (next === current) return NextResponse.json({ asset, reviews });
+  if (next === current) return NextResponse.json({ asset, reviews, item });
 
   const { data: updated, error: updErr } = await admin
     .from('art_assets')
@@ -59,5 +71,5 @@ export async function POST(request: NextRequest) {
     .select()
     .maybeSingle();
   if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
-  return NextResponse.json({ asset: updated ?? asset, reviews });
+  return NextResponse.json({ asset: updated ?? asset, reviews, item });
 }

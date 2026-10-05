@@ -56,9 +56,11 @@ function Preview() {
     let alive = true;
     (async () => {
       try {
-        const r = await fetch('/api/admin/art', { credentials: 'same-origin' });
-        if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'Admins only.' : `Could not load the library (${r.status}).`);
-        const { assets } = (await r.json()) as { assets: ArtAsset[] };
+        const assets = parentLibrary() ?? await (async () => {
+          const r = await fetch('/api/admin/art', { credentials: 'same-origin' });
+          if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'Admins only.' : `Could not load the library (${r.status}).`);
+          return ((await r.json()) as { assets: ArtAsset[] }).assets;
+        })();
         const asset = assetId ? assets.find((a) => a.id === assetId) ?? null : null;
         if (assetId && !asset) throw new Error('That piece is not in the library.');
         const plans = season ? seasonPlans(assets, season) : asset ? [planFor(asset)] : [];
@@ -101,6 +103,32 @@ function Preview() {
   );
 }
 
+/**
+ * The library the Art Library page already holds (window.__artLibraryAssets), when this preview is one of its
+ * frames: Before & After mounts many frames, and each would otherwise refetch the whole library. Same-origin
+ * only (a cross-origin parent throws, and we fall back to the fetch).
+ */
+function parentLibrary(): ArtAsset[] | null {
+  try {
+    if (window.parent === window) return null;
+    const list = (window.parent as unknown as { __artLibraryAssets?: unknown }).__artLibraryAssets;
+    return Array.isArray(list) && list.length ? (list as ArtAsset[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The Art Library page's shared signer (window.__artLibrarySign), when this preview is one of its frames. */
+function parentSigner(): ((ids: string[]) => Promise<Record<string, string>>) | null {
+  try {
+    if (window.parent === window) return null;
+    const fn = (window.parent as unknown as { __artLibrarySign?: unknown }).__artLibrarySign;
+    return typeof fn === 'function' ? (fn as (ids: string[]) => Promise<Record<string, string>>) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Season mode: every chosen piece, grouped onto Home, one game and the Leaderboard. */
 function seasonPlans(assets: ArtAsset[], season: string): PreviewPlan[] {
   const picks = seasonPicks(assets, season).map(planFor);
@@ -115,6 +143,8 @@ function seasonPlans(assets: ArtAsset[], season: string): PreviewPlan[] {
 }
 
 async function sign(ids: string[]): Promise<Record<string, string>> {
+  const viaParent = parentSigner();
+  if (viaParent) return viaParent(ids);
   const out: Record<string, string> = {};
   for (let i = 0; i < ids.length; i += 100) {
     const r = await fetch('/api/admin/art/sign', {
