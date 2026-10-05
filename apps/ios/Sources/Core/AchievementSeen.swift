@@ -37,3 +37,22 @@ public enum AchievementSeen {
         return out
     }
 }
+
+/// Johnny (iOS 242, 10-05): "Awesome!" re-showed the same Swift Codebreaker popup. The
+/// unlock popup queue works on moment ids ("a:<key>", "l:<level>"): an id is admitted at
+/// most once per session (never twice in one batch, never while it already waits, never
+/// after it was shown), and closing a moment drops EVERY queued copy of its id, so
+/// "Awesome!" always closes that achievement. Pure, so it is unit-tested in core.
+public enum UnlockQueue {
+    /// The ids of `incoming` to append, in order: not already queued / held, not shown
+    /// (or dismissed) this session, no repeats inside the batch.
+    public static func admit(_ incoming: [String], queued: [String], shown: Set<String>) -> [String] {
+        var taken = shown.union(queued)
+        return incoming.filter { taken.insert($0).inserted }
+    }
+
+    /// The queue after the moment `id` closes: every copy of it removed.
+    public static func dismiss(_ queue: [String], id: String) -> [String] {
+        queue.filter { $0 != id }
+    }
+}

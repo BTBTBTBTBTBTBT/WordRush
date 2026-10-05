@@ -55,6 +55,21 @@ class BadgeKitTest {
         assertEquals(2, BadgeMath.toEnqueue(emptyList(), emptySet(), listOf(BadgeMoment.Achievement("11"), BadgeMoment.LevelUp(11))).size)
     }
 
+    /** Johnny (iOS 242): "Awesome!" re-showed the same Swift Codebreaker popup. */
+    @Test
+    fun duplicate_unlock_shows_once_and_awesome_closes_it() {
+        val swift = BadgeMoment.Achievement("cryptogram_swift")
+        val owl = BadgeMoment.Achievement("night_owl")
+        // The same unlock announced twice (live result + sync) queues once.
+        var queue = BadgeMath.toEnqueue(emptyList(), emptySet(), listOf(swift, BadgeMoment.Achievement("cryptogram_swift")))
+        assertEquals(listOf(swift), queue)
+        // Even a queue holding two copies empties on one "Awesome!"; others stay, in order.
+        queue = BadgeMath.afterDismiss(listOf(swift, BadgeMoment.Achievement("cryptogram_swift"), owl), swift)
+        assertEquals(listOf(owl), queue)
+        // Once shown, a re-announcement never brings it back.
+        assertEquals(emptyList<BadgeMoment>(), BadgeMath.toEnqueue(emptyList(), setOf(swift.id), listOf(swift)))
+    }
+
     @Test
     fun level_up_popup_only_when_the_tier_changes() {
         assertTrue(BadgeMath.tierChangedOnLevelUp(true, 11))

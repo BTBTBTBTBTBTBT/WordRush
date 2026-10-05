@@ -31,4 +31,23 @@ final class AchievementSeenTests: XCTestCase {
         XCTAssertEqual(AchievementSeen.unseen(["a", "b", "a", "c"], seen: ["b"]), ["a", "c"])
         XCTAssertEqual(AchievementSeen.unseen([], seen: []), [])
     }
+
+    /// Johnny (iOS 242): the same unlock queued twice (live result + sync, or a replay)
+    /// must show ONCE, and "Awesome!" must close it for good.
+    func testDuplicateUnlockShowsOnceAndAwesomeCloses() {
+        let id = "a:cryptogram_swift"
+        // Two announcements of the same achievement in one batch → one popup.
+        var queue = UnlockQueue.admit([id, id], queued: [], shown: [])
+        XCTAssertEqual(queue, [id])
+        // A second announcement while it is on screen → still one.
+        queue += UnlockQueue.admit([id], queued: queue, shown: [id])
+        XCTAssertEqual(queue, [id])
+        // Even a queue that somehow holds two copies empties on one "Awesome!".
+        queue = UnlockQueue.dismiss([id, id, "a:best_buds"], id: id)
+        XCTAssertEqual(queue, ["a:best_buds"])
+        // After it was shown, a late re-announcement (sync, replay) is refused.
+        XCTAssertEqual(UnlockQueue.admit([id, "a:night_owl"], queued: [], shown: [id]), ["a:night_owl"])
+        // Different achievements still play one after another, in order.
+        XCTAssertEqual(UnlockQueue.admit(["a:x", "l:11", "a:y", "a:x"], queued: [], shown: []), ["a:x", "l:11", "a:y"])
+    }
 }

@@ -171,6 +171,8 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
                   onClick={async () => {
                     const r = await shareAchievementCard({ name: item.name, description: item.description, badgeSrcs: [ownArt ? artSrc(ownArt) : badgeSrc(item.badge)], accent });
                     setShareNote(r === 'copied' ? 'Copied!' : r === 'failed' ? 'Could not share' : null);
+                    // Shared (or copied): the popup closes too, a beat after its note.
+                    if (r !== 'failed') window.setTimeout(onClose, r === 'copied' ? 900 : 0);
                   }}
                 />
               </>

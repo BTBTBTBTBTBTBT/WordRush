@@ -34,6 +34,9 @@ object AchievementSeen {
 
     fun save(userId: String, seen: Set<String>) = SettingsPref.set(prefKey(userId), seen.sorted().joinToString(","))
 
+    /** The signed-in player's seen set right now (empty when signed out / never seeded). */
+    fun seenNow(): Set<String> = AuthService.userId?.let { load(it) }.orEmpty()
+
     /** A client-side unlock was just queued: it never celebrates again from the diff. */
     fun markSeen(keys: Collection<String>) {
         val uid = AuthService.userId ?: return
