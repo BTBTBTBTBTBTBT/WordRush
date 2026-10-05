@@ -524,6 +524,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     var confirmForfeit by remember { mutableStateOf(false) }
     // BI22: the whole ProperNoundle clue card (opened from the two-line clue slot).
     var showClueCard by remember { mutableStateOf(false) }
+    var clueTopPx by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     // Confirm only when leaving would TRULY forfeit (a recorded loss): CPU
     // practice and already-resolved matches leave without the scary "counts as
     // a loss" dialog, which would be lying there.
@@ -589,7 +590,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             if (vm.mode == GameMode.PROPERNOUNDLE) {
                 val clueText by game.clue.collectAsState()
                 val loadingClue by game.loadingClue.collectAsState()
-                com.wordocious.app.ui.game.ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true })
+                com.wordocious.app.ui.game.ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true }, onPlaced = { clueTopPx = it })
             }
         }
         // A run to send has no opponent: the panel says who will race it (§3).
@@ -724,7 +725,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
     // BI22 the whole ProperNoundle clue, over the match (the header slot shows three or four lines).
     if (showClueCard && vm.mode == GameMode.PROPERNOUNDLE) {
         val clueText by game.clue.collectAsState()
-        clueText?.let { com.wordocious.app.ui.game.ProperNoundleClueOverlay(it) { showClueCard = false } }
+        clueText?.let { com.wordocious.app.ui.game.ProperNoundleClueOverlay(it, anchorTopPx = clueTopPx) { showClueCard = false } }
     }
 
     }

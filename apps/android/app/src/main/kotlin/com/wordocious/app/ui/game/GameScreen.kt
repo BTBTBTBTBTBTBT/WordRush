@@ -763,6 +763,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     var showGuide by remember { mutableStateOf(false) }
     // BI22: the full ProperNoundle clue card (opened from the two-line clue slot).
     var showClueCard by remember { mutableStateOf(false) }
+    var clueTopPx by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     // Gauntlet stage-cleared interstitial is up (see StageTransitionOverlay below).
     var stageSkip by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val stageCleared = mode == GameMode.GAUNTLET && state.gauntlet != null &&
@@ -924,7 +925,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 if (mode == GameMode.PROPERNOUNDLE) {
                     val clueText by vm.clue.collectAsState()
                     val loadingClue by vm.loadingClue.collectAsState()
-                    ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true })
+                    ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true }, onPlaced = { clueTopPx = it })
                 }
             }
 
@@ -1040,7 +1041,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         // BI22 the whole ProperNoundle clue, over the game (the header slot shows three or four lines).
         if (showClueCard && mode == GameMode.PROPERNOUNDLE) {
             val clueText by vm.clue.collectAsState()
-            clueText?.let { ProperNoundleClueOverlay(it) { showClueCard = false } }
+            clueText?.let { ProperNoundleClueOverlay(it, anchorTopPx = clueTopPx) { showClueCard = false } }
         }
     }
 }

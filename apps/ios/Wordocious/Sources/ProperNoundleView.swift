@@ -350,6 +350,8 @@ struct ProperNoundleView: View {
     @State private var adShown = false
     @State private var showVictory = false
     @State private var showGuide = false
+    /// The whole clue's soft-pop card (tap the clamped clue).
+    @State private var showFullClue = false
     @State private var showShareOptions = false
     /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
     @State private var shareReveal: Bool?
@@ -442,6 +444,8 @@ struct ProperNoundleView: View {
             .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
             .softSheet(isPresented: $showGuide) { GuideSheet(mode: .propernoundle) }
         }
+        // The whole clue's soft-pop card, hung under the title art (Johnny 10-05).
+        .noundleFullClue(vm.isFinished ? nil : vm.clue, isPresented: $showFullClue)
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
@@ -500,7 +504,7 @@ struct ProperNoundleView: View {
             }
             // §BI22: the clue's slot is always there (two lines, empty until Clue is
             // tapped) — the clue used to appear in the header's flow and the board shrank.
-            NoundleClueSlot(clue: vm.clue).padding(.horizontal, 20)
+            NoundleClueSlot(clue: vm.clue, showFull: $showFullClue).padding(.horizontal, 20)
         }
     }
 
@@ -657,11 +661,13 @@ struct NoundleHints: View {
 
 /// §BI22: ProperNoundle's clue, in a slot that is always three lines tall (four on
 /// tall screens; empty until the Clue hint lands) so revealing it never resizes the
-/// board. A long Wikipedia clue is clamped to those lines; tapping it shows the whole
-/// clue in a popover. (Doug 10-05: two lines cut the clue short.)
+/// board. A long Wikipedia clue is clamped to those lines; tapping it opens the whole
+/// clue in a soft-pop card (`noundleFullClue`) hung from this slot's top edge — below
+/// the title art and the category line, never over them. (Johnny 10-05: the system
+/// popover floated over the title art, clipped; Doug 10-05: two lines cut the clue short.)
 struct NoundleClueSlot: View {
     let clue: String?
-    @State private var showFull = false
+    @Binding var showFull: Bool
 
     private var font: Font { Brand.body(CGFloat(HintLayout.noundleClueFontSize)) }
     private var lines: Int { HintLayout.noundleClueLines(screenHeight: Double(UIScreen.main.bounds.height)) }
@@ -681,17 +687,100 @@ struct NoundleClueSlot: View {
                 .accessibilityLabel("Clue: \(clue)")
                 .accessibilityHint("Shows the whole clue")
                 .transition(.opacity)
-                .popover(isPresented: $showFull) {
-                    Text(clue).font(Brand.body(14)).italic().foregroundStyle(FinishInk.heading)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: 320).padding(16)
-                        .modifier(CompactPopover())
-                }
             }
         }
         .frame(maxWidth: .infinity)
+        .anchorPreference(key: NoundleClueAnchor.self, value: .bounds) { $0 }
         .animation(.easeOut(duration: 0.2), value: clue)
+    }
+}
+
+/// Where the clue slot sits, for the full-clue card (read by `noundleFullClue`).
+struct NoundleClueAnchor: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? = nil
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) { value = value ?? nextValue() }
+}
+
+extension View {
+    /// The whole clue as a soft-pop card over the board: its top edge is the clue slot's
+    /// top (so the title art and the category line stay clear), full width with 14 pt
+    /// margins, a readable 16 pt, scrolling when a clue outgrows the space down to the
+    /// screen's bottom. Tap outside or the X closes it. Apply on the game's root.
+    func noundleFullClue(_ clue: String?, isPresented: Binding<Bool>) -> some View {
+        overlayPreferenceValue(NoundleClueAnchor.self) { anchor in
+            GeometryReader { g in
+                if isPresented.wrappedValue, let clue, let anchor {
+                    let top = max(0, g[anchor].minY - 4)
+                    ZStack(alignment: .top) {
+                        Color.black.opacity(0.22).ignoresSafeArea()
+                            .contentShape(Rectangle())
+                            .onTapGesture { isPresented.wrappedValue = false }
+                            .accessibilityLabel("Close")
+                            .accessibilityAddTraits(.isButton)
+                            .transition(.opacity)
+                        NoundleFullClueCard(clue: clue, maxHeight: max(160, g.size.height - top - 16)) {
+                            isPresented.wrappedValue = false
+                        }
+                        .frame(width: min(460, g.size.width - 28))
+                        .padding(.top, top)
+                        .transition(SoftPop.transition)
+                        .accessibilityAddTraits(.isModal)
+                    }
+                    .frame(width: g.size.width, height: g.size.height, alignment: .top)
+                }
+            }
+            .animation(Theme.animation(SoftPop.animation), value: isPresented.wrappedValue)
+        }
+    }
+}
+
+/// The full clue: the app's soft card (no outline), the game's red CLUE label with a close X
+/// (Android ProperNoundleClueOverlay / web clue-slot parity),
+/// the clue in 16 pt; a very long clue scrolls inside the card instead of clipping.
+private struct NoundleFullClueCard: View {
+    let clue: String
+    let maxHeight: CGFloat
+    let close: () -> Void
+
+
+    var body: some View {
+        // The card hugs the clue; only a clue taller than the room down to the screen's
+        // bottom gets the scrolling version (which takes exactly that room).
+        ViewThatFits(in: .vertical) {
+            card { clueText(clue) }
+            card { ScrollView(showsIndicators: true) { clueText(clue) } }
+        }
+        .frame(height: maxHeight, alignment: .top)
+    }
+
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "lightbulb.fill").font(.system(size: 13, weight: .bold))
+                Text("CLUE").font(Brand.font(13, .black)).tracking(1.2)
+                Spacer(minLength: 0)
+                HeaderCircleButton(.symbol("xmark"), size: 30, tint: FinishInk.muted, label: "Close") { close() }
+            }
+            .foregroundStyle(pnAccent)
+            content()
+        }
+        .padding(.leading, 18).padding(.trailing, 10).padding(.top, 8).padding(.bottom, 16)
+        .background(shape.fill(Color(hex: 0xFDF0EF)))   // the clue wash: 8% red on the card
+        .clipShape(shape)
+        .shadow(color: Color(hex: 0x280F50).opacity(0.30), radius: 18, x: 0, y: 14)
+        .contentShape(shape)
+        .onTapGesture {}
+    }
+
+    private func clueText(_ text: String) -> some View {
+        Text(text).font(Brand.body(16)).italic().foregroundStyle(FinishInk.title)
+            .lineSpacing(3)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, 8)
+            .accessibilityLabel("Clue: \(text)")
     }
 }
 
@@ -883,6 +972,8 @@ struct ProperNoundleVSBoard<Strip: View>: View {
     @ObservedObject var vm: ProperNoundleVM
     let onHome: () -> Void
     @ViewBuilder var strip: () -> Strip
+    /// The whole clue's soft-pop card (tap the clamped clue).
+    @State private var showFullClue = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -910,6 +1001,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             NoundleKeyboard(vm: vm).padding(.bottom, 6).gameFeedbackToast(vm.toast, alignment: .top)
         }
         .padding(.horizontal, 10)
+        .noundleFullClue(vm.clue, isPresented: $showFullClue)
     }
 
     /// The solo ProperNoundleView header (minus the daily-only number/holiday).
@@ -941,7 +1033,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             }
             // The clue lands here once fetched (tapping Clue burns a row) — in its
             // always-present two-line slot (§BI22: the board never shrinks for it).
-            NoundleClueSlot(clue: vm.clue).padding(.horizontal, 8)
+            NoundleClueSlot(clue: vm.clue, showFull: $showFullClue).padding(.horizontal, 8)
         }
         .padding(.top, 6)
     }
