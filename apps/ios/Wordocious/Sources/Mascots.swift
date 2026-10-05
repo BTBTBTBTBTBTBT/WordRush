@@ -477,6 +477,7 @@ struct GuestPitch: View {
     let preview: Preview
     let onSignIn: () -> Void
     @ObservedObject private var chrome = ChromeVisibility.shared
+    @ObservedObject private var auth = AuthService.shared
 
     /// The Stats tab's sample chips (streak, wins, best time).
     static let statsChips: [Chip] = [
@@ -532,14 +533,18 @@ struct GuestPitch: View {
             Button(action: onSignIn) { CandyLabel(title: "Sign in") }
                 .buttonStyle(CastButtonStyle(color: .purple, size: .large, fullWidth: false))
                 .padding(.top, 24)
-            Button { HomeNav.press {} } label: {
-                Text("Play without an account")
-                    .font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
-                    .underline()
-                    .frame(minHeight: 44)
+            // 2026-10-05: a guest is already playing without an account, so the link would
+            // only offer what they have; SIGN IN stays (web + Android parity).
+            if !auth.isGuest {
+                Button { HomeNav.press {} } label: {
+                    Text("Play without an account")
+                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
+                        .underline()
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.squish)
+                .padding(.top, 6)
             }
-            .buttonStyle(.squish)
-            .padding(.top, 6)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Centered in what is visible between the header and the bottom nav.

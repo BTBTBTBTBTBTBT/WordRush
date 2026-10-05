@@ -185,7 +185,9 @@ struct LeaderboardTab: View {
                 let size = LeaderboardArt.cardTitleSize(titleArt.asset)
                 ArtThumbs.image(titleArt.asset, points: LeaderboardArt.cardTitlePoints)
                     .resizable().interpolation(.high).scaledToFit()
-                    .frame(width: size.width, height: size.height)
+                    // A cap, not a fixed size: on a 375 pt phone the art shrinks a little so the
+                    // player count beside it stays whole.
+                    .frame(maxWidth: size.width, maxHeight: size.height)
                     .accessibilityLabel(titleArt.label)
                     .accessibilityAddTraits(.isHeader)
             } else {
@@ -202,7 +204,12 @@ struct LeaderboardTab: View {
                 }
             }
             .foregroundStyle(FinishInk.secondary)
-            .lineLimit(1).minimumScaleFactor(0.7)
+            // Never cut (2026-10-05, Android 201 parity): at 375 pt the 130 pt title art +
+            // VIEW BOARD truncated the count to "0…". The count keeps its one line and the
+            // title art gives up the width instead (it scales down; wider phones unchanged).
+            .lineLimit(1)
+            .fixedSize()
+            .layoutPriority(1)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
             Spacer(minLength: 4)

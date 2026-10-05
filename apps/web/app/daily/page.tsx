@@ -785,14 +785,18 @@ export default function DailyPage() {
               size={30}
               fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
             />
-            <div className="flex-1 min-w-0 flex items-center gap-1.5 text-[12px] font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
-              <span className="font-black truncate" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
-              <span aria-hidden="true">·</span>
-              <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">
-                {/* §223: the sweep board ranks by total points across all modes. */}
-                {isSweep ? `${playerCount} swept · ranked by points` : `${playerCount} today`}
+            {/* Two lines allowed (2026-10-05, Android 201 parity): at 360 px a long title
+                (Crosswordocious) beside VIEW BOARD truncated the count, and the Sweep line
+                lost "ranked by points". Normal widths still fit on one line. */}
+            <div className="flex-1 min-w-0 line-clamp-2 text-[12px] font-extrabold leading-[15px]" style={{ color: 'var(--color-text-secondary)' }}>
+              <span className="font-black" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
+              <span aria-hidden="true">{' · '}</span>
+              <span className="whitespace-nowrap">
+                <Users className="inline-block w-3.5 h-3.5 mr-1 align-[-2px]" />
+                {playerCount}
               </span>
+              {/* §223: the sweep board ranks by total points across all modes. */}
+              {isSweep ? ' swept · ranked by points' : ' today'}
             </div>
             {/* Sweep isn't a playable puzzle — no Play button. */}
             {!isSweep && (

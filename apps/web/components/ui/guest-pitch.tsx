@@ -5,6 +5,7 @@ import { CastButton } from '@/components/ui/cast-button';
 import type { MascotId } from '@/lib/mascots';
 import { PodiumPedestal } from '@/components/leaderboard/podium';
 import { HeadingArt, type HeadingSlug } from '@/components/ui/heading-art';
+import { useAuth } from '@/lib/auth-context';
 
 // FINISH_SPEC BI23 (founder, 2026-10-03: "get rid of the sign in to track your stats
 // gray circle image and make that screen look nicer"): the signed-out Stats / Friends
@@ -80,6 +81,9 @@ export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, 
   className?: string;
 }) {
   const duo = hosts.length > 1;
+  // 2026-10-05: a guest is already playing without an account, so the link would only
+  // offer what they have; SIGN IN stays (iOS + Android parity).
+  const { isGuest } = useAuth();
   return (
     <section className={`flex flex-1 flex-col items-center justify-center text-center px-5 py-6 ${className}`}>
       <div className="flex justify-center" style={{ gap: 0 }}>
@@ -110,9 +114,11 @@ export function GuestPitch({ hosts, title, heading, showTitle = true, subtitle, 
         </div>
       )}
       <CastButton onClick={onSignIn} color="purple" size="lg" className="mt-6">Sign In</CastButton>
-      <Link href="/" className="mt-1.5 inline-flex min-h-[44px] items-center px-2 text-sm font-bold underline" style={{ color: subColor }}>
-        Play without an account
-      </Link>
+      {!isGuest && (
+        <Link href="/" className="mt-1.5 inline-flex min-h-[44px] items-center px-2 text-sm font-bold underline" style={{ color: subColor }}>
+          Play without an account
+        </Link>
+      )}
     </section>
   );
 }
