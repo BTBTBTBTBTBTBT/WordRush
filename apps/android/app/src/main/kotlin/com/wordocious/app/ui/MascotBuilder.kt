@@ -468,7 +468,7 @@ private fun PatternColorRow(config: AvatarConfig, onChange: (AvatarConfig) -> Un
 
 /** Randomize: the pink dice candy button; a tap rolls a new look and the button does a playful wiggle. */
 @Composable
-private fun RandomizeButton(onRoll: () -> Unit) {
+internal fun RandomizeButton(onRoll: () -> Unit) {
     val scope = rememberCoroutineScope()
     val wiggle = remember { Animatable(0f) }
     val calm = WTheme.calmMotion
@@ -546,3 +546,12 @@ fun MascotWearToggle(wearPhoto: Boolean, onChange: (Boolean) -> Unit, modifier: 
 /** AO: report a control's layout to the onboarding coach (no-op without a hook). */
 private fun Modifier.builderAnchor(key: String, anchor: ((String, androidx.compose.ui.layout.LayoutCoordinates) -> Unit)?): Modifier =
     if (anchor == null) this else this.onGloballyPositioned { anchor(key, it) }
+
+/** 10-05 Dressing Room: the glossy swatch grid (color / pattern color / accessory color). */
+@Composable
+internal fun SwatchGridPublic(slot: String, config: AvatarConfig, isPro: Boolean, onChange: (AvatarConfig) -> Unit, onPaywall: (BuilderOption) -> Unit) =
+    SwatchGrid(slot, config, isPro, onChange, onPaywall)
+
+/** 10-05 Dressing Room: the drawn die (never an emoji) for the stage's Randomize. */
+@Composable
+internal fun DiceGlyphPublic(size: Dp) = DiceGlyph(size, 0f)

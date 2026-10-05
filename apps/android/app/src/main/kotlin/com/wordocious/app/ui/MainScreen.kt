@@ -341,6 +341,9 @@ fun MainScreen() {
     var showSignIn by rememberSaveable { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
     var infoRoute by rememberSaveable { mutableStateOf<String?>(null) }
+    // Founder 10-05: every dress-up door (own avatar taps, the Home host, the party-hat offer) opens Edit Profile.
+    val dressRequest by DressUp.request.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(dressRequest) { if (dressRequest != null) { infoRoute = "edit"; DressUp.request.value = null } }
     // VS flow: lobby (true) → active match (mode, isDaily).
     var vsLobby by remember { mutableStateOf(false) }
     // The lobby page to open on (VS overhaul: CHALLENGE BACK lands on the Friend page).
@@ -657,7 +660,7 @@ fun MainScreen() {
                                         onNavigate = { infoRoute = it },
                                     )
                                     1 -> LeaderboardScreen(
-                                        onOpenProfile = { publicProfileId = it },
+                                        onOpenProfile = { if (DressUp.isOwn(it)) DressUp.open() else publicProfileId = it },
                                         onPlay = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
                                         // Empty Friends board CTA → the Friends tab (§207 Tier 2).
                                         onOpenFriends = { selectedTab = 3 },
@@ -668,12 +671,12 @@ fun MainScreen() {
                                     )
                                     2 -> ProfileScreen(
                                         onGoPro = { infoRoute = "pro" },
-                                        onEditProfile = { infoRoute = "edit" },
+                                        onEditProfile = { DressUp.open() },
                                         // Today's Dailies badge → open that mode's daily game (completed
                                         // puzzle if played, fresh if not) — web parity.
                                         onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
                                         // Friends card rows → push the friend's profile in-tab.
-                                        onOpenProfile = { publicProfileId = it },
+                                        onOpenProfile = { if (DressUp.isOwn(it)) DressUp.open() else publicProfileId = it },
                                         // Compact FRIENDS row → the Friends tab (§207 Tier 3).
                                         onOpenFriends = { selectedTab = 3 },
                                         // D2 step 3: the Global Records tile on the All-time page → the Hall of Fame.
@@ -685,7 +688,7 @@ fun MainScreen() {
                                     3 -> FriendsScreen(
                                         onGoHome = { goToRoot(TabNav.HOME, scrollToTop = false) },
                                         onSignIn = { showSignIn = true },
-                                        onOpenProfile = { publicProfileId = it },
+                                        onOpenProfile = { if (DressUp.isOwn(it)) DressUp.open() else publicProfileId = it },
                                         // D3: a Challenge (the free live VS Battle) opens the private lobby with its code.
                                         onJoinInvite = { m, code -> vsInvite = m to code },
                                         // Friends overhaul §4: a pocket game's screen.
@@ -711,7 +714,7 @@ fun MainScreen() {
                             PageBackground(PageTint.LEADERBOARD, Modifier.fillMaxSize().zIndex(2f)) {
                                 Box(Modifier.fillMaxSize().contentColumn()) {
                                     RecordsScreen(
-                                        onOpenProfile = { publicProfileId = it },
+                                        onOpenProfile = { if (DressUp.isOwn(it)) DressUp.open() else publicProfileId = it },
                                         onOpenStats = { showRecords = false; selectedTab = 2 },
                                     )
                                 }
@@ -730,7 +733,7 @@ fun MainScreen() {
                                         onClose = { publicProfileId = null },
                                         // Profile-to-profile hop (nemesis row / podium rows):
                                         // same push-inside-the-tab pattern, new target id.
-                                        onOpenProfile = { publicProfileId = it },
+                                        onOpenProfile = { if (DressUp.isOwn(it)) DressUp.open() else publicProfileId = it },
                                     )
                                 }
                             }

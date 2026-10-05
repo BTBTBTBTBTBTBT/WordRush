@@ -1076,14 +1076,19 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
             // Avatar — real image (avatar_url) via Coil, else the §20 letter tile.
             // AH/AN: a worn character or saved mascot beats the photo.
             val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() && !com.wordocious.app.data.MascotAvatars.wearsMascot(profile.username) }
-            // AA2/AN6: a rounded-square photo in its frame (Pro gold + crown for a Pro member).
-            if (avatarUrl != null) {
-                PhotoAvatar(
-                    avatarUrl, 52.dp, frame = com.wordocious.app.data.MascotAvatars.photoFrame(profile.username),
-                    pro = isProActive, contentDescription = "Avatar",
-                )
-            } else {
-                LetterTileAvatar(initial, 52.dp, accentHex = profile?.accentColor, emoji = profile?.avatarEmoji, pro = isProActive)
+            // Founder 10-05 (door 1): your avatar IS the way in — a tap opens the Stage; the small
+            // "Dress up" tag replaces the old pencil.
+            Box(Modifier.padding(bottom = 6.dp).squishClickable(label = "Dress up your mascot. Opens Edit Profile", onClick = onEditProfile)) {
+                // AA2/AN6: a rounded-square photo in its frame (Pro gold + crown for a Pro member).
+                if (avatarUrl != null) {
+                    PhotoAvatar(
+                        avatarUrl, 52.dp, frame = com.wordocious.app.data.MascotAvatars.photoFrame(profile.username),
+                        pro = isProActive, contentDescription = "Avatar",
+                    )
+                } else {
+                    LetterTileAvatar(initial, 52.dp, accentHex = profile?.accentColor, emoji = profile?.avatarEmoji, pro = isProActive)
+                }
+                StageArt(com.wordocious.app.R.drawable.art_dress_tag_dressup, 16.dp, Modifier.align(Alignment.BottomCenter).offset(y = 9.dp))
             }
 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1113,9 +1118,6 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
 
             // A8: Edit and Share as small round candy buttons.
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                CandyRoundButton("Edit profile", onEditProfile, color = CandyColor.PURPLE, diameter = 36.dp) {
-                    Icon(Icons.Filled.Edit, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                }
                 CandyRoundButton("Share profile card", onShare, color = CandyColor.PINK, diameter = 36.dp, icon = CandyIcon.SHARE)
             }
         }

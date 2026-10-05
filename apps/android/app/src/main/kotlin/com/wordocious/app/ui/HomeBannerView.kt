@@ -268,6 +268,9 @@ fun HomeBannerView(
         // BJ6: the host, centered on the card's top edge (drawn over the card). On a swept day the
         // celebration art carries the cast: a W host then hides (alpha 0, keeps its place).
         if (hostShows) HomeHost(hostPick, HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE))
+        // Door 2 (founder 10-05): "Make me yours!" beside the plain host (× ends it for good).
+        if (hostShows && hostPick == com.wordocious.app.data.HomeHostPick.W && rememberHostInvite() != null)
+            HostInviteBubble(Modifier.align(Alignment.TopCenter).offset(x = 104.dp, y = -HOME_HOST_RISE + 4.dp))
         }
     }
     // BJ6: the share control moved to the app header (Home only): publish its state + action.

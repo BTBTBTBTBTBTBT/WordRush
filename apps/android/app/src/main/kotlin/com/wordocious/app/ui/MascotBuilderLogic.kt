@@ -69,10 +69,11 @@ object MascotBuilderLogic {
         BuilderTab.BODY -> AvatarOptions.BODIES.map { BuilderOption("body", it) }
         BuilderTab.COLOR -> emptyList()   // the glossy swatch grid (SwatchGrid) instead of tiles
         BuilderTab.PATTERN -> AvatarOptions.PATTERNS.map { BuilderOption("pattern", it) }
-        BuilderTab.EYES -> AvatarOptions.EYES.map { BuilderOption("eyes", it) }
+        // founder 10-05: None on any body part (eyes and mouth too)
+        BuilderTab.EYES -> (listOf(NONE) + AvatarOptions.EYES).map { BuilderOption("eyes", it) }
         BuilderTab.NOSE -> AvatarOptions.NOSES.map { BuilderOption("nose", it) }
         BuilderTab.CHEEKS -> AvatarOptions.CHEEKS.map { BuilderOption("cheeks", it) }
-        BuilderTab.MOUTH -> AvatarOptions.MOUTHS.map { BuilderOption("mouth", it) }
+        BuilderTab.MOUTH -> (listOf(NONE) + AvatarOptions.MOUTHS).map { BuilderOption("mouth", it) }
         BuilderTab.HATS -> listOf(BuilderOption("head", NONE)) +
             AvatarOptions.HEADS.filter { it != NONE }.map { BuilderOption("head", it) }
         BuilderTab.EXTRAS -> listOf(BuilderOption("extras", NONE)) +

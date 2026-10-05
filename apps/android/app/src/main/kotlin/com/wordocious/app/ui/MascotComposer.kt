@@ -135,6 +135,18 @@ object MascotComposer {
 
     // ── Round 2: the art path at the core FIT layout (parity with web + iOS) ──
 
+    /** 10-05 Dressing Room: JUST the body shape (the current color, with [pattern]) filling a [size] px square. */
+    fun drawBodyThumb(context: Context, c: Canvas, size: Float, body: String, cfg: AvatarConfig, pattern: String) {
+        val id = drawableId(context, "art_av_body_$body")
+        val bmp = (if (id != 0) partBitmap(context, id) else null) ?: return
+        val r = RectF(size * 0.04f, size * 0.04f, size * 0.96f, size * 0.96f)
+        val base = colorOf(avatarColorHex(cfg.color), 0xFF7C3AED.toInt())
+        val patInk = if (cfg.patternColor == cfg.color) mix(base, AColor.WHITE, 0.5f) else colorOf(avatarColorHex(cfg.patternColor), base)
+        drawTinted(c, bmp, r, swatchPaint(AvatarOptions.swatch(cfg.color), r)) { cv ->
+            if (pattern != "solid") drawShapes(cv, AvatarFit.patternShapes(pattern), r, patInk, base)
+        }
+    }
+
     /** The fit manifest (avatar-parts.json v2), or null when the asset is a v1 file. */
     fun fitManifest(context: Context): AvatarFitManifest? {
         if (fitLoaded) return fit

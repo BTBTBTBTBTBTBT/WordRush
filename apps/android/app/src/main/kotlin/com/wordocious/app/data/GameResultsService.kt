@@ -633,6 +633,8 @@ object GameResultsService {
          *  or a slow live record celebrates at a calm moment (CelebrationGate). */
         source: CelebrationGate.Source = CelebrationGate.Source.LIVE,
     ): XpResult? = kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+        // Founder 10-05 (door 3): the first live win queues the one-time "Party hat?" offer on Home.
+        if (won && source == CelebrationGate.Source.LIVE) com.wordocious.app.ui.DressUp.noteWin()
         val startedAtMs = System.currentTimeMillis()
         val guard = playType == "solo"
         if (guard && !PendingRecords.tryBeginFlight(gameMode.name, seed)) return@withContext null

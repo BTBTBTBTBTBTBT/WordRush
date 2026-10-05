@@ -131,7 +131,7 @@ internal fun HomeHost(pick: HomeHostPick, size: Dp = HOME_HOST_BOX, modifier: Mo
         }
     }
     Box(
-        modifier.size(size).clearAndSetSemantics { }
+        modifier.size(size).then(if (pick == HomeHostPick.W && rememberHostInvite() != null) Modifier else Modifier.clearAndSetSemantics { })
             .drawBehind {
                 // The soft floor shadow under its feet (on the strip): radial purple-black ~20% →
                 // clear, 78% × 13%, centered on the box's bottom edge.
@@ -165,10 +165,19 @@ internal fun HomeHost(pick: HomeHostPick, size: Dp = HOME_HOST_BOX, modifier: Mo
                 // BJ6 round 5: a full-body CUTOUT — no tile, backdrop, clip or frame (not a boxed sticker).
                 MascotAvatar(drawn, initial, size, motion, cutout = true)
             }
-            HomeHostPick.W -> Image(
-                artPainter(com.wordocious.app.R.drawable.art_pose_w_wave, size), contentDescription = null,
-                contentScale = ContentScale.Fit, modifier = motion.fillMaxHeight(),
-            )
+            HomeHostPick.W -> {
+                val invite = rememberHostInvite()
+                if (invite != null) {
+                    // Door 2 (founder 10-05): your own plain mascot hosts until you make it yours.
+                    val initial = remember(p?.username) { MascotConfigRules.initialOf(p?.username) }
+                    MascotAvatar(invite.copy(frame = "none"), initial, size, motion.squishClickable(label = "Your mascot. Make it yours") {
+                        DressUp.finish(DressUp.Nudge.HOST_INVITE); DressUp.open(DressDoor.Room(BuilderTab.BODY))
+                    }, cutout = true)
+                } else Image(
+                    artPainter(com.wordocious.app.R.drawable.art_pose_w_wave, size), contentDescription = null,
+                    contentScale = ContentScale.Fit, modifier = motion.fillMaxHeight(),
+                )
+            }
         }
     }
 }
@@ -201,4 +210,17 @@ object HomeHostPrewarm {
             }
         }
     }
+}
+
+
+/** Door 2 (founder 10-05): the signed-in player's plain seeded mascot while the "Make me yours!" invite is open. */
+@Composable
+internal fun rememberHostInvite(): com.wordocious.core.AvatarConfig? {
+    val profile by AuthService.profile.collectAsState()
+    val guest by AuthService.isGuest.collectAsState()
+    val v by DressUp.version.collectAsState()
+    if (profile == null || guest || v < 0 || DressUp.done(DressUp.Nudge.HOST_INVITE)) return null
+    val own = PlayerAvatars.ownFields() ?: return null
+    val r = com.wordocious.core.resolveAvatar(own.toSource())
+    return if (r.kind == com.wordocious.core.AvatarSourceKind.SEEDED) r.config.copy(display = com.wordocious.core.AvatarOptions.DISPLAY_MASCOT) else null
 }
