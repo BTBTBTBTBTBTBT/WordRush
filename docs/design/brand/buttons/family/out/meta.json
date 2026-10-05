@@ -1,0 +1,34 @@
+{
+ "pearl": {
+  "w": 451,
+  "h": 132,
+  "baseLum": 0.913
+ },
+ "pearl-pressed": {
+  "w": 451,
+  "h": 132,
+  "baseLum": 0.868
+ },
+ "frost": {
+  "w": 455,
+  "h": 132,
+  "baseLum": 0.85
+ },
+ "frost-pressed": {
+  "w": 456,
+  "h": 132,
+  "baseLum": 0.806
+ },
+ "key": {
+  "w": 124,
+  "h": 150,
+  "baseLum": 0.919,
+  "cornerPx": 31
+ },
+ "keyfrost": {
+  "w": 127,
+  "h": 150,
+  "baseLum": 0.883,
+  "cornerPx": 32
+ }
+}
