@@ -54,6 +54,8 @@ const TIER_ART: Record<Exclude<BannerTier, 'none'>, { art: 'art-scene-banner-swe
 };
 /** The banner art's height beside the headline (px) — the stationary art slot (lib/stationary-layout.ts). */
 const TIER_ART_H = 100;
+/** The season banner art's row height (iOS HomeBannerView: maxHeight 104). */
+const SEASON_ART_H = 104;
 /** Unlimited on a swept / flawless day keeps the art frame (Z), in Unlimited's colors with U's loop. */
 const UNLIMITED_BAR = `linear-gradient(90deg, #fdba74, ${UNLIMITED_PEACH} 55%, #ec4899)`;
 const LOOP_ART = 'art-scene-unlimited-loop' as const;
@@ -229,15 +231,17 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // The art frame belongs to the day (a swept / flawless Daily), not to the mode.
   const tierArt = slots.frame === 'art' && dailyTier !== 'none' ? TIER_ART[dailyTier] : null;
   const frameAccent = tierArt ? (unlimited ? UNLIMITED_PEACH : tierArt.accent) : null;
-  // FINISH_SPEC X: during Halloween the banner wears its Halloween art beside
-  // the headline (art-scene-banner-halloween; not shipped yet — the slot
-  // renders nothing until the file exists). Same in both modes, so the
+  // FINISH_SPEC X: during Halloween the banner wears its Halloween art in a
+  // centered row under the headline strip (art-scene-banner-halloween; the row
+  // collapses if the file is missing). Same in both modes, so the
   // Daily/Unlimited switch never moves anything; a tier's art wins.
   const season = useSeason();
   const host = useHomeHost();
   useNudgeVersion();
   const invite = host.choice.kind === 'w' && host.seeded && host.userId && !nudgeDone('host', host.userId) ? host.seeded : null;
   const [seasonArtOk, setSeasonArtOk] = useState(false);
+  /** A season banner file that failed to load (its row collapses; another season's file still gets a try). */
+  const [missingSeasonArt, setMissingSeasonArt] = useState<string | null>(null);
   // Season preview: the registry's Home banner for the active season (lib/season-kit.ts).
   const seasonBannerArt = seasonBanner(season);
   const seasonSlot = !!seasonBannerArt && !tierArt;
@@ -376,14 +380,6 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           </div>
         </div>
       </div>
-      {seasonSlot && (
-        <SeasonArt
-          src={`/art/${seasonBannerArt}.webp`}
-          onReady={setSeasonArtOk}
-          className="relative shrink-0 art-pop"
-          style={{ height: TIER_ART_H, width: 'auto', maxWidth: '46%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))' }}
-        />
-      )}
       {tierArt && (
         // Z: one art box in both modes — today's celebration art sizes it; in
         // Unlimited U's loop crossfades in over the same box.
@@ -448,6 +444,19 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         </div>
       </div>
 
+      {/* Season art (iOS parity, HomeBannerView momentArt): its own centered row under the strip
+          (at most 104 tall, 6 above, 10 at the sides), so the greeting keeps the full width and its
+          one size. The row's height is held while the file loads and only drops if it's missing. */}
+      {seasonSlot && missingSeasonArt !== seasonBannerArt && (
+        <div className="relative flex justify-center" style={{ height: SEASON_ART_H + 6, padding: '6px 10px 0' }}>
+          <SeasonArt
+            src={`/art/${seasonBannerArt}.webp`}
+            onReady={(ok) => { setSeasonArtOk(ok); if (!ok) setMissingSeasonArt(seasonBannerArt); }}
+            className="relative art-pop"
+            style={{ height: SEASON_ART_H, width: 'auto', maxWidth: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))' }}
+          />
+        </div>
+      )}
       {/* BJ6 round 3 flair: the two progress rows sit in one soft lavender band — the card reads as two zones. */}
       <div className="relative" style={{ background: ROWS_BAND }}>
       <div className="relative flex flex-col" style={{ gap: BANNER_SLOT.rowGap, padding: `${BANNER_SLOT.wordPadTop}px ${BANNER_SLOT.rowPadX}px ${BANNER_SLOT.wordPadBottom}px` }}>

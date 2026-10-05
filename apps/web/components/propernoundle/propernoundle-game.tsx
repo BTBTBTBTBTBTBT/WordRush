@@ -57,8 +57,12 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { REVEAL } from '@/lib/tile-motion';
 import { useFinishHold } from '@/hooks/use-finish-hold';
 
-/** The three hint pills share the row in equal thirds; a slimmer side padding keeps "Consonant" whole. */
-const HINT_THIRD = { paddingLeft: 8, paddingRight: 8 } as const;
+/**
+ * The three hint pills share the row in equal thirds. "CONSONANT" (85 px at 12.5) needs a slimmer side
+ * padding + icon gap to stay whole at 390 px (the 8 px padding left it 1.2 px short → "CONSONA…"), and
+ * the label eases down with the phone (3.2vw: 12 px at 375, 11.5 at 360) so narrower phones fit too.
+ */
+const HINT_THIRD = { paddingLeft: 6, paddingRight: 6, gap: 3, fontSize: 'min(12.5px, 3.2vw)' } as const;
 
 type GameMode = 'daily' | 'practice';
 

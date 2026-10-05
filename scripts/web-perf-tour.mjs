@@ -93,7 +93,10 @@ async function step(name, holdMs, action) {
   const after = await metrics();
   const p = await evaluate('(() => { const p = window.__perf; p.on = false; return { gaps: p.gaps, longMs: p.longMs, longN: p.longN, cls: p.cls }; })()') || { gaps: [] };
   const gaps = p.gaps || [];
+  const sorted = [...gaps].sort((a, b) => a - b);
+  const p90 = sorted.length ? Math.round(sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))]) : 0;
   rows.push({
+    p90, jank: gaps.length ? ((gaps.filter((g) => g > 25).length / gaps.length) * 100).toFixed(1) : '0.0',
     name, s: (Date.now() - t0) / 1000, frames: gaps.length,
     o25: gaps.filter((g) => g > 25).length, o50: gaps.filter((g) => g > 50).length,
     worst: Math.round(Math.max(0, ...gaps)), longN: p.longN, longMs: Math.round(p.longMs),
@@ -102,7 +105,7 @@ async function step(name, holdMs, action) {
     cls: (p.cls || 0).toFixed(3),
   });
   const r = rows.at(-1);
-  console.log(`${name.padEnd(22)} frames ${r.frames}  >25 ${r.o25}  >50 ${r.o50}  worst ${r.worst}ms  long ${r.longN}/${r.longMs}ms  layout+style ${r.layoutMs}ms  script ${r.scriptMs}ms`);
+  console.log(`${name.padEnd(22)} frames ${r.frames}  >25 ${r.o25} (${r.jank}%)  p90 ${r.p90}ms  >50 ${r.o50}  worst ${r.worst}ms  long ${r.longN}/${r.longMs}ms  layout+style ${r.layoutMs}ms  script ${r.scriptMs}ms`);
   await sleep(500);
 }
 
@@ -142,6 +145,31 @@ for (const [p, path] of [['classic', '/practice'], ['quad', '/quadword'], ['octo
   await step(`${p}.type2`, 400, () => typeWord('SLOTH'));
   await step(`${p}.submit2`, 2200, () => key('Enter'));
 }
+// 2.7.1 surfaces (guest-reachable): the season preview on Home, ProperNoundle + its clue card, Settings toggles.
+// (Edit Profile — the Stage / Dressing Room / Title Shelves — needs a signed-in profile: not in a guest tour.)
+const clickSel = (sel) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (el) el.click(); return !!el; })()`);
+if (wanted('season')) {
+  await go('/?season=halloween');
+  await step('season.on.home.scroll', 600, scrollPage);
+  await go('/?season=auto');
+  await step('season.off.home.scroll', 600, scrollPage);
+}
+if (wanted('propernoundle')) {
+  await go('/');
+  await step('propernoundle.open', 3500, () => clickText('ProperNoundle'));
+  await step('propernoundle.clue.open', 2500, () => evaluate(`(() => { const el = [...document.querySelectorAll('button')].find((e) => e.textContent.trim() === 'Clue'); if (el) el.click(); return !!el; })()`));
+  await step('propernoundle.clue.close', 1000, () => clickSel('[aria-label=Clue] button[aria-label=Close]'));
+  await step('propernoundle.clue.reopen', 1000, () => clickSel('button[aria-label="Read clue"]'));
+  await step('propernoundle.clue.close2', 1000, () => clickSel('[aria-label=Clue] button[aria-label=Close]'));
+}
+if (wanted('settings')) {
+  await go('/');
+  await step('settings.open', 1200, () => clickSel('button[aria-label="Settings"]'));
+  await step('settings.toggle.flip', 800, () => clickSel('[role=dialog] [role=switch]'));
+  await step('settings.toggle.back', 800, () => clickSel('[role=dialog] [role=switch]'));
+  await step('settings.scroll', 600, scrollPage);
+  await step('settings.close', 1000, () => send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 }).then(() => send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 })));
+}
 if (wanted('strategy')) { await go('/guides'); await step('strategy.scroll', 600, scrollPage); }
 if (wanted('muddle')) { await go('/muddle'); await step('muddle.type', 800, () => typeWord('STARE')); }
 if (wanted('crossword')) { await go('/crosswordocious'); await step('crossword.type', 800, () => typeWord('STARELINE')); }
@@ -150,8 +178,8 @@ const dir = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'web', '
 mkdirSync(dir, { recursive: true });
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 let md = `# Web perf tour ${stamp}\n\n${BASE} · 390×844 · CPU 4× throttle\n\n`;
-md += '| step | s | frames | >25ms | >50ms | worst ms | long tasks | long ms | layout+style ms | script ms | CLS |\n|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n';
-for (const r of rows) md += `| ${r.name} | ${r.s.toFixed(1)} | ${r.frames} | ${r.o25} | ${r.o50} | ${r.worst} | ${r.longN} | ${r.longMs} | ${r.layoutMs} | ${r.scriptMs} | ${r.cls} |\n`;
+md += '| step | s | frames | >25ms | janky % | p90 ms | >50ms | worst ms | long tasks | long ms | layout+style ms | script ms | CLS |\n|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n';
+for (const r of rows) md += `| ${r.name} | ${r.s.toFixed(1)} | ${r.frames} | ${r.o25} | ${r.jank} | ${r.p90} | ${r.o50} | ${r.worst} | ${r.longN} | ${r.longMs} | ${r.layoutMs} | ${r.scriptMs} | ${r.cls} |\n`;
 writeFileSync(join(dir, `perf-tour-${stamp}.md`), md);
 console.log(`report: apps/web/.perf/perf-tour-${stamp}.md`);
 ws.close();

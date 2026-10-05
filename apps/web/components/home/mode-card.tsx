@@ -210,13 +210,7 @@ export function ModeCard({ card, state, unlimited = false }: { card: HomeCard; s
             </span>
           </div>
           {/* Z: a fixed one-line box, the same in both modes. */}
-          <div
-            key={unlimited ? 'u' : 'd'}
-            className="font-medium mode-xfade truncate"
-            style={{ marginTop: MODE_CARD.descGap, fontSize: MODE_CARD.desc, color: 'var(--color-text-muted)', lineHeight: `${MODE_CARD.descLine}px`, height: slots.descHeight }}
-          >
-            {subtitle}
-          </div>
+          <FitDesc key={unlimited ? 'u' : 'd'} height={slots.descHeight}>{subtitle}</FitDesc>
         </div>
       </div>
     </div>
@@ -233,6 +227,60 @@ export function CardNameScope({ children }: { children: ReactNode }) {
   const [store] = useState(createCardNameScope);
   return <CardNameScopeContext.Provider value={store}>{children}</CardNameScopeContext.Provider>;
 }
+
+/**
+ * The muted subtitle on ONE line (iOS ModeCardView.subtitle parity: lineLimit 1, minimumScaleFactor 0.9,
+ * tail truncation): 13 px, shrinking to fit down to 90% (11.7 px) before an ellipsis may show, so
+ * "4 words at once" / "Rescue 4 boards" read whole on a 360–390 px phone like they do on iOS.
+ */
+function FitDesc({ height, children }: { height: number; children: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let lastWidth = -1;
+    // Sub-pixel widths: scrollWidth rounds, so a text 0.4 px too wide would still draw its ellipsis.
+    const range = document.createRange();
+    const textWidth = () => { range.selectNodeContents(el); return range.getBoundingClientRect().width; };
+    const fit = (force = false) => {
+      const width = el.getBoundingClientRect().width;
+      if (width <= 0 || (!force && width === lastWidth)) return;
+      lastWidth = width;
+      el.style.fontSize = `${MODE_CARD.desc}px`;
+      el.style.letterSpacing = '';
+      const room = width - 0.5;
+      const natural = textWidth();
+      if (natural > room) {
+        // Text width scales with the font size; floor at iOS's 0.9 (then a touch tighter
+        // tracking on a 360 px phone), then the ellipsis.
+        el.style.fontSize = `${Math.max(MODE_CARD.desc * DESC_MIN_SCALE, Math.floor(((MODE_CARD.desc * room) / natural) * 10) / 10)}px`;
+        for (const ls of ['-0.01em', '-0.02em', '-0.03em']) {
+          if (textWidth() <= room) break;
+          el.style.letterSpacing = ls;
+        }
+      }
+    };
+    fit();
+    let live = true;
+    const refit = () => { if (live) fit(true); };
+    document.fonts?.ready.then(refit);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => fit());
+    ro?.observe(el);
+    return () => { live = false; ro?.disconnect(); };
+  }, [children]);
+  return (
+    <div
+      ref={ref}
+      className="font-medium mode-xfade truncate"
+      style={{ marginTop: MODE_CARD.descGap, fontSize: MODE_CARD.desc, color: 'var(--color-text-muted)', lineHeight: `${MODE_CARD.descLine}px`, height }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** iOS ModeCardView: the subtitle's minimumScaleFactor. */
+const DESC_MIN_SCALE = 0.9;
 
 /**
  * The game name at 900 / 17 in its color on ONE line (BH2). Inside a CardNameScope it takes the
