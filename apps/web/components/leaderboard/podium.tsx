@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { openDressUp } from '@/components/profile/dress-up';
 import type { ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
@@ -117,9 +118,16 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
     <div className="relative flex flex-col items-center min-w-0" style={{ gap: 4, gridColumn: podiumColumn(index), gridRow: 1 }}>
       {first && <Icon3D name="crown" size={26} style={{ marginBottom: -8, position: 'relative', zIndex: 2 }} />}
       <span className="sr-only">Rank {place.rank}</span>
-      <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
-        <BoardAvatar url={place.avatarUrl} name={place.username} userId={place.userId} level={place.level} size={first ? 54 : 44} ring={place.isMe ? '#f59e0b' : undefined} {...place.avatar} />
-      </Link>
+      {place.isMe ? (
+        // Founder 10-05 (door 1): your own place opens your Stage.
+        <button type="button" onClick={() => openDressUp()} aria-label="Dress up your mascot" className="block border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
+          <BoardAvatar url={place.avatarUrl} name={place.username} userId={place.userId} level={place.level} size={first ? 54 : 44} ring="#f59e0b" {...place.avatar} />
+        </button>
+      ) : (
+        <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
+          <BoardAvatar url={place.avatarUrl} name={place.username} userId={place.userId} level={place.level} size={first ? 54 : 44} {...place.avatar} />
+        </Link>
+      )}
       <Link
         href={`/profile/${place.userId}`}
         className="max-w-full truncate text-[13px] font-black leading-tight hover:opacity-80 transition-opacity"

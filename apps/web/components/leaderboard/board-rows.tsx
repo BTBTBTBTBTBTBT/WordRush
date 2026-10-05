@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { openDressUp } from '@/components/profile/dress-up';
 import { CandySegment } from '@/components/ui/candy-segment';
 import { LiveHeadline } from '@/components/ui/live-headline';
 import type { CSSProperties, ReactNode } from 'react';
@@ -187,7 +188,12 @@ export function BoardRow({ rank, userId, username, avatarUrl, avatar, isMe, leve
   return (
     <div className="cv-row flex items-center gap-2.5 px-3 py-2" style={style}>
       <RankIcon rank={rank} />
-      <BoardAvatar url={avatarUrl} name={username} userId={userId} level={level} {...avatar} />
+      {isMe ? (
+        // Founder 10-05 (door 1): your own row's avatar opens your Stage.
+        <button type="button" onClick={() => openDressUp()} aria-label="Dress up your mascot" className="shrink-0 border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
+          <BoardAvatar url={avatarUrl} name={username} userId={userId} level={level} {...avatar} />
+        </button>
+      ) : <BoardAvatar url={avatarUrl} name={username} userId={userId} level={level} {...avatar} />}
       <div className="flex-1 min-w-0">
         <Link
           href={`/profile/${userId}`}

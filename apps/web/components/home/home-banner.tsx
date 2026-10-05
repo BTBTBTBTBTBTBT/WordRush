@@ -1,5 +1,6 @@
 'use client';
 
+import { HostInviteBubble, finishNudge, nudgeDone, openDressUp, useNudgeVersion } from '@/components/profile/dress-up';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
@@ -233,6 +234,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // Daily/Unlimited switch never moves anything; a tier's art wins.
   const season = useSeason();
   const host = useHomeHost();
+  useNudgeVersion();
+  const invite = host.choice.kind === 'w' && host.seeded && host.userId && !nudgeDone('host', host.userId) ? host.seeded : null;
   const [seasonArtOk, setSeasonArtOk] = useState(false);
   const seasonSlot = season === 'halloween' && !tierArt;
   const seasonArt = seasonSlot && seasonArtOk;
@@ -465,14 +468,22 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         style={{ top: slots.headroom - BANNER_SLOT.hostRise, left: `calc(50% - ${BANNER_SLOT.hostSize / 2}px)`, width: BANNER_SLOT.hostSize, height: BANNER_SLOT.hostSize, zIndex: 2 }}
       >
         <HomeHost
-          choice={host.choice}
+          choice={invite ? { kind: 'mascot', config: invite } : host.choice}
           initial={host.initial}
           level={host.level}
           pro={host.pro}
           size={BANNER_SLOT.hostSize}
           // The celebration art carries the cast: W steps out (keeps his slot); your own host stays.
-          hidden={homeHostHidden(host.choice, !!(tierArt || seasonArt))}
+          hidden={!invite && homeHostHidden(host.choice, !!(tierArt || seasonArt))}
         />
+        {invite && host.userId && (
+          <>
+            {/* Door 2 (founder 10-05): the plain host is a button into the Dressing Room, with its bubble. */}
+            <button type="button" aria-label="Your mascot. Make it yours" className="absolute inset-0 border-0 bg-transparent p-0 cursor-pointer"
+              onClick={() => { finishNudge('host', host.userId); openDressUp({ kind: 'room', tab: 'body' }); }} />
+            <span className="absolute" style={{ left: BANNER_SLOT.hostSize * 0.82, top: 4 }}><HostInviteBubble uid={host.userId} /></span>
+          </>
+        )}
       </span>
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { PartyHatOffer } from '@/components/profile/dress-up';
 import { BANNER_SLOT } from '@/lib/stationary-layout';
 import { afterIntro } from '@/lib/intro';
 import { homeCardTapBlocked } from '@/lib/nav-home';
@@ -440,6 +441,8 @@ export default function HomePage() {
           name={name}
           onOpen={open}
         />
+        {/* 10-05 door 3: the one-time "Party hat?" card after the first win. */}
+        <PartyHatOffer />
         </div>
         {/* Desktop website only (hidden below 1024 px): today's progress beside the banner. */}
         <div className="dk-only">

@@ -135,7 +135,7 @@ export function usePlayerAvatar(input: PlayerAvatarInput): PlayerAvatarLook {
  * saved / cast mascot, else W (guests and the seeded default). With their
  * initial, level (the portrait's tier frame) and Pro state.
  */
-export function useHomeHost(): { choice: HomeHostChoice; initial: string; level: number | null; pro: boolean | null } {
+export function useHomeHost(): { choice: HomeHostChoice; initial: string; level: number | null; pro: boolean | null; seeded: AvatarConfig | null; userId: string | null } {
   let auth: ReturnType<typeof useAuth> | null = null;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -170,6 +170,9 @@ export function useHomeHost(): { choice: HomeHostChoice; initial: string; level:
     initial: avatarInitial(String(profile?.username ?? '')),
     level: Number.isFinite(level) ? level : null,
     pro: profile ? !!auth?.isProActive : null,
+    // Founder 10-05 (door 2): no custom look yet → their own plain seeded mascot can host ("Make me yours!").
+    seeded: resolved && resolved.kind === 'seeded' ? { ...resolved.config, display: 'mascot' } : null,
+    userId: profile?.id ?? null,
   };
 }
 

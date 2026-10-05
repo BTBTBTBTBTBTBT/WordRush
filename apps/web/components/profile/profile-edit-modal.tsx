@@ -32,15 +32,21 @@ import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { ACCENT_COLORS, resolveAccent } from '@/lib/profile-personalization';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { DressStage, TitleRibbon, backdropCss, doorFromUrl, finishNudge, openDressUp, useDressUpRequests, warmDressArt, type DressDoor } from '@/components/profile/dress-up';
+import { TitleShelves } from '@/components/profile/title-shelves';
+import { applyAvatarPick } from '@wordle-duel/core';
+import { randomAvatar } from '@/lib/avatar-render';
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** The door it opened through (founder 10-05: own-avatar taps, the Home host, the party-hat offer). */
+  door?: DressDoor;
 }
 
 const BIO_MAX = 80;
 
-export function ProfileEditModal({ open, onClose }: Props) {
+export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Props) {
   const { profile, refreshProfile, isProActive } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusRef = useRef<HTMLDivElement>(null);
@@ -62,15 +68,33 @@ export function ProfileEditModal({ open, onClose }: Props) {
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [avatarNote, setAvatarNote] = useState('');
   const [nudge, setNudge] = useState(false);
+  // The Stage (founder 10-05): the live look, whether it changed, the hop, the sheets.
+  const [look, setLook] = useState<AvatarConfig | null>(null);
+  const [touched, setTouched] = useState(false);
+  const [hop, setHop] = useState(0);
+  const [sheet, setSheet] = useState<'titles' | 'socials' | 'privacy' | 'favorite' | null>(null);
+  const [dates, setDates] = useState<Record<string, string>>({});
   // The signed-in player's avatar as it shows everywhere (saved config, a locally kept one, or the default).
   const ownLook = usePlayerAvatar({ name: profile?.username ?? null, userId: profile?.id ?? null });
 
   const profileId = profile?.id ?? null;
   useEffect(() => {
     if (!open) return;
+    warmDressArt();
     setView('profile');
     setDraft(null);
     setAvatarNote('');
+    setTouched(false);
+    setSheet(null);
+    const base = { ...ownLook.config };
+    setLook(base);
+    if (door.kind === 'room') { setDraft({ ...base, display: 'mascot' }); setView('mascot'); }
+    if (door.kind === 'partyhat') {
+      if (profile) finishNudge('partyhat', profile.id);
+      setDraft(applyAvatarPick({ ...base, display: 'mascot' }, 'head', 'party')); setView('mascot');
+    }
+    if (door.kind === 'titles') setSheet('titles');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // AM2: players who had an emoji avatar get ONE gentle "Pick your character!" nudge (no DB change).
@@ -122,8 +146,11 @@ export function ProfileEditModal({ open, onClose }: Props) {
       setError('');
       setTimeout(() => inputRef.current?.focus(), 50);
       // Which achievements has the player unlocked? (only those are pickable as a title)
-      supabase.from('achievements').select('achievement_key').eq('user_id', profile.id)
-        .then(({ data }: any) => setUnlocked(new Set((data ?? []).map((r: any) => r.achievement_key))));
+      supabase.from('achievements').select('achievement_key,unlocked_at').eq('user_id', profile.id)
+        .then(({ data }: any) => {
+          setUnlocked(new Set((data ?? []).map((r: any) => r.achievement_key)));
+          setDates(Object.fromEntries((data ?? []).map((r: any) => [r.achievement_key, r.unlocked_at ?? ''])));
+        });
     }
   }, [open, profile]);
 
@@ -180,7 +207,11 @@ export function ProfileEditModal({ open, onClose }: Props) {
     };
     if (trimmed !== profile.username) payload.username = trimmed;
 
-    // AN4: the avatar saves from the mascot builder (its own Save); this saves the rest.
+    // Founder 10-05: ONE Save — the look (when it changed on the Stage) rides along with the rest.
+    if (touched && look) {
+      if (!(await saveAvatar(look))) { setSaving(false); return; }
+      finishNudge('host', profile.id);
+    }
     const { error: updErr } = await (supabase as any)
       .from('profiles')
       .update(payload)
@@ -203,287 +234,186 @@ export function ProfileEditModal({ open, onClose }: Props) {
     onClose();
   };
 
-  const label = (t: string) => (
-    <label className="block text-[10px] font-extrabold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{t}</label>
-  );
+  const photoShows = look?.display === 'photo' && !!avatarUrl;
+  const muted = '#7a6aa6';
+  const rowLabel = (t: string) => <span className="w-[84px] shrink-0 text-[10px] font-black uppercase tracking-[1px]" style={{ color: muted }}>{t}</span>;
+  const row = (t: string, content: React.ReactNode, onClick?: () => void) => {
+    const inner = <>{rowLabel(t)}<span className="flex-1 min-w-0 flex items-center gap-1.5">{content}</span>{onClick && <span className="font-black" style={{ color: '#a78bfa' }}>›</span>}</>;
+    return onClick
+      ? <button type="button" onClick={onClick} className="w-full flex items-center gap-2.5 py-2.5 border-0 bg-transparent text-left cursor-pointer" style={{ borderTop: '1px solid rgba(124,58,237,0.08)' }}>{inner}</button>
+      : <div className="w-full flex items-center gap-2.5 py-2.5" style={{ borderTop: '1px solid rgba(124,58,237,0.08)' }}>{inner}</div>;
+  };
+  const setLookTouched = (c: AvatarConfig) => { setLook(c); setTouched(true); };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: POPUP_DIM }}>
-      <div
-        ref={focusRef}
-        className="w-full max-w-sm max-h-[92vh] overflow-y-auto relative"
-        style={{ ...popupCard(EDIT_ACCENT, { share: 0.08 }), overflowY: 'auto' }}
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Accent bar — matches the app chrome (A1: the 10 px card top bar). */}
-        <PopupBar accent={EDIT_ACCENT} gradient="linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)" />
-
-        <div className="p-5">
-          <HeaderBack kind="close" onClick={onClose} size={32} className="absolute top-4 right-3" />
-
-          <div className="flex items-center gap-2 mb-3 pr-9">
-            {/* A7: O2, the star, strutting beside the title (a secondary spot). */}
-            <PoseArt pose="art-pose-o2-strut" size={44} />
-            {/* BJ16: the view's heading lettering, not plain text. */}
-            <HeadingArt key={view} slug={view === 'mascot' ? 'mascot' : 'editprofile'} as="h2" height={36} maxWidth={230} align="left" />
-          </div>
-
-          {view === 'mascot' && draft ? (
-            <>
-              <MascotBuilder
-                value={draft}
-                onChange={setDraft}
-                initial={initial}
-                isPro={isProActive}
-                level={level}
-                photoUrl={avatarUrl}
-                saving={avatarSaving}
-                onBack={() => setView('profile')}
-                onSave={async (config) => {
-                  if (await saveAvatar(config)) setView('profile');
-                }}
-              />
-              {avatarNote && <p className="text-xs font-bold mt-2" style={{ color: 'var(--color-loss-text)' }}>{avatarNote}</p>}
-            </>
-          ) : (
-          <>
-          {/* Live preview */}
-          <div className="p-4 mb-5 flex flex-col items-center text-center" style={softRow(accentHex, { radius: 18 })}>
-            {/* AN5 / AN6: the avatar as it shows everywhere (photo or mascot), its letter live with the name. */}
-            <MascotAvatar
-              config={ownLook.config}
+    <div className="fixed inset-0 z-50 flex justify-center" style={{ background: POPUP_DIM }}>
+      <div ref={focusRef} className="w-full max-w-sm h-full overflow-y-auto relative" style={{ background: '#f6f0ff' }} role="dialog" aria-modal="true" aria-label="Edit profile">
+        {view === 'mascot' && draft ? (
+          <div className="p-5">
+            <MascotBuilder
+              value={draft}
+              onChange={setDraft}
               initial={initial}
-              size={64}
-              photoUrl={ownLook.url}
-              pro={ownLook.pro}
-              level={ownLook.level}
-              className="mb-2"
-            />
-            <div className="text-lg font-black" style={{ color: accentHex }}>{username.trim() || 'username'}</div>
-            {featuredName && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full mt-1" style={{ background: `${accentHex}1a`, color: accentHex }}>
-                <Star className="w-3 h-3" /> {featuredName}
-              </span>
-            )}
-            {bio.trim() && <p className="text-xs font-bold mt-1.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{bio.trim()}</p>}
-            {favMode && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mt-1.5" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
-                <GameArt id={favMode.id} size={16} className="-my-1" fallback={favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} /> {favMode.shortTitle}
-              </span>
-            )}
-          </div>
-
-          {/* Avatar (AN4): make your mascot, or tap your picture to upload a photo. */}
-          {label('Avatar')}
-          {nudge && (
-            // AM2: a one-time gentle nudge for players who had an emoji avatar.
-            <div className="flex items-center gap-3 p-3 mb-2" style={softRow('#ec4899', { radius: 16 })} role="status">
-              <MascotAvatar config={ownLook.config} initial={initial} size={40} />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Pick your character!</div>
-                <div className="text-[11px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>Build a mascot that wears your initial.</div>
-              </div>
-            </div>
-          )}
-          <div className="flex items-center gap-3 mb-1.5">
-            <AvatarUpload
-              size={56}
-              editable
-              accent={accent}
-              photoOnly
-              onUploaded={() => {
-                // A new photo shows right away (the mascot / photo switch flips to the photo).
-                if (ownLook.config.display !== 'photo') void saveAvatar({ ...ownLook.config, display: 'photo' });
+              isPro={isProActive}
+              level={level}
+              photoUrl={avatarUrl}
+              saving={avatarSaving}
+              onBack={() => setView('profile')}
+              onSave={(config) => {
+                // Done returns to the Stage with a soft hop (saved with the one Save).
+                setLookTouched({ ...config, display: look?.display === 'photo' && avatarUrl && door.kind === 'stage' ? 'photo' : 'mascot' });
+                setView('profile');
+                window.setTimeout(() => setHop((h) => h + 1), 400);
               }}
             />
-            <div className="flex-1 min-w-0">
-              <CandyButton
-                color="purple"
-                size="sm"
-                onClick={() => { setDraft(ownLook.config); setNudge(false); setView('mascot'); }}
-                disabled={saving}
-              >
-                Make your mascot
-              </CandyButton>
-              <p className="text-[10px] font-bold leading-snug mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                Tap your picture to upload a photo.
-              </p>
+            {avatarNote && <p className="text-xs font-bold mt-2" style={{ color: 'var(--color-loss-text)' }}>{avatarNote}</p>}
+          </div>
+        ) : look && (
+          <>
+            <DressStage
+              config={look} initial={initial} height={320} hopToken={hop}
+              photo={photoShows ? <MascotAvatar config={look} initial={initial} size={130} photoUrl={avatarUrl} pro={isProActive} level={level} /> : undefined}
+            >
+              <div className="absolute inset-x-0 top-0 flex items-center gap-1 px-3 pt-3">
+                <HeaderBack kind="close" onClick={onClose} size={32} />
+                <span className="flex-1 flex justify-center"><HeadingArt slug="editprofile" as="h2" height={32} maxWidth={200} /></span>
+                <CandyButton color="purple" size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</CandyButton>
+              </div>
+            </DressStage>
+            <div className="flex flex-col items-center mt-2 px-4">
+              <div className="text-[22px] font-black truncate max-w-full" style={{ color: accent ? accentHex : '#6d28d9' }}>{username.trim() || 'username'}</div>
+              <button type="button" onClick={() => setSheet('titles')} className="border-0 bg-transparent p-0 mt-1 cursor-pointer" aria-label="Opens the title picker">
+                <TitleRibbon text={featuredName ?? 'Choose a title'} placeholder={!featuredName} maxWidth={250} />
+              </button>
+            </div>
+            <div className="flex items-center gap-2.5 px-4 mt-3.5">
+              <CandyButton color="pink" size="lg" className="flex-1" onClick={() => { setDraft({ ...look, display: 'mascot' }); setView('mascot'); }}>✦ MAKE YOUR MASCOT</CandyButton>
+              <button type="button" aria-label="Randomize my mascot" onClick={() => { setLookTouched({ ...randomAvatar(look, Math.random, { isPro: isProActive }), display: look.display }); setHop((h) => h + 1); }}
+                className="w-[52px] h-[52px] rounded-full border-0 flex items-center justify-center cursor-pointer"
+                style={{ background: 'linear-gradient(#5eead4, #0d9488)', boxShadow: '0 3px 0 #0f766e, inset 0 2px 0 rgba(255,255,255,0.45)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="#fff" />{[[8, 8], [16, 8], [12, 12], [8, 16], [16, 16]].map(([cx, cy]) => <circle key={`${cx}${cy}`} cx={cx} cy={cy} r="1.8" fill="#0f766e" />)}</svg>
+              </button>
+            </div>
+            {error && <p className="text-xs font-bold mt-2 px-4" style={{ color: 'var(--color-loss-text)' }}>{error}</p>}
+            {avatarNote && <p className="text-xs font-bold mt-2 px-4" style={{ color: 'var(--color-loss-text)' }}>{avatarNote}</p>}
+            <div className="text-center text-[10px] font-black uppercase tracking-[1.2px] mt-3.5" style={{ color: muted }}>Backdrop</div>
+            <div className="flex justify-center gap-2 mt-1.5">
+              {['auto', 'cottoncandy', 'sunset', 'aurora', 'mint', 'lemon', 'night', 'sunburst'].filter((id) => id === 'auto' || isProActive || !['aurora', 'galaxy'].includes(id)).slice(0, 8).map((id) => (
+                <button key={id} type="button" aria-label={`${id} backdrop`} aria-pressed={look.bg === id} onClick={() => setLookTouched({ ...look, bg: id })}
+                  className="w-[30px] h-[30px] rounded-full border-2 border-white cursor-pointer p-0"
+                  style={{ background: backdropCssFor(id, look.color), boxShadow: look.bg === id ? '0 0 0 3px #f5b82e' : '0 2px 5px rgba(60,30,120,0.18)', transform: look.bg === id ? 'scale(1.1)' : undefined }} />
+              ))}
+              <button type="button" aria-label="More backdrops" onClick={() => { setDraft({ ...look, display: 'mascot' }); setView('mascot'); }}
+                className="w-[30px] h-[30px] rounded-full border-0 font-black text-xs cursor-pointer" style={{ background: 'rgba(255,255,255,0.7)', color: '#7c3aed' }}>•••</button>
+            </div>
+            <div className="text-center text-[10px] font-black uppercase tracking-[1.2px] mt-2.5" style={{ color: muted }}>Frame <span className="normal-case tracking-normal font-extrabold">· how you look in lists</span></div>
+            <div className="flex justify-center gap-2 mt-1.5">
+              {(['none', 'bronze', 'silver', 'gold', 'platinum', 'diamond'] as const).map((id) => (
+                <button key={id} type="button" aria-label={`${id} frame`} aria-pressed={look.frame === id} onClick={() => setLookTouched({ ...look, frame: id })}
+                  className="w-9 h-9 rounded-[10px] border-0 p-0.5 flex items-center justify-center cursor-pointer text-[9px] font-black"
+                  style={{ background: look.frame === id ? '#fff' : 'rgba(255,255,255,0.55)', boxShadow: look.frame === id ? '0 0 0 2px #a78bfa' : undefined, color: muted }}>
+                  {id === 'none' ? 'None' : <MascotAvatar config={{ ...look, eyes: 'none', mouth: 'none', nose: 'none', cheeks: 'none', head: 'none', face: 'none', neck: 'none', frame: id } as AvatarConfig} initial=" " size={30} />}
+                </button>
+              ))}
+            </div>
+            <div className="px-4 mt-2 pb-8">
+              {row('Show', (
+                <span className="flex rounded-full p-[3px] w-full" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                  {(['mascot', 'photo'] as const).map((d) => (
+                    <button key={d} type="button" aria-pressed={(photoShows ? 'photo' : 'mascot') === d}
+                      disabled={d === 'photo' && !avatarUrl} onClick={() => { setLookTouched({ ...look, display: d }); setHop((h) => h + 1); }}
+                      className="flex-1 text-xs font-black py-1.5 rounded-full border-0 cursor-pointer"
+                      style={(photoShows ? 'photo' : 'mascot') === d ? { background: 'linear-gradient(#8b5cf6, #6d28d9)', color: '#fff' } : { background: 'transparent', color: '#6d28d9' }}>
+                      {d === 'mascot' ? 'My mascot' : 'My photo'}
+                    </button>
+                  ))}
+                </span>
+              ))}
+              {row('Username', <input ref={inputRef} value={username} onChange={(e) => setUsername(e.target.value)} maxLength={20} disabled={saving} aria-label="Username"
+                className="w-full bg-transparent border-0 outline-none text-[15px] font-extrabold" style={{ color: '#2a1650' }} />)}
+              {row('Bio', <input value={bio} onChange={(e) => setBio(Array.from(e.target.value).slice(0, BIO_MAX).join(''))} placeholder="A short tagline…" disabled={saving} aria-label="Bio"
+                className="w-full bg-transparent border-0 outline-none text-sm font-bold" style={{ color: '#2a1650' }} />)}
+              {row('Title', <span className="text-xs font-black px-2.5 py-0.5 rounded-full truncate" style={{ color: '#92400e', background: 'linear-gradient(#fef3c7, #fde68a)' }}>{featuredName ?? 'Choose one'}</span>, () => setSheet('titles'))}
+              {row('Favorite', favMode ? <span className="text-sm font-extrabold truncate" style={{ color: '#2a1650' }}>{favMode.title}</span> : <span className="text-sm font-bold" style={{ color: muted }}>Pick a game</span>, () => setSheet('favorite'))}
+              {row('Name color', (
+                <span className="flex gap-1.5">
+                  {ACCENT_COLORS.map((c) => {
+                    const selected = (accent ?? '#7C3AED').toLowerCase() === c.hex.toLowerCase();
+                    return <button key={c.id} type="button" aria-label={`${c.id} name color`} aria-pressed={selected} onClick={() => setAccent(c.id === 'purple' ? null : c.hex)}
+                      className="w-[18px] h-[18px] rounded-full border-0 p-0 cursor-pointer" style={{ background: c.hex, boxShadow: selected ? `0 0 0 2px #fff, 0 0 0 4px ${c.hex}` : undefined }} />;
+                  })}
+                </span>
+              ))}
+              {row('Private', <span className="text-[13px] font-bold truncate" style={{ color: muted }}>{isPrivate ? 'On · words & history hidden' : 'Off'}</span>, () => setSheet('privacy'))}
+              {row('Socials', <span className="text-[13px] font-bold" style={{ color: muted }}>{(() => { const n = PLATFORMS.filter((p) => (socials[p.key] ?? '').trim()).length; return n === 0 ? 'Add links' : `${n} link${n === 1 ? '' : 's'}`; })()}</span>, () => setSheet('socials'))}
+            </div>
+          </>
+        )}
+        {(sheet === 'socials' || sheet === 'privacy' || sheet === 'favorite') && (
+          <div className="fixed inset-0 z-[55] flex items-end justify-center" style={{ background: 'rgba(30,16,60,0.35)' }} onClick={() => setSheet(null)}>
+            <div className="w-full max-w-sm rounded-t-[22px] p-5 pb-7" style={{ background: '#fbf8ff' }} onClick={(e) => e.stopPropagation()}>
+              <div className="w-10 h-1 rounded mx-auto mb-3" style={{ background: '#c4b5fd' }} />
+              <div className="text-lg font-black text-center mb-2" style={{ color: '#6d28d9' }}>{sheet === 'socials' ? 'Your links' : sheet === 'privacy' ? 'Private profile' : 'Favorite game'}</div>
+              {sheet === 'socials' && PLATFORMS.map((p) => (
+                <div key={p.key} className="flex items-center gap-2 py-2" style={{ borderTop: '1px solid rgba(124,58,237,0.08)' }}>
+                  <span className="w-6 h-6 flex items-center justify-center" style={{ color: p.color }}><SocialIcon platform={p.key} className="w-4 h-4" /></span>
+                  <input value={socials[p.key] ?? ''} onChange={(e) => setSocials((v) => ({ ...v, [p.key]: e.target.value }))} placeholder={p.placeholder} aria-label={p.label}
+                    className="flex-1 bg-transparent border-0 outline-none text-sm font-bold" style={{ color: '#2a1650' }} />
+                </div>
+              ))}
+              {sheet === 'privacy' && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="flex-1 text-sm font-extrabold" style={{ color: '#2a1650' }}>Hide my words, stats and game history</span>
+                    <SoftSwitch checked={isPrivate} onCheckedChange={(v) => setIsPrivate(v)} accent={EDIT_ACCENT} label="Private profile" />
+                  </div>
+                  <p className="text-xs font-bold mt-2" style={{ color: muted }}>You&apos;ll still appear on leaderboards.</p>
+                </>
+              )}
+              {sheet === 'favorite' && (
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <button type="button" onClick={() => { setFavoriteMode(null); setSheet(null); }} className="text-[11px] font-bold px-2.5 py-1.5" style={{ ...chip(accentHex, favoriteMode == null, 10), color: muted }}>None</button>
+                  {PROFILE_MODES.map((m) => {
+                    const Icon = m.icon;
+                    return (
+                      <GameSquare key={m.dbKey} accent={m.accentColor} selected={favoriteMode === m.dbKey} size={40}
+                        glyph={Icon ? <Icon className="w-4 h-4" style={{ color: m.accentColor }} /> : <span className="text-[10px] font-black" style={{ color: m.accentColor }}>{m.romanNumeral ?? m.shortTitle.charAt(0)}</span>}
+                        onClick={() => { setFavoriteMode(m.dbKey); setSheet(null); }} aria-label={m.title} aria-pressed={favoriteMode === m.dbKey} />
+                    );
+                  })}
+                </div>
+              )}
+              <div className="flex justify-center mt-4"><CandyButton color="purple" size="sm" onClick={() => setSheet(null)}>Done</CandyButton></div>
             </div>
           </div>
-          {avatarNote && <p className="text-xs font-bold mb-2" style={{ color: 'var(--color-loss-text)' }}>{avatarNote}</p>}
-          <div className="mb-4" />
-
-          {/* Username */}
-          {label('Username')}
-          <input
-            ref={inputRef}
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            maxLength={20}
-            disabled={saving}
-            className="w-full px-3 py-2 text-sm font-bold outline-none mb-4"
-            style={softInput(EDIT_ACCENT)}
-          />
-
-          {/* Bio */}
-          <div className="flex items-center justify-between mb-1.5">
-            {label('Bio')}
-            <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{bio.length}/{BIO_MAX}</span>
-          </div>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
-            placeholder="A short tagline…"
-            rows={2}
-            disabled={saving}
-            className="w-full px-3 py-2 text-sm font-bold outline-none mb-4 resize-none"
-            style={softInput(EDIT_ACCENT)}
-          />
-
-          {/* Accent color */}
-          {label('Accent color')}
-          {/* The swatches sit on a tray tinted in the chosen accent; each is a glossy candy dot, the chosen one ringed. */}
-          <div className="flex flex-wrap gap-2.5 mb-4 p-2.5" style={softRow(accentHex, { radius: 16 })}>
-            {ACCENT_COLORS.map((c) => {
-              const selected = (accent ?? '#7C3AED').toLowerCase() === c.hex.toLowerCase();
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => setAccent(c.id === 'purple' ? null : c.hex)}
-                  className="w-8 h-8 rounded-full"
-                  style={{
-                    background: `radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 45%), ${c.hex}`,
-                    boxShadow: selected
-                      ? `0 0 0 2px var(--color-card-base, #fff), 0 0 0 4.5px ${c.hex}, 0 3px 6px ${c.hex}66`
-                      : `inset 0 -2.5px 0 rgba(0, 0, 0, 0.18), 0 2px 5px ${c.hex}55`,
-                  }}
-                  aria-label={c.id}
-                  aria-pressed={selected}
-                />
-              );
-            })}
-          </div>
-
-          {/* Featured title */}
-          {label('Featured title')}
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            <button
-              onClick={() => setFeatured(null)}
-              className="text-[11px] font-bold px-2.5 py-1"
-              style={{ ...chip(accentHex, featured == null), color: featured == null ? 'var(--color-text)' : 'var(--color-text-muted)' }}
-            >None</button>
-            {unlockedAchievements.length === 0 && (
-              <span className="text-[11px] font-bold py-1" style={{ color: 'var(--color-text-muted)' }}>Unlock achievements to wear one as a title.</span>
-            )}
-            {unlockedAchievements.map((a) => {
-              const sel = featured === a.key;
-              return (
-                <button
-                  key={a.key}
-                  onClick={() => setFeatured(a.key)}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1"
-                  style={{ ...chip(accentHex, sel), color: 'var(--color-text)' }}
-                >
-                  <Star className="w-3 h-3" style={{ color: accentHex }} /> {a.name}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Favorite mode */}
-          {label('Favorite mode')}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              onClick={() => setFavoriteMode(null)}
-              className="text-[11px] font-bold px-2.5 py-1.5"
-              style={{ ...chip(accentHex, favoriteMode == null, 10), color: favoriteMode == null ? 'var(--color-text)' : 'var(--color-text-muted)' }}
-            >None</button>
-            {PROFILE_MODES.map((m) => {
-              const sel = favoriteMode === m.dbKey;
-              const Icon = m.icon;
-              return (
-                // Compact square game tile (docs/GAME_TILE_STYLE.md).
-                <GameSquare
-                  key={m.dbKey}
-                  accent={m.accentColor}
-                  selected={sel}
-                  size={36}
-                  glyph={Icon
-                    ? <Icon className="w-4 h-4" style={{ color: m.accentColor }} />
-                    : <span className="text-[10px] font-black" style={{ color: m.accentColor }}>{m.romanNumeral ?? m.shortTitle.charAt(0)}</span>}
-                  onClick={() => setFavoriteMode(m.dbKey)}
-                  aria-label={m.title}
-                  aria-pressed={sel}
-                />
-              );
-            })}
-          </div>
-
-          {/* Privacy */}
-          {label('Privacy')}
-          <div
-            className="w-full flex items-center gap-3 px-3 py-2.5 mb-1.5"
-            style={{ ...softRow(EDIT_ACCENT, { radius: 14 }), opacity: saving ? 0.5 : 1 }}
-          >
-            {isPrivate ? (
-              <Lock className="w-4 h-4 shrink-0" style={{ color: '#7c3aed' }} />
-            ) : (
-              <Globe className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} />
-            )}
-            <span className="flex-1 text-left text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
-              Private profile
-            </span>
-            <SoftSwitch
-              checked={isPrivate}
-              onCheckedChange={(v) => setIsPrivate(v)}
-              accent={EDIT_ACCENT}
-              disabled={saving}
-              label="Private profile"
-            />
-          </div>
-          <p className="text-[10px] font-bold mb-4 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-            Hide your words, stats, and game history from other players. You&apos;ll still appear on leaderboards.
-          </p>
-
-          {/* Socials */}
-          {label('Socials')}
-          <div className="space-y-2 mb-4">
-            {PLATFORMS.map((p) => (
-              <div key={p.key} className="flex items-center gap-2">
-                <span className="w-6 h-6 flex items-center justify-center flex-shrink-0" style={{ color: p.color }}>
-                  <SocialIcon platform={p.key} className="w-4 h-4" />
-                </span>
-                <input
-                  type="text"
-                  value={socials[p.key] ?? ''}
-                  onChange={(e) => setSocials((v) => ({ ...v, [p.key]: e.target.value }))}
-                  placeholder={p.placeholder}
-                  disabled={saving}
-                  className="flex-1 text-xs font-bold px-2.5 py-1.5 outline-none"
-                  style={{ ...softInput(p.color), borderRadius: 10 }}
-                />
-              </div>
-            ))}
-          </div>
-
-          {error && <p className="text-xs font-bold mb-2" style={{ color: 'var(--color-loss-text)' }}>{error}</p>}
-
-          <div className="flex gap-2">
-            <CandyButton color="peach" size="md" className="flex-1" onClick={onClose} disabled={saving}>
-              Cancel
-            </CandyButton>
-            <CandyButton color="purple" size="md" className="flex-1" icon="check" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
-            </CandyButton>
-          </div>
-          </>
-          )}
-        </div>
+        )}
+        {sheet === 'titles' && look && (
+          <TitleShelves username={username.trim() || profile.username} mascot={look} initial={initial} accent={accent ? accentHex : '#6d28d9'}
+            unlockedDates={dates} selected={featured} onClose={() => setSheet(null)}
+            onDone={(k) => { setFeatured(k); setSheet(null); setHop((h) => h + 1); }} />
+        )}
       </div>
     </div>
   );
+}
+
+/**
+ * Founder 10-05: the one Edit Profile (the Stage) every door opens — mounted once in the app layout,
+ * opened with openDressUp() from the Stats card avatar, your own podium place / board row, the Home host
+ * and the party-hat offer.
+ */
+export function DressUpHost() {
+  const { user, profile } = useAuth();
+  const [door, setDoor] = useState<DressDoor | null>(null);
+  useDressUpRequests((d) => { if (user && profile) setDoor(d); });
+  // A door from another page (/stats?dress=…) opens once the profile is in.
+  const fromUrl = useRef(false);
+  useEffect(() => {
+    if (fromUrl.current || !user || !profile) return;
+    const d = doorFromUrl();
+    if (d) { fromUrl.current = true; setDoor(d); window.history.replaceState(null, '', window.location.pathname); }
+  }, [user, profile]);
+  return <ProfileEditModal open={door !== null} door={door ?? undefined} onClose={() => setDoor(null)} />;
 }
 
 export function EditProfileButton({ onClick }: { onClick: () => void }) {
@@ -493,6 +423,9 @@ export function EditProfileButton({ onClick }: { onClick: () => void }) {
     </CandyButton>
   );
 }
+
+/** A backdrop swatch (the stage's own CSS). */
+function backdropCssFor(id: string, color: string): string { return backdropCss(id, color); }
 
 /** The sheet's accent (brand purple). */
 const EDIT_ACCENT = '#7c3aed';

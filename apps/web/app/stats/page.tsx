@@ -33,7 +33,8 @@ import { AvatarUpload } from '@/components/profile/avatar-upload';
 import dynamic from 'next/dynamic';
 const ProStats = dynamic(() => import('@/components/profile/pro-stats').then(m => m.ProStats), { ssr: false });
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
-import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
+import { ProfileEditModal, EditProfileButton, DressUpHost } from '@/components/profile/profile-edit-modal';
+import { StageArt, openDressUp } from '@/components/profile/dress-up';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
 import { fetchProfileTrends, fetchDailyPointsOverTime, fetchOpenerStats, fetchWeekdayForm, fetchTodayDailyStanding } from '@/lib/stats-service';
 import { PointsChart } from '@/components/profile/sweep-stats';
@@ -477,7 +478,12 @@ export default function StatsPage() {
           <div aria-hidden="true" style={{ height: 10, background: 'linear-gradient(90deg, #7c3aed, #ec4899)' }} />
           <div className="p-4">
           <div className="flex items-start gap-3">
-            <AvatarUpload size={64} editable={false} />
+            {/* Founder 10-05 (door 1): your avatar IS the way in; the small "Dress up" tag replaces the pencil. */}
+            <button type="button" onClick={() => openDressUp()} aria-label="Dress up your mascot. Opens Edit Profile"
+              className="relative shrink-0 border-0 bg-transparent p-0 pb-2 cursor-pointer">
+              <AvatarUpload size={64} editable={false} />
+              <StageArt name="art-dress-tag-dressup" height={17} className="absolute left-1/2 -translate-x-1/2" style={{ bottom: -2 }} />
+            </button>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 min-w-0">
                 {(profile as any).accent_color ? (
@@ -516,14 +522,6 @@ export default function StatsPage() {
             </div>
             {/* A8 / A3: Edit is a small round candy button; Share is the bare 3D share icon. */}
             <div className="flex items-center gap-0.5 shrink-0 -mt-1 -mr-2">
-              <CandyButton
-                onClick={() => setEditOpen(true)}
-                aria-label="Edit profile"
-                color="purple"
-                size="round"
-                icon={<Pencil className="w-4 h-4 candy-icon" color="#fff" strokeWidth={3} aria-hidden="true" />}
-                style={{ ['--candy-h' as string]: '34px' } as React.CSSProperties}
-              />
               <HeaderGlyph
                 icon="share"
                 label="Share profile card"
@@ -567,7 +565,7 @@ export default function StatsPage() {
               <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
               {(profile as any).is_private && (
                 <CandyButton
-                  onClick={() => setEditOpen(true)}
+                  onClick={() => openDressUp()}
                   title="Your profile is private — other players see a limited card. Tap to change."
                   color="peach"
                   size="sm"
@@ -1185,6 +1183,8 @@ export default function StatsPage() {
 
       <BottomNav />
       <ProfileEditModal open={editOpen} onClose={() => setEditOpen(false)} />
+      {/* Founder 10-05: every dress-up door opens the Stage here (other pages link in with /stats?dress=…) */}
+      <DressUpHost />
     </PageBackground>
   );
 }

@@ -268,6 +268,8 @@ export async function recordGameResult(
   retry: boolean = false,
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
+  // Founder 10-05 (door 3): the first live win queues the one-time "Party hat?" offer on Home.
+  if (won && !retry && typeof window !== 'undefined') void import('@/components/profile/dress-up').then((m) => m.noteWin(userId)).catch(() => {});
   // Outage fix (lib/celebration-gate.ts): celebrations from a replayed result,
   // or from a live one that comes back > LATE_AFTER_MS after this call
   // started, wait for a calm moment instead of popping wherever the player is.
