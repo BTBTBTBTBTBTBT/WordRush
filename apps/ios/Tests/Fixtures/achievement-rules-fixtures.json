@@ -242,7 +242,7 @@
     {
       "key": "spooky_season",
       "name": "Spooky Season",
-      "description": "Finish a daily during Halloween week",
+      "description": "Finish a daily during the Halloween season",
       "category": "seasonal",
       "icon": "calendar"
     },

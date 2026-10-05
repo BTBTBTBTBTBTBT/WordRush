@@ -81,7 +81,7 @@ export const NEW_ACHIEVEMENTS: readonly AchievementCatalogEntry[] = [
   e('self_portrait', 'Self Portrait', 'Make your own mascot', 'mascot', 'star'),
   e('dress_up', 'Dress Up', 'Save a mascot with a hat, an extra and a backdrop', 'mascot', 'sparkles'),
   // Moments
-  e('spooky_season', 'Spooky Season', 'Finish a daily during Halloween week', 'seasonal', 'calendar'),
+  e('spooky_season', 'Spooky Season', 'Finish a daily during the Halloween season', 'seasonal', 'calendar'),
   e('early_bird', 'Early Bird', 'Finish a daily before 7 AM', 'streaks', 'calendar'),
   e('night_owl', 'Night Owl', 'Finish a daily between midnight and 4 AM', 'streaks', 'calendar'),
 ];
@@ -223,7 +223,7 @@ export function avatarAchievements(config: { head?: string; face?: string; neck?
 /**
  * A daily finished at the player's LOCAL hour (0–23) in `season`: Night Owl
  * from midnight to 4 AM, Early Bird from 4 to 7 AM (so one finish never earns
- * both), Spooky Season during Halloween week.
+ * both), Spooky Season during the Halloween season.
  */
 export function momentAchievements(m: { localHour: number; season: string | null }): string[] {
   return keep([
