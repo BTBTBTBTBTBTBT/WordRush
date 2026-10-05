@@ -14,6 +14,7 @@ function asset(p: Partial<ArtAsset> & { id: string }): ArtAsset {
     season: null,
     character: null,
     status: 'draft',
+    stage: 'final',
     title: p.id,
     caption: null,
     width: 512,
@@ -37,12 +38,13 @@ const LIB: ArtAsset[] = [
   asset({ id: 'seasons/halloween/cast/r-alt1', season: 'halloween', character: 'r', kind: 'cast', title: 'R pumpkin', status: 'rejected', created_at: '2026-10-04T00:00:00Z' }),
   asset({ id: 'seasons/winter-holidays/props/tree', season: 'winter-holidays', kind: 'props', title: 'Tree', status: 'approved', decided_at: '2026-10-05T00:00:00Z', created_at: '2026-10-05T00:00:00Z' }),
   asset({ id: 'animation/cast', path: 'animation/cast.html', mime: 'text/html', title: 'Cast player', width: null, height: null, created_at: '2026-10-06T00:00:00Z' }),
+  asset({ id: 'animation/w/layers/arm', kind: 'layers', stage: 'working', title: 'Arm', created_at: '2026-10-07T00:00:00Z' }),
   asset({ id: 'sounds/tap', path: 'sounds/tap.m4a', mime: 'audio/mp4', title: 'Tap', status: 'shipped', created_at: '2026-10-06T00:00:00Z' }),
 ];
 
 describe('filterAssets', () => {
   it('passes everything with no filters', () => {
-    expect(filterAssets(LIB, EMPTY_FILTERS)).toHaveLength(LIB.length);
+    expect(filterAssets(LIB, EMPTY_FILTERS)).toHaveLength(LIB.length - 1); // the one working file is hidden
   });
   it('ANDs facet filters', () => {
     const out = filterAssets(LIB, { ...EMPTY_FILTERS, season: 'halloween', character: 'w' });
@@ -52,7 +54,7 @@ describe('filterAssets', () => {
     expect(filterAssets(LIB, { ...EMPTY_FILTERS, q: 'FANGS' }).map((a) => a.id)).toEqual(['seasons/halloween/cast/w-alt1']);
     expect(filterAssets(LIB, { ...EMPTY_FILTERS, q: '.m4a' }).map((a) => a.id)).toEqual(['sounds/tap']);
     expect(filterAssets(LIB, { ...EMPTY_FILTERS, q: 'winter-holidays/props' })).toHaveLength(1);
-    expect(filterAssets(LIB, { ...EMPTY_FILTERS, q: '   ' })).toHaveLength(LIB.length);
+    expect(filterAssets(LIB, { ...EMPTY_FILTERS, q: '   ' })).toHaveLength(LIB.length - 1);
   });
 });
 
@@ -78,14 +80,29 @@ describe('facetCounts', () => {
   });
 });
 
+describe('working files', () => {
+  it('are hidden by default and counted only when shown', () => {
+    expect(filterAssets(LIB, EMPTY_FILTERS).some((a) => a.stage === 'working')).toBe(false);
+    expect(filterAssets(LIB, { ...EMPTY_FILTERS, working: true })).toHaveLength(LIB.length);
+    expect(facetCounts(LIB, EMPTY_FILTERS, 'type').find((c) => c.value === 'animation')?.count).toBe(1);
+    expect(facetCounts(LIB, { ...EMPTY_FILTERS, working: true }, 'type').find((c) => c.value === 'animation')?.count).toBe(2);
+  });
+});
+
 describe('sortAssets', () => {
+  it('featured: approved then draft season art (next season first), then newest finished pieces, working last', () => {
+    const ids = sortAssets(LIB, 'featured').map((a) => a.id);
+    expect(ids[0]).toBe('seasons/halloween/cast/w-alt1');
+    expect(ids[1]).toBe('seasons/winter-holidays/props/tree');
+    expect(ids[ids.length - 1]).toBe('animation/w/layers/arm');
+  });
   it('newest first, ties by id', () => {
-    const ids = sortAssets(LIB, 'newest').map((a) => a.id);
+    const ids = sortAssets(filterAssets(LIB, EMPTY_FILTERS), 'newest').map((a) => a.id);
     expect(ids.slice(0, 2)).toEqual(['animation/cast', 'sounds/tap']);
     expect(ids[ids.length - 1]).toBe('characters/hero/w');
   });
   it('A to Z by title', () => {
-    expect(sortAssets(LIB, 'az').map((a) => a.title)).toEqual(['Cast player', 'R hero', 'R pumpkin', 'Tap', 'Tree', 'W hero', 'W vampire']);
+    expect(sortAssets(filterAssets(LIB, EMPTY_FILTERS), 'az').map((a) => a.title)).toEqual(['Cast player', 'R hero', 'R pumpkin', 'Tap', 'Tree', 'W hero', 'W vampire']);
   });
   it('does not mutate the input', () => {
     const copy = LIB.slice();
