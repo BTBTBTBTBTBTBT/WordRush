@@ -8,7 +8,7 @@
  * - The publisher posts a target only when it is due, the post is approved, nothing is paused, the platform is
  *   connected and that target has not been posted.
  */
-import { SEASON_WINDOWS } from '@wordle-duel/core';
+import { currentSeason } from '@wordle-duel/core';
 
 /* ------------------------------------------------------------- platforms */
 
@@ -381,21 +381,21 @@ export function weekOf(day: string): string[] {
 
 export interface Band { id: string; label: string; start: string; end: string; tone: 'season' | 'release' }
 
-/** Season windows (core SEASON_WINDOWS) for the years around `day`, as dated bands. */
+/**
+ * Season bands for the given years, read from core currentSeason (the season registry) day by day, so the
+ * calendar always matches what the apps switch on (Halloween: Oct 17 - Nov 1 once the registry says so).
+ */
 export function seasonBands(years: readonly number[]): Band[] {
   const out: Band[] = [];
   for (const y of years) {
-    for (const w of SEASON_WINDOWS) {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      const wraps = w.start[0] * 100 + w.start[1] > w.end[0] * 100 + w.end[1];
-      out.push({
-        id: `${w.id}-${y}`,
-        label: w.id.charAt(0).toUpperCase() + w.id.slice(1),
-        start: `${y}-${pad(w.start[0])}-${pad(w.start[1])}`,
-        end: `${wraps ? y + 1 : y}-${pad(w.end[0])}-${pad(w.end[1])}`,
-        tone: 'season',
-      });
+    let run: { id: string; start: string; end: string } | null = null;
+    for (let day = `${y}-01-01`; day <= `${y}-12-31`; day = addDays(day, 1)) {
+      const s = currentSeason(day);
+      if (s && run && run.id === s && addDays(run.end, 1) === day) { run.end = day; continue; }
+      if (run) out.push({ id: `${run.id}-${run.start}`, label: run.id.charAt(0).toUpperCase() + run.id.slice(1), start: run.start, end: run.end, tone: 'season' });
+      run = s ? { id: s, start: day, end: day } : null;
     }
+    if (run) out.push({ id: `${run.id}-${run.start}`, label: run.id.charAt(0).toUpperCase() + run.id.slice(1), start: run.start, end: run.end, tone: 'season' });
   }
   return out;
 }
