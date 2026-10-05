@@ -8,6 +8,7 @@
 import * as React from 'react';
 import type { AvatarConfig } from '@wordle-duel/core';
 import { avatarColorHex, avatarPickConflict, seasonNudgeDue, seasonNudgeKey, seasonalShelf } from '@wordle-duel/core';
+import { pickHomeOffer } from '@/lib/home-offer';
 
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { artSrc } from '@/lib/art';
@@ -331,10 +332,12 @@ export function TitleRibbon({ text, height = 28, maxWidth = 260, placeholder = f
 export function PartyHatOffer() {
   const { user, profile } = useAuth();
   useNudgeVersion();
+  const seasonDue = useSeasonNudgeDue();
   const uid = user ? profile?.id ?? null : null;
   let pending = false;
   try { pending = typeof window !== 'undefined' && sessionStorage.getItem('wd_dressup_partyhat_pending') === '1'; } catch { /* ignore */ }
-  if (!uid || !pending || nudgeDone('partyhat', uid)) return null;
+  // One Home offer card at a time: in season the "Dress up?" nudge goes first; the hat waits (still pending).
+  if (!uid || nudgeDone('partyhat', uid) || pickHomeOffer({ seasonDue: !!seasonDue, partyHat: pending }) !== 'partyhat') return null;
   const done = () => { try { sessionStorage.removeItem('wd_dressup_partyhat_pending'); } catch { /* ignore */ } finishNudge('partyhat', uid); };
   return (
     <div className="flex items-center gap-2.5 pl-2.5 pr-1 py-2 rounded-[18px]" style={{ background: 'linear-gradient(90deg, #fce7f3, #ede9fe)' }}>
@@ -358,16 +361,24 @@ const seasonSeenKey = (uid: string) => `wd_dressup_season_v1:${uid.toLowerCase()
 function seasonSeen(uid: string): string[] {
   try { const v = JSON.parse(localStorage.getItem(seasonSeenKey(uid)) ?? '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
 }
-export function SeasonDressOffer() {
+/** The season whose "Dress up?" nudge is due on Home now (with the player's id), or null. */
+function useSeasonNudge(): { uid: string; due: string } | null {
   const { user, profile } = useAuth();
-  useNudgeVersion();
   const season = useSeason();
   const demo = devDressDemo()?.nudge ? 'dev-demo' : null;   // DEV ?dressDemo=nudge: the card for a guest
   const uid = user ? profile?.id ?? null : demo;
   const own = usePlayerAvatar({ name: profile?.username ?? null, userId: user ? uid : null });
   if (!uid || !season) return null;
   const due = seasonNudgeDue(new Date(), season, own.config, seasonSeen(uid));
-  if (!due) return null;
+  return due ? { uid, due } : null;
+}
+function useSeasonNudgeDue(): string | null { return useSeasonNudge()?.due ?? null; }
+
+export function SeasonDressOffer() {
+  useNudgeVersion();
+  const nudge = useSeasonNudge();
+  if (!nudge) return null;
+  const { uid, due } = nudge;
   const shelf = seasonalShelf(due);
   const title = due.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   const done = () => {

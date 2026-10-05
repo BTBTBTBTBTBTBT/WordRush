@@ -36,6 +36,8 @@ struct FriendsPanelView: View {
     // profile push (menu items can't be NavigationLinks).
     @State private var unfriendTarget: FriendsService.FriendProfile?
     @State private var profileTarget: String?
+    /// The family action menu's friend (the row's long-press), open while non-nil.
+    @State private var menuFriend: FriendsService.FriendProfile?
     // §234: double-tap guard for the weekly-race share card.
     @State private var sharingRace = false
     // §238: the "Last week" line unfolds into the settled-week history.
@@ -153,6 +155,12 @@ struct FriendsPanelView: View {
         .gameCover(item: $challengeMatch) { m in
             NavigationStack { VSGameView(mode: m.mode, inviteCode: m.code) }
         }
+        .familyActionMenu(item: $menuFriend) { f in friendMenuModel(f) }
+        #if DEBUG
+        .onReceive(NotificationCenter.default.publisher(for: FamilyActionMenuDemo.open)) { n in
+            if (n.object as? String) == "friend" { menuFriend = FriendsService.friends.first }
+        }
+        #endif
         // §225: Unfriend confirmation — the mutation was only reachable from a
         // profile page the rows couldn't open. remove() prunes the cache and
         // notifies, so the roster refreshes itself.
@@ -580,7 +588,11 @@ struct FriendsPanelView: View {
         let line = f.presenceLine() ?? FriendsKit.todayLine(f)
         // §225: the WHOLE row is the door to the profile; the candy Button nests
         // inside the label and its tap wins over the link.
-        return NavigationLink(value: f.id) {
+        return Button {
+            // A long-press release lands here with the menu already open — don't push too.
+            guard menuFriend == nil else { return }
+            profileTarget = f.id
+        } label: {
             // BJ7: one top line — avatar, name + badges and the streak / action all
             // top-aligned; the presence line 4 under the name.
             HStack(alignment: .top, spacing: 10) {
@@ -633,33 +645,42 @@ struct FriendsPanelView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
-        // §225: long-press menu — profile, taunt, challenge, gift, unfriend.
-        .contextMenu {
-            Button { profileTarget = f.id } label: {
-                Label("View Profile", systemImage: "person.crop.circle")
-            }
-            Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: {
-                Label("Play a game", systemImage: "gamecontroller")
-            }
-            Button { tauntTarget = f } label: {
-                Label("Taunt", systemImage: "bell")
-            }
+        // §225: long-press menu — profile, play, taunt, challenge, gift, unfriend — now the
+        // family action menu (founder 10-05: no plain-text menus). The release after the hold
+        // finds the menu open, so the row's push doesn't also fire.
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+            Feedback.press(true)
+            menuFriend = f
+        })
+        .accessibilityAction(named: "More actions") { menuFriend = f }
+    }
+
+    /// The friend row's long-press menu (the old context menu's rows, in order).
+    private func friendMenuModel(_ f: FriendsService.FriendProfile) -> FamilyActionMenuModel {
+        var rows: [FamilyMenuAction] = [
+            FamilyMenuAction(id: "profile", title: "View Profile", icon: .clay("eye")) { profileTarget = f.id },
+            FamilyMenuAction(id: "play", title: "Play a game", icon: .clay("play"), tint: FamilyMenuInk.pink) {
+                quickPlay = QuickPlay(friend: f, kind: .rps)
+            },
+            FamilyMenuAction(id: "taunt", title: "Taunt", icon: .art("icon3d-bell"), tint: FamilyMenuInk.amber,
+                             accessibility: "Taunt \(f.username)") { tauntTarget = f },
             // §289: a private Classic VS Battle, pushed to them.
-            Button { challenge(f) } label: {
-                Label("Challenge", image: "swords")
-            }
-            .disabled(challenging != nil)
-            // D3.4 (§294): gift one of your streak shields — only when you hold one.
-            if (AuthService.shared.profile?.streakShields ?? 0) > 0 {
-                Button { giftShield(f) } label: {
-                    Label("Gift a shield", systemImage: "shield")
-                }
-                .disabled(gifting != nil)
-            }
-            Button(role: .destructive) { unfriendTarget = f } label: {
-                Label("Unfriend", systemImage: "person.badge.minus")
-            }
+            FamilyMenuAction(id: "challenge", title: "Challenge", icon: .art("art-badge-swords"),
+                             disabled: challenging != nil,
+                             accessibility: "Challenge \(f.username) to a VS Battle") { challenge(f) },
+        ]
+        // D3.4 (§294): gift one of your streak shields — only when you hold one.
+        if (AuthService.shared.profile?.streakShields ?? 0) > 0 {
+            rows.append(FamilyMenuAction(id: "gift", title: "Gift a shield", icon: .art("icon3d-shield"),
+                                         tint: FamilyMenuInk.teal, disabled: gifting != nil) { giftShield(f) })
         }
+        rows.append(FamilyMenuAction(id: "unfriend", title: "Unfriend", icon: .clay("xmark"), danger: true,
+                                     accessibility: "Unfriend \(f.username)") { unfriendTarget = f })
+        return FamilyActionMenuModel(
+            title: f.username, subtitle: f.presenceLine() ?? FriendsKit.todayLine(f),
+            avatar: AnyView(AvatarView(url: f.avatar_url, username: f.username, size: 44, emoji: f.avatar_emoji,
+                                       castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id, stroke: false)),
+            actions: rows)
     }
 
     /// On now → Play (quick-play sheet); played today → Challenge (the free

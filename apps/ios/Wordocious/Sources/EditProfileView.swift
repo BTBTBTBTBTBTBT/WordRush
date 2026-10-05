@@ -117,12 +117,10 @@ struct EditProfileView: View {
             uploadingAvatar = true
             Task { await uploadAvatar(item); uploadingAvatar = false }
         }
-        .confirmationDialog("Change Photo", isPresented: $showPhotoChoice, titleVisibility: .visible) {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) { Button("Take Photo") { showCamera = true } }
-            Button("Choose from Library") { showLibraryPicker = true }
-            if auth.profile?.avatarUrl != nil { Button("Remove Photo", role: .destructive) { Task { await removeAvatar() } } }
-            Button("Cancel", role: .cancel) {}
-        }
+        // Change Photo — the family action menu (founder 10-05: no plain-text menus); same three choices.
+        .familyActionMenu(item: Binding(
+            get: { showPhotoChoice ? FamilyMenuToken(id: "photo") : nil },
+            set: { showPhotoChoice = $0 != nil })) { _ in photoMenuModel() }
         .photosPicker(isPresented: $showLibraryPicker, selection: $photoItem, matching: .images)
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { image in
@@ -667,6 +665,23 @@ struct EditProfileView: View {
         mascotTouched = true
         await auth.refreshProfile()
     }
+    /// Change Photo's rows: Take Photo (when there's a camera), Choose from Library, Remove Photo (when one is set).
+    private func photoMenuModel() -> FamilyActionMenuModel {
+        var rows: [FamilyMenuAction] = []
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            rows.append(FamilyMenuAction(id: "camera", title: "Take Photo", icon: .symbol("camera.fill")) { showCamera = true })
+        }
+        rows.append(FamilyMenuAction(id: "library", title: "Choose from Library", icon: .symbol("photo.on.rectangle"),
+                                     tint: FamilyMenuInk.teal) { showLibraryPicker = true })
+        if auth.profile?.avatarUrl != nil {
+            rows.append(FamilyMenuAction(id: "remove", title: "Remove Photo", icon: .clay("xmark"), danger: true) {
+                Task { await removeAvatar() }
+            })
+        }
+        return FamilyActionMenuModel(title: "Change Photo", subtitle: "A new photo or one from your library",
+                                     actions: rows)
+    }
+
     private func removeAvatar() async {
         guard let uid = auth.profile?.id else { return }
         _ = try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: nil)).eq("id", value: uid).execute()

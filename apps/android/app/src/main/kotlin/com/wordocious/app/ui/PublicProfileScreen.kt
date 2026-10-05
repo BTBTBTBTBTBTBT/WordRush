@@ -29,8 +29,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -346,29 +344,39 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                     HeaderCircle(onClick = { menuOpen = true }, contentDescription = "More options", size = 34.dp) {
                         Icon(Icons.Filled.MoreVert, null, tint = HeaderInk.control, modifier = Modifier.size(20.dp))
                     }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }, containerColor = accentWash(PROFILE_PURPLE, 0.10f)) {
-                        DropdownMenuItem(
-                            text = { Text("Report user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) },
-                            onClick = { menuOpen = false; showReportDialog = true },
+                    // The family action menu (founder 10-05: no plain-text menus) — same actions + confirmations.
+                    if (menuOpen) {
+                        val who = profile
+                        FamilyActionMenu(
+                            title = who?.username ?: "Player",
+                            subtitle = "Keep Wordocious friendly",
+                            avatar = who?.let { pr ->
+                                {
+                                    val f = pr.avatarFields()
+                                    PlayerAvatar(
+                                        pr.username ?: "P", 44.dp, userId = f.userId, avatarUrl = pr.avatarUrl, config = f.config,
+                                        castId = f.castId, frame = f.frame, accentHex = f.accentHex, contentDescription = null,
+                                    )
+                                }
+                            },
+                            onDismiss = { menuOpen = false },
+                            actions = buildList {
+                                add(FamilyMenuAction("report", "Report user", FamilyMenuIcon.Clay(FamIcon.FLAG), danger = true,
+                                    contentDescription = "Report this user") { showReportDialog = true })
+                                if (blocked) {
+                                    add(FamilyMenuAction("unblock", "Unblock user", FamilyMenuIcon.Clay(FamIcon.CHECK), FamilyMenuInk.TEAL) {
+                                        moderationScope.launch {
+                                            ModerationService.unblock(userId)
+                                            blocked = false
+                                            moderationToast = "User unblocked"
+                                        }
+                                    })
+                                } else {
+                                    add(FamilyMenuAction("block", "Block user", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true,
+                                        contentDescription = "Block this user") { showBlockConfirm = true })
+                                }
+                            },
                         )
-                        if (blocked) {
-                            DropdownMenuItem(
-                                text = { Text("Unblock user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.text) },
-                                onClick = {
-                                    menuOpen = false
-                                    moderationScope.launch {
-                                        ModerationService.unblock(userId)
-                                        blocked = false
-                                        moderationToast = "User unblocked"
-                                    }
-                                },
-                            )
-                        } else {
-                            DropdownMenuItem(
-                                text = { Text("Block user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) },
-                                onClick = { menuOpen = false; showBlockConfirm = true },
-                            )
-                        }
                     }
                 }
                 }

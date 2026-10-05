@@ -425,7 +425,10 @@ fun TitleRibbon(text: String, height: Dp = 28.dp, maxWidth: Dp = 260.dp, placeho
 fun PartyHatOffer(modifier: Modifier = Modifier) {
     val show by DressUp.partyHatOffer.collectAsState()
     val v by DressUp.version.collectAsState()
-    if (!show || DressUp.done(DressUp.Nudge.PARTY_HAT) || v < 0) return
+    // One Home offer card at a time (founder 10-05): in season the "Dress up?" nudge goes first and the
+    // party hat waits for a later open (the offer flag stays until YES or x).
+    val seasonFirst = seasonNudgeDue() != null
+    if (!show || DressUp.done(DressUp.Nudge.PARTY_HAT) || v < 0 || seasonFirst) return
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
             .background(Brush.horizontalGradient(listOf(Color(0xFFFCE7F3), Color(0xFFEDE9FE))).let { it })
@@ -459,18 +462,26 @@ object SeasonNudge {
     fun reset() { SettingsPref.remove(key()) }
 }
 
+/** The season whose "Dress up?" nudge is due on Home now, or null. */
 @Composable
-fun SeasonDressOffer(modifier: Modifier = Modifier) {
+fun seasonNudgeDue(): String? {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val v by DressUp.version.collectAsState()
     val profile by AuthService.profile.collectAsState()
     val guest by AuthService.isGuest.collectAsState()
     val season = rememberSeason()
-    val p = profile ?: return
-    if (guest || v < 0) return
-    val fit = MascotComposer.fitManifest(ctx) ?: return
+    val p = profile ?: return null
+    if (guest || v < 0) return null
+    val fit = MascotComposer.fitManifest(ctx) ?: return null
     val own = MascotAvatars.ownConfig(p)?.let { com.wordocious.core.AvatarSeason.worn(it) }
-    val due = com.wordocious.core.AvatarSeason.nudgeDue(com.wordocious.core.AvatarSeason.today(), season ?: "none", own, SeasonNudge.seen(), fit) ?: return
+    return com.wordocious.core.AvatarSeason.nudgeDue(com.wordocious.core.AvatarSeason.today(), season ?: "none", own, SeasonNudge.seen(), fit)
+}
+
+@Composable
+fun SeasonDressOffer(modifier: Modifier = Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val due = seasonNudgeDue() ?: return
+    val fit = MascotComposer.fitManifest(ctx) ?: return
     val first = com.wordocious.core.AvatarSeason.shelf(due, fit).firstOrNull()
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))

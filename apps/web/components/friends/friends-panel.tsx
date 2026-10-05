@@ -22,6 +22,7 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { CandyBadge } from '@/components/ui/candy-badge';
 import { Icon3D } from '@/components/ui/icon3d';
 import { UiIcon } from '@/components/ui/ui-icon';
+import { FamilyActionMenu, FAMILY_MENU_INK, type FamilyMenuAction } from '@/components/ui/family-action-menu';
 import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
@@ -142,12 +143,6 @@ export function FriendsPanel() {
     return () => clearTimeout(t);
   }, [shieldNote]);
   const [games, setGames] = useState<GameView[]>(() => getActiveGames());
-  useEffect(() => {
-    if (!menuFor) return;
-    const close = () => setMenuFor(null);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, [menuFor]);
 
   const [settled, setSettled] = useState(() => friendsLoaded());
   useEffect(() => {
@@ -430,15 +425,6 @@ export function FriendsPanel() {
   };
 
   const myTurnCount = sortedGames.filter((g) => g.yourTurn).length;
-  const menuItem = (label: React.ReactNode, onClick: () => void, color: string = FR_LOOK.ink) => (
-    <button
-      onClick={onClick}
-      className="w-full text-left px-3 py-2 text-xs font-extrabold"
-      style={{ color, borderTop: `1px solid ${softMix(FR_LOOK.lavender, 0.14)}` }}
-    >
-      {label}
-    </button>
-  );
   const [addW, addH] = ART_SIZE[ADD_POSE];
 
   return (
@@ -729,40 +715,15 @@ export function FriendsPanel() {
                   {action === 'nudge' && <Pill color="amber" onClick={() => setTauntTarget(f)} label={`Nudge ${f.username}`}>Nudge</Pill>}
                   <span className="relative shrink-0">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setMenuFor((m) => (m === f.id ? null : f.id)); }}
+                      onClick={(e) => { e.stopPropagation(); setMenuFor(f.id); }}
                       aria-label={`More options for ${f.username}`}
+                      aria-haspopup="dialog"
                       aria-expanded={menuFor === f.id}
                       className={candyClass({ color: 'peach', size: 'sm' })}
                       style={{ width: 32, padding: 0 }}
                     >
                       <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
                     </button>
-                    {menuFor === f.id && (
-                      <div
-                        className="absolute right-0 top-10 z-40 w-44 overflow-hidden"
-                        style={{ ...frSurface(FR_LOOK.lavender, { share: 0.08, radius: 14 }), boxShadow: '0 10px 26px rgba(60,30,110,0.2)' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={() => { setMenuFor(null); router.push(`/profile/${f.id}`); }}
-                          className="w-full text-left px-3 py-2 text-xs font-extrabold"
-                          style={{ color: FR_LOOK.ink }}
-                        >
-                          View profile
-                        </button>
-                        {menuItem('Play a quick game', () => { setMenuFor(null); openPlay(f); }, FR.solid)}
-                        {menuItem(<span className="inline-flex items-center gap-1"><UiIcon name="swords" size={14} /> Challenge</span>, () => { setMenuFor(null); void challenge(f); }, FR.solid)}
-                        {menuItem('Taunt', () => { setMenuFor(null); setTauntTarget(f); })}
-                        {isNewFriend(f) && menuItem('Say hi', () => { setMenuFor(null); void sayHi(f); })}
-                        {((profile as { streak_shields?: number } | null)?.streak_shields ?? 0) > 0 && menuItem(<span className="inline-flex items-center gap-1"><Icon3D name="shield" size={14} /> Gift a shield</span>, async () => {
-                          setMenuFor(null);
-                          const r = await giftShield(f.id);
-                          if ('error' in r) setNote(r.error);
-                          else setShieldNote(`Shield sent to ${f.username} · ${r.shieldsLeft} left`);
-                        }, '#0d9488')}
-                        {menuItem('Unfriend', () => { setMenuFor(null); setUnfriendTarget(f); }, '#dc2626')}
-                      </div>
-                    )}
                   </span>
                 </div>
               );
@@ -988,6 +949,35 @@ export function FriendsPanel() {
         </Sheet>
       )}
 
+      {/* The friend row's ⋯ menu — the family action menu (founder 10-05: no plain-text menus). */}
+      {(() => {
+        const f = menuFor ? friends.find((x) => x.id === menuFor) : undefined;
+        if (!f) return null;
+        const shields = (profile as { streak_shields?: number } | null)?.streak_shields ?? 0;
+        const rows: FamilyMenuAction[] = [
+          { id: 'profile', title: 'View profile', icon: 'eye', run: () => router.push(`/profile/${f.id}`) },
+          { id: 'play', title: 'Play a quick game', icon: 'play', tint: FAMILY_MENU_INK.pink, run: () => openPlay(f) },
+          { id: 'taunt', title: 'Taunt', icon: <Icon3D name="bell" size={28} />, tint: FAMILY_MENU_INK.amber, label: `Taunt ${f.username}`, run: () => setTauntTarget(f) },
+          { id: 'challenge', title: 'Challenge', icon: <UiIcon name="swords" size={28} />, disabled: challenging !== null, label: `Challenge ${f.username} to a VS Battle`, run: () => { void challenge(f); } },
+          ...(isNewFriend(f) ? [{ id: 'hi', title: 'Say hi', icon: 'sparkles', tint: FAMILY_MENU_INK.pink, label: `Say hi to ${f.username}`, run: () => { void sayHi(f); } } as FamilyMenuAction] : []),
+          ...(shields > 0 ? [{ id: 'gift', title: 'Gift a shield', icon: <Icon3D name="shield" size={28} />, tint: FAMILY_MENU_INK.teal, run: async () => {
+            const r = await giftShield(f.id);
+            if ('error' in r) setNote(r.error);
+            else setShieldNote(`Shield sent to ${f.username} · ${r.shieldsLeft} left`);
+          } } as FamilyMenuAction] : []),
+          { id: 'unfriend', title: 'Unfriend', icon: 'xmark', danger: true, label: `Unfriend ${f.username}`, run: () => setUnfriendTarget(f) },
+        ];
+        return (
+          <FamilyActionMenu
+            title={f.username}
+            subtitle={friendLine(f, Date.now(), SWEEP_MODES.length).text}
+            avatar={<FriendAvatar name={f.username} userId={f.id} url={f.avatar_url} config={f.avatar_config} castId={f.avatar_cast_id} frame={f.avatar_frame} pro={f.is_pro} size={44} />}
+            label={`More options for ${f.username}`}
+            actions={rows}
+            onClose={() => setMenuFor(null)}
+          />
+        );
+      })()}
       {tauntTarget && (
         <div
           className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"

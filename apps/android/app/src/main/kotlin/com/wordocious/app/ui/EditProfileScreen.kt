@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Close
 import com.wordocious.app.ui.theme.Nunito
 
@@ -233,55 +235,39 @@ fun EditProfileScreen(onDone: () -> Unit) {
 
     if (showPhotoChoice) {
         val currentAvatar = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
-        // A1 / A8: a tinted dialog; the three choices as candy buttons.
-        androidx.compose.material3.AlertDialog(
-            modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
-            onDismissRequest = { showPhotoChoice = false },
-            containerColor = accentWash(EDIT_PURPLE, 0.10f),
-            title = { Text("Change Photo", fontWeight = FontWeight.Black, color = WTheme.text) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Take a new photo or choose one from your library.", color = WTheme.textSecondary, fontWeight = FontWeight.SemiBold)
-                    Spacer(Modifier.height(2.dp))
-                    CandyButton(
-                        "Take Photo", onClick = {
-                            showPhotoChoice = false
-                            cameraLauncher.launch(cameraUri)
-                        },
-                        color = CandyColor.PURPLE, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
-                    )
-                    CandyButton(
-                        "Choose from Library", onClick = {
-                            showPhotoChoice = false
-                            picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                        },
-                        color = CandyColor.PURPLE, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
-                    )
-                    // iOS offers Remove Photo whenever an avatar_url exists —
-                    // without it an uploaded photo can never be cleared.
-                    if (currentAvatar != null) {
-                        CandyButton(
-                            "Remove Photo", onClick = {
-                                showPhotoChoice = false
-                                val uid = AuthService.userId ?: return@CandyButton
-                                scope.launch {
-                                    runCatching {
-                                        SupabaseConfig.client.postgrest["profiles"]
-                                            .update({ set("avatar_url", null as String?) }) { filter { eq("id", uid) } }
-                                    }
-                                    com.wordocious.app.data.PlayerAvatars.patchOwn(avatarUrl = "") // BJ5
-                                    AuthService.refreshProfile()
-                                    avatarOverride = null
-                                    mascot = mascot?.copy(display = AvatarOptions.DISPLAY_MASCOT)
-                                }
-                            },
-                            color = CandyColor.PINK, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
-                        )
-                    }
+        // Change Photo — the family action menu (founder 10-05: no plain-text menus; iOS parity); same choices.
+        com.wordocious.app.ui.FamilyActionMenu(
+            title = "Change Photo",
+            subtitle = "A new photo or one from your library",
+            onDismiss = { showPhotoChoice = false },
+            actions = buildList {
+                add(com.wordocious.app.ui.FamilyMenuAction("camera", "Take Photo",
+                    com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoCamera)) {
+                    cameraLauncher.launch(cameraUri)
+                })
+                add(com.wordocious.app.ui.FamilyMenuAction("library", "Choose from Library",
+                    com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoLibrary),
+                    com.wordocious.app.ui.FamilyMenuInk.TEAL) {
+                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                })
+                // iOS offers Remove Photo whenever an avatar_url exists —
+                // without it an uploaded photo can never be cleared.
+                if (currentAvatar != null) {
+                    add(com.wordocious.app.ui.FamilyMenuAction("remove", "Remove Photo",
+                        com.wordocious.app.ui.FamilyMenuIcon.Clay(com.wordocious.app.ui.FamIcon.XMARK), danger = true) {
+                        val uid = AuthService.userId ?: return@FamilyMenuAction
+                        scope.launch {
+                            runCatching {
+                                SupabaseConfig.client.postgrest["profiles"]
+                                    .update({ set("avatar_url", null as String?) }) { filter { eq("id", uid) } }
+                            }
+                            com.wordocious.app.data.PlayerAvatars.patchOwn(avatarUrl = "") // BJ5
+                            AuthService.refreshProfile()
+                            avatarOverride = null
+                            mascot = mascot?.copy(display = AvatarOptions.DISPLAY_MASCOT)
+                        }
+                    })
                 }
-            },
-            confirmButton = {
-                CandyButton("Cancel", onClick = { showPhotoChoice = false }, color = CandyColor.PEACH, size = CandySize.MEDIUM)
             },
         )
     }

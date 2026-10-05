@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { CandySegment } from '@/components/ui/candy-segment';
+import { FamilyActionMenu, FAMILY_MENU_INK, type FamilyMenuAction } from '@/components/ui/family-action-menu';
+import { FriendAvatar } from '@/components/friends/friends-ui';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
 import {
@@ -13,8 +15,6 @@ import {
   X,
   ArrowLeft,
   MoreHorizontal,
-  Flag,
-  Ban,
   Lock,
 } from 'lucide-react';
 import { GameArt } from '@/components/ui/game-art';
@@ -168,7 +168,7 @@ function AddFriendButton({ profileId }: { profileId: string }) {
 
 /** ⋯ report/block menu (App Review 1.2 parity) — only rendered when a
  *  signed-in user is viewing SOMEONE ELSE's profile. */
-function ModerationMenu({ viewerId, profileId }: { viewerId: string; profileId: string }) {
+function ModerationMenu({ viewerId, profileId, person }: { viewerId: string; profileId: string; person?: Profile | null }) {
   const [open, setOpen] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -202,11 +202,34 @@ function ModerationMenu({ viewerId, profileId }: { viewerId: string; profileId: 
     }
   };
 
+  // The family action menu (founder 10-05: no plain-text menus) — the same rows and steps: Report opens
+  // the reasons step inside the sheet (Back returns), Block / Unblock toggles as before.
+  const who = person?.username ?? 'Player';
+  // The profiles row's look columns aren't in the generated types (the page reads them the same way).
+  const look = person as (Profile & { accent_color?: string | null; avatar_cast_id?: string | null; avatar_frame?: string | null; avatar_config?: unknown }) | null | undefined;
+  const avatar = look ? (
+    <FriendAvatar name={look.username} url={look.avatar_url} accent={look.accent_color ?? null} size={44}
+      castId={look.avatar_cast_id ?? null} frame={look.avatar_frame ?? null} userId={profileId}
+      config={(look.avatar_config ?? null) as Parameters<typeof FriendAvatar>[0]['config']} />
+  ) : undefined;
+  const actions: FamilyMenuAction[] = !showReasons ? [
+    { id: 'report', title: 'Report user', icon: 'flag', danger: true, label: 'Report this user', stay: true, run: () => setShowReasons(true) },
+    blocked
+      ? { id: 'unblock', title: 'Unblock user', icon: 'check', tint: FAMILY_MENU_INK.teal, run: () => { void handleBlockToggle(); } }
+      : { id: 'block', title: 'Block user', icon: 'xmark', danger: true, label: 'Block this user', run: () => { void handleBlockToggle(); } },
+  ] : [
+    ...REPORT_REASONS.map((reason): FamilyMenuAction => ({
+      id: reason, title: reason, icon: 'flag', tint: FAMILY_MENU_INK.pink, label: `Report: ${reason}`, run: () => { void handleReport(reason); },
+    })),
+    { id: 'back', title: 'Back', icon: 'undo', stay: true, run: () => setShowReasons(false) },
+  ];
+
   return (
     <div className="relative flex flex-col items-center">
       <CandyButton
-        onClick={() => { setOpen((o) => !o); setShowReasons(false); }}
+        onClick={() => { setOpen(true); setShowReasons(false); }}
         aria-label="Profile actions"
+        aria-haspopup="dialog"
         aria-expanded={open}
         color="peach"
         size="round"
@@ -214,55 +237,14 @@ function ModerationMenu({ viewerId, profileId }: { viewerId: string; profileId: 
         style={{ ['--candy-h' as string]: '32px' } as React.CSSProperties}
       />
       {open && (
-        <div
-          className="absolute top-9 z-20 w-56 overflow-hidden text-left"
-          style={{ ...softCard('#7c3aed', { radius: 14 }), boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
-        >
-          {!showReasons ? (
-            <>
-              <button
-                onClick={() => setShowReasons(true)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold"
-                style={{ color: 'var(--color-text)' }}
-              >
-                <Flag className="w-3.5 h-3.5 shrink-0" style={{ color: '#dc2626' }} /> Report user
-              </button>
-              <button
-                onClick={handleBlockToggle}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold"
-                style={{ color: 'var(--color-text)', borderTop: '1px solid var(--color-border)' }}
-              >
-                <Ban className="w-3.5 h-3.5 shrink-0" style={{ color: '#dc2626' }} /> {blocked ? 'Unblock user' : 'Block user'}
-              </button>
-            </>
-          ) : (
-            <>
-              <div
-                className="px-3 py-2 text-[10px] font-black uppercase tracking-wider"
-                style={{ color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}
-              >
-                Report reason
-              </div>
-              {REPORT_REASONS.map((reason) => (
-                <button
-                  key={reason}
-                  onClick={() => handleReport(reason)}
-                  className="w-full px-3 py-2.5 text-xs font-extrabold text-left"
-                  style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
-                >
-                  {reason}
-                </button>
-              ))}
-              <button
-                onClick={() => setShowReasons(false)}
-                className="w-full px-3 py-2 text-[11px] font-bold text-left"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
+        <FamilyActionMenu
+          title={showReasons ? 'Report reason' : who}
+          subtitle={showReasons ? `Why are you reporting ${who}?` : 'Keep Wordocious friendly'}
+          avatar={avatar}
+          label="Profile actions"
+          actions={actions}
+          onClose={() => { setOpen(false); setShowReasons(false); }}
+        />
       )}
       {confirmation && (
         <p className="text-[11px] font-bold mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{confirmation}</p>
@@ -532,7 +514,7 @@ export default function PublicProfilePage() {
           {user && user.id !== profileId && (
             <div className="flex justify-center items-center gap-2">
               <AddFriendButton profileId={profileId} />
-              <ModerationMenu viewerId={user.id} profileId={profileId} />
+              <ModerationMenu viewerId={user.id} profileId={profileId} person={profile} />
             </div>
           )}
 
@@ -741,7 +723,7 @@ export default function PublicProfilePage() {
           {user && user.id !== profileId && (
             <div className="flex justify-center items-center gap-2">
               <AddFriendButton profileId={profileId} />
-              <ModerationMenu viewerId={user.id} profileId={profileId} />
+              <ModerationMenu viewerId={user.id} profileId={profileId} person={profile} />
             </div>
           )}
 

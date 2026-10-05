@@ -84,6 +84,8 @@ fun SoftModalSheet(
     sheetState: SheetState? = null,
     containerColor: Color = WTheme.surface,
     dragHandle: (@Composable () -> Unit)? = { BottomSheetDefaults.DragHandle() },
+    /** true = close with the quick reverse (an in-sheet X or a picked menu row). */
+    closeRequest: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     @Suppress("UNUSED_VARIABLE") val unused = sheetState
@@ -152,6 +154,7 @@ fun SoftModalSheet(
         // Built this frame (alpha 0), popped from the next.
         LaunchedEffect(Unit) { appear.animateTo(1f, if (reduce) tween(MotionSpec.CROSS_FADE_MS) else softPopSpring()) }
         BackHandler { close() }
+        LaunchedEffect(closeRequest) { if (closeRequest) close() }
         Box(Modifier.fillMaxSize()) {
             Box(
                 Modifier.fillMaxSize()

@@ -23,6 +23,8 @@ struct PublicProfileView: View {
     @State private var showReportDialog = false
     @State private var showBlockConfirm = false
     @State private var moderationToast: String?
+    /// The family action menu (Report / Block), open while non-nil.
+    @State private var moreMenu: FamilyMenuToken?
     /// Profile-social redesign data (presence ring, persona chips, H2H, trophy
     /// case, highlights, Lately). Loads separately from the core profile so
     /// the page renders even if every social fetch fails.
@@ -71,6 +73,12 @@ struct PublicProfileView: View {
             guard deepAllowed else { return }
             topWords = await PublicProfileService.topWords(userId: userId, mode: selectedMode, playType: tab)
         }
+        .familyActionMenu(item: $moreMenu) { _ in moderationMenuModel() }
+        #if DEBUG
+        .onReceive(NotificationCenter.default.publisher(for: FamilyActionMenuDemo.open)) { n in
+            if (n.object as? String) == "profile" { moreMenu = FamilyMenuToken(id: userId) }
+        }
+        #endif
         // Moderation dialogs live on the container (not inside the header) so
         // the private-profile teaser branch can open them too.
         .confirmationDialog("Report this user?", isPresented: $showReportDialog, titleVisibility: .visible) {
@@ -205,23 +213,30 @@ struct PublicProfileView: View {
     /// App Review 1.2: users must be able to report/block each other wherever
     /// strangers' content renders — including a private profile's teaser card.
     private var moderationMenu: some View {
-        Menu {
-            Button(role: .destructive) { showReportDialog = true } label: {
-                Label("Report User", systemImage: "flag")
-            }
-            if ModerationService.isBlocked(userId) {
-                Button { Task { await ModerationService.unblock(userId: userId); moderationToast = "User unblocked" } } label: {
-                    Label("Unblock User", systemImage: "person.crop.circle.badge.checkmark")
-                }
-            } else {
-                Button(role: .destructive) { showBlockConfirm = true } label: {
-                    Label("Block User", systemImage: "person.crop.circle.badge.xmark")
-                }
-            }
-        } label: {
-            HeaderCircleLabel(glyph: .symbol("ellipsis"))
+        // The family action menu (founder 10-05: no plain-text menus) — same actions + confirmations.
+        HeaderCircleButton(.symbol("ellipsis"), label: "More") { moreMenu = FamilyMenuToken(id: userId) }
+    }
+
+    /// The More menu's rows: Report, then Block / Unblock (all three keep their confirmation steps).
+    private func moderationMenuModel() -> FamilyActionMenuModel {
+        var rows: [FamilyMenuAction] = [
+            FamilyMenuAction(id: "report", title: "Report User", icon: .clay("flag"), danger: true,
+                             accessibility: "Report this user") { showReportDialog = true },
+        ]
+        if ModerationService.isBlocked(userId) {
+            rows.append(FamilyMenuAction(id: "unblock", title: "Unblock User", icon: .clay("check"), tint: FamilyMenuInk.teal) {
+                Task { await ModerationService.unblock(userId: userId); moderationToast = "User unblocked" }
+            })
+        } else {
+            rows.append(FamilyMenuAction(id: "block", title: "Block User", icon: .clay("xmark"), danger: true,
+                                         accessibility: "Block this user") { showBlockConfirm = true })
         }
-        .accessibilityLabel("More")
+        let name = profile?.username
+        return FamilyActionMenuModel(
+            title: name ?? "Player", subtitle: "Keep Wordocious friendly",
+            avatar: profile.map { p in AnyView(AvatarView(url: p.avatarUrl, username: p.username, size: 44,
+                                                         accentHex: p.accentColor, emoji: p.avatarEmoji, userId: userId, stroke: false)) },
+            actions: rows)
     }
 
     private func moderationToastView(_ toast: String) -> some View {

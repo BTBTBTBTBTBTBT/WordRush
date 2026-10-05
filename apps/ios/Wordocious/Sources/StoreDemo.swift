@@ -278,7 +278,13 @@ enum StoreDemoData {
         if path.hasPrefix("/rest/v1/") {
             let table = String(path.dropFirst("/rest/v1/".count))
             switch table {
-            case "profiles": return (200, json(profiles(idFilter: param("id"), nameFilter: param("username"))), count)
+            case "profiles":
+                let rows = profiles(idFilter: param("id"), nameFilter: param("username"))
+                // `.single()` (a public profile page) asks for one object, not an array.
+                if (request.value(forHTTPHeaderField: "Accept") ?? "").contains("vnd.pgrst.object"), let first = rows.first {
+                    return (200, json(first), count)
+                }
+                return (200, json(rows), count)
             case "app_flags":
                 // Production's flags (all on): the More Games menu + every Puzzles title, so
                 // Home reads "18 FRESH PUZZLES" (8 dailies + 10 puzzles) like the live app.
@@ -569,6 +575,15 @@ enum StoreDemoDriver {
                                              headToHead: HeadToHeadRecord(myWins: 7, theirWins: 5, draws: 0), onDone: {})),
                     full: true)
         case "mascot": present(AnyView(StoreDemoMascotPage()))
+        // 10-05 family action menu checks: a friend row's long-press menu / a profile's More menu.
+        case "friendmenu":
+            PerfTour.send(.selectTab(.friends))
+            await PerfDrive.sleep(3.0)
+            NotificationCenter.default.post(name: FamilyActionMenuDemo.open, object: "friend")
+        case "profilemenu":
+            present(AnyView(NavigationStack { PublicProfileView(userId: StoreDemo.people[0].id) }), full: true)
+            await PerfDrive.sleep(3.0)
+            NotificationCenter.default.post(name: FamilyActionMenuDemo.open, object: "profile")
         // Settings scrolled to the bottom (with `-storeDemoAdmin`: the ADMIN Season preview picker).
         case "settings":
             for _ in 0..<60 where AuthService.shared.profile == nil { await PerfDrive.sleep(0.1) }

@@ -35,8 +35,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -869,30 +867,39 @@ private fun YourFriendsSection(
                             else -> CastButton("Nudge", onClick = { onTaunt(f) }, color = CastColor.GOLD, size = CastSize.S, contentDescription = "Nudge ${f.username}")
                         }
                     }
-                    // §225: long-press menu — profile / taunt / challenge / gift / unfriend.
-                    DropdownMenu(
-                        expanded = menuTarget?.id == f.id, onDismissRequest = { menuTarget = null },
-                        containerColor = FRIENDS_SHEET,
-                    ) {
-                        MenuItem("View profile") { menuTarget = null; onOpenProfile(f.id) }
-                        MenuItem("Taunt") { menuTarget = null; onTaunt(f) }
-                        MenuItem("Play a game", FriendsPink.solid) { menuTarget = null; onPlay(f) }
-                        MenuItem("Challenge", Color(0xFFEC4899), art = GlyphArt.SWORDS) { menuTarget = null; onChallenge(f) }
-                        if (canGift) {
-                            MenuItem("Gift a shield", Color(0xFF0D9488), Icon3DName.SHIELD) {
-                                menuTarget = null
-                                scope.launch {
-                                    when (val r = FriendsService.giftShield(f.id)) {
-                                        is FriendsService.GiftOutcome.Sent -> {
-                                            onNote("${SHIELD_NOTE}Shield sent to ${f.username} · ${r.shieldsLeft} left")
-                                            AuthService.refreshProfile()
+                    // §225: long-press menu — profile / play / taunt / challenge / gift / unfriend — now the
+                    // family action menu (founder 10-05: no plain-text menus; iOS order).
+                    if (menuTarget?.id == f.id) {
+                        FamilyActionMenu(
+                            title = f.username,
+                            subtitle = presenceLine(f.lastSeenMs, f.activity, nowMs)
+                                ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today",
+                            avatar = { FriendAvatar44(f) },
+                            onDismiss = { menuTarget = null },
+                            actions = buildList {
+                                add(FamilyMenuAction("profile", "View profile", FamilyMenuIcon.Clay(FamIcon.EYE)) { onOpenProfile(f.id) })
+                                add(FamilyMenuAction("play", "Play a game", FamilyMenuIcon.Clay(FamIcon.PLAY), FamilyMenuInk.PINK) { onPlay(f) })
+                                add(FamilyMenuAction("taunt", "Taunt", FamilyMenuIcon.Art(Icon3DName.BELL.res), FamilyMenuInk.AMBER,
+                                    contentDescription = "Taunt ${f.username}") { onTaunt(f) })
+                                add(FamilyMenuAction("challenge", "Challenge", FamilyMenuIcon.Art(GlyphArt.SWORDS.res),
+                                    enabled = challengingId == null, contentDescription = "Challenge ${f.username}") { onChallenge(f) })
+                                if (canGift) {
+                                    add(FamilyMenuAction("gift", "Gift a shield", FamilyMenuIcon.Art(Icon3DName.SHIELD.res), FamilyMenuInk.TEAL) {
+                                        scope.launch {
+                                            when (val r = FriendsService.giftShield(f.id)) {
+                                                is FriendsService.GiftOutcome.Sent -> {
+                                                    onNote("${SHIELD_NOTE}Shield sent to ${f.username} · ${r.shieldsLeft} left")
+                                                    AuthService.refreshProfile()
+                                                }
+                                                is FriendsService.GiftOutcome.Failed -> onNote(r.message)
+                                            }
                                         }
-                                        is FriendsService.GiftOutcome.Failed -> onNote(r.message)
-                                    }
+                                    })
                                 }
-                            }
-                        }
-                        MenuItem("Unfriend", Color(0xFFDC2626)) { menuTarget = null; onUnfriend(f) }
+                                add(FamilyMenuAction("unfriend", "Unfriend", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true,
+                                    contentDescription = "Unfriend ${f.username}") { onUnfriend(f) })
+                            },
+                        )
                     }
                 }
             }
@@ -914,15 +921,6 @@ private fun MiniChip(text: String, ink: Color, tint: Color, icon3d: Icon3DName? 
         if (art != null) GlyphArtImage(art, 11.dp)
         Text(text, fontSize = 8.sp, fontWeight = FontWeight.Black, color = ink, fontFamily = Nunito, maxLines = 1)
     }
-}
-
-@Composable
-private fun MenuItem(text: String, color: Color = FriendsPink.heading, icon3d: Icon3DName? = null, art: GlyphArt? = null, onClick: () -> Unit) {
-    DropdownMenuItem(
-        text = { Text(text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Nunito, color = color) },
-        onClick = onClick,
-        leadingIcon = icon3d?.let { { Icon3D(it, 20.dp) } } ?: art?.let { { GlyphArtImage(it, 20.dp) } },
-    )
 }
 
 /** A small soft-number count on a pink pill (YOUR TURN / INVITES). */
@@ -1305,6 +1303,13 @@ private fun friendversary(f: FriendsService.FriendProfile): Int? {
     val days = ((System.currentTimeMillis() - t) / 86_400_000L).toInt()
     return if (days in listOf(7, 30, 100, 365)) days else null
 }
+
+/** The family action menu's header face (the shared resolver, 44 dp). */
+@Composable
+private fun FriendAvatar44(f: FriendsService.FriendProfile) = PlayerAvatar(
+    f.username, 44.dp, userId = f.id, avatarUrl = f.avatarUrl, config = f.avatarConfig,
+    castId = f.avatarCastId, frame = f.avatarFrame, contentDescription = null,
+)
 
 // Shared with TodaysRace.kt / ActivityFeed.kt (§289/§290) — one avatar idiom.
 @Composable

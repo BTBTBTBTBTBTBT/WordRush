@@ -522,7 +522,9 @@ struct PartyHatOffer: View {
     @ObservedObject private var dressUp = DressUp.shared
 
     var body: some View {
-        if dressUp.partyHatOffer && !dressUp.done(.partyHat) {
+        // One Home offer card at a time (founder 10-05): in season the "Dress up?" nudge goes first and the
+        // party hat waits for a later open (it isn't lost — the offer flag stays until YES or x).
+        if dressUp.partyHatOffer && !dressUp.done(.partyHat) && SeasonNudge.due() == nil {
             HStack(spacing: 10) {
                 StageArt("art-dress-partyhat", height: 50)
                 VStack(alignment: .leading, spacing: 1) {

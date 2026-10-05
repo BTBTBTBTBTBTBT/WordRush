@@ -1,8 +1,8 @@
 'use client';
 
 import { shareCaption } from '@wordle-duel/core';
-import { useEffect, useRef, useState } from 'react';
-import { Check, Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { useAuth } from '@/lib/auth-context';
 import { createInvite } from '@/lib/invite-service';
@@ -22,6 +22,7 @@ import { codeFromInviteUrl } from '@/lib/invite-screens';
 import { FeedbackPill } from '@/components/game/feedback-toast';
 import { HeadingArt } from '@/components/ui/heading-art';
 import { CandySegment } from '@/components/ui/candy-segment';
+import { FamilyActionMenu, type FamilyMenuAction } from '@/components/ui/family-action-menu';
 
 // The VS invite window (G5, docs/FINISH_SPEC.md): a lavender-washed sheet with
 // the brand top bar (A1; the washes follow the theme's card base), I with the
@@ -100,18 +101,7 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [sentToUser, setSentToUser] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const modeRef = useRef<HTMLDivElement>(null);
   const mode = MODES.find((m) => m.id === modeId) ?? MODES[0];
-
-  // Close mode dropdown on outside click
-  useEffect(() => {
-    if (!modeOpen) return;
-    const onClick = (e: MouseEvent) => {
-      if (modeRef.current && !modeRef.current.contains(e.target as Node)) setModeOpen(false);
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, [modeOpen]);
 
   // Each open starts from the caller's mode/tab.
   useEffect(() => {
@@ -235,9 +225,10 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
         <div className="flex flex-col" style={{ minHeight: '220px' }}>
           {/* Mode picker — custom dropdown with brand color + icon */}
           <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Mode</label>
-          <div ref={modeRef} className="relative mb-3">
+          <div className="relative mb-3">
             <button
-              onClick={() => setModeOpen((o) => !o)}
+              onClick={() => setModeOpen(true)}
+              aria-haspopup="dialog"
               aria-expanded={modeOpen}
               className="w-full px-3 py-2 flex items-center justify-between outline-none"
               style={{
@@ -259,33 +250,19 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
               </span>
               <ChevronDown className="w-4 h-4" style={{ color: mode.color }} />
             </button>
+            {/* The mode picker — the family action menu (founder 10-05: no plain-text menus). */}
             {modeOpen && (
-              <div
-                className="absolute left-0 right-0 top-full mt-1 z-10 overflow-hidden"
-                style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(26,26,46,0.12)' }}
-              >
-                {MODES.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => { setModeId(m.id); setModeOpen(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left"
-                    style={{
-                      // A1: a soft wash of the mode's color, stronger when chosen (never plain white).
-                      background: `linear-gradient(${m.color}${m.id === modeId ? '24' : '12'}, ${m.color}${m.id === modeId ? '24' : '12'}), var(--color-card-base, #ffffff)`,
-                      borderLeft: `4px solid ${m.color}`,
-                    }}
-                  >
-                    <span
-                      className="w-6 h-6 flex items-center justify-center rounded-md flex-shrink-0"
-                      style={{ background: `${m.color}15`, color: m.color }}
-                    >
-                      <ModeGlyph mode={m} />
-                    </span>
-                    <span className="text-sm font-black flex-1" style={{ color: m.color }}>{m.label}</span>
-                    {m.id === modeId && <Check className="w-3.5 h-3.5" style={{ color: m.color }} />}
-                  </button>
-                ))}
-              </div>
+              <FamilyActionMenu
+                title="Pick a game"
+                subtitle="The mode for your invite"
+                label="Invite mode"
+                onClose={() => setModeOpen(false)}
+                actions={MODES.map((m): FamilyMenuAction => ({
+                  id: m.id, title: m.label, icon: <ModeGlyph mode={m} />, tint: m.color, selected: m.id === modeId,
+                  label: m.id === modeId ? `${m.label}, selected` : m.label,
+                  run: () => setModeId(m.id),
+                }))}
+              />
             )}
           </div>
 

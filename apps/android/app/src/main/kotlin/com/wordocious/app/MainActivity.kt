@@ -99,6 +99,18 @@ class MainActivity : ComponentActivity() {
             } })
             return
         }
+        // DEBUG only: `--es menuDemo friend|profile|photo` shows the family action menu (10-05) for screenshots.
+        intent?.getStringExtra("menuDemo")?.takeIf { com.wordocious.app.BuildConfig.DEBUG && it.isNotBlank() }?.let { kind ->
+            com.wordocious.app.data.ThemePref.load()
+            setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
+                WordociousTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                        com.wordocious.app.ui.FamilyActionMenuDemo(kind)
+                    }
+                }
+            } })
+            return
+        }
         // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
         // starts arrive via onNewIntent below. Before this, the intent-filter
         // matched but the path was silently discarded.
