@@ -3,6 +3,7 @@ import { currentSeason, type Season } from '@wordle-duel/core';
 import { halloweenSrc } from './art';
 import { MASCOT_ART_SIZE, MASCOT_TRIM, boxAspect, boxTrimLayout, type TrimBox } from './cast-moves';
 import { CAST, mascotSrc, type MascotId } from './mascots';
+import { artTrimOverride } from './art-override';
 import type { CastRowLayout, CastSlot } from './share-fit';
 
 // Seasonal cast skins (docs/FINISH_SPEC.md X). During the season (core
@@ -144,6 +145,12 @@ export interface CastArt {
 
 /** The hero (no season) or the season's skin for one cast member. */
 export function castArt(id: MascotId, season: Season | null): CastArt {
+  // Admin Art Library preview only (lib/art-override.ts): a candidate costume framed by its own alpha box.
+  const swap = artTrimOverride(season === 'halloween' ? `art-halloween-${id}` : `mascot-${id}`);
+  if (swap) {
+    const src = season === 'halloween' ? halloweenSrc(id) : mascotSrc(id);
+    return { src, artSize: swap.size, trim: swap.trim, aspect: boxAspect(swap.trim), layout: boxTrimLayout(swap.trim, swap.size) };
+  }
   if (season === 'halloween') {
     const trim = HALLOWEEN_TRIM[id];
     return { src: halloweenSrc(id), artSize: SKIN_ART_SIZE, trim, aspect: boxAspect(trim), layout: boxTrimLayout(trim, SKIN_ART_SIZE) };

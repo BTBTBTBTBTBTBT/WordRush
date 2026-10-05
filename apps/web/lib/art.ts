@@ -6,6 +6,7 @@
 
 import type { CSSProperties } from 'react';
 import { MODES, MODE_BY_DBKEY } from './modes.generated';
+import { artOverride } from './art-override';
 
 /** Leaderboard day titles (§1), one per weekday, Sunday first (Date#getUTCDay order). */
 export const DAY_ART = [
@@ -1136,7 +1137,7 @@ export function wideWallSrc(name: WallArtName): string {
 }
 
 export function artSrc(name: string): string {
-  return `/art/${name}.webp`;
+  return artOverride(name) ?? `/art/${name}.webp`;
 }
 
 /** The day art for the board's local YYYY-MM-DD (same weekday math as core leaderboardTitle). */
