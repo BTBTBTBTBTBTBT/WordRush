@@ -1263,10 +1263,9 @@
 [data-theme="dark"] .candy.candy-peach { --fam-fill: #3b3163; --fam-fill-p: #463a74; --fam-ink: #ddd0ff; }
 [data-theme="dark"] [data-page-scheme="light"] .candy.candy-peach { --fam-fill: #ece4ff; --fam-fill-p: #e2d7ff; --fam-ink: #5b21b6; }
 .candy.candy-peach.candy-on { --fam-tint: #7c3aed; --fam-fill: #7c3aed; --fam-fill-p: #6d28d9; --fam-ink: #ffffff; }
-/* Inside a game a small peach candy is a game helper in the used look (the game accent's wash, saturation .25, 50%). */
+/* Inside a game a small peach candy is a normal game helper (the game accent's wash). The used look
+   (saturation .25, 50%) goes only on a spent hint, explicitly (.candy-dim / :disabled / UsedHintPill). */
 [data-page-tint="game"] .candy.candy-peach.candy-sm:not(.candy-on) {
-  filter: saturate(0.25);
-  opacity: 0.5;
   --fam-tint: var(--page-accent, #7c3aed);
   --fam-fill: color-mix(in srgb, var(--fam-tint) 20%, #ffffff);
   --fam-fill-p: color-mix(in srgb, var(--fam-tint) 27%, #ffffff);

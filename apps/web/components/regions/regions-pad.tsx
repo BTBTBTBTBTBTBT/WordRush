@@ -26,7 +26,7 @@ export function RegionsPad({ onUndo, onErase, onToggleAutoCross, onHint, autoCro
   const tap = (fn: () => void) => () => { if (disabled) return; haptic('light'); playKeyTap(); fn(); };
   // FINISH_SPEC A8 / H: every action is a small glossy candy pill (components/ui/candy-button.tsx)
   // with its icon in the candy white-with-outline treatment; Auto-cross turns amber while on.
-  const capsule = (active: boolean, dim: boolean) => candyClass({ dim, color: active ? 'amber' : 'purple' });
+  const capsule = (active: boolean, dim: boolean) => candyClass({ dim, color: active ? 'amber' : 'purple', extra: active ? 'candy-on' : '' });
   const icon = 'w-3.5 h-3.5';
 
   return (

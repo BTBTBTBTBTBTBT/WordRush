@@ -3,19 +3,13 @@
 // overrides A8), on the small candy's footprint (32px + its 3px lip) so nothing moves.
 // Parity: iOS UsedHintPill (G5Kit.swift), Android HintCandy's used state.
 
-import { softBackground } from '@/lib/soft-surface';
-
-export function UsedHintPill({ children, accent = '#0d9488' }: { children: React.ReactNode; accent?: string }) {
+// Button family (10-05, iOS HelperButtonStyle(used: true)): the spent hint is the HELPER pill in the explicit
+// used look (saturation .25, 50%) — the game accent in a game, else purple — keeping the helper's footprint.
+// [accent] is kept for callers (the hue no longer marks a state).
+export function UsedHintPill({ children }: { children: React.ReactNode; accent?: string }) {
   return (
-    <span
-      role="status"
-      className="flex w-full items-center justify-center font-black truncate"
-      style={{
-        height: 32, marginBottom: 3, borderRadius: 999, padding: '0 8px', fontSize: 12,
-        background: softBackground(accent, 0.2), color: 'var(--color-text)',
-      }}
-    >
-      {children}
+    <span role="status" className="candy candy-sm candy-dim candy-block" style={{ cursor: 'default' }}>
+      <span className="candy-label">{children}</span>
     </span>
   );
 }

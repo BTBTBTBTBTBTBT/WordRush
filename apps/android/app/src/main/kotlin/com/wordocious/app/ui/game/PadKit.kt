@@ -230,33 +230,11 @@ fun HintCandy(
     fill: Boolean = false,
     height: Dp = CandySize.MEDIUM.height,
 ) {
-    if (!used) {
-        CandyButton(
-            label, onClick = onClick, modifier = modifier, color = color, size = CandySize.MEDIUM, fill = fill,
-            leading = { Icon(icon, null, tint = Color.White, modifier = Modifier.size(15.dp)) },
-        )
-    } else {
-        Row(
-            modifier
-                .then(if (fill) Modifier.fillMaxWidth() else Modifier)
-                .padding(top = CandySize.MEDIUM.lip)
-                .tintedPill(color.bottom, corner = height / 2)
-                .semantics(mergeDescendants = true) {
-                    disabled()
-                    contentDescription = usedLabel
-                }
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
-        ) {
-            Box(Modifier.size(1.dp, height))
-            Icon(icon, null, tint = color.bottom, modifier = Modifier.size(14.dp))
-            // Shrink to fit (cast button rule: never below 11 sp) instead of clipping to "Clue u…".
-            com.wordocious.app.ui.FitText(
-                usedLabel, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.02.em,
-                color = if (WTheme.isDark) WTheme.text else FinishInk.softNumber,
-                fontFamily = Nunito, minScale = 11f / 13f,
-            )
-        }
-    }
+    // The button family (iOS HelperButtonStyle(used:)): a HELPER pill (the game accent in a game, else [color]'s
+    // tint); once spent it keeps its place carrying [usedLabel] in the explicit used look (saturation .25, 50%).
+    HelperButton(
+        if (used) usedLabel else label, onClick = { if (!used) onClick() }, modifier = modifier,
+        tint = color.helperTint(), vector = icon, used = used, enabled = !used, fill = fill,
+        contentDescription = if (used) usedLabel else label,
+    )
 }

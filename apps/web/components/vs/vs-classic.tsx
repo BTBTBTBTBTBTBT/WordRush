@@ -6,7 +6,6 @@ import { useReducer, useState, useEffect, useMemo, useCallback, useRef, useLayou
 import { modeColor } from '@/lib/vs-lobby';
 import { UsedHintPill } from '@/components/ui/used-hint-pill';
 import { CandyButton } from '@/components/ui/candy-button';
-import { CastButton } from '@/components/ui/cast-button';
 import { UiIcon } from '@/components/ui/ui-icon';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
@@ -259,15 +258,15 @@ export function VsClassic({ seed, mode, solutions, onBoardSolved, onCompleted, o
           {/* A8: the solo screen's teal candy hint buttons. */}
           {/* BI25: a used hint is a soft filled pill, no outline. */}
           {hints.vowelUsed ? <UsedHintPill>{hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}</UsedHintPill> : (
-            <CastButton screen="blue" size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+            <CandyButton size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleVowelHint} disabled={hints.vowelUsed} icon={hints.vowelUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
               {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : 'Vowel'}
-            </CastButton>
+            </CandyButton>
           )}
           {/* BI25: a used hint is a soft filled pill, no outline. */}
           {hints.consonantUsed ? <UsedHintPill>{hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}</UsedHintPill> : (
-            <CastButton screen="blue" size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
+            <CandyButton size="sm" color="teal" block style={{ paddingLeft: 8, paddingRight: 8 }} onClick={handleConsonantHint} disabled={hints.consonantUsed} icon={hints.consonantUsed ? undefined : <UiIcon name="sparkles" size={16} />}>
               {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : 'Consonant'}
-            </CastButton>
+            </CandyButton>
           )}
         </div>
       )}
