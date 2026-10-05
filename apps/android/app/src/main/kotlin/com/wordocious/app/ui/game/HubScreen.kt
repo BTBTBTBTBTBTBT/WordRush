@@ -509,6 +509,17 @@ private val HUB_ENTRY_H = 44.dp        // entry line min height (28 sp bold)
 private val HUB_CONTROL_ROW_H = 38.dp  // a small candy row (34 dp + its 4 dp lip)
 private val HUB_END_LINK_H = 38.dp     // "End puzzle and see answers" (a small candy too)
 private val HUB_ROW_GAP = 8.dp         // Column spacedBy between the stacked rows
+/** "N WORDS · M PTS" over the found-word flow (10 sp black caps). */
+private val HUB_FOUND_HEADER_H = 14.dp
+/**
+ * The found-word flow's guaranteed height: two chip rows (a ~22 dp chip, 5 dp apart) plus a
+ * little slack. Doug (Android, 2026-10-05: "I've lost the ability to see what words I've already
+ * guessed"): the J1 honeycomb sizing fit the hive to ALL the height left over and never counted
+ * the "N WORDS" header, so on a short or display-size-large phone the weighted flow got 0 dp and
+ * the found words vanished. The flow is now reserved before the hive is sized (iOS/web keep the
+ * equivalent room with their 3.3-unit rule).
+ */
+private val HUB_FOUND_MIN_H = 54.dp
 /** J1 + L the hive tray's inner padding; the tray adds its 4 dp lip under that. */
 private val HUB_TRAY_PAD = 10.dp
 
@@ -517,12 +528,14 @@ private val HUB_TRAY_PAD = 10.dp
 private fun HubBoard(session: HubSession) {
     val s = session.state
     BoxWithConstraints(Modifier.fillMaxSize().navigationBarsPadding()) {
-        // Six gaps: rank→entry→cluster→controls→hints→header→(chips)→end. The
-        // found-words header and chips are what the leftover height feeds.
-        val fixed = HUB_RANK_BAR_H + HUB_ENTRY_H + HUB_CONTROL_ROW_H * 2 + HUB_END_LINK_H + HUB_ROW_GAP * 6 + 6.dp
+        // Seven gaps: rank→entry→cluster→controls→hints→header→chips→end. The found-word
+        // header and at least two chip rows are reserved BEFORE the hive is sized, so the
+        // found words always show (the hive gives way first, down to a 60 dp side); any
+        // height beyond that goes back to the flow.
+        val fixed = HUB_RANK_BAR_H + HUB_ENTRY_H + HUB_CONTROL_ROW_H * 2 + HUB_END_LINK_H + HUB_FOUND_HEADER_H + HUB_FOUND_MIN_H + HUB_ROW_GAP * 7 + 6.dp
         val trayW = HUB_TRAY_PAD * 2
         val trayH = HUB_TRAY_PAD * 2 + GameTrayStyle.LIP
-        val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(70.dp, 112.dp)
+        val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, 112.dp)
         val band = side * Honeycomb.height() + trayH
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {
             RankBar(session)
