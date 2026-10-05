@@ -40,6 +40,8 @@ public struct AvatarManifest: Decodable {
         public var overlap: Double?
         public var tint: Bool?
         public var overFace: Bool?
+        /// Integrated parts drawn per body (the scarf): art `art-av-<kind>-<id>-<body>` at [x, y, w, h] body units.
+        public var perBody: [String: [Double]]?
     }
     public struct Fit: Decodable { public var pad: Double; public var maxBody: Double; public var minBody: Double }
     public struct Conflict: Decodable { public var a: String; public var aIds: [String]; public var b: String; public var bIds: [String] }
@@ -179,6 +181,12 @@ public enum AvatarFit {
         for (field, id) in wornParts(config, small: small, manifest: manifest) {
             let key = "\(fieldKind[field]!):\(id)"
             let m = manifest.items[key]!
+            if let pb = m.perBody?[config.body], pb.count == 4 {
+                placed.append(P(layer: m.layer, field: field, id: id, art: "art-av-\(fieldKind[field]!)-\(id)-\(config.body)",
+                                rect: AvatarRect(x: pb[0], y: pb[1], w: pb[2], h: pb[3]),
+                                tint: (m.tint ?? false) && AvatarCatalog.tintable.contains(id)))
+                continue
+            }
             let p = slotPoint(b, m.slot)
             let o = b.overrides?[key]
             let w = p.base * m.w * (o?.scale ?? 1)

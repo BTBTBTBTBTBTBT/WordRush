@@ -38,6 +38,11 @@ export interface AvatarItemMeta {
   w: number; aspect: number; anchor: [number, number]; slot: string; layer: string; overlap?: number; tint?: boolean;
   /** Hats only: may come down beside the eyes (headphones). Every other hat clears the eyes. */
   overFace?: boolean;
+  /**
+   * Integrated parts drawn per body (the scarf wraps the line between mouth and letter): art
+   * `art-av-<kind>-<id>-<body>` at [x, y, w, h] body units, instead of the anchor placement.
+   */
+  perBody?: Record<string, [number, number, number, number]>;
 }
 
 /** The gap a hat keeps above the eyes / glasses (body units). */
@@ -168,6 +173,15 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
     const key = `${FIELD_KIND[field]}:${id}`;
     const m = manifest.items[key];
     const p = slotPoint(b, m.slot);
+    const pb = m.perBody?.[config.body];
+    if (pb) {
+      placed.push({
+        layer: m.layer, field, id, art: `art-av-${FIELD_KIND[field]}-${id}-${config.body}`,
+        rect: { x: pb[0], y: pb[1], w: pb[2], h: pb[3] },
+        tint: !!m.tint && AVATAR_TINTABLE.includes(id),
+      });
+      continue;
+    }
     const o = b.overrides?.[key] ?? {};
     const w = p.base * m.w * (o.scale ?? 1);
     const h = w * m.aspect;

@@ -49,6 +49,10 @@ class AvatarFitManifest(val root: JsonObject) {
         val layer = (o["layer"] as? JsonPrimitive)?.content ?: "eyes"
         val tint = (o["tint"] as? JsonPrimitive)?.booleanOrNull ?: false
         val overFace = (o["overFace"] as? JsonPrimitive)?.booleanOrNull ?: false
+        /** Integrated parts drawn per body (the scarf): art `art-av-<kind>-<id>-<body>` at [x, y, w, h] body units. */
+        val perBody: Map<String, List<Double>> = (o["perBody"] as? JsonObject)?.mapValues { e ->
+            (e.value as? JsonArray)?.map { (it as JsonPrimitive).doubleOrNull ?: 0.0 } ?: emptyList()
+        } ?: emptyMap()
     }
     data class Conflict(val a: String, val aIds: List<String>, val b: String, val bIds: List<String>)
 
@@ -164,6 +168,12 @@ object AvatarFit {
         for ((field, id) in wornParts(c, small, m)) {
             val key = "${kind(field)}:$id"
             val it = m.items.getValue(key)
+            val pb = it.perBody[c.body]
+            if (pb != null && pb.size == 4) {
+                placed.add(P(it.layer, field, id, "art-av-${kind(field)}-$id-${c.body}", AvatarRect(pb[0], pb[1], pb[2], pb[3]),
+                    it.tint && id in AvatarOptions.TINTABLE))
+                continue
+            }
             val (px, py, base) = slot(b, it.slot)
             val (dx, dy, sc) = b.override(key)
             val w = base * it.w * sc
