@@ -30,7 +30,10 @@ final class SquishRegistryTests: XCTestCase {
     func testCustomButtonStylesSquish() throws {
         // Kit styles that own their press: CastButtonStyle (BJ15) draws the -pressed skin, drops the
         // label 1 pt and carries the same 0.92 squish + spring as CandyButtonStyle.
-        let kit: Set<String> = ["SquishButtonStyle", "CandyButtonStyle", "CastButtonStyle", "KeyPressStyle"]
+        // The button family (FamilyButtons.swift: helper / quiet pills, round icons) squishes on its own
+        // too: 0.94 / 0.9 scale on press, the same spring, Feedback.press.
+        let kit: Set<String> = ["SquishButtonStyle", "CandyButtonStyle", "CastButtonStyle", "KeyPressStyle",
+                                "HelperButtonStyle", "QuietButtonStyle", "RoundIconButtonStyle"]
         let re = try NSRegularExpression(pattern: #"struct (\w+): ButtonStyle \{"#)
         var found = 0
         for (name, src) in try appSources() {

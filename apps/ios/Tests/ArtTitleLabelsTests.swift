@@ -33,8 +33,19 @@ final class ArtTitleLabelsTests: XCTestCase {
         return out
     }
 
+    /// Season lettering (season-registry.json `slots.titles` values, e.g. art-title-halloween-quordle) stands
+    /// in for a base title; the views keep the base title's label (GameTitleArtView / TitleArt pass it).
+    private func seasonalSwaps() throws -> Set<String> {
+        let data = try Data(contentsOf: iosRoot.appendingPathComponent("Wordocious/Resources/season-registry.json"))
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let seasons = json?["seasons"] as? [[String: Any]] ?? []
+        return Set(seasons.flatMap { (($0["slots"] as? [String: Any])?["titles"] as? [String: String] ?? [:]).values })
+    }
+
     func testEveryShippedLetteringAssetHasALabel() throws {
-        let assets = try letteringAssets()
+        let swaps = try seasonalSwaps()
+        XCTAssertFalse(swaps.isEmpty, "season-registry.json moved?")
+        let assets = try letteringAssets().filter { !swaps.contains($0) }
         XCTAssertFalse(assets.isEmpty, "no lettering assets found — catalog path moved?")
         let games = try gameLabels()
         for name in assets {
