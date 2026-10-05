@@ -29,6 +29,7 @@ struct HomeHostMascot: View {
     @ObservedObject private var directory = AvatarDirectory.shared
     @ObservedObject private var mascots = MascotLooks.shared
     @ObservedObject private var looks = CastAvatars.shared
+    @ObservedObject private var dressUp = DressUp.shared
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
     /// One wave per launch (not per Home visit).
     private static var wavedThisLaunch = false
@@ -43,14 +44,56 @@ struct HomeHostMascot: View {
                                      center: .center, startRadius: 0, endRadius: size * 0.36))
                 .frame(width: size * 0.78, height: size * 0.13)
                 .offset(y: size * 0.03)
+                .allowsHitTesting(false)
             figure
                 .rotationEffect(.degrees(waveAngle), anchor: .bottom)
                 .offset(y: hop)
+                // only the invite host is a button; every other host lets taps through
+                .allowsHitTesting(directory.ownHostChoice() == .w && directory.ownHostInvite() != nil)
         }
         .frame(width: size, height: size)
+        .overlay(alignment: .topLeading) {
+            if directory.ownHostChoice() == .w, directory.ownHostInvite() != nil { inviteBubble }
+        }
         .onAppear(perform: waveOnce)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        .onAppear { DressUp.prewarm() }
+    }
+
+    /// Door 2 (founder 10-05): "Make me yours!" beside the plain host; tap → the Dressing Room,
+    /// × dismisses it for good. Subtle: a small soft bubble, once per account.
+    private var inviteBubble: some View {
+        Button {
+            DressUp.shared.finish(.hostInvite)
+            DressUp.shared.open(.room(.body))
+        } label: {
+            Text("Make me yours!")
+                .font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x6D28D9))
+                .lineLimit(1).fixedSize()
+                .padding(.horizontal, 14).padding(.top, 8).padding(.bottom, 13)
+                .background {
+                    if ArtAsset.exists("art-dress-bubble") {
+                        ArtThumbs.image("art-dress-bubble", points: 130).resizable().interpolation(.high)
+                    } else {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white)
+                    }
+                }
+        }
+        .buttonStyle(.squish)
+        .overlay(alignment: .topTrailing) {
+            Button { Haptics.tap(); DressUp.shared.finish(.hostInvite) } label: {
+                Image(systemName: "xmark").font(.system(size: 8, weight: .black)).foregroundStyle(Color(hex: 0x7A6AA6))
+                    .frame(width: 16, height: 16)
+                    .background(Circle().fill(Color.white))
+                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2, y: 1)
+                    .frame(width: 30, height: 30).contentShape(Rectangle())
+            }
+            .buttonStyle(.squishIcon)
+            .offset(x: 10, y: -10)
+            .accessibilityLabel("Dismiss")
+        }
+        .accessibilityLabel("Make me yours! Dress up your mascot")
+        .offset(x: size * 0.82, y: size * 0.04)
+        .transition(.opacity)
     }
 
     @ViewBuilder private var figure: some View {
@@ -70,8 +113,16 @@ struct HomeHostMascot: View {
             MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size)
                 .shadow(color: Color(hex: 0x4C1D95).opacity(0.16), radius: 2.5, x: 0, y: 2)
         case .w:
+            if let invite = directory.ownHostInvite() {
+                // Door 2: your own plain mascot hosts until you make it yours.
+                Button { DressUp.shared.finish(.hostInvite); DressUp.shared.open(.room(.body)) } label: {
+                    MascotCutout(config: invite, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size)
+                        .shadow(color: Color(hex: 0x4C1D95).opacity(0.16), radius: 2.5, x: 0, y: 2)
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("Your mascot. Make it yours")
+            } else if ArtAsset.exists(Self.wPose) {
             // Decoded ahead of Home's first frame (prewarm), drawn at its display size.
-            if ArtAsset.exists(Self.wPose) {
                 ArtThumbs.image(Self.wPose, points: size).resizable().interpolation(.high).scaledToFit()
                     .frame(height: size)
             } else {

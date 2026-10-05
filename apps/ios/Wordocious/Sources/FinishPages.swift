@@ -495,7 +495,10 @@ struct PodiumView: View {
             }
             VStack(spacing: 4) {
                 Group {
-                    if let onTap {
+                    if DressUp.isOwn(e.id) {
+                        // Founder 10-05 (door 1): your own place opens your Stage.
+                        Button { DressUp.shared.open() } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
+                    } else if let onTap {
                         Button { onTap(e) } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
                     } else {
                         content

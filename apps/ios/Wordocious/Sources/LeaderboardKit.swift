@@ -347,17 +347,14 @@ struct LbBoardRow<Info: View, Trailing: View>: View {
                 }
             }
             .frame(width: 28)
-            // Only the player (avatar + name) links to the public profile.
-            NavigationLink(value: userId) {
-                HStack(spacing: 10) {
-                    // BJ5: the one resolver (the own row resolves from the live profile).
-                    AvatarView(url: avatarUrl, username: username, size: 36, emoji: emoji,
-                               pro: userId == AuthService.shared.profile?.id && AuthService.shared.isProActive,
-                               userId: userId)
-                    info()
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            // Only the player (avatar + name) links to the public profile; your own row opens your
+            // Stage (founder 10-05, door 1).
+            Group {
+                if DressUp.isOwn(userId) {
+                    Button { DressUp.shared.open() } label: { player }
+                } else {
+                    NavigationLink(value: userId) { player }
                 }
-                .contentShape(Rectangle())
             }
             .buttonStyle(.squish)
             WLBadgeSlot(won: won)
@@ -369,6 +366,18 @@ struct LbBoardRow<Info: View, Trailing: View>: View {
         }
         // BJ7: 7 vertical (was 9) — the 36-pt avatar row still clears 44.
         .padding(.horizontal, 10).padding(.vertical, 7)
+    }
+
+    private var player: some View {
+                HStack(spacing: 10) {
+                    // BJ5: the one resolver (the own row resolves from the live profile).
+                    AvatarView(url: avatarUrl, username: username, size: 36, emoji: emoji,
+                               pro: userId == AuthService.shared.profile?.id && AuthService.shared.isProActive,
+                               userId: userId)
+                    info()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .contentShape(Rectangle())
     }
 }
 

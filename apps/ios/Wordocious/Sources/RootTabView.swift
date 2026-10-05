@@ -22,6 +22,8 @@ struct RootTabView: View {
     /// Universal-link VS invites (wordocious.com/vs/join/*) present from the
     /// tab root — same cover the pending-invite banner accept uses.
     @ObservedObject private var deepLink = DeepLink.shared
+    /// Founder 10-05: every dress-up door (own avatar taps, the Home host, the party-hat offer) opens here.
+    @ObservedObject private var dressUp = DressUp.shared
     /// Post-game "Next Daily" handoff (NextDailyCTA): the tapped mode's daily,
     /// presented from the tab root so it works no matter which tab/screen
     /// presented the game that just finished.
@@ -420,6 +422,7 @@ struct RootTabView: View {
         // Password-recovery universal link → native set-new-password sheet
         // (session already established by DeepLink's code exchange).
         .softSheet(isPresented: $deepLink.showNewPasswordSheet) { NewPasswordSheet() }
+        .softSheet(item: $dressUp.request) { req in EditProfileView(start: req.door) }
         // Cross-device auth links can't exchange in-app (PKCE verifier lives
         // on the requesting client) → finish on the web page in-app.
         .sheet(item: Binding(

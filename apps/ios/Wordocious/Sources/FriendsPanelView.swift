@@ -424,7 +424,7 @@ struct FriendsPanelView: View {
             if standings.count > 3 {
                 VStack(spacing: 0) {
                     ForEach(Array(standings.dropFirst(3).enumerated()), id: \.element.id) { i, e in
-                        NavigationLink(value: e.id) {
+                        OwnOrProfileLink(id: e.id, own: e.isMe) {
                             HStack(spacing: 8) {
                                 Text(FriendsPanelView.ordinal(i + 4))
                                     .font(Brand.font(11, .black)).foregroundStyle(weekInk)

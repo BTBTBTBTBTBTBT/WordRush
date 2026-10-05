@@ -1060,7 +1060,18 @@ struct ProfileTab: View {
         // line and a gradient level bar.
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
-                AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive)
+                // Founder 10-05 (door 1): your avatar IS the way in — a tap opens the Stage; the small
+                // "Dress up" tag replaces the old pencil.
+                Button { DressUp.shared.open() } label: {
+                    AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive)
+                        .overlay(alignment: .bottom) {
+                            StageArt("art-dress-tag-dressup", height: 17).offset(y: 9)
+                        }
+                        .padding(.bottom, 6)
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("Dress up your mascot")
+                .accessibilityHint("Opens Edit Profile")
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(p.username).font(Brand.font(20, .black))
@@ -1077,13 +1088,6 @@ struct ProfileTab: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 // §A3: bare icon controls (no bubbles) that squish.
                 HStack(spacing: 0) {
-                    Button { Haptics.tap(); showEditProfile = true } label: {
-                        Image(systemName: "pencil").font(.system(size: 18, weight: .black))
-                            .foregroundStyle(dark ? Theme.textSecondary : FinishInk.deepPurple)
-                            .frame(width: 40, height: 44).contentShape(Rectangle())
-                    }
-                    .buttonStyle(.squishIcon)
-                    .accessibilityLabel("Edit profile")
                     Button { Haptics.tap(); shareProfile(p) } label: {
                         Icon3D(.share, size: 23).frame(width: 40, height: 44).contentShape(Rectangle())
                     }
@@ -1123,7 +1127,7 @@ struct ProfileTab: View {
                     // see only the teaser card. Tap opens the edit surface (where
                     // the toggle lives).
                     if p.isPrivate == true {
-                        Button { Haptics.tap(); showEditProfile = true } label: {
+                        Button { DressUp.shared.open() } label: {
                             Label("Private", systemImage: "lock.fill").font(Brand.font(10, .heavy))
                                 .foregroundStyle(dark ? Theme.textSecondary : Color(hex: 0x6D28D9))
                                 .padding(.horizontal, 10).padding(.top, 7).padding(.bottom, 5)

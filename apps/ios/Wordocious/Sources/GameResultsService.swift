@@ -533,6 +533,8 @@ enum GameResultsService {
         // (web stats-service.ts recordGameResult parity).
         isDraw: Bool = false
     ) async -> XpResult? {
+        // Founder 10-05 (door 3): the first win queues the one-time "Party hat?" offer on Home.
+        if won { await MainActor.run { DressUp.shared.noteWin() } }
         let client = AuthService.shared.client
         // THE line that dropped finished games. This was
         // `guard let session = try? await client.auth.session` — a refreshing,

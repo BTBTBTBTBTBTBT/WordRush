@@ -39,6 +39,7 @@ enum AppWarmup {
         CastArt.prewarm()          // BJ15: cast button skins + art labels, decoded + pre-scaled off main
         FamilyArt.prewarm()        // button family: helper / quiet light maps (pre-scaled per height) + 3D icons
         HomeHostMascot.prewarm()   // BJ6: the Good Morning host's pose, before Home paints
+        Task { @MainActor in DressUp.prewarm() }   // 10-05: the Stage set, tab icons + your stage mascot frames
         HeadingArt.prewarm()       // BJ16: popup / sheet heading lettering at display size, off main
         Task { @MainActor in LeaderboardArt.prewarm() }   // 10-05: the big day title + game card titles, no pop-in
         GoProSign.prewarm()        // BJ17: the GO PRO sign cast (Stats locked sections + the free finish upsell)

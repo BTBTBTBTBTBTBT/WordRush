@@ -317,6 +317,7 @@ struct HomeView: View {
                             // The banner replaces the old Pro pill, the Daily Challenge /
                             // Unlimited / Sweep heroes and the top Word of the Day card.
                             homeBanner
+                            PartyHatOffer()   // 10-05 door 3: once, after the first win
                             if showFirstGameCard { firstGameCard }
                             // ART_SPEC §12 / §19.2: the whole-cast DAILIES art, centered on the
                             // same width rule as PUZZLES and WORD OF THE DAY below.

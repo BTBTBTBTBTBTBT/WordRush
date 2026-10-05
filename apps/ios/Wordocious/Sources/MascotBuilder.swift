@@ -14,7 +14,11 @@ import WordociousCore
 // presets, preview, Randomize and Save through `MascotBuilderAnchorKey` (bounds
 // anchors) or the stable `MascotBuilderAnchor.id` strings (ScrollViewReader ids).
 
-enum MascotBuilderMode { case profile, onboarding }
+enum MascotBuilderMode {
+    case profile, onboarding
+    /// Founder 10-05 "Dressing Room": full screen, the stage pinned on top, icon tabs, part-only tiles.
+    case room
+}
 
 /// The builder's categories, in tab order.
 enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
@@ -36,6 +40,20 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
         case .frame: return "Frame"
         }
     }
+
+    /// The Dressing Room's tabs (all visible in one row): Cheeks joins Nose.
+    static let roomTabs: [MascotBuilderTab] = [.body, .color, .pattern, .eyes, .nose, .mouth, .hats, .extras, .backdrop, .frame]
+
+    /// The tab's ChatGPT icon (art-dress-tab-<id>).
+    var artId: String { self == .cheeks ? "nose" : rawValue }
+}
+
+/// Parts that wear the pink NEW tag in the maker until the player has visited their tab once.
+enum MascotNew {
+    static let ids: Set<String> = ["head:santa", "head:witch", "neck:scarf", "neck:bubbletea", "neck:guitar", "neck:fairywings"]
+    private static func key(_ t: MascotBuilderTab) -> String { "wd_mascot_new_seen_v1:\(t.artId)" }
+    static func seen(_ t: MascotBuilderTab) -> Bool { UserDefaults.standard.bool(forKey: key(t)) }
+    static func markSeen(_ t: MascotBuilderTab) { UserDefaults.standard.set(true, forKey: key(t)) }
 }
 
 /// The spots a coach-mark spotlight can point at.
@@ -141,9 +159,18 @@ struct MascotBuilderView: View {
     var onSkip: (() -> Void)? = nil
     var saveTitle: String = "Save"
     var saving: Bool = false
+    /// `.room`: closes without keeping the changes.
+    var onClose: (() -> Void)? = nil
 
     @State private var config: AvatarConfig
     @State private var tab: MascotBuilderTab = .body
+    /// `.room`: Undo (every change pushes the look before it) and the mascot's hop on each change.
+    @State private var undo: [AvatarConfig] = []
+    @State private var previous: AvatarConfig
+    @State private var undoing = false
+    @State private var hopToken = 0
+    /// The tabs whose NEW tags were already on screen when this visit began.
+    @State private var seenNew: Set<MascotBuilderTab> = Set(MascotBuilderTab.allCases.filter(MascotNew.seen))
     @State private var hop: CGFloat = 0
     @State private var squash: CGFloat = 1
     @State private var showPro = false
@@ -153,7 +180,8 @@ struct MascotBuilderView: View {
 
     init(initial: String, config: AvatarConfig, mode: MascotBuilderMode = .profile, hasPhoto: Bool = false,
          level: Int = 1, isPro: Bool = false, saveTitle: String = "Save", saving: Bool = false,
-         onChange: ((AvatarConfig) -> Void)? = nil, onSave: ((AvatarConfig) -> Void)? = nil, onSkip: (() -> Void)? = nil) {
+         onChange: ((AvatarConfig) -> Void)? = nil, onSave: ((AvatarConfig) -> Void)? = nil, onSkip: (() -> Void)? = nil,
+         startTab: MascotBuilderTab = .body, onClose: (() -> Void)? = nil) {
         self.initial = initial
         self.mode = mode
         self.hasPhoto = hasPhoto
@@ -164,25 +192,156 @@ struct MascotBuilderView: View {
         self.onChange = onChange
         self.onSave = onSave
         self.onSkip = onSkip
+        self.onClose = onClose
         _config = State(initialValue: config)
+        _previous = State(initialValue: config)
+        _tab = State(initialValue: startTab)
     }
 
     private var accent: Color { Color(hex: AvatarCatalog.colorValue(config.color)) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            stage
-            if hasPhoto { displayToggle }
-            presets
-            tabs
-            options.builderAnchor(.options)
-            actions
+        Group {
+            if mode == .room {
+                room
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    stage
+                    if hasPhoto { displayToggle }
+                    presets
+                    tabs
+                    options.builderAnchor(.options)
+                    actions
+                }
+            }
         }
         .onChange(of: config) { c in
             onChange?(c)
-            bounce()
+            if mode == .room {
+                if !undoing { undo.append(previous); if undo.count > 40 { undo.removeFirst() } }
+                undoing = false
+                previous = c
+                let now = Date()
+                if now.timeIntervalSince(lastTick) > 0.08 { Feedback.hop(volume: 0.8) }
+                lastTick = now
+                hopToken += 1
+            } else {
+                bounce()
+            }
         }
+        .onChange(of: tab) { MascotNew.markSeen($0) }
+        .onAppear { MascotNew.markSeen(tab) }
         .softSheet(isPresented: $showPro) { ProView() }
+    }
+
+    // MARK: The Dressing Room (founder 10-05)
+
+    private var room: some View {
+        VStack(spacing: 0) {
+            DressStage(config: config, initial: initial, height: StageMetrics.roomHeight, mascotSize: 160,
+                       hopToken: hopToken, curtains: true, bulbs: true) {
+                ZStack(alignment: .topLeading) {
+                    HStack(alignment: .center) {
+                        Button { onClose?() } label: {
+                            Image(systemName: "xmark").font(.system(size: 16, weight: .black))
+                                .foregroundStyle(Color.white).shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                                .frame(width: 40, height: 40).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.squishIcon)
+                        .accessibilityLabel("Close without saving")
+                        Spacer(minLength: 0)
+                        if let onSave {
+                            Button { onSave(AvatarCatalog.enforcePro(config, isPro: isPro)) } label: {
+                                CandyLabel(title: saving ? "Saving…" : saveTitle)
+                            }
+                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                            .disabled(saving)
+                            .builderAnchor(.save)
+                        }
+                    }
+                    .padding(.horizontal, 10).padding(.top, 40)
+                    VStack(spacing: 9) {
+                        roundButton("dice.fill", label: "Randomize", top: 0x5EEAD4, bottom: 0x0D9488) { randomize() }
+                            .builderAnchor(.randomize)
+                        roundButton("arrow.uturn.backward", label: "Undo", top: 0xFDE68A, bottom: 0xF59E0B, disabled: undo.isEmpty) {
+                            guard let last = undo.popLast() else { return }
+                            undoing = true
+                            config = last
+                        }
+                    }
+                    .padding(.leading, 12).padding(.top, 92)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+            .background(alignment: .top) {
+                MascotBackdrop(bg: config.bg, base: accent, dark: Theme.isDark).ignoresSafeArea(edges: .top)
+            }
+            .clipShape(RoomStageShape(radius: 26))
+            .builderAnchor(.preview)
+            iconTabs.padding(.horizontal, 6).padding(.top, 8)
+            ScrollView(showsIndicators: false) {
+                options.builderAnchor(.options)
+                    .padding(.horizontal, 14).padding(.top, 6).padding(.bottom, 40)
+            }
+        }
+        .background(Theme.isDark ? Theme.surface : Color(hex: 0xF7F2FF))
+    }
+
+    private func roundButton(_ symbol: String, label: String, top: UInt, bottom: UInt, disabled: Bool = false,
+                             _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 15, weight: .black)).foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(LinearGradient(colors: [Color(hex: top), Color(hex: bottom)], startPoint: .top, endPoint: .bottom)))
+                .overlay(Circle().fill(LinearGradient(colors: [.white.opacity(0.45), .clear], startPoint: .top, endPoint: .center)).padding(3))
+                .shadow(color: Color(hex: bottom).opacity(0.5), radius: 0, y: 3)
+        }
+        .buttonStyle(.squish)
+        .opacity(disabled ? 0.45 : 1)
+        .disabled(disabled)
+        .accessibilityLabel(label)
+    }
+
+    /// All ten tabs in one row: the ChatGPT tab icon over a tiny label; the open tab lifts on a white pad.
+    private var iconTabs: some View {
+        HStack(spacing: 1) {
+            ForEach(MascotBuilderTab.roomTabs) { t in
+                let on = tab == t || (t == .nose && tab == .cheeks)
+                Button { Haptics.tap(); tab = t } label: {
+                    VStack(spacing: 2) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(on ? Color.white : Color.white.opacity(Theme.isDark ? 0.08 : 0.55))
+                                .shadow(color: Color(hex: 0x7C3AED).opacity(on ? 0.3 : 0), radius: 6, y: 3)
+                            StageArt("art-dress-tab-\(t.artId)", height: 24)
+                        }
+                        .frame(width: 32, height: 32)
+                        Text(t == .extras ? "Extras" : t.title)
+                            .font(Brand.font(8.5, .black))
+                            .foregroundStyle(on ? Color(hex: 0x6D28D9) : (Theme.isDark ? Theme.textSecondary : Color(hex: 0x6B5C8F)))
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .overlay(alignment: .topTrailing) {
+                        if hasNew(t) { Circle().fill(Color(hex: 0xEC4899)).frame(width: 7, height: 7).offset(x: -4, y: 1) }
+                    }
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("\(t.title) options")
+                .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+                .builderAnchor(.tab(t))
+            }
+        }
+    }
+
+    private func hasNew(_ t: MascotBuilderTab) -> Bool {
+        guard !seenNew.contains(t) else { return false }
+        switch t {
+        case .hats: return MascotNew.ids.contains { $0.hasPrefix("head:") }
+        case .extras: return MascotNew.ids.contains { $0.hasPrefix("neck:") || $0.hasPrefix("face:") }
+        default: return false
+        }
     }
 
     // MARK: Stage
@@ -281,6 +440,10 @@ struct MascotBuilderView: View {
     // MARK: Tabs (candy chips)
 
     private var tabs: some View {
+        iconTabs
+    }
+
+    private var chipTabs: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -313,7 +476,7 @@ struct MascotBuilderView: View {
         var id: String { "\(slot):\(value)" }
     }
 
-    private let columns = [GridItem(.adaptive(minimum: 70), spacing: 8)]
+    private let columns = [GridItem(.adaptive(minimum: 60), spacing: 10)]
 
     @ViewBuilder private var options: some View {
         switch tab {
@@ -327,10 +490,15 @@ struct MascotBuilderView: View {
                     swatchGrid("patternColor")
                 }
             }
-        case .eyes: grid(AvatarCatalog.eyes.map { Option(slot: "eyes", value: $0) })
-        case .nose: grid(AvatarCatalog.noses.map { Option(slot: "nose", value: $0) })
-        case .cheeks: grid(AvatarCatalog.cheeks.map { Option(slot: "cheeks", value: $0) })
-        case .mouth: grid(AvatarCatalog.mouths.map { Option(slot: "mouth", value: $0) })
+        case .eyes: grid((["none"] + AvatarCatalog.eyes).map { Option(slot: "eyes", value: $0) })   // founder 10-05: None on any part
+        case .nose, .cheeks:
+            VStack(alignment: .leading, spacing: 10) {
+                FinishLabel("NOSE")
+                grid(AvatarCatalog.noses.map { Option(slot: "nose", value: $0) })
+                FinishLabel("CHEEKS")
+                grid(AvatarCatalog.cheeks.map { Option(slot: "cheeks", value: $0) })
+            }
+        case .mouth: grid((["none"] + AvatarCatalog.mouths).map { Option(slot: "mouth", value: $0) })
         case .hats:
             VStack(alignment: .leading, spacing: 10) {
                 grid(AvatarCatalog.heads.map { Option(slot: "head", value: $0) })
@@ -528,11 +696,14 @@ struct MascotBuilderView: View {
         return s
     }
 
+    /// Founder 10-05 (Dressing Room): a tile shows ONLY the part on a soft round pad (no framed mascot
+    /// thumbnails); the selected one glows gold. NEW / PRO tags are the ChatGPT tag art.
     private func tile(_ o: Option) -> some View {
         let on = isSelected(o)
         let proLocked = isProOnly(o) && !isPro
         let tier = tierLock(o)
-        let tileAccent = o.slot == "color" ? Color(hex: AvatarCatalog.colorValue(o.value)) : accent
+        let isNew = MascotNew.ids.contains("\(o.slot):\(o.value)") && !seenNew.contains(tab)
+        let dark = Theme.isDark
         return Button {
             if tier != nil { return }
             if proLocked { showPro = true; return }
@@ -545,25 +716,25 @@ struct MascotBuilderView: View {
             }
             config = next
         } label: {
-            VStack(spacing: 4) {
-                MascotAvatar(config: applied(o), initial: initial, size: 54, cached: false)
-                    .overlay(alignment: .topTrailing) {
-                        if proLocked { MascotProPill().offset(x: 8, y: -6) }
-                    }
-                    .overlay {
-                        if tier != nil {
-                            Image(systemName: "lock.fill").font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(.white).shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-                        }
-                    }
-                Text(tier.map { "Lv \($0.minLevel)" } ?? label(o))
-                    .font(Brand.font(10, .black)).foregroundStyle(FinishInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+            VStack(spacing: 3) {
+                ZStack {
+                    // a soft lavender pad (white parts — wings, chef hat — still read on it)
+                    Circle().fill(on ? Color.white : (dark ? Color.white.opacity(0.10) : Color(hex: 0xEAE2FA)))
+                    PartThumb(slot: o.slot, value: o.value, config: config, initial: initial)
+                        .padding(o.slot == "bg" ? 0 : 7)
+                        .clipShape(Circle())
+                        .opacity(tier != nil ? 0.45 : 1)
+                    if tier != nil { StageArt("art-dress-lock", height: 20) }
+                }
+                .aspectRatio(1, contentMode: .fit)
+                .shadow(color: on ? Color(hex: 0xF59E0B).opacity(0.55) : .clear, radius: 6)
+                .overlay(Circle().strokeBorder(on ? Color(hex: 0xF5B82E) : .clear, lineWidth: 3))
+                .overlay(alignment: .topTrailing) { if isNew && !proLocked { StageArt("art-dress-tag-new", height: 15).offset(x: 4, y: -3) } }
+                .overlay(alignment: .bottomTrailing) { if proLocked { StageArt("art-dress-tag-pro", height: 15).offset(x: 6, y: 2) } }
+                if let tier {
+                    Text("Lv \(tier.minLevel)").font(Brand.font(9, .black)).foregroundStyle(FinishInk.secondary)
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 7).padding(.horizontal, 2)
-            .g5Option(active: on, accent: tileAccent, radius: 14)
-            .opacity(tier != nil ? 0.55 : 1)
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
@@ -601,12 +772,21 @@ struct MascotBuilderView: View {
     }
 
     private func randomize() {
+        config = Self.randomLook(from: config, isPro: isPro, level: level)
+    }
+
+    /// A random look the player can wear (no locked Pro parts, no level-locked frames, never a fit conflict).
+    static func randomLook(from config: AvatarConfig, isPro: Bool, level: Int) -> AvatarConfig {
         var g = SystemRandomNumberGenerator()
         func any(_ xs: [String]) -> String { xs.randomElement(using: &g) ?? xs[0] }
         func wearable(_ slot: String, _ ids: [String]) -> [String] {
             ids.filter { id in
-                let o = Option(slot: slot, value: id)
-                return !(isProOnly(o) && !isPro) && tierLock(o) == nil
+                switch slot {
+                case "head": return isPro || !AvatarCatalog.isProOnly(head: id)
+                case "neck": return isPro || !AvatarCatalog.isProOnly(neck: id)
+                case "bg": return isPro || !AvatarCatalog.isProOnly(bg: id)
+                default: return true
+                }
             }
         }
         var c = config
@@ -625,7 +805,89 @@ struct MascotBuilderView: View {
         if c == config { c.eyes = any(AvatarCatalog.eyes.filter { $0 != config.eyes }) }
         // never a combination the fit system rules out (the face extra yields)
         if let fit = MascotParts.fit, AvatarFit.pickConflict(c, field: "face", id: c.face, manifest: fit) != nil { c.face = "none" }
-        config = c
+        return c
+    }
+}
+
+/// One maker option drawn as JUST the part (founder 10-05): the body shape in the current color, the
+/// pattern on that body, the face part / accessory art, the backdrop swatch or the frame.
+struct PartThumb: View {
+    let slot: String
+    let value: String
+    let config: AvatarConfig
+    let initial: String
+
+    var body: some View {
+        let dark = Theme.isDark
+        let base = Color(hex: AvatarCatalog.colorValue(config.color))
+        if value == "none" || (slot == "pattern" && value == "solid") {
+            NoneGlyph()
+        } else {
+        switch slot {
+        case "bg":
+            MascotBackdrop(bg: value, base: base, dark: dark)
+        case "body", "pattern":
+            let bodyId = slot == "body" ? value : config.body
+            let pat = slot == "pattern" ? value : "solid"
+            Canvas { ctx, size in
+                let r = CGRect(origin: .zero, size: size).insetBy(dx: size.width * 0.04, dy: size.height * 0.04)
+                let bodyColor = AvatarCatalog.color(config.color)
+                let ink = MascotArtPainter.color(AvatarCatalog.color(config.patternColor == config.color ? MascotBuilderView.contrast(for: config.color) : config.patternColor).hex)
+                MascotArtPainter.tinted(ctx, "art-av-body-\(bodyId)", r, fill: MascotArtPainter.shading(bodyColor, in: r)) { layer in
+                    guard pat != "solid" else { return }
+                    MascotArtPainter.pattern(&layer, AvatarFit.patternShapes(pat), in: r, ink: ink, base: base)
+                }
+            }
+        case "frame":
+            if value == "none" {
+                Text("None").font(Brand.font(10, .black)).foregroundStyle(FinishInk.secondary)
+            } else if value == "pro" {
+                MascotFrame(frame: "pro", size: 40).padding(4)
+            } else if ArtAsset.exists("art-frame-\(value)") {
+                ArtThumbs.image("art-frame-\(value)", points: 48).resizable().interpolation(.high).scaledToFit()
+            } else {
+                MascotFrame(frame: value, size: 40)
+            }
+        default:
+            let kind = ["eyes": "eyes", "mouth": "mouth", "nose": "nose", "cheeks": "cheeks"][slot] ?? "acc"
+            if value == "none" {
+                Text("None").font(Brand.font(10, .black)).foregroundStyle(FinishInk.secondary)
+            } else if let name = MascotParts.art(kind, value) {
+                Image(uiImage: MascotArtCache.uiImage(name) ?? UIImage()).resizable().interpolation(.high).scaledToFit()
+            } else {
+                Text(MascotOptionNames.name(value)).font(Brand.font(9, .black)).foregroundStyle(FinishInk.heading)
+                    .multilineTextAlignment(.center).minimumScaleFactor(0.6)
+            }
+        }
+        }
+    }
+}
+
+/// The soft "None" tile glyph (ChatGPT art: a puffy lavender ring with a gentle slash; founder 10-05:
+/// "you're able to hit None on any body part").
+struct NoneGlyph: View {
+    var body: some View {
+        if ArtAsset.exists("art-dress-none") {
+            StageArt("art-dress-none", height: 30).accessibilityHidden(true)
+        } else {
+            Text("None").font(Brand.font(10, .black)).foregroundStyle(FinishInk.secondary)
+        }
+    }
+}
+
+/// The room's stage: square top corners (it runs under the status bar), rounded bottom.
+struct RoomStageShape: Shape {
+    var radius: CGFloat
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY - 400))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY - 400))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY - radius))
+        p.addQuadCurve(to: CGPoint(x: r.maxX - radius, y: r.maxY), control: CGPoint(x: r.maxX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.minX + radius, y: r.maxY))
+        p.addQuadCurve(to: CGPoint(x: r.minX, y: r.maxY - radius), control: CGPoint(x: r.minX, y: r.maxY))
+        p.closeSubpath()
+        return p
     }
 }
 

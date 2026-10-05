@@ -182,7 +182,10 @@ struct HomeBannerView: View {
                     .opacity(momentArt != nil && slots.showsMomentArt
                              && AvatarDirectory.shared.ownHostChoice() == .w ? 0 : 1)
             }
-            .padding(.top, Self.hostRise - Self.scrollTopGap)
+            // 10-05 (founder: the Pro crown "got clipped by the WORDOCIOUS mascots"): the host's whole box
+            // stays inside the scroll content (it rose `scrollTopGap` past it, so the scroll view cut tall
+            // hats and the crown at the header line).
+            .padding(.top, Self.hostRise)
     }
 
     // MARK: Background

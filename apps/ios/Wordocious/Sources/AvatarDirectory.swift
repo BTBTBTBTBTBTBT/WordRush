@@ -247,6 +247,19 @@ final class AvatarDirectory: ObservableObject {
         }
     }
 
+    /// Founder 10-05 (door 2): a signed-in player with no custom look sees their OWN plain seeded mascot
+    /// as the Home host saying "Make me yours!" (instead of W) until they save a look or dismiss it.
+    func ownHostInvite() -> AvatarConfig? {
+        _ = ownVersion
+        guard let p = AuthService.shared.profile, !AuthService.shared.isGuest, !DressUp.shared.done(.hostInvite) else { return nil }
+        let r = look(username: p.username, userId: p.id, url: p.avatarUrl, castId: nil, frame: nil,
+                     mascot: nil, accentHex: p.accentColor, lookup: true).resolved
+        guard r.kind == .seeded else { return nil }
+        var c = r.config
+        c.display = "mascot"
+        return c
+    }
+
     /// FINISH_SPEC BJ6 (founder 10-03): a photo is a framed PORTRAIT — the chosen frame,
     /// else the player's level-tier frame (art-frame-<tier>) — never pasted onto a body.
     /// Order (web / Android parity): chosen frame → the Pro gold frame for a Pro player →
