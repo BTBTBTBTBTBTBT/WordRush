@@ -215,9 +215,9 @@ final class CrosswordFitTests: XCTestCase {
         // 10 tiles across a phone: 31-wide tiles, 340 high for 6 rows.
         let f = BoardSizing.fillRows(tileWidth: 31, height: 340, rows: 6, gap: 4)
         XCTAssertEqual(f.tileWidth, 31)
-        XCTAssertEqual(f.tileHeight, floor(31 * 1.25))          // taller, capped at 1.25:1
+        XCTAssertEqual(f.tileHeight, floor(31 * 1.5))           // taller, capped at 1.5:1
         XCTAssertGreaterThan(f.rowGap, 4)                          // then roomier rows
-        XCTAssertLessThanOrEqual(f.rowGap, floor(f.tileHeight * 0.5))
+        XCTAssertLessThanOrEqual(f.rowGap, floor(f.tileHeight * 0.7))
         let used = 6 * f.tileHeight + 5 * f.rowGap
         XCTAssertGreaterThan(used, 340 * 0.98 - 12)                // no dead band
         // Height-bound (5 tiles): square, unchanged rule.

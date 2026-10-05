@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Visibility
@@ -177,6 +178,8 @@ fun ProperNoundleHints(
     clueUsed: Boolean, loadingClue: Boolean,
     vowelRevealed: String?, consonantRevealed: String?,
     onClue: () -> Unit, onVowel: () -> Unit, onConsonant: () -> Unit,
+    /** Founder 10-05: once the clue is in, its pill reopens the clue card ("Read clue"). */
+    onReadClue: (() -> Unit)? = null,
 ) {
     // BI22: three equal fixed thirds of a centered row (max 420 dp) — a pill no longer
     // shrinks when its label collapses to the revealed letter, so nothing in the row moves.
@@ -186,7 +189,13 @@ fun ProperNoundleHints(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HintCandy(
+        if (clueUsed && !loadingClue && onReadClue != null) {
+            HintCandy(
+                label = "Read clue", usedLabel = "Read clue",
+                used = false, color = com.wordocious.app.ui.CandyColor.PURPLE,
+                icon = Icons.Filled.MenuBook, onClick = onReadClue, modifier = Modifier.weight(1f), fill = true,
+            )
+        } else HintCandy(
             // Doug 10-05: "Clue used" clipped to "Clue u…" in a third of the row; web/iOS keep "Clue".
             label = "Clue", usedLabel = "Clue",
             used = clueUsed, color = com.wordocious.app.ui.CandyColor.PURPLE,
@@ -761,9 +770,17 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 
     val accent = com.wordocious.app.ui.modeAccent(mode)
     var showGuide by remember { mutableStateOf(false) }
-    // BI22: the full ProperNoundle clue card (opened from the two-line clue slot).
+    // The full ProperNoundle clue card: opens when the Clue hint lands, "Read clue" reopens it.
     var showClueCard by remember { mutableStateOf(false) }
     var clueTopPx by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+    if (mode == GameMode.PROPERNOUNDLE) {
+        val clueNow by vm.clue.collectAsState()
+        var hadClue by remember { mutableStateOf(clueNow != null) }   // a restored clue doesn't pop
+        LaunchedEffect(clueNow) {
+            if (clueNow != null && !hadClue && state.status == GameStatus.PLAYING) showClueCard = true
+            hadClue = clueNow != null
+        }
+    }
     // Gauntlet stage-cleared interstitial is up (see StageTransitionOverlay below).
     var stageSkip by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val stageCleared = mode == GameMode.GAUNTLET && state.gauntlet != null &&
@@ -919,14 +936,9 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         ClockText(vm.elapsed, statSp)
                     }
                 }
-                // ProperNoundle Clue (italic, centered) — BI22: a fixed three/four-line slot that is
-                // ALWAYS present (empty until the Clue is used), so revealing the clue never
-                // shrinks the board; tap it for the whole clue as an overlay card.
-                if (mode == GameMode.PROPERNOUNDLE) {
-                    val clueText by vm.clue.collectAsState()
-                    val loadingClue by vm.loadingClue.collectAsState()
-                    ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true }, onPlaced = { clueTopPx = it })
-                }
+                // ProperNoundle: no clue band (founder 10-05) — the whole clue is a card hung from
+                // here, so the board keeps the room and the hint never resizes it.
+                if (mode == GameMode.PROPERNOUNDLE) ProperNoundleClueAnchor { clueTopPx = it }
             }
 
             // Board area — fills between header and keyboard
@@ -971,6 +983,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         clueUsed = clueText != null || loadingClue, loadingClue = loadingClue,
                         vowelRevealed = vRev, consonantRevealed = cRev,
                         onClue = { vm.revealClue() }, onVowel = { vm.revealVowel() }, onConsonant = { vm.revealConsonant() },
+                        onReadClue = { showClueCard = true },
                     )
                 } else {
                     HintPills(
@@ -1164,7 +1177,7 @@ internal fun SingleBoard(
         val chromeW = if (tray) GameTrayStyle.PADDING.value * 2 else 0f
         val chromeH = if (tray) GameTrayStyle.PADDING.value * 2 + GameTrayStyle.LIP.value else 0f
         // ProperNoundle (wordGroups set): the widest tile the row allows, then fillRows spends
-        // the spare height — taller tiles up to 1.25:1, then roomier rows — so a long answer
+        // the spare height — taller tiles up to 1.5:1, then roomier rows — so a long answer
         // leaves no dead band (founder, 2026-10-05). Every other game keeps square tiles.
         val pnFill = wordGroups != null
         val availH = (maxHeight.value - chromeH).coerceAtLeast(0f)

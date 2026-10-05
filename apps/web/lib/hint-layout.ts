@@ -15,20 +15,10 @@ export function hintCountText(count: number): string {
   return count > 99 ? '99+' : String(Math.floor(count));
 }
 
-/**
- * ProperNoundle's clue slot (solo + VS): always present under the header, three
- * lines of the 13 px clue (17 px line height) plus 4 px padding top and bottom.
- * The clue is clamped to three lines; tapping it opens the whole clue as an overlay.
- * (Doug 10-05: two lines cut a Wikipedia clue at "His…"; the board gives up the
- * extra line for good, so revealing the clue still never resizes it.)
- */
-export const CLUE_SLOT = { fontPx: 13, linePx: 17, lines: 3, padY: 4 } as const;
-export const CLUE_SLOT_PX = CLUE_SLOT.linePx * CLUE_SLOT.lines + CLUE_SLOT.padY * 2;
-
-/** The slot height for a clue (or none): the same either way, so the board never resizes. */
-export function clueSlotHeight(_clue: string | null | undefined): number {
-  return CLUE_SLOT_PX;
-}
+// ProperNoundle's clue has NO slot on the play screen (founder 10-05: no empty space):
+// it opens as a card hung from the header (components/propernoundle/clue-slot.tsx
+// ClueCard) when the Clue hint lands, and the used Clue pill reopens it, so the hint
+// never resizes the board.
 
 /** Kindred's named-category chip row above the grid: one fixed-height line, always present. */
 export const KINDRED_LABEL_SLOT_PX = 24;

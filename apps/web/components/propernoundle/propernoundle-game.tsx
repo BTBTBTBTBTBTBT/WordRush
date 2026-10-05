@@ -6,7 +6,7 @@ import { Keyboard } from '@/components/game/keyboard';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
+import { BookOpen, Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
@@ -51,7 +51,7 @@ import { GameArt } from '@/components/ui/game-art';
 import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle } from '@/lib/art';
 import { FeedbackToast } from '@/components/game/feedback-toast';
-import { ClueSlot } from './clue-slot';
+import { ClueCard } from './clue-slot';
 import { ResultCard } from '@/components/game/result-line';
 import { CandyButton } from '@/components/ui/candy-button';
 import { REVEAL } from '@/lib/tile-motion';
@@ -603,6 +603,11 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
     return mapped;
   }, [letterStates]);
 
+  // The whole clue's card: opens when the Clue hint lands, reopened by "Read clue".
+  const [clueOpen, setClueOpen] = useState(false);
+  const closeClue = useCallback(() => setClueOpen(false), []);
+  const headerRef = useRef<HTMLDivElement>(null);
+
   const handleHintClue = useCallback(async () => {
     if (!puzzle || gameStatus !== 'playing') return;
     const hintGuess = await hints.fetchClue(puzzle, answerLength);
@@ -610,6 +615,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
       const newGuesses = [...guesses, hintGuess];
       setGuesses(newGuesses);
       if (newGuesses.length >= MAX_GUESSES) setGameStatus('lost');
+      else setClueOpen(true);
     }
   }, [puzzle, gameStatus, guesses, answerLength, hints]);
 
@@ -770,6 +776,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
           compact 68 px (still 56 under 700 tall, the step clamp mirrors the
           globals.css short-phone cap), so it never crowds the XP toast. */}
       <div
+        ref={headerRef}
         className="game-art-header text-center px-2 shrink-0 relative"
         style={gameStatus !== 'playing' || completion
           ? { ...gameHeaderStyle('PROPERNOUNDLE'), ['--game-title-cap' as string]: 'clamp(56px, (100vh - 699.98px) * 1000, 68px)' }
@@ -830,9 +837,9 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : gameStatus === 'playing' ? (
         <>
-          {/* The clue slot is ALWAYS here at three lines (empty until Clue): appearing in the flow,
-              a multi-line clue shrank the board (lib/hint-layout.ts). Tap it for the whole clue. */}
-          <ClueSlot clue={hints.hint} />
+          {/* No clue band (founder 10-05: no empty space): the whole clue is a card hung from
+              the header, opened when the Clue hint lands and from "Read clue". */}
+          <ClueCard clue={hints.hint} open={clueOpen} onClose={closeClue} anchorRef={headerRef} />
 
           {/* Board */}
           <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
@@ -848,10 +855,18 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
 
           {/* Hint Buttons — equal thirds, so "Vowel" → "A" / "None" never resizes a pill. */}
           <div className="shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[360px] mx-auto px-3 pb-1">
-            <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
-              icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
-              Clue
-            </CandyButton>
+            {/* Once used, the Clue pill reopens the clue card ("Read clue"): the clue has no band of its own. */}
+            {hints.hint ? (
+              <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={() => setClueOpen(true)} aria-label="Read clue"
+                icon={<BookOpen className="w-3 h-3" aria-hidden="true" />}>
+                Clue
+              </CandyButton>
+            ) : (
+              <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
+                icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
+                Clue
+              </CandyButton>
+            )}
             <CandyButton size="sm" color="teal" block style={HINT_THIRD} onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
               {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
             </CandyButton>

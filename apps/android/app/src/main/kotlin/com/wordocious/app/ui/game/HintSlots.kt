@@ -47,55 +47,27 @@ import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 
 // BI22 (founder, 2026-10-03): the ProperNoundle Clue used to appear as a multi-line Wikipedia
-// paragraph in the header flow, taking its height straight out of the board. It now sits in
-// a fixed two-line slot that is always present (empty when idle), and tapping it opens the
-// whole clue as an overlay card. Shared by the solo and VS ProperNoundle screens; iOS parity.
+// paragraph in the header flow, taking its height straight out of the board. Founder 10-05: no
+// reserved slot either — the whole clue is an overlay card hung from the header's bottom edge.
+// Shared by the solo and VS ProperNoundle screens; iOS / web parity.
 
 private val PN_RED = Color(0xFFDC2626)
 
 /**
- * The always-present clue slot under the ProperNoundle header: [HintLayout.clueLines] lines of the
- * 13 sp italic clue (tail ellipsis), empty until the Clue is used ("Finding a clue…" while it loads).
- * Tapping a clue calls [onOpen] (the full-clue overlay).
+ * Founder 10-05 ("ProperNoundle, always fix empty space issues"): the clue has NO band under
+ * the header, not even an empty, always-present slot. This zero-height marker sits at the
+ * header's bottom edge and reports where it is, so [ProperNoundleClueOverlay] hangs the whole
+ * clue from there. The card opens when the Clue hint lands; the used Clue pill ("Read clue")
+ * reopens it.
  */
 @Composable
-fun ProperNoundleClueSlot(
-    clue: String?, loading: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier,
-    onPlaced: (topInRootPx: Float) -> Unit = {},
-) {
-    val lineDp = with(LocalDensity.current) { HintLayout.CLUE_LINE_SP.sp.toDp() }.value
-    val lines = HintLayout.clueLines(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp)
-    val slotH = HintLayout.clueSlotHeight(lineDp, clue, lines).dp
-    Box(
-        modifier.fillMaxWidth().height(slotH)
-            .onGloballyPositioned { onPlaced(it.positionInRoot().y) }
-            .padding(start = 20.dp, end = 20.dp, top = HintLayout.CLUE_TOP_PAD.dp),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        when {
-            clue != null -> Text(
-                clue, color = WTheme.textSecondary, fontSize = HintLayout.CLUE_SP.sp, lineHeight = 1.3.em,
-                fontStyle = FontStyle.Italic, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-                maxLines = lines, overflow = TextOverflow.Ellipsis,
-                // Unbounded height: only maxLines decides where the clue ellipsizes, never the slot's
-                // rounding (the old exact-fit slot cut the clue to one line).
-                modifier = Modifier.wrapContentHeight(Alignment.Top, unbounded = true)
-                    .clickableNoRipple { onOpen() }.semantics {
-                        role = Role.Button
-                        onClick(label = "Read the whole clue") { onOpen(); true }
-                    },
-            )
-            loading -> Text(
-                "Finding a clue…", color = WTheme.textMuted, fontSize = HintLayout.CLUE_SP.sp, lineHeight = 1.3.em,
-                fontStyle = FontStyle.Italic, fontWeight = FontWeight.SemiBold, maxLines = 1,
-            )
-        }
-    }
+fun ProperNoundleClueAnchor(onPlaced: (topInRootPx: Float) -> Unit) {
+    Box(Modifier.fillMaxWidth().height(0.dp).onGloballyPositioned { onPlaced(it.positionInRoot().y) })
 }
 
 /**
  * The whole ProperNoundle clue as a soft-pop card over the game (tap outside, the X or Back
- * to close). Its top edge is the clue slot's top ([anchorTopPx], from the slot's `onPlaced`),
+ * to close). Its top edge is just under the header ([anchorTopPx], from [ProperNoundleClueAnchor]),
  * so the title art and the category line stay clear (Johnny 10-05: the centered card covered
  * the title art); full width with 14 dp margins, and a clue taller than the room down to the
  * screen's bottom scrolls inside the card. Fade + scale (instant with Reduce Motion); a soft
@@ -110,7 +82,7 @@ fun ProperNoundleClueOverlay(text: String, anchorTopPx: Float? = null, onDismiss
     val shape = RoundedCornerShape(22.dp)
     var selfTop by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
-    val top = with(density) { ((anchorTopPx ?: 0f) - selfTop).coerceAtLeast(0f).toDp() } - 4.dp
+    val top = with(density) { ((anchorTopPx ?: 0f) - selfTop).coerceAtLeast(0f).toDp() } + 6.dp
     Box(
         Modifier.fillMaxSize()
             .onGloballyPositioned { selfTop = it.positionInRoot().y }

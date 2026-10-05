@@ -76,7 +76,7 @@ export function fitBoard({
  * height). Height-bound boards stay square. Mirrors iOS BoardSizing.fillRows and Android
  * BoardSizing.fillRows.
  */
-export function fillRows({ tileWidth, height, rows, gap, maxRatio = 1.25, maxGapRatio = 0.5 }: {
+export function fillRows({ tileWidth, height, rows, gap, maxRatio = 1.5, maxGapRatio = 0.7 }: {
   tileWidth: number; height: number; rows: number; gap: number; maxRatio?: number; maxGapRatio?: number;
 }): { tileWidth: number; tileHeight: number; rowGap: number } {
   const r = Math.max(1, rows);

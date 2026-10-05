@@ -122,7 +122,7 @@ export default memo(function NoundleBoard({
       const totalTiles = wordGroups.reduce((sum, count) => sum + count, 0);
       // FINISH_SPEC L: the rows sit on the game tray, so its chrome comes out of the area.
       // The widest tile the row allows (height left open), then fillRows spends the spare
-      // height — taller tiles up to 1.25:1, then roomier rows — so a long answer leaves no
+      // height — taller tiles up to 1.5:1, then roomier rows — so a long answer leaves no
       // dead band above and below the board (founder, 2026-10-05).
       const availH = el.clientHeight - CHROME.top - CHROME.bottom;
       const fit = fitBoard({

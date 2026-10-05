@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { isTypingTarget } from '@/lib/keyboard';
 import { CandyButton } from '@/components/ui/candy-button';
 import { playInvalid } from '@/lib/sounds';
@@ -8,7 +8,7 @@ import { GameMode, pnGuessBlocked } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
 import { categoryLabel, CATEGORY_COLORS } from '@/components/propernoundle/categories';
-import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
+import { BookOpen, Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import NoundleBoard from '@/components/propernoundle/noundle-board';
 import { Guess, TileState, type Puzzle } from '@/components/propernoundle/types';
 import { normalizeString, evaluateGuess, checkWin } from '@/components/propernoundle/game-logic';
@@ -16,7 +16,7 @@ import { useHints } from '@/components/propernoundle/use-hints';
 import type { VsGameComponentProps } from './vs-classic';
 import type { EvaluatedRow } from './vs-result-detail';
 import { FeedbackToast } from '@/components/game/feedback-toast';
-import { ClueSlot } from '@/components/propernoundle/clue-slot';
+import { ClueCard } from '@/components/propernoundle/clue-slot';
 
 /** The three hint pills share the row in equal thirds; a slimmer side padding keeps "Consonant" whole. */
 const HINT_THIRD = { paddingLeft: 8, paddingRight: 8 } as const;
@@ -67,6 +67,11 @@ export function VsProperNoundle({
     [seed, answerDisplay],
   );
 
+  // The whole clue's card: opens when the Clue hint lands, reopened by "Read clue".
+  const [clueOpen, setClueOpen] = useState(false);
+  const closeClue = useCallback(() => setClueOpen(false), []);
+  const statsRef = useRef<HTMLDivElement>(null);
+
   const handleHintClue = useCallback(async () => {
     if (gameStatus !== 'playing') return;
     const hintGuess = await hints.fetchClue(hintPuzzle, answerLength);
@@ -76,8 +81,9 @@ export function VsProperNoundle({
         if (next.length >= MAX_GUESSES) setGameStatus('lost');
         return next;
       });
+      if (guesses.length + 1 < MAX_GUESSES) setClueOpen(true);
     }
-  }, [gameStatus, hints, hintPuzzle, answerLength]);
+  }, [gameStatus, hints, hintPuzzle, answerLength, guesses.length]);
 
   const handleVowelReveal = useCallback(() => {
     if (gameStatus !== 'playing') return;
@@ -231,7 +237,7 @@ export function VsProperNoundle({
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Solo stats row (the title + VS pill sit above, in vs-game). */}
-      <div className="relative text-center px-2 shrink-0">
+      <div ref={statsRef} className="relative text-center px-2 shrink-0">
         <div className="flex justify-center items-center gap-2">
           {puzzleMetadata?.themeCategory && (
             <span
@@ -260,9 +266,9 @@ export function VsProperNoundle({
         />
       </div>
 
-      {/* The clue slot is ALWAYS here at three lines (empty until Clue), on ProperNoundle's red
-          wash: appearing in the flow, a multi-line clue shrank the board. Tap it for the whole clue. */}
-      <ClueSlot clue={hints.hint} />
+      {/* No clue band (founder 10-05): the whole clue is a card hung under the stats row,
+          opened when the Clue hint lands and from "Read clue". */}
+      <ClueCard clue={gameStatus === 'playing' ? hints.hint : null} open={clueOpen} onClose={closeClue} anchorRef={statsRef} />
 
       {/* Board */}
       <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
@@ -282,10 +288,17 @@ export function VsProperNoundle({
           finishing and the 'waiting' screen swap — a visible board jump. */}
       <div className={`shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[360px] mx-auto px-3 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
           {/* A8: the solo screen's candy hint buttons, in equal thirds so a revealed letter never resizes a pill. */}
-          <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
-            icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
-            Clue
-          </CandyButton>
+          {hints.hint ? (
+            <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={() => setClueOpen(true)} aria-label="Read clue"
+              icon={<BookOpen className="w-3 h-3" aria-hidden="true" />}>
+              Clue
+            </CandyButton>
+          ) : (
+            <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={handleHintClue} disabled={hints.hintUsed || hints.loadingHint}
+              icon={hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Lightbulb className="w-3 h-3" aria-hidden="true" />}>
+              Clue
+            </CandyButton>
+          )}
           <CandyButton size="sm" color="teal" block style={HINT_THIRD} onClick={handleVowelReveal} disabled={hints.vowelUsed} icon={<Eye className="w-3 h-3" aria-hidden="true" />}>
             {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
           </CandyButton>

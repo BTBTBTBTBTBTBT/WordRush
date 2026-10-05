@@ -543,6 +543,8 @@ enum StoreDemoDriver {
             for w in openers(for: answer).prefix(2) { await PerfDrive.type(w, gap: 0.05); PerfDrive.enter(); await PerfDrive.sleep(1.6) }
             await PerfDrive.type(answer, gap: 0.05); PerfDrive.enter()
         case "octo": await octo()
+        // An Unlimited ProperNoundle in play (layout checks; pair with `-pnAnswerLength N`).
+        case "propernoundle": PerfDrive.playUnlimited("PROPERNOUNDLE")
         case "stats": PerfTour.send(.selectTab(.stats))
         case "leaderboard": PerfTour.send(.selectTab(.leaderboard))
         case "friends":

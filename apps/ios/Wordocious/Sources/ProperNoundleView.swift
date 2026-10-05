@@ -353,7 +353,7 @@ struct ProperNoundleView: View {
     @State private var adShown = false
     @State private var showVictory = false
     @State private var showGuide = false
-    /// The whole clue's soft-pop card (tap the clamped clue).
+    /// The whole clue's soft-pop card (opens when the clue lands; "Read clue" reopens it).
     @State private var showFullClue = false
     @State private var showShareOptions = false
     /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
@@ -449,6 +449,8 @@ struct ProperNoundleView: View {
         }
         // The whole clue's soft-pop card, hung under the title art (Johnny 10-05).
         .noundleFullClue(vm.isFinished ? nil : vm.clue, isPresented: $showFullClue)
+        // The clue opens as soon as it lands (a restored session's clue doesn't pop).
+        .onChange(of: vm.clue) { c in if c != nil, !vm.isFinished { showFullClue = true } }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
@@ -505,13 +507,14 @@ struct ProperNoundleView: View {
                 Text(holiday).font(Brand.caption(12)).foregroundStyle(pnAccent)
                     .opacity(shows ? 1 : 0).accessibilityHidden(!shows)
             }
-            // §BI22: the clue's slot is always there (two lines, empty until Clue is
-            // tapped) — the clue used to appear in the header's flow and the board shrank.
-            NoundleClueSlot(clue: vm.clue, showFull: $showFullClue).padding(.horizontal, 20)
         }
+        // Founder 10-05 ("always fix empty space issues"): no clue band under the header. The
+        // whole clue opens as a card hung from the header's bottom edge — on its own when the
+        // Clue hint lands, then from the Clue pill ("Read clue") — so the board keeps the room.
+        .anchorPreference(key: NoundleClueAnchor.self, value: .bounds) { $0 }
     }
 
-    private var hints: some View { NoundleHints(vm: vm) }
+    private var hints: some View { NoundleHints(vm: vm, onShowClue: { showFullClue = true }) }
 
     /// Founder 10-02: the FINISHED screen's compact header. The solo header's title
     /// art (120 pt) plus the clue overflowed the finished page and collided with the
@@ -637,10 +640,17 @@ struct ProperNoundleView: View {
 /// board (web shows hints in both). Buttons disable + gray out once used.
 struct NoundleHints: View {
     @ObservedObject var vm: ProperNoundleVM
+    /// Opens the whole-clue card: once the Clue hint is used its pill becomes "Read clue"
+    /// (the clue has no band of its own on the play screen).
+    var onShowClue: (() -> Void)? = nil
     var body: some View {
         HStack(spacing: 8) {
-            hintButton("Clue", systemImage: vm.loadingClue ? "hourglass" : "lightbulb", used: vm.clue != nil || vm.loadingClue,
-                       variant: .amber) { vm.revealClue() }
+            if vm.clue != nil, let onShowClue {
+                hintButton("Read clue", systemImage: "book.fill", used: false, variant: .amber) { onShowClue() }
+            } else {
+                hintButton("Clue", systemImage: vm.loadingClue ? "hourglass" : "lightbulb", used: vm.clue != nil || vm.loadingClue,
+                           variant: .amber) { vm.revealClue() }
+            }
             hintButton(vm.revealedVowel.map { $0 } ?? "Vowel", systemImage: "eye", used: vm.revealedVowel != nil,
                        variant: .pink) { vm.revealVowel() }
             hintButton(vm.revealedConsonant.map { $0 } ?? "Consonant", systemImage: "number", used: vm.revealedConsonant != nil,
@@ -662,58 +672,22 @@ struct NoundleHints: View {
     }
 }
 
-/// §BI22: ProperNoundle's clue, in a slot that is always three lines tall (four on
-/// tall screens; empty until the Clue hint lands) so revealing it never resizes the
-/// board. A long Wikipedia clue is clamped to those lines; tapping it opens the whole
-/// clue in a soft-pop card (`noundleFullClue`) hung from this slot's top edge — below
-/// the title art and the category line, never over them. (Johnny 10-05: the system
-/// popover floated over the title art, clipped; Doug 10-05: two lines cut the clue short.)
-struct NoundleClueSlot: View {
-    let clue: String?
-    @Binding var showFull: Bool
-
-    private var font: Font { Brand.body(CGFloat(HintLayout.noundleClueFontSize)) }
-    private var lines: Int { HintLayout.noundleClueLines(screenHeight: Double(UIScreen.main.bounds.height)) }
-
-    var body: some View {
-        ZStack {
-            // The clue's lines in its own font: the slot's fixed height.
-            Text(Array(repeating: "Ag", count: lines).joined(separator: "\n")).font(font).hidden().accessibilityHidden(true)
-            if let clue {
-                Button { showFull = true } label: {
-                    Text(clue).font(font).italic().foregroundStyle(Theme.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(lines).truncationMode(.tail)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.squish)
-                .accessibilityLabel("Clue: \(clue)")
-                .accessibilityHint("Shows the whole clue")
-                .transition(.opacity)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .anchorPreference(key: NoundleClueAnchor.self, value: .bounds) { $0 }
-        .animation(.easeOut(duration: 0.2), value: clue)
-    }
-}
-
-/// Where the clue slot sits, for the full-clue card (read by `noundleFullClue`).
+/// The header's bounds: the full-clue card hangs from its bottom edge (read by `noundleFullClue`).
 struct NoundleClueAnchor: PreferenceKey {
     static var defaultValue: Anchor<CGRect>? = nil
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) { value = value ?? nextValue() }
 }
 
 extension View {
-    /// The whole clue as a soft-pop card over the board: its top edge is the clue slot's
-    /// top (so the title art and the category line stay clear), full width with 14 pt
+    /// The whole clue as a soft-pop card over the board: its top edge is just under the
+    /// header (so the title art and the category line stay clear), full width with 14 pt
     /// margins, a readable 16 pt, scrolling when a clue outgrows the space down to the
     /// screen's bottom. Tap outside or the X closes it. Apply on the game's root.
     func noundleFullClue(_ clue: String?, isPresented: Binding<Bool>) -> some View {
         overlayPreferenceValue(NoundleClueAnchor.self) { anchor in
             GeometryReader { g in
                 if isPresented.wrappedValue, let clue, let anchor {
-                    let top = max(0, g[anchor].minY - 4)
+                    let top = max(0, g[anchor].maxY + 6)
                     ZStack(alignment: .top) {
                         Color.black.opacity(0.22).ignoresSafeArea()
                             .contentShape(Rectangle())
@@ -809,7 +783,7 @@ struct NoundleBoard: View {
         let gap: CGFloat = 4, groupGap: CGFloat = 14
         let rows = max(1, vm.maxGuesses)
         // The widest tile the row allows; then fillRows spends the spare height (taller tiles
-        // up to 1.25:1, then roomier rows) so a long answer leaves no dead band (2026-10-05).
+        // up to 1.5:1, then roomier rows) so a long answer leaves no dead band (2026-10-05).
         let tileW = floor(CGFloat(BoardSizing.fitTile(
             widthUnits: Double(max(1, total)),
             fixedWidth: Double(gap * CGFloat(max(0, total - groups.count)) + groupGap * CGFloat(max(0, groups.count - 1))),
@@ -978,7 +952,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
     @ObservedObject var vm: ProperNoundleVM
     let onHome: () -> Void
     @ViewBuilder var strip: () -> Strip
-    /// The whole clue's soft-pop card (tap the clamped clue).
+    /// The whole clue's soft-pop card (opens when the clue lands; "Read clue" reopens it).
     @State private var showFullClue = false
 
     var body: some View {
@@ -999,7 +973,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
             .padding(.vertical, 4)
             // §BI22: the hint row keeps its slot at the finish (faded, inert) so the
             // board doesn't jump as the final row lands.
-            NoundleHints(vm: vm)
+            NoundleHints(vm: vm, onShowClue: { showFullClue = true })
                 .opacity(vm.isFinished ? 0 : 1)
                 .allowsHitTesting(!vm.isFinished)
                 .accessibilityHidden(vm.isFinished)
@@ -1008,6 +982,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
         }
         .padding(.horizontal, 10)
         .noundleFullClue(vm.clue, isPresented: $showFullClue)
+        .onChange(of: vm.clue) { c in if c != nil, !vm.isFinished { showFullClue = true } }
     }
 
     /// The solo ProperNoundleView header (minus the daily-only number/holiday).
@@ -1037,11 +1012,10 @@ struct ProperNoundleVSBoard<Strip: View>: View {
                     }
                 }
             }
-            // The clue lands here once fetched (tapping Clue burns a row) — in its
-            // always-present two-line slot (§BI22: the board never shrinks for it).
-            NoundleClueSlot(clue: vm.clue, showFull: $showFullClue).padding(.horizontal, 8)
         }
         .padding(.top, 6)
+        // No clue band: the card hangs from here (the solo header's rule).
+        .anchorPreference(key: NoundleClueAnchor.self, value: .bounds) { $0 }
     }
 }
 

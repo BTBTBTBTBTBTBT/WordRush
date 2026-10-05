@@ -95,9 +95,9 @@ class BoardSizingTest {
     @Test fun fillRows_tenTilesAcrossAPhone_tallerTilesThenRoomierRows() {
         val f = BoardSizing.fillRows(tileW = 31f, availH = 340f, rows = 6, gap = 5f)
         assertEquals(31f, f.tileW, 0.01f)
-        assertEquals(kotlin.math.floor(31f * 1.25f), f.tileH, 0.01f)
+        assertEquals(kotlin.math.floor(31f * 1.5f), f.tileH, 0.01f)
         assertTrue(f.rowGap > 5f)
-        assertTrue(f.rowGap <= kotlin.math.floor(f.tileH * 0.5f))
+        assertTrue(f.rowGap <= kotlin.math.floor(f.tileH * 0.7f))
         assertTrue(6 * f.tileH + 5 * f.rowGap >= 340f * BoardSizing.HEIGHT_FRACTION - 20f)
     }
 

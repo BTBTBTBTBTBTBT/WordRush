@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { CLUE_SLOT_PX, KINDRED_LABEL_SLOT_PX, clueSlotHeight, hintCountText, hubTileSize } from './hint-layout';
+import { KINDRED_LABEL_SLOT_PX, hintCountText, hubTileSize } from './hint-layout';
 
 // Founder 10-03: "Hitting the hint button caused one of the puzzle games to
 // shrink a bit." A hint, check or reveal (or a toast / hint message) must never
@@ -16,16 +16,6 @@ describe('hint count badge text', () => {
     expect(hintCountText(12)).toBe('12');
     expect(hintCountText(99)).toBe('99');
     expect(hintCountText(100)).toBe('99+');
-  });
-});
-
-describe('ProperNoundle clue slot', () => {
-  it('is the same height with and without a clue (two 16 px lines + padding)', () => {
-    expect(clueSlotHeight(null)).toBe(CLUE_SLOT_PX);
-    expect(clueSlotHeight('')).toBe(CLUE_SLOT_PX);
-    expect(clueSlotHeight('A short clue')).toBe(CLUE_SLOT_PX);
-    expect(clueSlotHeight('A very long Wikipedia clue '.repeat(20))).toBe(CLUE_SLOT_PX);
-    expect(CLUE_SLOT_PX).toBe(59); // three 17 px lines (Doug 10-05: two cut the clue short)
   });
 });
 
@@ -74,10 +64,14 @@ describe('hint layout guard (source)', () => {
     expect(src).toContain('{pendingHintChips}{wordChips(newestFound)}');
   });
 
-  it('ProperNoundle (solo + VS): the clue lives in the always-present slot', () => {
+  it('ProperNoundle (solo + VS): no clue band — the clue is a card, reopened from the Clue pill', () => {
     for (const f of ['components/propernoundle/propernoundle-game.tsx', 'components/vs/vs-propernoundle.tsx']) {
-      expect(read(f)).toContain('<ClueSlot clue={hints.hint} />');
+      const src = read(f);
+      expect(src).not.toContain('<ClueSlot');
+      expect(src).toMatch(/<ClueCard clue=\{[^}]*hints\.hint[^}]*\} open=\{clueOpen\}/);
+      expect(src).toContain('aria-label="Read clue"');
     }
+    expect(read('components/propernoundle/clue-slot.tsx')).not.toMatch(/style=\{\{ height:/);
     expect(read('components/vs/vs-propernoundle.tsx')).not.toContain('{hints.hint && (');
   });
 

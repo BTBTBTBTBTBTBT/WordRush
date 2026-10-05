@@ -55,11 +55,12 @@ public enum BoardSizing {
     /// empty space issues"). Given the tile WIDTH the row allows, this spends that height:
     /// tiles grow taller (up to `maxRatio` × the width), then the row gaps grow (up to
     /// `maxGapRatio` × the tile height). When height is the binding side the tile stays
-    /// square (`tileHeight == tileWidth` capped by the height). Mirrors web
+    /// square (`tileHeight == tileWidth` capped by the height). 10-05 (no clue band): caps
+    /// 1.5:1 and 0.7 so a ten-letter board fills the room the clue slot gave back. Mirrors web
     /// lib/board-fit.ts `fillRows` and Android BoardSizing.fillRows.
     public static func fillRows(tileWidth: Double, height: Double?, rows: Int, gap: Double,
                                 heightFill: Double = BoardSizing.heightFill,
-                                maxRatio: Double = 1.25, maxGapRatio: Double = 0.5) -> (tileWidth: Double, tileHeight: Double, rowGap: Double) {
+                                maxRatio: Double = 1.5, maxGapRatio: Double = 0.7) -> (tileWidth: Double, tileHeight: Double, rowGap: Double) {
         let r = Double(max(1, rows))
         guard let h0 = height, h0.isFinite, h0 > 0 else { return (tileWidth, tileWidth, gap) }
         let h = h0 * heightFill

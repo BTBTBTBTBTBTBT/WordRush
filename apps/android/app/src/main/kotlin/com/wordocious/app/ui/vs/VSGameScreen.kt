@@ -522,7 +522,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
 
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     var confirmForfeit by remember { mutableStateOf(false) }
-    // BI22: the whole ProperNoundle clue card (opened from the two-line clue slot).
+    // The whole ProperNoundle clue card: opens when the Clue hint lands, "Read clue" reopens it.
     var showClueCard by remember { mutableStateOf(false) }
     var clueTopPx by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
     // Confirm only when leaving would TRULY forfeit (a recorded loss): CPU
@@ -584,13 +584,16 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
             }
             Spacer(Modifier.height(2.dp))
             VsStatRow(vm, game, state)
-            // ProperNoundle VS: the Wikipedia clue (italic, centered) — BI22: the solo screen's
-            // fixed two-line slot, always present, so revealing it never shrinks the board;
-            // tap it for the whole clue as an overlay card.
+            // ProperNoundle VS: no clue band (the solo rule) — the whole clue is a card hung from
+            // here; it opens when the Clue hint lands and "Read clue" reopens it.
             if (vm.mode == GameMode.PROPERNOUNDLE) {
-                val clueText by game.clue.collectAsState()
-                val loadingClue by game.loadingClue.collectAsState()
-                com.wordocious.app.ui.game.ProperNoundleClueSlot(clueText, loadingClue, onOpen = { showClueCard = true }, onPlaced = { clueTopPx = it })
+                com.wordocious.app.ui.game.ProperNoundleClueAnchor { clueTopPx = it }
+                val clueNow by game.clue.collectAsState()
+                var hadClue by remember { mutableStateOf(clueNow != null) }
+                LaunchedEffect(clueNow) {
+                    if (clueNow != null && !hadClue) showClueCard = true
+                    hadClue = clueNow != null
+                }
             }
         }
         // A run to send has no opponent: the panel says who will race it (§3).
@@ -667,6 +670,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                 clueUsed = clueText != null || loadingClue, loadingClue = loadingClue,
                 vowelRevealed = vRev, consonantRevealed = cRev,
                 onClue = { game.revealClue() }, onVowel = { game.revealVowel() }, onConsonant = { game.revealConsonant() },
+                onReadClue = { showClueCard = true },
             )
         }
         // Six/Seven VS: Vowel/Consonant hint pills (parity with solo — each reveal
@@ -722,7 +726,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
         ) { game.advanceGauntletStage() }
     }
 
-    // BI22 the whole ProperNoundle clue, over the match (the header slot shows three or four lines).
+    // BI22 the whole ProperNoundle clue, over the match (hung from the header; no clue band).
     if (showClueCard && vm.mode == GameMode.PROPERNOUNDLE) {
         val clueText by game.clue.collectAsState()
         clueText?.let { com.wordocious.app.ui.game.ProperNoundleClueOverlay(it, anchorTopPx = clueTopPx) { showClueCard = false } }

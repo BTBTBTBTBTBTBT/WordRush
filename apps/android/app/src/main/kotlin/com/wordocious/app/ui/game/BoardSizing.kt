@@ -60,7 +60,7 @@ object BoardSizing {
      * × the tile height). Height-bound boards stay square. Mirrors iOS BoardSizing.fillRows
      * and web lib/board-fit.ts fillRows.
      */
-    fun fillRows(tileW: Float, availH: Float, rows: Int, gap: Float, maxRatio: Float = 1.25f, maxGapRatio: Float = 0.5f): Rows {
+    fun fillRows(tileW: Float, availH: Float, rows: Int, gap: Float, maxRatio: Float = 1.5f, maxGapRatio: Float = 0.7f): Rows {
         val r = rows.coerceAtLeast(1)
         if (availH <= 0f) return Rows(tileW, tileW, gap)
         val h = availH * HEIGHT_FRACTION

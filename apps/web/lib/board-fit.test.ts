@@ -126,12 +126,12 @@ describe('crosswordCell', () => {
 
 // ProperNoundle long answers (founder, 2026-10-05: "always fix empty space issues").
 describe('fillRows (width-bound rows spend the spare height)', () => {
-  it('ten tiles across a phone: taller tiles (≤ 1.25:1), then roomier rows, no dead band', () => {
+  it('ten tiles across a phone: taller tiles (≤ 1.5:1), then roomier rows, no dead band', () => {
     const f = fillRows({ tileWidth: 31, height: 340, rows: 6, gap: 5 });
     expect(f.tileWidth).toBe(31);
-    expect(f.tileHeight).toBe(Math.floor(31 * 1.25));
+    expect(f.tileHeight).toBe(Math.floor(31 * 1.5));
     expect(f.rowGap).toBeGreaterThan(5);
-    expect(f.rowGap).toBeLessThanOrEqual(Math.floor(f.tileHeight * 0.5));
+    expect(f.rowGap).toBeLessThanOrEqual(Math.floor(f.tileHeight * 0.7));
     expect(6 * f.tileHeight + 5 * f.rowGap).toBeGreaterThanOrEqual(340 - 20);  // ≤ 10 px each side
   });
   it('height-bound (five tiles) stays square with the normal gap', () => {
