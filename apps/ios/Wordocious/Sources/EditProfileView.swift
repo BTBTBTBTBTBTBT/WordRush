@@ -168,16 +168,20 @@ struct EditProfileView: View {
                    photo: showsPhoto ? (auth.profile?.avatarUrl, auth.profile?.username ?? username, auth.profile?.id) : nil,
                    height: StageMetrics.height + 44, hopToken: hopToken) {
             VStack {
-                HStack(alignment: .center) {
-                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Cancel") { dismiss() }
-                    Spacer()
+                // × and SAVE sit in equal side slots, so the heading centers and both stay inside the stage.
+                HStack(alignment: .center, spacing: 4) {
+                    // -8: the X's 44 pt hit area pads its glyph; this puts the glyph as far in as SAVE's edge.
+                    StageCloseButton(label: "Cancel") { dismiss() }
+                        .padding(.leading, -8)
+                        .frame(width: StageMetrics.sideSlot, alignment: .leading)
                     HeadingArtView(.editprofile, height: 34, maxWidth: 200)
-                    Spacer()
+                        .frame(maxWidth: .infinity)
                     Button { save() } label: { CandyLabel(title: saving ? "Saving…" : "Save") }
-                        .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                        .buttonStyle(CastButtonStyle(color: .purple, size: .small, fullWidth: false))
                         .disabled(saving)
+                        .frame(width: StageMetrics.sideSlot, alignment: .trailing)
                 }
-                .padding(.horizontal, 14).padding(.top, 54)
+                .padding(.horizontal, 12).padding(.top, 54)
                 Spacer()
             }
         }
@@ -455,7 +459,7 @@ struct EditProfileView: View {
             Toggle(isOn: $isPrivate) {
                 Text("Hide my words, stats and game history").font(Brand.font(14, .heavy)).foregroundStyle(ink)
             }
-            .tint(Color(hex: 0x7C3AED))
+            .toggleStyle(.candy)   // button family §4: the candy switch everywhere
             .padding(.horizontal, 24)
             Text("You'll still appear on leaderboards.").font(Brand.font(12, .bold)).foregroundStyle(labelInk)
             Spacer(minLength: 0)

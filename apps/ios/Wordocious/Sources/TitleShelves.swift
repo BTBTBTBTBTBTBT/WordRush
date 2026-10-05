@@ -58,18 +58,25 @@ struct TitleShelvesView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                HeaderCircleButton(.symbol("xmark"), size: 30, label: "Close") { dismiss() }
-                Spacer()
-                if ArtAsset.exists("art-dress-title") {
-                    StageArt("art-dress-title", height: 30).accessibilityLabel("Pick your title")
-                } else {
-                    Text("PICK YOUR TITLE").font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0xF5B82E))
+                StageCloseButton(onStage: false) { dismiss() }
+                    .padding(.leading, -8)
+                    .frame(width: StageMetrics.sideSlot, alignment: .leading)
+                Group {
+                    if ArtAsset.exists("art-dress-title") {
+                        // Fits between the side slots (scales down on a narrow phone instead of running under DONE).
+                        ArtThumbs.image("art-dress-title", points: 240).resizable().interpolation(.high).scaledToFit()
+                            .frame(maxHeight: 30).padding(.horizontal, 2)
+                            .accessibilityLabel("Pick your title")
+                    } else {
+                        Text("PICK YOUR TITLE").font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0xF5B82E))
+                    }
                 }
-                Spacer()
+                .frame(maxWidth: .infinity)
                 Button { onPick(pick); dismiss() } label: { CandyLabel(title: "Done") }
-                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    .buttonStyle(CastButtonStyle(color: .purple, size: .small, fullWidth: false))
+                    .frame(width: StageMetrics.sideSlot, alignment: .trailing)
             }
-            .padding(.horizontal, 14).padding(.top, 14)
+            .padding(.horizontal, 10).padding(.top, 10)
             plate.padding(.horizontal, 14).padding(.top, 10)
             search.padding(.horizontal, 14).padding(.top, 8)
             ScrollView(showsIndicators: false) {
@@ -81,7 +88,16 @@ struct TitleShelvesView: View {
                         let list = (all.filter(earned) + all.filter { !earned($0) }).filter(matches)
                         if !list.isEmpty { shelf(s.label, count: "\(all.filter(earned).count) / \(all.count)", list) }
                     }
-                    if visible.filter(matches).isEmpty && !visible.isEmpty {
+                    if visible.isEmpty {
+                        // Never a bare screen: the bundled catalog makes this rare (a broken install / cache).
+                        VStack(spacing: 8) {
+                            PoseImage(.d, "skeptic", height: 70)
+                            Text("Your titles are on their way").font(Brand.font(14, .black)).foregroundStyle(ink)
+                            Button { Task { await catalog.load(force: true) } } label: { CandyLabel(title: "Try again") }
+                                .buttonStyle(CastButtonStyle(color: .purple, size: .small, fullWidth: false))
+                        }
+                        .frame(maxWidth: .infinity).padding(.top, 30)
+                    } else if visible.filter(matches).isEmpty {
                         VStack(spacing: 6) {
                             PoseImage(.d, "skeptic", height: 70)
                             Text("No title matches \"\(query)\"").font(Brand.font(13, .black)).foregroundStyle(ink)
@@ -140,8 +156,10 @@ struct TitleShelvesView: View {
                 Text(label.uppercased()).font(Brand.font(10, .black)).tracking(1.2).foregroundStyle(labelInk)
                 Spacer()
                 if let count {
+                    // The plaque art is the count's frame (it used to hang 7 pt past the padding, near the edge).
                     Text(count).font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0x7C2D12))
-                        .padding(.horizontal, 10).padding(.vertical, 3)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .frame(width: 64, height: 22)
                         .background { if ArtAsset.exists("art-dress-plaque") { StageArt("art-dress-plaque", width: 64, height: 22) } }
                         .accessibilityLabel("\(count) earned")
                 }
@@ -153,7 +171,8 @@ struct TitleShelvesView: View {
                 }
                 .padding(.horizontal, 10).padding(.top, 4)
             }
-            shelfLedge.padding(.horizontal, 8).padding(.top, -6)
+            // The ledge sits under the two-line names (it used to overlap and cut "Warrior", "Victory"…).
+            shelfLedge.padding(.horizontal, 8).padding(.top, -1)
         }
     }
 

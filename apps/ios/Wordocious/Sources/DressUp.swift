@@ -127,6 +127,8 @@ enum StageMetrics {
     static let roomHeight: CGFloat = 250
     static let mascot: CGFloat = 176
     static let podiumWidth: CGFloat = 232
+    /// The stage header's side slots (× left, SAVE / DONE right): equal, so the heading centers.
+    static let sideSlot: CGFloat = 86
 }
 
 // MARK: - The living mascot
@@ -313,7 +315,9 @@ struct DressStage<Overlay: View>: View {
                     Spacer(minLength: 0)
                     StageArt("art-dress-curtain-r", height: height * 0.92)
                 }
-                .frame(maxHeight: .infinity, alignment: .top)
+                // minWidth 0: on a narrow phone the two curtains are wider than the screen; they tuck
+                // under the edges (clipped) instead of widening the stage past the screen.
+                .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .offset(y: -height * 0.02)
             }
             if bulbs {
@@ -336,11 +340,47 @@ struct DressStage<Overlay: View>: View {
                 .padding(.bottom, podiumH * 0.42)
             }
             .padding(.bottom, 10)
-            overlay()
         }
         .frame(height: height)
-        .frame(maxWidth: .infinity)
+        .frame(minWidth: 0, maxWidth: .infinity)
+        // The controls lay out in the visible stage (never in the art's own, wider box).
+        .overlay { overlay() }
         .clipped()
+    }
+}
+
+/// The Stage / Dressing Room / Title Shelves close: the family's soft 3D X, bare (no bubble). On the stage it is
+/// whitened with a deep drop shadow so it reads on the curtains (the pale family X disappeared there); off the
+/// stage it wears the deep violet. A 44 pt hit area. Android: StageCloseButton (DressUp.kt), web: StageClose (dress-up.tsx).
+struct StageCloseButton: View {
+    var onStage = true
+    var label = "Close"
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if let ui = FamilyArt.shared.image("art-fam-cic-close") {
+                    if onStage {
+                        Image(uiImage: ui).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                            .saturation(0).brightness(0.22)
+                    } else {
+                        Image(uiImage: ui).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                            .colorMultiply(Color(hex: 0x8B5CF6))
+                    }
+                } else {
+                    Image(systemName: "xmark").resizable().scaledToFit().fontWeight(.black)
+                        .foregroundStyle(onStage ? Color.white : Color(hex: 0x6D28D9))
+                }
+            }
+            .frame(width: 24, height: 24)
+            .shadow(color: onStage ? Color(hex: 0x2E1065).opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.22),
+                    radius: onStage ? 2.5 : 2, x: 0, y: onStage ? 2 : 2.5)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.squishIcon)
+        .accessibilityLabel(label)
     }
 }
 

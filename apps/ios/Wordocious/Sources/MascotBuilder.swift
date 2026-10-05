@@ -268,19 +268,14 @@ struct MascotBuilderView: View {
                        hopToken: hopToken, curtains: true, bulbs: true) {
                 ZStack(alignment: .topLeading) {
                     HStack(alignment: .center) {
-                        Button { onClose?() } label: {
-                            Image(systemName: "xmark").font(.system(size: 16, weight: .black))
-                                .foregroundStyle(Color.white).shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-                                .frame(width: 40, height: 40).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.squishIcon)
-                        .accessibilityLabel("Close without saving")
+                        StageCloseButton(label: "Close without saving") { onClose?() }
                         Spacer(minLength: 0)
                         if let onSave {
                             Button { onSave(AvatarCatalog.enforcePro(config, isPro: isPro)) } label: {
                                 CandyLabel(title: saving ? "Saving…" : saveTitle)
                             }
-                            .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                            // The finished cast primary (the frost helper pill read pale on the stage).
+                            .buttonStyle(CastButtonStyle(color: .purple, size: .small, fullWidth: false))
                             .disabled(saving)
                             .builderAnchor(.save)
                         }
