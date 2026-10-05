@@ -9,12 +9,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Art Library local-screenshot bypass (see lib/admin/art-auth.ts): `next dev`
-  // with ART_LIBRARY_DEV_ADMIN=1 opens /admin/art without a session. The literal
+  // with ART_LIBRARY_DEV_ADMIN=1 opens /admin/art (and /admin/studio) without a session. The literal
   // NODE_ENV check compiles this out of production builds.
   if (
     process.env.NODE_ENV === 'development' &&
     process.env.ART_LIBRARY_DEV_ADMIN === '1' &&
-    request.nextUrl.pathname.startsWith('/admin/art')
+    (request.nextUrl.pathname.startsWith('/admin/art') || request.nextUrl.pathname.startsWith('/admin/studio'))
   ) {
     return NextResponse.next();
   }

@@ -20,6 +20,7 @@ const CRON_SCHEDULE: Record<string, { label: string; maxAgeHours: number }> = {
   'daily-medals': { label: 'Daily medals (12:05 UTC)', maxAgeHours: 26 },
   'daily-reminder': { label: 'Daily reminder push (14:00 UTC)', maxAgeHours: 26 },
   'friends-recap': { label: 'Friends weekly recap (Mon 13:00 UTC)', maxAgeHours: 7 * 24 + 2 },
+  'social-publish': { label: 'Social Studio publisher (every 15 min)', maxAgeHours: 1 },
   integrity: { label: 'Data integrity sweep (11:30 UTC)', maxAgeHours: 26 },
 };
 

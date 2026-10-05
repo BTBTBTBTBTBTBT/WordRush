@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, TrendingUp, Users, UserPlus, Shield, CalendarCheck, Gamepad2, Puzzle, SpellCheck, Swords,
   HeartHandshake, Trophy, Smile, CreditCard, DollarSign, Gift, Megaphone, BellRing, ToggleLeft, Library,
-  Ghost, MessageSquareText, Activity, Rocket, BookOpen, Palette, type LucideIcon,
+  Ghost, MessageSquareText, Activity, Rocket, BookOpen, Palette, Clapperboard, type LucideIcon,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -85,6 +85,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     title: 'Growth',
     items: [
       { href: '/admin/marketing', label: 'Marketing', icon: Megaphone, blurb: 'Links, signups by source, shares, push campaigns' },
+      { href: '/admin/studio', label: 'Social Studio', icon: Clapperboard, blurb: 'Marketing calendar: review posts with JP, they publish once both approve' },
       { href: '/admin/messaging', label: 'Messaging', icon: BellRing, blurb: 'Announcements and push devices' },
     ],
   },

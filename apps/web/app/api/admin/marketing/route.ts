@@ -106,7 +106,8 @@ export async function GET(request: NextRequest) {
       channel: l.channel,
       target: l.target,
       clicks: l.clicks ?? 0,
-      signups: signupsBySource[l.channel] ?? 0,
+      // signup_source is the /go cookie, i.e. the SLUG (bio links use slug = channel; Social Studio posts p-<id>-<platform>).
+      signups: signupsBySource[l.slug] ?? 0,
     })),
     signupsBySource,
     attributedSignups: Object.values(signupsBySource).reduce((a, b) => a + b, 0),
