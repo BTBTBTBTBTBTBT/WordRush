@@ -13,7 +13,7 @@ import { softBackground, softBorder, softMix } from '@/lib/soft-surface';
 import { AVATAR_CAST_IDS, AVATAR_CAST_NAME } from '@/lib/avatar-cast';
 import { MASCOT_LETTER } from '@/lib/mascots';
 import {
-  BUILDER_TABS, FRAME_UNLOCK_LEVEL, INTEGRATED_SECTIONS, SWATCH_FIELDS, SWATCH_ROWS, avatarConfigKey, avatarOptionIds, avatarOptionLabel, avatarProOnly,
+  BUILDER_TABS, FRAME_UNLOCK_LEVEL, INTEGRATED_SECTIONS, SWATCH_FIELDS, SWATCH_ROWS, avatarConfigKey, avatarOptionArt, avatarOptionIds, avatarOptionIsNew, avatarOptionLabel, avatarProOnly,
   effectiveAvatarFrame, frameLevelLocked, randomAvatar, swatchCss, type BuilderField, type BuilderTab,
 } from '@/lib/avatar-render';
 import { MascotAvatar } from './mascot-avatar';
@@ -189,9 +189,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
       case 'bg': return <span className="block w-full h-full rounded-full" style={{ background: backdropFill(id, value.color) }} />;
       case 'frame': return <MascotAvatar config={{ ...bodyOnly(value), frame: id } as AvatarConfig} initial=" " size={46} pro={id === 'pro' ? true : null} />;
       default: {
-        const kind = field === 'head' || field === 'face' || field === 'neck' ? 'acc' : field;
         // eslint-disable-next-line @next/next/no-img-element
-        return <img src={artSrc(`art-av-${kind}-${id}`)} alt="" draggable={false} style={{ width: '78%', height: '78%', objectFit: 'contain' }} />;
+        return <img src={artSrc(avatarOptionArt(field, id))} alt="" draggable={false} style={{ width: '78%', height: '78%', objectFit: 'contain' }} />;
       }
     }
   };
@@ -232,7 +231,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
           ) : partArt(field, id)}
           {levelLocked && <span className="absolute inset-0 flex items-center justify-center"><StageArt name="art-dress-lock" height={20} /></span>}
         </span>
-        {NEW_IDS.has(`${field}:${id}`) && !proLocked && <StageArt name="art-dress-tag-new" height={15} className="absolute" style={{ top: -3, right: -4 }} />}
+        {(NEW_IDS.has(`${field}:${id}`) || avatarOptionIsNew(field, id)) && !proLocked && <StageArt name="art-dress-tag-new" height={15} className="absolute" style={{ top: -3, right: -4 }} />}
         {proLocked && <StageArt name="art-dress-tag-pro" height={15} className="absolute" style={{ bottom: -2, right: -6 }} />}
         {levelLocked && <span className="absolute -bottom-3.5 text-[9px] font-black" style={{ color: 'var(--color-text-muted)' }}>Lv {FRAME_UNLOCK_LEVEL[id as AvatarFrame]}</span>}
       </button>
