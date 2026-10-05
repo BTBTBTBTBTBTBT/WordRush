@@ -212,6 +212,10 @@ object BadgeMath {
         return incoming.filter { taken.add(it.id) }
     }
 
+    /** Johnny (iOS 242): closing a moment drops EVERY queued copy of it, so "Awesome!" always closes it. */
+    fun afterDismiss(queued: List<BadgeMoment>, closed: BadgeMoment): List<BadgeMoment> =
+        queued.filter { it.id != closed.id }
+
     /**
      * The level-up popup's gate: a level-up whose new level sits in a different tier than
      * the level before it (one game is worth < 1,000 XP, so the previous level is N − 1).
@@ -345,12 +349,17 @@ object BadgeMoments {
      * popup. The launch / foreground diff ([fromDiff]) is always late.
      */
     fun achievements(keys: List<String>, fromDiff: Boolean = false, late: Boolean = fromDiff) {
-        if (keys.isEmpty()) return
+        var fresh = keys.distinct()
         if (!fromDiff) {
-            runCatching { com.wordocious.app.data.AchievementSeen.markSeen(keys) }
-            unlockedCount = unlockedCount?.plus(keys.size)
+            // Johnny (iOS 242): an unlock already celebrated (by the launch diff, before a
+            // restart) never celebrates again from a replayed / repeated result.
+            val already = runCatching { com.wordocious.app.data.AchievementSeen.seenNow() }.getOrNull().orEmpty()
+            fresh = fresh.filter { it !in already }
+            if (fresh.isEmpty()) return
+            runCatching { com.wordocious.app.data.AchievementSeen.markSeen(fresh) }
+            unlockedCount = unlockedCount?.plus(fresh.size)
         }
-        post(keys.map { BadgeMoment.Achievement(it) }, late)
+        post(fresh.map { BadgeMoment.Achievement(it) }, late)
     }
 
     fun levelUp(level: Int, late: Boolean = false) = post(listOf(BadgeMoment.LevelUp(level)), late)
@@ -365,12 +374,21 @@ object BadgeMoments {
 
     /** A late moment's calm moment came ([CelebrationQueue.presentNext], main thread). */
     fun showNow(moment: BadgeMoment) {
-        items.add(moment)
+        if (items.none { it.id == moment.id }) items.add(moment)
     }
 
-    /** "Nice!" — the next one (if any) takes its place. */
+    /**
+     * "Awesome!" / "Nice!" / See all / share — the moment on screen is acknowledged (seen for
+     * good, persisted before it goes) and every queued copy of it dropped; the next different
+     * one (if any) takes its place.
+     */
     fun dismiss() {
-        if (items.isNotEmpty()) items.removeAt(0)
+        val head = items.firstOrNull() ?: return
+        seen.add(head.id)
+        if (head is BadgeMoment.Achievement) runCatching { com.wordocious.app.data.AchievementSeen.markSeen(listOf(head.key)) }
+        val keep = BadgeMath.afterDismiss(items, head)
+        items.clear()
+        items.addAll(keep)
     }
 }
 

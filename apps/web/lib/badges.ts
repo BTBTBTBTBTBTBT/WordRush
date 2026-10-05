@@ -147,6 +147,18 @@ const EMPTY: readonly BadgeCelebration[] = Object.freeze([]);
 let queue: readonly BadgeCelebration[] = EMPTY;
 const listeners = new Set<() => void>();
 
+/**
+ * Johnny (iOS 242, 10-05): "Awesome!" re-showed the same unlock. Every celebration
+ * that was queued this session is remembered by id, so a later re-announcement (the
+ * live result AND the focus sync, a replayed result) never queues it again.
+ */
+const admitted = new Set<string>();
+
+/** One id per celebration: an achievement by key, a tier popup by tier. */
+export function celebrationId(c: BadgeCelebration): string {
+  return c.kind === 'achievement' ? `a:${c.key}` : `t:${c.tier}`;
+}
+
 function sameItem(a: BadgeCelebration, b: BadgeCelebration): boolean {
   if (a.kind === 'achievement' && b.kind === 'achievement') return a.key === b.key;
   if (a.kind === 'tier' && b.kind === 'tier') return a.tier === b.tier;
@@ -163,7 +175,9 @@ export function queueCelebrations(items: BadgeCelebration[], opts: { late?: bool
   const fresh: BadgeCelebration[] = [];
   for (const raw of items) {
     const it: BadgeCelebration = opts.late ? { ...raw, late: true } : raw;
+    if (admitted.has(celebrationId(it))) continue;
     if (queue.some((q) => sameItem(q, it)) || fresh.some((q) => sameItem(q, it))) continue;
+    admitted.add(celebrationId(it));
     fresh.push(it);
   }
   if (fresh.length === 0) return;
@@ -179,13 +193,25 @@ export function getCelebrations(): readonly BadgeCelebration[] {
   return queue;
 }
 
-/** Drops the celebration on screen: `item` when given, else the oldest. */
+/**
+ * Drops the celebration on screen (`item` when given, else the oldest) and every
+ * other queued copy of it, so "Awesome!" always closes that unlock for good.
+ */
 export function dismissCelebration(item?: BadgeCelebration): void {
   if (queue.length === 0) return;
-  const i = item ? queue.indexOf(item) : 0;
-  if (i < 0) return;
-  queue = queue.length === 1 ? EMPTY : queue.filter((_, j) => j !== i);
+  const head = item ?? queue[0];
+  const id = celebrationId(head);
+  admitted.add(id);
+  const next = queue.filter((q) => q !== head && celebrationId(q) !== id);
+  if (next.length === queue.length) return;
+  queue = next.length === 0 ? EMPTY : next;
   listeners.forEach((l) => l());
+}
+
+/** Tests only: forget the session's queue + admitted ids. */
+export function resetCelebrationsForTest(): void {
+  admitted.clear();
+  queue = EMPTY;
 }
 
 /**

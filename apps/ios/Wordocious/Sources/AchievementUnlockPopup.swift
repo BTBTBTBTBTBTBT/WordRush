@@ -64,7 +64,30 @@ final class AchievementUnlockCenter: ObservableObject {
         guard !attached else { return }
         attached = true
         flush()
+        #if DEBUG
+        // Repro hook (Johnny, iOS 242): `-debugDupAchievement` queues the same unlock
+        // three times from two racing announcements, the way a live result + a sync could.
+        if ProcessInfo.processInfo.arguments.contains("-debugDupAchievement") {
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                await self.debugQueueDuplicate()
+            }
+        }
+        #endif
     }
+
+    #if DEBUG
+    private func debugQueueDuplicate() async {
+        let key = "cryptogram_swift"
+        let user = Self.seenUser
+        if (Self.loadSeen(user) ?? []).contains(key) { print("[debugDupAchievement] \(key) already seen: no popup"); return }
+        // Raw presents (no enqueue-side filter): one batch with the key twice, then again
+        // with a different count, so equality-based de-dupe would have let all through.
+        await present(keys: [key, key], unlockedCount: 28)
+        await present(keys: [key], unlockedCount: 27)
+        print("[debugDupAchievement] queued \(queue.count) moment(s): \(queue.map(\.id))")
+    }
+    #endif
 
     // MARK: BF2 gating
 
@@ -101,6 +124,22 @@ final class AchievementUnlockCenter: ObservableObject {
         UserDefaults.standard.set(Array(s).sorted(), forKey: seenKey(uid))
     }
 
+    /// Whose persisted seen set the popup writes to (a guest gets its own).
+    private static var seenUser: String { AuthService.shared.profile?.id ?? "guest" }
+
+    /// The moment closed (Awesome / See all / share / backdrop): its achievement is
+    /// seen for good — persisted BEFORE the popup goes, so no sync, replay or relaunch
+    /// can ever bring it back.
+    private func acknowledge(_ moments: [Moment]) {
+        moments.forEach { seen.insert($0.id) }
+        let keys: [String] = moments.compactMap { if case .achievement(let k, _, _, _, _, _, _, _) = $0 { return k } else { return nil } }
+        guard !keys.isEmpty else { return }
+        let user = Self.seenUser
+        let stored = Self.loadSeen(user) ?? []
+        let next = stored.union(keys)
+        if next != stored { Self.saveSeen(next, user) }
+    }
+
     /// On launch / foreground / after a result lands: celebrate any achievement the
     /// player has earned (anywhere — server awards, crons, other devices) but hasn't
     /// seen here. The first run after this update seeds the set silently.
@@ -123,12 +162,12 @@ final class AchievementUnlockCenter: ObservableObject {
     /// `late` (BI16): the result came from a replay or answered slowly — the
     /// moment waits for calm (Home's root, nothing presented, no other popup).
     func enqueue(keys: [String], late: Bool = false) async {
-        var fresh = keys.filter { !seen.contains("a:\($0)") }
-        if let uid = AuthService.shared.profile?.id {
-            let stored = Self.loadSeen(uid) ?? []
-            fresh = AchievementSeen.unseen(fresh, seen: stored)
-            Self.saveSeen(stored.union(fresh), uid)
-        }
+        let user = Self.seenUser
+        let stored = Self.loadSeen(user) ?? []
+        // Johnny (242): no repeats inside the batch, nothing this session already
+        // queued / showed, nothing persisted as seen — and saved seen BEFORE any await.
+        let fresh = AchievementSeen.unseen(keys.filter { !seen.contains("a:\($0)") }, seen: stored)
+        if !fresh.isEmpty { Self.saveSeen(stored.union(fresh), user) }
         guard !fresh.isEmpty else { return }
         // A beat so a game's own win popup lands (and holds the queue) first.
         if !late { try? await Task.sleep(nanoseconds: 1_200_000_000) }
@@ -159,7 +198,9 @@ final class AchievementUnlockCenter: ObservableObject {
 
     /// BI16: hold late moments until a calm moment, then queue them in order.
     private func addLate(_ moments: [Moment]) {
-        let fresh = moments.filter { !seen.contains($0.id) && !latePending.contains($0) }
+        // Johnny (242): de-dupe by id (not full equality — the same unlock can arrive
+        // with a different "N of M" count from the sync and from the result).
+        let fresh = admit(moments)
         guard !fresh.isEmpty else { return }
         latePending.append(contentsOf: fresh)
         guard lateWaiter == nil else { return }
@@ -178,25 +219,43 @@ final class AchievementUnlockCenter: ObservableObject {
         add([.levelUp(level: newLevel)])
     }
 
-    /// "Awesome!" — on to the next queued moment (or close).
+    /// "Awesome!" — the moment on screen is acknowledged and EVERY queued copy of it
+    /// dropped (Johnny, 242: a second copy used to re-show the same popup), then on to
+    /// the next different moment (or close).
     func advance() {
-        if !queue.isEmpty { queue.removeFirst() }
+        guard let head = queue.first else { scheduleHide(); return }
+        acknowledge([head])
+        let ids = UnlockQueue.dismiss(queue.map(\.id), id: head.id)
+        queue = queue.filter { ids.contains($0.id) }
+        latePending.removeAll { $0.id == head.id }
+        pending.removeAll { $0.id == head.id }
         if queue.isEmpty { scheduleHide() }
     }
 
-    /// Close everything now (See all / share).
+    /// Close everything now (See all / share): all acknowledged first.
     func dismissAll() {
+        acknowledge(queue)
         queue.removeAll()
         scheduleHide()
     }
 
+    /// The moments of `moments` not yet queued, held, shown or acknowledged, one per id.
+    private func admit(_ moments: [Moment]) -> [Moment] {
+        let taken = queue.map(\.id) + pending.map(\.id) + latePending.map(\.id)
+        var ids = UnlockQueue.admit(moments.map(\.id), queued: taken, shown: seen)
+        return moments.filter { m in
+            guard let i = ids.firstIndex(of: m.id) else { return false }
+            ids.remove(at: i); return true
+        }
+    }
+
     private func add(_ moments: [Moment]) {
-        let fresh = moments.filter { !seen.contains($0.id) }
+        let fresh = admit(moments)
         guard !fresh.isEmpty else { return }
         // BJ2: decode the badge art off main while the moment waits for its turn.
         ArtThumbs.prewarm(fresh.map { (AchievementUnlockPopup.badgeAsset(for: $0), 150) }
                           + [("art-scene-achievement", 190 * max(1, ArtAsset.aspect("art-scene-achievement") ?? 1))])
-        guard attached, blocks.isEmpty else { pending.append(contentsOf: fresh.filter { m in !pending.contains(m) }); return }
+        guard attached, blocks.isEmpty else { pending.append(contentsOf: fresh); return }
         fresh.forEach { seen.insert($0.id) }
         queue.append(contentsOf: fresh)
         showWindow()

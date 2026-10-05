@@ -3,11 +3,13 @@ import { ACHIEVEMENTS } from './achievement-service';
 import { ACHIEVEMENT_BADGES, ART_SIZE } from './art';
 import {
   achievementBadge, achievementProgress, achievementTarget, celebrateLevelUp, dismissCelebration,
-  formatUnlockDate, getCelebrations, levelBadge, levelLabel, queueCelebrations, subscribeCelebrations, tierChanged,
+  formatUnlockDate, getCelebrations, levelBadge, levelLabel, queueCelebrations, resetCelebrationsForTest,
+  subscribeCelebrations, tierChanged,
 } from './badges';
 
 function drain() {
   while (getCelebrations().length > 0) dismissCelebration();
+  resetCelebrationsForTest();
 }
 
 describe('achievementBadge (FINISH_SPEC V1)', () => {
@@ -97,5 +99,26 @@ describe('celebration queue (V2)', () => {
     expect(getCelebrations()).toHaveLength(0);
     celebrateLevelUp(25, 26);
     expect(getCelebrations()).toEqual([{ kind: 'tier', level: 26, tier: 'gold', accent: '#f5a524' }]);
+  });
+});
+
+describe('unlock popup de-dupe (Johnny, iOS 242: "Awesome!" re-showed the same unlock)', () => {
+  beforeEach(drain);
+  const swift = { kind: 'achievement' as const, key: 'cryptogram_swift', name: 'Swift Codebreaker', description: '', badge: 'zap' as const, accent: '#7c3aed' };
+  it('the same unlock announced twice shows once, and Awesome closes it for good', () => {
+    queueCelebrations([swift, { ...swift }]);
+    queueCelebrations([{ ...swift }], { late: true });
+    expect(getCelebrations()).toHaveLength(1);
+    dismissCelebration(getCelebrations()[0]);
+    expect(getCelebrations()).toHaveLength(0);
+    // A later re-announcement (focus sync, replayed result) never brings it back.
+    queueCelebrations([{ ...swift }], { late: true });
+    expect(getCelebrations()).toHaveLength(0);
+  });
+  it('different unlocks still play one after another', () => {
+    queueCelebrations([swift, { ...swift, key: 'night_owl', name: 'Night Owl' }]);
+    expect(getCelebrations().map((c) => (c.kind === 'achievement' ? c.key : ''))).toEqual(['cryptogram_swift', 'night_owl']);
+    dismissCelebration(getCelebrations()[0]);
+    expect(getCelebrations().map((c) => (c.kind === 'achievement' ? c.key : ''))).toEqual(['night_owl']);
   });
 });
