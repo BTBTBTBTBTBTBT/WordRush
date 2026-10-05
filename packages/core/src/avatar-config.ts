@@ -110,8 +110,8 @@ const NEAREST_POOL = AVATAR_COLORS.slice(0, 16);
 
 export type AvatarBody = (typeof AVATAR_BODIES)[number];
 export type AvatarPattern = (typeof AVATAR_PATTERNS)[number];
-export type AvatarEyes = (typeof AVATAR_EYES)[number];
-export type AvatarMouth = (typeof AVATAR_MOUTHS)[number];
+export type AvatarEyes = (typeof AVATAR_EYES)[number] | 'none';
+export type AvatarMouth = (typeof AVATAR_MOUTHS)[number] | 'none';
 export type AvatarNose = (typeof AVATAR_NOSES)[number];
 export type AvatarCheeks = (typeof AVATAR_CHEEKS)[number];
 export type AvatarHead = (typeof AVATAR_HEADS)[number];
@@ -240,10 +240,11 @@ export function validateAvatar(raw: unknown, fallback: AvatarConfig = defaultAva
     color,
     pattern: pick(r.pattern, AVATAR_PATTERNS, fallback.pattern),
     patternColor,
-    eyes: pick(r.eyes, AVATAR_EYES, fallback.eyes),
+    // Founder 10-05: "you're able to hit None on any body part" — eyes and mouth may be 'none' (draws nothing).
+    eyes: r.eyes === 'none' ? 'none' : pick(r.eyes, AVATAR_EYES, fallback.eyes),
     nose: legacyCheeks ? 'none' : pick(r.nose, AVATAR_NOSES, fallback.nose),
     cheeks: legacyCheeks ?? pick(r.cheeks, AVATAR_CHEEKS, fallback.cheeks ?? 'none'),
-    mouth: pick(r.mouth, AVATAR_MOUTHS, fallback.mouth),
+    mouth: r.mouth === 'none' ? 'none' : pick(r.mouth, AVATAR_MOUTHS, fallback.mouth),
     head: pick(r.head, AVATAR_HEADS, fallback.head),
     face: pick(r.face, AVATAR_FACES, fallback.face),
     neck: pick(r.neck, AVATAR_NECKS, fallback.neck),

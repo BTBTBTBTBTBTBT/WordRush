@@ -246,10 +246,11 @@ fun validateAvatar(raw: JsonElement?, fallback: AvatarConfig = defaultAvatar("")
         color = color,
         pattern = pick(r.string("pattern"), AvatarOptions.PATTERNS, fallback.pattern),
         patternColor = patternColor,
-        eyes = pick(r.string("eyes"), AvatarOptions.EYES, fallback.eyes),
+        // founder 10-05: None on any body part — eyes / mouth may be "none" (draws nothing)
+        eyes = if (r.string("eyes") == "none") "none" else pick(r.string("eyes"), AvatarOptions.EYES, fallback.eyes),
         nose = if (legacyCheeks != null) "none" else pick(r.string("nose"), AvatarOptions.NOSES, fallback.nose),
         cheeks = legacyCheeks ?: pick(r.string("cheeks"), AvatarOptions.CHEEKS, fallback.cheeks),
-        mouth = pick(r.string("mouth"), AvatarOptions.MOUTHS, fallback.mouth),
+        mouth = if (r.string("mouth") == "none") "none" else pick(r.string("mouth"), AvatarOptions.MOUTHS, fallback.mouth),
         head = pick(r.string("head"), AvatarOptions.HEADS, fallback.head),
         face = pick(r.string("face"), AvatarOptions.FACES, fallback.face),
         neck = pick(r.string("neck"), AvatarOptions.NECKS, fallback.neck),

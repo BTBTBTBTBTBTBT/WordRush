@@ -336,10 +336,11 @@ public enum AvatarCatalog {
             color: color,
             pattern: pick(r["pattern"], patterns, fallback.pattern),
             patternColor: patternColor,
-            eyes: pick(r["eyes"], eyes, fallback.eyes),
+            // founder 10-05: None on any body part — eyes / mouth may be "none" (draws nothing)
+            eyes: (r["eyes"] as? String) == "none" ? "none" : pick(r["eyes"], eyes, fallback.eyes),
             nose: legacyCheeks != nil ? "none" : pick(r["nose"], noses, fallback.nose),
             cheeks: legacyCheeks ?? pick(r["cheeks"], cheeks, fallback.cheeks),
-            mouth: pick(r["mouth"], mouths, fallback.mouth),
+            mouth: (r["mouth"] as? String) == "none" ? "none" : pick(r["mouth"], mouths, fallback.mouth),
             head: pick(r["head"], heads, fallback.head),
             face: pick(r["face"], faces, fallback.face),
             neck: pick(r["neck"], necks, fallback.neck),

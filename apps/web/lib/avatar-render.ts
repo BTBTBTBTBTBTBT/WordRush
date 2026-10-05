@@ -199,7 +199,8 @@ export function avatarLayers(config: AvatarConfig, size: number, frame: AvatarFr
   out.push('gloss', 'letter');
   if (config.nose !== 'none') out.push('nose');
   if (!small && config.cheeks && config.cheeks !== 'none') out.push('cheeks');
-  out.push('eyes', 'mouth');
+  if (config.eyes !== 'none') out.push('eyes');
+  if (config.mouth !== 'none') out.push('mouth');
   if (!small && FRONT_NECKS.includes(config.neck)) out.push('neckFront');
   if (!small && config.face !== 'none') out.push('face');
   if (config.head !== 'none') out.push('head');
@@ -276,7 +277,10 @@ export function avatarArtName(kind: AvatarArtKind, id: string): string {
 
 /** The art names a config would use (nothing for "none" picks). */
 export function avatarArtNames(config: AvatarConfig): string[] {
-  const out = [avatarArtName('body', config.body), avatarArtName('eyes', config.eyes), avatarArtName('mouth', config.mouth)];
+  const out = [avatarArtName('body', config.body)];
+  // founder 10-05: eyes / mouth may be 'none' (no art, draws nothing)
+  if (config.eyes !== 'none') out.push(avatarArtName('eyes', config.eyes));
+  if (config.mouth !== 'none') out.push(avatarArtName('mouth', config.mouth));
   if (config.nose !== 'none') out.push(avatarArtName('nose', config.nose));
   if (config.cheeks && config.cheeks !== 'none') out.push(avatarArtName('cheeks', config.cheeks));
   for (const acc of [config.head, config.face, config.neck]) if (acc !== 'none') out.push(avatarArtName('acc', acc));
@@ -871,11 +875,11 @@ export function mascotSvg(input: MascotSvgInput): string {
     const n = avatarArtName('nose', config.nose);
     out.push(has(n) ? img(n, g.nose.x - g.nose.w / 2, g.nose.y - g.nose.w / 4, g.nose.w, g.nose.w / 2) : drawNose(config.nose, g.nose, g.eyes, pal));
   }
-  {
+  if (layers.has('eyes')) {
     const n = avatarArtName('eyes', config.eyes);
     out.push(has(n) ? img(n, g.eyes.x - g.eyes.w / 2, g.eyes.y - g.eyes.w / 4, g.eyes.w, g.eyes.w / 2) : drawEyes(config.eyes, g.eyes));
   }
-  {
+  if (layers.has('mouth')) {
     const n = avatarArtName('mouth', config.mouth);
     out.push(has(n) ? img(n, g.mouth.x - g.mouth.w / 2, g.mouth.y - g.mouth.w / 2, g.mouth.w, g.mouth.w) : drawMouth(config.mouth, g.mouth));
   }

@@ -1734,6 +1734,38 @@
         "bg": "auto",
         "display": "mascot"
       }
+    },
+    {
+      "raw": {
+        "eyes": "none",
+        "mouth": "none",
+        "nose": "none",
+        "cheeks": "none",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "pattern": "solid",
+        "bg": "auto",
+        "frame": "none"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "none",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "none",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
     }
   ],
   "pro": [

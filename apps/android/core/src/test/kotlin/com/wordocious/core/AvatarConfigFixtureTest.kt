@@ -128,4 +128,18 @@ class AvatarConfigFixtureTest {
         val v = validateAvatar(Json.parseToJsonElement("""{"body":7,"head":"fedora","bg":"lava","color":"PURPLE"}"""), c)
         assertEquals("star", v.body); assertEquals("tiara", v.head); assertEquals("galaxy", v.bg); assertEquals("mint", v.color)
     }
+
+    /** Founder 10-05: "you're able to hit None on any body part" — every optional category round-trips as none. */
+    @Test fun noneOnEveryOptionalPartRoundTrips() {
+        val fb = defaultAvatar("fixture", "#2563eb")
+        val raw = Json.parseToJsonElement(
+            """{"body":"${fb.body}","color":"${fb.color}","eyes":"none","mouth":"none","nose":"none","cheeks":"none","head":"none","face":"none","neck":"none","pattern":"solid","bg":"auto","frame":"none"}""",
+        )
+        val v = validateAvatar(raw, fb)
+        assertEquals("none", v.eyes); assertEquals("none", v.mouth); assertEquals("none", v.nose); assertEquals("none", v.cheeks)
+        assertEquals("none", v.head); assertEquals("none", v.face); assertEquals("none", v.neck); assertEquals("none", v.frame)
+        assertEquals(fb.body, v.body)
+        assertEquals(v, validateAvatar(v, fb))
+        assertEquals(fb.eyes, validateAvatar(Json.parseToJsonElement("""{"eyes":"laser"}"""), fb).eyes)
+    }
 }

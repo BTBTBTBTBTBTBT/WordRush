@@ -4371,6 +4371,120 @@
           "h": 0.8715
         }
       }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "none",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "none",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": false,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0187,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3194,
+          "y": 0.5218,
+          "w": 0.3612,
+          "h": 0.2113
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "classic",
+            "art": "art-av-body-classic",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0187,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.1489,
+          "w": 0.8063,
+          "h": 0.7021
+        }
+      }
+    },
+    {
+      "config": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "none",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "none",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "small": true,
+      "layout": {
+        "scale": 0.86,
+        "body": {
+          "x": 0.0708,
+          "y": 0.0187,
+          "w": 0.86,
+          "h": 0.86
+        },
+        "letter": {
+          "x": 0.3194,
+          "y": 0.5218,
+          "w": 0.3612,
+          "h": 0.2113
+        },
+        "layers": [
+          {
+            "layer": "body",
+            "field": "body",
+            "id": "classic",
+            "art": "art-av-body-classic",
+            "rect": {
+              "x": 0.0708,
+              "y": 0.0187,
+              "w": 0.86,
+              "h": 0.86
+            },
+            "tint": false
+          }
+        ],
+        "bounds": {
+          "x": 0.0969,
+          "y": 0.1489,
+          "w": 0.8063,
+          "h": 0.7021
+        }
+      }
     }
   ],
   "picks": [

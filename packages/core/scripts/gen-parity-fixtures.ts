@@ -783,6 +783,8 @@ export function renderAvatarConfigFixtures() {
     { nose: 'blush' }, { nose: 'freckles', cheeks: 'hearts' }, { nose: 'piggy', cheeks: 'bandage' },
     { body: 'hex', eyes: 'dizzy', mouth: 'braces', head: 'astronaut', face: 'eyepatch', neck: 'guitar', accColor: 'teal', color: 'rainbow', pattern: 'leopard', patternColor: 'navy' },
     { accColor: 'nope', cheeks: 'glitter', pattern: 'plaid' },
+    // founder 10-05: None on every optional part (body + color stay required)
+    { eyes: 'none', mouth: 'none', nose: 'none', cheeks: 'none', head: 'none', face: 'none', neck: 'none', pattern: 'solid', bg: 'auto', frame: 'none' },
   ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
   const pro = [true, false].flatMap((isPro) => [
     { isPro, input: { ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) },
@@ -841,6 +843,8 @@ export function renderAvatarLayoutFixtures() {
     { body: 'cloud', head: 'halo', neck: 'fairywings', cheeks: 'hearts' }, { body: 'pear', head: 'mohawk', neck: 'medal', face: 'starglasses' },
     { body: 'chunky', head: 'flowercrown', neck: 'backpack', eyes: 'anime', mouth: 'laugh' }, { body: 'bean', head: 'tophat', neck: 'scarf', face: 'monocle' },
     { body: 'blob', head: 'bearears', neck: 'chain', face: 'facepaint', cheeks: 'blush' },
+    // founder 10-05: None on every optional part — the bare body (and its letter) only
+    { body: 'classic', eyes: 'none', mouth: 'none', nose: 'none', cheeks: 'none', head: 'none', face: 'none', neck: 'none' },
   ];
   const cases = configs.flatMap((o) => [false, true].map((small) => ({ config: mk(o), small, layout: avatarLayout(mk(o), { small }) })));
   const picks = [

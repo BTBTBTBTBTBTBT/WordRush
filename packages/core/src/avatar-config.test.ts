@@ -60,3 +60,16 @@ describe('avatar config (FINISH_SPEC AN3)', () => {
     for (const b of AVATAR_BODIES) expect((parts.bodies as Record<string, unknown>)[b], b).toBeDefined();
   });
 });
+
+describe('None on any body part (founder 10-05)', () => {
+  it('round-trips every optional category set to none (body + color stay)', () => {
+    const fb = defaultAvatar('fixture', '#2563eb');
+    const raw = { ...fb, eyes: 'none', mouth: 'none', nose: 'none', cheeks: 'none', head: 'none', face: 'none', neck: 'none', pattern: 'solid', bg: 'auto', frame: 'none' };
+    const v = validateAvatar(raw, fb);
+    expect(v).toMatchObject({ eyes: 'none', mouth: 'none', nose: 'none', cheeks: 'none', head: 'none', face: 'none', neck: 'none', frame: 'none' });
+    expect(v.body).toBe(fb.body);
+    expect(validateAvatar(JSON.parse(JSON.stringify(v)), fb)).toEqual(v);
+    // a bogus id still falls back
+    expect(validateAvatar({ ...raw, eyes: 'laser' }, fb).eyes).toBe(fb.eyes);
+  });
+});

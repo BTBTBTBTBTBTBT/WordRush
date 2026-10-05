@@ -144,4 +144,17 @@ final class AvatarConfigTests: XCTestCase {
         for b in AvatarCatalog.bodies { XCTAssertNotNil(AvatarParts.builtIn.bodies[b], b) }
         XCTAssertEqual(parts.body("classic").y(slot: "headTop"), 0.06)
     }
+
+    /// Founder 10-05: "you're able to hit None on any body part" — every optional category round-trips as none.
+    func testNoneOnEveryOptionalPartRoundTrips() {
+        let fb = AvatarCatalog.defaultAvatar(userId: "fixture", accentHex: "#2563eb")
+        let raw: [String: Any] = ["body": fb.body, "color": fb.color, "eyes": "none", "mouth": "none", "nose": "none", "cheeks": "none",
+                                  "head": "none", "face": "none", "neck": "none", "pattern": "solid", "bg": "auto", "frame": "none"]
+        let v = AvatarCatalog.validate(raw, fallback: fb)
+        XCTAssertEqual([v.eyes, v.mouth, v.nose, v.cheeks, v.head, v.face, v.neck, v.frame], Array(repeating: "none", count: 8))
+        XCTAssertEqual(v.body, fb.body)
+        XCTAssertEqual(AvatarCatalog.validate(v.jsonObject, fallback: fb), v)
+        XCTAssertEqual(AvatarCatalog.validate(["eyes": "laser"], fallback: fb).eyes, fb.eyes)
+    }
 }
+
