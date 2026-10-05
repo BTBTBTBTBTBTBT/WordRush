@@ -488,6 +488,8 @@ fun SeasonDressOffer(modifier: Modifier = Modifier) {
             androidx.compose.material3.Text("Free looks for the season.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7A6AA6), maxLines = 1)
         }
         CandyButton("Yes!", onClick = { SeasonNudge.finish(due); DressUp.open(DressDoor.Room(BuilderTab.SEASON)) }, color = CandyColor.PINK, size = CandySize.SMALL)
+        // Button family §3: the soft 3D X.
+        RoundIconButton(FamChrome.CLOSE, "No thanks", onClick = { SeasonNudge.finish(due) }, size = 22.dp)
     }
 }
 
