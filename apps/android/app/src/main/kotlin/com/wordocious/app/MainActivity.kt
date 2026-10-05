@@ -43,6 +43,10 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The manifest locks phones to portrait (iOS parity); a tablet keeps free rotation.
+        if (resources.configuration.smallestScreenWidthDp >= 600) {
+            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         super.onCreate(savedInstanceState)
         // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
         // starts arrive via onNewIntent below. Before this, the intent-filter

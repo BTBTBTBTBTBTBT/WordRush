@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -114,7 +116,10 @@ fun GuestPitch(
         // BJ15: THE primary button is the cast button (SIGN IN lettering), as on the sign-in screen.
         CastButton("Sign in", onSignIn, color = CastColor.PURPLE, size = CastSize.L,
             modifier = Modifier.padding(top = 24.dp))
-        if (onPlay != null) {
+        // 2026-10-05: a guest is already playing without an account, so the link would only
+        // offer what they have; SIGN IN stays (iOS + web parity).
+        val isGuest by com.wordocious.app.data.AuthService.isGuest.collectAsState()
+        if (onPlay != null && !isGuest) {
             Text(
                 "Play without an account",
                 fontSize = 14.sp, fontWeight = FontWeight.Bold, color = subColor,

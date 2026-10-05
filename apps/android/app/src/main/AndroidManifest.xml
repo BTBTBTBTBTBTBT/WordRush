@@ -42,10 +42,15 @@
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_accent" />
 
+        <!-- Portrait on phones (iOS parity: iPhone-only, UIInterfaceOrientationPortrait).
+             Landscape collapsed the Classic board on a phone (2026-10-05). Tablets
+             (smallest width >= 600dp) are released in MainActivity.onCreate, and
+             Android 16 ignores this lock on large screens anyway. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:screenOrientation="sensorPortrait"
             android:label="@string/app_name"
             android:theme="@style/Theme.Wordocious">
             <intent-filter>
