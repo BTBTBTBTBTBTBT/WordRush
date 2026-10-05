@@ -86,23 +86,29 @@ object HeadlineTokens {
     }
 }
 
-/** AR the palettes: the main fill (top → bottom), the extrusion shade and the name accent. */
-enum class HeadlinePalette(val top: Color, val bottom: Color, val deep: Color, val nameTop: Color, val nameBottom: Color) {
+/**
+ * AR the palettes: the main fill (top → bottom), the extrusion shade, the name accent and the
+ * outline (gold; cream on the gold palettes so the outline still reads — iOS parity).
+ */
+enum class HeadlinePalette(
+    val top: Color, val bottom: Color, val deep: Color, val nameTop: Color, val nameBottom: Color,
+    val outline: Color = Color(0xFFF5C542),
+) {
     /** Home banner: purple → magenta. */
     HOME(Color(0xFF8B5CF6), Color(0xFFD946EF), Color(0xFF4C1D95), Color(0xFFF472B6), Color(0xFFF97316)),
     /** Friends race: pink → orange. */
     FRIENDS(Color(0xFFF472B6), Color(0xFFF97316), Color(0xFF9D174D), Color(0xFFA855F7), Color(0xFF7C3AED)),
     /** Leaderboard / Records: gold → amber. */
-    LEADERBOARD(Color(0xFFFCD34D), Color(0xFFF59E0B), Color(0xFF92400E), Color(0xFFA855F7), Color(0xFF7C3AED)),
+    LEADERBOARD(Color(0xFFFCD34D), Color(0xFFF59E0B), Color(0xFF92400E), Color(0xFFA855F7), Color(0xFF7C3AED), OUTLINE_CREAM),
     /** VS: teal → blue. */
     VS(Color(0xFF2DD4BF), Color(0xFF3B82F6), Color(0xFF1E3A8A), Color(0xFFF472B6), Color(0xFFEC4899)),
     /** Stats: blue → violet. */
     STATS(Color(0xFF60A5FA), Color(0xFF8B5CF6), Color(0xFF312E81), Color(0xFFF472B6), Color(0xFFEC4899)),
     /** Celebrations (DOUBLE SWEEP!, FLAWLESS, finish strips): gold. */
-    CELEBRATION(Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFB45309), Color(0xFFA855F7), Color(0xFF7C3AED)),
+    CELEBRATION(Color(0xFFFDE68A), Color(0xFFF59E0B), Color(0xFFB45309), Color(0xFFA855F7), Color(0xFF7C3AED), OUTLINE_CREAM),
 }
 
-private val OUTLINE_GOLD = Color(0xFFF5C542)
+private val OUTLINE_CREAM = Color(0xFFFFF7D6)
 private val NUMBER_TOP = Color(0xFFFFE9A3)
 private val NUMBER_BOTTOM = Color(0xFFF59E0B)
 private const val NUMBER_SCALE = 1.12f
@@ -140,6 +146,7 @@ fun LiveHeadline(
     sound: Boolean = true,
 ) {
     val measurer = rememberTextMeasurer(cacheSize = 4)
+    val fontResolver = androidx.compose.ui.platform.LocalFontFamilyResolver.current
     val star = ImageBitmap.imageResource(R.drawable.art_badge_icon_star_sprite)
     val reduced = WTheme.reducedMotion
     val calm = WTheme.calmMotion
@@ -155,7 +162,7 @@ fun LiveHeadline(
         val density = androidx.compose.ui.platform.LocalDensity.current
         val availPx = constraints.maxWidth.takeIf { it != Constraints.Infinity } ?: with(density) { 360.dp.roundToPx() }
         val art = remember(text, palette, names, availPx, maxSize, minSize, align, maxLines, density, star) {
-            buildHeadlineArt(measurer, density, text, palette, names, availPx, maxSize, minSize, align, maxLines, star)
+            buildHeadlineArt(measurer, fontResolver, density, text, palette, names, availPx, maxSize, minSize, align, maxLines, star)
         }
         val n = art.glyphs.size
         val total = if (n == 0) 0 else (n - 1) * POP_STAGGER_MS + POP_MS
@@ -231,6 +238,7 @@ fun LiveHeadline(
 
 private fun buildHeadlineArt(
     measurer: androidx.compose.ui.text.TextMeasurer,
+    fontResolver: androidx.compose.ui.text.font.FontFamily.Resolver,
     density: androidx.compose.ui.unit.Density,
     text: String,
     palette: HeadlinePalette,
@@ -246,7 +254,7 @@ private fun buildHeadlineArt(
     fun padFor(sizeSp: Float) = (sizeSp * density.fontScale * pxPerDp * 0.12f).coerceAtLeast(3f * pxPerDp) + 5f * pxPerDp
 
     /** Measure [s] at [sizeSp]; [styled] = with the token brushes (else plain, same geometry). */
-    fun measure(s: String, sizeSp: Float, styled: Boolean, wrap: Boolean): TextLayoutResult {
+    fun measure(s: String, sizeSp: Float, styled: Boolean, wrap: Boolean, m: androidx.compose.ui.text.TextMeasurer = measurer): TextLayoutResult {
         val tokens = HeadlineTokens.split(s, names)
         val placeholders = ArrayList<AnnotatedString.Range<Placeholder>>()
         val annotated = buildAnnotatedString {
@@ -279,7 +287,7 @@ private fun buildHeadlineArt(
             brush = if (styled) Brush.verticalGradient(listOf(palette.top, palette.bottom)) else null,
         )
         val width = (availPx - 2 * padFor(sizeSp)).roundToInt().coerceAtLeast(1)
-        return measurer.measure(
+        return m.measure(
             annotated, style, softWrap = wrap, maxLines = maxLines,
             constraints = Constraints(maxWidth = width), density = density, placeholders = placeholders,
         )
@@ -313,30 +321,42 @@ private fun buildHeadlineArt(
     }
     if (!found) { chosenText = text; chosenSp = minSp; wrap = true }
 
-    val plain = measure(chosenText, chosenSp, styled = false, wrap = wrap)
-    val styled = measure(chosenText, chosenSp, styled = true, wrap = wrap)
+    // The layers draw on FRESH, uncached paragraphs. A paragraph's paint keeps its last
+    // DrawStyle / shader between draws, and the shared measurer's cache hands the same paragraph
+    // back to later builds (and, brush being draw-only, to `plain` and `styled` alike) — so a
+    // rebuild could draw the outline or fill with a leftover Stroke / gradient: fat, hole-less
+    // letters (founder 10-05: "the text is hard to read on android").
+    val fresh = androidx.compose.ui.text.TextMeasurer(fontResolver, density, LayoutDirection.Ltr, cacheSize = 0)
+    val plain = measure(chosenText, chosenSp, styled = false, wrap = wrap, m = fresh)
+    val styled = measure(chosenText, chosenSp, styled = true, wrap = wrap, m = fresh)
     val pad = padFor(chosenSp)
     val w = (plain.size.width + pad * 2).roundToInt().coerceAtLeast(1)
     val h = (plain.size.height + pad * 2).roundToInt().coerceAtLeast(1)
     val bitmap = ImageBitmap(w, h)
-    val stroke = (chosenSp * density.fontScale * pxPerDp * 0.10f).coerceIn(2f * pxPerDp * 0.75f, 4f * pxPerDp)
-    val step = 1f * pxPerDp
+    // iOS parity (LiveHeadline.swift `lettering`): the outline reaches 6% of the glyph size past
+    // the fill and each 3D edge step is 4.5%. The old 10% half-stroke (up to 4 dp, i.e. an 8 dp
+    // stroke) also ran INTO the letters, closing the holes of O / D / A on phones — founder
+    // 10-05: "the text is hard to read on android".
+    val fontPx = chosenSp * density.fontScale * pxPerDp
+    val stroke = (fontPx * 0.06f).coerceIn(1f * pxPerDp, 2.5f * pxPerDp)
+    val step = (fontPx * 0.045f).coerceIn(0.75f * pxPerDp, 2f * pxPerDp)
     val lineH = if (plain.lineCount > 0) plain.size.height / plain.lineCount.toFloat() else plain.size.height.toFloat()
     CanvasDrawScope().draw(density, LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(bitmap), Size(w.toFloat(), h.toFloat())) {
         val o = Offset(pad, pad)
-        // Drop shadow under the deepest extrusion step.
+        // Drop shadow under the deepest extrusion step (filled glyphs, so it never fills a hole).
         drawText(plain, color = palette.deep.copy(alpha = 0.55f), topLeft = o + Offset(0f, step * 4f),
-            shadow = Shadow(Color.Black.copy(alpha = 0.28f), Offset(0f, 2f * pxPerDp), 6f * pxPerDp), drawStyle = Stroke(stroke * 2f))
-        // The extrusion: 3 stacked 1 dp offsets in the deep shade (outline included).
+            shadow = Shadow(Color.Black.copy(alpha = 0.28f), Offset(0f, 2f * pxPerDp), 6f * pxPerDp), drawStyle = Fill)
+        // The 3D edge: 3 stacked offsets in the deep shade, glyph fills only (iOS parity).
         for (k in 3 downTo 1) {
-            val ok = o + Offset(0f, step * k)
-            drawText(plain, color = palette.deep, topLeft = ok, drawStyle = Stroke(stroke * 2f))
-            drawText(plain, color = palette.deep, topLeft = ok, drawStyle = Fill)
+            drawText(plain, color = palette.deep, topLeft = o + Offset(0f, step * k), drawStyle = Fill)
         }
-        // The thin gold outline behind the fill.
-        drawText(plain, color = OUTLINE_GOLD, topLeft = o, drawStyle = Stroke(stroke * 2f))
-        // The fill: palette gradient, gold numbers, accent names.
-        drawText(styled, topLeft = o)
+        // The thin outline behind the fill (gold; cream on the gold palettes).
+        drawText(plain, color = palette.outline, topLeft = o, drawStyle = Stroke(stroke * 2f))
+        // The fill: palette gradient, gold numbers, accent names. drawStyle = Fill is REQUIRED:
+        // Compose keeps a paragraph's last DrawStyle when none is passed, and TextMeasurer's cache
+        // can hand `styled` and `plain` the same paragraph (brush is draw-only), so without it the
+        // fill (and the gloss) inherit the outline's Stroke — hollow letters, holes painted over.
+        drawText(styled, topLeft = o, drawStyle = Fill)
         // The gloss: soft white on the top ~40% of each line.
         drawText(
             plain,
@@ -345,6 +365,7 @@ private fun buildHeadlineArt(
                 startY = 0f, endY = lineH, tileMode = TileMode.Repeated,
             ),
             topLeft = o,
+            drawStyle = Fill,
         )
         // "·" → the tiny gold star sprite.
         plain.placeholderRects.forEach { r ->
