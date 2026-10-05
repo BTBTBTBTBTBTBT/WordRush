@@ -384,6 +384,7 @@ export function SeasonDressOffer() {
         <div className="text-[11px] font-bold truncate" style={{ color: '#7a6aa6' }}>Free looks for the season.</div>
       </div>
       <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'room', tab: 'season' }); }}><span className="candy-label">Yes!</span></button>
+      <RoundIconButton icon="close" label="No thanks" size={22} onClick={done} className="-my-1" />
     </div>
   );
 }
