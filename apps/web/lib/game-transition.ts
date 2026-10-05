@@ -27,23 +27,36 @@ let running = false;
 
 // ── route-rendered signal (RouteSignal in the root layout calls notifyRoute) ──
 
-let waiters: Array<{ path: string; resolve: () => void }> = [];
+let waiters: Array<{ path: string; resolve: () => void; inTransition: boolean }> = [];
 
 export function notifyRoute(pathname: string): void {
   const ready = waiters.filter((w) => w.path === pathname);
   waiters = waiters.filter((w) => w.path !== pathname);
-  // One frame after the commit, so the new route has laid out (its art requested).
-  if (ready.length) requestAnimationFrame(() => ready.forEach((w) => w.resolve()));
+  for (const w of ready) {
+    // Inside a view transition's update callback the browser suppresses rendering,
+    // so requestAnimationFrame never fires until the callback settles — waiting a
+    // frame there deadlocked every open/close until the timeout (a 1.5 s frozen
+    // frame, perf tour 10-05). A macrotask lets the commit's other effects run; the
+    // browser lays out the new route itself when it captures the new state.
+    if (w.inTransition) setTimeout(w.resolve, 0);
+    // Fallback path: one frame after the commit, so the new route has laid out
+    // (its art requested) before the shell fades off it.
+    else requestAnimationFrame(w.resolve);
+  }
 }
 
-function waitForRoute(href: string, timeout = 1500): Promise<void> {
+/** Resolves once `href`'s route has committed (exported for tests). */
+export function waitForRoute(href: string, opts: { inTransition: boolean }, timeout = 1500): Promise<void> {
   const path = href.split('?')[0].split('#')[0] || '/';
   return new Promise((resolve) => {
-    const w = { path, resolve };
+    const w = { path, resolve, inTransition: opts.inTransition };
     waiters.push(w);
     setTimeout(() => { waiters = waiters.filter((x) => x !== w); resolve(); }, timeout);
   });
 }
+
+const IN_VT = { inTransition: true };
+const NO_VT = { inTransition: false };
 
 // ── helpers ──
 
@@ -113,7 +126,7 @@ export function openGame(router: Router, href: string, el: HTMLElement | null, o
     if (!doc.startViewTransition) { router.push(href); return; }
     running = true;
     setVars(opts.color, radius, 'fade');
-    const t = doc.startViewTransition(async () => { router.push(href); await waitForRoute(href); });
+    const t = doc.startViewTransition(async () => { router.push(href); await waitForRoute(href, IN_VT); });
     t.finished.finally(() => { clearVars(); running = false; });
     return;
   }
@@ -127,7 +140,7 @@ export function openGame(router: Router, href: string, el: HTMLElement | null, o
       const t = doc.startViewTransition(async () => {
         if (el) el.style.removeProperty('view-transition-name');
         router.push(href);
-        await waitForRoute(href);
+        await waitForRoute(href, IN_VT);
         // The game is rendered (built) under the transition; the shell is its new image.
         shell = makeShell(opts.color, true);
       });
@@ -152,7 +165,7 @@ export function openGame(router: Router, href: string, el: HTMLElement | null, o
       { duration: frame ? MOTION.growMs : MOTION.riseMs, easing: MOTION.growEase, fill: 'forwards' },
     );
     router.push(href);
-    await Promise.all([grow.finished.catch(() => undefined), waitForRoute(href)]);
+    await Promise.all([grow.finished.catch(() => undefined), waitForRoute(href, NO_VT)]);
     if (el) el.getAnimations().forEach((a) => a.cancel());
     const r = revealTiming(kind);
     const fade = shell.animate([{ opacity: 1 }, { opacity: 0 }], { duration: r.duration, easing: 'ease-out', fill: 'forwards' });
@@ -174,7 +187,7 @@ export function closeGame(router: Router, href: string): void {
     if (doc.startViewTransition && reduceMotion()) {
       running = true;
       setVars(src?.color ?? 'var(--color-bg)', 0, 'fade');
-      const t = doc.startViewTransition(async () => { router.push(href); await waitForRoute(href); });
+      const t = doc.startViewTransition(async () => { router.push(href); await waitForRoute(href, IN_VT); });
       t.finished.finally(() => { clearVars(); running = false; });
     } else {
       router.push(href);
@@ -191,7 +204,7 @@ export function closeGame(router: Router, href: string): void {
     const t = doc.startViewTransition(async () => {
       shell.remove();
       router.push(href);
-      await waitForRoute(href);
+      await waitForRoute(href, IN_VT);
       target = src.key ? document.querySelector<HTMLElement>(`[data-game-source="${CSS.escape(src.key)}"]`) : null;
       const box = target ? usableSource(toBox(target.getBoundingClientRect()), screenBox()) : null;
       if (target && box) target.style.setProperty('view-transition-name', 'game-shell');
@@ -211,7 +224,7 @@ export function closeGame(router: Router, href: string): void {
     .finished.catch(() => undefined)
     .then(async () => {
       router.push(href);
-      await waitForRoute(href);
+      await waitForRoute(href, NO_VT);
       const target = src.key ? document.querySelector<HTMLElement>(`[data-game-source="${CSS.escape(src.key)}"]`) : null;
       const box = target ? usableSource(toBox(target.getBoundingClientRect()), screen) : null;
       const to = box ?? riseStartFrame(screen);
