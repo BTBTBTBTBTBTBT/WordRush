@@ -404,7 +404,7 @@ export function seasonBands(years: readonly number[]): Band[] {
  * App releases shown on the calendar. Add a row per release: { version, date (expected store day, YYYY-MM-DD) }.
  */
 export const STUDIO_RELEASES: ReadonlyArray<{ version: string; date: string; note?: string }> = [
-  { version: '2.7.1', date: '2026-10-09', note: 'target' },
+  { version: '2.7.1', date: '2026-10-05', note: 'submitted' },
 ];
 
 export function releaseBands(): Band[] {
