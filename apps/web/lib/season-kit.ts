@@ -31,11 +31,38 @@ export interface SeasonSlots {
   extras?: Record<string, string>;
 }
 
+/**
+ * The season's windows (registry `surfaces`): page cards, the Home hero card, the game cards' drip
+ * caps and the game board tray recolor so the whole screen reads seasonal. Every slot is optional.
+ */
+export interface SeasonSurfaces {
+  /** 'dark' = light on-card + on-wall text, the dark wall in every scheme. */
+  tone?: 'dark' | 'light';
+  card?: string;
+  cardOpacity?: number;
+  hero?: string;
+  heroOpacity?: number;
+  raised?: string;
+  /** The drip cap's stops, top lip → body → base; `capTint` mixes each game's color into the body. */
+  cap?: [string, string, string];
+  capTint?: number;
+  glow?: string;
+  text?: string;
+  textMuted?: string;
+  textSecondary?: string;
+  /** The hero greeting lettering: top, bottom, deep, nameTop, nameBottom. */
+  headline?: [string, string, string, string, string];
+  bannerGlow?: string;
+  cobweb?: string;
+}
+
 export interface SeasonEntry {
   id: string;
   title: string;
   palette: SeasonPalette;
   slots: SeasonSlots;
+  surfaces?: SeasonSurfaces;
+  surfaceVariants?: Record<string, SeasonSurfaces>;
 }
 
 export const SEASON_REGISTRY: readonly SeasonEntry[] = (registryJson as unknown as { seasons: SeasonEntry[] }).seasons;
@@ -101,3 +128,64 @@ export function seasonPalette(season: string | null | undefined): SeasonPalette 
 export function seasonLabel(id: string): string {
   return seasonEntry(id)?.title ?? id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, ' ');
 }
+
+// ── Season surfaces ─────────────────────────────────────────────────────────
+
+/**
+ * The season's surfaces for a preview choice: '' / null = the registry's `surfaces`, a
+ * `surfaceVariants` id (e.g. 'parchment'), or 'off'. Null = the normal look.
+ */
+export function seasonSurfaces(season: string | null | undefined, choice?: string | null): SeasonSurfaces | null {
+  const s = seasonEntry(season);
+  if (!s || choice === 'off') return null;
+  if (choice && s.surfaceVariants?.[choice]) return s.surfaceVariants[choice];
+  return s.surfaces ?? null;
+}
+
+function rgba(hex: string, a: number): string {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+/**
+ * The CSS variables a season's surfaces hand the document (SeasonDocument). The cards already
+ * paint over `--color-card-base` and read `--color-text*`, so a translucent card base + the ink
+ * recolor every card; the drip caps read `--season-cap-*` (card-trim seasonTrimStops).
+ */
+export function surfaceCssVars(s: SeasonSurfaces): Record<string, string> {
+  const v: Record<string, string> = {};
+  if (s.card) {
+    v['--color-card-base'] = rgba(s.card, s.cardOpacity ?? 1);
+    v['--color-surface'] = s.card;
+  }
+  if (s.hero ?? s.card) v['--season-hero-fill'] = rgba((s.hero ?? s.card)!, s.hero ? s.heroOpacity ?? 1 : s.cardOpacity ?? 1);
+  if (s.raised) {
+    v['--color-surface-alt'] = s.raised;
+    v['--color-surface-hover'] = s.raised;
+  }
+  if (s.text) v['--color-text'] = s.text;
+  if (s.textMuted) v['--color-text-muted'] = s.textMuted;
+  if (s.textSecondary) {
+    v['--color-text-secondary'] = s.textSecondary;
+    v['--banner-ink'] = s.textSecondary;
+  }
+  if (s.cap) {
+    v['--season-cap-0'] = s.cap[0];
+    v['--season-cap-1'] = s.cap[1];
+    v['--season-cap-2'] = s.cap[2];
+    v['--season-cap-tint'] = `${Math.round((s.capTint ?? 0) * 100)}%`;
+  }
+  if (s.glow) v['--season-glow'] = rgba(s.glow, s.tone === 'dark' ? 0.32 : 0.22);
+  if (s.bannerGlow) v['--season-banner-glow'] = rgba(s.bannerGlow, s.tone === 'dark' ? 0.34 : 0.26);
+  if (s.cobweb) v['--season-cobweb'] = rgba(s.cobweb, s.tone === 'dark' ? 0.42 : 0.38);
+  if (s.tone === 'dark') v['--banner-gloss'] = '0.04';
+  return v;
+}
+
+/** Every variable surfaceCssVars can set (SeasonDocument clears them out of season). */
+export const SURFACE_CSS_VARS = [
+  '--color-card-base', '--color-surface', '--season-hero-fill', '--color-surface-alt', '--color-surface-hover',
+  '--color-text', '--color-text-muted', '--color-text-secondary', '--banner-ink',
+  '--season-cap-0', '--season-cap-1', '--season-cap-2', '--season-cap-tint',
+  '--season-glow', '--season-banner-glow', '--season-cobweb', '--banner-gloss',
+] as const;

@@ -81,7 +81,10 @@ fun Modifier.gameTray(
     val dark = WTheme.isDark
     val tint = GameTrayStyle.tint(accent, state)
     val wash = if (state == TrayState.ACTIVE) GameTrayStyle.WASH_ACTIVE else GameTrayStyle.WASH
-    val face = if (dark) Color(0xFF241A38).copy(alpha = 0.92f) else Color(GameTrayStyle.washArgb(tint, wash))
+    // Season surfaces: the season's translucent card with a faint accent; no lip under it.
+    val season = WTheme.season?.takeIf { it.cardFill != null }
+    val face = if (season != null) season.wash(tint, wash * 0.6f).copy(alpha = season.cardOpacity)
+        else if (dark) Color(0xFF241A38).copy(alpha = 0.92f) else Color(GameTrayStyle.washArgb(tint, wash))
     val line = if (dark) tint.copy(alpha = 0.45f) else Color(GameTrayStyle.washArgb(tint, GameTrayStyle.LINE))
     val lip = if (dark) Color(0xFF120D1F) else Color(TintMath.over(0xFF000000.toInt(), GameTrayStyle.LIP_DARKEN, line.toArgb()))
     val ring = state == TrayState.ACTIVE
@@ -95,7 +98,7 @@ fun Modifier.gameTray(
             val r = CornerRadius(corner.toPx())
             val lipPx = GameTrayStyle.LIP.toPx()
             // The lip: the whole tray in the darker tone, the face sits a lip above it.
-            drawRoundRect(lip, cornerRadius = r)
+            if (season == null) drawRoundRect(lip, cornerRadius = r)
             val faceH = size.height - lipPx
             drawRoundRect(face, size = Size(size.width, faceH), cornerRadius = r)
             // A faint inner top gloss.

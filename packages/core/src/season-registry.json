@@ -1,5 +1,5 @@
 {
-  "_doc": "The season registry (docs/design/brand/seasons/README.md 'How to add a season'). ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/season-registry.json and apps/android/app/src/main/assets/season-registry.json (apps/web/lib/season-registry.test.ts checks the copies). Windows live in core SEASON_WINDOWS (\u00d73 ports, level-season-fixtures.json) and must list the same ids. Slots name shipped art (web /art/<name>.webp, iOS image set <name>, Android drawable <name with _>); 'titles' and 'walls' map the NORMAL art name to the seasonal one ('*' = prefix); a light-mode wall twin '<name>-light' wins in light mode. 'castSize' + 'castTrim' = the skins' square size and alpha boxes [x0, y0, x1, y1] (alpha > 8), so the cast row frames any season's skins. Any missing slot or unshipped file falls back to the normal art.",
+  "_doc": "The season registry (docs/design/brand/seasons/README.md 'How to add a season'). ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/season-registry.json and apps/android/app/src/main/assets/season-registry.json (apps/web/lib/season-registry.test.ts checks the copies). Windows live in core SEASON_WINDOWS (\u00d73 ports, level-season-fixtures.json) and must list the same ids. Slots name shipped art (web /art/<name>.webp, iOS image set <name>, Android drawable <name with _>); 'titles' and 'walls' map the NORMAL art name to the seasonal one ('*' = prefix); a light-mode wall twin '<name>-light' wins in light mode. 'castSize' + 'castTrim' = the skins' square size and alpha boxes [x0, y0, x1, y1] (alpha > 8), so the cast row frames any season's skins. Any missing slot or unshipped file falls back to the normal art. 'surfaces' (optional) recolors the app's windows during the season: tone ('dark' = light on-card + on-wall text, dark system chrome / status bar), card + cardOpacity (page cards, game board panel), hero + heroOpacity (the Home hero card), raised (chips inside cards), cap (the game cards' drip trim stops, top -> base; capTint mixes each game's own color into the middle stop), glow (the cards' soft lift color), text / textMuted / textSecondary (on-card ink), headline (the hero greeting lettering: top, bottom, deep, nameTop, nameBottom), bannerGlow (a soft glow behind the hero's banner art) and cobweb (the hero's top-corner web ink; absent = none). 'surfaceVariants' holds alternates for the admin preview key debug-season-surfaces (a variant id, or 'off'). Any missing surface slot keeps the normal look.",
   "seasons": [
     {
       "id": "halloween",
@@ -126,6 +126,62 @@
         ],
         "banner": "art-scene-banner-halloween",
         "extras": {}
+      },
+      "surfaces": {
+        "tone": "dark",
+        "card": "#1C0F30",
+        "cardOpacity": 0.78,
+        "hero": "#1A0C2C",
+        "heroOpacity": 0.82,
+        "raised": "#2C1846",
+        "cap": [
+          "#FFB45E",
+          "#F97316",
+          "#7C2D12"
+        ],
+        "capTint": 0.3,
+        "glow": "#F97316",
+        "text": "#F7EEFF",
+        "textMuted": "#C8B6E2",
+        "textSecondary": "#DCCDF2",
+        "headline": [
+          "#FFE3B8",
+          "#F97316",
+          "#431407",
+          "#FDE68A",
+          "#FB923C"
+        ],
+        "bannerGlow": "#F97316",
+        "cobweb": "#E9DDF7"
+      },
+      "surfaceVariants": {
+        "parchment": {
+          "tone": "light",
+          "card": "#FFF1DF",
+          "cardOpacity": 0.86,
+          "hero": "#FFEBD2",
+          "heroOpacity": 0.88,
+          "raised": "#FCE0C2",
+          "cap": [
+            "#FB923C",
+            "#2A1420",
+            "#0B0508"
+          ],
+          "capTint": 0.2,
+          "glow": "#EA580C",
+          "text": "#3A1430",
+          "textMuted": "#7A4A60",
+          "textSecondary": "#5E3048",
+          "headline": [
+            "#FDBA74",
+            "#C2410C",
+            "#3A1430",
+            "#A855F7",
+            "#581C87"
+          ],
+          "bannerGlow": "#FB923C",
+          "cobweb": "#4A2A3C"
+        }
       }
     }
   ]

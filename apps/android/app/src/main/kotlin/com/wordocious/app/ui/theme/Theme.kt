@@ -82,8 +82,11 @@ object WTheme {
     // Active palette — change via ThemeState; reads here recompose the whole app.
     var palette by mutableStateOf(Palettes.Light)
 
-    /** The dark theme is on (ART_SPEC §11 page tints pick their dark stops by this). */
-    val isDark: Boolean get() = palette == Palettes.Dark
+    /** The active season's windows (SeasonKit.applySurfaces); null = the normal look. */
+    var season by mutableStateOf<SeasonSurfaces?>(null)
+
+    /** The dark theme is on, or a season whose windows are dark (ART_SPEC §11 page tints pick their dark stops by this). */
+    val isDark: Boolean get() = season?.dark ?: (palette == Palettes.Dark)
 
     val bg get() = palette.bg
     val surface get() = palette.surface

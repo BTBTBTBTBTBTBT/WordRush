@@ -42,8 +42,10 @@ struct HomeBannerView: View {
     private var wTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(word.progress) }
     private var pTier: BannerTier { unlimited ? .none : HomeBanner.groupTier(puzzles.progress) }
     private var double: Bool { wTier == .flawless && pTier == .flawless }
-    private var headInk: Color { double ? Color(hex: 0x78350F) : Color(hex: 0x4C1D95) }
-    private var subInk: Color { double ? Color(hex: 0x92400E) : Color(hex: 0x6D28D9) }
+    private var headInk: Color { double ? Color(hex: 0x78350F) : (SeasonKit.surfaces?.text ?? Color(hex: 0x4C1D95)) }
+    private var subInk: Color { double ? Color(hex: 0x92400E) : (SeasonKit.surfaces?.textSecondary ?? Color(hex: 0x6D28D9)) }
+    /// Season surfaces (SeasonKit): the hero card's windows (nil = the normal look).
+    private var look: SeasonKit.Look? { SeasonKit.surfaces }
     private var anyPlayed: Bool { word.progress.played + puzzles.progress.played > 0 }
 
     /// FINISH_SPEC §Z: which optional pieces take room comes from TODAY'S DAILY
@@ -72,7 +74,7 @@ struct HomeBannerView: View {
 
     private static func tierInk(_ t: BannerTier) -> Color {
         switch t {
-        case .none: return Color(hex: 0x6D28D9)
+        case .none: return SeasonKit.surfaces?.textSecondary ?? Color(hex: 0x6D28D9)
         case .sweep: return Color(hex: 0x7E22CE)
         case .flawless: return Color(hex: 0x92400E)
         }
@@ -113,7 +115,8 @@ struct HomeBannerView: View {
             // BJ6 flair (founder 10-03: "that window needs flair … it looks unfinished"): the candy
             // frosting cap across the top edge, like the game cards' trim — brand purple → pink,
             // the moment's gold / pink on a swept / flawless day. Static, one shape.
-            BannerCap(colors: slots.showsMomentArt ? (momentBar ?? Self.brandCap) : Self.brandCap)
+            BannerCap(colors: slots.showsMomentArt ? (momentBar ?? Self.brandCap) : Self.brandCap,
+                      season: (slots.showsMomentArt && momentBar != nil) ? nil : look?.capStops(Self.brandCap[1]))
             strip
             // §G4: the wide sweep / flawless art across the banner under the headline,
             // the whole cast in it fully visible (never cropped).
@@ -145,12 +148,17 @@ struct HomeBannerView: View {
                         .padding(.top, 4).padding(.horizontal, Self.rowsInset).padding(.bottom, 8)
                 }
             }
-            .background(Color(hex: 0x7C3AED).opacity(unlimited ? 0.05 : 0.07))
+            .background(look?.raised.map { $0.opacity(look?.dark == true ? 0.45 : 0.5) }
+                        ?? Color(hex: 0x7C3AED).opacity(unlimited ? 0.05 : 0.07))
         }
         .frame(maxWidth: .infinity)
         .background {
             ZStack {
-                background
+                if let look, let fill = look.heroFill {
+                    SeasonHeroBackdrop(look: look, fill: fill)
+                } else {
+                    background
+                }
                 // Exactly ONE light band across the WHOLE banner (both rows, under the
                 // strip and the tiles), Daily only, once a row is swept or flawless.
                 // Reduce Motion: none at all.
@@ -165,8 +173,9 @@ struct HomeBannerView: View {
                 shape.stroke(bar[0].wash(0.45), lineWidth: 1.5)
             }
         }
-        .shadow(color: double ? Color(hex: 0xF59E0B).opacity(0.8) : Color(hex: 0x4C1D95).opacity(0.08),
-                radius: double ? 13 : 7, x: 0, y: double ? 0 : 4)
+        .shadow(color: double ? Color(hex: 0xF59E0B).opacity(0.8)
+                    : (look?.glow.map { $0.opacity(0.30) } ?? Color(hex: 0x4C1D95).opacity(0.08)),
+                radius: double ? 13 : (look != nil ? 12 : 7), x: 0, y: double || look != nil ? 0 : 4)
         // FINISH_SPEC BJ6 (founder 10-03: "keep things looking fairly even and symmetrical"):
         // the host (the player's framed photo / their mascot / W) stands CENTERED on the card's
         // top edge — its head rises into the gap above, its lower part overlaps the strip —
@@ -278,11 +287,14 @@ struct HomeBannerView: View {
         // BJ6 flair: a very soft diagonal sheen instead of the flat frost, and a few tiny
         // confetti dots in the empty top corners (mirrored). Static, drawn once.
         .background {
-            ZStack {
-                LinearGradient(colors: [Color(hex: 0xF7F0FF), Color(hex: 0xFDF2FA), Color(hex: 0xF3ECFF)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .opacity(reduceTransparency ? 0.97 : 0.92)
-                BannerCornerConfetti()
+            // Season surfaces: the hero's own fill shows through (no lavender frost, no confetti).
+            if look?.heroFill == nil {
+                ZStack {
+                    LinearGradient(colors: [Color(hex: 0xF7F0FF), Color(hex: 0xFDF2FA), Color(hex: 0xF3ECFF)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                        .opacity(reduceTransparency ? 0.97 : 0.92)
+                    BannerCornerConfetti()
+                }
             }
         }
     }
@@ -331,7 +343,7 @@ struct HomeBannerView: View {
             VStack(spacing: -fit.size * 0.42) {
                 ForEach(Array(fit.layout.lines.enumerated()), id: \.offset) { i, line in
                     let hero = fit.layout.nameLines.contains(i)
-                    LiveHeadline(text: line, palette: hero ? .leaderboard : (trophy ? .celebration : .home),
+                    LiveHeadline(text: line, palette: trophy ? .celebration : (look?.headlinePalette ?? (hero ? .leaderboard : .home)),
                                  size: fit.size, names: hero ? [] : [name], alignment: .center,
                                  maxLines: 1, minimumScale: fit.layout.lines.count > 1 ? 1 : 0.75)
                         .fixedSize(horizontal: false, vertical: true)
@@ -484,7 +496,7 @@ private struct BannerTile: View {
         Button(action: onTap) {
             ZStack {
                 if unlimited {
-                    shape.fill(accent.wash(0.16))
+                    shape.fill(accent.seasonWash(0.16))
                         .shadow(color: accent.opacity(0.18), radius: 3, x: 0, y: 2)
                 } else if let result {
                     // Glossy: the fill plus a soft white sheen over its top half.
@@ -494,7 +506,7 @@ private struct BannerTile: View {
                                                            startPoint: .top, endPoint: .bottom)))
                         .shadow(color: result.completed ? accent.opacity(0.55) : .clear, radius: 3.5, x: 0, y: 1.5)
                 } else {
-                    shape.fill(accent.wash(0.12))
+                    shape.fill(accent.seasonWash(0.12))
                 }
                 // BJ6: the icon scales with its tile (iconSize 0 = 56% of the tile's side).
                 GeometryReader { g in
@@ -649,10 +661,18 @@ struct BannerSweep: View {
 /// horizontal gradient with a baked-in top sheen. One shape, two fills, no blur / animation.
 private struct BannerCap: View {
     let colors: [Color]
+    /// Season surfaces: the season's drip cap stops (top lip → body → base), drawn top to bottom.
+    var season: [Color]? = nil
     var body: some View {
         ZStack {
-            CardTrimShape().fill(LinearGradient(colors: colors.count > 1 ? colors : colors + colors,
-                                                startPoint: .leading, endPoint: .trailing))
+            if let season {
+                CardTrimShape().fill(LinearGradient(stops: [.init(color: season[0], location: 0), .init(color: season[1], location: 0.42),
+                                                            .init(color: season[2], location: 1)],
+                                                    startPoint: .top, endPoint: .bottom))
+            } else {
+                CardTrimShape().fill(LinearGradient(colors: colors.count > 1 ? colors : colors + colors,
+                                                    startPoint: .leading, endPoint: .trailing))
+            }
             CardTrimShape().fill(LinearGradient(stops: [.init(color: .white.opacity(0.42), location: 0),
                                                         .init(color: .white.opacity(0), location: 0.6)],
                                                 startPoint: .top, endPoint: .bottom))
@@ -713,5 +733,87 @@ private struct BannerCornerConfetti: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+
+// MARK: - Season surfaces (the hero card)
+
+/// The Home hero card's backdrop under a season's surfaces (SeasonKit.Look): the season's hero
+/// fill (translucent, so the wall glows through), a soft glow behind the banner art (dark tone:
+/// a jack-o'-lantern glow; light tone: an orange inner glow around the edge) and a small cobweb
+/// in the top-trailing corner. Static gradients + one stroked path — no blur.
+struct SeasonHeroBackdrop: View {
+    let look: SeasonKit.Look
+    let fill: Color
+
+    var body: some View {
+        ZStack {
+            fill
+            if let glow = look.bannerGlow {
+                if look.dark {
+                    RadialGradient(colors: [glow.opacity(0.34), glow.opacity(0.10), glow.opacity(0)],
+                                   center: UnitPoint(x: 0.5, y: 0.46), startRadius: 0, endRadius: 190)
+                } else {
+                    EllipticalGradient(colors: [glow.opacity(0), glow.opacity(0.26)], center: .center,
+                                       startRadiusFraction: 0.42, endRadiusFraction: 0.78)
+                }
+            }
+            if let web = look.cobweb {
+                CobwebShape()
+                    .stroke(web.opacity(look.dark ? 0.42 : 0.38), style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
+                    .frame(width: 58, height: 58)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// A small corner cobweb anchored at the rect's top-trailing corner: five threads fanning down
+/// and left, joined by three sagging rings.
+struct CobwebShape: Shape {
+    func path(in r: CGRect) -> Path {
+        let o = CGPoint(x: r.maxX, y: r.minY)
+        let len = min(r.width, r.height)
+        let angles: [Double] = [90, 112, 135, 158, 180].map { $0 * .pi / 180 }
+        func pt(_ a: Double, _ d: CGFloat) -> CGPoint { CGPoint(x: o.x + CGFloat(cos(a)) * d, y: o.y + CGFloat(sin(a)) * d) }
+        var p = Path()
+        for a in angles { p.move(to: o); p.addLine(to: pt(a, len)) }
+        for f in [0.32, 0.58, 0.84] as [CGFloat] {
+            let d = len * f
+            p.move(to: pt(angles[0], d))
+            for i in 1..<angles.count {
+                let mid = (angles[i - 1] + angles[i]) / 2
+                p.addQuadCurve(to: pt(angles[i], d), control: pt(mid, d * 0.80))
+            }
+        }
+        return p
+    }
+}
+
+extension SeasonKit.Look {
+    /// The hero greeting's lettering in the season's colors (registry `headline`).
+    var headlinePalette: HeadlinePalette? {
+        guard let h = headline else { return nil }
+        return HeadlinePalette(top: h[0], bottom: h[1], deep: h[2], outline: Color(hex: 0xF5C542),
+                               nameTop: h[3], nameBottom: h[4],
+                               numberTop: Color(hex: 0xFFE07A), numberBottom: Color(hex: 0xF5A524))
+    }
+}
+
+extension Color {
+    /// `wash(amount)` under a season's windows: the accent over the season card instead of white
+    /// (deeper on dark cards so the tint still reads). The normal wash out of season.
+    func seasonWash(_ amount: Double) -> Color {
+        guard let look = SeasonKit.surfaces, let card = look.card else { return wash(amount) }
+        return mixed(over: card, look.dark ? min(1, amount * 2.4) : amount * 1.4)
+    }
+
+    /// A game color as on-card text under a dark season card (lifted so it reads); as is otherwise.
+    var onSeasonCard: Color {
+        guard let look = SeasonKit.surfaces, look.dark else { return self }
+        return mixed(over: .white, 0.55)
     }
 }

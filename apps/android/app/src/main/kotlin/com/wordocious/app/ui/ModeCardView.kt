@@ -147,6 +147,11 @@ private fun Modifier.gameCardSurface(bg: Color): Modifier {
  * outline any more.
  */
 internal fun gameCardBg(accent: Color, done: Boolean): Color = when {
+    // Season surfaces: the season's translucent card (the wall glows through) with a faint accent.
+    WTheme.season?.cardFill != null -> WTheme.season!!.let { s ->
+        val tinted = s.wash(accent, if (done) 0.16f else 0.06f)
+        tinted.copy(alpha = s.cardOpacity)
+    }
     WTheme.isDark -> if (done) accent.copy(alpha = 0.06f) else WTheme.surface
     done -> Wash.mix(accent, 0.20f)
     else -> Wash.mix(accent, Wash.CARD)
@@ -176,7 +181,10 @@ private fun CardTrim(color: Color, locked: Boolean = false) {
                     }
                     close()
                 }
-                val brush = if (locked) Brush.verticalGradient(TRIM_LOCKED) else Brush.verticalGradient(
+                val season = if (locked) null else WTheme.season?.capStops(color)
+                val brush = if (locked) Brush.verticalGradient(TRIM_LOCKED) else if (season != null) Brush.verticalGradient(
+                    0f to season[0], 0.42f to season[1], 1f to season[2],
+                ) else Brush.verticalGradient(
                     0f to Wash.mix(color, 0.45f),
                     0.42f to color,
                     1f to Color(TintMath.over(color.copy(alpha = 1f).toArgb(), 0.86f, 0xFF000000.toInt())),
@@ -298,7 +306,7 @@ internal fun ModeCardView(
                         // as a last resort (a name still wider than its slot at the uniform floor).
                         FitText(
                             card.title, fontSize = LocalCardNameSize.current.sp, fontWeight = FontWeight.Black,
-                            color = if (isLocked) WTheme.textMuted else card.accent, minScale = 0.6f,
+                            color = if (isLocked) WTheme.textMuted else (WTheme.season?.onCard(card.accent) ?: card.accent), minScale = 0.6f,
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.width(4.dp))

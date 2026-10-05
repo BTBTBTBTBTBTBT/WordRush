@@ -76,6 +76,7 @@ object SeasonSkins {
             SettingsPref.set(PREVIEW_KEY, s ?: "")
             SettingsPref.set(FORCE_KEY, s == Season.HALLOWEEN)
         }
+        runCatching { SeasonKit.applySurfaces(com.wordocious.app.App.instance) }
     }
 
     fun force(on: Boolean) = pick(if (on) Season.HALLOWEEN else null)

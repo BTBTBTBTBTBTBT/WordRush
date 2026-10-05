@@ -697,8 +697,10 @@ struct PageBackground: View {
                         .clipped()
                         // BJ8: the few calm tiles (one shared config), under the dark overlay.
                         .overlay { if seasonal == nil { BackdropTileLayer(tint: tint) } }
-                        .overlay(overlay(dark: dark, a11y: a11y))
-                        .overlay(alignment: .top) { headerFade(dark: dark) }
+                        // Season surfaces: the season wall is the finished backdrop (a dark-tone
+                        // wall is already night art) — no dark overlay, no top wash.
+                        .overlay { if !(seasonal != nil && SeasonKit.surfaces != nil) || a11y { overlay(dark: dark, a11y: a11y) } }
+                        .overlay(alignment: .top) { if !(seasonal != nil && SeasonKit.surfaces != nil) { headerFade(dark: dark) } }
                 }
                 .ignoresSafeArea()
             } else {

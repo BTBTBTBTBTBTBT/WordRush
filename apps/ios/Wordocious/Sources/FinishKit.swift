@@ -19,7 +19,7 @@ import WordociousCore
 
 extension Theme {
     /// The dark theme is on (it keeps its existing dark surfaces — §A1).
-    static var isDark: Bool { ThemeManager.shared.theme == "dark" }
+    static var isDark: Bool { ThemeManager.shared.isDark }
 }
 
 extension Color {
@@ -458,7 +458,23 @@ struct TintedCard: ViewModifier {
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         let dark = Theme.isDark
-        return VStack(spacing: 0) {
+        // Season surfaces: the season's translucent card, a faint accent tint, no outline, the
+        // season glow as the lift; drawn once so the opacity doesn't stack.
+        if let look = SeasonKit.surfaces, let seasonFill = look.cardFill {
+            return AnyView(VStack(spacing: 0) {
+                if let bar {
+                    LinearGradient(colors: bar.count > 1 ? bar : [bar.first ?? accent, bar.first ?? accent],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(height: barHeight)
+                }
+                content
+            }
+            .background(shape.fill(accent.opacity(look.dark ? 0.07 : 0.05)))
+            .clipShape(shape)
+            .background(shape.fill(seasonFill)
+                .shadow(color: (look.glow ?? accent).opacity(look.dark ? 0.26 : 0.18), radius: 10, x: 0, y: look.dark ? 0 : 6)))
+        }
+        return AnyView(VStack(spacing: 0) {
             if let bar {
                 LinearGradient(colors: bar.count > 1 ? bar : [bar.first ?? accent, bar.first ?? accent],
                                startPoint: .leading, endPoint: .trailing)
@@ -476,7 +492,7 @@ struct TintedCard: ViewModifier {
         // whole card's content (a content shadow re-rasterizes every text run and
         // icon in an offscreen pass each frame while a list scrolls).
         .background(shape.fill(dark ? Theme.surface : accent.wash(tint))
-            .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8))
+            .shadow(color: Color(hex: 0x3C1E6E).opacity(0.10), radius: 10, x: 0, y: 8)))
     }
 }
 

@@ -113,6 +113,30 @@ export function readSeasonOverride(): SeasonOverride | null {
   }
 }
 
+/** The admin surfaces preview: `?surfaces=parchment|off` (remembered for the session; '' = registry default). */
+export const SURFACES_PARAM = 'surfaces';
+export const SURFACES_PREVIEW_KEY = 'wordocious-season-surfaces';
+
+export function readSurfacesChoice(): string | null {
+  if (typeof window === 'undefined') return null;
+  let v: string | null = null;
+  try {
+    v = new URLSearchParams(window.location.search).get(SURFACES_PARAM);
+  } catch {
+    v = null;
+  }
+  try {
+    if (v != null) {
+      if (v === '' || v === 'auto') sessionStorage.removeItem(SURFACES_PREVIEW_KEY);
+      else sessionStorage.setItem(SURFACES_PREVIEW_KEY, v);
+      return v || null;
+    }
+    return sessionStorage.getItem(SURFACES_PREVIEW_KEY);
+  } catch {
+    return v;
+  }
+}
+
 /** The season right now on this device (client only; null on the server). */
 export function activeSeason(now: Date = new Date()): Season | null {
   if (typeof window === 'undefined') return null;

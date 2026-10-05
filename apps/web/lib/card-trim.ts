@@ -27,6 +27,21 @@ export function trimStops(accent: string, locked = false): [number, string][] {
 }
 
 /**
+ * The trim's stops as CSS colors that follow a season's surfaces (`--season-cap-*`, set by
+ * SeasonDocument): the season's lip / body (with the game color mixed in at `--season-cap-tint`)
+ * / base, else the normal candy stops. Use as `style={{ stopColor }}` (CSS, so var() resolves).
+ */
+export function seasonTrimStops(accent: string, locked = false): [number, string][] {
+  const normal = trimStops(accent, locked);
+  if (locked) return normal;
+  return [
+    [0, `var(--season-cap-0, ${normal[0][1]})`],
+    [0.42, `color-mix(in srgb, ${accent} var(--season-cap-tint, 100%), var(--season-cap-1, ${accent}))`],
+    [1, `var(--season-cap-2, ${normal[2][1]})`],
+  ];
+}
+
+/**
  * BH2 (founder 10-03): a card's subtitle stays ONE line. A result line that runs long
  * ("38 guesses · 10m 46s", Gauntlet) takes the short form ("38g · 10m 46s") instead of wrapping.
  */

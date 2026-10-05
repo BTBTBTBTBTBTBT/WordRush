@@ -29,6 +29,9 @@ struct Palette {
     var goldBorderLight = Color(hex: 0xFEF3C7)
 }
 
+/// The theme palette by an unambiguous name (SeasonKit has its own `Palette`).
+typealias ThemePalette = Palette
+
 /// Drives app-wide theming. `theme` persists to the same `pref-theme`
 /// UserDefaults key the Settings picker uses; `Theme.*` tokens read
 /// `current`, and the app root rebuilds when this publishes so every screen
@@ -58,11 +61,21 @@ final class ThemeManager: ObservableObject {
         reducedMotion = d.bool(forKey: "pref-reduced-motion")
     }
 
-    var current: Palette { Self.palettes[theme] ?? Self.palettes["default"]! }
+    var current: Palette {
+        // Season surfaces (SeasonKit): the season's windows set the card + ink tokens over the
+        // light or dark base its tone picks.
+        if let look = SeasonKit.surfaces {
+            return look.palette(over: Self.palettes[look.dark ? "dark" : "default"]!)
+        }
+        return Self.palettes[theme] ?? Self.palettes["default"]!
+    }
 
-    /// Dark needs `.dark` so system chrome (toggles, alerts, keyboards) adapts;
+    /// The dark look is on: the dark theme, or a season whose windows are dark (its `tone`).
+    var isDark: Bool { SeasonKit.surfaces.map(\.dark) ?? (theme == "dark") }
+
+    /// Dark needs `.dark` so system chrome (toggles, alerts, keyboards, the status bar) adapts;
     /// the tinted light themes (ocean/forest) and default stay `.light`.
-    var colorScheme: ColorScheme { theme == "dark" ? .dark : .light }
+    var colorScheme: ColorScheme { isDark ? .dark : .light }
 
     static let palettes: [String: Palette] = [
         // Default — globals.css :root (light). FINISH_SPEC §A1 (no plain white):

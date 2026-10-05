@@ -17,6 +17,7 @@ object ThemePref {
 
     fun load() {
         WTheme.palette = Palettes.byKey(current())
+        com.wordocious.app.ui.SeasonKit.applySurfaces(App.instance)
         WTheme.colorblind = SettingsPref.get(SettingsPref.COLORBLIND, false)
         WTheme.reducedMotionPref = SettingsPref.get(SettingsPref.REDUCED_MOTION, false)
         // Fold in the OS accessibility setting, like iOS does with
@@ -36,6 +37,7 @@ object ThemePref {
     fun set(key: String) {
         prefs.edit().putString("theme", key).apply()
         WTheme.palette = Palettes.byKey(key)
+        com.wordocious.app.ui.SeasonKit.applySurfaces(App.instance)
     }
 
     fun current(): String = prefs.getString("theme", "light") ?: "light"

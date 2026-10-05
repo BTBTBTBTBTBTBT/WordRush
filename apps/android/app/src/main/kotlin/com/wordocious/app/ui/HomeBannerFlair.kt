@@ -97,6 +97,10 @@ internal fun homeCornerDotXs(): List<Float> = HOME_CORNER_DOTS.map { it.first } 
  */
 internal fun Modifier.homeStripFlair(cap: Boolean): Modifier = this.drawWithCache {
     val u = density
+    // Season surfaces: the hero's own fill shows through (no frost / sheen / confetti); the season's
+    // drip cap; a small cobweb in the top-trailing corner.
+    val season = com.wordocious.app.ui.theme.WTheme.season?.takeIf { it.heroFill != null }
+    val seasonCap = season?.capStops(HOME_CAP_COLORS[HOME_CAP_COLORS.size / 2])
     val frost = FinishInk.lavender
     val fill = Brush.linearGradient(
         0f to frost.copy(alpha = 0.84f), 0.5f to frost.copy(alpha = 0.74f), 1f to frost.copy(alpha = 0.66f),
@@ -121,7 +125,13 @@ internal fun Modifier.homeStripFlair(cap: Boolean): Modifier = this.drawWithCach
     )
     val xs = homeCornerDotXs()
     val dots = HOME_CORNER_DOTS + HOME_CORNER_DOTS
+    val web = season?.cobweb?.let { c -> cobwebPath(size.width, 58f * u) to c.copy(alpha = if (season.dark) 0.42f else 0.38f) }
     onDrawBehind {
+        if (season != null) {
+            if (cap) drawPath(capPath, if (seasonCap != null) Brush.verticalGradient(0f to seasonCap[0], 0.42f to seasonCap[1], 1f to seasonCap[2], startY = 0f, endY = (HOME_CAP_BAND + CardTrimGeometry.DRIP) * u) else capBrush)
+            web?.let { (p, c) -> drawPath(p, c, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 0.9f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round)) }
+            return@onDrawBehind
+        }
         drawRect(fill)
         drawRect(sheen)
         if (cap) {
@@ -152,5 +162,26 @@ internal fun GoldSparkle(size: Dp, modifier: Modifier = Modifier) {
             close()
         }
         drawPath(star, Brush.radialGradient(listOf(Color(0xFFFFE7A3), Color(0xFFF5A524)), center = Offset(c, c), radius = c))
+    }
+}
+
+/** A small corner cobweb anchored at the top-trailing corner of a [width]-wide box: five threads
+ *  fanning down and left, joined by three sagging rings ([len] long). iOS CobwebShape. */
+internal fun cobwebPath(width: Float, len: Float): Path {
+    val ox = width
+    val oy = 0f
+    val angles = listOf(90.0, 112.0, 135.0, 158.0, 180.0).map { Math.toRadians(it) }
+    fun x(a: Double, d: Float) = ox + kotlin.math.cos(a).toFloat() * d
+    fun y(a: Double, d: Float) = oy + kotlin.math.sin(a).toFloat() * d
+    return Path().apply {
+        for (a in angles) { moveTo(ox, oy); lineTo(x(a, len), y(a, len)) }
+        for (f in listOf(0.32f, 0.58f, 0.84f)) {
+            val d = len * f
+            moveTo(x(angles[0], d), y(angles[0], d))
+            for (i in 1 until angles.size) {
+                val mid = (angles[i - 1] + angles[i]) / 2
+                quadraticTo(x(mid, d * 0.8f), y(mid, d * 0.8f), x(angles[i], d), y(angles[i], d))
+            }
+        }
     }
 }

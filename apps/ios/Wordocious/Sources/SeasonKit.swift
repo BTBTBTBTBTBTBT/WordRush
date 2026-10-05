@@ -33,6 +33,111 @@ enum SeasonKit {
         let title: String
         let palette: Palette
         let slots: Slots
+        let surfaces: Surfaces?
+        let surfaceVariants: [String: Surfaces]?
+    }
+
+    /// The season's windows (registry `surfaces`): the page cards, the Home hero card, the game
+    /// cards' drip caps and the game board panel recolor so the whole screen reads seasonal, not
+    /// just the wall. Every slot is optional — a missing one keeps the normal look.
+    struct Surfaces: Decodable {
+        let tone: String?
+        let card: String?
+        let cardOpacity: Double?
+        let hero: String?
+        let heroOpacity: Double?
+        let raised: String?
+        let cap: [String]?
+        let capTint: Double?
+        let glow: String?
+        let text: String?
+        let textMuted: String?
+        let textSecondary: String?
+        let headline: [String]?
+        let bannerGlow: String?
+        let cobweb: String?
+    }
+
+    /// The resolved surfaces, colors parsed once.
+    struct Look {
+        let dark: Bool
+        let card: Color?
+        let cardOpacity: Double
+        let hero: Color?
+        let heroOpacity: Double
+        let raised: Color?
+        let cap: [Color]?
+        let capTint: Double
+        let glow: Color?
+        let text: Color?
+        let textMuted: Color?
+        let textSecondary: Color?
+        let headline: [Color]?
+        let bannerGlow: Color?
+        let cobweb: Color?
+
+        init(_ s: Surfaces) {
+            func c(_ h: String?) -> Color? { h.flatMap { Color(hexString: $0) } }
+            dark = s.tone == "dark"
+            card = c(s.card); cardOpacity = s.cardOpacity ?? 1
+            hero = c(s.hero); heroOpacity = s.heroOpacity ?? 1
+            raised = c(s.raised)
+            let caps = (s.cap ?? []).compactMap { Color(hexString: $0) }
+            cap = caps.count == 3 ? caps : nil
+            capTint = s.capTint ?? 0
+            glow = c(s.glow)
+            text = c(s.text); textMuted = c(s.textMuted); textSecondary = c(s.textSecondary)
+            let h = (s.headline ?? []).compactMap { Color(hexString: $0) }
+            headline = h.count == 5 ? h : nil
+            bannerGlow = c(s.bannerGlow); cobweb = c(s.cobweb)
+        }
+
+        /// A card's translucent fill (nil = the normal fill).
+        var cardFill: Color? { card.map { $0.opacity(cardOpacity) } }
+        var heroFill: Color? { (hero ?? card).map { $0.opacity(hero != nil ? heroOpacity : cardOpacity) } }
+
+        /// The drip cap's three stops for a game color (top lip, body with a hint of the
+        /// game's own color, deep base).
+        func capStops(_ game: Color) -> [Color]? {
+            guard let cap else { return nil }
+            return [cap[0], game.mixed(over: cap[1], capTint), cap[2]]
+        }
+
+        /// The theme palette under the season (on-card ink + the opaque card color for sheets).
+        func palette(over base: ThemePalette) -> ThemePalette {
+            var p = ThemePalette(
+                background: base.background, backgroundGradientEnd: base.backgroundGradientEnd,
+                surface: card ?? base.surface, border: base.border, borderAlt: base.borderAlt,
+                borderLight: base.borderLight, divider: base.divider,
+                surfaceAlt: raised ?? base.surfaceAlt, surfaceHover: raised ?? base.surfaceHover,
+                textPrimary: text ?? base.textPrimary, textMuted: textMuted ?? base.textMuted,
+                textSecondary: textSecondary ?? base.textSecondary)
+            p.winBG = base.winBG; p.lossBG = base.lossBG; p.winText = base.winText; p.lossText = base.lossText
+            p.highlightGold = base.highlightGold; p.goldBorder = base.goldBorder; p.goldBorderLight = base.goldBorderLight
+            return p
+        }
+    }
+
+    /// UserDefaults key of the admin surfaces preview: absent = the registry's `surfaces`, a
+    /// `surfaceVariants` id (e.g. "parchment"), or "off". Read at launch (the theme root
+    /// rebuilds then), so flipping it takes a relaunch.
+    static let surfacesKey = "debug-season-surfaces"
+    private static let surfacesChoice = UserDefaults.standard.string(forKey: surfacesKey) ?? ""
+    private static let lookLock = NSLock()
+    private static var lookCache: (id: String?, look: Look?)?
+
+    /// The active season's windows (nil out of season / none / preview off).
+    static var surfaces: Look? {
+        let entry = current
+        lookLock.lock(); defer { lookLock.unlock() }
+        if let c = lookCache, c.id == entry?.id { return c.look }
+        var look: Look?
+        if let entry, surfacesChoice != "off" {
+            let s = surfacesChoice.isEmpty ? entry.surfaces : (entry.surfaceVariants?[surfacesChoice] ?? entry.surfaces)
+            look = s.map(Look.init)
+        }
+        lookCache = (entry?.id, look)
+        return look
     }
 
     private struct File: Decodable { let seasons: [Entry] }

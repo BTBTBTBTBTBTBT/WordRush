@@ -30,6 +30,15 @@ enum GameTray {
             case .normal: return accent.opacity(0.09)
             }
         }
+        // Season surfaces (light tone): a see-through accent tint over the season card.
+        if !lightOnly, SeasonKit.surfaces?.cardFill != nil {
+            switch state {
+            case .won: return Color(hex: 0x7C3AED).opacity(0.12)
+            case .lost: return Color(hex: 0x6B7891).opacity(0.14)
+            case .active: return accent.opacity(0.14)
+            case .normal: return accent.opacity(0.07)
+            }
+        }
         switch state {
         case .won: return Color(hex: 0x7C3AED).wash(0.13)
         case .lost: return Color(hex: 0x6B7891).wash(0.14)
@@ -67,24 +76,27 @@ struct GameTrayChrome: ViewModifier {
         let dark = Theme.isDark && !lightOnly
         let ink = GameTray.ink(accent, state)
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        // Season surfaces: the season's translucent card replaces the white / dark base.
+        let season = lightOnly ? nil : SeasonKit.surfaces
+        let base: Color = season?.cardFill ?? (dark ? Theme.surface : Color.white)
         return content
             .padding(padding)
             .background {
                 ZStack(alignment: .top) {
                     // The darker lip showing under the face.
-                    shape.fill(dark ? Color.black.opacity(0.35) : ink.wash(0.34))
+                    shape.fill(dark ? Color.black.opacity(0.35) : (season != nil ? ink.opacity(0.30) : ink.wash(0.34)))
                         .offset(y: GameTray.lip)
                         // Perf audit: the tray's lift from ONE shape (was a shadow over the
                         // whole layered group — an offscreen pass per board every frame).
-                        .shadow(color: ink.opacity(dark ? 0.0 : 0.16), radius: 9, x: 0, y: 6)
-                    shape.fill(dark ? Theme.surface : Color.white)
+                        .shadow(color: season?.glow?.opacity(0.28) ?? ink.opacity(dark ? 0.0 : 0.16), radius: 9, x: 0, y: 6)
+                    shape.fill(base)
                     shape.fill(GameTray.face(accent, state, lightOnly: lightOnly))
                     // The faint inner top gloss.
                     shape.fill(LinearGradient(colors: [Color.white.opacity(dark ? 0.06 : 0.55), Color.white.opacity(0)],
                                               startPoint: .top, endPoint: .center))
                         .padding(2)
                         .allowsHitTesting(false)
-                    shape.strokeBorder(dark ? ink.opacity(state == .normal ? 0.35 : 0.6) : ink.wash(state == .normal ? 0.30 : 0.55),
+                    shape.strokeBorder(dark || season != nil ? ink.opacity(state == .normal ? 0.30 : 0.6) : ink.wash(state == .normal ? 0.30 : 0.55),
                                        lineWidth: 1.5)
                 }
             }

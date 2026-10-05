@@ -139,8 +139,11 @@ fun TintedCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(corner)
+    // Season surfaces: the season's translucent card with a faint accent, no outline (flat fill, no blur).
+    val season = com.wordocious.app.ui.theme.WTheme.season?.takeIf { it.cardFill != null }
     Column(
-        modifier
+        if (season != null) modifier.clip(shape).background(season.wash(accent, 0.06f).copy(alpha = season.cardOpacity))
+        else modifier
             .shadow(6.dp, shape, clip = false, ambientColor = FinishInk.cardShadow, spotColor = FinishInk.cardShadow)
             .clip(shape)
             .background(tint)

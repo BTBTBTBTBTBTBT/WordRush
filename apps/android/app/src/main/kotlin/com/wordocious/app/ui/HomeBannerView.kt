@@ -146,8 +146,9 @@ fun HomeBannerView(
     }
     val topColor = when (wTier) { BannerTier.NONE -> Color(0xFFECE8FF); BannerTier.SWEEP -> TIER_SWEEP; BannerTier.FLAWLESS -> TIER_FLAWLESS }
     val bottomColor = when (pTier) { BannerTier.NONE -> Color(0xFFE2E6FF); BannerTier.SWEEP -> TIER_SWEEP; BannerTier.FLAWLESS -> TIER_FLAWLESS }
-    val headInk = if (double) Color(0xFF78350F) else Color(0xFF4C1D95)
-    val subInk = if (double) Color(0xFF92400E) else Color(0xFF6D28D9)
+    val season = WTheme.season?.takeIf { it.heroFill != null }
+    val headInk = if (double) Color(0xFF78350F) else (season?.text ?: Color(0xFF4C1D95))
+    val subInk = if (double) Color(0xFF92400E) else (season?.textSecondary ?: Color(0xFF6D28D9))
     // Exactly one shimmer, Daily only, and only once a row has something to celebrate.
     val shimmer = !unlimited && (wTier != BannerTier.NONE || pTier != BannerTier.NONE) && !WTheme.calmMotion // AD: a looping shine (off under Battery Saver too)
     // ART_SPEC §18.4: radius 22, the frosted headline strip across the full width.
@@ -178,7 +179,20 @@ fun HomeBannerView(
                 .bannerGlow(double)
                 .clip(shape)
                 .drawBehind {
-                    if (unlimited) {
+                    if (season != null) {
+                        // Season surfaces: the hero fill + a soft glow behind the banner art
+                        // (dark tone: jack-o'-lantern center glow; light tone: an orange edge glow).
+                        drawRect(season.heroFill!!)
+                        season.bannerGlow?.let { g ->
+                            if (season.dark) drawRect(Brush.radialGradient(
+                                0f to g.copy(alpha = 0.34f), 0.55f to g.copy(alpha = 0.10f), 1f to g.copy(alpha = 0f),
+                                center = Offset(size.width / 2, size.height * 0.46f), radius = 190.dp.toPx(),
+                            )) else drawRect(Brush.radialGradient(
+                                0f to g.copy(alpha = 0f), 0.6f to g.copy(alpha = 0f), 1f to g.copy(alpha = 0.26f),
+                                center = Offset(size.width / 2, size.height / 2), radius = maxOf(size.width, size.height) * 0.62f,
+                            ))
+                        }
+                    } else if (unlimited) {
                         drawRect(Brush.linearGradient(listOf(Color(0xFFFCE7F3), Color(0xFFEDE9FE)), start = Offset.Zero, end = Offset(size.width, size.height)))
                     } else {
                         drawRect(Brush.verticalGradient(0f to topColor, 0.52f to topColor, 0.72f to bottomColor, 1f to bottomColor))
@@ -265,7 +279,7 @@ fun HomeBannerView(
             // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
             // BJ6 round 3: the two progress rows sit in one subtle lavender tint band (two zones).
             val tileSlots = maxOf(10, word.cards.size, puzzles.cards.size)
-            Column(Modifier.fillMaxWidth().background(HOME_ROWS_TINT)) {
+            Column(Modifier.fillMaxWidth().background(season?.raised?.copy(alpha = 0.45f) ?: HOME_ROWS_TINT)) {
             BannerGroupRow(word, wTier, "WORDOCIOUS", tileSlots, unlimited, completions, onOpen,
                 Modifier.padding(start = HOME_ROW_PAD_X.dp, end = HOME_ROW_PAD_X.dp, top = 4.dp, bottom = 4.dp),
                 flameSlot = slots.wordFlameSlot, dailyTier = dailyWTier)

@@ -70,7 +70,7 @@ struct ModeCardView: View {
     private var titleRow: some View {
         HStack(alignment: .top, spacing: 4) {
             Text(mode.title).font(Brand.font(nameSize, .black))   // BJ18: the grid's ONE name size
-                .foregroundStyle(locked ? Theme.textMuted : mode.accent)
+                .foregroundStyle(locked ? Theme.textMuted : mode.accent.onSeasonCard)
                 .lineLimit(1).minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(unlimited && !locked ? "\(mode.title), Unlimited" : mode.title)
@@ -122,8 +122,23 @@ struct GameCardChrome: ViewModifier {
         // FINISH_SPEC §A1: no plain white — the card takes a soft wash of its own
         // accent (stronger once done). Dark keeps its surface.
         let dark = Theme.isDark
+        // Season surfaces: the season's translucent card (the wall glows through), its glow for
+        // the lift, drawn ONCE (under the clip) so the opacity doesn't stack.
+        if let look = SeasonKit.surfaces, let seasonFill = look.cardFill {
+            return AnyView(VStack(spacing: 0) {
+                Color.clear.frame(height: Self.band)
+                content
+            }
+            .background(ZStack(alignment: .top) {
+                shape.fill(bar.opacity(done ? 0.16 : 0.08))
+                CardTrim(color: bar, locked: locked)
+            })
+            .clipShape(shape)
+            .background(shape.fill(seasonFill)
+                .shadow(color: (look.glow ?? bar).opacity(look.dark ? 0.30 : 0.22), radius: 10, x: 0, y: look.dark ? 0 : 4)))
+        }
         let fill: Color = dark ? Theme.surface : bar.wash(done ? 0.16 : 0.10)
-        return VStack(spacing: 0) {
+        return AnyView(VStack(spacing: 0) {
             Color.clear.frame(height: Self.band)
             content
         }
@@ -134,7 +149,7 @@ struct GameCardChrome: ViewModifier {
         })
         .clipShape(shape)
         // ART_SPEC §11: an opaque base carrying the page-tinted lift, outside the clip.
-        .background(shape.fill(fill).pageCardShadow())
+        .background(shape.fill(fill).pageCardShadow()))
     }
 }
 
@@ -146,10 +161,13 @@ struct CardTrim: View {
     var locked: Bool = false
 
     var body: some View {
-        let stops: [Gradient.Stop] = locked
+        let season = locked ? nil : SeasonKit.surfaces?.capStops(color)
+        let stops: [Gradient.Stop] = season.map { s in
+            [.init(color: s[0], location: 0), .init(color: s[1], location: 0.42), .init(color: s[2], location: 1)]
+        } ?? (locked
             ? [.init(color: Color(hex: 0xE5E7EB), location: 0), .init(color: Color(hex: 0xC9CED6), location: 1)]
             : [.init(color: color.wash(0.45), location: 0), .init(color: color, location: 0.42),
-               .init(color: color.mixed(over: .black, 0.86), location: 1)]
+               .init(color: color.mixed(over: .black, 0.86), location: 1)])
         CardTrimShape()
             .fill(LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom))
             .frame(height: CardTrimGeometry.band + CardTrimGeometry.drip)

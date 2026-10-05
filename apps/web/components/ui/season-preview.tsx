@@ -2,8 +2,8 @@
 
 import Image, { type ImageProps } from 'next/image';
 import { useEffect } from 'react';
-import { seasonPalette, seasonalTitle, seasonalWall } from '@/lib/season-kit';
-import { useSeason } from '@/lib/season';
+import { SURFACE_CSS_VARS, seasonPalette, seasonSurfaces, seasonalTitle, seasonalWall, surfaceCssVars } from '@/lib/season-kit';
+import { readSurfacesChoice, useSeason } from '@/lib/season';
 
 // The season preview's client pieces (lib/season-kit.ts): a title image that swaps to the season's
 // lettering, the season's wallpaper layer inside .page-bg, and the document hook that hands the
@@ -29,8 +29,9 @@ export function SeasonTitleImage({ artName, maxHeight, maxWidthCap, ...img }: Im
 export function SeasonWallLayer({ wall }: { wall: string | null | undefined }) {
   const season = useSeason();
   if (!wall || !season) return null;
-  const light = seasonalWall(wall, season, 'light');
   const dark = seasonalWall(wall, season, 'dark');
+  // A dark-toned season's windows sit on its dark wall in every scheme (light on-wall ink).
+  const light = seasonSurfaces(season, readSurfacesChoice())?.tone === 'dark' ? dark : seasonalWall(wall, season, 'light');
   if (!light && !dark) return null;
   const url = (n: string | null, wide: boolean) => (n ? `url('/art/${n}${wide ? '-wide' : ''}.webp')` : 'none');
   const vars = {
@@ -48,6 +49,14 @@ export function SeasonDocument() {
   useEffect(() => {
     const root = document.documentElement;
     const p = seasonPalette(season);
+    // Season surfaces: the windows' CSS variables + html[data-season-tone].
+    for (const k of SURFACE_CSS_VARS) root.style.removeProperty(k);
+    root.removeAttribute('data-season-tone');
+    const surfaces = seasonSurfaces(season, readSurfacesChoice());
+    if (surfaces) {
+      for (const [k, v] of Object.entries(surfaceCssVars(surfaces))) root.style.setProperty(k, v);
+      root.setAttribute('data-season-tone', surfaces.tone ?? 'light');
+    }
     if (!season || !p) {
       root.removeAttribute('data-season');
       root.style.removeProperty('--season-button-tint');

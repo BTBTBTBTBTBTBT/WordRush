@@ -9,7 +9,7 @@ import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
 import { modeCardSlots } from '@/lib/stationary-layout';
-import { TRIM, compactCardLine, trimPath, trimStops } from '@/lib/card-trim';
+import { TRIM, compactCardLine, seasonTrimStops, trimPath } from '@/lib/card-trim';
 import { createCardNameScope, type CardNameScopeStore } from '@/lib/card-name-size';
 
 // The home-grid mode card, extracted verbatim from app/page.tsx (More Games
@@ -125,7 +125,7 @@ export function ModeCardBand({ accent, locked = false }: { accent: string; locke
       >
         <defs>
           <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-            {trimStops(accent, locked).map(([o, c]) => <stop key={o} offset={o} stopColor={c} />)}
+            {seasonTrimStops(accent, locked).map(([o, c]) => <stop key={o} offset={o} style={{ stopColor: c }} />)}
           </linearGradient>
         </defs>
         <path d={TRIM_PATH} fill={`url(#${gid})`} />
