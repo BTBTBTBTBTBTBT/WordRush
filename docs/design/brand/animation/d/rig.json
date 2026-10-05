@@ -1,0 +1,133 @@
+{
+ "id": "d",
+ "source": "cast/hero/d.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.01,
+  "meanAbsAlpha": 0.018,
+  "p99RGB": 0.2,
+  "pixels": 609059,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 382.029175193946,
+    "cy": 388.8931988006282,
+    "w": 167,
+    "h": 161
+   },
+   {
+    "cx": 647.0427001127396,
+    "cy": 352.49163848177375,
+    "w": 165,
+    "h": 162
+   }
+  ]
+ },
+ "name": "D",
+ "gesture": "Pencil tap",
+ "caption": "Every 6 s he taps his pencil (his own, cut from the art) in a quick rhythm, rocking it in his grip. Tap: he hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   508,
+   975
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "tap": {
+   "osc": [
+    3.2,
+    0.3,
+    1.0
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.1,
+     1,
+     "inOut"
+    ],
+    [
+     2.3,
+     1
+    ],
+    [
+     2.45,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "nod": {
+   "osc": [
+    0.8,
+    0.6,
+    1.0
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.1,
+     1,
+     "inOut"
+    ],
+    [
+     2.3,
+     1
+    ],
+    [
+     2.45,
+     0,
+     "inOut"
+    ]
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "base"
+  },
+  {
+   "img": "pencil",
+   "pivot": [
+    832,
+    552
+   ],
+   "rot": "tap"
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "root": {
+  "rot": "nod"
+ },
+ "patchAfter": "base"
+}

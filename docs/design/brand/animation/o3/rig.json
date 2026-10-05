@@ -1,0 +1,178 @@
+{
+ "id": "o3",
+ "source": "cast/hero/o3.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.013,
+  "meanAbsAlpha": 0.024,
+  "p99RGB": 0.0,
+  "pixels": 548171,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 498.2383082437276,
+    "cy": 381.4003870967742,
+    "w": 306,
+    "h": 290
+   }
+  ]
+ },
+ "name": "O (orange)",
+ "gesture": "Big blink + tongue wiggle",
+ "caption": "Every 6 s one huge slow blink of his single eye, then a tongue wiggle and a small wave of his raised arm. Tap: he hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   513,
+   959
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "eyes": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.12,
+     1,
+     "linear"
+    ],
+    [
+     1.24,
+     2,
+     "linear"
+    ],
+    [
+     1.6,
+     2
+    ],
+    [
+     1.72,
+     1,
+     "linear"
+    ],
+    [
+     1.84,
+     0,
+     "linear"
+    ]
+   ]
+  },
+  "wig": {
+   "osc": [
+    11,
+    0.34,
+    1.9
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.9,
+     0
+    ],
+    [
+     2.0,
+     1,
+     "inOut"
+    ],
+    [
+     3.1,
+     1
+    ],
+    [
+     3.3,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "wave": {
+   "osc": [
+    -7,
+    0.68,
+    1.9
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.9,
+     0
+    ],
+    [
+     2.0,
+     1,
+     "inOut"
+    ],
+    [
+     3.1,
+     1
+    ],
+    [
+     3.3,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "idle": {
+   "osc": [
+    1.5,
+    2.2,
+    0
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "base"
+  },
+  {
+   "img": "tongue",
+   "pivot": [
+    549,
+    523
+   ],
+   "rot": "wig"
+  },
+  {
+   "img": "arm",
+   "pivot": [
+    858,
+    425
+   ],
+   "rot": [
+    "wave",
+    "idle"
+   ]
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "eyesTrack": "eyes"
+}

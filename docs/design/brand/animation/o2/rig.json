@@ -1,0 +1,146 @@
+{
+ "id": "o2",
+ "source": "cast/hero/o2.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.0,
+  "meanAbsAlpha": 0.0,
+  "p99RGB": 0.0,
+  "pixels": 524730,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 364.9466547459395,
+    "cy": 393.26657726121294,
+    "w": 92,
+    "h": 93
+   }
+  ]
+ },
+ "name": "O (pink)",
+ "gesture": "Wink",
+ "caption": "Every 6 s she opens her winking eye for a look around, then snaps the wink back with a sassy tilt and a bob. Tap: she hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   472,
+   959
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "open": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.08,
+     1,
+     "linear"
+    ],
+    [
+     2.4,
+     1
+    ],
+    [
+     2.46,
+     0,
+     "linear"
+    ]
+   ]
+  },
+  "tilt": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     2.35,
+     0
+    ],
+    [
+     2.55,
+     -3.5,
+     "out"
+    ],
+    [
+     3.2,
+     -3.5
+    ],
+    [
+     3.7,
+     0,
+     "sine"
+    ]
+   ]
+  },
+  "bob": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     2.4,
+     0
+    ],
+    [
+     2.55,
+     -16,
+     "out"
+    ],
+    [
+     2.75,
+     0,
+     "in"
+    ],
+    [
+     2.85,
+     -4,
+     "out"
+    ],
+    [
+     2.95,
+     0,
+     "in"
+    ]
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "base"
+  },
+  {
+   "img": "eye-open",
+   "alpha": "open",
+   "when": "nolaugh"
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "root": {
+  "rot": "tilt",
+  "dy": "bob"
+ }
+}

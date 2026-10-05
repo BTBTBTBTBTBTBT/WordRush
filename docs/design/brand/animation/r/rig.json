@@ -1,0 +1,209 @@
+{
+ "id": "r",
+ "source": "cast/hero/r.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.015,
+  "meanAbsAlpha": 0.008,
+  "p99RGB": 0.0,
+  "pixels": 461127,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 473.37410772225826,
+    "cy": 456.7738481505516,
+    "w": 83,
+    "h": 55
+   },
+   {
+    "cx": 629.5556371648917,
+    "cy": 432.8027910392949,
+    "w": 79,
+    "h": 53
+   }
+  ]
+ },
+ "name": "R",
+ "gesture": "Slow yawn",
+ "caption": "Every 6 s a big slow yawn: his own mouth stretches open, his eyes close, his head tips back and the nightcap pom-pom droops and sways. Tap: he hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   460,
+   912
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "yawn": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     1.0,
+     1
+    ],
+    [
+     1.7,
+     1.32,
+     "sine"
+    ],
+    [
+     2.5,
+     1.32
+    ],
+    [
+     3.0,
+     1,
+     "sine"
+    ]
+   ]
+  },
+  "eyes": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.05,
+     0
+    ],
+    [
+     1.15,
+     1,
+     "linear"
+    ],
+    [
+     1.25,
+     2,
+     "linear"
+    ],
+    [
+     2.6,
+     2
+    ],
+    [
+     2.75,
+     1,
+     "linear"
+    ],
+    [
+     2.9,
+     0,
+     "linear"
+    ]
+   ]
+  },
+  "tilt": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.7,
+     -2.5,
+     "sine"
+    ],
+    [
+     2.5,
+     -2.5
+    ],
+    [
+     3.1,
+     0,
+     "sine"
+    ]
+   ]
+  },
+  "pomSway": {
+   "osc": [
+    5,
+    2.4,
+    0
+   ]
+  },
+  "pomDroop": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.2,
+     0
+    ],
+    [
+     1.9,
+     12,
+     "sine"
+    ],
+    [
+     2.6,
+     12
+    ],
+    [
+     3.4,
+     0,
+     "sine"
+    ]
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "shadow",
+   "shadow": true
+  },
+  {
+   "img": "base"
+  },
+  {
+   "img": "mouth",
+   "pivot": [
+    563,
+    462
+   ],
+   "sy": "yawn",
+   "when": "nolaugh"
+  },
+  {
+   "img": "pom",
+   "pivot": [
+    156,
+    407
+   ],
+   "rot": [
+    "pomSway",
+    "pomDroop"
+   ]
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "eyesTrack": "eyes",
+ "root": {
+  "rot": "tilt"
+ },
+ "patchAfter": "mouth"
+}

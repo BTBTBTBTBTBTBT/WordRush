@@ -1,0 +1,182 @@
+{
+ "id": "s",
+ "source": "cast/hero/s.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.0,
+  "meanAbsAlpha": 0.0,
+  "p99RGB": 0.0,
+  "pixels": 492767,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 589.2100885430641,
+    "cy": 333.29970485645293,
+    "w": 78,
+    "h": 70
+   },
+   {
+    "cx": 744.8298920694509,
+    "cy": 371.87494134209294,
+    "w": 78,
+    "h": 89
+   }
+  ]
+ },
+ "name": "S",
+ "gesture": "Jog in place",
+ "caption": "Always on the move: his speed lines stream past, and every 6 s he breaks into a bouncing jog in place. Tap: he hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   574,
+   957
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "jog": {
+   "osc": [
+    16,
+    0.36,
+    0.8,
+    1
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     0.8,
+     0
+    ],
+    [
+     1.0,
+     1,
+     "inOut"
+    ],
+    [
+     3.6,
+     1
+    ],
+    [
+     3.9,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "lean": {
+   "osc": [
+    1.6,
+    0.72,
+    0.8
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     0.8,
+     0
+    ],
+    [
+     1.0,
+     1,
+     "inOut"
+    ],
+    [
+     3.6,
+     1
+    ],
+    [
+     3.9,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "lineDx": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     0.3,
+     -46,
+     "out"
+    ],
+    [
+     0.36,
+     30,
+     "step"
+    ],
+    [
+     0.6,
+     0,
+     "out"
+    ]
+   ],
+   "period": 0.6
+  },
+  "lineA": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     0.3,
+     0,
+     "in"
+    ],
+    [
+     0.36,
+     0
+    ],
+    [
+     0.6,
+     1,
+     "out"
+    ]
+   ],
+   "period": 0.6
+  }
+ },
+ "layers": [
+  {
+   "img": "speed",
+   "dx": "lineDx",
+   "alpha": "lineA"
+  },
+  {
+   "img": "base"
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "root": {
+  "origin": [
+   574,
+   957
+  ],
+  "dy": "jog",
+  "rot": "lean"
+ }
+}

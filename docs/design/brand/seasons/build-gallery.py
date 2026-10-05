@@ -320,6 +320,16 @@ code{{font-size:11px;color:var(--muted);word-break:break-all}}
 </main></body></html>'''
 
 def anim_section():
+    """Cast puppets (animation/cast-embed.html, built by animation/rig-engine/build.py); falls back to the W pilot."""
+    cast = os.path.join(BRAND, 'animation', 'cast-embed.html')
+    if os.path.exists(cast):
+        with open(cast) as f: frag = f.read()
+        return ('<section class="season"><h2>Cast animation</h2><p class="win">All ten, cut from the approved hero art and animated in code: '
+                'each one breathes, blinks and does one signature move. Tap any of them to make them hop and laugh. '
+                'Top: W polished next to the v1 pilot. The rest diff under each name is the mean difference between the layers at rest '
+                'and the hero image, out of 255 (target under 2). Standalone page: docs/design/brand/animation/cast.html; '
+                'notes: docs/design/brand/animation/NOTES.md</p>'
+                f'<div class="anim">{frag}</div></section>')
     p = os.path.join(BRAND, 'animation', 'w-wave', 'embed.html')
     if not os.path.exists(p): return ''
     with open(p) as f: frag = f.read()

@@ -1,0 +1,106 @@
+{
+ "id": "u",
+ "source": "cast/hero/u.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.0,
+  "meanAbsAlpha": 0.0,
+  "p99RGB": 0.0,
+  "pixels": 548338,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 423.41191860465113,
+    "cy": 292.6081395348837,
+    "w": 117,
+    "h": 63
+   },
+   {
+    "cx": 642.8132273630429,
+    "cy": 295.54158387737726,
+    "w": 121,
+    "h": 64
+   }
+  ]
+ },
+ "name": "U",
+ "gesture": "Gentle float",
+ "caption": "Hovers cross-legged, bobbing slowly and breathing deep; every 6 s he drifts a little higher, then settles back down. Tap: he hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   512,
+   941
+  ],
+  "period": 4.2,
+  "sy": 0.016,
+  "sx": 0.008
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "float": {
+   "osc": [
+    -12,
+    3.0,
+    0
+   ]
+  },
+  "lift": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.2,
+     0
+    ],
+    [
+     2.4,
+     -44,
+     "sine"
+    ],
+    [
+     3.4,
+     -44
+    ],
+    [
+     4.8,
+     0,
+     "sine"
+    ]
+   ]
+  },
+  "sway": {
+   "osc": [
+    1.2,
+    6.0,
+    0
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "base"
+  }
+ ],
+ "root": {
+  "origin": [
+   512,
+   600
+  ],
+  "dy": [
+   "float",
+   "lift"
+  ],
+  "rot": "sway"
+ }
+}

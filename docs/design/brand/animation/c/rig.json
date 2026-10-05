@@ -1,0 +1,130 @@
+{
+ "id": "c",
+ "source": "cast/hero/c.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.0,
+  "meanAbsAlpha": 0.0,
+  "p99RGB": 0.0,
+  "pixels": 496001,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 454.89690988011574,
+    "cy": 366.99860479537,
+    "w": 156,
+    "h": 159
+   },
+   {
+    "cx": 698.7814854682455,
+    "cy": 355.0706475553793,
+    "w": 146,
+    "h": 154
+   }
+  ]
+ },
+ "name": "C",
+ "gesture": "Happy wiggle",
+ "caption": "Rocks side to side on his feet with a little squash, then settles. Tap: ^ ^ eyes and his C mouth stretches open so the teeth part.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   528,
+   963
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "wig": {
+   "osc": [
+    4.5,
+    0.55,
+    1.0
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.25,
+     1,
+     "inOut"
+    ],
+    [
+     2.5,
+     1
+    ],
+    [
+     2.9,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "bob": {
+   "osc": [
+    -12,
+    0.275,
+    1.0,
+    1
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.25,
+     1,
+     "inOut"
+    ],
+    [
+     2.5,
+     1
+    ],
+    [
+     2.9,
+     0,
+     "inOut"
+    ]
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "base"
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "root": {
+  "origin": [
+   528,
+   963
+  ],
+  "rot": "wig",
+  "dy": "bob"
+ }
+}

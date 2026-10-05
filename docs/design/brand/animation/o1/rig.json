@@ -1,0 +1,211 @@
+{
+ "id": "o1",
+ "source": "cast/hero/o1.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.024,
+  "meanAbsAlpha": 0.052,
+  "p99RGB": 0.9,
+  "pixels": 582993,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 437.50040883074405,
+    "cy": 339.2800490596893,
+    "w": 93,
+    "h": 56
+   },
+   {
+    "cx": 645.5756688963211,
+    "cy": 367.09197324414714,
+    "w": 92,
+    "h": 59
+   }
+  ]
+ },
+ "name": "O (amber)",
+ "gesture": "Pom-pom cheer",
+ "caption": "Every 6 s she shakes all four pom-poms (her own, cut from the art) and bounces on the beat. Tap: she hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   523,
+   922
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-half",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "shakeA": {
+   "osc": [
+    10,
+    0.3,
+    1.0
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.15,
+     1,
+     "inOut"
+    ],
+    [
+     2.6,
+     1
+    ],
+    [
+     2.8,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "shakeB": {
+   "osc": [
+    -10,
+    0.3,
+    1.0
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.15,
+     1,
+     "inOut"
+    ],
+    [
+     2.6,
+     1
+    ],
+    [
+     2.8,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "bounce": {
+   "osc": [
+    14,
+    0.3,
+    1.0,
+    1
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.15,
+     1,
+     "inOut"
+    ],
+    [
+     2.6,
+     1
+    ],
+    [
+     2.8,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "idle": {
+   "osc": [
+    2.5,
+    1.7,
+    0
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "shadow",
+   "shadow": true
+  },
+  {
+   "img": "base"
+  },
+  {
+   "img": "pom-ul",
+   "pivot": [
+    292,
+    286
+   ],
+   "rot": [
+    "shakeA",
+    "idle"
+   ]
+  },
+  {
+   "img": "pom-ur",
+   "pivot": [
+    805,
+    285
+   ],
+   "rot": [
+    "shakeB",
+    "idle"
+   ]
+  },
+  {
+   "img": "pom-ll",
+   "pivot": [
+    315,
+    630
+   ],
+   "rot": [
+    "shakeB",
+    "idle"
+   ]
+  },
+  {
+   "img": "pom-lr",
+   "pivot": [
+    839,
+    675
+   ],
+   "rot": [
+    "shakeA",
+    "idle"
+   ]
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-half"
+ },
+ "root": {
+  "dy": "bounce"
+ }
+}

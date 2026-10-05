@@ -1,0 +1,332 @@
+{
+ "id": "w",
+ "source": "cast/hero/w.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.014,
+  "meanAbsAlpha": 0.029,
+  "p99RGB": 0.4,
+  "pixels": 474891,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": {
+   "R": {
+    "cx": 691.3342457420924,
+    "cy": 351.19160583941607,
+    "w": 64,
+    "h": 69
+   },
+   "L": {
+    "cx": 465.42070735881344,
+    "cy": 394.3685111237878,
+    "w": 65,
+    "h": 72
+   }
+  }
+ },
+ "name": "W",
+ "gesture": "Wave hello (twice every 6 s)",
+ "cycle": 6.0,
+ "stage": {
+  "w": 1300,
+  "h": 1160,
+  "heroX": 40,
+  "heroY": 100
+ },
+ "caption": "Breathes, blinks, cape sways. The fist tucks behind his hip, then the hand swings up from behind him; the wave ends the same way in reverse with a soft settle.",
+ "breath": {
+  "origin": [
+   530,
+   955
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "capeSway": {
+   "osc": [
+    3.5,
+    2.6,
+    -0.455
+   ]
+  },
+  "fistRot": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     0.9,
+     0
+    ],
+    [
+     1.05,
+     60,
+     "in"
+    ],
+    [
+     3.95,
+     60
+    ],
+    [
+     4.45,
+     0,
+     "outBackSoft"
+    ]
+   ]
+  },
+  "fistInAlpha": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     0.9,
+     1
+    ],
+    [
+     0.9500000000000001,
+     0,
+     "linear"
+    ],
+    [
+     4.33,
+     0
+    ],
+    [
+     4.430000000000001,
+     1,
+     "linear"
+    ]
+   ]
+  },
+  "bandAlpha": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     0.9,
+     1
+    ],
+    [
+     1.0,
+     0,
+     "inOut"
+    ],
+    [
+     4.3,
+     0
+    ],
+    [
+     4.5,
+     1,
+     "inOut"
+    ]
+   ]
+  },
+  "armTheta": {
+   "kf": [
+    [
+     0,
+     170
+    ],
+    [
+     1.02,
+     170
+    ],
+    [
+     1.5,
+     0,
+     "outBack"
+    ],
+    [
+     3.6,
+     0
+    ],
+    [
+     3.98,
+     170,
+     "in"
+    ]
+   ]
+  },
+  "armScale": {
+   "kf": [
+    [
+     0,
+     0.9
+    ],
+    [
+     1.02,
+     0.9
+    ],
+    [
+     1.5,
+     1.15,
+     "out"
+    ],
+    [
+     3.6,
+     1.15
+    ],
+    [
+     3.98,
+     0.9,
+     "in"
+    ]
+   ]
+  },
+  "armDx": {
+   "kf": [
+    [
+     0,
+     -70
+    ],
+    [
+     1.02,
+     -70
+    ],
+    [
+     1.25,
+     0,
+     "out"
+    ],
+    [
+     3.75,
+     0
+    ],
+    [
+     3.98,
+     -70,
+     "in"
+    ]
+   ]
+  },
+  "armWave": {
+   "osc": [
+    -25,
+    1.05,
+    1.5
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.45,
+     0
+    ],
+    [
+     1.7,
+     1,
+     "inOut"
+    ],
+    [
+     3.35,
+     1
+    ],
+    [
+     3.6,
+     0,
+     "inOut"
+    ]
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "cape",
+   "pivot": [
+    330,
+    470
+   ],
+   "rot": "capeSway",
+   "ripple": {
+    "top": 430,
+    "hem": 905,
+    "amp": 6,
+    "period": 1.8
+   }
+  },
+  {
+   "img": "arm-wave",
+   "at": [
+    858,
+    520
+   ],
+   "pivotInImg": [
+    60,
+    245
+   ],
+   "rot": [
+    10,
+    "armTheta",
+    "armWave"
+   ],
+   "s": "armScale",
+   "dx": "armDx"
+  },
+  {
+   "img": "arm-fist-out",
+   "pivot": [
+    760,
+    450
+   ],
+   "rot": "fistRot"
+  },
+  {
+   "img": "base"
+  },
+  {
+   "img": "arm-band",
+   "alpha": "bandAlpha"
+  },
+  {
+   "img": "arm-fist-in",
+   "pivot": [
+    760,
+    450
+   ],
+   "rot": "fistRot",
+   "alpha": "fistInAlpha"
+  }
+ ],
+ "checkTimes": [
+  0.9,
+  0.95,
+  1.0,
+  1.05,
+  1.1,
+  1.15,
+  1.2,
+  1.3,
+  1.4,
+  1.5,
+  3.6,
+  3.7,
+  3.8,
+  3.9,
+  3.98,
+  4.1,
+  4.25,
+  4.42
+ ]
+}

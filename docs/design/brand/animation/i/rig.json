@@ -1,0 +1,177 @@
+{
+ "id": "i",
+ "source": "cast/hero/i.png",
+ "canvas": [
+  1024,
+  1024
+ ],
+ "restDiff": {
+  "meanAbsRGB": 0.017,
+  "meanAbsAlpha": 0.025,
+  "p99RGB": 0.0,
+  "pixels": 280561,
+  "note": "premultiplied, over the hero character area (alpha>0)"
+ },
+ "info": {
+  "eyes": [
+   {
+    "cx": 437.2391410444119,
+    "cy": 382.2254758418741,
+    "w": 51,
+    "h": 54
+   },
+   {
+    "cx": 562.5985772357724,
+    "cy": 355.587906504065,
+    "w": 51,
+    "h": 52
+   }
+  ]
+ },
+ "name": "I",
+ "gesture": "Sprout sway + shy sway",
+ "caption": "His sprout sways all the time; every 6 s he sways shyly, the sprout bobs and his cheeks warm up. Tap: he hops and laughs.",
+ "cycle": 6.0,
+ "breath": {
+  "origin": [
+   500,
+   959
+  ],
+  "period": 3.4,
+  "sy": 0.012,
+  "sx": 0.006
+ },
+ "laugh": [
+  "eyes-happy",
+  "mouth-laugh"
+ ],
+ "tracks": {
+  "sproutSway": {
+   "osc": [
+    5,
+    2.2,
+    0
+   ]
+  },
+  "sproutBoing": {
+   "osc": [
+    7,
+    0.7,
+    1.0
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.4,
+     1,
+     "inOut"
+    ],
+    [
+     3.4,
+     1
+    ],
+    [
+     3.9,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "shy": {
+   "osc": [
+    2.5,
+    1.25,
+    1.0
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.4,
+     1,
+     "inOut"
+    ],
+    [
+     3.4,
+     1
+    ],
+    [
+     3.9,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "blushA": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.5,
+     1,
+     "inOut"
+    ],
+    [
+     3.4,
+     1
+    ],
+    [
+     4.0,
+     0,
+     "inOut"
+    ]
+   ]
+  }
+ },
+ "layers": [
+  {
+   "img": "base"
+  },
+  {
+   "img": "blush",
+   "alpha": "blushA"
+  },
+  {
+   "img": "sprout",
+   "pivot": [
+    460,
+    68
+   ],
+   "rot": [
+    "sproutSway",
+    "sproutBoing"
+   ]
+  }
+ ],
+ "blink": {
+  "half": "eyes-half",
+  "closed": "eyes-closed"
+ },
+ "root": {
+  "origin": [
+   500,
+   959
+  ],
+  "rot": "shy"
+ },
+ "patchAfter": "blush"
+}
