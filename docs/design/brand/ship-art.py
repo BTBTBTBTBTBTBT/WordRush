@@ -73,7 +73,8 @@ def square(path, size=256, margin=0.06):
     return out
 
 
-ONLY = sys.argv[1:]  # optional name prefixes to (re)ship, e.g. art-title-welcome
+SEASONS_ONLY = '--seasons' in sys.argv   # ship only the season preview art (seasons/<id>/ship.json)
+ONLY = [a for a in sys.argv[1:] if not a.startswith('--')]  # optional name prefixes to (re)ship, e.g. art-title-welcome
 
 
 def ship(name, im):
@@ -106,6 +107,47 @@ def ship(name, im):
         json.dump({'images': [{'filename': f'{name}.png', 'idiom': 'universal'}],
                    'info': {'author': 'xcode', 'version': 1}}, f, indent=2)
 
+
+
+def ship_seasons():
+    """Season preview art (seasons/README.md "How to add a season"): every seasons/<id>/ship.json.
+    titles/<key> -> art-title-<id>-<key> · walls/<page> -> art-wall-<id>-<page>[-light][-wide] · banner ->
+    art-scene-banner-<id>. Also writes apps/web/lib/season-art.generated.json ({name: [w, h]}) — the web's
+    "does it ship" + size table (iOS / Android check the bundle)."""
+    import glob
+    sizes = {}
+    count = 0
+    for manifest in sorted(glob.glob(os.path.join(HERE, 'seasons', '*', 'ship.json'))):
+        sdir = os.path.dirname(manifest)
+        sid = os.path.basename(sdir)
+        spec = json.load(open(manifest))
+        for key, rel in spec.get('titles', {}).items():
+            name = f'art-title-{sid}-{key}'
+            im = wide(os.path.join(sdir, rel), 1080)
+            ship(name, im); sizes[name] = list(im.size); count += 1
+        for page, rel in spec.get('walls', {}).items():
+            for variant in ['', '-light']:
+                for suffix in ['', '-wide']:
+                    src = os.path.join(sdir, f'{rel}{variant}{suffix}.webp')
+                    if os.path.exists(src):
+                        name = f'art-wall-{sid}-{page}{variant}{suffix}'
+                        im = Image.open(src)
+                        ship(name, im); sizes[name] = list(im.size); count += 1
+        if spec.get('banner'):
+            name = f'art-scene-banner-{sid}'
+            im = wide(os.path.normpath(os.path.join(sdir, spec['banner'])), 1200)
+            ship(name, im); sizes[name] = list(im.size); count += 1
+    out = os.path.join(REPO, 'apps', 'web', 'lib', 'season-art.generated.json')
+    with open(out, 'w') as f:
+        json.dump(dict(sorted(sizes.items())), f, indent=1)
+        f.write('\n')
+    print('seasons shipped', count, '->', out)
+    return count
+
+
+if SEASONS_ONLY:
+    ship_seasons()
+    sys.exit(0)
 
 n = 0
 for d in DAYS:
@@ -180,7 +222,7 @@ ACH_DIR = os.path.join(HERE, 'badges', 'ach')   # a badge per achievement (FINIS
 for f in sorted(os.listdir(ACH_DIR)) if os.path.isdir(ACH_DIR) else []:
     if f.endswith('.png'):
         ship('art-ach-' + f[:-4], square(os.path.join(ACH_DIR, f), 256, 0.03)); n += 1
-for sc, w_ in [('achievement', 1200), ('welcome-cast', 1200), ('all-set', 1200), ('banner-halloween', 1200)]:   # BF2, AO
+for sc, w_ in [('achievement', 1200), ('welcome-cast', 1200), ('all-set', 1200)]:   # BF2, AO (banner-halloween: ship_seasons)
     if os.path.exists(os.path.join(HERE, 'scenes', f'{sc}.png')):
         ship(f'art-scene-{sc}', wide(os.path.join(HERE, 'scenes', f'{sc}.png'), w_)); n += 1
 GOPRO_DIR = os.path.join(HERE, 'scenes', 'gopro-sign')   # BJ17: the cast holding GO PRO → art-gopro-sign-<id>
@@ -230,4 +272,5 @@ BTN_DIR = os.path.join(HERE, 'buttons', 'cast', 'out')   # cast-color button ski
 for f in sorted(os.listdir(BTN_DIR)) if os.path.isdir(BTN_DIR) else []:
     if f.endswith('.png'):
         ship('art-btn-' + f[:-4], Image.open(os.path.join(BTN_DIR, f)).convert('RGBA')); n += 1
+n += ship_seasons()
 print('shipped', n)

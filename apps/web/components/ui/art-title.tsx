@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { ART_SIZE, MOMENT_LABEL, artLabel, artMotion, artSrc, type ArtMotion, type ArtName, type MomentName } from '@/lib/art';
+import { SeasonTitleImage } from '@/components/ui/season-preview';
 
 // Image titles (docs/ART_SPEC.md §1, §2, §6, §8): a page title drawn as art — the
 // lettering with the whole cast on it (art-title-*) or a Leaderboard day title
@@ -62,7 +63,11 @@ export function ArtTitle({
       className={`flex ${align === 'center' ? 'justify-center' : 'justify-start'} m-0 select-none ${className}`}
       style={{ lineHeight: 0, ...style }}
     >
-      <Image
+      {/* Season preview: the season's lettering for this title when it ships (lib/season-kit.ts). */}
+      <SeasonTitleImage
+        artName={name}
+        maxHeight={height == null ? maxHeight : undefined}
+        maxWidthCap={maxWidthProp}
         src={artSrc(name)}
         alt={label || artLabel(name)}
         width={w}

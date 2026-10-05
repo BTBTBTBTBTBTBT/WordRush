@@ -4,7 +4,7 @@
 // api/admin/* route fetches its rows (service role, verifyAdmin-gated) and
 // hands them here. Admin-only: nothing in the consumer app imports this file.
 
-import { validateAvatar, defaultAvatar, currentSeason, type AvatarConfig } from '@wordle-duel/core';
+import { validateAvatar, defaultAvatar, currentSeason, SEASON_WINDOWS, type AvatarConfig } from '@wordle-duel/core';
 
 export interface Tally { key: string; count: number }
 
@@ -216,14 +216,15 @@ const dayNum = (s: string) => {
   return Math.round(Date.UTC(y, m - 1, d) / 86400000);
 };
 
-/** The Halloween window (Oct 24 – Nov 1, core currentSeason) relative to a YYYY-MM-DD day. */
+/** The Halloween window (Oct 17 – Nov 1, core SEASON_WINDOWS / currentSeason) relative to a YYYY-MM-DD day. */
 export function halloweenStatus(day: string): SeasonStatus {
   const y = Number(day.slice(0, 4));
   const active = currentSeason(day);
   // Both ends fall in the same calendar year; once Nov 1 has passed, the next window is next year's.
   const startYear = day.slice(5) > '11-01' ? y + 1 : y;
-  const start = ymd(startYear, 10, 24);
-  const end = ymd(startYear, 11, 1);
+  const w = SEASON_WINDOWS.find((x) => x.id === 'halloween')!;
+  const start = ymd(startYear, w.start[0], w.start[1]);
+  const end = ymd(startYear, w.end[0], w.end[1]);
   const today = dayNum(day);
   return {
     active,

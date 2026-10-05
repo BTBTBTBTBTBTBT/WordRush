@@ -3,19 +3,35 @@ package com.wordocious.core
 import java.time.LocalDate
 
 /**
- * FINISH_SPEC X: the seasonal cast skins. Port of packages/core `currentSeason(date)`:
- * the season a LOCAL calendar date falls in, or null. Halloween runs Oct 24 – Nov 1
- * inclusive (every year). Pure, so web, iOS and Android switch skins on the same day.
+ * FINISH_SPEC X: the season registry's date windows (docs/design/brand/seasons/README.md
+ * "How to add a season"). Port of packages/core `SEASON_WINDOWS` / `currentSeason(date)`:
+ * the season a LOCAL calendar date falls in, or null. Halloween runs Oct 17 – Nov 1
+ * inclusive (every year). Pure, so web, iOS and Android switch on the same day; the art
+ * slots + palette live in season-registry.json (app, SeasonKit).
  */
 object Season {
     const val HALLOWEEN = "halloween"
+
+    /** One registry window: inclusive, local dates; wraps the new year when start > end. */
+    data class Window(val id: String, val startMonth: Int, val startDay: Int, val endMonth: Int, val endDay: Int)
+
+    val windows: List<Window> = listOf(
+        Window(HALLOWEEN, 10, 17, 11, 1),
+    )
+
+    /** Every registry season id, in calendar order. */
+    val ids: List<String> get() = windows.map { it.id }
 }
 
-/** The season [date] (a local date) falls in: "halloween" (Oct 24 – Nov 1 inclusive) or null. */
+/** The season [date] (a local date) falls in ("halloween": Oct 17 – Nov 1 inclusive) or null. */
 fun currentSeason(date: LocalDate): String? {
-    val m = date.monthValue
-    val d = date.dayOfMonth
-    return if ((m == 10 && d >= 24) || (m == 11 && d <= 1)) Season.HALLOWEEN else null
+    val k = date.monthValue * 100 + date.dayOfMonth
+    for (w in Season.windows) {
+        val a = w.startMonth * 100 + w.startDay
+        val b = w.endMonth * 100 + w.endDay
+        if (if (a <= b) k in a..b else (k >= a || k <= b)) return w.id
+    }
+    return null
 }
 
 /** [currentSeason] for a "YYYY-MM-DD" local date string; null when it doesn't parse. */

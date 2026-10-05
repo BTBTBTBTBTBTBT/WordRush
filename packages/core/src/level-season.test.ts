@@ -11,8 +11,9 @@ describe('levelTier (FINISH_SPEC V)', () => {
 });
 
 describe('currentSeason (FINISH_SPEC X)', () => {
-  it('is Halloween from Oct 24 through Nov 1, local date', () => {
-    expect(currentSeason('2026-10-23')).toBeNull();
+  it('is Halloween from Oct 17 through Nov 1, local date', () => {
+    expect(currentSeason('2026-10-16')).toBeNull();
+    expect(currentSeason('2026-10-17')).toBe('halloween');
     expect(currentSeason('2026-10-24')).toBe('halloween');
     expect(currentSeason('2026-10-31')).toBe('halloween');
     expect(currentSeason('2026-11-01')).toBe('halloween');

@@ -11,13 +11,27 @@ final class LevelSeasonTests: XCTestCase {
         XCTAssertEqual(LevelTier.platinum.label, "Platinum")
     }
 
-    func testHalloweenWindowIsOct24ThroughNov1() {
-        XCTAssertNil(Season.current(day: "2026-10-23"))
+    func testHalloweenWindowIsOct17ThroughNov1() {
+        XCTAssertNil(Season.current(day: "2026-10-16"))
+        XCTAssertEqual(Season.current(day: "2026-10-17"), .halloween)
         XCTAssertEqual(Season.current(day: "2026-10-24"), .halloween)
         XCTAssertEqual(Season.current(day: "2026-10-31"), .halloween)
         XCTAssertEqual(Season.current(day: "2026-11-01"), .halloween)
         XCTAssertNil(Season.current(day: "2026-11-02"))
         XCTAssertNil(Season.current(day: "2026-12-25"))
         XCTAssertNil(Season.current(day: "garbage"))
+    }
+
+    /// Parity: packages/core SEASON_WINDOWS + currentSeason (level-season-fixtures.json `days` + `windows`).
+    func testMatchesSharedSeasonFixture() throws {
+        struct Day: Decodable { let date: String; let season: String? }
+        struct Row: Decodable { let id: String; let start: [Int]; let end: [Int] }
+        struct F: Decodable { let days: [Day]; let windows: [Row] }
+        let url = try XCTUnwrap(Bundle.module.url(forResource: "level-season-fixtures", withExtension: "json", subdirectory: "Fixtures")
+            ?? Bundle.module.url(forResource: "level-season-fixtures", withExtension: "json"))
+        let f = try JSONDecoder().decode(F.self, from: Data(contentsOf: url))
+        for d in f.days { XCTAssertEqual(Season.current(day: d.date)?.rawValue, d.season, d.date) }
+        XCTAssertEqual(f.windows.map { "\($0.id) \($0.start) \($0.end)" },
+                       Season.windows.map { "\($0.season.rawValue) [\($0.start.0), \($0.start.1)] [\($0.end.0), \($0.end.1)]" })
     }
 }

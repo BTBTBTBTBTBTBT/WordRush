@@ -1,0 +1,69 @@
+{
+  "_doc": "The season registry (docs/design/brand/seasons/README.md 'How to add a season'). ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/season-registry.json and apps/android/app/src/main/assets/season-registry.json (apps/web/lib/season-registry.test.ts checks the copies). Windows live in core SEASON_WINDOWS (\u00d73 ports, level-season-fixtures.json) and must list the same ids. Slots name shipped art (web /art/<name>.webp, iOS image set <name>, Android drawable <name with _>); 'titles' and 'walls' map the NORMAL art name to the seasonal one ('*' = prefix); a light-mode wall twin '<name>-light' wins in light mode. Any missing slot or unshipped file falls back to the normal art.",
+  "seasons": [
+    {
+      "id": "halloween",
+      "title": "Halloween",
+      "palette": {
+        "accent": "#F97316",
+        "buttonTint": "#F97316",
+        "quietTint": "#7C3AED",
+        "wallLight": [
+          "#EEE6FC",
+          "#F8ECF6",
+          "#FFE2C8"
+        ],
+        "wallDark": [
+          "#120A26",
+          "#26103A",
+          "#34142A"
+        ]
+      },
+      "slots": {
+        "cast": "art-halloween-{id}",
+        "titles": {
+          "art-titlecast-dailies": "art-title-halloween-dailies",
+          "art-titlecast-puzzles": "art-title-halloween-puzzles",
+          "art-titlecast-friends": "art-title-halloween-friends",
+          "art-titlecast-leaderboard": "art-title-halloween-leaderboard",
+          "art-titlecast-stats": "art-title-halloween-stats",
+          "art-titlecast-wotd": "art-title-halloween-wotd",
+          "art-game-practice": "art-title-halloween-practice",
+          "art-game-six": "art-title-halloween-six",
+          "art-game-seven": "art-title-halloween-seven",
+          "art-game-quordle": "art-title-halloween-quordle",
+          "art-game-octordle": "art-title-halloween-octordle",
+          "art-game-sequence": "art-title-halloween-sequence",
+          "art-game-rescue": "art-title-halloween-rescue",
+          "art-game-gauntlet": "art-title-halloween-gauntlet",
+          "art-game-propernoundle": "art-title-halloween-propernoundle",
+          "art-game-sudoku": "art-title-halloween-sudoku",
+          "art-game-scramble": "art-title-halloween-scramble",
+          "art-game-hub": "art-title-halloween-hub",
+          "art-game-crossword": "art-title-halloween-crossword",
+          "art-game-groups": "art-title-halloween-groups",
+          "art-game-ladder": "art-title-halloween-ladder",
+          "art-game-cryptogram": "art-title-halloween-cryptogram",
+          "art-game-wordsearch": "art-title-halloween-wordsearch",
+          "art-game-regions": "art-title-halloween-regions"
+        },
+        "walls": {
+          "art-wall-home": "art-wall-halloween-home",
+          "art-wall-leaderboard": "art-wall-halloween-leaderboard",
+          "art-wall-stats": "art-wall-halloween-stats",
+          "art-wall-friends": "art-wall-halloween-friends",
+          "art-wall-vs": "art-wall-halloween-games",
+          "art-wall-game-*": "art-wall-halloween-games"
+        },
+        "props": [
+          "art-halloween-prop-pumpkin",
+          "art-halloween-prop-bat",
+          "art-halloween-prop-candy",
+          "art-halloween-prop-ghost"
+        ],
+        "banner": "art-scene-banner-halloween",
+        "extras": {}
+      }
+    }
+  ]
+}

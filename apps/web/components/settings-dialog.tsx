@@ -14,6 +14,7 @@ import { getKeyboardLayout, setKeyboardLayout, type KeyboardLayout } from '@/lib
 import { useAuth } from '@/lib/auth-context';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkedSignIns } from '@/components/settings/linked-sign-ins';
+import { SeasonPreviewPicker } from '@/components/settings/season-preview-picker';
 import { NotificationSettings } from '@/components/settings/notification-settings';
 import { KeyRowPreview, SETTINGS_ACCENT, SettingsOption, SettingsSection, SettingsToggle, ThemeTilesPreview, settingsRowStyle } from '@/components/settings/settings-kit';
 import { PoseArt } from '@/components/ui/soft-popup';
@@ -295,6 +296,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               />
             </div>
           </SettingsSection>
+
+          {/* Season preview (admins only): Off (by date) or any registry season (lib/season-kit.ts). */}
+          {(profile as { is_admin?: boolean | null } | null)?.is_admin === true && <SeasonPreviewPicker />}
 
           <div className="flex justify-center pt-1">
             <PoseArt pose="art-pose-r-cocoa" size={68} />

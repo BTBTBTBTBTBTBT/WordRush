@@ -115,9 +115,20 @@ def wallpaper(size, page, pages=None, props_dir=PROPS, sky=SKY, tint=TINT, tag='
     return im.convert('RGB')
 
 
+# Light-mode twins (season preview 10-05): the same layout at dusk — pale lavender top, blush middle, a peach
+# horizon — so text that sits right on the wall stays dark-on-light. The apps draw wall-<page>-light in light
+# mode and the night wall in dark mode (SeasonKit wall lookup: "<name>-light" first in light mode).
+LIGHT_SKY = ((238, 230, 252), (248, 236, 246), (255, 226, 200))
+LIGHT_TINT = (236, 224, 246)
+
+
 if __name__ == '__main__':
     for page in PAGES:
         for size, suffix in ((PORTRAIT, ''), (WIDE, '-wide')):
             out = os.path.join(HERE, f'wall-{page}{suffix}.webp')
             wallpaper(size, page).save(out, 'WEBP', quality=92, method=6)
+            print(out)
+            out = os.path.join(HERE, f'wall-{page}-light{suffix}.webp')
+            wallpaper(size, page, sky=LIGHT_SKY, tint=LIGHT_TINT, star_density=0.0,
+                      moon_glow=(200, 170, 255)).save(out, 'WEBP', quality=92, method=6)
             print(out)

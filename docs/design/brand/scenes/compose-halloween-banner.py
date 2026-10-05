@@ -1,10 +1,12 @@
-# art-scene-banner-halloween (FINISH_SPEC X, night art 10-03): three of the approved Halloween cast skins
-# (cast/halloween/: O1 pumpkin cheerleader, W vampire, R ghost) with the new glossy props (pumpkin, bat,
-# candy, ghost) — same framing as banner-sweep / banner-flawless (wide, transparent).
+# art-scene-banner-halloween (FINISH_SPEC X, night art 10-03; rebuilt 10-05 season preview): three of the
+# ON-MODEL layered Halloween figures (seasons/halloween/header/: O1 pumpkin, W vampire, R ghost — the same
+# pixels the cast header ships as art-halloween-<id>) with the glossy props (pumpkin, bat, candy, ghost) —
+# same framing as banner-sweep / banner-flawless (wide, transparent). Code compositing only, no redraw.
 import os
 from PIL import Image, ImageFilter
 HERE = os.path.dirname(os.path.abspath(__file__))
-HW = os.path.join(HERE, '..', 'cast', 'halloween')
+HW = os.path.join(HERE, '..', 'cast', 'halloween')          # props (the shipped art-halloween-prop-*)
+FIG = os.path.join(HERE, '..', 'seasons', 'halloween', 'header')   # on-model layered figures
 W, H = 980, 600
 
 
@@ -32,9 +34,9 @@ def put(im, x, y, shadow=True):
 put(load(os.path.join(HW, 'props', 'bat.png'), 110), 70, 30, False)
 put(load(os.path.join(HW, 'props', 'bat.png'), 80).transpose(Image.FLIP_LEFT_RIGHT), 800, 70, False)
 put(load(os.path.join(HW, 'props', 'ghost.png'), 120), 690, 40, False)
-o1 = load(os.path.join(HW, 'o1.png'), 400)
-w = load(os.path.join(HW, 'w.png'), 440)
-r = load(os.path.join(HW, 'r.png'), 380)
+o1 = load(os.path.join(FIG, 'o1.png'), 400)
+w = load(os.path.join(FIG, 'w.png'), 440)
+r = load(os.path.join(FIG, 'r.png'), 380)
 put(o1, 40, H - o1.height - 20)
 put(r, W - r.width - 40, H - r.height - 24)
 put(w, (W - w.width) // 2, H - w.height - 6)

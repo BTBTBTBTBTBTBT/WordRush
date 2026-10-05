@@ -103,13 +103,13 @@ describe('activationFunnel', () => {
 
 describe('halloweenStatus', () => {
   it('counts down before the window', () => {
-    expect(halloweenStatus('2026-10-02')).toEqual({ active: null, start: '2026-10-24', end: '2026-11-01', daysUntilStart: 22, daysLeft: 0 });
+    expect(halloweenStatus('2026-10-02')).toEqual({ active: null, start: '2026-10-17', end: '2026-11-01', daysUntilStart: 15, daysLeft: 0 });
   });
-  it('is on Oct 24 through Nov 1 inclusive', () => {
-    expect(halloweenStatus('2026-10-24')).toMatchObject({ active: 'halloween', daysLeft: 9 });
-    expect(halloweenStatus('2026-11-01')).toMatchObject({ active: 'halloween', daysLeft: 1, start: '2026-10-24' });
+  it('is on Oct 17 through Nov 1 inclusive', () => {
+    expect(halloweenStatus('2026-10-17')).toMatchObject({ active: 'halloween', daysLeft: 16 });
+    expect(halloweenStatus('2026-11-01')).toMatchObject({ active: 'halloween', daysLeft: 1, start: '2026-10-17' });
   });
   it('rolls to next year after Nov 1', () => {
-    expect(halloweenStatus('2026-11-02')).toMatchObject({ active: null, start: '2027-10-24', end: '2027-11-01' });
+    expect(halloweenStatus('2026-11-02')).toMatchObject({ active: null, start: '2027-10-17', end: '2027-11-01' });
   });
 });

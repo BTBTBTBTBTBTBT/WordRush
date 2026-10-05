@@ -21,12 +21,33 @@ export function levelTierLabel(tier: LevelTier): string {
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
-export type Season = 'halloween';
+/**
+ * The season registry's date windows (docs/design/brand/seasons/README.md "How to add a
+ * season"): one row per season, LOCAL calendar dates, inclusive, every year. A window may
+ * wrap the new year (start after end). The art slots + palette per season live in
+ * season-registry.json (shared by web, iOS and Android). The Swift (LevelSeason.swift) and
+ * Kotlin (Season.kt) ports carry the same rows; level-season-fixtures.json pins them.
+ */
+export const SEASON_WINDOWS = [
+  { id: 'halloween', start: [10, 17], end: [11, 1] },
+] as const satisfies readonly { id: string; start: readonly [number, number]; end: readonly [number, number] }[];
+
+export type Season = (typeof SEASON_WINDOWS)[number]['id'];
+
+/** Every registry season id, in calendar order. */
+export const SEASON_IDS: readonly Season[] = SEASON_WINDOWS.map((w) => w.id);
+
+/** Is month/day inside [start, end] (inclusive; wraps past Dec 31 when start > end)? */
+function inWindow(m: number, d: number, start: readonly [number, number], end: readonly [number, number]): boolean {
+  const k = m * 100 + d;
+  const a = start[0] * 100 + start[1];
+  const b = end[0] * 100 + end[1];
+  return a <= b ? k >= a && k <= b : k >= a || k <= b;
+}
 
 /**
- * The cast's seasonal skin for a LOCAL calendar date (YYYY-MM-DD or a Date
- * read in local time): Halloween runs Oct 24 – Nov 1 inclusive, any year.
- * Null otherwise.
+ * The season for a LOCAL calendar date (YYYY-MM-DD or a Date read in local
+ * time): Halloween runs Oct 17 – Nov 1 inclusive, any year. Null otherwise.
  */
 export function currentSeason(date: string | Date): Season | null {
   let m: number;
@@ -39,6 +60,7 @@ export function currentSeason(date: string | Date): Season | null {
     m = date.getMonth() + 1;
     d = date.getDate();
   }
-  if ((m === 10 && d >= 24) || (m === 11 && d <= 1)) return 'halloween';
+  if (!Number.isFinite(m) || !Number.isFinite(d)) return null;
+  for (const w of SEASON_WINDOWS) if (inWindow(m, d, w.start, w.end)) return w.id;
   return null;
 }

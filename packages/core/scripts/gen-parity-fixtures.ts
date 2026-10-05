@@ -43,7 +43,7 @@ import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvat
 import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
-import { currentSeason, levelTier, levelTierLabel } from '../src/level-season';
+import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
@@ -749,8 +749,9 @@ export function renderShareCaptionFixtures() {
 // FINISH_SPEC V + X: level tiers and the seasonal skin window.
 export function renderLevelSeasonFixtures() {
   const levels = [0, 1, 5, 10, 11, 25, 26, 50, 51, 99, 100, 101, 500].map((level) => ({ level, tier: levelTier(level), label: levelTierLabel(levelTier(level)) }));
-  const days = ['2026-10-01', '2026-10-23', '2026-10-24', '2026-10-31', '2026-11-01', '2026-11-02', '2026-12-25', '2027-10-24'].map((date) => ({ date, season: currentSeason(date) }));
-  return { levels, days };
+  const days = ['2026-10-01', '2026-10-16', '2026-10-17', '2026-10-23', '2026-10-24', '2026-10-31', '2026-11-01', '2026-11-02', '2026-12-25', '2027-10-24'].map((date) => ({ date, season: currentSeason(date) }));
+  const windows = SEASON_WINDOWS.map((w) => ({ id: w.id, start: [...w.start], end: [...w.end] }));
+  return { levels, days, windows };
 }
 
 // FINISH_SPEC AE: the push copy bank, filled.

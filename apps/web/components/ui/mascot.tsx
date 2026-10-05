@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { CAST, gameHost, mascotSrc, type MascotId } from '@/lib/mascots';
 import { Icon3D } from '@/components/ui/icon3d';
+import { SeasonTitleImage } from '@/components/ui/season-preview';
 import { ART_SIZE, GAME_HEADER, GAME_TITLE_ART_HEIGHT, artSrc, gameHeaderArtHeight, gameTitleArtForDbKey, type PoseArtName } from '@/lib/art';
 
 // The cast components (docs/MASCOT_SPEC.md §0): Mascot(id, size, motion) and
@@ -187,7 +188,8 @@ export function GameHostTitle({ mode, label, className = '', children }: {
     const [w, h] = ART_SIZE[art];
     return (
       <h1 className="flex justify-center m-0 select-none" style={{ lineHeight: 0, height: gameHeaderArtHeight(art) }}>
-        <Image
+        <SeasonTitleImage
+          artName={art}
           src={artSrc(art)}
           alt={label}
           width={w}

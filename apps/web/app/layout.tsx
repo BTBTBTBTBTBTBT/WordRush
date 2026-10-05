@@ -28,6 +28,7 @@ import { SquishHost } from '@/components/ui/squish-host';
 import { CastArtWarmup } from '@/components/ui/cast-art-warmup';
 import { HeadingArtWarmup } from '@/components/ui/heading-art';
 import { MotionPause } from '@/components/providers/motion-pause';
+import { SeasonDocument } from '@/components/ui/season-preview';
 import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
 import { ReferralRedeemer } from '@/components/referrals/referral-redeemer';
@@ -168,6 +169,7 @@ export default function RootLayout({
         <CastArtWarmup />
         <HeadingArtWarmup />
         <MotionPause />
+        <SeasonDocument />
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>

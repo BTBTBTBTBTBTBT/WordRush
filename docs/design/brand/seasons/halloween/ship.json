@@ -1,0 +1,37 @@
+{
+  "_doc": "Season preview ship list (seasons/README.md 'How to add a season'). ship-art.py --seasons ships every seasons/<id>/ship.json: titles -> art-title-<id>-<key> (width 1080), walls -> art-wall-<id>-<page>[-light][-wide] (opaque, JPEG on iOS), banner -> art-scene-banner-<id> (width 1200). Keys match season-registry.json slots.",
+  "titles": {
+    "dailies": "titles/dailies.png",
+    "puzzles": "titles/puzzles.png",
+    "friends": "titles/page-friends.png",
+    "leaderboard": "titles/page-leaderboard.png",
+    "stats": "titles/page-stats.png",
+    "wotd": "titles/page-wordoftheday.png",
+    "practice": "titles/game-classic.png",
+    "six": "titles/game-classicsix.png",
+    "seven": "titles/game-classicseven.png",
+    "quordle": "titles/game-quadword.png",
+    "octordle": "titles/game-octoword.png",
+    "sequence": "titles/game-succession.png",
+    "rescue": "titles/game-deliverance.png",
+    "gauntlet": "titles/game-gauntlet.png",
+    "propernoundle": "titles/game-propernoundle.png",
+    "sudoku": "titles/game-sudocious.png",
+    "scramble": "titles/game-muddle.png",
+    "hub": "titles/game-hubbub.png",
+    "crossword": "titles/game-crosswordocious.png",
+    "groups": "titles/game-kindred.png",
+    "ladder": "titles/game-letterladder.png",
+    "cryptogram": "titles/game-codebreaker.png",
+    "wordsearch": "titles/game-spyglass.png",
+    "regions": "titles/game-starsweep.png"
+  },
+  "walls": {
+    "home": "walls/wall-home",
+    "leaderboard": "walls/wall-leaderboard",
+    "stats": "walls/wall-stats",
+    "friends": "walls/wall-friends",
+    "games": "walls/wall-games"
+  },
+  "banner": "../../scenes/banner-halloween.png"
+}

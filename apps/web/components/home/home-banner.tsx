@@ -6,7 +6,8 @@ import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { LiveHeadline } from '@/components/ui/live-headline';
-import { HALLOWEEN_BANNER_SRC, useSeason } from '@/lib/season';
+import { useSeason } from '@/lib/season';
+import { seasonBanner } from '@/lib/season-kit';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
 import { alphaHex, softBorder } from '@/lib/soft-surface';
@@ -237,7 +238,9 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   useNudgeVersion();
   const invite = host.choice.kind === 'w' && host.seeded && host.userId && !nudgeDone('host', host.userId) ? host.seeded : null;
   const [seasonArtOk, setSeasonArtOk] = useState(false);
-  const seasonSlot = season === 'halloween' && !tierArt;
+  // Season preview: the registry's Home banner for the active season (lib/season-kit.ts).
+  const seasonBannerArt = seasonBanner(season);
+  const seasonSlot = !!seasonBannerArt && !tierArt;
   const seasonArt = seasonSlot && seasonArtOk;
 
 
@@ -375,7 +378,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
       </div>
       {seasonSlot && (
         <SeasonArt
-          src={HALLOWEEN_BANNER_SRC}
+          src={`/art/${seasonBannerArt}.webp`}
           onReady={setSeasonArtOk}
           className="relative shrink-0 art-pop"
           style={{ height: TIER_ART_H, width: 'auto', maxWidth: '46%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(76, 29, 149, 0.18))' }}

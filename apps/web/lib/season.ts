@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { currentSeason, type Season } from '@wordle-duel/core';
+import { SEASON_IDS, currentSeason, type Season } from '@wordle-duel/core';
 import { halloweenSrc } from './art';
 import { MASCOT_ART_SIZE, MASCOT_TRIM, boxAspect, boxTrimLayout, type TrimBox } from './cast-moves';
 import { CAST, mascotSrc, type MascotId } from './mascots';
@@ -7,12 +7,14 @@ import { artTrimOverride } from './art-override';
 import type { CastRowLayout, CastSlot } from './share-fit';
 
 // Seasonal cast skins (docs/FINISH_SPEC.md X). During the season (core
-// currentSeason on the player's LOCAL date — Halloween runs Oct 24 – Nov 1)
+// currentSeason on the player's LOCAL date — Halloween runs Oct 17 – Nov 1)
 // the ten art-halloween-<id> skins replace the hero cast in the living cast
 // header, the cold-start intro + landing flourish, the share-image cast
 // wordmark and the loading screen. Admin / QA preview on any page:
-// `?season=halloween` forces the skins, `?season=none` forces them off,
+// `?season=<id>` (any registry season) forces it, `?season=none` forces it off,
 // `?season=auto` clears the preview; the choice holds for the browser session.
+// Admins also get Settings > Season preview (setSeasonPreview), which writes the
+// same key. What each season swaps: lib/season-kit.ts (the registry).
 
 export type { Season };
 export type SeasonOverride = Season | 'none';
@@ -37,7 +39,7 @@ export function parseSeasonParam(search: string): SeasonOverride | 'auto' | null
   }
   if (v == null) return null;
   const s = v.trim().toLowerCase();
-  if (s === 'halloween') return 'halloween';
+  if ((SEASON_IDS as readonly string[]).includes(s)) return s as Season;
   if (s === 'none' || s === 'off') return 'none';
   if (s === 'auto') return 'auto';
   return null;
@@ -45,7 +47,40 @@ export function parseSeasonParam(search: string): SeasonOverride | 'auto' | null
 
 /** A stored preview value, validated (anything else reads as no preview). */
 export function parseStoredSeason(v: string | null | undefined): SeasonOverride | null {
-  return v === 'halloween' || v === 'none' ? v : null;
+  if (v === 'none') return 'none';
+  return v && (SEASON_IDS as readonly string[]).includes(v) ? (v as Season) : null;
+}
+
+/**
+ * The admin Settings picker: a registry season id, or null = Off (by date). Writes the session's
+ * preview key and tells every mounted season reader (SEASON_EVENT), so the page flips live.
+ */
+export function setSeasonPreview(season: Season | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (season) sessionStorage.setItem(SEASON_PREVIEW_KEY, season);
+    else sessionStorage.removeItem(SEASON_PREVIEW_KEY);
+  } catch { /* storage blocked: the URL param still works */ }
+  // Drop a ?season= on this URL so it doesn't re-force the old choice on the next read.
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has(SEASON_PARAM)) {
+      url.searchParams.delete(SEASON_PARAM);
+      window.history.replaceState(window.history.state, '', url.toString());
+    }
+  } catch { /* ignore */ }
+  window.dispatchEvent(new Event(SEASON_EVENT));
+}
+
+/** The stored preview for the picker (null = Off, by date). */
+export function storedSeasonPreview(): Season | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const v = parseStoredSeason(sessionStorage.getItem(SEASON_PREVIEW_KEY));
+    return v && v !== 'none' ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 /** The season to draw: the preview when there is one, else the calendar's. */

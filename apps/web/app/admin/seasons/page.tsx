@@ -32,7 +32,7 @@ export default function AdminSeasonsPage() {
       <PageHeader
         title="Seasons"
         icon={Ghost}
-        subtitle="Halloween runs Oct 24 to Nov 1 on each player's local date. During the season the ten Halloween skins replace the hero cast in the cast header, the cold-start intro and landing flourish, the share-image wordmark and the loading screen."
+        subtitle="Halloween runs Oct 17 to Nov 1 on each player's local date. During the season the registry (season-registry.json) swaps the cast skins, the game and page titles, the wallpapers, the button tints and the Home banner; admins preview any season from Settings > Season preview."
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

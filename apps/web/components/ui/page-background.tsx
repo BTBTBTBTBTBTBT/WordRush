@@ -1,4 +1,5 @@
 import { BACKDROP_GAME, BACKDROP_PAGE, backdropColors, type BackdropLook } from '@/lib/backdrop-tiles';
+import { SeasonWallLayer } from '@/components/ui/season-preview';
 import { PAGE_TINTS, WALL_OVERLAY, accentCardShadow, artSrc, wideWallSrc, gameTintForDbKey, gameWallForDbKey, pageWall, type PageTint, type TintStops, type WallArtName } from '@/lib/art';
 
 // The one shared page background (docs/ART_SPEC.md §11, §19.1). It is the
@@ -64,6 +65,8 @@ export function PageBackground({
     <div className={className} style={{ ...vars, ...style }} data-page-tint={colors ? 'game' : tint} data-page-scheme={scheme}>
       <div className="page-bg" aria-hidden="true">
         <BackdropTiles look={colors ? BACKDROP_GAME : BACKDROP_PAGE} accent={accent} />
+        {/* Season preview: the season's calm wallpaper over the page's own (lib/season-kit.ts walls). */}
+        <SeasonWallLayer wall={wallName} />
       </div>
       {children}
     </div>
