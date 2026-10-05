@@ -20,7 +20,7 @@
 import {
   AVATAR_BACKDROPS, AVATAR_BACKDROP_IDS, AVATAR_BODIES, AVATAR_COLORS, AVATAR_EYES, AVATAR_FACES, AVATAR_FRAMES,
   AVATAR_HEADS, AVATAR_MOUTHS, AVATAR_NECKS, AVATAR_NOSES, AVATAR_PATTERNS, AVATAR_PRO_ONLY, avatarColorHex, levelTier,
-  AVATAR_CHEEKS, avatarColor, avatarLayout, avatarPatternShapes, avatarPickConflict,
+  AVATAR_CHEEKS, AVATAR_INTEGRATED_OPTIONS, AVATAR_NEW_PARTS, avatarColor, avatarLayout, avatarPatternShapes, avatarPickConflict,
   type AvatarBody, type AvatarColor, type AvatarConfig, type AvatarFrame, type AvatarHead, type AvatarPatternShape, type AvatarRect,
 } from '@wordle-duel/core';
 import partsJson from '../../../packages/core/src/avatar-parts.json';
@@ -275,8 +275,16 @@ export function avatarArtName(kind: AvatarArtKind, id: string): string {
   return `art-av-${kind}-${id}`;
 }
 
-/** The art names a config would use (nothing for "none" picks). */
+/**
+ * The art names a config would use (nothing for "none" picks): exactly the layout's layers, so per-body art
+ * (the scarf, the 10-05 integrated parts' art-av-<kind>-<id>-<body>-<layer> pieces) is fetched + decoded too.
+ */
 export function avatarArtNames(config: AvatarConfig): string[] {
+  return [...new Set(avatarLayout(config).layers.map((l) => l.art))];
+}
+
+/** The pre-v3 art names (one sticker per part): kept for the code-drawn fallback's probes. */
+export function avatarStickerArtNames(config: AvatarConfig): string[] {
   const out = [avatarArtName('body', config.body)];
   // founder 10-05: eyes / mouth may be 'none' (no art, draws nothing)
   if (config.eyes !== 'none') out.push(avatarArtName('eyes', config.eyes));
@@ -982,7 +990,18 @@ function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: 
   const bodyR = box(L.body);
   // ground shadow under the feet
   out.push(`<ellipse cx="${r2(fw + (L.bounds.x + L.bounds.w / 2) * C)}" cy="${r2(fw + (L.body.y + L.body.h * 0.965) * C)}" rx="${r2(L.body.w * C * 0.3)}" ry="${r2(Math.max(1.2, L.body.w * C * 0.035))}" fill="${hexAlpha('#2a1745', 0.16)}"/>`);
-  for (const layer of L.layers) {
+  // The white initial (embossed) in the letter box: drawn just before layers[letterIndex], so it sits ON the
+  // 'under' garments (apron, belt) and under every part in front.
+  const letter = () => {
+    const lb = box(L.letter);
+    const fontSize = Math.min(lb.h / 0.74, lb.w / 0.9) * 0.94;
+    const ch = esc(Array.from(input.initial || '?')[0] ?? '?');
+    const cx = lb.x + lb.w / 2, base = lb.y + lb.h / 2 + fontSize * 0.36;
+    out.push(`<text x="${r2(cx)}" y="${r2(base + fontSize * 0.07)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="${pal.edge}" opacity="0.55">${ch}</text>`);
+    out.push(`<text x="${r2(cx)}" y="${r2(base)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="#ffffff" stroke="${hexAlpha('#ffffff', 0.35)}" stroke-width="${r2(fontSize * 0.02)}">${ch}</text>`);
+  };
+  for (const [i, layer] of L.layers.entries()) {
+    if (i === L.letterIndex) letter();
     const r = box(layer.rect);
     if (layer.layer === 'body') {
       const bodyFill = swatchFill(avatarColor(config.color), `${ID}-bf`, defs);
@@ -990,18 +1009,13 @@ function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: 
         ? patternSvg(avatarPatternShapes(config.pattern), bodyR, { ink: pal.pattern, base: pal.base, light: '#ffffff' }, defs)
         : '';
       out.push(tinted(layer.art, r, bodyFill, pat, 'b'));
-      // the initial (white, embossed) in the letter box
-      const lb = box(L.letter);
-      const fontSize = Math.min(lb.h / 0.74, lb.w / 0.9) * 0.94;
-      const ch = esc(Array.from(input.initial || '?')[0] ?? '?');
-      const cx = lb.x + lb.w / 2, base = lb.y + lb.h / 2 + fontSize * 0.36;
-      out.push(`<text x="${r2(cx)}" y="${r2(base + fontSize * 0.07)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="${pal.edge}" opacity="0.55">${ch}</text>`);
-      out.push(`<text x="${r2(cx)}" y="${r2(base)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="#ffffff" stroke="${hexAlpha('#ffffff', 0.35)}" stroke-width="${r2(fontSize * 0.02)}">${ch}</text>`);
       continue;
     }
     if (!has(layer.art)) continue;   // unreachable while composing (mascotSvg waits for every layer); kept as a guard
-    out.push(layer.tint && accFill ? tinted(layer.art, r, accFill, '', layer.field) : imgAt(layer.art, r));
+    // several pieces of one tinted part (a backpack's pack + straps) each need their own mask id
+    out.push(layer.tint && accFill ? tinted(layer.art, r, accFill, '', `${layer.field}${i}`) : imgAt(layer.art, r));
   }
+  if (L.letterIndex >= L.layers.length) letter();
   if (metal && !input.frameArt) {
     out.push(`<rect x="${r2(fw - 0.6)}" y="${r2(fw - 0.6)}" width="${r2(100 - 2 * fw + 1.2)}" height="${r2(100 - 2 * fw + 1.2)}" rx="${r2(Math.max(4, R - fw * 0.6))}" fill="none" stroke="${metal.shine}" stroke-width="1.2" opacity="0.9"/>`);
     out.push(`<rect x="0.7" y="0.7" width="98.6" height="98.6" rx="${R}" fill="none" stroke="${darkenHex(metal.ring, 0.3)}" stroke-width="1.1" opacity="0.55"/>`);
@@ -1012,7 +1026,8 @@ function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: 
 
 /** A stable key for a config (every field, in schema order). */
 export function avatarConfigKey(c: AvatarConfig): string {
-  return [c.body, c.color, c.pattern, c.patternColor, c.eyes, c.nose, c.cheeks, c.mouth, c.head, c.face, c.neck, c.accColor, c.frame, c.bg, c.display].join('.');
+  return [c.body, c.color, c.pattern, c.patternColor, c.eyes, c.nose, c.cheeks, c.mouth, c.head, c.face, c.neck, c.accColor, c.frame, c.bg, c.display,
+    c.held ?? 'none', c.wrap ?? 'none', c.feet ?? 'none', c.pet ?? 'none', c.brows ?? 'none', c.extra ?? 'none'].join('.');
 }
 
 const svgCache = new Map<string, string>();
@@ -1058,7 +1073,27 @@ export const BUILDER_TABS = [
 export type BuilderTab = (typeof BUILDER_TABS)[number]['id'];
 
 /** The config fields the builder's option tiles set. */
-export type BuilderField = 'body' | 'color' | 'pattern' | 'patternColor' | 'eyes' | 'nose' | 'cheeks' | 'mouth' | 'head' | 'face' | 'neck' | 'accColor' | 'bg' | 'frame';
+export type BuilderField = 'body' | 'color' | 'pattern' | 'patternColor' | 'eyes' | 'nose' | 'cheeks' | 'mouth' | 'head' | 'face' | 'neck' | 'accColor' | 'bg' | 'frame'
+  | 'held' | 'wrap' | 'feet' | 'pet' | 'brows' | 'extra';
+
+/**
+ * 10-05 integrated parts (core AVATAR_INTEGRATED_FIELDS): the maker's sections for them, in order (they live in the
+ * Extras tab until the Dressing Room gives them tabs of their own), and the art kind of their tile icons.
+ */
+export const INTEGRATED_SECTIONS: ReadonlyArray<{ field: BuilderField; heading: string }> = [
+  { field: 'held', heading: 'In hand' }, { field: 'wrap', heading: 'Wraps' }, { field: 'feet', heading: 'Shoes' },
+  { field: 'pet', heading: 'Buddies' }, { field: 'brows', heading: 'Brows' }, { field: 'extra', heading: 'Face extras' },
+];
+/** The tile icon of a part option: art-av-<kind>-<id> (brows are their own kind). */
+export function avatarOptionArt(field: BuilderField, id: string): string {
+  const kind = field === 'brows' ? 'brows' : ['head', 'face', 'neck', 'held', 'wrap', 'feet', 'pet', 'extra'].includes(field) ? 'acc' : field;
+  return `art-av-${kind}-${id}`;
+}
+/** True for an option that carries the maker's NEW tag (the 10-05 additions + the 7 rebuilt parts). */
+export function avatarOptionIsNew(field: BuilderField, id: string): boolean {
+  return id !== 'none' && AVATAR_NEW_PARTS.includes(field === 'brows' ? `brows:${id}` : id)
+    && ['held', 'wrap', 'feet', 'pet', 'brows', 'extra', 'neck'].includes(field);
+}
 
 /** Color-swatch fields (the glossy round grid, grouped by row). */
 export const SWATCH_FIELDS: readonly BuilderField[] = ['color', 'patternColor', 'accColor'];
@@ -1111,6 +1146,15 @@ const LABELS: Partial<Record<BuilderField, Record<string, string>>> = {
     none: 'Nothing on the neck', cape: 'Cape', wings: 'Wings', bowtie: 'Bow tie', scarf: 'Scarf', chain: 'Gold chain', medal: 'Medal',
     backpack: 'Backpack', bubbletea: 'Bubble tea', guitar: 'Guitar', supercape: 'Hero cape', fairywings: 'Fairy wings',
   },
+  held: {
+    none: 'Empty hands', mug: 'Coffee mug', book: 'Book', 'pencil-big': 'Big pencil', balloon: 'Balloon', trophy: 'Trophy', magnifier: 'Magnifier',
+    flashlight: 'Flashlight', umbrella: 'Umbrella', icecream: 'Ice cream', spatula: 'Spatula', mic: 'Microphone', 'wand-star': 'Star wand',
+  },
+  wrap: { none: 'No wrap', bandana: 'Bandana', belt: 'Belt', apron: 'Chef apron', lei: 'Flower lei', 'cape-drape': 'Drape cape' },
+  feet: { none: 'Bare feet', sneakers: 'High-tops', boots: 'Rain boots', slippers: 'Bunny slippers', skates: 'Roller skates' },
+  pet: { none: 'No buddy', bird: 'Bird on the head', kitten: 'Kitten', puppy: 'Puppy', snail: 'Snail on the shoulder' },
+  brows: { none: 'No brows', happy: 'Happy brows', worried: 'Worried brows', determined: 'Determined brows', surprised: 'Surprised brows', cheeky: 'Cheeky brow', sleepy: 'Sleepy brows' },
+  extra: { none: 'No extra', sweat: 'Sweat drop', tear: 'Happy tear', steam: 'Steam puff', heart: 'Floating heart' },
   accColor: { default: 'Original colors' },
   bg: { auto: 'Match my color', cottoncandy: 'Cotton candy' },
   frame: { none: 'No frame', pro: 'Pro gold' },
@@ -1143,6 +1187,7 @@ export function avatarOptionIds(field: BuilderField): readonly string[] {
     case 'neck': return AVATAR_NECKS;
     case 'bg': return AVATAR_BACKDROP_IDS;
     case 'frame': return AVATAR_FRAMES;
+    case 'held': case 'wrap': case 'feet': case 'pet': case 'brows': case 'extra': return AVATAR_INTEGRATED_OPTIONS[field];
   }
 }
 

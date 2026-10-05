@@ -87,6 +87,16 @@ enum MascotArtCache {
             for n in names { _ = uiImage(n) }
         }
     }
+
+    /// Decode one config's layers (the player's own mascot, a builder pick) off main, so its per-body
+    /// integrated pieces are ready before the live (uncached) composition draws them.
+    static func warm(_ config: AvatarConfig) {
+        guard let fit = MascotParts.fit else { return }
+        let names = AvatarFit.layout(config, small: false, manifest: fit).layers.map(\.art)
+        DispatchQueue.global(qos: .userInitiated).async {
+            for n in names { _ = uiImage(n) }
+        }
+    }
 }
 #endif
 
@@ -327,19 +337,22 @@ enum MascotArtPainter {
         let b = rect(layout.body, side)
         ctx.fill(Path(ellipseIn: CGRect(x: b.midX - b.width * 0.3, y: b.minY + b.height * 0.95, width: b.width * 0.6, height: max(1, b.height * 0.05))),
                  with: .color(Color(hex: 0x2A1745).opacity(0.14)))
-        for l in layout.layers {
+        for (i, l) in layout.layers.enumerated() {
+            // the white initial goes just before layers[letterIndex]: ON the 'under' garments (apron, belt),
+            // under every part in front (v3 integrated parts, docs/design/brand/avatar/INTEGRATION.md)
+            if i == layout.letterIndex { letter(ctx, initial, rect(layout.letter, side), base: baseC) }
             let r = rect(l.rect, side)
             if l.layer == "body" {
                 tinted(ctx, l.art, r, fill: shading(bodyColor, in: r)) { layer in
                     guard !small, c.pattern != "solid" else { return }
                     pattern(&layer, AvatarFit.patternShapes(c.pattern), in: r, ink: patInk, base: baseC)
                 }
-                letter(ctx, initial, rect(layout.letter, side), base: baseC)
                 continue
             }
             guard ArtAsset.exists(l.art) else { continue }
             if l.tint, let acc { tinted(ctx, l.art, r, fill: shading(acc, in: r)) } else { ctx.draw(MascotArtCache.image(l.art), in: r) }
         }
+        if layout.letterIndex >= layout.layers.count { letter(ctx, initial, rect(layout.letter, side), base: baseC) }
     }
 
     static func letter(_ ctx: GraphicsContext, _ initial: String, _ box: CGRect, base: Color) {

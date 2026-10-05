@@ -211,7 +211,10 @@ object MascotComposer {
             solidPaint(withAlpha(AColor.BLACK, 0.12f)))
         val acc = if (cfg.accColor == "default") null else AvatarOptions.swatch(cfg.accColor)
         val patInk = if (cfg.patternColor == cfg.color) mix(base, AColor.WHITE, 0.5f) else colorOf(avatarColorHex(cfg.patternColor), base)
-        for (l in layout.layers) {
+        for ((i, l) in layout.layers.withIndex()) {
+            // the white initial goes just before layers[letterIndex]: ON the 'under' garments (apron, belt),
+            // under every part in front (v3 integrated parts, docs/design/brand/avatar/INTEGRATION.md)
+            if (i == layout.letterIndex) drawLetterBox(context, c, key.initial, box(layout.letter), base)
             val r = box(l.rect)
             val id = drawableId(context, l.art.replace('-', '_'))
             val bmp = if (id != 0) partBitmap(context, id) else null
@@ -219,13 +222,13 @@ object MascotComposer {
                 if (bmp != null) drawTinted(c, bmp, r, swatchPaint(AvatarOptions.swatch(cfg.color), r)) { cv ->
                     if (!small && cfg.pattern != "solid") drawShapes(cv, AvatarFit.patternShapes(cfg.pattern), r, patInk, base)
                 }
-                drawLetterBox(context, c, key.initial, box(layout.letter), base)
                 continue
             }
             bmp ?: continue
             if (l.tint && acc != null) drawTinted(c, bmp, r, swatchPaint(acc, r))
             else c.drawBitmap(bmp, null, r, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
         }
+        if (layout.letterIndex >= layout.layers.size) drawLetterBox(context, c, key.initial, box(layout.letter), base)
         if (!key.cutout) drawFrame(c, cfg.frame, size, context)
         if (key.crown) drawCrown(context, c, size)
         c.restore()
