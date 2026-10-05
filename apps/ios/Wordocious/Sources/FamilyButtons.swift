@@ -252,6 +252,9 @@ struct HelperButtonStyle: ButtonStyle {
     var fullWidth = false
     /// The "used" look (a spent hint): desaturated, half strength, still tappable.
     var used = false
+    /// The "selected" look (an on state: Notes on, the active tool): the solid tint, white ink. Inside a game
+    /// every helper shares the game color, so an on state reads by this, never by a hue change.
+    var selected = false
 
     func makeBody(configuration: Configuration) -> some View {
         HelperBody(configuration: configuration, style: self)
@@ -271,7 +274,9 @@ struct HelperButtonStyle: ButtonStyle {
             let dark = scheme == .dark
             let tint = style.tint ?? page.gameAccent ?? style.fallback ?? Color(hex: 0x7C3AED)
             let h = FamilyMetrics.helperHeight
-            let ink = FamilyInk.helperInk(tint, dark: dark)
+            let ink = style.selected ? Color.white : FamilyInk.helperInk(tint, dark: dark)
+            let fill = style.selected ? (pressed ? Color.black.mixed(over: tint, 0.12) : tint)
+                                      : FamilyInk.helperFill(tint, dark: dark, pressed: pressed)
             let dim = style.used || !enabled
             configuration.label
                 .environment(\.familyInk, FamilyLabelInk(ink: ink, size: FamilyMetrics.helperFont, icon: FamilyMetrics.helperIcon))
@@ -282,7 +287,7 @@ struct HelperButtonStyle: ButtonStyle {
                 .padding(.trailing, style.circle ? 0 : h * 0.42)
                 .frame(maxWidth: style.fullWidth && !style.circle ? .infinity : nil)
                 .frame(width: style.circle ? h : nil, height: h)
-                .background { FamilyPillSkin(fill: FamilyInk.helperFill(tint, dark: dark, pressed: pressed), pressed: pressed, dark: dark, height: h) }
+                .background { FamilyPillSkin(fill: fill, pressed: pressed, dark: dark, height: h) }
                 .contentShape(Capsule())
                 .saturation(dim ? 0.25 : 1)
                 .opacity(dim ? 0.5 : 1)

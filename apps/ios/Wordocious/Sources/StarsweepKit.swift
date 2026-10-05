@@ -330,7 +330,8 @@ struct StarsweepTool: View {
             Button(action: action) {
                 StarsweepToolIcon(symbol: symbol)
             }
-            .buttonStyle(CandyButtonStyle(variant: variant, size: .small, fullWidth: false, circle: true))
+            // Button family: a helper circle; the active tool wears the selected look.
+            .buttonStyle(HelperButtonStyle(circle: true, selected: active))
             .hintCountBadge(count)
             .disabled(dim)
             .accessibilityLabel(count > 0 ? "\(label) (\(count) used)" : label)
@@ -348,15 +349,8 @@ struct StarsweepTool: View {
 /// The icon inside a round candy tool (white with the outline; dark purple on peach).
 private struct StarsweepToolIcon: View {
     let symbol: String
-    @Environment(\.candyInk) private var ink
-
     var body: some View {
-        if ink.quiet {
-            Image(systemName: symbol).font(.system(size: 14, weight: .black))
-                .foregroundStyle(FinishInk.softNumber).accessibilityHidden(true)
-        } else {
-            OutlinedSymbol(name: symbol, size: 14, width: 1.25)
-        }
+        FamilyInkIcon(symbol: symbol)   // button family: the 3D icon in the helper's ink
     }
 }
 

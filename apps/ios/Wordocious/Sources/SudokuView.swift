@@ -587,7 +587,8 @@ struct SudokuPad: View {
         // Four pills share one row: the icons ride along only on wide phones.
         // §BI22: a used count is the gold corner coin, never part of the label.
         Button(action: action) { CandyLabel(title: label, symbol: UIScreen.main.bounds.width >= 400 ? symbol : nil) }
-        .buttonStyle(CandyButtonStyle(variant: variant, size: .small, fullWidth: true))
+        // Button family: a game helper; an on state (Notes) wears the selected look.
+        .buttonStyle(HelperButtonStyle(fullWidth: true, selected: active))
         .hintCountBadge(count)
         .disabled(dim)
         .accessibilityLabel(count > 0 ? "\(label) (\(count) used)" : label)
