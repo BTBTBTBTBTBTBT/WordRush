@@ -2,7 +2,7 @@
 # Same API key as apps/ios/ship.sh; the .p8 is read from disk and never printed.
 #
 #   ruby scripts/asc/asc.rb versions
-#   ruby scripts/asc/asc.rb submit VER BUILD [whats-new.txt]   # attach build, What's New, submit, auto-release
+#   ruby scripts/asc/asc.rb submit VER BUILD [whats-new.txt]   # create VER if new, attach build, What's New, submit, auto-release
 #   ruby scripts/asc/asc.rb cancel                              # cancel the open review submission
 #   DRY=1 ruby scripts/asc/asc.rb submit ...                    # print what would change
 require_relative "asc_lib"
@@ -28,7 +28,17 @@ when "cancel"
 when "submit"
   ver, build_no, notes_file = ARGV[1], ARGV[2], ARGV[3]
   abort("usage: submit VER BUILD [whats-new.txt]") unless ver && build_no
-  v = version(ver) or abort("version #{ver} not found")
+  v = version(ver)
+  unless v
+    # A new version (e.g. 2.7.1) doesn't exist in App Store Connect until it's created.
+    v = call("POST", "/v1/appStoreVersions",
+             { data: { type: "appStoreVersions",
+                       attributes: { platform: "IOS", versionString: ver, releaseType: "AFTER_APPROVAL" },
+                       relationships: { app: { data: { type: "apps", id: APP } } } } })&.dig("data")
+    abort("version #{ver} not found and not created") unless v || DRY
+    puts "created version #{ver}"
+    exit 0 if DRY
+  end
   vid = v["id"]
   puts "version #{ver}: #{v["attributes"]["appStoreState"]} release=#{v["attributes"]["releaseType"]}"
   if v["attributes"]["releaseType"] != "AFTER_APPROVAL"
