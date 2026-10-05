@@ -228,8 +228,10 @@ struct CandyButtonStyle: ButtonStyle {
     /// A circle (icon-only round buttons) instead of a pill.
     var circle: Bool = false
 
+    /// Button family (10-05, docs/design/brand/buttons/family): every candy call site now renders the family —
+    /// small → helper pill, circle → helper circle, peach → quiet pill, else the cast primary.
     func makeBody(configuration: Configuration) -> some View {
-        CandyBody(configuration: configuration, style: self)
+        FamilyRouterBody(configuration: configuration, style: self)
     }
 
     private struct CandyBody: View {
@@ -358,8 +360,13 @@ struct CandyLabel<Icon: View>: View {
     /// FINISH_SPEC BJ15: set by `CastButtonStyle` → the art label (or its live fallback).
     @Environment(\.castInk) private var cast
 
+    /// Button family: set by the helper / quiet pills → the 3D icon + deep-tint label.
+    @Environment(\.familyInk) private var family
+
     var body: some View {
-        if let cast {
+        if let family {
+            FamilyLabelView(title: title, symbol: symbol, subtitle: subtitle, ink: family, icon: icon)
+        } else if let cast {
             // Cast buttons: the lettering alone (no SF Symbol), any custom icon kept.
             HStack(spacing: 6) {
                 icon()
@@ -940,11 +947,12 @@ struct KeyCap<Label: View>: View {
     @ViewBuilder var label: () -> Label
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
+        // Button family §5: the state fill + the ChatGPT key light map (gloss + the soft lip), nine-sliced.
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
         let colors = Self.colors(state, fill: fill)
         ZStack(alignment: .top) {
-            shape.fill(colors.edge)
-            shape.fill(colors.face).padding(.bottom, 3)
+            shape.fill(colors.face)
+            FamilyKeyGloss()
             label()
                 .foregroundStyle(colors.ink)
                 // §AB: at 200% Larger Text the letter shrinks to fit its key.
@@ -960,9 +968,7 @@ struct KeyCap<Label: View>: View {
         if let fill {
             return (Color.black.mixed(over: fill, 0.3), AnyShapeStyle(fill), .white)
         }
-        guard let state else {
-            return (Color(hex: 0xCDB9F0), AnyShapeStyle(Color.white.opacity(0.92)), FinishInk.softNumber)
-        }
+        guard let state else { return blank }
         let p: TilePalette
         switch state {
         case .correct: p = .correct
@@ -971,10 +977,15 @@ struct KeyCap<Label: View>: View {
             return (TilePalette.slate.edge,
                     AnyShapeStyle(LinearGradient(colors: [TilePalette.slate.light, TilePalette.slate.base], startPoint: .top, endPoint: .bottom)),
                     Color(hex: 0xEEF1F6))
-        case .empty:
-            return (Color(hex: 0xCDB9F0), AnyShapeStyle(Color.white.opacity(0.92)), FinishInk.softNumber)
+        case .empty: return blank
         }
         return (p.edge, AnyShapeStyle(LinearGradient(colors: [p.light, p.base], startPoint: .top, endPoint: .bottom)), .white)
+    }
+
+    /// An unplayed key: pearl (light) / deep lavender (dark) under the light map (button family §5).
+    private static var blank: (edge: Color, face: AnyShapeStyle, ink: Color) {
+        Theme.isDark ? (Color(hex: 0x231C40), AnyShapeStyle(Color(hex: 0x3D355F)), Color(hex: 0xEFE9FF))
+                     : (Color(hex: 0xCDB9F0), AnyShapeStyle(Color(hex: 0xFBFAFF)), FinishInk.softNumber)
     }
 }
 

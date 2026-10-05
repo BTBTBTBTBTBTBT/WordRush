@@ -897,7 +897,7 @@ struct ProfileTab: View {
                     Text("A nudge to play today's puzzles").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                 }
             }
-            .tint(Theme.primary).padding(14)
+            .toggleStyle(.candy).padding(14)   // button family §4
             .statsCard()
 
             Button { Task { await auth.signOut() } } label: {

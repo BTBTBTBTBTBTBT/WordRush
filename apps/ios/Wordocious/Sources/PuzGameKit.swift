@@ -248,7 +248,7 @@ struct PuzCandyIcon: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) { OutlinedSymbol(name: symbol, size: 14, width: 1.25) }
+        Button(action: action) { FamilyInkIcon(symbol: symbol) }
             .buttonStyle(CandyButtonStyle(variant: variant, size: .small, fullWidth: false, circle: true))
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())

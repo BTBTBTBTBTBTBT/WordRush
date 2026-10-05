@@ -45,15 +45,9 @@ struct StreakShieldModal: View {
             .clipShape(shape)
             .overlay(alignment: .topTrailing) {
                 if !saved {
-                    Button { onClose() } label: {
-                        Image(systemName: "xmark").font(.system(size: 16, weight: .heavy))
-                            .foregroundStyle(.white)
-                            .shadow(color: Color(hex: 0x3B1A78).opacity(0.4), radius: 1, x: 0, y: 1)
-                            .frame(width: 36, height: 36).contentShape(Rectangle())
-                    }
-                    .buttonStyle(.squish)
-                    .padding(.top, 12).padding(.trailing, 12)
-                    .accessibilityLabel("Close")
+                    // Button family §3: the soft 3D close X.
+                    FamilyCloseButton(size: 24) { onClose() }
+                    .padding(.top, 8).padding(.trailing, 8)
                 }
             }
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.25), radius: 30, x: 0, y: 24)

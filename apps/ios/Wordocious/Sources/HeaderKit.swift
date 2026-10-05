@@ -240,7 +240,12 @@ struct HeaderCircleLabel: View {
         Group {
             switch glyph {
             case .symbol(let s):
-                if let icon = Icon3DName.forHeaderSymbol(s) {
+                if s == "xmark" || s == "xmark.circle.fill", let x = FamilyArt.shared.image("art-fam-cic-close") {
+                    // Button family §3: the soft 3D close X (ChatGPT 10-05), bare like every header icon.
+                    Image(uiImage: x).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                        .frame(width: iconSize * 0.82, height: iconSize * 0.82)
+                        .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2.5, x: 0, y: 3)
+                } else if let icon = Icon3DName.forHeaderSymbol(s) {
                     Icon3D(icon, size: iconSize)
                         .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2.5, x: 0, y: 3)
                 } else {

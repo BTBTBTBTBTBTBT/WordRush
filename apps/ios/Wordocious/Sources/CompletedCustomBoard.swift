@@ -224,17 +224,16 @@ private struct CompletedHubBoard: View {
     private func chip(_ w: String) -> some View {
         let got = r.found.contains(w) || r.bonusFound.contains(w)
         let pangram = puzzle?.pangrams.contains(w) ?? false, revealed = r.revealed.contains(w)
-        // A rarer word scores but sits outside the N/M words count: a small "BONUS" tag (Doug 10-05).
+        // A rarer word scores but sits outside the N/M words count: a tiny glossy gem on the chip's
+        // corner (button family 10-05; no "bonus" on player screens).
         let bonus = !pangram && hubIsBonus(r.bonusFound, w)
-        return HStack(spacing: 3) {
-            Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .bold)).lineLimit(1).fixedSize()
-            if bonus { Text("BONUS").font(Brand.font(7.5, .black)).tracking(0.5).foregroundStyle(FinishInk.secondary) }
-        }
-        .accessibilityElement(children: .ignore).accessibilityLabel(bonus ? "\(w), bonus word" : w)
+        return Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .bold)).lineLimit(1).fixedSize()
+        .accessibilityElement(children: .ignore).accessibilityLabel(bonus ? "\(w), rare word" : w)
         .foregroundStyle(!got ? FinishInk.secondary.opacity(0.75) : pangram ? accent : revealed ? Color(hex: 0x8B5CF6) : FinishInk.heading)
         .padding(.horizontal, 8).padding(.top, 5).padding(.bottom, 3)
         // §A1: tinted pills — missed = soft slate, pangram = the accent,
         // revealed = lilac, found = the accent's light wash.
         .tintedPill(!got ? G5Accent.slate : revealed ? Color(hex: 0x8B5CF6) : accent)
+        .overlay(alignment: .topTrailing) { if bonus { RareWordGem() } }
     }
 }

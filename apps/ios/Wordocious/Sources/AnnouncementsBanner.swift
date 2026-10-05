@@ -34,14 +34,9 @@ struct AnnouncementsBanner: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer(minLength: 0)
-                    Button { dismiss(a) } label: {
-                        Image(systemName: "xmark").font(.system(size: 12, weight: .heavy))
-                            .foregroundStyle(FinishInk.secondary)
-                            .frame(width: 30, height: 30)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.squishIcon)
-                    .accessibilityLabel("Dismiss announcement")
+                    // Button family §3: the soft 3D close X.
+                    FamilyCloseButton(size: 18, label: "Dismiss announcement") { dismiss(a) }
+                        .frame(width: 30, height: 30)
                 }
                 .padding(.horizontal, 12).padding(.vertical, 10)
                 .tintedCard(accent: G5Accent.purple, bar: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], radius: 18, barHeight: 6)

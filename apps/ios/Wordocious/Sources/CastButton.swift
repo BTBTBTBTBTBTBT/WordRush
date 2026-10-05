@@ -422,6 +422,7 @@ struct CastShowcaseHost: View {
                 case "pro": root = AnyView(ProView())
                 case "invite": root = AnyView(InviteSheet())
                 case "gopro": root = AnyView(CastShowcaseBoard())
+                case "family": root = AnyView(FamilyShowcaseBoard())
                 case "share":
                     // The finished screen's action row (BJ18): SHARE (+ the countdown caption) and NEXT with
                     // the next game's 3D icon in ONE CastButtonRow, plus the slate CTA row.

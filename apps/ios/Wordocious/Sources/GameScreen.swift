@@ -436,7 +436,7 @@ struct GameScreen: View {
             CandyLabel(title: label, symbol: used ? nil : "lightbulb.fill")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(CandyButtonStyle(variant: used ? .peach : .amber, size: .small))
+        .buttonStyle(HelperButtonStyle(used: used))   // button family: a spent hint wears the used look
         .disabled(used)
         }
     }

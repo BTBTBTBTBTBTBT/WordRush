@@ -244,7 +244,7 @@ private struct QuadrantKeyView: View, Equatable {
         let present = states.compactMap { $0 }
         let hasAny = !present.isEmpty
         let allAbsent = hasAny && present.allSatisfy { $0 == .absent }
-        let fg: Color = hasAny ? .white : FinishInk.softNumber
+        let fg: Color = hasAny ? .white : (Theme.isDark ? Color(hex: 0xEFE9FF) : FinishInk.softNumber)
         return Button(action: action) {
             ZStack {
                 if allAbsent {
@@ -265,11 +265,10 @@ private struct QuadrantKeyView: View, Equatable {
                     .lineLimit(1).minimumScaleFactor(0.5)   // §AB: fits its key at 200% text
                     .shadow(color: hasAny ? .black.opacity(0.35) : .clear, radius: 1, x: 0, y: 1)
             }
-            .frame(maxWidth: .infinity).frame(height: height - 3)
-            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-            // §B2: the key's lilac lip under the quadrant face.
-            .padding(.bottom, 3)
-            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color(hex: 0xCDB9F0)))
+            .frame(maxWidth: .infinity).frame(height: height)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            // Button family §5: the key light map (gloss + lip) over the quadrant cells.
+            .overlay(FamilyKeyGloss())
         }
         .buttonStyle(KeyPressStyle())
         .accessibilityLabel(letter)
@@ -294,7 +293,7 @@ private struct QuadrantKeyView: View, Equatable {
         case .correct: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.correct.light, TilePalette.correct.base], startPoint: .top, endPoint: .bottom))
         case .present, .hintUsed: c = AnyShapeStyle(LinearGradient(colors: [TilePalette.present.light, TilePalette.present.base], startPoint: .top, endPoint: .bottom))
         case .absent: c = AnyShapeStyle(TilePalette.slate.base)
-        default: c = AnyShapeStyle(Color.white.opacity(0.92))
+        default: c = AnyShapeStyle(Theme.isDark ? Color(hex: 0x3D355F) : Color(hex: 0xFBFAFF))
         }
         return Rectangle().fill(c).frame(maxWidth: .infinity, maxHeight: .infinity)
     }

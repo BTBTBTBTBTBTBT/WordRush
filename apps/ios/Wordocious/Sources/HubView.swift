@@ -363,16 +363,15 @@ struct HubView: View {
         let s = vm.state, pangram = s.pangrams.contains(w), revealed = s.revealed.contains(w)
         let bonus = !pangram && hubIsBonus(s.bonusFound, w)
         // §A1: found words are tinted pills in the accent (pangrams stronger); a rarer word
-        // (scores, outside the N/M words count) wears a small "BONUS" tag.
-        return HStack(spacing: 3) {
-            Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .black))
-            if bonus { Text("BONUS").font(Brand.font(7.5, .black)).tracking(0.5).foregroundStyle(Theme.textMuted) }
-        }
-        .accessibilityElement(children: .ignore).accessibilityLabel(bonus ? "\(w), bonus word" : pangram ? "\(w), pangram" : w)
+        // (scores, outside the N/M words count) wears a tiny glossy gem on its corner (button family,
+        // 10-05 — no "bonus" on player screens since 09-25).
+        return Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .black))
+        .accessibilityElement(children: .ignore).accessibilityLabel(bonus ? "\(w), rare word" : pangram ? "\(w), pangram" : w)
         .foregroundStyle(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.ink)
         .padding(.horizontal, 8).padding(.vertical, 3)
         .background(Capsule().fill(PuzKit.face(hubAccent, pangram ? 0.2 : 0.09)))
         .overlay(Capsule().stroke(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.line(hubAccent, 0.28), lineWidth: 1))
+        .overlay(alignment: .topTrailing) { if bonus { RareWordGem() } }
         .opacity(dim ? 0.6 : 1)
     }
 
@@ -499,6 +498,7 @@ struct HubView: View {
                         ForEach(hubFoundInOrder(s).reversed(), id: \.self) { chip($0) }
                     }
                     .frame(maxWidth: .infinity)
+                    .padding(.top, 7).padding(.horizontal, 7)   // room for a rare word's corner gem (the scroll clips)
                     .padding(.vertical, 2)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

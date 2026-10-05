@@ -137,35 +137,15 @@ struct SoftSegmented<Key: Hashable>: View {
     var accessibilityLabel: String = ""
     var onChange: ((Key) -> Void)? = nil
 
+    /// Button family (10-05, README §4): every two-way switch is the candy segmented (frosted track +
+    /// glossy purple thumb), compact here (32 pt, hugging its labels).
     var body: some View {
-        let dark = Theme.isDark
-        HStack(spacing: 0) {
-            ForEach(options, id: \.key) { opt in
-                let on = opt.key == selection
-                Button {
-                    guard !on else { return }
-                    Haptics.tap()
-                    selection = opt.key
-                    onChange?(opt.key)
-                } label: {
-                    Text(opt.label)
-                        .font(Brand.font(12, .black))
-                        .foregroundStyle(on ? (dark ? Color.white : Color(hex: 0x6D28D9)) : (dark ? Theme.textMuted : Color(hex: 0x8A78AD)))
-                        .lineLimit(1).fixedSize()
-                        .padding(.horizontal, 11).frame(minHeight: 28)   // §AB: grows with Larger Text
-                        .background(Capsule().fill(on ? (dark ? accent.opacity(0.45) : Color(hex: 0xFFFBF6)) : .clear)
-                            .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.12) : .clear, radius: 3, x: 0, y: 2))
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.squish)
-                .accessibilityAddTraits(on ? .isSelected : [])
-            }
+        CandySegmented(options: options, selection: selection, accent: accent,
+                       accessibilityLabel: accessibilityLabel, height: 32) { k in
+            selection = k
+            onChange?(k)
         }
-        .padding(3)
-        .background(Capsule().fill(dark ? Color.white.opacity(0.08) : accent.wash(0.12)))
         .fixedSize()
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(accessibilityLabel)
     }
 }
 

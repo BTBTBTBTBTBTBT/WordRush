@@ -202,14 +202,8 @@ struct InvitePanelView: View {
                         }
                         .buttonStyle(.squishIcon)
                         .accessibilityLabel("Share invite \(inv.code)")
-                        Button { cancelTarget = inv } label: {
-                            Image(systemName: "xmark").font(.system(size: 12, weight: .heavy))
-                                .foregroundStyle(FinishInk.secondary)
-                                .frame(width: 28, height: 28)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.squishIcon)
-                        .accessibilityLabel("Cancel invite \(inv.code)")
+                        FamilyCloseButton(size: 17, label: "Cancel invite \(inv.code)") { cancelTarget = inv }
+                            .frame(width: 28, height: 28)
                     }
                     if inv.status == "converted" {
                         Icon3D(.crown, size: 15)

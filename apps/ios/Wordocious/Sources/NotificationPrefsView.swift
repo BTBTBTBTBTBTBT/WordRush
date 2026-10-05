@@ -67,7 +67,7 @@ struct NotificationPrefsToggles: View {
                         Text(c.hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1)
                     }
                 }
-                .tint(Color(hex: 0x7C3AED))
+                .toggleStyle(.candy)   // button family §4
                 .disabled(saving != nil)
                 .opacity(saving == c.key ? 0.5 : 1)
                 .padding(.horizontal, 12).padding(.vertical, 7)

@@ -37,6 +37,7 @@ enum AppWarmup {
         MascotArtCache.prewarm()
         PodiumView.prewarm()
         CastArt.prewarm()          // BJ15: cast button skins + art labels, decoded + pre-scaled off main
+        FamilyArt.prewarm()        // button family: helper / quiet light maps (pre-scaled per height) + 3D icons
         HomeHostMascot.prewarm()   // BJ6: the Good Morning host's pose, before Home paints
         HeadingArt.prewarm()       // BJ16: popup / sheet heading lettering at display size, off main
         Task { @MainActor in LeaderboardArt.prewarm() }   // 10-05: the big day title + game card titles, no pop-in
