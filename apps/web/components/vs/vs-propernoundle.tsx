@@ -286,7 +286,7 @@ export function VsProperNoundle({
           Hidden with `invisible` (not unmounted) so the row keeps its slot:
           unmounting it re-centered the flex-1 board for the frame between
           finishing and the 'waiting' screen swap — a visible board jump. */}
-      <div className={`shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[360px] mx-auto px-3 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
+      <div className={`shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[400px] mx-auto px-2 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
           {/* A8: the solo screen's candy hint buttons, in equal thirds so a revealed letter never resizes a pill. */}
           {hints.hint ? (
             <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={() => setClueOpen(true)} aria-label="Read clue"

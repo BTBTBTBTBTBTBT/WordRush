@@ -854,7 +854,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
           </div>
 
           {/* Hint Buttons — equal thirds, so "Vowel" → "A" / "None" never resizes a pill. */}
-          <div className="shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[360px] mx-auto px-3 pb-1">
+          <div className="shrink-0 grid grid-cols-3 gap-1.5 w-full max-w-[400px] mx-auto px-2 pb-1">
             {/* Once used, the Clue pill reopens the clue card ("Read clue"): the clue has no band of its own. */}
             {hints.hint ? (
               <CandyButton size="sm" color="purple" block style={HINT_THIRD} onClick={() => setClueOpen(true)} aria-label="Read clue"
