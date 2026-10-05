@@ -14,6 +14,10 @@ class SeasonSkinsTest {
         assertEquals("halloween", SeasonSkins.seasonFor(LocalDate.of(2026, 10, 24), force = false))
         assertEquals("halloween", SeasonSkins.seasonFor(LocalDate.of(2026, 11, 1), force = false))
         assertNull(SeasonSkins.seasonFor(LocalDate.of(2026, 11, 2), force = false))
+        assertEquals("halloween", SeasonSkins.seasonFor(LocalDate.of(2026, 10, 17), force = false))
+        assertNull(SeasonSkins.seasonFor(LocalDate.of(2026, 10, 16), force = false))
+        assertEquals("halloween", SeasonSkins.seasonFor(LocalDate.of(2026, 3, 1), preview = "halloween"))
+        assertNull(SeasonSkins.seasonFor(LocalDate.of(2026, 3, 1), preview = null))
     }
 
     @Test fun costumeCropsFitTheirSource() {

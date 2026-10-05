@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { SEASON_IDS, currentSeason, type Season } from '@wordle-duel/core';
-import { halloweenSrc } from './art';
+import { artSrc, halloweenSrc } from './art';
 import { MASCOT_ART_SIZE, MASCOT_TRIM, boxAspect, boxTrimLayout, type TrimBox } from './cast-moves';
 import { CAST, mascotSrc, type MascotId } from './mascots';
 import { artTrimOverride } from './art-override';
+import { SEASON_REGISTRY, seasonEntry } from './season-kit';
 import type { CastRowLayout, CastSlot } from './share-fit';
 
 // Seasonal cast skins (docs/FINISH_SPEC.md X). During the season (core
@@ -181,15 +182,19 @@ export interface CastArt {
 
 /** The hero (no season) or the season's skin for one cast member. */
 export function castArt(id: MascotId, season: Season | null): CastArt {
+  // Season preview registry (lib/season-kit.ts): the season's skin name + its measured alpha box.
+  const slots = seasonEntry(season)?.slots;
+  const skin = slots?.cast && slots.castTrim?.[id] ? slots.cast.replace('{id}', id) : null;
   // Admin Art Library preview only (lib/art-override.ts): a candidate costume framed by its own alpha box.
-  const swap = artTrimOverride(season === 'halloween' ? `art-halloween-${id}` : `mascot-${id}`);
+  const swap = artTrimOverride(skin ?? `mascot-${id}`);
   if (swap) {
-    const src = season === 'halloween' ? halloweenSrc(id) : mascotSrc(id);
+    const src = skin ? artSrc(skin) : mascotSrc(id);
     return { src, artSize: swap.size, trim: swap.trim, aspect: boxAspect(swap.trim), layout: boxTrimLayout(swap.trim, swap.size) };
   }
-  if (season === 'halloween') {
-    const trim = HALLOWEEN_TRIM[id];
-    return { src: halloweenSrc(id), artSize: SKIN_ART_SIZE, trim, aspect: boxAspect(trim), layout: boxTrimLayout(trim, SKIN_ART_SIZE) };
+  if (skin && slots?.castTrim) {
+    const trim = slots.castTrim[id] as TrimBox;
+    const size = slots.castSize ?? SKIN_ART_SIZE;
+    return { src: artSrc(skin), artSize: size, trim, aspect: boxAspect(trim), layout: boxTrimLayout(trim, size) };
   }
   const trim = MASCOT_TRIM[id];
   return { src: mascotSrc(id), artSize: MASCOT_ART_SIZE, trim, aspect: boxAspect(trim), layout: boxTrimLayout(trim, MASCOT_ART_SIZE) };
@@ -202,7 +207,11 @@ export function castImageSources(id: MascotId, season: Season | null): string[] 
 
 /** Which art a loaded image is (by its path): a Halloween skin or the hero. */
 export function seasonOfSrc(src: string): Season | null {
-  return src.includes('/art-halloween-') ? 'halloween' : null;
+  for (const s of SEASON_REGISTRY) {
+    const prefix = s.slots.cast?.split('{id}')[0];
+    if (prefix && src.includes(`/${prefix}`)) return s.id as Season;
+  }
+  return null;
 }
 
 /**

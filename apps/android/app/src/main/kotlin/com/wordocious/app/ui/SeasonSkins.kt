@@ -40,33 +40,54 @@ import java.time.LocalDate
 import kotlin.math.PI
 import kotlin.math.sin
 
-// FINISH_SPEC X: seasonal cast skins. During Halloween (Oct 24 – Nov 1, local date —
-// core currentSeason) the ten Halloween costumes (`art_halloween_<id>`, 320², the cast
-// pose framing) replace the hero cast in the living cast header, the cold-start intro
-// + its landing flourish, the share-image cast wordmark and the loading screen.
-// Admins can force the season on from Settings (a debug toggle).
+// FINISH_SPEC X: seasonal cast skins. During a season (Halloween: Oct 17 – Nov 1, local
+// date — core currentSeason) the season's costumes (registry `cast` slot, e.g.
+// `art_halloween_<id>`, 320², the cast pose framing) replace the hero cast in the living
+// cast header, the cold-start intro + its landing flourish, the share-image cast wordmark
+// and the loading screen. Admins pick a season preview in Settings (Off (by date) / every
+// registry season); what each season swaps lives in season-registry.json (SeasonKit).
 
 /** One cast figure as a skin draws it: the image, its figure crop and the crop's source size. */
 data class CastSkinFrame(@DrawableRes val res: Int, val crop: CastCrops.Crop, val source: Int)
 
 object SeasonSkins {
-    /** Settings → DEVELOPER (is_admin only): force the Halloween skins on. */
+    /** The old Halloween-only switch (still written for Halloween so older builds agree). */
     const val FORCE_KEY = "debug-force-halloween"
+    /** Settings → Season preview (is_admin only): a registry season id, "" = Off (by date). Same key as iOS. */
+    const val PREVIEW_KEY = "debug-season"
 
-    /** The admin preview switch (persisted); observable so the header swaps live. */
-    var forced by mutableStateOf(runCatching { SettingsPref.get(FORCE_KEY, false) }.getOrDefault(false))
+    /** The admin season preview (persisted; null = by date); observable so every screen flips live. */
+    var preview by mutableStateOf(readPreview())
         private set
 
-    fun force(on: Boolean) {
-        forced = on
-        runCatching { SettingsPref.set(FORCE_KEY, on) }
+    /** Back-compat: true when a preview is on. */
+    val forced: Boolean get() = preview != null
+
+    private fun readPreview(): String? = runCatching {
+        SettingsPref.get(PREVIEW_KEY, "").ifBlank { null }?.takeIf { it in Season.ids }
+            ?: if (SettingsPref.get(FORCE_KEY, false)) Season.HALLOWEEN else null
+    }.getOrNull()
+
+    /** Settings picker: a registry season id, or null = Off (by date). */
+    fun pick(season: String?) {
+        val s = season?.takeIf { it in Season.ids }
+        preview = s
+        runCatching {
+            SettingsPref.set(PREVIEW_KEY, s ?: "")
+            SettingsPref.set(FORCE_KEY, s == Season.HALLOWEEN)
+        }
     }
 
-    /** The season to draw for [date] (pure: [force] = the admin preview). */
+    fun force(on: Boolean) = pick(if (on) Season.HALLOWEEN else null)
+
+    /** The season to draw for [date] (pure: [force] = the Halloween preview). */
     fun seasonFor(date: LocalDate, force: Boolean): String? = if (force) Season.HALLOWEEN else currentSeason(date)
 
+    /** The season to draw for [date] with a [preview] season (pure). */
+    fun seasonFor(date: LocalDate, preview: String?): String? = preview ?: currentSeason(date)
+
     /** The season right now (device-local date + the admin preview). */
-    fun current(): String? = seasonFor(LocalDate.now(), forced)
+    fun current(): String? = seasonFor(LocalDate.now(), preview)
 
     /**
      * X the Halloween costumes trimmed to their opaque bounds (alpha > 8, measured with
@@ -101,14 +122,30 @@ object SeasonSkins {
         MascotId.S -> R.drawable.art_halloween_s
     }
 
-    /** The figure [id] draws as in [season] (null = the hero cast, 512² crops). */
-    fun frame(id: MascotId, season: String?): CastSkinFrame =
-        if (season == Season.HALLOWEEN) CastSkinFrame(halloweenRes(id), halloweenCrops.getValue(id), HALLOWEEN_SOURCE)
-        else CastSkinFrame(id.res, CastCrops.crops.getValue(id), 512)
+    /**
+     * The figure [id] draws as in [season] (null = the hero cast, 512² crops): the registry's
+     * cast skin with its measured alpha box (castTrim / castSize), when it ships.
+     */
+    fun frame(id: MascotId, season: String?): CastSkinFrame {
+        if (season == Season.HALLOWEEN) return CastSkinFrame(halloweenRes(id), halloweenCrops.getValue(id), HALLOWEEN_SOURCE)
+        skin(id, season)?.let { return it }
+        return CastSkinFrame(id.res, CastCrops.crops.getValue(id), 512)
+    }
+
+    /** A non-Halloween registry season's skin for [id] (name pattern + castTrim), or null. */
+    private fun skin(id: MascotId, season: String?): CastSkinFrame? {
+        if (season == null) return null
+        val ctx = runCatching { com.wordocious.app.App.instance }.getOrNull() ?: return null
+        val e = SeasonKit.entry(ctx, season) ?: return null
+        val key = id.name.lowercase()
+        val res = e.cast?.let { SeasonKit.drawable(ctx, it.replace("{id}", key)) }?.takeIf { it != 0 } ?: return null
+        val t = e.castTrim[key] ?: return null
+        return CastSkinFrame(res, CastCrops.Crop(t[0], t[1], t[2], t[3]), e.castSize)
+    }
 
     /** The whole-image drawable for [id] in [season] (untrimmed: the loaders' tiles). */
     @DrawableRes
-    fun fullRes(id: MascotId, season: String?): Int = if (season == Season.HALLOWEEN) halloweenRes(id) else id.res
+    fun fullRes(id: MascotId, season: String?): Int = if (season == null) id.res else frame(id, season).res
 
     /**
      * The shared figure height for a row [width] wide in [season]: the ten trimmed
@@ -126,16 +163,15 @@ object SeasonSkins {
     fun propRes(context: android.content.Context, name: String): Int =
         context.resources.getIdentifier("art_halloween_prop_$name", "drawable", context.packageName)
 
-    /** `art_scene_banner_halloween` if it ships; 0 = not there. */
-    fun bannerRes(context: android.content.Context): Int =
-        context.resources.getIdentifier("art_scene_banner_halloween", "drawable", context.packageName)
+    /** The [season]'s Home banner (registry `banner` slot) if it ships; 0 = not there. */
+    fun bannerRes(context: android.content.Context, season: String? = Season.HALLOWEEN): Int = SeasonKit.banner(context, season)
 }
 
 /** The season the composition draws in (recomposes when the admin preview flips). */
 @Composable
 fun rememberSeason(): String? {
-    val forced = SeasonSkins.forced
-    return remember(forced) { SeasonSkins.current() }
+    val preview = SeasonSkins.preview
+    return remember(preview) { SeasonSkins.current() }
 }
 
 /**
@@ -144,9 +180,15 @@ fun rememberSeason(): String? {
  */
 @Composable
 fun HalloweenPropSlot(name: String, size: Dp, modifier: Modifier = Modifier) {
-    if (rememberSeason() != Season.HALLOWEEN) return
+    val season = rememberSeason() ?: return
     val context = LocalContext.current
-    val res = remember(name) { SeasonSkins.propRes(context, name) }
+    // The registry's props for the season (`name` picks one of the Halloween four by name; any
+    // other season uses its own props in the same order).
+    val res = remember(name, season) {
+        val all = SeasonKit.props(context, season)
+        val idx = listOf("pumpkin", "bat", "candy", "ghost").indexOf(name)
+        if (season == Season.HALLOWEEN) SeasonSkins.propRes(context, name) else all.getOrNull(idx) ?: 0
+    }
     if (res == 0) return
     Image(artPainter(res, size), null, modifier.size(size).clearAndSetSemantics { }, contentScale = ContentScale.Fit)
 }
@@ -157,9 +199,9 @@ fun HalloweenPropSlot(name: String, size: Dp, modifier: Modifier = Modifier) {
  */
 @Composable
 fun HalloweenBannerSlot(content: @Composable (Int) -> Unit) {
-    if (rememberSeason() != Season.HALLOWEEN) return
+    val season = rememberSeason() ?: return
     val context = LocalContext.current
-    val res = remember { SeasonSkins.bannerRes(context) }
+    val res = remember(season) { SeasonSkins.bannerRes(context, season) }
     if (res != 0) content(res)
 }
 
@@ -202,13 +244,13 @@ fun SeasonalCastLoader(label: String?, modifier: Modifier = Modifier, tips: Bool
         }
         if (tips) {
             // D's rotating tips (the shared lines), D in costume.
-            SeasonTips()
+            SeasonTips(season)
         }
     }
 }
 
 @Composable
-private fun SeasonTips() {
+private fun SeasonTips(season: String) {
     var tip by remember { mutableStateOf((System.currentTimeMillis() / 1000L % Mascots.loadingTips.size).toInt()) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         while (true) { kotlinx.coroutines.delay(3500); tip = (tip + 1) % Mascots.loadingTips.size }
@@ -218,7 +260,7 @@ private fun SeasonTips() {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Image(painterResource(SeasonSkins.halloweenRes(MascotId.D)), null, Modifier.size(24.dp))
+        Image(painterResource(SeasonSkins.fullRes(MascotId.D, season)), null, Modifier.size(24.dp))
         Text(Mascots.loadingTips[tip], fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
     }
 }

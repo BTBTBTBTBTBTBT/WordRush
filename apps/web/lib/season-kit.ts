@@ -19,6 +19,9 @@ export interface SeasonPalette {
 export interface SeasonSlots {
   /** The cast skin pattern, `{id}` = the cast id (w, o1, r …). */
   cast?: string;
+  /** The skins' square side (px) and each one's alpha box [x0, y0, x1, y1] (the cast row frames them). */
+  castSize?: number;
+  castTrim?: Record<string, [number, number, number, number]>;
   /** Normal art name → seasonal art name (titles). */
   titles?: Record<string, string>;
   /** Normal wall name (or `prefix*`) → seasonal wall; `<name>-light` wins in light mode. */

@@ -345,7 +345,10 @@ fun HelperButton(
     contentDescription: String = text ?: "",
 ) {
     // Inside a game EVERY helper takes the game's accent (a state reads by [selected], never by hue); off a game [tint].
-    val t = LocalGameTint.current ?: tint ?: Color(0xFF7C3AED)
+    // Season preview: in season the helpers take the season's button tint (registry palette), an explicit
+    // [tint] off a game still wins.
+    val season = seasonPalette()?.buttonTint
+    val t = LocalGameTint.current?.let { season ?: it } ?: tint ?: season ?: Color(0xFF7C3AED)
     val dark = WTheme.isDark
     val spent = used || !enabled
     val c = remember(t, dark, selected, spent) {
@@ -385,9 +388,12 @@ fun QuietButton(
 ) {
     val dark = WTheme.isDark
     val h = when (size) { CandySize.LARGE -> 44.dp; CandySize.MEDIUM -> 40.dp; CandySize.SMALL -> 34.dp }
-    val face = if (dark) Color(0xFF3B3163) else Color(0xFFECE4FF)
-    val pressedFace = if (dark) Color(0xFF463A74) else Color(0xFFE2D7FF)
-    val ink = if (dark) Color(0xFFDDD0FF) else Color(0xFF5B21B6)
+    // Season preview: the quiet pill takes the season's quiet tint (registry palette).
+    val season = seasonPalette()?.quietTint
+    val sc = season?.let { remember(it, dark) { helperColors(it, dark) } }
+    val face = sc?.fill ?: if (dark) Color(0xFF3B3163) else Color(0xFFECE4FF)
+    val pressedFace = sc?.fillPressed ?: if (dark) Color(0xFF463A74) else Color(0xFFE2D7FF)
+    val ink = sc?.ink ?: if (dark) Color(0xFFDDD0FF) else Color(0xFF5B21B6)
     val fs = if (size == CandySize.SMALL) 12.5f else 13.5f
     FamPill(
         onClick, modifier, h, face, pressedFace, ink, enabled, used = false, circle = false, stretch = fill,

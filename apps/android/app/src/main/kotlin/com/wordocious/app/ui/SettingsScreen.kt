@@ -250,11 +250,18 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 }
             }
 
-            // DEVELOPER (profiles.is_admin only) — FINISH_SPEC X: preview the seasonal skins.
+            // DEVELOPER (profiles.is_admin only): Season preview — Off (by date) or any registry season
+            // (SeasonKit); every screen flips live (SeasonSkins.preview is observable).
             if (profile?.isAdmin == true) {
                 Section("DEVELOPER", SettingsAccent.theme) {
-                    ToggleRow("Halloween Preview", "Force the Halloween cast skins on", SeasonSkins.forced) {
-                        SeasonSkins.force(it)
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                    val seasons = remember { SeasonKit.registry(ctx) }
+                    Text("Season preview", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    ChoiceTile("Off (by date)", "Seasons switch on by the calendar", SettingsAccent.theme, active = SeasonSkins.preview == null,
+                        preview = { SeasonPreviewW(null) }) { SeasonSkins.pick(null) }
+                    seasons.forEach { s ->
+                        ChoiceTile(s.title, "Show the ${s.title} art today (admin preview)", SettingsAccent.theme, active = SeasonSkins.preview == s.id,
+                            preview = { SeasonPreviewW(s.id) }) { SeasonSkins.pick(s.id) }
                     }
                 }
             }
@@ -540,6 +547,15 @@ private fun Section(title: String, accent: Color, padded: Boolean = false, conte
  * text and a small white check badge; a live [preview] on the right. The selected face
  * cross-fades (alpha only); the press squishes (A9).
  */
+/** The Season preview tile's preview: the season's W skin (or the hero W). */
+@Composable
+private fun SeasonPreviewW(season: String?) {
+    androidx.compose.foundation.Image(
+        androidx.compose.ui.res.painterResource(SeasonSkins.fullRes(MascotId.W, season)), null,
+        Modifier.size(34.dp),
+    )
+}
+
 @Composable
 private fun ChoiceTile(
     label: String, desc: String, accent: Color, active: Boolean,

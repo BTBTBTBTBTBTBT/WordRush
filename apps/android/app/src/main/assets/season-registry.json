@@ -1,5 +1,5 @@
 {
-  "_doc": "The season registry (docs/design/brand/seasons/README.md 'How to add a season'). ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/season-registry.json and apps/android/app/src/main/assets/season-registry.json (apps/web/lib/season-registry.test.ts checks the copies). Windows live in core SEASON_WINDOWS (\u00d73 ports, level-season-fixtures.json) and must list the same ids. Slots name shipped art (web /art/<name>.webp, iOS image set <name>, Android drawable <name with _>); 'titles' and 'walls' map the NORMAL art name to the seasonal one ('*' = prefix); a light-mode wall twin '<name>-light' wins in light mode. Any missing slot or unshipped file falls back to the normal art.",
+  "_doc": "The season registry (docs/design/brand/seasons/README.md 'How to add a season'). ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/season-registry.json and apps/android/app/src/main/assets/season-registry.json (apps/web/lib/season-registry.test.ts checks the copies). Windows live in core SEASON_WINDOWS (\u00d73 ports, level-season-fixtures.json) and must list the same ids. Slots name shipped art (web /art/<name>.webp, iOS image set <name>, Android drawable <name with _>); 'titles' and 'walls' map the NORMAL art name to the seasonal one ('*' = prefix); a light-mode wall twin '<name>-light' wins in light mode. 'castSize' + 'castTrim' = the skins' square size and alpha boxes [x0, y0, x1, y1] (alpha > 8), so the cast row frames any season's skins. Any missing slot or unshipped file falls back to the normal art.",
   "seasons": [
     {
       "id": "halloween",
@@ -21,6 +21,69 @@
       },
       "slots": {
         "cast": "art-halloween-{id}",
+        "castSize": 320,
+        "castTrim": {
+          "w": [
+            6,
+            31,
+            313,
+            289
+          ],
+          "o1": [
+            6,
+            9,
+            313,
+            310
+          ],
+          "r": [
+            21,
+            6,
+            298,
+            313
+          ],
+          "d": [
+            36,
+            6,
+            283,
+            313
+          ],
+          "o2": [
+            45,
+            6,
+            274,
+            313
+          ],
+          "c": [
+            33,
+            6,
+            287,
+            313
+          ],
+          "i": [
+            59,
+            6,
+            261,
+            313
+          ],
+          "o3": [
+            8,
+            6,
+            311,
+            313
+          ],
+          "u": [
+            6,
+            38,
+            313,
+            281
+          ],
+          "s": [
+            19,
+            6,
+            300,
+            313
+          ]
+        },
         "titles": {
           "art-titlecast-dailies": "art-title-halloween-dailies",
           "art-titlecast-puzzles": "art-title-halloween-puzzles",

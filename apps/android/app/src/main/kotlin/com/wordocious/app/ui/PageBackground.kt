@@ -215,7 +215,12 @@ private fun Modifier.wallpaperBackground(
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
     val isDark = WTheme.isDark && !alwaysLight
     val context = LocalContext.current
-    val wall: ImageBitmap? = remember(res) { res?.let { Wallpapers.get(context, it) } }
+    // Season preview: the season's calm wallpaper (light twin in light mode); its own art, so no tiles.
+    val season = rememberSeason()
+    val seasonal = remember(res, season, isDark) { res?.let { SeasonKit.wall(context, it, season, isDark) } }
+    val shown = seasonal ?: res
+    val wall: ImageBitmap? = remember(shown) { shown?.let { Wallpapers.get(context, it) } }
+    val tiles = if (seasonal != null) null else tiles
     val highContrast = rememberHighContrast()
     var origin by remember { mutableStateOf(Offset.Zero) }
     var rootSize by remember { mutableStateOf(Size.Zero) }

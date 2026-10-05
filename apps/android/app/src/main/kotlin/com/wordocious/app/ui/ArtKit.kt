@@ -112,7 +112,8 @@ fun PageTitleArt(
     /** FINISH_SPEC BH2: the compact DAILIES / PUZZLES titles (0.75). */
     scale: Float = 1f,
 ) {
-    val painter = painterResource(art.res)
+    // Season preview: the season's lettering for this title when it ships (SeasonKit titles).
+    val painter = painterResource(seasonalTitleRes(art.res))
     val intrinsic = painter.intrinsicSize
     val aspect = if (intrinsic.height > 0f && intrinsic.width > 0f) intrinsic.width / intrinsic.height else 4f
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = alignment) {
@@ -479,7 +480,8 @@ fun FittedGameTitleArt(
     heading: Boolean = true,
 ) {
     // AQ2: the ~900 px title decoded once at about screen width and shared (mode switches re-use it).
-    val painter = artPainter(res, androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp)
+    // Season preview: the season's lettering at the same box rules (its own aspect).
+    val painter = artPainter(seasonalTitleRes(res), androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp)
     val intrinsic = painter.intrinsicSize
     val ratio = if (intrinsic.isSpecified && intrinsic.width > 0f && intrinsic.height > 0f) intrinsic.height / intrinsic.width
         else GAME_TITLE_ART_FALLBACK_RATIO
@@ -509,7 +511,7 @@ fun GameTitleArt(
     heading: Boolean = true,
 ) {
     Image(
-        painterResource(res),
+        painterResource(seasonalTitleRes(res)),
         contentDescription = label,
         contentScale = ContentScale.Fit,
         modifier = modifier.height(height).semantics { if (heading) heading() }.titleArtMotion(float = false),
