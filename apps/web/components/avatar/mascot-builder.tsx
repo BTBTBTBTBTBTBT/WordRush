@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Lock } from 'lucide-react';
 import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPickConflict, castPreset, enforceAvatarPro, type AvatarConfig, type AvatarFrame } from '@wordle-duel/core';
 
-import { CandyButton, candyClass } from '@/components/ui/candy-button';
 import { ProPill } from '@/components/game/finished-kit';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { feedback } from '@/lib/sound-events';
@@ -17,7 +16,8 @@ import {
   effectiveAvatarFrame, frameLevelLocked, randomAvatar, swatchCss, type BuilderField, type BuilderTab,
 } from '@/lib/avatar-render';
 import { MascotAvatar } from './mascot-avatar';
-import { DressStage, StageArt, backdropCss, warmDressArt } from '@/components/profile/dress-up';
+import { DressStage, StageArt, StageClose, backdropCss, warmDressArt } from '@/components/profile/dress-up';
+import { CastButton } from '@/components/ui/cast-button';
 import { artSrc } from '@/lib/art';
 
 /**
@@ -262,11 +262,9 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
       <div className="sticky top-0 z-10" style={{ background: 'var(--color-surface, #f7f2ff)' }}>
         <DressStage config={{ ...value, display: 'mascot' }} initial={initial} height={250} mascotSize={160} hopToken={hop} bulbs curtains>
           <div className="absolute inset-x-0 top-0 flex items-center justify-between px-2.5" style={{ paddingTop: 40 }}>
-            <button type="button" aria-label="Close without saving" onClick={onBack} disabled={saving}
-              className="w-10 h-10 flex items-center justify-center border-0 bg-transparent text-white font-black text-lg cursor-pointer" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.35)' }}>✕</button>
-            <button type="button" className={candyClass({ color: 'purple', size: 'sm' })} onClick={() => onSave(enforceAvatarPro(value, isPro))} disabled={saving}>
-              <span className="candy-label">{saving ? 'Saving…' : 'Done'}</span>
-            </button>
+            <StageClose label="Close without saving" onClick={onBack} disabled={saving} />
+            {/* The finished cast primary (the frost helper pill read pale on the stage). */}
+            <CastButton color="purple" size="s" onClick={() => onSave(enforceAvatarPro(value, isPro))} disabled={saving}>{saving ? 'Saving…' : 'Done'}</CastButton>
           </div>
           <div className="absolute left-3 flex flex-col gap-2.5" style={{ top: 92 }}>
             {round('Randomize', <DiceGlyph />, ['#5eead4', '#0d9488'], () => onChange(randomAvatar(value, Math.random, { isPro })))}
@@ -285,7 +283,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
                 <span className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: on ? '#ffffff' : 'rgba(255,255,255,0.55)', boxShadow: on ? '0 4px 14px rgba(124,58,237,0.35)' : undefined }}>
                   <StageArt name={`art-dress-tab-${art}`} height={24} />
                 </span>
-                <span className="text-[8.5px] font-black truncate max-w-full" style={{ color: on ? '#6d28d9' : '#6b5c8f' }}>{label}</span>
+                <span className="text-[8.5px] font-black whitespace-nowrap tracking-[-0.25px]" style={{ color: on ? '#6d28d9' : '#6b5c8f' }}>{label}</span>
               </button>
             );
           })}

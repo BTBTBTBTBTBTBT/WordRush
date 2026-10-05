@@ -6,7 +6,8 @@ import type { AvatarConfig } from '@wordle-duel/core';
 import { AchievementArt } from '@/components/badges/badge-art';
 import { ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import { achievementBadge } from '@/lib/badges';
-import { LiveMascot, StageArt, TitleRibbon } from './dress-up';
+import { LiveMascot, STAGE_SIDE_SLOT, StageArt, StageClose, TitleRibbon } from './dress-up';
+import { CastButton } from '@/components/ui/cast-button';
 
 /** Founder 10-05 "T1 Title Shelves": the shelves in order (catalog category → label). iOS / Android parity. */
 export const TITLE_SHELVES: Array<[string, string]> = [
@@ -82,9 +83,14 @@ export function TitleShelves({ username, mascot, initial, accent, unlockedDates,
     <div className="fixed inset-0 z-[60] flex justify-center" style={{ background: 'rgba(30,16,60,0.45)' }} role="dialog" aria-modal="true" aria-label="Pick your title">
       <div className="w-full max-w-sm h-full overflow-y-auto" style={{ background: '#f6f0ff' }}>
         <div className="flex items-center px-3 pt-3">
-          <button type="button" aria-label="Close" onClick={onClose} className="w-10 h-10 border-0 bg-transparent font-black text-lg cursor-pointer" style={{ color: '#6d28d9' }}>✕</button>
-          <span className="flex-1 flex justify-center"><StageArt name="art-dress-title" height={30} /></span>
-          <button type="button" className="candy candy-purple candy-sm" onClick={() => onDone(pick)}><span className="candy-label">Done</span></button>
+          <span className="flex items-center" style={{ width: STAGE_SIDE_SLOT, marginLeft: -8 }}><StageClose onStage={false} onClick={onClose} /></span>
+          <span className="flex-1 min-w-0 flex justify-center px-0.5">
+            {/* Fits between the side slots (scales down on a narrow phone instead of running under DONE). */}
+            <StageArt name="art-dress-title" style={{ width: '100%', height: 30, objectFit: 'contain' }} />
+          </span>
+          <span className="flex items-center justify-end" style={{ width: STAGE_SIDE_SLOT }}>
+            <CastButton color="purple" size="s" onClick={() => onDone(pick)}>Done</CastButton>
+          </span>
         </div>
         <div className="mx-3.5 mt-2.5 flex items-center gap-2 px-2 py-1.5 rounded-[20px]" style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.8), rgba(237,233,254,0.6))' }}>
           <LiveMascot config={mascot} initial={initial} size={78} hopToken={hop} />

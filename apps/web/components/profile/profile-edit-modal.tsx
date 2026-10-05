@@ -7,11 +7,11 @@ import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { Pencil, Star, Lock, Globe } from 'lucide-react';
 import { CandyButton } from '@/components/ui/candy-button';
+import { CastButton } from '@/components/ui/cast-button';
 import { POPUP_DIM, PoseArt, PopupBar, popupCard, softInput, softRow } from '@/components/ui/soft-popup';
 import { SoftSwitch } from '@/components/settings/settings-kit';
 import { softBackground, softBorder } from '@/lib/soft-surface';
 import { GameArt } from '@/components/ui/game-art';
-import { HeaderBack } from '@/components/ui/page-header';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { MascotBuilder } from '@/components/avatar/mascot-builder';
@@ -32,7 +32,7 @@ import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { ACCENT_COLORS, resolveAccent } from '@/lib/profile-personalization';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { HeadingArt } from '@/components/ui/heading-art';
-import { DressStage, TitleRibbon, backdropCss, doorFromUrl, finishNudge, openDressUp, useDressUpRequests, warmDressArt, type DressDoor } from '@/components/profile/dress-up';
+import { DressStage, STAGE_SIDE_SLOT, StageClose, TitleRibbon, backdropCss, doorFromUrl, finishNudge, openDressUp, useDressUpRequests, warmDressArt, type DressDoor } from '@/components/profile/dress-up';
 import { TitleShelves } from '@/components/profile/title-shelves';
 import { applyAvatarPick } from '@wordle-duel/core';
 import { randomAvatar } from '@/lib/avatar-render';
@@ -274,10 +274,14 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
               config={look} initial={initial} height={320} hopToken={hop}
               photo={photoShows ? <MascotAvatar config={look} initial={initial} size={130} photoUrl={avatarUrl} pro={isProActive} level={level} /> : undefined}
             >
+              {/* × and SAVE in equal side slots (the heading centers, both stay inside the stage); SAVE is the
+                  finished cast primary (the frost helper pill read pale on the stage). */}
               <div className="absolute inset-x-0 top-0 flex items-center gap-1 px-3 pt-3">
-                <HeaderBack kind="close" onClick={onClose} size={32} />
-                <span className="flex-1 flex justify-center"><HeadingArt slug="editprofile" as="h2" height={32} maxWidth={200} /></span>
-                <CandyButton color="purple" size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</CandyButton>
+                <span className="flex items-center" style={{ width: STAGE_SIDE_SLOT, marginLeft: -8 }}><StageClose label="Cancel" onClick={onClose} /></span>
+                <span className="flex-1 min-w-0 flex justify-center"><HeadingArt slug="editprofile" as="h2" height={32} maxWidth={200} /></span>
+                <span className="flex items-center justify-end" style={{ width: STAGE_SIDE_SLOT }}>
+                  <CastButton color="purple" size="s" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</CastButton>
+                </span>
               </div>
             </DressStage>
             <div className="flex flex-col items-center mt-2 px-4">

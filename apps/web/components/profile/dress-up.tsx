@@ -200,11 +200,45 @@ export function StageArt({ name, height, width, style, className }: { name: stri
     style={{ height: height ?? 'auto', width: width ?? 'auto', display: 'block', pointerEvents: 'none', ...style }} />;
 }
 
+/** The stage header's side slots (× left, SAVE / DONE right): equal, so the heading centers. */
+export const STAGE_SIDE_SLOT = 86;
+
+/**
+ * The Stage / Dressing Room / Title Shelves close (iOS StageCloseButton, Android StageCloseButton): the family's
+ * soft 3D X, bare. On the stage it is whitened with a deep drop shadow so it reads on the curtains (the pale
+ * family X disappeared there); off the stage it wears the deep violet (a masked multiply). A 44 px hit area.
+ */
+export function StageClose({ onClick, label = 'Close', onStage = true, disabled, className = '', style }: {
+  onClick: () => void; label?: string; onStage?: boolean; disabled?: boolean; className?: string; style?: React.CSSProperties;
+}) {
+  const src = artSrc('art-fam-cic-close');
+  return (
+    <button type="button" aria-label={label} onClick={onClick} disabled={disabled} data-squish=""
+      className={`w-11 h-11 flex items-center justify-center border-0 bg-transparent p-0 cursor-pointer ${className}`} style={style}>
+      <span aria-hidden="true" className="relative block" style={{
+        width: 24, height: 24, isolation: 'isolate',
+        filter: onStage ? 'drop-shadow(0 2px 2.5px rgba(46,16,101,0.6))' : 'drop-shadow(0 2.5px 2px rgba(76,29,149,0.22))',
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt="" draggable={false} width={24} height={24} className="block"
+          style={onStage ? { filter: 'grayscale(1) brightness(1.32)' } : undefined} />
+        {!onStage && (
+          <span className="absolute inset-0" style={{
+            background: '#8b5cf6', mixBlendMode: 'multiply',
+            WebkitMaskImage: `url(${src})`, maskImage: `url(${src})`, WebkitMaskSize: 'contain', maskSize: 'contain',
+          }} />
+        )}
+      </span>
+    </button>
+  );
+}
+
 /** The dress-up art, decoded ahead of the Stage opening (founder: "everything loads instantly"). */
 export const DRESS_ART = [
   'art-dress-podium', 'art-dress-curtain-l', 'art-dress-curtain-r', 'art-dress-bulbs', 'art-dress-ribbon-l', 'art-dress-ribbon-m',
   'art-dress-ribbon-r', 'art-dress-tag-new', 'art-dress-tag-pro', 'art-dress-tag-dressup', 'art-dress-bubble', 'art-dress-partyhat',
   'art-dress-none', 'art-dress-shelf-l', 'art-dress-shelf-m', 'art-dress-shelf-r', 'art-dress-plaque', 'art-dress-title', 'art-dress-lock',
+  'art-fam-cic-close',
   ...['body', 'color', 'pattern', 'eyes', 'nose', 'mouth', 'hats', 'extras', 'backdrop', 'frame'].map((t) => `art-dress-tab-${t}`),
 ];
 let warmed = false;
