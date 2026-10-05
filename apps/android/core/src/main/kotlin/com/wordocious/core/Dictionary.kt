@@ -41,19 +41,19 @@ object GameDictionary {
     private val frozenPrefixes = HashMap<Int, List<String>>()
     /** §265 swap gate: cached swapped copies of the curated pools, keyed by
      *  (length, batches) — batches is how many swap batches the date has
-     *  reached: 1 = batch 1 only, from SOLUTION_SWAP_CUTOVER_DATE; 2 = batch 1
-     *  then batch 2, from SOLUTION_SWAP_2_CUTOVER_DATE. Dated seeds gate on the
+     *  reached (solutionSwapBatchesFor): 1 = batch 1 only, 2 = then batch 2,
+     *  3 = then batch 3, each from its own cutover. Dated seeds gate on the
      *  seed's date, undated seeds on wall-clock UTC. */
     private val swappedPools = HashMap<Pair<Int, Int>, Pair<List<String>, List<String>>>()
 
     private fun swapped(length: Int, source: List<String>, dateKey: String?): List<String> {
         val date = dateKey ?: todayUtc()
-        if (date < SOLUTION_SWAP_CUTOVER_DATE) return source
-        val batches = if (date < SOLUTION_SWAP_2_CUTOVER_DATE) 1 else 2
+        val batches = solutionSwapBatchesFor(date)
+        if (batches == 0) return source
         val key = length to batches
         val hit = swappedPools[key]
         if (hit != null && hit.first === source) return hit.second
-        val out = if (batches == 1) applySolutionSwaps(source) else applyAllSolutionSwaps(source)
+        val out = applySolutionSwapBatches(source, batches)
         swappedPools[key] = source to out
         return out
     }

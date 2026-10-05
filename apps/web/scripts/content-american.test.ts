@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { applyAllSolutionSwaps } from '@wordle-duel/core';
 
 /**
  * Puzzle CONTENT is American English too — answers, hidden words, categories,
@@ -157,14 +158,13 @@ describe('American English in puzzle content (unseen puzzles)', () => {
     expect(hits, hits.slice(0, 30).join('\n')).toEqual([]);
   });
 
-  // Classic / Six / Seven answers change only through a dated answer swap (solution-swaps.ts, founder's call).
-  // This pins today's British-spelled answers so no NEW one is ever added; shrink it as swaps land.
-  it('no new British-spelled Classic / Six / Seven answers', () => {
-    const KNOWN = new Set(`LITRE QUEUE FIBRE BLOKE JUMPER LEARNT RUMOUR CENTRE PLOUGH PETROL ARMOUR CHILLI VAPOUR HONOUR HUMOUR AGEING
-      COLOUR LABOUR FAVOUR FULFIL TUMOUR AMONGST FLAVOUR DUSTBIN DEFENCE PARLOUR LICENCE REALISE CALIBRE CENTRED MOULDED FUELLED
-      THEATRE YOGHURT OFFENCE HARBOUR ANALYSE SULPHUR SPECTRE`.trim().split(/\s+/));
-    const found = ['solutions.json', 'solutions-6.json', 'solutions-7.json'].flatMap((f) => (read(f) as string[]).map((w) => w.toUpperCase()))
-      .filter((w) => BRIT_SPELLINGS.has(w) || BRIT_WORDS.has(w) || w === 'SULPHUR' || w === 'MOULDED');
-    expect(found.filter((w) => !KNOWN.has(w))).toEqual([]);
+  // Classic / Six / Seven answers change only through a dated answer swap (solution-swaps.ts). Swap batch 3
+  // (founder 2026-10-05) takes every British answer out, so the pools AS DEALT once every batch is live hold none.
+  it('no British Classic / Six / Seven answers once every swap batch is live', () => {
+    const extra = new Set(['SULPHUR', 'MOULDED', 'CHEQUE', 'ADVERT', 'PENCE', 'DRAUGHT', 'QUEUING', 'CRUMPET']);
+    const found = ['solutions.json', 'solutions-6.json', 'solutions-7.json']
+      .flatMap((f) => applyAllSolutionSwaps((read(f) as string[]).map((w) => w.toUpperCase())))
+      .filter((w) => BRIT_SPELLINGS.has(w) || BRIT_WORDS.has(w) || extra.has(w));
+    expect(found).toEqual([]);
   });
 });

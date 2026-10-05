@@ -1,6 +1,5 @@
 import {
-  SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUTOVER_DATE,
-  applySolutionSwaps, applyAllSolutionSwaps, isBlockedWordOfDay,
+  SOLUTIONS_CUTOVER_DATE, solutionSwapBatchesFor, applySolutionSwapBatches, isBlockedWordOfDay,
 } from '@wordle-duel/core';
 import solutions from '@/data/solutions.json';
 import legacySolutions from '@/data/solutions-legacy.json';
@@ -88,13 +87,12 @@ export function parseDateKey(key: string): Date | null {
 // §265: from the swap cutover on, the natives' Word of the Day reads the
 // swapped pool (they go through the core pool function); this list must match
 // or web and apps would feature different words on a swapped index.
-const swappedSolutions: string[] = applySolutionSwaps(solutions);  // lists are stored uppercase, like the swap table
-const swappedSolutions2: string[] = applyAllSolutionSwaps(solutions);  // batch 1 then batch 2, from the second cutover
+// Index = how many swap batches the date has reached (lists are stored uppercase, like the swap tables).
+const swappedByBatches: string[][] = [0, 1, 2, 3].map((n) => applySolutionSwapBatches(solutions, n));
 export function solutionsForDate(date: Date): string[] {
   const key = dateKey(date);
   if (key < SOLUTIONS_CUTOVER_DATE) return legacySolutions;
-  if (key < SOLUTION_SWAP_CUTOVER_DATE) return solutions;
-  return key < SOLUTION_SWAP_2_CUTOVER_DATE ? swappedSolutions : swappedSolutions2;
+  return swappedByBatches[solutionSwapBatchesFor(key)];
 }
 
 /** Deterministic candidate words for a date: today's index + the next 19 offsets. */

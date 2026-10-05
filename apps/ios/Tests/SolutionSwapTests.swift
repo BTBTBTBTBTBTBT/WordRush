@@ -97,11 +97,14 @@ final class SolutionSwapTests: XCTestCase {
             let between = len == 5 ? d.solutionPool(forDateKey: "2026-11-15") : d.solutionPool(forLength: len, dateKey: "2026-11-15")
             let after = len == 5 ? d.solutionPool(forDateKey: "2026-11-16") : d.solutionPool(forLength: len, dateKey: "2026-11-16")
             XCTAssertEqual(between, applySolutionSwaps(raw))
-            XCTAssertEqual(after, applyAllSolutionSwaps(raw))
+            // Batch 3 shares this date while SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE.
+            let sameDay3 = SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE
+            XCTAssertEqual(after, applySolutionSwapBatches(raw, sameDay3 ? 3 : 2))
             XCTAssertEqual(after.count, raw.count)
             for o in bothOld { XCTAssertFalse(after.contains(o), o) }
             let moved = zip(raw, after).filter { $0 != $1 }.map { $0.0 }.sorted()
-            XCTAssertEqual(moved, bothOld.filter { $0.count == len }.sorted())
+            let expected = (bothOld + (sameDay3 ? Array(SOLUTION_SWAPS_3.keys) : [])).filter { $0.count == len && raw.contains($0) }
+            XCTAssertEqual(moved, expected.sorted())
         }
         XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: "2026-11-15").contains("FUCKER"))
         XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: "2026-11-16").contains("CASHEW"))
@@ -129,5 +132,70 @@ final class SolutionSwapTests: XCTestCase {
         XCTAssertEqual(generateSolutionsFromSeedForLength("daily-2026-11-27-DUEL_6", count: 8, wordLength: 6),
                        ["JAGGED", "OPENER", "FESTER", "QUARTZ", "MARVEL", "SALUTE", "FONDUE", "ONWARD"])
         XCTAssertEqual(generateSolutionsFromSeedForLength("daily-2027-02-23-DUEL_7", count: 1, wordLength: 7), ["CROWBAR"])
+    }
+
+    // MARK: - Batch 3 (British answers — COLOUR, THEATRE, YOGHURT, BLOKE…, plus batch 2's CRUMPET),
+    // applied AFTER batch 2, its own cutover constant. Batches 1 and 2 never grow.
+
+    func testBatch3TableShapeAndGate() {
+        XCTAssertEqual(SOLUTION_SWAP_3_CUTOVER_DATE, "2026-11-16")
+        XCTAssertTrue(SOLUTION_SWAP_3_CUTOVER_DATE >= SOLUTION_SWAP_2_CUTOVER_DATE)
+        XCTAssertEqual(SOLUTION_SWAPS.count, 23)
+        XCTAssertEqual(SOLUTION_SWAPS_2.count, 13)
+        XCTAssertEqual(SOLUTION_SWAPS_3.count, 46)
+        XCTAssertEqual(Set(SOLUTION_SWAPS_3.values).count, 46)
+        XCTAssertEqual(SOLUTION_SWAPS_3["COLOUR"], "SORBET")
+        XCTAssertEqual(SOLUTION_SWAPS_3["CRUMPET"], "WALLABY")
+        XCTAssertEqual(solutionSwapBatchesFor("2026-10-04"), 0)
+        XCTAssertEqual(solutionSwapBatchesFor("2026-11-15"), 1)
+        XCTAssertEqual(solutionSwapBatchesFor("2026-11-16"), 3)
+        let earlier = Set(SOLUTION_SWAPS.values).union(SOLUTION_SWAPS_2.values)
+        for (o, n) in SOLUTION_SWAPS_3 {
+            XCTAssertEqual(o.count, n.count, "\(o)→\(n)")
+            XCTAssertFalse(earlier.contains(n), "\(n) is already a batch-1/2 replacement")
+            XCTAssertNil(SOLUTION_SWAPS[o] ?? SOLUTION_SWAPS_2[o], "\(o) is an earlier batch's key")
+        }
+    }
+
+    func testBatch3WordsLeaveDealtPoolEnterFromAllowed() {
+        for (len, file) in [(5, "solutions"), (6, "solutions-6"), (7, "solutions-7")] {
+            let dealt = Set(applySolutionSwapBatches(loadList(file), 2))
+            let allowed = Set(loadList(len == 5 ? "allowed" : "allowed-\(len)"))
+            for (o, n) in SOLUTION_SWAPS_3 where o.count == len {
+                XCTAssertTrue(dealt.contains(o), o)
+                XCTAssertFalse(dealt.contains(n), "\(n) must not already be an answer")
+                XCTAssertTrue(allowed.contains(n), "\(n) must be guessable")
+            }
+        }
+    }
+
+    func testBatch3InPlaceFromItsCutover() {
+        let d = GameDictionary.shared
+        let allOld = Array(SOLUTION_SWAPS.keys) + Array(SOLUTION_SWAPS_2.keys) + Array(SOLUTION_SWAPS_3.keys)
+        for (len, file) in [(5, "solutions"), (6, "solutions-6"), (7, "solutions-7")] {
+            let raw = loadList(file)
+            let after = len == 5 ? d.solutionPool(forDateKey: SOLUTION_SWAP_3_CUTOVER_DATE) : d.solutionPool(forLength: len, dateKey: SOLUTION_SWAP_3_CUTOVER_DATE)
+            XCTAssertEqual(after, applyAllSolutionSwaps(raw))
+            for o in allOld { XCTAssertFalse(after.contains(o), o) }
+        }
+        XCTAssertTrue(d.solutionPool(forLength: 6, dateKey: "2026-11-15").contains("COLOUR"))
+        d.todayOverrideForTests = "2026-11-15"
+        XCTAssertTrue(d.solutionPool(forDateKey: nil).contains("BLOKE"))
+        d.todayOverrideForTests = "2026-11-16"
+        XCTAssertFalse(d.solutionPool(forDateKey: nil).contains("BLOKE"))
+        XCTAssertTrue(d.solutionPool(forDateKey: nil).contains("LLAMA"))
+        XCTAssertTrue(d.solutionPool(forLength: 7, dateKey: nil).contains("WALLABY"))
+        XCTAssertFalse(d.solutionPool(forLength: 7, dateKey: nil).contains("CRUMPET"))
+        d.todayOverrideForTests = "2026-09-01"
+        for o in SOLUTION_SWAPS_3.keys { XCTAssertTrue(d.isValidWord(o), o) }
+    }
+
+    func testBatch3PinnedDeals() {
+        XCTAssertEqual(generateSolutionsFromSeed("daily-2026-10-15-DUEL", count: 8),
+                       ["ADORE", "LITRE", "RIDGE", "CUMIN", "ETHIC", "VALID", "THICK", "STORY"])
+        XCTAssertEqual(generateSolutionsFromSeedForLength("daily-2026-11-16-DUEL_7", count: 8, wordLength: 7),
+                       ["OVARIAN", "DEFLECT", "IGNORED", "ALGEBRA", "MARACAS", "CLIPPER", "LAUGHED", "EMPATHY"])
+        XCTAssertEqual(generateSolutionsFromSeedForLength("daily-2027-01-22-DUEL_6", count: 8, wordLength: 6),
+                       ["FILMED", "SMILED", "WIGGLE", "OPENLY", "SITTER", "SORBET", "SPRITE", "SUNSET"])
     }
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Icon3D } from '@/components/ui/icon3d';
-import { SOLUTIONS_CUTOVER_DATE, SOLUTION_SWAP_CUTOVER_DATE, SOLUTION_SWAP_2_CUTOVER_DATE, SOLUTION_SWAPS, SOLUTION_SWAPS_2 } from '@wordle-duel/core';
+import { SOLUTIONS_CUTOVER_DATE, solutionSwapBatchesFor, applySolutionSwapBatches } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-streaks';
 import { HomeSectionTitle } from '@/components/home/home-section-title';
@@ -46,10 +46,9 @@ interface WordInfo {
 
 /** Offline fallback: same index math as lib/word-of-day.ts, including the §265 answer swaps. */
 function offlineWotd(list: string[], dayIndex: number, dayKey: string): string {
-  let w = list[dayIndex % list.length];
-  if (dayKey >= SOLUTION_SWAP_CUTOVER_DATE) w = SOLUTION_SWAPS[w.toUpperCase()] ?? w;
-  if (dayKey >= SOLUTION_SWAP_2_CUTOVER_DATE) w = SOLUTION_SWAPS_2[w.toUpperCase()] ?? w;
-  return w;
+  const w = list[dayIndex % list.length];
+  const swapped = applySolutionSwapBatches([w.toUpperCase()], solutionSwapBatchesFor(dayKey))[0];
+  return swapped === w.toUpperCase() ? w : swapped;
 }
 
 const LETTERS = ['A', 'B', 'C'];

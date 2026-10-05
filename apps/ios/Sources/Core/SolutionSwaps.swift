@@ -82,7 +82,94 @@ public func applySolutionSwaps2(_ pool: [String]) -> [String] {
     pool.map { SOLUTION_SWAPS_2[$0] ?? $0 }
 }
 
-/// Batch 1 then batch 2 — the pool as every runtime sees it from SOLUTION_SWAP_2_CUTOVER_DATE on.
+/// Batch 3 (founder, 2026-10-05: "Definitely get the British answers out, I don't
+/// care the date you choose"): British-spelled and British-vocabulary answers
+/// (COLOUR, THEATRE, CENTRE, YOGHURT, DUSTBIN, PETROL, JUMPER, BLOKE, CHEQUE,
+/// ADVERT, PENCE…) plus
+/// CRUMPET, which batch 2 itself dealt in place of FUCKING (British, and slang),
+/// and DUVET, batch 1's replacement for ASPEN (US: comforter).
+/// CRUMPET and DUVET are keyed on earlier replacements, so this table is applied
+/// AFTER batches 1 and 2. Its own table because builds carrying batches 1 and 2 are already in
+/// the stores (neither may grow). Cutover: the batch-2 date — the 10-09
+/// coordinated release (first builds carrying this table) has 5+ weeks to reach
+/// users first, and one shared date keeps a single "release before" deadline.
+/// It is its own constant so it can move later without touching batch 2.
+/// Replacements: same length, common American words, guessable, not current
+/// answers, not a batch-1/2 replacement, not British-spelled.
+/// The old words stay valid GUESSES.
+public let SOLUTION_SWAP_3_CUTOVER_DATE = "2026-11-16"
+
+public let SOLUTION_SWAPS_3: [String: String] = [
+    "LITRE": "PECAN",
+    "QUEUE": "LASSO",
+    "FIBRE": "GECKO",
+    "BLOKE": "LLAMA",
+    "JUMPER": "PIGLET",
+    "LEARNT": "TURNIP",
+    "RUMOUR": "WALRUS",
+    "CENTRE": "IGUANA",
+    "PLOUGH": "TOUCAN",
+    "PETROL": "BOBCAT",
+    "ARMOUR": "QUIVER",
+    "CHILLI": "KIMCHI",
+    "VAPOUR": "MAGPIE",
+    "HONOUR": "CATNIP",
+    "HUMOUR": "EGGNOG",
+    "AGEING": "LENTIL",
+    "COLOUR": "SORBET",
+    "LABOUR": "GELATO",
+    "FAVOUR": "CHURRO",
+    "FULFIL": "TAMALE",
+    "TUMOUR": "SALAMI",
+    "AMONGST": "PRETZEL",
+    "FLAVOUR": "POTLUCK",
+    "DUSTBIN": "TOOLBOX",
+    "DEFENCE": "HOEDOWN",
+    "PARLOUR": "SUNBEAM",
+    "LICENCE": "CARPOOL",
+    "REALISE": "TADPOLE",
+    "CALIBRE": "BOBSLED",
+    "CENTRED": "TUGBOAT",
+    "MOULDED": "COWGIRL",
+    "FUELLED": "HARPOON",
+    "THEATRE": "MARACAS",
+    "YOGHURT": "PAPRIKA",
+    "OFFENCE": "TREETOP",
+    "HARBOUR": "WARTHOG",
+    "ANALYSE": "WETSUIT",
+    "SULPHUR": "MUSKRAT",
+    "SPECTRE": "SUNFISH",
+    "PENCE": "GUMBO",
+    "CHEQUE": "WIDGET",
+    "ADVERT": "SUDOKU",
+    "DRAUGHT": "GUMDROP",
+    "QUEUING": "TRAPEZE",
+    "DUVET": "TAFFY",
+    "CRUMPET": "WALLABY",
+]
+
+/// Batch 3 only, IN PLACE (keys may be batch-2 replacements — apply after batch 2).
+public func applySolutionSwaps3(_ pool: [String]) -> [String] {
+    pool.map { SOLUTION_SWAPS_3[$0] ?? $0 }
+}
+
+/// How many swap batches a date has reached (0 before the first cutover). Batches apply in order.
+public func solutionSwapBatchesFor(_ date: String) -> Int {
+    if date < SOLUTION_SWAP_CUTOVER_DATE { return 0 }
+    if date < SOLUTION_SWAP_2_CUTOVER_DATE { return 1 }
+    return date < SOLUTION_SWAP_3_CUTOVER_DATE ? 2 : 3
+}
+
+/// The first `batches` swap batches, in order.
+public func applySolutionSwapBatches(_ pool: [String], _ batches: Int) -> [String] {
+    var out = pool
+    if batches >= 1 { out = applySolutionSwaps(out) }
+    if batches >= 2 { out = applySolutionSwaps2(out) }
+    if batches >= 3 { out = applySolutionSwaps3(out) }
+    return out
+}
+
+/// Every batch in order — the pool as every runtime sees it once the last cutover has passed.
 public func applyAllSolutionSwaps(_ pool: [String]) -> [String] {
-    applySolutionSwaps2(applySolutionSwaps(pool))
+    applySolutionSwapBatches(pool, 3)
 }
