@@ -250,13 +250,15 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 }
             }
 
-            // DEVELOPER (profiles.is_admin only): Season preview — Off (by date) or any registry season
+            // ADMIN (profiles.is_admin only; iOS parity): Season preview — Off (by date) or any registry season
             // (SeasonKit); every screen flips live (SeasonSkins.preview is observable).
             if (profile?.isAdmin == true) {
-                Section("DEVELOPER", SettingsAccent.theme) {
+                Section("ADMIN", SettingsAccent.theme) {
                     val ctx = androidx.compose.ui.platform.LocalContext.current
                     val seasons = remember { SeasonKit.registry(ctx) }
-                    Text("Season preview", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    // Inset like the tiles' own text (it sat flush on the card's left edge).
+                    Text("Season preview", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 4.dp))
                     ChoiceTile("Off (by date)", "Seasons switch on by the calendar", SettingsAccent.theme, active = SeasonSkins.preview == null,
                         preview = { SeasonPreviewW(null) }) { SeasonSkins.pick(null) }
                     seasons.forEach { s ->

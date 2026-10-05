@@ -64,6 +64,21 @@ class MainActivity : ComponentActivity() {
             } })
             return
         }
+        // DEBUG only: `--es dressDemo settings` shows Settings for the demo player as an admin (Season preview picker).
+        if (com.wordocious.app.ui.DressDemo.isSettings(intent?.getStringExtra("dressDemo"))) {
+            com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage, admin = true)
+            com.wordocious.app.data.ThemePref.load()
+            setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
+                WordociousTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                        Box(Modifier.fillMaxSize().navigationBarsPadding().statusBarsPadding()) {
+                            com.wordocious.app.ui.SettingsScreen(onDone = { finish() })
+                        }
+                    }
+                }
+            } })
+            return
+        }
         // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
         // starts arrive via onNewIntent below. Before this, the intent-filter
         // matched but the path was silently discarded.
