@@ -3,7 +3,7 @@ Same toolkit as make-sounds.py (soft sines, FM bells, filtered noise) plus a few
 (marimba, glockenspiel, music box, soft retro "chip", tiny voices). Never touches the shipped pack.
   python3 docs/design/brand/sounds/make-sound-options.py
     -> sounds/options/<name>.m4a (AAC 96k)  [WAV masters go to $WAV_DIR or a temp dir, not the repo]
-    -> sounds/lab.html  (self-contained: every current sound + every option as a base64 data URI)
+  then python3 docs/design/brand/sounds/build-lab.py -> sounds/lab.html (the Sound Lab, self-contained)
 To ship a pick: copy options/<name>.m4a to out/<event>.m4a, then run ship-sounds.sh."""
 import base64, json, os, subprocess, tempfile, html
 import numpy as np
@@ -277,190 +277,101 @@ b = at(b, glock(N(84), 0.45), 0.15, 0.6); b = at(b, glock(N(88), 0.5), 0.21, 0.6
 save('open-b', verb(b, 0.2), 0.4)
 
 # ════════════════════════════════════════════════════════════════════════════
-# The Sound Lab page
+# 4 · Alternatives for EVERY shipped sound (v2, founder 10-05: "the current sound next to other options").
+#   alt-<sound>-a = softer · -b = brighter · -c = more playful. Peaks match the shipped sound's.
 # ════════════════════════════════════════════════════════════════════════════
-CURRENT = [
-    ('tap', 'Every letter key and number pad, Hubbub hex letters + shuffle (pitch wobbles ±3%)'),
-    ('delete', 'Delete / backspace'),
-    ('flip', 'Each tile turning over in a guess reveal; the opponent\'s row landing in VS (softer)'),
-    ('press', 'Squishy button press-down: candy buttons, cast buttons, onboarding coach'),
-    ('release', 'Squishy button release (web + Android)'),
-    ('hop', 'Mascot hops: the intro\'s landing flourish, mascot builder, onboarding'),
-    ('invalid', 'Not a word / wrong move, every game'),
-    ('win', 'Win popup at the end of a solved game'),
-    ('lose', 'Loss popup / out of guesses'),
-    ('celebrate', 'Sweep, flawless, Gauntlet cleared, VS win, Pro welcome'),
-    ('streak', 'Streak bump on the result popup, streak shield, VS streaks'),
-    ('tick', 'Points counting up on the result popup (max 12 a second)'),
-    ('notify', 'THE "HUBBUB COIN": a found word in Hubbub, and every partial success (a Spyglass word, a Kindred group, a Muddle step…) at 70% volume; iOS in-app notices'),
-    ('unlock', 'Achievement unlocked popup (iOS also uses it for level-up)'),
-    ('vs', 'VS match intro stinger'),
-    ('whoosh', 'A popup or sheet opening: result popup, help, Go Pro, streak popups, onboarding tour'),
-]
-SECTIONS = [
-    dict(id='pangram', title='Hubbub pangram 1-up',
-         blurb='Johnny\'s idea: using all seven letters gets its own 1-up. All three start from the coin (B5 → E6 bell) so it still feels like Hubbub.',
-         items=[('pangram-a', 'A', 'Coin Cascade: the coin, then the arpeggio keeps climbing into a chime with a sparkle tail'),
-                ('pangram-b', 'B', 'Triple Coin Climb: three coin pairs stepping up, a little retro, ending on a crown chord'),
-                ('pangram-c', 'C', 'Sparkle Bloom: the coin, a quick run up, then a shimmering music-box chord')]),
-    dict(id='intro', title='Intro jingle',
-         blurb='Cut to the intro\'s beats: the W pops (0 s), one note per hero as each pops in (0.6 to 1.3 s), a lift as the row glides up (1.7 s), and the "ta-da" as it lands in the header (2.2 s) while the cast hops.',
-         items=[('intro-a', 'A', 'Marimba Parade: a warm marimba walks up, a glockenspiel "ta-da" on landing'),
-                ('intro-b', 'B', 'Music Box: a twinkly music-box tune with a harp-style run and a rolled chord'),
-                ('intro-c', 'C', 'Glock & Boing: the W lands with a boing, a zig-zag glock climb, slide-whistle, "ta-DA!"')]),
-    dict(id='laugh', title='Cast tap-to-laugh', grid='cast',
-         blurb='A tiny sound when you tap a hero in the header. Each one has its own personality. Kept quiet on purpose.',
-         sets=[('A', 'Giggles: little synthesized voices', 'laugh-a'), ('B', 'Toy chimes: each hero\'s own little instrument', 'laugh-b')]),
-    dict(id='tiers', title='Hubbub coin tiers (longer words)', grid='tiers',
-         blurb='The coin gets bigger for longer words: 4, 5, 6, 7 and 8+ letters.',
-         sets=[('A', 'Pitch climb: the same coin, higher for longer words', 'tier-a'),
-               ('B', 'Coin stack: one more coin per extra letter', 'tier-b')]),
-    dict(id='levelup', title='Level-up fanfare',
-         blurb='When your XP crosses into a new level.',
-         items=[('levelup-a', 'A', 'Toy Fanfare: a marimba pickup into a bright glockenspiel chord'),
-                ('levelup-b', 'B', 'Rising Stairs: a glock scale up into a shimmering chord')]),
-    dict(id='achieve', title='Achievement unlocked',
-         blurb='Alternatives to today\'s "unlock" (play it above to compare).',
-         items=[('achieve-a', 'A', 'Badge Shine: a soft two-chord reveal with sparkle'),
-                ('achieve-b', 'B', 'Treasure Pop: a bubbly pop, a quick arpeggio, a twinkle')]),
-    dict(id='open', title='Game open',
-         blurb='A soft "page arriving" when a game opens. Quieter than everything else.',
-         items=[('open-a', 'A', 'Page Breeze: a light breeze and a two-note chime'),
-                ('open-b', 'B', 'Page Flutter: three paper flicks and a glock up-third')]),
-]
-CAST_COLORS = dict(w='#7c3aed', o1='#f59e0b', r='#94a3b8', d='#2563eb', o2='#ec4899', c='#0891b2', i='#059669', o3='#f97316', u='#7e22ce', s='#ca8a04')
-
-def uri(path):
-    with open(path, 'rb') as f: return 'data:audio/mp4;base64,' + base64.b64encode(f.read()).decode()
-AUDIO = {}
-def reg(key, path): AUDIO[key] = uri(path); return key
-E = html.escape
-def btn(key, label, sub='', style=''):
-    return (f'<button class="play" data-snd="{key}" style="{style}" aria-label="Play {E(label)}">'
-            f'<span class="ico" aria-hidden="true"></span><span class="lbl">{E(label)}</span>'
-            + (f'<span class="sub">{E(sub)}</span>' if sub else '') + '</button>')
-
-parts = []
-cur = []
-for name, where in CURRENT:
-    k = reg(f'cur-{name}', os.path.join(CUR, f'{name}.m4a'))
-    cur.append(f'<div class="row{" hot" if name == "notify" else ""}">{btn(k, name)}<p>{E(where)}</p></div>')
-parts.append(f'<section id="current"><h2>Current sounds</h2><p class="blurb">The 16 sounds in the app today, and where each one plays.</p><div class="rows">{"".join(cur)}</div></section>')
-for s in SECTIONS:
-    body = ''
-    if 'items' in s:
-        for key, letter, desc in s['items']:
-            k = reg(key, os.path.join(OPT, f'{key}.m4a'))
-            head, _, rest = desc.partition(': '); rest = rest[:1].upper() + rest[1:]
-            body += f'<div class="opt">{btn(k, letter)}<div><h3>{E(head)}</h3><p>{E(rest)}</p></div></div>'
-    else:
-        for letter, desc, prefix in s['sets']:
-            head, _, rest = desc.partition(': '); rest = rest[:1].upper() + rest[1:]
-            cells = ''
-            if s['grid'] == 'cast':
-                for cid, L, who in CAST:
-                    k = reg(f'{prefix}-{cid}', os.path.join(OPT, f'{prefix}-{cid}.m4a'))
-                    cells += btn(k, L, who, f'--c:{CAST_COLORS[cid]}')
-            else:
-                for tier in TIERS:
-                    k = reg(f'{prefix}-{tier}', os.path.join(OPT, f'{prefix}-{tier}.m4a'))
-                    cells += btn(k, tier, 'letters')
-            body += (f'<div class="set"><div class="sethead"><span class="badge">{letter}</span><div><h3>{E(head)}</h3><p>{E(rest)}</p></div></div>'
-                     f'<div class="grid {s["grid"]}">{cells}</div></div>')
-    parts.append(f'<section id="{s["id"]}"><h2>{E(s["title"])}</h2><p class="blurb">{E(s["blurb"])}</p>{body}</section>')
-
-nav = ''.join(f'<a href="#{i}">{E(n)}</a>' for i, n in [('current', 'Current')] + [(s['id'], s['title'].split(' (')[0]) for s in SECTIONS])
-PAGE = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Wordocious Sound Lab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#f7eefa;--bg2:#f1d7f6;--ink:#2b1640;--muted:#6f5a86;--tile:#ffffffcc;--tile2:#efe2f7;--hot:#fff4d6;
---brand:#7c3aed;--brand2:#c026d3;--on:#fff;--shadow:0 6px 0 #5b21b6,0 10px 22px #7c3aed40;--shadow2:0 3px 0 #00000026}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#160d22;--bg2:#24123a;--ink:#f4ecff;--muted:#b9a6d3;--tile:#2a1a40cc;--tile2:#2f1d47;--hot:#3a2a14;--shadow:0 6px 0 #3b0f86,0 10px 22px #00000066;--shadow2:0 3px 0 #00000066}}
-:root[data-theme="dark"]{--bg:#160d22;--bg2:#24123a;--ink:#f4ecff;--muted:#b9a6d3;--tile:#2a1a40cc;--tile2:#2f1d47;--hot:#3a2a14;--shadow:0 6px 0 #3b0f86,0 10px 22px #00000066;--shadow2:0 3px 0 #00000066}
-*{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,var(--bg2),var(--bg) 70%) fixed,var(--bg);color:var(--ink);font:600 16px/1.45 Nunito,ui-rounded,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
-.wrap{max-width:860px;margin:0 auto;padding:20px 16px 80px}
-header{text-align:center;padding:12px 0 6px}
-header h1{margin:0;font-weight:900;font-size:clamp(30px,7vw,46px);letter-spacing:-.5px;background:linear-gradient(90deg,var(--brand),var(--brand2));-webkit-background-clip:text;background-clip:text;color:transparent}
-header p{margin:6px auto 0;max-width:560px;color:var(--muted)}
-nav{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;padding:10px 2px;margin:8px -16px 6px;padding-left:16px;padding-right:16px;background:linear-gradient(var(--bg) 70%,transparent);scrollbar-width:none}
-nav::-webkit-scrollbar{display:none}
-nav a{flex:none;text-decoration:none;color:var(--brand);background:var(--tile2);padding:8px 14px;border-radius:999px;font-weight:800;font-size:14px}
-section{margin:30px 0}
-h2{font-weight:900;font-size:24px;margin:0 0 4px}
-h3{margin:0;font-size:17px;font-weight:900}
-.blurb{margin:0 0 14px;color:var(--muted)}
-p{margin:2px 0 0}
-.rows{display:grid;gap:8px}
-.row{display:flex;align-items:center;gap:14px;background:var(--tile);padding:10px 14px 10px 10px;border-radius:20px}
-.row.hot{background:var(--hot)}
-.row p{color:var(--muted);font-size:15px}
-.row .play{min-width:132px}
-.opt{display:flex;align-items:center;gap:16px;background:var(--tile);padding:12px 16px 12px 12px;border-radius:22px;margin-bottom:10px}
-.opt .play{width:84px;height:84px;border-radius:26px;flex-direction:column;gap:2px;justify-content:center}
-.opt .play .lbl{font-size:26px}
-.opt p,.sethead p{color:var(--muted);font-size:15px}
-.set{background:var(--tile);border-radius:22px;padding:14px;margin-bottom:12px}
-.sethead{display:flex;gap:12px;align-items:center;margin-bottom:12px}
-.badge{flex:none;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-weight:900;font-size:20px;color:var(--on);background:linear-gradient(135deg,var(--brand),var(--brand2))}
-.grid{display:grid;gap:10px}
-.grid.cast{grid-template-columns:repeat(5,1fr)}
-.grid.tiers{grid-template-columns:repeat(5,1fr)}
-.grid .play{flex-direction:column;gap:0;min-height:76px;padding:8px 4px;border-radius:20px}
-.grid .play .lbl{font-size:24px;line-height:1.1}
-.grid .play .sub{font-size:11px;font-weight:700;opacity:.9;line-height:1.15;text-align:center}
-.grid.cast .play{background:var(--c);box-shadow:0 5px 0 color-mix(in srgb,var(--c) 60%,#000),0 8px 16px #0002}
-.grid .play .ico{display:none}
-.play{appearance:none;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:10px 18px;border-radius:999px;
- color:var(--on);font:900 18px/1 Nunito,ui-rounded,system-ui,sans-serif;background:linear-gradient(160deg,#9b5cf6,var(--brand) 55%,#6d28d9);box-shadow:var(--shadow);
- transition:transform .12s cubic-bezier(.3,1.4,.5,1),box-shadow .12s;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-.play:active{transform:translateY(4px) scale(.98);box-shadow:var(--shadow2)}
-.play:focus-visible{outline:3px solid var(--brand2);outline-offset:3px}
-.play .ico{width:0;height:0;border-left:13px solid currentColor;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:2px}
-.play.playing{background:linear-gradient(160deg,#f0abfc,var(--brand2));animation:pulse .5s ease-in-out infinite alternate}
-.play.playing .ico{border:0;width:12px;height:12px;border-radius:3px;background:currentColor;margin:0 1px}
-@keyframes pulse{to{transform:scale(1.04)}}
-@media (prefers-reduced-motion:reduce){.play.playing{animation:none}}
-footer{color:var(--muted);font-size:14px;text-align:center;margin-top:40px}
-@media (max-width:560px){
- .row{flex-direction:column;align-items:stretch;gap:6px;padding:10px}
- .row .play{width:100%;justify-content:center}
- .row p{padding:0 6px 4px}
- .opt{gap:12px;padding:10px}
- .opt .play{width:72px;height:72px}
- .grid.cast,.grid.tiers{grid-template-columns:repeat(5,1fr);gap:7px}
- .grid .play{min-height:64px;border-radius:16px}
- .grid .play .sub{display:none}
-}
-</style></head><body><div class="wrap">
-<header><h1>Sound Lab</h1><p>Every Wordocious sound, plus new options to pick from. Tap to listen (one at a time). Tell Claude the letters you like, e.g. "pangram B, intro A, laughs B".</p></header>
-<nav>__NAV__</nav>
-__BODY__
-<footer>Synthesized in code: docs/design/brand/sounds/make-sound-options.py. Nothing here ships until picked.</footer>
-</div>
-<script>
-const SND = __AUDIO__;
-const els = {};
-for (const [k, src] of Object.entries(SND)) { const a = new Audio(); a.preload = 'auto'; a.src = src; els[k] = a; }
-window.__labAudio = els;
-let cur = null, curBtn = null;
-function stop() {
-  if (cur) { try { cur.pause(); cur.currentTime = 0; } catch (e) {} }
-  if (curBtn) curBtn.classList.remove('playing');
-  cur = null; curBtn = null;
-}
-document.addEventListener('click', (e) => {
-  const b = e.target.closest('button.play'); if (!b) return;
-  const a = els[b.dataset.snd]; if (!a) return;
-  const same = cur === a; stop(); if (same) return;   // tapping the playing one stops it
-  cur = a; curBtn = b; b.classList.add('playing');
-  a.onended = () => { if (cur === a) stop(); };
-  const p = a.play(); if (p && p.catch) p.catch(() => stop());
-});
-</script></body></html>"""
-out = PAGE.replace('__NAV__', nav).replace('__BODY__', '\n'.join(parts)).replace('__AUDIO__', json.dumps(AUDIO))
-with open(os.path.join(HERE, 'lab.html'), 'w') as f: f.write(out)
-print('options:', len(MADE), 'clips;', 'lab.html', round(len(out) / 1e6, 2), 'MB;', len(AUDIO), 'audio;', 'wav masters in', WAV)
-for k, v in MADE.items(): print(f'  {k:16s} {v["dur"]:.2f}s  rms {v["rms"]:.3f}')
+PK = dict(tap=.55, delete=.5, flip=.5, press=.5, release=.35, hop=.5, invalid=.55, win=.7, lose=.55, celebrate=.6,
+          streak=.65, tick=.35, notify=.55, unlock=.65, vs=.6, whoosh=.3)
+def alt(name, k, sig, v=0.0, pk=None): save(f'alt-{name}-{k}', verb(sig, v) if v else sig, pk or PK[name])
+def mix(a, b, g=1.0): return at(np.array(a, dtype=float), b, 0, g)
+def glide(f0, f1, d, curve=7, a=0.002): return sweep(f0, f1, d) * env(int(SR * d), a, d, curve)
+# tap
+alt('tap', 'a', lp(glide(520, 430, 0.07, 7, 0.004), 1800))                                  # felt
+alt('tap', 'b', mix(bell(1480, 0.06, 2.0, 0.5, 9), bell(2960, 0.03, 2.0, 0.3, 10), 0.3))        # glass
+alt('tap', 'c', glide(480, 900, 0.055, 6))                                                    # bubble
+# delete
+alt('delete', 'a', lp(glide(380, 300, 0.09, 6, 0.004), 1500))
+alt('delete', 'b', at(bell(1320, 0.05, 2.0, 0.4, 9), bell(990, 0.06, 2.0, 0.4, 9), 0.035))
+alt('delete', 'c', glide(820, 340, 0.08, 5))
+# flip
+alt('flip', 'a', lp(noise(0.06, 600, 2500, 14) * 0.5 + soft(880, 0.06, 9), 3000))             # soft card
+alt('flip', 'b', mix(bell(1660, 0.06, 2.0, 0.5, 9), noise(0.03, 3000, 7000, 25), 0.2))            # glass click
+alt('flip', 'c', marimba(N(84), 0.09))                                                         # wood block
+# press / release
+alt('press', 'a', lp(glide(200, 480, 0.08, 6, 0.004), 1400))
+alt('press', 'b', glide(400, 1250, 0.06, 6))
+x = t(0.09); alt('press', 'c', np.sin(2*np.pi*np.cumsum(600 + 300*x/0.09 + 40*np.sin(2*np.pi*35*x))/SR) * env(len(x), 0.002, 0.09, 5))   # rubber squeak
+alt('release', 'a', lp(glide(700, 900, 0.05, 8, 0.003), 2000))
+alt('release', 'b', glide(1200, 1850, 0.04, 8))
+alt('release', 'c', glide(900, 1500, 0.06, 6) * (1 + 0.3 * np.sin(2*np.pi*40*t(0.06))))
+# hop
+alt('hop', 'a', lp(boing(0.18, 240, 400), 1500))
+alt('hop', 'b', boing(0.15, 420, 820))
+b = at(boing(0.16, 260, 560), boing(0.12, 300, 520) * 0.6, 0.15); alt('hop', 'c', b)         # boing-oing
+# invalid (always kind)
+alt('invalid', 'a', lp(glide(330, 250, 0.22, 4, 0.006), 1200))                                # soft "hmm"
+b = at(bell(N(69), 0.2, 2.0, 0.4, 5), bell(N(66), 0.25, 2.0, 0.4, 5), 0.11); alt('invalid', 'b', lp(b, 4000), 0.12)
+alt('invalid', 'c', voice(420, 330, 0.26, 2, 0.45), pk=0.45)                                            # "uh-uh"
+# win
+b = np.zeros(1)
+for i, m in enumerate([72, 76, 79, 84]): b = at(b, marimba(N(m), 0.5), i * 0.09)
+b = at(b, musicbox(N(88), 0.7), 0.36, 0.6); b = sparkle(b, 0.4, 0.4, 6, 96, 108, 0.1, kind='bell')
+alt('win', 'a', b, 0.22)
+b = np.zeros(1)
+for i, m in enumerate([84, 88, 91, 96]): b = at(b, glock(N(m), 0.7), i * 0.075)
+b = sparkle(b, 0.3, 0.55, 14, 96, 110, 0.2); alt('win', 'b', b, 0.25)
+b = at(boing(0.16, 280, 600), np.zeros(1), 0)
+for i, m in enumerate([79, 84]): b = at(b, musicbox(N(m), 0.4), 0.15 + i * 0.12, 0.8)
+for m in [84, 88, 91, 96]: b = at(b, musicbox(N(m), 0.9), 0.42, 0.45)
+b = sparkle(b, 0.48, 0.4, 7, 98, 110, 0.12); alt('win', 'c', b, 0.22)
+# lose (kind, never sad-trombone)
+b = np.zeros(1)
+for i, m in enumerate([79, 76, 72]): b = at(b, musicbox(N(m), 0.6), i * 0.2, 0.8)
+alt('lose', 'a', b, 0.2)
+b = np.zeros(1)
+for i, m in enumerate([84, 79, 76]): b = at(b, glock(N(m), 0.5), i * 0.14, 0.7)
+b = at(b, glock(N(79), 0.7), 0.48, 0.6); alt('lose', 'b', b, 0.2)                               # ends on a hopeful lift
+x = t(0.5); f = 520 * (390 / 520) ** (x / 0.5) * (1 + 0.02 * np.sin(2*np.pi*6*x))
+alt('lose', 'c', lp(np.sin(2*np.pi*np.cumsum(f)/SR) * np.sin(np.pi * x / 0.5) ** 0.7 * np.exp(-1.5 * x), 1500), 0.15, pk=0.4)   # soft "aww" (sustained, so it sits lower)
+# celebrate
+b = np.zeros(int(SR * 1.2))
+for m, s0 in [(84, 0), (88, 0.12), (91, 0.24), (96, 0.36), (100, 0.5)]: b = at(b, musicbox(N(m), 0.8), s0, 0.6)
+b = sparkle(b, 0.2, 0.8, 12, 96, 110, 0.12, kind='bell'); alt('celebrate', 'a', b, 0.3)
+b = np.zeros(int(SR * 1.3)); b = at(b, noise(1.0, 4000, 11000, 3) * 0.1, 0)
+b = sparkle(b, 0, 1.0, 34, 88, 108, 0.35); alt('celebrate', 'b', b, 0.3)
+x = t(0.4); f = 500 * (1400 / 500) ** (x / 0.4); b = np.sin(2*np.pi*np.cumsum(f)/SR) * np.sin(np.pi*x/0.4) ** 1.5 * 0.4
+for i in range(6): b = at(b, bloop(400 + 80*i, 900 + 120*i, 0.06), 0.4 + i * 0.07, 0.4)
+b = sparkle(b, 0.45, 0.7, 16, 92, 108, 0.25); alt('celebrate', 'c', lp(b, 9000), 0.25)
+# streak
+x = t(0.4); w = noise(0.4, 250, 1800, 2) * np.sin(np.pi * x / 0.4)
+b = at(w * 0.5, marimba(N(81), 0.6), 0.3); alt('streak', 'a', b, 0.2)
+x = t(0.4); w = noise(0.4, 600, 4000, 2) * np.sin(np.pi * x / 0.4)
+b = at(w * 0.5, glock(N(88), 0.6), 0.3); b = at(b, glock(N(93), 0.6), 0.37, 0.7); b = sparkle(b, 0.42, 0.3, 5, 100, 110, 0.15); alt('streak', 'b', b, 0.22)
+b = at(glide(180, 700, 0.3, 2, 0.02) * 0.5, boing(0.15, 500, 900), 0.26); b = at(b, bell(N(88), 0.5, 2.0, 0.8, 4), 0.34, 0.8); alt('streak', 'c', b, 0.2)
+# tick
+alt('tick', 'a', soft(1400, 0.04, 9))
+alt('tick', 'b', glock(N(96), 0.05))
+alt('tick', 'c', chip(1760, 0.035, 7))
+# notify = the Hubbub coin (B5 → E6)
+b = at(musicbox(N(83), 0.35), musicbox(N(88), 0.5), 0.12); alt('notify', 'a', b, 0.2)
+b = at(glock(N(83), 0.3), glock(N(88), 0.5), 0.1); b = sparkle(b, 0.18, 0.2, 3, 100, 110, 0.15); alt('notify', 'b', b, 0.2)
+b = at(chip(N(83), 0.08), chip(N(88), 0.4, 4), 0.08); alt('notify', 'c', b, 0.12)            # 8-bit coin
+# unlock — A/B are the achievement options above; C = a playful one
+b = boing(0.15, 300, 640)
+for i, m in enumerate([79, 84, 88, 91]): b = at(b, glock(N(m), 0.5), 0.12 + i * 0.06, 0.8)
+b = at(b, musicbox(N(96), 0.8), 0.38, 0.6); b = sparkle(b, 0.42, 0.45, 8, 98, 110, 0.15); alt('unlock', 'c', b, 0.24)
+# vs
+b = at(lp(glide(90, 60, 0.25, 4), 600) * 0.8, marimba(N(64), 0.5), 0.1); alt('vs', 'a', b, 0.15)
+b = at(noise(0.18, 1500, 7000, 6) * 0.4, glock(N(76), 0.5), 0.1); b = at(b, glock(N(83), 0.6), 0.22); alt('vs', 'b', b, 0.2)
+b = at(bell(N(84), 0.3, 3.5, 0.6, 5), bell(N(84), 0.5, 3.5, 0.6, 4), 0.14); b = at(b, boing(0.16, 260, 560), 0.34, 0.7); alt('vs', 'c', b, 0.15)   # ding-ding!
+# whoosh
+x = t(0.26); alt('whoosh', 'a', noise(0.26, 300, 2200, 2) * np.sin(np.pi * x / 0.26))
+x = t(0.2); alt('whoosh', 'b', at(noise(0.2, 1200, 6500, 2) * np.sin(np.pi * x / 0.2), musicbox(N(96), 0.25) * 0.25, 0.14))
+x = t(0.2); alt('whoosh', 'c', at(noise(0.2, 600, 5000, 2) * np.sin(np.pi * x / 0.2), bloop(500, 1100, 0.06) * 0.5, 0.17))
+# tabs (silent today): two tiny ideas
+alt_tab = {'a': lp(glide(640, 600, 0.05, 8, 0.003), 2200), 'b': bell(N(91), 0.06, 2.0, 0.3, 9)}
+for k, s in alt_tab.items(): save(f'tab-{k}', s, 0.35)
+# pocket games (silent today): a friend's move arriving
+b = at(musicbox(N(88), 0.3), musicbox(N(84), 0.4), 0.09); save('pocket-turn-a', verb(b, 0.15), 0.45)
+b = at(bloop(350, 800, 0.07), glock(N(91), 0.35), 0.06, 0.6); save('pocket-turn-b', verb(b, 0.15), 0.45)
+print('options:', len(MADE), 'clips; wav masters in', WAV)
