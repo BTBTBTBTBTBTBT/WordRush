@@ -335,7 +335,7 @@ internal fun ModeCardView(
             ) {
                 Icon(
                     androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords),
-                    contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp),
+                    contentDescription = null, tint = androidx.compose.material3.LocalContentColor.current, modifier = Modifier.size(15.dp),
                 )
             }
         }

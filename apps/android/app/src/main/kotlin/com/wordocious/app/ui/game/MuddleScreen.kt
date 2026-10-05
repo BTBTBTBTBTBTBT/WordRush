@@ -1129,7 +1129,10 @@ private fun HintCircle(icon: ImageVector, description: String, onClick: () -> Un
             color = if (icon == Icons.Filled.Visibility) com.wordocious.app.ui.CandyColor.PURPLE else com.wordocious.app.ui.CandyColor.AMBER,
             modifier = Modifier.padding(bottom = 2.dp),
         ) {
-            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(d * 0.5f))
+            // The helper circle: the family art when the icon has one, else the vector in the deep tint.
+            val art = com.wordocious.app.ui.FamIcon.of(icon)
+            if (art != null) com.wordocious.app.ui.FamIconImage(art, androidx.compose.material3.LocalContentColor.current, d * 0.56f)
+            else Icon(icon, contentDescription = null, tint = androidx.compose.material3.LocalContentColor.current, modifier = Modifier.size(d * 0.5f))
         }
     }
 }

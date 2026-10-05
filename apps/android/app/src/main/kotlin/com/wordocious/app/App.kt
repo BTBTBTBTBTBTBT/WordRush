@@ -22,6 +22,8 @@ class App : Application() {
             runCatching { com.wordocious.app.ui.MascotComposer.prewarm(this@App) }
             // FINISH_SPEC BJ15: cast button skins + art labels (decoded + pre-scaled before any button paints).
             runCatching { com.wordocious.app.ui.CastArt.prewarm(this@App, resources.displayMetrics.density) }
+            // The button family: helper / quiet light maps, the key light map, helper + chrome icons.
+            runCatching { com.wordocious.app.ui.FamilyArt.prewarm(this@App) }
             // FINISH_SPEC BJ16: popup / sheet heading lettering, pre-scaled to its display size.
             runCatching { com.wordocious.app.ui.HeadingArtCache.prewarm(this@App, resources.displayMetrics.density) }
             // FINISH_SPEC BJ17: the GO PRO sign cast (Stats locked sections + the free finish upsell).

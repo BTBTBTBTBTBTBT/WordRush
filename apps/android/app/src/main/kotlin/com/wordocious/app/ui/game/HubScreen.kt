@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -443,30 +444,40 @@ private fun Chip(session: HubSession, w: String, dim: Boolean = false) =
     HubChip(w, pangram = w in session.state.pangrams, revealed = w in session.state.revealed, dim = dim, bonus = hubIsBonus(session.state.bonusFound, w))
 
 /** A found word: a soft tinted chip (A1); a pangram a glossy capsule in the accent (J3); a revealed word violet;
- *  a rarer word (scores, outside the N/M words count) the plain chip with a small "BONUS" tag. */
+ *  a rarer word (scores, outside the N/M words count) the plain chip wearing the corner gem. */
 @Composable
 private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean = false, bonus: Boolean = false) {
     val tone = if (revealed && !pangram) Color(0xFF8B5CF6) else HUB_ACCENT
-    androidx.compose.foundation.layout.Row(
-        Modifier.alpha(if (dim) 0.6f else 1f)
-            .then(if (pangram) Modifier.glossyCapsule(HUB_ACCENT, glow = 0.6f) else Modifier.softChip(tone))
-            .padding(start = 9.dp, end = 9.dp, top = 3.dp, bottom = if (pangram) 5.5.dp else 3.dp)
-            .then(if (pangram) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, pangram" }
-                else if (bonus) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, bonus word" } else Modifier),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp),
+    val rare = bonus && !pangram
+    // A rarer word (scores, outside the N/M count) wears the corner gem (button family: art_fam_cic_gem,
+    // 13 dp, 6 right / 7 up outside the chip's top-right corner) — no text tag. Spoken "WORD, rare word".
+    Box(
+        Modifier.then(
+            if (pangram) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, pangram" }
+            else if (rare) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, rare word" } else Modifier,
+        ),
     ) {
-        Text(
-            w, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-            color = if (pangram) Color.White else if (revealed) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
-            modifier = if (pangram || bonus) Modifier.clearAndSetSemantics { } else Modifier,
-        )
-        if (bonus && !pangram) Text(
-            "BONUS", fontSize = 7.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = WTheme.textMuted,
-            modifier = Modifier.clearAndSetSemantics { },
-        )
-        // AL addendum 2: a pangram wears the gold star art, not a ★ glyph.
-        if (pangram) com.wordocious.app.ui.GlyphArtImage(com.wordocious.app.ui.GlyphArt.STAR, 12.dp)
+        androidx.compose.foundation.layout.Row(
+            Modifier.alpha(if (dim) 0.6f else 1f)
+                .then(if (pangram) Modifier.glossyCapsule(HUB_ACCENT, glow = 0.6f) else Modifier.softChip(tone))
+                .padding(start = 9.dp, end = 9.dp, top = 3.dp, bottom = if (pangram) 5.5.dp else 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp),
+        ) {
+            Text(
+                w, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                color = if (pangram) Color.White else if (revealed) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
+                modifier = if (pangram || rare) Modifier.clearAndSetSemantics { } else Modifier,
+            )
+            // AL addendum 2: a pangram wears the gold star art, not a ★ glyph.
+            if (pangram) com.wordocious.app.ui.GlyphArtImage(com.wordocious.app.ui.GlyphArt.STAR, 12.dp)
+        }
+        if (rare) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(com.wordocious.app.ui.FamChrome.GEM.res), contentDescription = null,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-7).dp).size(13.dp, 10.75.dp),
+            )
+        }
     }
 }
 
@@ -579,7 +590,8 @@ private fun HubBoard(session: HubSession) {
             // The chips wrap newest-first and fill the rest, scrolling once they overflow.
             Text(HUB_FOUND_LABEL, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                // Room above the first row and between rows for a rare word's corner gem (7 dp up).
+                FlowRow(Modifier.fillMaxWidth().padding(top = 7.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (w in pending) PendingHintChip(w)
                     // Every accepted word, newest first, in the order found (the event log spans both lists).
                     for (w in hubFoundInOrder(s).asReversed()) Chip(session, w)
@@ -722,7 +734,7 @@ internal fun HubFinishedBoard(r: com.wordocious.core.HubReconstruction) {
         HubHoneycomb(r.letters[0], o, 46.dp, HUB_ACCENT, enabled = false, state = if (r.solved) TrayState.WON else TrayState.LOST, trayPadding = 8.dp) {}
         val words = (r.found + r.bonusFound).distinct().sorted()
         Text("WORDS FOUND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
-        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        FlowRow(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             for (w in words) HubChip(w, pangram = w.toSet().size == 7, revealed = w in r.revealed, bonus = hubIsBonus(r.bonusFound, w))
         }
     }

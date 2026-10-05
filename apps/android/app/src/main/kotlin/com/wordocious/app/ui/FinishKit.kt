@@ -508,7 +508,7 @@ fun CandyLabel(text: String, fontSize: TextUnit, ink: Color = Color.White, outli
 }
 
 /**
- * A8 THE button (every action button): a pill (radius = height / 2) filled with
+ * Now routed to the button family (see the body). Was — A8 THE button (every action button): a pill (radius = height / 2) filled with
  * [color]'s vertical gradient, a thin gold outline just inside the edge, a thick
  * darker bottom lip plus a soft drop shadow, a glossy white highlight across the top
  * half, and a white Nunito Black label with a dark-purple outline (optional leading
@@ -536,91 +536,42 @@ fun CandyButton(
      */
     subtitle: String? = null,
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val still = WTheme.reducedMotion
-    val press by androidx.compose.animation.core.animateFloatAsState(
-        if (pressed && !still) 1f else 0f,
-        if (pressed) androidx.compose.animation.core.tween(70)
-        else androidx.compose.animation.core.spring(dampingRatio = 0.3f, stiffness = 700f),
-        label = "candyPress",
-    )
-    val shape = RoundedCornerShape(50)
-    val lip = size.lip
-    Box(
-        modifier
-            .height(size.height + lip)
-            .graphicsLayer {
-                val s = 1f - 0.08f * press
-                scaleX = s; scaleY = s
-                alpha = if (enabled) 1f else 0.55f
-            }
-            .squishFeedback(interaction)
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
-            .semantics(mergeDescendants = true) {
-                role = Role.Button
-                this.contentDescription = contentDescription
-            },
-    ) {
-        // The lip (and the soft drop shadow under it): the whole pill in the darker color.
-        Box(
-            Modifier.matchParentSize().padding(top = lip)
-                .shadow(6.dp, shape, clip = false, ambientColor = color.lip.copy(alpha = 0.3f), spotColor = color.lip.copy(alpha = 0.45f))
-                .clip(shape).background(color.lip),
+    // The button family (docs/design/brand/buttons/family/README.md, 10-05): one switch here moves every call site.
+    //   SMALL → the HELPER pill (the game accent's wash; PEACH off a game → the small QUIET pill)
+    //   PEACH at MEDIUM / LARGE → the QUIET pill · any other MEDIUM / LARGE → the cast primary.
+    val famIcon = icon?.let { FamIcon.of(it) }
+    val glyph: (@Composable () -> Unit)? = leading
+        ?: if (icon != null && famIcon == null) candyGlyphSlot(icon, 14.dp) else null
+    val inGame = LocalGameTint.current != null
+    when {
+        size == CandySize.SMALL && color == CandyColor.PEACH && !inGame -> QuietButton(
+            text, onClick, modifier, size = CandySize.SMALL, icon = famIcon, leading = glyph, trailing = trailing,
+            fill = fill, enabled = enabled, contentDescription = contentDescription,
         )
-        // The face sits a lip's height above the bottom and sinks into the lip on press.
-        Box(
-            Modifier
-                .then(if (fill) Modifier.fillMaxWidth() else Modifier)
-                .height(size.height)
-                .graphicsLayer { translationY = lip.toPx() * 0.6f * press }
-                .clip(shape)
-                .background(Brush.verticalGradient(listOf(color.top, color.bottom)))
-                .drawWithContent {
-                    // The gloss: white 45% → 0% across the top half, inset from the edges.
-                    val h = this.size.height
-                    val w = this.size.width
-                    val inset = h * 0.12f
-                    drawRoundRect(
-                        Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0f)),
-                            startY = inset * 0.6f, endY = h * 0.52f,
-                        ),
-                        topLeft = Offset(inset * 1.4f, inset * 0.6f),
-                        size = Size(w - inset * 2.8f, h * 0.46f),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(h * 0.25f),
-                    )
-                    drawContent()
-                }
-                .border(size.outline, CANDY_GOLD, shape)
-                .padding(horizontal = size.padH),
-            contentAlignment = Alignment.Center,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                if (icon != null) CandyGlyph(icon, size.icon, color.ink, color.outlined)
-                leading?.invoke()
-                if (subtitle == null) {
-                    Box(Modifier.weight(1f, fill = false)) { CandyLabel(text, fontSize ?: size.fontSize, color.ink, color.outlined) }
-                } else {
-                    // Two lines in the one-line height: the label a step smaller, the subtitle ~70% of it.
-                    val main = fontSize ?: (size.fontSize.value - 1f).sp
-                    Column(Modifier.weight(1f, fill = false), horizontalAlignment = Alignment.CenterHorizontally) {
-                        CandyLabel(text, main, color.ink, color.outlined)
-                        CandyLabel(subtitle, (main.value * 0.72f).sp, color.ink, color.outlined)
-                    }
-                }
-                if (trailing != null) CandyLabel(trailing, fontSize ?: size.fontSize, color.ink, color.outlined)
-            }
-        }
+        size == CandySize.SMALL -> HelperButton(
+            text, onClick, modifier,
+            tint = if (color == CandyColor.PURPLE || color == CandyColor.PEACH) null else color.helperTint(),
+            icon = famIcon, leading = glyph, trailing = trailing, fill = fill, enabled = enabled,
+            contentDescription = contentDescription,
+        )
+        color == CandyColor.PEACH -> QuietButton(
+            text, onClick, modifier, size = size, icon = famIcon, leading = glyph, trailing = trailing,
+            fill = fill, enabled = enabled, contentDescription = contentDescription,
+        )
+        else -> CastButton(
+            text, onClick, modifier, color = color.cast(), size = size.cast, fill = fill, enabled = enabled,
+            contentDescription = contentDescription, leading = leading, subtitle = subtitle,
+        )
     }
 }
 
+/** A candy glyph (no art in the family) drawn in the helper's ink (LocalContentColor). */
+private fun candyGlyphSlot(icon: CandyIcon, size: Dp): @Composable () -> Unit =
+    { CandyGlyph(icon, size, androidx.compose.material3.LocalContentColor.current, outlined = false) }
+
 /**
- * A8 the small round candy button (40 dp circle): the same gradient, gold outline,
- * lip, gloss and squish around an [icon] (or any [content]).
+ * A8 the small round candy button, now the button family's helper CIRCLE (fill + light map) around an
+ * [icon] (or any [content], drawn with LocalContentColor = the deep tint).
  */
 @Composable
 fun CandyRoundButton(
@@ -632,48 +583,16 @@ fun CandyRoundButton(
     icon: CandyIcon? = null,
     content: (@Composable () -> Unit)? = null,
 ) {
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    val still = WTheme.reducedMotion
-    val press by androidx.compose.animation.core.animateFloatAsState(
-        if (pressed && !still) 1f else 0f,
-        if (pressed) androidx.compose.animation.core.tween(70)
-        else androidx.compose.animation.core.spring(dampingRatio = 0.3f, stiffness = 700f),
-        label = "candyRoundPress",
+    // The button family: the icon-only HELPER circle (the game accent's wash; other candy colors keep their hue).
+    val famIcon = icon?.let { FamIcon.of(it) }
+    HelperButton(
+        null, onClick, modifier,
+        tint = if (color == CandyColor.PURPLE || color == CandyColor.PEACH) null else color.helperTint(),
+        icon = famIcon,
+        leading = content
+            ?: if (icon != null && famIcon == null) candyGlyphSlot(icon, diameter * 0.46f) else null,
+        circle = true, height = diameter, contentDescription = contentDescription,
     )
-    val lip = 4.dp
-    Box(
-        modifier.size(diameter, diameter + lip)
-            .graphicsLayer { val s = 1f - 0.08f * press; scaleX = s; scaleY = s }
-            .squishFeedback(interaction)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .semantics(mergeDescendants = true) { role = Role.Button; this.contentDescription = contentDescription },
-    ) {
-        Box(
-            Modifier.matchParentSize().padding(top = lip)
-                .shadow(5.dp, androidx.compose.foundation.shape.CircleShape, clip = false, ambientColor = color.lip.copy(alpha = 0.3f), spotColor = color.lip.copy(alpha = 0.45f))
-                .clip(androidx.compose.foundation.shape.CircleShape).background(color.lip),
-        )
-        Box(
-            Modifier.size(diameter)
-                .graphicsLayer { translationY = lip.toPx() * 0.6f * press }
-                .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(Brush.verticalGradient(listOf(color.top, color.bottom)))
-                .drawWithContent {
-                    drawOval(
-                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.45f), Color.White.copy(alpha = 0f)), endY = size.height * 0.5f),
-                        topLeft = Offset(size.width * 0.16f, size.height * 0.06f),
-                        size = Size(size.width * 0.68f, size.height * 0.42f),
-                    )
-                    drawContent()
-                }
-                .border(1.5.dp, CANDY_GOLD, androidx.compose.foundation.shape.CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (icon != null) CandyGlyph(icon, diameter * 0.46f, color.ink, color.outlined)
-            content?.invoke()
-        }
-    }
 }
 
 // ── The cast poses (art_pose_<character>_<pose>) ──────────────────────────

@@ -246,7 +246,7 @@ fun InviteCodeTiles(
                     color = if (copied) CandyColor.TEAL else CandyColor.PURPLE,
                     diameter = 34.dp,
                 ) {
-                    Icon(if (copied) Icons.Filled.Check else Icons.Filled.ContentCopy, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(if (copied) Icons.Filled.Check else Icons.Filled.ContentCopy, null, tint = androidx.compose.material3.LocalContentColor.current, modifier = Modifier.size(16.dp))
                 }
             }
         }

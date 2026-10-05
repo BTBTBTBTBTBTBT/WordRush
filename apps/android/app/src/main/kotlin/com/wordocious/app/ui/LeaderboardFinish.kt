@@ -107,39 +107,8 @@ internal fun LbBoardLabel(text: String, modifier: Modifier = Modifier) {
  */
 @Composable
 internal fun <T> SoftSegment(options: List<Pair<T, String>>, selected: T, onChange: (T) -> Unit) {
-    val dark = WTheme.isDark
-    val track = if (dark) Color.White.copy(alpha = 0.08f) else Color(0xE6FFF0DE)
-    Row(
-        Modifier.clip(RoundedCornerShape(50)).background(track)   // BJ7: no outline
-            .padding(3.dp),
-    ) {
-        options.forEach { (value, label) ->
-            val on = selected == value
-            Box(
-                Modifier
-                    .squishClickable(role = Role.Tab) { onChange(value) }
-                    .semantics(mergeDescendants = true) {
-                        role = Role.Tab
-                        this.selected = on
-                    }
-                    .heightIn(min = 28.dp) // AB: grows with Larger Text
-                    .then(
-                        if (on) Modifier
-                            .shadow(3.dp, RoundedCornerShape(50), clip = false, ambientColor = Color(0x1F4C1D95), spotColor = Color(0x334C1D95))
-                            .clip(RoundedCornerShape(50))
-                            .background(if (dark) WTheme.surfaceAlt else Color(0xFFFFFAF3))
-                        else Modifier,
-                    )
-                    .padding(horizontal = 11.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    label, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                    color = if (on) (if (dark) Color(0xFFC4B5FD) else Color(0xFF6D28D9)) else (if (dark) WTheme.textSecondary else LB_RANK_INK),
-                )
-            }
-        }
-    }
+    // The button family: every two-way switch is the candy segmented (frosted track + glossy purple thumb).
+    CandySegmentedToggle(options, selected, onChange, height = 34.dp, width = 168.dp)
 }
 
 /** A row's rank number (mockup `.lrow .n`: 15 / 900 #8a78ad, a 28 dp column; medal tints for 1–3). */

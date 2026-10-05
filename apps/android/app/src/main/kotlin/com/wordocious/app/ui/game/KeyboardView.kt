@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.famKeyCap
+import com.wordocious.app.ui.famKeyLightMap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -160,16 +162,18 @@ fun KeyboardView(
     }
 }
 
-// ── FINISH_SPEC B2 · the keys are tiles ──────────────────────────────────
+// ── The key cap (button family §5, docs/design/brand/buttons/family/README.md) ──────────
+// The state fill (the tile palette's base colors, colorblind-aware; unstated #fbfaff / dark #3d355f),
+// then the key light map (art_fam_lm_key) nine-sliced on top — no separate lip (the map has it).
 
-/** B2 a key's paint: the lip (bottom 3 dp), the face gradient and the ink. */
-private data class KeyLook(val lip: Color, val faceTop: Color, val faceBottom: Color, val ink: Color)
+/** A key's paint: the state fill and the ink. */
+private data class KeyLook(val fill: Color, val ink: Color)
 
-/** B2 the unplayed key: a lilac lip, a light face, dark purple letters. */
-private val KEY_PLAIN = KeyLook(Color(0xFFCDB9F0), Color(0xE6FFFFFF), Color(0xE6FFFFFF), Color(0xFF3B1A78))
-private val KEY_PLAIN_DARK = KeyLook(Color(0xFF4A3B6E), Color(0xFF3A2D5C), Color(0xFF33284F), Color(0xFFF1EAFF))
+/** The unstated key: #fbfaff with the deep purple letter; dark #3d355f with #efe9ff. */
+private val KEY_PLAIN = KeyLook(Color(0xFFFBFAFF), Color(0xFF3B1A78))
+private val KEY_PLAIN_DARK = KeyLook(Color(0xFF3D355F), Color(0xFFEFE9FF))
 
-/** B2 a revealed key takes its tile's state colors (the colorblind swap included). */
+/** A revealed key takes its tile's state color (the colorblind swap included). */
 private fun keyLookFor(state: TileState): KeyLook {
     if (state == TileState.EMPTY) return if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN
     val face = when (state) {
@@ -178,31 +182,18 @@ private fun keyLookFor(state: TileState): KeyLook {
         else -> TileFace.ABSENT
     }
     val t = TileLooks.of(face, WTheme.colorblind)
-    return KeyLook(t.edge, t.faceTop, t.faceMid, if (face == TileFace.ABSENT) Color(0xFFEEF1F6) else Color.White)
+    return KeyLook(t.faceMid, if (face == TileFace.ABSENT) Color(0xFFEEF1F6) else Color.White)
 }
 
-/** A key filled in a fixed color (Codebreaker's settled letters): that color's face, a darker lip. */
-private fun keyLookFill(fill: Color): KeyLook = KeyLook(
-    lip = Color(com.wordocious.app.ui.TintMath.over(0xFF000000.toInt(), 0.32f, fill.copy(alpha = 1f).toArgb())),
-    faceTop = Color(com.wordocious.app.ui.TintMath.over(0xFFFFFFFF.toInt(), 0.22f, fill.copy(alpha = 1f).toArgb())),
-    faceBottom = fill.copy(alpha = 1f),
-    ink = Color.White,
-)
+/** A key filled in a fixed color (Codebreaker's settled letters). */
+private fun keyLookFill(fill: Color): KeyLook = KeyLook(fill.copy(alpha = 1f), Color.White)
 
-private val KEY_CORNER = 9.dp
-private val KEY_LIP = 3.dp
+/** No lip any more (the light map draws the key's depth); kept as the label inset. */
+private val KEY_LIP = 0.dp
 
-/** B2 a key tile: the lip under a face inset [KEY_LIP] from the bottom, radius 9; squishes on press (A9). */
-private fun Modifier.keyTile(look: KeyLook): Modifier = this.drawBehind {
-    val r = androidx.compose.ui.geometry.CornerRadius(KEY_CORNER.toPx())
-    drawRoundRect(look.lip, cornerRadius = r)
-    val faceH = size.height - KEY_LIP.toPx()
-    drawRoundRect(
-        Brush.verticalGradient(listOf(look.faceTop, look.faceBottom), endY = faceH),
-        size = androidx.compose.ui.geometry.Size(size.width, faceH),
-        cornerRadius = r,
-    )
-}
+/** A key cap: the fill + the nine-sliced key light map; squishes on press (A9). */
+@Composable
+private fun Modifier.keyTile(look: KeyLook): Modifier = this.famKeyCap(look.fill)
 
 /** Decorative space bar (§213): reacts like a key, does nothing. */
 @Composable
@@ -258,17 +249,19 @@ private fun RowScope.QuadrantKey(
     ) {
         if (!allAbsent && hasAny) {
             // Sub-cell grid on the key's face.
-            Column(Modifier.fillMaxSize().padding(bottom = KEY_LIP).clip(RoundedCornerShape(KEY_CORNER))) {
+            Column(Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp))) {
                 for (r in 0 until rows) {
                     Row(Modifier.weight(1f).fillMaxWidth()) {
                         for (c in 0 until cols) {
                             val idx = r * cols + c
                             val st = cellStates.getOrElse(idx) { TileState.EMPTY }
-                            Box(Modifier.weight(1f).fillMaxSize().background(quadColor(st)))
+                            Box(Modifier.weight(1f).fillMaxSize().background(if (st == TileState.EMPTY) look.fill else quadColor(st)))
                         }
                     }
                 }
             }
+            // The key light map over the per-board cells (the whole key, one finish).
+            Box(Modifier.fillMaxSize().famKeyLightMap())
         }
         Text(
             letter,
@@ -341,7 +334,7 @@ internal fun ChunkyBackspace(width: androidx.compose.ui.unit.Dp) {
     }
 }
 
-// Action keys (B2): the same key tile; Delete = the chunky purple backspace, ENTER = a 12 sp label.
+// Action keys: the same key cap; Delete = the 3D delete icon (art_fam_ic_delete in the ink), ENTER = a 12 sp label.
 @Composable
 private fun RowScope.WideKey(label: String, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
     val look = if (WTheme.isDark) KEY_PLAIN_DARK else KEY_PLAIN
@@ -355,7 +348,9 @@ private fun RowScope.WideKey(label: String, h: androidx.compose.ui.unit.Dp, onCl
     ) {
         Box(Modifier.padding(bottom = KEY_LIP), contentAlignment = Alignment.Center) {
             if (label == "BACK") {
-                ChunkyBackspace(30.dp)
+                com.wordocious.app.ui.FamIconImage(
+                    com.wordocious.app.ui.FamIcon.DELETE, if (WTheme.isDark) Color(0xFFD8C8FF) else Color(0xFF5B2BB5), 26.dp,
+                )
             } else {
                 // Never let this key wrap; shrinks to fit at a large font scale ("ENTEF" — Doug, 2026-09-27).
                 com.wordocious.app.ui.FitText(

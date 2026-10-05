@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.ui.CandyButton
+import com.wordocious.app.ui.helperTint
 import com.wordocious.app.ui.CandyColor
 import com.wordocious.app.ui.CandyIcon
 import com.wordocious.app.ui.CandySize
@@ -443,17 +444,18 @@ fun PieceResultCard(won: Boolean, title: String, note: String? = null, pills: @C
  */
 @Composable
 fun PieceAction(label: String, icon: ImageVector, onClick: () -> Unit, color: CandyColor = CandyColor.PEACH, faded: Boolean = false, reserveLabel: String? = null, count: Int = 0) {
-    val leading: @Composable () -> Unit = { Icon(icon, null, tint = color.ink, modifier = Modifier.size(13.dp)) }
+    // The button family: a HELPER pill in the game's accent (a non-purple [color] keeps its hue), 3D icon art.
+    val tint = color.takeIf { it != CandyColor.PURPLE && it != CandyColor.PEACH }?.helperTint()
     val description = hintCountDescription(label, count)
     // BI22: the used count is a corner badge (overlay); a changing label keeps its widest width.
     androidx.compose.foundation.layout.Box {
         if (reserveLabel == null) {
-            CandyButton(label, onClick = onClick, modifier = Modifier.alpha(if (faded) 0.55f else 1f), color = color, size = CandySize.SMALL, contentDescription = description, leading = leading)
+            com.wordocious.app.ui.HelperButton(label, onClick = onClick, modifier = Modifier.alpha(if (faded) 0.55f else 1f), tint = tint, vector = icon, contentDescription = description)
         } else {
             ReservedWidth(
-                reserve = { CandyButton(reserveLabel, onClick = {}, color = color, size = CandySize.SMALL, leading = leading) },
+                reserve = { com.wordocious.app.ui.HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon) },
                 modifier = Modifier.alpha(if (faded) 0.55f else 1f),
-            ) { CandyButton(label, onClick = onClick, color = color, size = CandySize.SMALL, fill = true, contentDescription = description, leading = leading) }
+            ) { com.wordocious.app.ui.HelperButton(label, onClick = onClick, tint = tint, vector = icon, fill = true, contentDescription = description) }
         }
         HintCountBadge(count, Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-7).dp))
     }

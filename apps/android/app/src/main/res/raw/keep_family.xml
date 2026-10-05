@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The button family art (docs/design/brand/buttons/family/README.md): light maps, helper icons and chrome
+     icons. Referenced through R.drawable in FamilyButtons.kt; kept explicitly through resource shrinking. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/art_fam_*" />

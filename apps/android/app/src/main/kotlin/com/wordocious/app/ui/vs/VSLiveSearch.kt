@@ -23,8 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -223,6 +223,7 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
                 Row(
                     Modifier.widthIn(max = 380.dp).fillMaxWidth()
                         .squishClickable(role = androidx.compose.ui.semantics.Role.Switch) { toggle() }
+                        .semantics(mergeDescendants = true) { stateDescription = if (lookingOn) "On" else "Off" }
                         .vsCard(16.dp).padding(horizontal = 14.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -231,13 +232,8 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
                         "Ping me when someone’s looking for $modeName",
                         fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.deep, modifier = Modifier.weight(1f),
                     )
-                    Switch(
-                        checked = lookingOn, onCheckedChange = { toggle() }, enabled = !lookingSaving,
-                        colors = SwitchDefaults.colors(
-                            checkedTrackColor = VS_ACCENT, checkedThumbColor = Color.White,
-                            uncheckedTrackColor = vsWash(VS_ACCENT, 0.18f), uncheckedBorderColor = vsLine(VS_ACCENT), uncheckedThumbColor = vsLine(VS_ACCENT, 0.6f),
-                        ),
-                    )
+                    // The candy switch (family rule: every on/off switch is the candy toggle); the row owns the tap.
+                    com.wordocious.app.ui.CandySwitch(lookingOn, Modifier.alpha(if (lookingSaving) 0.5f else 1f))
                 }
             }
             VsSoftPill("CANCEL", color = CandyColor.PEACH, onClick = onCancel)

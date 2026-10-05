@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.CandyButton
+import com.wordocious.app.ui.HelperButton
+import com.wordocious.app.ui.helperTint
 import com.wordocious.app.ui.CandyColor
 import com.wordocious.app.ui.CandySize
 import com.wordocious.app.ui.FinishInk
@@ -131,20 +133,21 @@ fun PadAction(
     /** BI22: hints / checks used, shown as the corner badge (0 = none). */
     count: Int = 0,
 ) {
-    val c = if (active) activeColor else color
-    val leading: @Composable () -> Unit = { Icon(icon, null, tint = c.ink, modifier = Modifier.size(13.dp)) }
+    // The button family: a HELPER pill in the game's accent (a non-purple [color] keeps its hue); [active] =
+    // the selected helper (solid tint, white ink); the icon is its 3D family art when it has one.
+    val tint = color.takeIf { it != CandyColor.PURPLE && it != CandyColor.PEACH }?.helperTint()
     val description = hintCountDescription(label, count) + if (active) ", on" else ""
     Box(modifier) {
         if (reserveLabel == null) {
-            CandyButton(
-                label, onClick = { if (!dim) onClick() }, color = c, size = CandySize.SMALL,
-                enabled = !dim, contentDescription = description, leading = leading,
+            HelperButton(
+                label, onClick = { if (!dim) onClick() }, tint = tint, vector = icon, selected = active,
+                enabled = !dim, contentDescription = description,
             )
         } else {
-            ReservedWidth(reserve = { CandyButton(reserveLabel, onClick = {}, color = c, size = CandySize.SMALL, enabled = false, leading = leading) }) {
-                CandyButton(
-                    label, onClick = { if (!dim) onClick() }, color = c, size = CandySize.SMALL, fill = true,
-                    enabled = !dim, contentDescription = description, leading = leading,
+            ReservedWidth(reserve = { HelperButton(reserveLabel, onClick = {}, tint = tint, vector = icon, selected = active, enabled = false) }) {
+                HelperButton(
+                    label, onClick = { if (!dim) onClick() }, tint = tint, vector = icon, selected = active, fill = true,
+                    enabled = !dim, contentDescription = description,
                 )
             }
         }
