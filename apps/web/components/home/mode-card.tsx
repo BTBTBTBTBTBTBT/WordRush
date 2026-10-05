@@ -281,11 +281,14 @@ function FitDesc({ height, children }: { height: number; children: string }) {
 
 /** iOS ModeCardView: the subtitle's minimumScaleFactor. */
 const DESC_MIN_SCALE = 0.9;
+/** iOS ModeCardView.titleRow: minimumScaleFactor(0.6) — the last resort for a long name before an ellipsis. */
+const NAME_MIN_SCALE = 0.6;
 
 /**
  * The game name at 900 / 17 in its color on ONE line (BH2). Inside a CardNameScope it takes the
  * grid's shared size (BJ18); a name wider than its column at that size still shrinks on its own
- * (down to 11, then tighter tracking, then 10.5) before an ellipsis may ever show.
+ * (down to 11, then tighter tracking, then 10.5, then — long names on a narrow phone — exactly to
+ * fit, floored at iOS's 0.6) before an ellipsis may ever show.
  */
 function FitName({ color, accent, children }: { color: string | null; accent: string; children: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -298,6 +301,7 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
     if (!el) return;
     const key = {};
     let lastWidth = -1;
+    const range = document.createRange();
     // Draw at `start`, shrinking on this card only while the name is still wider than its column.
     const apply = (start: number) => {
       const width = el.clientWidth;
@@ -315,6 +319,16 @@ function FitName({ color, accent, children }: { color: string | null; accent: st
         el.style.letterSpacing = ls;
       }
       if (el.scrollWidth > width + 0.5) el.style.fontSize = `${MODE_CARD.nameMinLast}px`;
+      // Long names only (ProperNoundle at 360 / 375 px, cut to "ProperNou…" at 10.5): like iOS's
+      // minimumScaleFactor(0.6) the name takes the exact size it fits at, measured sub-pixel (scrollWidth
+      // rounds, so a name 0.4 px over still drew its ellipsis), floored at 60% of the grid's size.
+      range.selectNodeContents(el);
+      const natural = range.getBoundingClientRect().width;
+      const room = width - 0.5;
+      if (width > 0 && natural > room) {
+        const current = parseFloat(el.style.fontSize);
+        el.style.fontSize = `${Math.max(start * NAME_MIN_SCALE, Math.floor(((current * room) / natural) * 10) / 10)}px`;
+      }
       // Still too wide at the floor (a very narrow screen): the ellipsis takes over (never wraps).
     };
     const fit = () => {

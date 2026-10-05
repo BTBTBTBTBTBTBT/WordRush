@@ -17,7 +17,7 @@
 // Report: apps/web/.perf/perf-tour-<stamp>.md
 
 import { spawn } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -184,4 +184,7 @@ writeFileSync(join(dir, `perf-tour-${stamp}.md`), md);
 console.log(`report: apps/web/.perf/perf-tour-${stamp}.md`);
 ws.close();
 chrome.kill();
+// The temp Chrome profile is 100–150 MB a run; don't leave it in $TMPDIR.
+await sleep(500);
+try { rmSync(profile, { recursive: true, force: true }); } catch { /* best effort */ }
 process.exit(0);
