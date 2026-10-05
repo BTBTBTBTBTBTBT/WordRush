@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { currentSeason } from '@wordle-duel/core';
 import {
-  applyEdit, calendarFlags, captionBudget, countChars, dayKey, displayStatus, finalText, groupByDay, monthGrid, moveToDay,
+  addDays, applyEdit, calendarFlags, captionBudget, countChars, dayKey, displayStatus, finalText, groupByDay, monthGrid, moveToDay,
   parseEditBody, parseReviewBody, parseScheduleBody, publishEligibility, reviewState, rollupStatus, seasonBands, targetSlug, weekOf,
   zonedInstant, type Platform, type SocialPost, type SocialReview, type SocialTarget,
 } from './studio';
@@ -122,8 +123,12 @@ describe('calendar', () => {
     expect(weeks.flat()).toContain('2026-10-31');
     expect(weekOf('2026-10-07')).toEqual(['2026-10-04', '2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10']);
   });
-  it('marks Halloween from the season registry', () => {
-    expect(seasonBands([2026])).toContainEqual(expect.objectContaining({ start: '2026-10-17', end: '2026-11-01', tone: 'season' }));
+  it('marks Halloween exactly where the season registry (core currentSeason) has it', () => {
+    const band = seasonBands([2026]).find((b) => b.label === 'Halloween')!;
+    expect(band.end).toBe('2026-11-01');
+    expect(currentSeason(band.start)).toBe('halloween');
+    expect(currentSeason(addDays(band.start, -1))).toBeNull();
+    expect(currentSeason(addDays(band.end, 1))).toBeNull();
   });
   it('handles DST in zonedInstant', () => {
     expect(zonedInstant('2026-11-02', 9, 0).toISOString()).toBe('2026-11-02T15:00:00.000Z'); // CST
