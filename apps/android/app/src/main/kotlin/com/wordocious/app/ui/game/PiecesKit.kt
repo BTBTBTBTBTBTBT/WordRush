@@ -444,7 +444,7 @@ fun PieceResultCard(won: Boolean, title: String, note: String? = null, pills: @C
  */
 @Composable
 fun PieceAction(label: String, icon: ImageVector, onClick: () -> Unit, color: CandyColor = CandyColor.PEACH, faded: Boolean = false, reserveLabel: String? = null, count: Int = 0) {
-    // The button family: a HELPER pill in the game's accent (a non-purple [color] keeps its hue), 3D icon art.
+    // The button family: a HELPER pill in the game's accent (off a game a non-purple [color]'s tint), 3D icon art.
     val tint = color.takeIf { it != CandyColor.PURPLE && it != CandyColor.PEACH }?.helperTint()
     val description = hintCountDescription(label, count)
     // BI22: the used count is a corner badge (overlay); a changing label keeps its widest width.

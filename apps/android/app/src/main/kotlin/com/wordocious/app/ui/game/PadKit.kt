@@ -133,7 +133,7 @@ fun PadAction(
     /** BI22: hints / checks used, shown as the corner badge (0 = none). */
     count: Int = 0,
 ) {
-    // The button family: a HELPER pill in the game's accent (a non-purple [color] keeps its hue); [active] =
+    // The button family: a HELPER pill in the game's accent (off a game a non-purple [color]'s tint); [active] =
     // the selected helper (solid tint, white ink); the icon is its 3D family art when it has one.
     val tint = color.takeIf { it != CandyColor.PURPLE && it != CandyColor.PEACH }?.helperTint()
     val description = hintCountDescription(label, count) + if (active) ", on" else ""

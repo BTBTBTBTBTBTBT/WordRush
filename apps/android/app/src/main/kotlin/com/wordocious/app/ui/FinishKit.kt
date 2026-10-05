@@ -537,7 +537,8 @@ fun CandyButton(
     subtitle: String? = null,
 ) {
     // The button family (docs/design/brand/buttons/family/README.md, 10-05): one switch here moves every call site.
-    //   SMALL → the HELPER pill (the game accent's wash; PEACH off a game → the small QUIET pill)
+    //   SMALL → the HELPER pill (in a game always the game accent's wash, PEACH in the used look; off a game the
+    //   variant's tint, PEACH → the small QUIET pill)
     //   PEACH at MEDIUM / LARGE → the QUIET pill · any other MEDIUM / LARGE → the cast primary.
     val famIcon = icon?.let { FamIcon.of(it) }
     val glyph: (@Composable () -> Unit)? = leading
@@ -548,11 +549,12 @@ fun CandyButton(
             text, onClick, modifier, size = CandySize.SMALL, icon = famIcon, leading = glyph, trailing = trailing,
             fill = fill, enabled = enabled, contentDescription = contentDescription,
         )
+        // In a game every helper wears the game accent; a small peach one wears the used look there.
         size == CandySize.SMALL -> HelperButton(
             text, onClick, modifier,
             tint = if (color == CandyColor.PURPLE || color == CandyColor.PEACH) null else color.helperTint(),
             icon = famIcon, leading = glyph, trailing = trailing, fill = fill, enabled = enabled,
-            contentDescription = contentDescription,
+            used = color == CandyColor.PEACH, contentDescription = contentDescription,
         )
         color == CandyColor.PEACH -> QuietButton(
             text, onClick, modifier, size = size, icon = famIcon, leading = glyph, trailing = trailing,
@@ -583,7 +585,7 @@ fun CandyRoundButton(
     icon: CandyIcon? = null,
     content: (@Composable () -> Unit)? = null,
 ) {
-    // The button family: the icon-only HELPER circle (the game accent's wash; other candy colors keep their hue).
+    // The button family: the icon-only HELPER circle (the game accent's wash in a game; off a game the variant's tint).
     val famIcon = icon?.let { FamIcon.of(it) }
     HelperButton(
         null, onClick, modifier,

@@ -323,7 +323,7 @@ internal fun FamLabel(text: String, fontSize: Float, ink: Color) {
 /**
  * The HELPER pill (game helpers: Hint, Shuffle, Reveal, Undo …): 34 dp, the [tint]'s wash, the tinted 3D [icon]
  * (or a Material [vector] mapped to its art, else drawn in the ink; or any [leading]) + the uppercase label in the
- * deep tint. [tint] null = the game's accent ([LocalGameTint]) or purple. [circle] = the icon-only 34 × 34 helper.
+ * deep tint. Inside a game the tint is always the game's accent ([LocalGameTint]); off a game [tint] (null = purple). [circle] = the icon-only 34 × 34 helper.
  * [selected] = a toggle that is on: the solid tint with white ink. [used] = the spent / disabled look.
  */
 @Composable
@@ -344,7 +344,8 @@ fun HelperButton(
     height: Dp = 34.dp,
     contentDescription: String = text ?: "",
 ) {
-    val t = tint ?: LocalGameTint.current ?: Color(0xFF7C3AED)
+    // Inside a game EVERY helper takes the game's accent (a state reads by [selected], never by hue); off a game [tint].
+    val t = LocalGameTint.current ?: tint ?: Color(0xFF7C3AED)
     val dark = WTheme.isDark
     val spent = used || !enabled
     val c = remember(t, dark, selected, spent) {

@@ -1171,8 +1171,8 @@
      .candy-round          → the helper CIRCLE (34)
      .candy-peach md / lg  → the QUIET pill (lavender, purple ink)
      any other md / lg     → the cast primary (art-btn-<color>-<m|l> skins; CastButton for the component)
-   Tints: purple = the game's accent inside a game screen ([data-page-tint="game"] → --page-accent),
-   else #7c3aed; pink #db2777, amber #d97706, teal #0d9488 keep their hue (they mark a state). ── */
+   Tints: inside a game screen every helper takes the game's accent ([data-page-tint="game"] →
+   --page-accent); off a game purple #7c3aed, pink #db2777, amber #d97706, teal #0d9488. ── */
 .candy {
   --candy-1: #a66bff;
   --candy-2: #6d28d9;
@@ -1239,7 +1239,8 @@
 .candy.candy-pink { --fam-tint: #db2777; }
 .candy.candy-amber { --fam-tint: #d97706; }
 .candy.candy-teal { --fam-tint: #0d9488; }
-[data-page-tint="game"] .candy:not(.candy-pink):not(.candy-peach):not(.candy-amber):not(.candy-teal) { --fam-tint: var(--page-accent, #7c3aed); }
+/* Inside a game EVERY helper takes the game's accent (a state reads by the selected look, never by hue). */
+[data-page-tint="game"] .candy { --fam-tint: var(--page-accent, #7c3aed); }
 /* Selected (a tab / choice that is on): the solid tint with white ink. */
 .candy.candy-on { --fam-fill: var(--fam-tint); --fam-fill-p: color-mix(in srgb, var(--fam-tint) 85%, #000000); --fam-ink: #ffffff; text-shadow: 0 1px 1px color-mix(in srgb, var(--fam-tint) 60%, #000000); }
 [data-theme="dark"] .candy {
@@ -1262,8 +1263,10 @@
 [data-theme="dark"] .candy.candy-peach { --fam-fill: #3b3163; --fam-fill-p: #463a74; --fam-ink: #ddd0ff; }
 [data-theme="dark"] [data-page-scheme="light"] .candy.candy-peach { --fam-fill: #ece4ff; --fam-fill-p: #e2d7ff; --fam-ink: #5b21b6; }
 .candy.candy-peach.candy-on { --fam-tint: #7c3aed; --fam-fill: #7c3aed; --fam-fill-p: #6d28d9; --fam-ink: #ffffff; }
-/* Inside a game a small peach candy is a game helper too (the game accent's wash), like every small candy. */
+/* Inside a game a small peach candy is a game helper in the used look (the game accent's wash, saturation .25, 50%). */
 [data-page-tint="game"] .candy.candy-peach.candy-sm:not(.candy-on) {
+  filter: saturate(0.25);
+  opacity: 0.5;
   --fam-tint: var(--page-accent, #7c3aed);
   --fam-fill: color-mix(in srgb, var(--fam-tint) 20%, #ffffff);
   --fam-fill-p: color-mix(in srgb, var(--fam-tint) 27%, #ffffff);
