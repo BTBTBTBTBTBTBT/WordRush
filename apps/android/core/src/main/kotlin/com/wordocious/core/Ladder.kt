@@ -31,6 +31,15 @@ data class LadderBank(val version: Int, val epoch: String, val daily: List<Ladde
             LadderBank::class.java.classLoader?.getResourceAsStream("data/ladder-puzzles.json")
                 ?.bufferedReader()?.use { it.readText() }?.let { parse(it) }
         }
+
+        /** Letter Ladder's accepted rungs (core resources/data/ladder-words.json, the web's data/ladder-words.json):
+         *  common American words only — never the full guess list (tester Doug, 2026-10-05: THAVE). */
+        val words: Set<String>? by lazy {
+            LadderBank::class.java.classLoader?.getResourceAsStream("data/ladder-words.json")
+                ?.bufferedReader()?.use { it.readText() }
+                ?.let { runCatching { json.decodeFromString<List<String>>(it) }.getOrNull() }
+                ?.takeIf { it.isNotEmpty() }?.toHashSet()
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import ladderWords from '@/data/ladder-words.json';
 import { keyDuringReject } from '@/lib/tile-motion';
 import { useRejectRow } from '@/hooks/use-reject-row';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -10,7 +11,7 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, Undo2, Lightbulb } from 'lucide-react';
 import {
   ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, ladderGuessCount, ladderMaxMoves,
-  generateDailySeed, getAllowedWordsForLength, type LadderState, type LadderAction, type LadderBank, type LadderPuzzle, type LadderReject,
+  generateDailySeed, type LadderState, type LadderAction, type LadderBank, type LadderPuzzle, type LadderReject,
 } from '@wordle-duel/core';
 import { bankSession } from '@/lib/bank-loader';
 import { GameLoading } from '@/components/game/game-loading';
@@ -91,8 +92,10 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
   const restoredRef = useRef(false);
   const hasRecordedRef = useRef(false);
 
-  // The engine's dictionary: the 5-letter allowed list, uppercased once.
-  const allowed = useMemo(() => { return new Set(getAllowedWordsForLength(5).map((w) => w.toUpperCase())); }, []);
+  // The engine's dictionary: Letter Ladder's curated common-word list (data/ladder-words.json, bundled ×3),
+  // not the full 5-letter guess list — a rung is shown on the board and suggested by the hint, so obscure
+  // or British words (THAVE, tester Doug 2026-10-05) never count.
+  const allowed = useMemo(() => new Set<string>(ladderWords as string[]), []);
 
   // Daily with no local save for today's seed → ask daily_results whether it
   // was finished on another device before showing a fresh ladder (founder, 2026-09-28).

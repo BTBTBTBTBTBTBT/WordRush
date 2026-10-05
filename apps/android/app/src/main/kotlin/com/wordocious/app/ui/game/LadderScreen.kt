@@ -95,7 +95,7 @@ private val LADDER_ACCENT = Color(0xFF0284C7)
 // ── Session ─────────────────────────────────────────────────────────────────
 
 class LadderSession(val seed: String, val isDaily: Boolean) {
-    private val allowed: Set<String> = GameDictionary.getAllowedWords().filter { it.length == 5 }.map { it.uppercase() }.toHashSet()
+    private val allowed: Set<String> = LadderBank.words ?: GameDictionary.getAllowedWords().filter { it.length == 5 }.map { it.uppercase() }.toHashSet()
 
     var state by mutableStateOf(
         LadderState.create(

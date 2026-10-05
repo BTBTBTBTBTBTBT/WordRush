@@ -17,6 +17,14 @@ enum LadderBankStore {
               let data = try? Data(contentsOf: url) else { return nil }
         return LadderBank.load(from: data)
     }()
+    /// Letter Ladder's accepted rungs (Resources/ladder-words.json, the web's data/ladder-words.json):
+    /// common American words only — never the full guess list (tester Doug, 2026-10-05: THAVE).
+    static let words: Set<String>? = {
+        guard let url = Bundle.main.url(forResource: "ladder-words", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let list = try? JSONDecoder().decode([String].self, from: data), !list.isEmpty else { return nil }
+        return Set(list)
+    }()
 }
 
 @MainActor
@@ -47,7 +55,7 @@ final class LadderVM: ObservableObject {
         let bank = LadderBankStore.shared ?? LadderBank(version: 1, epoch: LADDER_DAILY_EPOCH, daily: [], extra: [])
         let fallback = LadderPuzzle(id: "none", start: "STONE", end: "STARE", par: 2, path: ["STONE", "STORE", "STARE"])
         let puzzle = (seed == nil ? ladderPuzzleForDay(bank, day: today) : ladderPuzzleForSeed(bank, seed: self.seed)) ?? fallback
-        allowed = Set(GameDictionary.shared.getAllowedWordsForLength(5).filter { $0.count == 5 }.map { $0.uppercased() })
+        allowed = LadderBankStore.words ?? Set(GameDictionary.shared.getAllowedWordsForLength(5).filter { $0.count == 5 }.map { $0.uppercased() })
         state = LadderState(puzzle: puzzle, seed: self.seed, startTime: Date().timeIntervalSince1970 * 1000)
         restore()
     }
