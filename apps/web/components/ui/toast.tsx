@@ -3,11 +3,11 @@
 import * as React from 'react';
 import * as ToastPrimitives from '@radix-ui/react-toast';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { candyClass } from '@/components/ui/candy-button';
 import { softBackground, softBorder, alphaHex } from '@/lib/soft-surface';
+import { FamCloseGlyph } from '@/components/ui/family-button';
 
 // Toasts in the new look (docs/FINISH_SPEC.md K1 / G5; A1 no plain white): a
 // tinted card in the event's color (brand purple, a soft rose for errors) with
@@ -107,7 +107,7 @@ const ToastClose = React.forwardRef<
     toast-close=""
     {...props}
   >
-    <X aria-hidden="true" style={{ width: 18, height: 18, color: 'var(--color-win-text, #7c3aed)', filter: 'drop-shadow(0 2px 3px rgba(76, 29, 149, 0.2))' }} strokeWidth={3.2} />
+    <FamCloseGlyph />
   </ToastPrimitives.Close>
 ));
 ToastClose.displayName = ToastPrimitives.Close.displayName;

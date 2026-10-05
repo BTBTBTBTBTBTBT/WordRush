@@ -8,6 +8,7 @@ import { ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import { achievementBadge } from '@/lib/badges';
 import { LiveMascot, STAGE_SIDE_SLOT, StageArt, StageClose, TitleRibbon } from './dress-up';
 import { CastButton } from '@/components/ui/cast-button';
+import { QuietButton } from '@/components/ui/family-button';
 
 /** Founder 10-05 "T1 Title Shelves": the shelves in order (catalog category → label). iOS / Android parity. */
 export const TITLE_SHELVES: Array<[string, string]> = [
@@ -99,7 +100,7 @@ export function TitleShelves({ username, mascot, initial, accent, unlockedDates,
             <TitleRibbon text={pickName ?? 'No title'} height={26} maxWidth={220} placeholder={!pickName} />
             <div className="text-[11px] font-bold" style={{ color: '#7a6aa6' }}>{hint}</div>
           </div>
-          {pick && <button type="button" onClick={() => { setPick(null); setHint('No title for now.'); }} className="text-[11px] font-black px-2.5 py-1 rounded-full border-0 cursor-pointer" style={{ color: '#7c3aed', background: 'rgba(124,58,237,0.1)' }}>None</button>}
+          {pick && <QuietButton size="sm" aria-label="Wear no title" onClick={() => { setPick(null); setHint('No title for now.'); }}>None</QuietButton>}
         </div>
         <div className="mx-3.5 mt-2 rounded-full px-3.5 py-2" style={{ background: 'rgba(255,255,255,0.8)' }}>
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search your titles" aria-label="Search your titles"

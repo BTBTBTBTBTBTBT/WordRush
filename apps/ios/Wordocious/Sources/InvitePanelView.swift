@@ -169,12 +169,11 @@ struct InvitePanelView: View {
 
             if ReferralCredits.showClearAll(visibleInvites.map(\.status)) {
                 // Founder 10-03: a quiet Clear all once there are 2+ credit notices.
-                Button("Clear all") {
+                Button {
                     dismissCredits(visibleInvites.filter { ReferralCredits.isCredit($0.status) }.map(\.id))
-                }
-                .font(Brand.font(11, .heavy)).foregroundStyle(FinishInk.secondary)
+                } label: { CandyLabel(title: "Clear all") }
+                .buttonStyle(QuietButtonStyle(size: .small))   // button family §2: the quiet pill, never bare text
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                .frame(minHeight: 32)
             }
             ForEach(visibleInvites.prefix(6)) { inv in
                 // §251: settled rows lead with WHO — the code is noise once spent.
@@ -210,17 +209,8 @@ struct InvitePanelView: View {
                     }
                     if ReferralCredits.isCredit(inv.status) {
                         // Founder 10-03: X a credit notice away (soft circle, no outline, 44 pt tap area).
-                        Button { dismissCredits([inv.id]) } label: {
-                            Image(systemName: "xmark").font(.system(size: 10, weight: .heavy))
-                                .foregroundStyle(Color(hex: 0x92400E))
-                                .frame(width: 24, height: 24)
-                                .background(Circle().fill(G5Accent.gold.wash(0.22)))
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.squishIcon)
-                        .padding(.vertical, -10).padding(.trailing, -8)
-                        .accessibilityLabel("Dismiss")
+                        FamilyCloseButton(size: 22, label: "Dismiss") { dismissCredits([inv.id]) }   // family 3D X
+                            .padding(.vertical, -10).padding(.trailing, -8)
                     }
                 }
                 // §A1: each invite is a mini tinted row in its status color.

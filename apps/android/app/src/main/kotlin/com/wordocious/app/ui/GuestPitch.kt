@@ -120,14 +120,8 @@ fun GuestPitch(
         // offer what they have; SIGN IN stays (iOS + web parity).
         val isGuest by com.wordocious.app.data.AuthService.isGuest.collectAsState()
         if (onPlay != null && !isGuest) {
-            Text(
-                "Play without an account",
-                fontSize = 14.sp, fontWeight = FontWeight.Bold, color = subColor,
-                style = TextStyle(textDecoration = TextDecoration.Underline, fontFamily = Nunito),
-                modifier = Modifier.padding(top = 6.dp).heightIn(min = 44.dp)
-                    .clickable(role = Role.Button, onClick = onPlay)
-                    .padding(horizontal = 8.dp, vertical = 12.dp),
-            )
+            // BJ15 round 2: a secondary family text link (brand ink, no underline), the sign-in screen's own link.
+            TextLink("Play without an account", onClick = onPlay, modifier = Modifier.padding(top = 6.dp).heightIn(min = 44.dp))
         }
     }
 }

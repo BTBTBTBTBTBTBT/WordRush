@@ -326,28 +326,15 @@ struct RegionsView: View {
         }
     }
 
-    /// Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 tinted chips (selected = stronger tint +
-    /// accent ring); switching starts a fresh board.
+    /// Pro Unlimited: 7 × 7 · 8 × 8 · 9 × 9 on the candy segmented;
+    /// switching starts a fresh board.
     private var sizePicker: some View {
-        HStack(spacing: 8) {
-            ForEach(regionsSizes, id: \.self) { n in
-                let active = n == vm.n
-                let dark = Theme.isDark
-                let shape = Capsule(style: .continuous)
-                Button { if !active { onPlayAgain?(n) } } label: {
-                    Text(regionsSizeLabel[n] ?? "\(n)").font(Brand.font(12, .black)).monospacedDigit()
-                        .foregroundStyle(active ? FinishInk.number : FinishInk.secondary)
-                        .padding(.horizontal, 13).padding(.vertical, 6)
-                        .background(shape.fill(dark ? regionsAccent.opacity(active ? 0.28 : 0.12)
-                                                    : regionsAccent.wash(active ? 0.26 : 0.12)))
-                        .overlay(shape.strokeBorder(active ? regionsAccent : (dark ? regionsAccent.opacity(0.4) : regionsAccent.wash(0.32)),
-                                                    lineWidth: active ? 2 : 1.5))
-                        .overlay(active ? shape.inset(by: -3).stroke(regionsAccent.opacity(0.22), lineWidth: 3) : nil)
-                }
-                .buttonStyle(.squish)
-                .accessibilityAddTraits(active ? .isSelected : [])
-            }
+        // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb).
+        CandySegmented(options: regionsSizes.map { (key: $0, label: regionsSizeLabel[$0] ?? "\($0)") },
+                       selection: vm.n, accessibilityLabel: "Board size", height: 32) { n in
+            if n != vm.n { onPlayAgain?(n) }
         }
+        .fixedSize()
         .padding(.vertical, 2)
     }
 

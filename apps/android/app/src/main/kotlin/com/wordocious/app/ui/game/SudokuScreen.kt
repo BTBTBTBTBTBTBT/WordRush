@@ -398,23 +398,12 @@ private fun SudokuHeader(session: SudokuSession) {
 
 @Composable
 private fun DifficultyPicker(current: SudokuDifficulty, onPick: (SudokuDifficulty) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SudokuDifficulty.values().forEach { d ->
-            val active = d == current
-            // A1 / A9 a tinted segmented chip that squishes; the selected one filled.
-            Text(
-                DIFFICULTY_LABEL[d] ?: d.key, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                color = if (active) Color.White else SUDOKU_ACCENT,
-                modifier = Modifier
-                    .squishClickable(label = (DIFFICULTY_LABEL[d] ?: d.key) + if (active) ", selected" else "") { if (!active) onPick(d) }
-                    .then(
-                        if (active) Modifier.clip(CircleShape).background(SUDOKU_ACCENT)
-                        else Modifier.tintedPill(SUDOKU_ACCENT, corner = 20.dp),
-                    )
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
-    }
+    // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb), iOS parity.
+    com.wordocious.app.ui.CandySegmentedToggle(
+        options = SudokuDifficulty.values().map { it to (DIFFICULTY_LABEL[it] ?: it.key) },
+        selected = current, onChange = { if (it != current) onPick(it) },
+        height = 32.dp, width = 228.dp,
+    )
 }
 
 // ── Board ───────────────────────────────────────────────────────────────────

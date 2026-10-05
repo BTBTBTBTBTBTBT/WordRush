@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { poseSrc } from '@/lib/art';
 import { feedback } from '@/lib/sound-events';
 import { softCard } from '@/lib/soft-surface';
+import { HelperButton } from '@/components/ui/family-button';
 
 // FINISH_SPEC AO step 4: W coaches the mascot builder. A small W pose in a
 // speech-bubble card, four short tips, tap anywhere to advance; a spotlight
@@ -104,15 +105,14 @@ export function MascotCoach({ rootRef, reduced, onDone }: { rootRef: React.RefOb
           <p className="m-0 text-[15px] font-black leading-snug" style={{ color: 'var(--color-text)' }}>{tip.text}</p>
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{step + 1} of {TIPS.length}</span>
-            <button
-              type="button"
+            {/* Button family §1: the helper pill, on (solid purple, white ink). */}
+            <HelperButton
+              on
               autoFocus
               onClick={(e) => { e.stopPropagation(); next(); }}
-              className="text-[12px] font-black uppercase px-3 py-1 rounded-full"
-              style={{ background: '#7c3aed', color: '#fff', letterSpacing: '0.06em' }}
             >
               {step >= TIPS.length - 1 ? 'Got it' : 'Next'}
-            </button>
+            </HelperButton>
           </div>
         </div>
       </div>

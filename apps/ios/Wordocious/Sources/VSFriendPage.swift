@@ -74,8 +74,8 @@ struct VSFriendPage: View {
             segment(.live, "LIVE NOW", "both online")
         }
         .padding(4)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(VsLobbyKit.ink.wash(0.14)))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(VsLobbyKit.ink.wash(0.3), lineWidth: 1.5))
+        // Button family §4: the candy segmented (frosted track + glossy purple thumb), no outline.
+        .background(CandyPill(sprite: .track))
     }
 
     private func segment(_ t: Tab, _ title: String, _ sub: String) -> some View {
@@ -85,13 +85,12 @@ struct VSFriendPage: View {
                 Text(title).font(Brand.font(12, .black)).tracking(0.5)
                 Text(sub).font(Brand.font(9.5, .bold)).opacity(0.8)
             }
-            .foregroundStyle(on ? VsLobbyKit.titleInk : VsLobbyKit.ink)
+            .foregroundStyle(on ? CandyToggleInk.on : CandyToggleInk.off)
+            .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.45) : .clear, radius: 0, x: 0, y: 1)
             .frame(maxWidth: .infinity).padding(.vertical, 8)
-            // The selected option: a light warm pill with a soft lift (the shared
-            // SoftSegmented look — never plain white).
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(on ? Color(hex: 0xFFFBF6) : Color.clear)
-                .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.12) : .clear, radius: 3, x: 0, y: 2))
-            .contentShape(Rectangle())
+            // The selected option wears the candy thumb (button family §4).
+            .background { if on { CandyPill(sprite: .thumbOn) } }
+            .contentShape(Capsule())
         }
         .buttonStyle(.squish)
         .accessibilityAddTraits(on ? .isSelected : [])

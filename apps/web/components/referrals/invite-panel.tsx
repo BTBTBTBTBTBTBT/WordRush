@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase-client';
 import { logShareEvent } from '@/lib/share-events';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { FeedbackPill } from '@/components/game/feedback-toast';
+import { QuietButton, RoundIconButton } from '@/components/ui/family-button';
 
 interface ReferralRow {
   id: string;
@@ -260,14 +261,10 @@ export function InvitePanel() {
       {showClearAll(visibleInvites) && (
         <div className="flex justify-end -mb-1">
           {/* Founder 10-03: a quiet Clear all once there are 2+ credit notices. */}
-          <button
-            type="button"
-            onClick={() => dismissCredits(visibleInvites.filter((i) => isCredit(i.status)).map((i) => i.id))}
-            className="text-[11px] font-extrabold px-2"
-            style={{ color: FR_LOOK.sub, minHeight: 32 }}
-          >
+          {/* Button family §2: the quiet pill, never bare text. */}
+          <QuietButton size="sm" onClick={() => dismissCredits(visibleInvites.filter((i) => isCredit(i.status)).map((i) => i.id))}>
             Clear all
-          </button>
+          </QuietButton>
         </div>
       )}
       {visibleInvites.length > 0 && (
@@ -325,17 +322,9 @@ export function InvitePanel() {
                 {inv.status === 'converted' && <Icon3D name="crown" size={14} />}
                 {isCredit(inv.status) && (
                   // Founder 10-03: X a credit notice away (soft circle, no outline, 44 px tap area).
-                  <button
-                    type="button"
-                    onClick={() => dismissCredits([inv.id])}
-                    aria-label={`Dismiss: ${settledText ?? label.text}`}
-                    className="shrink-0 -my-2 -mr-2 flex items-center justify-center"
-                    style={{ width: 44, height: 44 }}
-                  >
-                    <span className="flex items-center justify-center rounded-full" style={{ width: 24, height: 24, background: softMix(FR_LOOK.gold, 0.22) }}>
-                      <XIcon className="w-3.5 h-3.5" style={{ color: '#92400e' }} aria-hidden="true" />
-                    </span>
-                  </button>
+                  // Button family §3: the soft 3D X.
+                  <RoundIconButton icon="close" size={22} onClick={() => dismissCredits([inv.id])}
+                    label={`Dismiss: ${settledText ?? label.text}`} className="shrink-0 -my-2 -mr-2" />
                 )}
               </div>
             );

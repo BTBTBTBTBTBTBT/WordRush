@@ -44,6 +44,7 @@ import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { useBoardFit } from '@/hooks/use-board-fit';
 import { softPill, softBackground, softBorder } from '@/lib/soft-surface';
+import { CandySegment } from '@/components/ui/candy-segment';
 
 // Starsweep (More Games §18b): place one star in every row, column and color
 // region, no two stars touching. Daily 7 × 7 Monday–Wednesday, 8 × 8
@@ -359,26 +360,11 @@ export function RegionsGame({ isDaily = false }: RegionsGameProps) {
       ) : !finished ? (
         <>
           {mode !== 'daily' && isPro && (
-            <div className="shrink-0 flex justify-center gap-2 px-4 pb-2" role="radiogroup" aria-label="Board size">
-              {SIZES.map((n) => {
-                const active = n === state.n;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => { if (!active) startPractice(n); }}
-                    // A1: tinted segmented chips — the selected size takes the stronger wash + an accent ring.
-                    className="text-xs font-extrabold px-3 py-1"
-                    style={active
-                      ? { ...softPill(REGIONS_ACCENT, { bar: false }), background: softBackground(REGIONS_ACCENT, 0.28), border: softBorder(REGIONS_ACCENT, 0.28, 2), boxShadow: `0 0 0 2px ${REGIONS_ACCENT}`, color: 'var(--color-text)' }
-                      : { ...softPill(REGIONS_ACCENT, { bar: false }), color: REGIONS_ACCENT }}
-                  >
-                    {REGIONS_SIZE_LABEL[n]}
-                  </button>
-                );
-              })}
+            // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb).
+            <div className="shrink-0 flex justify-center px-4 pb-2">
+              <CandySegment label="Board size" height={32} itemPad={14}
+                options={SIZES.map((n) => ({ key: String(n), label: REGIONS_SIZE_LABEL[n] }))}
+                value={String(state.n)} onChange={(k) => { const n = Number(k) as RegionsSize; if (n !== state.n) startPractice(n); }} />
             </div>
           )}
 

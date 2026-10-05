@@ -426,11 +426,9 @@ struct PublicProfileView: View {
                     if let handle = links[key], let url = socialURL(key, handle) {
                         Link(destination: url) {
                             Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
-                                .font(.system(size: 13, weight: .bold)).foregroundStyle(Color(hex: 0x7C3AED))
-                                .frame(width: 32, height: 32)
-                                .tintedPill(Color(hex: 0x7C3AED))
+                                .font(.system(size: 14, weight: .black))
                         }
-                        .buttonStyle(.squish)
+                        .buttonStyle(HelperButtonStyle(fallback: Color(hex: 0x7C3AED), circle: true))   // family helper circle
                         .accessibilityLabel(key == "website" ? "Website" : key.capitalized)   // §AB: icon-only
                     }
                 }

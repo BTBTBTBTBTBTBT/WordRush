@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X as XIcon } from 'lucide-react';
 import { HeaderCircle } from '@/components/ui/page-header';
 import { useExit } from '@/hooks/use-exit';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
@@ -13,6 +12,7 @@ import { softPill, softBackground } from '@/lib/soft-surface';
 import { WEEK_LETTERS, streakWeek } from '@/lib/streak-week';
 import { feedback } from '@/lib/sound-events';
 import { EMPTY_STREAK_SUMMARY, flawlessRows, sweepRows, type StreakSummary } from '@/lib/streak-summary';
+import { FamCloseGlyph } from '@/components/ui/family-button';
 
 // The streak + shield popups (docs/FINISH_SPEC.md C5; mockup
 // finishing-touches.html): little celebrations, not plain bubbles. A colored
@@ -77,7 +77,7 @@ function PopupShell({ open, onClose, label, icon, title, titleArt, sub, host, he
         <div className="relative flex items-center gap-3" style={{ padding: '14px 16px 12px', paddingRight: 92, background: header }}>
           {/* BI12: an always-visible close on the card (the scrim also closes). */}
           <HeaderCircle label="Close" onClick={onClose} size={32} className="absolute top-1 right-1 z-10">
-            <XIcon aria-hidden="true" style={{ width: 18, height: 18, color: '#fff' }} strokeWidth={3.2} />
+            <FamCloseGlyph />
           </HeaderCircle>
           <Icon3D name={icon} size={58} style={{ filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))' }} />
           <div className="min-w-0">

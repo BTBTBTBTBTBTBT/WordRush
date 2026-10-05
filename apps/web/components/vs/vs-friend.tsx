@@ -26,6 +26,7 @@ import { PAGE_HOSTS } from '@/lib/mascots';
 import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import { PAGE_SCENES } from '@/lib/art';
 import { PageBackground } from '@/components/ui/page-background';
+import { CandySegment } from '@/components/ui/candy-segment';
 
 const MODES = VS_MODE_ORDER as readonly string[];
 
@@ -77,21 +78,13 @@ export function VsFriend() {
     router.push(`${vsHrefForMode(mode)}?${q.toString()}`);
   };
 
-  const segment = (key: 'race' | 'live', title: string, sub: string) => {
-    const on = tab === key;
-    return (
-      <button
-        type="button"
-        onClick={() => setTab(key)}
-        aria-pressed={on}
-        className="flex-1 flex flex-col items-center py-2 transition-colors"
-        style={on ? vsCard(VS_ACCENT, { selected: true, radius: 10 }) : { borderRadius: 10, background: 'transparent', border: '2px solid transparent' }}
-      >
-        <span className="text-[12px] font-black" style={{ color: on ? VS.deep : VS.ink, letterSpacing: 0.6 }}>{title}</span>
-        <span className="text-[10px] font-bold" style={{ color: on ? '#4b5563' : VS.ink }}>{sub}</span>
-      </button>
-    );
-  };
+  // The two-line label of a candy-segmented option (the ink comes from the segment: white on the thumb).
+  const segment = (title: string, sub: string) => (
+    <span className="flex flex-col items-center leading-tight">
+      <span className="text-[12px] font-black" style={{ letterSpacing: 0.6 }}>{title}</span>
+      <span className="text-[10px] font-bold" style={{ opacity: 0.8 }}>{sub}</span>
+    </span>
+  );
 
   const checkCircle = (on: boolean) => (
     <span className="flex items-center justify-center shrink-0 rounded-full" style={{ width: 22, height: 22, background: on ? VS.ink : alphaHex(VS_ACCENT, 0.1), boxShadow: on ? undefined : `inset 0 0 0 2px ${alphaHex(VS_ACCENT, 0.4)}` }}>
@@ -119,10 +112,12 @@ export function VsFriend() {
           </VsCard>
         ) : (
           <>
-            <div className="flex p-1" style={{ background: VS.soft, borderRadius: 12 }} role="group" aria-label="Race my run or live now">
-              {segment('race', 'RACE MY RUN', 'they play any time in 24 h')}
-              {segment('live', 'LIVE NOW', 'both online')}
-            </div>
+            {/* Button family §4: the candy segmented (frosted track + glossy thumb), iOS / Android parity. */}
+            <CandySegment label="Race my run or live now" height={52} value={tab} onChange={setTab}
+              options={[
+                { key: 'race', label: segment('RACE MY RUN', 'they play any time in 24 h') },
+                { key: 'live', label: segment('LIVE NOW', 'both online') },
+              ]} />
 
             {tab === 'race' ? (
               <>

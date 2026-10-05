@@ -41,6 +41,7 @@ import { GameBackground } from '@/components/ui/page-background';
 import { gameHeaderStyle } from '@/lib/art';
 import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
+import { CandySegment } from '@/components/ui/candy-segment';
 
 // Sudocious, the daily sudoku (More Games §4): one fixed Medium puzzle a day, generated on the
 // device from the daily seed; Pro Unlimited picks Easy / Medium / Hard. Three
@@ -343,23 +344,11 @@ export function SudokuGame({ isDaily = false }: SudokuGameProps) {
         <>
           {/* Pro Unlimited: pick the difficulty. Switching starts a fresh puzzle. */}
           {mode !== 'daily' && isPro && (
-            <div className="shrink-0 flex justify-center gap-2 px-4 pb-2" role="radiogroup" aria-label="Difficulty">
-              {(['easy', 'medium', 'hard'] as SudokuDifficulty[]).map((d) => {
-                const active = d === state.difficulty;
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => { if (!active) startPractice(d); }}
-                    className={`text-xs font-bold px-3 py-1 rounded-full border transition-all ${active ? 'text-white' : ''}`}
-                    style={active ? { background: SUDOKU_ACCENT, borderColor: SUDOKU_ACCENT } : { borderColor: `${SUDOKU_ACCENT}55`, color: SUDOKU_ACCENT }}
-                  >
-                    {DIFFICULTY_LABEL[d]}
-                  </button>
-                );
-              })}
+            // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb).
+            <div className="shrink-0 flex justify-center px-4 pb-2">
+              <CandySegment label="Difficulty" height={32} itemPad={14}
+                options={(['easy', 'medium', 'hard'] as SudokuDifficulty[]).map((d) => ({ key: d, label: DIFFICULTY_LABEL[d] }))}
+                value={state.difficulty} onChange={(d) => { if (d !== state.difficulty) startPractice(d); }} />
             </div>
           )}
 

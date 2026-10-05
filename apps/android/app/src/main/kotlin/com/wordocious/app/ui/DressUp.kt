@@ -439,10 +439,8 @@ fun PartyHatOffer(modifier: Modifier = Modifier) {
             androidx.compose.material3.Text("Your mascot wants to celebrate.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7A6AA6), maxLines = 1)
         }
         CandyButton("Yes!", onClick = { DressUp.open(DressDoor.PartyHat) }, color = CandyColor.PINK, size = CandySize.SMALL)
-        Box(
-            Modifier.size(34.dp).squishClickable(label = "No thanks", icon = true) { DressUp.finish(DressUp.Nudge.PARTY_HAT) },
-            contentAlignment = Alignment.Center,
-        ) { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color(0xFF7A6AA6), modifier = Modifier.size(14.dp)) }
+        // Button family §3: the soft 3D X.
+        RoundIconButton(FamChrome.CLOSE, "No thanks", onClick = { DressUp.finish(DressUp.Nudge.PARTY_HAT) }, size = 22.dp)
     }
 }
 
@@ -508,14 +506,10 @@ internal fun HostInviteBubble(modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 13.dp),
             )
         }
-        Box(
-            Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-10).dp).size(30.dp)
-                .squishClickable(label = "Dismiss", icon = true) { DressUp.finish(DressUp.Nudge.HOST_INVITE) },
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(Modifier.size(16.dp).clip(RoundedCornerShape(50)).background(Color.White), contentAlignment = Alignment.Center) {
-                androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color(0xFF7A6AA6), modifier = Modifier.size(10.dp))
-            }
-        }
+        // Button family §3: the soft 3D X (44 dp hit area; the offset keeps its center on the bubble's corner).
+        RoundIconButton(
+            FamChrome.CLOSE, "Dismiss", onClick = { DressUp.finish(DressUp.Nudge.HOST_INVITE) },
+            modifier = Modifier.align(Alignment.TopEnd).offset(x = 17.dp, y = (-17).dp), size = 18.dp,
+        )
     }
 }

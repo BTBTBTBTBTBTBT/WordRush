@@ -204,7 +204,8 @@ fun PopupClose(
         modifier.size(SOFT_CONTROL_TAP).squishClickable(contentDescription, enabled = enabled, icon = true, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Close, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        // Button family §3: the soft 3D X ([tint] kept for callers; the art carries its own colors).
+        FamCloseGlyph(24.dp)
     }
 }
 

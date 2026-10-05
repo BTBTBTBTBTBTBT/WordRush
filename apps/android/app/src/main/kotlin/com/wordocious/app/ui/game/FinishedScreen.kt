@@ -694,12 +694,8 @@ fun UnlimitedCard(
             }
             if (newPuzzle) {
                 if (onOtherGames != null) {
-                    Text(
-                        "Other games", fontSize = 11.sp, fontWeight = FontWeight.Black,
-                        color = if (dark) WTheme.text else darkenInk(peach), maxLines = 1,
-                        modifier = Modifier.squishClickable("Other games") { onOtherGames() }
-                            .tintedPill(peach, corner = 14.dp).padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 4.dp),
-                    )
+                    // BJ15 round 2 (iOS parity): a tertiary action stays a family text link, never an ad-hoc chip.
+                    com.wordocious.app.ui.TextLink("Other games", onClick = onOtherGames, fontSize = 13.sp)
                 }
             } else if (upsell) {
                 CastButton(
@@ -810,17 +806,8 @@ fun ProPaywallDialog(onDismiss: () -> Unit, onPro: () -> Unit) {
 /** R2 a small tinted chip ("More ▾", "See all") that squishes. */
 @Composable
 fun FinishedChip(text: String, accent: Color, contentDescription: String = text, onClick: () -> Unit) {
-    Row(
-        Modifier.squishClickable(contentDescription) { onClick() }
-            .tintedPill(accent, corner = 16.dp)
-            .heightIn(min = 34.dp)
-            .padding(start = 12.dp, end = 10.dp, top = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(text, fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.text else FinishInk.label, maxLines = 1)
-        Text("▾", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) WTheme.textMuted else accent)
-    }
+    // Button family §2: the quiet pill (was an ad-hoc tinted chip); [accent] kept for callers.
+    com.wordocious.app.ui.QuietButton(text, onClick = onClick, size = com.wordocious.app.ui.CandySize.SMALL, trailing = "▾", contentDescription = contentDescription)
 }
 
 /** R2 the "More" disclosure: a tinted chip that opens [content] in a sheet. */

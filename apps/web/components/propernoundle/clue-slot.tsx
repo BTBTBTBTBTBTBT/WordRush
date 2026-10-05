@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { Lightbulb, X } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
+import { RoundIconButton } from '@/components/ui/family-button';
 
 // ProperNoundle's clue card (solo + VS). Founder 10-03: a hint must never resize
 // the board. Founder 10-05 ("always fix empty space issues"): the clue has NO band
@@ -48,11 +49,8 @@ export function ClueCard({ clue, open, onClose, anchorRef }: {
         onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1.5 text-[13px] font-black tracking-wider shrink-0" style={{ color: RED }}>
           <Lightbulb className="w-4 h-4" fill="#fca5a5" color={RED} strokeWidth={2} aria-hidden="true" /> CLUE
-          <button type="button" onClick={onClose} aria-label="Close"
-            className="ml-auto w-11 h-11 flex items-center justify-center active:scale-90 transition-transform"
-            style={{ color: 'var(--color-text-muted)' }}>
-            <X className="w-5 h-5" strokeWidth={2.75} aria-hidden="true" />
-          </button>
+          {/* Button family §3: the soft 3D X (iOS HeaderCircleButton parity). */}
+          <RoundIconButton icon="close" label="Close" size={24} onClick={onClose} className="ml-auto" />
         </div>
         <p className="min-h-0 overflow-y-auto pr-3 text-base italic font-semibold leading-relaxed" style={{ color: 'var(--color-text)' }}>{clue}</p>
       </div>

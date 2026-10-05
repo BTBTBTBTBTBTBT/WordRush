@@ -438,6 +438,13 @@ fun RoundIconButton(
     }
 }
 
+/** The family 3D close X as a bare glyph, for a close that already owns its hit area (header circle, popup corner). */
+@Composable
+fun FamCloseGlyph(size: Dp = 22.dp) {
+    val img = famBitmap(FamChrome.CLOSE.res)
+    if (img != null) Image(img, null, contentScale = ContentScale.Fit, modifier = Modifier.size(size))
+}
+
 /** [RoundIconButton] for the family chrome icons (close / info). */
 @Composable
 fun RoundIconButton(icon: FamChrome, contentDescription: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 28.dp) =

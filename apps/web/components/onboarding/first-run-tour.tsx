@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { PageBackground } from '@/components/ui/page-background';
 import { CandyButton } from '@/components/ui/candy-button';
-import { CastButton } from '@/components/ui/cast-button';
+import { CastButton, TextLink as FamilyTextLink } from '@/components/ui/cast-button';
 import { CastHeader } from '@/components/ui/cast-header';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
@@ -96,12 +96,9 @@ function Line({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** BJ15 round 2: a secondary action stays a family text link (brand ink, no underline). */
 function TextLink({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="text-[14px] font-extrabold underline underline-offset-4 px-2 py-1" style={{ color: 'var(--color-text-secondary)', background: 'transparent' }}>
-      {children}
-    </button>
-  );
+  return <FamilyTextLink onClick={onClick} className="px-2 py-1">{children}</FamilyTextLink>;
 }
 
 /** Springs its child in when it mounts (Reduce Motion: a crossfade). */

@@ -691,12 +691,8 @@ struct HomeView: View {
                 .padding(.top, 8)
             }
             Spacer(minLength: 4)
-            Button { firstGameCardDismissed = true } label: {
-                Image(systemName: "xmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(FinishInk.secondary)
-                    .frame(width: 26, height: 26).contentShape(Rectangle())
-            }
-            .buttonStyle(.squishIcon)
-            .accessibilityLabel("Dismiss")
+            FamilyCloseButton(size: 22, label: "Dismiss") { firstGameCardDismissed = true }   // family 3D X
+                .padding(-9)
         }
         .padding(12)
         .tintedCard(accent: accent, bar: G5Accent.bar(accent), radius: 18, barHeight: 6)
@@ -738,12 +734,8 @@ struct HomeView: View {
                 CandyLabel(title: "Go Pro")
             }
             .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
-            Button { dismissProPrompt() } label: {
-                Image(systemName: "xmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(FinishInk.secondary)
-                    .frame(width: 26, height: 26).contentShape(Rectangle())
-            }
-            .buttonStyle(.squishIcon)
-            .accessibilityLabel("Dismiss")
+            FamilyCloseButton(size: 22, label: "Dismiss") { dismissProPrompt() }   // family 3D X
+                .padding(-9)
         }
         .padding(14)
         // §G5: a gold-tinted card with its top bar (§A1).

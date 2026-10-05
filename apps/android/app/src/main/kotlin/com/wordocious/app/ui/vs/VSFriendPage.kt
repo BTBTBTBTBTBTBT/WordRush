@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import com.wordocious.core.GameMode
+import com.wordocious.app.ui.candyPill
 
 /**
  * The Friend page, `CHALLENGE` (VS overhaul §3, founder 2026-10-01) — Pro to
@@ -89,8 +90,11 @@ fun VsFriendPage(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Segmented control (A1 tinted track; the picked option = the stronger tint + ring; A9 squish).
+            // Button family §4: the candy segmented (frosted track + glossy purple thumb), no ring.
+            val segTrack = com.wordocious.app.ui.candyBitmap(com.wordocious.app.ui.CandySprite.TRACK)
+            val segThumb = com.wordocious.app.ui.candyBitmap(com.wordocious.app.ui.CandySprite.THUMB_ON)
             Row(
-                Modifier.fillMaxWidth().vsRow(VS_ACCENT, 14.dp).padding(4.dp),
+                Modifier.fillMaxWidth().candyPill(segTrack).padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 listOf(false to ("RACE MY RUN" to "they play any time in 24 h"), true to ("LIVE NOW" to "both online")).forEach { (live, labels) ->
@@ -99,12 +103,13 @@ fun VsFriendPage(
                         Modifier.weight(1f)
                             .squishClickable("${labels.first}, ${labels.second}", role = Role.Tab) { liveTab = live }
                             .semantics { selected = on }
-                            .then(if (on) Modifier.vsRow(VS_ACCENT, 11.dp, amount = 0.30f) else Modifier)
+                            .then(if (on) Modifier.candyPill(segThumb) else Modifier)
                             .padding(vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(labels.first, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = if (on) VsTeal.deep else VsTeal.ink)
-                        Text(labels.second, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub)
+                        val ink = if (on) com.wordocious.app.ui.CandyInk.ON else com.wordocious.app.ui.CandyInk.off
+                        Text(labels.first, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = ink)
+                        Text(labels.second, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ink.copy(alpha = 0.8f))
                     }
                 }
             }

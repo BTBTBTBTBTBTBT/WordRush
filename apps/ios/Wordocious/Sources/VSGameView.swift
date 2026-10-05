@@ -1870,7 +1870,8 @@ private struct VSLookingPingRow: View {
             Spacer(minLength: 0)
             Toggle("", isOn: Binding(get: { on }, set: { NotificationPrefsWriter.set(VsLookingService.prefKey, $0, saving: $saving) }))
                 .labelsHidden()
-                .tint(Color(hex: 0x0F766E))
+                .toggleStyle(.candy)   // button family §4: the candy switch, never the system one
+                .fixedSize()
                 .disabled(saving || auth.profile == nil)
         }
         .padding(.horizontal, 16).padding(.vertical, 12)

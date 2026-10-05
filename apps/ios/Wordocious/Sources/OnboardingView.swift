@@ -275,8 +275,8 @@ struct OnboardingWelcome: View {
                 .buttonStyle(CastButtonStyle(size: .large))
             if showSignIn {
                 Button(action: onSignIn) {
-                    Text("I already have an account")
-                        .font(Brand.font(14, .black)).foregroundStyle(FinishInk.purple).underline()
+                    // BJ15 round 2: a secondary text link in the brand ink (no underline, the family TextLinkLabel).
+                    TextLinkLabel(title: "I already have an account").frame(minHeight: 44)
                 }
                 .buttonStyle(.squish)
             }

@@ -80,16 +80,9 @@ struct HomeHostMascot: View {
         }
         .buttonStyle(.squish)
         .overlay(alignment: .topTrailing) {
-            Button { Haptics.tap(); DressUp.shared.finish(.hostInvite) } label: {
-                Image(systemName: "xmark").font(.system(size: 8, weight: .black)).foregroundStyle(Color(hex: 0x7A6AA6))
-                    .frame(width: 16, height: 16)
-                    .background(Circle().fill(Color.white))
-                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 2, y: 1)
-                    .frame(width: 30, height: 30).contentShape(Rectangle())
-            }
-            .buttonStyle(.squishIcon)
-            .offset(x: 10, y: -10)
-            .accessibilityLabel("Dismiss")
+            // The family 3D X (README §3); 44 pt hit area, so the offset keeps its center on the bubble's corner.
+            FamilyCloseButton(size: 18, label: "Dismiss") { Haptics.tap(); DressUp.shared.finish(.hostInvite) }
+                .offset(x: 17, y: -17)
         }
         .accessibilityLabel("Make me yours! Dress up your mascot")
         .offset(x: size * 0.82, y: size * 0.04)

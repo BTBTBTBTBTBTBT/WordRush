@@ -117,17 +117,9 @@ struct FinishedScreenLayout<Header: View, Board: View, Dock: View, Extras: View>
             Haptics.tap()
             toggleMore(proxy)
         } label: {
-            HStack(spacing: 4) {
-                Text(showMore ? "Less" : "More").font(Brand.font(12, .black)).tracking(0.6)
-                Image(systemName: showMore ? "chevron.up" : "chevron.down").font(.system(size: 10, weight: .black))
-            }
-            .foregroundStyle(FinishInk.secondary)
-            .padding(.horizontal, 14).frame(height: 26)
-            .tintedPill(Color(hex: 0x7C3AED))
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            CandyLabel(title: showMore ? "Less" : "More", symbol: showMore ? "chevron.up" : "chevron.down")
         }
-        .buttonStyle(.squish)
+        .buttonStyle(QuietButtonStyle(size: .small))   // button family §2: the quiet pill
         .accessibilityLabel(showMore ? "Show less" : "More: score breakdown and details")
         .padding(.bottom, 2)
     }

@@ -80,16 +80,12 @@ fun AnnouncementsBanner() {
                 Text(a.body, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted, fontFamily = Nunito)
             }
-            Box(
-                Modifier.size(SOFT_CONTROL_TAP).squishClickable("Dismiss", icon = true) {
-                    val dismissed = SettingsPref.get("dismissed-announcements", "")
-                    SettingsPref.set("dismissed-announcements", if (dismissed.isEmpty()) a.id else "$dismissed,${a.id}")
-                    current = null
-                },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.Close, null, tint = if (WTheme.isDark) WTheme.textMuted else FinishInk.label, modifier = Modifier.size(16.dp))
-            }
+            // Button family §3: the soft 3D X.
+            RoundIconButton(FamChrome.CLOSE, "Dismiss", onClick = {
+                val dismissed = SettingsPref.get("dismissed-announcements", "")
+                SettingsPref.set("dismissed-announcements", if (dismissed.isEmpty()) a.id else "$dismissed,${a.id}")
+                current = null
+            }, size = 22.dp)
         }
     }
 }

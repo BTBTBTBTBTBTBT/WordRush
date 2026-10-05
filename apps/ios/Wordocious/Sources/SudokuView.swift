@@ -291,21 +291,12 @@ struct SudokuView: View {
 
     /// Pro Unlimited: Easy · Medium · Hard capsules; switching starts a fresh puzzle.
     private var difficultyPicker: some View {
-        HStack(spacing: 8) {
-            ForEach(SudokuDifficulty.allCases, id: \.self) { d in
-                let active = d == vm.state.difficulty
-                Button { if !active { onPlayAgain?(d) } } label: {
-                    // §A1 / §A9: tinted options; the selected one the stronger tint + ring.
-                    Text(difficultyLabel[d] ?? d.rawValue).font(Brand.font(11, .black))
-                        .foregroundStyle(active ? (Theme.isDark ? Color.white : sudokuAccent) : FinishInk.secondary)
-                        .padding(.horizontal, 12).padding(.vertical, 5)
-                        .background(Capsule().fill(PuzKit.face(sudokuAccent, active ? 0.24 : 0.08)))
-                        .overlay(Capsule().stroke(active ? sudokuAccent : PuzKit.line(sudokuAccent, 0.3), lineWidth: active ? 2 : 1.5))
-                }
-                .buttonStyle(.squish)
-                .accessibilityAddTraits(active ? .isSelected : [])
-            }
+        // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb).
+        CandySegmented(options: SudokuDifficulty.allCases.map { (key: $0, label: difficultyLabel[$0] ?? $0.rawValue) },
+                       selection: vm.state.difficulty, accessibilityLabel: "Difficulty", height: 32) { d in
+            if d != vm.state.difficulty { onPlayAgain?(d) }
         }
+        .fixedSize()
     }
 
     private var board: some View {

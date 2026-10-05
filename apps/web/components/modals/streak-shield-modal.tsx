@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 
 import Image from 'next/image';
-import { X } from 'lucide-react';
 import { HeaderCircle } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
@@ -16,6 +15,7 @@ import { softPill } from '@/lib/soft-surface';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { feedback } from '@/lib/sound-events';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { FamCloseGlyph } from '@/components/ui/family-button';
 
 const PURPLE = '#7c3aed';
 /** The shield popups' purple header (components/ui/streak-popups.tsx ShieldPopup). */
@@ -121,7 +121,7 @@ export function StreakShieldModal({
           >
             {!saved && (
               <HeaderCircle label="Close" onClick={onClose} size={32} className="absolute top-2.5 right-2.5 z-10">
-                <X aria-hidden="true" style={{ width: 22, height: 22, color: '#ffffff', filter: 'drop-shadow(0 2px 3px rgba(46, 16, 101, 0.45))' }} strokeWidth={3.4} />
+                <FamCloseGlyph size={24} />
               </HeaderCircle>
             )}
 

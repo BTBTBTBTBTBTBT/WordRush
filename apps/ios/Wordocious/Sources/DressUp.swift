@@ -535,12 +535,10 @@ struct PartyHatOffer: View {
                 Spacer(minLength: 4)
                 Button { dressUp.open(.partyHat) } label: { CandyLabel(title: "Yes!") }
                     .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
-                Button { Haptics.tap(); withAnimation(.easeOut(duration: 0.2)) { dressUp.finish(.partyHat) } } label: {
-                    Image(systemName: "xmark").font(.system(size: 11, weight: .black))
-                        .foregroundStyle(Color(hex: 0x7A6AA6)).frame(width: 30, height: 34).contentShape(Rectangle())
+                FamilyCloseButton(size: 22, label: "No thanks") {   // family 3D X
+                    Haptics.tap(); withAnimation(.easeOut(duration: 0.2)) { dressUp.finish(.partyHat) }
                 }
-                .buttonStyle(.squishIcon)
-                .accessibilityLabel("No thanks")
+                .padding(.vertical, -5)
             }
             .padding(.leading, 10).padding(.trailing, 2).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous)

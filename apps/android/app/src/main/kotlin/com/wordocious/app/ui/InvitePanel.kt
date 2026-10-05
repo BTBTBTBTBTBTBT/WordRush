@@ -177,12 +177,10 @@ fun InvitePanel() {
             if (ReferralCredits.showClearAll(visible.filter { !(ReferralCredits.isCredit(it.status) && it.id in dismissed) }.map { it.status })) {
                 // Founder 10-03: a quiet Clear all once there are 2+ credit notices.
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    Text(
-                        "Clear all", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Nunito, color = FinishInk.muted,
-                        modifier = Modifier.squishClickable("Clear all") {
-                            dismissCredits(visible.filter { ReferralCredits.isCredit(it.status) }.map { it.id })
-                        }.padding(horizontal = 8.dp, vertical = 6.dp),
-                    )
+                    // Button family §2: the quiet pill, never bare text.
+                    QuietButton("Clear all", onClick = {
+                        dismissCredits(visible.filter { ReferralCredits.isCredit(it.status) }.map { it.id })
+                    }, size = CandySize.SMALL)
                 }
             }
             visible.take(6).forEach { inv ->
@@ -234,17 +232,7 @@ fun InvitePanel() {
                         // iOS marks a converted invite with trophy.fill, not a crown.
                         if (inv.status == "converted") Icon3D(Icon3DName.TROPHY, 14.dp)
                         // Founder 10-03: X a credit notice away (soft circle, no outline, 44 dp tap area).
-                        Box(
-                            Modifier.size(44.dp).squishClickable("Dismiss", icon = true) { dismissCredits(listOf(inv.id)) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Box(Modifier.size(24.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Wash.mix(GIFT_GOLD, 0.22f)), contentAlignment = Alignment.Center) {
-                                androidx.compose.material3.Icon(
-                                    androidx.compose.material.icons.Icons.Filled.Close, contentDescription = null,
-                                    tint = Color(0xFF92400E), modifier = Modifier.size(14.dp),
-                                )
-                            }
-                        }
+                        RoundIconButton(FamChrome.CLOSE, "Dismiss", onClick = { dismissCredits(listOf(inv.id)) }, size = 22.dp)   // family 3D X
                     }
                 }
               }

@@ -706,22 +706,14 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
             },
             color = CastColor.PINK, size = CastSize.S,
         )
-        Box(
-            // A1 / A9: a tinted pink dismiss circle that squishes (was a white circle).
-            Modifier.squishClickable("Dismiss", icon = true) {
-                    scope.launch {
-                        com.wordocious.app.data.InviteService.markInviteDeclined(top.id)
-                        invites = invites.filter { it.id != top.id }
-                        // Next inviter's name is already in the batched map — no extra query.
-                    }
-                }
-                .size(28.dp).clip(androidx.compose.foundation.shape.CircleShape)
-                .background(accentWash(Color(0xFFEC4899), 0.14f))
-                .border(1.5.dp, accentLine(Color(0xFFEC4899)), androidx.compose.foundation.shape.CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color(0xFFA21CAF), modifier = Modifier.size(14.dp))
-        }
+        // Button family §3: the soft 3D X (was an outlined pink circle).
+        RoundIconButton(FamChrome.CLOSE, "Dismiss", onClick = {
+            scope.launch {
+                com.wordocious.app.data.InviteService.markInviteDeclined(top.id)
+                invites = invites.filter { it.id != top.id }
+                // Next inviter's name is already in the batched map — no extra query.
+            }
+        }, size = 22.dp)
     }
 }
 
@@ -879,10 +871,6 @@ private fun ModeCardGrid(
 /** A bare dismiss X (no bubble) in a 44 dp tap area that squishes (A3 / A9). */
 @Composable
 private fun HomeDismissX(onDismiss: () -> Unit) {
-    Box(
-        Modifier.size(SOFT_CONTROL_TAP).squishClickable("Dismiss", icon = true, onClick = onDismiss),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Filled.Close, null, tint = if (WTheme.isDark) WTheme.textMuted else FinishInk.label, modifier = Modifier.size(16.dp))
-    }
+    // Button family §3: the soft 3D X.
+    RoundIconButton(FamChrome.CLOSE, "Dismiss", onClick = onDismiss, size = 22.dp)
 }

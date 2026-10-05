@@ -135,12 +135,8 @@ struct TitleShelvesView: View {
             }
             Spacer(minLength: 0)
             if pick != nil {
-                Button { Haptics.tap(); pick = nil; hint = "No title for now." } label: {
-                    Text("None").font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(Capsule().fill(Color(hex: 0x7C3AED).opacity(0.1)))
-                }
-                .buttonStyle(.squish)
+                Button { Haptics.tap(); pick = nil; hint = "No title for now." } label: { CandyLabel(title: "None") }
+                .buttonStyle(QuietButtonStyle(size: .small))   // button family §2
                 .accessibilityLabel("Wear no title")
             }
         }

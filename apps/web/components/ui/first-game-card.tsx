@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { X as XIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { CandyLink } from '@/components/ui/candy-button';
 import { HeaderCircle } from '@/components/ui/page-header';
 import { PoseArt } from '@/components/ui/soft-popup';
 import { cardBarStyle, softCard } from '@/lib/soft-surface';
+import { FamCloseGlyph } from '@/components/ui/family-button';
 
 const DISMISS_KEY = 'first-game-card-dismissed';
 
@@ -55,7 +55,7 @@ export function FirstGameCard() {
         Play
       </CandyLink>
       <HeaderCircle label="Dismiss" onClick={dismiss} size={28} className="absolute top-1.5 right-0.5">
-        <XIcon aria-hidden="true" style={{ width: 15, height: 15, color: 'var(--color-win-text, #7c3aed)' }} strokeWidth={3.2} />
+        <FamCloseGlyph size={18} />
       </HeaderCircle>
     </div>
   );

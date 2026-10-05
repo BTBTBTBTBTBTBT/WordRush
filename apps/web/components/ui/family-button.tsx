@@ -100,6 +100,15 @@ export function RoundIconButton({ icon, label, size = 28, className = '', style,
   );
 }
 
+/** The family 3D close X as a bare glyph, for a close that already owns its hit area (HeaderCircle, a popup corner). */
+export function FamCloseGlyph({ size = 22 }: { size?: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={famChromeSrc('close')} alt="" aria-hidden="true" draggable={false}
+      style={{ width: size, height: size, objectFit: 'contain', filter: 'drop-shadow(0 2px 2.5px rgba(76, 29, 149, 0.18))' }} />
+  );
+}
+
 /** Every family sprite (the idle warm-up list, CastArtWarmup). */
 export function famArtPaths(): string[] {
   return [

@@ -356,7 +356,7 @@ private fun HeaderPopup(
                     CastPose(host.first, host.second, 74.dp, Modifier.align(Alignment.BottomEnd).offset(x = (-8).dp, y = 6.dp))
                     // BI12: an always-visible close on the card (the scrim also closes).
                     HeaderCircle(close, "Close", Modifier.align(Alignment.TopEnd), size = 32.dp) {
-                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        FamCloseGlyph(22.dp)   // button family §3: the soft 3D X
                     }
                 }
                 Column(Modifier.fillMaxWidth().verticalScroll(androidx.compose.foundation.rememberScrollState())) { body() }

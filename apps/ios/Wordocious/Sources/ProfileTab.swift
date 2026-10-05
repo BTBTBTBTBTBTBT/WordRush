@@ -1197,13 +1197,10 @@ struct ProfileTab: View {
             if let handle = links[key], let url = socialURL(key, handle) {
                 Link(destination: url) {
                     Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
-                        .font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.isDark ? Theme.textSecondary : FinishInk.deepPurple)
-                        .frame(width: 30, height: 30)
-                        .background(Circle().fill(Theme.isDark ? Theme.surfaceHover : FinishInk.purple.wash(0.12)))
-                        .overlay(Circle().stroke(Theme.isDark ? Theme.border : FinishInk.purple.wash(0.32), lineWidth: 1.5))
+                        .font(.system(size: 14, weight: .black))
                 }
-                // §AB / §AK: icon-only — a spoken name, and the shared squish.
-                .buttonStyle(.squishIcon)
+                // §AB: icon-only — a spoken name; button family §1: the helper circle (no outlined ring).
+                .buttonStyle(HelperButtonStyle(fallback: Color(hex: 0x7C3AED), circle: true))
                 .accessibilityLabel(key == "website" ? "Website" : key.capitalized)
             }
         }

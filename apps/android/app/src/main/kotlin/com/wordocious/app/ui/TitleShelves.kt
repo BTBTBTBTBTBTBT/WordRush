@@ -116,12 +116,8 @@ fun TitleShelvesDialog(
                     TitleRibbon(name ?: "No title", height = 26.dp, maxWidth = 230.dp, placeholder = name == null)
                     Text(hint, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7A6AA6), maxLines = 2)
                 }
-                if (pick != null) Text(
-                    "None", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
-                    modifier = Modifier.clip(RoundedCornerShape(50)).background(Color(0x1A7C3AED))
-                        .squishClickable(label = "Wear no title") { pick = null; hint = "No title for now." }
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                )
+                // Button family §2: the quiet pill.
+                if (pick != null) QuietButton("None", onClick = { pick = null; hint = "No title for now." }, size = CandySize.SMALL, contentDescription = "Wear no title")
             }
             // Search (a soft filled capsule, never outlined).
             Box(

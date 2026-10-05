@@ -180,7 +180,7 @@ fun HeaderBackButton(
 ) {
     HeaderCircle(onClick, contentDescription, modifier, size) {
         if (close) {
-            Icon(Icons.Filled.Close, contentDescription = null, tint = HeaderInk.control, modifier = Modifier.size(24.dp))
+            FamCloseGlyph(22.dp)   // button family §3: the soft 3D X (iOS HeaderCircleLabel parity)
         } else {
             Icon3D(Icon3DName.BACK, SOFT_CONTROL_ICON)
         }

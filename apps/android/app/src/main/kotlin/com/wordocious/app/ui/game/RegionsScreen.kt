@@ -395,22 +395,12 @@ private fun RegionsHeader(session: RegionsSession) {
 
 @Composable
 private fun SizePicker(current: Int, onPick: (Int) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        REGIONS_SIZES.forEach { n ->
-            val active = n == current
-            Text(
-                REGIONS_SIZE_LABEL[n] ?: "$n", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                color = if (active) Color.White else REGIONS_ACCENT,
-                modifier = Modifier
-                    .squishClickable(label = (REGIONS_SIZE_LABEL[n] ?: "$n") + if (active) ", selected" else "") { if (!active) onPick(n) }
-                    .then(
-                        if (active) Modifier.clip(CircleShape).background(REGIONS_ACCENT)
-                        else Modifier.tintedPill(REGIONS_ACCENT, corner = 20.dp),
-                    )
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
-    }
+    // Button family §4: a three-way choice is the candy segmented (frosted track + glossy thumb), iOS parity.
+    com.wordocious.app.ui.CandySegmentedToggle(
+        options = REGIONS_SIZES.map { it to (REGIONS_SIZE_LABEL[it] ?: "$it") },
+        selected = current, onChange = { if (it != current) onPick(it) },
+        height = 32.dp, width = 210.dp,
+    )
 }
 
 // ── Board ───────────────────────────────────────────────────────────────────

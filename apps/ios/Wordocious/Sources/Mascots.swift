@@ -537,10 +537,8 @@ struct GuestPitch: View {
             // only offer what they have; SIGN IN stays (web + Android parity).
             if !auth.isGuest {
                 Button { HomeNav.press {} } label: {
-                    Text("Play without an account")
-                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
-                        .underline()
-                        .frame(minHeight: 44)
+                    // BJ15 round 2: a secondary text link in the brand ink (the sign-in screen's own link).
+                    TextLinkLabel(title: "Play without an account").frame(minHeight: 44)
                 }
                 .buttonStyle(.squish)
                 .padding(.top, 6)

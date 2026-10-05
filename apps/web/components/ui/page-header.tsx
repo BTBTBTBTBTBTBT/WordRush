@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ArtTitle } from '@/components/ui/art-title';
 import { ART_SIZE, type TitleArtName } from '@/lib/art';
 import { HEADLINE, PAGE_HEADLINE, headlineMaxWidth } from '@/lib/headline';
 import { Mascot, type MascotMotion } from '@/components/ui/mascot';
 import type { MascotId } from '@/lib/mascots';
+import { FamCloseGlyph } from '@/components/ui/family-button';
 
 // One header style for every page, screen and sheet (docs/HEADER_SPEC.md §4):
 // the title in caps 900 with the purple→pink gradient (or the page's accent:
@@ -89,14 +89,14 @@ export interface HeaderNav {
 
 /**
  * The back or close (X) control, bare (A3). Back draws the 3D back arrow
- * (docs/ART_SPEC.md §5) at 23 px; close keeps a chunky X in #6d28d9.
+ * (docs/ART_SPEC.md §5) at 23 px; close = the family soft 3D X (button family §3).
  */
 export function HeaderBack({ kind = 'back', href, onClick, label, size = 34, className = '' }: HeaderNav & { kind?: 'back' | 'close'; size?: number; className?: string }) {
   return (
     <HeaderCircle label={label ?? (kind === 'back' ? 'Back' : 'Close')} href={href} onClick={onClick} size={size} className={className}>
       {kind === 'back'
         ? <Icon3D name="back" size={HEADER_GLYPH} />
-        : <X aria-hidden="true" style={{ width: 22, height: 22, color: HEADER_INK, filter: 'drop-shadow(0 2px 3px rgba(76, 29, 149, 0.2))' }} strokeWidth={3.4} />}
+        : <FamCloseGlyph size={24} />}
     </HeaderCircle>
   );
 }

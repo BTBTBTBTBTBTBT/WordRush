@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
-import { X as XIcon } from 'lucide-react';
 import { HeaderCircle } from '@/components/ui/page-header';
 import { PoseArt } from '@/components/ui/soft-popup';
 import { alphaHex, cardBarStyle, softBackground, softBorder } from '@/lib/soft-surface';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
+import { FamCloseGlyph } from '@/components/ui/family-button';
 
 interface Announcement {
   id: string;
@@ -88,7 +88,7 @@ export function AnnouncementsBanner() {
           </p>
         </div>
         <HeaderCircle label="Dismiss announcement" onClick={dismiss} size={32} className="absolute top-2 right-1">
-          <XIcon aria-hidden="true" style={{ width: 18, height: 18, color: 'var(--color-win-text, #7c3aed)' }} strokeWidth={3.2} />
+          <FamCloseGlyph />
         </HeaderCircle>
       </div>
     </div>

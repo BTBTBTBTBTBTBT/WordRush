@@ -344,7 +344,7 @@ export function PartyHatOffer() {
         <div className="text-[11px] font-bold truncate" style={{ color: '#7a6aa6' }}>Your mascot wants to celebrate.</div>
       </div>
       <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'partyhat' }); }}><span className="candy-label">Yes!</span></button>
-      <button type="button" aria-label="No thanks" onClick={done} className="w-8 h-9 flex items-center justify-center font-black text-xs" style={{ color: '#7a6aa6' }}>✕</button>
+      <RoundIconButton icon="close" label="No thanks" size={22} onClick={done} className="-my-1" />
     </div>
   );
 }
@@ -398,10 +398,8 @@ export function HostInviteBubble({ uid }: { uid: string }) {
         <span className="absolute inset-0" style={{ background: `url(${artSrc('art-dress-bubble')}) 0 0 / 100% 100%` }} aria-hidden="true" />
         <span className="relative block whitespace-nowrap text-xs font-black" style={{ color: '#6d28d9', padding: '8px 14px 13px' }}>Make me yours!</span>
       </button>
-      <button type="button" aria-label="Dismiss" onClick={() => finishNudge('host', uid)}
-        className="absolute -top-2.5 -right-2.5 w-7 h-7 flex items-center justify-center border-0 bg-transparent p-0 cursor-pointer">
-        <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center text-[8px] font-black shadow" style={{ color: '#7a6aa6' }}>✕</span>
-      </button>
+      {/* Button family §3: the soft 3D X (44 px hit area centered on the bubble's corner). */}
+      <RoundIconButton icon="close" label="Dismiss" size={18} onClick={() => finishNudge('host', uid)} className="absolute -top-[18px] -right-[18px]" />
     </span>
   );
 }

@@ -21,6 +21,7 @@ import { InviteCodeTiles, InviteSentCard } from '@/components/friends/invite-scr
 import { codeFromInviteUrl } from '@/lib/invite-screens';
 import { FeedbackPill } from '@/components/game/feedback-toast';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { CandySegment } from '@/components/ui/candy-segment';
 
 // The VS invite window (G5, docs/FINISH_SPEC.md): a lavender-washed sheet with
 // the brand top bar (A1; the washes follow the theme's card base), I with the
@@ -222,26 +223,13 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
         </p>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => { setTab('link'); reset(); }}
-            aria-pressed={tab === 'link'}
-            className="flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5"
-            style={{ ...tint(BRAND_ACCENT, tab === 'link'), color: tab === 'link' ? 'var(--color-win-text)' : 'var(--color-text-secondary)' }}
-          >
-            <LinkIcon className="w-3 h-3" />
-            Share link
-          </button>
-          <button
-            onClick={() => { setTab('username'); reset(); }}
-            aria-pressed={tab === 'username'}
-            className="flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5"
-            style={{ ...tint(BRAND_ACCENT, tab === 'username'), color: tab === 'username' ? 'var(--color-win-text)' : 'var(--color-text-secondary)' }}
-          >
-            <UserIcon className="w-3 h-3" />
-            Username
-          </button>
-        </div>
+        {/* Button family §4: the candy segmented (iOS SoftSegmented parity). */}
+        <CandySegment label="Invite by" className="mb-4" height={36}
+          options={[
+            { key: 'link', label: <><LinkIcon className="w-3 h-3" aria-hidden="true" /> Share link</> },
+            { key: 'username', label: <><UserIcon className="w-3 h-3" aria-hidden="true" /> Username</> },
+          ]}
+          value={tab} onChange={(k) => { if (k !== tab) { setTab(k); reset(); } }} />
 
         {/* Body — fixed min-height so modal doesn't jump between tabs */}
         <div className="flex flex-col" style={{ minHeight: '220px' }}>
