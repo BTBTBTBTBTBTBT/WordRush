@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import {
-  AVATAR_BODIES, AVATAR_CHEEKS, AVATAR_EYES, AVATAR_FACES, AVATAR_HEADS, AVATAR_MOUTHS, AVATAR_NECKS, AVATAR_NOSES,
+  AVATAR_INTEGRATED_OPTIONS, AVATAR_BODIES, AVATAR_CHEEKS, AVATAR_EYES, AVATAR_FACES, AVATAR_HEADS, AVATAR_MOUTHS, AVATAR_NECKS, AVATAR_NOSES,
   avatarColor, avatarLayout, defaultAvatar, validateAvatar, type AvatarConfig,
 } from '@wordle-duel/core';
 import { ART_SIZE } from './art';
@@ -24,6 +24,13 @@ function combos(): AvatarConfig[] {
     for (const nose of AVATAR_NOSES) out.push({ ...BASE, body, nose });
     for (const cheeks of AVATAR_CHEEKS) out.push({ ...BASE, body, cheeks });
     for (const face of AVATAR_FACES) out.push({ ...BASE, body, face });
+    // 10-05 integrated parts: every option on every body (per-body layer art), alone and with a hat + neck item
+    for (const [field, ids] of Object.entries(AVATAR_INTEGRATED_OPTIONS)) {
+      for (const id of ids) {
+        out.push({ ...BASE, body, [field]: id });
+        out.push({ ...BASE, body, head: 'party', neck: 'backpack', [field]: id });
+      }
+    }
   }
   return out;
 }

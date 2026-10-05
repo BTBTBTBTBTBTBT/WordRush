@@ -31,6 +31,12 @@ export interface AvatarBodyAnchors {
   cape: { y: number };
   hand: { x: number; y: number };
   bounds: [number, number, number, number];
+  /** v3 integration anchors (docs/design/brand/avatar/INTEGRATION.md): hand ellipses [x, y, rx, ry] (L/R = the
+   *  viewer's left/right), the shoulder line, the wrap line samples [x, top, bottom], the floor. */
+  hands?: Record<'L' | 'R', [number, number, number, number]>;
+  shoulderY?: number;
+  wrap?: Array<[number, number, number]>;
+  floor?: number;
   overrides?: Record<string, { dx?: number; dy?: number; scale?: number }>;
 }
 
@@ -43,6 +49,14 @@ export interface AvatarItemMeta {
    * `art-av-<kind>-<id>-<body>` at [x, y, w, h] body units, instead of the anchor placement.
    */
   perBody?: Record<string, [number, number, number, number]>;
+  /**
+   * v3 integrated parts (front/back split, hand-over, wrap line, contact shadows baked per body): per body, the
+   * pieces [layer, x, y, w, h] in body units, art `art-av-<kind>-<id>-<body>-<layer>`. A body missing from the map
+   * has no room for the part: it draws nothing there.
+   */
+  pieces?: Record<string, Array<[string, number, number, number, number]>>;
+  /** Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes). */
+  inkTop?: number;
 }
 
 /** The gap a hat keeps above the eyes / glasses (body units). */
@@ -62,9 +76,18 @@ export interface AvatarManifest {
 export const AVATAR_MANIFEST = partsJson as unknown as AvatarManifest;
 
 /** The config fields that hold a part, and the art kind each one draws. */
-export const AVATAR_PART_FIELDS = ['cheeks', 'eyes', 'nose', 'mouth', 'face', 'head', 'neck'] as const;
+export const AVATAR_PART_FIELDS = ['cheeks', 'eyes', 'nose', 'mouth', 'face', 'head', 'neck', 'held', 'wrap', 'feet', 'pet', 'brows', 'extra'] as const;
 export type AvatarPartField = (typeof AVATAR_PART_FIELDS)[number];
-const FIELD_KIND: Record<AvatarPartField, string> = { cheeks: 'cheeks', eyes: 'eyes', nose: 'nose', mouth: 'mouth', face: 'acc', head: 'acc', neck: 'acc' };
+const FIELD_KIND: Record<AvatarPartField, string> = {
+  cheeks: 'cheeks', eyes: 'eyes', nose: 'nose', mouth: 'mouth', face: 'acc', head: 'acc', neck: 'acc',
+  held: 'acc', wrap: 'acc', feet: 'acc', pet: 'acc', brows: 'brows', extra: 'acc',
+};
+/** The manifest item key for a config field + id (e.g. held + mug → acc:mug, brows + happy → brows:happy). */
+export function avatarItemKey(field: AvatarPartField, id: string): string {
+  return `${FIELD_KIND[field]}:${id}`;
+}
+/** The layers drawn before the white initial (the letter sits ON the 'under' garments: apron, sash, belt). */
+export const AVATAR_LAYERS_UNDER_LETTER: readonly string[] = ['back', 'body', 'pattern', 'under'];
 
 export interface AvatarLayoutLayer {
   /** back | body | cheeks | eyes | nose | mouth | face | head | neckFront */
@@ -89,6 +112,8 @@ export interface AvatarLayout {
   letter: AvatarRect;
   /** Back → front, the body included (layer 'body'). */
   layers: AvatarLayoutLayer[];
+  /** The white initial is drawn just before layers[letterIndex] (= layers.length: after the last layer). */
+  letterIndex: number;
   /** The union of everything drawn (content fractions) — always inside the padded frame. */
   bounds: AvatarRect;
 }
@@ -131,7 +156,7 @@ export function applyAvatarPick<T extends AvatarConfig>(config: T, field: keyof 
 /** The parts a config actually draws, after conflicts (later fields in the priority list lose). */
 function wornParts(config: AvatarConfig, small: boolean, manifest: AvatarManifest): Array<[AvatarPartField, string]> {
   const out: Array<[AvatarPartField, string]> = [];
-  const priority: AvatarPartField[] = ['eyes', 'mouth', 'head', 'nose', 'cheeks', 'neck', 'face'];
+  const priority: AvatarPartField[] = ['eyes', 'mouth', 'head', 'nose', 'cheeks', 'neck', 'face', 'held', 'wrap', 'feet', 'pet', 'brows', 'extra'];
   const kept: Record<string, string> = {};
   for (const f of priority) {
     const id = (config as unknown as Record<string, string>)[f];
@@ -173,6 +198,16 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
     const key = `${FIELD_KIND[field]}:${id}`;
     const m = manifest.items[key];
     const p = slotPoint(b, m.slot);
+    if (m.pieces) {
+      // v3 integrated part: its per-body layers (nothing on a body without room for it)
+      for (const [layer, x, y, w, h] of m.pieces[config.body] ?? []) {
+        placed.push({
+          layer, field, id, art: `art-av-${FIELD_KIND[field]}-${id}-${config.body}-${layer}`,
+          rect: { x, y, w, h }, tint: !!m.tint && AVATAR_TINTABLE.includes(id),
+        });
+      }
+      continue;
+    }
     const pb = m.perBody?.[config.body];
     if (pb) {
       placed.push({
@@ -199,6 +234,19 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
     const bottom = p.rect.y + p.rect.h;
     if (bottom > limit) p.rect = { ...p.rect, y: p.rect.y - (bottom - limit) };
   }
+  // Brows sit over the round default eyes (beady); taller eyes lift them by the difference in visible eye top.
+  const eyesItem = manifest.items[`eyes:${config.eyes}`];
+  const beady = manifest.items['eyes:beady'];
+  const eyesLayer = placed.find((p) => p.layer === 'eyes');
+  if (eyesLayer && eyesItem?.inkTop !== undefined && beady?.inkTop !== undefined) {
+    const p = slotPoint(b, beady.slot);
+    const o = b.overrides?.['eyes:beady'] ?? {};
+    const w = p.base * beady.w * (o.scale ?? 1);
+    const h = w * beady.aspect;
+    const beadyTop = p.y - beady.anchor[1] * h + (o.dy ?? 0) + beady.inkTop * h;
+    const lift = Math.min(0, eyesLayer.rect.y + eyesItem.inkTop * eyesLayer.rect.h - beadyTop);
+    if (lift < 0) for (const q of placed) if (q.layer === 'brows') q.rect = { ...q.rect, y: q.rect.y + lift };
+  }
   // the union of the body art's content + every part
   let x0 = b.bounds[0], y0 = b.bounds[1], x1 = b.bounds[2], y1 = b.bounds[3];
   for (const p of placed) {
@@ -216,11 +264,13 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
   const layers = [bodyLayer, ...placed.map((p) => ({ ...p, rect: map(p.rect) }))]
     .sort((a, c) => order.indexOf(a.layer) - order.indexOf(c.layer));
   const [lx, ly, lw, lh] = b.letterBox;
+  const after = layers.findIndex((l) => !AVATAR_LAYERS_UNDER_LETTER.includes(l.layer));
   return {
     scale: r4(s),
     body: bodyLayer.rect,
     letter: map({ x: lx, y: ly, w: lw, h: lh }),
     layers,
+    letterIndex: after < 0 ? layers.length : after,
     bounds: map({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }),
   };
 }

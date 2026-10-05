@@ -41,6 +41,7 @@ final class AvatarLayoutTests: XCTestCase {
             close(got.body, try rect(want["body"]), "case \(i) body")
             close(got.letter, try rect(want["letter"]), "case \(i) letter")
             close(got.bounds, try rect(want["bounds"]), "case \(i) bounds")
+            XCTAssertEqual(got.letterIndex, try XCTUnwrap(want["letterIndex"] as? Int), "case \(i) letterIndex")
             let layers = try XCTUnwrap(want["layers"] as? [[String: Any]])
             XCTAssertEqual(got.layers.map(\.art), layers.map { $0["art"] as? String ?? "" }, "case \(i) order")
             for (g, w) in zip(got.layers, layers) {

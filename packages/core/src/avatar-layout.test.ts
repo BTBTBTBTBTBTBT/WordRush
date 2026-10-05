@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   AVATAR_BODIES, AVATAR_CHEEKS, AVATAR_EYES, AVATAR_FACES, AVATAR_HEADS, AVATAR_MOUTHS, AVATAR_NECKS, AVATAR_NOSES,
-  castPreset, validateAvatar, type AvatarConfig,
+  AVATAR_BUNDLES, AVATAR_INTEGRATED_OPTIONS, castPreset, validateAvatar, type AvatarConfig,
 } from './avatar-config';
 import { AVATAR_MANIFEST, HAT_EYE_CLEARANCE, applyAvatarPick, avatarLayout, avatarPickConflict, avatarPatternShapes } from './avatar-layout';
 
@@ -114,5 +114,74 @@ describe('avatar fit system', () => {
     for (const b of AVATAR_BODIES) expect(AVATAR_MANIFEST.bodies[b], b).toBeDefined();
     expect(avatarPatternShapes('solid')).toEqual([]);
     for (const p of ['hearts', 'stars', 'zigzag', 'checkers', 'tiedye', 'leopard', 'galaxy', 'colorblock']) expect(avatarPatternShapes(p).length, p).toBeGreaterThan(0);
+  });
+});
+
+// 10-05 integrated parts (docs/design/brand/avatar/INTEGRATION.md): drawn per body from baked layer art, never as a
+// sticker; every option fits the frame on every body; the letter sits on the 'under' garments.
+describe('integrated parts (v3 pieces)', () => {
+  const OPTIONS: Record<string, readonly string[]> = AVATAR_INTEGRATED_OPTIONS;
+  it('every integrated option on every body: per-body pieces only, inside the frame', () => {
+    expect(AVATAR_MANIFEST.version).toBe(3);
+    for (const body of AVATAR_BODIES) {
+      for (const [field, ids] of Object.entries(OPTIONS)) {
+        for (const id of ids.slice(1)) {
+          const c = mk({ body, [field]: id } as Partial<AvatarConfig>);
+          const L = checkFrame(c);
+          const mine = L.layers.filter((l) => l.field === field);
+          expect(mine.length, `${body} ${field}:${id}`).toBeGreaterThan(0);
+          for (const l of mine) expect(l.art).toBe(`art-av-${field === 'brows' ? 'brows' : 'acc'}-${id}-${body}-${l.layer}`);
+          // small avatars keep only the body, face and hat
+          expect(avatarLayout(c, { small: true }).layers.some((l) => l.field === field)).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('the 7 rebuilt parts keep their ids and draw per body (the chain withheld where there is no neck room)', () => {
+    for (const id of ['backpack', 'chain', 'bubbletea', 'guitar', 'cape', 'supercape']) {
+      expect(AVATAR_MANIFEST.items[`acc:${id}`].pieces).toBeTruthy();
+      expect(validateAvatar({ neck: id }).neck).toBe(id);
+    }
+    const pack = avatarLayout(mk({ body: 'classic', neck: 'backpack', accColor: 'orange' })).layers.filter((l) => l.id === 'backpack');
+    expect(pack.map((l) => l.layer)).toEqual(['back', 'wrap']);
+    expect(pack.every((l) => l.tint)).toBe(true);
+    for (const body of ['wide', 'mini']) expect(avatarLayout(mk({ body, neck: 'chain' })).layers.some((l) => l.id === 'chain')).toBe(false);
+  });
+
+  it('the letter is drawn after the under garments and before every front layer', () => {
+    const L = avatarLayout(mk({ body: 'tall', wrap: 'apron', held: 'spatula' }));
+    const names = L.layers.map((l) => l.layer);
+    expect(names.slice(0, L.letterIndex)).toEqual(['body', 'under']);
+    expect(names.slice(L.letterIndex)).toContain('wrap');
+    expect(avatarLayout(mk({})).letterIndex).toBe(1);
+  });
+
+  it('brows clear taller eyes (never lower than over the default eyes)', () => {
+    const top = (eyes: string) => avatarLayout(mk({ body: 'classic', eyes: eyes as AvatarConfig['eyes'], brows: 'happy' })).layers.find((l) => l.layer === 'brows')!.rect.y;
+    for (const eyes of AVATAR_EYES) expect(top(eyes)).toBeLessThanOrEqual(top('beady') + 1e-3);
+  });
+
+  it('held items swap out a held guitar / bubble tea; a drape cape swaps out back parts', () => {
+    expect(avatarPickConflict(mk({ neck: 'guitar' }), 'held', 'mug')).toEqual({ field: 'neck', id: 'guitar' });
+    expect(applyAvatarPick(mk({ neck: 'backpack' }), 'wrap', 'cape-drape').neck).toBe('none');
+    expect(applyAvatarPick(mk({ neck: 'scarf' }), 'wrap', 'lei').neck).toBe('none');
+  });
+
+  it('old configs (no integrated fields) validate to none and lay out unchanged', () => {
+    const c = validateAvatar({ body: 'blob', eyes: 'happy', mouth: 'grin', neck: 'bowtie' });
+    for (const f of ['held', 'wrap', 'feet', 'pet', 'brows', 'extra'] as const) expect(c[f] ?? 'none').toBe('none');
+    expect(Object.keys(c)).not.toContain('held');
+    expect(validateAvatar({ wrap: 'tie' }).wrap ?? 'none').toBe('none');
+    expect(validateAvatar({ wrap: 'sash' }).wrap ?? 'none').toBe('none');
+  });
+
+  it('bundles only pick shipped options', () => {
+    for (const b of AVATAR_BUNDLES) {
+      for (const [field, id] of Object.entries(b.picks)) {
+        const c = validateAvatar({ [field]: id });
+        expect((c as unknown as Record<string, string>)[field], `${b.id} ${field}`).toBe(id);
+      }
+    }
   });
 });

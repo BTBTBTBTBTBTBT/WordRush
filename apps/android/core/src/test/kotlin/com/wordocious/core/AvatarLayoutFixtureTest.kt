@@ -41,6 +41,7 @@ class AvatarLayoutFixtureTest {
             close(got.body, rect(want["body"] as JsonObject), "case $i body")
             close(got.letter, rect(want["letter"] as JsonObject), "case $i letter")
             close(got.bounds, rect(want["bounds"] as JsonObject), "case $i bounds")
+            assertEquals("case $i letterIndex", (want["letterIndex"] as JsonPrimitive).content.toInt(), got.letterIndex)
             val layers = want["layers"]!!.jsonArray.map { it.jsonObject }
             assertEquals("case $i order", layers.map { (it["art"] as JsonPrimitive).content }, got.layers.map { it.art })
             for ((g, w) in got.layers.zip(layers)) {

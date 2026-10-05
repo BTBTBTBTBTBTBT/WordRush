@@ -20,7 +20,8 @@ data class AvatarRect(val x: Double, val y: Double, val w: Double, val h: Double
 
 data class AvatarLayoutLayer(val layer: String, val field: String, val id: String, val art: String, val rect: AvatarRect, val tint: Boolean)
 
-data class AvatarLayout(val scale: Double, val body: AvatarRect, val letter: AvatarRect, val layers: List<AvatarLayoutLayer>, val bounds: AvatarRect)
+/** [letterIndex]: the white initial is drawn just before layers[letterIndex] (== layers.size: after the last layer). */
+data class AvatarLayout(val scale: Double, val body: AvatarRect, val letter: AvatarRect, val layers: List<AvatarLayoutLayer>, val bounds: AvatarRect, val letterIndex: Int = 1)
 
 /** avatar-parts.json v2 (the fit manifest), read leniently from its JSON. */
 class AvatarFitManifest(val root: JsonObject) {
@@ -53,7 +54,21 @@ class AvatarFitManifest(val root: JsonObject) {
         val perBody: Map<String, List<Double>> = (o["perBody"] as? JsonObject)?.mapValues { e ->
             (e.value as? JsonArray)?.map { (it as JsonPrimitive).doubleOrNull ?: 0.0 } ?: emptyList()
         } ?: emptyMap()
+        /**
+         * v3 integrated parts: per body, the pieces [layer, x, y, w, h] (body units), art
+         * `art-av-<kind>-<id>-<body>-<layer>`; null for a classic part. A body missing from the map draws nothing.
+         */
+        val pieces: Map<String, List<Piece>>? = (o["pieces"] as? JsonObject)?.mapValues { e ->
+            (e.value as? JsonArray)?.map { el ->
+                val a = el as JsonArray
+                fun n(i: Int) = (a[i] as JsonPrimitive).doubleOrNull ?: 0.0
+                Piece((a[0] as JsonPrimitive).content, n(1), n(2), n(3), n(4))
+            } ?: emptyList()
+        }
+        /** Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes). */
+        val inkTop: Double? = (o["inkTop"] as? JsonPrimitive)?.doubleOrNull
     }
+    data class Piece(val layer: String, val x: Double, val y: Double, val w: Double, val h: Double)
     data class Conflict(val a: String, val aIds: List<String>, val b: String, val bIds: List<String>)
 
     private val fit = root["fit"] as? JsonObject
@@ -79,8 +94,14 @@ class AvatarFitManifest(val root: JsonObject) {
 }
 
 object AvatarFit {
-    val PART_FIELDS = listOf("cheeks", "eyes", "nose", "mouth", "face", "head", "neck")
-    private val FIELD_KIND = mapOf("cheeks" to "cheeks", "eyes" to "eyes", "nose" to "nose", "mouth" to "mouth", "face" to "acc", "head" to "acc", "neck" to "acc")
+    val PART_FIELDS = listOf("cheeks", "eyes", "nose", "mouth", "face", "head", "neck", "held", "wrap", "feet", "pet", "brows", "extra")
+    private val FIELD_KIND = mapOf("cheeks" to "cheeks", "eyes" to "eyes", "nose" to "nose", "mouth" to "mouth", "face" to "acc", "head" to "acc", "neck" to "acc",
+        "held" to "acc", "wrap" to "acc", "feet" to "acc", "pet" to "acc", "brows" to "brows", "extra" to "acc")
+    /** The layers drawn before the white initial (the letter sits ON the 'under' garments: apron, sash, belt). */
+    val LAYERS_UNDER_LETTER = setOf("back", "body", "pattern", "under")
+
+    /** The manifest item key for a config field + id (held + mug → acc:mug, brows + happy → brows:happy). */
+    fun itemKey(field: String, id: String): String = "${kind(field)}:$id"
     const val HAT_EYE_CLEARANCE = 0.012
     const val SMALL_SIZE = 28
 
@@ -90,12 +111,16 @@ object AvatarFit {
 
     fun value(c: AvatarConfig, field: String): String = when (field) {
         "cheeks" -> c.cheeks; "eyes" -> c.eyes; "nose" -> c.nose; "mouth" -> c.mouth
-        "face" -> c.face; "head" -> c.head; "neck" -> c.neck; else -> "none"
+        "face" -> c.face; "head" -> c.head; "neck" -> c.neck
+        "held" -> c.held; "wrap" -> c.wrap; "feet" -> c.feet; "pet" -> c.pet; "brows" -> c.brows; "extra" -> c.extra
+        else -> "none"
     }
 
     fun setting(c: AvatarConfig, field: String, id: String): AvatarConfig = when (field) {
         "cheeks" -> c.copy(cheeks = id); "eyes" -> c.copy(eyes = id); "nose" -> c.copy(nose = id); "mouth" -> c.copy(mouth = id)
         "face" -> c.copy(face = id); "head" -> c.copy(head = id); "neck" -> c.copy(neck = id); "body" -> c.copy(body = id)
+        "held" -> c.copy(held = id); "wrap" -> c.copy(wrap = id); "feet" -> c.copy(feet = id); "pet" -> c.copy(pet = id)
+        "brows" -> c.copy(brows = id); "extra" -> c.copy(extra = id)
         else -> c
     }
 
@@ -133,7 +158,7 @@ object AvatarFit {
     private fun wornParts(c: AvatarConfig, small: Boolean, m: AvatarFitManifest): List<Pair<String, String>> {
         val out = mutableListOf<Pair<String, String>>()
         val kept = mutableMapOf<String, String>()
-        for (f in listOf("eyes", "mouth", "head", "nose", "cheeks", "neck", "face")) {
+        for (f in listOf("eyes", "mouth", "head", "nose", "cheeks", "neck", "face", "held", "wrap", "feet", "pet", "brows", "extra")) {
             val id = value(c, f)
             if (id.isEmpty() || id == "none") continue
             if (small && f !in setOf("eyes", "mouth", "head", "nose")) continue
@@ -168,6 +193,15 @@ object AvatarFit {
         for ((field, id) in wornParts(c, small, m)) {
             val key = "${kind(field)}:$id"
             val it = m.items.getValue(key)
+            val pieces = it.pieces
+            if (pieces != null) {
+                // v3 integrated part: its per-body layers (nothing on a body without room for it)
+                for (pc in pieces[c.body] ?: emptyList()) {
+                    placed.add(P(pc.layer, field, id, "art-av-${kind(field)}-$id-${c.body}-${pc.layer}", AvatarRect(pc.x, pc.y, pc.w, pc.h),
+                        it.tint && id in AvatarOptions.TINTABLE))
+                }
+                continue
+            }
             val pb = it.perBody[c.body]
             if (pb != null && pb.size == 4) {
                 placed.add(P(it.layer, field, id, "art-av-${kind(field)}-$id-${c.body}", AvatarRect(pb[0], pb[1], pb[2], pb[3]),
@@ -190,6 +224,20 @@ object AvatarFit {
                 if (bottom > limit) p.rect = p.rect.copy(y = p.rect.y - (bottom - limit))
             }
         }
+        // brows sit over the round default eyes (beady); taller eyes lift them by the difference in visible eye top
+        val eyesP = placed.firstOrNull { it.layer == "eyes" }
+        val ink = m.items["eyes:${c.eyes}"]?.inkTop
+        val beady = m.items["eyes:beady"]
+        val beadyInk = beady?.inkTop
+        if (eyesP != null && ink != null && beady != null && beadyInk != null) {
+            val (_, py, base) = slot(b, beady.slot)
+            val (_, dy, sc) = b.override("eyes:beady")
+            val w = base * beady.w * sc
+            val h = w * beady.aspect
+            val beadyTop = py - beady.anchor[1] * h + dy + beadyInk * h
+            val lift = min(0.0, eyesP.rect.y + ink * eyesP.rect.h - beadyTop)
+            if (lift < 0) for (p in placed) if (p.layer == "brows") p.rect = p.rect.copy(y = p.rect.y + lift)
+        }
         var x0 = b.bounds[0]; var y0 = b.bounds[1]; var x1 = b.bounds[2]; var y1 = b.bounds[3]
         for (p in placed) {
             x0 = min(x0, p.rect.x); y0 = min(y0, p.rect.y)
@@ -205,7 +253,8 @@ object AvatarFit {
             placed.map { AvatarLayoutLayer(it.layer, it.field, it.id, it.art, map(it.rect), it.tint) }
         val sorted = all.sortedBy { m.layerOrder.indexOf(it.layer) }   // stable
         val lb = b.letterBox
-        return AvatarLayout(r4(s), bodyRect, map(AvatarRect(lb[0], lb[1], lb[2], lb[3])), sorted, map(AvatarRect(x0, y0, x1 - x0, y1 - y0)))
+        val after = sorted.indexOfFirst { it.layer !in LAYERS_UNDER_LETTER }.let { if (it < 0) sorted.size else it }
+        return AvatarLayout(r4(s), bodyRect, map(AvatarRect(lb[0], lb[1], lb[2], lb[3])), sorted, map(AvatarRect(x0, y0, x1 - x0, y1 - y0)), after)
     }
 
     // ── Patterns (shared shapes, body-square units) ─────────────────────────

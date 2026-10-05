@@ -42,6 +42,20 @@ public struct AvatarManifest: Decodable {
         public var overFace: Bool?
         /// Integrated parts drawn per body (the scarf): art `art-av-<kind>-<id>-<body>` at [x, y, w, h] body units.
         public var perBody: [String: [Double]]?
+        /// v3 integrated parts: per body, the pieces [layer, x, y, w, h] (body units), art
+        /// `art-av-<kind>-<id>-<body>-<layer>`. A body missing from the map draws nothing (no room for the part).
+        public var pieces: [String: [Piece]]?
+        /// Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes).
+        public var inkTop: Double?
+    }
+    /// One per-body piece of an integrated part, decoded from `[layer, x, y, w, h]`.
+    public struct Piece: Decodable {
+        public var layer: String, x: Double, y: Double, w: Double, h: Double
+        public init(from decoder: Decoder) throws {
+            var c = try decoder.unkeyedContainer()
+            layer = try c.decode(String.self); x = try c.decode(Double.self); y = try c.decode(Double.self)
+            w = try c.decode(Double.self); h = try c.decode(Double.self)
+        }
     }
     public struct Fit: Decodable { public var pad: Double; public var maxBody: Double; public var minBody: Double }
     public struct Conflict: Decodable { public var a: String; public var aIds: [String]; public var b: String; public var bIds: [String] }
@@ -70,18 +84,25 @@ public struct AvatarLayout: Equatable {
     public var letter: AvatarRect
     public var layers: [AvatarLayoutLayer]
     public var bounds: AvatarRect
+    /// The white initial is drawn just before layers[letterIndex] (== layers.count: after the last layer).
+    public var letterIndex: Int = 1
 }
 
 public enum AvatarFit {
-    public static let partFields = ["cheeks", "eyes", "nose", "mouth", "face", "head", "neck"]
-    static let fieldKind: [String: String] = ["cheeks": "cheeks", "eyes": "eyes", "nose": "nose", "mouth": "mouth", "face": "acc", "head": "acc", "neck": "acc"]
+    public static let partFields = ["cheeks", "eyes", "nose", "mouth", "face", "head", "neck", "held", "wrap", "feet", "pet", "brows", "extra"]
+    static let fieldKind: [String: String] = ["cheeks": "cheeks", "eyes": "eyes", "nose": "nose", "mouth": "mouth", "face": "acc", "head": "acc", "neck": "acc",
+                                              "held": "acc", "wrap": "acc", "feet": "acc", "pet": "acc", "brows": "brows", "extra": "acc"]
+    /// The manifest item key for a config field + id (held + mug -> acc:mug, brows + happy -> brows:happy).
+    public static func itemKey(field: String, id: String) -> String { "\(fieldKind[field] ?? "acc"):\(id)" }
+    /// The layers drawn before the white initial (the letter sits ON the 'under' garments: apron, sash, belt).
+    public static let layersUnderLetter: Set<String> = ["back", "body", "pattern", "under"]
     public static let hatEyeClearance = 0.012
     /// Sizes at or below this draw only the body, eyes, mouth, nose and hat.
     public static let smallSize: Double = 28
 
     static func r4(_ v: Double) -> Double { (v * 10000).rounded() / 10000 }
 
-    static func value(_ c: AvatarConfig, _ field: String) -> String {
+    public static func value(_ c: AvatarConfig, _ field: String) -> String {
         switch field {
         case "cheeks": return c.cheeks
         case "eyes": return c.eyes
@@ -90,6 +111,12 @@ public enum AvatarFit {
         case "face": return c.face
         case "head": return c.head
         case "neck": return c.neck
+        case "held": return c.held
+        case "wrap": return c.wrap
+        case "feet": return c.feet
+        case "pet": return c.pet
+        case "brows": return c.brows
+        case "extra": return c.extra
         default: return "none"
         }
     }
@@ -104,6 +131,12 @@ public enum AvatarFit {
         case "face": o.face = id
         case "head": o.head = id
         case "neck": o.neck = id
+        case "held": o.held = id
+        case "wrap": o.wrap = id
+        case "feet": o.feet = id
+        case "pet": o.pet = id
+        case "brows": o.brows = id
+        case "extra": o.extra = id
         case "body": o.body = id
         default: break
         }
@@ -144,7 +177,7 @@ public enum AvatarFit {
     static func wornParts(_ config: AvatarConfig, small: Bool, manifest: AvatarManifest) -> [(String, String)] {
         var out: [(String, String)] = []
         var kept: [String: String] = [:]
-        for f in ["eyes", "mouth", "head", "nose", "cheeks", "neck", "face"] {
+        for f in ["eyes", "mouth", "head", "nose", "cheeks", "neck", "face", "held", "wrap", "feet", "pet", "brows", "extra"] {
             let id = value(config, f)
             if id.isEmpty || id == "none" { continue }
             if small && !["eyes", "mouth", "head", "nose"].contains(f) { continue }
@@ -181,6 +214,15 @@ public enum AvatarFit {
         for (field, id) in wornParts(config, small: small, manifest: manifest) {
             let key = "\(fieldKind[field]!):\(id)"
             let m = manifest.items[key]!
+            if let pieces = m.pieces {
+                // v3 integrated part: its per-body layers (nothing on a body without room for it)
+                for pc in pieces[config.body] ?? [] {
+                    placed.append(P(layer: pc.layer, field: field, id: id, art: "art-av-\(fieldKind[field]!)-\(id)-\(config.body)-\(pc.layer)",
+                                    rect: AvatarRect(x: pc.x, y: pc.y, w: pc.w, h: pc.h),
+                                    tint: (m.tint ?? false) && AvatarCatalog.tintable.contains(id)))
+                }
+                continue
+            }
             if let pb = m.perBody?[config.body], pb.count == 4 {
                 placed.append(P(layer: m.layer, field: field, id: id, art: "art-av-\(fieldKind[field]!)-\(id)-\(config.body)",
                                 rect: AvatarRect(x: pb[0], y: pb[1], w: pb[2], h: pb[3]),
@@ -204,6 +246,17 @@ public enum AvatarFit {
                 if bottom > limit { placed[i].rect.y -= bottom - limit }
             }
         }
+        // brows sit over the round default eyes (beady); taller eyes lift them by the difference in visible eye top
+        if let eyes = placed.first(where: { $0.layer == "eyes" }), let ink = manifest.items["eyes:\(config.eyes)"]?.inkTop,
+           let beady = manifest.items["eyes:beady"], let beadyInk = beady.inkTop {
+            let p = slotPoint(b, beady.slot)
+            let o = b.overrides?["eyes:beady"]
+            let w = p.base * beady.w * (o?.scale ?? 1)
+            let h = w * beady.aspect
+            let beadyTop = p.y - beady.anchor[1] * h + (o?.dy ?? 0) + beadyInk * h
+            let lift = min(0, eyes.rect.y + ink * eyes.rect.h - beadyTop)
+            if lift < 0 { for i in placed.indices where placed[i].layer == "brows" { placed[i].rect.y += lift } }
+        }
         var x0 = b.bounds[0], y0 = b.bounds[1], x1 = b.bounds[2], y1 = b.bounds[3]
         for p in placed {
             x0 = min(x0, p.rect.x); y0 = min(y0, p.rect.y)
@@ -225,8 +278,10 @@ public enum AvatarFit {
         func rank(_ l: String) -> Int { order.firstIndex(of: l) ?? -1 }
         all.sort { (a, c) in rank(a.1.layer) != rank(c.1.layer) ? rank(a.1.layer) < rank(c.1.layer) : a.0 < c.0 }
         let lb = b.letterBox
+        let layers = all.map(\.1)
+        let after = layers.firstIndex { !layersUnderLetter.contains($0.layer) } ?? layers.count
         return AvatarLayout(scale: r4(s), body: bodyRect, letter: map(AvatarRect(x: lb[0], y: lb[1], w: lb[2], h: lb[3])),
-                            layers: all.map(\.1), bounds: map(AvatarRect(x: x0, y: y0, w: x1 - x0, h: y1 - y0)))
+                            layers: layers, bounds: map(AvatarRect(x: x0, y: y0, w: x1 - x0, h: y1 - y0)), letterIndex: after)
     }
 
     // MARK: Patterns (shared shapes, body-square units)

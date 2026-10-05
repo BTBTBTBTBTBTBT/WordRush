@@ -29,6 +29,14 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
     public var head: String
     public var face: String
     public var neck: String
+    /// 10-05 integrated parts (docs/design/brand/avatar/INTEGRATION.md): held item, body wrap, shoes, companion,
+    /// brows, face extra. Missing in older configs (= "none").
+    public var held: String = "none"
+    public var wrap: String = "none"
+    public var feet: String = "none"
+    public var pet: String = "none"
+    public var brows: String = "none"
+    public var extra: String = "none"
     /// The tint for white accessories (`AvatarCatalog.tintable`): a swatch id, or "default".
     public var accColor: String
     public var frame: String
@@ -49,6 +57,7 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case v, body, color, pattern, patternColor, eyes, nose, cheeks, mouth, head, face, neck, accColor, frame, bg, display
+        case held, wrap, feet, pet, brows, extra
     }
 
     public init(from decoder: Decoder) throws {
@@ -71,6 +80,12 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         head = try c.decode(String.self, forKey: .head)
         face = try c.decode(String.self, forKey: .face)
         neck = try c.decode(String.self, forKey: .neck)
+        held = (try? c.decodeIfPresent(String.self, forKey: .held)) ?? "none"
+        wrap = (try? c.decodeIfPresent(String.self, forKey: .wrap)) ?? "none"
+        feet = (try? c.decodeIfPresent(String.self, forKey: .feet)) ?? "none"
+        pet = (try? c.decodeIfPresent(String.self, forKey: .pet)) ?? "none"
+        brows = (try? c.decodeIfPresent(String.self, forKey: .brows)) ?? "none"
+        extra = (try? c.decodeIfPresent(String.self, forKey: .extra)) ?? "none"
         accColor = (try? c.decodeIfPresent(String.self, forKey: .accColor)) ?? "default"
         frame = try c.decode(String.self, forKey: .frame)
         bg = (try? c.decodeIfPresent(String.self, forKey: .bg)) ?? "auto"
@@ -85,6 +100,10 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         try c.encode(eyes, forKey: .eyes); try c.encode(nose, forKey: .nose); try c.encode(cheeks, forKey: .cheeks)
         try c.encode(mouth, forKey: .mouth)
         try c.encode(head, forKey: .head); try c.encode(face, forKey: .face); try c.encode(neck, forKey: .neck)
+        // 10-05 integrated parts: only the worn ones are written (missing = "none"), like packages/core validateAvatar
+        for (key, val) in [(CodingKeys.held, held), (.wrap, wrap), (.feet, feet), (.pet, pet), (.brows, brows), (.extra, extra)] where val != "none" {
+            try c.encode(val, forKey: key)
+        }
         try c.encode(accColor, forKey: .accColor)
         try c.encode(frame, forKey: .frame); try c.encode(bg, forKey: .bg)
         try c.encode(display, forKey: .display)
@@ -95,12 +114,14 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         var o: [String: Any] = ["v": 1, "body": body, "color": color, "pattern": pattern, "patternColor": patternColor,
                                 "eyes": eyes, "nose": nose, "cheeks": cheeks, "mouth": mouth, "head": head, "face": face, "neck": neck,
                                 "accColor": accColor, "frame": frame, "bg": bg, "display": display]
+        for (k, val) in [("held", held), ("wrap", wrap), ("feet", feet), ("pet", pet), ("brows", brows), ("extra", extra)] where val != "none" { o[k] = val }
         return o
     }
 
     /// A stable string key for the DRAWN mascot (caches; `display` doesn't change the drawing).
     public var cacheKey: String {
-        [body, color, pattern, patternColor, eyes, nose, cheeks, mouth, head, face, neck, accColor, frame, bg].joined(separator: "|")
+        [body, color, pattern, patternColor, eyes, nose, cheeks, mouth, head, face, neck, accColor, frame, bg,
+         held, wrap, feet, pet, brows, extra].joined(separator: "|")
     }
 }
 
@@ -196,6 +217,39 @@ public enum AvatarCatalog {
     /// Neck / back extras (AN addendum + round 2). Pro-only: wings, chain.
     public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar",
                                "supercape", "fairywings"]
+    /// 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on.
+    public static let held = ["none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella",
+                              "icecream", "spatula", "mic", "wand-star"]
+    /// Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter).
+    public static let wraps = ["none", "bandana", "belt", "apron", "lei", "cape-drape"]
+    public static let feet = ["none", "sneakers", "boots", "slippers", "skates"]
+    public static let pets = ["none", "bird", "kitten", "puppy", "snail"]
+    public static let brows = ["none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy"]
+    public static let extras = ["none", "sweat", "tear", "steam", "heart"]
+    /// The integrated config fields + their options, in the maker's tab order.
+    public static let integratedFields: [(field: String, options: [String])] =
+        [("held", held), ("wrap", wraps), ("feet", feet), ("pet", pets), ("brows", brows), ("extra", extras)]
+    public static let proOnlyHeld: Set<String> = ["wand-star"]
+    public static let proOnlyWraps: Set<String> = ["cape-drape"]
+    /// Parts that carry the maker's NEW tag (the 10-05 additions + the 7 rebuilt parts; brows as "brows:<id>").
+    public static let newParts: Set<String> = {
+        var out: [String] = []
+        for list in [held, wraps, feet, pets, extras] { out.append(contentsOf: list.dropFirst()) }
+        out.append(contentsOf: brows.dropFirst().map { "brows:\($0)" })
+        out.append(contentsOf: ["backpack", "scarf", "chain", "bubbletea", "guitar", "cape", "supercape"])
+        return Set(out)
+    }()
+    /// One-tap looks (packages/core AVATAR_BUNDLES): field -> id picks, applied with AvatarFit.applyPick.
+    public static let bundles: [(id: String, label: String, pro: Bool, picks: [(String, String)])] = [
+        ("bookworm", "Bookworm", false, [("held", "book"), ("face", "roundglasses"), ("brows", "happy")]),
+        ("athlete", "Athlete", false, [("held", "trophy"), ("head", "sweatband"), ("feet", "sneakers"), ("wrap", "belt")]),
+        ("chef", "Chef", false, [("held", "spatula"), ("wrap", "apron"), ("head", "chef")]),
+        ("explorer", "Explorer", false, [("neck", "backpack"), ("held", "magnifier"), ("head", "bucket")]),
+        ("rockstar", "Rock star", true, [("held", "mic"), ("face", "starglasses"), ("neck", "chain")]),
+        ("rainyday", "Rainy day", false, [("held", "umbrella"), ("feet", "boots")]),
+        ("magic", "Magic", true, [("held", "wand-star"), ("wrap", "cape-drape"), ("head", "wizard")]),
+        ("summer", "Summer", false, [("held", "icecream"), ("wrap", "lei")]),
+    ]
     /// White glossy accessories that take the accessory color.
     public static let tintable = ["supercape", "backpack", "wings", "chef", "astronaut"]
     public static let frames = ["none", "bronze", "silver", "gold", "platinum", "diamond", "pro"]
@@ -331,7 +385,7 @@ public enum AvatarCatalog {
         let rawNose = r["nose"] as? String
         let legacyCheeks: String? = r["cheeks"] == nil && (rawNose == "blush" || rawNose == "freckles") ? rawNose : nil
         let acc = (r["accColor"] as? String).flatMap { $0 == "default" || ids.contains($0) ? $0 : nil } ?? fallback.accColor
-        return AvatarConfig(
+        var out = AvatarConfig(
             body: pick(r["body"], bodies, fallback.body),
             color: color,
             pattern: pick(r["pattern"], patterns, fallback.pattern),
@@ -348,6 +402,13 @@ public enum AvatarCatalog {
             frame: pick(r["frame"], frames, fallback.frame),
             bg: pick(r["bg"], backdropIds, fallback.bg),
             display: (r["display"] as? String).flatMap { displays.contains($0) ? $0 : nil } ?? fallback.display)
+        out.held = pick(r["held"], held, fallback.held)
+        out.wrap = pick(r["wrap"], wraps, fallback.wrap)
+        out.feet = pick(r["feet"], feet, fallback.feet)
+        out.pet = pick(r["pet"], pets, fallback.pet)
+        out.brows = pick(r["brows"], brows, fallback.brows)
+        out.extra = pick(r["extra"], extras, fallback.extra)
+        return out
     }
 
     /// `validate` for a lenient payload field (nil / non-object → the fallback).
@@ -366,6 +427,8 @@ public enum AvatarCatalog {
         var out = c
         if proOnlyHeads.contains(c.head) { out.head = "none" }
         if proOnlyNecks.contains(c.neck) { out.neck = "none" }
+        if proOnlyHeld.contains(c.held) { out.held = "none" }
+        if proOnlyWraps.contains(c.wrap) { out.wrap = "none" }
         if proOnlyFrames.contains(c.frame) { out.frame = "none" }
         if proOnlyBackdrops.contains(c.bg) { out.bg = "auto" }
         if isProOnly(color: c.color) { out.color = "purple" }

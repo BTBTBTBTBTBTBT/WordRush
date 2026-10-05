@@ -51,6 +51,13 @@ data class AvatarConfig(
     val head: String = "none",
     val face: String = "none",
     val neck: String = "none",
+    /** 10-05 integrated parts (docs/design/brand/avatar/INTEGRATION.md); missing in older configs = "none". */
+    val held: String = "none",
+    val wrap: String = "none",
+    val feet: String = "none",
+    val pet: String = "none",
+    val brows: String = "none",
+    val extra: String = "none",
     /** The tint for white accessories (AvatarOptions.TINTABLE): a swatch id, or "default". */
     val accColor: String = "default",
     val frame: String = "none",
@@ -148,10 +155,38 @@ object AvatarOptions {
     const val DISPLAY_PHOTO = "photo"
     val DISPLAYS: List<String> = listOf(DISPLAY_MASCOT, DISPLAY_PHOTO)
 
+    /** 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on. */
+    val HELD: List<String> = listOf("none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella", "icecream", "spatula", "mic", "wand-star")
+    /** Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter). */
+    val WRAPS: List<String> = listOf("none", "bandana", "belt", "apron", "lei", "cape-drape")
+    val FEET: List<String> = listOf("none", "sneakers", "boots", "slippers", "skates")
+    val PETS: List<String> = listOf("none", "bird", "kitten", "puppy", "snail")
+    val BROWS: List<String> = listOf("none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy")
+    val EXTRAS: List<String> = listOf("none", "sweat", "tear", "steam", "heart")
+    /** The integrated config fields + their options, in the maker's tab order. */
+    val INTEGRATED: List<Pair<String, List<String>>> = listOf("held" to HELD, "wrap" to WRAPS, "feet" to FEET, "pet" to PETS, "brows" to BROWS, "extra" to EXTRAS)
+    /** Parts that carry the maker's NEW tag (the 10-05 additions + the 7 rebuilt parts; brows as "brows:<id>"). */
+    val NEW_PARTS: Set<String> = (HELD.drop(1) + WRAPS.drop(1) + FEET.drop(1) + PETS.drop(1) + BROWS.drop(1).map { "brows:$it" } + EXTRAS.drop(1) +
+        listOf("backpack", "scarf", "chain", "bubbletea", "guitar", "cape", "supercape")).toSet()
+    /** One-tap looks (packages/core AVATAR_BUNDLES): field → id picks, applied with AvatarFit.applyPick. */
+    data class Bundle(val id: String, val label: String, val pro: Boolean, val picks: List<Pair<String, String>>)
+    val BUNDLES: List<Bundle> = listOf(
+        Bundle("bookworm", "Bookworm", false, listOf("held" to "book", "face" to "roundglasses", "brows" to "happy")),
+        Bundle("athlete", "Athlete", false, listOf("held" to "trophy", "head" to "sweatband", "feet" to "sneakers", "wrap" to "belt")),
+        Bundle("chef", "Chef", false, listOf("held" to "spatula", "wrap" to "apron", "head" to "chef")),
+        Bundle("explorer", "Explorer", false, listOf("neck" to "backpack", "held" to "magnifier", "head" to "bucket")),
+        Bundle("rockstar", "Rock star", true, listOf("held" to "mic", "face" to "starglasses", "neck" to "chain")),
+        Bundle("rainyday", "Rainy day", false, listOf("held" to "umbrella", "feet" to "boots")),
+        Bundle("magic", "Magic", true, listOf("held" to "wand-star", "wrap" to "cape-drape", "head" to "wizard")),
+        Bundle("summer", "Summer", false, listOf("held" to "icecream", "wrap" to "lei")),
+    )
+
     /** Pro-only options per field (free players see the gold PRO pill → the Go Pro popup). */
     val PRO_ONLY: Map<String, Set<String>> = mapOf(
         "head" to setOf("crown", "halo", "tiara"),
         "neck" to setOf("wings", "chain"),
+        "held" to setOf("wand-star"),
+        "wrap" to setOf("cape-drape"),
         "frame" to setOf("diamond", "pro"),
         "bg" to setOf("aurora", "galaxy"),
         "color" to setOf("gold", "silver", "rainbow", "holo", "neon"),
@@ -254,6 +289,12 @@ fun validateAvatar(raw: JsonElement?, fallback: AvatarConfig = defaultAvatar("")
         head = pick(r.string("head"), AvatarOptions.HEADS, fallback.head),
         face = pick(r.string("face"), AvatarOptions.FACES, fallback.face),
         neck = pick(r.string("neck"), AvatarOptions.NECKS, fallback.neck),
+        held = pick(r.string("held"), AvatarOptions.HELD, fallback.held),
+        wrap = pick(r.string("wrap"), AvatarOptions.WRAPS, fallback.wrap),
+        feet = pick(r.string("feet"), AvatarOptions.FEET, fallback.feet),
+        pet = pick(r.string("pet"), AvatarOptions.PETS, fallback.pet),
+        brows = pick(r.string("brows"), AvatarOptions.BROWS, fallback.brows),
+        extra = pick(r.string("extra"), AvatarOptions.EXTRAS, fallback.extra),
         accColor = r.string("accColor")?.takeIf { it == "default" || it in colorIds } ?: fallback.accColor,
         frame = pick(r.string("frame"), AvatarOptions.FRAMES, fallback.frame),
         bg = r.string("bg")?.takeIf { it in AvatarOptions.BACKDROP_IDS } ?: fallback.bg,
@@ -271,6 +312,8 @@ fun enforceAvatarPro(c: AvatarConfig, isPro: Boolean): AvatarConfig {
     return c.copy(
         head = if (AvatarOptions.isProOnly("head", c.head)) "none" else c.head,
         neck = if (AvatarOptions.isProOnly("neck", c.neck)) "none" else c.neck,
+        held = if (AvatarOptions.isProOnly("held", c.held)) "none" else c.held,
+        wrap = if (AvatarOptions.isProOnly("wrap", c.wrap)) "none" else c.wrap,
         frame = if (AvatarOptions.isProOnly("frame", c.frame)) "none" else c.frame,
         bg = if (AvatarOptions.isProOnly("bg", c.bg)) "auto" else c.bg,
         color = if (AvatarOptions.isProOnly("color", c.color)) "purple" else c.color,
@@ -313,6 +356,10 @@ fun avatarToJson(c: AvatarConfig): JsonObject = buildJsonObject {
     put("head", c.head)
     put("face", c.face)
     put("neck", c.neck)
+    // 10-05 integrated parts: only the worn ones are written (missing = "none"), like packages/core validateAvatar
+    for ((k, v) in listOf("held" to c.held, "wrap" to c.wrap, "feet" to c.feet, "pet" to c.pet, "brows" to c.brows, "extra" to c.extra)) {
+        if (v != "none") put(k, v)
+    }
     put("accColor", c.accColor)
     put("frame", c.frame)
     put("bg", c.bg)

@@ -29,6 +29,14 @@ final class AvatarArtCoverageTests: XCTestCase {
             for v in AvatarCatalog.noses { var c = b; c.nose = v; out.append(c) }
             for v in AvatarCatalog.cheeks { var c = b; c.cheeks = v; out.append(c) }
             for v in AvatarCatalog.faces { var c = b; c.face = v; out.append(c) }
+            // 10-05 integrated parts: every option on every body (per-body layer art), alone and with a hat + neck item
+            for (field, ids) in AvatarCatalog.integratedFields {
+                for id in ids {
+                    out.append(AvatarFit.setting(b, field, id))
+                    var hn = b; hn.head = "party"; hn.neck = "backpack"
+                    out.append(AvatarFit.setting(hn, field, id))
+                }
+            }
         }
         return out
     }

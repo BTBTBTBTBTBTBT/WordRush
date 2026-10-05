@@ -785,10 +785,15 @@ export function renderAvatarConfigFixtures() {
     { accColor: 'nope', cheeks: 'glitter', pattern: 'plaid' },
     // founder 10-05: None on every optional part (body + color stay required)
     { eyes: 'none', mouth: 'none', nose: 'none', cheeks: 'none', head: 'none', face: 'none', neck: 'none', pattern: 'solid', bg: 'auto', frame: 'none' },
+    // 10-05 integrated parts (held / wrap / feet / pet / brows / extra); unknown ids → none, dropped tie + sash too
+    { held: 'mug', wrap: 'apron', feet: 'sneakers', pet: 'kitten', brows: 'happy', extra: 'heart' },
+    { held: 'sword', wrap: 'tie', feet: 'heels', pet: 'dragon', brows: 'angry', extra: 'fire' },
+    { wrap: 'sash', held: 'wand-star' },
   ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
   const pro = [true, false].flatMap((isPro) => [
     { isPro, input: { ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) },
     { isPro, input: { ...fb, color: 'holo', patternColor: 'gold', accColor: 'neon' }, result: enforceAvatarPro({ ...fb, color: 'holo', patternColor: 'gold', accColor: 'neon' }, isPro) },
+    { isPro, input: { ...fb, held: 'wand-star', wrap: 'cape-drape', feet: 'boots' }, result: enforceAvatarPro({ ...fb, held: 'wand-star', wrap: 'cape-drape', feet: 'boots' }, isPro) },
   ]);
   const presets = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'].map((id) => ({ castId: id, config: castPreset(id) }));
   return { colors: AVATAR_COLORS, backdrops: AVATAR_BACKDROPS, defaults, withPhoto, display, nearest, fallback: fb, validate, pro, presets };
@@ -845,12 +850,23 @@ export function renderAvatarLayoutFixtures() {
     { body: 'blob', head: 'bearears', neck: 'chain', face: 'facepaint', cheeks: 'blush' },
     // founder 10-05: None on every optional part — the bare body (and its letter) only
     { body: 'classic', eyes: 'none', mouth: 'none', nose: 'none', cheeks: 'none', head: 'none', face: 'none', neck: 'none' },
+    // 10-05 integrated parts: per-body pieces (back / under / wrap / held / feet / pet / brows / extra), the letter
+    // after the 'under' garments, brows lifted over tall eyes, no-room bodies, conflicts
+    { body: 'classic', neck: 'backpack', held: 'mug', feet: 'sneakers', pet: 'kitten', brows: 'happy', accColor: 'orange' },
+    { body: 'tall', wrap: 'apron', held: 'spatula', head: 'chef', extra: 'sweat' },
+    { body: 'bean', held: 'balloon', wrap: 'belt', feet: 'boots', pet: 'bird' },
+    { body: 'wide', eyes: 'anime', brows: 'surprised', extra: 'heart', wrap: 'lei', neck: 'chain' },
+    { body: 'star', neck: 'guitar', held: 'mic', brows: 'sleepy' },
+    { body: 'cloud', neck: 'cape', wrap: 'cape-drape', feet: 'skates', pet: 'puppy' },
+    { body: 'mini', neck: 'supercape', held: 'umbrella', wrap: 'bandana', pet: 'snail', accColor: 'pink' },
   ];
   const cases = configs.flatMap((o) => [false, true].map((small) => ({ config: mk(o), small, layout: avatarLayout(mk(o), { small }) })));
   const picks = [
     [{}, 'face', 'mask'], [{ eyes: 'glasses' }, 'face', 'roundglasses'], [{ face: 'heart-glasses' }, 'eyes', 'sunglasses'],
     [{ face: 'mustache' }, 'mouth', 'kissy'], [{ cheeks: 'blush' }, 'face', 'facepaint'], [{ face: 'facepaint' }, 'cheeks', 'sparkle'],
     [{ head: 'astronaut' }, 'face', 'eyepatch'], [{ eyes: 'beady' }, 'face', 'monocle'],
+    [{ neck: 'guitar' }, 'held', 'mug'], [{ held: 'book' }, 'neck', 'bubbletea'], [{ neck: 'scarf' }, 'wrap', 'lei'],
+    [{ neck: 'backpack' }, 'wrap', 'cape-drape'],
   ].map(([o, field, id]) => {
     const c = mk(o as Record<string, string>);
     return { config: c, field, id, conflict: avatarPickConflict(c, field as string, id as string), result: applyAvatarPick(c, field as keyof typeof c & string, id as string) };

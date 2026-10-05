@@ -1766,6 +1766,93 @@
         "bg": "auto",
         "display": "mascot"
       }
+    },
+    {
+      "raw": {
+        "held": "mug",
+        "wrap": "apron",
+        "feet": "sneakers",
+        "pet": "kitten",
+        "brows": "happy",
+        "extra": "heart"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "mug",
+        "wrap": "apron",
+        "feet": "sneakers",
+        "pet": "kitten",
+        "brows": "happy",
+        "extra": "heart",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "held": "sword",
+        "wrap": "tie",
+        "feet": "heels",
+        "pet": "dragon",
+        "brows": "angry",
+        "extra": "fire"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "wrap": "sash",
+        "held": "wand-star"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
     }
   ],
   "pro": [
@@ -1848,6 +1935,51 @@
       }
     },
     {
+      "isPro": true,
+      "input": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot",
+        "held": "wand-star",
+        "wrap": "cape-drape",
+        "feet": "boots"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot",
+        "held": "wand-star",
+        "wrap": "cape-drape",
+        "feet": "boots"
+      }
+    },
+    {
       "isPro": false,
       "input": {
         "v": 1,
@@ -1923,6 +2055,49 @@
         "frame": "none",
         "bg": "auto",
         "display": "mascot"
+      }
+    },
+    {
+      "isPro": false,
+      "input": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot",
+        "held": "wand-star",
+        "wrap": "cape-drape",
+        "feet": "boots"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot",
+        "feet": "boots"
       }
     }
   ],

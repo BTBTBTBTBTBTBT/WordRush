@@ -36,6 +36,48 @@ export const AVATAR_HEADS = [
 export const AVATAR_FACES = ['none', 'mustache', 'heart-glasses', 'monocle', 'starglasses', 'roundglasses', 'eyepatch', 'facepaint', 'mask', 'curlymustache'] as const;
 /** Neck / back extras (AN addendum + round 2). Pro-only: wings, chain. */
 export const AVATAR_NECKS = ['none', 'cape', 'wings', 'bowtie', 'scarf', 'chain', 'medal', 'backpack', 'bubbletea', 'guitar', 'supercape', 'fairywings'] as const;
+/**
+ * Integrated parts (founder 10-05: "the new items … so long as they don't look bolted on"; docs/design/brand/avatar/
+ * INTEGRATION.md). Each one is drawn PER BODY as layer art (avatar-parts.json `pieces`): held items sit in the fist,
+ * wraps follow the body's wrap line, shoes go on the feet, companions sit beside, brows + extras on the face.
+ * New fields: missing in older configs (= 'none'). Ids are appended only, so stored configs stay valid.
+ */
+export const AVATAR_HELD = ['none', 'mug', 'book', 'pencil-big', 'balloon', 'trophy', 'magnifier', 'flashlight', 'umbrella', 'icecream', 'spatula', 'mic', 'wand-star'] as const;
+/** Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter). */
+export const AVATAR_WRAPS = ['none', 'bandana', 'belt', 'apron', 'lei', 'cape-drape'] as const;
+export const AVATAR_FEET = ['none', 'sneakers', 'boots', 'slippers', 'skates'] as const;
+export const AVATAR_PETS = ['none', 'bird', 'kitten', 'puppy', 'snail'] as const;
+/** Brows (code-drawn in the eyes' own ink; six friendly pairs, never angry). */
+export const AVATAR_BROWS = ['none', 'happy', 'worried', 'determined', 'surprised', 'cheeky', 'sleepy'] as const;
+/** Face extras: little expression marks beside the face (never over the eyes, mouth or letter). */
+export const AVATAR_EXTRAS = ['none', 'sweat', 'tear', 'steam', 'heart'] as const;
+/** The integrated config fields, in the maker's tab order. */
+export const AVATAR_INTEGRATED_FIELDS = ['held', 'wrap', 'feet', 'pet', 'brows', 'extra'] as const;
+export type AvatarIntegratedField = (typeof AVATAR_INTEGRATED_FIELDS)[number];
+/** The options of each integrated field (for the maker's catalog). */
+export const AVATAR_INTEGRATED_OPTIONS: Readonly<Record<AvatarIntegratedField, readonly string[]>> = {
+  held: AVATAR_HELD, wrap: AVATAR_WRAPS, feet: AVATAR_FEET, pet: AVATAR_PETS, brows: AVATAR_BROWS, extra: AVATAR_EXTRAS,
+};
+/** Parts that carry the maker's NEW tag (10-05 additions + the 7 rebuilt parts). */
+export const AVATAR_NEW_PARTS: readonly string[] = [
+  ...AVATAR_HELD.slice(1), ...AVATAR_WRAPS.slice(1), ...AVATAR_FEET.slice(1), ...AVATAR_PETS.slice(1),
+  ...AVATAR_BROWS.slice(1).map((b) => `brows:${b}`), ...AVATAR_EXTRAS.slice(1),
+  'backpack', 'scarf', 'chain', 'bubbletea', 'guitar', 'cape', 'supercape',
+];
+/**
+ * One-tap looks (the 10-05 "sets"): applying one sets every listed field (the maker resolves conflicts with
+ * applyAvatarPick). Pro when any part is Pro-only.
+ */
+export const AVATAR_BUNDLES: ReadonlyArray<{ id: string; label: string; pro?: boolean; picks: Readonly<Record<string, string>> }> = [
+  { id: 'bookworm', label: 'Bookworm', picks: { held: 'book', face: 'roundglasses', brows: 'happy' } },
+  { id: 'athlete', label: 'Athlete', picks: { held: 'trophy', head: 'sweatband', feet: 'sneakers', wrap: 'belt' } },
+  { id: 'chef', label: 'Chef', picks: { held: 'spatula', wrap: 'apron', head: 'chef' } },
+  { id: 'explorer', label: 'Explorer', picks: { neck: 'backpack', held: 'magnifier', head: 'bucket' } },
+  { id: 'rockstar', label: 'Rock star', pro: true, picks: { held: 'mic', face: 'starglasses', neck: 'chain' } },
+  { id: 'rainyday', label: 'Rainy day', picks: { held: 'umbrella', feet: 'boots' } },
+  { id: 'magic', label: 'Magic', pro: true, picks: { held: 'wand-star', wrap: 'cape-drape', head: 'wizard' } },
+  { id: 'summer', label: 'Summer', picks: { held: 'icecream', wrap: 'lei' } },
+];
 /** White glossy accessories that take the accessory color (accColor); everything else keeps its own colors. */
 export const AVATAR_TINTABLE: readonly string[] = ['supercape', 'backpack', 'wings', 'chef', 'astronaut'];
 export const AVATAR_FRAMES = ['none', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'pro'] as const;
@@ -135,6 +177,13 @@ export interface AvatarConfig {
   head: AvatarHead;
   face: AvatarFace;
   neck: AvatarNeck;
+  /** 10-05 integrated parts (missing = 'none'; validateAvatar writes only the worn ones). */
+  held?: string;
+  wrap?: string;
+  feet?: string;
+  pet?: string;
+  brows?: string;
+  extra?: string;
   /** The tint for white accessories (AVATAR_TINTABLE): a swatch id, or 'default' (their own white). */
   accColor: string;
   frame: AvatarFrame;
@@ -151,9 +200,11 @@ export interface AvatarConfig {
 export type AvatarDisplay = 'mascot' | 'photo';
 
 /** Pro-only options (free players see the gold PRO pill → the Go Pro popup). */
-export const AVATAR_PRO_ONLY: Readonly<{ head: readonly AvatarHead[]; neck: readonly AvatarNeck[]; frame: readonly AvatarFrame[]; bg: readonly string[]; color: readonly string[] }> = {
+export const AVATAR_PRO_ONLY: Readonly<{ head: readonly AvatarHead[]; neck: readonly AvatarNeck[]; held: readonly string[]; wrap: readonly string[]; frame: readonly AvatarFrame[]; bg: readonly string[]; color: readonly string[] }> = {
   head: ['crown', 'halo', 'tiara'],
   neck: ['wings', 'chain'],
+  held: ['wand-star'],
+  wrap: ['cape-drape'],
   frame: ['diamond', 'pro'],
   bg: ['aurora', 'galaxy'],
   color: ['gold', 'silver', 'rainbow', 'holo', 'neon'],
@@ -248,6 +299,7 @@ export function validateAvatar(raw: unknown, fallback: AvatarConfig = defaultAva
     head: pick(r.head, AVATAR_HEADS, fallback.head),
     face: pick(r.face, AVATAR_FACES, fallback.face),
     neck: pick(r.neck, AVATAR_NECKS, fallback.neck),
+    ...integratedPicks(r, fallback),
     accColor: typeof r.accColor === 'string' && (r.accColor === 'default' || COLOR_IDS.has(r.accColor)) ? r.accColor : fallback.accColor ?? 'default',
     frame: pick(r.frame, AVATAR_FRAMES, fallback.frame),
     bg: typeof r.bg === 'string' && AVATAR_BACKDROP_IDS.includes(r.bg) ? r.bg : fallback.bg ?? 'auto',
@@ -255,11 +307,33 @@ export function validateAvatar(raw: unknown, fallback: AvatarConfig = defaultAva
   };
 }
 
+/**
+ * The 10-05 integrated fields of a stored config: only the ones actually worn are written (a missing field is
+ * 'none'), so configs saved before they existed — and everyone who never picks one — stay byte-identical.
+ */
+function integratedPicks(r: Record<string, unknown>, fallback: AvatarConfig): Partial<Record<AvatarIntegratedField, string>> {
+  const out: Partial<Record<AvatarIntegratedField, string>> = {};
+  for (const f of AVATAR_INTEGRATED_FIELDS) {
+    const id = pick(r[f], AVATAR_INTEGRATED_OPTIONS[f], fallback[f] ?? 'none');
+    if (id !== 'none') out[f] = id;
+  }
+  return out;
+}
+
+function stripProIntegrated(c: AvatarConfig): AvatarConfig {
+  const out = { ...c };
+  if (out.held && AVATAR_PRO_ONLY.held.includes(out.held)) delete out.held;
+  if (out.wrap && AVATAR_PRO_ONLY.wrap.includes(out.wrap)) delete out.wrap;
+  return out;
+}
+
 /** Strip Pro-only picks for a free player (crown → none, Pro frames → none). */
 export function enforceAvatarPro(c: AvatarConfig, isPro: boolean): AvatarConfig {
   if (isPro) return c;
+  // integrated Pro parts come off (a missing field is 'none', the way validateAvatar writes them)
+  const out = stripProIntegrated(c);
   return {
-    ...c,
+    ...out,
     head: AVATAR_PRO_ONLY.head.includes(c.head) ? 'none' : c.head,
     neck: AVATAR_PRO_ONLY.neck.includes(c.neck) ? 'none' : c.neck,
     frame: AVATAR_PRO_ONLY.frame.includes(c.frame) ? 'none' : c.frame,

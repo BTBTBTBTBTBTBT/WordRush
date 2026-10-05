@@ -31,6 +31,11 @@ class AvatarArtCoverageTest {
             AvatarOptions.NOSES.forEach { out += b.copy(nose = it) }
             AvatarOptions.CHEEKS.forEach { out += b.copy(cheeks = it) }
             AvatarOptions.FACES.forEach { out += b.copy(face = it) }
+            // 10-05 integrated parts: every option on every body (per-body layer art), alone and with a hat + neck item
+            for ((field, ids) in AvatarOptions.INTEGRATED) for (id in ids) {
+                out += AvatarFit.setting(b, field, id)
+                out += AvatarFit.setting(b.copy(head = "party", neck = "backpack"), field, id)
+            }
         }
         return out
     }
