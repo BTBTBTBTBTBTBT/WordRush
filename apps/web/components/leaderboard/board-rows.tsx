@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CandySegment } from '@/components/ui/candy-segment';
 import { LiveHeadline } from '@/components/ui/live-headline';
 import type { CSSProperties, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -220,42 +221,30 @@ export function BoardCard({ children, className = '', style }: { children: React
   return <div className={`overflow-hidden ${className}`} style={{ ...SOFT_CARD, ...style }}>{children}</div>;
 }
 
-/** The tinted segmented control (Everyone | Friends, Solo | VS, Daily | All-time). */
+/**
+ * The two-way switch (Everyone | Friends, Solo | VS, Daily | All-time): the candy segmented (family rule —
+ * frosted track + the glossy purple thumb, components/ui/candy-segment.tsx), hugging its labels.
+ */
 export function SegmentedPill<T extends string | boolean>({ options, value, onChange, accent, label }: {
   options: readonly (readonly [T, ReactNode])[];
   value: T;
   onChange: (v: T) => void;
+  /** Kept for callers; the candy sprites are the app's purple in every context. */
   accent: string;
   label: string;
 }) {
+  const keyed = options.map(([v, text]) => ({ key: String(v), label: text }));
   return (
-    <div
-      role="group"
-      aria-label={label}
-      className="flex shrink-0"
-      style={{ padding: 3, borderRadius: 999, background: softBackground(accent, 0.18) }}
-    >
-      {options.map(([v, text]) => {
-        const on = value === v;
-        return (
-          <button
-            key={String(v)}
-            type="button"
-            onClick={() => onChange(v)}
-            aria-pressed={on}
-            className="flex items-center gap-1 text-[11px] font-black"
-            style={{
-              height: 'max(26px, 2.2em)', padding: '0 11px', borderRadius: 999, letterSpacing: 0.3,
-              background: on ? softBackground(accent, 0.34) : 'transparent',
-              color: on ? 'var(--color-text)' : 'var(--color-text-secondary)',
-              boxShadow: on ? `inset 0 0 0 1.5px ${accent}, 0 2px 6px ${alphaHex(accent, 0.2)}` : undefined,
-            }}
-          >
-            {text}
-          </button>
-        );
-      })}
-    </div>
+    <CandySegment
+      options={keyed}
+      value={String(value)}
+      onChange={(k) => { const hit = options.find(([v]) => String(v) === k); if (hit) onChange(hit[0]); }}
+      accent={accent}
+      label={label}
+      height={32}
+      className="shrink-0"
+      itemPad={12}
+    />
   );
 }
 

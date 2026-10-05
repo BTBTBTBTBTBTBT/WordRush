@@ -86,7 +86,8 @@ describe('one-screen finished audit', () => {
     expect(row).toContain('{share}');
     expect(row).toContain('{primary}');
     const css = fs.readFileSync(require('path').join(__dirname, '..', 'app', 'globals.css'), 'utf8');
-    expect(css).toContain('.candy-md { --candy-h: 40px;');
+    // Button family 10-05: an md candy is the cast primary at m (44, the skin's own height).
+    expect(css).toContain('.candy-md:not(.candy-sm):not(.candy-round):not(.candy-peach) { --candy-h: 44px; }');
   });
 
   it('BA1 shows the Unlimited chip on its own line, only under 700 tall, with the PRO pill for free players', async () => {

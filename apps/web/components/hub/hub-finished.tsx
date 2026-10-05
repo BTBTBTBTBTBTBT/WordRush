@@ -31,21 +31,32 @@ export function HubRankBar({ state: s, points = true }: { state: HubState; point
   );
 }
 
-/** The small "BONUS" tag on a rarer word's chip: it scores but sits outside the N/M words count (Doug 10-05). */
-export function HubBonusTag() {
-  return <span aria-hidden="true" className="font-black tracking-wide" style={{ fontSize: 7.5, color: 'var(--color-text-muted)' }}>BONUS</span>;
+/**
+ * A rarer word (it scores but sits outside the N/M words count, Doug 10-05) wears the corner gem
+ * (button family: art-fam-cic-gem, 13 px, 6 right / 7 up outside the chip's top-right corner) — no text tag.
+ * The chip itself must be `relative`; its accessible name says "WORD, rare word".
+ */
+export function HubRareGem() {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/art/art-fam-cic-gem.webp" alt="" aria-hidden="true" draggable={false} width={144} height={119}
+      className="absolute pointer-events-none select-none" style={{ right: -6, top: -7, width: 13, height: 'auto' }} />
+  );
 }
+
+/** The chip's accessible name: "WORD, rare word" for a rarer word. */
+export const hubRareLabel = (w: string) => `${w}, rare word`;
 
 /** Every word of the puzzle once it has ended: found ones solid (pangrams in the accent), the rest muted. */
 export function HubAllWordChips({ state: s }: { state: HubState }) {
   return (
     <>
       {[...s.words, ...s.bonusFound].sort().map((w) => (
-        <span key={w} className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border"
-          aria-label={hubIsBonus(s.bonusFound, w) ? `${w}, bonus word` : undefined} style={s.found.includes(w) || s.bonusFound.includes(w)
+        <span key={w} className="relative inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border"
+          aria-label={hubIsBonus(s.bonusFound, w) && !s.pangrams.includes(w) ? hubRareLabel(w) : undefined} style={s.found.includes(w) || s.bonusFound.includes(w)
           ? (s.pangrams.includes(w) ? { background: `${HUB_ACCENT}22`, borderColor: HUB_ACCENT, color: HUB_ACCENT } : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' })
           // A1: the words never found are muted tinted chips (no plain white).
-          : { ...softPill('#94a3b8', { bar: false }), color: 'var(--color-text-muted)' }}>{w}{s.pangrams.includes(w) ? ' ★' : ''}{hubIsBonus(s.bonusFound, w) && !s.pangrams.includes(w) && <HubBonusTag />}</span>
+          : { ...softPill('#94a3b8', { bar: false }), color: 'var(--color-text-muted)' }}>{w}{s.pangrams.includes(w) ? ' ★' : ''}{hubIsBonus(s.bonusFound, w) && !s.pangrams.includes(w) && <HubRareGem />}</span>
       ))}
     </>
   );

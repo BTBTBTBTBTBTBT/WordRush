@@ -16,7 +16,6 @@ export function CandySwitch({ checked, onCheckedChange, label, disabled = false,
   id?: string;
 }) {
   const { width, height } = CANDY_SWITCH;
-  const knob = height - 4;
   return (
     <button
       type="button"
@@ -29,6 +28,17 @@ export function CandySwitch({ checked, onCheckedChange, label, disabled = false,
       className="relative shrink-0 disabled:opacity-50"
       style={{ width, height, padding: 0, background: 'transparent', border: 0, margin: '7px 0' }}
     >
+      <CandySwitchTrack checked={checked} />
+    </button>
+  );
+}
+
+/** The switch's look alone (track + crossfade + knob), for a whole row that is the switch (role="switch" on the row). */
+export function CandySwitchTrack({ checked, standalone = false }: { checked: boolean; standalone?: boolean }) {
+  const { width, height } = CANDY_SWITCH;
+  const knob = height - 4;
+  const art = (
+    <>
       <span aria-hidden="true" className="absolute inset-0" style={threeSlice('switch', height, '--candy-switch')} />
       <span aria-hidden="true" className="absolute inset-0 candy-fade" style={{ ...threeSlice('switch-on', height, '--candy-switch-on'), opacity: checked ? 1 : 0 }} />
       <span
@@ -40,6 +50,8 @@ export function CandySwitch({ checked, onCheckedChange, label, disabled = false,
           transform: `translateX(${checked ? width - knob - 4 : 0}px)`,
         }}
       />
-    </button>
+    </>
   );
+  if (!standalone) return art;
+  return <span aria-hidden="true" className="relative shrink-0 block" style={{ width, height }}>{art}</span>;
 }

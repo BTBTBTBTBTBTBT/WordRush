@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
-import { CandyButton, candyVars } from '@/components/ui/candy-button';
+import { CandyButton } from '@/components/ui/candy-button';
+import { CandySwitchTrack } from '@/components/ui/candy-switch';
 import { CastButton } from '@/components/ui/cast-button';
 import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
 import { alphaHex } from '@/lib/soft-surface';
@@ -185,14 +186,8 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
         >
           <Icon3D name="bell" size={20} />
           <span className="flex-1 min-w-0 text-[12.5px] font-extrabold" style={{ color: VS.deep }}>{looking.label}</span>
-          {/* The switch's track in the candy colors (teal on, peach off). */}
-          <span
-            className="candy candy-sm relative shrink-0"
-            style={{ ...candyVars(looking.on ? 'teal' : 'peach'), width: 44, minWidth: 44, height: 24, padding: 0, marginBottom: 3 }}
-            aria-hidden="true"
-          >
-            <span className="absolute rounded-full transition-all" style={{ top: 3, width: 18, height: 18, left: looking.on ? 22 : 4, background: '#ffffff', boxShadow: '0 1px 3px rgba(59,26,120,0.35)' }} />
-          </span>
+          {/* The candy switch (family rule: every on/off switch is the candy toggle). */}
+          <CandySwitchTrack checked={looking.on} standalone />
         </button>
       )}
 

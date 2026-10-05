@@ -185,7 +185,7 @@ function FinishedMoreBoard({ board, won }: { board: MoreBoard; won: boolean }) {
           <HubRankBar state={board.state} />
           <div className="w-full max-w-md mx-auto">
             <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>ALL WORDS</div>
-            <div className="flex flex-wrap justify-center gap-1.5"><HubAllWordChips state={board.state} /></div>
+            <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-2.5 pt-1.5"><HubAllWordChips state={board.state} /></div>
           </div>
         </>
       );

@@ -20,7 +20,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
-import { HubRankBar, HubAllWordChips, HubHive, HubBonusTag, HUB_ACCENT } from './hub-finished';
+import { HubRankBar, HubAllWordChips, HubHive, HubRareGem, hubRareLabel, HUB_ACCENT } from './hub-finished';
 import { GameTray } from '@/components/ui/game-tray';
 import { pieceSrc } from '@/lib/art';
 import { hiveBox, hiveOffsets } from '@/lib/hive-layout';
@@ -404,14 +404,14 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const wordChips = (words: string[], dim = false) => words.map((w) => {
     const pangram = state.pangrams.includes(w);
     const revealed = state.revealed.includes(w);
-    // A rarer word scores but sits outside the N/M words count: a small "BONUS" tag (Doug 10-05).
+    // A rarer word scores but sits outside the N/M words count: the corner gem (button family, 10-05).
     const bonus = !pangram && hubIsBonus(state.bonusFound, w);
     return (
-      <span key={w} className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${dim ? 'opacity-60' : ''}`}
-        aria-label={bonus ? `${w}, bonus word` : undefined}
+      <span key={w} className={`relative inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${dim ? 'opacity-60' : ''}`}
+        aria-label={bonus ? hubRareLabel(w) : undefined}
         // A1: tinted chips — pangrams in the accent, revealed words violet, the rest brand lilac.
         style={pangram ? { ...softPill(HUB_ACCENT, { bar: false }), color: HUB_ACCENT } : revealed ? { ...softPill('#8b5cf6', { bar: false }), color: '#8b5cf6' } : { ...softPill('#7c3aed', { bar: false }), color: 'var(--color-text)' }}>
-        {w}{pangram ? ' ★' : ''}{bonus && <HubBonusTag />}
+        {w}{pangram ? ' ★' : ''}{bonus && <HubRareGem />}
       </span>
     );
   });
@@ -474,7 +474,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* Pending "Starts with…" hints lead the found-words flow (which already scrolls). As a row
               under the hint buttons they were a fixed row, so the honeycomb shrank on every hint. */}
-          <div className="flex flex-wrap justify-center gap-1.5 pb-1">{pendingHintChips}{wordChips(newestFound)}</div>
+          <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-2.5 pt-2 pb-1">{pendingHintChips}{wordChips(newestFound)}</div>
         </div>
       </div>
       <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
@@ -505,7 +505,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       <div className="text-[10px] font-black tracking-wider mb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
         {ended ? 'ALL WORDS' : `FOUND SO FAR · ${s.words.length - s.found.length} MORE TO FIND`}
       </div>
-      <div className="flex flex-wrap justify-center gap-1.5">
+      <div className="flex flex-wrap justify-center gap-x-1.5 gap-y-2.5 pt-1.5">
         {ended ? allWordChips(s) : wordChips(sortedFound)}
       </div>
     </div>

@@ -51,7 +51,7 @@ export function DesktopTabs() {
               // BI11: no jump to the top on a tab switch — the tab restores its own position.
               scroll={false}
               onClick={(e) => onTabTap(e, item.href)}
-              className={candyClass({ color: isActive ? 'purple' : 'peach', size: 'sm', extra: 'dk-tab' })}
+              className={candyClass({ color: isActive ? 'purple' : 'peach', size: 'sm', extra: isActive ? 'dk-tab candy-on' : 'dk-tab' })}
               aria-current={isActive ? 'page' : undefined}
               aria-label={item.href === '/friends' ? friendsTabLabel(badge) : item.label}
             >

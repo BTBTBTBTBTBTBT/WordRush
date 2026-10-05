@@ -1071,14 +1071,17 @@
 }
 @keyframes gt-hint { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 
-/* ── B2 · Keyboard keys are tiles too: lilac lip, light face, dark purple letters, state colors after a reveal ── */
+/* ── Keys (button family §5, docs/design/brand/buttons/family/README.md): the state fill, then the key
+   light map art-fam-lm-key NINE-SLICED on top (corner 31 px of the 124 × 150 @3x sprite = 10.33 px).
+   No separate lip (the map has it). Fills = the tile palette's base colors (colorblind-aware via the
+   --gt-* variables); unstated = #fbfaff light / #3d355f dark. ── */
 .kkey {
   position: relative;
+  isolation: isolate;
   border: 0;
-  padding-top: 0;
-  padding-bottom: 3px;
-  border-radius: 9px;
-  background: var(--k-edge, #cdb9f0);
+  padding: 0;
+  border-radius: 10px;
+  background: var(--k-face, #fbfaff);
   color: var(--k-ink, #3b1a78);
   font-weight: 900;
   line-height: 1;
@@ -1089,15 +1092,18 @@
 .kkey::before {
   content: '';
   position: absolute;
-  inset: 0 0 3px 0;
-  border-radius: 9px;
-  background: var(--k-face, rgba(255, 255, 255, 0.92));
+  inset: 0;
+  z-index: 1;
+  border: 0 solid transparent;
+  border-image: url(/art/art-fam-lm-key.webp) 31 fill / 10.33px stretch;
+  pointer-events: none;
 }
-.kkey > * { position: relative; }
-.kkey[data-s="correct"] { --k-edge: var(--gt-c-edge); --k-face: linear-gradient(var(--gt-c-light), var(--gt-c-base)); --k-ink: #ffffff; }
-.kkey[data-s="present"] { --k-edge: var(--gt-p-edge); --k-face: linear-gradient(var(--gt-p-light), var(--gt-p-base)); --k-ink: #ffffff; }
-.kkey[data-s="absent"] { --k-edge: var(--gt-a-edge); --k-face: linear-gradient(var(--gt-a-light), var(--gt-a-base)); --k-ink: #eef1f6; }
-.kkey[data-s="blocked"] { --k-edge: rgba(220, 38, 38, 0.25); --k-face: rgba(254, 226, 226, 0.9); --k-ink: rgba(220, 38, 38, 0.45); }
+.kkey > * { position: relative; z-index: 2; }
+[data-theme="dark"] .kkey { --k-face: #3d355f; --k-ink: #efe9ff; --k-del: #d8c8ff; }
+.kkey[data-s="correct"] { --k-face: var(--gt-c-base); --k-ink: #ffffff; }
+.kkey[data-s="present"] { --k-face: var(--gt-p-base); --k-ink: #ffffff; }
+.kkey[data-s="absent"] { --k-face: var(--gt-a-base); --k-ink: #eef1f6; }
+.kkey[data-s="blocked"] { --k-face: rgba(254, 226, 226, 0.9); --k-ink: rgba(220, 38, 38, 0.45); }
 .kkey-text { text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18); }
 .kkey:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
 
@@ -1157,30 +1163,42 @@
    plus a soft drop shadow, a white gloss across the top half, and a white
    Nunito Black label with a dark-purple outline. Press = squish (scale .92,
    the lip compresses) with the spring back. Sizes: lg 52, md 40, round 40. */
+/* ── The button family (docs/design/brand/buttons/family/README.md, 10-05): the old candy classes
+   now render the family, so every call site switches at once. Technique = fill + light map: the
+   plain shape fill, then art-fam-lm-frost (a white/black gloss + shading overlay) three-sliced on
+   top (caps = h / 2) in ::before, behind the label (isolation). Mapping:
+     .candy-sm (not round) → the HELPER pill (34, the game accent's wash, deep-tint label)
+     .candy-round          → the helper CIRCLE (34)
+     .candy-peach md / lg  → the QUIET pill (lavender, purple ink)
+     any other md / lg     → the cast primary (art-btn-<color>-<m|l> skins; CastButton for the component)
+   Tints: purple = the game's accent inside a game screen ([data-page-tint="game"] → --page-accent),
+   else #7c3aed; pink #db2777, amber #d97706, teal #0d9488 keep their hue (they mark a state). ── */
 .candy {
   --candy-1: #a66bff;
   --candy-2: #6d28d9;
   --candy-lip: #471a8d;
-  --candy-gold: #f5c542;
-  --candy-ring: 2px;
-  --candy-lip-h: 5px;
-  --candy-h: 52px;
+  --candy-h: 34px;
+  --fam-tint: #7c3aed;
+  --fam-fill: color-mix(in srgb, var(--fam-tint) 20%, #ffffff);
+  --fam-fill-p: color-mix(in srgb, var(--fam-tint) 27%, #ffffff);
+  --fam-ink: color-mix(in srgb, var(--fam-tint) 68%, #000000);
+  --fam-lm-a: 1;
   position: relative;
+  isolation: isolate;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 5px;
+  box-sizing: border-box;
   height: var(--candy-h);
   min-width: var(--candy-h);
-  padding: 0 calc(var(--candy-h) * 0.42);
+  padding: 0 calc(var(--candy-h) * 0.42) 0 calc(var(--candy-h) * 0.34);
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(var(--candy-1), var(--candy-2));
-  box-shadow: inset 0 0 0 var(--candy-ring) var(--candy-gold), 0 var(--candy-lip-h) 0 var(--candy-lip), 0 calc(var(--candy-lip-h) + 5px) 14px rgba(59, 26, 120, 0.28);
-  margin-bottom: var(--candy-lip-h);
-  color: #ffffff;
+  background: var(--fam-fill);
+  color: var(--fam-ink);
   font-weight: 900;
-  font-size: 17px;
+  font-size: 12.5px;
   line-height: 1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -1189,55 +1207,144 @@
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
+  text-decoration: none;
 }
+/* The light map, three-sliced: 66 px caps of the 132 px sprite drawn at h / 2, the middle stretched. */
 .candy::before {
   content: '';
   position: absolute;
-  left: 7%;
-  right: 7%;
-  top: 7%;
-  height: 46%;
-  border-radius: 999px;
-  background: linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+  inset: 0;
+  z-index: -1;
+  border: 0 solid transparent;
+  border-image: url(/art/art-fam-lm-frost.webp) 0 66 fill / 0 calc(var(--candy-h) / 2) stretch;
+  opacity: var(--fam-lm-a);
   pointer-events: none;
 }
 .candy > * { position: relative; }
-/* The white label with its dark-purple outline (on the button itself, so a
-   plain text child gets it too). */
-.candy {
-  text-shadow:
-    1.5px 0 0 #3b1a78, -1.5px 0 0 #3b1a78, 0 1.5px 0 #3b1a78, 0 -1.5px 0 #3b1a78,
-    1.1px 1.1px 0 #3b1a78, -1.1px 1.1px 0 #3b1a78, 1.1px -1.1px 0 #3b1a78, -1.1px -1.1px 0 #3b1a78,
-    0 3px 4px rgba(40, 10, 80, 0.35);
-}
-.candy-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 2px 1px;
-}
-.candy > svg, .candy-icon {
-  display: inline-flex;
-  flex: none;
-  line-height: 0;
-  filter: drop-shadow(1.5px 0 0 #3b1a78) drop-shadow(-1.5px 0 0 #3b1a78) drop-shadow(0 1.5px 0 #3b1a78) drop-shadow(0 -1.5px 0 #3b1a78) drop-shadow(0 2px 2px rgba(40, 10, 80, 0.3));
-}
-.candy-md { --candy-h: 40px; --candy-lip-h: 4px; font-size: 14px; gap: 6px; }
-.candy-sm { --candy-h: 32px; --candy-lip-h: 3px; --candy-ring: 1px; font-size: 12px; gap: 5px; }
-.candy-round { padding: 0; width: var(--candy-h); --candy-h: 40px; --candy-lip-h: 4px; }
+.candy-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 2px 0; }
+.candy > svg, .candy-icon { display: inline-flex; flex: none; line-height: 0; }
+.candy > svg { width: 16px; height: 16px; }
+.candy .candy-icon [fill="#fff"] { fill: currentColor; }
+.candy.candy-pressed, .candy:active { --fam-fill: var(--fam-fill-p); }
+.candy.candy-pressed::before, .candy:active::before { border-image-source: url(/art/art-fam-lm-frost-pressed.webp); }
+.candy.candy-pressed > *, .candy:active > * { transform: translateY(0.5px); }
+.candy-md, .candy-sm { --candy-h: 34px; }
+.candy-round { --candy-h: 34px; width: var(--candy-h); padding: 0; }
 .candy-block { display: flex; width: 100%; }
 .candy-purple { --candy-1: #a66bff; --candy-2: #6d28d9; --candy-lip: #471a8d; }
 .candy-pink { --candy-1: #f472b6; --candy-2: #a21caf; --candy-lip: #691272; }
 .candy-amber { --candy-1: #ffc56b; --candy-2: #f97316; --candy-lip: #a24b0e; }
 .candy-teal { --candy-1: #5eead4; --candy-2: #0d9488; --candy-lip: #086058; }
-.candy-peach { --candy-1: #ffd6c2; --candy-2: #fbb38f; --candy-lip: #a3745d; color: #3b1a78; }
-.candy-peach { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6); }
-.candy-peach > svg, .candy-peach .candy-icon { filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6)); }
-.candy:disabled, .candy[aria-disabled="true"], .candy.candy-dim { filter: saturate(0.4); opacity: 0.6; cursor: default; }
+.candy-peach { --candy-1: #ffd6c2; --candy-2: #fbb38f; --candy-lip: #a3745d; }
+.candy.candy-pink { --fam-tint: #db2777; }
+.candy.candy-amber { --fam-tint: #d97706; }
+.candy.candy-teal { --fam-tint: #0d9488; }
+[data-page-tint="game"] .candy.candy-purple, [data-page-tint="game"] .candy:not([class*="candy-p"]):not(.candy-amber):not(.candy-teal) { --fam-tint: var(--page-accent, #7c3aed); }
+/* Selected (a tab / choice that is on): the solid tint with white ink. */
+.candy.candy-on { --fam-fill: var(--fam-tint); --fam-fill-p: color-mix(in srgb, var(--fam-tint) 85%, #000000); --fam-ink: #ffffff; text-shadow: 0 1px 1px color-mix(in srgb, var(--fam-tint) 60%, #000000); }
+[data-theme="dark"] .candy {
+  --fam-fill: color-mix(in srgb, var(--fam-tint) 34%, #231c40);
+  --fam-fill-p: color-mix(in srgb, var(--fam-tint) 42%, #231c40);
+  --fam-ink: color-mix(in srgb, var(--fam-tint) 35%, #ffffff);
+  --fam-lm-a: 0.85;
+}
+[data-theme="dark"] [data-page-scheme="light"] .candy {
+  --fam-fill: color-mix(in srgb, var(--fam-tint) 20%, #ffffff);
+  --fam-fill-p: color-mix(in srgb, var(--fam-tint) 27%, #ffffff);
+  --fam-ink: color-mix(in srgb, var(--fam-tint) 68%, #000000);
+  --fam-lm-a: 1;
+}
+[data-theme="dark"] .candy.candy-on, [data-theme="dark"] [data-page-scheme="light"] .candy.candy-on { --fam-fill: var(--fam-tint); --fam-fill-p: color-mix(in srgb, var(--fam-tint) 85%, #000000); --fam-ink: #ffffff; }
+/* QUIET: peach at md / lg (and the small peach helpers) — lavender fill, purple ink. */
+.candy.candy-peach { --fam-fill: #ece4ff; --fam-fill-p: #e2d7ff; --fam-ink: #5b21b6; padding: 0 calc(var(--candy-h) * 0.45); }
+.candy.candy-peach:not(.candy-sm):not(.candy-round) { --candy-h: 44px; font-size: 13.5px; }
+.candy-md.candy-peach:not(.candy-round) { --candy-h: 40px; }
+[data-theme="dark"] .candy.candy-peach { --fam-fill: #3b3163; --fam-fill-p: #463a74; --fam-ink: #ddd0ff; }
+[data-theme="dark"] [data-page-scheme="light"] .candy.candy-peach { --fam-fill: #ece4ff; --fam-fill-p: #e2d7ff; --fam-ink: #5b21b6; }
+.candy.candy-peach.candy-on { --fam-tint: #7c3aed; --fam-fill: #7c3aed; --fam-fill-p: #6d28d9; --fam-ink: #ffffff; }
+/* CAST PRIMARY: any other md / lg (raw class users; the CandyButton component renders CastButton
+   and gets the art labels). Live lettering at the cast cap height (0.42 h, cap ratio 0.75). */
+.candy:not(.candy-sm):not(.candy-round):not(.candy-peach) {
+  --candy-h: 56px;
+  height: var(--candy-h);
+  min-width: calc(var(--candy-h) * 1.6);
+  padding: 0 max(calc(var(--candy-h) * 0.6), calc(var(--candy-h) * 14 / 44));
+  gap: 6px;
+  background: none;
+  border: 0 solid transparent;
+  border-radius: 0;
+  border-image: var(--cs);
+  color: #ffffff;
+  font-size: calc(var(--candy-h) * 0.42 / 0.75);
+  letter-spacing: 0.01em;
+  text-shadow:
+    1.1px 0 0 var(--cast-deep), -1.1px 0 0 var(--cast-deep), 0 1.1px 0 var(--cast-deep), 0 -1.1px 0 var(--cast-deep),
+    0.8px 0.8px 0 var(--cast-deep), -0.8px 0.8px 0 var(--cast-deep), 0.8px -0.8px 0 var(--cast-deep), -0.8px -0.8px 0 var(--cast-deep),
+    0 1px 2px color-mix(in srgb, var(--cast-deep) 35%, transparent);
+}
+.candy-md:not(.candy-sm):not(.candy-round):not(.candy-peach) { --candy-h: 44px; }
+.candy:not(.candy-sm):not(.candy-round):not(.candy-peach)::before { display: none; }
+.candy:not(.candy-sm):not(.candy-round):not(.candy-peach).candy-pressed,
+.candy:not(.candy-sm):not(.candy-round):not(.candy-peach):active { border-image: var(--cs-p); }
+[data-theme="dark"] .candy:not(.candy-sm):not(.candy-round):not(.candy-peach) { border-image: var(--cs-d); }
+[data-theme="dark"] .candy:not(.candy-sm):not(.candy-round):not(.candy-peach).candy-pressed,
+[data-theme="dark"] .candy:not(.candy-sm):not(.candy-round):not(.candy-peach):active { border-image: var(--cs-pd); }
+.candy:not(.candy-sm):not(.candy-round):not(.candy-peach) > svg { width: 20px; height: 20px; filter: drop-shadow(0 1px 1px var(--cast-deep)); }
+.candy.candy-purple { --cast-deep: #4f0192; --cs: url(/art/art-btn-purple-l.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; --cs-p: url(/art/art-btn-purple-l-pressed.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; --cs-d: url(/art/art-btn-purple-l-dark.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; --cs-pd: url(/art/art-btn-purple-l-pressed-dark.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; }
+.candy-md.candy-purple { --cast-deep: #4f0192; --cs: url(/art/art-btn-purple-m.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; --cs-p: url(/art/art-btn-purple-m-pressed.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; --cs-d: url(/art/art-btn-purple-m-dark.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; --cs-pd: url(/art/art-btn-purple-m-pressed-dark.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; }
+.candy.candy-pink { --cast-deep: #931048; --cs: url(/art/art-btn-pink-l.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; --cs-p: url(/art/art-btn-pink-l-pressed.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; --cs-d: url(/art/art-btn-pink-l-dark.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; --cs-pd: url(/art/art-btn-pink-l-pressed-dark.webp) 0 157 0 157 fill / 0 52.33px 0 52.33px / 0 stretch; }
+.candy-md.candy-pink { --cast-deep: #931048; --cs: url(/art/art-btn-pink-m.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; --cs-p: url(/art/art-btn-pink-m-pressed.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; --cs-d: url(/art/art-btn-pink-m-dark.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; --cs-pd: url(/art/art-btn-pink-m-pressed-dark.webp) 0 123 0 124 fill / 0 41.00px 0 41.33px / 0 stretch; }
+.candy.candy-amber { --cast-deep: #936801; --cs: url(/art/art-btn-gold-l.webp) 0 156 0 156 fill / 0 52.00px 0 52.00px / 0 stretch; --cs-p: url(/art/art-btn-gold-l-pressed.webp) 0 156 0 156 fill / 0 52.00px 0 52.00px / 0 stretch; --cs-d: url(/art/art-btn-gold-l-dark.webp) 0 156 0 156 fill / 0 52.00px 0 52.00px / 0 stretch; --cs-pd: url(/art/art-btn-gold-l-pressed-dark.webp) 0 156 0 156 fill / 0 52.00px 0 52.00px / 0 stretch; }
+.candy-md.candy-amber { --cast-deep: #936801; --cs: url(/art/art-btn-gold-m.webp) 0 122 0 123 fill / 0 40.67px 0 41.00px / 0 stretch; --cs-p: url(/art/art-btn-gold-m-pressed.webp) 0 122 0 123 fill / 0 40.67px 0 41.00px / 0 stretch; --cs-d: url(/art/art-btn-gold-m-dark.webp) 0 122 0 123 fill / 0 40.67px 0 41.00px / 0 stretch; --cs-pd: url(/art/art-btn-gold-m-pressed-dark.webp) 0 122 0 123 fill / 0 40.67px 0 41.00px / 0 stretch; }
+.candy.candy-teal { --cast-deep: #016774; --cs: url(/art/art-btn-teal-l.webp) 0 169 0 170 fill / 0 56.33px 0 56.67px / 0 stretch; --cs-p: url(/art/art-btn-teal-l-pressed.webp) 0 174 0 175 fill / 0 58.00px 0 58.33px / 0 stretch; --cs-d: url(/art/art-btn-teal-l-dark.webp) 0 169 0 170 fill / 0 56.33px 0 56.67px / 0 stretch; --cs-pd: url(/art/art-btn-teal-l-pressed-dark.webp) 0 174 0 175 fill / 0 58.00px 0 58.33px / 0 stretch; }
+.candy-md.candy-teal { --cast-deep: #016774; --cs: url(/art/art-btn-teal-m.webp) 0 133 0 133 fill / 0 44.33px 0 44.33px / 0 stretch; --cs-p: url(/art/art-btn-teal-m-pressed.webp) 0 137 0 137 fill / 0 45.67px 0 45.67px / 0 stretch; --cs-d: url(/art/art-btn-teal-m-dark.webp) 0 133 0 133 fill / 0 44.33px 0 44.33px / 0 stretch; --cs-pd: url(/art/art-btn-teal-m-pressed-dark.webp) 0 137 0 137 fill / 0 45.67px 0 45.67px / 0 stretch; }
+.candy:disabled, .candy[aria-disabled="true"], .candy.candy-dim { filter: saturate(0.25); opacity: 0.5; cursor: default; }
 .candy:focus-visible { outline: 3px solid #7c3aed; outline-offset: 3px; }
-.candy { transition: box-shadow 90ms ease-out; }
-/* Held down: the lip compresses (the squish itself is SquishHost's). */
-.candy.candy-pressed { box-shadow: inset 0 0 0 var(--candy-ring) var(--candy-gold), 0 calc(var(--candy-lip-h) * 0.4) 0 var(--candy-lip), 0 4px 8px rgba(59, 26, 120, 0.22); }
+/* A tinted 3D icon (components/ui/family-button.tsx FamIcon): the white clay multiplied by the ink, masked
+   to its own shape — one element (background-blend-mode), so it also works on a lucide <svg> swapped below. */
+.fic {
+  display: inline-block;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: var(--ic) center / contain no-repeat, var(--fic-ink, currentColor);
+  background-blend-mode: multiply;
+  -webkit-mask: var(--ic) center / contain no-repeat;
+  mask: var(--ic) center / contain no-repeat;
+}
+/* The game helpers pass lucide icons: in a helper pill / circle the ones with family art draw the art. */
+.candy > svg.lucide-delete, .candy > svg.lucide-shuffle, .candy > svg.lucide-corner-down-left, .candy > svg.lucide-lightbulb, .candy > svg.lucide-eye, .candy > svg.lucide-flag, .candy > svg.lucide-check, .candy > svg.lucide-circle-check, .candy > svg.lucide-undo-2, .candy > svg.lucide-undo, .candy > svg.lucide-rotate-ccw, .candy > svg.lucide-arrow-right, .candy > svg.lucide-rotate-cw, .candy > svg.lucide-refresh-cw, .candy > svg.lucide-repeat, .candy > svg.lucide-sparkles, .candy > svg.lucide-pencil, .candy > svg.lucide-eraser, .candy > svg.lucide-x, .candy > svg.lucide-play, .candy > svg.lucide-chart-bar, .candy > svg.lucide-chart-column, .candy > svg.lucide-bar-chart-3 {
+  width: 18px;
+  height: 18px;
+  background: var(--ic) center / contain no-repeat, var(--fam-ink);
+  background-blend-mode: multiply;
+  -webkit-mask: var(--ic) center / contain no-repeat;
+  mask: var(--ic) center / contain no-repeat;
+}
+.candy > svg.lucide-delete > *, .candy > svg.lucide-shuffle > *, .candy > svg.lucide-corner-down-left > *, .candy > svg.lucide-lightbulb > *, .candy > svg.lucide-eye > *, .candy > svg.lucide-flag > *, .candy > svg.lucide-check > *, .candy > svg.lucide-circle-check > *, .candy > svg.lucide-undo-2 > *, .candy > svg.lucide-undo > *, .candy > svg.lucide-rotate-ccw > *, .candy > svg.lucide-arrow-right > *, .candy > svg.lucide-rotate-cw > *, .candy > svg.lucide-refresh-cw > *, .candy > svg.lucide-repeat > *, .candy > svg.lucide-sparkles > *, .candy > svg.lucide-pencil > *, .candy > svg.lucide-eraser > *, .candy > svg.lucide-x > *, .candy > svg.lucide-play > *, .candy > svg.lucide-chart-bar > *, .candy > svg.lucide-chart-column > *, .candy > svg.lucide-bar-chart-3 > * { visibility: hidden; }
+.lucide-delete { --ic: url(/art/art-fam-ic-delete.webp); }
+.lucide-shuffle { --ic: url(/art/art-fam-ic-shuffle.webp); }
+.lucide-corner-down-left { --ic: url(/art/art-fam-ic-enter.webp); }
+.lucide-lightbulb { --ic: url(/art/art-fam-ic-hint.webp); }
+.lucide-eye { --ic: url(/art/art-fam-ic-eye.webp); }
+.lucide-flag { --ic: url(/art/art-fam-ic-flag.webp); }
+.lucide-check, .lucide-circle-check { --ic: url(/art/art-fam-ic-check.webp); }
+.lucide-undo-2, .lucide-undo, .lucide-rotate-ccw { --ic: url(/art/art-fam-ic-undo.webp); }
+.lucide-arrow-right { --ic: url(/art/art-fam-ic-next.webp); }
+.lucide-rotate-cw, .lucide-refresh-cw, .lucide-repeat { --ic: url(/art/art-fam-ic-refresh.webp); }
+.lucide-sparkles { --ic: url(/art/art-fam-ic-sparkles.webp); }
+.lucide-pencil { --ic: url(/art/art-fam-ic-pencil.webp); }
+.lucide-eraser { --ic: url(/art/art-fam-ic-erase.webp); }
+.lucide-x { --ic: url(/art/art-fam-ic-xmark.webp); }
+.lucide-play { --ic: url(/art/art-fam-ic-play.webp); }
+.lucide-chart-bar, .lucide-chart-column, .lucide-bar-chart-3 { --ic: url(/art/art-fam-ic-chart.webp); }
+/* The cast primary keeps lucide glyphs as plain white strokes (the lettering carries the button). */
+.candy:not(.candy-sm):not(.candy-round):not(.candy-peach) > svg[class*="lucide-"] { background: none; -webkit-mask: none; mask: none; }
+.candy:not(.candy-sm):not(.candy-round):not(.candy-peach) > svg[class*="lucide-"] > * { visibility: visible !important; }
+/* QUIET pill (components/ui/family-button.tsx QuietButton) and the ROUND bare-icon button. */
+.fam-round { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fam-round > img { width: 28px; height: 28px; object-fit: contain; pointer-events: none; }
+.fam-round:active { transform: scale(0.9); }
 
 /* ── A5 · The living cast header (components/ui/cast-header.tsx): ten heroes
    spelling WORDOCIOUS edge to edge; one character at a time plays its move. */

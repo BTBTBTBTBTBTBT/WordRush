@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
+import { CastButton, CastLink, type CastColor } from '@/components/ui/cast-button';
+import { FamIcon, type FamIconName } from '@/components/ui/family-button';
 
 // The one button style (docs/FINISH_SPEC.md A8; reference
 // docs/design/brand/buttons/chatgpt-buttons-*.jpg): a glossy candy pill (or
@@ -8,6 +10,10 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'reac
 // with a dark-purple outline. Press = squish (components/ui/squish-host.tsx:
 // scale .92 while the lip compresses). The look lives in globals.css `.candy*`.
 // No hooks: renders in server components too.
+//
+// The button family (docs/design/brand/buttons/family/README.md, 10-05) replaced the look: `sm` → the HELPER
+// pill, `round` → the helper circle, `peach` at md / lg → the QUIET pill (all globals.css `.candy*`), and any
+// other md / lg → the cast primary (CastButton / CastLink, with the art labels).
 
 export type CandyColor = 'purple' | 'pink' | 'amber' | 'teal' | 'peach';
 /** lg 52 (primary CTAs) · md 40 · sm 32 · round 40 (icon only). */
@@ -72,6 +78,8 @@ export function candyClass({ color = 'purple', size = 'sm', dim = false, extra =
 
 interface CandyLook {
   color?: CandyColor;
+  /** The screen's cast color (what purple means when this renders the cast primary). */
+  screen?: CastColor;
   size?: CandySize;
   /** Leading icon: a candy glyph by name, or any node (e.g. a 3D icon). */
   icon?: CandyIconName | ReactNode;
@@ -89,8 +97,19 @@ function classes({ color = 'purple', size = 'lg', block = false, className = '' 
   return `candy candy-${color}${sz}${block ? ' candy-block' : ''} ${className}`.trim();
 }
 
+/** The candy glyphs with family art (the tinted 3D helper icons). */
+const FAM_OF: Partial<Record<CandyIconName, FamIconName>> = { play: 'play', eye: 'eye', arrow: 'next', check: 'check', replay: 'refresh' };
+
+/** True when this look renders the cast primary (md / lg, not the quiet peach). */
+function isCast(color: CandyColor | undefined, size: CandySize | undefined): boolean {
+  const s = size ?? 'lg';
+  return (s === 'lg' || s === 'md') && color !== 'peach';
+}
+
 function Inner({ icon, size = 'lg', trailing, children }: CandyLook) {
-  const iconNode = typeof icon === 'string' ? <CandyIcon name={icon as CandyIconName} size={ICON_PX[size]} /> : icon;
+  const fam = typeof icon === 'string' ? FAM_OF[icon as CandyIconName] : undefined;
+  const iconNode = fam ? <FamIcon name={fam} />
+    : typeof icon === 'string' ? <CandyIcon name={icon as CandyIconName} size={ICON_PX[size]} /> : icon;
   return (
     <>
       {iconNode}
@@ -101,7 +120,14 @@ function Inner({ icon, size = 'lg', trailing, children }: CandyLook) {
 }
 
 /** A candy <button>. */
-export function CandyButton({ color, size, icon, trailing, block, className, style, children, type = 'button', ...rest }: CandyLook & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color' | 'style' | 'className' | 'children'>) {
+export function CandyButton({ color, screen, size, icon, trailing, block, className, style, children, type = 'button', ...rest }: CandyLook & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color' | 'style' | 'className' | 'children'>) {
+  if (isCast(color, size)) {
+    return (
+      <CastButton type={type} {...rest} color={color} screen={screen} size={size} icon={typeof icon === 'string' ? undefined : icon} trailing={trailing} block={block} className={className} style={style}>
+        {children}
+      </CastButton>
+    );
+  }
   return (
     <button type={type} {...rest} className={classes({ color, size, block, className })} style={style}>
       <Inner icon={icon} size={size} trailing={trailing}>{children}</Inner>
@@ -113,10 +139,17 @@ export function CandyButton({ color, size, icon, trailing, block, className, sty
  * A candy link: a Next <Link> by default, or a plain <a> with `native` (a full
  * document load, e.g. Unlimited on the same route as the finished daily).
  */
-export function CandyLink({ href, native = false, color, size, icon, trailing, block, className, style, children, ...rest }: CandyLook & {
+export function CandyLink({ href, native = false, color, screen, size, icon, trailing, block, className, style, children, ...rest }: CandyLook & {
   href: string;
   native?: boolean;
 } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'color' | 'style' | 'className' | 'children' | 'href'>) {
+  if (isCast(color, size)) {
+    return (
+      <CastLink href={href} native={native} {...rest} color={color} screen={screen} size={size} icon={typeof icon === 'string' ? undefined : icon} trailing={trailing} block={block} className={className} style={style}>
+        {children}
+      </CastLink>
+    );
+  }
   const cls = classes({ color, size, block, className });
   const inner = <Inner icon={icon} size={size} trailing={trailing}>{children}</Inner>;
   if (native) return <a href={href} {...rest} className={cls} style={style}>{inner}</a>;

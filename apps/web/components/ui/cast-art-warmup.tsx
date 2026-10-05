@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { castArtPaths } from '@/components/ui/cast-button';
+import { famArtPaths } from '@/components/ui/family-button';
 import { GOPRO_SIGN_CAST, artSrc } from '@/lib/art';
 
 // FINISH_SPEC BJ15: decode every cast-button skin + label at idle after the first paint, so a
@@ -15,7 +16,9 @@ export function CastArtWarmup() {
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const idle = (cb: () => void) => (ric ? ric.call(window, cb, { timeout: 2500 }) : setTimeout(cb, 800));
     // + BJ17: the GO PRO sign cast (Stats locked sections, the free finish upsell).
-    const paths = [...castArtPaths(), ...GOPRO_SIGN_CAST.map((id) => artSrc(`art-gopro-sign-${id}`))];
+    // + the button family (helper / quiet light maps, the key light map, the helper + chrome icons) first:
+    //   they are on nearly every screen.
+    const paths = [...famArtPaths(), ...castArtPaths(), ...GOPRO_SIGN_CAST.map((id) => artSrc(`art-gopro-sign-${id}`))];
     let i = 0;
     const step = () => {
       // A few per idle slice — never a long task.

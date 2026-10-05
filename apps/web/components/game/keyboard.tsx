@@ -33,26 +33,21 @@ const LAYOUT_ROWS: Record<KeyboardLayout, string[][]> = {
 
 type LetterState = 'correct' | 'present' | 'absent';
 
-// FINISH_SPEC B2: keys are tiles too (globals.css `.kkey`): a lilac lip, a light
-// face and dark purple letters, taking the tile state colors as each tile lands (AQ1);
-// Delete is a chunky purple backspace icon; ENTER is 12 px. Every key sinks
-// into its lip and springs back on press (A9, components/ui/squish-host.tsx).
+// The key cap (button family §5, globals.css `.kkey`): the state fill (the tile palette's base
+// colors as each tile lands, AQ1; unstated #fbfaff / dark #3d355f), then the key light map
+// (art-fam-lm-key) nine-sliced on top — no separate lip. Delete is the 3D delete icon tinted by
+// the ink; ENTER is 12 px. Every key squishes on press (A9, components/ui/squish-host.tsx).
 
-/** The chunky purple backspace (mockup game-kit.html). */
+/** The 3D delete icon (art-fam-ic-delete), multiplied by the key's ink. */
 function BackspaceIcon() {
-  return (
-    <svg viewBox="0 0 32 24" width="30" height="22" aria-hidden="true" style={{ width: '62%', maxWidth: 30, height: 'auto', filter: 'drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6))' }}>
-      <path d="M10.2 2.5h17.3a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3H10.2a3 3 0 0 1-2.3-1.1L2.2 13.9a3 3 0 0 1 0-3.8L7.9 3.6a3 3 0 0 1 2.3-1.1z" fill="#5b2bb5" />
-      <path d="M15.2 8.3l7.4 7.4M22.6 8.3l-7.4 7.4" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-  );
+  return <span className="fic" aria-hidden="true" style={{ ['--ic' as string]: 'url(/art/art-fam-ic-delete.webp)', ['--fic-ink' as string]: 'var(--k-del, #5b2bb5)', width: 24, height: 24 }} />;
 }
 
 /** A key face's fill per state (the tile ramps). */
 const KEY_FACE: Record<LetterState, string> = {
-  correct: 'linear-gradient(var(--gt-c-light), var(--gt-c-base))',
-  present: 'linear-gradient(var(--gt-p-light), var(--gt-p-base))',
-  absent: 'linear-gradient(var(--gt-a-light), var(--gt-a-base))',
+  correct: 'var(--gt-c-base)',
+  present: 'var(--gt-p-base)',
+  absent: 'var(--gt-a-base)',
 };
 const EMPTY_STATES: Record<string, LetterState> = {};
 
@@ -136,15 +131,16 @@ function QuadrantKey({
           aria-hidden="true"
           className="absolute grid overflow-hidden"
           style={{
-            inset: '0 0 3px 0',
-            borderRadius: 9,
+            inset: 0,
+            zIndex: 0,
+            borderRadius: 10,
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
             gridTemplateRows: `repeat(${rows}, 1fr)`,
           }}
         >
           {boardStates.map((states, i) => {
             const state = states[letter];
-            return <span key={i} style={{ background: state ? KEY_FACE[state] : 'rgba(255, 255, 255, 0.92)' }} />;
+            return <span key={i} style={{ background: state ? KEY_FACE[state] : 'var(--k-face, #fbfaff)' }} />;
           })}
         </span>
       )}
@@ -178,7 +174,7 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
   const hStyle = keyHeight ? { height: layout === 'michael' ? keyHeight - 6 : keyHeight } : undefined;
 
   return (
-    <div className="flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard" style={{ paddingBottom: 3 }}>
+    <div className="flex flex-col gap-1.5 lg:gap-1 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
       {rows.map((row, i) => (
         <div key={i} className="flex gap-1 justify-center">
           {row.map((key, ki) => {
@@ -259,7 +255,6 @@ export const Keyboard = memo(function Keyboard({ onKey, letterStates: rawLetterS
                 className={cn(keyH, 'kkey w-10 sm:w-12 text-base sm:text-lg select-none')}
                 style={fill ? {
                   ['--k-face' as string]: fill,
-                  ['--k-edge' as string]: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), ${fill}`,
                   ['--k-ink' as string]: '#ffffff',
                   ...hStyle,
                 } : hStyle}
