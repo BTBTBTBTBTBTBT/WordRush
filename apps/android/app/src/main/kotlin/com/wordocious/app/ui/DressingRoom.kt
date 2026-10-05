@@ -98,11 +98,10 @@ fun DressingRoom(
         ) {
             StageArt(R.drawable.art_dress_bulbs, 30.dp, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 4.dp), width = 280.dp)
             Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp).padding(top = 40.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).squishClickable(label = "Close without saving", icon = true, onClick = onClose), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                }
+                StageCloseButton(label = "Close without saving", onClick = onClose)
                 Spacer(Modifier.weight(1f))
-                CandyButton("Done", onClick = { onDone(MascotBuilderLogic.sanitize(look, isPro, level)) }, color = CandyColor.PURPLE, size = CandySize.SMALL)
+                // The finished cast primary (the frost helper pill read pale on the stage).
+                CastButton("Done", onClick = { onDone(MascotBuilderLogic.sanitize(look, isPro, level)) }, color = CastColor.PURPLE, size = CastSize.S)
             }
             Column(Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 12.dp, top = 92.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 RoundCandy(null, "Randomize", listOf(Color(0xFF5EEAD4), Color(0xFF0D9488))) { change(MascotBuilderLogic.randomize(look, isPro, level)) }
@@ -128,7 +127,9 @@ fun DressingRoom(
                         StageArt(DressUp.tabArt(t), 24.dp)
                         if (t !in seen && (t == BuilderTab.HATS || t == BuilderTab.EXTRAS)) Box(Modifier.align(Alignment.TopEnd).size(7.dp).clip(CircleShape).background(Color(0xFFEC4899)))
                     }
-                    Text(t.label, fontSize = 8.5.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                    // softWrap off + a hair of negative tracking: "Backdrop" fits its tenth of a 360 dp row (was "Backdro").
+                    Text(t.label, fontSize = 8.5.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, letterSpacing = (-0.25).sp,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
                         color = if (on) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.textSecondary else Color(0xFF6B5C8F))
                 }
             }
@@ -182,13 +183,13 @@ fun DressingRoom(
 }
 
 @Composable
-private fun RoundCandy(glyph: String?, label: String, colors: List<Color>, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun RoundCandy(glyph: String?, label: String, colors: List<Color>, enabled: Boolean = true, size: androidx.compose.ui.unit.Dp = 38.dp, onClick: () -> Unit) {
     Box(
-        Modifier.size(38.dp).graphicsLayer { alpha = if (enabled) 1f else 0.45f }
+        Modifier.size(size).graphicsLayer { alpha = if (enabled) 1f else 0.45f }
             .shadow(3.dp, CircleShape, clip = false).clip(CircleShape).background(Brush.verticalGradient(colors))
             .squishClickable(label = label, enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { if (glyph == null) DiceGlyphPublic(18.dp) else Text(glyph, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Color.White) }
+    ) { if (glyph == null) DiceGlyphPublic(size * 0.47f) else Text(glyph, fontSize = 17.sp, fontWeight = FontWeight.Black, color = Color.White) }
 }
 
 /**

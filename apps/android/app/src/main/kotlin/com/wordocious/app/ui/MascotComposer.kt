@@ -49,7 +49,7 @@ object MascotComposer {
 
     /** Decoded part art by drawable id (0 = known missing), ~12 MB. */
     private val parts = WeightedLru<Int, Bitmap>(12L * 1024 * 1024) { _, b -> b.byteCount.toLong() }
-    private val ids = HashMap<String, Int>()
+    private val ids = java.util.concurrent.ConcurrentHashMap<String, Int>()   // read off main too (compose, prewarmThumbs)
 
     @Volatile private var manifest: AvatarManifest? = null
     @Volatile private var fit: AvatarFitManifest? = null
@@ -138,7 +138,7 @@ object MascotComposer {
     /** 10-05 Dressing Room: JUST the body shape (the current color, with [pattern]) filling a [size] px square. */
     fun drawBodyThumb(context: Context, c: Canvas, size: Float, body: String, cfg: AvatarConfig, pattern: String) {
         val id = drawableId(context, "art_av_body_$body")
-        val bmp = (if (id != 0) partBitmap(context, id) else null) ?: return
+        val bmp = (if (id != 0) thumbBitmap(context, id) else null) ?: return
         val r = RectF(size * 0.04f, size * 0.04f, size * 0.96f, size * 0.96f)
         val base = colorOf(avatarColorHex(cfg.color), 0xFF7C3AED.toInt())
         val patInk = if (cfg.patternColor == cfg.color) mix(base, AColor.WHITE, 0.5f) else colorOf(avatarColorHex(cfg.patternColor), base)
@@ -279,7 +279,7 @@ object MascotComposer {
     private fun drawLetterBox(context: Context, c: Canvas, initial: String, box: RectF, base: Int) {
         val s = box.height() * 3.5f
         val text = initial.ifEmpty { "?" }
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = font(context); textAlign = Paint.Align.CENTER; textSize = box.height() }
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = font(context); fontVariationSettings = BLACK; textAlign = Paint.Align.CENTER; textSize = box.height() }
         val bounds = Rect()
         p.getTextBounds(text, 0, text.length, bounds)
         val fit = min(box.height() / max(bounds.height(), 1).toFloat(), box.width() / max(bounds.width(), 1).toFloat())
@@ -534,6 +534,10 @@ object MascotComposer {
 
     // ── the letter ────────────────────────────────────────────────────────
 
+    /** nunito.ttf is a VARIABLE font: Typeface.create(base, 900) keeps the default instance (the letter drew thin,
+     *  Regular), so the paint asks for the Black instance by its wght axis (iOS / web draw Nunito Black). */
+    private const val BLACK = "'wght' 900"
+
     private fun font(context: Context): Typeface =
         typeface ?: runCatching { com.wordocious.app.data.ShareFinish.nunito(context, 900) }.getOrDefault(Typeface.DEFAULT_BOLD).also { typeface = it }
 
@@ -543,6 +547,7 @@ object MascotComposer {
         val text = initial.ifEmpty { "?" }
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = font(context)
+            fontVariationSettings = BLACK
             textAlign = Paint.Align.CENTER
             textSize = box.height()
         }
@@ -638,6 +643,35 @@ object MascotComposer {
     @Synchronized
     fun drawableId(context: Context, name: String): Int = ids.getOrPut(name) {
         runCatching { context.resources.getIdentifier(name, "drawable", context.packageName) }.getOrDefault(0)
+    }
+
+    /**
+     * The Dressing Room's body / pattern tiles: the body art at <= 256 px in its own small cache. They used the
+     * composer's 512 px parts (12 bodies = the whole 12 MB parts cache, evicting the stage mascot's parts) and
+     * decoded on the main thread inside the first draw (the room's first open dropped frames: 90th 101 ms on
+     * the emulator). [prewarmThumbs] decodes them off main when the Stage opens.
+     */
+    private val thumbs = WeightedLru<Int, Bitmap>(4L * 1024 * 1024) { _, b -> b.byteCount.toLong() }
+
+    private fun thumbBitmap(context: Context, resId: Int): Bitmap? {
+        thumbs.get(resId)?.let { return it }
+        val bmp = runCatching {
+            val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeResource(context.resources, resId, opts)
+            var sample = 1
+            while (max(opts.outWidth, opts.outHeight) / (sample * 2) >= 256) sample *= 2
+            BitmapFactory.decodeResource(context.resources, resId, BitmapFactory.Options().apply { inSampleSize = sample })
+        }.getOrNull() ?: return null
+        thumbs.put(resId, bmp)
+        return bmp
+    }
+
+    /** Off main: every body tile's art (call when the Stage opens, before the Dressing Room can). */
+    fun prewarmThumbs(context: Context) {
+        com.wordocious.core.AvatarOptions.BODIES.forEach { b ->
+            val id = drawableId(context, "art_av_body_$b")
+            if (id != 0) thumbBitmap(context, id)
+        }
     }
 
     private fun partBitmap(context: Context, resId: Int): Bitmap? {

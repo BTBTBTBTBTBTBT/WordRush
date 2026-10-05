@@ -174,6 +174,39 @@ object StageMetrics {
     val roomHeight = 250.dp
     val mascot = 176.dp
     val podiumWidth = 232.dp
+    /** The stage header's side slots (× left, SAVE / DONE right): equal, so the heading centers. */
+    val sideSlot = 86.dp
+}
+
+/**
+ * The Stage / Dressing Room / Title Shelves close (iOS StageCloseButton, web StageClose): the family's soft 3D X,
+ * bare. On the stage it is whitened with a deep drop shadow so it reads on the curtains (the pale family X
+ * disappeared there); off the stage it wears the deep violet. A 44 dp hit area.
+ */
+@Composable
+fun StageCloseButton(onStage: Boolean = true, label: String = "Close", modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val img = famBitmap(FamChrome.CLOSE.res)
+    val filter = remember(onStage) {
+        if (onStage) androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+            androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }.also { m ->
+                // desaturate, then lift toward white (keeps the clay shading)
+                val lift = 56f
+                m.values[4] = lift; m.values[9] = lift; m.values[14] = lift
+            },
+        ) else androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF8B5CF6), androidx.compose.ui.graphics.BlendMode.Modulate)
+    }
+    Box(modifier.size(44.dp).squishClickable(label = label, icon = true, onClick = onClick), contentAlignment = Alignment.Center) {
+        if (img != null) {
+            // a soft drop: the same X in deep violet, 2 dp down, under the face
+            Image(img, null, contentScale = ContentScale.Fit,
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF2E1065), androidx.compose.ui.graphics.BlendMode.SrcIn),
+                modifier = Modifier.size(24.dp).graphicsLayer { translationY = 2.dp.toPx(); alpha = if (onStage) 0.5f else 0.18f })
+            Image(img, null, contentScale = ContentScale.Fit, colorFilter = filter, modifier = Modifier.size(24.dp))
+        } else {
+            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, null,
+                tint = if (onStage) Color.White else Color(0xFF6D28D9), modifier = Modifier.size(22.dp))
+        }
+    }
 }
 
 /** The three frames a living mascot swaps between: the eyes swap for the blink, eyes + mouth for the tap grin. */

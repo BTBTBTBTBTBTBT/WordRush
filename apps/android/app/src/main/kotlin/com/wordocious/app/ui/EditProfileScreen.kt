@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -127,7 +129,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
     var mascotSaved by remember { mutableStateOf(false) }
     var unlocked by remember { mutableStateOf<Set<String>>(emptySet()) }
     val catalog by androidx.compose.runtime.produceState(com.wordocious.app.data.AchievementCatalog.cached()) {
-        value = com.wordocious.app.data.AchievementCatalog.load()
+        value = if (DressDemo.active) com.wordocious.app.data.AchievementCatalog.bundled() else com.wordocious.app.data.AchievementCatalog.load()
     }
     // Favorite-mode picker: every daily mode this viewer can see — the sweep
     // tiles plus the visible More Games titles (ProperNoundle among them).
@@ -149,6 +151,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
             )
         }
         val uid = profile?.id ?: return@LaunchedEffect
+        if (DressDemo.active) { unlocked = DressDemo.unlockedDates.keys; return@LaunchedEffect }
         unlocked = com.wordocious.app.data.AchievementService.fetchUnlocked(uid)
         runCatching {
             SupabaseConfig.client.postgrest["profiles"]
@@ -285,6 +288,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
 
     // The one Save (top right of the Stage).
     fun save() {
+        if (DressDemo.active) { onDone(); return }   // DEBUG demo: never writes
             if (saving) return
             val t = username.trim()
             // Only screen a CHANGED name — mirrors the DB trigger,
@@ -376,7 +380,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
     var unlockedDates by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     LaunchedEffect(profile?.id) {
         val uid = profile?.id ?: return@LaunchedEffect
-        unlockedDates = com.wordocious.app.data.AchievementService.fetchUnlockedDates(uid)
+        unlockedDates = if (DressDemo.active) DressDemo.unlockedDates else com.wordocious.app.data.AchievementService.fetchUnlockedDates(uid)
     }
     val avatarUrl = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
     val accentColor = ProfileAccent.color(accent)
@@ -388,16 +392,22 @@ fun EditProfileScreen(onDone: () -> Unit) {
     fun openRoom(tab: BuilderTab, start: AvatarConfig = look.copy(display = AvatarOptions.DISPLAY_MASCOT)) {
         roomTab = tab; roomStart = start; showRoom = true
     }
+    // The Dressing Room's body tiles decoded off main now, so its first open never decodes on a frame.
+    LaunchedEffect(Unit) { withContext(Dispatchers.Default) { runCatching { MascotComposer.prewarmThumbs(context) } } }
     // The door it opened through (Stats card, podium, Home host, the party-hat offer).
     var doorDone by remember { mutableStateOf(false) }
     LaunchedEffect(mascot != null) {
-        if (doorDone || mascot == null) return@LaunchedEffect
+        // Read the STATE, not the composed `look`: the profile effect above can set the mascot before this
+        // first run, and the captured `look` was still the default (the room opened on a stranger's look).
+        val cur = mascot ?: return@LaunchedEffect
+        if (doorDone) return@LaunchedEffect
         doorDone = true
+        val start = cur.copy(display = AvatarOptions.DISPLAY_MASCOT)
         when (val d = DressUp.pendingDoor) {
-            is DressDoor.Room -> openRoom(d.tab)
+            is DressDoor.Room -> openRoom(d.tab, start)
             DressDoor.PartyHat -> {
                 DressUp.finish(DressUp.Nudge.PARTY_HAT)
-                openRoom(BuilderTab.HATS, MascotBuilderLogic.apply(look, BuilderOption("head", "party")))
+                openRoom(BuilderTab.HATS, MascotBuilderLogic.apply(start, BuilderOption("head", "party")))
             }
             DressDoor.Titles -> showTitles = true
             DressDoor.Stage -> Unit
@@ -417,11 +427,15 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(40.dp).squishClickable(label = "Cancel", icon = true, onClick = onDone), contentAlignment = Alignment.Center) {
-                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color(0xFF6D28D9), modifier = Modifier.size(22.dp))
+                    // × and SAVE sit in equal side slots, so the heading centers; SAVE is the finished cast primary
+                    // (the frost helper pill read pale on the stage).
+                    Box(Modifier.width(StageMetrics.sideSlot), contentAlignment = Alignment.CenterStart) {
+                        StageCloseButton(label = "Cancel", modifier = Modifier.offset(x = (-6).dp), onClick = onDone)
                     }
                     HeadingArt(Heading.EDITPROFILE, Modifier.weight(1f), height = 32.dp, maxWidth = 200.dp)
-                    CandyButton(if (saving) "Saving…" else "Save", onClick = { if (!saving) save() }, color = CandyColor.PURPLE, size = CandySize.SMALL)
+                    Box(Modifier.width(StageMetrics.sideSlot), contentAlignment = Alignment.CenterEnd) {
+                        CastButton(if (saving) "Saving…" else "Save", onClick = { if (!saving) save() }, color = CastColor.PURPLE, size = CastSize.S)
+                    }
                 }
             }
             // The name plate: your name + the featured title as a gold ribbon (tap → the Title Shelves).
@@ -436,7 +450,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
             // One loud button + Randomize.
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CandyButton("MAKE YOUR MASCOT", onClick = { openRoom(BuilderTab.BODY) }, color = CandyColor.PINK, size = CandySize.LARGE, fill = true, modifier = Modifier.weight(1f))
-                RandomizeButton {
+                // Randomize = the round teal dice (iOS parity); the onboarding builder's pink pill took half the row
+                // and squeezed MAKE YOUR MASCOT.
+                RoundCandy(null, "Randomize my mascot", listOf(Color(0xFF5EEAD4), Color(0xFF0D9488)), size = 52.dp) {
                     mascot = MascotBuilderLogic.randomize(look, proSelf, profile?.level ?: 1).copy(display = look.display)
                     hopToken++
                 }
@@ -476,7 +492,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                             .graphicsLayer { alpha = if (locked) 0.4f else 1f },
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (id == "none") Text("None", fontSize = 9.sp, fontWeight = FontWeight.Black, color = labelInk)
+                        if (id == "none") StageArt(com.wordocious.app.R.drawable.art_dress_none, 26.dp)
                         else AvatarSquareFrame(id, 30.dp)
                         if (locked) StageArt(com.wordocious.app.R.drawable.art_dress_lock, 15.dp)
                     }
@@ -485,11 +501,12 @@ fun EditProfileScreen(onDone: () -> Unit) {
             // Everything else: quiet unboxed rows.
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 28.dp)) {
                 QuietRow("SHOW", labelInk) {
-                    MascotWearToggle(wearPhoto, onChange = { photo ->
-                        if (photo && avatarUrl == null) { showPhotoChoice = true; return@MascotWearToggle }
+                    // The candy segmented (iOS / web parity), never two outlined boxes.
+                    CandySegmentedToggle(listOf(false to "My mascot", true to "My photo"), wearPhoto, onChange = { photo ->
+                        if (photo && avatarUrl == null) { showPhotoChoice = true; return@CandySegmentedToggle }
                         mascot = look.copy(display = if (photo) AvatarOptions.DISPLAY_PHOTO else AvatarOptions.DISPLAY_MASCOT)
                         hopToken++
-                    })
+                    }, width = 200.dp)
                 }
                 RowDivider()
                 QuietRow("USERNAME", labelInk) {
@@ -603,9 +620,13 @@ fun EditProfileScreen(onDone: () -> Unit) {
                         }
                     }
                     "privacy" -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Button family §4: the candy switch everywhere; the row owns the Switch role + tap.
+                        Row(
+                            Modifier.fillMaxWidth().toggleable(value = isPrivate, role = androidx.compose.ui.semantics.Role.Switch, onValueChange = { isPrivate = it }),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             Text("Hide my words, stats and game history", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f))
-                            androidx.compose.material3.Switch(isPrivate, { isPrivate = it })
+                            CandySwitch(isPrivate)
                         }
                         Text("You'll still appear on leaderboards.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = labelInk)
                     }

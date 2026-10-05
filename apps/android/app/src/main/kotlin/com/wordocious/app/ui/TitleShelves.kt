@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -87,11 +88,19 @@ fun TitleShelvesDialog(
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Column(Modifier.fillMaxSize().background(if (WTheme.isDark) WTheme.bg else Color(0xFFF6F0FF)).statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).squishClickable(label = "Close", icon = true, onClick = onDismiss), contentAlignment = Alignment.Center) {
-                    androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Filled.Close, null, tint = Color(0xFF6D28D9), modifier = Modifier.size(22.dp))
+                Box(Modifier.width(StageMetrics.sideSlot), contentAlignment = Alignment.CenterStart) {
+                    StageCloseButton(onStage = false, modifier = Modifier.offset(x = (-6).dp), onClick = onDismiss)
                 }
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { StageArt(R.drawable.art_dress_title, 30.dp) }
-                CandyButton("Done", onClick = { onPick(pick) }, color = CandyColor.PURPLE, size = CandySize.SMALL)
+                // The lettering fits between the side slots (scales down on a narrow phone instead of running under DONE).
+                Box(Modifier.weight(1f).padding(horizontal = 2.dp), contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(R.drawable.art_dress_title), "Pick your title",
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit, modifier = Modifier.fillMaxWidth().height(30.dp),
+                    )
+                }
+                Box(Modifier.width(StageMetrics.sideSlot), contentAlignment = Alignment.CenterEnd) {
+                    CastButton("Done", onClick = { onPick(pick) }, color = CastColor.PURPLE, size = CastSize.S)
+                }
             }
             // The live name plate.
             Row(
@@ -135,7 +144,13 @@ fun TitleShelvesDialog(
                         }
                     }
                 }
-                if (visible.none(::matches) && visible.isNotEmpty()) item {
+                if (visible.isEmpty()) item {
+                    // Never a bare screen: the bundled catalog makes this rare (a broken install / cache).
+                    Column(Modifier.fillMaxWidth().padding(top = 30.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CastPose(MascotId.D, "skeptic", 70.dp)
+                        Text("Your titles are on their way", fontSize = 14.sp, fontWeight = FontWeight.Black, color = ink)
+                    }
+                } else if (visible.none(::matches)) item {
                     Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         CastPose(MascotId.D, "skeptic", 70.dp)
                         Text("No title matches \"$query\"", fontSize = 13.sp, fontWeight = FontWeight.Black, color = ink)

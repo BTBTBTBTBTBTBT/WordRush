@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,6 +49,21 @@ class MainActivity : ComponentActivity() {
             requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
         super.onCreate(savedInstanceState)
+        // DEBUG only: `--es dressDemo stage|titles|room-<tab>` shows Edit Profile for a local demo player (ui/DressDemo).
+        com.wordocious.app.ui.DressDemo.door(intent?.getStringExtra("dressDemo"))?.let { door ->
+            com.wordocious.app.ui.DressDemo.start(door)
+            com.wordocious.app.data.ThemePref.load()
+            setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
+                WordociousTheme {
+                    Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                        Box(Modifier.fillMaxSize().navigationBarsPadding().statusBarsPadding()) {
+                            com.wordocious.app.ui.EditProfileScreen(onDone = { finish() })
+                        }
+                    }
+                }
+            } })
+            return
+        }
         // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
         // starts arrive via onNewIntent below. Before this, the intent-filter
         // matched but the path was silently discarded.

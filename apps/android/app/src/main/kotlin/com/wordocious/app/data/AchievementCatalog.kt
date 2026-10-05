@@ -31,12 +31,24 @@ object AchievementCatalog {
     /** BE: hidden achievements (their tracking hasn't shipped) never show in the grid or popups. */
     fun visible(all: List<AchievementService.AchievementDef>): List<AchievementService.AchievementDef> = all.filter { !it.hidden }
 
+    /**
+     * The last fetch, else the bundled snapshot (assets/achievements-catalog.json, pinned to web
+     * ACHIEVEMENT_CATALOG by lib/achievements-catalog-snapshot.test.ts), so the Title Shelves and the badge
+     * grid are never bare on a first offline open; the live fetch replaces it.
+     */
     fun cached(): List<AchievementService.AchievementDef> {
         mem?.let { return it }
-        val raw = prefs.getString(CACHE_KEY, null) ?: return emptyList()
-        return runCatching { visible(json.decodeFromString(Payload.serializer(), raw).achievements) }
-            .getOrDefault(emptyList()).also { if (it.isNotEmpty()) mem = it }
+        val raw = prefs.getString(CACHE_KEY, null)
+        val fromCache = raw?.let { r -> runCatching { visible(json.decodeFromString(Payload.serializer(), r).achievements) }.getOrNull() }
+        val list = fromCache?.takeIf { it.isNotEmpty() } ?: bundled()
+        return list.also { if (it.isNotEmpty() && fromCache != null) mem = it }
     }
+
+    private var bundledMem: List<AchievementService.AchievementDef>? = null
+    fun bundled(): List<AchievementService.AchievementDef> = bundledMem ?: runCatching {
+        val body = App.instance.assets.open("achievements-catalog.json").bufferedReader().use { it.readText() }
+        visible(json.decodeFromString(Payload.serializer(), body).achievements)
+    }.getOrDefault(emptyList()).also { bundledMem = it }
 
     suspend fun load(): List<AchievementService.AchievementDef> = withContext(Dispatchers.IO) {
         runCatching {

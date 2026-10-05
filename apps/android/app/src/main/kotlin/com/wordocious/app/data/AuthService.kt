@@ -225,6 +225,11 @@ object AuthService {
 
     val userId: String? get() = _profile.value?.id
 
+    /** DEBUG only (ui/DressDemo, iOS -storeDemo parity): a local demo profile — no session, nothing persisted. */
+    internal fun debugDemoProfile(p: Profile) {
+        if (com.wordocious.app.BuildConfig.DEBUG) _profile.value = p
+    }
+
     /** Current Supabase access token — the VS socket handshake sends this so the
      *  server can verify identity instead of trusting a client-supplied id. */
     val accessToken: String? get() = runCatching { client.auth.currentSessionOrNull()?.accessToken }.getOrNull()
