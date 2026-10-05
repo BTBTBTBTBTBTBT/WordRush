@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WordociousCore
 
 // Letter Ladder (More Games §15) — the iOS twin of components/ladder/*. Change
@@ -221,7 +222,14 @@ struct LadderView: View {
             } else {
                 VStack(spacing: 8) {
                     header
-                    ScrollView { LadderBoardView(vm: vm, revealPath: false, tray: true).padding(.horizontal, 6).padding(.vertical, 4) }
+                    // Doug (Android, 10-05; same layout here): the board scrolled as one block, so
+                    // a few rungs pushed the REACH row under the controls. The tiles now size to
+                    // the height left, and an over-long ladder scrolls only its climbed rungs.
+                    GeometryReader { geo in
+                        LadderPlayBoard(vm: vm, height: geo.size.height)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    }
+                    .padding(.horizontal, 6).padding(.vertical, 4)
                     // // §BI9: the feedback popup hangs from the line under the board — never over the title art or the board.
                     // §BI22: equal halves — "Hint · 2" never widens its pill or nudges Undo.
                     HStack(spacing: 8) {
@@ -442,23 +450,7 @@ struct LadderBoardView: View {
     static func hasHidden(_ s: LadderState, revealPath: Bool) -> Bool { s.words.count > 3 || (revealPath && !s.path.isEmpty) }
 
     private func row(_ word: String, prev: String?, kind: String, invalid: Bool = false) -> some View {
-        let chars = Array(word.padding(toLength: 5, withPad: " ", startingAt: 0))
-        let prevChars = prev.map(Array.init)
-        return HStack(spacing: 5) {
-            ForEach(0..<5, id: \.self) { i in
-                let ch = chars[i] == " " ? "" : String(chars[i])
-                let changed = prevChars.map { $0[i] != chars[i] } ?? false
-                switch kind {
-                case "start": LadderTile(letter: ch, look: .start, size: tileSize)
-                case "rung", "hint":
-                    if changed { LadderTile(letter: ch, look: kind == "hint" ? .hint : .changed, size: tileSize) }
-                    else { LadderTile(letter: ch, look: .plain, size: tileSize) }
-                case "typing": LadderTile(letter: ch, look: ch.isEmpty ? .empty : (invalid ? .invalid : .typed), size: tileSize)
-                case "end": LadderTile(letter: ch, look: .end, size: tileSize)
-                default: LadderTile(letter: ch, look: .reveal, size: tileSize)
-                }
-            }
-        }
+        LadderRowView(word: word, prev: prev, kind: kind, invalid: invalid, tileSize: tileSize)
     }
 
     var body: some View {
@@ -489,6 +481,102 @@ struct LadderBoardView: View {
             }
         }
         .modifier(LadderTrayChrome(on: tray, state: s.status == .won ? .won : (s.status == .lost ? .lost : .normal)))
+        .accessibilityLabel("Letter Ladder")
+    }
+}
+
+/// One rung: five ladder tiles (START / rung / hint / typing / end / reveal).
+private struct LadderRowView: View {
+    let word: String
+    let prev: String?
+    let kind: String
+    var invalid = false
+    var tileSize: CGFloat = 44
+
+    var body: some View {
+        let chars = Array(word.padding(toLength: 5, withPad: " ", startingAt: 0))
+        let prevChars = prev.map(Array.init)
+        HStack(spacing: 5) {
+            ForEach(0..<5, id: \.self) { i in
+                let ch = chars[i] == " " ? "" : String(chars[i])
+                let changed = prevChars.map { $0[i] != chars[i] } ?? false
+                switch kind {
+                case "start": LadderTile(letter: ch, look: .start, size: tileSize)
+                case "rung", "hint":
+                    if changed { LadderTile(letter: ch, look: kind == "hint" ? .hint : .changed, size: tileSize) }
+                    else { LadderTile(letter: ch, look: .plain, size: tileSize) }
+                case "typing": LadderTile(letter: ch, look: ch.isEmpty ? .empty : (invalid ? .invalid : .typed), size: tileSize)
+                case "end": LadderTile(letter: ch, look: .end, size: tileSize)
+                default: LadderTile(letter: ch, look: .reveal, size: tileSize)
+                }
+            }
+        }
+    }
+}
+
+/// The live ladder's tile size for the height it has (Android LadderFit twin).
+enum LadderFit {
+    static let maxTile: CGFloat = 44
+    static let minTile: CGFloat = 26
+    struct Fit: Equatable { let tile: CGFloat; let gap: CGFloat; let scrolls: Bool }
+
+    /// `rungs` climbed words (START included) + the typing row (+ the REACH label of
+    /// `labelLine` pt and the target when `showEnd`) inside the tray's chrome, in `height`.
+    static func fit(height: CGFloat, rungs: Int, showEnd: Bool, labelLine: CGFloat) -> Fit {
+        let rows = CGFloat(rungs + 1 + (showEnd ? 1 : 0))
+        let chrome = GameTray.padding * 2 + GameTray.lip
+        for (gap, floor) in [(CGFloat(6), CGFloat(36)), (4, minTile)] {
+            let fixed = chrome + (showEnd ? labelLine + gap : 0)
+            let t = min(maxTile, (height - fixed - gap * (rows - 1)) / rows)
+            if t >= floor { return Fit(tile: t.rounded(.down), gap: gap, scrolls: false) }
+        }
+        return Fit(tile: minTile, gap: 4, scrolls: true)
+    }
+}
+
+/// The live ladder: every rung, the typing row and the target fit `height`; when
+/// even the smallest tile is too tall, only the climbed rungs scroll (kept at the
+/// newest) and the typing row + REACH + target stay pinned in view.
+private struct LadderPlayBoard: View {
+    @ObservedObject var vm: LadderVM
+    let height: CGFloat
+
+    var body: some View {
+        let s = vm.state
+        let hints = Array(s.hintMask)
+        let showEnd = s.current != s.end
+        let label = ceil(min(UIFontMetrics.default.scaledValue(for: 10), 20) * 1.3)
+        let f = LadderFit.fit(height: height, rungs: s.words.count, showEnd: showEnd, labelLine: label)
+        let rungs = VStack(spacing: f.gap) {
+            ForEach(Array(s.words.enumerated()), id: \.offset) { i, w in
+                LadderRowView(word: w, prev: i > 0 ? s.words[i - 1] : nil,
+                              kind: i == 0 ? "start" : (i < hints.count && hints[i] == "1" ? "hint" : "rung"), tileSize: f.tile)
+                    .id(i)
+            }
+        }
+        // The rungs' share of the height when they scroll: the slot minus the tray
+        // chrome and the pinned rows below them.
+        let pinned = f.tile + f.gap + (showEnd ? label + f.tile + f.gap * 2 : 0)
+        let rungsH = max(f.tile, height - GameTray.padding * 2 - GameTray.lip - pinned)
+        VStack(spacing: f.gap) {
+            if f.scrolls {
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) { rungs }
+                        .frame(height: rungsH)
+                        .onAppear { proxy.scrollTo(s.words.count - 1, anchor: .bottom) }
+                        .onChange(of: s.words.count) { n in withAnimation(Theme.animation(.easeOut(duration: 0.2))) { proxy.scrollTo(n - 1, anchor: .bottom) } }
+                }
+            } else {
+                rungs
+            }
+            LadderRowView(word: vm.typing, prev: s.current, kind: "typing", invalid: vm.invalid, tileSize: f.tile)
+            if showEnd {
+                Text("↓ REACH").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(ladderAccent.opacity(0.7))
+                    .lineLimit(1).frame(height: label)
+                LadderRowView(word: s.end, prev: nil, kind: "end", tileSize: f.tile)
+            }
+        }
+        .gameTray(accent: ladderAccent, state: .normal)
         .accessibilityLabel("Letter Ladder")
     }
 }

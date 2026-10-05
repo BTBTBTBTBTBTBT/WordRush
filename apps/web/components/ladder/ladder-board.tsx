@@ -1,12 +1,13 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { LadderState } from '@wordle-duel/core';
 import { LetterTile, type TileLook } from '@/components/game/letter-tile';
 import { darken, softMix } from '@/lib/soft-surface';
 import { GameTray } from '@/components/ui/game-tray';
 import { trayStateFor } from '@/lib/tray-fit';
+import { ladderFit } from '@/lib/ladder-fit';
 
 // The ladder (More Games §15): Classic tiles, one row per rung. START is a
 // filled purple row, each accepted rung is a light row with the CHANGED letter
@@ -70,10 +71,10 @@ function LadderTile({ letter, kind, changed, invalid, bad, outIndex }: { letter:
   );
 }
 
-function LadderRow({ word, prev, kind, invalid, shaking }: { word: string; prev?: string; kind: RowKind; invalid?: boolean; shaking?: boolean }) {
+function LadderRow({ word, prev, kind, invalid, shaking, tile }: { word: string; prev?: string; kind: RowKind; invalid?: boolean; shaking?: boolean; tile?: number }) {
   const tiles = word.padEnd(5, ' ').split('');
   return (
-    <div className={cn('flex gap-1 justify-center h-[clamp(34px,7.5vmin,52px)]', shaking && 'gt-nudge')} role="row">
+    <div className={cn('flex gap-1 justify-center shrink-0', tile == null && 'h-[clamp(34px,7.5vmin,52px)]', shaking && 'gt-nudge')} style={tile != null ? { height: tile } : undefined} role="row">
       {tiles.map((ch, i) => (
         <LadderTile key={i} letter={ch === ' ' ? '' : ch} kind={kind} changed={!!prev && prev[i] !== ch} invalid={invalid} bad={shaking} outIndex={tiles.length - 1 - i} />
       ))}
@@ -117,6 +118,60 @@ export const LadderBoard = memo(function LadderBoard({ state, typing, invalid, s
     </div>
   );
 });
+
+/**
+ * The live ladder (Doug, Android 10-05: a few rungs pushed the REACH row out of
+ * the board): it fills its slot — every rung, the typing row, REACH and the target
+ * sized to fit (lib/ladder-fit.ts) — and a ladder too long even at the smallest
+ * tile scrolls only its climbed rungs (kept at the newest); the typing row and the
+ * target stay pinned in view.
+ */
+export function LadderPlayBoard({ state, typing, invalid, shaking }: Omit<LadderBoardProps, 'revealPath'>) {
+  const slotRef = useRef<HTMLDivElement>(null);
+  const rungsRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    const el = slotRef.current;
+    if (!el) return;
+    const measure = () => setBox((b) => (b && b.w === el.clientWidth && b.h === el.clientHeight ? b : { w: el.clientWidth, h: el.clientHeight }));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const showEnd = state.words[state.words.length - 1] !== state.end;
+  const vmin = typeof window === 'undefined' ? 800 : Math.min(window.innerWidth, window.innerHeight);
+  const fit = box ? ladderFit(box.w, box.h, state.words.length, showEnd, 14, Math.min(52, Math.max(34, vmin * 0.075))) : null;
+  useEffect(() => {
+    const r = rungsRef.current;
+    if (r) r.scrollTop = r.scrollHeight;
+  }, [state.words.length, fit?.scrolls]);
+  const gap = fit?.gap ?? 6;
+  return (
+    <div ref={slotRef} className="flex-1 min-h-0 w-full flex justify-center items-start">
+      {fit && (
+        <GameTray accent={LADDER_ACCENT} state={trayStateFor(state.status)} role="grid" aria-label="Letter Ladder"
+          className="w-fit max-w-full min-h-0 flex flex-col items-center"
+          style={{ gap, maxHeight: box!.h, ['--gt-font' as string]: `${fit.tile * 0.55}px` } as React.CSSProperties}>
+          <div ref={rungsRef} className="min-h-0 overflow-y-auto flex flex-col items-center [scrollbar-width:none]"
+            style={{ gap, ...(fit.scrolls ? { maskImage: 'linear-gradient(transparent, #000 14px)', WebkitMaskImage: 'linear-gradient(transparent, #000 14px)' } : null) }}>
+            {state.words.map((w, i) => (
+              <LadderRow key={`${i}-${w}`} word={w} prev={i > 0 ? state.words[i - 1] : undefined} tile={fit.tile}
+                kind={i === 0 ? 'start' : state.hintMask[i] === '1' ? 'hint' : 'rung'} />
+            ))}
+          </div>
+          <LadderRow word={typing} prev={state.words[state.words.length - 1]} kind="typing" invalid={invalid} shaking={shaking} tile={fit.tile} />
+          {showEnd && (
+            <>
+              <div className="shrink-0 text-[10px] leading-[14px] font-black tracking-wider" style={{ color: `${LADDER_ACCENT}aa` }}>↓ REACH</div>
+              <LadderRow word={state.end} kind="end" tile={fit.tile} />
+            </>
+          )}
+        </GameTray>
+      )}
+    </div>
+  );
+}
 
 /** Rungs (START included) a finished ladder shows in full before it collapses to a summary. */
 export const LADDER_SUMMARY_AFTER = 4;

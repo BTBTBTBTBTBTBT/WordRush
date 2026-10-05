@@ -20,7 +20,7 @@ import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
-import { LadderBoard, LadderSummary, LADDER_ACCENT } from './ladder-board';
+import { LadderBoard, LadderPlayBoard, LadderSummary, LADDER_ACCENT } from './ladder-board';
 import { loadDailySave, saveDaily, loadPracticeSave, savePractice } from './persistence';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -303,8 +303,8 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : !finished ? (
         <>
-          <div className="flex-1 min-h-0 overflow-y-auto flex items-start justify-center px-3 pb-1 pt-1">
-            <LadderBoard state={state} typing={typing} invalid={invalid} shaking={shaking} revealPath={false} />
+          <div className="flex-1 min-h-0 flex flex-col px-3 pb-1 pt-1">
+            <LadderPlayBoard state={state} typing={typing} invalid={invalid} shaking={shaking} />
           </div>
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
             <div className="flex justify-center gap-2 px-1" role="group" aria-label="Ladder controls">

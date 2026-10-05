@@ -312,9 +312,13 @@ fun LadderScreen(
         } else {
             Column(Modifier.fillMaxSize().padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 LadderHeader(session)
-                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    LadderBoard(session, revealPath = false)
-                }
+                // Doug (Android, 10-05): the board scrolled as one block, so a few rungs pushed
+                // the REACH row under the controls. Now the tiles size to the height between the
+                // header and Undo/Hint, and a ladder too long even at the smallest tile scrolls
+                // only its climbed rungs — the typing row and the target stay pinned in view.
+                androidx.compose.foundation.layout.BoxWithConstraints(
+                    Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp), contentAlignment = Alignment.TopCenter,
+                ) { LadderPlayBoard(session, maxHeight) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Capsule("Undo", Icons.AutoMirrored.Filled.Undo, dim = session.state.words.size <= 1) { session.undo(onFinished) }
                     Capsule("Hint", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER, count = session.state.hintsUsed) { session.hint(onFinished) }
@@ -431,6 +435,61 @@ fun LadderBoard(s: LadderState, typing: String, invalid: Boolean, revealPath: Bo
             Text("ONE SHORTEST ROUTE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted, modifier = Modifier.padding(top = 8.dp))
             s.path.forEachIndexed { i, w -> LadderRow(w, if (i > 0) s.path[i - 1] else null, "reveal", tile = tile) }
         }
+    }
+}
+
+/** The live ladder: every rung, the typing row and the target fit [maxH] (tiles from
+ *  [LadderFit.tile]); when even the smallest tile is too tall, only the climbed rungs
+ *  scroll (kept at the newest) and the typing row + REACH + target stay pinned. */
+@Composable
+private fun LadderPlayBoard(session: LadderSession, maxH: androidx.compose.ui.unit.Dp) {
+    val s = session.state
+    val showEnd = s.current != s.end
+    val fontScale = LocalDensity.current.fontScale
+    val fit = LadderFit.tile(maxH.value, rungs = s.words.size, showEnd = showEnd, labelLine = 15f * fontScale)
+    val tile = fit.tile.dp
+    val gap = fit.gap.dp
+    val scroll = rememberScrollState()
+    LaunchedEffect(s.words.size, scroll.maxValue) { scroll.animateScrollTo(scroll.maxValue) }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap),
+        modifier = Modifier.widthIn(max = 420.dp).gameTray(
+            LADDER_ACCENT, finishTray(false, false),
+            padding = androidx.compose.foundation.layout.PaddingValues(LadderFit.PAD.dp),
+        ),
+    ) {
+        Column(
+            Modifier.weight(1f, fill = false).verticalScroll(scroll),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap),
+        ) {
+            s.words.forEachIndexed { i, w -> LadderRow(w, if (i > 0) s.words[i - 1] else null, if (i == 0) "start" else if (s.hintMask.getOrNull(i) == '1') "hint" else "rung", tile = tile) }
+        }
+        LadderRow(session.typing, s.current, "typing", session.invalid, tile)
+        if (showEnd) {
+            Text("↓ REACH", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = if (WTheme.isDark) Color(0xFF7DD3FC) else Color(0xFF0369A1))
+            LadderRow(s.end, null, "end", tile = tile)
+        }
+    }
+}
+
+/** The live ladder's tile size for the height it has (pure; LadderFitTest). */
+object LadderFit {
+    const val PAD = 12f
+    const val MAX_TILE = 44f
+    const val MIN_TILE = 26f
+    data class Fit(val tile: Float, val gap: Float, val scrolls: Boolean)
+
+    /** [rungs] climbed words (START included) + the typing row (+ the REACH label of
+     *  [labelLine] dp and the target when [showEnd]) inside a tray of [PAD] padding and
+     *  the lip, in [availH] dp. */
+    fun tile(availH: Float, rungs: Int, showEnd: Boolean, labelLine: Float): Fit {
+        val rows = rungs + 1 + (if (showEnd) 1 else 0)
+        for (gap in floatArrayOf(6f, 4f)) {
+            val fixed = PAD * 2 + GameTrayStyle.LIP.value + (if (showEnd) labelLine + gap else 0f)
+            val t = FinishedSizing.rowTile(availH, rows, gap, fixed, MAX_TILE, if (gap == 6f) 36f else MIN_TILE)
+            if (t != null) return Fit(kotlin.math.floor(t), gap, scrolls = false)
+        }
+        return Fit(MIN_TILE, 4f, scrolls = true)
     }
 }
 
