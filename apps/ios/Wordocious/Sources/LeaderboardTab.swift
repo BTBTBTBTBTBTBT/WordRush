@@ -182,8 +182,10 @@ struct LeaderboardTab: View {
                 // Drawn from the display-size cache (LeaderboardArt.prewarm decodes every
                 // game's title off main at launch) with no pop-in, so a picker tap swaps
                 // the art in the same frame.
-                let size = LeaderboardArt.cardTitleSize(titleArt.asset)
-                ArtThumbs.image(titleArt.asset, points: LeaderboardArt.cardTitlePoints)
+                // Season preview: the season's lettering when it ships (SeasonKit titles).
+                let shown = SeasonKit.title(titleArt.asset)
+                let size = LeaderboardArt.cardTitleSize(shown)
+                ArtThumbs.image(shown, points: LeaderboardArt.cardTitlePoints)
                     .resizable().interpolation(.high).scaledToFit()
                     // A cap, not a fixed size: on a 375 pt phone the art shrinks a little so the
                     // player count beside it stays whole.

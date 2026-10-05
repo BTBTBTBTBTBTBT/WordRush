@@ -1,15 +1,17 @@
 import SwiftUI
 import WordociousCore
 
-/// FINISH_SPEC §X: seasonal cast skins. During a season (Halloween: Oct 24 – Nov 1,
+/// FINISH_SPEC §X: seasonal cast skins. During a season (Halloween: Oct 17 – Nov 1,
 /// local date — core `Season.current`) the hero cast (`mascot-<id>`) is swapped for
 /// that season's skins (`art-halloween-<id>`) in the living cast header row, the
 /// cold-start intro + landing flourish, the share-image cast wordmark and the cast
 /// loader. A skin that doesn't ship falls back to the hero image, so a partial art
 /// drop never leaves a hole in the row.
 ///
-/// Admin preview: Settings shows a "Halloween preview" toggle to `is_admin` profiles
-/// only; it writes `debug-season` ("halloween" | absent), which wins over the date.
+/// Admin preview: Settings shows a "Season preview" picker to `is_admin` profiles only
+/// (Off (by date) / every registry season); it writes `debug-season` (a season id | absent),
+/// which wins over the date. What each season swaps lives in the registry (SeasonKit).
+/// The skins, props and banner below read the registry slots.
 enum CastSkin {
     /// UserDefaults key of the admin season preview ("halloween"; absent = by date).
     static let debugKey = "debug-season"
@@ -44,11 +46,7 @@ enum CastSkin {
     /// The image set to draw for a cast member: its season skin when one is active
     /// and ships, else the hero image (`mascot-<id>`).
     static func assetName(for id: MascotID) -> String {
-        if season == .halloween {
-            let name = "art-halloween-\(id.rawValue)"
-            if ArtAsset.exists(name) { return name }
-        }
-        return id.assetName
+        SeasonKit.cast(id.rawValue) ?? id.assetName
     }
 
     // MARK: Season art slots (hidden when the art is missing)
@@ -60,8 +58,7 @@ enum CastSkin {
     /// (picked by the day of the year among the props that ship), nil out of season
     /// or when none ship.
     static func dayProp(_ date: Date = Date()) -> String? {
-        guard season == .halloween else { return nil }
-        let available = halloweenProps.map { "art-halloween-prop-\($0)" }.filter(ArtAsset.exists)
+        let available = SeasonKit.props
         guard !available.isEmpty else { return nil }
         let day = Calendar(identifier: .gregorian).ordinality(of: .day, in: .year, for: date) ?? 0
         return available[day % available.count]
@@ -74,8 +71,7 @@ enum CastSkin {
     /// prop on one side. Two different props (picked by the day of the year among those
     /// that ship); nil out of season or when fewer than two ship.
     static func dayProps(_ date: Date = Date()) -> (left: String, right: String)? {
-        guard season == .halloween else { return nil }
-        let available = halloweenPropAssets.filter(ArtAsset.exists)
+        let available = SeasonKit.props
         guard available.count >= 2 else { return nil }
         let day = Calendar(identifier: .gregorian).ordinality(of: .day, in: .year, for: date) ?? 0
         return (available[day % available.count], available[(day + 1) % available.count])
@@ -83,11 +79,7 @@ enum CastSkin {
 
     /// The seasonal Home banner art (`art-scene-banner-halloween`), nil out of season
     /// or when it doesn't ship.
-    static var bannerArt: String? {
-        guard season == .halloween else { return nil }
-        let name = "art-scene-banner-halloween"
-        return ArtAsset.exists(name) ? name : nil
-    }
+    static var bannerArt: String? { SeasonKit.banner }
 }
 
 /// §X: the small seasonal prop beside a day-title headline (decorative; nothing

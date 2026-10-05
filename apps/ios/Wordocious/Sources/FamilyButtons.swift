@@ -267,12 +267,15 @@ struct HelperButtonStyle: ButtonStyle {
         @Environment(\.isEnabled) private var enabled
         @Environment(\.colorScheme) private var scheme
         @Environment(\.pageTint) private var page
+        /// Season preview: re-render when the admin picker flips (SeasonKit reads it).
+        @AppStorage(CastSkin.debugKey) private var debugSeason = ""
 
         var body: some View {
             let still = envReduce || Theme.reduceMotion
             let pressed = configuration.isPressed
             let dark = scheme == .dark
-            let tint = style.tint ?? page.gameAccent ?? style.fallback ?? Color(hex: 0x7C3AED)
+            // Season preview: in season every helper takes the season's button tint (registry palette).
+            let tint = style.tint ?? SeasonKit.buttonTint ?? page.gameAccent ?? style.fallback ?? Color(hex: 0x7C3AED)
             let h = FamilyMetrics.helperHeight
             let ink = style.selected ? Color.white : FamilyInk.helperInk(tint, dark: dark)
             let fill = style.selected ? (pressed ? Color.black.mixed(over: tint, 0.12) : tint)
@@ -313,13 +316,17 @@ struct QuietButtonStyle: ButtonStyle {
         @Environment(\.accessibilityReduceMotion) private var envReduce
         @Environment(\.isEnabled) private var enabled
         @Environment(\.colorScheme) private var scheme
+        /// Season preview: re-render when the admin picker flips (SeasonKit reads it).
+        @AppStorage(CastSkin.debugKey) private var debugSeason = ""
 
         var body: some View {
             let still = envReduce || Theme.reduceMotion
             let pressed = configuration.isPressed
             let dark = scheme == .dark
             let h = FamilyMetrics.quietHeight(style.size)
-            let ink = FamilyInk.quietInk(dark: dark)
+            // Season preview: the quiet pill takes the season's quiet tint (registry palette).
+            let season = SeasonKit.quietTint
+            let ink = season.map { FamilyInk.helperInk($0, dark: dark) } ?? FamilyInk.quietInk(dark: dark)
             configuration.label
                 .environment(\.familyInk, FamilyLabelInk(ink: ink, size: style.size == .small ? 12.5 : 13.5, icon: style.size == .small ? 17 : 19))
                 .environment(\.castInk, nil)
@@ -329,7 +336,7 @@ struct QuietButtonStyle: ButtonStyle {
                 .frame(maxWidth: style.fullWidth ? .infinity : nil)
                 .frame(minWidth: h * 1.6)
                 .frame(height: h)
-                .background { FamilyPillSkin(fill: FamilyInk.quietFill(dark: dark, pressed: pressed), pressed: pressed, dark: dark, height: h) }
+                .background { FamilyPillSkin(fill: season.map { FamilyInk.helperFill($0, dark: dark, pressed: pressed) } ?? FamilyInk.quietFill(dark: dark, pressed: pressed), pressed: pressed, dark: dark, height: h) }
                 .contentShape(Capsule())
                 .opacity(enabled ? 1 : 0.5)
                 .scaleEffect(pressed && !still ? 0.94 : 1)

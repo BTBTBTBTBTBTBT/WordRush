@@ -130,9 +130,14 @@ struct ArtTitle: View {
         self.colors = colors
     }
 
+    /// Season preview: re-render when the admin picker flips (SeasonKit reads it).
+    @AppStorage(CastSkin.debugKey) private var debugSeason = ""
+
     var body: some View {
-        if ArtAsset.exists(name.assetName) {
-            Image(name.assetName)
+        // Season preview: the season's lettering for this title when it ships (SeasonKit titles).
+        let asset = SeasonKit.title(name.assetName)
+        if ArtAsset.exists(asset) {
+            Image(asset)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
@@ -403,13 +408,17 @@ struct GameTitleArtView: View {
     var headerOf: GameMode? = nil
     /// BA1: the finished screen's short-screen cap.
     @Environment(\.finishedTitleCap) private var finishedCap
+    /// Season preview: re-render when the admin picker flips (SeasonKit reads it).
+    @AppStorage(CastSkin.debugKey) private var debugSeason = ""
 
     var body: some View {
         let maxHeight = min(self.maxHeight, finishedCap ?? .infinity)
         let minHeight = min(self.minHeight, maxHeight)
-        WidthFitLayout(aspect: ArtAsset.aspect(asset) ?? 4, minHeight: minHeight, maxHeight: maxHeight,
+        // Season preview: the season's lettering at the same box rules (its own aspect).
+        let shown = SeasonKit.title(asset)
+        WidthFitLayout(aspect: ArtAsset.aspect(shown) ?? 4, minHeight: minHeight, maxHeight: maxHeight,
                        maxWidth: maxWidth, leading: alignment == .leading, centerY: centerY) {
-            Image(asset)
+            Image(shown)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
@@ -662,6 +671,8 @@ struct PageBackground: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
+    /// Season preview: re-render when the admin picker flips (SeasonKit reads it).
+    @AppStorage(CastSkin.debugKey) private var debugSeason = ""
 
     init(tint: PageTint, lightOnly: Bool = false) {
         self.tint = tint
@@ -671,7 +682,10 @@ struct PageBackground: View {
     var body: some View {
         let dark = scheme == .dark && !lightOnly
         let a11y = reduceTransparency || contrast == .increased
-        let wall = tint.wallpaper
+        // Season preview: the season's calm wallpaper (light twin in light mode); its own art, so
+        // the backdrop tiles stay off on it.
+        let seasonal = SeasonKit.wall(tint.wallpaper, dark: dark)
+        let wall = seasonal ?? tint.wallpaper
         Group {
             if ArtAsset.exists(wall) {
                 GeometryReader { geo in
@@ -682,7 +696,7 @@ struct PageBackground: View {
                         .frame(width: geo.size.width, height: geo.size.height)
                         .clipped()
                         // BJ8: the few calm tiles (one shared config), under the dark overlay.
-                        .overlay(BackdropTileLayer(tint: tint))
+                        .overlay { if seasonal == nil { BackdropTileLayer(tint: tint) } }
                         .overlay(overlay(dark: dark, a11y: a11y))
                         .overlay(alignment: .top) { headerFade(dark: dark) }
                 }

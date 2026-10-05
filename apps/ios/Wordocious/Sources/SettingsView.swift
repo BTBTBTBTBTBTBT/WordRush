@@ -97,10 +97,15 @@ struct SettingsView: View {
                         // FINISH_SPEC §X: admin-only preview of the Halloween cast skins.
                         if auth.profile?.isAdmin == true {
                             section("ADMIN", accent: G5Accent.coral) {
-                                toggleRow("Halloween preview", "Show the Halloween cast skins today",
-                                          Binding(get: { debugSeason == "halloween" },
-                                                  set: { debugSeason = $0 ? "halloween" : ""; CastSkin.invalidate() }),
-                                          accent: G5Accent.coral)
+                                // Season preview: Off (by date) or any registry season (SeasonKit); flips live.
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Season preview").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                                    seasonRow(nil, "Off (by date)", "Seasons switch on by the calendar")
+                                    ForEach(SeasonKit.registry, id: \.id) { s in
+                                        seasonRow(s.id, s.title, "Show the \(s.title) art today (admin preview)")
+                                    }
+                                }
+                                .padding(.vertical, 4)
                             }
                         }
                         // Which providers open this account + link Google / Apple
@@ -282,6 +287,19 @@ struct SettingsView: View {
             ThemeTilesPreview(theme: t.value)
         } action: {
             themeManager.theme = t.value
+        }
+    }
+
+    /// One Season preview choice: a soft option tile with the season's W (or the hero W) as its preview.
+    private func seasonRow(_ id: String?, _ label: String, _ desc: String) -> some View {
+        SettingsOptionTile(label: label, desc: desc, active: (debugSeason.isEmpty ? nil : debugSeason) == id, accent: G5Accent.coral) {
+            let skin = SeasonKit.entry(id)?.slots.cast?.replacingOccurrences(of: "{id}", with: "w")
+            let w = skin.flatMap { ArtAsset.exists($0) ? $0 : nil } ?? MascotID.w.assetName
+            Image(w).resizable().interpolation(.high).scaledToFit().frame(width: 34, height: 34)
+        } action: {
+            CastSkin.invalidate()
+            debugSeason = id ?? ""
+            CastSkin.invalidate()
         }
     }
 
