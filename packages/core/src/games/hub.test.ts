@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, hubIsPangram, hubWordScore, hubRankIndex, hubRankThreshold, hubGuessCount, hubBoardsSolved,
   createHubState, hubReduce, hubMatchRow, reconstructHub, hubRank, hubRankName, HUB_RANKS, HUB_SOLVED_RANK, type HubBank,
+  hubWordCount, hubWordsLabel, hubIsBonus, HUB_FOUND_LABEL, type HubPuzzle, type HubState,
 } from './hub';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
@@ -111,5 +112,33 @@ describe('Hubbub reducer', () => {
     expect(r.found).toEqual(s.found); expect(r.bonusFound).toEqual(s.bonusFound); expect(r.revealed).toEqual(s.revealed);
     expect(r.points).toBe(s.points); expect(r.hintsUsed).toBe(s.hintsUsed); expect(r.rank).toBe(hubRank(s)); expect(r.ended).toBe(true);
     expect(reconstructHub(['x', 'ABC', '1'], [])).toBeNull();
+  });
+});
+
+// Doug (Android 2.7, 2026-10-05): the header said "8/31 words" while the found-words strip said
+// "18 WORDS" (it counted the rarer finds too). Every surface takes its word count from
+// hubWordCount / hubWordsLabel, the strip is headed by a count-free label, and rarer words score
+// but never move the count. Mirrors HubWordCountTest.kt and HubWordCountTests.swift.
+describe('Hubbub word count (one source)', () => {
+  const puzzle: HubPuzzle = { id: 't', letters: 'OFAMYLR', words: ['FOAL', 'FORM', 'FORMAL', 'FORMALLY'], bonus: ['MORA', 'MARO'], pangrams: ['FORMALLY'], max: 26 };
+  const play = (...words: string[]): HubState => words.reduce((s, w) => hubReduce(s, { type: 'SUBMIT', word: w }, 0), createHubState(puzzle, 't', 0));
+
+  it('header and strip share one count', () => {
+    const s = play('FORMALLY', 'MORA', 'FOAL', 'MARO');
+    expect(s.found).toEqual(['FORMALLY', 'FOAL']);
+    expect(s.bonusFound).toEqual(['MORA', 'MARO']);
+    expect(hubWordCount(s)).toEqual({ found: 2, total: 4 });
+    expect(hubWordsLabel(s)).toBe('2/4 words');
+    // The strip's heading carries no number, so it can never disagree with the header.
+    expect(HUB_FOUND_LABEL).not.toMatch(/\d/);
+  });
+
+  it('bonus words score but never move the count', () => {
+    const before = play('FOAL');
+    const after = hubReduce(before, { type: 'SUBMIT', word: 'MORA' }, 0);
+    expect(after.points).toBeGreaterThan(before.points);
+    expect(hubWordsLabel(after)).toBe(hubWordsLabel(before));
+    expect(hubIsBonus(after.bonusFound, 'MORA')).toBe(true);
+    expect(hubIsBonus(after.bonusFound, 'FOAL')).toBe(false);
   });
 });
