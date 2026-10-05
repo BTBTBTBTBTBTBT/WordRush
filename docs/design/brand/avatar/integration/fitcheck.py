@@ -45,7 +45,8 @@ def check(body, L):
         m = alpha(im) > 0.35
         g = float((m & hm).sum() / max(1, m.sum()))
         res['grip'] = g
-        if not (0.02 <= g <= 0.5):
+        lo, hi = L.get('grip_range', (0.02, 0.5))
+        if not (lo <= g <= hi):
             fails.append('grip %.2f' % g)
     for im in L.get('back', ()):
         m = alpha(im) > 0.35
@@ -58,7 +59,7 @@ def check(body, L):
         if not (0.04 <= vis <= 0.65):
             fails.append('back visible %.2f' % vis)
     allm = A.copy()
-    for k in ('back', 'front', 'held'):
+    for k in ('back', 'front', 'held', 'beside_'):   # beside_: shoes + companions (10-05), frame only
         for im in L.get(k, ()):
             allm |= alpha(im) > 0.1
     ys, xs = np.nonzero(allm)

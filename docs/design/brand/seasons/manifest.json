@@ -7,6 +7,9 @@
     },
     "thanksgiving": {
       "window": "Nov 16 \u2013 27 (local date)"
+    },
+    "winter-holidays": {
+      "window": "Dec 1 \u2013 26 (local date)"
     }
   },
   "assets": [
@@ -1454,6 +1457,34 @@
       "size": [
         206,
         401
+      ]
+    },
+    {
+      "id": "halloween-piece-ghost-back",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/ghost-back.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "",
+      "size": [
+        803,
+        606
+      ]
+    },
+    {
+      "id": "halloween-piece-ghost-hood",
+      "season": "halloween",
+      "kind": "piece",
+      "castId": null,
+      "file": "halloween/pieces/ghost-hood.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "",
+      "size": [
+        627,
+        398
       ]
     },
     {
@@ -3029,6 +3060,1195 @@
       "size": [
         485,
         344
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-w",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "w",
+      "file": "winter-holidays/cast/w.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "W in a Santa hat (fluffy trim, pom-pom flopping right); his own magenta cape kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "santa-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-w-alt1",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "w",
+      "file": "winter-holidays/cast/w-alt1.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Alternate: W in a snowman top hat with holly; his own magenta cape kept. (Earmuffs were tried and rejected: on W they cover an eye.)",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "snowman-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-o1",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "o1",
+      "file": "winter-holidays/cast/o1.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Amber O with a reindeer-antler headband and a holly sprig; pom-poms and all four arms untouched.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "antlers"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-r",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "r",
+      "file": "winter-holidays/cast/r.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "R wrapped in a cozy patchwork quilt (behind him), a mug of hot cocoa at his feet; nightcap kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "quilt-cape",
+        "cocoa-mug"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-d",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "d",
+      "file": "winter-holidays/cast/d.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "D as an elf: green elf hat with a red zigzag band and a gold bell; glasses and pencil untouched.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "elf-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-d-alt1",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "d",
+      "file": "winter-holidays/cast/d-alt1.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Alternate: D with a reindeer-antler headband; glasses and pencil untouched.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "antlers"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-o2",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "o2",
+      "file": "winter-holidays/cast/o2.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Pink O in a red winter cape with fluffy white trim (behind her), a wrapped gift at her feet; heart sunglasses kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "winter-cape",
+        "gift-box"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-c",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "c",
+      "file": "winter-holidays/cast/c.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "C as a snowman: black top hat with a red band and holly; the C mouth and teeth untouched.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "snowman-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-c-alt1",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "c",
+      "file": "winter-holidays/cast/c-alt1.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Alternate: C in a Santa hat; the C mouth and teeth untouched.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "santa-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-i",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "i",
+      "file": "winter-holidays/cast/i.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "I in fluffy white earmuffs, the band arching under his sprout (the sprout stays in front).",
+      "method": "layered",
+      "faceRegionDiff": 0.733,
+      "pieces": [
+        "earmuffs"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-o3",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "o3",
+      "file": "winter-holidays/cast/o3.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Orange O in a red-and-white snowflake pom-pom beanie; his single eye and tongue untouched.",
+      "method": "layered",
+      "faceRegionDiff": 0.151,
+      "pieces": [
+        "pom-beanie"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-o3-alt1",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "o3",
+      "file": "winter-holidays/cast/o3-alt1.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Alternate: orange O as an elf, with a gift box at his feet.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "elf-hat",
+        "gift-box"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-u",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "u",
+      "file": "winter-holidays/cast/u.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "U floating under an arch of colorful twinkle lights (behind him); eyes closed, calm.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "twinkle-lights"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-u-alt1",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "u",
+      "file": "winter-holidays/cast/u-alt1.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Alternate: U in a snowflake pom-pom beanie, still floating with his eyes closed.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "pom-beanie"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-s",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "s",
+      "file": "winter-holidays/cast/s.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "S on the run with a long striped knit scarf flying out behind him; headband and sneakers kept.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "scarf-flying"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-cast-s-alt1",
+      "season": "winter-holidays",
+      "kind": "cast",
+      "castId": "s",
+      "file": "winter-holidays/cast/s-alt1.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Alternate: S in a Santa hat above his own headband.",
+      "method": "layered",
+      "faceRegionDiff": 0.0,
+      "pieces": [
+        "santa-hat"
+      ],
+      "size": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "winter-holidays-title-happy-holidays",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/happy-holidays.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Greeting header, stacked HAPPY / HOLIDAYS in cranberry red with a navy rim and snow on top. Spell-checked.",
+      "size": [
+        799,
+        348
+      ]
+    },
+    {
+      "id": "winter-holidays-title-winter",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/winter.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "WINTER in sky blue, snow-capped.",
+      "size": [
+        606,
+        173
+      ]
+    },
+    {
+      "id": "winter-holidays-title-dailies",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/dailies.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "DAILIES in evergreen with a navy rim and snow caps.",
+      "size": [
+        668,
+        193
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-classic",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-classic.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Classic game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        616,
+        163
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-classicseven",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-classicseven.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Classic Seven game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        928,
+        154
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-classicsix",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-classicsix.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Classic Six game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        813,
+        158
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-codebreaker",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-codebreaker.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Codebreaker (cryptogram) game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        948,
+        155
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-crosswordocious",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-crosswordocious.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Crosswordocious game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        975,
+        132
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-deliverance",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-deliverance.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Deliverance (rescue) game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        898,
+        155
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-gauntlet",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-gauntlet.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Gauntlet game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        811,
+        179
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-hubbub",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-hubbub.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Hubbub game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        668,
+        181
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-kindred",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-kindred.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Kindred (groups) game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        747,
+        186
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-letterladder",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-letterladder.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Letter Ladder game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        961,
+        158
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-muddle",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-muddle.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Muddle (scramble) game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        687,
+        179
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-octoword",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-octoword.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Octoword game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        859,
+        179
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-propernoundle",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-propernoundle.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "ProperNoundle game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        923,
+        133
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-quadword",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-quadword.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Quadword game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        839,
+        167
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-spyglass",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-spyglass.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Spyglass (word search) game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        782,
+        170
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-starsweep",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-starsweep.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Starsweep (regions) game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        894,
+        172
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-succession",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-succession.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Succession (sequence) game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        900,
+        165
+      ]
+    },
+    {
+      "id": "winter-holidays-title-game-sudocious",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/game-sudocious.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Sudocious game title in its game color with a navy rim and snow caps. Spell-checked.",
+      "size": [
+        832,
+        168
+      ]
+    },
+    {
+      "id": "winter-holidays-title-label-snow-day",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/label-snow-day.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Label: SNOW DAY in snowy white with lavender shading.",
+      "size": [
+        774,
+        187
+      ]
+    },
+    {
+      "id": "winter-holidays-title-label-warm-wishes",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/label-warm-wishes.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Label: WARM WISHES in golden yellow.",
+      "size": [
+        966,
+        176
+      ]
+    },
+    {
+      "id": "winter-holidays-title-let-it-snow",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/let-it-snow.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Label: LET IT SNOW in icy blue.",
+      "size": [
+        918,
+        167
+      ]
+    },
+    {
+      "id": "winter-holidays-title-page-friends",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/page-friends.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Page title: FRIENDS in rosy pink.",
+      "size": [
+        648,
+        180
+      ]
+    },
+    {
+      "id": "winter-holidays-title-page-leaderboard",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/page-leaderboard.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Page title: LEADERBOARD in gold, snow-capped.",
+      "size": [
+        920,
+        158
+      ]
+    },
+    {
+      "id": "winter-holidays-title-page-stats",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/page-stats.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Page title: STATS in icy blue-gray.",
+      "size": [
+        502,
+        175
+      ]
+    },
+    {
+      "id": "winter-holidays-title-page-wordoftheday",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/page-wordoftheday.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Page title: WORD OF THE DAY in evergreen.",
+      "size": [
+        940,
+        151
+      ]
+    },
+    {
+      "id": "winter-holidays-title-puzzles",
+      "season": "winter-holidays",
+      "kind": "title",
+      "castId": null,
+      "file": "winter-holidays/titles/puzzles.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "PUZZLES in royal purple (pairs with DAILIES).",
+      "size": [
+        751,
+        198
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-friends",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-friends.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Friends wallpaper, 1290 x 2796, drawn in code: winter-night gradient, cool snow glow at the horizon, few faint winter props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-friends-wide",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-friends-wide.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Friends wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-games",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-games.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Games wallpaper, 1290 x 2796, drawn in code: winter-night gradient, cool snow glow at the horizon, few faint winter props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-games-wide",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-games-wide.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Games wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-home",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-home.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Home wallpaper, 1290 x 2796, drawn in code: winter-night gradient, cool snow glow at the horizon, few faint winter props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-home-wide",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-home-wide.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Home wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-leaderboard",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-leaderboard.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Leaderboard wallpaper, 1290 x 2796, drawn in code: winter-night gradient, cool snow glow at the horizon, few faint winter props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-leaderboard-wide",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-leaderboard-wide.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Leaderboard wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-stats",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-stats.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Stats wallpaper, 1290 x 2796, drawn in code: winter-night gradient, cool snow glow at the horizon, few faint winter props in the margins only.",
+      "size": [
+        1290,
+        2796
+      ]
+    },
+    {
+      "id": "winter-holidays-wall-wall-stats-wide",
+      "season": "winter-holidays",
+      "kind": "wall",
+      "castId": null,
+      "file": "winter-holidays/walls/wall-stats-wide.webp",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Stats wallpaper, 2400 x 1500 (web desktop).",
+      "size": [
+        2400,
+        1500
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-candle",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/candle.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Candle (inclusive light motif): small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        137,
+        264
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-candy-cane",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/candy-cane.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Candy cane: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        142,
+        270
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-cocoa",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/cocoa.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Hot cocoa: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        259,
+        225
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-gift",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/gift.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Gift box: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        242,
+        239
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-gingerbread",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/gingerbread.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Gingerbread cookie: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        228,
+        252
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-holly",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/holly.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Holly sprig: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        260,
+        241
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-mittens",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/mittens.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Knit mittens: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        238,
+        218
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-ornament",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/ornament.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Gold ornament: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        183,
+        231
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-pine-branch",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/pine-branch.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Pine branch with a pinecone: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        273,
+        225
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-snowflake",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/snowflake.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Snowflake: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        207,
+        236
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-snowman",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/snowman.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Snowman: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        258,
+        263
+      ]
+    },
+    {
+      "id": "winter-holidays-prop-star",
+      "season": "winter-holidays",
+      "kind": "prop",
+      "castId": null,
+      "file": "winter-holidays/props/star.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Gold star: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).",
+      "size": [
+        234,
+        223
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-antlers",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/antlers.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Reindeer-antler headband with holly: costume piece, layered onto hero art in code.",
+      "size": [
+        287,
+        204
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-cocoa-mug",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/cocoa-mug.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Mug of hot cocoa: costume piece, layered onto hero art in code.",
+      "size": [
+        220,
+        185
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-earmuffs",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/earmuffs.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Fluffy earmuffs: costume piece, layered onto hero art in code.",
+      "size": [
+        293,
+        206
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-elf-hat",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/elf-hat.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Elf hat with a bell: costume piece, layered onto hero art in code.",
+      "size": [
+        247,
+        214
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-gift-box",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/gift-box.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Wrapped gift box: costume piece, layered onto hero art in code.",
+      "size": [
+        206,
+        219
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-pom-beanie",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/pom-beanie.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Snowflake pom-pom beanie: costume piece, layered onto hero art in code.",
+      "size": [
+        257,
+        250
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-quilt-cape",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/quilt-cape.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Patchwork quilt cape (behind): costume piece, layered onto hero art in code.",
+      "size": [
+        285,
+        241
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-santa-hat",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/santa-hat.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Santa hat with fluffy trim: costume piece, layered onto hero art in code.",
+      "size": [
+        308,
+        200
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-scarf-flying",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/scarf-flying.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Striped knit scarf flying in the wind (behind): costume piece, layered onto hero art in code.",
+      "size": [
+        348,
+        229
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-snowman-hat",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/snowman-hat.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Snowman top hat with holly: costume piece, layered onto hero art in code.",
+      "size": [
+        264,
+        199
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-twinkle-lights",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/twinkle-lights.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "String of twinkle lights: costume piece, layered onto hero art in code.",
+      "size": [
+        335,
+        133
+      ]
+    },
+    {
+      "id": "winter-holidays-piece-winter-cape",
+      "season": "winter-holidays",
+      "kind": "piece",
+      "castId": null,
+      "file": "winter-holidays/pieces/winter-cape.png",
+      "status": "draft",
+      "created": "2026-10-05",
+      "caption": "Red winter cape with white trim (behind): costume piece, layered onto hero art in code.",
+      "size": [
+        290,
+        240
       ]
     }
   ]

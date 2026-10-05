@@ -237,7 +237,7 @@ def mask_out(im, keep):
 
 
 def compose(body, color='purple', letter='A', eyes='beady', mouth='smile', back=(), front=(), held=(),
-            head=None, handover=('L', 'R'), shadows=True, extra_face=()):
+            head=None, handover=('L', 'R'), shadows=True, extra_face=(), under=()):
     """Compose a mascot with integrated layers. back/front/held: canvas-sized RGBA layers (from place())."""
     R = rig(body)
     b = R['b']
@@ -250,10 +250,12 @@ def compose(body, color='purple', letter='A', eyes='beady', mouth='smile', back=
     if shadows and (front or held):
         darken = np.zeros((CW, CW), np.float32)
         Af = A.astype(np.float32)
-        for L in list(front) + list(held):
+        for L in list(front) + list(held) + list(under):
             darken = np.maximum(darken, contact_shadow(Af, alpha(L)))
         bt = shade(bt, 1 - darken)
     out.alpha_composite(bt)
+    for L in under:            # 10-05: garments the letter sits ON (apron, tie, sash): drawn before the letter
+        out.alpha_composite(L)
     draw_letter(out, b, letter)
     place_part(out, f'eyes:{eyes}', b)
     place_part(out, f'mouth:{mouth}', b)
@@ -264,7 +266,7 @@ def compose(body, color='purple', letter='A', eyes='beady', mouth='smile', back=
         out.alpha_composite(mask_out(L, 1 - guard))
     for L in held:
         out.alpha_composite(L)
-    if handover and (held or front):
+    if handover and (held or front or under):
         hb = bt.copy()
         hm = np.zeros((CW, CW), np.float32)
         for s in handover:

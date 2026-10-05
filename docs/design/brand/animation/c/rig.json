@@ -26,11 +26,12 @@
     "w": 146,
     "h": 154
    }
-  ]
+  ],
+  "laughBowlPx": 32748
  },
  "name": "C",
  "gesture": "Happy wiggle",
- "caption": "Rocks side to side on his feet with a little squash, then settles. Tap: ^ ^ eyes and his C mouth stretches open so the teeth part.",
+ "caption": "Rocks side to side on his feet with a little squash, then settles. Tap: ^ ^ eyes and his C mouth stretches open so the teeth part, showing his mouth and tongue.",
  "cycle": 6.0,
  "breath": {
   "origin": [

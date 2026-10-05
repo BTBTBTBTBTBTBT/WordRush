@@ -94,7 +94,11 @@ def warp(a, s, tx, ty):
 SPEC = {
     'w': dict(keep=['behind', 'neck', 'above'], caption='Vampire: black cape with red lining and stand-up collar BEHIND him, a red gem clasp at the neck.'),
     'o1': dict(mode='box', keep=[], caption='Pumpkin: green stem + curly vine on top of his head; his own purple pom-poms and four arms untouched.'),
-    'r': dict(mode='box', keep=[], caption='Ghost: the sheet drapes around him from behind; his nightcap and sleepy face stay on top.'),
+    # 10-05: was mode='box' (night-1 sheet, mostly hidden behind him, read as wisps). Now two new ChatGPT pieces:
+    # a full sheet BACK panel with a ragged hem behind him + a hood behind his head and nightcap (a front hood covered the cap).
+    'r': dict(mode='layered', keep=[], layers=[dict(piece='ghost-back', z='behind', anchor='center', w=1.85, dx=0.0, dy=0.10),
+                                              dict(piece='ghost-hood', z='behind', anchor='top', w=1.5, dx=0.04, dy=0.62)],
+              caption='Ghost: a full sheet hangs behind him with a ragged hem, and the hood drapes over his head behind his nightcap; his nightcap and sleepy face stay on top.'),
     'd': dict(mode='box', keep=[], caption='Wizard: starry hat with a gold band, starry robe behind him; glasses, pencil and face untouched.'),
     'o2': dict(mode='box', keep=[], caption='Witch: black witch hat UNDER her heart sunglasses, purple-lined cape behind her.'),
     'c': dict(mode='box', keep=[], caption='Space explorer: antennae headband with glowing green bulbs; the C mouth and snaggleteeth untouched.'),

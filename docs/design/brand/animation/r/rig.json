@@ -6,13 +6,14 @@
   1024
  ],
  "restDiff": {
-  "meanAbsRGB": 0.015,
-  "meanAbsAlpha": 0.008,
+  "meanAbsRGB": 0.039,
+  "meanAbsAlpha": 0.083,
   "p99RGB": 0.0,
   "pixels": 461127,
   "note": "premultiplied, over the hero character area (alpha>0)"
  },
  "info": {
+  "shadowHoleFilled": 10902,
   "eyes": [
    {
     "cx": 473.37410772225826,

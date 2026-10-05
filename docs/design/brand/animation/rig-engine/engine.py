@@ -126,17 +126,107 @@ class Rig:
         (self.back if back else self.front).append((name, layer))
         return layer
 
-    def shadow(self, y0, name='shadow', amax=235, satmax=60):
-        """Soft ground shadow (semi-transparent, low-saturation pixels below y0) as a static floor layer."""
+    def shadow(self, y0, name='shadow', amax=235, satmax=60, keep_edge=0):
+        """Soft ground shadow (semi-transparent, low-saturation pixels below y0) as a static floor layer.
+        keep_edge: pixels within this many px of the opaque body stay in the body (its anti-aliased edge), so y0 can
+        sit higher and catch the shadow's faint top rows without cutting the feet."""
         m = (self.yy >= y0) & (self.A > 0) & (self.A < amax) & (self.sat < satmax)
+        if keep_edge:
+            m &= ~self.grow(self.A >= amax, keep_edge)
         m = ndimage.binary_closing(m, iterations=2) & (self.A > 0) & (self.A < amax)
+        if keep_edge:
+            m &= ~self.grow(self.A >= amax, keep_edge)
         layer = np.zeros_like(self.H)
         layer[m] = self.H[m]
         self.base[m] = 0
+        if keep_edge:
+            # the feet hid part of the shadow: fill those foot-shaped gaps row by row, interpolating between the
+            # shadow on either side (premultiplied), so the floor shadow stays whole when the character hops
+            hole = self.grow(self.A >= amax, keep_edge + 1) & (self.yy >= y0) & ~m
+            pm = layer[..., :3] * layer[..., 3:] / 255
+            filled = 0
+            for y in np.where(hole.any(1))[0]:
+                xs = np.where(hole[y])[0]
+                runs = np.split(xs, np.where(np.diff(xs) > 1)[0] + 1)
+                for run in runs:
+                    a, b = run[0] - 1, run[-1] + 1
+                    if a < 0 or b >= self.w or layer[y, a, 3] <= 0 or layer[y, b, 3] <= 0:
+                        continue
+                    t = (run - a) / (b - a)
+                    al = layer[y, a, 3] * (1 - t) + layer[y, b, 3] * t
+                    c = pm[y, a][None] * (1 - t)[:, None] + pm[y, b][None] * t[:, None]
+                    layer[y, run, 3] = al
+                    layer[y, run, :3] = c / np.maximum(al, 1e-3)[:, None] * 255
+                    filled += len(run)
+            self.info['shadowHoleFilled'] = int(filled)
         self.back.insert(0, (name, layer))
         return m
 
     # ---------------------------------------------------------------- face patches
+    def inpaint_fill(self, cover, radius=14, blur=2.5, feather=2.5, also=None, plain=None, halo=0, limit=None):
+        """RGBA patch over `cover`: Telea inpaint of the hero from the pixels around it, smoothed inside. Unlike the
+        quadratic surface it meets the real face exactly at the border, so no disc edge or eye 'socket' shows."""
+        # `also`: other features to inpaint away at the same time (so a nearby mouth or eye can't bleed into the fill)
+        # `halo`: a feature's soft glow around it is inpainted too and faded back in over `halo` px, so the fill
+        # isn't lit by the glow (which reads as a lighter disc once the feature is gone)
+        core = cover
+        if halo:
+            cover = self.grow(cover, halo) & (self.A > 0)
+        if limit is not None:            # e.g. the face only: other areas (a headband) neither get painted nor bleed in
+            cover = cover & limit
+            core = core & limit
+            also = (also if also is not None else np.zeros_like(cover)) | (self.grow(cover, radius + 2) & ~limit)
+        hm = ((cover | (also if also is not None else False)) & (self.A > 0)).astype(np.uint8) * 255
+        rgb = np.clip(self.H[..., :3], 0, 255).astype(np.uint8)
+        f = cv2.inpaint(rgb, hm, radius, cv2.INPAINT_TELEA).astype(np.float32)
+        if blur:
+            fb = np.stack([ndimage.gaussian_filter(f[..., c], blur) for c in range(3)], -1)
+            inner = ndimage.distance_transform_edt(cover)
+            w = np.clip(inner / 6, 0, 1)[..., None]       # keep the exact border, smooth only inside
+            f = fb * w + f * (1 - w)
+        if plain is not None:
+            # put the face's own fine texture back (the fill is otherwise too smooth and reads as a disc): the
+            # high-frequency part of a nearby featureless face area with the same shape as the cover
+            hf = self.H[..., :3] - np.stack([ndimage.gaussian_filter(self.H[..., c], 4) for c in range(3)], -1)
+            lab, n = ndimage.label(cover)
+            inner = np.clip(ndimage.distance_transform_edt(cover) / 4, 0, 1)
+            for i in range(1, n + 1):
+                ys, xs = np.where(lab == i)
+                best = None
+                for dy in range(-400, 401, 8):
+                    for dx in range(-400, 401, 8):
+                        if best is not None and dx * dx + dy * dy >= best[0]:
+                            continue
+                        y2, x2 = ys + dy, xs + dx
+                        if y2.min() < 0 or x2.min() < 0 or y2.max() >= self.h or x2.max() >= self.w:
+                            continue
+                        if plain[y2[::3], x2[::3]].mean() > 0.95:
+                            best = (dx * dx + dy * dy, dy, dx)
+                if best:
+                    _, dy, dx = best
+                    f[ys, xs] += hf[ys + dy, xs + dx] * inner[ys, xs, None]
+                    self.info.setdefault('textureFrom', []).append([int(dx), int(dy)])
+        out = np.zeros_like(self.H)
+        out[..., :3] = f
+        if halo:
+            d = ndimage.distance_transform_edt(~core)
+            out[..., 3] = np.where((self.A > 0) & cover, 255 * np.clip(1 - d / halo, 0, 1) ** 0.8, 0)
+        else:
+            d = ndimage.distance_transform_edt(~cover)
+            out[..., 3] = np.where(self.A > 0, 255 * np.clip((feather + 0.5 - d) / max(feather, 1e-3), 0, 1), 0)
+        return out
+
+    def stroke(self, im, pts, ink, lw):
+        """Rounded stroke through `pts` (hero px) drawn into the RGBA PIL image `im` (supersampled)."""
+        S = 4
+        big = Image.new('RGBA', (self.w * S, self.h * S), (0, 0, 0, 0))
+        d = ImageDraw.Draw(big)
+        P = [(x * S, y * S) for x, y in pts]
+        d.line(P, fill=tuple(ink) + (255,), width=int(lw * S), joint='curve')
+        for x, y in (P[0], P[-1]):
+            d.ellipse([x - lw * S / 2, y - lw * S / 2, x + lw * S / 2, y + lw * S / 2], fill=tuple(ink) + (255,))
+        im.alpha_composite(big.resize((self.w, self.h), Image.LANCZOS))
+
     def eye_info(self, eyes):
         out = []
         for m in eyes:
@@ -146,7 +236,7 @@ class Rig:
 
     def eye_patches(self, eyes, cover=None, ring_ok=None, ring_w=22, ink=None, lw=None, clip=None,
                     closed=(0.46, 0.30, 0.22), happy=(0.46, 0.18, 0.55), half=0.45, kinds=('half', 'closed', 'happy'),
-                    prefix='eyes', ring_gap=3, feather=3):
+                    prefix='eyes', ring_gap=3, feather=3, fillmode='surface', brows=None, also=None, plain=None, ifeather=4, halo=0, limit=None):
         """Blink and laugh face patches over the real eyes.
         cover: area painted with the fitted face fill (default: eyes grown by 8 px).
         closed/happy: (half width, top, bottom) of the lid arc box, as fractions of each eye's size."""
@@ -156,7 +246,8 @@ class Rig:
         if cover is None:
             cover = self.grow(allm, 8) & (self.A > 200)
         cover = ndimage.binary_fill_holes(cover) & (self.A > 0)   # the art has semi-transparent seams around features
-        fill = self.surface(cover, ring_w=ring_w, ring_ok=ring_ok, ring_gap=ring_gap, area_grow=feather)
+        fill = (self.inpaint_fill(cover, also=also, plain=plain, feather=ifeather, halo=halo, limit=limit) if fillmode == 'inpaint' else
+                self.surface(cover, ring_w=ring_w, ring_ok=ring_ok, ring_gap=ring_gap, area_grow=feather))
         if ink is None:
             dark = allm & (self.lum < 70)
             ink = tuple(int(v) for v in np.median(self.H[dark if dark.any() else allm][:, :3], 0))
@@ -178,6 +269,14 @@ class Rig:
                     d.arc([v * S for v in [cx - w * hw, cy - h * top, cx + w * hw, cy + h * bot]], 200, 340, fill=ink + (255,), width=lwi * S)
             big = big.resize((self.w, self.h), Image.LANCZOS)
             im.alpha_composite(big)
+            if brows and kind in brows and brows[kind][0] == 'hero':   # ('hero', mask): keep the real brows on top
+                bm = Image.fromarray((brows[kind][1] * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.7))
+                hb = self.hero.copy(); hb.putalpha(Image.fromarray(np.minimum(np.asarray(bm), np.asarray(self.hero)[..., 3])))
+                im.alpha_composite(hb)
+            elif brows and kind in brows:        # ([stroke pts...], ink, lw): paint brows for this face (cover them first)
+                strokes, bink, blw = brows[kind]
+                for pts in strokes:
+                    self.stroke(im, pts, bink, blw)
             if kind == 'half':
                 for m, e in zip(eyes, info):
                     bx = (int(e['cx'] - e['w'] * 0.75), int(e['cy'] - e['h'] * 0.75), int(e['cx'] + e['w'] * 0.75), int(e['cy'] + e['h'] * 0.75))
@@ -194,14 +293,14 @@ class Rig:
         self.info[prefix] = info
         return res
 
-    def mouth_laugh(self, mouth, sy=1.55, sx=1.08, ring_ok=None, name='mouth-laugh', ring_w=12):
+    def mouth_laugh(self, mouth, sy=1.55, sx=1.08, ring_ok=None, name='mouth-laugh', ring_w=12, fillmode='surface', also=None, grow=3, soft=0.8, plain=None, halo=0, limit=None):
         """The real mouth stretched open (top edge fixed) over a fitted face fill."""
-        cover = ndimage.binary_fill_holes(self.grow(mouth, 3) & (self.A > 200)) & (self.A > 0)
-        fill = self.surface(cover, ring_w=ring_w, ring_ok=ring_ok)
+        cover = ndimage.binary_fill_holes(self.grow(mouth, grow) & (self.A > 200)) & (self.A > 0)
+        fill = (self.inpaint_fill(self.grow(cover, 2), also=also, plain=plain, feather=4, halo=halo, limit=limit) if fillmode == 'inpaint' else self.surface(cover, ring_w=ring_w, ring_ok=ring_ok))
         ys, xs = np.where(cover)
         bx = (int(xs.min()) - 2, int(ys.min()) - 2, int(xs.max()) + 3, int(ys.max()) + 3)
         src = self.hero.crop(bx)
-        src.putalpha(Image.fromarray((cover[bx[1]:bx[3], bx[0]:bx[2]] * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.8)))
+        src.putalpha(Image.fromarray((cover[bx[1]:bx[3], bx[0]:bx[2]] * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(soft)))
         big = src.resize((round(src.width * sx), round(src.height * sy)), Image.LANCZOS)
         im = Image.fromarray(np.clip(fill, 0, 255).astype(np.uint8), 'RGBA')
         im.alpha_composite(big, (bx[0] - round(src.width * (sx - 1) / 2), bx[1]))

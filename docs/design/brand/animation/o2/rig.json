@@ -6,9 +6,9 @@
   1024
  ],
  "restDiff": {
-  "meanAbsRGB": 0.0,
-  "meanAbsAlpha": 0.0,
-  "p99RGB": 0.0,
+  "meanAbsRGB": 0.015,
+  "meanAbsAlpha": 0.034,
+  "p99RGB": 0.6,
   "pixels": 524730,
   "note": "premultiplied, over the hero character area (alpha>0)"
  },
@@ -20,11 +20,24 @@
     "w": 92,
     "h": 93
    }
-  ]
+  ],
+  "glasses": {
+   "rotation": -7.71,
+   "lensCenters": [
+    [
+     316.89412381340634,
+     213.92056374119156
+    ],
+    [
+     565.9083222073876,
+     149.85196929238984
+    ]
+   ]
+  }
  },
  "name": "O (pink)",
- "gesture": "Wink",
- "caption": "Every 6 s she opens her winking eye for a look around, then snaps the wink back with a sassy tilt and a bob. Tap: she hops and laughs.",
+ "gesture": "Wink + sunglasses bob",
+ "caption": "Every 6 s she opens her winking eye for a look around (her sunglasses hop), then snaps the wink back with a sassy tilt; the glasses lift and land a beat after her head. Tap: she hops and laughs.",
  "cycle": 6.0,
  "breath": {
   "origin": [
@@ -123,6 +136,98 @@
      "in"
     ]
    ]
+  },
+  "glassDy": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.1,
+     -10,
+     "out"
+    ],
+    [
+     1.22,
+     0,
+     "in"
+    ],
+    [
+     1.3,
+     -4,
+     "out"
+    ],
+    [
+     1.38,
+     0,
+     "in"
+    ],
+    [
+     2.45,
+     0
+    ],
+    [
+     2.62,
+     -14,
+     "out"
+    ],
+    [
+     2.86,
+     0,
+     "in"
+    ],
+    [
+     2.95,
+     -3,
+     "out"
+    ],
+    [
+     3.03,
+     0,
+     "in"
+    ]
+   ]
+  },
+  "glassRot": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.0,
+     0
+    ],
+    [
+     1.1,
+     2.5,
+     "out"
+    ],
+    [
+     1.38,
+     0,
+     "inOut"
+    ],
+    [
+     2.45,
+     0
+    ],
+    [
+     2.62,
+     -3,
+     "out"
+    ],
+    [
+     3.03,
+     0,
+     "inOut"
+    ]
+   ]
   }
  },
  "layers": [
@@ -133,6 +238,15 @@
    "img": "eye-open",
    "alpha": "open",
    "when": "nolaugh"
+  },
+  {
+   "img": "glasses",
+   "pivot": [
+    440,
+    318
+   ],
+   "dy": "glassDy",
+   "rot": "glassRot"
   }
  ],
  "blink": {
@@ -142,5 +256,6 @@
  "root": {
   "rot": "tilt",
   "dy": "bob"
- }
+ },
+ "patchAfter": "eye-open"
 }

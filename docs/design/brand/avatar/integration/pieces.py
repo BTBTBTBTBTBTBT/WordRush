@@ -125,10 +125,14 @@ def main_width(body):
     return (r - l) / U, (l + r) / 2
 
 
-def avoid(make, body, step=(0.01, 0.0), tries=12, masks=('face', 'letter'), grip=None):
+def avoid(make, body, step=(0.01, 0.0), tries=12, masks=('face', 'letter'), grip=None, pad=0.0):
     """Re-place a layer (make(dx, dy) -> layer) until it covers none of the guarded pixels: the part moves out of
-    the way instead of being cut by the mask."""
+    the way instead of being cut by the mask. pad (body units): keep that much clear space around the face too
+    (10-05: the backpack straps crowded the eyes on the narrow bodies)."""
     face, letter = guards(body)
+    if pad:
+        from scipy import ndimage as _nd
+        face = _nd.binary_dilation(face, iterations=max(1, int(pad * U)))
     g = np.zeros_like(face)
     if 'face' in masks:
         g |= face
@@ -246,8 +250,10 @@ def backpack(body, acc='sky'):
         sg = -1 if sd == 'L' else 1
         def mk(dx, dy, pts=pts, sg=sg):
             q = [(pts[0][0] + sg * dx * 0.6, pts[0][1]), (pts[1][0] + sg * dx, pts[1][1]), pts[2]]
-            return draw_strap(q, sw * max(0.45, 1 - dx * 7), acc)
-        front.append(avoid(mk, body, step=(0.007, 0), tries=14))
+            return draw_strap(q, sw * max(0.42, 1 - dx * 7), acc)
+        # 10-05: keep a clear gap around the eyes (pad), so on tall / drop / pear / bean / mini the straps get
+        # thinner and ride farther out on the shoulder instead of crowding the face
+        front.append(avoid(mk, body, step=(0.007, 0), tries=22, pad=0.035))
     return dict(back=[back], front=front, handover=('L', 'R'))
 
 

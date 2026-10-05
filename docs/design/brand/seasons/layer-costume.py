@@ -37,9 +37,11 @@ SPECS = {
 
 
 def load_specs_extra():
-    p = os.path.join(ROOT, 'thanksgiving', 'specs.json')
-    if os.path.exists(p):
-        SPECS['thanksgiving'].update(json.load(open(p)))
+    # every <season>/specs.json (thanksgiving, winter-holidays, ...) joins the built-in Halloween specs
+    for season in sorted(os.listdir(ROOT)):
+        p = os.path.join(ROOT, season, 'specs.json')
+        if os.path.exists(p):
+            SPECS.setdefault(season, {}).update(json.load(open(p)))
 
 
 def split(capture, season, sheet, names):

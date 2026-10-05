@@ -1,6 +1,22 @@
-# Mascot maker: new additions queue (held 10-04: ChatGPT went to the cast animations)
+# Mascot maker: new additions queue
 
-None of these are drawn yet. Each row is one ChatGPT piece, made for the integration rig
+**Status 10-05: DRAWN AND BUILT (proposals).** Every piece below was drawn in ChatGPT on 10-05 (sheets in `raw/`,
+split by `split.py` into `pieces/`), built with `../integration/new_pieces.py` + `build_new.py`, and fit-checked on
+all 12 bodies (`../integration/fit-new.json`: 37 options, 0 failures). They are shown in `../options.html`,
+section 3. The shipped `avatar-parts.json` is untouched. Changes from the plan below:
+- The apron, necktie, sash, and the belt on short bodies are drawn UNDER the letter (a new `under` layer in
+  `rig.compose`): the letter stays on top, like a print, instead of the part dodging it.
+- Shoes use only the lower part of the drawn shoe (sole, toe and laces), because the stubby feet would vanish in a
+  full high-top. The torso stays in front of the shoe tops.
+- Brows are drawn in code in the eyes' own ink (six pairs, no angry ones), not by ChatGPT.
+- The face extras (sweat, tear, steam, heart) came from the footwear sheet.
+- R's ghost back panel and hood are done and in the Halloween header.
+
+The original plan follows.
+
+---
+
+None of these were drawn when this was written (10-04). Each row is one ChatGPT piece, made for the integration rig
 (`../INTEGRATION.md`). After drawing: key, cut, build with `integration/pieces.py`, run `integration/fitcheck.py`
 on all 12 bodies, then add to `options.html`.
 

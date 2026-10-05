@@ -10,7 +10,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 BRAND = os.path.dirname(ROOT)
 KINDS = [('cast', 'Costumed cast'), ('titles', 'Title lettering'), ('walls', 'Code-drawn wallpapers (full resolution)'), ('props', 'Props for code-drawn wallpapers'), ('pieces', 'Costume pieces (ChatGPT draws only these; code layers them onto the real hero art)'), ('extras', 'Extras to judge')]
 KIND_ID = {'cast': 'cast', 'titles': 'title', 'walls': 'wall', 'props': 'prop', 'pieces': 'piece', 'extras': 'extra'}
-WINDOWS = {'halloween': 'Oct 17 – Nov 1 (local date)', 'thanksgiving': 'Nov 16 – 27 (local date)'}
+WINDOWS = {'halloween': 'Oct 17 – Nov 1 (local date)', 'thanksgiving': 'Nov 16 – 27 (local date)', 'winter-holidays': 'Dec 1 – 26 (local date)'}
 CAST_ORDER = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']
 TODAY = datetime.date.today().isoformat()
 
@@ -127,6 +127,37 @@ for k, v in {'pie-slice': 'Pumpkin pie slice', 'turkey-platter': 'Roast turkey o
     CAPTIONS[f'thanksgiving/props/{k}.png'] = f'{v}: small motif for code-drawn harvest wallpapers (place faint, in margins).'
 
 
+# winter holidays (10-05): inclusive winter framing (snow, cocoa, lights, gifts), every costume layered on the hero
+for k, v in {'santa-hat': 'Santa hat with fluffy trim', 'elf-hat': 'Elf hat with a bell', 'antlers': 'Reindeer-antler headband with holly',
+             'snowman-hat': 'Snowman top hat with holly', 'pom-beanie': 'Snowflake pom-pom beanie', 'earmuffs': 'Fluffy earmuffs',
+             'winter-cape': 'Red winter cape with white trim (behind)', 'quilt-cape': 'Patchwork quilt cape (behind)',
+             'twinkle-lights': 'String of twinkle lights', 'scarf-flying': 'Striped knit scarf flying in the wind (behind)',
+             'gift-box': 'Wrapped gift box', 'cocoa-mug': 'Mug of hot cocoa'}.items():
+    CAPTIONS[f'winter-holidays/pieces/{k}.png'] = f'{v}: costume piece, layered onto hero art in code.'
+CAPTIONS.update({
+    'winter-holidays/titles/happy-holidays.png': 'Greeting header, stacked HAPPY / HOLIDAYS in cranberry red with a navy rim and snow on top. Spell-checked.',
+    'winter-holidays/titles/winter.png': 'WINTER in sky blue, snow-capped.',
+    'winter-holidays/titles/dailies.png': 'DAILIES in evergreen with a navy rim and snow caps.',
+    'winter-holidays/titles/puzzles.png': 'PUZZLES in royal purple (pairs with DAILIES).',
+    'winter-holidays/titles/let-it-snow.png': 'Label: LET IT SNOW in icy blue.',
+    'winter-holidays/titles/label-warm-wishes.png': 'Label: WARM WISHES in golden yellow.',
+    'winter-holidays/titles/label-snow-day.png': 'Label: SNOW DAY in snowy white with lavender shading.',
+    'winter-holidays/titles/page-leaderboard.png': 'Page title: LEADERBOARD in gold, snow-capped.',
+    'winter-holidays/titles/page-stats.png': 'Page title: STATS in icy blue-gray.',
+    'winter-holidays/titles/page-friends.png': 'Page title: FRIENDS in rosy pink.',
+    'winter-holidays/titles/page-wordoftheday.png': 'Page title: WORD OF THE DAY in evergreen.',
+})
+for k, v in {'snowflake': 'Snowflake', 'mittens': 'Knit mittens', 'ornament': 'Gold ornament', 'pine-branch': 'Pine branch with a pinecone', 'star': 'Gold star',
+             'gift': 'Gift box', 'candle': 'Candle (inclusive light motif)', 'snowman': 'Snowman', 'gingerbread': 'Gingerbread cookie', 'candy-cane': 'Candy cane',
+             'cocoa': 'Hot cocoa', 'holly': 'Holly sprig'}.items():
+    CAPTIONS[f'winter-holidays/props/{k}.png'] = f'{v}: small motif for code-drawn winter wallpapers, badges and banners (place faint, in margins).'
+for k, v in GAMES.items():
+    CAPTIONS[f'winter-holidays/titles/game-{k}.png'] = f'{v} game title in its game color with a navy rim and snow caps. Spell-checked.'
+for pg in ('home', 'games', 'stats', 'friends', 'leaderboard'):
+    CAPTIONS[f'winter-holidays/walls/wall-{pg}.webp'] = f'{pg.title()} wallpaper, 1290 x 2796, drawn in code: winter-night gradient, cool snow glow at the horizon, few faint winter props in the margins only.'
+    CAPTIONS[f'winter-holidays/walls/wall-{pg}-wide.webp'] = f'{pg.title()} wallpaper, 2400 x 1500 (web desktop).'
+
+
 def load_manifest():
     p = os.path.join(ROOT, 'manifest.json')
     if os.path.exists(p):
@@ -176,7 +207,7 @@ def scan(man):
         c = e['castId'] if e['kind'] == 'cast' else ''
         ci = CAST_ORDER.index(c) if c in CAST_ORDER else 99
         stem = os.path.basename(e['file']).rsplit('.', 1)[0]
-        head = {'happy-halloween': 0, 'happy-thanksgiving': 0, 'thanksgiving': 1, 'dailies': 2, 'puzzles': 3}.get(stem.split('-alt')[0], 3) if e['kind'] == 'title' else 0
+        head = {'happy-halloween': 0, 'happy-thanksgiving': 0, 'happy-holidays': 0, 'winter': 1, 'thanksgiving': 1, 'dailies': 2, 'puzzles': 3}.get(stem.split('-alt')[0], 3) if e['kind'] == 'title' else 0
         return (e['season'], k, ci, head, stem.split('-alt')[0], '-alt' in stem, stem)
     out.sort(key=order)
     man['assets'] = out

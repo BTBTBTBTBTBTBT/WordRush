@@ -1,0 +1,149 @@
+{
+ "winter-holidays/cast/w.png": {
+  "method": "layered",
+  "hero": "w",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "santa-hat"
+  ],
+  "caption": "W in a Santa hat (fluffy trim, pom-pom flopping right); his own magenta cape kept."
+ },
+ "winter-holidays/cast/o1.png": {
+  "method": "layered",
+  "hero": "o1",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "antlers"
+  ],
+  "caption": "Amber O with a reindeer-antler headband and a holly sprig; pom-poms and all four arms untouched."
+ },
+ "winter-holidays/cast/r.png": {
+  "method": "layered",
+  "hero": "r",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "quilt-cape",
+   "cocoa-mug"
+  ],
+  "caption": "R wrapped in a cozy patchwork quilt (behind him), a mug of hot cocoa at his feet; nightcap kept."
+ },
+ "winter-holidays/cast/d.png": {
+  "method": "layered",
+  "hero": "d",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "elf-hat"
+  ],
+  "caption": "D as an elf: green elf hat with a red zigzag band and a gold bell; glasses and pencil untouched."
+ },
+ "winter-holidays/cast/o2.png": {
+  "method": "layered",
+  "hero": "o2",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "winter-cape",
+   "gift-box"
+  ],
+  "caption": "Pink O in a red winter cape with fluffy white trim (behind her), a wrapped gift at her feet; heart sunglasses kept."
+ },
+ "winter-holidays/cast/c.png": {
+  "method": "layered",
+  "hero": "c",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "snowman-hat"
+  ],
+  "caption": "C as a snowman: black top hat with a red band and holly; the C mouth and teeth untouched."
+ },
+ "winter-holidays/cast/i.png": {
+  "method": "layered",
+  "hero": "i",
+  "faceRegionDiff": 0.733,
+  "pieces": [
+   "earmuffs"
+  ],
+  "caption": "I in fluffy white earmuffs, the band arching under his sprout (the sprout stays in front)."
+ },
+ "winter-holidays/cast/o3.png": {
+  "method": "layered",
+  "hero": "o3",
+  "faceRegionDiff": 0.151,
+  "pieces": [
+   "pom-beanie"
+  ],
+  "caption": "Orange O in a red-and-white snowflake pom-pom beanie; his single eye and tongue untouched."
+ },
+ "winter-holidays/cast/u.png": {
+  "method": "layered",
+  "hero": "u",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "twinkle-lights"
+  ],
+  "caption": "U floating under an arch of colorful twinkle lights (behind him); eyes closed, calm."
+ },
+ "winter-holidays/cast/s.png": {
+  "method": "layered",
+  "hero": "s",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "scarf-flying"
+  ],
+  "caption": "S on the run with a long striped knit scarf flying out behind him; headband and sneakers kept."
+ },
+ "winter-holidays/cast/c-alt1.png": {
+  "method": "layered",
+  "hero": "c",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "santa-hat"
+  ],
+  "caption": "Alternate: C in a Santa hat; the C mouth and teeth untouched."
+ },
+ "winter-holidays/cast/d-alt1.png": {
+  "method": "layered",
+  "hero": "d",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "antlers"
+  ],
+  "caption": "Alternate: D with a reindeer-antler headband; glasses and pencil untouched."
+ },
+ "winter-holidays/cast/o3-alt1.png": {
+  "method": "layered",
+  "hero": "o3",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "elf-hat",
+   "gift-box"
+  ],
+  "caption": "Alternate: orange O as an elf, with a gift box at his feet."
+ },
+ "winter-holidays/cast/u-alt1.png": {
+  "method": "layered",
+  "hero": "u",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "pom-beanie"
+  ],
+  "caption": "Alternate: U in a snowflake pom-pom beanie, still floating with his eyes closed."
+ },
+ "winter-holidays/cast/s-alt1.png": {
+  "method": "layered",
+  "hero": "s",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "santa-hat"
+  ],
+  "caption": "Alternate: S in a Santa hat above his own headband."
+ },
+ "winter-holidays/cast/w-alt1.png": {
+  "method": "layered",
+  "hero": "w",
+  "faceRegionDiff": 0.0,
+  "pieces": [
+   "snowman-hat"
+  ],
+  "caption": "Alternate: W in a snowman top hat with holly; his own magenta cape kept. (Earmuffs were tried and rejected: on W they cover an eye.)"
+ }
+}

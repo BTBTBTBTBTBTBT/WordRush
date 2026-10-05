@@ -1,28 +1,7 @@
-# Last session: 2026-10-04, 15:55 to ~17:00 CT (night 2: W animation pilot, Halloween follow-ups, Thanksgiving)
+# Last session: 2026-10-05, 02:39 to ~03:50 CT (night 3: animation limbs, 37 mascot-maker additions, winter holidays)
 
-1. **W puppet pilot** (`../animation/w-wave/preview.html`, also playing at the top of `gallery.html`):
-   - **What it does:** W breathes, blinks every 3 to 5 s, waves twice every 6 s and his cape sways and ripples.
-     Tap him and he hops and laughs.
-   - **How it's built:** every layer is cut from the approved hero art. At rest the layers rebuild the hero with a
-     mean difference of 0.014/255.
-   - **The one new piece:** the raised hand (ChatGPT), color-matched to his own arm.
-   - **Weakest moment:** the quick arm swap at the start and end of the wave. Details are in `NOTES.md`.
-2. **New rule applied: costumes are LAYERED.**
-   - ChatGPT drew only the costume pieces. `layer-costume.py` puts them onto the real hero pixels.
-   - Each one has a face/letter check stored in `manifest.json` (score 0 = untouched).
-   - Night 1's costumes are marked "redrawn".
-3. **Halloween:** 3 new alternates:
-   - U as a bat, with the wings right side up this time;
-   - I as a little witch with a candy pail;
-   - S as a black cat.
-   The orange and black wallpapers are code-drawn at 1290 x 2796 plus 2400 x 1500 for Home, games, Stats, Friends
-   and Leaderboard. Props stay small and faint, in the margins only.
-4. **Thanksgiving:**
-   - **Costumes:** all 10, each with one alternate (20 in total), all layered. Pilgrim hat (W), turkey-feather
-     cheerleader (amber O), plaid blanket and leaf (R), pie chef (D), knitted shawl (pink O), acorn cap (C), corn
-     husk (I), pie-slice hat (orange O), knit beanie (U) and turkey hat (S).
-   - **Lettering:** HAPPY THANKSGIVING (stacked, plus a one-line alt that runs together), THANKSGIVING, DAILIES,
-     PUZZLES, GOBBLE GOBBLE!, GIVE THANKS, 4 page titles and all 18 game titles in their game colors.
-     All 29 are spell-checked.
-   - **Other art:** 10 props, 12 costume pieces, and warm-dusk wallpapers for the same 5 pages.
-5. **ChatGPT:** 12 generations and no limit hit. Nothing ships until you pick from `gallery.html`.
+1. **Animation** (`../animation/cast.html`): I now **waves** (his own hand lets go of his cheek and hands over to a ChatGPT raised arm), S **pumps his fist** after his jog, and pink O's **sunglasses bob** (her own pixels, cut with a ChatGPT outline registered to her lenses). Also fixed: C's eye "socket" ghost (and his laugh now opens to a mouth and tongue), S's laugh brows (friendly arcs in his own ink), and the line under R's feet in his hop. Every rest diff is still under 0.06/255. Weakest: I's handover is a fast swap, so a paused frame mid-swing shows a slightly smaller arm.
+2. **Mascot maker** (`../avatar/options.html`, section 3): **37 new additions**, all drawn as separate pieces and fitted by the rig, with **0 fit-check failures on all 12 bodies**. That is 12 held items, 7 wraps (the apron, tie and sash sit under the letter, so the letter stays on top), 4 shoes, 4 companions, 6 code-drawn brow pairs and 4 face extras. Also 8 "wear the set" bundles, and the backpack straps now keep clear of the eyes on narrow bodies (tall is still the tightest).
+3. **Halloween header**: R's ghost sheet is rebuilt from two new pieces (a full back panel and a hood behind his nightcap). He reads as a ghost now, with a face diff of 0.
+4. **Winter holidays** (Dec 1 to 26, inclusive winter framing): 10 layered costumes plus 6 alternates, all with a face diff under 1. One idea (W in earmuffs) was rejected because it covered an eye. Also 29 snow-capped titles (HAPPY HOLIDAYS, WINTER, DAILIES, PUZZLES, 3 labels, 4 page titles and all 18 game titles, each spell-checked), 12 props, 12 costume pieces, and code-drawn winter-night wallpapers for 5 pages.
+5. **ChatGPT**: 15 generations (free, in the browser) and no limit hit. Nothing is shipped or wired in; pick what you like from `gallery.html`, `../avatar/options.html` and `../animation/cast.html`.

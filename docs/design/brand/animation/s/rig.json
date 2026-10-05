@@ -6,8 +6,8 @@
   1024
  ],
  "restDiff": {
-  "meanAbsRGB": 0.0,
-  "meanAbsAlpha": 0.0,
+  "meanAbsRGB": 0.054,
+  "meanAbsAlpha": 0.086,
   "p99RGB": 0.0,
   "pixels": 492767,
   "note": "premultiplied, over the hero character area (alpha>0)"
@@ -21,17 +21,23 @@
     "h": 70
    },
    {
-    "cx": 744.8298920694509,
-    "cy": 371.87494134209294,
-    "w": 78,
-    "h": 89
+    "cx": 742.6200686106347,
+    "cy": 379.1132075471698,
+    "w": 67,
+    "h": 70
    }
+  ],
+  "textureFrom": [
+   [
+    208,
+    208
+   ]
   ]
  },
  "name": "S",
- "gesture": "Jog in place",
- "caption": "Always on the move: his speed lines stream past, and every 6 s he breaks into a bouncing jog in place. Tap: he hops and laughs.",
- "cycle": 6.0,
+ "gesture": "Jog in place + fist pump",
+ "caption": "Always on the move: his speed lines stream past, he breaks into a bouncing jog, then tucks his fist and pumps it overhead three times. Tap: he hops and laughs, and his brows soften.",
+ "cycle": 8.0,
  "breath": {
   "origin": [
    574,
@@ -68,11 +74,11 @@
      "inOut"
     ],
     [
-     3.6,
+     3.2,
      1
     ],
     [
-     3.9,
+     3.5,
      0,
      "inOut"
     ]
@@ -99,11 +105,11 @@
      "inOut"
     ],
     [
-     3.6,
+     3.2,
      1
     ],
     [
-     3.9,
+     3.5,
      0,
      "inOut"
     ]
@@ -155,6 +161,258 @@
     ]
    ],
    "period": 0.6
+  },
+  "fistDx": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     4.1,
+     0
+    ],
+    [
+     4.25,
+     -115,
+     "in"
+    ],
+    [
+     6.419999999999999,
+     -115
+    ],
+    [
+     6.949999999999999,
+     0,
+     "outBackSoft"
+    ]
+   ]
+  },
+  "fistInA": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     4.1,
+     1
+    ],
+    [
+     4.1499999999999995,
+     0,
+     "linear"
+    ],
+    [
+     6.829999999999999,
+     0
+    ],
+    [
+     6.93,
+     1,
+     "linear"
+    ]
+   ]
+  },
+  "bandA": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     4.1,
+     1
+    ],
+    [
+     4.199999999999999,
+     0,
+     "inOut"
+    ],
+    [
+     6.799999999999999,
+     0
+    ],
+    [
+     6.999999999999999,
+     1,
+     "inOut"
+    ]
+   ]
+  },
+  "armTheta": {
+   "kf": [
+    [
+     0,
+     -38
+    ],
+    [
+     4.22,
+     -38
+    ],
+    [
+     4.7,
+     0,
+     "outBack"
+    ],
+    [
+     6.1,
+     0
+    ],
+    [
+     6.449999999999999,
+     -38,
+     "in"
+    ]
+   ]
+  },
+  "armS": {
+   "kf": [
+    [
+     0,
+     0.9
+    ],
+    [
+     4.22,
+     0.9
+    ],
+    [
+     4.7,
+     1.0,
+     "out"
+    ],
+    [
+     6.1,
+     1.0
+    ],
+    [
+     6.449999999999999,
+     0.9,
+     "in"
+    ]
+   ]
+  },
+  "armDx": {
+   "kf": [
+    [
+     0,
+     -130
+    ],
+    [
+     4.22,
+     -130
+    ],
+    [
+     4.6000000000000005,
+     0,
+     "out"
+    ],
+    [
+     6.199999999999999,
+     0
+    ],
+    [
+     6.449999999999999,
+     -130,
+     "in"
+    ]
+   ]
+  },
+  "pumpDy": {
+   "osc": [
+    22,
+    0.36,
+    4.7,
+    1
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     4.65,
+     0
+    ],
+    [
+     4.75,
+     1,
+     "inOut"
+    ],
+    [
+     5.75,
+     1
+    ],
+    [
+     5.800000000000001,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "pumpRot": {
+   "osc": [
+    -4,
+    0.36,
+    4.7,
+    1
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     4.65,
+     0
+    ],
+    [
+     4.75,
+     1,
+     "inOut"
+    ],
+    [
+     5.75,
+     1
+    ],
+    [
+     5.800000000000001,
+     0,
+     "inOut"
+    ]
+   ]
+  },
+  "hop": {
+   "osc": [
+    8,
+    0.36,
+    4.7,
+    1
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     4.65,
+     0
+    ],
+    [
+     4.75,
+     1,
+     "inOut"
+    ],
+    [
+     5.75,
+     1
+    ],
+    [
+     5.800000000000001,
+     0,
+     "inOut"
+    ]
+   ]
   }
  },
  "layers": [
@@ -164,7 +422,39 @@
    "alpha": "lineA"
   },
   {
+   "img": "arm-pump",
+   "at": [
+    858,
+    480
+   ],
+   "pivotInImg": [
+    81,
+    234
+   ],
+   "rot": [
+    38,
+    "armTheta",
+    "pumpRot"
+   ],
+   "s": "armS",
+   "dx": "armDx",
+   "dy": "pumpDy"
+  },
+  {
+   "img": "fist-out",
+   "dx": "fistDx"
+  },
+  {
    "img": "base"
+  },
+  {
+   "img": "fist-band",
+   "alpha": "bandA"
+  },
+  {
+   "img": "fist-in",
+   "dx": "fistDx",
+   "alpha": "fistInA"
   }
  ],
  "blink": {
@@ -176,7 +466,30 @@
    574,
    957
   ],
-  "dy": "jog",
+  "dy": [
+   "jog",
+   "hop"
+  ],
   "rot": "lean"
- }
+ },
+ "checkTimes": [
+  4.1,
+  4.15,
+  4.2,
+  4.25,
+  4.3,
+  4.4,
+  4.5,
+  4.75,
+  4.9,
+  5.1,
+  6.0,
+  6.1,
+  6.2,
+  6.3,
+  6.45,
+  6.6,
+  6.8,
+  7.0
+ ]
 }

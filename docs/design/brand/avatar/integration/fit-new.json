@@ -1,0 +1,4089 @@
+{
+ "mug": {
+  "category": "Held items",
+  "label": "Coffee mug",
+  "set": "Bookworm",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.055,
+     "bodyScale": 0.691
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.059,
+     "bodyScale": 0.929
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.049,
+     "bodyScale": 0.691
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.051,
+     "bodyScale": 0.68
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.068,
+     "bodyScale": 0.932
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.06,
+     "bodyScale": 0.72
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.057,
+     "bodyScale": 0.768
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.059,
+     "bodyScale": 0.78
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.056,
+     "bodyScale": 0.697
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.055,
+     "bodyScale": 0.691
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.057,
+     "bodyScale": 0.838
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.051,
+     "bodyScale": 0.691
+    },
+    "fails": []
+   }
+  }
+ },
+ "book": {
+  "category": "Held items",
+  "label": "Book",
+  "set": "Bookworm",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.3,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.241,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.28,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.294,
+     "bodyScale": 0.881
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.301,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.34,
+     "bodyScale": 0.929
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.304,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.298,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.312,
+     "bodyScale": 0.893
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.295,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.307,
+     "bodyScale": 1.166
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.288,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   }
+  }
+ },
+ "pencil-big": {
+  "category": "Held items",
+  "label": "Big pencil",
+  "set": "Bookworm",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.482,
+     "bodyScale": 0.941
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.446,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.446,
+     "bodyScale": 0.941
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.484,
+     "bodyScale": 0.941
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.604,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.57,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.509,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.504,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.518,
+     "bodyScale": 0.952
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.474,
+     "bodyScale": 0.941
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.513,
+     "bodyScale": 1.274
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.447,
+     "bodyScale": 0.941
+    },
+    "fails": []
+   }
+  }
+ },
+ "balloon": {
+  "category": "Held items",
+  "label": "Balloon",
+  "set": "Party",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.011,
+     "bodyScale": 0.79
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.011,
+     "bodyScale": 0.91
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.011,
+     "bodyScale": 0.79
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.012,
+     "bodyScale": 0.782
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.011,
+     "bodyScale": 0.842
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.015,
+     "bodyScale": 0.828
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.012,
+     "bodyScale": 0.897
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.011,
+     "bodyScale": 0.913
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.013,
+     "bodyScale": 0.798
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.011,
+     "bodyScale": 0.79
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.012,
+     "bodyScale": 0.998
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.01,
+     "bodyScale": 0.79
+    },
+    "fails": []
+   }
+  }
+ },
+ "trophy": {
+  "category": "Held items",
+  "label": "Trophy",
+  "set": "Athlete",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.221,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.195,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.215,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.228,
+     "bodyScale": 0.836
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.137,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.27,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.231,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.229,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.241,
+     "bodyScale": 0.851
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.215,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.235,
+     "bodyScale": 1.091
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.211,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   }
+  }
+ },
+ "magnifier": {
+  "category": "Held items",
+  "label": "Magnifier",
+  "set": "Explorer",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.143,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.144,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.141,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.152,
+     "bodyScale": 0.836
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.191,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.173,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.149,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.146,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.157,
+     "bodyScale": 0.851
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.138,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.15,
+     "bodyScale": 1.089
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.136,
+     "bodyScale": 0.843
+    },
+    "fails": []
+   }
+  }
+ },
+ "flashlight": {
+  "category": "Held items",
+  "label": "Flashlight",
+  "set": "Explorer",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.304,
+     "bodyScale": 0.937
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.242,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.279,
+     "bodyScale": 0.937
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.296,
+     "bodyScale": 0.935
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.308,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.345,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.311,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.303,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.317,
+     "bodyScale": 0.946
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.296,
+     "bodyScale": 0.937
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.315,
+     "bodyScale": 1.266
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.286,
+     "bodyScale": 0.937
+    },
+    "fails": []
+   }
+  }
+ },
+ "umbrella": {
+  "category": "Held items",
+  "label": "Umbrella",
+  "set": "Rainy day",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.116,
+     "bodyScale": 0.784
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.107,
+     "bodyScale": 0.759
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.109,
+     "bodyScale": 0.834
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.111,
+     "bodyScale": 0.765
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.122,
+     "bodyScale": 0.711
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.129,
+     "bodyScale": 0.797
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.12,
+     "bodyScale": 0.783
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.121,
+     "bodyScale": 0.783
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.12,
+     "bodyScale": 0.834
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.116,
+     "bodyScale": 0.773
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.12,
+     "bodyScale": 0.829
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.111,
+     "bodyScale": 0.808
+    },
+    "fails": []
+   }
+  }
+ },
+ "icecream": {
+  "category": "Held items",
+  "label": "Ice cream",
+  "set": "Summer",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.191,
+     "bodyScale": 0.899
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.134,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.181,
+     "bodyScale": 0.899
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.19,
+     "bodyScale": 0.894
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.162,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.224,
+     "bodyScale": 0.946
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.193,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.19,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.202,
+     "bodyScale": 0.907
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.188,
+     "bodyScale": 0.899
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.194,
+     "bodyScale": 1.19
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.18,
+     "bodyScale": 0.899
+    },
+    "fails": []
+   }
+  }
+ },
+ "spatula": {
+  "category": "Held items",
+  "label": "Spatula",
+  "set": "Chef",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.183,
+     "bodyScale": 0.84
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.189,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.172,
+     "bodyScale": 0.84
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.179,
+     "bodyScale": 0.832
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.23,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.211,
+     "bodyScale": 0.881
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.191,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.19,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.191,
+     "bodyScale": 0.847
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.181,
+     "bodyScale": 0.84
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.19,
+     "bodyScale": 1.083
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.171,
+     "bodyScale": 0.84
+    },
+    "fails": []
+   }
+  }
+ },
+ "mic": {
+  "category": "Held items",
+  "label": "Microphone",
+  "set": "Rock star",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.201,
+     "bodyScale": 0.92
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.204,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.189,
+     "bodyScale": 0.92
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.204,
+     "bodyScale": 0.92
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.186,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.227,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.205,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.201,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.211,
+     "bodyScale": 0.929
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.198,
+     "bodyScale": 0.92
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.207,
+     "bodyScale": 1.236
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.188,
+     "bodyScale": 0.92
+    },
+    "fails": []
+   }
+  }
+ },
+ "wand-star": {
+  "category": "Held items",
+  "label": "Star wand",
+  "set": "Pro: Magic",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.106,
+     "bodyScale": 0.818
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.101,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.098,
+     "bodyScale": 0.818
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.105,
+     "bodyScale": 0.812
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.133,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.118,
+     "bodyScale": 0.858
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.103,
+     "bodyScale": 0.937
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.101,
+     "bodyScale": 0.955
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.108,
+     "bodyScale": 0.826
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.103,
+     "bodyScale": 0.818
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.105,
+     "bodyScale": 1.049
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "grip": 0.099,
+     "bodyScale": 0.818
+    },
+    "fails": []
+   }
+  }
+ },
+ "bandana": {
+  "category": "Wraps",
+  "label": "Bandana + knot",
+  "set": "Explorer",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.993,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.968,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.003,
+     "seat": 0.94,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.996,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.986,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.99,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.977,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.964,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.002,
+     "seat": 0.984,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.995,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.002,
+     "seat": 0.945,
+     "bodyScale": 1.255
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.991,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "sash": {
+  "category": "Wraps",
+  "label": "Pageant sash (behind the letter)",
+  "set": "Party",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "belt": {
+  "category": "Wraps",
+  "label": "Belt + buckle",
+  "set": "Athlete",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.97,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.975,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.984,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.724,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.799,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.803,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.977,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "apron": {
+  "category": "Wraps",
+  "label": "Chef apron (letter on top)",
+  "set": "Chef",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.996,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.994,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.997,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.991,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.999,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.998,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "tie": {
+  "category": "Wraps",
+  "label": "Necktie (tucks behind the letter)",
+  "set": "Bookworm",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "lei": {
+  "category": "Wraps",
+  "label": "Flower lei",
+  "set": "Summer",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.002,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.006,
+     "seat": 0.983,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.002,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.993,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.003,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.004,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 0.98,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.004,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.001,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.005,
+     "seat": 1.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.002,
+     "seat": 1.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "cape-drape": {
+  "category": "Wraps",
+  "label": "Drape cape + collar",
+  "set": "Pro: Magic",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.771,
+     "back_visible": 0.165,
+     "bodyScale": 0.857
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.929,
+     "back_visible": 0.042,
+     "bodyScale": 0.94
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.767,
+     "back_visible": 0.172,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.767,
+     "back_visible": 0.178,
+     "bodyScale": 0.856
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.807,
+     "back_visible": 0.152,
+     "bodyScale": 0.941
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.76,
+     "back_visible": 0.18,
+     "bodyScale": 0.897
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.766,
+     "back_visible": 0.184,
+     "bodyScale": 0.943
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.821,
+     "back_visible": 0.145,
+     "bodyScale": 0.943
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.74,
+     "back_visible": 0.209,
+     "bodyScale": 0.86
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.774,
+     "back_visible": 0.168,
+     "bodyScale": 0.857
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.786,
+     "back_visible": 0.191,
+     "bodyScale": 1.143
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "seat": 1.0,
+     "back_hidden": 0.735,
+     "back_visible": 0.216,
+     "bodyScale": 0.867
+    },
+    "fails": []
+   }
+  }
+ },
+ "sneakers": {
+  "category": "Footwear",
+  "label": "High-tops",
+  "set": "Athlete",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.692
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.679
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.677
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.695
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.597
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.624
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.672
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.598
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.645
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.674
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291,
+     "shoeSeat": 0.643
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.635
+    },
+    "fails": []
+   }
+  }
+ },
+ "boots": {
+  "category": "Footwear",
+  "label": "Rain boots",
+  "set": "Rainy day",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.72
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.687
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.702
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.721
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.607
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.664
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.699
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.6
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.675
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.703
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291,
+     "shoeSeat": 0.626
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.668
+    },
+    "fails": []
+   }
+  }
+ },
+ "slippers": {
+  "category": "Footwear",
+  "label": "Bunny slippers",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.71
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.648
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.856
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.694
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.592
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.81
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.659
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.632
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.738
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.701
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291,
+     "shoeSeat": 0.794
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.615
+    },
+    "fails": []
+   }
+  }
+ },
+ "skates": {
+  "category": "Footwear",
+  "label": "Roller skates",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.773
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.638
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.857
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.709
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.605
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.833
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.668
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.947,
+     "shoeSeat": 0.643
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.792
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.767
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291,
+     "shoeSeat": 0.794
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96,
+     "shoeSeat": 0.674
+    },
+    "fails": []
+   }
+  }
+ },
+ "bird": {
+  "category": "Companions",
+  "label": "Bird on the head",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.899
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.807
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.896
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.816
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.828
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.881
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.818
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.886
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.241
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.901
+    },
+    "fails": []
+   }
+  }
+ },
+ "kitten": {
+  "category": "Companions",
+  "label": "Kitten at the feet",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.807
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.957
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.81
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.816
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.955
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.807
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.892
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.904
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.817
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.801
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.966
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.824
+    },
+    "fails": []
+   }
+  }
+ },
+ "puppy": {
+  "category": "Companions",
+  "label": "Puppy at the feet",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.807
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.957
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.81
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.816
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.955
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.807
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.892
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.904
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.817
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.801
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.966
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.824
+    },
+    "fails": []
+   }
+  }
+ },
+ "snail": {
+  "category": "Companions",
+  "label": "Snail on the shoulder",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.871
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.906
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.909
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "brows-happy": {
+  "category": "Brows + extras",
+  "label": "Happy brows",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "brows-worried": {
+  "category": "Brows + extras",
+  "label": "Worried brows",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "brows-determined": {
+  "category": "Brows + extras",
+  "label": "Determined brows",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "brows-surprised": {
+  "category": "Brows + extras",
+  "label": "Surprised brows",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "brows-cheeky": {
+  "category": "Brows + extras",
+  "label": "Cheeky brows",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "brows-sleepy": {
+  "category": "Brows + extras",
+  "label": "Sleepy brows",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "sweat": {
+  "category": "Brows + extras",
+  "label": "Sweat drop",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "tear": {
+  "category": "Brows + extras",
+  "label": "Happy tear",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "steam": {
+  "category": "Brows + extras",
+  "label": "Steam puff",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.925
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.943
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.9
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.885
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.877
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.922
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.949
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ },
+ "heart": {
+  "category": "Brows + extras",
+  "label": "Floating heart",
+  "set": "",
+  "bodies": {
+   "classic": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "tall": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "wide": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "blob": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "bean": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "star": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "drop": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "pear": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "cloud": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "chunky": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   },
+   "mini": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 1.291
+    },
+    "fails": []
+   },
+   "hex": {
+    "metrics": {
+     "face": 0.0,
+     "letter": 0.0,
+     "bodyScale": 0.96
+    },
+    "fails": []
+   }
+  }
+ }
+}

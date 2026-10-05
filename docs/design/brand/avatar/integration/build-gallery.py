@@ -46,11 +46,15 @@ img{max-width:100%;height:auto;display:block;border-radius:14px}
 table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)}
 .scroll{overflow-x:auto}.dark{background:#1e1630;border-radius:14px;padding:8px}
 ol li,ul li{margin:4px 0}.ok{color:var(--ok);font-weight:600}.muted{color:var(--sub)}
+.ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:8px 0 18px}
+.nitem{margin:0;background:var(--card);border-radius:16px;padding:8px}.nitem figcaption{font-size:14px;margin:6px 4px 2px;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
+.nitem .set{font-size:11px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:999px;padding:1px 8px}
+.nitem .ok{margin-left:auto;font-size:12px}.nitem .note{flex-basis:100%;margin:2px 0 0;font-size:13px}
 """
 h = [f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
      f'<title>Mascot Integration Options</title><style>{css}</style></head><body><main>']
 h.append('<h1>Mascot maker: no more bolt-on parts</h1><p class="lede">The answer for the backpack and the other '
-         'stickers, the rebuilt parts on every body, what comes next, and the Halloween header back on-model. '
+         'stickers, the rebuilt parts on every body, 37 new additions drawn tonight, and the Halloween header back on-model. '
          'Design only, nothing is wired into the apps.</p>')
 
 # 1
@@ -90,16 +94,56 @@ for pid, name, desc in PARTS:
              '<div class="after"><div class="tag">After</div>'
              f'<img loading="lazy" alt="{name} after" src="{uri(os.path.join(OUT, pid + "-after.webp"), 960, 80)}"></div></div>')
 # 3
-h.append('<h2>3. New additions: designed, waiting on ChatGPT</h2>'
-         '<p>Tonight\'s ChatGPT time went to the cast animations, so the new pieces are written up with their prompts in <code>avatar/new/QUEUE.md</code> and not drawn yet. '
-         'Each one is made for the rig above: held items for the fist, wraps for the wrap line, back/front pairs.</p>'
-         '<ul><li><b>Held (12):</b> coffee mug, book, balloon, trophy, big pencil, magnifier, umbrella, ice cream, spatula, microphone, flashlight, star wand (Pro)</li>'
-         '<li><b>Wraps (7):</b> bandana + knot, pageant sash, belt + buckle, chef apron, necktie, flower lei, drape cape + collar</li>'
-         '<li><b>Footwear (4):</b> high-tops, rain boots, bunny slippers, roller skates</li>'
-         '<li><b>Companions (4):</b> a tiny bird on the head, a kitten or puppy at the feet, a snail on the shoulder</li>'
-         '<li><b>Brows + extras (2 sheets):</b> six friendly brow pairs (no angry ones), sweat drop and happy tear</li>'
-         '<li><b>Personality sets:</b> Bookworm, Athlete, Chef, Explorer, Rock star, Rainy day; Pro: Magic</li>'
-         '<li><b>Poses, once the rig gets arm cut-outs:</b> wave, cheer, arms crossed</li></ul>')
+NEWFIT = json.load(open(os.path.join(HERE, 'fit-new.json'))) if os.path.exists(os.path.join(HERE, 'fit-new.json')) else {}
+NOUT = os.path.join(OUT, 'new')
+h.append('<h2>3. New additions (10-05)</h2>'
+         '<p class="lede">Drawn tonight in ChatGPT as separate pieces, then fitted to every body by the same rig: held items sit in the fist '
+         '(the hand is redrawn on top), wraps follow the line between the mouth and the letter, garments like the apron, tie, sash and a '
+         'belt on short bodies sit <b>under</b> the letter (the letter stays on top, like a print), shoes go over the feet with the legs tucked '
+         'into them, and companions sit on the head, the shoulder or the floor. Every piece was fit-checked on all 12 bodies; '
+         'the rows below show classic, tall and blob. Proposals only: the shipped parts file is untouched.</p>')
+NOTES = {
+    'balloon': 'Held by its string; the fist covers the knot.',
+    'tie': 'Tucks behind the letter, so on most bodies you mainly see the knot and the tie edges beside the letter.',
+    'apron': 'Hangs from the wrap line with the tie strip around the body; the letter reads printed on it. Tinted (red here).',
+    'sash': 'Diagonal from the left shoulder to the right hip, under the letter, slid down until it clears the face.',
+    'belt': 'Below the letter where there is room; on short bodies it runs under the lower letter, buckle beside it.',
+    'sneakers': 'Only the lower shoe is used (sole, toe, laces): the stubby feet would vanish in a full high-top.',
+    'boots': 'Cut low, like the sneakers.',
+    'brows-happy': 'Brows are drawn in code in the eyes\' own plum ink, so they stay crisp at every size. No angry pair.',
+}
+cats = {}
+for pid, v in NEWFIT.items():
+    cats.setdefault(v['category'], []).append((pid, v))
+for cat in ['Held items', 'Wraps', 'Footwear', 'Companions', 'Brows + extras']:
+    if cat not in cats:
+        continue
+    h.append(f'<h3>{cat}</h3>')
+    h.append('<div class="ngrid">')
+    for pid, v in cats[cat]:
+        bodies = v['bodies']
+        uns = [b for b, r in bodies.items() if r.get('unsupported')]
+        nf = sum(1 for r in bodies.values() if r['fails'])
+        ok = 12 - len(uns) - nf
+        tag = f'<span class="set">{v["set"]}</span>' if v.get('set') else ''
+        note = f'<p class="note">{NOTES[pid]}</p>' if pid in NOTES else ''
+        h.append(f'<figure class="nitem"><img loading="lazy" alt="{v["label"]} on three bodies" src="{uri(os.path.join(NOUT, pid + ".webp"), 660, 80)}">'
+                 f'<figcaption><b>{v["label"]}</b>{tag}<span class="ok">fit {ok}/{12 - len(uns)}</span>{note}</figcaption></figure>')
+    h.append('</div>')
+h.append('<h3>Personality sets ("wear the set")</h3><p>Each set is the new pieces plus parts the maker already has.</p><div class="ngrid">')
+SETNOTE = {'bookworm': 'Mug + book (both hands), round glasses (have), tie under the letter. The big pencil is a swap-in for the book.',
+           'athlete': 'Trophy, sweatband (have), high-tops, belt.', 'chef': 'Spatula, apron with the letter on top, chef hat (have).',
+           'explorer': 'Magnifier + flashlight, bucket hat (have), rebuilt backpack.', 'rock-star': 'Microphone, star glasses (have), rebuilt chain (not on wide or mini).',
+           'rainy-day': 'Umbrella + rain boots.', 'pro-magic': 'Star wand, wizard hat (have), drape cape.', 'summer': 'Ice cream + flower lei.'}
+for nm in ['bookworm', 'athlete', 'chef', 'explorer', 'rock-star', 'rainy-day', 'pro-magic', 'summer']:
+    f = os.path.join(NOUT, f'set-{nm}.webp')
+    if os.path.exists(f):
+        label = {'pro-magic': 'Pro: Magic', 'rock-star': 'Rock star', 'rainy-day': 'Rainy day'}.get(nm, nm.capitalize())
+        h.append(f'<figure class="nitem"><img loading="lazy" alt="{label} set" src="{uri(f, 660, 80)}"><figcaption><b>{label}</b><p class="note">{SETNOTE[nm]}</p></figcaption></figure>')
+h.append('</div>')
+h.append('<h3>Backpack straps on narrow bodies</h3><p>The straps now keep a clear gap around the eyes: on tall, drop, pear, bean and mini they get thinner '
+         'and ride farther out on the shoulder (row above, section 1). Tall is still the tightest fit.</p>')
+h.append('<p class="muted">Not built yet: the animated poses (wave, cheer, arms crossed), which need the body art\'s arms cut out.</p>')
 # 4
 h.append('<h2>4. Halloween header, back on-model</h2><p>The shipped header used ChatGPT redraws (C\'s mouth under the letter, the amber O with two arms, I without his sprout). '
          'The new row is the <b>real header art</b> with the costume layered on, and every face, letter and signature feature is protected.</p>')
@@ -108,7 +152,7 @@ for nm, label in (('strip-normal.png', 'Normal header'), ('strip-shipped.png', '
 h.append('<h3>Face check (eyes, mouth and letter box vs the canonical art; 0 = untouched)</h3><div class="scroll"><table><tr><th>Cast</th><th>Face diff</th><th>Features kept</th><th>Costume</th></tr>')
 for cid, v in hdr.items():
     h.append(f'<tr><td>{NAMES[cid]}</td><td>{v["faceRegionDiff"]}</td><td>{v["featuresUntouched"] * 100:.1f}%</td><td>{v["caption"]}</td></tr>')
-h.append('</table></div><p>Weakest: R\'s ghost sheet reads as wisps (one new back + hood piece is queued). S switched from the skeleton suit to the approved layered black cat, because a bone suit has to cover his body.</p>')
+h.append('</table></div><p>R\'s ghost (10-05): a full sheet back panel with a ragged hem and a hood behind his head, both new ChatGPT pieces, so he reads as a ghost now instead of wisps; nightcap and face untouched. S switched from the skeleton suit to the approved layered black cat, because a bone suit has to cover his body.</p>')
 h.append('</main></body></html>')
 p = os.path.join(AV, 'options.html')
 open(p, 'w').write('\n'.join(h))

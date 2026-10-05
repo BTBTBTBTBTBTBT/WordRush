@@ -21,7 +21,7 @@
   "alignIoU": 0.619,
   "costumePx": 0,
   "method": "layered on cast/app (costume pixels transferred from night-1, features protected)",
-  "caption": "Ghost: the sheet drapes around him from behind; his nightcap and sleepy face stay on top."
+  "caption": "Ghost: a full sheet hangs behind him with a ragged hem, and the hood drapes over his head behind his nightcap; his nightcap and sleepy face stay on top."
  },
  "d": {
   "faceRegionDiff": 0.0,

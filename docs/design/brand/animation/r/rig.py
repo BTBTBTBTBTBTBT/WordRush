@@ -10,7 +10,7 @@ from engine import Rig, motion
 
 r = Rig('r', HERE)
 feet = int(np.where((r.A > 250).any(1))[0].max())
-r.shadow(feet - 30, amax=200)
+r.shadow(feet - 80, amax=200, keep_edge=2)   # 10-05: higher start + keep the feet edge: no faint line under his feet in a hop
 gray = (r.sat < 40) & (r.lum > 110) & (r.lum < 230) & (r.A > 240)
 cap = (r.B > r.R + 25) & (r.A > 0)
 pom = r.largest(r.box(70, 320, 250, 500) & (r.lum > 195) & (r.A > 0))

@@ -6,8 +6,8 @@
   1024
  ],
  "restDiff": {
-  "meanAbsRGB": 0.017,
-  "meanAbsAlpha": 0.025,
+  "meanAbsRGB": 0.032,
+  "meanAbsAlpha": 0.049,
   "p99RGB": 0.0,
   "pixels": 280561,
   "note": "premultiplied, over the hero character area (alpha>0)"
@@ -29,8 +29,8 @@
   ]
  },
  "name": "I",
- "gesture": "Sprout sway + shy sway",
- "caption": "His sprout sways all the time; every 6 s he sways shyly, the sprout bobs and his cheeks warm up. Tap: he hops and laughs.",
+ "gesture": "Wave hello + sprout sway",
+ "caption": "His sprout sways all the time. Every 6 s his hand lets go of his cheek and swings up into a two-wave hello (the raised arm swings out from behind his side), his cheeks warm up, then it swings back. Tap: he hops and laughs.",
  "cycle": 6.0,
  "breath": {
   "origin": [
@@ -65,32 +65,27 @@
      0
     ],
     [
-     1.0,
+     1.1,
      0
     ],
     [
-     1.4,
+     1.5,
      1,
      "inOut"
     ],
     [
-     3.4,
+     3.3,
      1
     ],
     [
-     3.9,
+     3.8,
      0,
      "inOut"
     ]
    ]
   },
-  "shy": {
-   "osc": [
-    2.5,
-    1.25,
-    1.0
-   ],
-   "env": [
+  "tilt": {
+   "kf": [
     [
      0,
      0
@@ -100,13 +95,13 @@
      0
     ],
     [
-     1.4,
-     1,
+     1.5,
+     -2.2,
      "inOut"
     ],
     [
-     3.4,
-     1
+     3.3,
+     -2.2
     ],
     [
      3.9,
@@ -122,16 +117,16 @@
      0
     ],
     [
-     1.0,
+     1.2,
      0
     ],
     [
-     1.5,
+     1.7,
      1,
      "inOut"
     ],
     [
-     3.4,
+     3.3,
      1
     ],
     [
@@ -140,15 +135,232 @@
      "inOut"
     ]
    ]
+  },
+  "restRot": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     0.9,
+     0
+    ],
+    [
+     1.12,
+     36,
+     "in"
+    ],
+    [
+     3.6,
+     36
+    ],
+    [
+     4.05,
+     0,
+     "outBackSoft"
+    ]
+   ]
+  },
+  "restA": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     1.1150000000000002,
+     1
+    ],
+    [
+     1.12,
+     0,
+     "step"
+    ],
+    [
+     3.595,
+     0
+    ],
+    [
+     3.6,
+     1,
+     "step"
+    ]
+   ]
+  },
+  "bandA": {
+   "kf": [
+    [
+     0,
+     1
+    ],
+    [
+     0.9,
+     1
+    ],
+    [
+     1.02,
+     0,
+     "inOut"
+    ],
+    [
+     3.8000000000000003,
+     0
+    ],
+    [
+     4.05,
+     1,
+     "inOut"
+    ]
+   ]
+  },
+  "waveA": {
+   "kf": [
+    [
+     0,
+     0
+    ],
+    [
+     1.1150000000000002,
+     0
+    ],
+    [
+     1.12,
+     1,
+     "step"
+    ],
+    [
+     3.595,
+     1
+    ],
+    [
+     3.6,
+     0,
+     "step"
+    ]
+   ]
+  },
+  "waveTheta": {
+   "kf": [
+    [
+     0,
+     -40
+    ],
+    [
+     1.12,
+     -40
+    ],
+    [
+     1.52,
+     -6,
+     "outBack"
+    ],
+    [
+     3.32,
+     -6
+    ],
+    [
+     3.6,
+     -40,
+     "in"
+    ]
+   ]
+  },
+  "waveS": {
+   "kf": [
+    [
+     0,
+     0.82
+    ],
+    [
+     1.12,
+     0.82
+    ],
+    [
+     1.52,
+     1.0,
+     "out"
+    ],
+    [
+     3.32,
+     1.0
+    ],
+    [
+     3.6,
+     0.82,
+     "in"
+    ]
+   ]
+  },
+  "waveOsc": {
+   "osc": [
+    13,
+    0.9,
+    1.52
+   ],
+   "env": [
+    [
+     0,
+     0
+    ],
+    [
+     1.4200000000000002,
+     0
+    ],
+    [
+     1.62,
+     1,
+     "inOut"
+    ],
+    [
+     3.1199999999999997,
+     1
+    ],
+    [
+     3.32,
+     0,
+     "inOut"
+    ]
+   ]
   }
  },
  "layers": [
+  {
+   "img": "arm-wave",
+   "at": [
+    688,
+    548
+   ],
+   "pivotInImg": [
+    28,
+    189
+   ],
+   "rot": [
+    "waveTheta",
+    "waveOsc"
+   ],
+   "s": "waveS",
+   "alpha": "waveA"
+  },
   {
    "img": "base"
   },
   {
    "img": "blush",
    "alpha": "blushA"
+  },
+  {
+   "img": "arm-band",
+   "alpha": "bandA"
+  },
+  {
+   "img": "arm-rest",
+   "pivot": [
+    706,
+    560
+   ],
+   "rot": "restRot",
+   "alpha": "restA"
   },
   {
    "img": "sprout",
@@ -171,7 +383,27 @@
    500,
    959
   ],
-  "rot": "shy"
+  "rot": "tilt"
  },
- "patchAfter": "blush"
+ "patchAfter": "blush",
+ "checkTimes": [
+  0.9,
+  1.0,
+  1.08,
+  1.12,
+  1.16,
+  1.25,
+  1.4,
+  1.55,
+  2.0,
+  2.45,
+  3.0,
+  3.32,
+  3.45,
+  3.58,
+  3.62,
+  3.75,
+  3.9,
+  4.1
+ ]
 }
