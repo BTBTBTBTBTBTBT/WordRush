@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dress-up art (Edit Profile stage, Dressing Room tabs, Title Shelves) is partly looked up by
+     name (DressArt.tab, getIdentifier); keep it through resource shrinking. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/art_dress_*" />
