@@ -8,7 +8,9 @@ import WordociousCore
 /// content (and its ad banner) insets above it, while TabView keeps every tab's
 /// state alive.
 struct RootTabView: View {
-    @State private var tab: Tab = .home
+    /// SceneStorage (2026-10-05, Android rememberSaveable parity): when iOS kills the
+    /// backgrounded app, the relaunch restores the tab the player was on.
+    @SceneStorage("wordocious.root-tab") private var tab: Tab = .home
     // Leaderboard's navigation stack lives here so tab gestures can reset it:
     // re-tapping the active Leaderboard tab pops to root, and leaving the tab
     // clears it so returning shows the leaderboard (not the profile you left on).
@@ -46,7 +48,7 @@ struct RootTabView: View {
     /// D1 of the Stats + Friends redesign (founder, 2026-09-26, "option 2"): Profile and
     /// Records merge into Stats; Friends gets its own tab. Web bottom-nav.tsx / Android
     /// MainScreen carry the same four.
-    enum Tab: Hashable { case home, leaderboard, stats, friends }
+    enum Tab: String, Hashable { case home, leaderboard, stats, friends }
     struct SafariURLItem: Identifiable { let id = UUID(); let url: URL }
 
     init() {
@@ -392,6 +394,8 @@ struct RootTabView: View {
         }
         // A More Games / Puzzles link lands on Home, which scrolls to PUZZLES.
         .onReceive(deepLink.$puzzlesRequest) { req in if req != nil { tab = .home } }
+        // A tab restored from SceneStorage must be the router's current tab too.
+        .onAppear { router.current = Self.appTab(tab) }
         // A Friends push (/friends) lands on the Friends tab.
         .onReceive(deepLink.$friendsRequest) { req in if req != nil { tab = .friends } }
         // A pocket-game push (/friends/games/<id>) → that game's screen.

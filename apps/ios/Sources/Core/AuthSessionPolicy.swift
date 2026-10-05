@@ -53,4 +53,21 @@ public enum AuthSessionPolicy {
         let steps: [Double] = [5, 15, 30]
         return attempt < steps.count ? steps[max(attempt, 0)] : 60
     }
+
+    // MARK: Guest mode across app restarts (2026-10-05)
+
+    /// Whether a cold launch brings guest mode back: the player chose "Play without an
+    /// account" and nothing signed in since. A device that last ran signed in restores
+    /// that session instead; the guest flag never outranks it.
+    /// Same rule: Android `AuthSessionPolicy.restoresGuest`, web localStorage 'wordocious-guest'.
+    public static func restoresGuest(storedGuestFlag: Bool, hadSignedInSession: Bool) -> Bool {
+        storedGuestFlag && !hadSignedInSession
+    }
+
+    /// ContentView's gate: the app shell (not the sign-in screen) is shown for a signed-in
+    /// player, a guest, or while the last signed-in session is still restoring.
+    /// Same rule: Android `AuthSessionPolicy.showsApp`.
+    public static func showsApp(isAuthenticated: Bool, isGuest: Bool, isLoading: Bool, hadSession: Bool) -> Bool {
+        isAuthenticated || isGuest || (isLoading && hadSession)
+    }
 }

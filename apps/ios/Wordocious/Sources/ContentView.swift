@@ -20,7 +20,8 @@ struct ContentView: View {
         // instead of the loading skeleton. The home renders from cached/static
         // data and fills in as the session + profile load. If the restore turns
         // out to have no session (expired), the condition drops to AuthView.
-        if auth.isAuthenticated || auth.isGuest || (auth.isLoading && AuthService.hadPersistedSession) {
+        if AuthSessionPolicy.showsApp(isAuthenticated: auth.isAuthenticated, isGuest: auth.isGuest,
+                                     isLoading: auth.isLoading, hadSession: AuthService.hadPersistedSession) {
             RootTabView()
                 // First-run onboarding (ports the web WelcomeModal): shown once
                 // when a new account hasn't onboarded yet.

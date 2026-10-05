@@ -102,7 +102,26 @@ final class AuthService: ObservableObject {
     /// Guest mode — chose "Play without an account". Lets a signed-out user reach
     /// the app to play the daily single-player puzzle (Apple 5.1.1(v)). No session,
     /// so recording no-ops; account surfaces show their signed-out "Sign in" state.
-    @Published var isGuest = false
+    ///
+    /// 2026-10-05: PERSISTED (Android `GUEST_MODE`, web localStorage 'wordocious-guest').
+    /// It used to live only in memory, so when iOS killed the backgrounded app a guest
+    /// relaunched onto the sign-in screen. The stored choice is read synchronously as
+    /// the service is built (before ContentView's gate first renders — no sign-in
+    /// flash); every write (AuthView's "Play without an account", a real session
+    /// superseding it, sign-out) goes through `didSet`.
+    @Published var isGuest = AuthService.restoredGuest() {
+        didSet { if isGuest != oldValue { UserDefaults.standard.set(isGuest, forKey: AuthService.guestModeKey) } }
+    }
+
+    nonisolated static let guestModeKey = "wordocious.guest-mode"
+
+    /// A stored guest choice comes back unless the last run had a real session — that
+    /// session restores instead (AuthSessionPolicy.restoresGuest).
+    nonisolated private static func restoredGuest() -> Bool {
+        let d = UserDefaults.standard
+        return AuthSessionPolicy.restoresGuest(storedGuestFlag: d.bool(forKey: guestModeKey),
+                                               hadSignedInSession: d.bool(forKey: "wordocious.had-session"))
+    }
 
     // nonisolated: the client is an immutable, Sendable (thread-safe) SupabaseClient
     // created once, so it (and `shared`) are safe to reach from any context. This
