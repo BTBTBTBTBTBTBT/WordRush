@@ -84,7 +84,6 @@ class MainActivity : ComponentActivity() {
             } })
             return
         }
-        if (intent?.getStringExtra("dressDemo") == "btnharness") { setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent { WordociousTheme { com.wordocious.app.ui.BtnHarnessTemp() } } }); return }   // TEMP-BTN-HARNESS
         // DEBUG only: `--es dressDemo settings` shows Settings for the demo player as an admin (Season preview picker).
         if (com.wordocious.app.ui.DressDemo.isSettings(intent?.getStringExtra("dressDemo"))) {
             com.wordocious.app.ui.DressDemo.start(com.wordocious.app.ui.DressDoor.Stage, admin = true)
