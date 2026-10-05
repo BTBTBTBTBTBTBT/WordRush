@@ -261,7 +261,8 @@ struct VSLobbyView: View {
                 Button {
                     if locked { showPro = true } else { Haptics.tap(); mode = m }
                 } label: {
-                    GameTileSquare(accent: accent, selected: (free ? .duel : mode) == m, radius: 10, light: true) { chip in
+                    // Under a dark season the chips take the night surface (Android parity), else the light page's white wash.
+                    GameTileSquare(accent: accent, selected: (free ? .duel : mode) == m, radius: 10, light: !VsLobbyKit.darkSeason) { chip in
                         if let h = VsLobbyKit.home(m) { ModeIconView(icon: h.icon, accent: accent, box: chip) }
                     }
                     .opacity(locked ? 0.35 : 1)

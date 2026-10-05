@@ -44,10 +44,28 @@ struct SettingsView: View {
         ("forest", "Forest", "Green and earth tones"),
     ]
 
+    /// ART_SPEC §2: the whole-cast SETTINGS art (it carries the cast, so R's host spot is gone),
+    /// centered in a 44 pt bar with the close on the right.
+    private var settingsHeader: some View {
+        ZStack {
+            ArtTitle(.settings, maxWidth: 230).frame(maxHeight: 42)
+            HStack {
+                Spacer()
+                HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
+            }
+        }
+        .frame(height: 44)
+        .padding(.horizontal, 16)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 PageBackground(tint: .home)
+                // The header sits above the scroll (not over it): rows clip at its bottom
+                // edge, so nothing scrolls behind the SETTINGS art (wall shows through).
+                VStack(spacing: 0) {
+                settingsHeader
                 ScrollView {
                     // FINISH_SPEC BJ3: lazy — the sheet's presenting frame builds only the
                     // sections on screen (measured: the gear's open stalled 240–580 ms).
@@ -200,17 +218,9 @@ struct SettingsView: View {
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    // ART_SPEC §2: the whole-cast SETTINGS art (it carries the cast, so R's host spot is gone).
-                    ArtTitle(.settings, maxWidth: 230).frame(maxHeight: 42)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    HeaderCircleButton(.symbol("xmark"), size: 32, label: "Done") { dismiss() }
                 }
             }
+            .toolbar(.hidden, for: .navigationBar)
             .onChange(of: dailyReminder) { on in
                 if on {
                     Task {

@@ -12,6 +12,7 @@
 //   node scripts/web-perf-tour.mjs                         # https://wordocious.com
 //   node scripts/web-perf-tour.mjs http://localhost:3000   # a local `next start`
 //   ONLY=home,classic node scripts/web-perf-tour.mjs
+//   SEASON=halloween node scripts/web-perf-tour.mjs http://localhost:3000   # whole tour under the preview
 //
 // Measure a production build (`next build && next start`), never `next dev`.
 // Report: apps/web/.perf/perf-tour-<stamp>.md
@@ -109,8 +110,11 @@ async function step(name, holdMs, action) {
   await sleep(500);
 }
 
+// SEASON=halloween runs the whole tour under that season preview (every plain path gets ?season=).
+const SEASON = process.env.SEASON || '';
 async function go(path) {
-  await send('Page.navigate', { url: BASE + path });
+  const p = SEASON && !path.includes('?') ? `${path}?season=${SEASON}` : path;
+  await send('Page.navigate', { url: BASE + p });
   await sleep(4000);
 }
 const scrollBy = (dy) => send('Input.synthesizeScrollGesture', { x: 195, y: 500, yDistance: -dy, speed: 1600, gestureSourceType: 'touch' });

@@ -39,6 +39,10 @@ enum FamilyMenuInk {
     static let teal = Color(hex: 0x0D9488)
     /// The family danger tint (the same pink as a confirming Remove friend).
     static let danger = pink
+    /// Fixed light inks (web / Android parity): the menu is always the light lavender sheet,
+    /// so its text never takes a dark season's light ink (FriendsInk flips under Haunted glass).
+    static let heading = Color(hex: 0x3B1F6E)
+    static let sub = Color(hex: 0x7A6A95)
     static let rowHeight: CGFloat = 58
     static let rowGap: CGFloat = 8
 
@@ -68,10 +72,10 @@ struct FamilyActionMenu: View {
             HStack(spacing: 12) {
                 if let avatar = model.avatar { avatar }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.title).font(Brand.font(19, .black)).foregroundStyle(FriendsInk.heading)
+                    Text(model.title).font(Brand.font(19, .black)).foregroundStyle(FamilyMenuInk.heading)
                         .lineLimit(1).minimumScaleFactor(0.7)
                     if let s = model.subtitle {
-                        Text(s).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.rowSub).lineLimit(1)
+                        Text(s).font(Brand.font(12, .heavy)).foregroundStyle(FamilyMenuInk.sub).lineLimit(1)
                     }
                 }
                 .accessibilityElement(children: .combine)
@@ -112,7 +116,7 @@ struct FamilyActionMenu: View {
                 }
                 .accessibilityHidden(true)
                 Text(a.title).font(Brand.font(17, .black))
-                    .foregroundStyle(a.danger ? ink : FriendsInk.heading)
+                    .foregroundStyle(a.danger ? ink : FamilyMenuInk.heading)
                     .lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
             }
@@ -137,7 +141,8 @@ private struct FamilyActionMenuModifier<Item: Identifiable>: ViewModifier {
     @State private var pending: (() -> Void)?
 
     func body(content: Content) -> some View {
-        content.sheet(item: $item, onDismiss: {
+        // BJ10: an app-owned sheet soft-pops like the Pick a Friend picker it matches.
+        content.softSheet(item: $item, onDismiss: {
             let run = pending
             pending = nil
             run?()

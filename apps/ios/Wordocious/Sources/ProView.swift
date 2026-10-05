@@ -72,6 +72,9 @@ struct ProView: View {
             .softSheet(isPresented: $showAuth) { AuthView() }
             .proManageHandoff($showManage)
         }
+        // Pushed from a NavigationLink (VS lobby / friend page "See Pro"), the host stack's
+        // system back button would sit beside our own back circle: keep only ours.
+        .navigationBarBackButtonHidden(true)
         // FINISH_SPEC §AP: LET'S PLAY on Welcome to Pro takes the player back to where
         // they were — the Pro page closes itself behind it.
         .onReceive(ProWelcomeCenter.shared.$finishToken.dropFirst()) { _ in

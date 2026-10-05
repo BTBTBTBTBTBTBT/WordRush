@@ -159,6 +159,7 @@ struct FriendsPanelView: View {
         #if DEBUG
         .onReceive(NotificationCenter.default.publisher(for: FamilyActionMenuDemo.open)) { n in
             if (n.object as? String) == "friend" { menuFriend = FriendsService.friends.first }
+            if (n.object as? String) == "close" { menuFriend = nil }
         }
         #endif
         // §225: Unfriend confirmation — the mutation was only reachable from a

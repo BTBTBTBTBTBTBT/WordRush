@@ -54,7 +54,7 @@ enum PerfTour {
     }
 
     enum Sheet: String, Identifiable { case settings, help, strategy, words, quickPlay; var id: String { rawValue } }
-    enum Cover: String, Identifiable { case vsBot; var id: String { rawValue } }
+    enum Cover: String, Identifiable { case vsBot, vsLobby; var id: String { rawValue } }
 
     static let commands = PassthroughSubject<Command, Never>()
     static func send(_ c: Command) { commands.send(c) }
@@ -437,6 +437,9 @@ enum PerfTourDriver {
         await step("settings.close", hold: 0.9) { PerfTour.send(.sheet(nil)) }
 
         // MARK: Season preview (Halloween on vs off), Home scroll
+        // A tour launched under a preview (`-debug-season halloween`) returns to it at
+        // season.off, so the rest of the tour still measures the season.
+        let launchSeason = UserDefaults.standard.string(forKey: CastSkin.debugKey)
         await step("season.on", hold: 1.2) {
             UserDefaults.standard.set("halloween", forKey: CastSkin.debugKey); CastSkin.invalidate()
         }
@@ -446,7 +449,9 @@ enum PerfTourDriver {
         await step("season.leaderboardScroll") { await PerfDrive.scroll(to: 1); await PerfDrive.scroll(to: 0) }
         await step("season.toHome", hold: 1.2) { PerfTour.send(.selectTab(.home)) }
         await step("season.off", hold: 1.2) {
-            UserDefaults.standard.removeObject(forKey: CastSkin.debugKey); CastSkin.invalidate()
+            if let launchSeason { UserDefaults.standard.set(launchSeason, forKey: CastSkin.debugKey) }
+            else { UserDefaults.standard.removeObject(forKey: CastSkin.debugKey) }
+            CastSkin.invalidate()
         }
 
         // MARK: Dress-up (the Stage, the Dressing Room, the Title Shelves; signed-in only: `--demo`)
@@ -463,6 +468,12 @@ enum PerfTourDriver {
                 for _ in 0..<3 { PerfTour.send(.builderHop); await PerfDrive.sleep(0.7) }
             }
             await step("dress.roomClose", hold: 1.0) { DressUp.shared.request = nil }
+            if CastSkin.season != nil {
+                // The season's shelf (the Halloween items) while a season is on.
+                await step("dress.seasonShelfOpen", hold: 1.4) { DressUp.shared.open(.room(.season)) }
+                await step("dress.seasonShelfScroll") { await PerfDrive.scroll(to: 1); await PerfDrive.scroll(to: 0) }
+                await step("dress.seasonShelfClose", hold: 1.0) { DressUp.shared.request = nil }
+            }
             await step("dress.titlesOpen", hold: 1.4) { DressUp.shared.open(.titles) }
             await step("dress.titlesScroll") { await PerfDrive.scroll(to: 1); await PerfDrive.scroll(to: 0) }
             await step("dress.titlesClose", hold: 1.0) { DressUp.shared.request = nil }
@@ -607,6 +618,16 @@ enum PerfTourDriver {
                 PerfDrive.enter()
             }
             await step("vs.close", hold: 1.0) { PerfTour.send(.cover(nil)) }
+            await step("vs.lobbyOpen", hold: 1.4) { PerfTour.send(.cover(.vsLobby)) }
+            await step("vs.lobbyScroll") { await PerfDrive.scroll(to: 1); await PerfDrive.scroll(to: 0) }
+            await step("vs.lobbyClose", hold: 1.0) { PerfTour.send(.cover(nil)) }
+        }
+        // The family action menu (a friend's ••• on the Friends tab).
+        if !FriendsService.friends.isEmpty {
+            await step("menu.toFriends", hold: 1.2) { PerfTour.send(.selectTab(.friends)) }
+            await step("menu.open", hold: 1.2) { NotificationCenter.default.post(name: FamilyActionMenuDemo.open, object: "friend") }
+            await step("menu.close", hold: 0.9) { NotificationCenter.default.post(name: FamilyActionMenuDemo.open, object: "close") }
+            await step("menu.toHome", hold: 1.2) { PerfTour.send(.selectTab(.home)) }
         }
         await step("pocket.open", hold: 1.2) { PerfTour.send(.sheet(.quickPlay)) }
         await step("pocket.close", hold: 0.9) { PerfTour.send(.sheet(nil)) }
@@ -699,8 +720,11 @@ struct PerfTourHost: View {
                         FriendsQuickPlaySheet(friend: nil, kind: .ttt, onStarted: { _ in }, onVSBattle: { _ in }, onRaceMyRun: { _ in })
                     }
                 }
-                .fullScreenCover(item: $cover) { _ in
-                    NavigationStack { VSGameView(mode: .duel, intent: .bot(.opal)) }
+                .fullScreenCover(item: $cover) { c in
+                    switch c {
+                    case .vsBot: NavigationStack { VSGameView(mode: .duel, intent: .bot(.opal)) }
+                    case .vsLobby: NavigationStack { VSLobbyView() }
+                    }
                 }
         }
     }
