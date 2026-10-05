@@ -297,3 +297,19 @@ simply never dated.
 - Native achievement *display* names come from production's `/api/achievements` until the web
   deploys, so a Sudocious unlock toast may show the key. Unlock detection itself is native and works.
 - Android share is image + caption without the hosted `/s/` link (web and iOS upload theirs).
+
+## Content authoring rule: American English only (2026-10-05)
+
+Every generator, bank builder and prompt that writes puzzle content (Spyglass themes, Kindred groups,
+Crossword clues and answers, Codebreaker quotes, Muddle jokes, captions and alt text, Hubbub required words,
+Letter Ladder paths, ProperNoundle, Word of the Day, Classic/Six/Seven answers) follows these rules:
+
+- **Vocabulary:** American only (rain boots, not wellies; line, not queue; vest, not waistcoat; cart, not trolley;
+  Mom, not Mum; math, not maths; county fair, not village fete; vacation, not holiday abroad).
+- **Spelling:** American (-or, -er, -ize, single l: color, center, organize, traveled, gray, tire, curb).
+- **Dates and units:** month-first dates (October 5), US customary units (miles, pounds, Fahrenheit); never metric-only.
+- **Category fit:** every word must be something a typical American player instantly connects to the title as written.
+  No rain-adjacent words in "Rain Gear", no part names (TOGGLE), no jargon, no regional terms, no half of a two-word phrase.
+  If the words share something else, retitle; otherwise swap the word.
+- Guard: `apps/web/scripts/content-american.test.ts` (unseen puzzles + Spyglass pools). Spyglass fixes to shipped
+  dailies go through `apps/web/scripts/wordsearch/repair-future.mjs --from=<first unseen day>`, never a rebuild.

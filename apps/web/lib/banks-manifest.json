@@ -1,13 +1,13 @@
 {
   "hub": {
-    "h": "75771dcc17",
+    "h": "1736dcd83c",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 400,
     "extra": 200
   },
   "crossword": {
-    "h": "07855de1aa",
+    "h": "b84144d3c0",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 410,
@@ -44,14 +44,14 @@
     }
   },
   "wordsearch": {
-    "h": "d6536c05de",
+    "h": "46f25a1182",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 400,
     "extra": 150
   },
   "scramble": {
-    "h": "447dc4cba5",
+    "h": "ceeca96ac9",
     "version": 1,
     "epoch": "2026-09-23",
     "daily": 365,
