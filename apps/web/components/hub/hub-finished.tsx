@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { hubRank, hubRankThreshold, HUB_RANKS, HUB_SOLVED_RANK, type HubState } from '@wordle-duel/core';
+import { hubIsBonus, hubRank, hubRankThreshold, HUB_RANKS, HUB_SOLVED_RANK, type HubState } from '@wordle-duel/core';
 import { GameTray } from '@/components/ui/game-tray';
 import { pieceSrc } from '@/lib/art';
 import { hiveBox, hiveOffsets } from '@/lib/hive-layout';
@@ -13,13 +13,14 @@ export const HUB_ACCENT = '#c026d3';
 // other-device boards) and the leaderboard's Completed Today card, which must
 // not pull in the puzzle bank the game module imports (founder, 2026-09-29).
 
-export function HubRankBar({ state: s }: { state: HubState }) {
+/** `points: false` where a header already says "N/M pts" (the live board) — never twice. */
+export function HubRankBar({ state: s, points = true }: { state: HubState; points?: boolean }) {
   const rk = hubRank(s), name = HUB_RANKS[rk].name, next = rk < 9 ? hubRankThreshold(rk + 1, s.max) : null;
   return (
     <div className="w-full max-w-md mx-auto px-2">
       <div className="flex items-center justify-between text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
         <span className="font-black" style={{ color: HUB_ACCENT }}>{name}</span>
-        <span>{s.points} pts{next != null ? ` · ${next - s.points} to ${HUB_RANKS[rk + 1].name}` : ' · maximum'}</span>
+        <span>{points ? `${s.points} pts · ` : ''}{next != null ? `${next - s.points} to ${HUB_RANKS[rk + 1].name}` : 'maximum'}</span>
       </div>
       <div className="flex items-center gap-1 mt-1" role="progressbar" aria-valuenow={rk} aria-valuemin={0} aria-valuemax={9} aria-label={`Rank ${name}`}>
         {HUB_RANKS.map((r, i) => (
@@ -30,15 +31,21 @@ export function HubRankBar({ state: s }: { state: HubState }) {
   );
 }
 
+/** The small "BONUS" tag on a rarer word's chip: it scores but sits outside the N/M words count (Doug 10-05). */
+export function HubBonusTag() {
+  return <span aria-hidden="true" className="font-black tracking-wide" style={{ fontSize: 7.5, color: 'var(--color-text-muted)' }}>BONUS</span>;
+}
+
 /** Every word of the puzzle once it has ended: found ones solid (pangrams in the accent), the rest muted. */
 export function HubAllWordChips({ state: s }: { state: HubState }) {
   return (
     <>
       {[...s.words, ...s.bonusFound].sort().map((w) => (
-        <span key={w} className="text-[11px] font-bold px-2 py-0.5 rounded-full border" style={s.found.includes(w) || s.bonusFound.includes(w)
+        <span key={w} className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border"
+          aria-label={hubIsBonus(s.bonusFound, w) ? `${w}, bonus word` : undefined} style={s.found.includes(w) || s.bonusFound.includes(w)
           ? (s.pangrams.includes(w) ? { background: `${HUB_ACCENT}22`, borderColor: HUB_ACCENT, color: HUB_ACCENT } : { background: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)' })
           // A1: the words never found are muted tinted chips (no plain white).
-          : { ...softPill('#94a3b8', { bar: false }), color: 'var(--color-text-muted)' }}>{w}{s.pangrams.includes(w) ? ' ★' : ''}</span>
+          : { ...softPill('#94a3b8', { bar: false }), color: 'var(--color-text-muted)' }}>{w}{s.pangrams.includes(w) ? ' ★' : ''}{hubIsBonus(s.bonusFound, w) && !s.pangrams.includes(w) && <HubBonusTag />}</span>
       ))}
     </>
   );

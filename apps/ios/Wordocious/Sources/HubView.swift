@@ -234,7 +234,7 @@ struct HubView: View {
                 results.padding(.horizontal, 10)
             } else {
                 VStack(spacing: 8) {
-                    header
+                    header()
                     board
                 }
                 .padding(.horizontal, 10)
@@ -305,14 +305,18 @@ struct HubView: View {
         PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
     }
 
-    private var header: some View {
+    /// `counts: false` on results, where the result line carries the word count.
+    private func header(counts: Bool = true) -> some View {
         VStack(spacing: 4) {
             Text("HUBBUB").font(Brand.font(24, .black)).foregroundStyle(hubAccent)
                 .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.hub)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
-                Text("\(vm.state.found.count)/\(vm.state.words.count) words").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                Text("\(vm.state.points)/\(vm.state.max) pts").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                // The one "N/M words · pts" line (hubWordsLabel); results say it in the result line instead.
+                if counts {
+                    Text(hubWordsLabel(vm.state)).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    Text("\(vm.state.points)/\(vm.state.max) pts").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                }
                 if !vm.state.ended {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 2) {
@@ -327,7 +331,8 @@ struct HubView: View {
         }
     }
 
-    private var rankBar: some View {
+    /// `points: false` on the board, where the header already says "N/M pts".
+    private func rankBar(points: Bool = true) -> some View {
         let s = vm.state, rank = s.rank
         let next: String? = rank < 9 ? "\(hubRankThreshold(rank + 1, max: s.max) - s.points) to \(HUB_RANKS[rank + 1].name)" : "maximum"
         return VStack(spacing: 4) {
@@ -335,8 +340,8 @@ struct HubView: View {
                 Text(s.rankName).font(Brand.font(12, .black)).foregroundStyle(hubAccent)
                 Spacer()
                 HStack(spacing: 3) {
-                    Text("\(s.points)").softNumber(13)
-                    Text("pts · \(next ?? "")").font(Brand.caption(11)).foregroundStyle(FinishInk.secondary)
+                    if points { Text("\(s.points)").softNumber(13) }
+                    Text(points ? "pts · \(next ?? "")" : (next ?? "")).font(Brand.caption(11)).foregroundStyle(FinishInk.secondary)
                 }
             }
             HStack(spacing: 4) {
@@ -356,13 +361,19 @@ struct HubView: View {
 
     private func chip(_ w: String, dim: Bool = false) -> some View {
         let s = vm.state, pangram = s.pangrams.contains(w), revealed = s.revealed.contains(w)
-        // §A1: found words are tinted pills in the accent (pangrams stronger).
-        return Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .black))
-            .foregroundStyle(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.ink)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(PuzKit.face(hubAccent, pangram ? 0.2 : 0.09)))
-            .overlay(Capsule().stroke(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.line(hubAccent, 0.28), lineWidth: 1))
-            .opacity(dim ? 0.6 : 1)
+        let bonus = !pangram && hubIsBonus(s.bonusFound, w)
+        // §A1: found words are tinted pills in the accent (pangrams stronger); a rarer word
+        // (scores, outside the N/M words count) wears a small "BONUS" tag.
+        return HStack(spacing: 3) {
+            Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .black))
+            if bonus { Text("BONUS").font(Brand.font(7.5, .black)).tracking(0.5).foregroundStyle(Theme.textMuted) }
+        }
+        .accessibilityElement(children: .ignore).accessibilityLabel(bonus ? "\(w), bonus word" : pangram ? "\(w), pangram" : w)
+        .foregroundStyle(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.ink)
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background(Capsule().fill(PuzKit.face(hubAccent, pangram ? 0.2 : 0.09)))
+        .overlay(Capsule().stroke(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.line(hubAccent, 0.28), lineWidth: 1))
+        .opacity(dim ? 0.6 : 1)
     }
 
     /// §BI22: a pending "Starts with…" hint — a soft filled amber candy chip with a
@@ -457,7 +468,7 @@ struct HubView: View {
             let side = Self.tileSide(boardHeight: geo.size.height)
             let pending = s.hinted.filter { !s.found.contains($0) }
             VStack(spacing: Self.boardRowSpacing) {
-                rankBar
+                rankBar(points: false)  // the header already says "N/M pts"
                 // §BI9: the feedback popup sits on the entry line, just above the
                 // honeycomb — never over the HUBBUB title art or the board.
                 entryLine.gameFeedbackToast(vm.toast, seq: vm.toastSeq)
@@ -474,8 +485,8 @@ struct HubView: View {
                     capsule("Starts with…", "lightbulb", variant: .amber) { vm.hintStart() }
                     capsule("Reveal a word", "eye", variant: .pink) { vm.hintReveal() }
                 }
-                let total = s.found.count + s.bonusFound.count
-                Text("\(total) \(total == 1 ? "WORD" : "WORDS") · \(s.points) \(s.points == 1 ? "PT" : "PTS")").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                // A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
+                Text(HUB_FOUND_LABEL).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 // Found words: newest first in a wrapping flow that fills the lower area
                 // and scrolls once it overflows.
                 ScrollView(showsIndicators: false) {
@@ -504,14 +515,14 @@ struct HubView: View {
     /// going before the end, share, the daily CTAs / the Unlimited card); the full
     /// summary + breakdown below the dock.
     private var results: some View {
-        let s = vm.state, won = s.status == .won, secs = vm.displaySeconds
+        let s = vm.state, won = s.status == .won, secs = vm.displaySeconds, count = hubWordCount(s)
         return FinishedScreenLayout {
             VStack(spacing: 6) {
-                header
+                header(counts: false)
                 PuzFinishedHeadline(text: won ? (s.rank == 9 ? "Pandemonium — every word" : s.rankName) : "\(s.rankName) — below Hubbub", won: won)
-                PuzResultLine(won: won, items: [("\(s.found.count)/\(s.words.count)", "words"), (puzClock(secs), "time")],
+                PuzResultLine(won: won, items: [("\(count.found)/\(count.total)", "words"), (puzClock(secs), "time")],
                                     points: vm.points)
-                rankBar
+                rankBar()
             }
         } board: { size in
             ScrollView(showsIndicators: false) {
@@ -536,7 +547,8 @@ struct HubView: View {
                             keepGoing: s.ended ? nil : { vm.setResults(false) }, onShare: { _ in share() })
         } extras: {
             VStack(spacing: 10) {
-                Text("\(s.points)/\(s.max) pts · \(s.found.count)/\(s.words.count) words · \(vm.pangramsFound)/\(s.pangrams.count) pangram\(s.pangrams.count == 1 ? "" : "s") · \(timeText(secs))\(s.hintsUsed > 0 ? " · \(s.hintsUsed) hint\(s.hintsUsed == 1 ? "" : "s")" : "")")
+                // Words, points and time are already in the result line and rank bar above — never twice.
+                Text("\(vm.pangramsFound)/\(s.pangrams.count) pangram\(s.pangrams.count == 1 ? "" : "s")\(s.hintsUsed > 0 ? " · \(s.hintsUsed) hint\(s.hintsUsed == 1 ? "" : "s")" : "")")
                     .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .tintedPill(hubAccent)

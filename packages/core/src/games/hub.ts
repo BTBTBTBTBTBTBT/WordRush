@@ -135,6 +135,25 @@ export function createHubState(p: HubPuzzle, seed: string, startTime: number): H
   };
 }
 
+/**
+ * The ONE word count every Hubbub surface shows (header, result strip, share, overlay):
+ * core-list finds over the core list. Rarer words still score points (founder 2026-09-25)
+ * but never join this count; their chips carry a small "bonus" tag instead. The found-words
+ * strip under the controls is headed by HUB_FOUND_LABEL, a label with no second count
+ * (Doug, Android 2.7, 2026-10-05: the header said "8/31 words", the strip "18 WORDS").
+ */
+export function hubWordCount(s: { found: string[]; words: string[] }): { found: number; total: number } {
+  return { found: s.found.length, total: s.words.length };
+}
+export function hubWordsLabel(s: { found: string[]; words: string[] }): string {
+  const c = hubWordCount(s);
+  return `${c.found}/${c.total} words`;
+}
+/** The found-words strip's heading: a label only, never a count. */
+export const HUB_FOUND_LABEL = 'FOUND';
+/** A rarer accepted word: scores, but sits outside hubWordCount — its chip is tagged "bonus". */
+export function hubIsBonus(bonusFound: string[], w: string): boolean { return bonusFound.includes(w); }
+
 export function hubCentre(s: { letters: string }): string { return s.letters[0]; }
 export function hubRank(s: { points: number; max: number }): number { return hubRankIndex(s.points, s.max); }
 export function hubRankName(s: { points: number; max: number }): string { return HUB_RANKS[hubRank(s)].name; }

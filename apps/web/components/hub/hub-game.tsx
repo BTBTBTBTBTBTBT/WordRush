@@ -9,6 +9,7 @@ import { Clock, Delete, Shuffle, CornerDownLeft, Lightbulb, Eye, Flag } from 'lu
 import {
   hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, hubRank, hubGuessCount, hubBoardsSolved,
   hubIsPangram, hubWordScore, HUB_RANKS, HUB_SOLVED_RANK, HUB_TOTAL_BOARDS, generateDailySeed,
+  hubWordCount, hubWordsLabel, hubIsBonus, HUB_FOUND_LABEL,
   type HubState, type HubAction, type HubBank, type HubPuzzle, type HubReject,
 } from '@wordle-duel/core';
 import { bankSession } from '@/lib/bank-loader';
@@ -19,7 +20,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { GameGuideButton } from '@/components/game/game-guide-button';
 import { GameHostTitle } from '@/components/ui/mascot';
 import { SoundToggle } from '@/components/game/sound-toggle';
-import { HubRankBar, HubAllWordChips, HubHive, HUB_ACCENT } from './hub-finished';
+import { HubRankBar, HubAllWordChips, HubHive, HubBonusTag, HUB_ACCENT } from './hub-finished';
 import { GameTray } from '@/components/ui/game-tray';
 import { pieceSrc } from '@/lib/art';
 import { hiveBox, hiveOffsets } from '@/lib/hive-layout';
@@ -393,8 +394,9 @@ export function HubGame({ isDaily = false }: HubGameProps) {
 
   // A function of the state it draws so the other-device hive (rebuilt from the
   // matches row) shares the live board's rank bar (founder, 2026-09-28).
-  const renderRankBar = (s: HubState) => <HubRankBar state={s} />;
-  const rankBar = renderRankBar(state);
+  const renderRankBar = (s: HubState, points = true) => <HubRankBar state={s} points={points} />;
+  // On the board the header already says "N/M pts", so the rank bar keeps only "N to <next>".
+  const rankBar = renderRankBar(state, false);
 
   // Every word of the puzzle once it has ended: found ones solid (pangrams in the accent), the rest muted.
   const allWordChips = (s: HubState) => <HubAllWordChips state={s} />;
@@ -402,11 +404,14 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const wordChips = (words: string[], dim = false) => words.map((w) => {
     const pangram = state.pangrams.includes(w);
     const revealed = state.revealed.includes(w);
+    // A rarer word scores but sits outside the N/M words count: a small "BONUS" tag (Doug 10-05).
+    const bonus = !pangram && hubIsBonus(state.bonusFound, w);
     return (
-      <span key={w} className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${dim ? 'opacity-60' : ''}`}
+      <span key={w} className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${dim ? 'opacity-60' : ''}`}
+        aria-label={bonus ? `${w}, bonus word` : undefined}
         // A1: tinted chips — pangrams in the accent, revealed words violet, the rest brand lilac.
         style={pangram ? { ...softPill(HUB_ACCENT, { bar: false }), color: HUB_ACCENT } : revealed ? { ...softPill('#8b5cf6', { bar: false }), color: '#8b5cf6' } : { ...softPill('#7c3aed', { bar: false }), color: 'var(--color-text)' }}>
-        {w}{pangram ? ' ★' : ''}
+        {w}{pangram ? ' ★' : ''}{bonus && <HubBonusTag />}
       </span>
     );
   });
@@ -463,7 +468,8 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       {/* Found words — header, then a wrapping chip flow that fills the lower area and scrolls once it overflows. */}
       <div className="flex-1 min-h-0 flex flex-col w-full max-w-md mx-auto">
         <div ref={setFixed(3)} className="shrink-0 text-[10px] font-black tracking-wider pb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
-          {state.found.length + state.bonusFound.length} {state.found.length + state.bonusFound.length === 1 ? 'WORD' : 'WORDS'} · {state.points} {state.points === 1 ? 'PT' : 'PTS'}
+          {/* A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18). */}
+          {HUB_FOUND_LABEL}
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* Pending "Starts with…" hints lead the found-words flow (which already scrolls). As a row
@@ -484,12 +490,13 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   // left, Keep going (a won hunt that has not ended) right above the dock.
   // Every word (or the words found so far) and the breakdown sit under More.
   const pangramsFound = (s: HubState) => s.found.filter((w) => s.pangrams.includes(w)).length;
-  const hubFinishedBoard = (s: HubState) => (
+  // `words`: the other-device card has no strip, so it says the word count here; results don't (the strip does).
+  const hubFinishedBoard = (s: HubState, words = true) => (
     <div className="flex flex-col items-center gap-2 px-1 pb-1">
       <div className="w-full">{renderRankBar(s)}</div>
       <HubHive state={s} />
       <div className="text-[11px] font-extrabold text-center" style={{ color: 'var(--color-text-muted)' }}>
-        {s.found.length}/{s.words.length} words · {pangramsFound(s)}/{s.pangrams.length} pangram{s.pangrams.length === 1 ? '' : 's'} · {Math.floor((s.points * 100) / Math.max(1, s.max))}%
+        {words ? `${hubWordsLabel(s)} · ` : ''}{pangramsFound(s)}/{s.pangrams.length} pangram{s.pangrams.length === 1 ? '' : 's'} · {Math.floor((s.points * 100) / Math.max(1, s.max))}%
       </div>
     </div>
   );
@@ -508,10 +515,10 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     <>
       <PuzzleFinished
         strip={
-          <ResultStrip won={won} guesses={`${state.found.length}/${state.words.length}`} guessLabel="words" time={formatTime(scoredSeconds)} points={points}
+          <ResultStrip won={won} guesses={`${hubWordCount(state).found}/${hubWordCount(state).total}`} guessLabel="words" time={formatTime(scoredSeconds)} points={points}
             srText={`${won ? `${rankName}${rank === 9 ? ' — every word' : ''}` : `${rankName} — below Hubbub`}. ${state.points}/${state.max} pts · ${state.found.length}/${state.words.length} words · ${pangramsFound(state)}/${state.pangrams.length} pangram${state.pangrams.length === 1 ? '' : 's'} · ${formatTime(scoredSeconds)}${state.hintsUsed ? ` · ${state.hintsUsed} hint${state.hintsUsed === 1 ? '' : 's'}` : ''}`} />
         }
-        board={hubFinishedBoard(state)}
+        board={hubFinishedBoard(state, false)}
         beforeDock={!state.ended ? <CandyButton size="sm" color="purple" onClick={() => setView('board')}>Keep going</CandyButton> : undefined}
         dock={
           <FinishedDock currentMode="HUB" isDaily={mode === 'daily'} onShare={handleShare} copied={copied}
@@ -550,8 +557,12 @@ export function HubGame({ isDaily = false }: HubGameProps) {
         </GameHostTitle>
         <div className="flex justify-center items-center gap-2 mt-1 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
           {mode === 'daily' && <span>#{hubDailyNumber(getTodayLocal())}</span>}
-          <span>{state.found.length}/{state.words.length} words</span>
-          <span>{state.points}/{state.max} pts</span>
+          {/* The one "N/M words · pts" line (hubWordsLabel), on the board only: results carry the
+              count in their strip and the other-device card in its own summary — never twice. */}
+          {view === 'board' && !completion && !checking && <>
+            <span>{hubWordsLabel(state)}</span>
+            <span>{state.points}/{state.max} pts</span>
+          </>}
           {/* After a win the header clock keeps moving on the board ("· playing on" says why);
               once the puzzle ends it freezes on the recorded time. */}
           {won && (state.ended || view !== 'board')

@@ -81,6 +81,7 @@ import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 import com.wordocious.core.HUB_DAILY_EPOCH
+import com.wordocious.core.HUB_FOUND_LABEL
 import com.wordocious.core.HUB_MIN_WORD
 import com.wordocious.core.HUB_RANKS
 import com.wordocious.core.HUB_SOLVED_RANK
@@ -92,13 +93,16 @@ import com.wordocious.core.HubReject
 import com.wordocious.core.HubState
 import com.wordocious.core.HubStatus
 import com.wordocious.core.hubDailyNumber
+import com.wordocious.core.hubIsBonus
 import com.wordocious.core.hubIsPangram
 import com.wordocious.core.hubMatchRow
 import com.wordocious.core.hubPuzzleForDay
 import com.wordocious.core.hubPuzzleForSeed
 import com.wordocious.core.hubRankThreshold
 import com.wordocious.core.hubReduce
+import com.wordocious.core.hubWordCount
 import com.wordocious.core.hubWordScore
+import com.wordocious.core.hubWordsLabel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -389,15 +393,19 @@ fun HubScreen(
 }
 
 @Composable
-private fun HubHeader(session: HubSession) {
+private fun HubHeader(session: HubSession, counts: Boolean = true) {
     val tick by produceState(0, session.state.ended) { while (!session.state.ended) { kotlinx.coroutines.delay(1000); value++ } }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 6.dp)) {
         // The game's title art: lettering + host (ART_SPEC §10).
         com.wordocious.app.ui.HostedGameTitle("HUB") { Text("HUBBUB", fontSize = 24.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT, fontFamily = Nunito) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (session.isDaily) Text("#${session.dailyNumber}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text("${session.state.found.size}/${session.state.words.size} words", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text("${session.state.points}/${session.state.max} pts", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            // The one "N/M words · pts" line (hubWordsLabel). On results the strip carries the
+            // word count, so the header drops both rather than say them twice.
+            if (counts) {
+                Text(hubWordsLabel(session.state), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text("${session.state.points}/${session.state.max} pts", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
             if (!session.state.ended) {
                 @Suppress("UNUSED_EXPRESSION") tick
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -413,13 +421,13 @@ private fun HubHeader(session: HubSession) {
 }
 
 @Composable
-private fun RankBar(session: HubSession) {
+private fun RankBar(session: HubSession, points: Boolean = true) {
     val s = session.state; val rank = s.rank
     val next = if (rank < 9) "${hubRankThreshold(rank + 1, s.max) - s.points} to ${HUB_RANKS[rank + 1].first}" else "maximum"
     Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(s.rankName, fontSize = 12.sp, fontWeight = FontWeight.Black, color = HUB_ACCENT)
-            Text("${s.points} pts · $next", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(if (points) "${s.points} pts · $next" else next, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             for (i in HUB_RANKS.indices) Box(
@@ -432,24 +440,30 @@ private fun RankBar(session: HubSession) {
 
 @Composable
 private fun Chip(session: HubSession, w: String, dim: Boolean = false) =
-    HubChip(w, pangram = w in session.state.pangrams, revealed = w in session.state.revealed, dim = dim)
+    HubChip(w, pangram = w in session.state.pangrams, revealed = w in session.state.revealed, dim = dim, bonus = hubIsBonus(session.state.bonusFound, w))
 
-/** A found word: a soft tinted chip (A1); a pangram a glossy capsule in the accent (J3); a revealed word violet. */
+/** A found word: a soft tinted chip (A1); a pangram a glossy capsule in the accent (J3); a revealed word violet;
+ *  a rarer word (scores, outside the N/M words count) the plain chip with a small "BONUS" tag. */
 @Composable
-private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean = false) {
+private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean = false, bonus: Boolean = false) {
     val tone = if (revealed && !pangram) Color(0xFF8B5CF6) else HUB_ACCENT
     androidx.compose.foundation.layout.Row(
         Modifier.alpha(if (dim) 0.6f else 1f)
             .then(if (pangram) Modifier.glossyCapsule(HUB_ACCENT, glow = 0.6f) else Modifier.softChip(tone))
             .padding(start = 9.dp, end = 9.dp, top = 3.dp, bottom = if (pangram) 5.5.dp else 3.dp)
-            .then(if (pangram) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, pangram" } else Modifier),
+            .then(if (pangram) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, pangram" }
+                else if (bonus) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, bonus word" } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp),
     ) {
         Text(
             w, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
             color = if (pangram) Color.White else if (revealed) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
-            modifier = if (pangram) Modifier.clearAndSetSemantics { } else Modifier,
+            modifier = if (pangram || bonus) Modifier.clearAndSetSemantics { } else Modifier,
+        )
+        if (bonus && !pangram) Text(
+            "BONUS", fontSize = 7.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = WTheme.textMuted,
+            modifier = Modifier.clearAndSetSemantics { },
         )
         // AL addendum 2: a pangram wears the gold star art, not a ★ glyph.
         if (pangram) com.wordocious.app.ui.GlyphArtImage(com.wordocious.app.ui.GlyphArt.STAR, 12.dp)
@@ -509,7 +523,7 @@ private val HUB_ENTRY_H = 44.dp        // entry line min height (28 sp bold)
 private val HUB_CONTROL_ROW_H = 38.dp  // a small candy row (34 dp + its 4 dp lip)
 private val HUB_END_LINK_H = 38.dp     // "End puzzle and see answers" (a small candy too)
 private val HUB_ROW_GAP = 8.dp         // Column spacedBy between the stacked rows
-/** "N WORDS · M PTS" over the found-word flow (10 sp black caps). */
+/** The "FOUND" label over the found-word flow (10 sp black caps; no count, see hubWordsLabel). */
 private val HUB_FOUND_HEADER_H = 14.dp
 /**
  * The found-word flow's guaranteed height: two chip rows (a ~22 dp chip, 5 dp apart) plus a
@@ -538,7 +552,8 @@ private fun HubBoard(session: HubSession) {
         val side = Honeycomb.sideFor((maxWidth - trayW).value, (maxHeight - fixed - trayH).value).dp.coerceIn(60.dp, 112.dp)
         val band = side * Honeycomb.height() + trayH
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(HUB_ROW_GAP)) {
-            RankBar(session)
+            // The header already says "N/M pts" on the board.
+            RankBar(session, points = false)
             HubEntryLine(session)
             val o = session.outer.toList() + List(maxOf(0, 6 - session.outer.size)) { ' ' }
             val enabled = !s.ended
@@ -559,10 +574,10 @@ private fun HubBoard(session: HubSession) {
             // appearing moved everything under the hint capsules): they lead the found-words flow
             // below, which is already the flexible, scrolling area.
             val pending = s.hinted.filter { it !in s.found }
-            // "N OF M WORDS" heads the found-words area directly under the hint capsules;
-            // the chips wrap newest-first and fill the rest, scrolling once they overflow.
-            val total = s.found.size + s.bonusFound.size
-            Text("$total ${if (total == 1) "WORD" else "WORDS"} · ${s.points} ${if (s.points == 1) "PT" else "PTS"}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
+            // "FOUND" heads the found-words area directly under the hint capsules — a label, never a
+            // second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
+            // The chips wrap newest-first and fill the rest, scrolling once they overflow.
+            Text(HUB_FOUND_LABEL, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     for (w in pending) PendingHintChip(w)
@@ -618,11 +633,11 @@ private fun HubFinished(
         } else ChipRows(session, (s.found + s.bonusFound).sorted())
     }
     FinishedScreen(
-        header = { HubHeader(session) },
+        header = { HubHeader(session, counts = false) },
         strip = {
             ResultStrip(
                 won,
-                listOf(stripCount("${s.found.size}/${s.words.size}", "words", accent = HUB_ACCENT), stripTime(secs), stripPoints(session.points)),
+                listOf(hubWordCount(s).let { stripCount("${it.found}/${it.total}", "words", accent = HUB_ACCENT) }, stripTime(secs), stripPoints(session.points)),
                 srText = "$title. $note. ${s.points} of ${s.max} game points, ${s.found.size} of ${s.words.size} words, time ${timeText(secs)}, ${session.points} points",
             )
         },
@@ -706,9 +721,9 @@ internal fun HubFinishedBoard(r: com.wordocious.core.HubReconstruction) {
         // J1 + L the read-only hive: the honeycomb in its tray, purple when solved, slate when not.
         HubHoneycomb(r.letters[0], o, 46.dp, HUB_ACCENT, enabled = false, state = if (r.solved) TrayState.WON else TrayState.LOST, trayPadding = 8.dp) {}
         val words = (r.found + r.bonusFound).distinct().sorted()
-        Text("${words.size} ${if (words.size == 1) "WORD" else "WORDS"} FOUND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
+        Text("WORDS FOUND", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            for (w in words) HubChip(w, pangram = w.toSet().size == 7, revealed = w in r.revealed)
+            for (w in words) HubChip(w, pangram = w.toSet().size == 7, revealed = w in r.revealed, bonus = hubIsBonus(r.bonusFound, w))
         }
     }
 }

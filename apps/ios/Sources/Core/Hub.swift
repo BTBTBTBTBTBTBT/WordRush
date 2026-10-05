@@ -107,6 +107,19 @@ public struct HubState: Codable, Equatable {
     public func nextUnfound(skipHinted: Bool = false) -> String? { words.first { !found.contains($0) && (!skipHinted || !hinted.contains($0)) } }
 }
 
+/// The ONE word count every Hubbub surface shows (header, result strip, share, overlay):
+/// core-list finds over the core list. Rarer words still score points (founder 2026-09-25)
+/// but never join this count; their chips carry a small "bonus" tag instead. The found-words
+/// strip under the controls is headed by `HUB_FOUND_LABEL`, a label with no second count
+/// (Doug, Android 2.7, 2026-10-05: the header said "8/31 words", the strip "18 WORDS").
+public struct HubWordCount: Equatable { public let found: Int; public let total: Int }
+public func hubWordCount(_ s: HubState) -> HubWordCount { HubWordCount(found: s.found.count, total: s.words.count) }
+public func hubWordsLabel(_ s: HubState) -> String { let c = hubWordCount(s); return "\(c.found)/\(c.total) words" }
+/// The found-words strip's heading: a label only, never a count.
+public let HUB_FOUND_LABEL = "FOUND"
+/// A rarer accepted word: scores, but sits outside `hubWordCount` — its chip is tagged "bonus".
+public func hubIsBonus(_ bonusFound: [String], _ w: String) -> Bool { bonusFound.contains(w) }
+
 public enum HubAction: Equatable {
     case submit(String)
     case hintStart
