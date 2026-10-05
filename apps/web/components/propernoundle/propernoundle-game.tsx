@@ -830,7 +830,7 @@ function ProperNoundleGameInner({ isDaily = false }: ProperNoundleGameProps) {
         <div className="flex-1 min-h-0" aria-busy="true" />
       ) : gameStatus === 'playing' ? (
         <>
-          {/* The clue slot is ALWAYS here at two lines (empty until Clue): appearing in the flow,
+          {/* The clue slot is ALWAYS here at three lines (empty until Clue): appearing in the flow,
               a multi-line clue shrank the board (lib/hint-layout.ts). Tap it for the whole clue. */}
           <ClueSlot clue={hints.hint} />
 

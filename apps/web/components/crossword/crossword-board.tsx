@@ -33,7 +33,7 @@ interface CellMotion { kind: 'lock' | 'hint'; delay: number; seq: number }
  * The grid, always centered (§13 round 11), on the shared game tray
  * (FINISH_SPEC L): a sparse criss-cross of B1 glossy tiles (J3); blocks are
  * simply absent (the tray shows through, no grid lines). The letter is centered
- * exactly like a Classic tile; the clue number is a small soft badge in the
+ * exactly like a Classic tile; the clue number is a small superscript inside the
  * top-left corner. Checked-right letters are purple (they turn over when a
  * Check locks them), revealed letters the hint violet (gold glow as they land),
  * wrong letters red ink + a shake; the active entry wears a lilac wash and the
@@ -115,6 +115,7 @@ export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, ac
               data-s={look}
               data-wash={inActive ? 'true' : undefined}
               data-sel={isSel ? 'true' : undefined}
+              data-num={n === undefined ? undefined : cell !== undefined && cell < 26 ? 'small' : 'true'}
               data-wrong={wrong ? 'true' : undefined}
               style={{
                 ['--gt-font' as string]: font,

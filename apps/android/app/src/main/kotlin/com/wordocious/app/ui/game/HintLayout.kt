@@ -25,21 +25,32 @@ object HintLayout {
     fun countdownReserve(label: String): String = label.map { if (it.isDigit()) '8' else it }.joinToString("")
 
     // ── ProperNoundle clue slot ──
+    // Doug (Android, 10-05): the clue read as ONE line ending "His…". The slot was exactly two line
+    // heights, so the Text's own font metrics overflowed it and Compose ellipsized at line one. The clue
+    // is now 13 sp, three lines (four on tall screens), in a slot with a little slack; the board gives
+    // up that height for good (the slot is always reserved, so revealing the clue still never moves it).
 
-    /** The clue under the header is clamped to this many lines (tap opens the full clue). */
-    const val CLUE_LINES = 2
-    /** Line height of the 12 sp clue (the theme's 1.3 em), in sp. */
-    const val CLUE_LINE_SP = 12f * 1.3f
+    /** Font size of the clue (sp). */
+    const val CLUE_SP = 13f
+    /** Line height of the clue (1.3 em), in sp. */
+    const val CLUE_LINE_SP = CLUE_SP * 1.3f
     /** Space above the clue text. */
     const val CLUE_TOP_PAD = 4f
+    /** Slack under the last line so font metrics never push a line out of the slot. */
+    const val CLUE_SLACK = 4f
+    /** Screens at least this tall (dp) get a fourth clue line. */
+    const val CLUE_TALL_SCREEN_DP = 760
+
+    /** Lines the clue wraps to before it ellipsizes (tap opens the whole clue). */
+    fun clueLines(screenHeightDp: Int): Int = if (screenHeightDp >= CLUE_TALL_SCREEN_DP) 4 else 3
 
     /**
-     * The clue slot's height (dp) for a clue line [lineDp] dp tall ([CLUE_LINE_SP] at the
-     * phone's font scale). It does NOT depend on [clue]: the slot is always present (empty
-     * when idle), so revealing the Clue never takes height from the board.
+     * The clue slot's height (dp) for a clue line [lineDp] dp tall ([CLUE_LINE_SP] at the phone's
+     * font scale). It does NOT depend on [clue]: the slot is always present (empty when idle), so
+     * revealing the Clue never takes height from the board.
      */
     @Suppress("UNUSED_PARAMETER")
-    fun clueSlotHeight(lineDp: Float, clue: String? = null): Float = CLUE_TOP_PAD + lineDp * CLUE_LINES
+    fun clueSlotHeight(lineDp: Float, clue: String? = null, lines: Int = 3): Float = CLUE_TOP_PAD + lineDp * lines + CLUE_SLACK
 
     // ── Kindred ──
 

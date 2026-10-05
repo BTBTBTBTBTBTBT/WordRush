@@ -261,7 +261,7 @@ export function VsProperNoundle({
         />
       </div>
 
-      {/* The clue slot is ALWAYS here at two lines (empty until Clue), on ProperNoundle's red
+      {/* The clue slot is ALWAYS here at three lines (empty until Clue), on ProperNoundle's red
           wash: appearing in the flow, a multi-line clue shrank the board. Tap it for the whole clue. */}
       <ClueSlot clue={hints.hint} />
 

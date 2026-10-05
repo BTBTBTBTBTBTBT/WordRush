@@ -248,10 +248,11 @@ fun HintCandy(
         ) {
             Box(Modifier.size(1.dp, height))
             Icon(icon, null, tint = color.bottom, modifier = Modifier.size(14.dp))
-            Text(
+            // Shrink to fit (cast button rule: never below 11 sp) instead of clipping to "Clue u…".
+            com.wordocious.app.ui.FitText(
                 usedLabel, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 0.02.em,
                 color = if (WTheme.isDark) WTheme.text else FinishInk.softNumber,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, fontFamily = Nunito,
+                fontFamily = Nunito, minScale = 11f / 13f,
             )
         }
     }

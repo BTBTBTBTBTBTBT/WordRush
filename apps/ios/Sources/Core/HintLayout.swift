@@ -36,7 +36,11 @@ public enum HintLayout {
         return count > 99 ? "99+" : String(count)
     }
 
-    /// ProperNoundle's clue slot: always two lines tall (empty until the Clue hint
-    /// lands); a longer clue is clamped and opens in full on tap.
-    public static let noundleClueLines = 2
+    /// ProperNoundle's clue slot: always three lines tall, four on tall screens (empty
+    /// until the Clue hint lands); a longer clue is clamped and opens in full on tap.
+    /// Doug 10-05 (Android): two lines cut a Wikipedia clue at "His…". Android
+    /// HintLayout.clueLines / web CLUE_SLOT match.
+    public static let noundleClueTallScreen: Double = 760
+    public static let noundleClueFontSize: Double = 13
+    public static func noundleClueLines(screenHeight: Double) -> Int { screenHeight >= noundleClueTallScreen ? 4 : 3 }
 }

@@ -25,7 +25,7 @@ describe('ProperNoundle clue slot', () => {
     expect(clueSlotHeight('')).toBe(CLUE_SLOT_PX);
     expect(clueSlotHeight('A short clue')).toBe(CLUE_SLOT_PX);
     expect(clueSlotHeight('A very long Wikipedia clue '.repeat(20))).toBe(CLUE_SLOT_PX);
-    expect(CLUE_SLOT_PX).toBe(40);
+    expect(CLUE_SLOT_PX).toBe(59); // three 17 px lines (Doug 10-05: two cut the clue short)
   });
 });
 

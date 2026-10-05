@@ -634,6 +634,8 @@ struct GlossyTile: View {
     var height: CGFloat? = nil
     /// Letter size as a fraction of the tile's shorter side.
     var letterScale: CGFloat = 0.56
+    /// Nudges the letter off center (a crossword cell's letter steps clear of its clue number).
+    var letterOffset: CGSize = .zero
     /// An animated glow around the face (reveal bloom, hint pulse).
     var glow: Color = .clear
     var glowAmount: CGFloat = 0
@@ -672,6 +674,7 @@ struct GlossyTile: View {
                         .shadow(color: st.letterShadow, radius: s * 0.02, x: 0, y: s * 0.03)
                         .lineLimit(1).minimumScaleFactor(0.5)
                         .frame(width: width, height: h - lip)
+                        .offset(letterOffset)
                 }
             }
             .frame(width: width, height: h - lip)

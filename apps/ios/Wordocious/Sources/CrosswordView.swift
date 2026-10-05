@@ -85,9 +85,8 @@ final class CrosswordVM: ObservableObject {
     }
     /// The entry the cursor is on in the current direction (else whichever passes through the cell).
     var activeEntry: CrosswordEntry? {
-        guard let sel = selected, !isFinished else { return nil }
-        let here = crosswordEntriesAt(state, cell: sel)
-        return here.first(where: { $0.dir == dir }) ?? here.first
+        guard !isFinished else { return nil }
+        return crosswordActiveEntry(state, cell: selected, dir: dir)
     }
     var activeCells: [Int] { activeEntry.map { crosswordEntryCells(state, $0) } ?? [] }
     /// Clue number shown at each entry's first cell.
@@ -158,10 +157,7 @@ final class CrosswordVM: ObservableObject {
         guard !isFinished, Array(state.solution)[cell] != CROSSWORD_BLOCK else { return }
         SoundManager.shared.playKeyTap()
         let here = crosswordEntriesAt(state, cell: cell)
-        if cell == selected {
-            if here.count > 1 { dir = dir == .across ? .down : .across }
-            return
-        }
+        if cell == selected { dir = crosswordToggleDir(state, cell: cell, dir: dir); return }
         if !here.isEmpty, !here.contains(where: { $0.dir == dir }) { dir = here[0].dir }
         selected = cell
     }
@@ -174,7 +170,8 @@ final class CrosswordVM: ObservableObject {
         selected = cells.first(where: { fill[$0] == CROSSWORD_EMPTY }) ?? cells.first
         showClues = false  // BI18: a picked clue goes back to the grid
     }
-    func toggleDirection() { guard !isFinished else { return }; SoundManager.shared.playKeyTap(); dir = dir == .across ? .down : .across }
+    /// The clue bar / Space: flips only where Across and Down both pass through the cursor's cell.
+    func toggleDirection() { guard !isFinished else { return }; SoundManager.shared.playKeyTap(); dir = crosswordToggleDir(state, cell: selected, dir: dir) }
     /// Arrow keys on a hardware keyboard (web crossword-game keydown): hop to
     /// the next open cell that way, skipping blocks; direction follows the arrow.
     func moveCursor(dr: Int, dc: Int) {
@@ -189,22 +186,11 @@ final class CrosswordVM: ObservableObject {
         }
     }
 
-    /// After typing: the next open cell in the active entry, else the next unfinished entry's first empty cell.
+    /// After typing (core crosswordCursorAfterType): the typed entry owns the direction until it is complete,
+    /// so a cell that starts another word never turns it (Doug 10-05: 1-Across ran down 2-Down).
     private func advance(from: Int, entry: CrosswordEntry?) {
-        guard let entry else { return }
-        let s = state, fill = Array(s.fill), locked = Array(s.locked)
-        let cells = crosswordEntryCells(s, entry)
-        let k = cells.firstIndex(of: from) ?? -1
-        if let nextIn = cells.dropFirst(k + 1).first(where: { fill[$0] == CROSSWORD_EMPTY || locked[$0] == "0" }) { selected = nextIn; return }
-        let order = s.entries
-        guard let idx = order.firstIndex(where: { $0.n == entry.n && $0.dir == entry.dir }) else { return }
-        for step in 1...order.count {
-            let e = order[(idx + step) % order.count]
-            if crosswordEntrySolved(s, e) { continue }
-            let ec = crosswordEntryCells(s, e)
-            dir = e.dir; selected = ec.first(where: { fill[$0] == CROSSWORD_EMPTY }) ?? ec.first
-            return
-        }
+        guard let next = crosswordCursorAfterType(state, from: from, entry: entry) else { return }
+        dir = next.dir; selected = next.cell
     }
 
     // MARK: - Actions
@@ -237,14 +223,15 @@ final class CrosswordVM: ObservableObject {
         let cells = activeCells
         if let k = cells.firstIndex(of: sel), k > 0 {
             let prev = cells[k - 1]
+            if let e = activeEntry { dir = e.dir }
             selected = prev
             if locked[prev] == "0" { dispatch(.clear(cell: prev)) }
         }
     }
     /// ENTER jumps to the next unfinished entry.
     func nextEntry() {
-        guard !isFinished, let entry = activeEntry, let last = activeCells.last else { return }
-        advance(from: last, entry: entry)
+        guard !isFinished, let entry = activeEntry, let next = crosswordNextEntryCursor(state, entry: entry) else { return }
+        dir = next.dir; selected = next.cell
     }
     func check() {
         guard !isFinished else { return }
@@ -644,10 +631,12 @@ struct CrosswordGridView: View {
         // gold ring when revealed, red when a Check just cleared it.
         let face: GlossyFace = wrong ? .bad : (revealed || locked) ? .correct : (letter.isEmpty ? .empty : .typed)
         let radius = side * 0.22
-        let badge = max(8, side * 0.3)
+        // Doug / founder 10-05: the number sits fully inside the corner; a numbered cell's letter steps clear of it.
+        let nudge = number == nil ? (scale: 1.0, dx: 0.0, dy: 0.0) : CrosswordCellSpec.numberedGlyph(cell: Double(side))
         return Button { vm.selectCell(i) } label: {
             ZStack(alignment: .topLeading) {
-                GlossyTile(face: face, letter: letter, width: side, letterScale: side < 26 ? 0.56 : 0.5,
+                GlossyTile(face: face, letter: letter, width: side, letterScale: (side < 26 ? 0.56 : 0.5) * CGFloat(nudge.scale),
+                           letterOffset: CGSize(width: side * CGFloat(nudge.dx), height: side * CGFloat(nudge.dy)),
                            glowAmount: revealed ? 0.85 : 0, goldRing: revealed)
                     .modifier(TypePop(letter: (locked || revealed) ? "" : letter, size: CGSize(width: side, height: side)))
                 // The active entry wears a soft accent wash over its tiles.
@@ -658,15 +647,14 @@ struct CrosswordGridView: View {
                         .allowsHitTesting(false)
                 }
                 if let number {
-                    // The clue number as a small soft badge in the corner.
-                    Text("\(number)").font(Brand.fixedFont(max(6.5, side * 0.2), .black))
-                        .foregroundStyle(FinishInk.softNumber)
-                        .lineLimit(1).minimumScaleFactor(0.6)
-                        .frame(minWidth: badge, minHeight: badge * 0.86)
-                        .padding(.horizontal, 1)
-                        .background(Capsule().fill(Color(hex: 0xF5EEFF).opacity(0.94)))
-                        .overlay(Capsule().strokeBorder(Color(hex: 0xC4B5FD), lineWidth: 0.75))
-                        .offset(x: -side * 0.08, y: -side * 0.1)
+                    // The clue number: a small muted superscript fully inside the top-left corner (no chip on the
+                    // border); the cursor ring is drawn outside the tile, so it never covers it.
+                    let inset = CGFloat(CrosswordCellSpec.inset(cell: Double(side)))
+                    Text("\(number)").font(Brand.fixedFont(CGFloat(CrosswordCellSpec.numberSize(cell: Double(side))), .black))
+                        .foregroundStyle(face == .correct ? Color.white.opacity(0.85) : cwPurple.opacity(0.72))
+                        .lineLimit(1).fixedSize()
+                        .padding(.leading, inset).padding(.top, inset * 0.7)
+                        .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
             }

@@ -143,6 +143,63 @@ fun crosswordGuessCount(checks: Int): Int = minOf(checks, CROSSWORD_MAX_CHECKS) 
 /** True when every cell of the entry is filled correctly. */
 fun crosswordEntrySolved(s: CrosswordState, e: CrosswordEntry): Boolean = crosswordEntryCells(s, e).all { i -> s.fill[i] == s.solution[i] }
 
+// ── Cursor (port of crossword.ts crosswordActiveEntry / crosswordToggleDir / crosswordCursorAfterType) ──
+// Doug (Android, 2026-10-05): typing 1-Across, the letter in the cell where 2-Down starts turned the rest of
+// the word down 2-Down. The direction could go stale (the clue fell back to the cell's only entry but kept the
+// old direction), so the first shared cell re-read it. The entry being typed owns the direction until complete.
+
+/** A cursor position: the cell and the direction ("A" / "D") it travels. */
+data class CrosswordCursor(val cell: Int, val dir: String)
+
+/** The entry the cursor is in: the one running [dir] through [cell], else whichever passes through it. */
+fun crosswordActiveEntry(s: CrosswordState, cell: Int?, dir: String): CrosswordEntry? {
+    if (cell == null) return null
+    val here = crosswordEntriesAt(s, cell)
+    return here.firstOrNull { it.dir == dir } ?: here.firstOrNull()
+}
+
+/** Tap-to-toggle: flips Across/Down only where both pass through [cell]; otherwise the cell's own direction. */
+fun crosswordToggleDir(s: CrosswordState, cell: Int?, dir: String): String {
+    if (cell == null) return dir
+    val here = crosswordEntriesAt(s, cell)
+    if (here.isEmpty()) return dir
+    val other = if (dir == "A") "D" else "A"
+    return if (here.any { it.dir == other }) other else here[0].dir
+}
+
+/**
+ * Where the cursor goes after a letter lands in [from] while typing [entry] ([s] already holds the letter):
+ * the next unlocked cell of the SAME entry (a cell that starts another word never turns it); at the word's end
+ * its first still-empty cell; only when the word is complete, [crosswordNextEntryCursor]. Null = stay.
+ */
+fun crosswordCursorAfterType(s: CrosswordState, from: Int, entry: CrosswordEntry?): CrosswordCursor? {
+    if (entry == null) return null
+    val cells = crosswordEntryCells(s, entry)
+    val k = cells.indexOf(from)
+    cells.drop(k + 1).firstOrNull { s.locked[it] != '1' }?.let { return CrosswordCursor(it, entry.dir) }
+    cells.firstOrNull { s.fill[it] == CROSSWORD_EMPTY }?.let { return CrosswordCursor(it, entry.dir) }
+    return crosswordNextEntryCursor(s, entry)
+}
+
+/** Enter / a finished word: the next entry with an empty cell (same direction, then the other, wrapping), else the next unsolved one. */
+fun crosswordNextEntryCursor(s: CrosswordState, entry: CrosswordEntry): CrosswordCursor? {
+    val same = s.entries.filter { it.dir == entry.dir }
+    val other = s.entries.filter { it.dir != entry.dir }
+    val at = same.indexOfFirst { it.n == entry.n }
+    val order = same.drop(at + 1) + other + same.take(at + 1)
+    val isSelf = { e: CrosswordEntry -> e.n == entry.n && e.dir == entry.dir }
+    for (e in order) {
+        if (isSelf(e)) continue
+        crosswordEntryCells(s, e).firstOrNull { s.fill[it] == CROSSWORD_EMPTY }?.let { return CrosswordCursor(it, e.dir) }
+    }
+    for (e in order) {
+        if (isSelf(e)) continue
+        val ec = crosswordEntryCells(s, e)
+        if (ec.any { s.fill[it] != s.solution[it] }) return CrosswordCursor(ec[0], e.dir)
+    }
+    return null
+}
+
 private fun cellOk(s: CrosswordState, cell: Int): Boolean = cell >= 0 && cell < s.solution.length && s.solution[cell] != CROSSWORD_BLOCK
 private fun rc(s: CrosswordState, cell: Int): String = "${cell / s.w},${cell % s.w}"
 

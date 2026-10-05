@@ -15,7 +15,20 @@ class HintLayoutTest {
             val idle = HintLayout.clueSlotHeight(lineDp, clue = null)
             assertEquals(idle, HintLayout.clueSlotHeight(lineDp, clue = "Category: Music"), 0f)
             assertEquals(idle, HintLayout.clueSlotHeight(lineDp, clue = longClue), 0f)
-            assertEquals(HintLayout.CLUE_TOP_PAD + lineDp * HintLayout.CLUE_LINES, idle, 0.001f)
+            assertEquals(HintLayout.CLUE_TOP_PAD + lineDp * 3 + HintLayout.CLUE_SLACK, idle, 0.001f)
+        }
+    }
+
+    @Test
+    fun propernoundle_clue_wraps_three_lines_and_four_on_tall_screens() {
+        // Doug 10-05: the clue read as one line ("His…"). It wraps to 3 lines, 4 on tall phones.
+        assertEquals(3, HintLayout.clueLines(640))
+        assertEquals(3, HintLayout.clueLines(HintLayout.CLUE_TALL_SCREEN_DP - 1))
+        assertEquals(4, HintLayout.clueLines(HintLayout.CLUE_TALL_SCREEN_DP))
+        assertTrue(HintLayout.CLUE_SP >= 13f)
+        // The slot always has room for every line plus slack, at any font scale.
+        for (lineDp in listOf(16.9f, 21.97f, 33.8f)) for (lines in 3..4) {
+            assertTrue(HintLayout.clueSlotHeight(lineDp, null, lines) >= HintLayout.CLUE_TOP_PAD + lineDp * lines + 2f)
         }
     }
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,30 +47,34 @@ import com.wordocious.app.ui.theme.WTheme
 private val PN_RED = Color(0xFFDC2626)
 
 /**
- * The always-present clue slot under the ProperNoundle header: [HintLayout.CLUE_LINES] lines
- * of the 12 sp italic clue (tail ellipsis), empty until the Clue is used ("Finding a clue…"
- * while it loads). Tapping a clue calls [onOpen] (the full-clue overlay).
+ * The always-present clue slot under the ProperNoundle header: [HintLayout.clueLines] lines of the
+ * 13 sp italic clue (tail ellipsis), empty until the Clue is used ("Finding a clue…" while it loads).
+ * Tapping a clue calls [onOpen] (the full-clue overlay).
  */
 @Composable
 fun ProperNoundleClueSlot(clue: String?, loading: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val lineDp = with(LocalDensity.current) { HintLayout.CLUE_LINE_SP.sp.toDp() }.value
-    val slotH = HintLayout.clueSlotHeight(lineDp, clue).dp
+    val lines = HintLayout.clueLines(androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp)
+    val slotH = HintLayout.clueSlotHeight(lineDp, clue, lines).dp
     Box(
         modifier.fillMaxWidth().height(slotH).padding(start = 20.dp, end = 20.dp, top = HintLayout.CLUE_TOP_PAD.dp),
         contentAlignment = Alignment.TopCenter,
     ) {
         when {
             clue != null -> Text(
-                clue, color = WTheme.textSecondary, fontSize = 12.sp, lineHeight = 1.3.em,
+                clue, color = WTheme.textSecondary, fontSize = HintLayout.CLUE_SP.sp, lineHeight = 1.3.em,
                 fontStyle = FontStyle.Italic, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-                maxLines = HintLayout.CLUE_LINES, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.clickableNoRipple { onOpen() }.semantics {
-                    role = Role.Button
-                    onClick(label = "Read the whole clue") { onOpen(); true }
-                },
+                maxLines = lines, overflow = TextOverflow.Ellipsis,
+                // Unbounded height: only maxLines decides where the clue ellipsizes, never the slot's
+                // rounding (the old exact-fit slot cut the clue to one line).
+                modifier = Modifier.wrapContentHeight(Alignment.Top, unbounded = true)
+                    .clickableNoRipple { onOpen() }.semantics {
+                        role = Role.Button
+                        onClick(label = "Read the whole clue") { onOpen(); true }
+                    },
             )
             loading -> Text(
-                "Finding a clue…", color = WTheme.textMuted, fontSize = 12.sp, lineHeight = 1.3.em,
+                "Finding a clue…", color = WTheme.textMuted, fontSize = HintLayout.CLUE_SP.sp, lineHeight = 1.3.em,
                 fontStyle = FontStyle.Italic, fontWeight = FontWeight.SemiBold, maxLines = 1,
             )
         }

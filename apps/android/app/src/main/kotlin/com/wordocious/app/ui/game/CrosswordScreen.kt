@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -203,9 +204,7 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
 
     /** The entry the cursor is in: the one running in [dir] through the selected cell, else whichever passes through it. */
     val activeEntry: CrosswordEntry? get() {
-        val sel = selected ?: return null
-        val here = crosswordEntriesAt(state, sel)
-        return here.firstOrNull { it.dir == dir } ?: here.firstOrNull()
+        return com.wordocious.core.crosswordActiveEntry(state, selected, dir)
     }
     val activeCells: List<Int> get() = activeEntry?.let { crosswordEntryCells(state, it) } ?: emptyList()
 
@@ -304,12 +303,13 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
         if (cell < 0 || cell >= s.solution.length || s.solution[cell] == CROSSWORD_BLOCK) return
         SoundManager.playKeyTap()
         val here = crosswordEntriesAt(s, cell)
-        if (cell == selected) { if (here.size > 1) toggleDir(); return }
+        if (cell == selected) { toggleDir(); return }
         if (here.isNotEmpty() && here.none { it.dir == dir }) dir = here[0].dir
         selected = cell
         persist()
     }
-    fun toggleDir() { if (!isFinished) { dir = if (dir == "A") "D" else "A"; persist() } }
+    /** Tap the selected cell / the clue bar / Space: flips only where Across and Down both pass through the cell. */
+    fun toggleDir() { if (!isFinished) { dir = com.wordocious.core.crosswordToggleDir(state, selected, dir); persist() } }
     /** Arrow keys (web crossword-game.tsx move()): the next open cell that way; the cursor turns to match. */
     fun moveCursor(dr: Int, dc: Int) {
         if (isFinished) return
@@ -334,24 +334,14 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
         showClues = false // BI18: a picked clue goes back to the grid
         persist()
     }
-    /** After typing: the next open cell in the active entry, else the next unfinished entry's first empty cell. */
+    /**
+     * After typing (core crosswordCursorAfterType): the typed entry owns the direction until it is complete,
+     * so a cell that starts another word never turns it (Doug 10-05: 1-Across ran down 2-Down).
+     */
     private fun advance(s: CrosswordState, from: Int, entry: CrosswordEntry?) {
-        if (entry == null) return
-        val cells = crosswordEntryCells(s, entry)
-        val k = cells.indexOf(from)
-        val nextIn = cells.drop(k + 1).firstOrNull { s.fill[it] == CROSSWORD_EMPTY || s.locked[it] == '0' }
-        if (nextIn != null) { selected = nextIn; return }
-        val order = s.entries
-        if (order.isEmpty()) return
-        val idx = order.indexOfFirst { it.n == entry.n && it.dir == entry.dir }
-        for (step in 1..order.size) {
-            val e = order[((idx + step) % order.size + order.size) % order.size]
-            if (crosswordEntrySolved(s, e)) continue
-            val ec = crosswordEntryCells(s, e)
-            dir = e.dir
-            selected = ec.firstOrNull { s.fill[it] == CROSSWORD_EMPTY } ?: ec.firstOrNull()
-            return
-        }
+        val next = com.wordocious.core.crosswordCursorAfterType(s, from, entry) ?: return
+        dir = next.dir
+        selected = next.cell
     }
 
     fun type(ch: Char, onFinished: () -> Unit) {
@@ -374,6 +364,7 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
         val k = cells.indexOf(sel)
         if (k > 0) {
             val prev = cells[k - 1]
+            activeEntry?.let { dir = it.dir }
             selected = prev
             if (s.locked[prev] == '0') dispatch(CrosswordAction.Clear(prev)) {} else persist()
         }
@@ -382,9 +373,9 @@ class CrosswordSession(val seed: String, val isDaily: Boolean) {
     fun advanceEntry() {
         if (isFinished) return
         val e = activeEntry ?: return
-        val cells = activeCells
-        if (cells.isEmpty()) return
-        advance(state, cells.last(), e)
+        val next = com.wordocious.core.crosswordNextEntryCursor(state, e) ?: return
+        dir = next.dir
+        selected = next.cell
         persist()
     }
 
@@ -676,8 +667,9 @@ internal fun CrosswordGrid(
         // Letters and clue numbers scale with the cell (BI18: readable down to the 14 dp floor).
         val glyph = if (fitHeight) maxOf(cell.value * 0.46f, minOf(11f, cell.value * 0.56f)).coerceAtMost(19f)
             else (cell.value * 0.46f).coerceIn(if (small) 9f else 12f, 19f)
-        val ns = if (fitHeight) maxOf(5f, cell.value * 0.2f, minOf(7f, cell.value * 0.3f)).coerceAtMost(9f).sp
-            else (cell.value * 0.2f).coerceIn(if (small) 5f else 7f, 9f).sp
+        // Doug 10-05 ("the numbers … seem a bit off": "5" jammed against a T): the clue number is a dp-sized
+        // superscript (CrosswordCellSpec.NUMBER), so a large system font can't grow it into the letter.
+        val ns = with(androidx.compose.ui.platform.LocalDensity.current) { CrosswordCellSpec.numberDp(cell.value).dp.toSp() }
         GameTray(
             CROSSWORD_ACCENT, state = tray, corner = if (small) 14.dp else GameTrayStyle.CORNER,
             padding = androidx.compose.foundation.layout.PaddingValues(trayPad),
@@ -734,17 +726,30 @@ private fun CrosswordCell(
             },
         contentAlignment = Alignment.Center,
     ) {
-        TileGlyph(ch, look.glyph, look.glyphShadow, glyphDp, cellSize.value)
         if (number != null) {
-            // J3 the clue number: a small soft badge tucked in the corner, clear of the letter.
-            Text(
-                "$number", fontSize = ns, lineHeight = ns, fontWeight = FontWeight.Black, fontFamily = Nunito, maxLines = 1, softWrap = false,
-                color = if (solid) Color(0xFF5B21B6) else Color(0xFF6D28D9),
-                modifier = Modifier.align(Alignment.TopStart).padding(start = 2.dp, top = 2.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(if (solid) Color.White.copy(alpha = 0.85f) else Color(0xFFEDE4FF).copy(alpha = 0.95f))
-                    .padding(horizontal = 1.5.dp),
+            // The letter in a numbered cell: a touch smaller and nudged down, so it never meets the number.
+            val nudge = CrosswordCellSpec.numberedGlyph(cellSize.value)
+            TileGlyph(
+                ch, look.glyph, look.glyphShadow, glyphDp * nudge.scale, cellSize.value,
+                Modifier.offset(x = (cellSize.value * nudge.dx).dp, y = (cellSize.value * nudge.dy).dp),
             )
+            // The clue number: a small muted superscript fully inside the top-left corner (inset, no chip), clear
+            // of the letter and of the cursor ring (drawn outside the tile).
+            val inset = (cellSize.value * CrosswordCellSpec.NUMBER_INSET).dp
+            Text(
+                "$number", maxLines = 1, softWrap = false,
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = ns, lineHeight = ns, fontWeight = FontWeight.Black, fontFamily = Nunito,
+                    color = if (solid) Color.White.copy(alpha = 0.85f) else Color(0xFF6D28D9).copy(alpha = 0.72f),
+                    platformStyle = androidx.compose.ui.text.PlatformTextStyle(includeFontPadding = false),
+                    lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(
+                        androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.Both,
+                    ),
+                ),
+                modifier = Modifier.align(Alignment.TopStart).padding(start = inset, top = inset),
+            )
+        } else {
+            TileGlyph(ch, look.glyph, look.glyphShadow, glyphDp, cellSize.value)
         }
     }
 }
@@ -927,3 +932,22 @@ private fun CrosswordOverlay(session: CrosswordSession, onPlayAgain: (() -> Unit
 /** A2 a soft-number stat. */
 @Composable
 private fun StatBlock(value: String, label: String) = PieceStat(value, label)
+
+/**
+ * A crossword cell's clue number vs its letter (Doug 10-05: "5" jammed against a T, "2" over an E). Fractions of
+ * the cell side: the number is ~27% of the cell, inset 7% from the top-left; in a numbered cell the letter is a
+ * touch smaller and dropped so the two never touch — on small cells (big grids, short screens) it also steps
+ * right and shrinks more, since the readable-number floor is then a bigger share of the cell. Mirrors iOS
+ * CrosswordCellSpec / web crossword-board.
+ */
+internal object CrosswordCellSpec {
+    const val NUMBER = 0.27f
+    const val NUMBER_MIN_DP = 5f
+    const val NUMBER_INSET = 0.07f
+    /** Below this cell side (dp) the small-cell nudge applies. */
+    const val SMALL_CELL_DP = 26f
+    data class Nudge(val scale: Float, val dx: Float, val dy: Float)
+    fun numberDp(cellDp: Float): Float = maxOf(NUMBER_MIN_DP, cellDp * NUMBER)
+    fun numberedGlyph(cellDp: Float): Nudge =
+        if (cellDp < SMALL_CELL_DP) Nudge(scale = 0.7f, dx = 0.14f, dy = 0.15f) else Nudge(scale = 0.92f, dx = 0f, dy = 0.06f)
+}

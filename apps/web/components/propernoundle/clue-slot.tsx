@@ -6,8 +6,8 @@ import { Lightbulb } from 'lucide-react';
 import { CLUE_SLOT, clueSlotHeight } from '@/lib/hint-layout';
 
 // ProperNoundle's clue slot (solo + VS). Founder 10-03: a hint must never
-// resize the board. The slot is ALWAYS present at two lines of the 12 px clue
-// (empty until the Clue hint is used); the clue is clamped to two lines, and
+// resize the board. The slot is ALWAYS present at three lines of the 13 px clue
+// (empty until the Clue hint is used); the clue is clamped to three lines, and
 // tapping it opens the whole clue as a card over the game (tap anywhere to
 // close). Fade + scale only; no outlines.
 
@@ -33,7 +33,7 @@ export function ClueSlot({ clue, className = '' }: { clue: string | null | undef
           className="animate-fade-in w-full h-full flex items-center gap-1.5 rounded-xl px-3 text-left"
           style={{ background: WASH, paddingTop: CLUE_SLOT.padY, paddingBottom: CLUE_SLOT.padY }}>
           <Lightbulb className="w-3.5 h-3.5 shrink-0" fill="#fca5a5" color={RED} strokeWidth={2} aria-hidden="true" />
-          <span className="min-w-0 flex-1 italic font-semibold line-clamp-2"
+          <span className="min-w-0 flex-1 italic font-semibold line-clamp-3"
             style={{ fontSize: CLUE_SLOT.fontPx, lineHeight: `${CLUE_SLOT.linePx}px`, color: 'var(--color-text-secondary)' }}>
             {clue}
           </span>

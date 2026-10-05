@@ -721,7 +721,7 @@ private fun MatchScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
         ) { game.advanceGauntletStage() }
     }
 
-    // BI22 the whole ProperNoundle clue, over the match (the header slot shows two lines).
+    // BI22 the whole ProperNoundle clue, over the match (the header slot shows three or four lines).
     if (showClueCard && vm.mode == GameMode.PROPERNOUNDLE) {
         val clueText by game.clue.collectAsState()
         clueText?.let { com.wordocious.app.ui.game.ProperNoundleClueOverlay(it) { showClueCard = false } }

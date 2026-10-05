@@ -8,7 +8,7 @@ const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-a
 import { Clock, CheckCheck, Lightbulb, Eye, Flag, ArrowLeftRight, ListOrdered, Grid3x3 } from 'lucide-react';
 import {
   crosswordPuzzleForDay, crosswordPuzzleForSeed, crosswordDailyNumber, createCrosswordState, crosswordReduce, crosswordMatchRow, crosswordGuessCount,
-  crosswordEntryCells, crosswordEntriesAt, crosswordEntrySolved, crosswordCorrectCount, crosswordLetterCount, CROSSWORD_BLOCK, CROSSWORD_EMPTY, CROSSWORD_TOTAL_BOARDS,
+  crosswordEntryCells, crosswordEntriesAt, crosswordActiveEntry, crosswordCursorAfterType, crosswordNextEntryCursor, crosswordToggleDir, crosswordCorrectCount, crosswordLetterCount, CROSSWORD_BLOCK, CROSSWORD_EMPTY, CROSSWORD_TOTAL_BOARDS,
   generateDailySeed, type CrosswordState, type CrosswordAction, type CrosswordBank, type CrosswordPuzzle, type CrosswordEntry, type CrosswordDir,
 } from '@wordle-duel/core';
 import { bankSession, useSessionPuzzle } from '@/lib/bank-loader';
@@ -236,20 +236,15 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
 
   // ── Selection ──────────────────────────────────────────────────────────
   const activeEntry: CrosswordEntry | null = useMemo(() => {
-    if (!state || selected === null) return null;
-    const here = crosswordEntriesAt(state, selected);
-    return here.find((e) => e.dir === dir) ?? here[0] ?? null;
+    if (!state) return null;
+    return crosswordActiveEntry(state, selected, dir);
   }, [state, selected, dir]);
   const activeCells = useMemo(() => (state && activeEntry ? crosswordEntryCells(state, activeEntry) : []), [state, activeEntry]);
 
   const selectCell = useCallback((cell: number) => {
     if (!state || state.solution[cell] === CROSSWORD_BLOCK) return;
     playKeyTap();
-    if (cell === selected) {
-      const here = crosswordEntriesAt(state, cell);
-      if (here.length > 1) setDir((d) => (d === 'A' ? 'D' : 'A'));
-      return;
-    }
+    if (cell === selected) { setDir((d) => crosswordToggleDir(state, cell, d)); return; }
     const here = crosswordEntriesAt(state, cell);
     if (here.length && !here.some((e) => e.dir === dir)) setDir(here[0].dir);
     setSelected(cell);
@@ -260,30 +255,26 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
     setDir(e.dir); setSelected(cells.find((i) => state.fill[i] === CROSSWORD_EMPTY) ?? cells[0]);
     setShowClues(false); // BI18: a picked clue goes back to the grid
   }, [state]);
-  /** After typing: next empty cell in the active entry, else the next entry's first empty cell. */
+  /** After typing (core crosswordCursorAfterType): the typed entry owns the direction until it is complete (Doug 10-05). */
   const advance = useCallback((s: CrosswordState, from: number, entry: CrosswordEntry | null) => {
-    if (!entry) return;
-    const cells = crosswordEntryCells(s, entry);
-    const k = cells.indexOf(from);
-    const nextIn = cells.slice(k + 1).find((i) => s.fill[i] === CROSSWORD_EMPTY || s.locked[i] === '0');
-    if (nextIn !== undefined) { setSelected(nextIn); return; }
-    const order = s.entries;
-    const idx = order.findIndex((e) => e.n === entry.n && e.dir === entry.dir);
-    for (let step = 1; step <= order.length; step++) {
-      const e = order[(idx + step) % order.length];
-      if (crosswordEntrySolved(s, e)) continue;
-      const ec = crosswordEntryCells(s, e);
-      setDir(e.dir); setSelected(ec.find((i) => s.fill[i] === CROSSWORD_EMPTY) ?? ec[0]); return;
-    }
+    const next = crosswordCursorAfterType(s, from, entry);
+    if (next) { setDir(next.dir); setSelected(next.cell); }
   }, []);
+  /** Enter: the next entry with an empty cell (same direction first). */
+  const nextEntry = useCallback((s: CrosswordState, entry: CrosswordEntry | null) => {
+    const next = entry ? crosswordNextEntryCursor(s, entry) : null;
+    if (next) { setDir(next.dir); setSelected(next.cell); }
+  }, []);
+  /** The clue bar / Space: flip only where both directions pass through the selected cell. */
+  const toggleDir = useCallback(() => { if (state) setDir((d) => crosswordToggleDir(state, selected, d)); }, [state, selected]);
 
   const onKey = useCallback((key: string) => {
     if (!state || state.status !== 'playing' || selected === null) return;
-    if (key === 'ENTER') { if (activeEntry) advance(state, activeCells[activeCells.length - 1], activeEntry); return; }
+    if (key === 'ENTER') { nextEntry(state, activeEntry); return; }
     if (key === 'BACK') {
       if (state.fill[selected] !== CROSSWORD_EMPTY && state.locked[selected] === '0') { dispatch({ type: 'CLEAR', cell: selected }); playKeyTap(); return; }
       const k = activeCells.indexOf(selected);
-      if (k > 0) { const prev = activeCells[k - 1]; setSelected(prev); if (state.locked[prev] === '0') dispatch({ type: 'CLEAR', cell: prev }); }
+      if (k > 0 && activeEntry) { const prev = activeCells[k - 1]; setDir(activeEntry.dir); setSelected(prev); if (state.locked[prev] === '0') dispatch({ type: 'CLEAR', cell: prev }); }
       return;
     }
     if (/^[A-Z]$/.test(key)) {
@@ -291,7 +282,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
       dispatch({ type: 'SET', cell: selected, letter: key }); playKeyTap();
       advance({ ...state, fill: state.fill.slice(0, selected) + key + state.fill.slice(selected + 1) }, selected, activeEntry);
     }
-  }, [state, selected, activeEntry, activeCells, dispatch, advance, flash]);
+  }, [state, selected, activeEntry, activeCells, dispatch, advance, nextEntry, flash]);
 
   const check = useCallback(() => {
     if (!state) return;
@@ -319,13 +310,13 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
       else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1, 0); }
       else if (e.key === 'ArrowDown') { e.preventDefault(); move(1, 0); }
       else if (e.key === 'Tab' || e.key === 'Enter') { e.preventDefault(); onKey('ENTER'); }
-      else if (e.key === ' ') { e.preventDefault(); setDir((d) => (d === 'A' ? 'D' : 'A')); }
+      else if (e.key === ' ') { e.preventDefault(); toggleDir(); }
       else if (e.key === 'Backspace' || e.key === 'Delete') onKey('BACK');
       else if (/^[a-zA-Z]$/.test(e.key)) onKey(e.key.toUpperCase());
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [state, selected, onKey]);
+  }, [state, selected, onKey, toggleDir]);
 
   const won = state?.status === 'won';
   const gc = state ? crosswordGuessCount(state.checks) : 1;
@@ -403,7 +394,7 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
             {(
               <div className="mx-auto max-w-[700px] w-full flex items-stretch gap-1.5">
                 {/* BI18: the bar keeps a fixed two-line height so the grid never resizes between clues. */}
-                <button type="button" disabled={!activeEntry} onClick={() => setDir((d) => (d === 'A' ? 'D' : 'A'))} className="flex-1 min-w-0 h-[60px] flex items-center gap-2 rounded-xl px-3 pt-2.5 pb-2 text-left" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}` }} aria-label={activeEntry ? 'Active clue; tap to switch direction' : 'No clue selected'}>
+                <button type="button" disabled={!activeEntry} onClick={toggleDir} className="flex-1 min-w-0 h-[60px] flex items-center gap-2 rounded-xl px-3 pt-2.5 pb-2 text-left" style={{ background: softBackground(CROSSWORD_ACCENT, 0.13), border: softBorder(CROSSWORD_ACCENT, 0.13), boxShadow: `inset 0 4px 0 ${CROSSWORD_ACCENT}, 0 4px 10px ${alphaHex(CROSSWORD_ACCENT, 0.12)}` }} aria-label={activeEntry ? 'Active clue; tap to switch direction' : 'No clue selected'}>
                   {activeEntry && (<>
                     <span className="shrink-0 rounded-md text-[11px] font-black w-6 h-6 flex items-center justify-center" style={{ background: '#ede9fe', color: '#7c3aed', boxShadow: `inset 0 0 0 1px #c4b5fd, inset 0 -2px 0 ${alphaHex('#7c3aed', 0.2)}` }}>{activeEntry.n}{activeEntry.dir}</span>
                     <span className="text-[15px] font-extrabold leading-snug flex-1 line-clamp-2" style={{ color: 'var(--color-text)' }}>{activeEntry.clue}</span>

@@ -655,25 +655,26 @@ struct NoundleHints: View {
     }
 }
 
-/// §BI22: ProperNoundle's clue, in a slot that is always two lines tall (empty
-/// until the Clue hint lands) so revealing it never resizes the board. A long
-/// Wikipedia clue is clamped to the two lines; tapping it shows the whole clue
-/// in a popover.
+/// §BI22: ProperNoundle's clue, in a slot that is always three lines tall (four on
+/// tall screens; empty until the Clue hint lands) so revealing it never resizes the
+/// board. A long Wikipedia clue is clamped to those lines; tapping it shows the whole
+/// clue in a popover. (Doug 10-05: two lines cut the clue short.)
 struct NoundleClueSlot: View {
     let clue: String?
     @State private var showFull = false
 
-    private var font: Font { Brand.body(12) }
+    private var font: Font { Brand.body(CGFloat(HintLayout.noundleClueFontSize)) }
+    private var lines: Int { HintLayout.noundleClueLines(screenHeight: Double(UIScreen.main.bounds.height)) }
 
     var body: some View {
         ZStack {
-            // Two lines of the clue's own font: the slot's fixed height.
-            Text("Ag\nAg").font(font).hidden().accessibilityHidden(true)
+            // The clue's lines in its own font: the slot's fixed height.
+            Text(Array(repeating: "Ag", count: lines).joined(separator: "\n")).font(font).hidden().accessibilityHidden(true)
             if let clue {
                 Button { showFull = true } label: {
                     Text(clue).font(font).italic().foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.center)
-                        .lineLimit(2).truncationMode(.tail)
+                        .lineLimit(lines).truncationMode(.tail)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.squish)

@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   crosswordPuzzleForDay, crosswordPuzzleForSeed, crosswordDailyNumber, crosswordSolution, crosswordEntryCells, crosswordEntriesAt, crosswordIndex,
+  crosswordActiveEntry, crosswordCursorAfterType, crosswordToggleDir,
   createCrosswordState, crosswordReduce, crosswordMatchRow, reconstructCrossword, crosswordGuessCount, crosswordCorrectCount, crosswordLetterCount, crosswordIsSolved,
   CROSSWORD_BLOCK, CROSSWORD_EMPTY, type CrosswordBank,
 } from './crossword';
@@ -91,5 +92,48 @@ describe('Crosswordocious reducer', () => {
     expect(r.revealedPuzzle).toBe(true); expect(r.solved).toBe(false); expect(r.hintsUsed).toBe(3);
     expect(reconstructCrossword(['x|y', 'ABC'], [])).toBeNull();
     expect(reconstructCrossword(['x|y|2x2', 'ABC', 'AB'], [])).toBeNull();
+  });
+});
+
+describe('Crosswordocious cursor (Doug 10-05: 1-Across turned down 2-Down mid-word)', () => {
+  // "The Turning Year" cw-kzdl08: 1A WHITE (r0 c3–7); 2D HUSH starts on its 2nd cell, 3D EFFECT on its 5th.
+  const p = [...bank.daily, ...bank.extra, ...Object.values(bank.holiday ?? {}).flat()].find((q) => q.id === 'cw-kzdl08')!;
+  const typeWord = (word: string, dir: 'A' | 'D') => {
+    let s = createCrosswordState(p, 'xw-cursor', 0);
+    let cur = { cell: crosswordIndex(p.w, 0, 3), dir };
+    const visited: number[] = [];
+    for (const ch of word) {
+      const entry = crosswordActiveEntry(s, cur.cell, cur.dir);
+      visited.push(cur.cell);
+      s = crosswordReduce(s, { type: 'SET', cell: cur.cell, letter: ch });
+      cur = crosswordCursorAfterType(s, cur.cell, entry) ?? cur;
+    }
+    return { s, cur, visited };
+  };
+
+  it('typing WHITE fills 1-Across even where 2-Down and 3-Down start', () => {
+    const { s, cur, visited } = typeWord('WHITE', 'A');
+    expect(visited).toEqual([3, 4, 5, 6, 7]);
+    expect(crosswordEntryCells(s, p.entries[0]).map((i) => s.fill[i]).join('')).toBe('WHITE');
+    expect(s.fill[crosswordIndex(p.w, 1, 4)]).toBe(CROSSWORD_EMPTY); // nothing ran down 2-Down
+    // Word complete: on to the next Across with an empty cell (6A SHOWERS), not 2-Down.
+    expect(cur.dir).toBe('A');
+    expect(crosswordActiveEntry(s, cur.cell, cur.dir)?.n).toBe(6);
+  });
+
+  it('a stale Down direction on a cell only Across passes through never turns the word', () => {
+    // The cursor sits on 1A's first cell with dir "D" (clue-bar tap / old save): the entry typed is 1A, and it stays 1A.
+    const { s, visited } = typeWord('WHITE', 'D');
+    expect(visited).toEqual([3, 4, 5, 6, 7]);
+    expect(crosswordEntryCells(s, p.entries[0]).map((i) => s.fill[i]).join('')).toBe('WHITE');
+  });
+
+  it('tap-to-toggle flips only where both directions pass; at the word end a gap is filled first', () => {
+    expect(crosswordToggleDir(p, crosswordIndex(p.w, 0, 4), 'A')).toBe('D'); // 1A × 2D
+    expect(crosswordToggleDir(p, crosswordIndex(p.w, 0, 5), 'A')).toBe('A'); // 1A only
+    expect(crosswordToggleDir(p, crosswordIndex(p.w, 0, 5), 'D')).toBe('A');
+    let s = createCrosswordState(p, 'xw-cursor', 0);
+    s = crosswordReduce(s, { type: 'SET', cell: 7, letter: 'E' }); // last cell typed, cells 3–6 still empty
+    expect(crosswordCursorAfterType(s, 7, p.entries[0])).toEqual({ cell: 3, dir: 'A' });
   });
 });

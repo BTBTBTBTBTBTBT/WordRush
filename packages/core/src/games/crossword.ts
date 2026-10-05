@@ -132,6 +132,70 @@ export function crosswordGuessCount(checks: number): number { return Math.min(ch
 export function crosswordEntrySolved(s: CrosswordState, e: CrosswordEntry): boolean {
   return crosswordEntryCells(s, e).every((i) => s.fill[i] === s.solution[i]);
 }
+
+// ── Cursor ─────────────────────────────────────────────────────────────────
+// Doug (Android, 2026-10-05): typing 1-Across, the H landed in the cell where 2-Down starts and the
+// rest of the word ran DOWN 2-Down. The cursor's direction could go stale: it fell back to "whichever
+// entry passes through the cell" for display, but kept the old direction, so the first shared cell
+// re-read it and turned. These pure rules are the one source of truth on every platform (Crossword.kt
+// / Crossword.swift mirror them): the entry being typed owns the direction until it is complete.
+
+export interface CrosswordCursor { cell: number; dir: CrosswordDir }
+type CursorGrid = { w: number; entries: CrosswordEntry[]; fill: string; locked: string; solution: string };
+
+/** The entry the cursor is in: the one running [dir] through [cell], else whichever passes through it. */
+export function crosswordActiveEntry(p: { w: number; entries: CrosswordEntry[] }, cell: number | null, dir: CrosswordDir): CrosswordEntry | null {
+  if (cell === null) return null;
+  const here = crosswordEntriesAt(p, cell);
+  return here.find((e) => e.dir === dir) ?? here[0] ?? null;
+}
+
+/** Tap-to-toggle: flips Across/Down only where both pass through [cell]; otherwise the cell's own direction. */
+export function crosswordToggleDir(p: { w: number; entries: CrosswordEntry[] }, cell: number | null, dir: CrosswordDir): CrosswordDir {
+  if (cell === null) return dir;
+  const here = crosswordEntriesAt(p, cell);
+  if (here.length === 0) return dir;
+  const other: CrosswordDir = dir === 'A' ? 'D' : 'A';
+  return here.some((e) => e.dir === other) ? other : here[0].dir;
+}
+
+/**
+ * Where the cursor goes after a letter lands in [from] while typing [entry] ([s] already holds the letter):
+ * the next unlocked cell of the SAME entry in the SAME direction (a cell that starts another word never
+ * turns it); at the word's end, its first still-empty cell; only when the word is complete, the next entry
+ * with an empty cell — same direction first, then the other, wrapping — else the next unsolved one. Null = stay.
+ */
+export function crosswordCursorAfterType(s: CursorGrid, from: number, entry: CrosswordEntry | null): CrosswordCursor | null {
+  if (!entry) return null;
+  const cells = crosswordEntryCells(s, entry);
+  const k = cells.indexOf(from);
+  const nextIn = cells.slice(k + 1).find((i) => s.locked[i] !== '1');
+  if (nextIn !== undefined) return { cell: nextIn, dir: entry.dir };
+  const gap = cells.find((i) => s.fill[i] === CROSSWORD_EMPTY);
+  if (gap !== undefined) return { cell: gap, dir: entry.dir };
+  return crosswordNextEntryCursor(s, entry);
+}
+
+/** Enter / a finished word: the next entry with an empty cell (same direction, then the other, wrapping), else the next unsolved one. */
+export function crosswordNextEntryCursor(s: CursorGrid, entry: CrosswordEntry): CrosswordCursor | null {
+  const same = s.entries.filter((e) => e.dir === entry.dir);
+  const other = s.entries.filter((e) => e.dir !== entry.dir);
+  const at = same.findIndex((e) => e.n === entry.n);
+  const order = [...same.slice(at + 1), ...other, ...same.slice(0, at + 1)];
+  const empty = (e: CrosswordEntry) => crosswordEntryCells(s, e).find((i) => s.fill[i] === CROSSWORD_EMPTY);
+  for (const e of order) {
+    if (e.n === entry.n && e.dir === entry.dir) continue;
+    const cell = empty(e);
+    if (cell !== undefined) return { cell, dir: e.dir };
+  }
+  for (const e of order) {
+    if (e.n === entry.n && e.dir === entry.dir) continue;
+    const ec = crosswordEntryCells(s, e);
+    if (ec.some((i) => s.fill[i] !== s.solution[i])) return { cell: ec[0], dir: e.dir };
+  }
+  return null;
+}
+
 const cellOk = (s: CrosswordState, cell: number) => Number.isInteger(cell) && cell >= 0 && cell < s.solution.length && s.solution[cell] !== CROSSWORD_BLOCK;
 const rc = (s: { w: number }, cell: number) => `${Math.floor(cell / s.w)},${cell % s.w}`;
 

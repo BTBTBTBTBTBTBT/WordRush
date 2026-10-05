@@ -143,7 +143,8 @@ export function crosswordCell(width: number, height: number, cols: number, rows:
 export function crosswordCellFonts(cell: number): { letter: number; number: number } {
   return {
     letter: Math.max(Math.round(cell * 0.46), Math.min(11, Math.round(cell * 0.56))),
-    number: Math.max(5, Math.round(cell * 0.2), Math.min(7, Math.round(cell * 0.3))),
+    // Doug 10-05: a ~27% superscript inside the corner (Android/iOS CrosswordCellSpec); the letter steps clear in CSS.
+    number: Math.max(5, Math.round(cell * 0.27)),
   };
 }
 

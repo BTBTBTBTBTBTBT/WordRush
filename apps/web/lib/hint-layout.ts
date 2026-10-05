@@ -16,11 +16,13 @@ export function hintCountText(count: number): string {
 }
 
 /**
- * ProperNoundle's clue slot (solo + VS): always present under the header, two
- * lines of the 12 px clue (16 px line height) plus 4 px padding top and bottom.
- * The clue is clamped to two lines; tapping it opens the whole clue as an overlay.
+ * ProperNoundle's clue slot (solo + VS): always present under the header, three
+ * lines of the 13 px clue (17 px line height) plus 4 px padding top and bottom.
+ * The clue is clamped to three lines; tapping it opens the whole clue as an overlay.
+ * (Doug 10-05: two lines cut a Wikipedia clue at "His…"; the board gives up the
+ * extra line for good, so revealing the clue still never resizes it.)
  */
-export const CLUE_SLOT = { fontPx: 12, linePx: 16, lines: 2, padY: 4 } as const;
+export const CLUE_SLOT = { fontPx: 13, linePx: 17, lines: 3, padY: 4 } as const;
 export const CLUE_SLOT_PX = CLUE_SLOT.linePx * CLUE_SLOT.lines + CLUE_SLOT.padY * 2;
 
 /** The slot height for a clue (or none): the same either way, so the board never resizes. */

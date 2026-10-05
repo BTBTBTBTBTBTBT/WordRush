@@ -31,4 +31,12 @@ final class HintLayoutTests: XCTestCase {
         XCTAssertEqual(HintLayout.countText(99), "99")
         XCTAssertEqual(HintLayout.countText(100), "99+")
     }
+
+    /// Doug 10-05: a two-line slot cut the ProperNoundle clue at "His…". Three lines, four on tall screens (Android/web parity).
+    func testNoundleClueWrapsThreeLinesAndFourOnTallScreens() {
+        XCTAssertEqual(HintLayout.noundleClueLines(screenHeight: 667), 3)
+        XCTAssertEqual(HintLayout.noundleClueLines(screenHeight: 759), 3)
+        XCTAssertEqual(HintLayout.noundleClueLines(screenHeight: 852), 4)
+        XCTAssertGreaterThanOrEqual(HintLayout.noundleClueFontSize, 13)
+    }
 }

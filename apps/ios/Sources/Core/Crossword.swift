@@ -123,6 +123,84 @@ public func crosswordEntriesAt(_ p: CrosswordLayout, cell: Int) -> [CrosswordEnt
     p.entries.filter { crosswordEntryCells(p, $0).contains(cell) }
 }
 
+// MARK: - Cursor (port of crossword.ts crosswordActiveEntry / crosswordToggleDir / crosswordCursorAfterType)
+// Doug (Android, 2026-10-05): typing 1-Across, the letter in the cell where 2-Down starts turned the rest of
+// the word down 2-Down. The direction could go stale (the clue fell back to the cell's only entry but kept the
+// old direction), so the first shared cell re-read it. The entry being typed owns the direction until complete.
+
+/// A cursor position: the cell and the direction it travels.
+public struct CrosswordCursor: Equatable {
+    public let cell: Int
+    public let dir: CrosswordDir
+    public init(cell: Int, dir: CrosswordDir) { self.cell = cell; self.dir = dir }
+}
+
+/// The entry the cursor is in: the one running `dir` through `cell`, else whichever passes through it.
+public func crosswordActiveEntry(_ p: CrosswordLayout, cell: Int?, dir: CrosswordDir) -> CrosswordEntry? {
+    guard let cell else { return nil }
+    let here = crosswordEntriesAt(p, cell: cell)
+    return here.first(where: { $0.dir == dir }) ?? here.first
+}
+
+/// Tap-to-toggle: flips Across/Down only where both pass through `cell`; otherwise the cell's own direction.
+public func crosswordToggleDir(_ p: CrosswordLayout, cell: Int?, dir: CrosswordDir) -> CrosswordDir {
+    guard let cell else { return dir }
+    let here = crosswordEntriesAt(p, cell: cell)
+    guard let first = here.first else { return dir }
+    let other: CrosswordDir = dir == .across ? .down : .across
+    return here.contains(where: { $0.dir == other }) ? other : first.dir
+}
+
+/// Where the cursor goes after a letter lands in `from` while typing `entry` (`s` already holds the letter):
+/// the next unlocked cell of the SAME entry (a cell that starts another word never turns it); at the word's
+/// end its first still-empty cell; only when the word is complete, `crosswordNextEntryCursor`. Nil = stay.
+public func crosswordCursorAfterType(_ s: CrosswordState, from: Int, entry: CrosswordEntry?) -> CrosswordCursor? {
+    guard let entry else { return nil }
+    let fill = Array(s.fill), locked = Array(s.locked)
+    let cells = crosswordEntryCells(s, entry)
+    let k = cells.firstIndex(of: from) ?? -1
+    if let next = cells.dropFirst(k + 1).first(where: { locked[$0] != "1" }) { return CrosswordCursor(cell: next, dir: entry.dir) }
+    if let gap = cells.first(where: { fill[$0] == CROSSWORD_EMPTY }) { return CrosswordCursor(cell: gap, dir: entry.dir) }
+    return crosswordNextEntryCursor(s, entry: entry)
+}
+
+/// Enter / a finished word: the next entry with an empty cell (same direction, then the other, wrapping), else the next unsolved one.
+public func crosswordNextEntryCursor(_ s: CrosswordState, entry: CrosswordEntry) -> CrosswordCursor? {
+    let fill = Array(s.fill), sol = Array(s.solution)
+    let same = s.entries.filter { $0.dir == entry.dir }, other = s.entries.filter { $0.dir != entry.dir }
+    let at = same.firstIndex(where: { $0.n == entry.n }) ?? -1
+    let order = Array(same.dropFirst(at + 1)) + other + Array(same.prefix(at + 1))
+    let isSelf = { (e: CrosswordEntry) in e.n == entry.n && e.dir == entry.dir }
+    for e in order where !isSelf(e) {
+        if let cell = crosswordEntryCells(s, e).first(where: { fill[$0] == CROSSWORD_EMPTY }) { return CrosswordCursor(cell: cell, dir: e.dir) }
+    }
+    for e in order where !isSelf(e) {
+        let ec = crosswordEntryCells(s, e)
+        if ec.contains(where: { fill[$0] != sol[$0] }), let first = ec.first { return CrosswordCursor(cell: first, dir: e.dir) }
+    }
+    return nil
+}
+
+/// A crossword cell's clue number vs its letter (Doug 10-05, Android: "5" jammed against a T; founder 10-05, iOS:
+/// the badge straddled the cell border and the cursor ring covered it). Fractions of the cell side: the number
+/// is ~27% of the cell, fully INSIDE the top-left corner with an 11% inset (never on the border, never under the
+/// ring, which sits outside the tile); in a numbered cell the letter is a touch smaller and dropped — on small
+/// cells it also steps right and shrinks more. Mirrors Android CrosswordCellSpec / web crossword-board.
+public enum CrosswordCellSpec {
+    public static let number: Double = 0.27
+    public static let numberMin: Double = 5
+    /// Clear of the glossy tile's own ring (≈3.5% of the side) with room to spare.
+    public static let numberInset: Double = 0.11
+    public static let numberInsetMin: Double = 2.5
+    public static func inset(cell: Double) -> Double { max(numberInsetMin, cell * numberInset) }
+    public static let smallCell: Double = 26
+    public static func numberSize(cell: Double) -> Double { max(numberMin, cell * number) }
+    /// (scale, dx, dy) for the letter in a numbered cell, dx/dy as fractions of the cell.
+    public static func numberedGlyph(cell: Double) -> (scale: Double, dx: Double, dy: Double) {
+        cell < smallCell ? (0.7, 0.14, 0.15) : (0.92, 0, 0.06)
+    }
+}
+
 // MARK: - Reducer
 
 public enum CrosswordStatus: String, Codable { case playing, won, lost }

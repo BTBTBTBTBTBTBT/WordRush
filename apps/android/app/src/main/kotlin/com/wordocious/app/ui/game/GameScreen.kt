@@ -187,7 +187,8 @@ fun ProperNoundleHints(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HintCandy(
-            label = "Clue", usedLabel = "Clue used",
+            // Doug 10-05: "Clue used" clipped to "Clue u…" in a third of the row; web/iOS keep "Clue".
+            label = "Clue", usedLabel = "Clue",
             used = clueUsed, color = com.wordocious.app.ui.CandyColor.PURPLE,
             icon = if (loadingClue) Icons.Filled.HourglassEmpty else Icons.Filled.Lightbulb,
             onClick = onClue, modifier = Modifier.weight(1f), fill = true,
@@ -917,7 +918,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         ClockText(vm.elapsed, statSp)
                     }
                 }
-                // ProperNoundle Clue (italic, centered) — BI22: a fixed two-line slot that is
+                // ProperNoundle Clue (italic, centered) — BI22: a fixed three/four-line slot that is
                 // ALWAYS present (empty until the Clue is used), so revealing the clue never
                 // shrinks the board; tap it for the whole clue as an overlay card.
                 if (mode == GameMode.PROPERNOUNDLE) {
@@ -1036,7 +1037,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         val rejectMsg by vm.rejectMessage.collectAsState()
         GameFeedbackToast(rejectMsg, fallbackTop = 90.dp, anchor = feedbackAnchor)
 
-        // BI22 the whole ProperNoundle clue, over the game (the header slot shows two lines).
+        // BI22 the whole ProperNoundle clue, over the game (the header slot shows three or four lines).
         if (showClueCard && mode == GameMode.PROPERNOUNDLE) {
             val clueText by vm.clue.collectAsState()
             clueText?.let { ProperNoundleClueOverlay(it) { showClueCard = false } }
