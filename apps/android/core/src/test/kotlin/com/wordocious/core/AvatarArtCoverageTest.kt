@@ -18,7 +18,7 @@ class AvatarArtCoverageTest {
     private val app = File("../app/src/main")
     private val m: AvatarFitManifest by lazy { AvatarFitManifest.parse(File(app, "assets/avatar-parts.json").readText())!! }
 
-    private fun ships(art: String) = File(app, "res/drawable-nodpi/${art.replace('-', '_')}.webp").exists()
+    private fun ships(art: String) = File(app, "res/drawable-nodpi/${art.replace('-', '_').lowercase()}.webp").exists()
 
     private fun combos(): List<AvatarConfig> {
         val base = defaultAvatar("coverage").copy(pattern = "solid")

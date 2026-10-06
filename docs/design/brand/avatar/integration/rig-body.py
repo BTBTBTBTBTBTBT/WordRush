@@ -313,7 +313,8 @@ def layer_img(arr):
 
 def ship_art(name, im):
     im.save(os.path.join(WEB, name + '.webp'), 'WEBP', quality=90, method=6)
-    im.save(os.path.join(DROID, name.replace('-', '_') + '.webp'), 'WEBP', quality=90, method=6)
+    # Android resource names must be lowercase (aapt2); MascotComposer falls back to the lowercased name
+    im.save(os.path.join(DROID, name.replace('-', '_').lower() + '.webp'), 'WEBP', quality=90, method=6)
     iset = os.path.join(IOS, name + '.imageset')
     os.makedirs(iset, exist_ok=True)
     im.save(os.path.join(iset, name + '.png'), optimize=True)

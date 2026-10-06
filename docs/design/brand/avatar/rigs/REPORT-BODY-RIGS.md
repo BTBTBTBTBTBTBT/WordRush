@@ -158,7 +158,44 @@ pose).
 - **iOS / Android:** see the next section.
 
 ## 7. iOS and Android
-NATIVE
+**iOS** (`Sources/Core/AvatarPose.swift` and the posed path in `AvatarLayout.swift` / `AvatarConfig.swift`):
+- **Renderer:** each layer draws under its matrix (`MascotAvatar.swift`), and the letter under `letterM`. The body
+  rig layers take the body tint, and the pattern stays on the base only.
+- **`LivingMascotView`:** used on the Edit Profile Stage (eyes follow the finger), the Dressing Room stage, the
+  Home host and the Stats card. It runs a `TimelineView` only on screen and only without Reduce Motion. The laugh is
+  pitched per body: `SoundManager` takes a rate.
+- **Pose tab:** in the Dressing Room.
+- **Reactions:** `Feedback.win()` / `lose()` / `levelUp()` and the streak bump post `mascotMoment`.
+- **Bundle:** the project bundles the whole Resources folder, so `avatar-poses.json` is included.
+- **Tests:** `Tests/AvatarPoseTests.swift`.
+- **NOT COMPILED: no Swift toolchain here.** The logic was checked by running a line-for-line Python copy of the
+  Swift against the fixtures, with 0 mismatches at 1e-9. That covered matrices, live frames, the posed layouts
+  (saved / small / live / none), the withholds and every un-posed layout case. Still to check on a Mac:
+  - Swift 5.9 syntax;
+  - CGFloat / Double mixing;
+  - that `TimelineView` pauses when it should;
+  - that the 1e-9 tolerance holds on Darwin's sin / cos;
+  - that the new press gesture doesn't block scrolling.
+- **Simplifications:**
+  - a mascot turned away by the animation budget doesn't retry (the player's own always gets a slot);
+  - eye-follow only tracks a finger that is on the mascot;
+  - the Home host and the Stats card don't hop on tap (their taps already open other things).
+
+**Android** (core `AvatarPose.kt` and the posed path in `AvatarLayout.kt` / `AvatarConfig.kt`):
+- **Core tests run here:** `:core:test` ran 164 tests in 41 suites: 0 failures, 0 errors, 0 skipped. That
+  includes the new AvatarPoseFixtureTest and the regenerated config / layout / art-coverage fixtures. It was a
+  core-only Gradle build: the app module can't build in this sandbox, because the proxy returns 403 for
+  dl.google.com (the Android Gradle Plugin) and there is no Android SDK.
+- **App code:** `ui/LivingMascot.kt` (still frame under Reduce Motion; holds still between moves, as on Android, with
+  blinks continuing), `data/MascotMoments.kt`, `MascotComposer.kt` (matrices, `letterM`, rig tint), the Stage /
+  Dressing Room / Home host / Stats card surfaces, and a POSE pill in the Dressing Room. The laugh is pitched per
+  body.
+- **Reactions:** `VictoryOverlay` (win / loss) and `XpToast` (level up / streak). The puzzle modes (Ladder, Sudoku,
+  Codebreaker…) don't emit yet; each needs one line.
+- **NOT COMPILED: the app module.**
+- **Fixed during the port:** the shipped `art_av_body_*_armL/armR` drawables had uppercase names, which aapt2
+  rejects. They are now lowercase (`arml` / `armr`): rig-body.py ships them that way, and the renderer looks the
+  name up lowercased.
 
 ## 8. Honest notes and what needs on-device checks
 - **Mittens are floating hands.** These bodies have no arms, so a raised mitten reads as a hand beside the head. In

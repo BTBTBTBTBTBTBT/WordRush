@@ -183,7 +183,7 @@ object MascotComposer {
         val configs = listOf(com.wordocious.core.defaultAvatar("warm")) + listOf("w", "o1", "r", "d").map { com.wordocious.core.castPreset(it) }
         val names = LinkedHashSet<String>()
         configs.forEach { c -> listOf(false, true).forEach { small -> AvatarFit.layout(c, small, fm).layers.forEach { names += it.art } } }
-        names.forEach { n -> drawableId(context, n.replace('-', '_')).takeIf { it != 0 }?.let { runCatching { partBitmap(context, it) } } }
+        names.forEach { n -> drawableId(context, n.replace('-', '_').lowercase()).takeIf { it != 0 }?.let { runCatching { partBitmap(context, it) } } }
     }
 
     private fun solidPaint(color: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.FILL }
