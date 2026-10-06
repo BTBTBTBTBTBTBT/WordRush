@@ -844,90 +844,20 @@
  },
  "withheld": {
   "cheer": {
-   "bean": [
-    "acc:ghost"
-   ],
-   "blob": [
-    "acc:ghost"
-   ],
-   "chunky": [
-    "acc:bat",
-    "acc:ghost"
-   ],
-   "classic": [
-    "acc:bat"
-   ],
-   "cloud": [
-    "acc:bat"
-   ],
-   "drop": [
-    "acc:ghost"
-   ],
-   "hex": [
-    "acc:ghost"
-   ],
-   "mini": [
-    "acc:bat"
-   ],
-   "pear": [
-    "acc:ghost"
-   ],
-   "star": [
-    "acc:ghost"
-   ],
    "tall": [
     "acc:book",
     "acc:flashlight",
-    "acc:ghost",
     "acc:icecream",
     "acc:mic",
     "acc:pencil-big",
     "acc:trophy",
     "acc:umbrella"
-   ],
-   "wide": [
-    "acc:bat"
    ]
   },
   "flex": {
-   "bean": [
-    "acc:ghost"
-   ],
-   "blob": [
-    "acc:ghost"
-   ],
-   "chunky": [
-    "acc:ghost"
-   ],
-   "classic": [
-    "acc:ghost"
-   ],
-   "cloud": [
-    "acc:ghost"
-   ],
-   "drop": [
-    "acc:ghost"
-   ],
-   "hex": [
-    "acc:ghost"
-   ],
-   "mini": [
-    "acc:bat"
-   ],
-   "pear": [
-    "acc:ghost"
-   ],
-   "star": [
-    "acc:ghost"
-   ],
    "tall": [
-    "acc:ghost",
     "acc:mic",
     "acc:trophy"
-   ],
-   "wide": [
-    "acc:bat",
-    "acc:ghost"
    ]
   },
   "hips": {
@@ -936,8 +866,7 @@
     "acc:pencil-big"
    ],
    "blob": [
-    "acc:candypail",
-    "acc:kitten"
+    "acc:candypail"
    ],
    "chunky": [
     "acc:candypail"
@@ -946,20 +875,15 @@
     "acc:candypail"
    ],
    "cloud": [
-    "acc:candypail",
-    "acc:kitten"
+    "acc:candypail"
    ],
    "hex": [
-    "acc:candypail",
-    "acc:kitten"
+    "acc:candypail"
    ],
    "mini": [
     "acc:book",
     "acc:candypail",
     "acc:trophy"
-   ],
-   "star": [
-    "acc:kitten"
    ],
    "tall": [
     "acc:book",
@@ -967,8 +891,7 @@
     "acc:trophy"
    ],
    "wide": [
-    "acc:candypail",
-    "acc:kitten"
+    "acc:candypail"
    ]
   },
   "hug": {
@@ -1118,177 +1041,49 @@
    ]
   },
   "jump": {
-   "bean": [
-    "acc:bat",
-    "acc:ghost"
-   ],
-   "blob": [
-    "acc:bat"
-   ],
-   "chunky": [
-    "acc:bat"
-   ],
-   "classic": [
-    "acc:bat"
-   ],
-   "cloud": [
-    "acc:bat"
-   ],
-   "hex": [
-    "acc:bat",
-    "acc:ghost"
-   ],
-   "mini": [
-    "acc:bat"
-   ],
-   "pear": [
-    "acc:ghost"
-   ],
-   "star": [
-    "acc:ghost"
-   ],
    "tall": [
     "acc:book",
     "acc:flashlight",
-    "acc:ghost",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
     "acc:pencil-big",
     "acc:trophy",
     "acc:umbrella"
-   ],
-   "wide": [
-    "acc:bat"
    ]
   },
   "shrug": {
    "bean": [
-    "acc:ghost",
     "acc:mic"
-   ],
-   "blob": [
-    "acc:ghost"
-   ],
-   "chunky": [
-    "acc:ghost"
-   ],
-   "classic": [
-    "acc:ghost"
-   ],
-   "cloud": [
-    "acc:ghost"
-   ],
-   "drop": [
-    "acc:ghost"
-   ],
-   "hex": [
-    "acc:ghost"
-   ],
-   "mini": [
-    "acc:ghost"
-   ],
-   "pear": [
-    "acc:ghost"
-   ],
-   "star": [
-    "acc:ghost"
    ],
    "tall": [
     "acc:icecream",
     "acc:mic",
     "acc:trophy"
-   ],
-   "wide": [
-    "acc:ghost"
    ]
   },
   "sit": {
    "bean": [
     "acc:icecream",
-    "acc:kitten",
     "acc:mic"
-   ],
-   "blob": [
-    "acc:kitten"
-   ],
-   "chunky": [
-    "acc:kitten"
-   ],
-   "classic": [
-    "acc:kitten"
-   ],
-   "cloud": [
-    "acc:blackcat",
-    "acc:kitten",
-    "acc:puppy"
-   ],
-   "drop": [
-    "acc:kitten",
-    "acc:puppy"
-   ],
-   "hex": [
-    "acc:blackcat",
-    "acc:kitten",
-    "acc:puppy"
-   ],
-   "mini": [
-    "acc:kitten",
-    "acc:puppy"
-   ],
-   "pear": [
-    "acc:kitten",
-    "acc:puppy"
-   ],
-   "star": [
-    "acc:kitten"
    ],
    "tall": [
     "acc:balloon",
     "acc:icecream",
-    "acc:kitten",
     "acc:trophy",
     "acc:umbrella"
-   ],
-   "wide": [
-    "acc:blackcat",
-    "acc:kitten",
-    "acc:puppy"
    ]
   },
   "wave": {
    "bean": [
     "acc:candypail"
    ],
-   "blob": [
-    "acc:kitten"
-   ],
-   "cloud": [
-    "acc:kitten"
-   ],
-   "drop": [
-    "acc:kitten"
-   ],
-   "hex": [
-    "acc:kitten"
-   ],
    "mini": [
-    "acc:bat",
     "acc:candypail"
-   ],
-   "pear": [
-    "acc:kitten"
-   ],
-   "star": [
-    "acc:kitten"
    ],
    "tall": [
     "acc:candypail",
     "acc:flashlight"
-   ],
-   "wide": [
-    "acc:bat",
-    "acc:kitten"
    ]
   }
  }

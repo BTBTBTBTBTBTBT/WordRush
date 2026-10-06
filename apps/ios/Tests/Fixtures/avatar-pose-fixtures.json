@@ -867,90 +867,20 @@
     },
     "withheld": {
       "cheer": {
-        "bean": [
-          "acc:ghost"
-        ],
-        "blob": [
-          "acc:ghost"
-        ],
-        "chunky": [
-          "acc:bat",
-          "acc:ghost"
-        ],
-        "classic": [
-          "acc:bat"
-        ],
-        "cloud": [
-          "acc:bat"
-        ],
-        "drop": [
-          "acc:ghost"
-        ],
-        "hex": [
-          "acc:ghost"
-        ],
-        "mini": [
-          "acc:bat"
-        ],
-        "pear": [
-          "acc:ghost"
-        ],
-        "star": [
-          "acc:ghost"
-        ],
         "tall": [
           "acc:book",
           "acc:flashlight",
-          "acc:ghost",
           "acc:icecream",
           "acc:mic",
           "acc:pencil-big",
           "acc:trophy",
           "acc:umbrella"
-        ],
-        "wide": [
-          "acc:bat"
         ]
       },
       "flex": {
-        "bean": [
-          "acc:ghost"
-        ],
-        "blob": [
-          "acc:ghost"
-        ],
-        "chunky": [
-          "acc:ghost"
-        ],
-        "classic": [
-          "acc:ghost"
-        ],
-        "cloud": [
-          "acc:ghost"
-        ],
-        "drop": [
-          "acc:ghost"
-        ],
-        "hex": [
-          "acc:ghost"
-        ],
-        "mini": [
-          "acc:bat"
-        ],
-        "pear": [
-          "acc:ghost"
-        ],
-        "star": [
-          "acc:ghost"
-        ],
         "tall": [
-          "acc:ghost",
           "acc:mic",
           "acc:trophy"
-        ],
-        "wide": [
-          "acc:bat",
-          "acc:ghost"
         ]
       },
       "hips": {
@@ -959,8 +889,7 @@
           "acc:pencil-big"
         ],
         "blob": [
-          "acc:candypail",
-          "acc:kitten"
+          "acc:candypail"
         ],
         "chunky": [
           "acc:candypail"
@@ -969,20 +898,15 @@
           "acc:candypail"
         ],
         "cloud": [
-          "acc:candypail",
-          "acc:kitten"
+          "acc:candypail"
         ],
         "hex": [
-          "acc:candypail",
-          "acc:kitten"
+          "acc:candypail"
         ],
         "mini": [
           "acc:book",
           "acc:candypail",
           "acc:trophy"
-        ],
-        "star": [
-          "acc:kitten"
         ],
         "tall": [
           "acc:book",
@@ -990,8 +914,7 @@
           "acc:trophy"
         ],
         "wide": [
-          "acc:candypail",
-          "acc:kitten"
+          "acc:candypail"
         ]
       },
       "hug": {
@@ -1141,177 +1064,49 @@
         ]
       },
       "jump": {
-        "bean": [
-          "acc:bat",
-          "acc:ghost"
-        ],
-        "blob": [
-          "acc:bat"
-        ],
-        "chunky": [
-          "acc:bat"
-        ],
-        "classic": [
-          "acc:bat"
-        ],
-        "cloud": [
-          "acc:bat"
-        ],
-        "hex": [
-          "acc:bat",
-          "acc:ghost"
-        ],
-        "mini": [
-          "acc:bat"
-        ],
-        "pear": [
-          "acc:ghost"
-        ],
-        "star": [
-          "acc:ghost"
-        ],
         "tall": [
           "acc:book",
           "acc:flashlight",
-          "acc:ghost",
           "acc:icecream",
           "acc:magnifier",
           "acc:mic",
           "acc:pencil-big",
           "acc:trophy",
           "acc:umbrella"
-        ],
-        "wide": [
-          "acc:bat"
         ]
       },
       "shrug": {
         "bean": [
-          "acc:ghost",
           "acc:mic"
-        ],
-        "blob": [
-          "acc:ghost"
-        ],
-        "chunky": [
-          "acc:ghost"
-        ],
-        "classic": [
-          "acc:ghost"
-        ],
-        "cloud": [
-          "acc:ghost"
-        ],
-        "drop": [
-          "acc:ghost"
-        ],
-        "hex": [
-          "acc:ghost"
-        ],
-        "mini": [
-          "acc:ghost"
-        ],
-        "pear": [
-          "acc:ghost"
-        ],
-        "star": [
-          "acc:ghost"
         ],
         "tall": [
           "acc:icecream",
           "acc:mic",
           "acc:trophy"
-        ],
-        "wide": [
-          "acc:ghost"
         ]
       },
       "sit": {
         "bean": [
           "acc:icecream",
-          "acc:kitten",
           "acc:mic"
-        ],
-        "blob": [
-          "acc:kitten"
-        ],
-        "chunky": [
-          "acc:kitten"
-        ],
-        "classic": [
-          "acc:kitten"
-        ],
-        "cloud": [
-          "acc:blackcat",
-          "acc:kitten",
-          "acc:puppy"
-        ],
-        "drop": [
-          "acc:kitten",
-          "acc:puppy"
-        ],
-        "hex": [
-          "acc:blackcat",
-          "acc:kitten",
-          "acc:puppy"
-        ],
-        "mini": [
-          "acc:kitten",
-          "acc:puppy"
-        ],
-        "pear": [
-          "acc:kitten",
-          "acc:puppy"
-        ],
-        "star": [
-          "acc:kitten"
         ],
         "tall": [
           "acc:balloon",
           "acc:icecream",
-          "acc:kitten",
           "acc:trophy",
           "acc:umbrella"
-        ],
-        "wide": [
-          "acc:blackcat",
-          "acc:kitten",
-          "acc:puppy"
         ]
       },
       "wave": {
         "bean": [
           "acc:candypail"
         ],
-        "blob": [
-          "acc:kitten"
-        ],
-        "cloud": [
-          "acc:kitten"
-        ],
-        "drop": [
-          "acc:kitten"
-        ],
-        "hex": [
-          "acc:kitten"
-        ],
         "mini": [
-          "acc:bat",
           "acc:candypail"
-        ],
-        "pear": [
-          "acc:kitten"
-        ],
-        "star": [
-          "acc:kitten"
         ],
         "tall": [
           "acc:candypail",
           "acc:flashlight"
-        ],
-        "wide": [
-          "acc:bat",
-          "acc:kitten"
         ]
       }
     }
@@ -8428,6 +8223,28 @@
             "ride": "root"
           },
           {
+            "layer": "pet",
+            "field": "pet",
+            "id": "kitten",
+            "art": "art-av-acc-kitten-classic-pet",
+            "rect": {
+              "x": 0.6348,
+              "y": 0.635,
+              "w": 0.2054,
+              "h": 0.2264
+            },
+            "tint": false,
+            "m": [
+              1,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            "ride": "none"
+          },
+          {
             "layer": "arms",
             "field": "body",
             "id": "classic",
@@ -8514,28 +8331,6 @@
               0
             ],
             "ride": "feet"
-          },
-          {
-            "layer": "pet",
-            "field": "pet",
-            "id": "kitten",
-            "art": "art-av-acc-kitten-classic-pet",
-            "rect": {
-              "x": 0.6348,
-              "y": 0.635,
-              "w": 0.2054,
-              "h": 0.2264
-            },
-            "tint": false,
-            "m": [
-              1,
-              0,
-              0,
-              1,
-              0,
-              0
-            ],
-            "ride": "none"
           }
         ],
         "letterIndex": 2,
@@ -8809,6 +8604,28 @@
             "ride": "root"
           },
           {
+            "layer": "pet",
+            "field": "pet",
+            "id": "kitten",
+            "art": "art-av-acc-kitten-classic-pet",
+            "rect": {
+              "x": 0.5731,
+              "y": 0.6682,
+              "w": 0.199,
+              "h": 0.2193
+            },
+            "tint": false,
+            "m": [
+              1,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            "ride": "none"
+          },
+          {
             "layer": "arms",
             "field": "body",
             "id": "classic",
@@ -8895,28 +8712,6 @@
               -0.04304
             ],
             "ride": "feet"
-          },
-          {
-            "layer": "pet",
-            "field": "pet",
-            "id": "kitten",
-            "art": "art-av-acc-kitten-classic-pet",
-            "rect": {
-              "x": 0.5731,
-              "y": 0.6682,
-              "w": 0.199,
-              "h": 0.2193
-            },
-            "tint": false,
-            "m": [
-              1,
-              0,
-              0,
-              1,
-              0,
-              0
-            ],
-            "ride": "none"
           }
         ],
         "letterIndex": 2,
@@ -14192,17 +13987,12 @@
     {
       "pose": "wave",
       "body": "wide",
-      "items": [
-        "acc:bat",
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "wave",
       "body": "blob",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "wave",
@@ -14214,30 +14004,22 @@
     {
       "pose": "wave",
       "body": "star",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "wave",
       "body": "drop",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "wave",
       "body": "pear",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "wave",
       "body": "cloud",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "wave",
@@ -14248,23 +14030,18 @@
       "pose": "wave",
       "body": "mini",
       "items": [
-        "acc:bat",
         "acc:candypail"
       ]
     },
     {
       "pose": "wave",
       "body": "hex",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "classic",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
@@ -14272,7 +14049,6 @@
       "items": [
         "acc:book",
         "acc:flashlight",
-        "acc:ghost",
         "acc:icecream",
         "acc:mic",
         "acc:pencil-big",
@@ -14283,73 +14059,52 @@
     {
       "pose": "cheer",
       "body": "wide",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "blob",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "bean",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "star",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "drop",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "pear",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "cloud",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "chunky",
-      "items": [
-        "acc:bat",
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "mini",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "cheer",
       "body": "hex",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "hips",
@@ -14371,16 +14126,14 @@
       "pose": "hips",
       "body": "wide",
       "items": [
-        "acc:candypail",
-        "acc:kitten"
+        "acc:candypail"
       ]
     },
     {
       "pose": "hips",
       "body": "blob",
       "items": [
-        "acc:candypail",
-        "acc:kitten"
+        "acc:candypail"
       ]
     },
     {
@@ -14394,9 +14147,7 @@
     {
       "pose": "hips",
       "body": "star",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "hips",
@@ -14412,8 +14163,7 @@
       "pose": "hips",
       "body": "cloud",
       "items": [
-        "acc:candypail",
-        "acc:kitten"
+        "acc:candypail"
       ]
     },
     {
@@ -14436,16 +14186,13 @@
       "pose": "hips",
       "body": "hex",
       "items": [
-        "acc:candypail",
-        "acc:kitten"
+        "acc:candypail"
       ]
     },
     {
       "pose": "shrug",
       "body": "classic",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
@@ -14459,86 +14206,64 @@
     {
       "pose": "shrug",
       "body": "wide",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "blob",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "bean",
       "items": [
-        "acc:ghost",
         "acc:mic"
       ]
     },
     {
       "pose": "shrug",
       "body": "star",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "drop",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "pear",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "cloud",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "chunky",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "mini",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "shrug",
       "body": "hex",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "classic",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "tall",
       "items": [
-        "acc:ghost",
         "acc:mic",
         "acc:trophy"
       ]
@@ -14546,73 +14271,52 @@
     {
       "pose": "flex",
       "body": "wide",
-      "items": [
-        "acc:bat",
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "blob",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "bean",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "star",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "drop",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "pear",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "cloud",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "chunky",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "mini",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "flex",
       "body": "hex",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "hug",
@@ -14809,9 +14513,7 @@
     {
       "pose": "sit",
       "body": "classic",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
@@ -14819,7 +14521,6 @@
       "items": [
         "acc:balloon",
         "acc:icecream",
-        "acc:kitten",
         "acc:trophy",
         "acc:umbrella"
       ]
@@ -14827,90 +14528,60 @@
     {
       "pose": "sit",
       "body": "wide",
-      "items": [
-        "acc:blackcat",
-        "acc:kitten",
-        "acc:puppy"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "blob",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "bean",
       "items": [
         "acc:icecream",
-        "acc:kitten",
         "acc:mic"
       ]
     },
     {
       "pose": "sit",
       "body": "star",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "drop",
-      "items": [
-        "acc:kitten",
-        "acc:puppy"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "pear",
-      "items": [
-        "acc:kitten",
-        "acc:puppy"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "cloud",
-      "items": [
-        "acc:blackcat",
-        "acc:kitten",
-        "acc:puppy"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "chunky",
-      "items": [
-        "acc:kitten"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "mini",
-      "items": [
-        "acc:kitten",
-        "acc:puppy"
-      ]
+      "items": []
     },
     {
       "pose": "sit",
       "body": "hex",
-      "items": [
-        "acc:blackcat",
-        "acc:kitten",
-        "acc:puppy"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "classic",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
@@ -14918,7 +14589,6 @@
       "items": [
         "acc:book",
         "acc:flashlight",
-        "acc:ghost",
         "acc:icecream",
         "acc:magnifier",
         "acc:mic",
@@ -14930,31 +14600,22 @@
     {
       "pose": "jump",
       "body": "wide",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "blob",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "bean",
-      "items": [
-        "acc:bat",
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "star",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
@@ -14964,38 +14625,27 @@
     {
       "pose": "jump",
       "body": "pear",
-      "items": [
-        "acc:ghost"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "cloud",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "chunky",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "mini",
-      "items": [
-        "acc:bat"
-      ]
+      "items": []
     },
     {
       "pose": "jump",
       "body": "hex",
-      "items": [
-        "acc:bat",
-        "acc:ghost"
-      ]
+      "items": []
     }
   ]
 }

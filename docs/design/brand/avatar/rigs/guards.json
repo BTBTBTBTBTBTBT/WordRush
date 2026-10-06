@@ -405,17 +405,11 @@
   "wide": {
    "acc:candypail": [
     "swings over the face / letter (2%)"
-   ],
-   "acc:kitten": [
-    "hides a moved arm (22%)"
    ]
   },
   "blob": {
    "acc:candypail": [
     "swings over the face / letter (8%)"
-   ],
-   "acc:kitten": [
-    "hides a moved arm (17%)"
    ]
   },
   "bean": {
@@ -426,17 +420,9 @@
     "swings over the face / letter (14%)"
    ]
   },
-  "star": {
-   "acc:kitten": [
-    "hides a moved arm (16%)"
-   ]
-  },
   "cloud": {
    "acc:candypail": [
     "swings over the face / letter (3%)"
-   ],
-   "acc:kitten": [
-    "hides a moved arm (24%)"
    ]
   },
   "chunky": {
@@ -458,125 +444,10 @@
   "hex": {
    "acc:candypail": [
     "swings over the face / letter (2%)"
-   ],
-   "acc:kitten": [
-    "hides a moved arm (26%)"
-   ]
-  }
- },
- "sit": {
-  "classic": {
-   "acc:kitten": [
-    "hides a moved arm (26%)"
-   ]
-  },
-  "tall": {
-   "acc:balloon": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:trophy": [
-    "swings over the face / letter (4%)"
-   ],
-   "acc:umbrella": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:icecream": [
-    "swings over the face / letter (2%)"
-   ],
-   "acc:kitten": [
-    "hides a moved arm (24%)"
-   ]
-  },
-  "wide": {
-   "acc:kitten": [
-    "hides a moved arm (35%)"
-   ],
-   "acc:puppy": [
-    "hides a moved arm (18%)"
-   ],
-   "acc:blackcat": [
-    "hides a moved arm (18%)"
-   ]
-  },
-  "blob": {
-   "acc:kitten": [
-    "hides a moved arm (32%)"
-   ]
-  },
-  "bean": {
-   "acc:icecream": [
-    "swings over the face / letter (3%)"
-   ],
-   "acc:mic": [
-    "swings over the face / letter (5%)"
-   ],
-   "acc:kitten": [
-    "hides a moved arm (17%)"
-   ]
-  },
-  "star": {
-   "acc:kitten": [
-    "hides a moved arm (38%)"
-   ]
-  },
-  "drop": {
-   "acc:kitten": [
-    "hides a moved arm (36%)"
-   ],
-   "acc:puppy": [
-    "hides a moved arm (16%)"
-   ]
-  },
-  "pear": {
-   "acc:kitten": [
-    "hides a moved arm (36%)"
-   ],
-   "acc:puppy": [
-    "hides a moved arm (16%)"
-   ]
-  },
-  "cloud": {
-   "acc:kitten": [
-    "hides a moved arm (40%)"
-   ],
-   "acc:puppy": [
-    "hides a moved arm (21%)"
-   ],
-   "acc:blackcat": [
-    "hides a moved arm (20%)"
-   ]
-  },
-  "chunky": {
-   "acc:kitten": [
-    "hides a moved arm (21%)"
-   ]
-  },
-  "mini": {
-   "acc:kitten": [
-    "hides a moved arm (26%)"
-   ],
-   "acc:puppy": [
-    "hides a moved arm (15%)"
-   ]
-  },
-  "hex": {
-   "acc:kitten": [
-    "hides a moved arm (37%)"
-   ],
-   "acc:puppy": [
-    "hides a moved arm (19%)"
-   ],
-   "acc:blackcat": [
-    "hides a moved arm (20%)"
    ]
   }
  },
  "cheer": {
-  "classic": {
-   "acc:bat": [
-    "hides a moved arm (20%)"
-   ]
-  },
   "tall": {
    "acc:book": [
     "swings over the face / letter (5%)"
@@ -598,71 +469,10 @@
    ],
    "acc:mic": [
     "swings over the face / letter (7%)"
-   ],
-   "acc:ghost": [
-    "hides a moved arm (42%)"
-   ]
-  },
-  "wide": {
-   "acc:bat": [
-    "hides a moved arm (38%)"
-   ]
-  },
-  "blob": {
-   "acc:ghost": [
-    "hides a moved arm (19%)"
-   ]
-  },
-  "bean": {
-   "acc:ghost": [
-    "hides a moved arm (45%)"
-   ]
-  },
-  "star": {
-   "acc:ghost": [
-    "hides a moved arm (50%)"
-   ]
-  },
-  "drop": {
-   "acc:ghost": [
-    "hides a moved arm (22%)"
-   ]
-  },
-  "pear": {
-   "acc:ghost": [
-    "hides a moved arm (50%)"
-   ]
-  },
-  "cloud": {
-   "acc:bat": [
-    "hides a moved arm (17%)"
-   ]
-  },
-  "chunky": {
-   "acc:bat": [
-    "hides a moved arm (21%)"
-   ],
-   "acc:ghost": [
-    "hides a moved arm (17%)"
-   ]
-  },
-  "mini": {
-   "acc:bat": [
-    "hides a moved arm (30%)"
-   ]
-  },
-  "hex": {
-   "acc:ghost": [
-    "hides a moved arm (39%)"
    ]
   }
  },
  "jump": {
-  "classic": {
-   "acc:bat": [
-    "hides a moved arm (32%)"
-   ]
-  },
   "tall": {
    "acc:book": [
     "swings over the face / letter (5%)"
@@ -687,69 +497,34 @@
    ],
    "acc:mic": [
     "swings over the face / letter (10%)"
+   ]
+  }
+ },
+ "sit": {
+  "tall": {
+   "acc:balloon": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:ghost": [
-    "hides a moved arm (51%)"
-   ]
-  },
-  "wide": {
-   "acc:bat": [
-    "hides a moved arm (29%)"
-   ]
-  },
-  "blob": {
-   "acc:bat": [
-    "hides a moved arm (23%)"
+   "acc:trophy": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (2%)"
    ]
   },
   "bean": {
-   "acc:bat": [
-    "hides a moved arm (23%)"
+   "acc:icecream": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:ghost": [
-    "hides a moved arm (38%)"
-   ]
-  },
-  "star": {
-   "acc:ghost": [
-    "hides a moved arm (40%)"
-   ]
-  },
-  "pear": {
-   "acc:ghost": [
-    "hides a moved arm (44%)"
-   ]
-  },
-  "cloud": {
-   "acc:bat": [
-    "hides a moved arm (32%)"
-   ]
-  },
-  "chunky": {
-   "acc:bat": [
-    "hides a moved arm (32%)"
-   ]
-  },
-  "mini": {
-   "acc:bat": [
-    "hides a moved arm (19%)"
-   ]
-  },
-  "hex": {
-   "acc:bat": [
-    "hides a moved arm (16%)"
-   ],
-   "acc:ghost": [
-    "hides a moved arm (26%)"
+   "acc:mic": [
+    "swings over the face / letter (5%)"
    ]
   }
  },
  "shrug": {
-  "classic": {
-   "acc:ghost": [
-    "hides a moved arm (38%)"
-   ]
-  },
   "tall": {
    "acc:trophy": [
     "swings over the face / letter (4%)"
@@ -761,128 +536,19 @@
     "swings over the face / letter (3%)"
    ]
   },
-  "wide": {
-   "acc:ghost": [
-    "hides a moved arm (25%)"
-   ]
-  },
-  "blob": {
-   "acc:ghost": [
-    "hides a moved arm (40%)"
-   ]
-  },
   "bean": {
    "acc:mic": [
     "swings over the face / letter (3%)"
-   ],
-   "acc:ghost": [
-    "hides a moved arm (28%)"
-   ]
-  },
-  "star": {
-   "acc:ghost": [
-    "hides a moved arm (47%)"
-   ]
-  },
-  "drop": {
-   "acc:ghost": [
-    "hides a moved arm (42%)"
-   ]
-  },
-  "pear": {
-   "acc:ghost": [
-    "hides a moved arm (32%)"
-   ]
-  },
-  "cloud": {
-   "acc:ghost": [
-    "hides a moved arm (33%)"
-   ]
-  },
-  "chunky": {
-   "acc:ghost": [
-    "hides a moved arm (38%)"
-   ]
-  },
-  "mini": {
-   "acc:ghost": [
-    "hides a moved arm (22%)"
-   ]
-  },
-  "hex": {
-   "acc:ghost": [
-    "hides a moved arm (45%)"
    ]
   }
  },
  "flex": {
-  "classic": {
-   "acc:ghost": [
-    "hides a moved arm (37%)"
-   ]
-  },
   "tall": {
    "acc:trophy": [
     "swings over the face / letter (5%)"
    ],
    "acc:mic": [
     "swings over the face / letter (3%)"
-   ],
-   "acc:ghost": [
-    "hides a moved arm (25%)"
-   ]
-  },
-  "wide": {
-   "acc:bat": [
-    "hides a moved arm (32%)"
-   ],
-   "acc:ghost": [
-    "hides a moved arm (22%)"
-   ]
-  },
-  "blob": {
-   "acc:ghost": [
-    "hides a moved arm (43%)"
-   ]
-  },
-  "bean": {
-   "acc:ghost": [
-    "hides a moved arm (42%)"
-   ]
-  },
-  "star": {
-   "acc:ghost": [
-    "hides a moved arm (50%)"
-   ]
-  },
-  "drop": {
-   "acc:ghost": [
-    "hides a moved arm (43%)"
-   ]
-  },
-  "pear": {
-   "acc:ghost": [
-    "hides a moved arm (45%)"
-   ]
-  },
-  "cloud": {
-   "acc:ghost": [
-    "hides a moved arm (31%)"
-   ]
-  },
-  "chunky": {
-   "acc:ghost": [
-    "hides a moved arm (41%)"
-   ]
-  },
-  "mini": {
-   "acc:bat": [
-    "hides a moved arm (31%)"
-   ]
-  },
-  "hex": {
-   "acc:ghost": [
-    "hides a moved arm (50%)"
    ]
   }
  },
@@ -895,55 +561,14 @@
     "swings over the face / letter (4%)"
    ]
   },
-  "wide": {
-   "acc:kitten": [
-    "hides a moved arm (18%)"
-   ],
-   "acc:bat": [
-    "hides a moved arm (36%)"
-   ]
-  },
-  "blob": {
-   "acc:kitten": [
-    "hides a moved arm (16%)"
-   ]
-  },
   "bean": {
    "acc:candypail": [
     "swings over the face / letter (5%)"
    ]
   },
-  "star": {
-   "acc:kitten": [
-    "hides a moved arm (18%)"
-   ]
-  },
-  "drop": {
-   "acc:kitten": [
-    "hides a moved arm (19%)"
-   ]
-  },
-  "pear": {
-   "acc:kitten": [
-    "hides a moved arm (19%)"
-   ]
-  },
-  "cloud": {
-   "acc:kitten": [
-    "hides a moved arm (23%)"
-   ]
-  },
   "mini": {
    "acc:candypail": [
     "swings over the face / letter (4%)"
-   ],
-   "acc:bat": [
-    "hides a moved arm (32%)"
-   ]
-  },
-  "hex": {
-   "acc:kitten": [
-    "hides a moved arm (21%)"
    ]
   }
  }

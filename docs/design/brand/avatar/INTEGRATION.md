@@ -196,3 +196,28 @@ letter the apps draw. Report + every override and withhold: `integration/REPORT-
 - Re-running `ship-integrated.py` / `ship-seasonal.py` item builders would put the 10-05 hand fits back. Re-ship with
   `ship-rules.py`, regenerate the parity fixtures, run `audit.py --guards shipped` + `--wraps`, then look at
   `reship-sheets.py`.
+
+## How to rig a new body (10-06, poses + the living mascot)
+Poses are shared data (`packages/core/src/avatar-poses.json`), so a rigged body gets every pose for free. The full
+report is `rigs/REPORT-BODY-RIGS.md`.
+1. **New body art:** a white `parts/art-av-body-<id>.png` (1024², mittens and feet like the others) plus its manifest
+   entry in `avatar-parts.json` `bodies`.
+2. **Landmarks:** `python3 integration/landmarks.py <id>`. Check `out/landmarks/overlay-<id>.jpg`: the arms, hips and
+   floor must sit on the art.
+3. **Rig:** `python3 integration/rig-body.py <id> --ship`. It cuts the arms and feet, inpaints the gaps, sets the
+   pivots and runs the rest diff (must be < 2/255; it prints it). It writes `rigs/<id>/` and ships
+   `art-av-body-<id>-{base,feet,armL,armR}` to web, iOS and Android. It also adds the rig to `avatar-poses.json`
+   `rigs`, the art names to `avatar-parts.json` `art`, and the sizes to `apps/web/lib/art-av-rigs.ts`.
+4. **Look at one sheet:** `rigs/<id>/sheet.jpg` (every pose, white and tinted). If a cut truly fails, add a hand
+   override in `rig-body.py` `OVERRIDES` (none so far) and list it in the report.
+5. **Guards + fixtures:**
+   - `apps/server/node_modules/.bin/tsx packages/core/scripts/dump-pose-layouts.ts`
+   - `python3 integration/rig-body.py --guards` (writes the per-pose withholds)
+   - `…/tsx packages/core/scripts/gen-parity-fixtures.ts`
+   - Copy `avatar-parts.json` and `avatar-poses.json` into `apps/ios/Wordocious/Resources/` and
+     `apps/android/app/src/main/assets/`.
+6. **Ship.** Contact sheets through the real web renderer: `…/tsx --tsconfig apps/web/tsconfig.json
+   apps/web/scripts/pose-sheets.ts`, then `python3 rigs/shoot.py`.
+
+The size variants prove it generalizes: `python3 integration/rig-body.py --sizes classic,star,bean` rigs the XS / S /
+L / XL / chunky / lanky variants from `sizes.py` with no changes.

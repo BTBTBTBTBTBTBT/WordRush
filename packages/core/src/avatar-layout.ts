@@ -352,7 +352,10 @@ export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATA
   const items: L[] = placed.map((p) => {
     if (!P) return { ...p, rect: map(p.rect), k: rank(p.layer) };
     const ride = rideOf(p);
-    return { ...p, rect: map(p.rect), m: toContent(matOf(ride)), ride, k: ride === 'armL' || ride === 'armR' || ride === 'handL' || ride === 'handR' ? armRank + 0.25 : rank(p.layer) };
+    // what a hand holds draws over that hand; buddies (they stay on the floor) draw just behind a moving arm
+    const k = ride === 'armL' || ride === 'armR' || ride === 'handL' || ride === 'handR' ? armRank + 0.25
+      : ride === 'none' && rank(p.layer) > armRank ? armRank - 0.25 : rank(p.layer);
+    return { ...p, rect: map(p.rect), m: toContent(matOf(ride)), ride, k };
   });
   const layers: AvatarLayoutLayer[] = [...rigLayers, ...items].sort((a, c) => a.k - c.k).map(({ k: _k, ...l }) => l);
   const [lx, ly, lw, lh] = b.letterBox;
