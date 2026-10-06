@@ -34,6 +34,8 @@ final class CastAvatars: ObservableObject {
     /// the server accepted wrote them). nil = not known (missing columns / not loaded).
     private var ownServer: (uid: String, look: AvatarLook)?
     private var fetchedFor: String?
+    /// The user id whose own cast/frame read has finished (success or failure) this launch.
+    @Published private(set) var ownSettled: String?
     private var subs: Set<AnyCancellable> = []
 
     private init() {
@@ -103,6 +105,7 @@ final class CastAvatars: ObservableObject {
         let uid = profile.id
         Task {
             struct Row: Decodable { let avatar_cast_id: String?; let avatar_frame: String? }
+            defer { if AuthService.shared.profile?.id == uid { ownSettled = uid } }
             guard let row: Row = try? await AuthService.shared.client.from("profiles")
                 .select("\(AvatarSaveRules.castColumn),\(AvatarSaveRules.frameColumn)")
                 .eq("id", value: uid).limit(1).single().execute().value else { return }

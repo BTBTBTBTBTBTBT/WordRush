@@ -21,6 +21,9 @@ final class MascotLooks: ObservableObject {
     static let column = "avatar_config"
 
     @Published private(set) var byName: [String: AvatarConfig] = [:]
+    /// The user id whose own avatar_config read has finished (success or failure) this launch —
+    /// until then the Home host draws the cached look (HostLookRules).
+    @Published private(set) var ownSettled: String?
 
     private var ownKey: String?
     private var ownServer: (uid: String, config: AvatarConfig?)?
@@ -123,6 +126,7 @@ final class MascotLooks: ObservableObject {
         let uid = profile.id
         Task {
             struct Row: Decodable { let avatar_config: AvatarConfigRaw? }
+            defer { if AuthService.shared.profile?.id == uid { ownSettled = uid } }
             guard let row: Row = try? await AuthService.shared.client.from("profiles")
                 .select(Self.column).eq("id", value: uid).limit(1).single().execute().value else { return }
             guard let p = AuthService.shared.profile, p.id == uid else { return }

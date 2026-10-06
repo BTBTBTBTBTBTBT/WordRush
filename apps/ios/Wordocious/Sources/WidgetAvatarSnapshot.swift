@@ -43,6 +43,8 @@ enum WidgetAvatarSnapshot {
 
     /// Renders (or clears) the snapshot for the current own look.
     static func refresh() async {
+        // Founder 10-05: not while the own look is still loading (the Home host shows the cache then).
+        guard AvatarDirectory.shared.ownHostIsLive else { return }
         let side = CGFloat(WidgetAvatar.side) / 2   // drawn at 2× → 256 px
         var png: Data?
         var file: String?

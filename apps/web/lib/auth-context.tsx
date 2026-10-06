@@ -9,6 +9,7 @@ import { reportRejectedWrite } from './supabase-error-handler';
 import { migrateLegacyStorageKeys } from './storage-migration';
 import { clearPageCacheForUser, setCacheUser } from './page-cache';
 import { updateResultStore } from './optimistic-results';
+import { clearHomeHostCache, homeHostLookFor, writeHomeHostCache } from './home-host-cache';
 import {
   classifyAuthError,
   isSupabaseSessionKey,
@@ -201,6 +202,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfileError(false);
       setProfile(profile);
       writeCachedProfile(profile);
+      // 2.7.1: the Home host's look for the next cold start (also after a Dressing Room / Edit Profile save → refreshProfile).
+      try { writeHomeHostCache(profile.id, homeHostLookFor(profile, isProActive(profile))); } catch {}
       return;
     }
 
@@ -439,6 +442,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const stored = readStoredSession();
           if (stored) { holdStoredSession(stored); return; }
           stopSessionRetry();
+          // A real sign-out (incl. from another tab / a revoked session): drop the cached Home host look.
+          clearHomeHostCache();
         } else if (holdingStoredSession.current) {
           stopSessionRetry();   // auth is back (TOKEN_REFRESHED / SIGNED_IN)
         }
@@ -628,6 +633,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sessionStorage.removeItem('wordocious-daily-completions');
       localStorage.removeItem('wordocious-daily-completions');   // §255: the cache moved to localStorage
       clearCachedProfile();
+      clearHomeHostCache();   // 2.7.1: the next player never sees this one's Home host
       localStorage.removeItem('wordocious-propernoundle-daily');
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);

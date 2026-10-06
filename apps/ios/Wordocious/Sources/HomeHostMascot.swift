@@ -17,7 +17,7 @@ import WordociousCore
 //   • else (guests, no custom look) → W, waving.
 // It waves once per launch when Home appears (transform only), then rests.
 
-enum HomeHostChoice: Equatable {
+enum HomeHostChoice: Hashable {
     case photo
     case mascot(AvatarConfig)
     case w
@@ -45,16 +45,25 @@ struct HomeHostMascot: View {
                 .frame(width: size * 0.78, height: size * 0.13)
                 .offset(y: size * 0.03)
                 .allowsHitTesting(false)
-            figure
-                .rotationEffect(.degrees(waveAngle), anchor: .bottom)
-                .offset(y: hop)
-                // only the invite host is a button; every other host lets taps through
-                .allowsHitTesting(directory.ownHostChoice() == .w && directory.ownHostInvite() != nil)
+            // Founder 10-05: the first frame is the player's cached look (HostLookCache); a look that
+            // changed on another device crossfades in (~200 ms), never a hard pop. Same look = no change.
+            ZStack(alignment: .bottom) {
+                figure
+                    .id(choice)
+                    .transition(.opacity)
+            }
+            .frame(width: size, height: size, alignment: .bottom)
+            .animation(.easeInOut(duration: HostLookRules.crossfadeSeconds), value: choice)
+            .rotationEffect(.degrees(waveAngle), anchor: .bottom)
+            .offset(y: hop)
+            // only the invite host is a button; every other host lets taps through
+            .allowsHitTesting(choice == .w && directory.ownHostInvite() != nil)
         }
         .frame(width: size, height: size)
         .overlay(alignment: .topLeading) {
-            if directory.ownHostChoice() == .w, directory.ownHostInvite() != nil { inviteBubble }
+            if choice == .w, directory.ownHostInvite() != nil { inviteBubble }
         }
+        .animation(.easeInOut(duration: HostLookRules.crossfadeSeconds), value: directory.ownHostInvite() != nil)
         .onAppear(perform: waveOnce)
         .onAppear { DressUp.prewarm() }
     }
@@ -89,15 +98,25 @@ struct HomeHostMascot: View {
         .transition(.opacity)
     }
 
+    private var choice: HomeHostChoice { directory.ownHostChoice() }
+
     @ViewBuilder private var figure: some View {
-        switch directory.ownHostChoice() {
+        switch choice {
         case .photo:
             // The framed portrait: the photo whole, never on a body (AvatarView's photo branch
-            // wears the chosen frame, else the player's tier art frame).
-            if let p = AuthService.shared.profile {
-                AvatarView(url: p.avatarUrl, username: p.username, size: size * 0.92, userId: p.id)
-                    .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 4, x: 0, y: 3)
-                    .padding(.bottom, size * 0.02)
+            // wears the chosen frame, else the player's tier art frame). Launch window: the cached
+            // photo + frame, drawn as given (the profile row isn't in hand yet).
+            if let h = directory.ownHostPhoto() {
+                Group {
+                    if h.cached {
+                        AvatarView(url: h.url, username: h.username, size: size * 0.92, pro: h.pro, frame: h.frame,
+                                   lookup: false, userId: h.userId)
+                    } else {
+                        AvatarView(url: h.url, username: h.username, size: size * 0.92, userId: h.userId)
+                    }
+                }
+                .shadow(color: Color(hex: 0x4C1D95).opacity(0.18), radius: 4, x: 0, y: 3)
+                .padding(.bottom, size * 0.02)
             }
         case .mascot(let config):
             // FINISH_SPEC BJ6 (coordinator 10-03): the host is a full-body CUTOUT — no backdrop
@@ -107,10 +126,10 @@ struct HomeHostMascot: View {
                 if LivingMascotView.canAnimate(config) {
                     // 10-06 (behind AvatarLiveConfig.livingMascot, off): alive in its saved pose; taps still pass through
                     // to the card (the host is never a button here), so it breathes, blinks and reacts to moments.
-                    LivingMascotView(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size,
+                    LivingMascotView(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username ?? HostLookCache.load()?.username), size: size,
                                      cutout: true, interactive: false)
                 } else {
-                    MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size)
+                    MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username ?? HostLookCache.load()?.username), size: size)
                 }
             }
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.16), radius: 2.5, x: 0, y: 2)
@@ -118,7 +137,7 @@ struct HomeHostMascot: View {
             if let invite = directory.ownHostInvite() {
                 // Door 2: your own plain mascot hosts until you make it yours.
                 Button { DressUp.shared.finish(.hostInvite); DressUp.shared.open(.room(.body)) } label: {
-                    MascotCutout(config: invite, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size)
+                    MascotCutout(config: invite, initial: AvatarCatalog.initial(AuthService.shared.profile?.username ?? HostLookCache.load()?.username), size: size)
                         .shadow(color: Color(hex: 0x4C1D95).opacity(0.16), radius: 2.5, x: 0, y: 2)
                 }
                 .buttonStyle(.squish)

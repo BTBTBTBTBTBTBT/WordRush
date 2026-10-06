@@ -43,7 +43,7 @@ import { useCompletedElsewhere } from '@/hooks/use-completed-elsewhere';
 import { PuzzleElsewhere, PuzzleFinished, FINISHED_SHELL_PAD } from '@/components/puzzles/finished-screen';
 import { hubElsewhere } from '@/lib/elsewhere-progress';
 import { isTypingTarget } from '@/lib/keyboard';
-import { playDelete, playInvalid, playKeyTap, playSuccess } from '@/lib/sounds';
+import { playDelete, playInvalid, playKeyTap, playPangram, playSuccess } from '@/lib/sounds';
 import { haptic } from '@/lib/haptics';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
@@ -250,7 +250,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
           setTyping('');
           const word = a.word.toUpperCase();
           // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
-          haptic('light'); playSuccess(); flash(hubIsPangram(word, s.letters) ? `Pangram! +${hubWordScore(word, s.letters)}` : `+${hubWordScore(word, s.letters)}`);
+          if (hubIsPangram(word, s.letters)) playPangram(); else { haptic('light'); playSuccess(); } flash(hubIsPangram(word, s.letters) ? `Pangram! +${hubWordScore(word, s.letters)}` : `+${hubWordScore(word, s.letters)}`);
         }
       } else if (a.type === 'HINT_START' || a.type === 'HINT_REVEAL') { if (next.hintsUsed > s.hintsUsed) playKeyTap(); }
       return next;

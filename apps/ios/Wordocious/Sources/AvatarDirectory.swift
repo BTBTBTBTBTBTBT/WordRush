@@ -58,6 +58,14 @@ final class AvatarDirectory: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] p in self?.recordOwn(p) }
             .store(in: &subs)
+        // Founder 10-05: keep the last settled host look on the device (HostLookCache) — on every
+        // profile load, avatar column read and Dressing Room / Edit Profile save.
+        Publishers.Merge3($ownVersion.map { _ in () },
+                          MascotLooks.shared.objectWillChange.map { _ in () },
+                          CastAvatars.shared.objectWillChange.map { _ in () })
+            .debounce(for: .milliseconds(250), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in self?.persistHostLook() }
+            .store(in: &subs)
     }
 
     static func key(_ username: String?) -> String? {
@@ -232,7 +240,57 @@ final class AvatarDirectory: ObservableObject {
     /// BJ6: who hosts the Good Morning card — the player's uploaded photo as a framed
     /// portrait when their avatar shows it, else their custom mascot (a saved avatar_config
     /// or a worn cast hero), else W (guests, no custom look).
+    /// Founder 10-05: until the own look has settled at launch, the last known look of this
+    /// player (HostLookCache) hosts instead — never W first and a pop later.
     func ownHostChoice() -> HomeHostChoice {
+        switch hostSource() {
+        case .live: return liveHostChoice()
+        case .unknown: return .w
+        case .cached(let e):
+            switch e.kind {
+            case .photo: return .photo
+            case .mascot: return e.config.map { .mascot($0) } ?? .w
+            case .plain: return .w
+            }
+        }
+    }
+
+    /// Founder 10-05 (door 2): a signed-in player with no custom look sees their OWN plain seeded mascot
+    /// as the Home host saying "Make me yours!" (instead of W) until they save a look or dismiss it.
+    /// No invite while the look is still unknown (it may be a customized player).
+    func ownHostInvite() -> AvatarConfig? {
+        switch hostSource() {
+        case .live: return liveHostInvite()
+        case .unknown: return nil
+        case .cached(let e):
+            guard e.kind == .plain, !DressUp.shared.done(.hostInvite) else { return nil }
+            return e.config
+        }
+    }
+
+    /// What the photo host draws: the live profile, else (launch window) the cached look.
+    func ownHostPhoto() -> (url: String?, username: String, userId: String?, frame: String?, pro: Bool, cached: Bool)? {
+        if case .cached(let e) = hostSource(), e.kind == .photo {
+            return (e.photoUrl, e.username ?? "", e.userId, e.frame, e.pro, true)
+        }
+        guard let p = AuthService.shared.profile else { return nil }
+        return (p.avatarUrl, p.username, p.id, nil, false, false)
+    }
+
+    /// True once the host draws the live look (not the launch-window cache) — the widget snapshot
+    /// waits for it so it never deletes / re-renders the widget figure from a half-loaded look.
+    var ownHostIsLive: Bool { if case .live = hostSource() { return true } else { return false } }
+
+    private func hostSource() -> HostLookRules.Source {
+        _ = ownVersion
+        let auth = AuthService.shared
+        let uid = auth.profile?.id
+        let settled = uid != nil && MascotLooks.shared.ownSettled == uid && CastAvatars.shared.ownSettled == uid
+        return HostLookRules.source(entry: HostLookCache.load(), sessionExpected: AuthService.hadPersistedSession,
+                                    isGuest: auth.isGuest, profileUserId: uid, liveSettled: settled)
+    }
+
+    private func liveHostChoice() -> HomeHostChoice {
         _ = ownVersion
         guard let p = AuthService.shared.profile, !AuthService.shared.isGuest else { return .w }
         let r = look(username: p.username, userId: p.id, url: p.avatarUrl, castId: nil, frame: nil,
@@ -247,9 +305,7 @@ final class AvatarDirectory: ObservableObject {
         }
     }
 
-    /// Founder 10-05 (door 2): a signed-in player with no custom look sees their OWN plain seeded mascot
-    /// as the Home host saying "Make me yours!" (instead of W) until they save a look or dismiss it.
-    func ownHostInvite() -> AvatarConfig? {
+    private func liveHostInvite() -> AvatarConfig? {
         _ = ownVersion
         guard let p = AuthService.shared.profile, !AuthService.shared.isGuest, !DressUp.shared.done(.hostInvite) else { return nil }
         let r = look(username: p.username, userId: p.id, url: p.avatarUrl, castId: nil, frame: nil,
@@ -260,11 +316,58 @@ final class AvatarDirectory: ObservableObject {
         return c
     }
 
+    /// Writes the settled live host look (keyed by user id). Never while unsettled, never for guests.
+    private func persistHostLook() {
+        let auth = AuthService.shared
+        guard let p = auth.profile, !auth.isGuest, case .live = hostSource() else { return }
+        let lk = look(username: p.username, userId: p.id, url: p.avatarUrl, castId: nil, frame: nil,
+                      mascot: nil, accentHex: p.accentColor, lookup: true)
+        let entry: HostLookEntry
+        switch liveHostChoice() {
+        case .photo:
+            let pro = lk.ownPro
+            entry = HostLookEntry(userId: p.id, kind: .photo, photoUrl: lk.resolved.photoUrl ?? p.avatarUrl, username: p.username,
+                                  frame: Self.portraitFrame(lk.resolved, level: p.level, pro: pro), pro: pro)
+        case .mascot(let c):
+            entry = HostLookEntry(userId: p.id, kind: .mascot, config: c, username: p.username)
+        case .w:
+            var c = lk.resolved.config
+            c.display = "mascot"
+            entry = HostLookEntry(userId: p.id, kind: .plain, config: c, username: p.username)
+        }
+        if HostLookRules.shouldWrite(stored: HostLookCache.load(), live: entry) { HostLookCache.save(entry) }
+    }
+
     /// FINISH_SPEC BJ6 (founder 10-03): a photo is a framed PORTRAIT — the chosen frame,
     /// else the player's level-tier frame (art-frame-<tier>) — never pasted onto a body.
     /// Order (web / Android parity): chosen frame → the Pro gold frame for a Pro player →
     /// the level tier's frame when the level is known → none.
     static func portraitFrame(_ resolved: AvatarResolve.Resolved, level: Int?, pro: Bool = false) -> String? {
         AvatarResolve.portraitFrame(chosen: resolved.config.frame, pro: pro, level: level)
+    }
+}
+
+/// Founder 10-05: the signed-in player's last settled Home host look, in UserDefaults (one entry,
+/// keyed by its user id inside; HostLookRules only honors it for that id). Cleared on sign-out.
+@MainActor
+enum HostLookCache {
+    static let key = "wordocious.host-look"
+    private static var memo: HostLookEntry??
+
+    static func load() -> HostLookEntry? {
+        if let memo { return memo }
+        let e = UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode(HostLookEntry.self, from: $0) }
+        memo = .some(e)
+        return e
+    }
+
+    static func save(_ entry: HostLookEntry) {
+        memo = .some(entry)
+        if let data = try? JSONEncoder().encode(entry) { UserDefaults.standard.set(data, forKey: key) }
+    }
+
+    static func clear() {
+        memo = .some(nil)
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }

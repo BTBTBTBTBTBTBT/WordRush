@@ -10,7 +10,10 @@ import {
   readPendingChoice, resolveRowAvatar, retryPendingChoice, type AvatarRowFields, type ProfilesUpdater,
 } from '@/lib/avatar-cast';
 import { useAvatarLookup } from '@/lib/avatar-directory';
-import { homeHostChoice, type HomeHostChoice } from '@/lib/home-host';
+import { type HomeHostChoice } from '@/lib/home-host';
+import {
+  homeHostChoiceKey, homeHostLookFor, pickHomeHostLook, readHomeHostCache, storedSessionHint, writeHomeHostCache, type HomeHostPhase,
+} from '@/lib/home-host-cache';
 import { MascotAvatar, warmAvatarArt } from './mascot-avatar';
 
 /**
@@ -134,8 +137,18 @@ export function usePlayerAvatar(input: PlayerAvatarInput): PlayerAvatarLook {
  * for the signed-in player — their photo as a framed portrait, else their
  * saved / cast mascot, else W (guests and the seeded default). With their
  * initial, level (the portrait's tier frame) and Pro state.
+ *
+ * 2.7.1 (founder: W showed during the intro, then popped to your mascot): until
+ * the profile lands, the host paints from this device's last look for this user
+ * (lib/home-host-cache.ts); with none cached, `phase` is 'unknown' (the host stays
+ * invisible, no bubble). Home is client-only (AuthGate renders the app only after
+ * mount / once auth resolves, never on the server), so the storage reads in the
+ * state initializers below can't cause a hydration mismatch.
  */
-export function useHomeHost(): { choice: HomeHostChoice; initial: string; level: number | null; pro: boolean | null; seeded: AvatarConfig | null; userId: string | null } {
+export function useHomeHost(): {
+  choice: HomeHostChoice; initial: string; level: number | null; pro: boolean | null;
+  seeded: AvatarConfig | null; userId: string | null; phase: HomeHostPhase;
+} {
   let auth: ReturnType<typeof useAuth> | null = null;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -144,35 +157,41 @@ export function useHomeHost(): { choice: HomeHostChoice; initial: string; level:
     // No AuthProvider above.
   }
   const profile = (auth?.user ? auth.profile ?? null : null) as OwnProfile | null;
-  const pending = profile ? readPendingChoice(profile.id) : null;
-  const resolved = profile
-    ? resolveRowAvatar(
-      {
-        avatar_url: profile.avatar_url,
-        avatar_config: pending?.config ?? profile.avatar_config,
-        avatar_cast_id: pending ? pending.castId : profile.avatar_cast_id,
-        avatar_frame: pending ? pending.frame : profile.avatar_frame,
-      } as AvatarRowFields,
-      String(profile.username ?? ''),
-      (profile.accent_color as string | null | undefined) ?? null,
-    )
-    : null;
-  const next = homeHostChoice(resolved);
+  const pro = profile ? !!auth?.isProActive : null;
+  const live = profile ? homeHostLookFor(profile, !!pro) : null;
+  // Read once per mount: only needed until the live look arrives.
+  const [cache] = React.useState(() => readHomeHostCache());
+  const [session] = React.useState(() => storedSessionHint());
+  const picked = pickHomeHostLook({ live, userId: auth?.user?.id ?? null, loading: !!auth?.loading, session, cache });
+  const next = picked.look.choice;
   // BJ6 round 4: warm the host's art parts during this first render (before Home's first paint).
   if (next.kind !== 'w') warmAvatarArt(next.config);
-  const key = next.kind === 'w' ? 'w' : `${next.kind}|${next.kind === 'photo' ? next.photoUrl : ''}|${avatarConfigKey(next.config)}`;
+  else if (picked.look.seeded) warmAvatarArt(picked.look.seeded);
+  const key = homeHostChoiceKey(next);
   // Keep the object stable across renders (MascotAvatar is memoized).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const choice = React.useMemo(() => next, [key]);
-  const level = profile ? Number(profile.level) : NaN;
+  const seededKey = picked.look.seeded ? avatarConfigKey(picked.look.seeded) : '';
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const seeded = React.useMemo(() => picked.look.seeded, [seededKey]);
+
+  // Keep this device's look current whenever the live one resolves (incl. a Dressing Room / Edit Profile save).
+  const liveId = picked.phase === 'live' ? profile?.id ?? null : null;
+  const liveSig = liveId && live ? JSON.stringify(live) : '';
+  React.useEffect(() => {
+    if (liveId && live) writeHomeHostCache(liveId, live);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveId, liveSig]);
+
   return {
     choice,
-    initial: avatarInitial(String(profile?.username ?? '')),
-    level: Number.isFinite(level) ? level : null,
-    pro: profile ? !!auth?.isProActive : null,
+    initial: picked.look.initial,
+    level: picked.look.level,
+    pro: picked.look.pro,
     // Founder 10-05 (door 2): no custom look yet → their own plain seeded mascot can host ("Make me yours!").
-    seeded: resolved && resolved.kind === 'seeded' ? { ...resolved.config, display: 'mascot' } : null,
-    userId: profile?.id ?? null,
+    seeded,
+    userId: picked.uid,
+    phase: picked.phase,
   };
 }
 
