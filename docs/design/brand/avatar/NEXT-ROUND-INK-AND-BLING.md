@@ -144,6 +144,23 @@ Candidates — new silhouettes:
 56. Shield
 57. Speech bubble (a nod to words)
 58. Puzzle piece (a nod to the games)
+**Squishy plush shapes (founder 10-05: the big plush-toy trend — our OWN designs, never named or modeled after
+any brand; generic "squishy" / "plush" wording only):** extra-soft, extra-round silhouettes with a matte
+plush finish option (velvety, less gloss) and tiny nubs instead of full limbs:
+59a. Mochi dumpling (wide, soft squat dome)
+59b. Marshmallow (short soft cylinder)
+59c. Kitty-ear plush (round with two small ear nubs)
+59d. Bunny-ear plush (round with two tall floppy ears)
+59e. Bear-ear plush (round with two round ears)
+59f. Seal / blob (long, lying-down loaf)
+59g. Frog plush (wide with two eye bumps on top)
+59h. Axolotl-ish (round with soft frill nubs on the sides)
+59i. Dino plush (bean with soft back spikes)
+59j. Fruit plush (round with a leaf on top — peach / strawberry)
+59k. Cloud-loaf (pillow-like rectangle)
+Plush finish = a material option on any body (Gloss · Plush), drawn once per body as a matte variant.
+Items fit by the landmark rules like every other body; ear nubs count as head landmarks for hats/hair.
+
 And SIZES — a size slider or presets applied to any body: XS, S, M (today), L, XL, plus "chunky" (wider) and
 "lanky" (taller) proportions.
 
