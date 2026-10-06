@@ -239,3 +239,13 @@ export function playOpponentThunk() {
 export function playGameOver() {
   playSound('lose');
 }
+
+/**
+ * Sound.castLaugh — the cast puppet tap (components/ui/cast-puppets.ts): a character in
+ * the header hops and laughs. SILENT for now: the founder is picking the laugh from the
+ * Sound Lab; wire it here (e.g. `playSound('<name>', { gain: 0.6 })`, optionally per
+ * character id). iOS: Sound.castLaugh(_:) in Sound.swift; Android: SoundManager.castLaugh().
+ */
+export function castLaugh(_id: string): void {
+  // intentionally silent until the laugh sound is chosen
+}

@@ -1470,6 +1470,13 @@ html[data-season] .candy.candy-peach:not(.candy-on) {
    re-applied every frame of every move (and of the intro's pop + glide); on the
    image it is painted once into the cell's layer. */
 .castrow .cm > img { position: absolute; max-width: none; pointer-events: none; user-select: none; filter: drop-shadow(0 3px 4px rgba(60, 30, 110, 0.18)); }
+/* 2.7.1 cast puppets (components/ui/cast-puppets.ts): the rig canvas over each hero
+   image takes over once every layer has loaded (the images stay as the fallback). */
+.castrow .cm > canvas[data-puppet] { position: absolute; max-width: none; height: auto; pointer-events: none; opacity: 0; filter: drop-shadow(0 3px 4px rgba(60, 30, 110, 0.18)); }
+.castrow[data-puppet-ready] .cm > img { visibility: hidden; }
+.castrow[data-puppet-ready] .cm > canvas[data-puppet] { opacity: 1; }
+.castrow .cm, a:has(> * > .castrow), a:has(.castrow) { -webkit-tap-highlight-color: transparent; }
+.castrow .cm { touch-action: manipulation; }
 .cm.act-o1 { animation: m-spin 900ms cubic-bezier(0.45, 0, 0.25, 1); transform-origin: 50% 55%; }
 @keyframes m-spin { 0% { transform: rotate(0); } 85% { transform: rotate(372deg); } 100% { transform: rotate(360deg); } }
 .cm.act-w { animation: m-hop 700ms cubic-bezier(0.3, 1.5, 0.5, 1); }

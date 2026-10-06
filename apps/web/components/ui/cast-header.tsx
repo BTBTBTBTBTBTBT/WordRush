@@ -11,6 +11,9 @@ import { PRO_CROWN, crownTarget } from '@/lib/pro-crown';
 import { CROWN_DROP_EVENT } from '@/lib/pro-welcome';
 import { CAST_FLOURISH_ATTR, INTRO_RUNNING_ATTR } from '@/lib/intro';
 import { ProCrownSheet } from '@/components/pro/pro-crown-sheet';
+import { puppetBox, tapKeyframes, useCastPuppets } from '@/components/ui/cast-puppets';
+import { haptic } from '@/lib/haptics';
+import { castLaugh } from '@/lib/sounds';
 
 // The living cast header (docs/FINISH_SPEC.md A5, option A; mockup
 // game-kit.html §5 `.castrow`): the ten cast heroes (/mascots/<id>.png) as
@@ -28,6 +31,11 @@ import { ProCrownSheet } from '@/components/pro/pro-crown-sheet';
 // "You're Pro" sheet.
 // The cold-start intro (components/providers/cold-start-intro.tsx) glides into
 // the row marked `data-cast-row`.
+// 2.7.1 cast puppets (components/ui/cast-puppets.ts): out of season each figure is
+// its rig (breathing, blinks, a signature move every 6–10 s, one at a time) and a
+// tap makes it hop + laugh; the CSS personality moves stand down. In season the
+// costumes stay (the rigs are cut from the plain heroes) with the CSS moves and a
+// transform-only tap hop. The figures take taps (the rest of the row doesn't).
 
 /**
  * The calmer top (FINISH_SPEC N3/N4): the row spans ≈90% of the screen,
@@ -54,6 +62,10 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
   const season = useSeason();
   const [crownBox, setCrownBox] = useState<Box | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const puppets = useCastPuppets(rowRef, season === null);
+  const puppetsOn = puppets.ready && season === null;
+  const puppetsOnRef = useRef(puppetsOn);
+  puppetsOnRef.current = puppetsOn;
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -63,7 +75,8 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
       const row = rowRef.current;
       // F2 fix: wait while the cold-start intro runs or the landing flourish plays.
       const busy = document.documentElement.hasAttribute(INTRO_RUNNING_ATTR) || document.documentElement.hasAttribute(CAST_FLOURISH_ATTR);
-      if (row && !busy && document.visibilityState === 'visible' && !prefersReducedMotion()) {
+      // 2.7.1: the puppets play their own signature moves.
+      if (row && !busy && !puppetsOnRef.current && document.visibilityState === 'visible' && !prefersReducedMotion()) {
         const id = pickCastMove(last);
         last = id;
         const el = row.querySelector<HTMLElement>(`[data-cast="${id}"]`);
@@ -168,6 +181,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
         aria-hidden="true"
         data-cast-row=""
         data-season={season ?? undefined}
+        data-puppet-ready={puppetsOn ? '' : undefined}
         className={`castrow relative pointer-events-none select-none ${className}`}
         style={{ paddingTop: crown ? '5%' : 4, ...style }}
       >
@@ -189,7 +203,20 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
               key={id}
               data-cast={id}
               className="cm"
-              style={{ flex: `${art.aspect.toFixed(3)} 1 0`, aspectRatio: `${art.aspect.toFixed(4)}` }}
+              style={{ flex: `${art.aspect.toFixed(3)} 1 0`, aspectRatio: `${art.aspect.toFixed(4)}`, pointerEvents: 'auto' }}
+              onPointerDown={(e) => {
+                if (e.button !== 0) return;
+                if (season === null) { puppets.tap(id); return; }
+                // In season: the costume hops (squash + stretch, no face swap).
+                haptic('light');
+                castLaugh(id);
+                const el = e.currentTarget;
+                if (puppets.bundle && !prefersReducedMotion() && typeof el.animate === 'function') {
+                  el.animate(tapKeyframes(puppets.bundle.tap, 12), { duration: puppets.bundle.tap.dur * 1000, easing: 'linear' });
+                }
+              }}
+              // The header sits inside the home link: a tap on a character is just for fun.
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
               <Image
                 key={art.src}
@@ -202,6 +229,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
                 sizes="(min-width: 900px) 112px, 20vw"
                 style={{ width: art.layout.width, height: 'auto', left: art.layout.left, top: art.layout.top }}
               />
+              {season === null && <canvas data-puppet="" aria-hidden="true" style={puppetBox(art.trim)} />}
               {crown && id === 'w' && (
                 <span
                   ref={crownRef}
