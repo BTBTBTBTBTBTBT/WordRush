@@ -108,11 +108,12 @@ export function TitleShelves({ username, mascot, initial, accent, unlockedDates,
         </div>
         {recent.length > 0 && shelf('Recently earned', null, recent)}
         {TITLE_SHELVES.map(([id, label]) => {
-          const all = ACHIEVEMENTS.filter((a) => a.category === id);
+          // a secret (the musical cast's tunes) shows only once earned
+          const all = ACHIEVEMENTS.filter((a) => a.category === id && (!a.secret || earned(a)));
           const list = [...all.filter(earned), ...all.filter((a) => !earned(a))].filter(matches);
           return list.length ? shelf(label, `${all.filter(earned).length} / ${all.length}`, list) : null;
         })}
-        {ACHIEVEMENTS.every((a) => !matches(a)) && (
+        {ACHIEVEMENTS.every((a) => !matches(a) || (a.secret && !earned(a))) && (
           <div className="flex flex-col items-center pt-6 gap-1">
             <StageArt name="art-pose-d-skeptic" height={70} />
             <div className="text-[13px] font-black" style={{ color: '#2a1650' }}>No title matches &ldquo;{query}&rdquo;</div>

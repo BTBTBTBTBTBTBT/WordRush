@@ -13,7 +13,9 @@ import { CAST_FLOURISH_ATTR, INTRO_RUNNING_ATTR } from '@/lib/intro';
 import { ProCrownSheet } from '@/components/pro/pro-crown-sheet';
 import { puppetBox, tapKeyframes, useCastPuppets } from '@/components/ui/cast-puppets';
 import { haptic } from '@/lib/haptics';
-import { castLaugh } from '@/lib/sounds';
+import { castLaugh, castNote } from '@/lib/sounds';
+import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyTap, musicalTransformDelays, type MelodyState } from '@wordle-duel/core';
+import { MUSICAL_CAST_ON, NOTE_SVG, noteColor, unlockTune } from '@/lib/musical-cast';
 
 // The living cast header (docs/FINISH_SPEC.md A5, option A; mockup
 // game-kit.html §5 `.castrow`): the ten cast heroes (/mascots/<id>.png) as
@@ -36,6 +38,10 @@ import { castLaugh } from '@/lib/sounds';
 // tap makes it hop + laugh; the CSS personality moves stand down. In season the
 // costumes stay (the rigs are cut from the plain heroes) with the CSS moves and a
 // transform-only tap hop. The figures take taps (the rest of the row doesn't).
+// The musical cast (docs/cloud-prompts/10, core musical-cast.ts; behind MUSICAL_CAST_ON — dev builds only): a
+// long-press on any figure turns all ten "musical" with a squash-and-pop rippling out from it (a gold glow, a note
+// badge); then a tap plays that hero's scale note in its own voice + a floating note (visual even with sound off),
+// and playing a known tune unlocks its secret achievement. Long-press again → back. Reduce Motion = instant swap.
 
 /**
  * The calmer top (FINISH_SPEC N3/N4): the row spans ≈90% of the screen,
@@ -66,6 +72,69 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
   const puppetsOn = puppets.ready && season === null;
   const puppetsOnRef = useRef(puppetsOn);
   puppetsOnRef.current = puppetsOn;
+  // The musical cast (see above).
+  const [musical, setMusical] = useState(false);
+  const [rippleFrom, setRippleFrom] = useState<string>('w');
+  const musicalRef = useRef(false);
+  musicalRef.current = musical;
+  const melody = useRef<MelodyState>(MELODY_START);
+  const press = useRef<{ id: string; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const floats = useRef(0);
+  const cancelPress = () => { if (press.current) { clearTimeout(press.current.timer); press.current = null; } };
+  useEffect(() => () => cancelPress(), []);
+
+  /** Long-press: all ten change over, rippling out from the pressed hero (instant under Reduce Motion). */
+  const toggleMusical = (from: string) => {
+    const row = rowRef.current;
+    const reduce = prefersReducedMotion();
+    const delays = musicalTransformDelays(from, reduce);
+    melody.current = MELODY_START;
+    setRippleFrom(from);
+    setMusical((m) => !m);
+    haptic('medium');
+    if (!row || reduce) return;
+    CAST.forEach((id, i) => {
+      const el = row.querySelector<HTMLElement>(`[data-cast="${id}"]`);
+      if (!el || typeof el.animate !== 'function') return;
+      el.animate(
+        MUSICAL_POP_KEYS.map((k) => ({ offset: k.t, transform: `translateY(${-k.lift}%) scale(${k.sx}, ${k.sy})` })),
+        { duration: MUSICAL_TIMING.popMs, delay: delays[i], easing: 'ease-out' },
+      );
+    });
+  };
+
+  /** One note: the voice (silent with sound off), a selection haptic, the hop, a floating note, the melody matcher. */
+  const playNote = (id: MascotId, el: HTMLElement) => {
+    castNote(id);
+    haptic('selection');
+    const reduce = prefersReducedMotion();
+    if (puppetsOnRef.current) puppets.tap(id, { silent: true });
+    else if (!reduce && typeof el.animate === 'function') {
+      el.animate(MUSICAL_POP_KEYS.map((k) => ({ offset: k.t, transform: `translateY(${-k.lift / 2}%) scale(${1 + (k.sx - 1) / 2}, ${1 + (k.sy - 1) / 2})` })), { duration: 300, easing: 'ease-out' });
+    }
+    // the floating note (capped, transform / opacity only; under Reduce Motion it fades in place)
+    if (floats.current < 12) {
+      const n = document.createElement('span');
+      n.className = 'cm-float';
+      n.setAttribute('aria-hidden', 'true');
+      n.style.color = noteColor(floats.current + Math.floor(performance.now() / 97));
+      n.innerHTML = NOTE_SVG;
+      el.appendChild(n);
+      floats.current += 1;
+      const done = () => { n.remove(); floats.current -= 1; };
+      if (typeof n.animate === 'function') {
+        const drift = (Math.random() * 2 - 1) * 40;
+        const a = n.animate(reduce
+          ? [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0 }]
+          : [{ opacity: 0, transform: 'translate(0, 0) scale(0.5)' }, { opacity: 1, transform: `translate(${drift / 3}%, -60%) scale(1)`, offset: 0.25 }, { opacity: 0, transform: `translate(${drift}%, -220%) scale(0.9) rotate(${drift / 3}deg)` }],
+        { duration: reduce ? 600 : 1100, easing: 'ease-out' });
+        a.onfinish = done; a.oncancel = done;
+      } else setTimeout(done, 600);
+    }
+    const r = melodyTap(melody.current, id, performance.now());
+    melody.current = r.state;
+    if (r.matched) void unlockTune(r.matched.achievement);
+  };
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -182,6 +251,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
         data-cast-row=""
         data-season={season ?? undefined}
         data-puppet-ready={puppetsOn ? '' : undefined}
+        data-musical={musical ? '' : undefined}
         className={`castrow relative pointer-events-none select-none ${className}`}
         style={{ paddingTop: crown ? '5%' : 4, ...style }}
       >
@@ -196,16 +266,23 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
             }}
           />
         )}
-        {CAST.map((id) => {
+        {CAST.map((id, i) => {
           const art = castArt(id, season);
+          // each hero's musical touches switch on partway through its own pop (the ripple)
+          const md = MUSICAL_CAST_ON ? musicalTransformDelays(rippleFrom, false)[i] + Math.round(MUSICAL_TIMING.popMs * 0.4) : 0;
           return (
             <span
               key={id}
               data-cast={id}
               className="cm"
-              style={{ flex: `${art.aspect.toFixed(3)} 1 0`, aspectRatio: `${art.aspect.toFixed(4)}`, pointerEvents: 'auto' }}
+              style={{ flex: `${art.aspect.toFixed(3)} 1 0`, aspectRatio: `${art.aspect.toFixed(4)}`, pointerEvents: 'auto', ['--md' as string]: `${md}ms` }}
               onPointerDown={(e) => {
                 if (e.button !== 0) return;
+                if (MUSICAL_CAST_ON) {
+                  cancelPress();
+                  press.current = { id, x: e.clientX, y: e.clientY, timer: setTimeout(() => { press.current = null; toggleMusical(id); }, MUSICAL_TIMING.longPressMs) };
+                  if (musicalRef.current) { playNote(id, e.currentTarget); return; }
+                }
                 if (season === null) { puppets.tap(id); return; }
                 // In season: the costume hops (squash + stretch, no face swap).
                 haptic('light');
@@ -215,9 +292,18 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
                   el.animate(tapKeyframes(puppets.bundle.tap, 12 * (puppets.bundle.tap.hop / 110)), { duration: puppets.bundle.tap.dur * 1000, easing: 'linear' });
                 }
               }}
+              onPointerMove={(e) => {
+                const p = press.current;
+                if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > MUSICAL_TIMING.moveSlop) cancelPress();
+              }}
+              onPointerUp={cancelPress}
+              onPointerCancel={cancelPress}
+              onPointerLeave={cancelPress}
+              onContextMenu={MUSICAL_CAST_ON ? (e) => e.preventDefault() : undefined}
               // The header sits inside the home link: a tap on a character is just for fun.
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
+              {MUSICAL_CAST_ON && <span className="cm-glow" aria-hidden="true" />}
               <Image
                 key={art.src}
                 src={art.src}
@@ -230,6 +316,8 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
                 style={{ width: art.layout.width, height: 'auto', left: art.layout.left, top: art.layout.top }}
               />
               {season === null && <canvas data-puppet="" aria-hidden="true" style={puppetBox(art.trim)} />}
+              {/* TODO(art): the hero's ChatGPT musical costume (art-cast-musical-<id>) replaces this code-drawn badge. */}
+              {MUSICAL_CAST_ON && <span className="cm-note" aria-hidden="true" data-art-slot={`art-cast-musical-${id}`} dangerouslySetInnerHTML={{ __html: NOTE_SVG }} />}
               {crown && id === 'w' && (
                 <span
                   ref={crownRef}

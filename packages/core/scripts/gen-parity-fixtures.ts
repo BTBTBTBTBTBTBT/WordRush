@@ -46,6 +46,8 @@ import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, av
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule, avatarSaveCheck, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext, type AvatarEarnCondition, type AvatarEarnStats } from '../src/avatar-access';
+import { MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
+import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-rules';
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
@@ -1077,6 +1079,39 @@ export function renderAvatarAccessFixtures() {
   return { contexts, rules, access, saves, earn, earned, tableSize: Object.keys(AVATAR_ACCESS_TABLE.parts).length };
 }
 
+export function renderMusicalCastFixtures() {
+  // The musical cast (musical-cast.ts): the note map, the transform timing, the melody matcher + tap reducer, secrets.
+  const notes = [...MUSICAL_CAST_IDS, 'zz'].map((id) => ({ id, note: musicalNote(id) }));
+  const names = [48, 59, 60, 61, 69, 76, 127].map((m) => ({ midi: m, name: midiNoteName(m) }));
+  const transform = [...MUSICAL_CAST_IDS, 'zz'].flatMap((id) => [false, true].map((reduce) => ({ id, reduce, delays: musicalTransformDelays(id, reduce), duration: musicalTransformDuration(id, reduce) })));
+  const idFor = (m: number) => MUSICAL_CAST_IDS[(MUSICAL_SCALE as readonly number[]).indexOf(m)];
+  const tune = (id: string) => MUSICAL_MELODIES.find((m) => m.id === id)!.notes;
+  const sequences: Array<{ name: string; taps: Array<{ id: string; at: number }> }> = [
+    ...MUSICAL_MELODIES.map((m) => ({ name: m.id, taps: m.notes.map((n, i) => ({ id: idFor(n), at: 1000 + i * 300 })) })),
+    { name: 'twinkle-in-g', taps: tune('twinkle').map((n, i) => ({ id: idFor(n + 7), at: i * 250 })) },
+    { name: 'noodle-then-ode', taps: [...['s', 'w', 'i'], ...tune('ode').map(idFor)].map((id, i) => ({ id, at: i * 400 })) },
+    { name: 'mary-with-a-pause', taps: tune('mary').map((n, i) => ({ id: idFor(n), at: i * 300 + (i >= 6 ? MELODY_GAP_MS + 1 : 0) })) },
+    { name: 'mary-wrong-note', taps: tune('mary').map((n, i) => ({ id: idFor(i === 5 ? 76 : n), at: i * 300 })) },
+    { name: 'buns-twice', taps: [...tune('buns'), ...tune('buns')].map((n, i) => ({ id: idFor(n), at: i * 200 })) },
+    { name: 'clock-backwards', taps: [{ id: 'w', at: 5000 }, { id: 'o1', at: 100 }, { id: 'zz', at: 200 }] },
+  ];
+  const taps = sequences.map(({ name, taps: list }) => {
+    let s: MelodyState = MELODY_START;
+    const steps = list.map(({ id, at }) => { const r = melodyTap(s, id, at); s = r.state; return { id, at, midi: r.note?.midi ?? null, matched: r.matched?.id ?? null, buffered: r.state.notes.length }; });
+    return { name, steps };
+  });
+  const matches = [[], [64, 62, 60], tune('mary').slice(1), tune('ode').map((n) => n + 2), [76, ...tune('birthday')]].map((played) => ({ played, matched: matchMelody(played)?.id ?? null }));
+  const listed = [
+    { a: { key: 'tune_ode_to_joy', secret: true }, unlocked: [] as string[] }, { a: { key: 'tune_ode_to_joy', secret: true }, unlocked: ['tune_ode_to_joy'] },
+    { a: { key: 'under_par', hidden: true }, unlocked: ['under_par'] }, { a: { key: 'first_win' }, unlocked: [] as string[] },
+  ].map(({ a, unlocked }) => ({ a, unlocked, listed: achievementListed(a, new Set(unlocked)) }));
+  return {
+    scale: MUSICAL_SCALE, timing: MUSICAL_TIMING, popKeys: MUSICAL_POP_KEYS, gapMs: MELODY_GAP_MS,
+    melodies: MUSICAL_MELODIES.map((m) => ({ ...m, intervals: melodyIntervals(m.notes) })), secrets: SECRET_ACHIEVEMENT_KEYS,
+    notes, names, transform, taps, matches, listed,
+  };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -1106,6 +1141,7 @@ const FILES: Array<[string, unknown]> = [
   ['avatar-season-fixtures.json', renderAvatarSeasonFixtures()],
   ['avatar-pose-fixtures.json', renderAvatarPoseFixtures()],
   ['avatar-access-fixtures.json', renderAvatarAccessFixtures()],
+  ['musical-cast-fixtures.json', renderMusicalCastFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

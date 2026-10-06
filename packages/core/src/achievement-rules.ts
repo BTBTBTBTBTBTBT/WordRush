@@ -29,6 +29,8 @@ export interface AchievementCatalogEntry {
   xp?: number;
   /** Defined but not shown or awarded until its tracking ships. */
   hidden?: boolean;
+  /** A secret (the musical cast's tunes): awarded normally, but listed only once unlocked (revealed on unlock). */
+  secret?: boolean;
 }
 
 /** The badge art for an achievement (falls back to the category icon until it ships). */
@@ -38,6 +40,9 @@ export function achievementArt(key: string): string {
 
 const e = (key: string, name: string, description: string, category: AchievementCategory, icon: string, hidden = false): AchievementCatalogEntry =>
   hidden ? { key, name, description, category, icon, hidden: true } : { key, name, description, category, icon };
+
+const secret = (key: string, name: string, description: string): AchievementCatalogEntry =>
+  ({ key, name, description, category: 'mascot', icon: 'sparkles', secret: true });
 
 export const NEW_ACHIEVEMENTS: readonly AchievementCatalogEntry[] = [
   // Puzzles
@@ -84,7 +89,22 @@ export const NEW_ACHIEVEMENTS: readonly AchievementCatalogEntry[] = [
   e('spooky_season', 'Spooky Season', 'Finish a daily during the Halloween season', 'seasonal', 'calendar'),
   e('early_bird', 'Early Bird', 'Finish a daily before 7 AM', 'streaks', 'calendar'),
   e('night_owl', 'Night Owl', 'Finish a daily between midnight and 4 AM', 'streaks', 'calendar'),
+  // The musical cast (secret: listed only once unlocked; musical-cast.ts MUSICAL_MELODIES)
+  secret('tune_little_lamb', 'Little Lamb', 'Played Mary Had a Little Lamb on the cast'),
+  secret('tune_little_star', 'Little Star', 'Played Twinkle, Twinkle, Little Star on the cast'),
+  secret('tune_ode_to_joy', 'Ode to Joy', 'Played Ode to Joy on the cast'),
+  secret('tune_happy_birthday', 'Happy Birthday', 'Played Happy Birthday on the cast'),
+  secret('tune_hot_cross_buns', 'Hot Cross Buns', 'Played Hot Cross Buns on the cast'),
 ];
+
+/** The secret keys: awarded, but a locked one is never listed (it appears once unlocked). */
+export const SECRET_ACHIEVEMENT_KEYS: readonly string[] = NEW_ACHIEVEMENTS.filter((a) => a.secret).map((a) => a.key);
+
+/** Should a catalog entry show in a player's list? Hidden never; a secret only once the player has it. */
+export function achievementListed(a: { key: string; hidden?: boolean; secret?: boolean }, unlocked: { has(key: string): boolean }): boolean {
+  if (a.hidden) return false;
+  return !a.secret || unlocked.has(a.key);
+}
 
 /** The keys whose tracking isn't recorded yet (defined, not shown, never awarded). */
 export const HIDDEN_ACHIEVEMENT_KEYS: readonly string[] = NEW_ACHIEVEMENTS.filter((a) => a.hidden).map((a) => a.key);

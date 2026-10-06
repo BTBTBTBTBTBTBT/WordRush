@@ -48,7 +48,8 @@ export function AchievementGrid({ unlocked, progress }: {
     <>
       <div className="space-y-3 mb-2">
         {ACHIEVEMENT_CATEGORIES.map(([catKey, catLabel]) => {
-          const items = ACHIEVEMENTS.filter((a) => a.category === catKey);
+          // a secret (the musical cast's tunes) appears only once unlocked
+          const items = ACHIEVEMENTS.filter((a) => a.category === catKey && (!a.secret || unlocked.has(a.key)));
           if (items.length === 0) return null;
           const color = CATEGORY_ACCENT[catKey];
           const unlockedN = items.filter((a) => unlocked.has(a.key)).length;

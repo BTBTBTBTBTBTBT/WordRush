@@ -259,6 +259,46 @@
       "description": "Finish a daily between midnight and 4 AM",
       "category": "streaks",
       "icon": "calendar"
+    },
+    {
+      "key": "tune_little_lamb",
+      "name": "Little Lamb",
+      "description": "Played Mary Had a Little Lamb on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_little_star",
+      "name": "Little Star",
+      "description": "Played Twinkle, Twinkle, Little Star on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_ode_to_joy",
+      "name": "Ode to Joy",
+      "description": "Played Ode to Joy on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_happy_birthday",
+      "name": "Happy Birthday",
+      "description": "Played Happy Birthday on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_hot_cross_buns",
+      "name": "Hot Cross Buns",
+      "description": "Played Hot Cross Buns on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
     }
   ],
   "hidden": [

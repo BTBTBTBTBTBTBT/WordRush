@@ -36,3 +36,4 @@ export * from './headline-tokens';
 export * from './achievement-rules';
 export * from './mode-coverage';
 export * from './avatar-access';
+export * from './musical-cast';

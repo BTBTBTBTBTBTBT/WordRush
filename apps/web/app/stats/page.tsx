@@ -42,7 +42,7 @@ import { GuessDistribution } from '@/components/profile/guess-distribution';
 import { SolveTimeChart } from '@/components/profile/solve-time-chart';
 import { DailyCalendar } from '@/components/profile/daily-calendar';
 import { TopWordsCard } from '@/components/profile/top-words-card';
-import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
+import { fetchUserAchievements, ACHIEVEMENTS, listedAchievements } from '@/lib/achievement-service';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard, TintTile } from '@/components/profile/stat-kit';
 import { STAT_LABELS } from '@/lib/stat-labels';
@@ -541,7 +541,7 @@ export default function StatsPage() {
                     silver: (profile as any).silver_medals ?? 0,
                     bronze: (profile as any).bronze_medals ?? 0,
                     achievementsUnlocked: userAchievements.size,
-                    achievementsTotal: ACHIEVEMENTS.length,
+                    achievementsTotal: listedAchievements(userAchievements).length,
                   });
                 }}
               />
@@ -1045,7 +1045,7 @@ export default function StatsPage() {
               {/* Achievements (grouped by category, under the Progression banner) */}
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Achievements</span>
-                <span className="px-2 py-0.5" style={softPill('#7c3aed', { bar: false })}><SoftNum size={12} className="soft-num-auto">{userAchievements.size} / {ACHIEVEMENTS.length}</SoftNum></span>
+                <span className="px-2 py-0.5" style={softPill('#7c3aed', { bar: false })}><SoftNum size={12} className="soft-num-auto">{userAchievements.size} / {listedAchievements(userAchievements).length}</SoftNum></span>
               </div>
               <AchievementGrid
                 unlocked={achievementDates}
