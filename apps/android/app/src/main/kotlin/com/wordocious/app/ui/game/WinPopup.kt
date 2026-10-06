@@ -806,6 +806,8 @@ fun WinExtraChips(streakDay: Int?, flawless: Boolean, newRecord: Boolean) {
             val still = WTheme.reducedMotion
             val pop = remember { Animatable(if (still) 1f else 0f) }
             LaunchedEffect(still) { if (!still) { delay(900); pop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = 300f)) } }
+            // Spec U parity (web result-popup, iOS header tick): the streak +1 sound as the chip pops.
+            LaunchedEffect(Unit) { delay(900); com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.STREAK) }
             Row(
                 Modifier.align(Alignment.CenterVertically)
                     .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
