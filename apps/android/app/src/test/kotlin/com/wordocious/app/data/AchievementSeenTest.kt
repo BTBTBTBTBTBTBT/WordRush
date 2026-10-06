@@ -44,6 +44,24 @@ class AchievementSeenTest {
         assertEquals(listOf("muddle_master"), AchievementCatalog.visible(defs).map { it.key })
     }
 
+    @Test fun secretAchievementsAreListedOnlyOnceUnlocked() {
+        val defs = listOf(
+            AchievementService.AchievementDef("muddle_master", "Muddle Master", "Solve 25 Muddles", "puzzles"),
+            AchievementService.AchievementDef("pocket_pro", "Pocket Pro", "Win every pocket game", "pocket", hidden = true),
+            AchievementService.AchievementDef("tune_ode_to_joy", "Ode to Joy", "Played Ode to Joy on the cast", "mascot", secret = true),
+        )
+        assertEquals(listOf("muddle_master"), AchievementCatalog.listed(defs) { false }.map { it.key })
+        assertEquals(listOf("muddle_master", "tune_ode_to_joy"), AchievementCatalog.listed(defs) { true }.map { it.key })
+        // The bundled snapshot carries `secret` on the five musical-cast tunes (core MusicalCast.ACHIEVEMENT_KEYS).
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val body = java.io.File("src/main/assets/achievements-catalog.json").readText()
+        val all = json.decodeFromString(
+            kotlinx.serialization.builtins.ListSerializer(AchievementService.AchievementDef.serializer()),
+            json.parseToJsonElement(body).let { (it as kotlinx.serialization.json.JsonObject)["achievements"].toString() },
+        )
+        assertEquals(com.wordocious.core.MusicalCast.ACHIEVEMENT_KEYS, all.filter { it.secret }.map { it.key })
+    }
+
     @Test fun ownArtNameAndCategoryFallback() {
         assertEquals("art_ach_muddle_master", BadgeArt.ownArtName("muddle_master"))
         assertEquals("art_ach_wake_up_call", BadgeArt.ownArtName("Wake-Up Call".replace(' ', '_')))

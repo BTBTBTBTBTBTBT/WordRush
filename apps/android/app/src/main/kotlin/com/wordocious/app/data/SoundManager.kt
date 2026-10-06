@@ -101,7 +101,9 @@ object SoundManager {
             p.setOnLoadCompleteListener { _, sampleId, status -> if (status == 0) loaded.add(sampleId) }
             val ctx = App.instance
             // The intro jingle loads first: it plays a moment after launch.
-            (listOf(Sfx.INTRO) + Sfx.entries.filter { it != Sfx.INTRO })
+            // The musical cast's notes load only where its flag is on (debug builds until the founder approves).
+            val notes = com.wordocious.core.MusicalCast.enabled(com.wordocious.app.BuildConfig.DEBUG)
+            (listOf(Sfx.INTRO) + Sfx.entries.filter { it != Sfx.INTRO && (notes || !it.file.startsWith("sfx_note_")) })
                 .forEach { s -> sampleIds[s.ordinal] = p.load(ctx, rawRes(s), 1) }
             pool = p
         }
