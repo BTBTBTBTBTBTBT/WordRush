@@ -181,6 +181,8 @@ export function recentlyPlayed(name: SoundName, ms: number): boolean {
 export function playSound(name: SoundName, opts: { rate?: number; gain?: number } = {}): void {
   try {
     if (!isSoundEnabled()) return;
+    // The admin portal is silent (founder 10-06): no game sounds while working in /admin.
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) return;
     const ctx = _ctx;
     const master = _master;
     if (!ctx || !master || ctx.state !== 'running') return;
@@ -288,6 +290,12 @@ export function playInvalid() {
 export function playSuccess() {
   if (recentlyPlayed('win', 400) || recentlyPlayed('celebrate', 400) || recentlyPlayed('unlock', 400)) return;
   playSound('notify', { gain: PARTIAL_GAIN });
+  haptic('light');
+}
+
+/** A Hubbub pangram: the 1-up (Johnny 10-05; pick "Triple Coin Climb") instead of the partial chime. */
+export function playPangram() {
+  playSound('pangram');
   haptic('light');
 }
 

@@ -9,6 +9,7 @@ import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { decodeImage } from '@/lib/predecode';
 import { HOME_HOST_PORTRAIT, HOME_HOST_SIZE, takeHomeHostWave, type HomeHostChoice } from '@/lib/home-host';
+import { HOME_HOST_CROSSFADE_MS, homeHostChoiceKey, homeHostTransition } from '@/lib/home-host-cache';
 
 const W_POSE = 'art-pose-w-wave' as const;
 
@@ -41,17 +42,41 @@ export function HomeHost({ choice, initial, level, pro, hidden = false, size = H
   const portrait = Math.round((size * HOME_HOST_PORTRAIT) / HOME_HOST_SIZE);
   const [wArtFailed, setWArtFailed] = React.useState(false);
 
-  let figure: React.ReactNode;
-  if (choice.kind === 'photo') {
-    figure = <MascotAvatar config={choice.config} initial={initial} size={portrait} photoUrl={choice.photoUrl} level={level} pro={pro} />;
-  } else if (choice.kind === 'mascot') {
-    // BJ6 round 5: the host's mascot is a full-body cutout (no tile, backdrop or frame) — like W.
-    figure = <MascotAvatar config={choice.config} initial={initial} size={size} cutout living />;
-  } else if (wArtFailed) {
-    // Never an empty host: if W's pose art can't load, the code-drawn W mascot stands in.
-    figure = <MascotAvatar config={W_FALLBACK} initial="W" size={size} cutout />;
-  } else {
-    figure = (
+  // 2.7.1: the live look replacing a different one on screen (e.g. this device's cached look)
+  // crossfades over ~200 ms instead of popping; the same look changes nothing.
+  const key = homeHostChoiceKey(choice);
+  const shown = React.useRef<{ key: string; choice: HomeHostChoice; visible: boolean } | null>(null);
+  const [leaving, setLeaving] = React.useState<{ key: string; choice: HomeHostChoice } | null>(null);
+  React.useLayoutEffect(() => {
+    const prev = shown.current;
+    if (prev && homeHostTransition(prev.key, key, prev.visible) === 'crossfade') setLeaving({ key: prev.key, choice: prev.choice });
+    shown.current = { key, choice, visible: !hidden };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  React.useEffect(() => {
+    if (shown.current) shown.current.visible = !hidden;
+  }, [hidden]);
+  // The outgoing layer leaves when the fade is done (a timer, so a paused / skipped animation can't strand it).
+  React.useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => setLeaving(null), HOME_HOST_CROSSFADE_MS + 60);
+    return () => clearTimeout(t);
+  }, [leaving]);
+
+  const figureFor = (c: HomeHostChoice): React.ReactNode => {
+    if (c.kind === 'photo') {
+      return <MascotAvatar config={c.config} initial={initial} size={portrait} photoUrl={c.photoUrl} level={level} pro={pro} />;
+    }
+    if (c.kind === 'mascot') {
+      // BJ6 round 5: the host's mascot is a full-body cutout (no tile, backdrop or frame) — like W.
+      // 10-06: the living mascot (behind the livingMascot flag); the outgoing crossfade layer stays still
+      return <MascotAvatar config={c.config} initial={initial} size={size} cutout living={c === choice} />;
+    }
+    if (wArtFailed) {
+      // Never an empty host: if W's pose art can't load, the code-drawn W mascot stands in.
+      return <MascotAvatar config={W_FALLBACK} initial="W" size={size} cutout />;
+    }
+    return (
       <Image
         src={artSrc(W_POSE)}
         alt=""
@@ -63,7 +88,18 @@ export function HomeHost({ choice, initial, level, pro, hidden = false, size = H
         style={{ width: 'auto', height: size, maxWidth: size, objectFit: 'contain' }}
       />
     );
-  }
+  };
+  const fading = leaving && leaving.key !== key ? leaving : null;
+  const layer = (c: HomeHostChoice, k: string, anim: string | undefined) => (
+    <span key={k} className="absolute inset-0 flex items-end justify-center" style={{ lineHeight: 0, animation: anim }}>
+      {figureFor(c)}
+    </span>
+  );
+  // Keyed siblings in one array, so the incoming layer is never remounted when the outgoing one leaves.
+  const figure = [
+    fading ? layer(fading.choice, `out:${fading.key}`, `home-host-fade-out ${HOME_HOST_CROSSFADE_MS}ms ease-out both`) : null,
+    layer(choice, key, fading ? `home-host-fade-in ${HOME_HOST_CROSSFADE_MS}ms ease-out both` : undefined),
+  ];
 
   return (
     // BJ6 round 3 (the missing host): `block` — inside the banner's absolute (non-flex) slot an

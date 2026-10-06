@@ -40,6 +40,8 @@ enum class Sfx(val file: String) {
     LEVELUP("sfx_levelup"),
     /** A game opening (pick: "Page Breeze"). */
     OPEN("sfx_open"),
+    /** Hubbub pangram: a 1-up (Johnny 10-05; pick: "Triple Coin Climb"). */
+    PANGRAM("sfx_pangram"),
 
     /** Each header hero's giggle (pick: "Giggles"), played by SoundManager.castLaugh. */
     LAUGH_W("sfx_laugh_w"), LAUGH_O1("sfx_laugh_o1"), LAUGH_R("sfx_laugh_r"), LAUGH_D("sfx_laugh_d"),
@@ -75,6 +77,8 @@ enum class FeedbackEvent(val sound: Sfx?, val haptic: Haptic?) {
     LEVEL_UP(Sfx.LEVELUP, Haptic.SUCCESS),
     /** A game opens (GameMotion.gameEntered: solo, VS, pocket games). Never on close / back. */
     GAME_OPEN(Sfx.OPEN, null),
+    /** A Hubbub pangram (all seven letters): the 1-up. */
+    PANGRAM(Sfx.PANGRAM, Haptic.LIGHT),
 }
 
 /** The tunables (spec U): master volume, tap pitch spread, tick throttle, squish quiet window. */

@@ -12,7 +12,7 @@ import type { HapticKind } from '@/lib/haptics';
 export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
   'lose', 'celebrate', 'streak', 'tick', 'notify', 'unlock', 'vs', 'whoosh',
-  'intro', 'levelup', 'open',
+  'intro', 'levelup', 'open', 'pangram',
   'classic-invalid', 'classic-streak', 'classic-lose', 'classic-win',
   'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
 ] as const;

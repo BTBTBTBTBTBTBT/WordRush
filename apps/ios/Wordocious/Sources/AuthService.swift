@@ -223,6 +223,7 @@ final class AuthService: ObservableObject {
                 isAuthenticated = false
                 AuthService.hadPersistedSession = false
                 UserDefaults.standard.removeObject(forKey: AuthService.profileCacheKey)
+                HostLookCache.clear()
                 AuthService.discardUnattributedSaves()
             }
         }
@@ -497,6 +498,8 @@ final class AuthService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: AuthService.streakCacheKey)
         UserDefaults.standard.removeObject(forKey: AuthService.shieldsCacheKey)
         UserDefaults.standard.removeObject(forKey: AuthService.profileCacheKey)
+        // Founder 10-05: the cached Home host look goes with the session (the next account never sees it).
+        HostLookCache.clear()
     }
 
     private static let lastOwnerKey = "wordocious.last-save-owner"

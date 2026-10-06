@@ -46,6 +46,8 @@ final class SoundManager {
         case levelup
         /// A game opening (pick: "Page Breeze").
         case open
+        /// Hubbub pangram (all seven letters): a 1-up (Johnny 10-05; pick: "Triple Coin Climb").
+        case pangram
         /// Each header hero's giggle (pick: "Giggles"), file `sfx-laugh-<id>.m4a`.
         case laughW = "laugh-w", laughO1 = "laugh-o1", laughR = "laugh-r", laughD = "laugh-d", laughO2 = "laugh-o2"
         case laughC = "laugh-c", laughI = "laugh-i", laughO3 = "laugh-o3", laughU = "laugh-u", laughS = "laugh-s"
@@ -162,6 +164,8 @@ final class SoundManager {
     /// A partial success mid-game (a found word, a solved group / board / stage —
     /// never the finish): `notify` at 0.7. Partial successes never play `win`.
     func playFound() { play(.notify, volume: 0.7) }
+    /// A Hubbub pangram: the 1-up instead of the found-word sound.
+    func playPangram() { play(.pangram) }
 
     /// The intro jingle's own length: the cast hops it covers stay quiet meanwhile.
     private static let introQuiet: TimeInterval = 3.0

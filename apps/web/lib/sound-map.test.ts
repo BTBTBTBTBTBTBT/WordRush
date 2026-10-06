@@ -7,7 +7,7 @@ describe('sound pack', () => {
   it('names exactly the shipped samples (the 16-sound pack + the Sound Lab picks)', () => {
     const files = readdirSync(path.resolve(__dirname, '../public/sounds')).filter((f) => f.endsWith('.m4a')).map((f) => f.replace(/\.m4a$/, '')).sort();
     expect([...SOUND_NAMES].sort()).toEqual(files);
-    expect(SOUND_NAMES).toHaveLength(33);
+    expect(SOUND_NAMES).toHaveLength(34);
     expect(SOUND_NAMES).toContain('intro');
     expect(soundUrl('tap')).toBe('/sounds/tap.m4a');
   });
