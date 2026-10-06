@@ -80,6 +80,9 @@ fun DressingRoom(
     val shelf = remember(season) { MascotBuilderLogic.shelf() }
     var look by remember { mutableStateOf(config) }
     var tab by remember { mutableStateOf(if (startTab == BuilderTab.PRESETS) BuilderTab.BODY else startTab) }
+    // 10-06 the Pose tab (only while AvatarLiveConfig.LIVING_MASCOT is on): its own state, not a BuilderTab
+    val poseTab = com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT
+    var posing by remember { mutableStateOf(false) }
     val undo = remember { mutableStateListOf<AvatarConfig>() }
     var hop by remember { mutableIntStateOf(0) }
     var note by remember { mutableStateOf<String?>(null) }
@@ -117,9 +120,9 @@ fun DressingRoom(
         // All ten tabs, one row.
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp).padding(top = 8.dp)) {
             ((if (shelf.isEmpty()) emptyList() else listOf(BuilderTab.SEASON)) + DressUp.roomTabs).forEach { t ->
-                val on = tab == t || (t == BuilderTab.NOSE && tab == BuilderTab.CHEEKS)
+                val on = !posing && (tab == t || (t == BuilderTab.NOSE && tab == BuilderTab.CHEEKS))
                 Column(
-                    Modifier.weight(1f).squishClickable(label = "${t.label} options" + if (on) ", selected" else "", role = Role.Tab) { tab = t },
+                    Modifier.weight(1f).squishClickable(label = "${t.label} options" + if (on) ", selected" else "", role = Role.Tab) { tab = t; posing = false },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
@@ -138,6 +141,18 @@ fun DressingRoom(
                         overflow = androidx.compose.ui.text.style.TextOverflow.Visible,
                         color = if (on) (if (t == BuilderTab.SEASON) Color(0xFFC2410C) else Color(0xFF6D28D9)) else if (WTheme.isDark) WTheme.textSecondary else Color(0xFF6B5C8F))
                 }
+            }
+        }
+        if (poseTab) {
+            // the Pose tab: a row of its own under the part tabs (the ten-across row is full)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp).padding(top = 6.dp), horizontalArrangement = Arrangement.Center) {
+                Text(
+                    "POSE", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+                    color = if (posing) Color.White else Color(0xFF6D28D9),
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (posing) Color(0xFF7C3AED) else Color.White.copy(alpha = 0.7f))
+                        .squishClickable(label = "Pose options" + if (posing) ", selected" else "", role = Role.Tab) { posing = true }
+                        .padding(horizontal = 16.dp, vertical = 5.dp),
+                )
             }
         }
         Column(
@@ -161,7 +176,15 @@ fun DressingRoom(
                     }
                 }
             }
-            when (tab) {
+            if (poseTab && posing) {
+                // every pose as a static pose frame of YOUR mascot (the posed layout); a tap saves it in the look
+                MascotBuilderLogic.poseOptions().chunked(3).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEach { o -> PoseTile(o, look, initial, Modifier.weight(1f)) { change(MascotBuilderLogic.tap(look, o)) } }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            } else when (tab) {
                 BuilderTab.COLOR -> SwatchGridPublic("color", look, isPro, { change(it) }) { paywallFor = it }
                 BuilderTab.PATTERN -> {
                     Grid(MascotBuilderLogic.options(BuilderTab.PATTERN))
@@ -257,6 +280,30 @@ private fun PartTile(o: BuilderOption, look: AvatarConfig, isPro: Boolean, level
         MascotBuilderLogic.frameTier(o)?.takeIf { tierLock }?.let {
             Text("Lv ${it.minLevel}", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
         }
+    }
+}
+
+/**
+ * 10-06 one pose: the player's mascot standing in it (a static pose frame through the posed layout — MascotAvatar's
+ * default pose is the saved one while the flag is on), its label under it, a gold ring when worn.
+ */
+@Composable
+private fun PoseTile(o: BuilderOption, look: AvatarConfig, initial: String, modifier: Modifier, onTap: () -> Unit) {
+    val selected = MascotBuilderLogic.isSelected(look, o)
+    val name = MascotBuilderLogic.poseLabel(o.id)
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            Modifier.fillMaxWidth().aspectRatio(1f)
+                .then(if (selected) Modifier.shadow(6.dp, RoundedCornerShape(18.dp), clip = false, spotColor = Color(0x99F59E0B)) else Modifier)
+                .clip(RoundedCornerShape(18.dp))
+                .background(if (selected) Color.White else if (WTheme.isDark) Color.White.copy(alpha = 0.1f) else Color(0xFFEAE2FA))
+                .then(if (selected) Modifier.border(3.dp, Color(0xFFF5B82E), RoundedCornerShape(18.dp)) else Modifier)
+                .squishClickable(label = "Pose: $name" + if (selected) ", selected" else "", role = Role.RadioButton, onClick = onTap),
+            contentAlignment = Alignment.Center,
+        ) {
+            MascotAvatar(look.copy(pose = o.id, frame = "none"), initial, 84.dp, cutout = true)
+        }
+        Text(name, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1, color = if (selected) Color(0xFF6D28D9) else WTheme.textMuted)
     }
 }
 
