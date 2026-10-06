@@ -24,6 +24,7 @@ import type { HomeCard } from './mode-chrome';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { HomeHost } from '@/components/home/home-host';
 import { homeHostHidden } from '@/lib/home-host';
+import { homeHostInviteAllowed } from '@/lib/home-host-cache';
 import { BANNER_SLOT, MODE_SWITCH, homeBannerContent, homeBannerSlots } from '@/lib/stationary-layout';
 import { HomeClock } from '@/components/home/home-clock';
 import { seasonTrimStops, trimPath } from '@/lib/card-trim';
@@ -254,6 +255,8 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   const host = useHomeHost();
   useNudgeVersion();
   const invite = host.choice.kind === 'w' && host.seeded && host.userId && !nudgeDone('host', host.userId) ? host.seeded : null;
+  // 2.7.1: the cached plain mascot paints at once, but its "Make me yours!" bubble waits for the live profile.
+  const inviteLive = !!invite && homeHostInviteAllowed(host.phase);
   const [seasonArtOk, setSeasonArtOk] = useState(false);
   /** A season banner file that failed to load (its row collapses; another season's file still gets a try). */
   const [missingSeasonArt, setMissingSeasonArt] = useState<string | null>(null);
@@ -503,9 +506,10 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
           pro={host.pro}
           size={BANNER_SLOT.hostSize}
           // The celebration art carries the cast: W steps out (keeps his slot); your own host stays.
-          hidden={!invite && homeHostHidden(host.choice, !!(tierArt || seasonArt))}
+          // 2.7.1: a session is expected but its look isn't known yet → invisible (slot kept), never W.
+          hidden={host.phase === 'unknown' || (!invite && homeHostHidden(host.choice, !!(tierArt || seasonArt)))}
         />
-        {invite && host.userId && (
+        {inviteLive && host.userId && (
           <>
             {/* Door 2 (founder 10-05): the plain host is a button into the Dressing Room, with its bubble. */}
             <button type="button" aria-label="Your mascot. Make it yours" className="absolute inset-0 border-0 bg-transparent p-0 cursor-pointer"

@@ -218,6 +218,10 @@ object MascotAvatars {
         record(profile.username, clean)
         // BJ5: the edit shows on every avatar (boards, podiums, VS, cached rows) at once.
         runCatching { PlayerAvatars.patchOwn(config = clean) }
+        // Founder 2.7.1 (the launch flash): a SAVED row clears the local copy above, so the
+        // launch-painted profile row (CACHED_PROFILE_JSON) must be rewritten too, or the next
+        // cold start paints the OLD look (the onboarding mascot save never refreshed it).
+        if (result == AvatarSaveResult.SAVED) runCatching { AuthService.refreshProfile() }
         return result
     }
 }

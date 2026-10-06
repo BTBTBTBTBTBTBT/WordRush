@@ -172,7 +172,9 @@ fun HomeBannerView(
         // The share control lives in the app header (HomeShareControl), not on the card.
         // BJ6 round 3: the host renders in every state; a W host that steps aside for the
         // celebration art takes its headroom with it (never an empty slot).
-        val hostPick = rememberHomeHostPick()
+        // Founder 2.7.1: the cached own look until the live one is known (no purple-W flash).
+        val host = rememberHomeHost()
+        val hostPick = host.pick
         val hostShows = homeHostShows(hostPick, slots.hostShown)
         Box(Modifier.fillMaxWidth().padding(top = if (hostShows) HOME_BANNER_TOP else 0.dp)) {
         Column(
@@ -291,9 +293,10 @@ fun HomeBannerView(
         }
         // BJ6: the host, centered on the card's top edge (drawn over the card). On a swept day the
         // celebration art carries the cast: a W host then hides (alpha 0, keeps its place).
-        if (hostShows) HomeHost(hostPick, HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE))
-        // Door 2 (founder 10-05): "Make me yours!" beside the plain host (× ends it for good).
-        if (hostShows && hostPick == com.wordocious.app.data.HomeHostPick.W && rememberHostInvite() != null)
+        if (hostShows) HomeHostSwap(host, HOME_HOST_BOX, Modifier.align(Alignment.TopCenter).offset(y = -HOME_HOST_RISE))
+        // Door 2 (founder 10-05): "Make me yours!" beside the plain host (× ends it for good) —
+        // only once the look is known (never a bubble flash to a customized player at launch).
+        if (hostShows && host.inviteAllowed && hostPick == com.wordocious.app.data.HomeHostPick.W && rememberHostInvite() != null)
             HostInviteBubble(Modifier.align(Alignment.TopCenter).offset(x = 104.dp, y = -HOME_HOST_RISE + 4.dp))
         }
     }

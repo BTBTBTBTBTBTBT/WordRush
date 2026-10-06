@@ -28,12 +28,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.AvatarDirectoryRules
+import com.wordocious.app.data.CachedHostLook
+import com.wordocious.app.data.HomeHostDecision
+import com.wordocious.app.data.HomeHostLookCache
+import com.wordocious.app.data.HomeHostLookRules
 import com.wordocious.app.data.HomeHostPick
 import com.wordocious.app.data.MascotConfigRules
 import com.wordocious.app.data.PlayerAvatars
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 /** BJ6 round 3 (founder: "way more prominent"): the Good Morning host's box (was 72). */
@@ -68,13 +74,44 @@ internal fun homeStripTop(sceneBand: Boolean, hostShown: Boolean = true): Float 
  */
 internal fun homeHostShows(pick: HomeHostPick, wVisible: Boolean): Boolean = pick !is HomeHostPick.W || wVisible
 
-/** The host for the signed-in player (photo portrait / their mascot), else W. Recomposes on an edit. */
+/**
+ * The host for the signed-in player (photo portrait / their mascot), else W. Recomposes on an
+ * edit. Founder 2.7.1 ("the purple guy … then it changes suddenly to your mascot"): until the
+ * own look is known this launch, the cached look ([HomeHostLookCache], same user only) draws —
+ * so the first frame under the cold-start intro is already theirs ([HomeHostLookRules.decide]).
+ */
 @Composable
-internal fun rememberHomeHostPick(): HomeHostPick {
+internal fun rememberHomeHost(): HomeHostDecision {
     val profile by AuthService.profile.collectAsState()
-    val p = profile ?: return HomeHostPick.W
+    val known by AuthService.ownLookKnown.collectAsState()
+    val guest by AuthService.isGuest.collectAsState()
+    val p = profile
     // ownFields() reads the directory's own patch (snapshot state): an edit swaps the host at once.
-    return AvatarDirectoryRules.hostPick(PlayerAvatars.ownFields(), level = p.level, pro = AuthService.isProActive)
+    val live = p?.let { AvatarDirectoryRules.hostPick(PlayerAvatars.ownFields(), level = it.level, pro = AuthService.isProActive) }
+    val cache = remember(known, p?.id) { if (known) null else HomeHostLookCache.read() }
+    return HomeHostLookRules.decide(cache, live, p?.id, p?.username, loaded = known, guest = guest)
+}
+
+/** What the host's crossfade swaps between (the pick, its mascot initial, the plain invite mascot). */
+private data class HomeHostFace(val pick: HomeHostPick, val username: String?, val invite: com.wordocious.core.AvatarConfig?)
+
+/**
+ * The host with the founder's 2.7.1 rule: the cached look and the live one match → nothing
+ * changes; they differ (changed on another device) → a soft [HomeHostLookRules.CROSSFADE_MS]
+ * crossfade, never a hard pop. [inviteAllowed] false keeps the plain "Make me yours!" mascot
+ * (and the bubble, at the caller) away until the look is known.
+ */
+@Composable
+internal fun HomeHostSwap(decision: HomeHostDecision, size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier) {
+    val invite = if (decision.inviteAllowed && decision.pick == HomeHostPick.W) rememberHostInvite() else null
+    val face = HomeHostFace(decision.pick, decision.username, invite)
+    val still = WTheme.reducedMotion || WTheme.calmMotion
+    androidx.compose.animation.Crossfade(
+        targetState = face,
+        modifier = modifier,
+        animationSpec = tween(if (still) 0 else HomeHostLookRules.CROSSFADE_MS),
+        label = "home-host",
+    ) { f -> HomeHost(f.pick, size, username = f.username, invite = f.invite) }
 }
 
 /** BJ6: the header's share control shows only in Daily once a game is finished (absent otherwise). */
@@ -106,9 +143,15 @@ internal object HomeHostWave {
  * ([homeHostShows]); the player's own host stays. Never drawn at alpha 0. Transform only.
  */
 @Composable
-internal fun HomeHost(pick: HomeHostPick, size: Dp = HOME_HOST_BOX, modifier: Modifier = Modifier) {
-    val profile by AuthService.profile.collectAsState()
-    val p = profile
+internal fun HomeHost(
+    pick: HomeHostPick,
+    size: Dp = HOME_HOST_BOX,
+    modifier: Modifier = Modifier,
+    /** The name the mascot's initial reads (the profile's, or the cached look's before it lands). */
+    username: String? = AuthService.profile.collectAsState().value?.username,
+    /** The plain seeded mascot while the "Make me yours!" invite is open (W pick only). */
+    invite: com.wordocious.core.AvatarConfig? = rememberHostInvite(),
+) {
     val still = WTheme.reducedMotion || WTheme.calmMotion
     val hop = remember { Animatable(0f) }
     val wag = remember { Animatable(0f) }
@@ -131,7 +174,7 @@ internal fun HomeHost(pick: HomeHostPick, size: Dp = HOME_HOST_BOX, modifier: Mo
         }
     }
     Box(
-        modifier.size(size).then(if (pick == HomeHostPick.W && rememberHostInvite() != null) Modifier else Modifier.clearAndSetSemantics { })
+        modifier.size(size).then(if (pick == HomeHostPick.W && invite != null) Modifier else Modifier.clearAndSetSemantics { })
             .drawBehind {
                 // The soft floor shadow under its feet (on the strip): radial purple-black ~20% →
                 // clear, 78% × 13%, centered on the box's bottom edge.
@@ -159,17 +202,16 @@ internal fun HomeHost(pick: HomeHostPick, size: Dp = HOME_HOST_BOX, modifier: Mo
                 pro = AuthService.isProActive,
             )
             is HomeHostPick.Mascot -> {
-                val initial = remember(p?.username) { MascotConfigRules.initialOf(p?.username) }
+                val initial = remember(username) { MascotConfigRules.initialOf(username) }
                 // A host, not a list tile: no frame ring around the mascot.
                 val drawn = remember(pick.config) { pick.config.copy(frame = "none") }
                 // BJ6 round 5: a full-body CUTOUT — no tile, backdrop, clip or frame (not a boxed sticker).
                 MascotAvatar(drawn, initial, size, motion, cutout = true)
             }
             HomeHostPick.W -> {
-                val invite = rememberHostInvite()
                 if (invite != null) {
                     // Door 2 (founder 10-05): your own plain mascot hosts until you make it yours.
-                    val initial = remember(p?.username) { MascotConfigRules.initialOf(p?.username) }
+                    val initial = remember(username) { MascotConfigRules.initialOf(username) }
                     MascotAvatar(invite.copy(frame = "none"), initial, size, motion.squishClickable(label = "Your mascot. Make it yours") {
                         DressUp.finish(DressUp.Nudge.HOST_INVITE); DressUp.open(DressDoor.Room(BuilderTab.BODY))
                     }, cutout = true)
@@ -197,6 +239,14 @@ object HomeHostPrewarm {
         val app = context.applicationContext
         val px = Math.round(HOME_HOST_BOX.value * app.resources.displayMetrics.density).coerceAtLeast(1)
         scope.launch {
+            // Founder 2.7.1: the cached own look first — it is what the host draws on frame one.
+            runCatching {
+                val cached = HomeHostLookCache.read()?.takeIf { it.pick is HomeHostPick.Mascot }
+                if (cached != null) {
+                    val initial = MascotConfigRules.initialOf(cached.username)
+                    for (dark in listOf(false, true)) MascotComposer.image(app, homeHostMascotKey((cached.pick as HomeHostPick.Mascot).config, initial, px, dark))
+                }
+            }
             runCatching { ArtBitmaps.get(app, com.wordocious.app.R.drawable.art_pose_w_wave, ArtBitmaps.bucketPx(px)) }
             AuthService.profile.collect { p ->
                 if (p == null) return@collect
@@ -209,6 +259,29 @@ object HomeHostPrewarm {
                 }
             }
         }
+        // Founder 2.7.1: keep the host look cache current — every time the own look resolves
+        // (a fresh profile load, an avatar_config / photo save via PlayerAvatars.patchOwn).
+        scope.launch { writeLookCache() }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private suspend fun writeLookCache() {
+        kotlinx.coroutines.flow.combine(AuthService.profile, AuthService.ownLookKnown) { p, known -> p.takeIf { known } }
+            .flatMapLatest { p ->
+                if (p == null) kotlinx.coroutines.flow.flowOf(null)
+                // Snapshot state (the own patch, the profile mirror): a save re-emits at once.
+                else androidx.compose.runtime.snapshotFlow {
+                    CachedHostLook(
+                        p.id, p.username,
+                        AvatarDirectoryRules.hostPick(PlayerAvatars.ownFields(), level = p.level, pro = AuthService.isProActive),
+                    )
+                }
+            }
+            .distinctUntilChanged()
+            .collect { look ->
+                // Signed out (null) is cleared by AuthService; only the known own look is written.
+                if (look != null && AuthService.profile.value?.id == look.userId) HomeHostLookCache.write(look)
+            }
     }
 }
 

@@ -94,6 +94,15 @@ object AuthService {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    /**
+     * Home host cache (founder 2.7.1, "the purple guy … then it changes suddenly"): true once
+     * the signed-in player's own look is KNOWN this launch — a fresh profile load landed (or
+     * the launch restore settled with the painted row, e.g. offline). Until then the Good
+     * Morning host draws the cached look (HomeHostLookCache) instead of the launch-painted row.
+     */
+    private val _ownLookKnown = MutableStateFlow(false)
+    val ownLookKnown: StateFlow<Boolean> = _ownLookKnown.asStateFlow()
+
     // Guest mode — chose "Play without an account". Lets a signed-out user reach
     // the app to play the daily single-player puzzle (Apple 5.1.1(v) / Google
     // Play). No session, so recording no-ops; account surfaces prompt sign-in.
@@ -292,6 +301,8 @@ object AuthService {
                         else -> {
                             // No session — the optimistic paint (if any) was wrong.
                             _profile.value = null
+                            _ownLookKnown.value = false
+                            HomeHostLookCache.clear()
                             _isAuthenticated.value = false
                             SettingsPref.set(HAD_SESSION, false)
                             SettingsPref.set(CACHED_PROFILE_JSON, "")
@@ -304,6 +315,8 @@ object AuthService {
                 // refresh / foreground settles it. Never a sign-out on an exception.
             } finally {
                 initDone = true
+                // The restore settled (offline included): the profile we hold is the best known look.
+                if (_profile.value != null) _ownLookKnown.value = true
                 _isLoading.value = false
             }
         }
@@ -820,6 +833,9 @@ object AuthService {
         // guarded against is now closed on the sign-IN side by claimSavesFor,
         // which only wipes when the save owner actually changes.
         _profile.value = null
+        _ownLookKnown.value = false
+        // A different player signing in next never sees this player's host.
+        HomeHostLookCache.clear()
         _identities.value = null
         _linkNotice.value = null
         SettingsPref.remove(PENDING_LINK)
@@ -918,8 +934,9 @@ object AuthService {
             // with the anon key while the session refresh was failing) must not null the
             // profile — userId reads it, and a null profile looks signed out everywhere. A
             // brand-new sign-up with no row yet still lands null as before.
-            if (result == null && _profile.value?.id == userId) return true
+            if (result == null && _profile.value?.id == userId) { _ownLookKnown.value = true; return true }
             _profile.value = result
+            _ownLookKnown.value = true
             // AH: the player's character / frame for every avatar on screen.
             runCatching { CastAvatars.recordOwn(result) }
             result?.let {
