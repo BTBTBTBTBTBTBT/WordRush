@@ -150,7 +150,7 @@ final class HubVM: ObservableObject {
         } else {
             typing = ""
             // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
-            Haptics.tap(); SoundManager.shared.playFound(); flash(hubIsPangram(word, letters: state.letters) ? "Pangram! +\(hubWordScore(word, letters: state.letters))" : "+\(hubWordScore(word, letters: state.letters))")
+            Haptics.tap(); if hubIsPangram(word, letters: state.letters) { SoundManager.shared.playPangram() } else { SoundManager.shared.playFound() }; flash(hubIsPangram(word, letters: state.letters) ? "Pangram! +\(hubWordScore(word, letters: state.letters))" : "+\(hubWordScore(word, letters: state.letters))")
         }
     }
     func hintStart() { dispatch(.hintStart) }

@@ -61,6 +61,7 @@ PICKS = {
     'intro': ('intro-a', JINGLE),          # App intro: A Marimba Parade
     'levelup': ('levelup-b', JINGLE),      # Level up: B Rising Stairs
     'open': ('open-a', UI),                # Opening a game: A Page Breeze
+    'pangram': ('pangram-b', 'match:streak'),  # Hubbub pangram 1-up (Johnny): B Triple Coin Climb
     # Tap a hero in the header: A Giggles, one voice per hero (laugh-<id>)
     **{f'laugh-{c}': (f'laugh-a-{c}', UI) for c in ('w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's')},
 }

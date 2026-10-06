@@ -291,6 +291,12 @@ export function playSuccess() {
   haptic('light');
 }
 
+/** A Hubbub pangram: the 1-up (Johnny 10-05; pick "Triple Coin Climb") instead of the partial chime. */
+export function playPangram() {
+  playSound('pangram');
+  haptic('light');
+}
+
 /** Alias with the clearer name for partial successes. */
 export const playPartialSuccess = playSuccess;
 

@@ -57,6 +57,7 @@ object SoundManager {
         Sfx.INTRO -> R.raw.sfx_intro
         Sfx.LEVELUP -> R.raw.sfx_levelup
         Sfx.OPEN -> R.raw.sfx_open
+        Sfx.PANGRAM -> R.raw.sfx_pangram
         Sfx.CLASSIC_INVALID -> R.raw.sfx_classic_invalid
         Sfx.CLASSIC_STREAK -> R.raw.sfx_classic_streak
         Sfx.CLASSIC_LOSE -> R.raw.sfx_classic_lose
@@ -157,6 +158,12 @@ object SoundManager {
      */
     fun playPartial(view: android.view.View? = null) {
         play(Sfx.NOTIFY, volume = FeedbackRules.PARTIAL_VOLUME)
+        Haptics.perform(Haptic.LIGHT, view)
+    }
+
+    /** A Hubbub pangram: the 1-up instead of the partial chime, + a light haptic. */
+    fun playPangram(view: android.view.View? = null) {
+        play(Sfx.PANGRAM)
         Haptics.perform(Haptic.LIGHT, view)
     }
 

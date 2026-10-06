@@ -269,7 +269,7 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
         else {
             typing = ""
             // Every accepted word scores (founder, 2026-09-25) — one message for all of them.
-            SoundManager.playPartial(); toast = if (hubIsPangram(word, state.letters)) "Pangram! +${hubWordScore(word, state.letters)}" else "+${hubWordScore(word, state.letters)}"
+            if (hubIsPangram(word, state.letters)) SoundManager.playPangram() else SoundManager.playPartial(); toast = if (hubIsPangram(word, state.letters)) "Pangram! +${hubWordScore(word, state.letters)}" else "+${hubWordScore(word, state.letters)}"
         }
     }
     fun hintStart() = dispatch(HubAction.HintStart)
