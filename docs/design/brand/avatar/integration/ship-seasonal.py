@@ -21,7 +21,7 @@ import numpy as np  # noqa: E402
 from PIL import Image  # noqa: E402
 from rig import U, M, CW, MAN, REPO, rig, trim, load, place, light_match, P, alpha  # noqa: E402
 import new_pieces as NP  # noqa: E402
-from pieces import neck_band, guards, draw_strap, avoid, main_width  # noqa: E402
+from pieces import neck_band, guards, draw_strap, avoid, main_width, drape_path, drape_cord, drape_bottom, fit_clasp  # noqa: E402
 from fitcheck import check  # noqa: E402
 import importlib.util as _ilu  # noqa: E402
 _spec = _ilu.spec_from_file_location('ship_integrated', os.path.join(HERE, 'ship-integrated.py'))
@@ -95,23 +95,14 @@ def collar(season, rel):
         yc = float(((top + bot) / 2).mean())
         cw = min(max((x1 - x0) / U * 1.08 + 0.06, 0.66), 1.0)
         back = place(light_match(im, 0.06), ((x0 + x1) / 2 - M) / U, (yc - M) / U + 0.02, cw, anchor=(0.5, 0.78))
-        xa, xb, xm = (x0 - M) / U + 0.01, (x1 - M) / U - 0.01, ((x0 + x1) / 2 - M) / U
-        midb = (top + bot) / 2
-        thick = float((bot - top)[len(top) // 2])
-        yat = lambda xu: (midb[int(np.clip(xu * U + M - x0, 0, len(midb) - 1))] - M) / U
-        ym = yat(xm)
-        cord = Image.new('RGBA', (CW, CW), (0, 0, 0, 0))
-        for p in ([(xa, yat(xa) - 0.02), ((xa + xm) / 2, yat((xa + xm) / 2)), (xm, ym)],
-                  [(xb, yat(xb) - 0.02), ((xb + xm) / 2, yat((xb + xm) / 2)), (xm, ym)]):
-            cord.alpha_composite(draw_strap(p, min(0.024, thick / U * 0.75), '#2b1a33', buckle=False))
-        from scipy import ndimage
-        ca = np.asarray(cord).copy()
-        ca[..., 3] = ca[..., 3] * ndimage.binary_dilation(A, iterations=int(0.008 * U))
-        cord = Image.fromarray(ca, 'RGBA')
+        # 10-05 wrap fix: no straight cord across the belly + arms; the cord hangs on the necklace drape (ends tuck
+        # behind the silhouette at cheek height, above the arms) with the clasp at the bottom of the U
+        path = drape_path(body, half=0.012)
+        cord = drape_cord(body, '#2b1a33', width=0.018, path=path)
+        xm, ym = drape_bottom(body, path)
         W, H = im.size
         clasp = trim(im.crop((int(W * 0.38), int(H * 0.5), int(W * 0.62), int(H * 0.82))))
-        cl = avoid(lambda dx, dy: place(clasp, xm, ym + dy, min(0.11, thick / U * 1.25), anchor=(0.5, 0.5)), body,
-                   step=(0, -0.006), tries=8)
+        cl = fit_clasp(clasp, body, xm, ym)
         return dict(back=[back], front=[cord, cl], handover=(), seat_min=0.45)
     return build
 

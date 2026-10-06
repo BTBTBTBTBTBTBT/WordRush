@@ -734,5 +734,93 @@
    "wide"
   ],
   "fails": {}
+ },
+ "chain": {
+  "field": "neck",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "pear",
+   "star",
+   "tall"
+  ],
+  "fails": {}
+ },
+ "cape": {
+  "field": "neck",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "supercape": {
+  "field": "neck",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "bandana": {
+  "field": "wrap",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
+ },
+ "lei": {
+  "field": "wrap",
+  "bodies": [
+   "bean",
+   "blob",
+   "chunky",
+   "classic",
+   "cloud",
+   "drop",
+   "hex",
+   "mini",
+   "pear",
+   "star",
+   "tall",
+   "wide"
+  ],
+  "fails": {}
  }
 }

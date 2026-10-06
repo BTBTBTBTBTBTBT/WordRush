@@ -268,23 +268,23 @@ def scarf(body):
     # make it tile wider: mirror-repeat the knit roll
     bt = Image.new('RGBA', (band_tex.width * 2, band_tex.height))
     bt.paste(band_tex, (0, 0)); bt.paste(band_tex.transpose(Image.FLIP_LEFT_RIGHT), (band_tex.width, 0))
-    x0, x1, top, bot = neck_band(body, thick=0.10, margin=0.02)
-    band = warp_to_band(bt, x0, x1, top, bot, A)
-    # the tail (+ fringe) from the original art, hanging over the viewer's-left side, under the left hand
-    tail = s.crop((int(W * 0.5), int(H * 0.27), W, H))
-    tail = trim(tail)
+    # 10-05 wrap fix: along the necklace drape (ends tucked behind at cheek height, above the arms), not a hoop
+    band, (x0, x1, top, bot) = drape_wrap(bt, body, 0.10, margin=0.02)
+    # the tail (+ fringe) from the original art hangs from the drape in the gap between the left arm and the letter
+    # (10-05: never over the arm, never over the letter; a body without that gap gets a short stub tail)
+    tail = trim(s.crop((int(W * 0.5), int(H * 0.27), W, H)))
     face, letter = guards(body)
     lx = np.nonzero(letter.any(0))[0].min()
-    edge = x0
-    room = (lx - edge) / U
-    hx, hy, rx, ry = hand(body, 'L')
-    tw = max(0.1, min(0.15, room * 0.9))
-    i0 = int(len(top) * 0.16)
-    tx = (x0 + i0 - M) / U
-    ty = (top[i0] - M) / U + 0.01
-    tail = tail.transpose(Image.FLIP_LEFT_RIGHT)
-    tail = light_match(tail, 0.06)
-    tl = avoid(lambda dx, dy: place(tail, tx - dx, ty, tw * (1 - dx * 2), anchor=(0.5, 0.0), rot=-4), body, step=(0.012, 0))
+    arms = arm_mask(body)
+    acols = np.nonzero(arms.any(0))[0]
+    ain = acols[acols < P(R['b']['face']['x'])].max() if len(acols) else x0
+    gap = (lx - ain) / U
+    tw = float(np.clip(gap * 0.8, 0.07, 0.14))
+    xc = (ain + lx) / 2
+    i0 = int(np.clip(xc - x0, 0, len(top) - 1))
+    tx, ty = (xc - M) / U, (top[i0] - M) / U + 0.012
+    tail = light_match(tail.transpose(Image.FLIP_LEFT_RIGHT), 0.06)
+    tl = avoid(lambda dx, dy: place(tail, tx, ty, tw * (1 - dx * 3), anchor=(0.5, 0.0), rot=-3), body, step=(0.012, 0), tries=10)
     return dict(front=[tl, band], handover=(), seat_min=0.25)
 
 
@@ -294,45 +294,209 @@ NO_NECK_ROOM = {'wide', 'mini'}   # mouth and letter nearly touch: a neck wrap w
 
 
 def chain(body):
+    """10-05 wrap fix: a necklace, not a hoop. The links hang along the drape (pieces.drape_path): a soft U under
+    the mouth whose ends tuck behind the silhouette at cheek height, above the arms; smaller toward the ends."""
     if body in NO_NECK_ROOM:
         return dict(unsupported='no neck room between the mouth and the letter')
-    R = rig(body)
-    A = R['A']
     c = cut('chain')
     W, H = c.size
-    link_flat = trim(c.crop((int(W * 0.40), int(H * 0.80), int(W * 0.60), H)))
-    x0, x1, top, bot = neck_band(body, thick=0.075)
-    mid = (top + bot) / 2
-    lay = Image.new('RGBA', (CW, CW), (0, 0, 0, 0))
-    lw = min(0.1, (x1 - x0) / U / 7)
-    # a gentle smile curve
-    xs = np.arange(x0, x1 + 1)
-    u = (xs - (x0 + x1) / 2) / ((x1 - x0) / 2)
-    yline = mid
-    x = x0 + lw * U * 0.2
-    k = 0
-    while x < x1:
-        i = int(x - x0)
-        uu = u[min(i, len(u) - 1)]
-        fs = math.sqrt(max(0.15, 1 - uu ** 2))  # foreshortening toward the sides
-        w = lw * U * fs
-        lk = link_flat if k % 2 == 0 else link_flat.rotate(90, expand=True).resize((max(1, int(link_flat.width * 0.45)), link_flat.width))
-        if k % 2:
-            w *= 0.55
-        h = w * lk.height / lk.width
-        th = (bot[min(i, len(bot) - 1)] - top[min(i, len(top) - 1)]) * 1.0
-        if h > th:
-            w, h = w * th / h, th
-        L = lk.resize((max(1, int(w)), max(1, int(h))), Image.LANCZOS)
-        L = shade(L, np.full((L.height, L.width), 0.62 + 0.38 * fs, np.float32))
-        yy = yline[min(i, len(yline) - 1)]
-        lay.alpha_composite(L, (int(x - w * 0.1), int(yy - h / 2)))
-        x += w * 0.78
-        k += 1
+    link = trim(c.crop((int(W * 0.40), int(H * 0.80), int(W * 0.60), H)))
+    link = light_match(link, 0.08)
+    return dict(front=[drape_chain(body, link)], handover=())
+
+
+# ── 10-05 WRAP FIX: the necklace drape. Founder: the chain "went around his arms like a hula hoop". These are
+#    head-bodies with no neck, so anything worn at the neck hangs as a soft U under the mouth: its ends tuck BEHIND the
+#    silhouette at about cheek height, above + inside the arms (never over them); the bottom of the U sits in the gap
+#    between the mouth and the letter. Chain links, cape / collar cords and their clasps all follow this path. ─────
+
+def arm_mask(body, grow=1.18):
+    """The arms: the hand ellipses grown a little, plus the column above each one up to the shoulder bulge (the
+    arm's root), inside the silhouette. A neck wrap must stay above this."""
+    R = rig(body)
+    A = R['A']
+    yy, xx = np.mgrid[0:CW, 0:CW]
+    m = np.zeros((CW, CW), bool)
+    for side, (cx, cy, rx, ry) in [(k, (v['cu'][0], v['cu'][1], v['rx'], v['ry'])) for k, v in R['arms'].items()]:
+        m |= ((xx - P(cx)) / (rx * U * grow)) ** 2 + ((yy - P(cy)) / (ry * U * grow)) ** 2 <= 1
+    return m & A
+
+
+@lru_cache(None)
+def drape_path(body, half=0.016, end_y=None, margin=0.008):
+    """The U-shaped necklace line for a body: (xs, ys, us) in canvas px, us = -1 … 1 from end to end (0 = under the
+    mouth). Ends at the silhouette edge ~cheek height; clear of the face, the letter and the arms by `margin`."""
+    R = rig(body)
+    A = R['A']
+    b = R['b']
+    face, letter = guards(body)
+    arms = arm_mask(body)
+    mg = margin * U
+    hp = half * U
+    cxm = P(b['face']['x'])
+    fys = np.nonzero(face.any(1))[0]
+    ye = P(end_y if end_y is not None else b['cheekY'] - 0.05)
+    row = np.nonzero(A[int(ye)])[0]
+    xl, xr = row.min(), row.max()
+    xs = np.arange(xl, xr + 1).astype(float)
+    # bottom of the U: the middle of the mouth–letter gap under the mouth
+    col = int(cxm)
+    fb = np.nonzero(face[:, col])[0]
+    fb = fb[fb < P(b['letterBox'][1])]
+    lt = np.nonzero(letter[:, col])[0]
+    lt = lt[lt > (fb.max() if len(fb) else ye)]
+    yb = ((fb.max() if len(fb) else ye) + (lt.min() if len(lt) else ye + 0.1 * U)) / 2
+    us = np.where(xs < cxm, (xs - cxm) / (cxm - xl), (xs - cxm) / (xr - cxm))
+    ys = ye + (yb - ye) * (1 - np.abs(us) ** 1.6)
+    # per-column limits: below the face, above the letter and the arms
+    for i, x in enumerate(xs.astype(int)):
+        f = np.nonzero(face[:, x])[0]
+        f = f[f < yb + hp]
+        lo = (f.max() + mg + hp) if len(f) else -1e9
+        l = np.nonzero(letter[:, x])[0]
+        l = l[l > ye]
+        a = np.nonzero(arms[:, x])[0]
+        hi = min([(l.min() - mg - hp) if len(l) else 1e9, (a.min() - mg - hp) if len(a) else 1e9])
+        y = ys[i]
+        if hi < 1e8:
+            y = min(y, hi)
+        if lo > -1e8:
+            y = max(y, lo) if lo <= hi else (lo + hi) / 2
+        ys[i] = y
+    k = int(0.05 * U) | 1
+    ys = np.convolve(np.pad(ys, k // 2, mode='edge'), np.ones(k) / k, 'valid')
+    return xs, ys, us
+
+
+def _tuck(im, body, fade=0.035):
+    """Clip a front drape to inside the silhouette and darken it as it nears the edge: it goes BEHIND there."""
     from scipy import ndimage
-    a = np.asarray(lay).copy()
-    a[..., 3] = a[..., 3] * ndimage.binary_dilation(A, iterations=int(0.01 * U))
-    return dict(front=[Image.fromarray(a, 'RGBA')], handover=())
+    A = rig(body)['A']
+    d = ndimage.distance_transform_edt(A) / U
+    a = np.asarray(im).astype(np.float32)
+    k = np.clip(d / fade, 0, 1)
+    a[..., :3] *= (0.55 + 0.45 * k)[..., None]
+    a[..., 3] *= np.clip(d / 0.006, 0, 1)
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), 'RGBA')
+
+
+def drape_cord(body, color, width=0.017, path=None):
+    """A thin round cord along the drape (rim, body, top-left highlight), thinner toward the ends (perspective)."""
+    xs, ys, us = path or drape_path(body)
+    SS = 2
+    im = Image.new('RGBA', (CW * SS, CW * SS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    base = np.array(hexrgb(COLORS.get(color, color)), float)
+    rim = tuple(int(v) for v in base * 0.55) + (255,)
+    mid = tuple(int(v) for v in base * 0.95) + (255,)
+    hi = tuple(int(v) for v in np.minimum(255, base * 0.55 + 255 * 0.5)) + (255,)
+    step = 3
+    for i in range(0, len(xs) - step, step):
+        fs = 0.6 + 0.4 * math.sqrt(max(0.0, 1 - us[i] ** 2))
+        W = width * U * SS * fs
+        a, b2 = (xs[i] * SS, ys[i] * SS), (xs[i + step] * SS, ys[i + step] * SS)
+        d.line([a, b2], fill=rim, width=max(1, int(W)))
+        d.ellipse([a[0] - W / 2, a[1] - W / 2, a[0] + W / 2, a[1] + W / 2], fill=rim)
+    for i in range(0, len(xs) - step, step):
+        fs = 0.6 + 0.4 * math.sqrt(max(0.0, 1 - us[i] ** 2))
+        W = width * U * SS * fs
+        a, b2 = (xs[i] * SS, ys[i] * SS), (xs[i + step] * SS, ys[i + step] * SS)
+        d.line([a, b2], fill=mid, width=max(1, int(W * 0.68)))
+        d.line([(a[0] - W * 0.12, a[1] - W * 0.16), (b2[0] - W * 0.12, b2[1] - W * 0.16)], fill=hi, width=max(1, int(W * 0.2)))
+    im = im.filter(ImageFilter.GaussianBlur(SS * 0.6)).resize((CW, CW), Image.LANCZOS)
+    return _tuck(im, body)
+
+
+def drape_bottom(body, path=None):
+    """(x, y) body units of the bottom of the drape (where a clasp / pendant sits) and the room there (px)."""
+    xs, ys, us = path or drape_path(body)
+    i = int(np.argmin(np.abs(us)))
+    return (xs[i] - M) / U, (ys[i] - M) / U
+
+
+def drape_chain(body, link, half=0.016):
+    """Chain links stamped along the drape: alternating flat / edge-on links, smaller + darker toward the ends
+    (perspective: they turn away around the body), each rotated to the curve."""
+    path = drape_path(body, half=half)
+    xs, ys, us = path
+    lay = Image.new('RGBA', (CW, CW), (0, 0, 0, 0))
+    # arc length
+    seg = np.hypot(np.diff(xs), np.diff(ys))
+    s = np.concatenate([[0], np.cumsum(seg)])
+    pos, k = 0.0, 0
+    hmax = half * 2 * U
+    while pos < s[-1]:
+        i = int(np.searchsorted(s, pos))
+        i = min(i, len(xs) - 2)
+        u = us[i]
+        fs = 0.5 + 0.5 * math.sqrt(max(0.0, 1 - u ** 2))
+        ang = math.degrees(math.atan2(ys[i + 1] - ys[i], xs[i + 1] - xs[i]))
+        if k % 2 == 0:
+            h = hmax * fs
+            w = h * link.width / link.height
+            L = link.resize((max(1, int(w)), max(1, int(h))), Image.LANCZOS)
+        else:
+            h = hmax * fs * 0.42
+            w = hmax * fs * 0.95
+            L = link.resize((max(1, int(w)), max(1, int(h))), Image.LANCZOS)
+        L = shade(L, np.full((L.height, L.width), 0.6 + 0.4 * fs, np.float32))
+        L = L.rotate(-ang, Image.BICUBIC, expand=True)
+        lay.alpha_composite(L, (int(xs[i] - L.width / 2), int(ys[i] - L.height / 2)))
+        pos += (w if k % 2 == 0 else w * 0.9) * 0.62
+        k += 1
+    return _tuck(lay, body)
+
+
+def drape_band(body, thick, margin=0.012, min_thick=0.02):
+    """A fabric / flower band along the drape: (x0, x1, top[], bot[]) like neck_band, but following the U (ends
+    up at cheek height, tucked behind) and kept clear of the face, the letter and the arms per column."""
+    xs, ys, us = drape_path(body, half=0.012)
+    R = rig(body)
+    face, letter = guards(body)
+    arms = arm_mask(body)
+    mg = margin * U
+    h = thick * U / 2
+    fs = 0.75 + 0.25 * np.sqrt(np.clip(1 - us ** 2, 0, 1))   # a little thinner as it turns away
+    top, bot = ys - h * fs, ys + h * fs
+    for i, x in enumerate(xs.astype(int)):
+        f = np.nonzero(face[:, x])[0]
+        f = f[f < ys[i] + 2]
+        if len(f):
+            top[i] = max(top[i], f.max() + mg)
+        l = np.nonzero(letter[:, x] | arms[:, x])[0]
+        l = l[l > ys[i] - 2]
+        if len(l):
+            bot[i] = min(bot[i], l.min() - mg)
+    k = int(0.05 * U) | 1
+    sm = lambda v: np.convolve(np.pad(v, k // 2, mode='edge'), np.ones(k) / k, 'valid')
+    top, bot = sm(top), sm(bot)
+    mid = (top + bot) / 2
+    t = np.maximum(bot - top, min_thick * U)
+    return int(xs[0]), int(xs[-1]), mid - t / 2, mid + t / 2
+
+
+def drape_wrap(tex, body, thick, margin=0.012):
+    """A strip texture warped along the drape band, cylinder-shaded, tucked behind the silhouette at the ends."""
+    x0, x1, top, bot = drape_band(body, thick, margin)
+    band = warp_to_band(tex, x0, x1, top, bot, rig(body)['A'], overhang=0.0)
+    return _tuck(band, body), (x0, x1, top, bot)
+
+
+def fit_clasp(img, body, xm, ym, sizes=(0.07, 0.058, 0.048, 0.04, 0.034)):
+    """The clasp at the bottom of the drape: the biggest size (body units) that clears the face and the letter,
+    nudged up/down a hair if needed (wide / mini / cloud have almost no room between the mouth and the letter)."""
+    face, letter = guards(body)
+    g = face | letter
+    best = None
+    for w in sizes:
+        for dy in (0, -0.004, 0.004, -0.008, 0.008):
+            lay = place(img, xm, ym + dy, w, anchor=(0.5, 0.5))
+            hit = int(((np.asarray(lay.getchannel('A')) > 90) & g).sum())
+            if best is None or hit < best[0]:
+                best = (hit, lay)
+            if hit == 0:
+                return lay
+    return best[1]
 
 
 # ── 4/5. HELD: the hand-over layer grips them ──────────────────────────────
@@ -393,24 +557,16 @@ def cape(body, white=False, acc='red'):
     cw = 1.28 * (x1 - x0) / U + 0.06
     capeL = src.resize((int(cw * U), int(hgt * U)), Image.LANCZOS)
     back = place(light_match(capeL, 0.06), ((x0 + x1) / 2 - M) / U, ytop, cw, anchor=(0.5, 0.0))
-    # the cord: a thin rolled band in the cape's color along the wrap line, + the original clasp in the middle
+    # 10-05 wrap fix: no straight cord across the belly + arms. The tie is a thin cord on the necklace drape (a soft
+    # U under the mouth whose ends tuck behind the silhouette at cheek height, where the cape's top corners peek
+    # out), with the clasp at the bottom of the U.
     rgb = np.asarray(src.convert('RGB')).reshape(-1, 3)[np.asarray(src.getchannel('A')).reshape(-1) > 200]
     ccol = '#%02x%02x%02x' % tuple(int(v) for v in np.median(rgb, 0))
-    xa, xb, xm = (x0 - M) / U + 0.01, (x1 - M) / U - 0.01, ((x0 + x1) / 2 - M) / U
-    midb = (top + bot) / 2
-    thick = float((bot - top)[len(top) // 2])
-    yat = lambda xu: (midb[int(np.clip(xu * U + M - x0, 0, len(midb) - 1))] - M) / U
-    ym = yat(xm)
-    cord = Image.new('RGBA', (CW, CW), (0, 0, 0, 0))
-    for p in ([(xa, yat(xa) - 0.02), ((xa + xm) / 2, yat((xa + xm) / 2)), (xm, ym)], [(xb, yat(xb) - 0.02), ((xb + xm) / 2, yat((xb + xm) / 2)), (xm, ym)]):
-        cord.alpha_composite(draw_strap(p, min(0.022, thick / U * 0.7), ccol, buckle=False))
-    from scipy import ndimage
-    ca = np.asarray(cord).copy(); ca[..., 3] = ca[..., 3] * ndimage.binary_dilation(A, iterations=int(0.008 * U)); cord = Image.fromarray(ca, 'RGBA')
+    path = drape_path(body, half=0.011)
+    cord = drape_cord(body, ccol, width=0.016, path=path)
+    xm, ym = drape_bottom(body, path)
     clasp = trim(src.crop((int(W * 0.4), 0, int(W * 0.6), int(H * 0.2))))
-    if not white:
-        pass
-    face, letter = guards(body)
-    cl = place(clasp, xm, ym, min(0.1, thick / U * 1.1), anchor=(0.5, 0.5))
+    cl = fit_clasp(clasp, body, xm, ym, sizes=(0.05, 0.042, 0.036, 0.03))
     return dict(back=[back], front=[cord, cl], handover=())
 
 

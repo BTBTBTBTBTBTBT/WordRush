@@ -256,52 +256,52 @@
 96
 ],
 "art-av-acc-bandana-bean-wrap": [
-281,
-59
+204,
+88
 ],
 "art-av-acc-bandana-blob-wrap": [
-376,
-65
+300,
+88
 ],
 "art-av-acc-bandana-chunky-wrap": [
-376,
-65
+298,
+89
 ],
 "art-av-acc-bandana-classic-wrap": [
-376,
-65
+302,
+88
 ],
 "art-av-acc-bandana-cloud-wrap": [
-376,
-65
+305,
+92
 ],
 "art-av-acc-bandana-drop-wrap": [
-328,
-65
+242,
+82
 ],
 "art-av-acc-bandana-hex-wrap": [
-376,
-65
+302,
+86
 ],
 "art-av-acc-bandana-mini-wrap": [
-288,
-61
+198,
+91
 ],
 "art-av-acc-bandana-pear-wrap": [
-308,
-63
+194,
+82
 ],
 "art-av-acc-bandana-star-wrap": [
-364,
-65
+361,
+92
 ],
 "art-av-acc-bandana-tall-wrap": [
-162,
-44
+148,
+88
 ],
 "art-av-acc-bandana-wide-wrap": [
-372,
-65
+309,
+104
 ],
 "art-av-acc-bat": [
 192,
@@ -820,40 +820,40 @@
 240
 ],
 "art-av-acc-cape-bean-wrap": [
-268,
-29
+199,
+79
 ],
 "art-av-acc-cape-blob-back": [
 504,
 125
 ],
 "art-av-acc-cape-blob-wrap": [
-378,
-29
+292,
+72
 ],
 "art-av-acc-cape-chunky-back": [
 503,
 132
 ],
 "art-av-acc-cape-chunky-wrap": [
-377,
-29
+289,
+76
 ],
 "art-av-acc-cape-classic-back": [
 503,
 128
 ],
 "art-av-acc-cape-classic-wrap": [
-377,
-29
+298,
+71
 ],
 "art-av-acc-cape-cloud-back": [
 502,
 108
 ],
 "art-av-acc-cape-cloud-wrap": [
-375,
-26
+304,
+75
 ],
 "art-av-acc-cape-drape": [
 192,
@@ -960,56 +960,56 @@
 122
 ],
 "art-av-acc-cape-drop-wrap": [
-322,
-28
+240,
+66
 ],
 "art-av-acc-cape-hex-back": [
 498,
 122
 ],
 "art-av-acc-cape-hex-wrap": [
-372,
-29
+298,
+71
 ],
 "art-av-acc-cape-mini-back": [
 379,
 94
 ],
 "art-av-acc-cape-mini-wrap": [
-279,
-26
+198,
+76
 ],
 "art-av-acc-cape-pear-back": [
 392,
 121
 ],
 "art-av-acc-cape-pear-wrap": [
-291,
-28
+188,
+75
 ],
 "art-av-acc-cape-star-back": [
 482,
 131
 ],
 "art-av-acc-cape-star-wrap": [
-360,
-29
+358,
+71
 ],
 "art-av-acc-cape-tall-back": [
 212,
 112
 ],
 "art-av-acc-cape-tall-wrap": [
-150,
-30
+148,
+78
 ],
 "art-av-acc-cape-wide-back": [
 488,
 101
 ],
 "art-av-acc-cape-wide-wrap": [
-367,
-26
+309,
+86
 ],
 "art-av-acc-cattail": [
 99,
@@ -1068,44 +1068,44 @@
 313
 ],
 "art-av-acc-chain-bean-wrap": [
-271,
-43
+200,
+80
 ],
 "art-av-acc-chain-blob-wrap": [
-374,
-43
+293,
+74
 ],
 "art-av-acc-chain-chunky-wrap": [
-375,
-43
+290,
+77
 ],
 "art-av-acc-chain-classic-wrap": [
-376,
-43
+299,
+74
 ],
 "art-av-acc-chain-cloud-wrap": [
-376,
-43
+304,
+80
 ],
 "art-av-acc-chain-drop-wrap": [
-322,
-43
+241,
+68
 ],
 "art-av-acc-chain-hex-wrap": [
-372,
-43
+298,
+72
 ],
 "art-av-acc-chain-pear-wrap": [
-296,
-43
+191,
+78
 ],
 "art-av-acc-chain-star-wrap": [
 359,
-43
+74
 ],
 "art-av-acc-chain-tall-wrap": [
-149,
-32
+148,
+80
 ],
 "art-av-acc-flashlight": [
 75,
@@ -1424,52 +1424,52 @@
 26
 ],
 "art-av-acc-lei-bean-wrap": [
-274,
-51
+201,
+86
 ],
 "art-av-acc-lei-blob-wrap": [
-376,
-52
+296,
+86
 ],
 "art-av-acc-lei-chunky-wrap": [
-376,
-52
+294,
+88
 ],
 "art-av-acc-lei-classic-wrap": [
-376,
-52
+298,
+86
 ],
 "art-av-acc-lei-cloud-wrap": [
-376,
-52
+302,
+92
 ],
 "art-av-acc-lei-drop-wrap": [
-322,
-52
+240,
+82
 ],
 "art-av-acc-lei-hex-wrap": [
-375,
-52
+299,
+84
 ],
 "art-av-acc-lei-mini-wrap": [
-279,
-51
+198,
+94
 ],
 "art-av-acc-lei-pear-wrap": [
-298,
-50
+191,
+82
 ],
 "art-av-acc-lei-star-wrap": [
-362,
-52
+358,
+88
 ],
 "art-av-acc-lei-tall-wrap": [
-155,
-44
+148,
+86
 ],
 "art-av-acc-lei-wide-wrap": [
-368,
-52
+308,
+108
 ],
 "art-av-acc-magnifier": [
 123,
@@ -2056,96 +2056,96 @@
 139
 ],
 "art-av-acc-supercape-bean-wrap": [
-268,
-29
+199,
+79
 ],
 "art-av-acc-supercape-blob-back": [
 504,
 111
 ],
 "art-av-acc-supercape-blob-wrap": [
-378,
-29
+292,
+72
 ],
 "art-av-acc-supercape-chunky-back": [
 503,
 123
 ],
 "art-av-acc-supercape-chunky-wrap": [
-377,
-29
+289,
+76
 ],
 "art-av-acc-supercape-classic-back": [
 503,
 118
 ],
 "art-av-acc-supercape-classic-wrap": [
-377,
-29
+298,
+71
 ],
 "art-av-acc-supercape-cloud-back": [
 502,
 98
 ],
 "art-av-acc-supercape-cloud-wrap": [
-375,
-26
+304,
+75
 ],
 "art-av-acc-supercape-drop-back": [
 434,
 111
 ],
 "art-av-acc-supercape-drop-wrap": [
-322,
-28
+240,
+66
 ],
 "art-av-acc-supercape-hex-back": [
 498,
 122
 ],
 "art-av-acc-supercape-hex-wrap": [
-372,
-29
+298,
+71
 ],
 "art-av-acc-supercape-mini-back": [
 379,
 81
 ],
 "art-av-acc-supercape-mini-wrap": [
-279,
-26
+198,
+76
 ],
 "art-av-acc-supercape-pear-back": [
 392,
 109
 ],
 "art-av-acc-supercape-pear-wrap": [
-291,
-28
+188,
+75
 ],
 "art-av-acc-supercape-star-back": [
 482,
 121
 ],
 "art-av-acc-supercape-star-wrap": [
-360,
-29
+358,
+71
 ],
 "art-av-acc-supercape-tall-back": [
 212,
 111
 ],
 "art-av-acc-supercape-tall-wrap": [
-150,
-30
+148,
+78
 ],
 "art-av-acc-supercape-wide-back": [
 488,
 90
 ],
 "art-av-acc-supercape-wide-wrap": [
-367,
-26
+309,
+86
 ],
 "art-av-acc-sweat": [
 137,
@@ -2364,96 +2364,96 @@
 198
 ],
 "art-av-acc-vampirecollar-bean-wrap": [
-268,
-30
+199,
+80
 ],
 "art-av-acc-vampirecollar-blob-back": [
 400,
 258
 ],
 "art-av-acc-vampirecollar-blob-wrap": [
-379,
-31
+292,
+73
 ],
 "art-av-acc-vampirecollar-chunky-back": [
 400,
 258
 ],
 "art-av-acc-vampirecollar-chunky-wrap": [
-378,
-31
+289,
+76
 ],
 "art-av-acc-vampirecollar-classic-back": [
 400,
 258
 ],
 "art-av-acc-vampirecollar-classic-wrap": [
-377,
-29
+299,
+72
 ],
 "art-av-acc-vampirecollar-cloud-back": [
 400,
 258
 ],
 "art-av-acc-vampirecollar-cloud-wrap": [
-376,
-26
+304,
+76
 ],
 "art-av-acc-vampirecollar-drop-back": [
 369,
 238
 ],
 "art-av-acc-vampirecollar-drop-wrap": [
-322,
-28
+241,
+67
 ],
 "art-av-acc-vampirecollar-hex-back": [
 400,
 258
 ],
 "art-av-acc-vampirecollar-hex-wrap": [
-373,
-31
+298,
+71
 ],
 "art-av-acc-vampirecollar-mini-back": [
 324,
 208
 ],
 "art-av-acc-vampirecollar-mini-wrap": [
-279,
-26
+198,
+77
 ],
 "art-av-acc-vampirecollar-pear-back": [
 335,
 214
 ],
 "art-av-acc-vampirecollar-pear-wrap": [
-291,
-29
+189,
+76
 ],
 "art-av-acc-vampirecollar-star-back": [
 400,
 258
 ],
 "art-av-acc-vampirecollar-star-wrap": [
-360,
-29
+358,
+72
 ],
 "art-av-acc-vampirecollar-tall-back": [
 264,
 166
 ],
 "art-av-acc-vampirecollar-tall-wrap": [
-151,
-30
+148,
+79
 ],
 "art-av-acc-vampirecollar-wide-back": [
 400,
 258
 ],
 "art-av-acc-vampirecollar-wide-wrap": [
-368,
-26
+309,
+88
 ],
 "art-av-acc-wand-star": [
 98,

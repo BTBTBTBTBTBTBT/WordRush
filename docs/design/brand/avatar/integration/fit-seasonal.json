@@ -255,7 +255,7 @@
    "classic": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.999,
+    "seat": 1.0,
     "back_hidden": 0.824,
     "back_visible": 0.13,
     "bodyScale": 0.904
@@ -263,14 +263,14 @@
    "tall": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.995,
+    "seat": 1.0,
     "back_hidden": 0.653,
     "back_visible": 0.173,
     "bodyScale": 0.96
    },
    "wide": {
     "face": 0.0,
-    "letter": 0.0,
+    "letter": 0.002,
     "seat": 1.0,
     "back_hidden": 0.656,
     "back_visible": 0.334,
@@ -279,7 +279,7 @@
    "blob": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.993,
+    "seat": 1.0,
     "back_hidden": 0.768,
     "back_visible": 0.181,
     "bodyScale": 0.904
@@ -287,7 +287,7 @@
    "bean": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.979,
+    "seat": 1.0,
     "back_hidden": 0.804,
     "back_visible": 0.11,
     "bodyScale": 0.96
@@ -295,7 +295,7 @@
    "star": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.985,
+    "seat": 1.0,
     "back_hidden": 0.734,
     "back_visible": 0.199,
     "bodyScale": 0.904
@@ -303,7 +303,7 @@
    "drop": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.994,
+    "seat": 1.0,
     "back_hidden": 0.698,
     "back_visible": 0.247,
     "bodyScale": 0.96
@@ -311,7 +311,7 @@
    "pear": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.976,
+    "seat": 1.0,
     "back_hidden": 0.669,
     "back_visible": 0.227,
     "bodyScale": 0.96
@@ -327,7 +327,7 @@
    "chunky": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.99,
+    "seat": 1.0,
     "back_hidden": 0.812,
     "back_visible": 0.137,
     "bodyScale": 0.904
@@ -343,7 +343,7 @@
    "hex": {
     "face": 0.0,
     "letter": 0.0,
-    "seat": 0.985,
+    "seat": 1.0,
     "back_hidden": 0.723,
     "back_visible": 0.233,
     "bodyScale": 0.904

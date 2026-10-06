@@ -75,6 +75,21 @@ bakes everything the rules need into PER-BODY LAYER ART, so the three renderers 
   letter). Fixed: sneakers (the upper + laces, not white soles), boots (wider), the shoe keying fringe, sleepy
   brows (relaxed, never slanting in like angry brows).
 
+## The necklace drape + hoop check (10-05)
+Founder: the chain "went around his arms like a hula hoop". The fit check only measured the face and the letter, so
+straight bands at the wrap line passed while running edge to edge over both arms. These are head-bodies with no neck,
+so everything worn at the neck now hangs on ONE path, `pieces.drape_path(body)`: a soft U whose ends tuck BEHIND the
+silhouette at about cheek height (above + inside the arms, `pieces.arm_mask`), whose bottom sits in the gap between
+the mouth and the letter, darkening and thinning toward the ends (`_tuck`, perspective).
+- chain: links stamped along the drape, smaller + darker toward the ends (`drape_chain`); still no room on wide/mini.
+- cape, supercape, vampire collar: the straight front cord is gone; a thin cord on the drape (`drape_cord`) + a small
+  clasp at the bottom of the U (`fit_clasp`: the biggest size that clears the face + letter).
+- scarf, bandana, lei: the band follows the drape (`drape_band` / `drape_wrap`); the scarf tail hangs in the gap
+  between the left arm and the letter; the bandana knot sits just inside the arm.
+- `integration/audit.py --wraps` (also run by plain `audit.py`): every shipped wrap-line layer FAILS when it sits on
+  the arms or covers ≥ 70% of the body's width on a row at arm height (a hoop). Waist garments (apron, belt) are
+  exempt: they go around the body under the hands by design. It flagged 76 layers on the 10-05 art, 0 after the fix.
+
 ## How it ships (the 10-04 proposal, superseded by the section above)
 The data needs four additions to `avatar-parts.json`, sketched in `new/proposal-avatar-parts.json`:
 1. `bodies.<id>.hands`: the L/R ellipses (`integration/rig.py` `HANDS`).

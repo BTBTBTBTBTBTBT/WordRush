@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from scipy import ndimage
 from rig import (AV, CW, M, U, P, MAN, rig, load, trim, tint, place, light_match, place_part, hexrgb, soft, shade,
                  COLORS, compose as _compose)
-from pieces import guards, neck_band, warp_to_band, hand, main_width, avoid, draw_strap, REBUILT
+from pieces import guards, neck_band, warp_to_band, drape_wrap, hand, main_width, avoid, draw_strap, REBUILT
 
 NEW = os.path.join(AV, 'new', 'pieces')
 
@@ -96,14 +96,43 @@ def band_wrap(name, body, thick=0.09, margin=0.016, knot=None, tilt=0.0):
                 best = (top + sh, bot + sh)
                 break
         top, bot = best
-    band = warp_to_band(tex, x0, x1, top, bot, A)
+        band = warp_to_band(tex, x0, x1, top, bot, A)
+    else:
+        # 10-05 wrap fix: hang it on the necklace drape (ends tucked behind at cheek height, above the arms)
+        band, (x0, x1, top, bot) = drape_wrap(tex, body, thick, margin)
     front = [band]
     if knot:
         k = light_match(piece(knot), 0.05)
-        i = int(len(top) * 0.14)
-        kx, ky = (x0 + i - M) / U, ((top[i] + bot[i]) / 2 - M) / U
-        kw = min(0.24, (x1 - x0) / U * 0.32)
-        front.append(avoid(lambda dx, dy: place(k, kx - dx, ky, kw * (1 - dx * 2), anchor=(0.5, 0.42), rot=-8), body, step=(0.012, 0)))
+        if tilt:
+            i = int(len(top) * 0.14)
+            kx, ky = (x0 + i - M) / U, ((top[i] + bot[i]) / 2 - M) / U
+            kw = min(0.24, (x1 - x0) / U * 0.32)
+            front.append(avoid(lambda dx, dy: place(k, kx - dx, ky, kw * (1 - dx * 2), anchor=(0.5, 0.42), rot=-8), body, step=(0.012, 0)))
+        else:
+            # 10-05 wrap fix: the knot sits on the drape just inside the left arm, never on it (the hoop check)
+            from pieces import arm_mask
+            arms = arm_mask(body, grow=1.0)
+            face, letter = guards(body)
+            g = face | letter | arms
+            kw0 = min(0.2, (x1 - x0) / U * 0.26)
+
+            def mk(dx, dy):
+                kw = kw0 * (1 - dy)
+                xc = x0 + int(len(top) * 0.2) + int(dx * U)
+                i = int(np.clip(xc - x0, 0, len(top) - 1))
+                return place(k, (xc - M) / U, ((top[i] + bot[i]) / 2 - M) / U, kw, anchor=(0.5, 0.42), rot=-8)
+            best = None
+            for sh in (0, 0.15, 0.3, 0.45):
+                for dx in np.arange(0, 0.2, 0.01):
+                    lay = mk(dx, sh)
+                    hit = int(((np.asarray(lay.getchannel('A')) > 90) & g).sum())
+                    if best is None or hit < best[0]:
+                        best = (hit, lay)
+                    if hit == 0:
+                        break
+                if best[0] == 0:
+                    break
+            front.append(best[1])
     return dict(front=front, handover=(), seat_min=0.45)
 
 
