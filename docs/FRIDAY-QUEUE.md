@@ -31,3 +31,17 @@
 - Details: a subtle discovery hint (rare idle "humming" note), haptics per note, works with sound off (shows
   floating notes; achievements still count), Reduce Motion = instant swap, Halloween costumes keep their
   costume + a music touch, performance rules as the cast puppets.
+
+## 5. Big mascot-maker content round (free ChatGPT in the browser, as before)
+- Plan + candidate lists: docs/design/brand/avatar/NEXT-ROUND-INK-AND-BLING.md. Founder picks favorites first;
+  draw in free ChatGPT (on-model, flat key color), fit with the landmark rules (PR #41/#42), look at every
+  body sheet ("worn, not bolted on"), ship ×3.
+- Order: new body types + plush shapes (+ sizes) → rig them with the one-command rigger (cloud/body-rigs) so
+  poses/animations work → hair (+ colors) → letter fonts/colors + letter-fits-the-body → tattoos, piercings,
+  face fun → team jerseys (sport templates, two colors) → trending kid items, buddies, kawaii food →
+  ChatGPT hand art for peace sign / point / thumbs-up poses.
+- **Gating pass (decide with founder):** for every item (existing + new) assign free / Pro / buy / earn /
+  limited per docs/design/brand/avatar/UNLOCKS-AND-SHOP.md (decided: direct buy or earn, Pro unlocks most,
+  most options gated for free users except a starter handful, everything try-on-able). Produce a table to
+  approve, then build the access rules + owned-items ledger + locked card (ChatGPT lock art) + earn checks;
+  purchases (Apple/Google IAP + Stripe on web) after the founder sets up the products.
