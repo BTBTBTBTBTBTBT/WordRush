@@ -6,6 +6,7 @@
 //
 //   pnpm test:contrast                 (boots `next dev` on :3123 unless CONTRAST_BASE_URL is set)
 //   CONTRAST_ONLY=home,stats CONTRAST_SEASONS=halloween pnpm test:contrast
+//   CONTRAST_SHOTS=/some/dir …           (also saves each screen as rendered, text visible)
 //
 // Supabase is faked (see `open`): guests get nothing back, a signed-in screen gets a fresh, empty
 // account — so data screens show their empty states. The report lands in e2e/.contrast-report.json.
@@ -79,7 +80,7 @@ afterAll(async () => {
   await browser?.close();
   if (server?.pid) try { process.kill(-server.pid); } catch { /* gone */ }
   fs.writeFileSync(
-    path.join(__dirname, '.contrast-report.json'),
+    process.env.CONTRAST_REPORT ?? path.join(__dirname, '.contrast-report.json'),
     JSON.stringify({ checked, failures }, null, 2),
   );
 });
@@ -89,13 +90,18 @@ function hex([r, g, b]: number[]): string {
 }
 
 /** The text runs that miss AA against the pixels behind them. */
-async function sweep(page: Page): Promise<{ runs: TextRun[]; misses: Omit<Failure, 'screen' | 'season' | 'theme'>[] }> {
+async function sweep(page: Page, shot?: string): Promise<{ runs: TextRun[]; misses: Omit<Failure, 'screen' | 'season' | 'theme'>[] }> {
   await page.addStyleTag({ content: STILL_CSS });
-  await page.waitForTimeout(150);
+  // The whole page as one viewport, so every line box can be hit-tested (and the screenshot is 1:1).
+  const height = await page.evaluate(() => Math.min(6000, Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)));
+  await page.setViewportSize({ width: 390, height: Math.max(844, height) });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(300);
   const runs = await page.evaluate(collectText);
+  if (shot) await page.screenshot({ path: shot });
   await page.addStyleTag({ content: HIDE_TEXT_CSS });
   await page.waitForTimeout(100);
-  const png = await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' });
+  const png = await page.screenshot({ animations: 'disabled', caret: 'hide' });
   const { data, info } = await sharp(png).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const W = info.width;
   const H = info.height;
@@ -202,7 +208,8 @@ describe('season contrast (WCAG AA on rendered pixels)', () => {
         it(label, async () => {
           const page = await open(screen, season, theme);
           try {
-            const { runs, misses } = await sweep(page);
+            const shot = process.env.CONTRAST_SHOTS ? path.join(process.env.CONTRAST_SHOTS, `${screen.id}-${season ?? 'none'}-${theme}.png`) : undefined;
+            const { runs, misses } = await sweep(page, shot);
             checked.push({ screen: screen.id, season: season ?? 'none', theme, runs: runs.length });
             for (const m of misses) failures.push({ screen: screen.id, season: season ?? 'none', theme, ...m });
             expect(runs.length, `${label}: no text found (page failed to render?)`).toBeGreaterThan(0);

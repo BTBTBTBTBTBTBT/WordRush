@@ -64,6 +64,9 @@ export function collectText(): TextRun[] {
     if (!text || !/[\p{L}\p{N}]/u.test(text)) continue;
     const el = n.parentElement;
     if (!el || el.closest('script, style, noscript, svg, [hidden], option')) continue;
+    // aria-hidden text is decoration or a painted duplicate (wallpaper glyph tiles, the lettering's
+    // stroke layer): WCAG 1.4.3 exempts pure decoration; its accessible twin is checked instead.
+    if (el.closest('[aria-hidden="true"]')) continue;
     // Inactive controls are exempt from WCAG 1.4.3.
     if (el.closest(':disabled, [aria-disabled="true"]')) continue;
     const cs = getComputedStyle(el);
@@ -82,8 +85,14 @@ export function collectText(): TextRun[] {
     if (!color || color[3] * opacity < 0.05) continue;
     const range = document.createRange();
     range.selectNodeContents(n);
+    // Only line boxes that are on top: text under a popup / sheet (or scrolled out of its clip box)
+    // isn't what the player reads; the popup's own text is checked instead.
+    const onTop = (r: DOMRect) => {
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return !!hit && (hit === el || el.contains(hit) || hit.contains(el));
+    };
     const rects = [...range.getClientRects()]
-      .filter((r) => r.width >= 2 && r.height >= 4)
+      .filter((r) => r.width >= 2 && r.height >= 4 && onTop(r))
       .map((r) => ({ x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }));
     if (!rects.length) continue;
     // Clipped away (sr-only, overflow-hidden 1px boxes).
