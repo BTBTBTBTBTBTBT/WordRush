@@ -26,12 +26,14 @@ final class SoundManager {
         /// Classic's own picks (Sound Lab "Classic" rows): played instead of the pack sound while
         /// the Classic game screen is up (`classicSounds()`); every other game keeps the pack's.
         case classicInvalid = "classic-invalid"
+        case classicLose = "classic-lose"
         case classicWin = "classic-win"
 
         /// Classic's version of this pack sound, if it has one.
         var classic: Effect? {
             switch self {
             case .invalid: return .classicInvalid
+            case .lose: return .classicLose
             case .win: return .classicWin
             default: return nil
             }

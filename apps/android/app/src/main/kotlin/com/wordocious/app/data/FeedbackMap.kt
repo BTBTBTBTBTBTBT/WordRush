@@ -32,6 +32,7 @@ enum class Sfx(val file: String) {
     /** Classic's own picks (Sound Lab "Classic" rows), played instead of the pack sound while the
      *  Classic game screen is up (SoundManager.enterClassic); every other game keeps the pack's. */
     CLASSIC_INVALID("sfx_classic_invalid"),
+    CLASSIC_LOSE("sfx_classic_lose"),
     CLASSIC_WIN("sfx_classic_win"),
 
     /** The player's level going up (pick: "Rising Stairs"). */
@@ -124,6 +125,7 @@ object FeedbackRules {
     /** Classic's version of a pack sound (null = Classic plays the pack's). */
     fun classicVariant(s: Sfx): Sfx? = when (s) {
         Sfx.INVALID -> Sfx.CLASSIC_INVALID
+        Sfx.LOSE -> Sfx.CLASSIC_LOSE
         Sfx.WIN -> Sfx.CLASSIC_WIN
         else -> null
     }
