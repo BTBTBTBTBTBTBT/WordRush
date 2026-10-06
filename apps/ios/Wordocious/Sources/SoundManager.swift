@@ -25,6 +25,8 @@ final class SoundManager {
         case intro
         /// The player's level going up (pick: "Rising Stairs").
         case levelup
+        /// A game opening (pick: "Page Breeze").
+        case open
         /// Each header hero's giggle (pick: "Giggles"), file `sfx-laugh-<id>.m4a`.
         case laughW = "laugh-w", laughO1 = "laugh-o1", laughR = "laugh-r", laughD = "laugh-d", laughO2 = "laugh-o2"
         case laughC = "laugh-c", laughI = "laugh-i", laughO3 = "laugh-o3", laughU = "laugh-u", laughS = "laugh-s"
@@ -143,7 +145,7 @@ final class SoundManager {
     private func fire(_ e: Effect, at now: TimeInterval, volume: Float) {
         if let last = lastPlayed[e], now - last < e.minGap { return }
         // The intro jingle owns the cold start: its landing "ta-da" replaces the landing hops.
-        if e == .hop, let intro = lastPlayed[.intro], now - intro < Self.introQuiet { return }
+        if e == .hop || e == .open, let intro = lastPlayed[.intro], now - intro < Self.introQuiet { return }
         guard let buf = buffers[e], startIfNeeded() else { return }
         lastPlayed[e] = now
         let v = voices.first(where: { $0.busyUntil <= now }) ?? voices.min(by: { $0.busyUntil < $1.busyUntil })!
@@ -382,6 +384,8 @@ enum Feedback {
         guard once("vs", 0.8) else { return }
         SoundManager.shared.playVsStinger(); Haptics.medium()
     }
+    /// A game opens (GameTransition.beginOpen: Home / Puzzles / VS covers): open · —.
+    static func gameOpen() { SoundManager.shared.play(.open) }
     /// A popup / sheet opening: whoosh · —.
     static func whoosh() { SoundManager.shared.play(.whoosh) }
 }

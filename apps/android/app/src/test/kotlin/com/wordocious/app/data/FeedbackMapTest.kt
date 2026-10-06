@@ -31,6 +31,7 @@ class FeedbackMapTest {
             FeedbackEvent.WHOOSH to (Sfx.WHOOSH to null),
             FeedbackEvent.INTRO to (Sfx.INTRO to null),
             FeedbackEvent.LEVEL_UP to (Sfx.LEVELUP to Haptic.SUCCESS),
+            FeedbackEvent.GAME_OPEN to (Sfx.OPEN to null),
         )
         assertEquals(FeedbackEvent.entries.toSet(), expected.keys)
         expected.forEach { (e, pair) ->
@@ -40,7 +41,7 @@ class FeedbackMapTest {
     }
 
     @Test fun everySoundIsUsedAndNamedLikeItsFile() {
-        assertEquals(28, Sfx.entries.size)
+        assertEquals(29, Sfx.entries.size)
         Sfx.entries.forEach { assertEquals("sfx_" + it.name.lowercase(), it.file) }
         // Every sound is an event's, or a hero's giggle (SoundManager.castLaugh).
         val used = FeedbackEvent.entries.mapNotNull { it.sound }.toSet() +
@@ -64,6 +65,8 @@ class FeedbackMapTest {
         assertTrue(FeedbackRules.hopMutedByIntro(5_000L, 4_000L))       // the landing, inside the jingle
         assertFalse(FeedbackRules.hopMutedByIntro(7_000L, 4_000L))      // after the jingle
         assertEquals(5000L, FeedbackRules.minGapMs(FeedbackEvent.INTRO))
+        assertTrue(FeedbackRules.mutedByIntro(Sfx.OPEN, 5_000L, 4_000L))   // no game-open on top of it
+        assertFalse(FeedbackRules.mutedByIntro(Sfx.WIN, 5_000L, 4_000L))
     }
 
     @Test fun tapPitchStaysWithinThreePercent() {

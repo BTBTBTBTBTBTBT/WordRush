@@ -7,12 +7,12 @@ import type { HapticKind } from '@/lib/haptics';
 /**
  * The samples in public/sounds/<name>.m4a (docs/design/brand/sounds/make-sounds.py): the 16-sound
  * pack + the founder's Sound Lab picks (make-sounds.py PICKS) — `intro` = the cold-start jingle,
- * `levelup` = the player's level going up, `laugh-<id>` = each header hero's giggle.
+ * `levelup` = the player's level going up, `open` = a game opening, `laugh-<id>` = each header hero's giggle.
  */
 export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
   'lose', 'celebrate', 'streak', 'tick', 'notify', 'unlock', 'vs', 'whoosh',
-  'intro', 'levelup',
+  'intro', 'levelup', 'open',
   'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
@@ -61,7 +61,7 @@ export const SECOND_HAPTIC_MS = 140;
 export type FeedbackEvent =
   | 'key' | 'delete' | 'flip' | 'rowLand' | 'invalid' | 'press' | 'release' | 'hop'
   | 'win' | 'lose' | 'celebrate' | 'streak' | 'tick' | 'notify' | 'unlock' | 'vs' | 'whoosh'
-  | 'levelup';
+  | 'levelup' | 'open';
 
 /** FINISH_SPEC U event map (sound · haptic). */
 export const FEEDBACK: Record<FeedbackEvent, { sound: SoundName | null; haptics: readonly HapticKind[] }> = {
@@ -84,7 +84,13 @@ export const FEEDBACK: Record<FeedbackEvent, { sound: SoundName | null; haptics:
   whoosh: { sound: 'whoosh', haptics: [] },
   /** The level goes up: the XP toast's "Level up!", or the tier popup when it crosses a tier. */
   levelup: { sound: 'levelup', haptics: ['success'] },
+  /** A game opens from Home / Puzzles (once per open; never on close / back). */
+  open: { sound: 'open', haptics: [] },
 };
+
+/** The intro jingle owns the cold start: these stay quiet while it plays (≈ 3 s). */
+export const INTRO_QUIET_MS = 3000;
+export const INTRO_QUIETS: readonly SoundName[] = ['hop', 'open'];
 
 /** When each tile of a reveal turns over (ms from the reveal start): one `flip` per tile, REVEAL.stagger apart. */
 export function revealFlipDelays(tiles: number): number[] {

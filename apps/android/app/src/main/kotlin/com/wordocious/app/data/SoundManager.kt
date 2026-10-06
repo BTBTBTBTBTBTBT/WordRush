@@ -56,6 +56,7 @@ object SoundManager {
         Sfx.WHOOSH -> R.raw.sfx_whoosh
         Sfx.INTRO -> R.raw.sfx_intro
         Sfx.LEVELUP -> R.raw.sfx_levelup
+        Sfx.OPEN -> R.raw.sfx_open
         Sfx.LAUGH_W -> R.raw.sfx_laugh_w
         Sfx.LAUGH_O1 -> R.raw.sfx_laugh_o1
         Sfx.LAUGH_R -> R.raw.sfx_laugh_r
@@ -101,7 +102,7 @@ object SoundManager {
         if (id == 0 || id !in loaded) return
         val now = SystemClock.uptimeMillis()
         // The intro jingle owns the cold start: its landing "ta-da" replaces the landing hop.
-        if (s == Sfx.HOP && FeedbackRules.hopMutedByIntro(now, introAt)) return
+        if (FeedbackRules.mutedByIntro(s, now, introAt)) return
         val v = (FeedbackRules.MASTER_VOLUME * volume).coerceIn(0f, 1f)
         val stream = runCatching { p.play(id, v, v, 1, 0, rate.coerceIn(0.5f, 2f)) }.getOrDefault(0)
         if (stream == 0) return

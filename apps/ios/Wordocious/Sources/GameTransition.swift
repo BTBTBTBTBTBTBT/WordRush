@@ -127,6 +127,7 @@ final class GameTransition {
     /// server. Call right before presenting the cover (next run-loop turn).
     /// `hint`: the opening game's mode key (GameMode raw value), when known.
     func beginOpen(color fallback: UIColor, hint: String? = nil) {
+        Feedback.gameOpen()   // Sound Lab pick "Page Breeze", once per open (closes never play it)
         finishRun(animated: false)
         guard let window = Self.keyWindow, let scene = window.windowScene else { return }
         let screen = window.bounds

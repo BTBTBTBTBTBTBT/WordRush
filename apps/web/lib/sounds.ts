@@ -10,7 +10,7 @@
 // lib/sound-map.ts; lib/sound-events.ts `feedback(event)` plays both.
 
 import { haptic } from '@/lib/haptics';
-import { LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
+import { INTRO_QUIET_MS, INTRO_QUIETS, LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
 
 export { SOUND_NAMES, type SoundName } from '@/lib/sound-map';
 
@@ -176,6 +176,7 @@ export function playSound(name: SoundName, opts: { rate?: number; gain?: number 
     const buf = buffers.get(name);
     if (!buf) { decodeAll(ctx); return; }
     if (recentlyPlayed(name, SOUND_DEDUPE_MS)) return;
+    if (INTRO_QUIETS.includes(name) && recentlyPlayed('intro', INTRO_QUIET_MS)) return;
     lastPlayed.set(name, now());
     const src = ctx.createBufferSource();
     src.buffer = buf;

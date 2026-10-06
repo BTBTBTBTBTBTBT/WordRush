@@ -54,6 +54,7 @@ JINGLE, UI, PEAK_CAP = -14.7, -21.0, -1.5
 PICKS = {
     'intro': ('intro-a', JINGLE),          # App intro: A Marimba Parade
     'levelup': ('levelup-b', JINGLE),      # Level up: B Rising Stairs
+    'open': ('open-a', UI),                # Opening a game: A Page Breeze
     # Tap a hero in the header: A Giggles, one voice per hero (laugh-<id>)
     **{f'laugh-{c}': (f'laugh-a-{c}', UI) for c in ('w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's')},
 }

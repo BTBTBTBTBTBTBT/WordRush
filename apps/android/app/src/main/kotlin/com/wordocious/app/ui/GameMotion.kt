@@ -100,6 +100,8 @@ object GameMotion {
 
     /** Called from the game layer's first frame (before it draws). */
     internal fun gameEntered() {
+        // Sound Lab pick "Page Breeze": once per open (leaving never plays it).
+        com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.GAME_OPEN)
         gameUp = true
         fadedOut = false
         val key = armedKey?.takeIf { SystemClock.uptimeMillis() - armedAt <= MotionSpec.ARM_WINDOW_MS }

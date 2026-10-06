@@ -16,6 +16,7 @@
 // Fallback (no View Transitions): one fixed shell div animated with WAAPI
 // (transform + opacity only) over the navigation. Reduce Motion: a cross-fade.
 
+import { feedback } from '@/lib/sound-events';
 import { MOTION, openKind, revealTiming, shellTransform, usableSource, liftedFrame, closeDurationMs, riseStartFrame, type Box } from '@/lib/motion-spec';
 
 type Router = { push: (href: string) => void };
@@ -115,6 +116,7 @@ function lift(el: HTMLElement): Promise<void> {
  * soft rise). `color` is the card's shell color, `radius` its corner radius.
  */
 export function openGame(router: Router, href: string, el: HTMLElement | null, opts: { key?: string; color: string; radius?: number }): void {
+  feedback('open');   // Sound Lab pick "Page Breeze", once per open (closing never plays it)
   if (running) { router.push(href); return; }
   const radius = opts.radius ?? 16;
   const frame = el ? usableSource(toBox(el.getBoundingClientRect()), screenBox()) : null;

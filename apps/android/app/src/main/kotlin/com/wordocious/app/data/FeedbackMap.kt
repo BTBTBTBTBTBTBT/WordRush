@@ -31,6 +31,8 @@ enum class Sfx(val file: String) {
     INTRO("sfx_intro"),
     /** The player's level going up (pick: "Rising Stairs"). */
     LEVELUP("sfx_levelup"),
+    /** A game opening (pick: "Page Breeze"). */
+    OPEN("sfx_open"),
 
     /** Each header hero's giggle (pick: "Giggles"), played by SoundManager.castLaugh. */
     LAUGH_W("sfx_laugh_w"), LAUGH_O1("sfx_laugh_o1"), LAUGH_R("sfx_laugh_r"), LAUGH_D("sfx_laugh_d"),
@@ -64,6 +66,8 @@ enum class FeedbackEvent(val sound: Sfx?, val haptic: Haptic?) {
     INTRO(Sfx.INTRO, null),
     /** The level goes up: the XP toast's "Level up!", or the tier popup when it crosses a tier. */
     LEVEL_UP(Sfx.LEVELUP, Haptic.SUCCESS),
+    /** A game opens (GameMotion.gameEntered: solo, VS, pocket games). Never on close / back. */
+    GAME_OPEN(Sfx.OPEN, null),
 }
 
 /** The tunables (spec U): master volume, tap pitch spread, tick throttle, squish quiet window. */
@@ -101,6 +105,10 @@ object FeedbackRules {
     /** Whether a `hop` at [nowMs] is covered by the intro jingle that started at [introAtMs] (0 = never played). */
     fun hopMutedByIntro(nowMs: Long, introAtMs: Long): Boolean =
         introAtMs > 0L && nowMs - introAtMs in 0 until INTRO_QUIET_MS
+
+    /** The sounds the intro jingle covers: the landing hop and a game opening under it. */
+    fun mutedByIntro(s: Sfx, nowMs: Long, introAtMs: Long): Boolean =
+        (s == Sfx.HOP || s == Sfx.OPEN) && hopMutedByIntro(nowMs, introAtMs)
 
     /** One hero's giggle at most this often: longer than the longest giggle (never overlaps itself). */
     const val LAUGH_MIN_GAP_MS = 700L
