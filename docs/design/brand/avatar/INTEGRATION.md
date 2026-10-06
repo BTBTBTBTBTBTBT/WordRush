@@ -118,3 +118,67 @@ renderers still need these:
 
 Result: the 7 rebuilt parts × 12 bodies give 0 failures. The chain is withheld on `wide` and `mini`, which
 have no neck room.
+
+## Landmark fitting (10-06 prototype — STEP ONE of NEXT-ROUND-INK-AND-BLING.md)
+Not shipped yet: the apps still draw the 10-05 art. Report + item-by-item table: `integration/REPORT-LANDMARKS.md`.
+- `integration/landmarks.py` measures every body from its art (+ its face / letter anchors) → `landmarks.json` and a
+  debug overlay per body (`out/landmarks/overlay-<body>.jpg`, all on `overlays.jpg`): outline, head-top curve + head
+  band, face box, letter box, shoulder line + points, shoulder tops, arms (start / end notches, hand ellipses), the
+  arm-free neck band, waist, hips, feet, floor, torso width per row. Hands come from the outline's notches (each mitten
+  sits between two concave notches) — within 0.011 body units of today's hand-fit `HANDS` on average.
+- `integration/rules.py` holds ONE rule per item (anchor, scale, split, zone, curve; `python3 integration/rules.py
+  --table`) and renders it from the landmarks only → `rule-pieces.json` (the `pieces` format ship-integrated.py
+  writes, + per-body rects for the one-art items). `OVERRIDES` keeps today's fit where it is clearly better (the bow
+  tie); `landmarks.LANDMARK_OVERRIDES` keeps a hand-placed landmark (the cloud's head band).
+- `integration/audit.py --guards [shipped|rule]` fails an item that crosses an arm, is wider than the torso at its
+  height (waist garments exempt), leaves the outline, covers the face / letter beyond 1%, or floats off its anchor.
+  `--hoop-regression` runs them on the 10-05 "hula hoop" art (c08582d^): the chain fails on 9 of its 10 bodies.
+- The letter the guards protect is the one the APPS draw (Nunito 900 at min(h / 0.74, w / 0.9) × 0.94 of the
+  letter box: `rig.LETTER_MODE = 'app'`), ~20% bigger than the rig's own letter that ship-integrated.py guarded.
+
+### How to add a new body
+Goal: drop the art in, run one script, look at one sheet.
+1. Drop `parts/art-av-body-<id>.png` (1024², white glossy body, mittens + feet like the others) and give it a manifest
+   entry with its FACE + LETTER anchors only (`face`, `eyeY`, `mouthY`, `cheekY`, `mustacheY`, `letterBox`) — that is
+   the body's design; everything else is measured.
+2. `python3 integration/landmarks.py <id>` → its landmarks + `out/landmarks/overlay-<id>.jpg`. Look at the overlay: the
+   hand ellipses on the mittens, the feet boxes on the feet, the neck band between the mouth and the letter, the
+   head band across the head. If a measurement is wrong for a reason the art can't fix (the cloud's top puff), add a
+   `LANDMARK_OVERRIDES` entry with the reason.
+3. `python3 integration/compare.py` (or `audit.py --guards rule <id>`) → every item fitted by its rule on the new body
+   with the guards; look at its column on the sheets. Items the rule can't fit are withheld on that body (no room),
+   never drawn badly.
+
+### How to add a new item
+Write one rule. In `rules.build_rules()` add `rules['acc:<id>'] = R(kind, anchor, scale, split, zone, curve, **params)`
+with an existing kind (hat, face, pendant, necklace, drape, cape, backpack, wings, tail, held, belt, apron, shoes,
+buddy, brows, extra) — a hat is just `HAT()` (its art's `anchor`/`w` in the manifest), a held item `HELD()` + its grip
+point in `new_pieces.HELD`. Run `compare.py` / `audit.py --guards rule`; the guards + one look at its row are the gate.
+A new kind is a function `(body) → layers` that reads `rules.LMS[body]` (never a body id).
+
+### Sizes
+`integration/sizes.py` derives XS / S / L / XL (torso × 0.8 / 0.9 / 1.12 / 1.25), chunky (1.28 wide) and lanky
+(1.3 tall, 0.94 wide) from each of the 12 bodies: the torso is scaled, the mittens + feet keep their size and
+re-attach (the face scales by (sx·sy)^¼), then the body is normalized back into the square. The landmarks are
+re-measured (`landmarks-sizes.json`), every item is re-fitted by its rule and the guards run: contact sheets
+`out/landmarks/sizes-<size>-<group>.jpg`, bodies + overlays `sizes-bodies.jpg` / `sizes-overlays.jpg`. Prototype only:
+a size is not a config field yet (see REPORT-LANDMARKS.md "Shipping").
+
+### How to add clothing
+`integration/garments.py` — the "garment" rule type: shaped BY the body's landmarks, not pinned to a point.
+1. A garment is a dict: `top` (hem: waist | hip, sleeves: short | long | none, template, hood, pocket, number),
+   `bottom` (kind: shorts | pants | skirt) or both (a dress / overalls), and `colors` (p primary, s secondary trim,
+   a accent).
+2. Tops = the silhouette below the neckline (the necklace drape: under the mouth, up to the shoulder points) down to
+   the hem, inset a hair, cut away under the mittens (the arms + hands stay on top); sleeves are separate pieces cut
+   from each arm region (root / all but the hand tip). Bottoms = the silhouette from 30% of the torso above the hips
+   (the letter prints over them) to just above the feet (pants), the crotch (shorts), or a trapezoid flaring to
+   1.12 × the hip width (skirt). Hoods = a band behind the head (a back layer).
+3. Shading = the body art's own luminance × flat zone fills, + a soft hem shadow. Team jerseys are zone maps
+   (`zone_map`: collar, V-neck, placket + pinstripes, shoulder pads, lace collar, hem stripes, side panels, arm-hole
+   trim, sleeve bands) — procedural here; final art (ChatGPT) replaces the flat fills zone by zone.
+4. The letter is drawn ON the top (the jersey number / chest print) in the measured letter box, taking the garment's
+   lighting (trim colour on light fabric; football × 1.15).
+5. Guards (`garments.guard`): never past the outline (skirt flare + hood allowed), never over the face, both shoulder
+   tops covered symmetrically, sleeves inside their arm, top + bottom overlap at the waist, the arms + sleeves cover
+   ≤ 1% of the letter. `python3 integration/garments.py` → `out/landmarks/garments-*.jpg` on every body × size.

@@ -1,0 +1,858 @@
+{
+"classic": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"tall": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"wide": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"blob": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"bean": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"star": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"drop": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"pear": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"cloud": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"mini": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"hex": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [],
+"basketball": [],
+"baseball": [],
+"football": [],
+"hockey": [],
+"soccer": []
+},
+"classic@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"tall@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"wide@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"blob@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"bean@XS": {
+"tshirt": [
+[
+"letter",
+"arms cover 2.1% of the letter"
+]
+],
+"jersey": [
+[
+"letter",
+"arms cover 2.1% of the letter"
+]
+],
+"hoodie": [
+[
+"letter",
+"arms cover 2.1% of the letter"
+]
+],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [
+[
+"letter",
+"arms cover 2.1% of the letter"
+]
+]
+},
+"star@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"drop@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"pear@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"cloud@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"chunky@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"mini@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"hex@XS": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"classic@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"tall@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"wide@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"blob@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"bean@S": {
+"tshirt": [
+[
+"letter",
+"arms cover 1.8% of the letter"
+]
+],
+"jersey": [
+[
+"letter",
+"arms cover 1.8% of the letter"
+]
+],
+"hoodie": [
+[
+"letter",
+"arms cover 1.8% of the letter"
+]
+],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": [
+[
+"letter",
+"arms cover 1.8% of the letter"
+]
+]
+},
+"star@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"drop@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"pear@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"cloud@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"chunky@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"mini@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"hex@S": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"classic@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"tall@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"wide@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"blob@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"bean@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"star@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"drop@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"pear@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"cloud@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"chunky@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"mini@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"hex@L": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"classic@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"tall@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"wide@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"blob@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"bean@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"star@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"drop@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"pear@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"cloud@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"chunky@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"mini@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"hex@XL": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"classic@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"tall@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"wide@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"blob@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"bean@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"star@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"drop@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"pear@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"cloud@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"chunky@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"mini@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"hex@chunky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"classic@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"tall@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"wide@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"blob@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"bean@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"star@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"drop@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"pear@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"cloud@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"chunky@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"mini@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+},
+"hex@lanky": {
+"tshirt": [],
+"jersey": [],
+"hoodie": [],
+"shorts": [],
+"pants": [],
+"skirt": [],
+"jersey+pants": []
+}
+}
