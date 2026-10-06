@@ -966,6 +966,7 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-btnlabel-sharelink': [626, 96],
   'art-btnlabel-erase': [328, 96],
   'art-btnlabel-keepplaying': [646, 96],
+  'art-btnlabel-makeyourmascot': [923, 96],
   'art-btnlabel-save': [268, 96],
   'art-btnlabel-notnow': [494, 96],
   'art-btnlabel-start': [331, 96],

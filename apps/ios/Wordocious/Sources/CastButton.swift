@@ -68,7 +68,7 @@ enum CastLabels {
         "CHALLENGETHEM": ("challengethem", 9.2917), "SEEFRIENDS": ("seefriends", 6.1146),
         "STARTPLAYING": ("startplaying", 7.4479), "UNDO": ("undo", 2.9167), "CONTINUE": ("continue", 4.9271),
         "HOWTOPLAY": ("howtoplay", 7.1354), "SKIP": ("skip", 2.4792), "SHARELINK": ("sharelink", 6.5208),
-        "ERASE": ("erase", 3.4167), "KEEPPLAYING": ("keepplaying", 6.7292), "SAVE": ("save", 2.7917),
+        "ERASE": ("erase", 3.4167), "KEEPPLAYING": ("keepplaying", 6.7292), "MAKEYOURMASCOT": ("makeyourmascot", 9.6146), "SAVE": ("save", 2.7917),
         "NOTNOW": ("notnow", 5.1458), "START": ("start", 3.4479), "SIGNUP": ("signup", 3.875),
         "INVITE": ("invite", 3.1875), "HEADS": ("heads", 3.1562), "TAILS": ("tails", 2.7292),
         "COPIED": ("copied", 3.6562),

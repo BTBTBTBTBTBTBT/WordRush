@@ -111,7 +111,7 @@ object CastLabels {
         "UPGRADETOPRO" to "upgrade", "GOTIT" to "gotit", "SEEPRO" to "seepro", "LETSPLAY" to "letsplay",
         "CHALLENGETHEM" to "challengethem", "SEEFRIENDS" to "seefriends", "STARTPLAYING" to "startplaying",
         "UNDO" to "undo", "CONTINUE" to "continue", "HOWTOPLAY" to "howtoplay", "SKIP" to "skip",
-        "SHARELINK" to "sharelink", "ERASE" to "erase", "KEEPPLAYING" to "keepplaying", "SAVE" to "save",
+        "SHARELINK" to "sharelink", "ERASE" to "erase", "KEEPPLAYING" to "keepplaying", "MAKEYOURMASCOT" to "makeyourmascot", "SAVE" to "save",
         "NOTNOW" to "notnow", "START" to "start", "SIGNUP" to "signup", "INVITE" to "invite", "HEADS" to "heads",
         "TAILS" to "tails", "COPIED" to "copied",
     )

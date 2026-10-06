@@ -32,7 +32,7 @@ const LABEL_ART: Record<string, string> = {
   SENDAGIFT: 'sendgift', UPGRADETOPRO: 'upgrade', GOTIT: 'gotit', SEEPRO: 'seepro', LETSPLAY: 'letsplay',
   CHALLENGETHEM: 'challengethem', SEEFRIENDS: 'seefriends', STARTPLAYING: 'startplaying', UNDO: 'undo',
   CONTINUE: 'continue', HOWTOPLAY: 'howtoplay', SKIP: 'skip', SHARELINK: 'sharelink', ERASE: 'erase',
-  KEEPPLAYING: 'keepplaying', SAVE: 'save', NOTNOW: 'notnow', START: 'start', SIGNUP: 'signup', INVITE: 'invite',
+  KEEPPLAYING: 'keepplaying', MAKEYOURMASCOT: 'makeyourmascot', SAVE: 'save', NOTNOW: 'notnow', START: 'start', SIGNUP: 'signup', INVITE: 'invite',
   HEADS: 'heads', TAILS: 'tails', COPIED: 'copied',
 };
 export const CAST_LABEL_SLUGS: readonly string[] = Object.values(LABEL_ART);
