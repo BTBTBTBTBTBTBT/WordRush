@@ -99,6 +99,19 @@ art, pivots, inpainted gaps, rest-pose diff check) — applied to the 12 player 
    per pose (nothing through an arm, nothing off the body). Landmark system required first.
 4. **Bonus — the player's mascot comes alive:** with the body rigged, the player's own mascot can breathe/blink on
    the Stage and do its pose (and the tap-to-laugh hop) the way the cast does, on the Stage, Home host and profile.
+4b. **Alive everywhere (founder 10-05: "Their mascot should come alive everywhere, widgets, main page, etc.")**
+   - In the app: Home host, the Stage/Dressing Room, profile, Stats card, finish screens (cheers on a win, a
+     sad-then-shrug on a loss), VS intro/result, Friends race, podium. Breathing, blinks, its saved pose, reactions
+     to moments (streak +1 = a hop, level up = a cheer, Halloween = costume wiggle), tap = laugh/hop with its own
+     voice (the laugh sounds, pitched per body).
+   - Performance rules (founder: smooth over pretty): only the player's OWN mascot and a few on-screen ones
+     animate; long lists (leaderboard rows, friends lists) stay still and come alive on tap; offscreen = paused;
+     Android holds still between moves (as the cast does); Reduce Motion = still.
+   - **Widgets:** iOS and Android home-screen widgets can't run live animation (the systems only allow snapshots).
+     Make them feel alive within those limits: a "flip-book" timeline that swaps the mascot's frame through the
+     day (morning wave, lunchtime stretch, sleepy at night, cheering after a sweep, worried when the streak is at
+     risk), the widget's built-in transition on each update, and a reaction right after the player finishes a
+     game. iOS 17+ interactive widget buttons could trigger a one-off "poke" frame.
 5. Pose picker in the Dressing Room (a Pose tab with thumbnails); saved in the avatar config; widget / share
    images / leaderboard show the saved pose (static frame).
 Cost: moderate — rigging 12 bodies + ~6 new limb drawings + per-pose guard runs; very cheap per pose after that.
