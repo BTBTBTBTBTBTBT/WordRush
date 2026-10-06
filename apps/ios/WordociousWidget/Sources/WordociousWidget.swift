@@ -676,8 +676,9 @@ struct SmallView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(widgetPhrase(snap, date))
-        // The one tap a small widget gets: straight into the next unplayed daily.
-        .widgetURL(snap.nextUp.flatMap(dailyURL))
+        // The one tap a small widget gets: Home (founder 10-05: "I find myself just clicking home
+        // every time anyways"), not the next unplayed daily. Medium/large chips still deep-link.
+        .widgetURL(URL(string: "wordocious://home"))
     }
 }
 

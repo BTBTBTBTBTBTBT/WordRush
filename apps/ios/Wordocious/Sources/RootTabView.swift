@@ -396,6 +396,8 @@ struct RootTabView: View {
         }
         // A More Games / Puzzles link lands on Home, which scrolls to PUZZLES.
         .onReceive(deepLink.$puzzlesRequest) { req in if req != nil { tab = .home } }
+        // The small widget lands on Home (founder 10-05).
+        .onReceive(deepLink.$homeRequest) { req in if req != nil { tab = .home; deepLink.homeRequest = nil } }
         // A tab restored from SceneStorage must be the router's current tab too.
         .onAppear { router.current = Self.appTab(tab) }
         // A Friends push (/friends) lands on the Friends tab.

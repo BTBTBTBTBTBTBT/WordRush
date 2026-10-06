@@ -427,7 +427,8 @@ class DailyWidgetProvider : AppWidgetProvider() {
             else views.setImageViewResource(R.id.w_mascot, peekRes(snap))
             views.setTextViewText(R.id.w_reset, "RESETS IN ${resetLabel(now)}")
             views.setContentDescription(R.id.w_reset, WidgetStats.countdownPhraseFor(now))
-            views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))
+            // Founder 10-05: the small widget opens Home, not the next unplayed daily.
+            views.setOnClickPendingIntent(R.id.widget_root, homeIntent(context, 98))
             return views
         }
 
@@ -465,6 +466,17 @@ class DailyWidgetProvider : AppWidgetProvider() {
         }
 
         // ── Click targets ───────────────────────────────────────────────────
+
+        /** wordocious://home — DeepLinkRouter → MainScreen shows the Home tab. */
+        private fun homeIntent(context: Context, requestCode: Int): PendingIntent =
+            PendingIntent.getActivity(
+                context, requestCode,
+                Intent(context, MainActivity::class.java)
+                    .setAction(Intent.ACTION_VIEW)
+                    .setData(Uri.parse("wordocious://home"))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         private fun openAppIntent(context: Context, requestCode: Int): PendingIntent =
             PendingIntent.getActivity(

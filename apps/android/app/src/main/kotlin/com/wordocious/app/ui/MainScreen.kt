@@ -476,6 +476,15 @@ fun MainScreen() {
             }
         }
     }
+    // The small widget (wordocious://home): the Home tab (founder 10-05).
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        com.wordocious.app.data.DeepLinkRouter.homeRequest.collect { go ->
+            if (go) {
+                com.wordocious.app.data.DeepLinkRouter.homeRequest.value = false
+                selectedTab = 0
+            }
+        }
+    }
     // Password-recovery app link → native new-password dialog (session already
     // established by the code exchange in DeepLinkRouter).
     val showNewPassword by com.wordocious.app.data.DeepLinkRouter.showNewPassword.collectAsState()

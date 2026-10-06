@@ -57,6 +57,8 @@ final class DeepLink: ObservableObject {
     /// the More Games sheet is gone (home redesign, founder 2026-10-01), so Home
     /// scrolls to its PUZZLES section instead. A fresh id per request.
     @Published var puzzlesRequest: UUID?
+    /// The small widget's tap (wordocious://home): show the Home tab. A fresh id per request.
+    @Published var homeRequest: UUID?
     /// A recovery link was consumed and a session established — show the
     /// native "set a new password" sheet.
     @Published var showNewPasswordSheet = false
@@ -71,6 +73,11 @@ final class DeepLink: ObservableObject {
         // Widget deep link: wordocious://daily/<GameMode.rawValue>. The custom
         // scheme exists ONLY for the widget — everything user-facing stays on
         // universal links. Set state and let HomeView launch the daily.
+        // The small widget's tap (wordocious://home): land on the Home tab.
+        if url.scheme == "wordocious", url.host?.lowercased() == "home" {
+            homeRequest = UUID()
+            return true
+        }
         if url.scheme == "wordocious", ["puzzles", "more"].contains(url.host?.lowercased() ?? "") {
             puzzlesRequest = UUID()
             return true

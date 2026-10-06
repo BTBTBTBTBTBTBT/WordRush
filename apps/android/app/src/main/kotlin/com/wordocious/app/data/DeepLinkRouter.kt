@@ -37,6 +37,8 @@ object DeepLinkRouter {
     /** A widget chip asked for this mode's daily (wordocious://daily/KEY —
      *  iOS DeepLink.swift's daily route); MainScreen consumes and clears it. */
     val dailyMode = MutableStateFlow<GameMode?>(null)
+    /** The small widget's tap (wordocious://home): show the Home tab (founder 10-05). */
+    val homeRequest = MutableStateFlow(false)
     /** A Friends pocket game to open (/friends/games/<id> — the push url, Friends
      *  overhaul §7); MainScreen opens the game screen and clears it. */
     val friendlyGame = MutableStateFlow<String?>(null)
@@ -49,6 +51,10 @@ object DeepLinkRouter {
 
         // Widget chips: wordocious://daily/DUEL etc. Explicit intents from our
         // own PendingIntents, so no manifest intent-filter is involved.
+        if (uri.scheme == "wordocious" && host == "home") {
+            homeRequest.value = true
+            return true
+        }
         if (uri.scheme == "wordocious" && host == "daily") {
             val key = uri.pathSegments.firstOrNull() ?: return false
             val mode = runCatching { GameMode.valueOf(key) }.getOrNull() ?: return false
