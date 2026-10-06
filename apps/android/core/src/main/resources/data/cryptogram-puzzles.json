@@ -224,12 +224,12 @@
   },
   {
    "id": "cg-bm83g",
-   "text": "Home is home, be it ever so homely.",
+   "text": "Truth is stranger than fiction.",
    "key": "HMLQUYBXJGITKWNADVPERZFCSO",
    "given": [
-    "E",
-    "O",
-    "H"
+    "T",
+    "I",
+    "N"
    ]
   },
   {
@@ -354,12 +354,12 @@
   },
   {
    "id": "cg-spl4xt",
-   "text": "There's no smoke without fire.",
+   "text": "Where there is smoke, there is fire.",
    "key": "WFQCSVRKBYMHPXDGIEZUTLANJO",
    "given": [
     "E",
-    "O",
-    "T"
+    "R",
+    "H"
    ]
   },
   {
@@ -454,12 +454,12 @@
   },
   {
    "id": "cg-ejj9u0",
-   "text": "In for a penny, in for a pound.",
+   "text": "Time flies when you are having fun.",
    "key": "VYTZHLPEMIAJWKXCOFRUNBSDQG",
    "given": [
-    "N",
-    "O",
-    "A"
+    "E",
+    "I",
+    "N"
    ]
   },
   {
@@ -554,12 +554,12 @@
   },
   {
    "id": "cg-axt6y7",
-   "text": "Too much pudding will choke a dog.",
+   "text": "Variety is the very spice of life.",
    "key": "WYLUBJMEDINCPKXHAOGFVZQTRS",
    "given": [
-    "O",
-    "D",
-    "C"
+    "E",
+    "I",
+    "F"
    ]
   },
   {
@@ -624,12 +624,12 @@
   },
   {
    "id": "cg-ogbqe4",
-   "text": "Mackerel sky, mackerel sky, never long wet and never long dry.",
+   "text": "If you can't stand the heat, get out of the kitchen.",
    "key": "KIGLBXWQYMFNUCVSTZHDRPAEOJ",
    "given": [
+    "T",
     "E",
-    "N",
-    "R"
+    "H"
    ]
   },
   {
@@ -654,22 +654,22 @@
   },
   {
    "id": "cg-vwdvpo",
-   "text": "After dinner rest a while, after supper walk a mile.",
+   "text": "Breakfast is the most important meal of the day.",
    "key": "YKINQJZDVHFCOLRXEUMBGPSTWA",
    "given": [
-    "E",
+    "T",
     "A",
-    "R"
+    "E"
    ]
   },
   {
    "id": "cg-2fdz20",
-   "text": "The least said, the soonest mended.",
+   "text": "To err is human, to forgive divine.",
    "key": "EVQCLMXYJSHURWFIKGABDONZPT",
    "given": [
+    "I",
     "E",
-    "S",
-    "T"
+    "O"
    ]
   },
   {
@@ -794,22 +794,22 @@
   },
   {
    "id": "cg-sx17eg",
-   "text": "Fresh air impoverishes the doctor.",
+   "text": "Laughter is the shortest distance between two people.",
    "key": "YUHKWNJTSAZXIBDEMFLVQGOCRP",
    "given": [
     "E",
-    "R",
-    "H"
+    "T",
+    "S"
    ]
   },
   {
    "id": "cg-tmrtky",
-   "text": "The more haste, the less speed.",
+   "text": "The grass is always greener on the other side.",
    "key": "SXUCWBZYKIAQHEVNJDRPTGFMLO",
    "given": [
     "E",
     "S",
-    "H"
+    "R"
    ]
   },
   {
@@ -884,12 +884,12 @@
   },
   {
    "id": "cg-xt2d2z",
-   "text": "The wider we roam, the welcomer home.",
+   "text": "Wherever you go, there you are.",
    "key": "GPUILEZRWCYJTXHSMVOBDFNAKQ",
    "given": [
     "E",
-    "H",
-    "M"
+    "R",
+    "O"
    ]
   },
   {
@@ -944,7 +944,7 @@
   },
   {
    "id": "cg-xb4iwf",
-   "text": "Constant dropping wears away the stone.",
+   "text": "Constant dripping wears away the stone.",
    "key": "TIPEUBQDAMRFKLHSGNZVCXYOWJ",
    "given": [
     "A",
@@ -964,22 +964,22 @@
   },
   {
    "id": "cg-ms7jmk",
-   "text": "The cat would eat fish but would not wet her feet.",
+   "text": "If it sounds too good to be true, it probably is.",
    "key": "DREGILMWXUFQSAYBOKVPHZTJNC",
    "given": [
+    "O",
     "T",
-    "E",
-    "H"
+    "I"
    ]
   },
   {
    "id": "cg-sdrx68",
-   "text": "Handsome is that handsome does.",
+   "text": "Where there is a will, there is a way.",
    "key": "GHYMXZILUNSVWJABEOTRCPQFKD",
    "given": [
-    "S",
+    "E",
     "A",
-    "D"
+    "H"
    ]
   },
   {
@@ -1034,12 +1034,12 @@
   },
   {
    "id": "cg-lpzc1a",
-   "text": "It's a long lane that has no turning.",
+   "text": "What doesn't kill you makes you stronger.",
    "key": "GQWTRMAULIHZPCFSBXYNVEKDJO",
    "given": [
-    "N",
-    "A",
-    "T"
+    "O",
+    "E",
+    "S"
    ]
   },
   {
@@ -1074,22 +1074,22 @@
   },
   {
    "id": "cg-mkyw28",
-   "text": "Even a cat may look at a king.",
+   "text": "Even a blind squirrel finds a nut.",
    "key": "YVMCZOITUBPDHSKLEJFRXANGWQ",
    "given": [
-    "A",
+    "N",
     "E",
-    "K"
+    "I"
    ]
   },
   {
    "id": "cg-hcxmaj",
-   "text": "An Englishman's home is his castle.",
+   "text": "The road to success is always under construction.",
    "key": "RHBZDSENOQPVTMYAJUGCILFWKX",
    "given": [
     "S",
-    "A",
-    "E"
+    "C",
+    "O"
    ]
   },
   {
@@ -1204,12 +1204,12 @@
   },
   {
    "id": "cg-ee4wgv",
-   "text": "You can't see the wood for the trees.",
+   "text": "You can't see the forest for the trees.",
    "key": "VNLTPXQJGDFBOCAHZEYRSIUMKW",
    "given": [
     "E",
-    "O",
-    "T"
+    "T",
+    "O"
    ]
   },
   {
@@ -1324,12 +1324,12 @@
   },
   {
    "id": "cg-kuqhdy",
-   "text": "A creaking door hangs longest.",
+   "text": "Two's company, three's a crowd.",
    "key": "LWTBPIOKHQRFUYDMVNJSZEAGXC",
    "given": [
+    "O",
     "A",
-    "G",
-    "N"
+    "C"
    ]
   },
   {
@@ -1444,12 +1444,12 @@
   },
   {
    "id": "cg-abao6o",
-   "text": "Prevention is better than cure.",
+   "text": "Better late than never, but never late is better.",
    "key": "OPEKSRDAYIXFULJVBZMWQCTGNH",
    "given": [
     "E",
     "T",
-    "N"
+    "R"
    ]
   },
   {
@@ -1524,12 +1524,12 @@
   },
   {
    "id": "cg-ocy2sm",
-   "text": "A deaf husband and a blind wife are always a happy couple.",
+   "text": "Life is what happens while you're busy making other plans.",
    "key": "XNQRCAHWUODTFSEBYGMVJKZIPL",
    "given": [
+    "E",
     "A",
-    "D",
-    "E"
+    "H"
    ]
   },
   {
@@ -1574,12 +1574,12 @@
   },
   {
    "id": "cg-2net32",
-   "text": "Cut your coat according to your cloth.",
+   "text": "Close only counts in horseshoes.",
    "key": "GKJFORTMBULNYISEZQCXWPADVH",
    "given": [
     "O",
-    "C",
-    "T"
+    "S",
+    "E"
    ]
   },
   {
@@ -1644,12 +1644,12 @@
   },
   {
    "id": "cg-kv2yh7",
-   "text": "If you want to live and thrive, let the spider run alive.",
+   "text": "Do what you love and you'll never work a day in your life.",
    "key": "BTJIHCSGYNAOVEFQPWXKLRDMZU",
    "given": [
-    "E",
-    "I",
-    "T"
+    "O",
+    "A",
+    "E"
    ]
   },
   {
@@ -1684,12 +1684,12 @@
   },
   {
    "id": "cg-dabmqg",
-   "text": "Take care of the pennies and the pounds will take care of themselves.",
+   "text": "Those who cannot remember the past are condemned to repeat it.",
    "key": "GKNMUAZBXFHTJDVESPQCYWLRIO",
    "given": [
     "E",
-    "A",
-    "T"
+    "T",
+    "O"
    ]
   },
   {
@@ -1844,11 +1844,11 @@
   },
   {
    "id": "cg-70fd9a",
-   "text": "There is no smoke without fire.",
+   "text": "A journey of a thousand miles begins with one step.",
    "key": "HKLQTOCINRDJXZWGSFVPAYMUEB",
    "given": [
     "E",
-    "I",
+    "N",
     "O"
    ]
   },
@@ -1954,12 +1954,12 @@
   },
   {
    "id": "cg-gaew8v",
-   "text": "Patience is a plaster for all sores.",
+   "text": "It ain't over until it's over.",
    "key": "TQUMSENXDAIPYWZBLJGRHOCVKF",
    "given": [
-    "A",
-    "E",
-    "S"
+    "I",
+    "T",
+    "E"
    ]
   },
   {
@@ -2054,12 +2054,12 @@
   },
   {
    "id": "cg-axysr8",
-   "text": "Grasp the nettle, and it will not sting.",
+   "text": "A house divided against itself cannot stand.",
    "key": "CXHQTWLSKEZYVFRMOAPUINGDJB",
    "given": [
-    "T",
-    "N",
-    "E"
+    "A",
+    "D",
+    "I"
    ]
   },
   {
@@ -2194,12 +2194,12 @@
   },
   {
    "id": "cg-o473ws",
-   "text": "Rain at seven, fine at eleven.",
+   "text": "Knowledge is power, but enthusiasm pulls the switch.",
    "key": "HKWTVQZOSABJLIMGYCDPXUNFRE",
    "given": [
     "E",
-    "N",
-    "A"
+    "S",
+    "T"
    ]
   },
   {
@@ -2214,11 +2214,11 @@
   },
   {
    "id": "cg-xa7rkp",
-   "text": "Don't wash your dirty linen in public.",
+   "text": "Don't air your dirty laundry in public.",
    "key": "QJRCTZDAOUWYIXLFBHESNPKMGV",
    "given": [
     "I",
-    "N",
+    "R",
     "D"
    ]
   },
@@ -2444,12 +2444,12 @@
   },
   {
    "id": "cg-ivte2y",
-   "text": "You can't make an omelette without breaking eggs.",
+   "text": "You can't make an omelet without breaking eggs.",
    "key": "XUVCOWSQNERGKIFMZBTYLPJDHA",
    "given": [
     "E",
-    "T",
-    "A"
+    "A",
+    "T"
    ]
   },
   {
@@ -2784,21 +2784,21 @@
   },
   {
    "id": "cg-kr3cug",
-   "text": "You have to take the rough with the smooth.",
+   "text": "You have to take the good with the bad.",
    "key": "VNWCAKXJMSUBOGTIZQYFRHELPD",
    "given": [
-    "H",
     "T",
-    "O"
+    "E",
+    "H"
    ]
   },
   {
    "id": "cg-jhc31p",
-   "text": "A problem shared is a problem halved.",
+   "text": "A rising tide lifts all boats.",
    "key": "GSPECWFJRLYZXVNOUHTMBQDIAK",
    "given": [
+    "I",
     "A",
-    "E",
     "L"
    ]
   },
@@ -2824,12 +2824,12 @@
   },
   {
    "id": "cg-ougy0w",
-   "text": "Fine words butter no parsnips.",
+   "text": "Put your money where your mouth is.",
    "key": "HJUABGWYVOLMRZQNKSEXCPFTDI",
    "given": [
-    "N",
-    "R",
-    "S"
+    "O",
+    "U",
+    "E"
    ]
   },
   {
@@ -2904,11 +2904,11 @@
   },
   {
    "id": "cg-q0ujgs",
-   "text": "Everything has an end, and a sausage has two.",
+   "text": "If it's not one thing, it's another.",
    "key": "MTEZDGVLRAQICWYJHNFKPXSBUO",
    "given": [
-    "A",
-    "E",
+    "T",
+    "I",
     "N"
    ]
   },
@@ -2934,12 +2934,12 @@
   },
   {
    "id": "cg-7w19w5",
-   "text": "When one door shuts, another opens.",
+   "text": "If you build it, they will come.",
    "key": "MTEVNGUQJRIZXCBWAFPSOHDYKL",
    "given": [
-    "O",
-    "E",
-    "N"
+    "I",
+    "L",
+    "E"
    ]
   },
   {
@@ -2954,12 +2954,12 @@
   },
   {
    "id": "cg-bweo8q",
-   "text": "Red sky at night, shepherd's delight; red sky in the morning, shepherd's warning.",
+   "text": "Red sky at night, sailor's delight; red sky in the morning, sailors take warning.",
    "key": "HMBEDRLIWKOZASNGCFTUJXYPQV",
    "given": [
-    "E",
-    "H",
-    "N"
+    "I",
+    "N",
+    "R"
    ]
   },
   {
@@ -2994,22 +2994,22 @@
   },
   {
    "id": "cg-goievw",
-   "text": "Empty vessels make the most noise.",
+   "text": "Speak softly and carry a big stick.",
    "key": "RLGTHYCQKBFAOZPMEUWXJIDVNS",
    "given": [
-    "E",
+    "A",
     "S",
-    "M"
+    "C"
    ]
   },
   {
    "id": "cg-jgq6zw",
-   "text": "A dry March and a wet May fill barns and bays with corn and hay.",
+   "text": "The more things change, the more they stay the same.",
    "key": "WDEVROKYSPICUZTQFAXLGBNJMH",
    "given": [
-    "A",
-    "N",
-    "D"
+    "E",
+    "H",
+    "T"
    ]
   },
   {
@@ -3024,12 +3024,12 @@
   },
   {
    "id": "cg-f1bih6",
-   "text": "Don't get too big for your boots.",
+   "text": "Don't get too big for your britches.",
    "key": "NQBOXDMVPSEYKCFZIURJWHLTGA",
    "given": [
     "O",
     "T",
-    "B"
+    "R"
    ]
   },
   {
@@ -3134,12 +3134,12 @@
   },
   {
    "id": "cg-f2r7jg",
-   "text": "There's no use crying over spilt milk.",
+   "text": "There's no use crying over spilled milk.",
    "key": "PDSXWCTJQVMOYUFKGEIBZRAHNL",
    "given": [
     "E",
     "I",
-    "R"
+    "L"
    ]
   },
   {
@@ -3234,21 +3234,21 @@
   },
   {
    "id": "cg-yxoocs",
-   "text": "A clear conscience is a soft pillow.",
+   "text": "Ask me no questions and I'll tell you no lies.",
    "key": "MNYCSUPQBGVFDOHKZIXAWETRLJ",
    "given": [
-    "C",
-    "A",
-    "E"
+    "L",
+    "E",
+    "N"
    ]
   },
   {
    "id": "cg-6kb5dz",
-   "text": "It's no use locking the stable door after the horse has bolted.",
+   "text": "It's too late to close the barn door after the horse is gone.",
    "key": "ZGRWNJOXEPHUAFBMTQYCIDSKLV",
    "given": [
-    "E",
     "O",
+    "E",
     "T"
    ]
   },
@@ -3284,12 +3284,12 @@
   },
   {
    "id": "cg-57bcsm",
-   "text": "It's a long road that has no turning.",
+   "text": "Look on the bright side of life.",
    "key": "ZJXIMSUOHVYNPDBETKLRWFAQGC",
    "given": [
-    "A",
-    "N",
-    "T"
+    "O",
+    "E",
+    "I"
    ]
   },
   {
@@ -3334,12 +3334,12 @@
   },
   {
    "id": "cg-hwk6e9",
-   "text": "Every family has a skeleton in the cupboard.",
+   "text": "Every family has a skeleton in the closet.",
    "key": "DFQOCGEBAKUNZVPRXLMHJSYWTI",
    "given": [
     "E",
     "A",
-    "H"
+    "L"
    ]
   },
   {
@@ -3756,12 +3756,12 @@
   },
   {
    "id": "cg-rvnfi9",
-   "text": "Men make houses, women make homes.",
+   "text": "Don't sweat the small stuff, and it's all small stuff.",
    "key": "EOPAGVIKDSRQBXCTJLNUFHZMWY",
    "given": [
-    "E",
-    "M",
-    "O"
+    "L",
+    "S",
+    "T"
    ]
   },
   {
@@ -4046,12 +4046,12 @@
   },
   {
    "id": "cg-ovjxry",
-   "text": "Ne'er cast a clout till May be out.",
+   "text": "Life is like a box of chocolates.",
    "key": "JPBGFLINUQMWEHRDSZVXTKCYOA",
    "given": [
-    "T",
-    "A",
-    "E"
+    "O",
+    "E",
+    "I"
    ]
   },
   {
@@ -4226,12 +4226,12 @@
   },
   {
    "id": "cg-4nhqgx",
-   "text": "You can't run with the hare and hunt with the hounds.",
+   "text": "Imitation is the sincerest form of flattery.",
    "key": "BVSCUTHFNEIZWDAGPYQRXKMLJO",
    "given": [
-    "H",
     "T",
-    "N"
+    "I",
+    "E"
    ]
   },
   {
@@ -4256,12 +4256,12 @@
   },
   {
    "id": "cg-r17owx",
-   "text": "A hedge between keeps friendship green.",
+   "text": "Laugh and the world laughs with you.",
    "key": "MXRTZSLAHPWNGYCVKOUIBJDFQE",
    "given": [
-    "E",
-    "N",
-    "D"
+    "H",
+    "A",
+    "L"
    ]
   },
   {
@@ -4316,12 +4316,12 @@
   },
   {
    "id": "cg-obip9r",
-   "text": "It takes all sorts to make a world.",
+   "text": "Different strokes for different folks.",
    "key": "TXHLGYCAEIWJVOBMDKPRQZUFSN",
    "given": [
-    "A",
-    "T",
-    "L"
+    "F",
+    "E",
+    "R"
    ]
   }
  ],
@@ -4585,23 +4585,23 @@
    },
    {
     "id": "cg-95hxpd",
-    "text": "If Candlemas be fair and bright, winter will have another flight.",
+    "text": "To everything there is a season, and a time to every purpose under heaven.",
     "key": "KFVGWSTAOEPXIRHZJYLQNUCMBD",
     "given": [
+     "E",
      "A",
-     "I",
-     "E"
+     "N"
     ],
     "holiday": "groundhog"
    },
    {
     "id": "cg-pcja9j",
-    "text": "If Candlemas brings clouds and rain, winter will not come again.",
+    "text": "Winter is on my head, but eternal spring is in my heart.",
     "key": "OGTYUXJKRPQBZCNSIALVDMFHEW",
     "given": [
-     "N",
-     "A",
-     "I"
+     "E",
+     "I",
+     "N"
     ],
     "holiday": "groundhog"
    }
@@ -4876,12 +4876,12 @@
    },
    {
     "id": "cg-yg1sma",
-    "text": "Leap year was never a good sheep year.",
+    "text": "Yesterday is history, tomorrow is a mystery.",
     "key": "QHXSULJRYTGZOMFAVIWKCBPNDE",
     "given": [
-     "E",
-     "A",
-     "R"
+     "R",
+     "S",
+     "Y"
     ],
     "holiday": "leapday"
    }

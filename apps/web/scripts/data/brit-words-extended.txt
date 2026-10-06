@@ -2,6 +2,7 @@
 # Always-British vocabulary: the American reading of the word is different or doesn't exist.
 # Context words (LIFT, FLAT, BOOT, CHIPS, MATE, PINT, TROLLEY...) are deliberately left out: they stay with human review.
 # Format: WORD  US equivalent / note
+# Not listed (ordinary US usage): MUM ("mum's the word"), SWEETS (Diwali sweets), FIZZY, NOSH.
 
 # --- general British vocabulary ---
 ALLOTMENT       community-garden
@@ -42,12 +43,10 @@ DUNGAREES       overalls
 DUSTCART        garbage-truck
 DUSTMAN         garbageman
 FARTHING        -
-FIZZY           carbonated(soda)
 FLATMATE        roommate
 FLYOVER         overpass
 FOOTIE          soccer
 FOOTY           soccer
-FRESHER         freshman
 FRYUP           -
 GAFFER          boss
 GAMMON          ham
@@ -75,7 +74,7 @@ JACKETPOTATO    baked-potato
 JAMMY           lucky
 JUMBLESALE      rummage-sale
 KIP             nap
-KNICKERS        panties
+KNICKERS        underwear
 LAYBY           pull-off
 LETTERBOX       mailbox(slot)
 LIDO            public-pool
@@ -84,11 +83,8 @@ MANGETOUT       snow-peas
 MANKY           gross
 MINGING         gross
 MOGGY           cat
-MUM             mom
-MUMS            moms
 NAFF            tacky
 NIFFY           smelly
-NOSH            grub
 NOUGHTS         zeros
 OFFIE           liquor-store
 OFFLICENCE      liquor-store
@@ -126,7 +122,6 @@ STROPPY         cranky
 SULTANA         raisin
 SULTANAS        raisins
 SWEDE           rutabaga
-SWEETS          candy
 SWEETSHOP       candy-store
 SWISSROLL       jelly-roll
 SWOT            nerd
@@ -146,7 +141,6 @@ TRUNCHEON       nightstick
 TWEE            cutesy
 UNI             college
 WALLY           dope
-WANKER          profanity
 WASHINGUP       dishes
 WELLY           rain-boot
 WHINGE          whine

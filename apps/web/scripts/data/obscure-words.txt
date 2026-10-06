@@ -1,6 +1,8 @@
-# Proposed additions to OBSCURE_WORDS (content-american.test.ts), NOT wired in.
-# Every word was flagged "obscure" in the 2026-10-06 audit (see content-audit.json for game, puzzle and reason).
-# Review before adopting: some are fine in one game (a Hubbub bonus word) but unfair as a required answer.
+# Obscure, archaic, jargon or fragment words (2026-10-06 content audit, REPORT-CONTENT-FIXES.md).
+# Never a REQUIRED/scored word, a Spyglass word, a Kindred word or a Letter Ladder rung; content-american.test.ts
+# enforces it. Everyday words that a reviewer only flagged for their group link (BRAND, CEREAL, REMARK as
+# "hidden currencies") were pruned. INTER stays accepted as a ladder rung (the only INNER/INFER bridge) but
+# is swapped out of the Classic answers (batch 4).
 ALACK
 ALBEDO
 AMBLER
@@ -16,7 +18,6 @@ BABA
 BATES
 BATTEN
 BERG
-BISQUE
 BLANC
 BLOODED
 BODIED
@@ -24,8 +25,6 @@ BONITO
 BOSUN
 BOTANIC
 BOWMAN
-BRACE
-BRAND
 CAMBER
 CANT
 CANTOR
@@ -33,7 +32,6 @@ CAPITA
 CARDED
 CARREL
 CENTRIC
-CEREAL
 CHIT
 COCO
 COGNATE
@@ -45,7 +43,6 @@ CORTADO
 CORTICAL
 CUPOLA
 DAMSELFLY
-DAZE
 DECKER
 DHARMA
 DIMLIGHT
@@ -60,7 +57,6 @@ EPITHELIAL
 ETUDE
 EUROS
 EYELET
-FADER
 FOOTED
 FORME
 FRANC
@@ -78,17 +74,14 @@ HAIRED
 HAPTIC
 HARPER
 HECTARE
-HEEL
 HEPATIC
 HERES
 HIPPY
 HOVE
 HYDRO
 INSHORE
-INTER
 INTRA
 INVARIANT
-KEEP
 KERN
 KINASE
 LAMBDA
@@ -109,7 +102,6 @@ MULLER
 NEATH
 NEURO
 NEURONAL
-OBJECTIVE
 OCULUS
 ORTHO
 OVERDUB
@@ -132,7 +124,6 @@ PORTED
 PROTO
 REAGENT
 RECTOR
-REMARK
 RUFF
 SALAAM
 SCHEMA
@@ -152,7 +143,6 @@ STOKER
 STRIDER
 SUBUNIT
 SUPRA
-SURGE
 TENSOR
 TERNARY
 TERRA
@@ -173,10 +163,8 @@ UTERINE
 VENTRAL
 VERSA
 WAISTED
-WAKEUP
-WATERING
 WELLER
 WHENCE
 WHITING
 WIGGY
-WOOLENS
+NITTY

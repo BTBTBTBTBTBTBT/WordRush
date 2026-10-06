@@ -27,6 +27,15 @@ class HubWordCountTest {
         assertFalse(HUB_FOUND_LABEL.any { it.isDigit() })
     }
 
+    // Prompt 05b (tester video): re-entering a found word says "Already found", never "Not a word we know".
+    @Test fun reenteringAFoundWordIsFoundNotNotword() {
+        var s = play("FOAL", "MORA")
+        for (w in listOf("FOAL", "foal", "MORA", "mora")) assertEquals(w, HubReject.FOUND, hubReduce(s, HubAction.Submit(w), 0L).reject)
+        s = hubReduce(s, HubAction.HintReveal, 0L)
+        assertEquals(HubReject.FOUND, hubReduce(s, HubAction.Submit(s.revealed.first()), 0L).reject)
+        assertEquals(s.points, hubReduce(s, HubAction.Submit("FOAL"), 0L).points)
+    }
+
     @Test fun bonusWordsScoreButNeverMoveTheCount() {
         val before = play("FOAL")
         val after = hubReduce(before, HubAction.Submit("MORA"), 0L)

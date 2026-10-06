@@ -157,23 +157,363 @@ export function applySolutionSwaps3(pool: readonly string[]): string[] {
   return pool.map((w) => SOLUTION_SWAPS_3[w] ?? w);
 }
 
-/** How many swap batches a date has reached (0 before the first cutover). Batches apply in order. */
-export function solutionSwapBatchesFor(date: string): number {
-  if (date < SOLUTION_SWAP_CUTOVER_DATE) return 0;
-  if (date < SOLUTION_SWAP_2_CUTOVER_DATE) return 1;
-  return date < SOLUTION_SWAP_3_CUTOVER_DATE ? 2 : 3;
+/**
+ * Batch 4 (content audit, 2026-10-06 — REPORT-CONTENT-AUDIT.md / REPORT-CONTENT-FIXES.md):
+ * profanity, slurs, sexual / drug / violent words, political and brand names
+ * (the report lists them, masked), the British answers batch 3 missed
+ * (ENQUIRY, RUBBISH, NETBALL…), proper nouns, and obscure or jargon words (TOGGLE,
+ * KINASE, THEREOF…). Its own table because builds carrying batches 1–3 are already
+ * out (none of them may grow). Keys are words of the ORIGINAL pools (none is an
+ * earlier batch's key or replacement), so this batch is independent of batches
+ * 2–3 and can start BEFORE them: its cutover is the day after the next
+ * coordinated store builds (2026-10-12). From then until the batch-2/3 date the
+ * pools deal batches 1 + 4. Not swapped: the answer-pool-hygiene
+ * PENDING_FOUNDER_CALL words (BOOZE, SLAVE, DAMNED…) — still the founder's call.
+ * Replacements: same length, common American words, guessable, not a current or
+ * legacy answer, not an earlier batch's key or replacement, not blocked, not British.
+ * The old words stay valid GUESSES.
+ */
+export const SOLUTION_SWAP_4_CUTOVER_DATE = '2026-10-13';
+
+/** Batch 4, keys in plain text. */
+const SOLUTION_SWAPS_4_PLAIN: Readonly<Record<string, string>> = {
+  // 5 letters
+  AMINO: 'WISPY',
+  BLANC: 'CHIVE',
+  BOWIE: 'BIKER',
+  COSTA: 'CRYPT',
+  DUCHY: 'GEEKY',
+  EUROS: 'CLEAT',
+  FRANC: 'GAFFE',
+  HEATH: 'MOSSY',
+  HIPPY: 'ANTSY',
+  HYDRO: 'FOAMY',
+  INTER: 'BORED',
+  MAMMA: 'KIDDO',
+  MINCE: 'SAUTE',
+  REMIT: 'BLURB',
+  SHIRE: 'GUSTY',
+  TERRA: 'MUGGY',
+  TERRY: 'GLITZ',
+  // 6 letters
+  AIRBUS: 'BRAINY',
+  ALBEDO: 'AMOEBA',
+  AMBLER: 'SLOUCH',
+  ANNALS: 'TROPIC',
+  AORTIC: 'HICCUP',
+  APACHE: 'POSSUM',
+  BANGER: 'SIZZLE',
+  BARROW: 'TOMBOY',
+  BASQUE: 'QUICHE',
+  BATMAN: 'MUDDLE',
+  BATTEN: 'GIRDER',
+  BETHEL: 'SWEATY',
+  BLOODY: 'CHOPPY',
+  BODIED: 'SLIVER',
+  BONITO: 'MINNOW',
+  BOOKER: 'BURLAP',
+  BOURNE: 'SIESTA',
+  BOWMAN: 'JACKAL',
+  BRUINS: 'RECAST',
+  CAIRNS: 'CRUTCH',
+  CAMBER: 'STUCCO',
+  CANTON: 'GROTTO',
+  CANTOR: 'SHRIEK',
+  CAPITA: 'ACUMEN',
+  CARDED: 'CHALKY',
+  CAYMAN: 'WEEVIL',
+  CHEEKY: 'PLUCKY',
+  CICERO: 'ORATOR',
+  CLARET: 'PAPAYA',
+  COCKLE: 'SEESAW',
+  COMELY: 'SNAZZY',
+  CONTRA: 'PACIFY',
+  COOKER: 'OMELET',
+  CORPUS: 'PATINA',
+  CUPOLA: 'PAGODA',
+  CUTLER: 'SKIMPY',
+  DECKER: 'SLEUTH',
+  DHARMA: 'WALLOP',
+  DINGLE: 'SQUEAK',
+  DIPOLE: 'DIPPER',
+  DISTAL: 'GRAINY',
+  DOBSON: 'BELUGA',
+  DODGER: 'SUPPLE',
+  DRAPER: 'RUFFLE',
+  DREAMT: 'MUTTER',
+  ENSUES: 'FALTER',
+  EUROPE: 'COLLIE',
+  EXPIRY: 'UPTICK',
+  EYELET: 'TASSEL',
+  FISHER: 'ANGLER',
+  FOOTED: 'TRYOUT',
+  FULLER: 'STOCKY',
+  GARRET: 'MANTEL',
+  GENERA: 'GAGGLE',
+  GRANGE: 'QUINCE',
+  GUINEA: 'GIBBON',
+  HAIRED: 'FRIZZY',
+  HAPTIC: 'KEYPAD',
+  HARPER: 'CADDIE',
+  HOBBIT: 'URCHIN',
+  HOOVER: 'BASSET',
+  HOWLER: 'WHAMMY',
+  JASPER: 'PEWTER',
+  JOINER: 'PUTTER',
+  KANSAS: 'MIDAIR',
+  KENYAN: 'SPOTTY',
+  KINASE: 'OSPREY',
+  LAGUNA: 'SWAMPY',
+  LAMBDA: 'HYPHEN',
+  LANCET: 'SPLINT',
+  LATINO: 'SUITOR',
+  LEGGED: 'PERUSE',
+  LEVANT: 'GLASSY',
+  LIGAND: 'MUSSEL',
+  LINDEN: 'DAHLIA',
+  LISTER: 'LEVITY',
+  MANILA: 'SELFIE',
+  MEDIAL: 'CORNEA',
+  MERCER: 'WOOLEN',
+  METHYL: 'AIRBAG',
+  MORROW: 'WINTRY',
+  MOZART: 'SONNET',
+  MULLER: 'SPACER',
+  NISSAN: 'BIONIC',
+  NOUGHT: 'PRESTO',
+  OCULUS: 'EERILY',
+  OILERS: 'TWISTY',
+  PACERS: 'SPRAIN',
+  PASSER: 'REFUEL',
+  PIAZZA: 'ENTREE',
+  PLANAR: 'NEGATE',
+  PORTED: 'REHEAT',
+  PRIORY: 'DINGHY',
+  PUNTER: 'TIRADE',
+  QUAKER: 'OBLONG',
+  RECTOR: 'PONCHO',
+  REEVES: 'STINKY',
+  RIDLEY: 'SNOOZE',
+  SALAAM: 'CUTOUT',
+  SCHEMA: 'ITALIC',
+  SCOTCH: 'TUSSLE',
+  SEXTON: 'MUSKET',
+  SIXERS: 'DOLLOP',
+  SLATER: 'TAMPER',
+  SLOUGH: 'SQUIRM',
+  SLUICE: 'SPRAWL',
+  SMITHY: 'WELDER',
+  SNOOPY: 'SNARKY',
+  SOVIET: 'TUMULT',
+  SPICER: 'POINTY',
+  SPOILT: 'SMUDGE',
+  SQUIRE: 'CANTER',
+  STILES: 'SCYTHE',
+  STOKER: 'SKEWER',
+  SURREY: 'SPIFFY',
+  TENSOR: 'TOFFEE',
+  THENCE: 'LEEWAY',
+  THRICE: 'PRESET',
+  TIPPLE: 'FROTHY',
+  TOGGLE: 'BEANIE',
+  ULSTER: 'HOARSE',
+  UNICEF: 'PAJAMA',
+  UNWELL: 'QUEASY',
+  WAGNER: 'BELLOW',
+  WHENCE: 'UNSUNG',
+  WHISKY: 'KIMONO',
+  WICKET: 'HOODIE',
+  WRIGHT: 'SCULPT',
+  YAKUZA: 'PINKIE',
+  ZEPHYR: 'SQUALL',
+  ZIMMER: 'STUBBY',
+  // 7 letters
+  AQUEOUS: 'RUBBERY',
+  BATSMAN: 'SLUGGER',
+  BESPOKE: 'THRIFTY',
+  BLOODED: 'MUSCLED',
+  BOLIVIA: 'SAVANNA',
+  BOTANIC: 'PETUNIA',
+  BRONCOS: 'STIRRUP',
+  BULLOCK: 'CARIBOU',
+  CENTRIC: 'NUANCED',
+  CHAPMAN: 'DOORMAN',
+  COGNATE: 'NUMERAL',
+  COLLIER: 'TRUCKER',
+  COOKERY: 'COOKOUT',
+  COROLLA: 'SIDECAR',
+  COULTER: 'TOPSOIL',
+  DICKENS: 'STENCIL',
+  DRACULA: 'GREMLIN',
+  ENQUIRE: 'NOURISH',
+  ENQUIRY: 'AMENITY',
+  FANCIED: 'TEARFUL',
+  FLEMISH: 'CHOWDER',
+  GEARBOX: 'SUNROOF',
+  GOOGLED: 'BROWSED',
+  GRANGER: 'JUGGLER',
+  HACKNEY: 'TAXICAB',
+  HANOVER: 'VERANDA',
+  HECTARE: 'HEXAGON',
+  HEPATIC: 'EARDRUM',
+  INSHORE: 'RIPTIDE',
+  INWARDS: 'FARAWAY',
+  IRONMAN: 'JETPACK',
+  ISLAMIC: 'ORIGAMI',
+  LANGLEY: 'KEYHOLE',
+  LOOSING: 'MOPPING',
+  MAGNETO: 'TOOLKIT',
+  MAHATMA: 'MATINEE',
+  MARQUIS: 'CHARADE',
+  MIDLAND: 'MIDTOWN',
+  NETBALL: 'RAFTING',
+  ORIOLES: 'BUZZARD',
+  PARSONS: 'BARISTA',
+  PEPTIDE: 'MICROBE',
+  PLENARY: 'WEBINAR',
+  POLITIC: 'TACTFUL',
+  POLLARD: 'SAPLING',
+  POLLOCK: 'HALIBUT',
+  PORTAGE: 'CABOOSE',
+  PREFECT: 'CATERER',
+  RAILWAY: 'AIRFARE',
+  RUBBISH: 'TAKEOUT',
+  SIEMENS: 'CHECKUP',
+  SIMPLEX: 'OCTAGON',
+  SKINNER: 'DRIFTER',
+  SNOOKER: 'CROQUET',
+  SPECTRA: 'SUNSPOT',
+  SPIEGEL: 'SPATULA',
+  STRIDER: 'WIPEOUT',
+  SUBUNIT: 'ROADMAP',
+  TALIBAN: 'TRINKET',
+  TEMPLAR: 'SCEPTER',
+  THEREIN: 'OFFLINE',
+  THEREOF: 'ANYTIME',
+  TOOTHED: 'MOONLIT',
+  TRIPOLI: 'LAYOVER',
+  TWITTER: 'HASHTAG',
+  UNITARY: 'PREQUEL',
+  UTERINE: 'MIXTAPE',
+  VENTRAL: 'NOSTRIL',
+  WAISTED: 'PLEATED',
+  WASTAGE: 'SAWDUST',
+  WHITING: 'SARDINE',
+};
+/**
+ * Batch 4, keys that are offensive (profanity, slurs, sexual, drug or violent words) — stored base64-encoded
+ * (content-safety policy: no offensive word in plain text in the repo's own files) and decoded at load.
+ */
+const SOLUTION_SWAPS_4_ENCODED: Readonly<Record<string, string>> = {
+  'Qk9PVFk=': 'LAYUP',
+  'Qk9XRUw=': 'ZESTY',
+  'QlVUQ0g=': 'CORGI',
+  'RkFUVFk=': 'DECAL',
+  'RkVUVVM=': 'TAUPE',
+  'U1BBTks=': 'CONDO',
+  'UFJJQ0s=': 'PHASE',
+  'UkFORFk=': 'ALOHA',
+  'VFJVTVA=': 'EMOJI',
+  'Q0VSVklY': 'BONSAI',
+  'Q1JPVENI': 'SILKEN',
+  'QUJVU0VS': 'SQUEAL',
+  'QVJPVVNF': 'WHOOSH',
+  'Qk9PR0VS': 'TEACUP',
+  'QkFOR0VE': 'WALLOW',
+  'QkVOREVS': 'SHRILL',
+  'QlJFQVNU': 'GOATEE',
+  'R0hFVFRP': 'EATERY',
+  'R1VOTkVE': 'SWATCH',
+  'Rk9ORExF': 'NUZZLE',
+  'SE9PS1VQ': 'IMPROV',
+  'SElDS0VZ': 'MAYDAY',
+  'SElUTUFO': 'MOUSSE',
+  'SlVOS0lF': 'PREPPY',
+  'T1JBTExZ': 'RUDELY',
+  'TE9PTkVZ': 'REWIND',
+  'TUFUSU5H': 'SWERVE',
+  'TVVDT1VT': 'SPONGY',
+  'TlVESVRZ': 'WHIMSY',
+  'U0VEVUNF': 'SCURRY',
+  'U0xFQVpZ': 'CLUNKY',
+  'U1RPTkVE': 'SULLEN',
+  'U1RPTkVS': 'MILDEW',
+  'UFNZQ0hP': 'GROGGY',
+  'UkFDSVNN': 'CANDOR',
+  'UkFDSVNU': 'HAGGLE',
+  'UkFQSU5H': 'BUNGEE',
+  'UklQUEVS': 'PAYOUT',
+  'V0lFTkVS': 'PANINI',
+  'VVRFUlVT': 'CANOLA',
+  'VklBR1JB': 'WASABI',
+  'VklSR0lO': 'SERENE',
+  'QVJPVVNBTA==': 'ELATION',
+  'QVJPVVNFRA==': 'DAZZLED',
+  'QVRIRUlTTQ==': 'ANAGRAM',
+  'QVRIRUlTVA==': 'RETIREE',
+  'R0FOR1NUQQ==': 'SHOWMAN',
+  'R1JPUElORw==': 'PEEKING',
+  'RkFTQ0lTTQ==': 'CURSIVE',
+  'RkFTQ0lTVA==': 'ODDBALL',
+  'RkxBU0hFUg==': 'FLIPPER',
+  'SEVBVEhFTg==': 'MEERKAT',
+  'SFVTVExFUg==': 'FIDDLER',
+  'TEVGVElTVA==': 'LOGBOOK',
+  'TFVOQVRJQw==': 'DIEHARD',
+  'U0FUQU5JQw==': 'OFFBEAT',
+  'U0NSRVdFRA==': 'CLAMPED',
+  'U0VEVUNFRA==': 'ENTICED',
+  'U0VOU1VBTA==': 'PENSIVE',
+  'UEFOVElFUw==': 'NECKTIE',
+  'UEVSVkVSVA==': 'COPYCAT',
+  'UExBWUJPWQ==': 'HOTSHOT',
+  'UkVETkVDSw==': 'BANDANA',
+  'VE9QTEVTUw==': 'SATCHEL',
+};
+/** Base64 → ASCII word (browsers, Node ≥ 16 and React Native all provide atob). */
+const decodeKey = (k: string): string => (globalThis as unknown as { atob: (s: string) => string }).atob(k);
+
+export const SOLUTION_SWAPS_4: Readonly<Record<string, string>> = {
+  ...SOLUTION_SWAPS_4_PLAIN,
+  ...Object.fromEntries(Object.entries(SOLUTION_SWAPS_4_ENCODED).map(([k, v]) => [decodeKey(k), v])),
+};
+
+/** Batch 4 only, IN PLACE (keys are original pool words — order-independent of batches 2–3). */
+export function applySolutionSwaps4(pool: readonly string[]): string[] {
+  return pool.map((w) => SOLUTION_SWAPS_4[w] ?? w);
 }
 
-/** The first `batches` swap batches, in order. */
-export function applySolutionSwapBatches(pool: readonly string[], batches: number): string[] {
+/**
+ * Which swap batches are live on `date`, as a BITMASK: bit k-1 set = batch k has
+ * reached its own cutover (batch 1 = 1, batch 2 = 2, batch 3 = 4, batch 4 = 8).
+ * Batch 4 starts before batches 2–3, so the live set is not a prefix any more:
+ * 0 before 2026-10-05, 1 (batch 1), 9 (batches 1 + 4) from 2026-10-13, 15 from
+ * 2026-11-16. Callers pass the value straight to applySolutionSwapBatches and may
+ * use it as a cache key.
+ */
+export function solutionSwapBatchesFor(date: string): number {
+  let mask = 0;
+  if (date >= SOLUTION_SWAP_CUTOVER_DATE) mask |= 1;
+  if (date >= SOLUTION_SWAP_2_CUTOVER_DATE) mask |= 2;
+  if (date >= SOLUTION_SWAP_3_CUTOVER_DATE) mask |= 4;
+  if (date >= SOLUTION_SWAP_4_CUTOVER_DATE) mask |= 8;
+  return mask;
+}
+
+/** Every swap batch whose bit is set in `mask` (see solutionSwapBatchesFor), always in table order 1 → 4. */
+export function applySolutionSwapBatches(pool: readonly string[], mask: number): string[] {
   let out = [...pool];
-  if (batches >= 1) out = applySolutionSwaps(out);
-  if (batches >= 2) out = applySolutionSwaps2(out);
-  if (batches >= 3) out = applySolutionSwaps3(out);
+  if (mask & 1) out = applySolutionSwaps(out);
+  if (mask & 2) out = applySolutionSwaps2(out);
+  if (mask & 4) out = applySolutionSwaps3(out);
+  if (mask & 8) out = applySolutionSwaps4(out);
   return out;
 }
 
+/** Mask with every batch set. */
+export const ALL_SOLUTION_SWAP_BATCHES = 15;
+
 /** Every batch in order — the pool as every runtime sees it once the last cutover has passed. */
 export function applyAllSolutionSwaps(pool: readonly string[]): string[] {
-  return applySolutionSwapBatches(pool, 3);
+  return applySolutionSwapBatches(pool, ALL_SOLUTION_SWAP_BATCHES);
 }

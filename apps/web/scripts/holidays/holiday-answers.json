@@ -26,7 +26,7 @@
   },
   "leapday": {
     "5": ["LEAPS", "YEARS", "EXTRA", "BONUS", "JUMPS", "ORBIT", "MONTH", "SKIPS", "ADDED", "DATES"],
-    "6": ["BOUNCE", "YEARLY", "LEAPED", "JUMPER"],
+    "6": ["BOUNCE", "RARITY", "LEAPED", "HOPPER"],
     "7": ["ALMANAC", "LEAPING", "SPECIAL", "JUMPING"]
   },
   "mardigras": {
@@ -35,8 +35,8 @@
     "7": ["REVELRY", "PARADES", "TRUMPET", "DANCING"]
   },
   "stpatricks": {
-    "5": ["GREEN", "LUCKY", "PINCH", "PINTS", "CHARM", "HARPS", "STOUT", "BREWS", "FAIRY", "ISLES"],
-    "6": ["CLOVER", "FIDDLE", "GREENS", "BREWER"],
+    "5": ["GREEN", "LUCKY", "PINCH", "PIPES", "CHARM", "HARPS", "REELS", "SAINT", "FAIRY", "ISLES"],
+    "6": ["CLOVER", "FIDDLE", "GREENS", "LEGEND"],
     "7": ["EMERALD", "RAINBOW", "LUCKILY", "FIDDLES"]
   },
   "aprilfools": {
@@ -131,7 +131,7 @@
   },
   "diwali": {
     "5": ["LAMPS", "LIGHT", "COLOR", "GLEAM", "LOTUS", "SHINY", "BLAZE", "GLINT", "BEAMS", "AGLOW"],
-    "6": ["SWEETS", "BRIGHT", "DAZZLE", "ALIGHT"],
+    "6": ["SPARKS", "BRIGHT", "DAZZLE", "ALIGHT"],
     "7": ["RADIANT", "GARLAND", "TRIUMPH", "GLOWING"]
   },
   "hanukkah": {

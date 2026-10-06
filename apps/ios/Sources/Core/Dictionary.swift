@@ -31,9 +31,9 @@ public final class GameDictionary {
     private var lengthAllowedArrays: [Int: [String]] = [:]
     private var frozenPrefixes: [Int: [String]] = [:]
     /// §265 swap gate: cached swapped copies of the curated pools, by length and
-    /// then by how many swap batches the date has reached (solutionSwapBatchesFor:
-    /// 1 = batch 1 only, 2 = then batch 2, 3 = then batch 3, each from its own
-    /// cutover). Dated seeds gate on the seed's date, undated
+    /// then by the bitmask of swap batches live on the date (solutionSwapBatchesFor:
+    /// bit k-1 = batch k has reached its own cutover; batch 4 starts before 2–3).
+    /// Dated seeds gate on the seed's date, undated
     /// seeds on wall-clock UTC. Invalidated by the init functions (arrays are
     /// values — no identity check).
     private var swappedPools: [Int: [Int: [String]]] = [:]

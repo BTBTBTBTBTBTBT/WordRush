@@ -7,9 +7,9 @@ Machine-readable copy of every flag: [`content-audit.json`](content-audit.json).
 ## TL;DR
 
 - **1788 flags** across 13 content sources (181 high, 680 medium, 927 low). 1699 are on future/unseen content and changeable; 89 sit on already-served content and are listed as frozen.
-- **Profanity already in a future bank:** Muddle daily `md-ikz7lk` (2027-01-29) has the scramble word **FUCKED**, and the Kwanzaa Muddle `md-9guhqs` has **SHITTY**. The answer-pool swap batch 2 removed these words from the Classic pools, but the Muddle bank had already been built from the unswapped pool, and no guard checks Muddle words against the profanity lists.
-- **Slurs and sexual words outside the Classic pools:** Crossword clues *"A chink in the ____"* (2 puzzles) and *"A cock and bull ____"* (2). In Hubbub's scored lists: HOMO, RETARDED, BONER, HORNY, VIBRATOR and BONDAGE (the last two are their puzzles' only pangram). On the Letter Ladder accept list: BONER, HORNY, SEMEN, SPERM, NUDES, QUEER and GAYER.
-- **Answer pools:** 5-letter 33 flags (TRUMP, PRICK, SPANK, RANDY, BUTCH, plus the 7 words awaiting a founder call). 6-letter 164 flags (RAPING, NUDITY, VIAGRA, JUNKIE, STONED; **TOGGLE is a live Six answer**). 7-letter 97 flags (REDNECK, TALIBAN, PERVERT, ENQUIRE/ENQUIRY, RUBBISH, NETBALL). Each has a same-length replacement that passes the batch rules, for a proposed **swap batch 4**.
+- **Profanity already in a future bank:** Muddle daily `md-ikz7lk` (2027-01-29) has the scramble word **F*******, and the Kwanzaa Muddle `md-9guhqs` has **S*******. The answer-pool swap batch 2 removed these words from the Classic pools, but the Muddle bank had already been built from the unswapped pool, and no guard checks Muddle words against the profanity lists.
+- **Slurs and sexual words outside the Classic pools:** Crossword clues *"A C**** in the ____"* (2 puzzles) and *"A C*** and bull ____"* (2). In Hubbub's scored lists: H***, R*******, B****, H****, V******* and B****** (the last two are their puzzles' only pangram). On the Letter Ladder accept list: B****, H****, S****, S****, N****, Q**** and G****.
+- **Answer pools:** 5-letter 33 flags (TRUMP, P****, S****, RANDY, B****, plus the 7 words awaiting a founder call). 6-letter 164 flags (R*****, N*****, V*****, J*****, STONED; **TOGGLE is a live Six answer**). 7-letter 97 flags (R******, TALIBAN, P******, ENQUIRE/ENQUIRY, RUBBISH, NETBALL). Each has a same-length replacement that passes the batch rules, for a proposed **swap batch 4**.
 - **British content is concentrated in idioms:** Crossword and Codebreaker fill-in-the-blank sayings ("Pull your socks up" ×5, "Mind the gap" ×4, "Bob's your uncle", "Pigs might fly", "storm in a teacup", "stable door…bolted", "An Englishman's home…"), Muddle captions ("lollipop man", HIGHLY STRUNG, LOST PROPERTY, TRUNK CALL), and Hubbub's TONNE ×13, TORY ×9, PENCE ×9 and GIRO ×8.
 - **Duplicates:** Kindred's "Sound like numbers: WON TOO FORE ATE" group appears word-for-word in **6 puzzles**, and three Kindred puzzles are near-copies of others. Codebreaker has 4 sayings twice. Eight ProperNoundle answers are both in the daily rotation and the holiday file; Sacagawea is the holiday puzzle on **2026-10-12**, three days after the release cutover. Crossword has about 60 grids that repeat a word stem (EGG/EGGS, TREE/TREES…).
 - The three platform copies of every bundled bank are **byte-identical** (web = iOS = Android), so each fix is one edit followed by the usual copy step.
@@ -18,7 +18,7 @@ Machine-readable copy of every flag: [`content-audit.json`](content-audit.json).
 
 - **CONTENT_RELEASE_DATE = 2026-10-09** (`apps/web/scripts/content-release-date.mjs`). Bank dailies dated 2026-09-23…2026-10-08 (index 0–15) are already bundled in the store builds. They are marked **frozen**: flagged where wrong, but no replacement is proposed.
 - **Answer swaps** (`packages/core/src/solution-swaps.ts`): batch 1 started 2026-10-05; batches 2 and 3 start 2026-11-16. Words those batches already swap out are not re-flagged. Every pool flag is assessed **as dealt after batch 3**, and every replacement is checked against the batch rules: valid guess, not a current or legacy answer, not an earlier swap replacement, not blocklisted, not British. The tables are append-only (`SOLUTION_SWAPS*` must never grow), so the replacements are proposed as a **new batch 4** with its own future cutover. Dates already dealt keep their words.
-- **Already decided:** the `ALLOW` entries in `content-american.test.ts` (PLOUGH "spelled the British way" ×2, TROUSERS ×3, Kindred GREY in ___hound), its OFF_THEME/OBSCURE lists, its empty `PENDING`, and `answer-pool-hygiene.test.ts`. The `PENDING_FOUNDER_CALL` words (BOOZE VOMIT DRUNK URINE OPIUM NAKED SLAVE SLANT DAMNED DAMNING SLAVERY COLORED HOSPICE DRUNKEN) are listed with replacements and marked as awaiting the founder's call.
+- **Already decided:** the `ALLOW` entries in `content-american.test.ts` (PLOUGH "spelled the British way" ×2, TROUSERS ×3, Kindred GREY in ___hound), its OFF_THEME/OBSCURE lists, its empty `PENDING`, and `answer-pool-hygiene.test.ts`. The `PENDING_FOUNDER_CALL` words (BOOZE VOMIT DRUNK URINE O**** NAKED SLAVE SLANT DAMNED DAMNING SLAVERY COLORED HOSPICE DRUNKEN) are listed with replacements and marked as awaiting the founder's call.
 - Proposals only. Nothing in any bank was changed.
 
 ## Where the content lives (three platform copies)
@@ -88,22 +88,22 @@ ProperNoundle rotates forever: day N plays category N mod 7, and the index in th
 
 | # | Game | Date / index | Puzzle | Word | Category | Reason | Proposed replacement |
 |---|---|---|---|---|---|---|---|
-| F0001 | pool5 | 2026-11-03 |  | PRICK | inappropriate | Common vulgar insult/genital slang; testers will snicker or object. | PHASE |
-| F0002 | pool5 | 2026-11-04 |  | BUTCH | inappropriate | Often used as a derogatory label for lesbians or masculine women. | CORGI |
+| F0001 | pool5 | 2026-11-03 |  | P**** | inappropriate | Common vulgar insult/G****** slang; testers will snicker or object. | PHASE |
+| F0002 | pool5 | 2026-11-04 |  | B**** | inappropriate | Often used as a derogatory label for lesbians or masculine women. | CORGI |
 | F0034 | pool6 | 2026-11-21 |  | SLATER | proper-noun | Surname; the trade sense (roofer) or British woodlouse sense is obscure. | TAMPER |
 | F0035 | pool6 | 2027-04-10 |  | BASQUE | proper-noun | Ethnic group/region name (the bodice sense is obscure). | QUICHE |
 | F0036 | pool6 | 2027-05-05 |  | CAPITA | obscure | Not a standalone English word (only in 'per capita'). | ACUMEN |
 | F0037 | pool6 | 2027-05-13 |  | PUNTER | british | British slang for a customer/gambler; US sense is a niche football position. | TIRADE |
 | F0038 | pool6 | 2027-08-05 |  | EUROPE | proper-noun | A continent name. | COLLIE |
-| F0039 | pool6 | 2027-08-22 |  | HOOKUP | inappropriate | Casual-sex slang. | IMPROV |
+| F0039 | pool6 | 2027-08-22 |  | H***** | inappropriate | Casual-sex slang. | IMPROV |
 | F0040 | pool6 | 2027-09-13 |  | QUAKER | proper-noun | Religious group name (and oat brand). | OBLONG |
 | F0041 | pool6 | 2027-10-11 |  | OCULUS | obscure | Latin architectural term / VR brand name. | EERILY |
 | F0042 | pool6 | 2027-10-25 |  | UNICEF | proper-noun | Organization acronym. | PAJAMA |
 | F0043 | pool6 | 2028-01-11 |  | CICERO | proper-noun | Roman statesman's name. | ORATOR |
 | F0044 | pool6 | 2028-03-16 |  | CAYMAN | proper-noun | Reads as the Cayman Islands (caiman is the usual reptile spelling). | WEEVIL |
-| F0045 | pool6 | 2028-03-26 |  | FONDLE | inappropriate | Strong sexual-touching connotation; not family-friendly. | NUZZLE |
+| F0045 | pool6 | 2028-03-26 |  | F***** | inappropriate | Strong sexual-touching connotation; not family-friendly. | NUZZLE |
 | F0046 | pool6 | 2028-04-02 |  | SIXERS | proper-noun | Reads as the Philadelphia 76ers nickname. | DOLLOP |
-| F0047 | pool6 | 2028-04-22 |  | JUNKIE | inappropriate | Drug-addiction slang; not family-friendly. | PREPPY |
+| F0047 | pool6 | 2028-04-22 |  | J***** | inappropriate | Drug-addiction slang; not family-friendly. | PREPPY |
 | F0048 | pool6 | 2028-05-29 |  | LIGAND | obscure | Chemistry jargon. | MUSSEL |
 | F0049 | pool6 | 2028-09-27 |  | MULLER | proper-noun | Surname (Müller/Mueller); the paint-grinding tool sense is obscure. | SPACER |
 | F0050 | pool6 | 2028-10-11 |  | SNOOPY | proper-noun | Reads as the Peanuts character (a trademarked name), not an ordinary word. | SNARKY |
@@ -113,13 +113,13 @@ ProperNoundle rotates forever: day N plays category N mod 7, and the index in th
 | F0054 | pool6 | 2029-06-17 |  | KANSAS | proper-noun | A U.S. state name. | MIDAIR |
 | F0055 | pool6 | 2029-11-11 |  | KINASE | obscure | Biochemistry jargon (an enzyme class). | OSPREY |
 | F0056 | pool6 | 2029-12-03 |  | ZIMMER | proper-noun | Surname/brand (Hans Zimmer; British 'Zimmer frame'). | STUBBY |
-| F0057 | pool6 | 2029-12-06 |  | RAPING | inappropriate | Sexual violence; must not be an answer. | BUNGEE |
+| F0057 | pool6 | 2029-12-06 |  | R***** | inappropriate | Sexual violence; must not be an answer. | BUNGEE |
 | F0058 | pool6 | 2030-03-31 |  | ULSTER | proper-noun | Region of Ireland/Northern Ireland. | HOARSE |
 | F0059 | pool6 | 2030-04-16 |  | METHYL | obscure | Chemistry jargon. | AIRBAG |
 | F0060 | pool6 | 2030-08-16 |  | CERVIX | inappropriate | Reproductive anatomy; parents would object as a featured answer. | BONSAI |
 | F0061 | pool6 | 2030-12-29 |  | DOBSON | proper-noun | Surname; not an ordinary word. | BELUGA |
 | F0062 | pool6 | 2031-02-07 |  | SPICER | proper-noun | Surname; not a standard word ('spicier' is the comparative). | POINTY |
-| F0063 | pool6 | 2031-02-18 |  | STONER | inappropriate | Drug slang (marijuana user). | MILDEW |
+| F0063 | pool6 | 2031-02-18 |  | S***** | inappropriate | Drug slang (marijuana user). | MILDEW |
 | F0064 | pool6 | 2031-02-22 |  | PACERS | proper-noun | Reads as the Indiana Pacers (NBA team); odd plural otherwise. | SPRAIN |
 | F0065 | pool6 | 2031-03-05 |  | WAGNER | proper-noun | Composer's surname. | BELLOW |
 | F0066 | pool6 | 2031-04-30 |  | BRUINS | proper-noun | Reads as the Boston Bruins / UCLA Bruins team name. | RECAST |
@@ -128,7 +128,7 @@ ProperNoundle rotates forever: day N plays category N mod 7, and the index in th
 | F0069 | pool6 | 2031-09-15 |  | TENSOR | obscure | Math/physics jargon. | TOFFEE |
 | F0070 | pool6 | 2031-10-04 |  | DIPOLE | obscure | Physics/chemistry jargon. | DIPPER |
 | F0071 | pool6 | 2031-10-05 |  | NOUGHT | british | British word for zero (American: naught/zero). | PRESTO |
-| F0072 | pool6 | 2031-12-31 |  | NUDITY | inappropriate | Sexual/nudity content; not family-friendly as an answer. | WHIMSY |
+| F0072 | pool6 | 2031-12-31 |  | N***** | inappropriate | Sexual/N***** content; not family-friendly as an answer. | WHIMSY |
 | F0073 | pool6 | 2032-06-18 |  | AMBLER | obscure | Odd -ER form nobody says; reads as a surname. | SLOUCH |
 | F0074 | pool6 | 2032-06-24 |  | AIRBUS | proper-noun | Aircraft manufacturer brand. | BRAINY |
 | F0075 | pool6 | 2032-08-03 |  | HOOVER | proper-noun | Brand/president's name; 'to hoover' is British usage. | BASSET |
@@ -136,13 +136,13 @@ ProperNoundle rotates forever: day N plays category N mod 7, and the index in th
 | F0077 | pool6 | 2032-08-30 |  | OILERS | proper-noun | Reads as the Edmonton Oilers (NHL team). | TWISTY |
 | F0078 | pool6 | 2032-10-10 |  | SALAAM | obscure | Arabic greeting; unfamiliar spelling to most Americans and religiously loaded. | CUTOUT |
 | F0079 | pool6 | 2032-12-03 |  | BANGER | british | British slang (sausage / old car); 'banged' sense is also crude. | SIZZLE |
-| F0080 | pool6 | 2033-02-18 |  | VIAGRA | proper-noun | Drug brand name with sexual connotation. | WASABI |
+| F0080 | pool6 | 2033-02-18 |  | V***** | proper-noun | Drug brand name with sexual connotation. | WASABI |
 | F0081 | pool6 | 2033-02-26 |  | CAMBER | obscure | Automotive/engineering jargon (wheel tilt, road curvature). | STUCCO |
 | F0082 | pool6 | 2033-06-10 |  | DINGLE | obscure | Dialect word for a wooded valley; most players will think it's not a word (or slang). | SQUEAK |
 | F0083 | pool6 | 2033-08-12 |  | SURREY | proper-noun | An English county (the carriage sense is archaic); British proper noun. | SWANKY |
 | F0084 | pool6 | 2033-09-24 |  | ALBEDO | obscure | Astronomy/physics jargon (reflectivity); unfair for a general audience. | AMOEBA |
 | F0085 | pool6 | 2033-09-25 |  | BETHEL | proper-noun | Biblical place name / church name. | SWEATY |
-| F0086 | pool6 | 2033-11-01 |  | HICKEY | inappropriate | Sexual 'love bite'; not family-friendly. | MAYDAY |
+| F0086 | pool6 | 2033-11-01 |  | H***** | inappropriate | Sexual 'love bite'; not family-friendly. | MAYDAY |
 | F0087 | pool6 | 2033-11-09 |  | WRIGHT | proper-noun | Archaic craftsman word that reads as a surname (Wright brothers). | SCULPT |
 | F0088 | pool6 | 2033-11-11 |  | LISTER | proper-noun | Surname (Listerine origin); not a standard word. | LEVITY |
 | F0089 | pool6 | 2034-01-06 |  | BATMAN | proper-noun | Trademarked superhero name (the British army 'batman' sense is obscure). | MUDDLE |
@@ -159,114 +159,114 @@ ProperNoundle rotates forever: day N plays category N mod 7, and the index in th
 | F0204 | pool7 | 2029-02-22 |  | NETBALL | british | British/Commonwealth sport most Americans have never heard of. | RAFTING |
 | F0205 | pool7 | 2029-03-21 |  | MAHATMA | proper-noun | Honorific known almost only from Gandhi's name. | MATINEE |
 | F0206 | pool7 | 2029-04-06 |  | ISLAMIC | proper-noun | Proper adjective naming a religion; religiously sensitive as a puzzle answer. | ORIGAMI |
-| F0207 | pool7 | 2029-05-01 |  | REDNECK | inappropriate | Derogatory term for rural white Americans. | BANDANA |
+| F0207 | pool7 | 2029-05-01 |  | R****** | inappropriate | Derogatory term for rural white Americans. | BANDANA |
 | F0208 | pool7 | 2029-06-08 |  | BOLIVIA | proper-noun | Country name. | SAVANNA |
-| F0209 | pool7 | 2029-06-20 |  | PANTIES | inappropriate | Women's underwear; sexualized/embarrassing for kids. | NECKTIE |
+| F0209 | pool7 | 2029-06-20 |  | P****** | inappropriate | Women's underwear; sexualized/embarrassing for kids. | NECKTIE |
 | F0210 | pool7 | 2029-12-28 |  | POLLOCK | proper-noun | Surname (Jackson Pollock); the fish is usually spelled POLLACK. | HALIBUT |
 | F0211 | pool7 | 2030-12-16 |  | HANOVER | proper-noun | City / royal-house name. | VERANDA |
-| F0212 | pool7 | 2031-08-09 |  | GROPING | inappropriate | Usually refers to sexual groping. | PEEKING |
+| F0212 | pool7 | 2031-08-09 |  | G****** | inappropriate | Usually refers to sexual G******. | PEEKING |
 | F0213 | pool7 | 2031-11-02 |  | RUBBISH | british | British word for trash/garbage. | TAKEOUT |
-| F0214 | pool7 | 2032-01-07 |  | PERVERT | inappropriate | Sexual-deviance term; not family-friendly. | COPYCAT |
+| F0214 | pool7 | 2032-01-07 |  | P****** | inappropriate | Sexual-deviance term; not family-friendly. | COPYCAT |
 | F0215 | pool7 | 2032-05-17 |  | PARSONS | proper-noun | Surname / design-school name; 'parson' itself is dated. | BARISTA |
-| F0216 | pool7 | 2032-09-19 |  | FLASHER | inappropriate | Most commonly means someone who indecently exposes themselves. | FLIPPER |
+| F0216 | pool7 | 2032-09-19 |  | F****** | inappropriate | Most commonly means someone who indecently exposes themselves. | FLIPPER |
 | F0217 | pool7 | 2032-12-29 |  | ENQUIRY | british | British spelling; US uses INQUIRY (already in the pool). | AMENITY |
 | F0218 | pool7 | 2033-03-04 |  | BATSMAN | british | Cricket term; Americans say batter. | SLUGGER |
 | F0219 | pool7 | 2033-03-10 |  | COULTER | proper-noun | Surname; the plow-blade sense is obscure. | TOPSOIL |
 | F0220 | pool7 | 2033-04-16 |  | TALIBAN | proper-noun | Name of a militant political group; violent/political association. | TRINKET |
-| F0221 | pool7 | 2033-05-11 |  | PLAYBOY | inappropriate | Adult-magazine brand / womanizer. | HOTSHOT |
+| F0221 | pool7 | 2033-05-11 |  | P****** | inappropriate | Adult-magazine brand / womanizer. | HOTSHOT |
 | F0222 | pool7 | 2033-05-12 |  | TRIPOLI | proper-noun | City name. | LAYOVER |
 | F0223 | pool7 | 2033-05-24 |  | FLEMISH | proper-noun | Proper adjective/language of Flanders; obscure too. | CHOWDER |
 | F0224 | pool7 | 2033-07-03 |  | LANGLEY | proper-noun | Place/surname (CIA headquarters). | KEYHOLE |
 | F0225 | pool7 | 2033-09-09 |  | GRANGER | proper-noun | Surname (Hermione Granger); the 'farmer' sense is obscure. | JUGGLER |
-| F0226 | pool7 | 2033-12-08 |  | TOPLESS | inappropriate | Nudity connotation. | SATCHEL |
+| F0226 | pool7 | 2033-12-08 |  | T****** | inappropriate | N***** connotation. | SATCHEL |
 | F0227 | pool7 | 2034-02-12 |  | COROLLA | proper-noun | Toyota model name; the botany sense is obscure. | SIDECAR |
 | F0228 | pool7 | 2034-04-05 |  | POLLARD | obscure | Tree-pruning jargon (also a surname); few Americans know it. | SAPLING |
 | F0229 | pool7 | 2034-06-04 |  | TEMPLAR | proper-noun | Proper noun (Knights Templar). | SCEPTER |
-| F0295 | crossword | 2026-10-09 | cw-ha3thp | 2D STORY :: A cock and bull ____ | inappropriate | Clue 'A cock and bull ____' puts the word COCK (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it |
-| F0296 | crossword | 2027-01-03 | cw-5fj28d | 1D STORY :: A cock and bull ____ | inappropriate | Clue 'A cock and bull ____' puts the word COCK (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it |
-| F0297 | crossword | 2027-02-20 | cw-gx7m6l | 5A ARMOR :: A chink in the ____ | inappropriate | Clue 'A chink in the ____' uses CHINK, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ |
-| F0298 | crossword | 2027-06-20 | cw-qh0z8h | 3D ARMOR :: A chink in the ____ | inappropriate | Clue 'A chink in the ____' uses CHINK, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ |
-| F0299 | crossword | 2027-09-29 | cw-bzvm8u | 7D STORY :: A cock and bull ____ | inappropriate | "A cock and bull story" puts "cock" in front of kids; trips the profanity list. | A likely ____! |
+| F0295 | crossword | 2026-10-09 | cw-ha3thp | 2D STORY :: A C*** and bull ____ | inappropriate | Clue 'A C*** and bull ____' puts the word C*** (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it |
+| F0296 | crossword | 2027-01-03 | cw-5fj28d | 1D STORY :: A C*** and bull ____ | inappropriate | Clue 'A C*** and bull ____' puts the word C*** (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it |
+| F0297 | crossword | 2027-02-20 | cw-gx7m6l | 5A ARMOR :: A C**** in the ____ | inappropriate | Clue 'A C**** in the ____' uses C****, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ |
+| F0298 | crossword | 2027-06-20 | cw-qh0z8h | 3D ARMOR :: A C**** in the ____ | inappropriate | Clue 'A C**** in the ____' uses C****, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ |
+| F0299 | crossword | 2027-09-29 | cw-bzvm8u | 7D STORY :: A C*** and bull ____ | inappropriate | "A C*** and bull story" puts "C***" in front of kids; trips the profanity list. | A likely ____! |
 | F0729 | muddle | 2026-10-04 | md-1rpjhu | TRUNK CALL | british | 'Trunk call' is British for a long-distance phone call; the pun is lost on Americans. | — frozen — |
 | F0730 | muddle | 2026-10-18 | md-8upzsk | HIGHLY STRUNG | british | 'Highly strung' is British; Americans say 'high-strung'. | HIGH STRUNG |
-| F0731 | muddle | 2026-10-31 | md-krfti8 | HOOKUP | inappropriate | HOOKUP has a common sexual meaning (Halloween holiday puzzle). | HOCKEY |
+| F0731 | muddle | 2026-10-31 | md-krfti8 | H***** | inappropriate | H***** has a common sexual meaning (Halloween holiday puzzle). | HOCKEY |
 | F0732 | muddle | 2026-11-01 | md-2i7t2x | LOST PROPERTY | british | 'Lost property' is British; Americans say 'lost and found'. | LOST AND FOUND |
-| F0733 | muddle | 2026-12-27 | md-9guhqs | SHITTY | inappropriate | Profanity as a scramble answer word (Kwanzaa holiday puzzle). | GRITTY |
-| F0734 | muddle | 2027-01-29 | md-ikz7lk | FUCKED | inappropriate | Profanity as a scramble answer word. | FORKED |
+| F0733 | muddle | 2026-12-27 | md-9guhqs | S***** | inappropriate | Profanity as a scramble answer word (Kwanzaa holiday puzzle). | GRITTY |
+| F0734 | muddle | 2027-01-29 | md-ikz7lk | F***** | inappropriate | Profanity as a scramble answer word. | FORKED |
 | F0735 | muddle | 2027-02-12 | md-83zqje | MOZART | proper-noun | MOZART is a person's name. | MOTHER |
 | F0736 | muddle | 2027-02-20 | md-lh3wjv | NISSAN | proper-noun | NISSAN is a car brand. | STAIRS |
 | F0737 | muddle | 2027-03-08 | md-nyhi5f | lollipop man | british | 'Lollipop man' is British for a crossing guard; Americans won't know it. | The grumpy man with the stop sign at the school crosswalk was known to everyone as the ____. |
-| F0738 | muddle | 2027-06-30 | md-d4bohx | HOOKUP | inappropriate | HOOKUP has a common sexual meaning. | COOKIE |
+| F0738 | muddle | 2027-06-30 | md-d4bohx | H***** | inappropriate | H***** has a common sexual meaning. | COOKIE |
 | F0739 | muddle | 2027-07-24 | md-d5j7sy | PARROT FASHION | british | 'Parrot fashion' (rote repetition) is a British idiom unknown to Americans. |  |
 | F0740 | muddle | 2027-07-25 | md-szxpv4 | CICERO | proper-noun | CICERO is a person's name. | CIRCUS |
 | F0741 | muddle | unlimited#16 | md-dlroeh | PEAR SHAPED | british | 'Gone pear-shaped' is a British idiom unknown to most Americans. | BANANAS |
 | F0824 | codebreaker | 2027-01-09 | cg-hcxmaj | An Englishman's home is his castle. | british | 'An Englishman's home is his castle' is explicitly British. | A friend in need is a friend indeed. |
 | F0825 | codebreaker | 2027-07-02 | cg-ougy0w | Fine words butter no parsnips. | british | 'Fine words butter no parsnips' is a British idiom unknown in the US. | Put your money where your mouth is. |
 | F0826 | codebreaker | unlimited#32 | cg-ovjxry | Ne'er cast a clout till May be out. | british | 'Ne'er cast a clout till May be out' is archaic British weather lore. | Life is like a box of chocolates. |
-| F0881 | hubbub | 2026-09-27 | hb0005 | DONG | inappropriate | Common slang for penis. | — frozen — |
-| F0882 | hubbub | 2026-10-15 | hb0023 | DONG | inappropriate | Common slang for penis. | (move to bonus) |
-| F0883 | hubbub | 2026-10-26 | hb0034 | QUEER | inappropriate | Historically a slur; sensitive for all ages. | (move to bonus) |
-| F0884 | hubbub | 2026-11-09 | hb0048 | PERVERT | inappropriate | Sexual-deviance term. | (move to bonus) |
-| F0885 | hubbub | 2026-11-09 | hb0048 | PIMP | inappropriate | Prostitution term. | (move to bonus) |
-| F0886 | hubbub | 2026-11-24 | hb0063 | PERVERT | inappropriate | Sexual-deviance term. | (move to bonus) |
-| F0887 | hubbub | 2026-11-25 | hb0064 | PIMP | inappropriate | Prostitution term. | (move to bonus) |
-| F0888 | hubbub | 2026-12-14 | hb0083 | PIMP | inappropriate | Prostitution term. | (move to bonus) |
+| F0881 | hubbub | 2026-09-27 | hb0005 | D*** | inappropriate | Common slang for P****. | — frozen — |
+| F0882 | hubbub | 2026-10-15 | hb0023 | D*** | inappropriate | Common slang for P****. | (move to bonus) |
+| F0883 | hubbub | 2026-10-26 | hb0034 | Q**** | inappropriate | Historically a slur; sensitive for all ages. | (move to bonus) |
+| F0884 | hubbub | 2026-11-09 | hb0048 | P****** | inappropriate | Sexual-deviance term. | (move to bonus) |
+| F0885 | hubbub | 2026-11-09 | hb0048 | P*** | inappropriate | Prostitution term. | (move to bonus) |
+| F0886 | hubbub | 2026-11-24 | hb0063 | P****** | inappropriate | Sexual-deviance term. | (move to bonus) |
+| F0887 | hubbub | 2026-11-25 | hb0064 | P*** | inappropriate | Prostitution term. | (move to bonus) |
+| F0888 | hubbub | 2026-12-14 | hb0083 | P*** | inappropriate | Prostitution term. | (move to bonus) |
 | F0889 | hubbub | 2027-01-17 | hb0117 | YORK | proper-noun | Place name. | (move to bonus) |
-| F0890 | hubbub | 2027-01-18 | hb0118 | HORNY | inappropriate | Sexual slang. | (move to bonus) |
-| F0891 | hubbub | 2027-02-03 | hb0134 | RETARDED | inappropriate | Ableist slur. | (move to bonus) |
-| F0892 | hubbub | 2027-02-11 | hb0142 | DONG | inappropriate | Common slang for penis. | (move to bonus) |
-| F0893 | hubbub | 2027-02-17 | hb0148 | BONER | inappropriate | Sexual slang. | (move to bonus) |
+| F0890 | hubbub | 2027-01-18 | hb0118 | H**** | inappropriate | Sexual slang. | (move to bonus) |
+| F0891 | hubbub | 2027-02-03 | hb0134 | R******* | inappropriate | Ableist slur. | (move to bonus) |
+| F0892 | hubbub | 2027-02-11 | hb0142 | D*** | inappropriate | Common slang for P****. | (move to bonus) |
+| F0893 | hubbub | 2027-02-17 | hb0148 | B**** | inappropriate | Sexual slang. | (move to bonus) |
 | F0894 | hubbub | 2027-03-13 | hb0172 | JETER | proper-noun | Surname (Derek Jeter). | (move to bonus) |
-| F0895 | hubbub | 2027-04-01 | hb0191 | PERVERT | inappropriate | Sexual-deviance term. | (move to bonus) |
-| F0896 | hubbub | 2027-04-05 | hb0195 | DONG | inappropriate | Common slang for penis. | (move to bonus) |
-| F0897 | hubbub | 2027-04-19 | hb0209 | VIBRATOR | inappropriate | Sex-toy connotation. | (move to bonus) |
+| F0895 | hubbub | 2027-04-01 | hb0191 | P****** | inappropriate | Sexual-deviance term. | (move to bonus) |
+| F0896 | hubbub | 2027-04-05 | hb0195 | D*** | inappropriate | Common slang for P****. | (move to bonus) |
+| F0897 | hubbub | 2027-04-19 | hb0209 | V******* | inappropriate | Sex-toy connotation. | (move to bonus) |
 | F0898 | hubbub | 2027-04-20 | hb0210 | BATMAN | proper-noun | Comic-book character name. | (move to bonus) |
-| F0899 | hubbub | 2027-05-12 | hb0232 | LUBE | inappropriate | Sexual connotation. | (move to bonus) |
-| F0900 | hubbub | 2027-05-19 | hb0239 | HOMO | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
-| F0901 | hubbub | 2027-05-20 | hb0240 | PIMP | inappropriate | Prostitution term. | (move to bonus) |
-| F0902 | hubbub | 2027-05-26 | hb0246 | HOMO | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
-| F0903 | hubbub | 2027-06-12 | hb0263 | QUEER | inappropriate | Historically a slur; sensitive for all ages. | (move to bonus) |
-| F0904 | hubbub | 2027-06-13 | hb0264 | RETARDED | inappropriate | Ableist slur. | (move to bonus) |
+| F0899 | hubbub | 2027-05-12 | hb0232 | L*** | inappropriate | Sexual connotation. | (move to bonus) |
+| F0900 | hubbub | 2027-05-19 | hb0239 | H*** | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
+| F0901 | hubbub | 2027-05-20 | hb0240 | P*** | inappropriate | Prostitution term. | (move to bonus) |
+| F0902 | hubbub | 2027-05-26 | hb0246 | H*** | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
+| F0903 | hubbub | 2027-06-12 | hb0263 | Q**** | inappropriate | Historically a slur; sensitive for all ages. | (move to bonus) |
+| F0904 | hubbub | 2027-06-13 | hb0264 | R******* | inappropriate | Ableist slur. | (move to bonus) |
 | F0905 | hubbub | 2027-06-19 | hb0270 | TRIPOLI | proper-noun | City name. | (move to bonus) |
-| F0906 | hubbub | 2027-06-20 | hb0271 | QUEER | inappropriate | Historically a slur; sensitive for all ages. | (move to bonus) |
+| F0906 | hubbub | 2027-06-20 | hb0271 | Q**** | inappropriate | Historically a slur; sensitive for all ages. | (move to bonus) |
 | F0907 | hubbub | 2027-06-24 | hb0275 | ATLANTIC | proper-noun | Ocean name (proper noun). | (move to bonus) |
-| F0908 | hubbub | 2027-08-12 | hb0324 | DONG | inappropriate | Common slang for penis. | (move to bonus) |
+| F0908 | hubbub | 2027-08-12 | hb0324 | D*** | inappropriate | Common slang for P****. | (move to bonus) |
 | F0909 | hubbub | 2027-08-13 | hb0325 | BACH | proper-noun | Composer surname. | (move to bonus) |
-| F0910 | hubbub | 2027-08-20 | hb0332 | PIMP | inappropriate | Prostitution term. | (move to bonus) |
-| F0911 | hubbub | 2027-08-28 | hb0340 | HOMO | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
-| F0912 | hubbub | 2027-09-06 | hb0349 | BONDAGE | inappropriate | Sexual connotation. | (move to bonus) |
-| F0913 | hubbub | 2027-09-26 | hb0369 | HOMO | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
+| F0910 | hubbub | 2027-08-20 | hb0332 | P*** | inappropriate | Prostitution term. | (move to bonus) |
+| F0911 | hubbub | 2027-08-28 | hb0340 | H*** | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
+| F0912 | hubbub | 2027-09-06 | hb0349 | B****** | inappropriate | Sexual connotation. | (move to bonus) |
+| F0913 | hubbub | 2027-09-26 | hb0369 | H*** | inappropriate | Anti-gay slur (or a prefix). | (move to bonus) |
 | F0914 | hubbub | 2027-10-06 | hb0379 | BACH | proper-noun | Composer surname. | (move to bonus) |
-| F0915 | hubbub | unlimited#5 | hb0406 | DONG | inappropriate | Common slang for penis. | (move to bonus) |
-| F0916 | hubbub | unlimited#23 | hb0424 | PERVERT | inappropriate | Sexual-deviance term. | (move to bonus) |
-| F0917 | hubbub | unlimited#23 | hb0424 | PERVERTED | inappropriate | Sexual-deviance term. | (move to bonus) |
-| F0918 | hubbub | unlimited#81 | hb0482 | LUBE | inappropriate | Sexual connotation. | (move to bonus) |
+| F0915 | hubbub | unlimited#5 | hb0406 | D*** | inappropriate | Common slang for P****. | (move to bonus) |
+| F0916 | hubbub | unlimited#23 | hb0424 | P****** | inappropriate | Sexual-deviance term. | (move to bonus) |
+| F0917 | hubbub | unlimited#23 | hb0424 | P******** | inappropriate | Sexual-deviance term. | (move to bonus) |
+| F0918 | hubbub | unlimited#81 | hb0482 | L*** | inappropriate | Sexual connotation. | (move to bonus) |
 | F0919 | hubbub | unlimited#132 | hb0533 | ATLANTIC | proper-noun | Ocean name (proper noun). | (move to bonus) |
-| F0920 | hubbub | unlimited#188 | hb0589 | PIMP | inappropriate | Prostitution term. | (move to bonus) |
-| F0921 | hubbub | unlimited#192 | hb0593 | LUBE | inappropriate | Sexual connotation. | (move to bonus) |
-| F0922 | hubbub | unlimited#198 | hb0599 | LUBE | inappropriate | Sexual connotation. | (move to bonus) |
-| F1612 | ladder | 2027-03-09 | ld0168 | BUTCH | inappropriate | BUTCH is the rung (PUNCH BUNCH BUTCH BATCH LATCH). BUTCH is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH LATCH |
-| F1613 | ladder | 2027-05-08 | ld0228 | PRICK | inappropriate | PRICK is the rung (GRIME PRIME PRICE PRICK BRICK BRINK DRINK). PRICK doubles as a vulgar insult. | GRIME PRIME PRIDE BRIDE BRINE BRINK DRINK |
-| F1614 | ladder | 2027-06-08 | ld0259 | BUTCH | inappropriate | BUTCH is the rung (HITCH HUTCH BUTCH BUNCH BENCH). BUTCH is often a derogatory label; avoid as a featured rung. | HITCH HUTCH HUNCH BUNCH BENCH |
-| F1615 | ladder | 2027-06-14 | ld0265 | BUTCH | inappropriate | BUTCH is the rung (HATCH BATCH BUTCH BUNCH BENCH). BUTCH is often a derogatory label; avoid as a featured rung. | HATCH HUTCH HUNCH BUNCH BENCH |
-| F1616 | ladder | 2027-06-15 | ld0266 | BUTCH | inappropriate | BUTCH is the rung (LUNCH BUNCH BUTCH BATCH CATCH). BUTCH is often a derogatory label; avoid as a featured rung. | LUNCH HUNCH HUTCH HATCH CATCH |
-| F1617 | ladder | 2027-06-22 | ld0273 | PRICK | inappropriate | PRICK is the start word (PRICK BRICK BRINK BRINE BRIBE). PRICK doubles as a vulgar insult. | TRICK BRICK BRINK BRINE BRIBE |
-| F1618 | ladder | 2027-06-30 | ld0281 | BUTCH | inappropriate | BUTCH is the rung (HUTCH BUTCH BUNCH BENCH BEACH). BUTCH is often a derogatory label; avoid as a featured rung. | HUTCH HUNCH BUNCH BENCH BEACH |
-| F1619 | ladder | 2027-07-01 | ld0282 | BUTCH | inappropriate | BUTCH is the rung (WATCH BATCH BUTCH BUNCH LUNCH). BUTCH is often a derogatory label; avoid as a featured rung. | WATCH HATCH HUTCH HUNCH LUNCH |
-| F1620 | ladder | 2027-07-06 | ld0287 | BUTCH | inappropriate | BUTCH is the rung (WATCH BATCH BUTCH BUNCH PUNCH). BUTCH is often a derogatory label; avoid as a featured rung. | WATCH PATCH PITCH PINCH PUNCH |
-| F1621 | ladder | ladder-words.json#228 |  | BONER | inappropriate | Sexual slang. |  |
-| F1622 | ladder | ladder-words.json#306 |  | BUTCH | inappropriate | Often used as a derogatory label for lesbians; used in 9 ladder paths. |  |
-| F1623 | ladder | ladder-words.json#884 |  | GAYER | inappropriate | Comparative of "gay" used mainly as an insult. |  |
-| F1624 | ladder | ladder-words.json#1071 |  | HORNY | inappropriate | Sexual slang. |  |
+| F0920 | hubbub | unlimited#188 | hb0589 | P*** | inappropriate | Prostitution term. | (move to bonus) |
+| F0921 | hubbub | unlimited#192 | hb0593 | L*** | inappropriate | Sexual connotation. | (move to bonus) |
+| F0922 | hubbub | unlimited#198 | hb0599 | L*** | inappropriate | Sexual connotation. | (move to bonus) |
+| F1612 | ladder | 2027-03-09 | ld0168 | B**** | inappropriate | B**** is the rung (PUNCH BUNCH B**** BATCH LATCH). B**** is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH LATCH |
+| F1613 | ladder | 2027-05-08 | ld0228 | P**** | inappropriate | P**** is the rung (GRIME PRIME PRICE P**** BRICK BRINK DRINK). P**** doubles as a vulgar insult. | GRIME PRIME PRIDE BRIDE BRINE BRINK DRINK |
+| F1614 | ladder | 2027-06-08 | ld0259 | B**** | inappropriate | B**** is the rung (HITCH HUTCH B**** BUNCH BENCH). B**** is often a derogatory label; avoid as a featured rung. | HITCH HUTCH HUNCH BUNCH BENCH |
+| F1615 | ladder | 2027-06-14 | ld0265 | B**** | inappropriate | B**** is the rung (HATCH BATCH B**** BUNCH BENCH). B**** is often a derogatory label; avoid as a featured rung. | HATCH HUTCH HUNCH BUNCH BENCH |
+| F1616 | ladder | 2027-06-15 | ld0266 | B**** | inappropriate | B**** is the rung (LUNCH BUNCH B**** BATCH CATCH). B**** is often a derogatory label; avoid as a featured rung. | LUNCH HUNCH HUTCH HATCH CATCH |
+| F1617 | ladder | 2027-06-22 | ld0273 | P**** | inappropriate | P**** is the start word (P**** BRICK BRINK BRINE BRIBE). P**** doubles as a vulgar insult. | TRICK BRICK BRINK BRINE BRIBE |
+| F1618 | ladder | 2027-06-30 | ld0281 | B**** | inappropriate | B**** is the rung (HUTCH B**** BUNCH BENCH BEACH). B**** is often a derogatory label; avoid as a featured rung. | HUTCH HUNCH BUNCH BENCH BEACH |
+| F1619 | ladder | 2027-07-01 | ld0282 | B**** | inappropriate | B**** is the rung (WATCH BATCH B**** BUNCH LUNCH). B**** is often a derogatory label; avoid as a featured rung. | WATCH HATCH HUTCH HUNCH LUNCH |
+| F1620 | ladder | 2027-07-06 | ld0287 | B**** | inappropriate | B**** is the rung (WATCH BATCH B**** BUNCH PUNCH). B**** is often a derogatory label; avoid as a featured rung. | WATCH PATCH PITCH PINCH PUNCH |
+| F1621 | ladder | ladder-words.json#228 |  | B**** | inappropriate | Sexual slang. |  |
+| F1622 | ladder | ladder-words.json#306 |  | B**** | inappropriate | Often used as a derogatory label for lesbians; used in 9 ladder paths. |  |
+| F1623 | ladder | ladder-words.json#884 |  | G**** | inappropriate | Comparative of "gay" used mainly as an insult. |  |
+| F1624 | ladder | ladder-words.json#1071 |  | H**** | inappropriate | Sexual slang. |  |
 | F1625 | ladder | ladder-words.json#1132 |  | JETER | proper-noun | Surname (Derek Jeter), not a common word. |  |
-| F1626 | ladder | ladder-words.json#1287 |  | LYNCH | inappropriate | Racial-violence connotation. |  |
-| F1627 | ladder | ladder-words.json#1465 |  | NUDES | inappropriate | Sexual connotation (explicit photos). |  |
-| F1628 | ladder | ladder-words.json#1637 |  | PRICK | inappropriate | Common vulgar insult/anatomical slang; used in 2 ladders. |  |
-| F1629 | ladder | ladder-words.json#1675 |  | QUEER | inappropriate | Historically a slur; sensitive for an all-ages word game. |  |
-| F1630 | ladder | ladder-words.json#1869 |  | SEMEN | inappropriate | Sexual/anatomical; not family-friendly as a typed rung. |  |
-| F1631 | ladder | ladder-words.json#2046 |  | SPERM | inappropriate | Sexual/anatomical; not family-friendly. |  |
-| F1632 | ladder | unlimited#22 | ld0423 | BUTCH | inappropriate | BUTCH is the rung (LUNCH BUNCH BUTCH BATCH PATCH). BUTCH is often a derogatory label; avoid as a featured rung. | LUNCH PUNCH PINCH PITCH PATCH |
-| F1633 | ladder | unlimited#27 | ld0428 | BUTCH | inappropriate | BUTCH is the rung (PUNCH BUNCH BUTCH BATCH CATCH). BUTCH is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH CATCH |
+| F1626 | ladder | ladder-words.json#1287 |  | L**** | inappropriate | Racial-violence connotation. |  |
+| F1627 | ladder | ladder-words.json#1465 |  | N**** | inappropriate | Sexual connotation (explicit photos). |  |
+| F1628 | ladder | ladder-words.json#1637 |  | P**** | inappropriate | Common vulgar insult/anatomical slang; used in 2 ladders. |  |
+| F1629 | ladder | ladder-words.json#1675 |  | Q**** | inappropriate | Historically a slur; sensitive for an all-ages word game. |  |
+| F1630 | ladder | ladder-words.json#1869 |  | S**** | inappropriate | Sexual/anatomical; not family-friendly as a typed rung. |  |
+| F1631 | ladder | ladder-words.json#2046 |  | S**** | inappropriate | Sexual/anatomical; not family-friendly. |  |
+| F1632 | ladder | unlimited#22 | ld0423 | B**** | inappropriate | B**** is the rung (LUNCH BUNCH B**** BATCH PATCH). B**** is often a derogatory label; avoid as a featured rung. | LUNCH PUNCH PINCH PITCH PATCH |
+| F1633 | ladder | unlimited#27 | ld0428 | B**** | inappropriate | B**** is the rung (PUNCH BUNCH B**** BATCH CATCH). B**** is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH CATCH |
 | F1700 | propernoundle | 2028-04-01 | hol-aprilfools-1 | Sidd Finch | obscure | Sidd Finch is a 1985 Sports Illustrated hoax pitcher almost no American today would know. | Globetrotters |
 | F1701 | propernoundle | 2028-10-14 | spo097 | Lionel Scaloni | obscure | Lionel Scaloni (Argentina national soccer coach) is unknown to almost all Americans. | — frozen — |
 
@@ -278,16 +278,16 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 
 | Flag | Status | Date | Pool#idx | Puzzle | Field | Word | Cat / sev | Reason | Proposed replacement |
 |---|---|---|---|---|---|---|---|---|---|
-| F0001 | pool | 2026-11-03 (served 2026-07-11; GAUNTLET) | solutions.json#1072 |  | answer | PRICK | inappropriate / high | Common vulgar insult/genital slang; testers will snicker or object. | PHASE — Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
-| F0002 | pool | 2026-11-04 (served 2026-09-07; WotD 2028-02-04; OCTORDLE) | solutions.json#410 |  | answer | BUTCH | inappropriate / high | Often used as a derogatory label for lesbians or masculine women. | CORGI — Common dog breed word, not a proper noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
+| F0001 | pool | 2026-11-03 (served 2026-07-11; GAUNTLET) | solutions.json#1072 |  | answer | P**** | inappropriate / high | Common vulgar insult/G****** slang; testers will snicker or object. | PHASE — Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
+| F0002 | pool | 2026-11-04 (served 2026-09-07; WotD 2028-02-04; OCTORDLE) | solutions.json#410 |  | answer | B**** | inappropriate / high | Often used as a derogatory label for lesbians or masculine women. | CORGI — Common dog breed word, not a proper noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0003 | pool | 2026-10-19 (served 2026-08-05; RESCUE) | solutions.json#508 |  | answer | BOOZE | inappropriate / medium | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Slang for liquor; not family-friendly as a featured answer. | RAMEN — Common food word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
-| F0004 | pool | 2026-10-30 (served 2026-07-25; RESCUE) | solutions.json#1702 |  | answer | OPIUM | inappropriate / medium | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Narcotic drug name. | HAIKU — Familiar school word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
+| F0004 | pool | 2026-10-30 (served 2026-07-25; RESCUE) | solutions.json#1702 |  | answer | O**** | inappropriate / medium | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Narcotic drug name. | HAIKU — Familiar school word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0005 | pool | 2026-10-31 (served 2026-09-08; QUORDLE) | solutions.json#999 |  | answer | COSTA | proper-noun / medium | Not an English word; Spanish/Italian for coast, known only from Costa Rica / Costa Coffee. | CRYPT — Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0006 | pool | 2026-11-03 (served 2026-09-28; GAUNTLET) | solutions.json#1111 |  | answer | BOWIE | proper-noun / medium | Reads as David Bowie; "bowie knife" is the only common-noun use. | BIKER — Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0007 | pool | 2026-11-05 (served 2026-07-17; WotD 2027-04-19; OCTORDLE) | solutions.json#119 |  | answer | SLAVE | inappropriate / medium | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Slavery term is a heavy, divisive pick for a kids-friendly daily answer. | TOUCH — Common everyday word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0008 | pool | 2026-11-05 (served 2026-07-24; DUEL_VS) | solutions.json#1007 |  | answer | TRUMP | inappropriate / medium | Reads as a sitting U.S. political figure's surname; politically divisive (and proper-noun-like) as an answer/Word of the Day. | EMOJI — Common modern word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0009 | pool | 2026-11-09 (served 2026-07-31; WotD 2028-08-08; RESCUE) | solutions.json#596 |  | answer | BLANC | obscure / medium | French, not English; only appears in "sauvignon blanc" / "carte blanche". | CHIVE — Common food word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
-| F0010 | pool | 2026-11-09 (served 2026-07-31; WotD 2028-12-25; RESCUE) | solutions.json#735 |  | answer | SPANK | inappropriate / medium | Corporal punishment / sexual connotation; poor fit for an all-ages answer. | CONDO — Common American noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
+| F0010 | pool | 2026-11-09 (served 2026-07-31; WotD 2028-12-25; RESCUE) | solutions.json#735 |  | answer | S**** | inappropriate / medium | Corporal punishment / sexual connotation; poor fit for an all-ages answer. | CONDO — Common American noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0011 | pool | 2026-11-11 (served 2026-08-02; SEQUENCE) | solutions.json#959 |  | answer | URINE | inappropriate / medium | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Bodily-fluid gross-out word. | DECAL — Common American word (sticker). Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0012 | pool | 2026-12-14 (served 2026-08-25; WotD 2028-05-06; GAUNTLET) | solutions.json#502 |  | answer | RANDY | inappropriate / medium | Slang for sexually aroused (British-flavored) and otherwise a first name. | ALOHA — Common, cheerful word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0013 | pool | 2026-12-17 (served 2026-07-16; GAUNTLET) | solutions.json#570 |  | answer | VOMIT | inappropriate / medium | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Gross-out word. | MINTY — Pleasant common adjective. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
@@ -296,7 +296,7 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0016 | pool | 2026-10-12 (served 2026-08-19; GAUNTLET) | solutions.json#884 |  | answer | AMINO | obscure / low | Not a standalone word; only appears in "amino acid". | WISPY — Common adjective. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0017 | pool | 2026-10-17 (served 2026-07-30; WotD 2027-06-21; SEQUENCE) | solutions.json#182 |  | answer | BOOTY | inappropriate / low | Primarily slang for buttocks today; pirate-loot sense is secondary. | LAYUP — Common American sports word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0018 | pool | 2026-10-17 (served 2026-08-29; WotD 2028-12-09; QUORDLE) | solutions.json#719 |  | answer | EUROS | obscure / low | Plural of a foreign currency; non-American and an odd plural answer. | CLEAT — Common American word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
-| F0019 | pool | 2026-10-20 (served 2026-08-06; WotD 2027-08-04; RESCUE) | solutions.json#226 |  | answer | NAKED | inappropriate / low | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Nudity word; parents/app reviewers may object as an answer or Word of the Day. | CLIFF — Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
+| F0019 | pool | 2026-10-20 (served 2026-08-06; WotD 2027-08-04; RESCUE) | solutions.json#226 |  | answer | NAKED | inappropriate / low | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). N***** word; parents/app reviewers may object as an answer or Word of the Day. | CLIFF — Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0020 | pool | 2026-10-22 (served 2026-09-13; WotD 2027-05-25; GAUNTLET) | solutions.json#155 |  | answer | SLANT | inappropriate / low | Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). On the profanity list as an anti-Asian slur sense; ordinary word otherwise. | TIGHT — Common adjective; neutral. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0021 | pool | 2026-10-23 (served 2026-09-22; WotD 2027-04-22; GAUNTLET) | solutions.json#122 |  | answer | DUCHY | obscure / low | British-aristocracy term (Duchy of Cornwall); rare in American usage. | GEEKY — Common adjective. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
 | F0022 | pool | 2026-10-27 (served 2026-07-08; QUORDLE) | solutions.json#1442 |  | answer | REMIT | british / low | Noun "remit" (scope of responsibility) is British usage; rare in American speech. | BLURB — Common American word. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch. |
@@ -321,15 +321,15 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0036 | pool | 2027-05-05 (DUEL_6) | solutions-6.json#2241 |  | answer | CAPITA | obscure / high | Not a standalone English word (only in 'per capita'). | ACUMEN — Same length (6), common American word; passesthe audit validator. |
 | F0037 | pool | 2027-05-13 (DUEL_6) | solutions-6.json#2774 |  | answer | PUNTER | british / high | British slang for a customer/gambler; US sense is a niche football position. | TIRADE — Same length (6), common American word; passesthe audit validator. |
 | F0038 | pool | 2027-08-05 (DUEL_6) | solutions-6.json#2280 |  | answer | EUROPE | proper-noun / high | A continent name. | COLLIE — Same length (6), common American word; passesthe audit validator. |
-| F0039 | pool | 2027-08-22 (DUEL_6) | solutions-6.json#2859 |  | answer | HOOKUP | inappropriate / high | Casual-sex slang. | IMPROV — Same length (6), common American word; passesthe audit validator. |
+| F0039 | pool | 2027-08-22 (DUEL_6) | solutions-6.json#2859 |  | answer | H***** | inappropriate / high | Casual-sex slang. | IMPROV — Same length (6), common American word; passesthe audit validator. |
 | F0040 | pool | 2027-09-13 (DUEL_6) | solutions-6.json#2333 |  | answer | QUAKER | proper-noun / high | Religious group name (and oat brand). | OBLONG — Same length (6), common American word; passesthe audit validator. |
 | F0041 | pool | 2027-10-11 (DUEL_6) | solutions-6.json#2445 |  | answer | OCULUS | obscure / high | Latin architectural term / VR brand name. | EERILY — Same length (6), common American word; passesthe audit validator. |
 | F0042 | pool | 2027-10-25 (DUEL_6) | solutions-6.json#2137 |  | answer | UNICEF | proper-noun / high | Organization acronym. | PAJAMA — Same length (6), common American word; passesthe audit validator. |
 | F0043 | pool | 2028-01-11 (DUEL_6) | solutions-6.json#1816 |  | answer | CICERO | proper-noun / high | Roman statesman's name. | ORATOR — Same length (6), common American word; passesthe audit validator. |
 | F0044 | pool | 2028-03-16 (DUEL_6) | solutions-6.json#2734 |  | answer | CAYMAN | proper-noun / high | Reads as the Cayman Islands (caiman is the usual reptile spelling). | WEEVIL — Same length (6), common American word; passesthe audit validator. |
-| F0045 | pool | 2028-03-26 (DUEL_6) | solutions-6.json#1104 |  | answer | FONDLE | inappropriate / high | Strong sexual-touching connotation; not family-friendly. | NUZZLE — Same length (6), common American word; passesthe audit validator. |
+| F0045 | pool | 2028-03-26 (DUEL_6) | solutions-6.json#1104 |  | answer | F***** | inappropriate / high | Strong sexual-touching connotation; not family-friendly. | NUZZLE — Same length (6), common American word; passesthe audit validator. |
 | F0046 | pool | 2028-04-02 (DUEL_6) | solutions-6.json#2014 |  | answer | SIXERS | proper-noun / high | Reads as the Philadelphia 76ers nickname. | DOLLOP — Same length (6), common American word; passesthe audit validator. |
-| F0047 | pool | 2028-04-22 (DUEL_6) | solutions-6.json#1823 |  | answer | JUNKIE | inappropriate / high | Drug-addiction slang; not family-friendly. | PREPPY — Same length (6), common American word; passesthe audit validator. |
+| F0047 | pool | 2028-04-22 (DUEL_6) | solutions-6.json#1823 |  | answer | J***** | inappropriate / high | Drug-addiction slang; not family-friendly. | PREPPY — Same length (6), common American word; passesthe audit validator. |
 | F0048 | pool | 2028-05-29 (DUEL_6) | solutions-6.json#2331 |  | answer | LIGAND | obscure / high | Chemistry jargon. | MUSSEL — Same length (6), common American word; passesthe audit validator. |
 | F0049 | pool | 2028-09-27 (DUEL_6) | solutions-6.json#2016 |  | answer | MULLER | proper-noun / high | Surname (Müller/Mueller); the paint-grinding tool sense is obscure. | SPACER — Same length (6), common American word; passesthe audit validator. |
 | F0050 | pool | 2028-10-11 (DUEL_6) | solutions-6.json#1348 |  | answer | SNOOPY | proper-noun / high | Reads as the Peanuts character (a trademarked name), not an ordinary word. | SNARKY — Same length (6), common American word; passesthe audit validator. |
@@ -339,13 +339,13 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0054 | pool | 2029-06-17 (DUEL_6) | solutions-6.json#1786 |  | answer | KANSAS | proper-noun / high | A U.S. state name. | MIDAIR — Same length (6), common American word; passesthe audit validator. |
 | F0055 | pool | 2029-11-11 (DUEL_6) | solutions-6.json#1715 |  | answer | KINASE | obscure / high | Biochemistry jargon (an enzyme class). | OSPREY — Same length (6), common American word; passesthe audit validator. |
 | F0056 | pool | 2029-12-03 (DUEL_6) | solutions-6.json#1914 |  | answer | ZIMMER | proper-noun / high | Surname/brand (Hans Zimmer; British 'Zimmer frame'). | STUBBY — Same length (6), common American word; passesthe audit validator. |
-| F0057 | pool | 2029-12-06 (DUEL_6) | solutions-6.json#2040 |  | answer | RAPING | inappropriate / high | Sexual violence; must not be an answer. | BUNGEE — Same length (6), common American word; passesthe audit validator. |
+| F0057 | pool | 2029-12-06 (DUEL_6) | solutions-6.json#2040 |  | answer | R***** | inappropriate / high | Sexual violence; must not be an answer. | BUNGEE — Same length (6), common American word; passesthe audit validator. |
 | F0058 | pool | 2030-03-31 (DUEL_6) | solutions-6.json#2845 |  | answer | ULSTER | proper-noun / high | Region of Ireland/Northern Ireland. | HOARSE — Same length (6), common American word; passesthe audit validator. |
 | F0059 | pool | 2030-04-16 (DUEL_6) | solutions-6.json#2425 |  | answer | METHYL | obscure / high | Chemistry jargon. | AIRBAG — Same length (6), common American word; passesthe audit validator. |
 | F0060 | pool | 2030-08-16 (DUEL_6) | solutions-6.json#1980 |  | answer | CERVIX | inappropriate / high | Reproductive anatomy; parents would object as a featured answer. | BONSAI — Same length (6), common American word; passesthe audit validator. |
 | F0061 | pool | 2030-12-29 (DUEL_6) | solutions-6.json#2349 |  | answer | DOBSON | proper-noun / high | Surname; not an ordinary word. | BELUGA — Same length (6), common American word; passesthe audit validator. |
 | F0062 | pool | 2031-02-07 (DUEL_6) | solutions-6.json#2269 |  | answer | SPICER | proper-noun / high | Surname; not a standard word ('spicier' is the comparative). | POINTY — Same length (6), common American word; passesthe audit validator. |
-| F0063 | pool | 2031-02-18 (DUEL_6) | solutions-6.json#2565 |  | answer | STONER | inappropriate / high | Drug slang (marijuana user). | MILDEW — Same length (6), common American word; passesthe audit validator. |
+| F0063 | pool | 2031-02-18 (DUEL_6) | solutions-6.json#2565 |  | answer | S***** | inappropriate / high | Drug slang (marijuana user). | MILDEW — Same length (6), common American word; passesthe audit validator. |
 | F0064 | pool | 2031-02-22 (DUEL_6) | solutions-6.json#1808 |  | answer | PACERS | proper-noun / high | Reads as the Indiana Pacers (NBA team); odd plural otherwise. | SPRAIN — Same length (6), common American word; passesthe audit validator. |
 | F0065 | pool | 2031-03-05 (DUEL_6) | solutions-6.json#2616 |  | answer | WAGNER | proper-noun / high | Composer's surname. | BELLOW — Same length (6), common American word; passesthe audit validator. |
 | F0066 | pool | 2031-04-30 (DUEL_6) | solutions-6.json#2760 |  | answer | BRUINS | proper-noun / high | Reads as the Boston Bruins / UCLA Bruins team name. | RECAST — Same length (6), common American word; passesthe audit validator. |
@@ -354,7 +354,7 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0069 | pool | 2031-09-15 (DUEL_6) | solutions-6.json#2004 |  | answer | TENSOR | obscure / high | Math/physics jargon. | TOFFEE — Same length (6), common American word; passesthe audit validator. |
 | F0070 | pool | 2031-10-04 (DUEL_6) | solutions-6.json#1253 |  | answer | DIPOLE | obscure / high | Physics/chemistry jargon. | DIPPER — Same length (6), common American word; passesthe audit validator. |
 | F0071 | pool | 2031-10-05 (DUEL_6) | solutions-6.json#945 |  | answer | NOUGHT | british / high | British word for zero (American: naught/zero). | PRESTO — Same length (6), common American word; passesthe audit validator. |
-| F0072 | pool | 2031-12-31 (DUEL_6) | solutions-6.json#1751 |  | answer | NUDITY | inappropriate / high | Sexual/nudity content; not family-friendly as an answer. | WHIMSY — Same length (6), common American word; passesthe audit validator. |
+| F0072 | pool | 2031-12-31 (DUEL_6) | solutions-6.json#1751 |  | answer | N***** | inappropriate / high | Sexual/N***** content; not family-friendly as an answer. | WHIMSY — Same length (6), common American word; passesthe audit validator. |
 | F0073 | pool | 2032-06-18 (DUEL_6) | solutions-6.json#1570 |  | answer | AMBLER | obscure / high | Odd -ER form nobody says; reads as a surname. | SLOUCH — Same length (6), common American word; passesthe audit validator. |
 | F0074 | pool | 2032-06-24 (DUEL_6) | solutions-6.json#2816 |  | answer | AIRBUS | proper-noun / high | Aircraft manufacturer brand. | BRAINY — Same length (6), common American word; passesthe audit validator. |
 | F0075 | pool | 2032-08-03 (DUEL_6) | solutions-6.json#2613 |  | answer | HOOVER | proper-noun / high | Brand/president's name; 'to hoover' is British usage. | BASSET — Same length (6), common American word; passesthe audit validator. |
@@ -362,13 +362,13 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0077 | pool | 2032-08-30 (DUEL_6) | solutions-6.json#2675 |  | answer | OILERS | proper-noun / high | Reads as the Edmonton Oilers (NHL team). | TWISTY — Same length (6), common American word; passesthe audit validator. |
 | F0078 | pool | 2032-10-10 (DUEL_6) | solutions-6.json#1875 |  | answer | SALAAM | obscure / high | Arabic greeting; unfamiliar spelling to most Americans and religiously loaded. | CUTOUT — Same length (6), common American word; passesthe audit validator. |
 | F0079 | pool | 2032-12-03 (DUEL_6) | solutions-6.json#1887 |  | answer | BANGER | british / high | British slang (sausage / old car); 'banged' sense is also crude. | SIZZLE — Same length (6), common American word; passesthe audit validator. |
-| F0080 | pool | 2033-02-18 (DUEL_6) | solutions-6.json#2087 |  | answer | VIAGRA | proper-noun / high | Drug brand name with sexual connotation. | WASABI — Same length (6), common American word; passesthe audit validator. |
+| F0080 | pool | 2033-02-18 (DUEL_6) | solutions-6.json#2087 |  | answer | V***** | proper-noun / high | Drug brand name with sexual connotation. | WASABI — Same length (6), common American word; passesthe audit validator. |
 | F0081 | pool | 2033-02-26 (DUEL_6) | solutions-6.json#1215 |  | answer | CAMBER | obscure / high | Automotive/engineering jargon (wheel tilt, road curvature). | STUCCO — Same length (6), common American word; passesthe audit validator. |
 | F0082 | pool | 2033-06-10 (DUEL_6) | solutions-6.json#1185 |  | answer | DINGLE | obscure / high | Dialect word for a wooded valley; most players will think it's not a word (or slang). | SQUEAK — Same length (6), common American word; passesthe audit validator. |
 | F0083 | pool | 2033-08-12 (DUEL_6) | solutions-6.json#1699 |  | answer | SURREY | proper-noun / high | An English county (the carriage sense is archaic); British proper noun. | SWANKY — Same length (6), common American word; passesthe audit validator. |
 | F0084 | pool | 2033-09-24 (DUEL_6) | solutions-6.json#843 |  | answer | ALBEDO | obscure / high | Astronomy/physics jargon (reflectivity); unfair for a general audience. | AMOEBA — Same length (6), common American word; passesthe audit validator. |
 | F0085 | pool | 2033-09-25 (DUEL_6) | solutions-6.json#2154 |  | answer | BETHEL | proper-noun / high | Biblical place name / church name. | SWEATY — Same length (6), common American word; passesthe audit validator. |
-| F0086 | pool | 2033-11-01 (DUEL_6) | solutions-6.json#2205 |  | answer | HICKEY | inappropriate / high | Sexual 'love bite'; not family-friendly. | MAYDAY — Same length (6), common American word; passesthe audit validator. |
+| F0086 | pool | 2033-11-01 (DUEL_6) | solutions-6.json#2205 |  | answer | H***** | inappropriate / high | Sexual 'love bite'; not family-friendly. | MAYDAY — Same length (6), common American word; passesthe audit validator. |
 | F0087 | pool | 2033-11-09 (served 2026-07-12; DUEL_6) | solutions-6.json#1503 |  | answer | WRIGHT | proper-noun / high | Archaic craftsman word that reads as a surname (Wright brothers). | SCULPT — Same length (6), common American word; passesthe audit validator. |
 | F0088 | pool | 2033-11-11 (DUEL_6) | solutions-6.json#2798 |  | answer | LISTER | proper-noun / high | Surname (Listerine origin); not a standard word. | LEVITY — Same length (6), common American word; passesthe audit validator. |
 | F0089 | pool | 2034-01-06 (DUEL_6) | solutions-6.json#2077 |  | answer | BATMAN | proper-noun / high | Trademarked superhero name (the British army 'batman' sense is obscure). | MUDDLE — Same length (6), common American word; passesthe audit validator. |
@@ -441,7 +441,7 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0156 | pool | 2034-04-23 (DUEL_6) | solutions-6.json#1338 |  | answer | TOGGLE | obscure / medium | Known tester complaint: reads as tech/coat-fastener jargon; on the guard's OBSCURE_WORDS list. | BEANIE — Same length (6), common American word; passesthe audit validator. Addresses the known tester complaint (TOGGLE is on the guard OBSCURE_WORDS list). |
 | F0157 | pool | 2034-05-01 (DUEL_6) | solutions-6.json#2394 |  | answer | WHISKY | british / medium | British/Scotch spelling (American: WHISKEY); also alcohol. | KIMONO — Same length (6), common American word; passesthe audit validator. |
 | F0158 | pool | 2034-05-16 (DUEL_6) | solutions-6.json#2855 |  | answer | CONTRA | proper-noun / medium | Nicaraguan rebel group / Iran-Contra; otherwise only a prefix. | PACIFY — Same length (6), common American word; passesthe audit validator. |
-| F0159 | pool |  (served 2026-09-23) | solutions-6.json#2822 |  | answer | CROTCH | inappropriate / medium | Body-part word that draws snickers; not great for kids. | SILKEN — Same length (6), common American word; passesthe audit validator. |
+| F0159 | pool |  (served 2026-09-23) | solutions-6.json#2822 |  | answer | C***** | inappropriate / medium | Body-part word that draws snickers; not great for kids. | SILKEN — Same length (6), common American word; passesthe audit validator. |
 | F0160 | pool | 2026-12-02 (DUEL_6) | solutions-6.json#1716 |  | answer | SLEAZY | inappropriate / low | Sexual-sleaze connotation; mild but not great for kids. | CLUNKY — Same length (6), common American word; passesthe audit validator. |
 | F0161 | pool | 2027-01-04 (DUEL_6) | solutions-6.json#2273 |  | answer | LOONEY | inappropriate / low | Mocking slang for mentally ill (or the Looney Tunes brand). | REWIND — Same length (6), common American word; passesthe audit validator. |
 | F0162 | pool | 2027-02-07 (DUEL_6) | solutions-6.json#1134 |  | answer | GARRET | obscure / low | Old-fashioned word for an attic room. | MANTEL — Same length (6), common American word; passesthe audit validator. |
@@ -494,26 +494,26 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0204 | pool | 2029-02-22 (DUEL_7) | solutions-7.json#2295 |  | answer | NETBALL | british / high | British/Commonwealth sport most Americans have never heard of. | RAFTING — Common American 7-letter word; passesthe audit validator. Swap in place at index 2295 via a new dated swap batch (future deals only). |
 | F0205 | pool | 2029-03-21 (DUEL_7) | solutions-7.json#2572 |  | answer | MAHATMA | proper-noun / high | Honorific known almost only from Gandhi's name. | MATINEE — Common American 7-letter word; passesthe audit validator. Swap in place at index 2572 via a new dated swap batch (future deals only). |
 | F0206 | pool | 2029-04-06 (DUEL_7) | solutions-7.json#443 |  | answer | ISLAMIC | proper-noun / high | Proper adjective naming a religion; religiously sensitive as a puzzle answer. | ORIGAMI — Common American 7-letter word; passesthe audit validator. Swap in place at index 443 via a new dated swap batch (future deals only). |
-| F0207 | pool | 2029-05-01 (DUEL_7) | solutions-7.json#2117 |  | answer | REDNECK | inappropriate / high | Derogatory term for rural white Americans. | BANDANA — Common American 7-letter word; passesthe audit validator. Swap in place at index 2117 via a new dated swap batch (future deals only). |
+| F0207 | pool | 2029-05-01 (DUEL_7) | solutions-7.json#2117 |  | answer | R****** | inappropriate / high | Derogatory term for rural white Americans. | BANDANA — Common American 7-letter word; passesthe audit validator. Swap in place at index 2117 via a new dated swap batch (future deals only). |
 | F0208 | pool | 2029-06-08 (DUEL_7) | solutions-7.json#1206 |  | answer | BOLIVIA | proper-noun / high | Country name. | SAVANNA — Common American 7-letter word; passesthe audit validator. Swap in place at index 1206 via a new dated swap batch (future deals only). |
-| F0209 | pool | 2029-06-20 (DUEL_7) | solutions-7.json#1253 |  | answer | PANTIES | inappropriate / high | Women's underwear; sexualized/embarrassing for kids. | NECKTIE — Common American 7-letter word; passesthe audit validator. Swap in place at index 1253 via a new dated swap batch (future deals only). |
+| F0209 | pool | 2029-06-20 (DUEL_7) | solutions-7.json#1253 |  | answer | P****** | inappropriate / high | Women's underwear; sexualized/embarrassing for kids. | NECKTIE — Common American 7-letter word; passesthe audit validator. Swap in place at index 1253 via a new dated swap batch (future deals only). |
 | F0210 | pool | 2029-12-28 (DUEL_7) | solutions-7.json#2110 |  | answer | POLLOCK | proper-noun / high | Surname (Jackson Pollock); the fish is usually spelled POLLACK. | HALIBUT — Common American 7-letter word; passesthe audit validator. Swap in place at index 2110 via a new dated swap batch (future deals only). |
 | F0211 | pool | 2030-12-16 (DUEL_7) | solutions-7.json#2132 |  | answer | HANOVER | proper-noun / high | City / royal-house name. | VERANDA — Common American 7-letter word; passesthe audit validator. Swap in place at index 2132 via a new dated swap batch (future deals only). |
-| F0212 | pool | 2031-08-09 (DUEL_7) | solutions-7.json#1314 |  | answer | GROPING | inappropriate / high | Usually refers to sexual groping. | PEEKING — Common American 7-letter word; passesthe audit validator. Swap in place at index 1314 via a new dated swap batch (future deals only). |
+| F0212 | pool | 2031-08-09 (DUEL_7) | solutions-7.json#1314 |  | answer | G****** | inappropriate / high | Usually refers to sexual G******. | PEEKING — Common American 7-letter word; passesthe audit validator. Swap in place at index 1314 via a new dated swap batch (future deals only). |
 | F0213 | pool | 2031-11-02 (DUEL_7) | solutions-7.json#630 |  | answer | RUBBISH | british / high | British word for trash/garbage. | TAKEOUT — Common American 7-letter word; passesthe audit validator. Swap in place at index 630 via a new dated swap batch (future deals only). |
-| F0214 | pool | 2032-01-07 (DUEL_7) | solutions-7.json#1793 |  | answer | PERVERT | inappropriate / high | Sexual-deviance term; not family-friendly. | COPYCAT — Common American 7-letter word; passesthe audit validator. Swap in place at index 1793 via a new dated swap batch (future deals only). |
+| F0214 | pool | 2032-01-07 (DUEL_7) | solutions-7.json#1793 |  | answer | P****** | inappropriate / high | Sexual-deviance term; not family-friendly. | COPYCAT — Common American 7-letter word; passesthe audit validator. Swap in place at index 1793 via a new dated swap batch (future deals only). |
 | F0215 | pool | 2032-05-17 (DUEL_7) | solutions-7.json#2411 |  | answer | PARSONS | proper-noun / high | Surname / design-school name; 'parson' itself is dated. | BARISTA — Common American 7-letter word; passesthe audit validator. Swap in place at index 2411 via a new dated swap batch (future deals only). |
-| F0216 | pool | 2032-09-19 (DUEL_7) | solutions-7.json#921 |  | answer | FLASHER | inappropriate / high | Most commonly means someone who indecently exposes themselves. | FLIPPER — Common American 7-letter word; passesthe audit validator. Swap in place at index 921 via a new dated swap batch (future deals only). |
+| F0216 | pool | 2032-09-19 (DUEL_7) | solutions-7.json#921 |  | answer | F****** | inappropriate / high | Most commonly means someone who indecently exposes themselves. | FLIPPER — Common American 7-letter word; passesthe audit validator. Swap in place at index 921 via a new dated swap batch (future deals only). |
 | F0217 | pool | 2032-12-29 (DUEL_7) | solutions-7.json#2518 |  | answer | ENQUIRY | british / high | British spelling; US uses INQUIRY (already in the pool). | AMENITY — Common American 7-letter word; passesthe audit validator. Swap in place at index 2518 via a new dated swap batch (future deals only). |
 | F0218 | pool | 2033-03-04 (DUEL_7) | solutions-7.json#2466 |  | answer | BATSMAN | british / high | Cricket term; Americans say batter. | SLUGGER — Common American 7-letter word; passesthe audit validator. Swap in place at index 2466 via a new dated swap batch (future deals only). |
 | F0219 | pool | 2033-03-10 (DUEL_7) | solutions-7.json#2269 |  | answer | COULTER | proper-noun / high | Surname; the plow-blade sense is obscure. | TOPSOIL — Common American 7-letter word; passesthe audit validator. Swap in place at index 2269 via a new dated swap batch (future deals only). |
 | F0220 | pool | 2033-04-16 (DUEL_7) | solutions-7.json#2714 |  | answer | TALIBAN | proper-noun / high | Name of a militant political group; violent/political association. | TRINKET — Common American 7-letter word; passesthe audit validator. Swap in place at index 2714 via a new dated swap batch (future deals only). |
-| F0221 | pool | 2033-05-11 (DUEL_7) | solutions-7.json#2026 |  | answer | PLAYBOY | inappropriate / high | Adult-magazine brand / womanizer. | HOTSHOT — Common American 7-letter word; passesthe audit validator. Swap in place at index 2026 via a new dated swap batch (future deals only). |
+| F0221 | pool | 2033-05-11 (DUEL_7) | solutions-7.json#2026 |  | answer | P****** | inappropriate / high | Adult-magazine brand / womanizer. | HOTSHOT — Common American 7-letter word; passesthe audit validator. Swap in place at index 2026 via a new dated swap batch (future deals only). |
 | F0222 | pool | 2033-05-12 (DUEL_7) | solutions-7.json#2566 |  | answer | TRIPOLI | proper-noun / high | City name. | LAYOVER — Common American 7-letter word; passesthe audit validator. Swap in place at index 2566 via a new dated swap batch (future deals only). |
 | F0223 | pool | 2033-05-24 (DUEL_7) | solutions-7.json#1749 |  | answer | FLEMISH | proper-noun / high | Proper adjective/language of Flanders; obscure too. | CHOWDER — Common American 7-letter word; passesthe audit validator. Swap in place at index 1749 via a new dated swap batch (future deals only). |
 | F0224 | pool | 2033-07-03 (DUEL_7) | solutions-7.json#2659 |  | answer | LANGLEY | proper-noun / high | Place/surname (CIA headquarters). | KEYHOLE — Common American 7-letter word; passesthe audit validator. Swap in place at index 2659 via a new dated swap batch (future deals only). |
 | F0225 | pool | 2033-09-09 (DUEL_7) | solutions-7.json#2642 |  | answer | GRANGER | proper-noun / high | Surname (Hermione Granger); the 'farmer' sense is obscure. | JUGGLER — Common American 7-letter word; passesthe audit validator. Swap in place at index 2642 via a new dated swap batch (future deals only). |
-| F0226 | pool | 2033-12-08 (DUEL_7) | solutions-7.json#1759 |  | answer | TOPLESS | inappropriate / high | Nudity connotation. | SATCHEL — Common American 7-letter word; passesthe audit validator. Swap in place at index 1759 via a new dated swap batch (future deals only). |
+| F0226 | pool | 2033-12-08 (DUEL_7) | solutions-7.json#1759 |  | answer | T****** | inappropriate / high | N***** connotation. | SATCHEL — Common American 7-letter word; passesthe audit validator. Swap in place at index 1759 via a new dated swap batch (future deals only). |
 | F0227 | pool | 2034-02-12 (DUEL_7) | solutions-7.json#2226 |  | answer | COROLLA | proper-noun / high | Toyota model name; the botany sense is obscure. | SIDECAR — Common American 7-letter word; passesthe audit validator. Swap in place at index 2226 via a new dated swap batch (future deals only). |
 | F0228 | pool | 2034-04-05 (DUEL_7) | solutions-7.json#1699 |  | answer | POLLARD | obscure / high | Tree-pruning jargon (also a surname); few Americans know it. | SAPLING — Common American 7-letter word; passesthe audit validator. Swap in place at index 1699 via a new dated swap batch (future deals only). |
 | F0229 | pool | 2034-06-04 (DUEL_7) | solutions-7.json#2876 |  | answer | TEMPLAR | proper-noun / high | Proper noun (Knights Templar). | SCEPTER — Common American 7-letter word; passesthe audit validator. Swap in place at index 2876 via a new dated swap batch (future deals only). |
@@ -521,7 +521,7 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0231 | pool | 2027-07-17 (DUEL_7) | solutions-7.json#1983 |  | answer | LOOSING | obscure / medium | Rare verb form; reads as a misspelling of LOSING. | MOPPING — Common American 7-letter word; passesthe audit validator. Swap in place at index 1983 via a new dated swap batch (future deals only). |
 | F0232 | pool | 2028-03-03 (DUEL_7) | solutions-7.json#389 |  | answer | DRUNKEN | inappropriate / medium | Alcohol intoxication as a featured answer; on PENDING_FOUNDER_CALL (awaits founder decision). | GROUCHY — Common American 7-letter word; passesthe audit validator. Swap in place at index 389 via a new dated swap batch (future deals only). Awaits founder call; on approval also drop it from PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts. |
 | F0233 | pool | 2028-11-30 (DUEL_7) | solutions-7.json#1250 |  | answer | HECTARE | obscure / medium | Metric land unit unfamiliar to most Americans (US uses acres). | HEXAGON — Common American 7-letter word; passesthe audit validator. Swap in place at index 1250 via a new dated swap batch (future deals only). |
-| F0234 | pool | 2029-03-06 (DUEL_7) | solutions-7.json#1329 |  | answer | DICKENS | proper-noun / medium | Surname (Charles Dickens); 'what the dickens' is dated, and it starts with DICK. | STENCIL — Common American 7-letter word; passesthe audit validator. Swap in place at index 1329 via a new dated swap batch (future deals only). |
+| F0234 | pool | 2029-03-06 (DUEL_7) | solutions-7.json#1329 |  | answer | DICKENS | proper-noun / medium | Surname (Charles Dickens); 'what the dickens' is dated, and it starts with D***. | STENCIL — Common American 7-letter word; passesthe audit validator. Swap in place at index 1329 via a new dated swap batch (future deals only). |
 | F0235 | pool | 2029-03-31 (DUEL_7) | solutions-7.json#2897 |  | answer | GEARBOX | british / medium | British for a car's transmission. | SUNROOF — Common American 7-letter word; passesthe audit validator. Swap in place at index 2897 via a new dated swap batch (future deals only). |
 | F0236 | pool | 2029-05-25 (DUEL_7) | solutions-7.json#2280 |  | answer | COLLIER | british / medium | British/archaic word for a coal miner; also a surname. | TRUCKER — Common American 7-letter word; passesthe audit validator. Swap in place at index 2280 via a new dated swap batch (future deals only). |
 | F0237 | pool | 2029-09-11 (DUEL_7) | solutions-7.json#2510 |  | answer | SKINNER | obscure / medium | Mainly a surname; 'one who skins' is rare. | DRIFTER — Common American 7-letter word; passesthe audit validator. Swap in place at index 2510 via a new dated swap batch (future deals only). |
@@ -587,11 +587,11 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 
 | Flag | Status | Date | Pool#idx | Puzzle | Field | Word | Cat / sev | Reason | Proposed replacement |
 |---|---|---|---|---|---|---|---|---|---|
-| F0295 | future | 2026-10-09 | daily#16 | cw-ha3thp | clue | 2D STORY :: A cock and bull ____ | inappropriate / high | Clue 'A cock and bull ____' puts the word COCK (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it — Answer STORY unchanged; clean idiom. |
-| F0296 | future | 2027-01-03 | daily#102 | cw-5fj28d | clue | 1D STORY :: A cock and bull ____ | inappropriate / high | Clue 'A cock and bull ____' puts the word COCK (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it — Answer STORY unchanged; clean idiom. |
-| F0297 | future | 2027-02-20 | daily#150 | cw-gx7m6l | clue | 5A ARMOR :: A chink in the ____ | inappropriate / high | Clue 'A chink in the ____' uses CHINK, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ — Answer ARMOR unchanged. |
-| F0298 | never-dated | 2027-06-20 | daily#270 | cw-qh0z8h | clue | 3D ARMOR :: A chink in the ____ | inappropriate / high | Clue 'A chink in the ____' uses CHINK, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ — Answer ARMOR unchanged. |
-| F0299 | future | 2027-09-29 | daily#371 | cw-bzvm8u | clue | 7D STORY :: A cock and bull ____ | inappropriate / high | "A cock and bull story" puts "cock" in front of kids; trips the profanity list. | A likely ____! |
+| F0295 | future | 2026-10-09 | daily#16 | cw-ha3thp | clue | 2D STORY :: A C*** and bull ____ | inappropriate / high | Clue 'A C*** and bull ____' puts the word C*** (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it — Answer STORY unchanged; clean idiom. |
+| F0296 | future | 2027-01-03 | daily#102 | cw-5fj28d | clue | 1D STORY :: A C*** and bull ____ | inappropriate / high | Clue 'A C*** and bull ____' puts the word C*** (on the profanity list) in front of kids. | That's my ____ and I'm sticking to it — Answer STORY unchanged; clean idiom. |
+| F0297 | future | 2027-02-20 | daily#150 | cw-gx7m6l | clue | 5A ARMOR :: A C**** in the ____ | inappropriate / high | Clue 'A C**** in the ____' uses C****, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ — Answer ARMOR unchanged. |
+| F0298 | never-dated | 2027-06-20 | daily#270 | cw-qh0z8h | clue | 3D ARMOR :: A C**** in the ____ | inappropriate / high | Clue 'A C**** in the ____' uses C****, which is also an ethnic slur and trips the offensive list. | A knight in shining ____ — Answer ARMOR unchanged. |
+| F0299 | future | 2027-09-29 | daily#371 | cw-bzvm8u | clue | 7D STORY :: A C*** and bull ____ | inappropriate / high | "A C*** and bull story" puts "C***" in front of kids; trips the profanity list. | A likely ____! |
 | F0300 | future | 2026-11-13 | daily#51 | cw-3gyqzp | clue | 1A SOCKS :: Pull your ____ up | british / medium | 'Pull your socks up' is a British idiom. | Knock your ____ off — Answer unchanged; American idiom. |
 | F0301 | future | 2026-11-16 | daily#54 | cw-fo1aex | clue | 5D LEMONS :: Oranges and ____ | british / medium | 'Oranges and lemons' is an English nursery rhyme few Americans know. | When life gives you ____, make lemonade — Answer unchanged; American idiom. |
 | F0302 | future | 2026-11-24 | daily#62 | cw-k046t9 | clue | 5D SOCKS :: Pull your ____ up | british / medium | 'Pull your socks up' is a British idiom. | Knock your ____ off — Answer unchanged; American idiom. |
@@ -1038,14 +1038,14 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 |---|---|---|---|---|---|---|---|---|---|
 | F0729 | frozen | 2026-10-04 | daily#11 | md-1rpjhu | answer | TRUNK CALL | british / high | 'Trunk call' is British for a long-distance phone call; the pun is lost on Americans. | — frozen — |
 | F0730 | future | 2026-10-18 | daily#25 | md-8upzsk | answer | HIGHLY STRUNG | british / high | 'Highly strung' is British; Americans say 'high-strung'. | HIGH STRUNG — Change final to HIGH STRUNG with no word changes: LICHEN circled [3,5] (H,N) instead of [0,3,5]; GOODY circled [0] (G) instead of [0,4]; RITUAL and GHOST unchanged. Caption still works. |
-| F0731 | holiday | 2026-10-31 | holiday:halloween#1 | md-krfti8 | answer | HOOKUP | inappropriate / high | HOOKUP has a common sexual meaning (Halloween holiday puzzle). | HOCKEY — Replaces HOOKUP (circled [0, 3, 5] -> letters HKP); new circled indexes [0, 3]. HOCKEY only supplies H,K, so also change ALIAS -> PAINT circled [0,1,2] (P,A,I); CLAMP [0,3,4] and PUNDIT [0,1,2,5] unchanged; letters still spell PUMPKINPATCH. |
+| F0731 | holiday | 2026-10-31 | holiday:halloween#1 | md-krfti8 | answer | H***** | inappropriate / high | H***** has a common sexual meaning (Halloween holiday puzzle). | HOCKEY — Replaces H***** (circled [0, 3, 5] -> letters HKP); new circled indexes [0, 3]. HOCKEY only supplies H,K, so also change ALIAS -> PAINT circled [0,1,2] (P,A,I); CLAMP [0,3,4] and PUNDIT [0,1,2,5] unchanged; letters still spell PUMPKINPATCH. |
 | F0732 | future | 2026-11-01 | daily#39 | md-2i7t2x | answer | LOST PROPERTY | british / high | 'Lost property' is British; Americans say 'lost and found'. | LOST AND FOUND — Rebuild: CREPT -> TREND [0,3,4] (T,N,D); HEFTY -> AUDIT [0,1] (A,U); SOLACE circled [0,1,2] (S,O,L); IMPORT -> FONDUE [0,1,2,3] (F,O,N,D). Caption: '...finally turned up at the station's ____.' |
-| F0733 | holiday | 2026-12-27 | holiday:kwanzaa#0 | md-9guhqs | answer | SHITTY | inappropriate / high | Profanity as a scramble answer word (Kwanzaa holiday puzzle). | GRITTY — Replaces SHITTY (circled [2, 3, 4, 5] -> letters ITTY); new circled indexes [2, 3, 4, 5]. |
-| F0734 | future | 2027-01-29 | daily#128 | md-ikz7lk | answer | FUCKED | inappropriate / high | Profanity as a scramble answer word. | FORKED — Replaces FUCKED (circled [0, 3] -> letters FK); new circled indexes [0, 3]. |
+| F0733 | holiday | 2026-12-27 | holiday:kwanzaa#0 | md-9guhqs | answer | S***** | inappropriate / high | Profanity as a scramble answer word (Kwanzaa holiday puzzle). | GRITTY — Replaces S***** (circled [2, 3, 4, 5] -> letters ITTY); new circled indexes [2, 3, 4, 5]. |
+| F0734 | future | 2027-01-29 | daily#128 | md-ikz7lk | answer | F***** | inappropriate / high | Profanity as a scramble answer word. | FORKED — Replaces F***** (circled [0, 3] -> letters FK); new circled indexes [0, 3]. |
 | F0735 | future | 2027-02-12 | daily#142 | md-83zqje | answer | MOZART | proper-noun / high | MOZART is a person's name. | MOTHER — Replaces MOZART (circled [0, 1, 4] -> letters MOR); new circled indexes [0, 1, 5]. |
 | F0736 | future | 2027-02-20 | daily#150 | md-lh3wjv | answer | NISSAN | proper-noun / high | NISSAN is a car brand. | STAIRS — Replaces NISSAN (circled [2, 3, 4] -> letters SSA); new circled indexes [0, 2, 5]. |
 | F0737 | future | 2027-03-08 | daily#166 | md-nyhi5f | caption | lollipop man | british / high | 'Lollipop man' is British for a crossing guard; Americans won't know it. | The grumpy man with the stop sign at the school crosswalk was known to everyone as the ____. |
-| F0738 | future | 2027-06-30 | daily#280 | md-d4bohx | answer | HOOKUP | inappropriate / high | HOOKUP has a common sexual meaning. | COOKIE — Replaces HOOKUP (circled [1, 2, 3] -> letters OOK); new circled indexes [1, 2, 3]. |
+| F0738 | future | 2027-06-30 | daily#280 | md-d4bohx | answer | H***** | inappropriate / high | H***** has a common sexual meaning. | COOKIE — Replaces H***** (circled [1, 2, 3] -> letters OOK); new circled indexes [1, 2, 3]. |
 | F0739 | future | 2027-07-24 | daily#304 | md-d5j7sy | answer | PARROT FASHION | british / high | 'Parrot fashion' (rote repetition) is a British idiom unknown to Americans. |  — Needs a rebuilt puzzle with a US idiom (e.g. a pirate-parrot pun). |
 | F0740 | future | 2027-07-25 | daily#305 | md-szxpv4 | answer | CICERO | proper-noun / high | CICERO is a person's name. | CIRCUS — Replaces CICERO (circled [0, 2] -> letters CC); new circled indexes [0, 3]. |
 | F0741 | unlimited |  | unlimited#16 | md-dlroeh | answer | PEAR SHAPED | british / high | 'Gone pear-shaped' is a British idiom unknown to most Americans. | BANANAS — Rebuild: FAITH [1] (A); SNAPPY [0,1] (S,N); LETTER -> BANNER [0,1] (B,A); PROUD -> PLANT [2,3] (A,N). Caption: 'When the orchard's apple trees started growing yellow fruit, the farmer went completely ____.' |
@@ -1085,7 +1085,7 @@ Columns: flag id · status · date (next daily date; for pools the next dated de
 | F0775 | future | 2027-07-23 | daily#303 | md-wxsn77 | answer | TRUMP | inappropriate / medium | TRUMP reads as a political proper noun; politically divisive as a featured word. | SYRUP — Replaces TRUMP (circled [1, 2, 4] -> letters RUP); new circled indexes [2, 3, 4]. |
 | F0776 | future | 2027-09-08 | daily#350 | md-b01e5c | caption | notes / till | british / medium | 'Notes' (bills) and 'till' (register) are British. | The shopkeeper haggled by sliding bills back and forth across the counter; he called it a ____. — Alt: 'push folded bills across the counter toward each other.' |
 | F0777 | future | 2027-09-15 | daily#357 | md-m824u4 | answer | BETHEL | proper-noun / medium | BETHEL is a biblical place/proper name. | BOTTLE — Replaces BETHEL (circled [0, 2, 5] -> letters BTL); new circled indexes [0, 2, 4]. |
-| F0778 | holiday | 2027-12-25 | holiday:hanukkah#1 | md-wfr8ri | answer | CROTCH | inappropriate / medium | Crude body-part word as a scramble answer in a Hanukkah puzzle. | SKETCH — Replaces CROTCH (circled [0, 5] -> letters CH); new circled indexes [4, 5]. |
+| F0778 | holiday | 2027-12-25 | holiday:hanukkah#1 | md-wfr8ri | answer | C***** | inappropriate / medium | Crude body-part word as a scramble answer in a Hanukkah puzzle. | SKETCH — Replaces C***** (circled [0, 5] -> letters CH); new circled indexes [4, 5]. |
 | F0779 | holiday | 2028-04-22 | holiday:earthday#1 | md-iumrhz | answer | OILERS | proper-noun / medium | OILERS reads as the Edmonton Oilers; odd as a common plural. | WINTER — Replaces OILERS (circled [1, 3, 4] -> letters IER); new circled indexes [1, 4, 5]. |
 | F0780 | holiday | 2028-05-14 | holiday:mothersday#0 | md-1p7idp | answer | MUMS THE WORD | british / medium | Mother's Day pun relies on British 'mum' for mother. | MOMS THE WORD — COUNT -> FLOOD circled [2,3] (O,O); MOTOR, SHREWD, SMITHY unchanged. Alt: drop 'autumn flowers' -> 'behind a huge bouquet of flowers'. |
 | F0781 | holiday | 2030-03-05 | holiday:mardigras#1 | md-mwaaan | alt | reveller | british / medium | British spelling 'reveller' (US: reveler). | A masked reveler on a float tosses strings of beads to a cheering crowd. |
@@ -1203,31 +1203,31 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 | ATLANTIC | proper-noun | high | 2: hb0275@2027-06-24, hb0533 | Ocean name (proper noun). | move to bonus |
 | BACH | proper-noun | high | 2: hb0325@2027-08-13, hb0379@2027-10-06 | Composer surname. | move to bonus |
 | BATMAN | proper-noun | high | 1: hb0210@2027-04-20 | Comic-book character name. | move to bonus |
-| BONDAGE | inappropriate | high | 1: hb0349@2027-09-06 | Sexual connotation. | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
-| BONER | inappropriate | high | 1: hb0148@2027-02-17 | Sexual slang. | move to bonus |
-| DONG | inappropriate | high | 6: hb0005*@2026-09-27, hb0023@2026-10-15, hb0142@2027-02-11, hb0195@2027-04-05, hb0324@2027-08-12, hb0406 | Common slang for penis. | move to bonus |
-| HOMO | inappropriate | high | 4: hb0239@2027-05-19, hb0246@2027-05-26, hb0340@2027-08-28, hb0369@2027-09-26 | Anti-gay slur (or a prefix). | move to bonus |
-| HORNY | inappropriate | high | 1: hb0118@2027-01-18 | Sexual slang. | move to bonus |
+| B****** | inappropriate | high | 1: hb0349@2027-09-06 | Sexual connotation. | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
+| B**** | inappropriate | high | 1: hb0148@2027-02-17 | Sexual slang. | move to bonus |
+| D*** | inappropriate | high | 6: hb0005*@2026-09-27, hb0023@2026-10-15, hb0142@2027-02-11, hb0195@2027-04-05, hb0324@2027-08-12, hb0406 | Common slang for P****. | move to bonus |
+| H*** | inappropriate | high | 4: hb0239@2027-05-19, hb0246@2027-05-26, hb0340@2027-08-28, hb0369@2027-09-26 | Anti-gay slur (or a prefix). | move to bonus |
+| H**** | inappropriate | high | 1: hb0118@2027-01-18 | Sexual slang. | move to bonus |
 | JETER | proper-noun | high | 1: hb0172@2027-03-13 | Surname (Derek Jeter). | move to bonus |
-| LUBE | inappropriate | high | 4: hb0232@2027-05-12, hb0482, hb0593, hb0599 | Sexual connotation. | move to bonus |
-| PERVERT | inappropriate | high | 4: hb0048@2026-11-09, hb0063@2026-11-24, hb0191@2027-04-01, hb0424 | Sexual-deviance term. | move to bonus |
-| PERVERTED | inappropriate | high | 1: hb0424 | Sexual-deviance term. | move to bonus |
-| PIMP | inappropriate | high | 6: hb0048@2026-11-09, hb0064@2026-11-25, hb0083@2026-12-14, hb0240@2027-05-20, hb0332@2027-08-20, hb0589 | Prostitution term. | move to bonus |
-| QUEER | inappropriate | high | 3: hb0034@2026-10-26, hb0263@2027-06-12, hb0271@2027-06-20 | Historically a slur; sensitive for all ages. | move to bonus |
-| RETARDED | inappropriate | high | 2: hb0134@2027-02-03, hb0264@2027-06-13 | Ableist slur. | move to bonus |
+| L*** | inappropriate | high | 4: hb0232@2027-05-12, hb0482, hb0593, hb0599 | Sexual connotation. | move to bonus |
+| P****** | inappropriate | high | 4: hb0048@2026-11-09, hb0063@2026-11-24, hb0191@2027-04-01, hb0424 | Sexual-deviance term. | move to bonus |
+| P******** | inappropriate | high | 1: hb0424 | Sexual-deviance term. | move to bonus |
+| P*** | inappropriate | high | 6: hb0048@2026-11-09, hb0064@2026-11-25, hb0083@2026-12-14, hb0240@2027-05-20, hb0332@2027-08-20, hb0589 | Prostitution term. | move to bonus |
+| Q**** | inappropriate | high | 3: hb0034@2026-10-26, hb0263@2027-06-12, hb0271@2027-06-20 | Historically a slur; sensitive for all ages. | move to bonus |
+| R******* | inappropriate | high | 2: hb0134@2027-02-03, hb0264@2027-06-13 | Ableist slur. | move to bonus |
 | TRIPOLI | proper-noun | high | 1: hb0270@2027-06-19 | City name. | move to bonus |
-| VIBRATOR | inappropriate | high | 1: hb0209@2027-04-19 | Sex-toy connotation. | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
+| V******* | inappropriate | high | 1: hb0209@2027-04-19 | Sex-toy connotation. | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
 | YORK | proper-noun | high | 1: hb0117@2027-01-17 | Place name. | move to bonus |
 | ADVERT | british | medium | 1: hb0264@2027-06-13 | British for "ad". | move to bonus |
 | AMIR | obscure | medium | 11: hb0053@2026-11-14, hb0105@2027-01-05, hb0161@2027-03-02, hb0196@2027-04-06, hb0243@2027-05-23, hb0337@2027-08-25, hb0363@2027-09-20, hb0374@2027-10-01, hb0491, hb0504, hb0556 | Variant spelling of emir; reads as a first name. | move to bonus |
 | ANIL | obscure | medium | 20: hb0053@2026-11-14, hb0057@2026-11-18, hb0067@2026-11-28, hb0070@2026-12-01, hb0071@2026-12-02, hb0092@2026-12-23, hb0105@2027-01-05, hb0132@2027-02-01, hb0213@2027-04-23, hb0221@2027-05-01, hb0293@2027-07-12, hb0297@2027-07-16 … +8 | Obscure indigo plant; reads as a first name. | move to bonus |
 | ANON | obscure | medium | 42: hb0023@2026-10-15, hb0056@2026-11-17, hb0061@2026-11-22, hb0067@2026-11-28, hb0071@2026-12-02, hb0075@2026-12-06, hb0078@2026-12-09, hb0081@2026-12-12, hb0082@2026-12-13, hb0115@2027-01-15, hb0125@2027-01-25, hb0140@2027-02-09 … +30 | Archaic ("soon"); otherwise an abbreviation. | move to bonus |
 | APACHE | proper-noun | medium | 3: hb0031@2026-10-23, hb0229@2027-05-09, hb0421 | Name of a Native American people (proper noun). | move to bonus |
-| BONG | inappropriate | medium | 2: hb0011*@2026-10-03, hb0023@2026-10-15 | Drug paraphernalia. | move to bonus |
+| B*** | inappropriate | medium | 2: hb0011*@2026-10-03, hb0023@2026-10-15 | Drug paraphernalia. | move to bonus |
 | CAYMAN | proper-noun | medium | 2: hb0075@2026-12-06, hb0160@2027-03-01 | Mainly Cayman Islands; the reptile is usually spelled caiman. | move to bonus |
 | CONN | obscure | medium | 33: hb0020@2026-10-12, hb0024@2026-10-16, hb0039@2026-10-31, hb0043@2026-11-04, hb0059@2026-11-20, hb0075@2026-12-06, hb0077@2026-12-08, hb0078@2026-12-09, hb0097@2026-12-28, hb0121@2027-01-21, hb0138@2027-02-07, hb0140@2027-02-09 … +21 | Nautical jargon (to steer a ship); reads as an abbreviation. | move to bonus |
 | CORTADO | obscure | medium | 1: hb0361@2027-09-18 | Niche coffee-shop term (zipf 1.6). | move to bonus |
-| CRAP | inappropriate | medium | 3: hb0009*@2026-10-01, hb0387@2027-10-14, hb0539 | Mild profanity. | move to bonus |
+| C*** | inappropriate | medium | 3: hb0009*@2026-10-01, hb0387@2027-10-14, hb0539 | Mild profanity. | move to bonus |
 | CREE | proper-noun | medium | 30: hb0009*@2026-10-01, hb0025@2026-10-17, hb0034@2026-10-26, hb0043@2026-11-04, hb0059@2026-11-20, hb0103@2027-01-03, hb0104@2027-01-04, hb0117@2027-01-17, hb0149@2027-02-18, hb0166@2027-03-07, hb0172@2027-03-13, hb0173@2027-03-14 … +18 | Name of an Indigenous people/language (proper noun). | move to bonus |
 | DAMNED | inappropriate | medium | 2: hb0395@2027-10-22, hb0404 | Mild profanity. | move to bonus |
 | EPITHELIAL | obscure | medium | 1: hb0591 | Medical/biology jargon. | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
@@ -1252,7 +1252,7 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 | NAPA | proper-noun | medium | 16: hb0056@2026-11-17, hb0078@2026-12-09, hb0091@2026-12-22, hb0107@2027-01-07, hb0168@2027-03-09, hb0254@2027-06-03, hb0333@2027-08-21, hb0416, hb0469, hb0520, hb0525, hb0534 … +4 | Place name (Napa Valley); "napa cabbage" is niche. | move to bonus |
 | NETBALL | british | medium | 2: hb0125@2027-01-25, hb0594 | Commonwealth sport largely unknown in the US. | move to bonus |
 | NEURONAL | obscure | medium | 1: hb0501 | Neuroscience jargon. | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
-| NUDE | inappropriate | medium | 14: hb0001*@2026-09-23, hb0146@2027-02-15, hb0158@2027-02-27, hb0182@2027-03-23, hb0287@2027-07-06, hb0328@2027-08-16, hb0334@2027-08-22, hb0362@2027-09-19, hb0375@2027-10-02, hb0395@2027-10-22, hb0402, hb0444 … +2 | Nudity; not a kid-friendly required word. | move to bonus |
+| NUDE | inappropriate | medium | 14: hb0001*@2026-09-23, hb0146@2027-02-15, hb0158@2027-02-27, hb0182@2027-03-23, hb0287@2027-07-06, hb0328@2027-08-16, hb0334@2027-08-22, hb0362@2027-09-19, hb0375@2027-10-02, hb0395@2027-10-22, hb0402, hb0444 … +2 | N*****; not a kid-friendly required word. | move to bonus |
 | PARA | obscure | medium | 15: hb0030@2026-10-22, hb0086@2026-12-17, hb0095@2026-12-26, hb0268@2027-06-17, hb0332@2027-08-20, hb0333@2027-08-21, hb0343@2027-08-31, hb0387@2027-10-14, hb0396@2027-10-23, hb0448, hb0471, hb0491 … +3 | Clipping/prefix (paralegal, paratrooper), not a standalone word. | move to bonus |
 | PARR | obscure | medium | 15: hb0030@2026-10-22, hb0086@2026-12-17, hb0095@2026-12-26, hb0268@2027-06-17, hb0332@2027-08-20, hb0333@2027-08-21, hb0343@2027-08-31, hb0387@2027-10-14, hb0396@2027-10-23, hb0448, hb0471, hb0491 … +3 | Obscure term for a young salmon; reads as a surname. | move to bonus |
 | PENCE | british | medium | 9: hb0179@2027-03-20, hb0190@2027-03-31, hb0279@2027-06-28, hb0286@2027-07-05, hb0318@2027-08-06, hb0408, hb0469, hb0534, hb0600 | British money (plural of penny). | move to bonus |
@@ -1265,7 +1265,7 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 | TONNE | british | medium | 13: hb0004*@2026-09-26, hb0045@2026-11-06, hb0056@2026-11-17, hb0088@2026-12-19, hb0168@2027-03-09, hb0171@2027-03-12, hb0215@2027-04-25, hb0282@2027-07-01, hb0413, hb0440, hb0544, hb0545 … +1 | British/metric spelling of ton. | move to bonus |
 | TORY | british | medium | 9: hb0030@2026-10-22, hb0032@2026-10-24, hb0060@2026-11-21, hb0063@2026-11-24, hb0181@2027-03-22, hb0208@2027-04-18, hb0242@2027-05-22, hb0384@2027-10-11, hb0484 | British political party (proper noun). | move to bonus |
 | TUNG | obscure | medium | 3: hb0294@2027-07-13, hb0500, hb0578 | Only in "tung oil". | move to bonus |
-| TURD | inappropriate | medium | 6: hb0134@2027-02-03, hb0328@2027-08-16, hb0401, hb0457, hb0464, hb0477 | Crude. | move to bonus |
+| T*** | inappropriate | medium | 6: hb0134@2027-02-03, hb0328@2027-08-16, hb0401, hb0457, hb0464, hb0477 | Crude. | move to bonus |
 | UNDERWOOD | obscure | medium | 1: hb0502 | Surname; archaic word for undergrowth. | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
 | WELLER | obscure | medium | 2: hb0068@2026-11-29, hb0313@2027-08-01 | Surname; not an ordinary word. | move to bonus |
 | ANALOGUE | british | low | 1: hb0536 | British spelling of "analog". | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
@@ -1279,9 +1279,9 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 | CANTON | proper-noun | low | 6: hb0039@2026-10-31, hb0078@2026-12-09, hb0193@2027-04-03, hb0201@2027-04-11, hb0339@2027-08-27, hb0392@2027-10-19 | Mostly a place name; administrative sense is Swiss/obscure. | move to bonus |
 | CENTENARY | british | low | 1: hb0166@2027-03-07 | British; Americans say "centennial". | move to bonus — Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs). |
 | CHIT | obscure | low | 5: hb0041@2026-11-02, hb0326@2027-08-14, hb0433, hb0441, hb0455 | Dated/British term for a voucher or note. | move to bonus |
-| COCA | inappropriate | low | 25: hb0039@2026-10-31, hb0043@2026-11-04, hb0047@2026-11-08, hb0069@2026-11-30, hb0074@2026-12-05, hb0104@2027-01-04, hb0110@2027-01-10, hb0183@2027-03-24, hb0200@2027-04-10, hb0201@2027-04-11, hb0226@2027-05-06, hb0245@2027-05-25 … +13 | Coca leaf = cocaine source; otherwise only in a brand name. | move to bonus |
+| COCA | inappropriate | low | 25: hb0039@2026-10-31, hb0043@2026-11-04, hb0047@2026-11-08, hb0069@2026-11-30, hb0074@2026-12-05, hb0104@2027-01-04, hb0110@2027-01-10, hb0183@2027-03-24, hb0200@2027-04-10, hb0201@2027-04-11, hb0226@2027-05-06, hb0245@2027-05-25 … +13 | Coca leaf = C****** source; otherwise only in a brand name. | move to bonus |
 | COCO | obscure | low | 37: hb0013*@2026-10-05, hb0039@2026-10-31, hb0043@2026-11-04, hb0047@2026-11-08, hb0059@2026-11-20, hb0069@2026-11-30, hb0074@2026-12-05, hb0077@2026-12-08, hb0097@2026-12-28, hb0104@2027-01-04, hb0162@2027-03-03, hb0186@2027-03-27 … +25 | Mostly a name/brand; "coco" for coconut is uncommon. | move to bonus |
-| COKE | inappropriate | low | 2: hb0013*@2026-10-05, hb0069@2026-11-30 | Cocaine slang (or a brand name). | move to bonus |
+| COKE | inappropriate | low | 2: hb0013*@2026-10-05, hb0069@2026-11-30 | C****** slang (or a brand name). | move to bonus |
 | CONTRA | proper-noun | low | 1: hb0484 | Mostly a proper noun (Nicaraguan Contras/video game). | move to bonus |
 | COOKERY | british | low | 1: hb0117@2027-01-17 | British-leaning; Americans say "cooking". | move to bonus |
 | CORTICAL | obscure | low | 1: hb0006*@2026-09-28 | Medical jargon. (Only pangram of this frozen puzzle.) | move to bonus |
@@ -1324,28 +1324,28 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 
 | Flag | Status | Date | Pool#idx | Puzzle | Field | Word | Cat / sev | Reason | Proposed replacement |
 |---|---|---|---|---|---|---|---|---|---|
-| F1612 | future | 2027-03-09 | daily#167 | ld0168 | path | BUTCH | inappropriate / high | BUTCH is the rung (PUNCH BUNCH BUTCH BATCH LATCH). BUTCH is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH LATCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1613 | future | 2027-05-08 | daily#227 | ld0228 | path | PRICK | inappropriate / high | PRICK is the rung (GRIME PRIME PRICE PRICK BRICK BRINK DRINK). PRICK doubles as a vulgar insult. | GRIME PRIME PRIDE BRIDE BRINE BRINK DRINK — Alternate par-6 path avoiding PRICK (same start/end, par unchanged); the audit validator. |
-| F1614 | future | 2027-06-08 | daily#258 | ld0259 | path | BUTCH | inappropriate / high | BUTCH is the rung (HITCH HUTCH BUTCH BUNCH BENCH). BUTCH is often a derogatory label; avoid as a featured rung. | HITCH HUTCH HUNCH BUNCH BENCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1615 | future | 2027-06-14 | daily#264 | ld0265 | path | BUTCH | inappropriate / high | BUTCH is the rung (HATCH BATCH BUTCH BUNCH BENCH). BUTCH is often a derogatory label; avoid as a featured rung. | HATCH HUTCH HUNCH BUNCH BENCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1616 | future | 2027-06-15 | daily#265 | ld0266 | path | BUTCH | inappropriate / high | BUTCH is the rung (LUNCH BUNCH BUTCH BATCH CATCH). BUTCH is often a derogatory label; avoid as a featured rung. | LUNCH HUNCH HUTCH HATCH CATCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1617 | future | 2027-06-22 | daily#272 | ld0273 | path | PRICK | inappropriate / high | PRICK is the start word (PRICK BRICK BRINK BRINE BRIBE). PRICK doubles as a vulgar insult. | TRICK BRICK BRINK BRINE BRIBE — PRICK is an endpoint, so no in-place reroute; change start PRICK->TRICK; par stays 4; verified shortest=4 and no duplicate start/end pair. |
-| F1618 | future | 2027-06-30 | daily#280 | ld0281 | path | BUTCH | inappropriate / high | BUTCH is the rung (HUTCH BUTCH BUNCH BENCH BEACH). BUTCH is often a derogatory label; avoid as a featured rung. | HUTCH HUNCH BUNCH BENCH BEACH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1619 | future | 2027-07-01 | daily#281 | ld0282 | path | BUTCH | inappropriate / high | BUTCH is the rung (WATCH BATCH BUTCH BUNCH LUNCH). BUTCH is often a derogatory label; avoid as a featured rung. | WATCH HATCH HUTCH HUNCH LUNCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1620 | future | 2027-07-06 | daily#286 | ld0287 | path | BUTCH | inappropriate / high | BUTCH is the rung (WATCH BATCH BUTCH BUNCH PUNCH). BUTCH is often a derogatory label; avoid as a featured rung. | WATCH PATCH PITCH PINCH PUNCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1621 | list |  | ladder-words.json#228 |  | list | BONER | inappropriate / high | Sexual slang. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1622 | list |  | ladder-words.json#306 |  | list | BUTCH | inappropriate / high | Often used as a derogatory label for lesbians; used in 9 ladder paths. |  — drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags) |
-| F1623 | list |  | ladder-words.json#884 |  | list | GAYER | inappropriate / high | Comparative of "gay" used mainly as an insult. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1624 | list |  | ladder-words.json#1071 |  | list | HORNY | inappropriate / high | Sexual slang. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1612 | future | 2027-03-09 | daily#167 | ld0168 | path | B**** | inappropriate / high | B**** is the rung (PUNCH BUNCH B**** BATCH LATCH). B**** is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH LATCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1613 | future | 2027-05-08 | daily#227 | ld0228 | path | P**** | inappropriate / high | P**** is the rung (GRIME PRIME PRICE P**** BRICK BRINK DRINK). P**** doubles as a vulgar insult. | GRIME PRIME PRIDE BRIDE BRINE BRINK DRINK — Alternate par-6 path avoiding P**** (same start/end, par unchanged); the audit validator. |
+| F1614 | future | 2027-06-08 | daily#258 | ld0259 | path | B**** | inappropriate / high | B**** is the rung (HITCH HUTCH B**** BUNCH BENCH). B**** is often a derogatory label; avoid as a featured rung. | HITCH HUTCH HUNCH BUNCH BENCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1615 | future | 2027-06-14 | daily#264 | ld0265 | path | B**** | inappropriate / high | B**** is the rung (HATCH BATCH B**** BUNCH BENCH). B**** is often a derogatory label; avoid as a featured rung. | HATCH HUTCH HUNCH BUNCH BENCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1616 | future | 2027-06-15 | daily#265 | ld0266 | path | B**** | inappropriate / high | B**** is the rung (LUNCH BUNCH B**** BATCH CATCH). B**** is often a derogatory label; avoid as a featured rung. | LUNCH HUNCH HUTCH HATCH CATCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1617 | future | 2027-06-22 | daily#272 | ld0273 | path | P**** | inappropriate / high | P**** is the start word (P**** BRICK BRINK BRINE BRIBE). P**** doubles as a vulgar insult. | TRICK BRICK BRINK BRINE BRIBE — P**** is an endpoint, so no in-place reroute; change start P****->TRICK; par stays 4; verified shortest=4 and no duplicate start/end pair. |
+| F1618 | future | 2027-06-30 | daily#280 | ld0281 | path | B**** | inappropriate / high | B**** is the rung (HUTCH B**** BUNCH BENCH BEACH). B**** is often a derogatory label; avoid as a featured rung. | HUTCH HUNCH BUNCH BENCH BEACH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1619 | future | 2027-07-01 | daily#281 | ld0282 | path | B**** | inappropriate / high | B**** is the rung (WATCH BATCH B**** BUNCH LUNCH). B**** is often a derogatory label; avoid as a featured rung. | WATCH HATCH HUTCH HUNCH LUNCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1620 | future | 2027-07-06 | daily#286 | ld0287 | path | B**** | inappropriate / high | B**** is the rung (WATCH BATCH B**** BUNCH PUNCH). B**** is often a derogatory label; avoid as a featured rung. | WATCH PATCH PITCH PINCH PUNCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1621 | list |  | ladder-words.json#228 |  | list | B**** | inappropriate / high | Sexual slang. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1622 | list |  | ladder-words.json#306 |  | list | B**** | inappropriate / high | Often used as a derogatory label for lesbians; used in 9 ladder paths. |  — drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags) |
+| F1623 | list |  | ladder-words.json#884 |  | list | G**** | inappropriate / high | Comparative of "gay" used mainly as an insult. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1624 | list |  | ladder-words.json#1071 |  | list | H**** | inappropriate / high | Sexual slang. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1625 | list |  | ladder-words.json#1132 |  | list | JETER | proper-noun / high | Surname (Derek Jeter), not a common word. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1626 | list |  | ladder-words.json#1287 |  | list | LYNCH | inappropriate / high | Racial-violence connotation. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1627 | list |  | ladder-words.json#1465 |  | list | NUDES | inappropriate / high | Sexual connotation (explicit photos). |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1628 | list |  | ladder-words.json#1637 |  | list | PRICK | inappropriate / high | Common vulgar insult/anatomical slang; used in 2 ladders. |  — drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags) |
-| F1629 | list |  | ladder-words.json#1675 |  | list | QUEER | inappropriate / high | Historically a slur; sensitive for an all-ages word game. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1630 | list |  | ladder-words.json#1869 |  | list | SEMEN | inappropriate / high | Sexual/anatomical; not family-friendly as a typed rung. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1631 | list |  | ladder-words.json#2046 |  | list | SPERM | inappropriate / high | Sexual/anatomical; not family-friendly. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1632 | unlimited |  | unlimited#22 | ld0423 | path | BUTCH | inappropriate / high | BUTCH is the rung (LUNCH BUNCH BUTCH BATCH PATCH). BUTCH is often a derogatory label; avoid as a featured rung. | LUNCH PUNCH PINCH PITCH PATCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
-| F1633 | unlimited |  | unlimited#27 | ld0428 | path | BUTCH | inappropriate / high | BUTCH is the rung (PUNCH BUNCH BUTCH BATCH CATCH). BUTCH is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH CATCH — Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator. |
+| F1626 | list |  | ladder-words.json#1287 |  | list | L**** | inappropriate / high | Racial-violence connotation. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1627 | list |  | ladder-words.json#1465 |  | list | N**** | inappropriate / high | Sexual connotation (explicit photos). |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1628 | list |  | ladder-words.json#1637 |  | list | P**** | inappropriate / high | Common vulgar insult/anatomical slang; used in 2 ladders. |  — drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags) |
+| F1629 | list |  | ladder-words.json#1675 |  | list | Q**** | inappropriate / high | Historically a slur; sensitive for an all-ages word game. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1630 | list |  | ladder-words.json#1869 |  | list | S**** | inappropriate / high | Sexual/anatomical; not family-friendly as a typed rung. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1631 | list |  | ladder-words.json#2046 |  | list | S**** | inappropriate / high | Sexual/anatomical; not family-friendly. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1632 | unlimited |  | unlimited#22 | ld0423 | path | B**** | inappropriate / high | B**** is the rung (LUNCH BUNCH B**** BATCH PATCH). B**** is often a derogatory label; avoid as a featured rung. | LUNCH PUNCH PINCH PITCH PATCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
+| F1633 | unlimited |  | unlimited#27 | ld0428 | path | B**** | inappropriate / high | B**** is the rung (PUNCH BUNCH B**** BATCH CATCH). B**** is often a derogatory label; avoid as a featured rung. | PUNCH PINCH PITCH PATCH CATCH — Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator. |
 | F1634 | future | 2027-03-31 | daily#189 | ld0190 | path | BLANC | obscure / medium | BLANC is the start word (BLANC BLAND BRAND GRAND GRANT GRUNT). BLANC is French, not English. | BLANK BLAND BRAND GRAND GRANT GRUNT — BLANC is an endpoint, so no in-place reroute; change start BLANC->BLANK; par stays 5; verified shortest=5 and no duplicate start/end pair. |
 | F1635 | future | 2027-06-05 | daily#255 | ld0256 | path | BLANC | obscure / medium | BLANC is the start word (BLANC BLAND BLOND BLOOD BLOOM BROOM). BLANC is French, not English. | BLANK BLAND BLOND BLOOD BLOOM BROOM — BLANC is an endpoint, so no in-place reroute; change start BLANC->BLANK; par stays 5; verified shortest=5 and no duplicate start/end pair. |
 | F1636 | future | 2027-10-08 | daily#380 | ld0381 | path | BLANC | obscure / medium | BLANC is the end word (CRAFT GRAFT GRANT GRAND BRAND BLAND BLANC). BLANC is French, not English. | CRAFT GRAFT GRANT GRAND BRAND BLAND BLANK — BLANC is an endpoint, so no in-place reroute; change end BLANC->BLANK; par stays 6; verified shortest=6 and no duplicate start/end pair. |
@@ -1372,35 +1372,35 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 | F1657 | list |  | ladder-words.json#2345 |  | list | TWIXT | obscure / medium | Archaic contraction of "betwixt". |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1658 | unlimited |  | unlimited#63 | ld0464 | path | BLANC | obscure / medium | BLANC is the end word (DRIED CRIED CREED BREED BLEED BLEND BLAND BLANC). BLANC is French, not English. | DRIED CRIED CREED BREED BLEED BLEND BLAND BLANK — BLANC is an endpoint, so no in-place reroute; change end BLANC->BLANK; par stays 7; verified shortest=7 and no duplicate start/end pair. |
 | F1659 | future | 2026-11-20 | daily#58 | ld0059 | path | SLAVE | inappropriate / low | SLAVE is the rung (PLACE PLATE SLATE SLAVE SHAVE SHALE SHALL). SLAVE is a sensitive word to feature in a casual puzzle. | PLACE PLATE SLATE STATE STALE SHALE SHALL — Alternate par-6 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
-| F1660 | future | 2026-11-23 | daily#61 | ld0062 | path | SPANK | inappropriate / low | SPANK is the end word (SHAME SHARE SHARK SHANK SPANK). SPANK (corporal punishment/sexual connotation) as a featured endpoint. | SHAME SHARE SHORE SHORT SPORT — SPANK is an endpoint, so no in-place reroute; change end SPANK->SPORT; par stays 4; verified shortest=4 and no duplicate start/end pair. |
+| F1660 | future | 2026-11-23 | daily#61 | ld0062 | path | S**** | inappropriate / low | S**** is the end word (SHAME SHARE SHARK SHANK S****). S**** (corporal punishment/sexual connotation) as a featured endpoint. | SHAME SHARE SHORE SHORT SPORT — S**** is an endpoint, so no in-place reroute; change end S****->SPORT; par stays 4; verified shortest=4 and no duplicate start/end pair. |
 | F1661 | future | 2027-04-02 | daily#191 | ld0192 | path | BOWEL | inappropriate / low | BOWEL is the start word (BOWEL BOWER LOWER LONER LINER LINED LIKED). BOWEL is gross-out as a featured start word. Path also uses BOWER (literary). | TOWEL TOWER LOWER LOVER LOVED LIVED LIKED — BOWEL is an endpoint, so no in-place reroute; change start BOWEL->TOWEL; par stays 6; verified shortest=6 and no duplicate start/end pair. |
 | F1662 | future | 2027-04-15 | daily#204 | ld0205 | path | SLAVE | inappropriate / low | SLAVE is the start word (SLAVE STAVE STALE STALK STACK STUCK). SLAVE is a sensitive word to feature in a casual puzzle. | SHAVE SHARE SHARK STARK STACK STUCK — SLAVE is an endpoint, so no in-place reroute; change start SLAVE->SHAVE; par stays 5; verified shortest=5 and no duplicate start/end pair. |
-| F1663 | future | 2027-04-28 | daily#217 | ld0218 | path | SPANK | inappropriate / low | SPANK is the start word (SPANK SPARK SPARE SCARE SCORE SCOPE). SPANK (corporal punishment/sexual connotation) as a featured endpoint. | SHIFT SHIRT SHORT SHORE SCORE SCOPE — SPANK is an endpoint, so no in-place reroute; change start SPANK->SHIFT; par stays 5; verified shortest=5 and no duplicate start/end pair. |
+| F1663 | future | 2027-04-28 | daily#217 | ld0218 | path | S**** | inappropriate / low | S**** is the start word (S**** SPARK SPARE SCARE SCORE SCOPE). S**** (corporal punishment/sexual connotation) as a featured endpoint. | SHIFT SHIRT SHORT SHORE SCORE SCOPE — S**** is an endpoint, so no in-place reroute; change start S****->SHIFT; par stays 5; verified shortest=5 and no duplicate start/end pair. |
 | F1664 | future | 2027-04-29 | daily#218 | ld0219 | path | DRUNK | inappropriate / low | DRUNK is the end word (TRADE TRACE TRACK TRUCK TRUNK DRUNK). DRUNK as a featured endpoint in an all-ages game. | TRADE TRACE TRACK CRACK CRANK DRANK — DRUNK is an endpoint, so no in-place reroute; change end DRUNK->DRANK; par stays 5; verified shortest=5 and no duplicate start/end pair. |
 | F1665 | future | 2027-05-15 | daily#234 | ld0235 | path | SLAVE | inappropriate / low | SLAVE is the rung (PLATE SLATE SLAVE SHAVE SHALE WHALE WHILE). SLAVE is a sensitive word to feature in a casual puzzle. | PLATE SLATE STATE STALE SHALE WHALE WHILE — Alternate par-6 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
 | F1666 | future | 2027-07-07 | daily#287 | ld0288 | path | DRUNK | inappropriate / low | DRUNK is the start word (DRUNK TRUNK TRUCK TRACK TRACE). DRUNK as a featured endpoint in an all-ages game. | DRANK CRANK CRACK TRACK TRACE — DRUNK is an endpoint, so no in-place reroute; change start DRUNK->DRANK; par stays 4; verified shortest=4 and no duplicate start/end pair. |
 | F1667 | future | 2027-09-07 | daily#349 | ld0350 | path | SLAVE | inappropriate / low | SLAVE is the rung (PLATE SLATE SLAVE SHAVE SHALE). SLAVE is a sensitive word to feature in a casual puzzle. | PLATE SLATE STATE STALE SHALE — Alternate par-4 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
 | F1668 | future | 2027-10-10 | daily#382 | ld0383 | path | SLAVE | inappropriate / low | SLAVE is the rung (SHELL SHALL SHALE SHAVE SLAVE SLATE PLATE PLACE). SLAVE is a sensitive word to feature in a casual puzzle. | SHELL SHALL STALL STALE STATE SLATE PLATE PLACE — Alternate par-7 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
-| F1669 | future | 2027-10-11 | daily#383 | ld0384 | path | SPANK | inappropriate / low | SPANK is the start word (SPANK SHANK SHARK SHARE SHIRE). SPANK (corporal punishment/sexual connotation) as a featured endpoint. | SMALL SHALL SHALE SHARE SHIRE — SPANK is an endpoint, so no in-place reroute; change start SPANK->SMALL; par stays 4; verified shortest=4 and no duplicate start/end pair. |
+| F1669 | future | 2027-10-11 | daily#383 | ld0384 | path | S**** | inappropriate / low | S**** is the start word (S**** SHANK SHARK SHARE SHIRE). S**** (corporal punishment/sexual connotation) as a featured endpoint. | SMALL SHALL SHALE SHARE SHIRE — S**** is an endpoint, so no in-place reroute; change start S****->SMALL; par stays 4; verified shortest=4 and no duplicate start/end pair. |
 | F1670 | list |  | ladder-words.json#241 |  | list | BOSUN | obscure / low | Nautical jargon (boatswain). |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1671 | list |  | ladder-words.json#307 |  | list | BUTTS | inappropriate / low | Crude. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1671 | list |  | ladder-words.json#307 |  | list | B**** | inappropriate / low | Crude. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1672 | list |  | ladder-words.json#649 |  | list | EBOLA | proper-noun / low | Named disease/river (capitalized proper noun). |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1673 | list |  | ladder-words.json#730 |  | list | FATTY | inappropriate / low | Body-shaming insult. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1673 | list |  | ladder-words.json#730 |  | list | F**** | inappropriate / low | Body-shaming insult. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1674 | list |  | ladder-words.json#1044 |  | list | HIPPY | british / low | British spelling of "hippie". |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1675 | list |  | ladder-words.json#1116 |  | list | INTRA | obscure / low | Prefix, not a standalone word. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1676 | list |  | ladder-words.json#1160 |  | list | KINKY | inappropriate / low | Sexual connotation. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1676 | list |  | ladder-words.json#1160 |  | list | K**** | inappropriate / low | Sexual connotation. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1677 | list |  | ladder-words.json#1240 |  | list | LIPPY | british / low | British slang (cheeky; lipstick). |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1678 | list |  | ladder-words.json#1298 |  | list | MAINS | british / low | British usage (mains power/water, main courses). |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1679 | list |  | ladder-words.json#1428 |  | list | NEATH | obscure / low | Poetic/archaic clipping of "beneath". |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1680 | list |  | ladder-words.json#1436 |  | list | NEURO | obscure / low | Prefix, not a standalone word. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1681 | list |  | ladder-words.json#1487 |  | list | OPIUM | inappropriate / low | Narcotic. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1681 | list |  | ladder-words.json#1487 |  | list | O**** | inappropriate / low | Narcotic. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1682 | list |  | ladder-words.json#1493 |  | list | ORTHO | obscure / low | Prefix, not a standalone word. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1683 | list |  | ladder-words.json#1942 |  | list | SITCH | obscure / low | Slang clipping of "situation", not standard. |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1684 | list |  | ladder-words.json#2033 |  | list | SPANK | inappropriate / low | Corporal punishment / sexual connotation; start or end word of 4 ladders. |  — drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags) |
+| F1684 | list |  | ladder-words.json#2033 |  | list | S**** | inappropriate / low | Corporal punishment / sexual connotation; start or end word of 4 ladders. |  — drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags) |
 | F1685 | list |  | ladder-words.json#2150 |  | list | SUPRA | obscure / low | Latin legal term; not everyday English. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1686 | list |  | ladder-words.json#2221 |  | list | TERRA | obscure / low | Latin ("terra firma"); not a standalone English word. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1687 | list |  | ladder-words.json#2275 |  | list | TORAH | proper-noun / low | Proper noun (religious text). |  — drop from list; check no unseen ladder needs itthe audit validator |
-| F1688 | list |  | ladder-words.json#2340 |  | list | TWERK | inappropriate / low | Sexualized dance slang. |  — drop from list; check no unseen ladder needs itthe audit validator |
+| F1688 | list |  | ladder-words.json#2340 |  | list | T**** | inappropriate / low | Sexualized dance slang. |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1689 | list |  | ladder-words.json#2393 |  | list | VERSA | obscure / low | Only used in "vice versa". |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1690 | list |  | ladder-words.json#2485 |  | list | WIGGY | obscure / low | Rare slang ("crazy"). |  — drop from list; check no unseen ladder needs itthe audit validator |
 | F1691 | unlimited |  | unlimited#13 | ld0414 | path | SLAVE | inappropriate / low | SLAVE is the rung (WHILE WHALE SHALE SHAVE SLAVE SLATE). SLAVE is a sensitive word to feature in a casual puzzle. | WHILE WHALE SHALE STALE STATE SLATE — Alternate par-5 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
@@ -1409,7 +1409,7 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 | F1694 | unlimited |  | unlimited#87 | ld0488 | path | SLAVE | inappropriate / low | SLAVE is the rung (STAVE SLAVE SLATE PLATE PLACE PEACE PEACH PERCH). SLAVE is a sensitive word to feature in a casual puzzle. | STAVE STATE SLATE PLATE PLACE PEACE PEACH PERCH — Alternate par-7 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
 | F1695 | unlimited |  | unlimited#90 | ld0491 | path | SLAVE | inappropriate / low | SLAVE is the end word (STOUT SHOUT SHORT SHORE SHARE SHAVE SLAVE). SLAVE is a sensitive word to feature in a casual puzzle. | STOUT SHOUT SHORT SHORE STORE STARE STATE — SLAVE is an endpoint, so no in-place reroute; change end SLAVE->STATE; par stays 6; verified shortest=6 and no duplicate start/end pair. |
 | F1696 | unlimited |  | unlimited#110 | ld0511 | path | SLAVE | inappropriate / low | SLAVE is the rung (SLATE SLAVE SHAVE SHALE SHALL SHELL SHELF). SLAVE is a sensitive word to feature in a casual puzzle. | SLATE STATE STALE SHALE SHALL SHELL SHELF — Alternate par-6 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
-| F1697 | unlimited |  | unlimited#124 | ld0525 | path | SPANK | inappropriate / low | SPANK is the start word (SPANK SPARK SPARE SPORE STORE). SPANK (corporal punishment/sexual connotation) as a featured endpoint. | SHIFT SHIRT SHORT SHORE STORE — SPANK is an endpoint, so no in-place reroute; change start SPANK->SHIFT; par stays 4; verified shortest=4 and no duplicate start/end pair. |
+| F1697 | unlimited |  | unlimited#124 | ld0525 | path | S**** | inappropriate / low | S**** is the start word (S**** SPARK SPARE SPORE STORE). S**** (corporal punishment/sexual connotation) as a featured endpoint. | SHIFT SHIRT SHORT SHORE STORE — S**** is an endpoint, so no in-place reroute; change start S****->SHIFT; par stays 4; verified shortest=4 and no duplicate start/end pair. |
 | F1698 | unlimited |  | unlimited#129 | ld0530 | path | SLAVE | inappropriate / low | SLAVE is the rung (SHALE SHAVE SLAVE SLATE PLATE PLACE). SLAVE is a sensitive word to feature in a casual puzzle. | SHALE STALE STATE SLATE PLATE PLACE — Alternate par-5 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
 | F1699 | unlimited |  | unlimited#179 | ld0580 | path | SLAVE | inappropriate / low | SLAVE is the rung (PEACH PEACE PLACE PLATE SLATE SLAVE STAVE STOVE). SLAVE is a sensitive word to feature in a casual puzzle. | PEACH PEACE PLACE PLATE SLATE STATE STAVE STOVE — Alternate par-7 path avoiding SLAVE (same start/end, par unchanged); the audit validator. |
 
@@ -1483,7 +1483,7 @@ Hubbub flags are grouped by word, because the same word recurs across puzzles. T
 | F1763 | frozen | 2028-03-01 | daily#415 | mov056 | answer | Top Gun Maverick | duplicate / low | Top Gun Maverick near-duplicates mov017 "Top Gun". | — frozen — (frozen: founder decision (in-place change would also rewrite past archive dates)) |
 | F1764 | frozen | 2028-04-06 | daily#33 | mus034 | answer | Peso Pluma | inappropriate / low | Peso Pluma is known for narcocorridos (songs glorifying cartels) and is obscure to many Americans. | — frozen — (frozen: founder decision (in-place change would also rewrite past archive dates)) |
 | F1765 | frozen | 2028-04-17 | daily#295 | geo001 | answer | New York … Taj Mahal (geo001–geo040) | off-theme / low | 40 world cities/landmarks/states (geo001–geo040, New York through Taj Mahal) are filed under "Current Events" though they are not current events. | — frozen — (frozen: founder decision (in-place change would also rewrite past archive dates)) |
-| F1766 | frozen | 2028-05-13 | daily#182 | spo043 | answer | Mike Tyson | inappropriate / low | Mike Tyson has a rape conviction; questionable as a celebrated all-ages answer. | — frozen — (frozen: founder decision (in-place change would also rewrite past archive dates)) |
+| F1766 | frozen | 2028-05-13 | daily#182 | spo043 | answer | Mike Tyson | inappropriate / low | Mike Tyson has a R*** conviction; questionable as a celebrated all-ages answer. | — frozen — (frozen: founder decision (in-place change would also rewrite past archive dates)) |
 | F1767 | frozen | 2028-09-22 | daily#232 | sci013 | answer | Atomic Theory | off-theme / low | "Atomic theory" is a common noun/concept, not a proper noun, in a proper-noun game. | — frozen — (frozen: founder decision (in-place change would also rewrite past archive dates)) |
 | F1768 | frozen | 2028-11-01 | daily#592 | mov106 | answer | Emilia Perez | obscure / low | Emilia Perez is a little-seen, controversy-laden foreign-language film. | — frozen — (frozen: founder decision (in-place change would also rewrite past archive dates)) |
 | F1769 | holiday | 2030-03-05 | holiday:mardigras#1 | hol-mardigras-2 | answer | Bourbon Street | inappropriate / low | Bourbon Street is best known as a bar/drinking strip (and its theme is "music", which it isn't). | Louis Armstrong — celebrity/music; New Orleans jazz legend; louisarmstrong = 14 letters; not in bank |
@@ -1552,14 +1552,14 @@ These items are left as they are. A puzzle someone has already played never chan
 | F0783 | muddle | 2026-10-08 | md-l6stfl | BUSKER | british | Caption uses British-leaning 'busker' and 'passers-by' (US: street musician). |
 | F0864 | codebreaker | 2026-09-25 | cg-k4j28n | Dry bread at home is better than roast meat abroad. | obscure | Obscure proverb most Americans won't know. |
 | F0865 | codebreaker | 2026-10-01 | cg-r06gqz | As the days lengthen, so the cold strengthens. | british | British weather lore, obscure in the US. |
-| F0881 | hubbub | 2026-09-27 | hb0005 | DONG | inappropriate | Common slang for penis. |
-| F0923 | hubbub | 2026-09-23 | hb0001 | NUDE | inappropriate | Nudity; not a kid-friendly required word. |
+| F0881 | hubbub | 2026-09-27 | hb0005 | D*** | inappropriate | Common slang for P****. |
+| F0923 | hubbub | 2026-09-23 | hb0001 | NUDE | inappropriate | N*****; not a kid-friendly required word. |
 | F0924 | hubbub | 2026-09-25 | hb0003 | METRE | british | British spelling of meter. |
 | F0925 | hubbub | 2026-09-26 | hb0004 | PHENOTYPE | obscure | Genetics jargon. (Only pangram of this frozen puzzle.) |
 | F0926 | hubbub | 2026-09-26 | hb0004 | TONNE | british | British/metric spelling of ton. |
-| F0927 | hubbub | 2026-10-01 | hb0009 | CRAP | inappropriate | Mild profanity. |
+| F0927 | hubbub | 2026-10-01 | hb0009 | C*** | inappropriate | Mild profanity. |
 | F0928 | hubbub | 2026-10-01 | hb0009 | CREE | proper-noun | Name of an Indigenous people/language (proper noun). |
-| F0929 | hubbub | 2026-10-03 | hb0011 | BONG | inappropriate | Drug paraphernalia. |
+| F0929 | hubbub | 2026-10-03 | hb0011 | B*** | inappropriate | Drug paraphernalia. |
 | F0930 | hubbub | 2026-10-04 | hb0012 | TELLY | british | British slang for television. |
 | F0931 | hubbub | 2026-10-06 | hb0014 | MERCER | obscure | Mainly a surname; archaic word for a cloth dealer. |
 | F0932 | hubbub | 2026-10-07 | hb0015 | GRANGER | obscure | Surname; archaic farmer sense. |
@@ -1569,7 +1569,7 @@ These items are left as they are. A puzzle someone has already played never chan
 | F1273 | hubbub | 2026-09-30 | hb0008 | WEIR | british | British-leaning term for a low dam; obscure in US. |
 | F1274 | hubbub | 2026-10-02 | hb0010 | EBOLA | proper-noun | Named disease (capitalized); also grim. |
 | F1275 | hubbub | 2026-10-05 | hb0013 | COCO | obscure | Mostly a name/brand; "coco" for coconut is uncommon. |
-| F1276 | hubbub | 2026-10-05 | hb0013 | COKE | inappropriate | Cocaine slang (or a brand name). |
+| F1276 | hubbub | 2026-10-05 | hb0013 | COKE | inappropriate | C****** slang (or a brand name). |
 | F1277 | hubbub | 2026-10-06 | hb0014 | MORON | inappropriate | Insult. |
 | F1278 | hubbub | 2026-10-07 | hb0015 | GENERA | obscure | Biology jargon (plural of genus). |
 | F1279 | hubbub | 2026-10-07 | hb0015 | GRANGE | obscure | Dated word for a farm/farmers' association. |
@@ -1615,7 +1615,7 @@ These items are left as they are. A puzzle someone has already played never chan
 | F1763 | propernoundle | 2024-11-27 | mov056 | Top Gun Maverick | duplicate | Top Gun Maverick near-duplicates mov017 "Top Gun". |
 | F1764 | propernoundle | 2024-08-15 | mus034 | Peso Pluma | inappropriate | Peso Pluma is known for narcocorridos (songs glorifying cartels) and is obscure to many Americans. |
 | F1765 | propernoundle | 2024-12-16 | geo001 | New York … Taj Mahal (geo001–geo040) | off-theme | 40 world cities/landmarks/states (geo001–geo040, New York through Taj Mahal) are filed under "Current Events" though they are not current events. |
-| F1766 | propernoundle | 2024-10-05 | spo043 | Mike Tyson | inappropriate | Mike Tyson has a rape conviction; questionable as a celebrated all-ages answer. |
+| F1766 | propernoundle | 2024-10-05 | spo043 | Mike Tyson | inappropriate | Mike Tyson has a R*** conviction; questionable as a celebrated all-ages answer. |
 | F1767 | propernoundle | 2024-03-29 | sci013 | Atomic Theory | off-theme | "Atomic theory" is a common noun/concept, not a proper noun, in a proper-noun game. |
 | F1768 | propernoundle | 2025-07-30 | mov106 | Emilia Perez | obscure | Emilia Perez is a little-seen, controversy-laden foreign-language film. |
 | F1770 | propernoundle | 2025-10-27 | cur064 | Justin Trudeau | off-theme | Justin Trudeau left office in 2025; stale and not a U.S. figure. |
@@ -1629,16 +1629,16 @@ These items are left as they are. A puzzle someone has already played never chan
 
 | Word | Pool | Already dealt on (first 5) | WotD already featured |
 |---|---|---|---|
-| PRICK | pool5 | 2026-07-11, 2026-07-20, 2026-09-19 |  |
-| BUTCH | pool5 | 2026-09-07 |  |
+| P**** | pool5 | 2026-07-11, 2026-07-20, 2026-09-19 |  |
+| B**** | pool5 | 2026-09-07 |  |
 | BOOZE | pool5 | 2026-08-05, 2026-09-21 |  |
-| OPIUM | pool5 | 2026-07-25, 2026-08-09, 2026-08-12, 2026-09-28 |  |
+| O**** | pool5 | 2026-07-25, 2026-08-09, 2026-08-12, 2026-09-28 |  |
 | COSTA | pool5 | 2026-09-08 |  |
 | BOWIE | pool5 | 2026-09-28 |  |
 | SLAVE | pool5 | 2026-07-17, 2026-09-13 |  |
 | TRUMP | pool5 | 2026-07-24, 2026-08-03, 2026-09-16 |  |
 | BLANC | pool5 | 2026-07-31, 2026-08-06, 2026-08-07, 2026-09-09 |  |
-| SPANK | pool5 | 2026-07-31, 2026-08-27 |  |
+| S**** | pool5 | 2026-07-31, 2026-08-27 |  |
 | URINE | pool5 | 2026-08-02, 2026-09-08 |  |
 | RANDY | pool5 | 2026-08-25, 2026-10-05 |  |
 | VOMIT | pool5 | 2026-07-16, 2026-07-18, 2026-08-11, 2026-09-12, 2026-10-03 |  |
@@ -1665,7 +1665,7 @@ These items are left as they are. A puzzle someone has already played never chan
 | WRIGHT | pool6 | 2026-07-12 |  |
 | CUPOLA | pool6 | 2026-08-09 |  |
 | TIPPLE | pool6 | 2026-07-13 |  |
-| CROTCH | pool6 | 2026-09-23 |  |
+| C***** | pool6 | 2026-09-23 |  |
 | HUSTLER | pool7 | 2026-07-26 |  |
 | RAILWAY | pool7 | 2026-09-10 |  |
 
@@ -1685,7 +1685,7 @@ These items are left as they are. A puzzle someone has already played never chan
 See `docs/content-audit/proposals/README.md`. In short:
 
 - an extended British vocabulary list (`brit-words-extended.txt`)
-- a profanity/slur check over **every** More Games bank (Muddle words, Hubbub required words, ladder-words, crossword clues), which would have caught FUCKED and SHITTY
+- a profanity/slur check over **every** More Games bank (Muddle words, Hubbub required words, ladder-words, crossword clues), which would have caught F***** and S*****
 - a cross-puzzle duplicate-group check for Kindred, and a duplicate-saying check for Codebreaker
 - a crossword stem-repeat check
 - a ProperNoundle rotation-vs-holiday duplicate check

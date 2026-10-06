@@ -40,10 +40,10 @@ object GameDictionary {
     private val preGrowthPoolSizes = mapOf(6 to 1681, 7 to 1181)
     private val frozenPrefixes = HashMap<Int, List<String>>()
     /** §265 swap gate: cached swapped copies of the curated pools, keyed by
-     *  (length, batches) — batches is how many swap batches the date has
-     *  reached (solutionSwapBatchesFor): 1 = batch 1 only, 2 = then batch 2,
-     *  3 = then batch 3, each from its own cutover. Dated seeds gate on the
-     *  seed's date, undated seeds on wall-clock UTC. */
+     *  (length, batches) — batches is the bitmask of swap batches live on the
+     *  date (solutionSwapBatchesFor): bit k-1 = batch k has reached its own
+     *  cutover; batch 4 starts before 2–3. Dated seeds gate on the seed's
+     *  date, undated seeds on wall-clock UTC. */
     private val swappedPools = HashMap<Pair<Int, Int>, Pair<List<String>, List<String>>>()
 
     private fun swapped(length: Int, source: List<String>, dateKey: String?): List<String> {

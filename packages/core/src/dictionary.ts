@@ -32,10 +32,9 @@ export const SOLUTIONS_GROWTH_CUTOVER_DATE = '2026-08-24';
 const PRE_GROWTH_POOL_SIZES = new Map<number, number>([[6, 1681], [7, 1181]]);
 
 // §265 swap gate: cached swapped copies of the curated pools, keyed by length
-// and by how many swap batches the date has reached (solutionSwapBatchesFor:
-// 1 = batch 1 only, 2 = then batch 2, 3 = then batch 3, each from its own
-// cutover). Dated seeds gate on the seed's date, undated
-// seeds on wall-clock UTC.
+// and by the bitmask of swap batches live on the date (solutionSwapBatchesFor:
+// bit k-1 = batch k has reached its own cutover; batch 4 starts before 2–3).
+// Dated seeds gate on the seed's date, undated seeds on wall-clock UTC.
 const swappedPools = new Map<string, { source: string[]; swapped: string[] }>();
 function swappedFor(length: number, source: string[], dateKey: string | null): string[] {
   const date = dateKey ?? todayUTC();
