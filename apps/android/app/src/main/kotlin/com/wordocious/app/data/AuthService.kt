@@ -102,7 +102,7 @@ object AuthService {
     fun enterGuest() {
         // Guest is its own save owner — never inherit the boards of whoever was
         // signed in on this device before.
-        claimSavesFor("guest")
+        claimSavesFor(GUEST_OWNER)
         setGuest(true)
     }
 
@@ -117,6 +117,7 @@ object AuthService {
     const val GUEST_MODE = "guest-mode"
 
     private const val LAST_OWNER = "last-save-owner"
+    private const val GUEST_OWNER = "guest"
 
     /** Hand local saves to [owner] ("guest" or a user id), wiping them only when
      *  they belonged to somebody else. The home grid seeds from the completions
@@ -125,7 +126,7 @@ object AuthService {
      *  player's boards. */
     fun claimSavesFor(owner: String) {
         val previous = SettingsPref.get(LAST_OWNER, "")
-        if (previous.isNotEmpty() && previous != owner) {
+        if (AuthSessionPolicy.ownerChangeWipesSaves(previous, owner)) {
             runCatching { DailyCompletionsService.clearCache() }
             runCatching { GamePersistence.clearAll() }
             // BI19: persisted screen caches + optimistic results belong to the previous owner.
@@ -142,9 +143,15 @@ object AuthService {
      *  someone else's boards. Discard once, then let the normal claim take over.
      *  Only ever runs when no owner has been recorded yet. */
     fun discardUnattributedSaves() {
-        if (SettingsPref.get(LAST_OWNER, "").isNotEmpty()) return
-        runCatching { DailyCompletionsService.clearCache() }
-        runCatching { GamePersistence.clearAll() }
+        when (AuthSessionPolicy.savesOnSignedOutLaunch(SettingsPref.get(LAST_OWNER, ""), _isGuest.value)) {
+            AuthSessionPolicy.SignedOutSaves.KEEP -> Unit
+            // A restored guest's saves are the guest's own — never discard them on a cold start.
+            AuthSessionPolicy.SignedOutSaves.CLAIM_FOR_GUEST -> SettingsPref.set(LAST_OWNER, GUEST_OWNER)
+            AuthSessionPolicy.SignedOutSaves.DISCARD -> {
+                runCatching { DailyCompletionsService.clearCache() }
+                runCatching { GamePersistence.clearAll() }
+            }
+        }
     }
     /** Leave guest mode → the MainActivity gate shows AuthScreen so the guest
      *  can sign in (used by the "Sign in" prompts on account-only surfaces). */

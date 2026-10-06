@@ -527,8 +527,28 @@ private fun BannerTile(
         Modifier.squishClickable(card.title + state, card = true, onClick = onClick).size(size).then(look),
         contentAlignment = Alignment.Center,
     ) {
+        // A played tile shows the real full-color 3D art on a small pale disc (iOS BannerGlyph
+        // `solid` parity), so it never melts into its own accent fill. ModeGlyph's white ink
+        // tints the art into a flat white silhouette, so it is used only for the unplayed /
+        // Unlimited tiles and for a mode without art.
+        val playedArt = if (!unlimited && result != null) gameArtRes(card.id) else null
         Box(Modifier.graphicsLayer { alpha = if (!unlimited && result == null) 0.45f else 1f }, contentAlignment = Alignment.Center) {
-            ModeGlyph(card, ink, box = size)
+            if (playedArt != null) {
+                val icon = size * 0.56f
+                Box(
+                    Modifier.size(icon * 1.3f)
+                        .shadow(1.5.dp, androidx.compose.foundation.shape.CircleShape, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.12f))
+                        .background(Wash.mix(accent, 0.12f), androidx.compose.foundation.shape.CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.foundation.Image(
+                        artPainter(playedArt, icon * 1.12f), contentDescription = null,
+                        modifier = Modifier.size(icon * 1.12f),
+                    )
+                }
+            } else {
+                ModeGlyph(card, ink, box = size)
+            }
         }
         if (!unlimited && result?.completed == true) {
             androidx.compose.material3.Icon(

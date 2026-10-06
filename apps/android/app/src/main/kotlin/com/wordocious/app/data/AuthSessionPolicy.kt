@@ -78,6 +78,33 @@ object AuthSessionPolicy {
     fun restoresGuest(storedGuestFlag: Boolean, hadSignedInSession: Boolean): Boolean =
         storedGuestFlag && !hadSignedInSession
 
+    /** What a launch that ends with no signed-in session does with the on-device saves. */
+    enum class SignedOutSaves {
+        /** An owner is recorded — the normal claim (sign-in / enterGuest) decides later. */
+        KEEP,
+        /** A restored guest with no owner on record: the saves are the guest's — record
+         *  "guest" as the owner and keep them. */
+        CLAIM_FOR_GUEST,
+        /** Nobody owns them (an upgrade from a build that wiped on sign-out) — discard once. */
+        DISCARD,
+    }
+
+    /** 2026-10-05: the unattributed-save discard used to run on every signed-out launch with
+     *  no owner recorded, guest or not — so a guest whose owner key was missing (prefs restored
+     *  or seeded without it) lost today's finishes and boards on every cold start. A restored
+     *  guest now claims them instead. Cross-account isolation is unchanged: the guest is its own
+     *  owner, so the next account to sign in still wipes them (claimSavesFor). */
+    /** claimSavesFor's rule: local saves are wiped only when they belonged to a DIFFERENT
+     *  recorded owner ("guest" or a user id) — never on a first claim, never for the same owner. */
+    fun ownerChangeWipesSaves(previousOwner: String, newOwner: String): Boolean =
+        previousOwner.isNotEmpty() && previousOwner != newOwner
+
+    fun savesOnSignedOutLaunch(recordedOwner: String, guestRestored: Boolean): SignedOutSaves = when {
+        recordedOwner.isNotEmpty() -> SignedOutSaves.KEEP
+        guestRestored -> SignedOutSaves.CLAIM_FOR_GUEST
+        else -> SignedOutSaves.DISCARD
+    }
+
     /** MainActivity's gate: the app shell (not the sign-in screen) is shown for a signed-in
      *  player, a guest, or while the last signed-in session is still restoring. */
     fun showsApp(isAuthenticated: Boolean, isGuest: Boolean, isLoading: Boolean, hadSession: Boolean): Boolean =
