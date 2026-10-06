@@ -10,6 +10,20 @@
 - Android 208 (widget fix): confirm Play approval.
 - Cut + gate + submit 2.7.2 (iOS + Play), push web, bible entry.
 
+## 1b. Halloween readability audit — MUST be in 2.7.2 (founder 10-06)
+- Founder: "a lot of areas where the font is impossible to read" under the Halloween skin.
+- NOTE: 2.7.1 (live) turns Halloween ON automatically on Oct 17 — so these fixes must be live in 2.7.2 before
+  Oct 17, or every player sees unreadable text. (2.7.2 target: live by ~Oct 12 for the content cutover anyway.)
+- Sweep EVERY screen and state with the season preview on, on iOS, Android and web: Home (all cards, banners,
+  headlines, chips, counters), every game screen + its finish/share screens, VS (lobby, game, results), Friends,
+  Stats, Leaderboard (podium, rows, picker), Settings, Edit Profile/Stage/Dressing Room, popups/sheets/toasts,
+  onboarding, paywall, empty/error states, widgets.
+- Fix every text that fails contrast: on-wall text, text on glass cards, small labels, numbers, disabled states,
+  placeholders. Rule: WCAG AA (4.5:1 small text, 3:1 large/bold) measured against the ACTUAL pixels behind it.
+- Add an automated check so it stays fixed: web — a contrast test over every route with ?season=halloween
+  (computed colors vs background); iOS/Android — the season palette tokens tested against both surfaces + a
+  screenshot sweep (perf-tour style) reviewed by eye.
+
 ## 2. Sound Library in the admin portal (like the Art Library)
 - Every sound by game/section: CURRENT vs options, play buttons, BMT + JP approve/reject/comment inline,
   "approve all" per section, feedback Claude reads; approved picks flow into make-sounds.py PICKS → ship ×3.
