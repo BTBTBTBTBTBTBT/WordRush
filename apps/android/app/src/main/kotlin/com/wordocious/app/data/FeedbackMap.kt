@@ -29,6 +29,11 @@ enum class Sfx(val file: String) {
     // The founder's Sound Lab picks (docs/design/brand/sounds/make-sounds.py PICKS).
     /** The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s. */
     INTRO("sfx_intro"),
+
+    /** Each header hero's giggle (pick: "Giggles"), played by SoundManager.castLaugh. */
+    LAUGH_W("sfx_laugh_w"), LAUGH_O1("sfx_laugh_o1"), LAUGH_R("sfx_laugh_r"), LAUGH_D("sfx_laugh_d"),
+    LAUGH_O2("sfx_laugh_o2"), LAUGH_C("sfx_laugh_c"), LAUGH_I("sfx_laugh_i"), LAUGH_O3("sfx_laugh_o3"),
+    LAUGH_U("sfx_laugh_u"), LAUGH_S("sfx_laugh_s"),
 }
 
 /** The haptic vocabulary (spec U): iOS UIImpactFeedbackGenerator / UINotificationFeedbackGenerator names. */
@@ -92,6 +97,12 @@ object FeedbackRules {
     /** Whether a `hop` at [nowMs] is covered by the intro jingle that started at [introAtMs] (0 = never played). */
     fun hopMutedByIntro(nowMs: Long, introAtMs: Long): Boolean =
         introAtMs > 0L && nowMs - introAtMs in 0 until INTRO_QUIET_MS
+
+    /** One hero's giggle at most this often: longer than the longest giggle (never overlaps itself). */
+    const val LAUGH_MIN_GAP_MS = 700L
+
+    /** A header hero's giggle ([id] = MascotId.key: w, o1, r, … s), or null for an unknown id. */
+    fun laughSfx(id: String): Sfx? = Sfx.entries.firstOrNull { it.file == "sfx_laugh_$id" }
 
     /** The per-event repeat throttle (0 = every time). */
     fun minGapMs(e: FeedbackEvent): Long = when (e) {

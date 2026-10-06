@@ -55,6 +55,16 @@ object SoundManager {
         Sfx.VS -> R.raw.sfx_vs
         Sfx.WHOOSH -> R.raw.sfx_whoosh
         Sfx.INTRO -> R.raw.sfx_intro
+        Sfx.LAUGH_W -> R.raw.sfx_laugh_w
+        Sfx.LAUGH_O1 -> R.raw.sfx_laugh_o1
+        Sfx.LAUGH_R -> R.raw.sfx_laugh_r
+        Sfx.LAUGH_D -> R.raw.sfx_laugh_d
+        Sfx.LAUGH_O2 -> R.raw.sfx_laugh_o2
+        Sfx.LAUGH_C -> R.raw.sfx_laugh_c
+        Sfx.LAUGH_I -> R.raw.sfx_laugh_i
+        Sfx.LAUGH_O3 -> R.raw.sfx_laugh_o3
+        Sfx.LAUGH_U -> R.raw.sfx_laugh_u
+        Sfx.LAUGH_S -> R.raw.sfx_laugh_s
     }
 
     /** Load all 16 sounds once (idempotent; the decode itself runs on SoundPool's thread). */
@@ -168,14 +178,18 @@ object SoundManager {
     /** Achievement unlock: `unlock` · success haptic (for the achievement popup). */
     fun achievementUnlocked(view: android.view.View? = null) = fire(FeedbackEvent.UNLOCK, view)
 
+    private val laughGates = ConcurrentHashMap<Sfx, FeedbackThrottle>()
+
     /**
-     * Sound.castLaugh — a header character was tapped and hops + laughs (CastHeader.kt).
-     * SILENT for now: the founder is picking the laugh in the Sound Lab; wire it here
-     * (e.g. `play(Sfx.<laugh>, volume = 0.6f)`, optionally per character [id]).
+     * Sound.castLaugh — a header character was tapped and hops + laughs (CastHeader.kt: the
+     * puppet tap and the season costume tap hop): that hero's own giggle (Sound Lab pick
+     * "Giggles"), at most once per [FeedbackRules.LAUGH_MIN_GAP_MS] per hero.
      * Web: castLaugh() in lib/sounds.ts; iOS: SoundManager.castLaugh(_:).
      */
-    @Suppress("UNUSED_PARAMETER")
     fun castLaugh(id: String) {
-        // intentionally silent until the laugh sound is chosen
+        val s = FeedbackRules.laughSfx(id) ?: return
+        val gate = laughGates.getOrPut(s) { FeedbackThrottle(FeedbackRules.LAUGH_MIN_GAP_MS) }
+        if (!gate.allow(SystemClock.uptimeMillis())) return
+        play(s)
     }
 }

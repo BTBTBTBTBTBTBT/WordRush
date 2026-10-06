@@ -23,6 +23,16 @@ final class SoundManager {
         case celebrate, streak, tick, notify, unlock, vs, whoosh
         /// The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s.
         case intro
+        /// Each header hero's giggle (pick: "Giggles"), file `sfx-laugh-<id>.m4a`.
+        case laughW = "laugh-w", laughO1 = "laugh-o1", laughR = "laugh-r", laughD = "laugh-d", laughO2 = "laugh-o2"
+        case laughC = "laugh-c", laughI = "laugh-i", laughO3 = "laugh-o3", laughU = "laugh-u", laughS = "laugh-s"
+
+        /// A header hero's giggle (`id` = MascotID raw value), nil for an unknown id.
+        static func laugh(_ id: String) -> Effect? {
+            guard let e = Effect(rawValue: "laugh-\(id)"), e.isLaugh else { return nil }
+            return e
+        }
+        var isLaugh: Bool { rawValue.hasPrefix("laugh-") }
 
         /// Per-sound gain under the master volume (the tiny UI sounds sit lower).
         var gain: Float {
@@ -52,6 +62,8 @@ final class SoundManager {
             case .invalid: return 0.2
             case .notify: return 0.25
             case .intro: return 5
+            // One hero's giggle: longer than the longest giggle, so taps never machine-gun it.
+            case _ where isLaugh: return 0.7
             default: return 0.5
             }
         }
@@ -395,11 +407,12 @@ extension View {
 // MARK: - Sound.castLaugh (2.7.1 cast puppets)
 
 extension SoundManager {
-    /// Sound.castLaugh — a header character was tapped and hops + laughs (LivingCastHeader).
-    /// SILENT for now: the founder is picking the laugh in the Sound Lab; wire it here
-    /// (e.g. `play(.<laugh>, volume: 0.6)`, optionally per character `id`).
+    /// Sound.castLaugh — a header character was tapped and hops + laughs (LivingCastHeader,
+    /// the puppet tap and the season costume tap hop): that hero's own giggle (Sound Lab pick
+    /// "Giggles"), at most once per 0.7 s per hero (Effect.minGap).
     /// Web: castLaugh() in lib/sounds.ts; Android: SoundManager.castLaugh().
     func castLaugh(_ id: String) {
-        // intentionally silent until the laugh sound is chosen
+        guard let e = Effect.laugh(id) else { return }
+        play(e)
     }
 }

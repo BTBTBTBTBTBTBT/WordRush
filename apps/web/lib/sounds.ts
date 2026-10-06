@@ -10,7 +10,7 @@
 // lib/sound-map.ts; lib/sound-events.ts `feedback(event)` plays both.
 
 import { haptic } from '@/lib/haptics';
-import { MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
+import { LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
 
 export { SOUND_NAMES, type SoundName } from '@/lib/sound-map';
 
@@ -297,12 +297,21 @@ export function playGameOver() {
   playSound('lose');
 }
 
+/** One gate per hero: a burst of taps giggles at most once per LAUGH_MIN_MS. */
+const laughGates = new Map<string, (now: number) => boolean>();
+
 /**
- * Sound.castLaugh — the cast puppet tap (components/ui/cast-puppets.ts): a character in
- * the header hops and laughs. SILENT for now: the founder is picking the laugh from the
- * Sound Lab; wire it here (e.g. `playSound('<name>', { gain: 0.6 })`, optionally per
- * character id). iOS: Sound.castLaugh(_:) in Sound.swift; Android: SoundManager.castLaugh().
+ * Sound.castLaugh — the cast puppet tap (components/ui/cast-puppets.ts) and the season
+ * costume tap hop (cast-header.tsx): that hero's own giggle (Sound Lab pick "Giggles").
+ * iOS: SoundManager.castLaugh(_:); Android: SoundManager.castLaugh(id).
  */
-export function castLaugh(_id: string): void {
-  // intentionally silent until the laugh sound is chosen
+export function castLaugh(id: string): void {
+  try {
+    const name = laughSound(id);
+    if (!name) return;
+    let gate = laughGates.get(id);
+    if (!gate) { gate = makeThrottle(LAUGH_MIN_MS); laughGates.set(id, gate); }
+    if (!gate(now())) return;
+    playSound(name);
+  } catch { /* never throw from a sound */ }
 }

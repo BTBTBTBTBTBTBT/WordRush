@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync } from 'fs';
 import path from 'path';
-import { FEEDBACK, MASTER_GAIN, SOUND_NAMES, TICK_MIN_MS, makeThrottle, revealFlipDelays, soundUrl, tapRate } from './sound-map';
+import { FEEDBACK, LAUGH_MIN_MS, MASTER_GAIN, SOUND_NAMES, TICK_MIN_MS, laughSound, makeThrottle, revealFlipDelays, soundUrl, tapRate } from './sound-map';
 
 describe('sound pack', () => {
   it('names exactly the shipped samples (the 16-sound pack + the Sound Lab picks)', () => {
     const files = readdirSync(path.resolve(__dirname, '../public/sounds')).filter((f) => f.endsWith('.m4a')).map((f) => f.replace(/\.m4a$/, '')).sort();
     expect([...SOUND_NAMES].sort()).toEqual(files);
-    expect(SOUND_NAMES).toHaveLength(17);
+    expect(SOUND_NAMES).toHaveLength(27);
     expect(SOUND_NAMES).toContain('intro');
     expect(soundUrl('tap')).toBe('/sounds/tap.m4a');
   });
@@ -45,6 +45,21 @@ describe('event map (FINISH_SPEC U)', () => {
   });
   it('every sound in the map is a shipped sample', () => {
     for (const { sound } of Object.values(FEEDBACK)) if (sound) expect(SOUND_NAMES).toContain(sound);
+  });
+});
+
+describe('cast giggles (Sound.castLaugh)', () => {
+  it('maps every header hero to its own giggle', () => {
+    for (const id of ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's']) expect(laughSound(id)).toBe(`laugh-${id}`);
+    expect(laughSound('x')).toBeNull();
+    expect(laughSound('')).toBeNull();
+  });
+  it('never machine-guns one hero (≥ 0.4 s, longer than a giggle)', () => {
+    expect(LAUGH_MIN_MS).toBeGreaterThanOrEqual(400);
+    const gate = makeThrottle(LAUGH_MIN_MS);
+    let fired = 0;
+    for (let t = 0; t < 1000; t += 50) if (gate(t)) fired++;
+    expect(fired).toBe(2);
   });
 });
 

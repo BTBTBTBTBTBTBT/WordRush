@@ -39,10 +39,23 @@ class FeedbackMapTest {
     }
 
     @Test fun everySoundIsUsedAndNamedLikeItsFile() {
-        assertEquals(17, Sfx.entries.size)
+        assertEquals(27, Sfx.entries.size)
         Sfx.entries.forEach { assertEquals("sfx_" + it.name.lowercase(), it.file) }
-        val used = FeedbackEvent.entries.mapNotNull { it.sound }.toSet()
+        // Every sound is an event's, or a hero's giggle (SoundManager.castLaugh).
+        val used = FeedbackEvent.entries.mapNotNull { it.sound }.toSet() +
+            listOf("w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s").map { FeedbackRules.laughSfx(it)!! }
         assertEquals(Sfx.entries.toSet(), used)
+    }
+
+    @Test fun everyHeroHasItsOwnGiggle() {
+        val ids = listOf("w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s")
+        assertEquals(10, ids.mapNotNull { FeedbackRules.laughSfx(it) }.toSet().size)
+        assertEquals(Sfx.LAUGH_O2, FeedbackRules.laughSfx("o2"))
+        assertNull(FeedbackRules.laughSfx("x"))
+        assertNull(FeedbackRules.laughSfx("intro"))
+        assertTrue(FeedbackRules.LAUGH_MIN_GAP_MS >= 400L)
+        val gate = FeedbackThrottle(FeedbackRules.LAUGH_MIN_GAP_MS)
+        assertEquals(2, (0L until 1000L step 50L).count { gate.allow(it) })
     }
 
     @Test fun introJingleMutesTheLandingHopOnly() {

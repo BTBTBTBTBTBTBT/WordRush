@@ -6,18 +6,29 @@ import type { HapticKind } from '@/lib/haptics';
 
 /**
  * The samples in public/sounds/<name>.m4a (docs/design/brand/sounds/make-sounds.py): the 16-sound
- * pack + the founder's Sound Lab picks (make-sounds.py PICKS) — `intro` = the cold-start jingle.
+ * pack + the founder's Sound Lab picks (make-sounds.py PICKS) — `intro` = the cold-start jingle,
+ * `laugh-<id>` = each header hero's giggle.
  */
 export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
   'lose', 'celebrate', 'streak', 'tick', 'notify', 'unlock', 'vs', 'whoosh',
   'intro',
+  'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
 
 export function soundUrl(name: SoundName): string {
   return `/sounds/${name}.m4a`;
 }
+
+/** A header hero's giggle (Sound.castLaugh), or null for an unknown id. */
+export function laughSound(id: string): SoundName | null {
+  const name = `laugh-${id}`;
+  return (SOUND_NAMES as readonly string[]).includes(name) ? (name as SoundName) : null;
+}
+
+/** One hero's giggle at most this often: longer than the longest giggle, so it never overlaps itself. */
+export const LAUGH_MIN_MS = 700;
 
 /** Master volume. */
 export const MASTER_GAIN = 0.6;
