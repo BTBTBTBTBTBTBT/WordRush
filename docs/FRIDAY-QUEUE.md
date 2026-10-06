@@ -110,3 +110,22 @@
   (Home, Leaderboard, Stats, Friends, game pages that show the cast) until the player long-presses a mascot again.
   PR #48 made iOS (and check web) Home-only — lift the musical state to an app-wide store (iOS app state / web
   context; persist across tab switches; DECIDED: resets to normal on app restart — never persisted) so all headers share it.
+
+## 9. Friends + pocket games cleanup (founder 10-06, screenshots: Friends tab, Call It leave dialog)
+- **Friends list at the top**: a clean friends strip/list with each friend's mascot; ONLINE friends highlighted
+  first (live dot, "playing Muddle" etc.), the rest in a collapsible "All friends" dropdown. Replaces the plain
+  "ON NOW · Nobody's on right now…" text line.
+- **Pending pocket games, simplified**: no stack of "Waiting on…" windows. One compact "Your games" area: each
+  pending game as a small chip/row with the friend's mascot + game icon + state ("Your turn" highlighted /
+  "Their turn" quiet / score); tap to open. Resign/decline lives HERE (long-press or a ⋯ family action menu on the
+  row), not inside the game.
+- **In-game "Leave" dialog**: ONE button only, ChatGPT-designed in the game's theme, better wording, e.g.
+  "Back to Friends — your game waits for you" (no Resign in-game).
+- **Fix the flow**: today: pick a game → pick a friend → a SECOND "pick a game" screen. Make it: pick a game →
+  pick a friend → straight into that game (and from a friend's profile: pick a friend → pick a game → play).
+  Audit every entry point so no step repeats.
+- **ChatGPT design pass for the pocket games** (free ChatGPT, on-model cast): themed title art per game
+  (Rock Paper Scissors, Tic-Tac-Tile, Call It, Pass the Puzzle, Ghost, Word Chain), menus/cards, game pieces,
+  a **Wordocious coin for Call It** (heads = W with his cape; tails = another design — e.g. the cast's "O" or a
+  W-monogram crest; founder picks), win/lose moments, and other fun personalized touches.
+- Same readability + smoothness gates; parity ×3.
