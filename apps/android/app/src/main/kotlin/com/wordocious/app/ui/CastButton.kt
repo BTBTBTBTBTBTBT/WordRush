@@ -381,7 +381,12 @@ fun CastButtonRow(
         val control = controlHeight.roundToPx()
         val maxW = if (c.hasBoundedWidth) c.maxWidth else Int.MAX_VALUE / 4
         val flex = ms.map { it.layoutId == CAST_FLEX }
-        val natural = ms.map { it.maxIntrinsicWidth(androidx.compose.ui.unit.Constraints.Infinity).coerceAtMost(maxW) }
+        // 2.7.1 gate: an item built on a SubcomposeLayout (BoxWithConstraints, e.g. CandyLabel) has no
+        // intrinsics and threw here (guest daily Gauntlet finish crashed the app). Such an item takes a
+        // full line instead.
+        val natural = ms.map {
+            runCatching { it.maxIntrinsicWidth(androidx.compose.ui.unit.Constraints.Infinity) }.getOrDefault(maxW).coerceAtMost(maxW)
+        }
         // Greedy lines: fixed widths + gaps + (flex count × widest flex) must fit.
         val lines = mutableListOf<MutableList<Int>>()
         var cur = mutableListOf<Int>()
