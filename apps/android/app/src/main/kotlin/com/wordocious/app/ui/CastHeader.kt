@@ -137,18 +137,27 @@ fun LivingCastHeader(
         if (taps.values.any { now - it < b.tap.dur * 1000 }) return true
         return gestures.any { (id, at) -> now - at < (b.rigs[id.key]?.gestureSeconds ?: 0.0) * 1000 }
     }
-    // The puppets breathe at 15 fps (full rate while a move or tap plays); they hold still
-    // while the page scrolls, the tab is hidden, or with Reduce Motion / Battery Saver (a tap
-    // still plays: the laugh face fades; in season, the costume's hop).
+    // Smooth over pretty (founder): the Android puppets render ONLY while something moves —
+    // a blink, a signature move or a tap — at full frame rate. Between moves they hold the
+    // rest pose (no breathing or idle sway) and no frames are drawn at all: the loop sleeps
+    // until the next blink. They also hold while the page scrolls, the tab is hidden, or
+    // with Reduce Motion / Battery Saver (a tap still plays: the laugh face fades; in season,
+    // the costume's hop).
     LaunchedEffect(rigs, puppetsOn, calm, hidden, scrolling, wake) {
-        if (rigs == null || hidden) return@LaunchedEffect
-        var last = 0L
+        val b = rigs ?: return@LaunchedEffect
+        if (hidden) return@LaunchedEffect
         while (true) {
             val now = androidx.compose.runtime.withFrameNanos { it } / 1_000_000
             val active = busy(now)
             if (!active && (gestures.isNotEmpty() || taps.isNotEmpty())) { gestures.clear(); taps.clear() }
-            if (!active && (!puppetsOn || calm || scrolling)) { clock.longValue = now; break }
-            if (active || now - last >= 64) { clock.longValue = now; last = now } // idle: 15 fps (smooth over pretty)
+            val tw = (now - t0) / 1000.0
+            val blinking = puppetsOn && !calm && !scrolling && b.rigs.values.any { it.blinking(tw) }
+            clock.longValue = now
+            if (!active && !blinking) {
+                if (!puppetsOn || calm || scrolling) break
+                val wait = b.rigs.values.minOf { it.nextBlinkIn(tw) }
+                delay((wait * 1000).toLong().coerceAtLeast(16L))
+            }
         }
     }
     fun tapFigure(id: MascotId) {
@@ -278,14 +287,24 @@ fun LivingCastHeader(
                                 val now = clock.longValue
                                 val gr = gestures[id]?.let { (now - it) / 1000.0 }?.takeIf { it < rig.gestureSeconds }
                                 val tp = taps[id]?.let { (now - it) / 1000.0 }?.takeIf { it < b.tap.dur }
-                                with(CastPuppets) { drawPuppet(b, rig, crop, (now - t0) / 1000.0, gr, tp, calm) }
+                                with(CastPuppets) { drawPuppet(b, rig, crop, (now - t0) / 1000.0, gr, tp, calm, ambient = false) }
                             },
                         )
                     } else {
                         Image(painters[i], contentDescription = null, contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
                     }
                     if (crown && id == MascotId.W) {
-                        CrownOnW(crownTap, twinkle = !calm && !hidden)
+                        // The puppet W hops inside his drawing: the crown rides the same hop.
+                        Box(
+                            Modifier.matchParentSize().graphicsLayer {
+                                val b = rigs
+                                val at = taps[MascotId.W]
+                                val r = b?.rigs?.get("w")
+                                translationY = if (puppetsOn && !calm && b != null && r != null && at != null) {
+                                    (b.tap.pose((clock.longValue - at) / 1000.0).first * r.mascot.s * size.height / CastCrops.crops.getValue(MascotId.W).height).toFloat()
+                                } else 0f
+                            },
+                        ) { CrownOnW(crownTap, twinkle = !calm && !hidden) }
                     }
                 }
             }

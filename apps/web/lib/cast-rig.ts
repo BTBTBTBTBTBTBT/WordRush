@@ -70,11 +70,13 @@ function isFree(R: Rig, tr: Track): boolean {
   return !tr.env;
 }
 
-function trackVal(R: Rig, name: string, t: number, g: number): number {
+/** `t` null = ambient off: the free-running idle sways hold their rest value. */
+function trackVal(R: Rig, name: string, t: number | null, g: number): number {
   const tr = R.tracks[name];
   if (!tr) return 0;
   const free = isFree(R, tr);
-  const c = free ? t : g;
+  if (free && t === null) return restVal(R, name);
+  const c = free ? (t as number) : g;
   let v = 0;
   if (tr.kf) {
     const P = tr.period || R.cycle;
@@ -95,7 +97,7 @@ function restVal(R: Rig, name: string): number {
   return tr && tr.kf ? tr.kf[0][1] : 0;
 }
 
-function val(R: Rig, spec: Spec, t: number, g: number, still: boolean, dflt: number): number {
+function val(R: Rig, spec: Spec, t: number | null, g: number, still: boolean, dflt: number): number {
   if (spec === undefined || spec === null) return dflt;
   if (typeof spec === 'number') return spec;
   if (typeof spec === 'string') return still ? restVal(R, spec) : trackVal(R, spec, t, g);
@@ -169,8 +171,10 @@ export function tapPose(tap: TapSpec, t: number): { hop: number; sq: number } {
  * signature move started (null = rest); `tap` seconds since a tap (null = none); `still`
  * Reduce Motion (the pose holds; a tap only fades the laughing face in and out).
  */
-export function evaluateRig(B: RigBundle, R: Rig, t: number, gr: number | null, tap: number | null, still: boolean, laughOk = true): DrawOp[] {
+export function evaluateRig(B: RigBundle, R: Rig, tw: number, gr: number | null, tap: number | null, still: boolean, laughOk = true, ambient = true): DrawOp[] {
   const TP = B.tap;
+  // ambient = false: no breathing / idle sways (the rest pose between moves); blinks keep `tw`.
+  const t = ambient ? tw : null;
   const g = gr === null || still || gr >= R.warp[R.warp.length - 1][0] ? 0 : warpG(R, gr);
   let hop = 0;
   let sq = 0;
@@ -192,7 +196,7 @@ export function evaluateRig(B: RigBundle, R: Rig, t: number, gr: number | null, 
     ops.push({ layer: L.img, m: mul(mul(mul(T(cx, cy), S(gg, gg)), T(-cx, -cy)), T(l.x, l.y)), alpha: 1 - 0.45 * f });
   }
   const Br = R.breath || { origin: [512, 960] as [number, number], period: 3.4, sy: 0.012, sx: 0.006 };
-  const br = still ? 0 : Math.sin((t / Br.period) * Math.PI * 2);
+  const br = still || t === null ? 0 : Math.sin((t / Br.period) * Math.PI * 2);
   const sy = 1 + Br.sy * br + sq;
   const sx = 1 - Br.sx * br - sq * 0.6;
   const RT = R.root || {};
@@ -204,23 +208,28 @@ export function evaluateRig(B: RigBundle, R: Rig, t: number, gr: number | null, 
   const rsy = val(R, RT.sy, t, g, still, 1);
   const root = mul(mul(mul(mul(T(rdx, rdy + hop), T(o[0], o[1])), Rd(rrot)), S(sx * rsx, sy * rsy)), T(-o[0], -o[1]));
 
+  // The laugh face fades in OVER the opaque face (blink lids stay opaque under it), so no
+  // frame shows two half-transparent faces; the face under it hides once the laugh is full.
   const patches = () => {
+    if (la < 0.998 && !still && R.blink) blink();
     if (la > 0.002) for (const p of R.laugh || []) { const l = lay[p]; ops.push({ layer: p, m: mul(root, T(l.x, l.y)), alpha: la }); }
-    if (la >= 0.998 || still || !R.blink) return;
-    let e: 'half' | 'closed' | null = blinkState(R, t);
+  };
+  const blink = () => {
+    if (!R.blink) return;
+    let e: 'half' | 'closed' | null = blinkState(R, tw);
     if (R.eyesTrack) {
       const v = trackVal(R, R.eyesTrack, t, g);
       if (v >= 1.5) e = 'closed';
       else if (v >= 0.5 && e !== 'closed') e = 'half';
     }
     const p = e ? R.blink[e] : undefined;
-    if (p) { const l = lay[p]; ops.push({ layer: p, m: mul(root, T(l.x, l.y)), alpha: 1 - la }); }
+    if (p) { const l = lay[p]; ops.push({ layer: p, m: mul(root, T(l.x, l.y)), alpha: 1 }); }
   };
 
   let patched = false;
   for (const L of R.layers) {
     if (L.shadow) continue;
-    const aMul = L.when === 'laugh' ? la : L.when === 'nolaugh' ? 1 - la : 1;
+    const aMul = L.when === 'laugh' ? la : L.when === 'nolaugh' ? (la >= 0.998 ? 0 : 1) : 1;
     const l = lay[L.img];
     const piv = L.pivot || [l.x, l.y];
     const at = L.at || piv;

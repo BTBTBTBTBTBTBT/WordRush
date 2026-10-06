@@ -40,6 +40,24 @@ describe('cast puppet rigs', () => {
     for (const id of bundle.cast) expect(gestureSeconds(bundle.rigs[id])).toBeGreaterThan(1);
   });
 
+  it('never shows two half-transparent faces while the laugh fades', () => {
+    const w = bundle.rigs.w;
+    const mid = evaluateRig(bundle, w, 1.31, null, 0.075, false); // mid fade-in, mid blink
+    const lids = mid.filter((o) => o.layer.startsWith('eyes-') && o.layer !== 'eyes-happy');
+    expect(lids.every((o) => o.alpha === 1)).toBe(true);
+    const happy = mid.findIndex((o) => o.layer === 'eyes-happy');
+    expect(happy).toBeGreaterThan(mid.findIndex((o) => o.layer === lids[0]?.layer));
+    const r = evaluateRig(bundle, bundle.rigs.r, 2, null, 0.075, false);
+    expect(r.find((o) => o.layer === 'mouth')?.alpha).toBe(1);
+    expect(evaluateRig(bundle, bundle.rigs.r, 2, null, 0.5, false).find((o) => o.layer === 'mouth')).toBeUndefined();
+  });
+
+  it('holds the rest pose with ambient off (no breathing or idle sways)', () => {
+    const a = evaluateRig(bundle, bundle.rigs.w, 0.5, null, null, false, true, false);
+    const b = evaluateRig(bundle, bundle.rigs.w, 2.2, null, null, false, true, false);
+    expect(a).toEqual(b);
+  });
+
   it('eases the laugh face in and out (no hard swap)', () => {
     expect(kfVal(bundle.tap.laugh, 0)).toBe(0);
     expect(kfVal(bundle.tap.laugh, 0.075)).toBeGreaterThan(0.2);
@@ -50,11 +68,12 @@ describe('cast puppet rigs', () => {
   });
 
   it('matches the reference evaluator draw ops (golden frames)', () => {
-    const golden = JSON.parse(readFileSync(GOLDEN, 'utf8')) as { id: string; t: number; g: number | null; tap: number | null; still: boolean; ops: [string, number[], number][] }[];
-    expect(golden.length).toBeGreaterThan(50);
+    const golden = JSON.parse(readFileSync(GOLDEN, 'utf8')) as { id: string; t: number; g: number | null; tap: number | null; still: boolean; ambient: boolean; ops: [string, number[], number][] }[];
+    expect(golden.length).toBeGreaterThan(90);
+    expect(golden.some((f) => !f.ambient)).toBe(true);
     for (const f of golden) {
-      const ops = evaluateRig(bundle, bundle.rigs[f.id], f.t, f.g, f.tap, f.still);
-      const where = `${f.id} t=${f.t} g=${f.g} tap=${f.tap} still=${f.still}`;
+      const ops = evaluateRig(bundle, bundle.rigs[f.id], f.t, f.g, f.tap, f.still, true, f.ambient);
+      const where = `${f.id} t=${f.t} g=${f.g} tap=${f.tap} still=${f.still} ambient=${f.ambient}`;
       expect(ops.map((o) => o.layer), where).toEqual(f.ops.map((o) => o[0]));
       ops.forEach((o, i) => {
         o.m.forEach((v, k) => expect(Math.abs(v - f.ops[i][1][k]), `${where} ${o.layer} m${k}`).toBeLessThan(2e-3));

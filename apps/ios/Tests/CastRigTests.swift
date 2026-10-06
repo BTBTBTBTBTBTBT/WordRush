@@ -42,16 +42,18 @@ final class CastRigTests: XCTestCase {
     func testMatchesGoldenFrames() throws {
         let b = try CastRigBundle.decode(try read(iosPath))
         let golden = try XCTUnwrap(JSONSerialization.jsonObject(with: try read("docs/design/brand/animation/rig-engine/rig-golden.json")) as? [[String: Any]])
-        XCTAssertGreaterThan(golden.count, 50)
+        XCTAssertGreaterThan(golden.count, 90)
+        XCTAssert(golden.contains { ($0["ambient"] as? Bool) == false })
         for f in golden {
             let id = f["id"] as! String
             let t = (f["t"] as! NSNumber).doubleValue
             let g = (f["g"] as? NSNumber)?.doubleValue
             let tap = (f["tap"] as? NSNumber)?.doubleValue
             let still = f["still"] as! Bool
+            let ambient = f["ambient"] as? Bool ?? true
             let want = f["ops"] as! [[Any]]
-            let ops = b.rigs[id]!.evaluate(b, t: t, gr: g, tap: tap, still: still)
-            let at = "\(id) t=\(t) g=\(String(describing: g)) tap=\(String(describing: tap)) still=\(still)"
+            let ops = b.rigs[id]!.evaluate(b, t: t, gr: g, tap: tap, still: still, ambient: ambient)
+            let at = "\(id) t=\(t) g=\(String(describing: g)) tap=\(String(describing: tap)) still=\(still) ambient=\(ambient)"
             XCTAssertEqual(ops.map(\.layer), want.map { $0[0] as! String }, at)
             guard ops.count == want.count else { continue }
             for (op, w) in zip(ops, want) {

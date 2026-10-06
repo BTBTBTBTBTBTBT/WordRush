@@ -45,7 +45,7 @@ GOLDEN = os.path.join(ENGINE, 'rig-golden.json')
 
 TAP = {
     'dur': 1.0,
-    'hop': 110,
+    'hop': 185,
     'hopT': [0.10, 0.52],
     'sq': [[0, 0], [0.10, -0.05, 'sine'], [0.22, 0.035, 'inOut'], [0.40, 0, 'inOut'],
            [0.52, -0.045, 'in'], [0.66, 0.012, 'inOut'], [0.82, 0, 'inOut']],
@@ -53,7 +53,9 @@ TAP = {
 }
 WARP = {'lo': 0.5, 'ramp': 0.7}
 # Visible segments that used to accelerate into rest (a snap) -> ease in-out.
-SOFTEN = {'o2': ['bob', 'glassDy']}
+SOFTEN = {'o2': ['bob', 'glassDy'],
+          # W's raised arm used to leave in one ~90 ms step: it now slows as it swings behind him
+          'w': ['armTheta', 'armScale', 'armDx']}
 
 # ---------------------------------------------------------------- reference evaluator
 EASE = {
@@ -92,6 +94,8 @@ def track_val(R, name, t, g):
     if not tr:
         return 0.0
     free = is_free(R, tr)
+    if free and t is None:      # ambient off: idle sways hold their rest value
+        return rest_val(R, name)
     c = t if free else g
     v = 0.0
     if 'kf' in tr:
@@ -177,11 +181,14 @@ def warp_g(R, r):
     return w[-1][1]
 
 
-def evaluate(B, R, t, gr, tap, still, laugh_ok=True):
+def evaluate(B, R, t, gr, tap, still, laugh_ok=True, ambient=True):
     """Draw ops for one frame: [(layer, [a,b,c,d,e,f] hero px, alpha)], back to front.
     t: wall clock (s). gr: seconds since the signature move started (None = at rest).
-    tap: seconds since a tap (None = none). still: Reduce Motion."""
+    tap: seconds since a tap (None = none). still: Reduce Motion. ambient=False: no
+    breathing / idle sways (the rest pose between moves; blinks, moves and taps still play)."""
     TP = B['tap']
+    tw = t                      # blinks keep the wall clock
+    t = t if ambient else None
     g = 0.0 if (gr is None or still or gr >= R['warp'][-1][0]) else warp_g(R, gr)
     hop, sq, la = 0.0, 0.0, 0.0
     if tap is not None and 0 <= tap < TP['dur']:
@@ -204,7 +211,7 @@ def evaluate(B, R, t, gr, tap, still, laugh_ok=True):
         m = mul(mul(mul(T(cx, cy), S(gg, gg)), T(-cx, -cy)), T(l['x'], l['y']))
         ops.append((L['img'], m, 1 - 0.45 * f))
     Br = R.get('breath') or {'origin': [512, 960], 'period': 3.4, 'sy': 0.012, 'sx': 0.006}
-    br = 0.0 if still else math.sin(t / Br['period'] * math.pi * 2)
+    br = 0.0 if (still or t is None) else math.sin(t / Br['period'] * math.pi * 2)
     sy = 1 + Br['sy'] * br + sq
     sx = 1 - Br['sx'] * br - sq * 0.6
     RT = R.get('root') or {}
@@ -217,13 +224,17 @@ def evaluate(B, R, t, gr, tap, still, laugh_ok=True):
     root = mul(mul(mul(mul(T(rdx, rdy + hop), T(o[0], o[1])), Rd(rrot)), S(sx * rsx, sy * rsy)), T(-o[0], -o[1]))
 
     def patches():
+        # The laugh face fades in OVER the opaque face (blink lids stay opaque under it), so
+        # no frame shows two half-transparent faces; the face under it hides once it's full.
+        if la < 0.998 and not still and R.get('blink'):
+            blink()
         if la > 0.002:
             for p in R.get('laugh') or []:
                 l = lay[p]
                 ops.append((p, mul(root, T(l['x'], l['y'])), la))
-        if la >= 0.998 or still or not R.get('blink'):
-            return
-        e = blink_state(R, t)
+
+    def blink():
+        e = blink_state(R, tw)
         if R.get('eyesTrack'):
             v = track_val(R, R['eyesTrack'], t, g)
             if v >= 1.5:
@@ -233,7 +244,7 @@ def evaluate(B, R, t, gr, tap, still, laugh_ok=True):
         p = e and R['blink'].get(e)
         if p:
             l = lay[p]
-            ops.append((p, mul(root, T(l['x'], l['y'])), 1 - la))
+            ops.append((p, mul(root, T(l['x'], l['y'])), 1.0))
 
     patched = False
     for L in R['layers']:
@@ -243,7 +254,7 @@ def evaluate(B, R, t, gr, tap, still, laugh_ok=True):
         if L.get('when') == 'laugh':
             a_mul = la
         elif L.get('when') == 'nolaugh':
-            a_mul = 1 - la
+            a_mul = 0.0 if la >= 0.998 else 1.0
         l = lay[L['img']]
         piv = L.get('pivot') or [l['x'], l['y']]
         at = L.get('at') or piv
@@ -458,7 +469,11 @@ def main():
                                     (3.3, 2.6, 0.3, False), (5.0, R['warp'][-1][0] * 0.8, 0.12, False),
                                     (7.77, None, 0.9, False), (2.0, 1.0, 0.4, True)]:
             ops = evaluate(B, R, t, gr, tap, still)
-            golden.append({'id': cid, 't': t, 'g': gr, 'tap': tap, 'still': still,
+            golden.append({'id': cid, 't': t, 'g': gr, 'tap': tap, 'still': still, 'ambient': True,
+                           'ops': [[n, [round(x, 4) for x in m], round(a, 4)] for n, m, a in ops]})
+        for (t, gr, tap) in [(1.31, None, None), (3.3, 2.6, 0.08), (6.2, None, 0.86)]:
+            ops = evaluate(B, R, t, gr, tap, False, ambient=False)
+            golden.append({'id': cid, 't': t, 'g': gr, 'tap': tap, 'still': False, 'ambient': False,
                            'ops': [[n, [round(x, 4) for x in m], round(a, 4)] for n, m, a in ops]})
     json.dump(golden, open(GOLDEN, 'w'), separators=(',', ':'))
     print('shipped', sum(len(c[1]) for c in compiled.values()), 'layers; bundle', len(data), 'bytes; golden', len(golden), 'frames')

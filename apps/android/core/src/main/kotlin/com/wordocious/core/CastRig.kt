@@ -220,10 +220,12 @@ class CastRig private constructor(
 
     private fun pmod(a: Double, p: Double) = ((a % p) + p) % p
 
-    private fun trackVal(name: String, t: Double, g: Double): Double {
+    /** [t] null = ambient off: the free-running idle sways hold their rest value. */
+    private fun trackVal(name: String, t: Double?, g: Double): Double {
         val tr = tracks[name] ?: return 0.0
         val free = isFree(tr)
-        val c = if (free) t else g
+        if (free && t == null) return restVal(name)
+        val c = if (free) t!! else g
         var v = 0.0
         tr.kf?.let { kf ->
             val P = if ((tr.period ?: 0.0) != 0.0) tr.period!! else cycle
@@ -244,7 +246,7 @@ class CastRig private constructor(
 
     private fun restVal(name: String) = tracks[name]?.kf?.first()?.v ?: 0.0
 
-    private fun v(spec: CastRigSpec, t: Double, g: Double, still: Boolean, dflt: Double): Double = when (spec) {
+    private fun v(spec: CastRigSpec, t: Double?, g: Double, still: Boolean, dflt: Double): Double = when (spec) {
         null, is JsonNull -> dflt
         is JsonPrimitive -> if (spec.isString) (if (still) restVal(spec.content) else trackVal(spec.content, t, g)) else spec.doubleOrNull ?: dflt
         is JsonArray -> spec.sumOf { v(it, t, g, still, 0.0) }
@@ -259,6 +261,16 @@ class CastRig private constructor(
             return a[1] + (b[1] - a[1]) * (r - a[0]) / (b[0] - a[0])
         }
         return warp.last()[1]
+    }
+
+    /** A blink is on screen at wall-clock [tw] (s). */
+    fun blinking(tw: Double): Boolean = blinkState(tw) != null
+
+    /** Seconds from [tw] until this character's next blink starts. */
+    fun nextBlinkIn(tw: Double): Double {
+        val tt = tw % 900
+        for (b in blinks) if (b > tt) return b - tt
+        return 900 - tt + blinks.first()
     }
 
     private fun blinkState(t: Double): String? {
@@ -276,8 +288,10 @@ class CastRig private constructor(
      * signature move started (null = rest); [tap] seconds since a tap (null = none); [still]
      * Reduce Motion (the pose holds; a tap only fades the laughing face in and out).
      */
-    fun evaluate(B: CastRigBundle, t: Double, gr: Double?, tap: Double?, still: Boolean, laughOk: Boolean = true): List<CastRigOp> {
+    fun evaluate(B: CastRigBundle, tw: Double, gr: Double?, tap: Double?, still: Boolean, laughOk: Boolean = true, ambient: Boolean = true): List<CastRigOp> {
         val TP = B.tap
+        // ambient = false: no breathing / idle sways (the rest pose between moves); blinks keep [tw].
+        val t: Double? = if (ambient) tw else null
         val g = if (gr == null || still || gr >= warp.last()[0]) 0.0 else warpG(gr)
         var hop = 0.0
         var sq = 0.0
@@ -297,7 +311,7 @@ class CastRig private constructor(
             val gg = min(1.2, max(0.5, 1 - 0.35 * f + min(0.0, fl) * 0.004))
             ops += CastRigOp(L.img, mul(mul(mul(T(cx, cy), S(gg, gg)), T(-cx, -cy)), T(l.x, l.y)), 1 - 0.45 * f)
         }
-        val br = if (still) 0.0 else sin(t / breath[2] * PI * 2)
+        val br = if (still || t == null) 0.0 else sin(t / breath[2] * PI * 2)
         val sy = 1 + breath[3] * br + sq
         val sx = 1 - breath[4] * br - sq * 0.6
         val o = nums(root["origin"]) ?: listOf(breath[0], breath[1])
@@ -308,22 +322,27 @@ class CastRig private constructor(
         val rsy = v(root["sy"], t, g, still, 1.0)
         val rootM = mul(mul(mul(mul(T(rdx, rdy + hop), T(o[0], o[1])), Rd(rrot)), S(sx * rsx, sy * rsy)), T(-o[0], -o[1]))
 
-        fun patches() {
-            if (la > 0.002) for (p in laugh) { val l = lay.getValue(p); ops += CastRigOp(p, mul(rootM, T(l.x, l.y)), la) }
-            if (la >= 0.998 || still || (blinkHalf == null && blinkClosed == null)) return
-            var e = blinkState(t)
+        // The laugh face fades in OVER the opaque face (blink lids stay opaque under it), so no
+        // frame shows two half-transparent faces; the face under it hides once the laugh is full.
+        fun blinkPatch() {
+            if (blinkHalf == null && blinkClosed == null) return
+            var e = blinkState(tw)
             eyesTrack?.let { et ->
                 val ev = trackVal(et, t, g)
                 if (ev >= 1.5) e = "closed" else if (ev >= 0.5 && e != "closed") e = "half"
             }
             val p = when (e) { "half" -> blinkHalf; "closed" -> blinkClosed; else -> null }
-            if (p != null) lay[p]?.let { l -> ops += CastRigOp(p, mul(rootM, T(l.x, l.y)), 1 - la) }
+            if (p != null) lay[p]?.let { l -> ops += CastRigOp(p, mul(rootM, T(l.x, l.y)), 1.0) }
+        }
+        fun patches() {
+            if (la < 0.998 && !still) blinkPatch()
+            if (la > 0.002) for (p in laugh) { val l = lay.getValue(p); ops += CastRigOp(p, mul(rootM, T(l.x, l.y)), la) }
         }
 
         var patched = false
         for (L in layers) {
             if (L.shadow) continue
-            val aMul = when (L.`when`) { "laugh" -> la; "nolaugh" -> 1 - la; else -> 1.0 }
+            val aMul = when (L.`when`) { "laugh" -> la; "nolaugh" -> if (la >= 0.998) 0.0 else 1.0; else -> 1.0 }
             val l = lay.getValue(L.img)
             val piv = L.pivot ?: listOf(l.x, l.y)
             val at = L.at ?: piv

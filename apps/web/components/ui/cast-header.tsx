@@ -212,7 +212,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
                 castLaugh(id);
                 const el = e.currentTarget;
                 if (puppets.bundle && !prefersReducedMotion() && typeof el.animate === 'function') {
-                  el.animate(tapKeyframes(puppets.bundle.tap, 12), { duration: puppets.bundle.tap.dur * 1000, easing: 'linear' });
+                  el.animate(tapKeyframes(puppets.bundle.tap, 12 * (puppets.bundle.tap.hop / 110)), { duration: puppets.bundle.tap.dur * 1000, easing: 'linear' });
                 }
               }}
               // The header sits inside the home link: a tap on a character is just for fun.
@@ -233,6 +233,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
               {crown && id === 'w' && (
                 <span
                   ref={crownRef}
+                  data-crown=""
                   className="absolute left-1/2"
                   style={{
                     width: `${PRO_CROWN.widthPct}%`, aspectRatio: '1 / 1', top: `${PRO_CROWN.topPct}%`,

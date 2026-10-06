@@ -16,7 +16,7 @@ import { CAST_FLOURISH_ATTR, INTRO_RUNNING_ATTR } from '@/lib/intro';
 // or a tap plays; nothing while the row is off screen or the tab is hidden.
 
 /** The canvas box around the 512-px mascot square (mascot px): room for the hop and raised arms. */
-export const PUPPET_PAD = { x: 160, top: 100, bottom: 28 } as const;
+export const PUPPET_PAD = { x: 160, top: 150, bottom: 28 } as const;
 /** A signature move every 6–10 s, one character at a time (never the same twice in a row). */
 const MOVE_FIRST_MS = 2600;
 const moveGapMs = () => 6000 + Math.random() * 4000;
@@ -133,6 +133,16 @@ export function useCastPuppets(rowRef: React.RefObject<HTMLDivElement | null>, e
       if (front !== L.front) { L.front = front; const cell = L.canvas.parentElement; if (cell) cell.style.zIndex = front ? '5' : ''; }
       const { ctx, k } = L;
       const M = R.mascot;
+      // The puppet W hops inside his canvas: his crown (a sibling element) rides the same hop.
+      if (R.id === 'w') {
+        const crown = L.canvas.parentElement?.querySelector<HTMLElement>('[data-crown]');
+        if (crown) {
+          const hop = tap !== null && !still ? tapPose(bundle.tap, tap).hop : 0;
+          const y = (hop * M.s * L.canvas.clientWidth) / (512 + PUPPET_PAD.x * 2);
+          const v = hop ? `0 ${y.toFixed(2)}px` : '';
+          if (crown.style.translate !== v) crown.style.translate = v;
+        }
+      }
       // hero px → canvas px
       const a = M.s * k;
       const ex = (M.ox + PUPPET_PAD.x) * k;

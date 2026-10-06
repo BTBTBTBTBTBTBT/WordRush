@@ -389,7 +389,7 @@ struct LivingCastHeader: View {
                     // ~45% of W's width, sitting on its top edge. It rides inside W's
                     // transforms below, so it hops / moves / flourishes with W.
                     CastCrown(size: s * 0.92 * 0.45, still: still || Motion.lowPower) { showProSheet = true }
-                        .offset(y: s * 0.115 - s * 0.92 * 0.45 * 0.72)
+                        .offset(y: s * 0.115 - s * 0.92 * 0.45 * 0.72 + puppetCrownHop(s: s, now: now))
                 }
             }
             .scaleEffect(x: CGFloat(1 - tapPose.sq * 0.6), y: CGFloat(1 + tapPose.sq), anchor: UnitPoint(x: 0.5, y: 0.94))
@@ -421,6 +421,13 @@ struct LivingCastHeader: View {
             // Perf audit: the display-size bitmap (the 512 px hero was scaled every frame).
             ArtThumbs.image(CastSkin.assetName(for: m), points: s).resizable().interpolation(.high).scaledToFit()
         }
+    }
+
+    /// The puppet W hops inside his canvas: his crown rides the same hop (points).
+    private func puppetCrownHop(s: CGFloat, now: Date) -> CGFloat {
+        guard puppetsOn, !still, !Motion.lowPower, let start = puppetTap[.w],
+              let b = CastPuppets.shared.bundle, let rig = CastPuppets.shared.rig(.w) else { return 0 }
+        return CGFloat(b.tap.pose(now.timeIntervalSince(start)).hop * rig.mascot.s) * s / 512
     }
 
     /// In season: the costume's transform-only tap hop (squash + stretch, no face swap).
@@ -593,7 +600,7 @@ struct CastPuppetCanvas: View {
     let still: Bool
 
     /// The canvas around the 512-px mascot square (mascot px) — same as web PUPPET_PAD.
-    static let padX: CGFloat = 160, padTop: CGFloat = 100, padBottom: CGFloat = 28
+    static let padX: CGFloat = 160, padTop: CGFloat = 150, padBottom: CGFloat = 28
 
     var body: some View {
         let u = size / 512

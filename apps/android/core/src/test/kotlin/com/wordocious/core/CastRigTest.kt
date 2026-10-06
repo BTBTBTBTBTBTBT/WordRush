@@ -53,7 +53,8 @@ class CastRigTest {
 
     @Test fun matchesGoldenFrames() {
         val golden = Json.parseToJsonElement(File(repo, "docs/design/brand/animation/rig-engine/rig-golden.json").readText()).jsonArray
-        assertTrue(golden.size > 50)
+        assertTrue(golden.size > 90)
+        assertTrue(golden.any { it.jsonObject["ambient"]?.jsonPrimitive?.booleanOrNull == false })
         for (fe in golden) {
             val f = fe.jsonObject
             val id = f["id"]!!.jsonPrimitive.content
@@ -61,9 +62,10 @@ class CastRigTest {
             val g = f["g"]!!.takeUnless { it is JsonNull }?.jsonPrimitive?.doubleOrNull
             val tap = f["tap"]!!.takeUnless { it is JsonNull }?.jsonPrimitive?.doubleOrNull
             val still = f["still"]!!.jsonPrimitive.booleanOrNull!!
+            val ambient = f["ambient"]?.jsonPrimitive?.booleanOrNull ?: true
             val want = f["ops"]!!.jsonArray
-            val ops = bundle.rigs.getValue(id).evaluate(bundle, t, g, tap, still)
-            val at = "$id t=$t g=$g tap=$tap still=$still"
+            val ops = bundle.rigs.getValue(id).evaluate(bundle, t, g, tap, still, ambient = ambient)
+            val at = "$id t=$t g=$g tap=$tap still=$still ambient=$ambient"
             assertEquals(at, want.map { it.jsonArray[0].jsonPrimitive.content }, ops.map { it.layer })
             ops.forEachIndexed { i, op ->
                 val w = want[i].jsonArray

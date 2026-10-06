@@ -79,13 +79,13 @@ object CastPuppets {
      * the `mascot_<id>` 512-px art cut to [crop] (CastCrops). Nothing is clipped: the hop and
      * raised arms reach outside the box.
      */
-    fun DrawScope.drawPuppet(b: CastRigBundle, rig: CastRig, crop: CastCrops.Crop, t: Double, gr: Double?, tap: Double?, still: Boolean) {
+    fun DrawScope.drawPuppet(b: CastRigBundle, rig: CastRig, crop: CastCrops.Crop, t: Double, gr: Double?, tap: Double?, still: Boolean, ambient: Boolean = true) {
         val u = size.height / crop.height                 // px per mascot px
         val M = rig.mascot
         val a = (M.s * u).toFloat()
         val ex = ((M.ox - crop.left) * u).toFloat()
         val ey = ((M.oy - crop.top) * u).toFloat()
-        val ops = rig.evaluate(b, t, gr, tap, still)
+        val ops = rig.evaluate(b, t, gr, tap, still, ambient = ambient)
         drawIntoCanvas { c ->
             val nc = c.nativeCanvas
             for (op in ops) {

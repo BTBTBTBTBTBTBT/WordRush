@@ -186,10 +186,12 @@ public final class CastRig: Decodable {
 
     private func pmod(_ a: Double, _ p: Double) -> Double { ((a.truncatingRemainder(dividingBy: p)) + p).truncatingRemainder(dividingBy: p) }
 
-    func trackVal(_ name: String, _ t: Double, _ g: Double) -> Double {
+    /// `t` nil = ambient off: the free-running idle sways hold their rest value.
+    func trackVal(_ name: String, _ t: Double?, _ g: Double) -> Double {
         guard let tr = tracks[name] else { return 0 }
         let free = isFree(tr)
-        let c = free ? t : g
+        if free && t == nil { return restVal(name) }
+        let c = free ? t! : g
         var v = 0.0
         if let kf = tr.kf {
             let P = (tr.period ?? 0) != 0 ? tr.period! : cycle
@@ -209,7 +211,7 @@ public final class CastRig: Decodable {
 
     private func restVal(_ name: String) -> Double { tracks[name]?.kf?.first?.v ?? 0 }
 
-    private func val(_ spec: CastRigSpec?, _ t: Double, _ g: Double, _ still: Bool, _ dflt: Double) -> Double {
+    private func val(_ spec: CastRigSpec?, _ t: Double?, _ g: Double, _ still: Bool, _ dflt: Double) -> Double {
         guard let spec else { return dflt }
         switch spec {
         case .num(let d): return d
@@ -253,8 +255,10 @@ public final class CastRig: Decodable {
     /// The draw ops for one frame, back to front. `t` wall clock (s); `gr` seconds since the
     /// signature move started (nil = rest); `tap` seconds since a tap (nil = none); `still`
     /// Reduce Motion (the pose holds; a tap only fades the laughing face in and out).
-    public func evaluate(_ B: CastRigBundle, t: Double, gr: Double?, tap: Double?, still: Bool, laughOk: Bool = true) -> [CastRigOp] {
+    public func evaluate(_ B: CastRigBundle, t tw: Double, gr: Double?, tap: Double?, still: Bool, laughOk: Bool = true, ambient: Bool = true) -> [CastRigOp] {
         let TP = B.tap
+        // ambient = false: no breathing / idle sways (the rest pose between moves); blinks keep `tw`.
+        let t: Double? = ambient ? tw : nil
         let g: Double = (gr == nil || still || gr! >= warp[warp.count - 1][0]) ? 0 : warpG(gr!)
         var hop = 0.0, sq = 0.0, la = 0.0
         if let tap, tap >= 0, tap < TP.dur {
@@ -272,7 +276,7 @@ public final class CastRig: Decodable {
             ops.append(CastRigOp(layer: L.img, m: m, alpha: 1 - 0.45 * f))
         }
         let Br = breath ?? CastRigBreathDefault.value
-        let br = still ? 0 : sin(t / Br.period * .pi * 2)
+        let br = still || t == nil ? 0 : sin(t! / Br.period * .pi * 2)
         let sy = 1 + Br.sy * br + sq
         let sx = 1 - Br.sx * br - sq * 0.6
         let o = root?.origin ?? Br.origin
@@ -282,24 +286,28 @@ public final class CastRig: Decodable {
         var rootM = CastRig.mul(CastRig.T(rdx, rdy + hop), CastRig.T(o[0], o[1]))
         rootM = CastRig.mul(CastRig.mul(CastRig.mul(rootM, CastRig.Rd(rrot)), CastRig.S(sx * rsx, sy * rsy)), CastRig.T(-o[0], -o[1]))
 
+        // The laugh face fades in OVER the opaque face (blink lids stay opaque under it), so no
+        // frame shows two half-transparent faces; the face under it hides once the laugh is full.
         func patches() {
+            if la < 0.998 && !still { blinkPatch() }
             if la > 0.002 {
                 for p in laugh { let l = lay[p]!; ops.append(CastRigOp(layer: p, m: CastRig.mul(rootM, CastRig.T(l.x, l.y)), alpha: la)) }
             }
-            if la >= 0.998 || still { return }
+        }
+        func blinkPatch() {
             guard let blink else { return }
-            var e = blinkState(t)
+            var e = blinkState(tw)
             if let et = eyesTrack {
                 let v = trackVal(et, t, g)
                 if v >= 1.5 { e = "closed" } else if v >= 0.5 && e != "closed" { e = "half" }
             }
             let p = e == "half" ? blink.half : e == "closed" ? blink.closed : nil
-            if let p, let l = lay[p] { ops.append(CastRigOp(layer: p, m: CastRig.mul(rootM, CastRig.T(l.x, l.y)), alpha: 1 - la)) }
+            if let p, let l = lay[p] { ops.append(CastRigOp(layer: p, m: CastRig.mul(rootM, CastRig.T(l.x, l.y)), alpha: 1)) }
         }
 
         var patched = false
         for L in layers where L.shadow != true {
-            let aMul = L.when == "laugh" ? la : L.when == "nolaugh" ? 1 - la : 1
+            let aMul = L.when == "laugh" ? la : L.when == "nolaugh" ? (la >= 0.998 ? 0 : 1) : 1
             let l = lay[L.img]!
             let piv = L.pivot ?? [l.x, l.y]
             let at = L.at ?? piv
