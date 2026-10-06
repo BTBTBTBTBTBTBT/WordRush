@@ -136,3 +136,13 @@
   centered; the clue number sits as a tiny badge in the top-left corner that never overlaps the letter (shrink
   the number, not the letter). Same in play, on the finished screen and the share image, on iOS, Android and web
   (earlier fix dbc30603 moved numbers "clear of letters" by shrinking/offsetting the letter — redo it this way).
+
+## 11. Leaderboard: one game card above the podium (founder 10-06, Spyglass screenshot)
+- The "VIEW BOARD" pill (eye icon, oversized pink pill) is ugly; the "#3 of 3 · 1,160 PTS · Solved · 5 misses…
+  + YOUR BOARD" card under the podium repeats it. Merge them into ONE card above the podium: the branded game
+  title art + cast mascot, "N today", then YOUR rank + stats underneath (#3 of 3 · 1,160 pts · 5 misses ·
+  10/10 · 2m 42s — or "Not played yet" + Play button), and one clean button that opens your board.
+- Button designed in ChatGPT first (family style, matches the game's tint; no eye glyph, no huge pill).
+- Delete the card under the podium; "Yesterday's winners" follows right under the podium.
+- Every game on the Leaderboard, iOS + Android + web; compact + symmetric; check unplayed / guest / no-friends
+  / Friends-tab states and Halloween surfaces.
