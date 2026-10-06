@@ -20,6 +20,10 @@
   onboarding, paywall, empty/error states, widgets.
 - Fix every text that fails contrast: on-wall text, text on glass cards, small labels, numbers, disabled states,
   placeholders. Rule: WCAG AA (4.5:1 small text, 3:1 large/bold) measured against the ACTUAL pixels behind it.
+- Make it a STANDING GATE for every season (founder: "we need to have that audit done when we do major
+  changeovers during holidays and seasons"): the contrast checks run for EVERY season in the registry, a season
+  can't be enabled/shipped while any check fails, and "run the readability sweep" is a required step in
+  docs/design/brand/seasons/README.md "How to add a season".
 - Add an automated check so it stays fixed: web — a contrast test over every route with ?season=halloween
   (computed colors vs background); iOS/Android — the season palette tokens tested against both surfaces + a
   screenshot sweep (perf-tour style) reviewed by eye.
