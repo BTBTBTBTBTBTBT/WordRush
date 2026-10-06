@@ -1085,6 +1085,9 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
                         avatarUrl, 52.dp, frame = com.wordocious.app.data.MascotAvatars.photoFrame(profile.username),
                         pro = isProActive, contentDescription = "Avatar",
                     )
+                } else if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
+                    // 10-06: your own mascot, alive (LetterTileAvatar resolves the same way, through PlayerAvatar)
+                    PlayerAvatar(initial, 52.dp, accentHex = profile?.accentColor, pro = isProActive, live = true)
                 } else {
                     LetterTileAvatar(initial, 52.dp, accentHex = profile?.accentColor, emoji = profile?.avatarEmoji, pro = isProActive)
                 }

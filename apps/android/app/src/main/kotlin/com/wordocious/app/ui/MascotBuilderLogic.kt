@@ -5,6 +5,8 @@ import com.wordocious.core.AvatarConfig
 import com.wordocious.core.AvatarFit
 import com.wordocious.core.AvatarFitManifest
 import com.wordocious.core.AvatarOptions
+import com.wordocious.core.AvatarLiveConfig
+import com.wordocious.core.AvatarPoses
 import com.wordocious.core.AvatarPresets
 import com.wordocious.core.AvatarPart
 import com.wordocious.core.AvatarSeason
@@ -66,6 +68,16 @@ object MascotBuilderLogic {
 
     /** The season's shelf (hats first). */
     fun shelf(): List<BuilderOption> = fit?.let { m -> AvatarSeason.shelf(season, m).map { BuilderOption(it.field, it.id) } } ?: emptyList()
+
+    /**
+     * 10-06 the Dressing Room's Pose tab (shown only while AvatarLiveConfig.LIVING_MASCOT is on; not a BuilderTab so
+     * the builder's tabs stay as they are with the flag off): every pose, "none" (the body as drawn) first.
+     */
+    fun poseOptions(): List<BuilderOption> = if (AvatarLiveConfig.LIVING_MASCOT) AvatarPoses.IDS.map { BuilderOption("pose", it) } else emptyList()
+
+    /** A pose's label ("Wave", "Hands on hips"; "No pose" for none). */
+    fun poseLabel(id: String): String =
+        if (id == NONE) "No pose" else AvatarPoses.data?.poses?.get(id)?.label ?: id.replaceFirstChar { it.uppercaseChar() }
 
     /** The swatch slots (glossy round grid, grouped by row). */
     val SWATCH_SLOTS = setOf("color", "patternColor", "accColor")
@@ -136,6 +148,7 @@ object MascotBuilderLogic {
             "extras" -> config.copy(face = NONE, neck = NONE, held = NONE, wrap = NONE, feet = NONE, pet = NONE, brows = NONE, extra = NONE)
             "bg" -> config.copy(bg = o.id)
             "frame" -> config.copy(frame = o.id)
+            "pose" -> config.copy(pose = if (o.id in AvatarPoses.IDS) o.id else NONE)
             else -> config
         }
         return if (o.slot == "frame") c else c.copy(display = AvatarOptions.DISPLAY_MASCOT)
@@ -167,6 +180,7 @@ object MascotBuilderLogic {
         "extras" -> config.face == NONE && config.neck == NONE && INTEGRATED_SLOTS.all { AvatarFit.value(config, it) == NONE }
         "bg" -> config.bg == o.id
         "frame" -> config.frame == o.id
+        "pose" -> config.pose == o.id
         else -> false
     }
 
@@ -262,11 +276,13 @@ object MascotBuilderLogic {
             "head" -> "No hat"
             "extras", "face", "neck" -> "No extras"
             "frame" -> "No frame"
+            "pose" -> "No pose"
             else -> "None"
         }
         return when (o.slot) {
             "preset" -> AvatarCast.name(o.id) ?: o.id.uppercase()
             "bg" -> if (o.id == "auto") "Auto" else o.id.replaceFirstChar { it.uppercaseChar() }
+            "pose" -> poseLabel(o.id)
             else -> o.id.replace('-', ' ').replaceFirstChar { it.uppercaseChar() }
         }
     }

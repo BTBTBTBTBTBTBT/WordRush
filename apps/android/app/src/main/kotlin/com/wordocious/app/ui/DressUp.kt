@@ -364,11 +364,18 @@ fun DressStage(
     hopToken: Int = 0,
     curtains: Boolean = true,
     bulbs: Boolean = false,
+    /** 10-06 living mascot (flag on only): the mascot's eyes follow the finger over the stage (Edit Profile). */
+    followFinger: Boolean = false,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val podiumW = minOf(StageMetrics.podiumWidth, mascotSize * 1.34f)
     val podiumH = podiumW * (241f / 555f)
-    Box(modifier.fillMaxWidth().height(height), contentAlignment = Alignment.BottomCenter) {
+    val living = com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT
+    val finger = remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
+    Box(
+        modifier.fillMaxWidth().height(height).then(if (living && followFinger) Modifier.trackMascotFinger(finger) else Modifier),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
         StageBackdrop(config.bg, avatarColorHex(config.color), Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().background(Brush.radialGradient(
             listOf(Color.White.copy(alpha = if (WTheme.isDark) 0.16f else 0.42f), Color.Transparent),
@@ -385,7 +392,13 @@ fun DressStage(
             StageArt(R.drawable.art_dress_podium, podiumH, width = podiumW)
             Box(Modifier.padding(bottom = podiumH * 0.42f)) {
                 if (photoUrl != null) PhotoAvatar(photoUrl, mascotSize * 0.74f, Modifier.padding(bottom = mascotSize * 0.06f), contentDescription = "Your photo")
-                else LiveMascot(config, initial, mascotSize, hopToken = hopToken)
+                else if (living) {
+                    // 10-06 the living mascot (AvatarLiveConfig.LIVING_MASCOT): its saved pose, tap = hop + laugh,
+                    // press = squish, moments = reactions, the eyes follow the finger (Edit Profile)
+                    androidx.compose.runtime.CompositionLocalProvider(LocalMascotFinger provides if (followFinger) finger else null) {
+                        LivingMascot(config.copy(frame = "none"), initial, mascotSize, cutout = true, follow = followFinger, hopToken = hopToken)
+                    }
+                } else LiveMascot(config, initial, mascotSize, hopToken = hopToken)
             }
         }
         overlay()

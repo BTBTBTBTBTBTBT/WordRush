@@ -407,7 +407,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 look, initial,
                 modifier = Modifier.clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)),
                 photoUrl = if (wearPhoto) avatarUrl else null,
-                height = StageMetrics.height + 20.dp, hopToken = hopToken,
+                height = StageMetrics.height + 20.dp, hopToken = hopToken, followFinger = true,
             ) {
                 Row(
                     Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp),
