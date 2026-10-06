@@ -67,3 +67,14 @@
   banner next to the cast, celebrating with them; cast members animate with the puppet rigs (cheer, hop,
   W wave, S fist pump…). Seasonal versions during seasons (Halloween sweep).
 - Same performance + Reduce Motion rules; share image of the sweep uses the same day's scene.
+
+## 8. One game-tile style everywhere: W / L badges + matching spacing (founder 10-06, screenshots)
+- Reference = the Sudocious finished screen's tile rows (WORDOCIOUS + PUZZLES): each completed game tile shows the
+  game-colored top band and a small W (win, purple) or L (loss, red) badge on its top-right corner; unplayed tiles
+  stay plain. Spacing/size like the Home hero card rows (8 per row fit evenly).
+- Home hero card: replace today's check marks / greyed-out finished tiles with the same W / L badges.
+- Leaderboard game picker (WORDOCIOUS + PUZZLES rows): add the same W / L badges so it's clear what's left; fix its
+  spacing to match Home/Sudocious (today 9 tiles are crammed in the Wordocious row incl. the sweep broom).
+- One shared tile component ×3 so Home, Leaderboard, finish screens and Stats can't drift again; Halloween surfaces
+  keep the badge readable.
+- Also seen: Home headline "WORDOCIOUS SWEPT! 1…" is truncated — fit it (ties into item 6's bubble text auto-fit).
