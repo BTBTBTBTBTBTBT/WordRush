@@ -19,7 +19,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { WEB, DATA, SAMPLES, readJSON, simpleHash, rngFor, shuffle } from '../more-games/lib.mjs';
+import { WEB, DATA, SAMPLES, readJSON, simpleHash, rngFor, shuffle, gateBank } from '../more-games/lib.mjs';
 
 const EPOCH = '2026-09-23';
 const PER = 6, PER_HOLIDAY = 3, DAILY_ROUNDS = 5;
@@ -57,6 +57,8 @@ for (const k of Object.keys(holiday)) holiday[k].sort((a, b) => a.id.localeCompa
 const ids = new Set(); for (const e of [...daily, ...extra, ...Object.values(holiday).flat()]) { if (ids.has(e.id)) throw new Error(`id collision ${e.id}`); ids.add(e.id); }
 const bank = { version: 1, epoch: EPOCH, daily, extra, holiday: Object.fromEntries(Object.keys(holiday).sort().map((k) => [k, holiday[k]])) };
 const out = path.join(DATA, 'crossword-puzzles.json');
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('crossword', bank);
 fs.writeFileSync(out, JSON.stringify(bank) + '\n');
 const gaps = []; for (let i = 0; i < daily.length; i++) { const j = daily.findIndex((g, k) => k > i && g.theme === daily[i].theme); if (j > 0) gaps.push(j - i); }
 console.log(`wrote ${out}: ${daily.length} daily (epoch ${EPOCH}), ${extra.length} extra, ${Object.keys(holiday).length} holidays / ${Object.values(holiday).flat().length} grids; ${themes.length} evergreen themes; min gap between a theme's outings ${Math.min(...gaps)} days`);

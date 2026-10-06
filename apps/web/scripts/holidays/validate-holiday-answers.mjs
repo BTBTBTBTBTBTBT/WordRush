@@ -9,7 +9,7 @@
 // (OctoWord needs eight distinct answers on the day), 2 six-letter, 2 seven.
 //   node scripts/holidays/validate-holiday-answers.mjs [--in file]
 import path from 'node:path';
-import { WEB, readJSON, upperList, neverAnswer, wordset } from '../more-games/lib.mjs';
+import { WEB, readJSON, upperList, neverAnswer, wordset, wordProblems } from '../more-games/lib.mjs';
 import { HOLIDAY_KEYS } from '../crossword/holidays.mjs';
 
 const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
@@ -33,6 +33,7 @@ for (const key of Object.keys(table)) {
       else if (!allowed[len].has(w)) why.push('not a valid guess (allowed list)');
       if (never.has(w)) why.push('proper noun / blocklisted answer');
       if (hard.has(w)) why.push('blocked term');
+      for (const p of wordProblems(w)) why.push(`content-safety: ${p}`); // offensive / British-only / curated obscure
       if (seen.has(w) && seen.get(w) !== key) why.push(`also under ${seen.get(w)}`);
       seen.set(w, key);
       if (why.length) { console.log(`FAIL ${key}/${len} ${w}: ${why.join('; ')}`); problems++; }

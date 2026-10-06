@@ -17,7 +17,7 @@
 // + Tests/Fixtures and Android resources (word-list-sync.test.ts pins all four copies).
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJSON, rngFor, below, shuffle, neverAnswer, wordset } from '../more-games/lib.mjs';
+import { DATA, readJSON, rngFor, below, shuffle, neverAnswer, wordset, gateBank } from '../more-games/lib.mjs';
 import { nearWords } from './add-near.mjs';
 import { CONTENT_RELEASE_DATE } from '../content-release-date.mjs';
 
@@ -134,4 +134,6 @@ for (const p of touched) p.near = nearWords(p, byKey.get(p.theme).rawPool);
 const swapped = report.filter((r) => r.swaps.length);
 console.log(`from ${FROM} (daily index ${fromIdx}): ${swapped.length} puzzles re-laid, ${report.filter((r) => r.title).length} retitled`);
 for (const r of report) console.log(`  ${r.id}${r.day === null ? ' (unlimited)' : ` day ${r.day + 1}`}${r.title ? ` "${r.title[0]}" → "${r.title[1]}"` : ''}${r.swaps.length ? ` ${r.swaps.join(' ')}` : ''}`);
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('spyglass', bank);
 if (!DRY) { fs.writeFileSync(bankPath, JSON.stringify(bank) + '\n'); console.log('wrote', bankPath); }

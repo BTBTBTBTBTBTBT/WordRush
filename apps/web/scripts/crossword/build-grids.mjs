@@ -4,7 +4,7 @@
 // construction, bounding box <= 10 wide x 11 tall, >= 60% of entries on-theme,
 // no answer used twice in a puzzle.   node scripts/crossword/build-grids.mjs
 import path from 'node:path';
-import { WEB, REPO, readJSON, rngFor, below, shuffle, writeSample, wordset } from '../more-games/lib.mjs';
+import { WEB, REPO, readJSON, rngFor, below, shuffle, writeSample, wordset, wordProblems } from '../more-games/lib.mjs';
 
 const MAXW = 10, MAXH = 11, MIN_ENTRIES = 10, MAX_ENTRIES = 13, SIZE = 40, MID = 20;
 const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
@@ -20,6 +20,7 @@ for (const [theme, t] of Object.entries(bank)) for (const [clue, raw] of t.pairs
   if (!/^[A-Z]{3,9}$/.test(answer)) why.push('answer must be 3–9 letters');
   if (!common.has(answer) && !(t.allow || []).map((w) => w.toUpperCase()).includes(answer)) why.push('answer not in the common lexicon tier (add it to the theme\'s "allow" list only if every player knows it)');
   if (hard.has(answer)) why.push('blocked term');
+  for (const p of wordProblems(answer, { obscure: false })) why.push(`content-safety: ${p}`); // fill may be rarer (it is clued)
   if ((clue.match(/____/g) || []).length !== 1) why.push('clue needs exactly one blank');
   if (new RegExp(`\\b${answer}\\b`, 'i').test(clue)) why.push('answer appears in its own clue');
   (why.length ? rejected : pairs).push({ theme, clue, answer, why });

@@ -6,6 +6,7 @@ import { applyAllSolutionSwaps } from '@wordle-duel/core';
 import { CONTENT_RELEASE_DATE } from './content-release-date.mjs';
 import * as safety from '../../../packages/core/src/content-safety/safety.mjs';
 import { servedEntries, sha } from '../../../packages/core/src/content-safety/served.mjs';
+import { ALLOW, bankItems, itemProblems, unseenEntries } from '../../../packages/core/src/content-safety/gate.mjs';
 
 /**
  * THE CONTENT GATE (prompt 05c, docs/CONTENT-SAFETY.md) — `npm run content:check`, and part of every CI run
@@ -27,77 +28,35 @@ import { servedEntries, sha } from '../../../packages/core/src/content-safety/se
  *  G9  registry complete; web / iOS / Android copies byte-identical
  *  G10 already-served entries unchanged (served-snapshot.json)
  *  G11 no offensive word in plain text in the content tooling's own files (code, tests, data, reports)
- * A legit exception goes in ALLOW with its reason. Rarer-than-Zipf-2.5 words are reported, not failed.
+ *  G12 the registry's length rule: every list word / answer / required word / rung is A–Z within [min, max]
+ * A legit exception goes in content-safety/data/allow.json with its reason. Rarer-than-Zipf-2.5 words are reported, not failed.
  * Offensive words are only ever printed MASKED (first letter + asterisks); ALLOW keys never spell them.
  */
 const REPO = join(__dirname, '..', '..', '..');
 const CS = join(REPO, 'packages', 'core', 'src', 'content-safety');
 const J = (p: string) => JSON.parse(readFileSync(join(REPO, p), 'utf8'));
-type Bank = { id: string; games: string[]; kind: string; schema: string; web: string; copies: string[] };
+type Bank = { id: string; games: string[]; kind: string; schema: string; web: string; copies: string[]; lengths?: number[] };
 const registry = JSON.parse(readFileSync(join(CS, 'registry.json'), 'utf8')) as {
   scan: string[]; banks: Bank[]; sources: { id: string; paths: string[] }[]; notContent: Record<string, string>;
 };
 const bank = (id: string) => registry.banks.find((b) => b.id === id)!;
 const holidayDays: Record<string, string> & { __pnHoliday?: Set<string> } = J('apps/web/data/holiday-days.json').days;
 
-/** Known, reasoned exceptions: `${guard}:${bankId}:${puzzleId}:${WORD | text}` → why (an offensive WORD is keyed masked). */
-const ALLOW: Record<string, string> = {
-  // Decided before this gate (content-american.test.ts ALLOW).
-  'G2:crossword:cw-uplpfw:PLOUGH': 'clue says "spelled the British way"', 'G2:crossword:cw-hmxt00:PLOUGH': 'clue says "spelled the British way"',
-  'G2:crossword:cw-8dyxbz:TROUSERS': 'clue: "Dress pants, also called ____"', 'G2:crossword:cw-shifet:TROUSERS': 'clue: "Dress pants, also called ____"',
-  'G2:crossword:cw-3es5ch:TROUSERS': 'clue: "Dress pants, also called ____"', 'G2:kindred:gr-hzu5x7:GREY': '___hound (GREYHOUND)',
-  'G2:crossword:cw-uplpfw:text': 'clue says "spelled the British way"', 'G2:crossword:cw-hmxt00:text': 'clue says "spelled the British way"',
-  'G2:crossword:cw-8dyxbz:text': 'clue: "Dress pants, also called ____"', 'G2:crossword:cw-shifet:text': 'clue: "Dress pants, also called ____"',
-  'G2:crossword:cw-3es5ch:text': 'clue: "Dress pants, also called ____"',
-  // Nursery rhymes whose standard words collide with the blocklist (clue text only).
-  'G1:crossword:cw-5wafd1:text': 'nursery rhyme ("Ding, d*** , bell")', 'G1:crossword:cw-xvjj4v:text': 'nursery rhyme ("Ding, d*** , bell")',
-  'G1:crossword:cw-lu3r9g:text': 'nursery rhyme ("P*****cat, p*****cat")', 'G1:crossword:cw-pjwj69:text': 'nursery rhyme ("P*****cat, p*****cat")',
-  // Kindred words that are fair in their group even though the word is British or rare on its own.
-  'G2:kindred:gr-etmydy:WEIR': 'anagram of WIRE ("Anagrams of hardware")', 'G2:kindred:gr-l6jaqj:COOKER': 'PRESSURE COOKER (US)',
-  'G2:kindred:gr-w8ij3o:COOKER': 'SLOW COOKER (US)', 'G2:kindred:gr-z9upr:GAFFER': 'film-set job title (US credits)',
-  'G7:kindred:gr-1pj39z:THATCH': 'wordplay: Hidden HAT', 'G7:kindred:gr-6e8rj:THATCH': 'wordplay: Hidden HAT',
-  'G7:kindred:gr-67bfrd:FRANC': '"Foreign currencies" group', 'G7:kindred:gr-b1tgpe:THORAX': '"Insect parts" group',
-  'G7:kindred:gr-b4ctdw:COCO': '___nut (COCONUT)', 'G7:kindred:gr-cd53an:SQUIRE': '"Castle court" group',
-  // Classic answers on the curated obscure list for scrambles/rungs, but familiar as a guessed answer.
-  'G7:answers-5:pool:ANVIL': 'familiar word (cartoons, the ear); a long-standing Classic answer',
-  'G7:answers-6:pool:THATCH': 'familiar word (thatched roof, a thatch of hair)',
-  // Crossword grids where every same-length swap breaks a crossing — need a grid rebuild (REPORT-CONTENT-FIXES.md).
-  'G5:crossword:cw-3es5ch:CLOTH/CLOTHING': 'needs a grid rebuild (no fill keeps the crossings)',
-  'G5:crossword:cw-8tmtmg:HEART/HEARTBEAT': 'needs a grid rebuild (no fill keeps the crossings)',
-  'G5:crossword:cw-78zs14:PRINCE/PRINCESS': 'needs a grid rebuild (only off-theme fills)',
-  'G5:crossword:cw-pzf6mr:HEAVEN/HEAVENLY': 'needs a grid rebuild (no fill keeps the crossings)',
-};
+// Reasoned exceptions live in packages/core/src/content-safety/data/allow.json (shared with the generators' gate).
 
 // ---------------------------------------------------------------- scope
-const DAY = 86400000;
-const FROM = Math.round((Date.parse(`${CONTENT_RELEASE_DATE}T00:00:00Z`) - Date.parse('2026-09-23T00:00:00Z')) / DAY);
-const servedHoliday = (key: string, i: number, n: number) => {
-  const dates = Object.keys(holidayDays).filter((d) => holidayDays[d] === key).sort();
-  return dates.filter((_, k) => k % n === i).some((d) => d >= '2026-09-23' && d < CONTENT_RELEASE_DATE);
-};
 type Entry = { id: string; where: string; p: any };
-function unseen(b: { daily: any[]; extra?: any[]; holiday?: Record<string, any[]> }): Entry[] {
-  return [
-    ...b.daily.slice(FROM).map((p, i) => ({ id: p.id, where: `daily#${FROM + i}`, p })),
-    ...(b.extra ?? []).map((p, i) => ({ id: p.id, where: `unlimited#${i}`, p })),
-    ...Object.entries(b.holiday ?? {}).flatMap(([k, l]) => l.filter((_, i) => !servedHoliday(k, i, l.length)).map((p, i) => ({ id: p.id, where: `holiday:${k}#${i}`, p }))),
-  ];
-}
+const unseen = (b: any): Entry[] => unseenEntries(b, { from: CONTENT_RELEASE_DATE, holidayDays });
+const servedHoliday = (key: string, i: number, n: number) => Object.keys(holidayDays).filter((d) => holidayDays[d] === key).sort()
+  .filter((_, k) => k % n === i).some((d) => d >= '2026-09-23' && d < CONTENT_RELEASE_DATE);
 const up = (ws: string[]) => ws.map((w) => w.toUpperCase());
 
-/** Per-bank: the words that are answers (shown / required) and the lines of text a player reads. */
-type Item = { bank: string; id: string; where: string; words: string[]; texts: string[] };
+/** Per-bank: the words that are answers (shown / required), the words merely accepted, and the lines of text a player reads. */
+type Item = { bank: string; id: string; where: string; words: string[]; accepted?: string[]; sized?: string[]; texts: string[] };
 const items: Item[] = [];
-const push = (bankId: string, e: Entry, words: string[], texts: string[]) => items.push({ bank: bankId, id: e.id, where: e.where, words, texts });
-for (const e of unseen(J(bank('crossword').web))) push('crossword', e, e.p.entries.map((x: any) => x.answer),
-  [e.p.title, ...e.p.entries.map((x: any) => x.clue.replace('____', x.answer.toLowerCase()))]);
-for (const e of unseen(J(bank('codebreaker').web))) push('codebreaker', e, [], [e.p.text]);
-for (const e of unseen(J(bank('kindred').web))) push('kindred', e, e.p.groups.flatMap((g: any) => g.words), e.p.groups.map((g: any) => g.label));
-for (const e of unseen(J(bank('hubbub').web))) push('hubbub', e, e.p.words, []);
-for (const e of unseen(J(bank('ladder').web))) push('ladder', e, [e.p.start, e.p.end, ...e.p.path], []);
-for (const e of unseen(J(bank('muddle').web))) push('muddle', e, [...e.p.words.map((w: any) => w.answer), ...e.p.final.answer.split(' ')],
-  [e.p.caption.replace('____', e.p.final.answer.toLowerCase()), e.p.altText]);
-for (const e of unseen(J(bank('spyglass').web))) push('spyglass', e, e.p.words.map((w: any) => w.w), [e.p.title]);
+for (const id of ['crossword', 'codebreaker', 'kindred', 'hubbub', 'ladder', 'muddle', 'spyglass']) {
+  items.push(...(bankItems(id, J(bank(id).web), { from: CONTENT_RELEASE_DATE, holidayDays }) as Item[]));
+}
 const themes = J(bank('spyglass-themes').web).themes as { key: string; title: string; words: string }[];
 for (const t of themes) items.push({ bank: 'spyglass-themes', id: t.key, where: 'theme pool', words: t.words.split(/\s+/), texts: [t.title] });
 for (const id of ['answers-5', 'answers-6', 'answers-7']) items.push({ bank: id, id: 'pool', where: 'as dealt after every swap batch', words: applyAllSolutionSwaps(up(J(bank(id).web))), texts: [] });
@@ -147,28 +106,22 @@ describe('content gate (npm run content:check)', () => {
     report.push(`G10 served: ${n} served entries / pools hashed before ${snap.from}; 0 changed`);
   });
 
+  // G1 / G2 / G7 are the generators' own gate (content-safety/gate.mjs itemProblems), over every item here plus
+  // the Letter Ladder accept list (shown as hints, so British / obscure rules apply to it too).
+  const ladderItem = (): Item => ({ bank: 'ladder-accept', id: 'list', where: 'accept list', words: up(J(bank('ladder-accept').web)), texts: [] });
+  let problems: ReturnType<typeof itemProblems> | undefined;
+  const gate = () => (problems ??= itemProblems([...items, ladderItem()], { skipOffensive: PENDING }));
+
   it('G1 nothing offensive in answers, required words, rungs, accept lists or text', () => {
-    const hits: string[] = [];
-    for (const it_ of items) {
-      for (const w of it_.words) { const why = safety.offensiveWord(w); if (why && !PENDING.has(w) && !ok(`G1:${it_.bank}:${it_.id}:${safety.mask(w)}`)) hits.push(`${it_.bank} ${it_.id} (${it_.where}): ${why}`); }
-      for (const t of it_.texts) { const why = safety.offensiveText(t); if (why && !ok(`G1:${it_.bank}:${it_.id}:text`)) hits.push(`${it_.bank} ${it_.id} (${it_.where}): ${why}`); }
-    }
     // The Classic / Six / Seven GUESS lists are monotonic — removing a guess rewrites every finished game that
     // used it (word-list-sync.test.ts) — so they keep that test's slur rule; additions go through G8's filter.
-    for (const id of ['ladder-accept']) for (const w of up(J(bank(id).web))) { const why = safety.offensiveWord(w); if (why && !ok(`G1:${id}:list:${safety.mask(w)}`)) hits.push(`${id}: ${why}`); }
-    for (const e of unseen(J(bank('hubbub').web))) for (const w of e.p.bonus) { const why = safety.offensiveWord(w); if (why) hits.push(`hubbub ${e.id} bonus: ${why}`); }
+    const hits = gate().g1;
     report.push(`G1  offensive: ${hits.length} hit(s)`);
     expect(hits, fmt(hits)).toEqual([]);
   });
 
   it('G2 nothing British-only in answers, required words, rungs or text', () => {
-    const hits: string[] = [];
-    const ladderList = up(J(bank('ladder-accept').web));
-    const all = [...items, { bank: 'ladder-accept', id: 'list', where: 'accept list', words: ladderList, texts: [] }];
-    for (const it_ of all) {
-      for (const w of it_.words) { const why = safety.britishWord(w); if (why && !ok(`G2:${it_.bank}:${it_.id}:${w}`)) hits.push(`${it_.bank} ${it_.id} (${it_.where}): ${why}`); }
-      for (const t of it_.texts) { const why = safety.britishText(t); if (why && !ok(`G2:${it_.bank}:${it_.id}:text`)) hits.push(`${it_.bank} ${it_.id} (${it_.where}): "${safety.leaks(t).length ? '(masked)' : t.slice(0, 70)}" — ${why}`); }
-    }
+    const hits = gate().g2;
     report.push(`G2  British: ${hits.length} hit(s)`);
     expect(hits, fmt(hits)).toEqual([]);
   });
@@ -216,15 +169,7 @@ describe('content gate (npm run content:check)', () => {
   });
 
   it('G7 no curated-obscure word as an answer, required word, rung, Kindred or Spyglass word', () => {
-    const hits: string[] = []; const rare: string[] = [];
-    const ladderList = up(J(bank('ladder-accept').web));
-    for (const it_ of [...items, { bank: 'ladder-accept', id: 'list', where: 'accept list', words: ladderList, texts: [] }]) {
-      if (it_.bank === 'crossword') continue; // crossword fill is clued, so rarer fill is fair; G5/G1/G2 cover it
-      for (const w of it_.words) {
-        if (safety.isListedObscure(w) && !ok(`G7:${it_.bank}:${it_.id}:${w}`)) hits.push(`${it_.bank} ${it_.id} (${it_.where}): ${safety.offensiveWord(w) ? safety.mask(w) : w}`);
-        else if (w.length >= 4 && safety.zipf(w) < 2.5 && it_.bank !== 'muddle') rare.push(`${it_.bank}:${w}`);
-      }
-    }
+    const { g7: hits, rare } = gate();
     report.push(`G7  curated obscure: ${hits.length} hit(s) (+ ${Object.keys(ALLOW).filter((k) => k.startsWith('G7:')).length} allowed); warning only — ${new Set(rare).size} distinct shown/required words rarer than Zipf 2.5`);
     expect(hits, fmt(hits)).toEqual([]);
   });
@@ -265,6 +210,20 @@ describe('content gate (npm run content:check)', () => {
     for (const [f, a, b] of sections) { const t = readFileSync(join(REPO, f), 'utf8'); const l = safety.leaks(t.slice(t.indexOf(a), t.indexOf(b))); if (l.length) hits.push(`${f} (batch 4): ${l.join(' ')}`); }
     report.push(`G11 plain-text leak scan: ${files.length + sections.length} files/sections, ${hits.length} with a leak`);
     expect(hits, `store these base64-encoded (see docs/CONTENT-SAFETY.md):\n${hits.join('\n')}`).toEqual([]);
+  });
+
+  it('G12 length rules: every registered list word, answer, required word and rung is A–Z within the registry\'s [min, max]', () => {
+    const hits: string[] = []; let n = 0;
+    const check = (b: Bank, where: string, ws: string[]) => {
+      const [min, max] = b.lengths!.length === 1 ? [b.lengths![0], b.lengths![0]] : b.lengths!;
+      for (const w of ws) { n++; if (!/^[A-Z]+$/.test(w) || w.length < min || w.length > max) hits.push(`${b.id} ${where}: ${safety.offensiveWord(w) ? safety.mask(w) : w} (${w.length})`); }
+    };
+    for (const b of registry.banks.filter((x) => x.lengths)) {
+      if (b.schema === 'epoch-bank') for (const it_ of items.filter((x) => x.bank === b.id)) check(b, `${it_.id} (${it_.where})`, it_.sized ?? []);
+      else check(b, 'list', up(J(b.web)));
+    }
+    report.push(`G12 lengths: ${n} words in ${registry.banks.filter((x) => x.lengths).length} registered files; ${hits.length} out of range`);
+    expect(hits, fmt(hits)).toEqual([]);
   });
 
   afterAll(() => {

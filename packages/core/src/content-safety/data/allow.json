@@ -1,0 +1,46 @@
+{
+ "note": "Reasoned exceptions to the content gate (content-check.test.ts and gate.mjs). Key: GUARD:bankId:puzzleId:WORD (or :text for a line of text; an offensive WORD is keyed masked, e.g. B****). Value: why it is fine. Add an entry only with a reason a reviewer would accept (docs/CONTENT-SAFETY.md).",
+ "groups": {
+  "Decided before this gate (content-american.test.ts ALLOW).": {
+   "G2:crossword:cw-uplpfw:PLOUGH": "clue says \"spelled the British way\"",
+   "G2:crossword:cw-hmxt00:PLOUGH": "clue says \"spelled the British way\"",
+   "G2:crossword:cw-8dyxbz:TROUSERS": "clue: \"Dress pants, also called ____\"",
+   "G2:crossword:cw-shifet:TROUSERS": "clue: \"Dress pants, also called ____\"",
+   "G2:crossword:cw-3es5ch:TROUSERS": "clue: \"Dress pants, also called ____\"",
+   "G2:kindred:gr-hzu5x7:GREY": "___hound (GREYHOUND)",
+   "G2:crossword:cw-uplpfw:text": "clue says \"spelled the British way\"",
+   "G2:crossword:cw-hmxt00:text": "clue says \"spelled the British way\"",
+   "G2:crossword:cw-8dyxbz:text": "clue: \"Dress pants, also called ____\"",
+   "G2:crossword:cw-shifet:text": "clue: \"Dress pants, also called ____\"",
+   "G2:crossword:cw-3es5ch:text": "clue: \"Dress pants, also called ____\""
+  },
+  "Nursery rhymes whose standard words collide with the blocklist (clue text only).": {
+   "G1:crossword:cw-5wafd1:text": "nursery rhyme (\"Ding, d*** , bell\")",
+   "G1:crossword:cw-xvjj4v:text": "nursery rhyme (\"Ding, d*** , bell\")",
+   "G1:crossword:cw-lu3r9g:text": "nursery rhyme (\"P*****cat, p*****cat\")",
+   "G1:crossword:cw-pjwj69:text": "nursery rhyme (\"P*****cat, p*****cat\")"
+  },
+  "Kindred words that are fair in their group even though the word is British or rare on its own.": {
+   "G2:kindred:gr-etmydy:WEIR": "anagram of WIRE (\"Anagrams of hardware\")",
+   "G2:kindred:gr-l6jaqj:COOKER": "PRESSURE COOKER (US)",
+   "G2:kindred:gr-w8ij3o:COOKER": "SLOW COOKER (US)",
+   "G2:kindred:gr-z9upr:GAFFER": "film-set job title (US credits)",
+   "G7:kindred:gr-1pj39z:THATCH": "wordplay: Hidden HAT",
+   "G7:kindred:gr-6e8rj:THATCH": "wordplay: Hidden HAT",
+   "G7:kindred:gr-67bfrd:FRANC": "\"Foreign currencies\" group",
+   "G7:kindred:gr-b1tgpe:THORAX": "\"Insect parts\" group",
+   "G7:kindred:gr-b4ctdw:COCO": "___nut (COCONUT)",
+   "G7:kindred:gr-cd53an:SQUIRE": "\"Castle court\" group"
+  },
+  "Classic answers on the curated obscure list for scrambles/rungs, but familiar as a guessed answer.": {
+   "G7:answers-5:pool:ANVIL": "familiar word (cartoons, the ear); a long-standing Classic answer",
+   "G7:answers-6:pool:THATCH": "familiar word (thatched roof, a thatch of hair)"
+  },
+  "Crossword grids where every same-length swap breaks a crossing — need a grid rebuild (REPORT-CONTENT-FIXES.md).": {
+   "G5:crossword:cw-3es5ch:CLOTH/CLOTHING": "needs a grid rebuild (no fill keeps the crossings)",
+   "G5:crossword:cw-8tmtmg:HEART/HEARTBEAT": "needs a grid rebuild (no fill keeps the crossings)",
+   "G5:crossword:cw-78zs14:PRINCE/PRINCESS": "needs a grid rebuild (only off-theme fills)",
+   "G5:crossword:cw-pzf6mr:HEAVEN/HEAVENLY": "needs a grid rebuild (no fill keeps the crossings)"
+  }
+ }
+}
