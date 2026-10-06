@@ -83,4 +83,4 @@
 - Behave like Android everywhere: once the cast turns musical it STAYS musical on every page with the header
   (Home, Leaderboard, Stats, Friends, game pages that show the cast) until the player long-presses a mascot again.
   PR #48 made iOS (and check web) Home-only — lift the musical state to an app-wide store (iOS app state / web
-  context; persist across tab switches, not across app restarts unless founder wants) so all headers share it.
+  context; persist across tab switches; DECIDED: resets to normal on app restart — never persisted) so all headers share it.
