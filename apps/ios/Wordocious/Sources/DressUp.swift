@@ -298,6 +298,8 @@ struct DressStage<Overlay: View>: View {
     var hopToken: Int = 0
     var curtains = true
     var bulbs = false
+    /// The living mascot's eyes follow the finger (the Edit Profile Stage; AvatarLiveConfig.livingMascot only).
+    var follow = false
     @ViewBuilder var overlay: () -> Overlay
 
     var body: some View {
@@ -333,6 +335,9 @@ struct DressStage<Overlay: View>: View {
                         AvatarView(url: photo.url, username: photo.username, size: mascotSize * 0.74, userId: photo.userId)
                             .shadow(color: Color(hex: 0x4C1D95).opacity(0.22), radius: 6, y: 4)
                             .padding(.bottom, mascotSize * 0.06)
+                    } else if LivingMascotView.canAnimate(config) {
+                        // 10-06 (behind AvatarLiveConfig.livingMascot, off): the rigged living mascot in its saved pose
+                        LivingMascotView(config: config, initial: initial, size: mascotSize, cutout: true, follow: follow, hopToken: hopToken)
                     } else {
                         LiveMascot(config: config, initial: initial, size: mascotSize, hopToken: hopToken)
                     }

@@ -1063,7 +1063,8 @@ struct ProfileTab: View {
                 // Founder 10-05 (door 1): your avatar IS the way in — a tap opens the Stage; the small
                 // "Dress up" tag replaces the old pencil.
                 Button { DressUp.shared.open() } label: {
-                    AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive)
+                    AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive,
+                               living: true)
                         .overlay(alignment: .bottom) {
                             StageArt("art-dress-tag-dressup", height: 17).offset(y: 9)
                         }

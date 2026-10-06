@@ -25,6 +25,8 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
     case body, color, pattern, eyes, nose, cheeks, mouth, hats, extras, backdrop, frame
     /// 10-05: the season's shelf (AvatarSeason), first in the row while a season is on.
     case season
+    /// 10-06: the saved pose (AvatarPose), last in the room's row — only while AvatarLiveConfig.livingMascot is on.
+    case pose
     var id: String { rawValue }
 
     var title: String {
@@ -41,11 +43,14 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
         case .backdrop: return "Backdrop"
         case .frame: return "Frame"
         case .season: return MascotSeasonal.title ?? "Season"
+        case .pose: return "Pose"
         }
     }
 
     /// The Dressing Room's tabs (all visible in one row): Cheeks joins Nose.
     static let roomTabs: [MascotBuilderTab] = [.body, .color, .pattern, .eyes, .nose, .mouth, .hats, .extras, .backdrop, .frame]
+    /// The tabs the room shows: + Pose while the living mascot ships (AvatarLiveConfig.livingMascot; hidden while off).
+    static var shownRoomTabs: [MascotBuilderTab] { roomTabs + (AvatarLiveConfig.livingMascot ? [.pose] : []) }
 
     /// The tab's ChatGPT icon (art-dress-tab-<id>).
     var artId: String { self == .cheeks ? "nose" : rawValue }
@@ -365,7 +370,7 @@ struct MascotBuilderView: View {
     /// All ten tabs in one row: the ChatGPT tab icon over a tiny label; the open tab lifts on a white pad.
     private var iconTabs: some View {
         HStack(spacing: 1) {
-            ForEach((MascotSeasonal.shelf.isEmpty ? [] : [MascotBuilderTab.season]) + MascotBuilderTab.roomTabs) { t in
+            ForEach((MascotSeasonal.shelf.isEmpty ? [] : [MascotBuilderTab.season]) + MascotBuilderTab.shownRoomTabs) { t in
                 let on = tab == t || (t == .nose && tab == .cheeks)
                 Button { Haptics.tap(); tab = t } label: {
                     VStack(spacing: 2) {
@@ -375,6 +380,9 @@ struct MascotBuilderView: View {
                                 .shadow(color: Color(hex: 0x7C3AED).opacity(on ? 0.3 : 0), radius: 6, y: 3)
                             if t == .season, let first = MascotSeasonal.shelf.first {
                                 StageArt("art-av-acc-\(first.id)", height: 24)   // the season's first hat (the pumpkin)
+                            } else if t == .pose {
+                                // no tab art yet: the player's own mascot, waving
+                                MascotPoseThumb(config: config, pose: "wave", initial: initial, size: 30)   // > 28 pt: small mascots never pose
                             } else {
                                 StageArt("art-dress-tab-\(t.artId)", height: 24)
                             }
@@ -587,6 +595,12 @@ struct MascotBuilderView: View {
                     .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                     .frame(maxWidth: .infinity)
             }
+        case .pose:
+            VStack(alignment: .leading, spacing: 8) {
+                grid(AvatarPose.ids.map { Option(slot: "pose", value: $0) })
+                Text("Your mascot holds this pose and comes alive on your Stage and Home.")
+                    .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
+            }
         case .backdrop: grid(AvatarCatalog.backdropIds.map { Option(slot: "bg", value: $0) })
         case .frame:
             VStack(alignment: .leading, spacing: 8) {
@@ -695,6 +709,7 @@ struct MascotBuilderView: View {
             if let fit = MascotParts.fit { c = AvatarFit.applyPick(c, field: o.slot, id: o.value, manifest: fit) }
         case "bg": c.bg = o.value
         case "frame": c.frame = o.value
+        case "pose": c.pose = o.value
         default: break
         }
         return c
@@ -727,6 +742,7 @@ struct MascotBuilderView: View {
         case "held", "wrap", "feet", "pet", "brows", "extra": return AvatarFit.value(config, o.slot) == o.value
         case "bg": return config.bg == o.value
         case "frame": return config.frame == o.value
+        case "pose": return config.pose == o.value
         default: return false
         }
     }
@@ -752,6 +768,7 @@ struct MascotBuilderView: View {
     private func label(_ o: Option) -> String {
         if o.slot == "color" || o.slot == "patternColor" { return MascotOptionNames.name(o.value) }
         if o.slot == "frame", let t = AvatarFrameRules.tier(o.value) { return t.label }
+        if o.slot == "pose" { return o.value == "none" ? "Standing" : AvatarPosesData.bundled?.poses[o.value]?.label ?? MascotOptionNames.name(o.value) }
         return MascotOptionNames.name(o.value)
     }
 
@@ -771,6 +788,7 @@ struct MascotBuilderView: View {
             case "brows": return "brows"
             case "bg": return "backdrop"
             case "frame": return "frame"
+            case "pose": return "pose"
             default: return ""
             }
         }()
@@ -907,7 +925,9 @@ struct PartThumb: View {
     var body: some View {
         let dark = Theme.isDark
         let base = Color(hex: AvatarCatalog.colorValue(config.color))
-        if value == "none" || (slot == "pattern" && value == "solid") {
+        if slot == "pose" {
+            MascotPoseThumb(config: config, pose: value, initial: initial, size: 56)
+        } else if value == "none" || (slot == "pattern" && value == "solid") {
             NoneGlyph()
         } else {
         switch slot {

@@ -38,6 +38,9 @@ struct AvatarView: View {
     var alwaysLight: Bool = false
     /// false = no thin body-color edge on an unframed mascot tile (the Pick a Friend grid only).
     var stroke: Bool = true
+    /// 10-06: the player's own mascot comes alive here (the Stats card) while AvatarLiveConfig.livingMascot is on.
+    /// Lists never pass it (they stay still). Taps stay with the surrounding button.
+    var living: Bool = false
 
     @ObservedObject private var directory = AvatarDirectory.shared
     @ObservedObject private var looks = CastAvatars.shared
@@ -88,6 +91,10 @@ struct AvatarView: View {
                 }
                 .frame(width: size, height: size)
                 .proAvatarMark(wearsPro && ring != "pro", size: size, tile: true)
+            } else if living && LivingMascotView.canAnimate(r.config) {
+                LivingMascotView(config: r.config, initial: look.initial, size: size, interactive: false, stroke: stroke)
+                    .frame(width: size, height: size)
+                    .proAvatarMark(wearsPro && r.config.frame != "pro", size: size, tile: true)
             } else {
                 MascotAvatar(config: r.config, initial: look.initial, size: size, alwaysLight: alwaysLight, stroke: stroke)
                     .frame(width: size, height: size)

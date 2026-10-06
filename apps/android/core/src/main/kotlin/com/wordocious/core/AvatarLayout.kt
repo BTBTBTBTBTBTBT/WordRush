@@ -18,10 +18,37 @@ import kotlin.math.roundToLong
 
 data class AvatarRect(val x: Double, val y: Double, val w: Double, val h: Double)
 
-data class AvatarLayoutLayer(val layer: String, val field: String, val id: String, val art: String, val rect: AvatarRect, val tint: Boolean)
+/**
+ * One drawn layer. Posed layouts only: [m] = the layer's affine matrix in content fractions (draw the rect under it),
+ * [ride] = what it moves with (root / armL / armR / handL / handR / feet / none — the living mascot re-poses these).
+ */
+data class AvatarLayoutLayer(
+    val layer: String, val field: String, val id: String, val art: String, val rect: AvatarRect, val tint: Boolean,
+    val m: AvatarMatrix? = null, val ride: String? = null,
+)
 
-/** [letterIndex]: the white initial is drawn just before layers[letterIndex] (== layers.size: after the last layer). */
-data class AvatarLayout(val scale: Double, val body: AvatarRect, val letter: AvatarRect, val layers: List<AvatarLayoutLayer>, val bounds: AvatarRect, val letterIndex: Int = 1)
+/** Posed layouts only: the pose drawn (its id), with every part's matrix (content fractions). */
+data class AvatarLayoutPoseInfo(val id: String, val parts: AvatarPoseParts)
+
+/**
+ * [letterIndex]: the white initial is drawn just before layers[letterIndex] (== layers.size: after the last layer).
+ * Posed layouts only: [letterM] = the body's matrix (content fractions; the white initial moves with it), [pose].
+ */
+data class AvatarLayout(
+    val scale: Double, val body: AvatarRect, val letter: AvatarRect, val layers: List<AvatarLayoutLayer>, val bounds: AvatarRect, val letterIndex: Int = 1,
+    val letterM: AvatarMatrix? = null, val pose: AvatarLayoutPoseInfo? = null,
+)
+
+/**
+ * The pose to lay out (TS AvatarLayoutPose): a pose id ([Id], its shared data), [Saved] (the config's own pose), or a
+ * live frame ([Live]: the saved pose id for the per-pose withholds + the spec to draw). null = the body as drawn.
+ * Default ([AvatarFit.defaultPose]): Saved while AvatarLiveConfig.LIVING_MASCOT is on, else null.
+ */
+sealed class AvatarLayoutPose {
+    data class Id(val id: String) : AvatarLayoutPose()
+    data object Saved : AvatarLayoutPose()
+    data class Live(val id: String, val spec: AvatarPoseSpec) : AvatarLayoutPose()
+}
 
 /** avatar-parts.json v2 (the fit manifest), read leniently from its JSON. */
 class AvatarFitManifest(val root: JsonObject) {
@@ -189,18 +216,39 @@ object AvatarFit {
         else -> Triple(b.backX, b.backY, b.backW)
     }
 
-    /** Where every layer of [c] goes (content-square fractions). */
-    fun layout(c: AvatarConfig, small: Boolean, m: AvatarFitManifest): AvatarLayout {
+    /** The default pose option: the saved pose while the living mascot is on, else none (the body as drawn). */
+    val defaultPose: AvatarLayoutPose? get() = if (AvatarLiveConfig.LIVING_MASCOT) AvatarLayoutPose.Saved else null
+
+    /**
+     * Where every layer of [c] goes (content-square fractions). [pose] (default: [defaultPose]) lays it out posed on
+     * the body's rig ([poses]: avatar-poses.json; null = never posed); [room] = more poses the fit leaves room for.
+     */
+    fun layout(
+        c: AvatarConfig, small: Boolean, m: AvatarFitManifest,
+        pose: AvatarLayoutPose? = defaultPose, room: List<AvatarPoseSpec> = emptyList(), poses: AvatarPosesData? = AvatarPoses.data,
+    ): AvatarLayout {
         val b = m.bodies[c.body] ?: m.bodies["classic"] ?: run {
             val u = AvatarRect(0.07, 0.07, 0.86, 0.86)
             return AvatarLayout(0.86, u, u, emptyList(), u)
         }
+        // the pose (small avatars never pose: they draw only the body + face)
+        val poseId = when (pose) {
+            null -> "none"
+            AvatarLayoutPose.Saved -> c.pose
+            is AvatarLayoutPose.Id -> if (pose.id == "saved") c.pose else pose.id
+            is AvatarLayoutPose.Live -> pose.id
+        }
+        val spec: AvatarPoseSpec? = if (pose is AvatarLayoutPose.Live) pose.spec else poses?.let { AvatarPoses.poseDef(poseId, it)?.spec }
+        val rig = poses?.let { AvatarPoses.bodyRig(c.body, it) }
+        val posed = !small && spec != null && rig != null && m.bodies[c.body] != null
+        val withheld = if (posed) AvatarPoses.withheld(poseId, c.body, poses!!) else emptyList()
         data class P(val layer: String, val field: String, val id: String, val art: String, var rect: AvatarRect, val tint: Boolean)
         val placed = mutableListOf<P>()
         for ((field, id) in wornParts(c, small, m)) {
             val key = "${kind(field)}:$id"
             val it = m.items.getValue(key)
             if (b.withheld(key)) continue   // no room on this body: drop it silently (saved configs keep working)
+            if (key in withheld) continue   // fails the guards in this pose: off while posed
             val pieces = it.pieces
             if (pieces != null) {
                 // v3 integrated part: its per-body layers (nothing on a body without room for it)
@@ -246,6 +294,7 @@ object AvatarFit {
             val lift = min(0.0, eyesP.rect.y + ink * eyesP.rect.h - beadyTop)
             if (lift < 0) for (p in placed) if (p.layer == "brows") p.rect = p.rect.copy(y = p.rect.y + lift)
         }
+        if (posed) return posedLayout(c, b, m, placed.map { Placed(it.layer, it.field, it.id, it.art, it.rect, it.tint) }, poseId, spec!!, rig!!, room)
         var x0 = b.bounds[0]; var y0 = b.bounds[1]; var x1 = b.bounds[2]; var y1 = b.bounds[3]
         for (p in placed) {
             x0 = min(x0, p.rect.x); y0 = min(y0, p.rect.y)
@@ -263,6 +312,126 @@ object AvatarFit {
         val lb = b.letterBox
         val after = sorted.indexOfFirst { it.layer !in LAYERS_UNDER_LETTER }.let { if (it < 0) sorted.size else it }
         return AvatarLayout(r4(s), bodyRect, map(AvatarRect(lb[0], lb[1], lb[2], lb[3])), sorted, map(AvatarRect(x0, y0, x1 - x0, y1 - y0)), after)
+    }
+
+    private class Placed(val layer: String, val field: String, val id: String, val art: String, val rect: AvatarRect, val tint: Boolean)
+
+    /** The posed half of [layout] (TS avatarLayout with a pose): every layer rides a rig part. */
+    private fun posedLayout(
+        c: AvatarConfig, b: AvatarFitManifest.Body, m: AvatarFitManifest, placed: List<Placed>,
+        poseId: String, spec: AvatarPoseSpec, rig: AvatarBodyRig, room: List<AvatarPoseSpec>,
+    ): AvatarLayout {
+        val I = AvatarPoses.IDENTITY
+        // posed: every layer rides a part (held items the hand they sit in, shoes the feet, pets stay on the floor)
+        val P = AvatarPoses.matrices(rig, spec)
+        fun rideOf(field: String, r: AvatarRect): String {
+            if (field == "pet") return "none"
+            if (field == "feet") return "feet"
+            if (field == "held" || field == "wrist") {
+                // held items ride the hand landmark (upright), wrist items the forearm (the whole arm)
+                val cx = r.x + r.w / 2; val cy = r.y + r.h / 2
+                fun d(h: List<Double>) = (h[0] - cx) * (h[0] - cx) + (h[1] - cy) * (h[1] - cy)
+                val left = d(rig.armL.hand) <= d(rig.armR.hand)
+                return if (field == "wrist") (if (left) "armL" else "armR") else (if (left) "handL" else "handR")
+            }
+            return "root"
+        }
+        // the union of the body art's content + every part, each through its matrix
+        var x0 = Double.POSITIVE_INFINITY; var y0 = Double.POSITIVE_INFINITY
+        var x1 = Double.NEGATIVE_INFINITY; var y1 = Double.NEGATIVE_INFINITY
+        fun grow(r: AvatarRect, mm: AvatarMatrix) {
+            for ((cx, cy) in listOf(r.x to r.y, (r.x + r.w) to r.y, r.x to (r.y + r.h), (r.x + r.w) to (r.y + r.h))) {
+                val (px, py) = AvatarPoses.matApply(mm, cx, cy)
+                x0 = min(x0, px); y0 = min(y0, py); x1 = max(x1, px); y1 = max(y1, py)
+            }
+        }
+        fun box4(v: List<Double>) = AvatarRect(v[0], v[1], v[2] - v[0], v[3] - v[1])
+        val bb = box4(b.bounds)
+        // `room`: more poses the fit leaves room for (the living mascot: its reactions + hop never leave the tile)
+        fun growPose(Q: AvatarPoseParts) {
+            grow(bb, Q.root)
+            rig.armL.box?.let { grow(box4(it), Q.armL) }
+            rig.armR.box?.let { grow(box4(it), Q.armR) }
+            rig.feet.box?.let { grow(box4(it), Q.feet) }
+            for (p in placed) { val r = rideOf(p.field, p.rect); grow(p.rect, if (r == "none") I else Q[r]) }
+        }
+        growPose(P)
+        for (sp in room) growPose(AvatarPoses.matrices(rig, sp))
+        val avail = 1 - 2 * m.pad
+        val s = minOf(m.maxBody, avail / (x1 - x0), avail / (y1 - y0))
+        val tx = 0.5 - ((x0 + x1) / 2) * s
+        val ty = 0.5 - ((y0 + y1) / 2) * s
+        fun map(r: AvatarRect) = AvatarRect(r4(tx + r.x * s), r4(ty + r.y * s), r4(r.w * s), r4(r.h * s))
+        // a body-unit matrix → content fractions (A · M · A⁻¹, A = scale s + translate t)
+        fun toContent(mm: AvatarMatrix): AvatarMatrix =
+            AvatarPoses.matMul(AvatarPoses.matMul(listOf(s, 0.0, 0.0, s, tx, ty), mm), listOf(1 / s, 0.0, 0.0, 1 / s, -tx / s, -ty / s)).map { AvatarPoses.r5(it) }
+        val order = m.layerOrder
+        val bodyRect = map(AvatarRect(0.0, 0.0, 1.0, 1.0))
+        fun rank(layer: String) = order.indexOf(layer).toDouble()
+        // the arms draw in front of the hats (a raised hand passes in front of a brim) and behind the neck pieces;
+        // what a hand holds draws just over that hand
+        val armRank = (if ("head" in order) rank("head") else order.size.toDouble()) + 0.5
+        val body = c.body
+        val rigLayers = listOf(
+            AvatarLayoutLayer("body", "body", body, "art-av-body-$body-feet", bodyRect, false, toContent(P.feet), "feet") to rank("body") - 0.5,
+            AvatarLayoutLayer("body", "body", body, "art-av-body-$body-base", bodyRect, false, toContent(P.root), "root") to rank("body"),
+            AvatarLayoutLayer("arms", "body", body, "art-av-body-$body-armL", bodyRect, false, toContent(P.armL), "armL") to armRank,
+            AvatarLayoutLayer("arms", "body", body, "art-av-body-$body-armR", bodyRect, false, toContent(P.armR), "armR") to armRank,
+        )
+        val items = placed.map { p ->
+            val ride = rideOf(p.field, p.rect)
+            // what a hand holds draws over that hand; buddies (they stay on the floor) draw just behind a moving arm
+            val k = if (ride == "armL" || ride == "armR" || ride == "handL" || ride == "handR") armRank + 0.25
+                else if (ride == "none" && rank(p.layer) > armRank) armRank - 0.25 else rank(p.layer)
+            AvatarLayoutLayer(p.layer, p.field, p.id, p.art, map(p.rect), p.tint, toContent(if (ride == "none") I else P[ride]), ride) to k
+        }
+        val layers = (rigLayers + items).sortedBy { it.second }.map { it.first }   // stable
+        val lb = b.letterBox
+        val after = layers.indexOfFirst { it.layer !in LAYERS_UNDER_LETTER }.let { if (it < 0) layers.size else it }
+        return AvatarLayout(
+            r4(s), bodyRect, map(AvatarRect(lb[0], lb[1], lb[2], lb[3])), layers, map(AvatarRect(x0, y0, x1 - x0, y1 - y0)), after,
+            letterM = toContent(P.root), pose = AvatarLayoutPoseInfo(poseId, P.map { toContent(it) }),
+        )
+    }
+
+    /**
+     * The living mascot's per-frame matrices: a pose spec's part matrices (content fractions) at a posed layout's
+     * FIXED fit (so the mascot never rescales while its arms move). Lay the mascot out once with
+     * layout(config, false, m, Live(id, spec), AvatarPoses.liveRoom(data)), then call this every frame.
+     */
+    fun layoutPoseParts(layout: AvatarLayout, body: String, spec: AvatarPoseSpec, poses: AvatarPosesData? = AvatarPoses.data): AvatarPoseParts? {
+        val rig = poses?.let { AvatarPoses.bodyRig(body, it) } ?: return null
+        val s = layout.body.w; val tx = layout.body.x; val ty = layout.body.y
+        val P = AvatarPoses.matrices(rig, spec)
+        return P.map { mm ->
+            AvatarPoses.matMul(AvatarPoses.matMul(listOf(s, 0.0, 0.0, s, tx, ty), mm), listOf(1 / s, 0.0, 0.0, 1 / s, -tx / s, -ty / s)).map { AvatarPoses.r5(it) }
+        }
+    }
+
+    /**
+     * One live frame's matrices (content fractions) per draw group — web avatarLiveTransforms: root / armL / armR /
+     * handL / handR / feet / none (identity), plus the face: "eyes" = root ∘ the blink squash about the eyes' center
+     * (nudged toward a finger by [lookX] / [lookY], −1…1), "mouth" = root ∘ the laugh stretch (1 + 0.25·laugh) about
+     * (its center x, top + 0.3h). A layer draws under its face key when it has one, else its ride ("root" default);
+     * the white initial under "root". Empty when the body has no rig.
+     */
+    fun liveTransforms(layout: AvatarLayout, body: String, frame: AvatarLiveFrame, lookX: Double = 0.0, lookY: Double = 0.0, poses: AvatarPosesData? = AvatarPoses.data): Map<String, AvatarMatrix> {
+        val P = layoutPoseParts(layout, body, frame.spec, poses) ?: return emptyMap()
+        val out = linkedMapOf("root" to P.root, "armL" to P.armL, "armR" to P.armR, "handL" to P.handL, "handR" to P.handR, "feet" to P.feet, "none" to AvatarPoses.IDENTITY)
+        layout.layers.firstOrNull { it.layer == "eyes" }?.let { eyes ->
+            // the blink squashes the eyes about their center; the look nudges them toward a finger (pupil offset only)
+            val cy = eyes.rect.y + eyes.rect.h / 2
+            val lx = max(-1.0, min(1.0, lookX)) * 0.012
+            val ly = max(-1.0, min(1.0, lookY)) * 0.008
+            out["eyes"] = AvatarPoses.matMul(P.root, listOf(1.0, 0.0, 0.0, frame.eyes, lx, cy - frame.eyes * cy + ly))
+        }
+        layout.layers.firstOrNull { it.layer == "mouth" }?.let { mouth ->
+            val k = 1 + 0.25 * frame.laugh
+            val cx = mouth.rect.x + mouth.rect.w / 2
+            val top = mouth.rect.y + mouth.rect.h * 0.3
+            out["mouth"] = AvatarPoses.matMul(P.root, listOf(k, 0.0, 0.0, k, cx - k * cx, top - k * top))
+        }
+        return out
     }
 
     // ── Patterns (shared shapes, body-square units) ─────────────────────────

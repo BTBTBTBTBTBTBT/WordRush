@@ -103,8 +103,17 @@ struct HomeHostMascot: View {
             // FINISH_SPEC BJ6 (coordinator 10-03): the host is a full-body CUTOUT — no backdrop
             // tile, no frame, no border — standing free on the cap like W. (Everywhere else the
             // avatar keeps its backdrop + frame.)
-            MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size)
-                .shadow(color: Color(hex: 0x4C1D95).opacity(0.16), radius: 2.5, x: 0, y: 2)
+            Group {
+                if LivingMascotView.canAnimate(config) {
+                    // 10-06 (behind AvatarLiveConfig.livingMascot, off): alive in its saved pose; taps still pass through
+                    // to the card (the host is never a button here), so it breathes, blinks and reacts to moments.
+                    LivingMascotView(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size,
+                                     cutout: true, interactive: false)
+                } else {
+                    MascotCutout(config: config, initial: AvatarCatalog.initial(AuthService.shared.profile?.username), size: size)
+                }
+            }
+            .shadow(color: Color(hex: 0x4C1D95).opacity(0.16), radius: 2.5, x: 0, y: 2)
         case .w:
             if let invite = directory.ownHostInvite() {
                 // Door 2: your own plain mascot hosts until you make it yours.

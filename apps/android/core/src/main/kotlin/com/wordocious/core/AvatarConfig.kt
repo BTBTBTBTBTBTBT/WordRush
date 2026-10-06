@@ -65,6 +65,11 @@ data class AvatarConfig(
     val bg: String = "auto",
     /** "mascot" | "photo": which one the avatar shows (a photo display needs a photo URL). */
     val display: String = AvatarOptions.DISPLAY_MASCOT,
+    /**
+     * 10-06 poses (AvatarPose.kt, the Dressing Room's Pose tab): a pose id from AvatarPoses.IDS. Missing = "none"
+     * (written only when set). Drawn only while AvatarLiveConfig.LIVING_MASCOT is on.
+     */
+    val pose: String = "none",
 )
 
 object AvatarOptions {
@@ -298,6 +303,8 @@ fun validateAvatar(raw: JsonElement?, fallback: AvatarConfig = defaultAvatar("")
         pet = pick(r.string("pet"), AvatarOptions.PETS, fallback.pet),
         brows = pick(r.string("brows"), AvatarOptions.BROWS, fallback.brows),
         extra = pick(r.string("extra"), AvatarOptions.EXTRAS, fallback.extra),
+        // the saved pose: a known pose id (else the fallback's); written only when not "none"
+        pose = pick(r.string("pose"), AvatarPoses.IDS, fallback.pose),
         accColor = r.string("accColor")?.takeIf { it == "default" || it in colorIds } ?: fallback.accColor,
         frame = pick(r.string("frame"), AvatarOptions.FRAMES, fallback.frame),
         bg = r.string("bg")?.takeIf { it in AvatarOptions.BACKDROP_IDS } ?: fallback.bg,
@@ -363,6 +370,8 @@ fun avatarToJson(c: AvatarConfig): JsonObject = buildJsonObject {
     for ((k, v) in listOf("held" to c.held, "wrap" to c.wrap, "feet" to c.feet, "pet" to c.pet, "brows" to c.brows, "extra" to c.extra)) {
         if (v != "none") put(k, v)
     }
+    // 10-06 the saved pose: only when set (older configs stay byte-identical)
+    if (c.pose != "none") put("pose", c.pose)
     put("accColor", c.accColor)
     put("frame", c.frame)
     put("bg", c.bg)

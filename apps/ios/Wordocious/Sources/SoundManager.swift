@@ -1,5 +1,6 @@
 import AVFoundation
 import SwiftUI
+import WordociousCore
 import UIKit
 
 // FINISH_SPEC §U — sound + haptics.
@@ -135,11 +136,12 @@ final class SoundManager {
     static var classicDepth = 0
 
     /// Play one sound from the pack (no-op when Sound is off). Inside Classic, its own picks.
-    func play(_ requested: Effect, volume: Float = 1) {
+    /// `rate`: a fixed playback rate (the varispeed: pitch + speed), e.g. the living mascot's per-body laugh pitch.
+    func play(_ requested: Effect, volume: Float = 1, rate: Float? = nil) {
         guard Self.enabled else { return }
         let effect = Self.classicDepth > 0 ? (requested.classic ?? requested) : requested
         let now = ProcessInfo.processInfo.systemUptime
-        queue.async { self.fire(effect, at: now, volume: volume) }
+        queue.async { self.fire(effect, at: now, volume: volume, rate: rate) }
     }
 
     // Legacy names (callers keep compiling) mapped onto the new pack.
@@ -164,14 +166,14 @@ final class SoundManager {
     /// The intro jingle's own length: the cast hops it covers stay quiet meanwhile.
     private static let introQuiet: TimeInterval = 3.0
 
-    private func fire(_ e: Effect, at now: TimeInterval, volume: Float) {
+    private func fire(_ e: Effect, at now: TimeInterval, volume: Float, rate fixedRate: Float? = nil) {
         if let last = lastPlayed[e], now - last < e.minGap { return }
         // The intro jingle owns the cold start: its landing "ta-da" replaces the landing hops.
         if e == .hop || e == .open, let intro = lastPlayed[.intro], now - intro < Self.introQuiet { return }
         guard let buf = buffers[e], startIfNeeded() else { return }
         lastPlayed[e] = now
         let v = voices.first(where: { $0.busyUntil <= now }) ?? voices.min(by: { $0.busyUntil < $1.busyUntil })!
-        let rate: Float = e == .tap ? Float.random(in: 0.97...1.03) : 1
+        let rate: Float = e == .tap ? Float.random(in: 0.97...1.03) : max(0.5, min(2, fixedRate ?? 1))
         v.pitch.rate = rate
         v.node.volume = min(1, e.gain * volume)
         v.busyUntil = now + Double(buf.frameLength) / format.sampleRate / Double(rate)
@@ -370,9 +372,9 @@ enum Feedback {
     /// A cast hop / mascot spring-in: hop · —.
     static func hop(volume: Float = 1) { SoundManager.shared.play(.hop, volume: volume) }
     /// The win popup: win · success.
-    static func win() { if once("end", 0.8) { SoundManager.shared.playSuccess(); Haptics.success() } }
+    static func win() { if once("end", 0.8) { SoundManager.shared.playSuccess(); Haptics.success(); MascotMoment.post(.win) } }
     /// The loss popup: lose · soft.
-    static func lose() { if once("end", 0.8) { SoundManager.shared.playGameOver(); Haptics.soft() } }
+    static func lose() { if once("end", 0.8) { SoundManager.shared.playGameOver(); Haptics.soft(); MascotMoment.post(.loss) } }
     /// Sweep / Flawless / Gauntlet champion / ladder cleared: celebrate · success+heavy.
     static func celebrate() {
         guard once("celebrate", 1.5) else { return }
@@ -395,6 +397,7 @@ enum Feedback {
     static func levelUp() {
         guard once("levelup", 1.5) else { return }
         SoundManager.shared.play(.levelup); Haptics.success()
+        MascotMoment.post(.levelup)   // the living mascot cheers (a no-op while AvatarLiveConfig.livingMascot is off)
     }
     /// Achievement unlock: unlock · success.
     static func unlock() {
@@ -426,7 +429,7 @@ private struct StreakBumpFeedback: ViewModifier {
             .onAppear { if seen == nil { seen = streak } }
             .onChange(of: streak) { new in
                 if let new, let old = seen, new == old + 1 {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { Feedback.streak() }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { Feedback.streak(); MascotMoment.post(.streak) }
                 }
                 if let new { seen = new }
             }
@@ -455,4 +458,17 @@ extension SoundManager {
         guard let e = Effect.laugh(id) else { return }
         play(e)
     }
+
+    /// The living mascot's laugh (AvatarLiveConfig.livingMascot): the cast giggle its body borrows (web BODY_LAUGH),
+    /// pitched per body by AvatarPose.laughRate (small bodies higher, big ones lower).
+    func mascotLaugh(body: String) {
+        guard let e = Effect.laugh(Self.bodyLaugh[body] ?? "w") else { return }
+        play(e, rate: Float(AvatarPose.laughRate[body] ?? 1))
+    }
+
+    /// Which cast giggle a body laughs with (web lib/living-mascot.ts BODY_LAUGH).
+    static let bodyLaugh: [String: String] = [
+        "classic": "w", "tall": "i", "wide": "u", "blob": "o1", "bean": "s", "star": "o2", "drop": "d", "pear": "r", "cloud": "u",
+        "chunky": "c", "mini": "o3", "hex": "d",
+    ]
 }

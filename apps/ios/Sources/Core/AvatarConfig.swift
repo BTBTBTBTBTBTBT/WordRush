@@ -37,6 +37,9 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
     public var pet: String = "none"
     public var brows: String = "none"
     public var extra: String = "none"
+    /// 10-06 poses (AvatarPose, the Dressing Room's Pose tab): a pose id from `AvatarPose.ids`. Missing = "none" (written
+    /// only when set, like packages/core validateAvatar). Drawn only while AvatarLiveConfig.livingMascot is on.
+    public var pose: String = "none"
     /// The tint for white accessories (`AvatarCatalog.tintable`): a swatch id, or "default".
     public var accColor: String
     public var frame: String
@@ -58,6 +61,7 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
     private enum CodingKeys: String, CodingKey {
         case v, body, color, pattern, patternColor, eyes, nose, cheeks, mouth, head, face, neck, accColor, frame, bg, display
         case held, wrap, feet, pet, brows, extra
+        case pose
     }
 
     public init(from decoder: Decoder) throws {
@@ -86,6 +90,7 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         pet = (try? c.decodeIfPresent(String.self, forKey: .pet)) ?? "none"
         brows = (try? c.decodeIfPresent(String.self, forKey: .brows)) ?? "none"
         extra = (try? c.decodeIfPresent(String.self, forKey: .extra)) ?? "none"
+        pose = (try? c.decodeIfPresent(String.self, forKey: .pose)) ?? "none"
         accColor = (try? c.decodeIfPresent(String.self, forKey: .accColor)) ?? "default"
         frame = try c.decode(String.self, forKey: .frame)
         bg = (try? c.decodeIfPresent(String.self, forKey: .bg)) ?? "auto"
@@ -104,6 +109,8 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         for (key, val) in [(CodingKeys.held, held), (.wrap, wrap), (.feet, feet), (.pet, pet), (.brows, brows), (.extra, extra)] where val != "none" {
             try c.encode(val, forKey: key)
         }
+        // 10-06 poses: written only when set (older configs stay byte-identical)
+        if pose != "none" { try c.encode(pose, forKey: .pose) }
         try c.encode(accColor, forKey: .accColor)
         try c.encode(frame, forKey: .frame); try c.encode(bg, forKey: .bg)
         try c.encode(display, forKey: .display)
@@ -115,13 +122,14 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
                                 "eyes": eyes, "nose": nose, "cheeks": cheeks, "mouth": mouth, "head": head, "face": face, "neck": neck,
                                 "accColor": accColor, "frame": frame, "bg": bg, "display": display]
         for (k, val) in [("held", held), ("wrap", wrap), ("feet", feet), ("pet", pet), ("brows", brows), ("extra", extra)] where val != "none" { o[k] = val }
+        if pose != "none" { o["pose"] = pose }
         return o
     }
 
     /// A stable string key for the DRAWN mascot (caches; `display` doesn't change the drawing).
     public var cacheKey: String {
         [body, color, pattern, patternColor, eyes, nose, cheeks, mouth, head, face, neck, accColor, frame, bg,
-         held, wrap, feet, pet, brows, extra].joined(separator: "|")
+         held, wrap, feet, pet, brows, extra].joined(separator: "|") + (pose == "none" ? "" : "|pose:\(pose)")
     }
 }
 
@@ -411,6 +419,8 @@ public enum AvatarCatalog {
         out.pet = pick(r["pet"], pets, fallback.pet)
         out.brows = pick(r["brows"], brows, fallback.brows)
         out.extra = pick(r["extra"], extras, fallback.extra)
+        // 10-06 poses: a known pose id is kept (unknown / non-strings fall back), written only when not "none"
+        out.pose = pick(r["pose"], AvatarPose.ids, fallback.pose)
         return out
     }
 

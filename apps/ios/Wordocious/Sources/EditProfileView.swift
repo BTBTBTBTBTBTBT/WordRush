@@ -170,7 +170,7 @@ struct EditProfileView: View {
     private var stage: some View {
         DressStage(config: mascot, initial: initial,
                    photo: showsPhoto ? (auth.profile?.avatarUrl, auth.profile?.username ?? username, auth.profile?.id) : nil,
-                   height: StageMetrics.height + 44, hopToken: hopToken) {
+                   height: StageMetrics.height + 44, hopToken: hopToken, follow: true) {
             VStack {
                 // × and SAVE sit in equal side slots, so the heading centers and both stay inside the stage.
                 HStack(alignment: .center, spacing: 4) {
