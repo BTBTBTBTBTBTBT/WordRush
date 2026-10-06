@@ -78,3 +78,9 @@
 - One shared tile component ×3 so Home, Leaderboard, finish screens and Stats can't drift again; Halloween surfaces
   keep the badge readable.
 - Also seen: Home headline "WORDOCIOUS SWEPT! 1…" is truncated — fit it (ties into item 6's bubble text auto-fit).
+
+## 4b. Musical cast — persistence rule (founder 10-06, after PR #48)
+- Behave like Android everywhere: once the cast turns musical it STAYS musical on every page with the header
+  (Home, Leaderboard, Stats, Friends, game pages that show the cast) until the player long-presses a mascot again.
+  PR #48 made iOS (and check web) Home-only — lift the musical state to an app-wide store (iOS app state / web
+  context; persist across tab switches, not across app restarts unless founder wants) so all headers share it.
