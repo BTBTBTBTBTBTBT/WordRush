@@ -24,7 +24,7 @@ import {
   type AvatarBody, type AvatarColor, type AvatarConfig, type AvatarFrame, type AvatarHead, type AvatarPatternShape, type AvatarRect,
 } from '@wordle-duel/core';
 import {
-  AVATAR_LIVE_ROOM, avatarLayoutPoseParts, avatarPoseDef, matMul, type AvatarLayout, type AvatarLayoutPose, type AvatarLiveFrame, type AvatarMatrix,
+  AVATAR_LIVE_ROOM, AVATAR_POSES, AVATAR_POSES_DATA, avatarLayoutPoseParts, avatarPoseDef, matMul, type AvatarLayout, type AvatarLayoutPose, type AvatarLiveFrame, type AvatarMatrix,
 } from '@wordle-duel/core';
 import partsJson from '../../../packages/core/src/avatar-parts.json';
 import { darkenHex, hexAlpha, lightenHex } from './avatar-tile';
@@ -1109,7 +1109,7 @@ const SVG_CACHE_MAX = 400;
 export function cachedMascotSvg(input: MascotSvgInput): string {
   const frame = input.frame ?? input.config.frame;
   const artKey = input.art && input.art.size ? avatarArtNames(input.config).filter((n) => input.art!.has(n)).join(',') : '';
-  const key = `${avatarConfigKey(input.config)}|${input.initial}|${frame}|${isSmallAvatar(input.size) ? 's' : 'l'}|${artKey}|${input.frameArt ? 'fa' : ''}|${input.cutout ? 'cut' : ''}`;
+  const key = `${avatarConfigKey(input.config)}|${input.initial}|${frame}|${isSmallAvatar(input.size) ? 's' : 'l'}|${artKey}|${input.frameArt ? 'fa' : ''}|${input.cutout ? 'cut' : ''}|${input.live ? 'live' : ''}|${input.pose === undefined ? '' : JSON.stringify(input.pose)}`;
   const hit = svgCache.get(key);
   if (hit) return hit;
   const svg = mascotSvg(input);
@@ -1146,7 +1146,7 @@ export type BuilderTab = (typeof BUILDER_TABS)[number]['id'];
 
 /** The config fields the builder's option tiles set. */
 export type BuilderField = 'body' | 'color' | 'pattern' | 'patternColor' | 'eyes' | 'nose' | 'cheeks' | 'mouth' | 'head' | 'face' | 'neck' | 'accColor' | 'bg' | 'frame'
-  | 'held' | 'wrap' | 'feet' | 'pet' | 'brows' | 'extra';
+  | 'held' | 'wrap' | 'feet' | 'pet' | 'brows' | 'extra' | 'pose';
 
 /**
  * 10-05 integrated parts (core AVATAR_INTEGRATED_FIELDS): the maker's sections for them, in order (they live in the
@@ -1237,6 +1237,7 @@ const LABELS: Partial<Record<BuilderField, Record<string, string>>> = {
 
 /** The screen-reader / tile label for an option ("Party hat", "Cotton candy"). */
 export function avatarOptionLabel(field: BuilderField, id: string): string {
+  if (field === 'pose') return id === 'none' ? 'Standing' : AVATAR_POSES_DATA.poses[id]?.label ?? cap(id);
   const named = LABELS[field === 'patternColor' ? 'color' : field]?.[id];
   if (!named && (field === 'color' || field === 'patternColor' || field === 'accColor')) return cap(id);
   if (named) return named;
@@ -1263,6 +1264,7 @@ export function avatarOptionIds(field: BuilderField): readonly string[] {
     case 'bg': return AVATAR_BACKDROP_IDS;
     case 'frame': return AVATAR_FRAMES;
     case 'held': case 'wrap': case 'feet': case 'pet': case 'brows': case 'extra': return AVATAR_INTEGRATED_OPTIONS[field];
+    case 'pose': return AVATAR_POSES;
   }
 }
 

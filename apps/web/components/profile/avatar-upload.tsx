@@ -33,9 +33,11 @@ interface AvatarUploadProps {
   photoOnly?: boolean;
   /** Called after a new photo was stored. */
   onUploaded?: () => void;
+  /** 10-06: the player's own living mascot (behind the livingMascot flag; the Stats card). */
+  living?: boolean;
 }
 
-export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, accent, pro, castId, frame, level, userId, config, photoOnly = false, onUploaded }: AvatarUploadProps) {
+export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, accent, pro, castId, frame, level, userId, config, photoOnly = false, onUploaded, living = false }: AvatarUploadProps) {
   const { profile, refreshProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,6 +132,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
         pro={look.pro}
         level={look.level}
         label={displayName}
+        living={living}
       />
 
       {editable && (

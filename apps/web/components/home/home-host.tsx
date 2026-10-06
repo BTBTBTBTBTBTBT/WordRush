@@ -46,7 +46,7 @@ export function HomeHost({ choice, initial, level, pro, hidden = false, size = H
     figure = <MascotAvatar config={choice.config} initial={initial} size={portrait} photoUrl={choice.photoUrl} level={level} pro={pro} />;
   } else if (choice.kind === 'mascot') {
     // BJ6 round 5: the host's mascot is a full-body cutout (no tile, backdrop or frame) — like W.
-    figure = <MascotAvatar config={choice.config} initial={initial} size={size} cutout />;
+    figure = <MascotAvatar config={choice.config} initial={initial} size={size} cutout living />;
   } else if (wArtFailed) {
     // Never an empty host: if W's pose art can't load, the code-drawn W mascot stands in.
     figure = <MascotAvatar config={W_FALLBACK} initial="W" size={size} cutout />;

@@ -16,6 +16,7 @@ import {
   effectiveAvatarFrame, frameLevelLocked, randomAvatar, swatchCss, type BuilderField, type BuilderTab,
 } from '@/lib/avatar-render';
 import { MascotAvatar } from './mascot-avatar';
+import { LIVING_MASCOT_ON } from '@/lib/living-mascot';
 import { DressStage, StageArt, StageClose, backdropCss, warmDressArt } from '@/components/profile/dress-up';
 import { CastButton } from '@/components/ui/cast-button';
 import { artSrc } from '@/lib/art';
@@ -85,8 +86,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   const savedRef = React.useRef<AvatarConfig | null>(saved ?? value);
   const shelf = React.useMemo(() => seasonalShelf(season), [season]);
   const available = React.useCallback((field: string, id: string) => isPartAvailable({ field, id }, new Date(), season ?? 'none', savedRef.current), [season]);
-  const [tab, setTab] = React.useState<BuilderTab | 'season'>(
-    initialTab === 'season' ? 'season' : (BUILDER_TABS.some((t) => t.id === initialTab) ? initialTab as BuilderTab : 'body'));
+  const [tab, setTab] = React.useState<BuilderTab | 'season' | 'pose'>(
+    initialTab === 'season' ? 'season' : initialTab === 'pose' && LIVING_MASCOT_ON ? 'pose' : (BUILDER_TABS.some((t) => t.id === initialTab) ? initialTab as BuilderTab : 'body'));
   React.useEffect(() => { if (tab === 'season' && season && shelf.length === 0) setTab('head'); }, [tab, season, shelf.length]);
   /** "Swapped out the heart shades" — a pick that doesn't fit with something worn replaces it (fit system). */
   const [note, setNote] = React.useState<string | null>(null);
@@ -199,6 +200,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
       case 'body': return <MascotAvatar config={bodyOnly({ ...value, body: id } as AvatarConfig)} initial=" " size={50} cutout />;
       case 'pattern': return <MascotAvatar config={bodyOnly({ ...value, pattern: id } as AvatarConfig)} initial=" " size={50} cutout />;
       case 'bg': return <span className="block w-full h-full rounded-full" style={{ background: backdropFill(id, value.color) }} />;
+      // 10-06 Pose tab (flag on only): the mascot itself in each pose (a static pose frame)
+      case 'pose': return <MascotAvatar config={{ ...value, pose: id, frame: 'none', display: 'mascot' } as AvatarConfig} initial={initial} size={50} cutout />;
       case 'frame': return <MascotAvatar config={{ ...bodyOnly(value), frame: id } as AvatarConfig} initial=" " size={46} pro={id === 'pro' ? true : null} />;
       default: {
         // eslint-disable-next-line @next/next/no-img-element
@@ -209,7 +212,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   const NEW_IDS = new Set(['head:santa', 'head:witch', 'neck:scarf', 'neck:bubbletea', 'neck:guitar', 'neck:fairywings']);
   const tile = (field: BuilderField, id: string) => {
     // Pro players always wear a frame (AA2): their "none" is the Pro gold frame.
-    const selected = field === 'frame' ? effectiveAvatarFrame(value.frame, { pro: isPro }) === id : value[field as keyof AvatarConfig] === id;
+    const selected = field === 'frame' ? effectiveAvatarFrame(value.frame, { pro: isPro }) === id
+      : field === 'pose' ? (value.pose ?? 'none') === id : value[field as keyof AvatarConfig] === id;
     const proLocked = !isPro && avatarProOnly(field, id);
     const levelLocked = field === 'frame' && frameLevelLocked(id as AvatarFrame, level);
     const label = id === 'none' ? 'None' : avatarOptionLabel(field, id);
@@ -260,6 +264,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
     ['body', 'body', 'Body'], ['color', 'color', 'Color'], ['pattern', 'pattern', 'Pattern'], ['eyes', 'eyes', 'Eyes'], ['nose', 'nose', 'Nose'],
     ['mouth', 'mouth', 'Mouth'], ['head', 'hats', 'Hats'], ['extras', 'extras', 'Extras'], ['bg', 'backdrop', 'Backdrop'], ['frame', 'frame', 'Frame'],
   ];
+  // 10-06: the Pose tab (behind the livingMascot flag; its icon borrows the body tab art until a pose icon is drawn)
+  const roomTabs: Array<[BuilderTab | 'pose', string, string]> = LIVING_MASCOT_ON ? [...ROOM_TABS, ['pose', 'body', 'Pose']] : ROOM_TABS;
   const round = (label: string, glyph: React.ReactNode, colors: [string, string], onClick: () => void, disabled = false) => (
     <button type="button" aria-label={label} onClick={onClick} disabled={disabled || saving}
       className="w-[38px] h-[38px] rounded-full flex items-center justify-center border-0 p-0 cursor-pointer"
@@ -304,7 +310,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
               </button>
             );
           })()}
-          {ROOM_TABS.map(([id, art, label]) => {
+          {roomTabs.map(([id, art, label]) => {
             const on = tab === id || (id === 'nose' && tab === 'cheeks');
             return (
               <button key={id} type="button" role="tab" aria-selected={on} aria-controls="mascot-tabpanel" id={`mascot-tab-${id}`} onClick={() => setTab(id)}
@@ -330,7 +336,16 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
             <p className="text-[11px] font-bold mt-2.5 text-center" style={{ color: 'var(--color-text-muted)' }}>Free for the season. Save a look and it stays yours.</p>
           </div>
         )}
-        {tab !== 'season' && TAB_FIELDS[tab]
+        {tab === 'pose' && (
+          <div key="pose">
+            <div className="h-2" />
+            <div className="grid grid-cols-5 gap-2.5" role="group" aria-label="Pose">
+              {optionIds('pose').map((id) => tile('pose', id))}
+            </div>
+            <p className="text-[11px] font-bold mt-2.5 text-center" style={{ color: 'var(--color-text-muted)' }}>Your mascot holds its pose everywhere it shows.</p>
+          </div>
+        )}
+        {tab !== 'season' && tab !== 'pose' && TAB_FIELDS[tab]
           // the accessory color row only shows when a white (tintable) accessory is worn
           .filter(({ field }) => field !== 'accColor' || [value.head, value.neck].some((x) => AVATAR_TINTABLE.includes(x)))
           .map(({ field, heading: h }) => (
