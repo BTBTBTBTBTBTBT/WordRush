@@ -24,6 +24,10 @@
   changeovers during holidays and seasons"): the contrast checks run for EVERY season in the registry, a season
   can't be enabled/shipped while any check fails, and "run the readability sweep" is a required step in
   docs/design/brand/seasons/README.md "How to add a season".
+- Same gate for SMOOTHNESS (founder 10-06: "New seasons also need to go through the choppiness/fluidity tests"):
+  every season runs the perf harnesses (apps/ios/scripts/perf-tour.sh, scripts/android-perf-tour.sh,
+  scripts/web-perf-tour.mjs) with the season ON vs OFF — Home scroll, game open/close, VS, Friends, Stats,
+  Leaderboard, Stage/Dressing Room, cast puppets — and may not ship if it's choppier than OFF beyond noise.
 - Add an automated check so it stays fixed: web — a contrast test over every route with ?season=halloween
   (computed colors vs background); iOS/Android — the season palette tokens tested against both surfaces + a
   screenshot sweep (perf-tour style) reviewed by eye.
