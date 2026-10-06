@@ -51,6 +51,18 @@ Today every mascot's letter is Nunito Black, white. Add a "Letter" control (in t
   (e.g. Chewy / Bubblegum Sans), a bold slab/varsity (e.g. Bungee / Alfa Slab-style), a pixel/arcade
   (e.g. Press Start-style), a serif storybook, and the cast's own puffy ChatGPT lettering for A–Z (26 glyph
   images, drawn once — the premium option, maybe Pro).
+- **The letter must fit the body, not look stuck on (founder 10-05):**
+  - *Shape-aware box:* the letter fills the body's measured letter area (landmarks), which follows the body —
+    narrower toward the top of a cone/drop, centered in the star's core, leaning with the bean (S) body's tilt.
+  - *Surface wrap:* a gentle bulge warp so the letter curves over the round body (more on round/plush bodies,
+    almost none on flat block bodies).
+  - *Same light as the body:* the body's own shading (top highlight, darker toward the bottom/edges) is
+    multiplied over the letter, plus a soft contact shade where it meets the surface — the letter reads as
+    printed/raised ON the body, not floating above it.
+  - *Finish modes:* Printed (flat ink taking the body's shading), Embossed (softly raised, a hair of highlight
+    + shadow), and Stitched patch for the Plush finish (felt patch with a soft stitch line).
+  - Arms/held items still pass in front of it (existing layer order); guards keep it off the face.
+  - Applies to today's default letter too, so the current 12 bodies get the improvement first.
 - **Letter color + finish** (founder 10-05: change the letter's color): the FULL swatch set of the body Color tab
   (Brights, Pastels, Deeps, Neutrals, Pro Specials) plus white (default), cream, black; finishes: solid,
   metallic (gold / silver / rose gold), rainbow gradient (Pro?), glitter, outline-only, two-tone; optional soft
