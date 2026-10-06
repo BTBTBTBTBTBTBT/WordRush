@@ -39,6 +39,8 @@ object CastPuppets {
         if (failed) return null
         // QA / perf A-B: the pref `debug-no-puppets` = true keeps the static hero images.
         if (runCatching { com.wordocious.app.data.SettingsPref.get("debug-no-puppets", false) }.getOrDefault(false)) return null
+        // (release-like builds can't edit prefs: `am start … --ez noPuppets true`, PERF_EXTRAS in android-perf-tour.sh)
+        if ((context as? android.app.Activity)?.intent?.getBooleanExtra("noPuppets", false) == true) return null
         return withContext(Dispatchers.Default) {
             runCatching {
                 val res = context.applicationContext.resources

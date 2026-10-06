@@ -291,7 +291,7 @@ struct LivingCastHeader: View {
     /// costumes keep their images + a transform-only tap hop). Off if the bundle fails.
     private var puppetsOn: Bool { CastSkin.season == nil && CastPuppets.shared.bundle != nil }
 
-    /// A tap or a signature move is playing (full frame rate); else the puppets breathe at 30 fps.
+    /// A tap or a signature move is playing (full frame rate); else the puppets breathe at 15 fps.
     private func puppetBusy(_ now: Date) -> Bool {
         let tapDur = CastPuppets.shared.bundle?.tap.dur ?? 1
         if puppetTap.values.contains(where: { now.timeIntervalSince($0) < tapDur }) { return true }
@@ -312,7 +312,7 @@ struct LivingCastHeader: View {
     var body: some View {
         let s = Self.figure
         let busy = puppetBusy(Date())
-        TimelineView(.animation(minimumInterval: puppetsOn && !busy && handoff.flourishStart == nil ? 1 / 30 : 1 / 60, paused: timelinePaused)) { ctx in
+        TimelineView(.animation(minimumInterval: puppetsOn && !busy && handoff.flourishStart == nil ? 1 / 15 : 1 / 60, paused: timelinePaused)) { ctx in
             row(s, now: ctx.date)
                 // Perf audit: ONE soft shadow pass for the row (was one offscreen pass per figure).
                 .compositingGroup()
@@ -475,11 +475,17 @@ struct LivingCastHeader: View {
             if puppetsOn {
                 // 2.7.1: one signature move every 6–10 s (never the same character twice
                 // in a row, never over another move or a tapped character's own).
+                var playing = 0.0
                 if puppetGesture.isEmpty {
                     let pool = Mascots.cast.filter { $0.rawValue != last }
-                    if let m = pool.randomElement() { last = m.rawValue; startGesture(m, at: Date()) }
+                    if let m = pool.randomElement() {
+                        last = m.rawValue
+                        startGesture(m, at: Date())
+                        playing = CastPuppets.shared.rig(m)?.gestureSeconds ?? 0
+                    }
                 }
-                try? await Task.sleep(nanoseconds: UInt64(Double.random(in: 6...10) * 1_000_000_000))
+                // 6–10 s of rest after the move ends (the idle cast breathes at 15 fps).
+                try? await Task.sleep(nanoseconds: UInt64((playing + Double.random(in: 6...10)) * 1_000_000_000))
                 continue
             }
             let id = CastMoves.pick(after: last)

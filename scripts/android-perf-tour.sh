@@ -109,7 +109,8 @@ echo "Wordocious Android perf tour -> $OUT"
 # Cold start.
 $ADB shell am force-stop "$PKG"
 sleep 1
-measure "launch" 6 sh -c "$ADB shell am start -W -n $PKG/.MainActivity | grep -E 'TotalTime' | sed 's/^/  /'"
+# PERF_EXTRAS: launch extras for an A/B run (e.g. PERF_EXTRAS="--ez noPuppets true": the static cast header).
+measure "launch" 6 sh -c "$ADB shell am start -W -n $PKG/.MainActivity ${PERF_EXTRAS:-} | grep -E 'TotalTime' | sed 's/^/  /'"
 if xy=$(find_xy "Play without an account"); then tap_xy $xy; sleep 3; fi
 
 # Home.

@@ -137,7 +137,7 @@ fun LivingCastHeader(
         if (taps.values.any { now - it < b.tap.dur * 1000 }) return true
         return gestures.any { (id, at) -> now - at < (b.rigs[id.key]?.gestureSeconds ?: 0.0) * 1000 }
     }
-    // The puppets breathe at 30 fps (full rate while a move or tap plays); they hold still
+    // The puppets breathe at 15 fps (full rate while a move or tap plays); they hold still
     // while the page scrolls, the tab is hidden, or with Reduce Motion / Battery Saver (a tap
     // still plays: the laugh face fades; in season, the costume's hop).
     LaunchedEffect(rigs, puppetsOn, calm, hidden, scrolling, wake) {
@@ -148,7 +148,7 @@ fun LivingCastHeader(
             val active = busy(now)
             if (!active && (gestures.isNotEmpty() || taps.isNotEmpty())) { gestures.clear(); taps.clear() }
             if (!active && (!puppetsOn || calm || scrolling)) { clock.longValue = now; break }
-            if (active || now - last >= 32) { clock.longValue = now; last = now }
+            if (active || now - last >= 64) { clock.longValue = now; last = now } // idle: 15 fps (smooth over pretty)
         }
     }
     fun tapFigure(id: MascotId) {
@@ -170,13 +170,16 @@ fun LivingCastHeader(
             var last: MascotId? = null
             while (true) {
                 val now = System.nanoTime() / 1_000_000
+                var playing = 0L
                 if (!busy(now)) {
                     val id = MascotId.entries.filter { it != last }.random(random)
                     last = id
                     gestures[id] = now
+                    playing = ((rigs?.rigs?.get(id.key)?.gestureSeconds ?: 0.0) * 1000).toLong()
                     wake++
                 }
-                delay(6000L + random.nextLong(4000L))
+                // 6–10 s of rest after the move ends.
+                delay(playing + 6000L + random.nextLong(4000L))
             }
         }
         val random = Random(System.nanoTime())
@@ -269,7 +272,8 @@ fun LivingCastHeader(
                     if (puppetsOn && rig != null) {
                         val crop = CastCrops.crops.getValue(id)
                         androidx.compose.foundation.layout.Spacer(
-                            Modifier.fillMaxSize().drawBehind {
+                            // Its own render layer: a clock tick re-records only this figure, not the page.
+                            Modifier.fillMaxSize().graphicsLayer().drawBehind {
                                 val b = rigs ?: return@drawBehind
                                 val now = clock.longValue
                                 val gr = gestures[id]?.let { (now - it) / 1000.0 }?.takeIf { it < rig.gestureSeconds }

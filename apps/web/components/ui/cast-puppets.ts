@@ -12,7 +12,7 @@ import { CAST_FLOURISH_ATTR, INTRO_RUNNING_ATTR } from '@/lib/intro';
 // <canvas data-puppet> laid over its hero image; once every layer has loaded the
 // canvas takes over (`data-puppet-ready` on the row hides the images). If anything
 // fails to load the hero images simply stay. One shared rAF loop draws the row:
-// 30 fps while the cast just breathes and blinks, full rate while a signature move
+// 15 fps while the cast just breathes and blinks, full rate while a signature move
 // or a tap plays; nothing while the row is off screen or the tab is hidden.
 
 /** The canvas box around the 512-px mascot square (mascot px): room for the hop and raised arms. */
@@ -20,7 +20,9 @@ export const PUPPET_PAD = { x: 160, top: 100, bottom: 28 } as const;
 /** A signature move every 6–10 s, one character at a time (never the same twice in a row). */
 const MOVE_FIRST_MS = 2600;
 const moveGapMs = () => 6000 + Math.random() * 4000;
-const IDLE_FRAME_MS = 1000 / 30;
+// Smooth over pretty: between moves the cast only breathes / blinks / sways a pixel or two,
+// so 15 fps is plenty (each idle frame repaints the page); moves and taps run full rate.
+const IDLE_FRAME_MS = 1000 / 15;
 
 /** The puppet canvas box as percentages of a cell whose 512-px art is cut to `trim`. */
 export function puppetBox([x0, y0, x1, y1]: readonly [number, number, number, number]) {
@@ -176,7 +178,7 @@ export function useCastPuppets(rowRef: React.RefObject<HTMLDivElement | null>, e
           if (id) { S.gesture[id] = now; next = id; kick(); }
         }
         schedule(next);
-      }, last === null ? MOVE_FIRST_MS : moveGapMs());
+      }, last === null ? MOVE_FIRST_MS : moveGapMs() + (last && live[last] ? gestureSeconds(live[last].rig) * 1000 : 0));
     };
 
     (async () => {
