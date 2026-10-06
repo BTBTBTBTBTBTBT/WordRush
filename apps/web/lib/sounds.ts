@@ -10,7 +10,7 @@
 // lib/sound-map.ts; lib/sound-events.ts `feedback(event)` plays both.
 
 import { haptic } from '@/lib/haptics';
-import { INTRO_QUIET_MS, INTRO_QUIETS, LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
+import { INTRO_QUIET_MS, INTRO_QUIETS, LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, scopedSound, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
 
 export { SOUND_NAMES, type SoundName } from '@/lib/sound-map';
 
@@ -160,6 +160,17 @@ if (typeof window !== 'undefined') {
   else setTimeout(() => { if (isSoundEnabled()) prefetchAll(); }, 1500);
 }
 
+// ── Sound scope (Classic's own picks) ──────────────────────────────────────
+
+let classicDepth = 0;
+
+/** The Classic game screen is up: CLASSIC_SOUNDS play Classic's picks until the returned leave(). */
+export function enterClassicSounds(): () => void {
+  classicDepth++;
+  let left = false;
+  return () => { if (!left) { left = true; classicDepth = Math.max(0, classicDepth - 1); } };
+}
+
 /** Whether `name` started playing within the last `ms`. */
 export function recentlyPlayed(name: SoundName, ms: number): boolean {
   const at = lastPlayed.get(name);
@@ -173,7 +184,8 @@ export function playSound(name: SoundName, opts: { rate?: number; gain?: number 
     const ctx = _ctx;
     const master = _master;
     if (!ctx || !master || ctx.state !== 'running') return;
-    const buf = buffers.get(name);
+    const actual = scopedSound(name, classicDepth > 0 ? 'classic' : null);
+    const buf = buffers.get(actual);
     if (!buf) { decodeAll(ctx); return; }
     if (recentlyPlayed(name, SOUND_DEDUPE_MS)) return;
     if (INTRO_QUIETS.includes(name) && recentlyPlayed('intro', INTRO_QUIET_MS)) return;
@@ -190,7 +202,7 @@ export function playSound(name: SoundName, opts: { rate?: number; gain?: number 
       src.connect(master);
     }
     src.start(0);
-    logSfx(name);
+    logSfx(actual);
   } catch { /* never throw from a sound */ }
 }
 

@@ -49,9 +49,12 @@ N = lambda m: 440 * 2 ** ((m - 69) / 12)   # midi -> Hz
 # name -> (options file, target loudness). Targets: JINGLE = the median of the shipped jingles
 # (win / lose / streak / unlock / celebrate / notify / vs ≈ -14.7), UI = the small UI sounds
 # (tap / delete / press / hop ≈ -21). Peaks are capped at PEAK_CAP dBFS (AAC overshoot headroom),
-# so a pick can land quieter than its target, never louder.
+# so a pick can land quieter than its target, never louder. 'match:<name>' = the loudness of the
+# shipped out/<name> it stands in for (the Classic picks replace a sound in Classic only).
 JINGLE, UI, PEAK_CAP = -14.7, -21.0, -1.5
 PICKS = {
+    # Classic only (the game screen's sound scope swaps these in; every other game keeps the pack's)
+    'classic-invalid': ('alt-invalid-a', 'match:invalid'),   # Not a word / too short / already guessed: A Soft "hmm"
     'intro': ('intro-a', JINGLE),          # App intro: A Marimba Parade
     'levelup': ('levelup-b', JINGLE),      # Level up: B Rising Stairs
     'open': ('open-a', UI),                # Opening a game: A Page Breeze
@@ -83,6 +86,8 @@ def loudness(x):
 
 def apply_picks():
     for name, (src, target) in PICKS.items():
+        if isinstance(target, str):   # 'match:<name>': the shipped sound this pick replaces
+            target = round(loudness(_read(os.path.join(OUT, target.split(':')[1] + '.wav'))), 1)
         x = _read(os.path.join(HERE, 'options', f'{src}.m4a'))
         before = loudness(x); pk = 20 * np.log10(np.abs(x).max() + 1e-12)
         gain_db = min(target - before, PEAK_CAP - pk)

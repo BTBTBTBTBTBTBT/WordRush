@@ -243,6 +243,8 @@ struct GameScreen: View {
         // the final overlay auto-advances, record the win on the way out so the
         // daily result (and a Flawless sweep) isn't lost.
         .onDisappear { vm.finalizeGauntletIfCleared() }
+        // Classic's own Sound Lab picks while Classic is up (every other game keeps the pack's).
+        .classicSounds(mode == .duel)
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .animation(Theme.animation(.easeInOut(duration: 0.3)), value: stageCardUp)
         .onChange(of: vm.stageCleared) { cleared in

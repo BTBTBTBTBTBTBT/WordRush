@@ -2,6 +2,8 @@
 
 import { useDictionary } from '@/lib/init-dictionary';
 import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { enterClassicSounds } from '@/lib/sounds';
 import { PracticeGame } from '@/components/practice/practice-game';
 import { AdGate } from '@/components/ads/ad-gate';
 import { UnlimitedGate } from '@/components/game/unlimited-gate';
@@ -14,6 +16,8 @@ export default function PracticePage() {
   const ready = useDictionary([5]);
   const searchParams = useSearchParams();
   const isDaily = searchParams.get('daily') === 'true';
+  // Classic's own Sound Lab picks while this screen is up (lib/sound-map.ts CLASSIC_SOUNDS).
+  useEffect(() => enterClassicSounds(), []);
 
   if (!ready) return <GameLoading />;
 

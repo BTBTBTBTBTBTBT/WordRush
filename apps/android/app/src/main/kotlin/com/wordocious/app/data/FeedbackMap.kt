@@ -29,6 +29,10 @@ enum class Sfx(val file: String) {
     // The founder's Sound Lab picks (docs/design/brand/sounds/make-sounds.py PICKS).
     /** The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s. */
     INTRO("sfx_intro"),
+    /** Classic's own picks (Sound Lab "Classic" rows), played instead of the pack sound while the
+     *  Classic game screen is up (SoundManager.enterClassic); every other game keeps the pack's. */
+    CLASSIC_INVALID("sfx_classic_invalid"),
+
     /** The player's level going up (pick: "Rising Stairs"). */
     LEVELUP("sfx_levelup"),
     /** A game opening (pick: "Page Breeze"). */
@@ -115,6 +119,12 @@ object FeedbackRules {
 
     /** A header hero's giggle ([id] = MascotId.key: w, o1, r, … s), or null for an unknown id. */
     fun laughSfx(id: String): Sfx? = Sfx.entries.firstOrNull { it.file == "sfx_laugh_$id" }
+
+    /** Classic's version of a pack sound (null = Classic plays the pack's). */
+    fun classicVariant(s: Sfx): Sfx? = when (s) {
+        Sfx.INVALID -> Sfx.CLASSIC_INVALID
+        else -> null
+    }
 
     /** The per-event repeat throttle (0 = every time). */
     fun minGapMs(e: FeedbackEvent): Long = when (e) {

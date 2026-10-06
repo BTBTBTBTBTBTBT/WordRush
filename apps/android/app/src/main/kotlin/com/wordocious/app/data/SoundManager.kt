@@ -57,6 +57,7 @@ object SoundManager {
         Sfx.INTRO -> R.raw.sfx_intro
         Sfx.LEVELUP -> R.raw.sfx_levelup
         Sfx.OPEN -> R.raw.sfx_open
+        Sfx.CLASSIC_INVALID -> R.raw.sfx_classic_invalid
         Sfx.LAUGH_W -> R.raw.sfx_laugh_w
         Sfx.LAUGH_O1 -> R.raw.sfx_laugh_o1
         Sfx.LAUGH_R -> R.raw.sfx_laugh_r
@@ -92,8 +93,15 @@ object SoundManager {
         }
     }
 
-    /** Play [s] (muted when Sound Effects is off). [rate] = SoundPool pitch, [volume] × master. */
-    fun play(s: Sfx, rate: Float = 1f, volume: Float = 1f) {
+    @Volatile private var classicDepth = 0
+
+    /** The Classic game screen is up: its own Sound Lab picks play until [leaveClassic]. */
+    fun enterClassic() { classicDepth++ }
+    fun leaveClassic() { classicDepth = (classicDepth - 1).coerceAtLeast(0) }
+
+    /** Play [requested] (muted when Sound Effects is off); inside Classic, its own picks. [rate] = SoundPool pitch, [volume] × master. */
+    fun play(requested: Sfx, rate: Float = 1f, volume: Float = 1f) {
+        val s = if (classicDepth > 0) FeedbackRules.classicVariant(requested) ?: requested else requested
         if (s == Sfx.TAP || s == Sfx.DELETE) lastKeyAt = SystemClock.uptimeMillis()
         if (!enabled) return
         if (pool == null) preload()

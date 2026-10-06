@@ -41,12 +41,18 @@ class FeedbackMapTest {
     }
 
     @Test fun everySoundIsUsedAndNamedLikeItsFile() {
-        assertEquals(29, Sfx.entries.size)
+        assertEquals(30, Sfx.entries.size)
         Sfx.entries.forEach { assertEquals("sfx_" + it.name.lowercase(), it.file) }
         // Every sound is an event's, or a hero's giggle (SoundManager.castLaugh).
         val used = FeedbackEvent.entries.mapNotNull { it.sound }.toSet() +
-            listOf("w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s").map { FeedbackRules.laughSfx(it)!! }
+            listOf("w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s").map { FeedbackRules.laughSfx(it)!! } +
+            Sfx.entries.mapNotNull { FeedbackRules.classicVariant(it) }
         assertEquals(Sfx.entries.toSet(), used)
+    }
+
+    @Test fun classicPicksSwapOnlyTheListedSounds() {
+        assertEquals(Sfx.CLASSIC_INVALID, FeedbackRules.classicVariant(Sfx.INVALID))
+        listOf(Sfx.TAP, Sfx.DELETE, Sfx.FLIP).forEach { assertNull(FeedbackRules.classicVariant(it)) }
     }
 
     @Test fun everyHeroHasItsOwnGiggle() {

@@ -23,6 +23,18 @@ final class SoundManager {
         case celebrate, streak, tick, notify, unlock, vs, whoosh
         /// The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s.
         case intro
+        /// Classic's own picks (Sound Lab "Classic" rows): played instead of the pack sound while
+        /// the Classic game screen is up (`classicSounds()`); every other game keeps the pack's.
+        case classicInvalid = "classic-invalid"
+
+        /// Classic's version of this pack sound, if it has one.
+        var classic: Effect? {
+            switch self {
+            case .invalid: return .classicInvalid
+            default: return nil
+            }
+        }
+
         /// The player's level going up (pick: "Rising Stairs").
         case levelup
         /// A game opening (pick: "Page Breeze").
@@ -63,7 +75,7 @@ final class SoundManager {
             case .tick: return 1.0 / 12
             case .hop: return 0.12
             case .whoosh: return 0.2
-            case .invalid: return 0.2
+            case .invalid, .classicInvalid: return 0.2
             case .notify: return 0.25
             case .intro: return 5
             // One hero's giggle: longer than the longest giggle, so taps never machine-gun it.
@@ -113,9 +125,13 @@ final class SoundManager {
 
     // MARK: Playing
 
-    /// Play one sound from the pack (no-op when Sound is off).
-    func play(_ effect: Effect, volume: Float = 1) {
+    /// >0 while the Classic game screen is up (main thread).
+    static var classicDepth = 0
+
+    /// Play one sound from the pack (no-op when Sound is off). Inside Classic, its own picks.
+    func play(_ requested: Effect, volume: Float = 1) {
         guard Self.enabled else { return }
+        let effect = Self.classicDepth > 0 ? (requested.classic ?? requested) : requested
         let now = ProcessInfo.processInfo.systemUptime
         queue.async { self.fire(effect, at: now, volume: volume) }
     }
@@ -412,6 +428,12 @@ private struct StreakBumpFeedback: ViewModifier {
 }
 
 extension View {
+    /// Classic's own Sound Lab picks while this view is on screen (SoundManager.Effect.classic).
+    func classicSounds(_ on: Bool) -> some View {
+        onAppear { if on { SoundManager.classicDepth += 1 } }
+            .onDisappear { if on { SoundManager.classicDepth = max(0, SoundManager.classicDepth - 1) } }
+    }
+
     /// FINISH_SPEC §U: streak +1 → streak · medium.
     func streakBumpFeedback(_ streak: Int?) -> some View { modifier(StreakBumpFeedback(streak: streak)) }
 }

@@ -390,6 +390,12 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         vm.onScreenEnter()
         onDispose { vm.onScreenExit() }
     }
+    // Classic's own Sound Lab picks while Classic is up (every other game keeps the pack's).
+    androidx.compose.runtime.DisposableEffect(mode) {
+        val classic = mode == GameMode.DUEL
+        if (classic) com.wordocious.app.data.SoundManager.enterClassic()
+        onDispose { if (classic) com.wordocious.app.data.SoundManager.leaveClassic() }
+    }
 
     // Perf (2026-10-02 measured audit): the stage card's big cast pose (StageTransitionOverlay →
     // SceneArtPop, 132 dp) was decoded on the main thread in the card's first frame, right as it

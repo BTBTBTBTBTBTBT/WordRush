@@ -13,12 +13,26 @@ export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
   'lose', 'celebrate', 'streak', 'tick', 'notify', 'unlock', 'vs', 'whoosh',
   'intro', 'levelup', 'open',
+  'classic-invalid',
   'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
 
 export function soundUrl(name: SoundName): string {
   return `/sounds/${name}.m4a`;
+}
+
+/**
+ * Classic's own picks (founder, Sound Lab "Classic" rows): while the Classic game screen is up
+ * (sound scope 'classic'), these pack sounds play Classic's version; every other game keeps the pack's.
+ */
+export const CLASSIC_SOUNDS: Partial<Record<SoundName, SoundName>> = {
+  invalid: 'classic-invalid',
+};
+
+/** The sample that actually plays for `name` in `scope`. */
+export function scopedSound(name: SoundName, scope: 'classic' | null): SoundName {
+  return scope === 'classic' ? CLASSIC_SOUNDS[name] ?? name : name;
 }
 
 /** A header hero's giggle (Sound.castLaugh), or null for an unknown id. */
