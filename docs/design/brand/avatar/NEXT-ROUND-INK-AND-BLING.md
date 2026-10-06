@@ -72,6 +72,23 @@ Today every mascot's letter is Nunito Black, white. Add a "Letter" control (in t
   saved in the avatar config and drawn identically everywhere (parity tests).
 - Cost: low for the bundled fonts (code only); the 26-glyph ChatGPT alphabet is one short drawing session.
 
+## POSES (founder 10-05: "What about poses? Is that attainable?") — yes, after landmarks
+Uses the SAME rig engine as the animated cast (docs/design/brand/animation/rig-engine: cut parts from the real
+art, pivots, inpainted gaps, rest-pose diff check) — applied to the 12 player bodies instead of the 10 heroes.
+1. **Rig each body once:** cut arms + feet into layers with shoulder/hip pivots (no redrawing; the rest pose must
+   match today's body exactly). Bodies are simpler than the cast, so this is cheaper than the cast rigs were.
+2. **Poses = data** (a rotation/offset per limb), shared by all bodies: Wave · Cheer (both arms up) · Hands on hips
+   · Peace sign · Thinking (hand to chin) · Point · Shrug · Hug-self · Flex · Dab-style arm stretch · Sitting ·
+   Jumping. Poses that need a hand shape we don't have (peace sign, point, thumbs up) get one ChatGPT limb drawing
+   each, color-matched to the body (same trick as the I wave / S fist pump).
+3. **Items follow the pose:** held items ride the hand landmark; wrist items ride the forearm; the guards re-run
+   per pose (nothing through an arm, nothing off the body). Landmark system required first.
+4. **Bonus — the player's mascot comes alive:** with the body rigged, the player's own mascot can breathe/blink on
+   the Stage and do its pose (and the tap-to-laugh hop) the way the cast does, on the Stage, Home host and profile.
+5. Pose picker in the Dressing Room (a Pose tab with thumbnails); saved in the avatar config; widget / share
+   images / leaderboard show the saved pose (static frame).
+Cost: moderate — rigging 12 bodies + ~6 new limb drawings + per-pose guard runs; very cheap per pose after that.
+
 ## PLAYER ADJUSTMENTS (founder 10-05: "making the items bigger and smaller… move the items up and down on the
 ## body, or on a different arm")
 Builds on the landmark system (step one), which is what makes this safe.
