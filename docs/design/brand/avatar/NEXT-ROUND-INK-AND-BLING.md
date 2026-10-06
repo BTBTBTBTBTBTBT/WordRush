@@ -29,7 +29,21 @@ Wearables:
 - Heart-shaped sunglasses; star face gems / puffy stickers
 - Friendship bracelets (stacked, pick colors)
 - Oversized hoodie (wrap/body tint) with a pocket
-- Sports jersey with their letter as the number (soccer / basketball)
+- **Team jerseys (founder 10-05)** — a JERSEY item with sport templates and two team colors so players can match
+  their favorite team (no team names/logos — colors + generic designs only):
+  - Templates: Basketball (tank, wide arm holes, side panels) · Baseball (button-front, pinstripe option, script
+    across the chest is OUR wordmark style, never a team's) · Football (shoulder-pad silhouette, big number) ·
+    Hockey (sweater with hem stripes + lace collar) · Soccer (V-neck kit, sleeve band) · Volleyball / Lacrosse /
+    Softball later.
+  - **Primary + secondary color** pickers (full swatch set) mapped onto the template's color zones (body,
+    trim/stripes, number outline); optional third accent for stripes.
+  - Number = their mascot letter by default, or two digits they choose; name bar optional (their username,
+    profanity-filtered).
+  - Matching extras per sport (optional): foam finger, cap, eye-black, wristbands, ball in hand (held), helmet
+    (hat slot).
+  - Drawn once per template in neutral zones, tinted in code (same tint approach as hair) and fitted by the
+    landmark rules (a garment layer under the letter? → NO: the jersey number IS the letter, so the jersey
+    replaces the plain letter while worn; the letter-style settings still apply to the number).
 Held:
 - Big tumbler cup with a straw (sticker-covered); boba (have); slushie
 - Fidget popper (rainbow), slime blob, fidget spinner
