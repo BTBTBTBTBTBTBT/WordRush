@@ -16,10 +16,13 @@ import UIKit
 // `Feedback` is the spec's event map (sound · haptic) — prefer it at call sites.
 
 final class SoundManager {
-    /// The sound pack (file `sfx-<rawValue>.m4a`).
+    /// The sound pack (file `sfx-<rawValue>.m4a`): the 16 sounds + the founder's Sound Lab
+    /// picks (docs/design/brand/sounds/make-sounds.py PICKS).
     enum Effect: String, CaseIterable {
         case tap, delete, flip, press, release, hop, invalid, win, lose
         case celebrate, streak, tick, notify, unlock, vs, whoosh
+        /// The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s.
+        case intro
 
         /// Per-sound gain under the master volume (the tiny UI sounds sit lower).
         var gain: Float {
@@ -48,6 +51,7 @@ final class SoundManager {
             case .whoosh: return 0.2
             case .invalid: return 0.2
             case .notify: return 0.25
+            case .intro: return 5
             default: return 0.5
             }
         }
@@ -119,8 +123,13 @@ final class SoundManager {
     /// never the finish): `notify` at 0.7. Partial successes never play `win`.
     func playFound() { play(.notify, volume: 0.7) }
 
+    /// The intro jingle's own length: the cast hops it covers stay quiet meanwhile.
+    private static let introQuiet: TimeInterval = 3.0
+
     private func fire(_ e: Effect, at now: TimeInterval, volume: Float) {
         if let last = lastPlayed[e], now - last < e.minGap { return }
+        // The intro jingle owns the cold start: its landing "ta-da" replaces the landing hops.
+        if e == .hop, let intro = lastPlayed[.intro], now - intro < Self.introQuiet { return }
         guard let buf = buffers[e], startIfNeeded() else { return }
         lastPlayed[e] = now
         let v = voices.first(where: { $0.busyUntil <= now }) ?? voices.min(by: { $0.busyUntil < $1.busyUntil })!
@@ -130,7 +139,15 @@ final class SoundManager {
         v.busyUntil = now + Double(buf.frameLength) / format.sampleRate / Double(rate)
         v.node.scheduleBuffer(buf, at: nil, options: .interrupts, completionHandler: nil)
         if !v.node.isPlaying { v.node.play() }
+        #if DEBUG
+        playCount[e, default: 0] += 1
+        NSLog("[sfx] %@ %d", e.rawValue, playCount[e] ?? 0)
+        #endif
     }
+    #if DEBUG
+    /// DEBUG verification aid: how many times each sound actually started.
+    private var playCount: [Effect: Int] = [:]
+    #endif
 
     // MARK: Setup
 

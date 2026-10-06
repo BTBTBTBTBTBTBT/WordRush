@@ -3,7 +3,7 @@ package com.wordocious.app.data
 /**
  * FINISH_SPEC U — the pure half of sound + haptics (no Android types, JVM-testable).
  *
- * The 16 sounds (res/raw/sfx_<name>.m4a), the haptic vocabulary, and the event map
+ * The 16 sounds + the Sound Lab picks (res/raw/sfx_<name>.m4a), the haptic vocabulary, and the event map
  * (sound · haptic) every screen fires through [SoundManager] / [Haptics].
  */
 
@@ -25,6 +25,10 @@ enum class Sfx(val file: String) {
     UNLOCK("sfx_unlock"),
     VS("sfx_vs"),
     WHOOSH("sfx_whoosh"),
+
+    // The founder's Sound Lab picks (docs/design/brand/sounds/make-sounds.py PICKS).
+    /** The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s. */
+    INTRO("sfx_intro"),
 }
 
 /** The haptic vocabulary (spec U): iOS UIImpactFeedbackGenerator / UINotificationFeedbackGenerator names. */
@@ -49,6 +53,8 @@ enum class FeedbackEvent(val sound: Sfx?, val haptic: Haptic?) {
     UNLOCK(Sfx.UNLOCK, Haptic.SUCCESS),
     VS(Sfx.VS, Haptic.MEDIUM),
     WHOOSH(Sfx.WHOOSH, null),
+    /** The cold-start intro, as the W pops (the animated intro only). */
+    INTRO(Sfx.INTRO, null),
 }
 
 /** The tunables (spec U): master volume, tap pitch spread, tick throttle, squish quiet window. */
@@ -80,11 +86,19 @@ object FeedbackRules {
     /** One `correct-row land` per row: the hop wave's later tiles land inside this window. */
     const val ROW_LAND_MIN_GAP_MS = 800L
 
+    /** The intro jingle owns the cold start: a `hop` inside this window after it starts stays quiet. */
+    const val INTRO_QUIET_MS = 3000L
+
+    /** Whether a `hop` at [nowMs] is covered by the intro jingle that started at [introAtMs] (0 = never played). */
+    fun hopMutedByIntro(nowMs: Long, introAtMs: Long): Boolean =
+        introAtMs > 0L && nowMs - introAtMs in 0 until INTRO_QUIET_MS
+
     /** The per-event repeat throttle (0 = every time). */
     fun minGapMs(e: FeedbackEvent): Long = when (e) {
         FeedbackEvent.TICK -> TICK_MIN_GAP_MS
         FeedbackEvent.FLIP -> FLIP_MIN_GAP_MS
         FeedbackEvent.ROW_LAND -> ROW_LAND_MIN_GAP_MS
+        FeedbackEvent.INTRO -> 5000L
         else -> 0L
     }
 

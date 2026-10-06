@@ -11,7 +11,7 @@ import kotlin.random.Random
 /**
  * FINISH_SPEC U — the one sound service (replaces the old synthesized AudioTrack tones).
  *
- * The 16-sound pack (res/raw/sfx_<name>.m4a) is preloaded once into a SoundPool
+ * The 16-sound pack + the Sound Lab picks (res/raw/sfx_<name>.m4a) is preloaded once into a SoundPool
  * (USAGE_GAME / CONTENT_TYPE_SONIFICATION, so it follows the media/game stream and
  * mixes with the player's music) at App start, or on first use. Master volume
  * [FeedbackRules.MASTER_VOLUME]; `tap` varies pitch ±3 % per press.
@@ -31,6 +31,11 @@ object SoundManager {
         FeedbackEvent.entries.filter { FeedbackRules.minGapMs(it) > 0 }
             .associateWith { FeedbackThrottle(FeedbackRules.minGapMs(it)) }
     @Volatile private var lastKeyAt = 0L
+    @Volatile private var introAt = 0L
+    private val playCount = ConcurrentHashMap<Sfx, Int>()
+
+    /** Whether [s] has finished loading (the cold-start intro waits briefly for its jingle). */
+    fun isLoaded(s: Sfx): Boolean = sampleIds[s.ordinal].let { it != 0 && it in loaded }
 
     private fun rawRes(s: Sfx): Int = when (s) {
         Sfx.TAP -> R.raw.sfx_tap
@@ -49,6 +54,7 @@ object SoundManager {
         Sfx.UNLOCK -> R.raw.sfx_unlock
         Sfx.VS -> R.raw.sfx_vs
         Sfx.WHOOSH -> R.raw.sfx_whoosh
+        Sfx.INTRO -> R.raw.sfx_intro
     }
 
     /** Load all 16 sounds once (idempotent; the decode itself runs on SoundPool's thread). */
@@ -67,7 +73,9 @@ object SoundManager {
                 .build()
             p.setOnLoadCompleteListener { _, sampleId, status -> if (status == 0) loaded.add(sampleId) }
             val ctx = App.instance
-            Sfx.entries.forEach { s -> sampleIds[s.ordinal] = p.load(ctx, rawRes(s), 1) }
+            // The intro jingle loads first: it plays a moment after launch.
+            (listOf(Sfx.INTRO) + Sfx.entries.filter { it != Sfx.INTRO })
+                .forEach { s -> sampleIds[s.ordinal] = p.load(ctx, rawRes(s), 1) }
             pool = p
         }
     }
@@ -80,8 +88,17 @@ object SoundManager {
         val p = pool ?: return
         val id = sampleIds[s.ordinal]
         if (id == 0 || id !in loaded) return
+        val now = SystemClock.uptimeMillis()
+        // The intro jingle owns the cold start: its landing "ta-da" replaces the landing hop.
+        if (s == Sfx.HOP && FeedbackRules.hopMutedByIntro(now, introAt)) return
         val v = (FeedbackRules.MASTER_VOLUME * volume).coerceIn(0f, 1f)
-        runCatching { p.play(id, v, v, 1, 0, rate.coerceIn(0.5f, 2f)) }
+        val stream = runCatching { p.play(id, v, v, 1, 0, rate.coerceIn(0.5f, 2f)) }.getOrDefault(0)
+        if (stream == 0) return
+        if (s == Sfx.INTRO) introAt = now
+        if (com.wordocious.app.BuildConfig.DEBUG) {
+            val n = playCount.merge(s, 1) { a, b -> a + b }
+            android.util.Log.d("sfx", "${s.file} $n")
+        }
     }
 
     /** Spec U: an event's sound + haptic ([view] = the composable's LocalView, when there is one). */

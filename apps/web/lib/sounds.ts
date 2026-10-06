@@ -166,7 +166,7 @@ export function recentlyPlayed(name: SoundName, ms: number): boolean {
   return at != null && now() - at < ms;
 }
 
-/** Play one of the 16 samples. Silent when Sound is off, before the first tap, or before the sample decodes. */
+/** Play one of the samples. Silent when Sound is off, before the first tap, or before the sample decodes. */
 export function playSound(name: SoundName, opts: { rate?: number; gain?: number } = {}): void {
   try {
     if (!isSoundEnabled()) return;
@@ -189,6 +189,63 @@ export function playSound(name: SoundName, opts: { rate?: number; gain?: number 
       src.connect(master);
     }
     src.start(0);
+    logSfx(name);
+  } catch { /* never throw from a sound */ }
+}
+
+/** Dev builds: every sample that actually starts is counted in `window.__sfx` (verification aid). */
+function logSfx(name: SoundName): void {
+  if (process.env.NODE_ENV === 'production') return;
+  try {
+    const w = window as unknown as { __sfx?: Record<string, number> };
+    w.__sfx = w.__sfx ?? {};
+    w.__sfx[name] = (w.__sfx[name] ?? 0) + 1;
+    console.debug('[sfx]', name, w.__sfx[name]);
+  } catch { /* debug only */ }
+}
+
+/** Fetch + decode one sample now (the context may still be suspended; decoding works anyway). */
+function warm(ctx: AudioContext, name: SoundName): void {
+  if (buffers.has(name) || decoding.has(name)) return;
+  if (!raw.has(name) && typeof fetch === 'function') {
+    raw.set(name, fetch(soundUrl(name)).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null));
+  }
+  const bytes = raw.get(name);
+  if (!bytes) return;
+  decoding.add(name);
+  bytes
+    .then((b) => (b ? decode(ctx, b) : null))
+    .then((buf) => { if (buf) buffers.set(name, buf); else raw.delete(name); })
+    .catch(() => { raw.delete(name); })
+    .finally(() => decoding.delete(name));
+}
+
+/** The cold-start intro is about to run: fetch + decode its jingle so it starts on the W's first pop. */
+export function warmIntroSound(): void {
+  try {
+    if (!isSoundEnabled()) return;
+    const ctx = getCtx();
+    if (ctx) warm(ctx, 'intro');
+  } catch { /* never throw from a sound */ }
+}
+
+/**
+ * The cold-start intro jingle (founder's Sound Lab pick: "Marimba Parade", cut to the intro's
+ * beats), once, as the W pops — the animated intro only (Reduce Motion's crossfade stays silent).
+ * Browsers only allow audio before the first tap when autoplay is permitted for the site; when
+ * it isn't, the intro stays silent rather than starting the jingle late.
+ */
+export function playIntroJingle(): void {
+  try {
+    if (!isSoundEnabled()) return;
+    const ctx = getCtx();
+    if (!ctx) return;
+    if (ctx.state === 'running') { playSound('intro'); return; }
+    const t0 = now();
+    const r = ctx.resume();
+    if (r && typeof r.then === 'function') {
+      r.then(() => { if (ctx.state === 'running' && now() - t0 < 250) playSound('intro'); }).catch(() => {});
+    }
   } catch { /* never throw from a sound */ }
 }
 

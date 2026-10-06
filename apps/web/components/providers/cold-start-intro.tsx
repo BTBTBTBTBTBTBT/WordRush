@@ -5,6 +5,7 @@ import { flushSync } from 'react-dom';
 import { CAST } from '@/lib/mascots';
 import { activeSeason, castArt, type Season } from '@/lib/season';
 import { prefersReducedMotion } from '@/lib/motion';
+import { playIntroJingle, warmIntroSound } from '@/lib/sounds';
 import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTRO_RUNNING_ATTR, SPLASH, flourishTotalMs, glideFrame, glideTransform, introShouldPlay } from '@/lib/intro';
 
 // The cold-start launch (docs/FINISH_SPEC.md F2). The static launch screen is
@@ -120,6 +121,8 @@ export function ColdStartIntro() {
     setReduced(rm);
     setSeason(season0);
     setPhase('w');
+    // The intro jingle decodes alongside the images (the animated intro only).
+    if (!rm) warmIntroSound();
     // Step 1: the real header row stays laid out but hidden while the intro runs.
     html().setAttribute(INTRO_RUNNING_ATTR, '');
     let cancelled = false;
@@ -139,6 +142,8 @@ export function ColdStartIntro() {
         at(INTRO.reducedHoldMs + INTRO.reducedFadeMs, () => { landed.current = true; setPhase('off'); });
         return;
       }
+      // The jingle's first note is the W's pop (its notes are cut to the choreography's beats).
+      playIntroJingle();
       at(INTRO.rowAt, () => {
         setPhase('row');
         // The real header row's images (next/image URLs, not the intro's) —

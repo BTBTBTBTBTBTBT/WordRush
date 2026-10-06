@@ -29,6 +29,7 @@ class FeedbackMapTest {
             FeedbackEvent.UNLOCK to (Sfx.UNLOCK to Haptic.SUCCESS),
             FeedbackEvent.VS to (Sfx.VS to Haptic.MEDIUM),
             FeedbackEvent.WHOOSH to (Sfx.WHOOSH to null),
+            FeedbackEvent.INTRO to (Sfx.INTRO to null),
         )
         assertEquals(FeedbackEvent.entries.toSet(), expected.keys)
         expected.forEach { (e, pair) ->
@@ -38,10 +39,17 @@ class FeedbackMapTest {
     }
 
     @Test fun everySoundIsUsedAndNamedLikeItsFile() {
-        assertEquals(16, Sfx.entries.size)
+        assertEquals(17, Sfx.entries.size)
         Sfx.entries.forEach { assertEquals("sfx_" + it.name.lowercase(), it.file) }
         val used = FeedbackEvent.entries.mapNotNull { it.sound }.toSet()
         assertEquals(Sfx.entries.toSet(), used)
+    }
+
+    @Test fun introJingleMutesTheLandingHopOnly() {
+        assertFalse(FeedbackRules.hopMutedByIntro(5_000L, 0L))          // no intro this process
+        assertTrue(FeedbackRules.hopMutedByIntro(5_000L, 4_000L))       // the landing, inside the jingle
+        assertFalse(FeedbackRules.hopMutedByIntro(7_000L, 4_000L))      // after the jingle
+        assertEquals(5000L, FeedbackRules.minGapMs(FeedbackEvent.INTRO))
     }
 
     @Test fun tapPitchStaysWithinThreePercent() {

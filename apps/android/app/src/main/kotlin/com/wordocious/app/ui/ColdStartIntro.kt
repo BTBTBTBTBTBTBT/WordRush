@@ -147,6 +147,12 @@ fun ColdStartIntro(onDone: () -> Unit) {
             // effects). Hold the opening pose — identical to the launch screen — through
             // them, so the bounce starts on steady frames instead of jumping mid-move.
             repeat(3) { androidx.compose.runtime.withFrameNanos { } }
+            // The intro jingle (Sound Lab pick "Marimba Parade"): its first note is the W's pop
+            // (its notes are cut to the choreography's beats). Waits ≤ 250 ms for it to load.
+            val t0 = android.os.SystemClock.uptimeMillis()
+            while (!com.wordocious.app.data.SoundManager.isLoaded(com.wordocious.app.data.Sfx.INTRO) &&
+                android.os.SystemClock.uptimeMillis() - t0 < 250) androidx.compose.runtime.withFrameNanos { }
+            com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.INTRO)
             // Glide to exactly the measured header frame (no overshoot), then land.
             clock.animateTo(IntroT.TO_HEADER_END, tween((IntroT.TO_HEADER_END * IntroT.PACE).toInt(), easing = LinearEasing))
         }

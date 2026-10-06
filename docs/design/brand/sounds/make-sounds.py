@@ -1,8 +1,12 @@
 """Wordocious sound pack (founder 10-02: sound + haptics to match the tactile candy look).
 Synthesized offline (soft sines, FM bells, filtered noise) so it's ours, tiny and consistent.
   python3 sounds/make-sounds.py  -> sounds/out/<name>.wav (44.1k mono 16-bit) + .m4a (AAC) via afconvert
+  python3 sounds/make-sounds.py --picks-only  -> only re-applies PICKS (ship-sounds.sh runs this)
+Sound Lab picks (founder): PICKS maps a shipped name -> the options/<file>.m4a he picked; each is
+loudness-matched (K-weighted, gated, 100 ms blocks) to a reference level, peak-capped, then written
+to out/ like a synthesized sound. Add a row and re-run ship-sounds.sh to ship a new pick.
 Shipped by sounds/ship-sounds.sh to web public/sounds, iOS Resources/Sounds, Android res/raw."""
-import os, subprocess, numpy as np
+import os, sys, subprocess, tempfile, numpy as np
 from scipy.io import wavfile
 from scipy.signal import butter, lfilter
 SR = 44100
@@ -40,6 +44,52 @@ def save(name, sig, peak=0.7):
     subprocess.run(['afconvert', '-f', 'm4af', '-d', 'aac', '-b', '96000', p, p.replace('.wav', '.m4a')], check=True)
 
 N = lambda m: 440 * 2 ** ((m - 69) / 12)   # midi -> Hz
+
+# ── Sound Lab picks ─────────────────────────────────────────────────────────
+# name -> (options file, target loudness). Targets: JINGLE = the median of the shipped jingles
+# (win / lose / streak / unlock / celebrate / notify / vs ≈ -14.7), UI = the small UI sounds
+# (tap / delete / press / hop ≈ -21). Peaks are capped at PEAK_CAP dBFS (AAC overshoot headroom),
+# so a pick can land quieter than its target, never louder.
+JINGLE, UI, PEAK_CAP = -14.7, -21.0, -1.5
+PICKS = {
+    'intro': ('intro-a', JINGLE),          # App intro: A Marimba Parade
+}
+
+def _read(path):
+    tmp = tempfile.mktemp(suffix='.wav')
+    subprocess.run(['afconvert', '-f', 'WAVE', '-d', 'LEI16@44100', '-c', '1', path, tmp], check=True)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore'); sr, x = wavfile.read(tmp)
+    os.remove(tmp)
+    x = x.astype(np.float64) / 32768.0
+    return x.mean(1) if x.ndim > 1 else x
+
+def loudness(x):
+    """BS.1770 K-weighting + gating, on 100 ms blocks (the sounds are short)."""
+    y = lfilter([1, -2, 1], [1, -1.98916967363, 0.98919159782],
+                lfilter([1.53090959966, -2.65116903469, 1.16916686977], [1, -1.66375011193, 0.71265753585], x))
+    n, hop = int(0.1 * SR), int(0.025 * SR)
+    if len(y) < n: y = np.concatenate([y, np.zeros(n - len(y))])
+    ms = np.array([np.mean(y[i:i + n] ** 2) for i in range(0, len(y) - n + 1, hop)])
+    L = -0.691 + 10 * np.log10(ms + 1e-12); g = ms[L > -70]
+    if not len(g): return -99.0
+    rel = -0.691 + 10 * np.log10(g.mean()) - 10
+    return float(-0.691 + 10 * np.log10(ms[(L > -70) & (L > rel)].mean()))
+
+def apply_picks():
+    for name, (src, target) in PICKS.items():
+        x = _read(os.path.join(HERE, 'options', f'{src}.m4a'))
+        before = loudness(x); pk = 20 * np.log10(np.abs(x).max() + 1e-12)
+        gain_db = min(target - before, PEAK_CAP - pk)
+        y = x * 10 ** (gain_db / 20)
+        p = os.path.join(OUT, f'{name}.wav'); wavfile.write(p, SR, (np.clip(y, -1, 1) * 32767).astype(np.int16))
+        subprocess.run(['afconvert', '-f', 'm4af', '-d', 'aac', '-b', '96000', p, p.replace('.wav', '.m4a')], check=True)
+        print(f'pick {name:10s} <- {src:14s} {before:6.1f} -> {loudness(y):6.1f} LUFS (target {target}), peak {pk + gain_db:5.1f} dBFS')
+
+if '--picks-only' in sys.argv:
+    apply_picks(); sys.exit(0)
+
 
 # 1 key tap: soft candy boop with a tiny pitch drop
 x = t(0.07); f = 700 * (560/700) ** (x/0.07); s = np.sin(2*np.pi*np.cumsum(f)/SR) * env(len(x), 0.002, 0.07, 7)
@@ -93,4 +143,5 @@ b = at(b, noise(0.12, 2000, 8000, 10) * 0.5, 0); b = at(b, bell(N(76), 0.4, 1.5,
 save('vs', b, 0.6)
 # 16 whoosh (popup open / page slide), very soft
 x = t(0.22); save('whoosh', noise(0.22, 600, 5000, 2) * np.sin(np.pi * x / 0.22), 0.3)
+apply_picks()
 print('ok', sorted(f for f in os.listdir(OUT) if f.endswith('.m4a')))

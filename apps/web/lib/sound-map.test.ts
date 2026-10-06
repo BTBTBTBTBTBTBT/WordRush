@@ -4,10 +4,11 @@ import path from 'path';
 import { FEEDBACK, MASTER_GAIN, SOUND_NAMES, TICK_MIN_MS, makeThrottle, revealFlipDelays, soundUrl, tapRate } from './sound-map';
 
 describe('sound pack', () => {
-  it('names exactly the 16 shipped samples', () => {
+  it('names exactly the shipped samples (the 16-sound pack + the Sound Lab picks)', () => {
     const files = readdirSync(path.resolve(__dirname, '../public/sounds')).filter((f) => f.endsWith('.m4a')).map((f) => f.replace(/\.m4a$/, '')).sort();
     expect([...SOUND_NAMES].sort()).toEqual(files);
-    expect(SOUND_NAMES).toHaveLength(16);
+    expect(SOUND_NAMES).toHaveLength(17);
+    expect(SOUND_NAMES).toContain('intro');
     expect(soundUrl('tap')).toBe('/sounds/tap.m4a');
   });
   it('plays at ~0.6 master volume', () => {

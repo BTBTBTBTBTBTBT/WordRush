@@ -4,10 +4,14 @@
 import { REVEAL } from '@/lib/tile-motion';
 import type { HapticKind } from '@/lib/haptics';
 
-/** The 16 samples in public/sounds/<name>.m4a (docs/design/brand/sounds/make-sounds.py). */
+/**
+ * The samples in public/sounds/<name>.m4a (docs/design/brand/sounds/make-sounds.py): the 16-sound
+ * pack + the founder's Sound Lab picks (make-sounds.py PICKS) — `intro` = the cold-start jingle.
+ */
 export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
   'lose', 'celebrate', 'streak', 'tick', 'notify', 'unlock', 'vs', 'whoosh',
+  'intro',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
 
