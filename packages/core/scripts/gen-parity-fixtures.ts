@@ -45,6 +45,7 @@ import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
+import { AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule, avatarSaveCheck, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext, type AvatarEarnCondition, type AvatarEarnStats } from '../src/avatar-access';
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
@@ -1026,6 +1027,56 @@ export function renderAvatarSeasonFixtures() {
   return { available, seasons, active, shelf, wears, nudge, keys };
 }
 
+export function renderAvatarAccessFixtures() {
+  // Item gating (avatar-access.ts): the rules, access + routes, the try-on / save check, enforcement, the earn evaluator.
+  const parts = [
+    ['head', 'party'], ['head', 'cowboy'], ['head', 'crown'], ['head', 'pumpkinhat'], ['head', 'none'], ['body', 'star'], ['body', 'classic'],
+    ['color', 'navy'], ['accColor', 'rainbow'], ['patternColor', 'purple'], ['pattern', 'galaxy'], ['pattern', 'solid'], ['frame', 'gold'],
+    ['frame', 'diamond'], ['bg', 'auto'], ['bg', 'aurora'], ['pet', 'kitten'], ['pet', 'ghost'], ['pose', 'jump'], ['brows', 'worried'], ['held', 'wand-star'],
+    ['eyes', 'stars'], ['neck', 'fairywings'], ['head', 'not-a-hat'],
+  ].map(([field, id]) => ({ field, id }));
+  const rules = parts.flatMap((p) => [true, false].map((gating) => ({ ...p, gating, key: avatarAccessKey(p.field, p.id), rule: avatarPartRule(p.field, p.id, { gating }) })));
+  const base = castPreset('w');
+  const mk = (o: Record<string, string>) => validateAvatar({ ...base, ...o }, base);
+  const contexts: Array<{ name: string; ctx: AvatarAccessContext }> = [
+    { name: 'free', ctx: { isPro: false, date: '2026-07-01', gating: true } },
+    { name: 'pro', ctx: { isPro: true, date: '2026-07-01', gating: true } },
+    { name: 'owned', ctx: { isPro: false, date: '2026-07-01', gating: true, owned: ['head:cowboy', 'pet:kitten', 'color:navy'] } },
+    { name: 'earner', ctx: { isPro: false, date: '2026-07-01', gating: true, stats: { level: 30, bestStreak: 31, bestLoginStreak: 12, achievements: ['boss_battle', 'night_owl'] } } },
+    { name: 'progress', ctx: { isPro: false, date: '2026-07-01', gating: true, stats: { level: 3, bestStreak: 12, bestLoginStreak: 49 } } },
+    { name: 'saved', ctx: { isPro: false, date: '2026-07-01', gating: true, saved: mk({ head: 'cowboy', color: 'navy', pet: 'ghost' }) } },
+    { name: 'halloween', ctx: { isPro: false, date: '2026-10-20', gating: true } },
+    { name: 'preview', ctx: { isPro: false, date: '2026-07-01', gating: true, previewSeason: 'halloween' } },
+    { name: 'off', ctx: { isPro: false, date: '2026-07-01', gating: false } },
+    { name: 'off-pro', ctx: { isPro: true, date: '2026-07-01', gating: false, stats: { level: 30 } } },
+  ];
+  const access = contexts.flatMap(({ name, ctx }) => parts.map((part) => {
+    const a = avatarPartAccess(part, ctx);
+    return { ctx: name, part, unlocked: a.unlocked, reason: a.reason, routes: a.routes, lines: avatarLockedCardLines(a) };
+  }));
+  const drafts = [
+    mk({ head: 'cowboy', pet: 'kitten', color: 'navy' }),
+    mk({ head: 'crown', neck: 'wings', color: 'gold', accColor: 'rainbow', frame: 'diamond', bg: 'galaxy' }),
+    mk({ body: 'star', pattern: 'galaxy', patternColor: 'navy', pose: 'jump', held: 'wand-star', brows: 'worried' }),
+    mk({ head: 'pumpkinhat', pet: 'ghost' }),
+    mk({ pattern: 'solid', patternColor: 'navy', frame: 'gold' }),
+    castPreset('s'),
+  ];
+  const saves = contexts.flatMap(({ name, ctx }) => drafts.map((draft) => {
+    const check = avatarSaveCheck(draft, ctx);
+    return { ctx: name, draft, ok: check.ok, locked: check.locked, enforced: enforceAvatarAccess(draft, ctx) };
+  }));
+  const conditions: AvatarEarnCondition[] = [
+    { label: 'Beat Webster', achievement: 'boss_battle' }, { label: '30-day streak', stat: 'bestStreak', min: 30 },
+    { label: 'Level 26', stat: 'level', min: 26 }, { label: 'Login 50', stat: 'bestLoginStreak', min: 50 }, { label: 'Current 7', stat: 'currentStreak', min: 7 },
+    { label: 'Nothing' },
+  ];
+  const statsCases: Array<AvatarEarnStats | null> = [null, {}, { level: 26, bestStreak: 12, currentStreak: 7, bestLoginStreak: 60, achievements: ['boss_battle'] }, { level: -3, bestStreak: 99.7 }];
+  const earn = conditions.flatMap((cond) => statsCases.map((stats) => ({ cond, stats, progress: evaluateEarn(cond, stats) })));
+  const earned = statsCases.map((stats) => ({ stats, keys: avatarEarnedKeys(stats) }));
+  return { contexts, rules, access, saves, earn, earned, tableSize: Object.keys(AVATAR_ACCESS_TABLE.parts).length };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -1054,6 +1105,7 @@ const FILES: Array<[string, unknown]> = [
   ['avatar-layout-fixtures.json', renderAvatarLayoutFixtures()],
   ['avatar-season-fixtures.json', renderAvatarSeasonFixtures()],
   ['avatar-pose-fixtures.json', renderAvatarPoseFixtures()],
+  ['avatar-access-fixtures.json', renderAvatarAccessFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports
