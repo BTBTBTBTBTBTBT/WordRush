@@ -878,7 +878,7 @@ object BadgeShare {
 private fun LevelUpPopup(level: Int, waiting: Int, onNice: () -> Unit) {
     val tier = levelTier(level)
     val accent = TierInk.accent(tier)
-    BadgePopupFrame(accent, paneTitle = "Level up: level $level, ${tier.label}", waiting = waiting, onNice = onNice) {
+    BadgePopupFrame(accent, paneTitle = "Level up: level $level, ${tier.label}", waiting = waiting, onNice = onNice, levelUp = true) {
         BadgeStage(null, 132.dp, accent, res = BadgeArt.level(tier))
         HeadingArt(Heading.LEVELUP, height = 34.dp)   // BJ16: lettering, not plain text
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -907,13 +907,16 @@ private fun BadgePopupFrame(
     primaryLabel: String = "Nice!",
     /** BF2: extra actions beside the primary (See all, share). */
     actions: (@Composable RowScope.() -> Unit)? = null,
+    /** A tier-crossing level-up: the level-up jingle instead of `unlock`. */
+    levelUp: Boolean = false,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     val still = WTheme.reducedMotion
     val view = LocalView.current
     val enter = remember { Animatable(if (still) 1f else 0f) }
     LaunchedEffect(Unit) {
-        com.wordocious.app.data.SoundManager.achievementUnlocked(view)
+        if (levelUp) com.wordocious.app.data.SoundManager.levelUp(view)
+        else com.wordocious.app.data.SoundManager.achievementUnlocked(view)
         // AZ: the shared spring in.
         if (!still) enter.animateTo(1f, Motion.springIn())
     }

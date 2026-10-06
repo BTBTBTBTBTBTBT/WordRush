@@ -7,7 +7,7 @@ describe('sound pack', () => {
   it('names exactly the shipped samples (the 16-sound pack + the Sound Lab picks)', () => {
     const files = readdirSync(path.resolve(__dirname, '../public/sounds')).filter((f) => f.endsWith('.m4a')).map((f) => f.replace(/\.m4a$/, '')).sort();
     expect([...SOUND_NAMES].sort()).toEqual(files);
-    expect(SOUND_NAMES).toHaveLength(27);
+    expect(SOUND_NAMES).toHaveLength(28);
     expect(SOUND_NAMES).toContain('intro');
     expect(soundUrl('tap')).toBe('/sounds/tap.m4a');
   });
@@ -42,6 +42,7 @@ describe('event map (FINISH_SPEC U)', () => {
     expect(FEEDBACK.unlock).toEqual({ sound: 'unlock', haptics: ['success'] });
     expect(FEEDBACK.vs).toEqual({ sound: 'vs', haptics: ['medium'] });
     expect(FEEDBACK.whoosh).toEqual({ sound: 'whoosh', haptics: [] });
+    expect(FEEDBACK.levelup).toEqual({ sound: 'levelup', haptics: ['success'] });
   });
   it('every sound in the map is a shipped sample', () => {
     for (const { sound } of Object.values(FEEDBACK)) if (sound) expect(SOUND_NAMES).toContain(sound);

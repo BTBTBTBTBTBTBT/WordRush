@@ -53,6 +53,7 @@ N = lambda m: 440 * 2 ** ((m - 69) / 12)   # midi -> Hz
 JINGLE, UI, PEAK_CAP = -14.7, -21.0, -1.5
 PICKS = {
     'intro': ('intro-a', JINGLE),          # App intro: A Marimba Parade
+    'levelup': ('levelup-b', JINGLE),      # Level up: B Rising Stairs
     # Tap a hero in the header: A Giggles, one voice per hero (laugh-<id>)
     **{f'laugh-{c}': (f'laugh-a-{c}', UI) for c in ('w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's')},
 }
@@ -85,7 +86,11 @@ def apply_picks():
         before = loudness(x); pk = 20 * np.log10(np.abs(x).max() + 1e-12)
         gain_db = min(target - before, PEAK_CAP - pk)
         y = x * 10 ** (gain_db / 20)
-        p = os.path.join(OUT, f'{name}.wav'); wavfile.write(p, SR, (np.clip(y, -1, 1) * 32767).astype(np.int16))
+        p = os.path.join(OUT, f'{name}.wav'); pcm = (np.clip(y, -1, 1) * 32767).astype(np.int16)
+        # Unchanged pick: keep its .m4a (AAC encodes aren't byte-stable, so re-runs stay diff-free).
+        if os.path.exists(p) and os.path.exists(p.replace('.wav', '.m4a')) and np.array_equal(wavfile.read(p)[1], pcm):
+            continue
+        wavfile.write(p, SR, pcm)
         subprocess.run(['afconvert', '-f', 'm4af', '-d', 'aac', '-b', '96000', p, p.replace('.wav', '.m4a')], check=True)
         print(f'pick {name:10s} <- {src:14s} {before:6.1f} -> {loudness(y):6.1f} LUFS (target {target}), peak {pk + gain_db:5.1f} dBFS')
 

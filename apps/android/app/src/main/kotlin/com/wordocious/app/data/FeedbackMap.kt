@@ -29,6 +29,8 @@ enum class Sfx(val file: String) {
     // The founder's Sound Lab picks (docs/design/brand/sounds/make-sounds.py PICKS).
     /** The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s. */
     INTRO("sfx_intro"),
+    /** The player's level going up (pick: "Rising Stairs"). */
+    LEVELUP("sfx_levelup"),
 
     /** Each header hero's giggle (pick: "Giggles"), played by SoundManager.castLaugh. */
     LAUGH_W("sfx_laugh_w"), LAUGH_O1("sfx_laugh_o1"), LAUGH_R("sfx_laugh_r"), LAUGH_D("sfx_laugh_d"),
@@ -60,6 +62,8 @@ enum class FeedbackEvent(val sound: Sfx?, val haptic: Haptic?) {
     WHOOSH(Sfx.WHOOSH, null),
     /** The cold-start intro, as the W pops (the animated intro only). */
     INTRO(Sfx.INTRO, null),
+    /** The level goes up: the XP toast's "Level up!", or the tier popup when it crosses a tier. */
+    LEVEL_UP(Sfx.LEVELUP, Haptic.SUCCESS),
 }
 
 /** The tunables (spec U): master volume, tap pitch spread, tick throttle, squish quiet window. */
@@ -110,6 +114,7 @@ object FeedbackRules {
         FeedbackEvent.FLIP -> FLIP_MIN_GAP_MS
         FeedbackEvent.ROW_LAND -> ROW_LAND_MIN_GAP_MS
         FeedbackEvent.INTRO -> 5000L
+        FeedbackEvent.LEVEL_UP -> 1500L
         else -> 0L
     }
 

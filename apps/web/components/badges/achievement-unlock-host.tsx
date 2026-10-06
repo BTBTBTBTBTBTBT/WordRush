@@ -104,7 +104,8 @@ export function AchievementUnlockHost() {
   // The unlock moment's sound + haptic, once per celebration.
   useEffect(() => {
     if (!isLeader || !current || !clear) return;
-    playSound('unlock');
+    // A tier-crossing level-up plays the level-up jingle; achievements play `unlock`.
+    playSound(current.kind === 'tier' ? 'levelup' : 'unlock');
     haptic('success');
   }, [isLeader, current, clear]);
 

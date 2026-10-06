@@ -55,6 +55,7 @@ object SoundManager {
         Sfx.VS -> R.raw.sfx_vs
         Sfx.WHOOSH -> R.raw.sfx_whoosh
         Sfx.INTRO -> R.raw.sfx_intro
+        Sfx.LEVELUP -> R.raw.sfx_levelup
         Sfx.LAUGH_W -> R.raw.sfx_laugh_w
         Sfx.LAUGH_O1 -> R.raw.sfx_laugh_o1
         Sfx.LAUGH_R -> R.raw.sfx_laugh_r
@@ -177,6 +178,9 @@ object SoundManager {
 
     /** Achievement unlock: `unlock` · success haptic (for the achievement popup). */
     fun achievementUnlocked(view: android.view.View? = null) = fire(FeedbackEvent.UNLOCK, view)
+
+    /** The level goes up: `levelup` · success haptic (once per level-up; see FeedbackRules). */
+    fun levelUp(view: android.view.View? = null) = fire(FeedbackEvent.LEVEL_UP, view)
 
     private val laughGates = ConcurrentHashMap<Sfx, FeedbackThrottle>()
 

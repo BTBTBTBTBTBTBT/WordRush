@@ -125,6 +125,11 @@ struct XpToastView: View {
         scheduled = true
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             withAnimation(Theme.animation(.easeOut(duration: 0.3))) { shown = true }
+            // Level up: the jingle as "Level up!" shows (a tier-crossing level-up plays it on
+            // its tier popup instead, so one level-up = one jingle).
+            if result.leveledUp, LevelTier.forLevel(result.newLevel) == LevelTier.forLevel(max(1, result.newLevel - 1)) {
+                Feedback.levelUp()
+            }
             // Web parity: stretch 3s → 5s when a sweep/flawless bonus fired so the
             // bigger payout is actually readable.
             let dwell: Double = (result.sweepBonus + result.flawlessBonus) > 0 ? 5 : 3

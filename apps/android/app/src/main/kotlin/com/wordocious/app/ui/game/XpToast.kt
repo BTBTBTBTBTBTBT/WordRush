@@ -68,6 +68,11 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
             android.os.SystemClock.uptimeMillis()
         if (wait > 0) delay(wait)
         visible = true
+        // Level up: the jingle as "Level up!" shows (a tier-crossing level-up plays it on its
+        // tier popup instead, so one level-up = one jingle).
+        if (result.leveledUp && !com.wordocious.app.ui.BadgeMath.tierChangedOnLevelUp(true, result.newLevel)) {
+            com.wordocious.app.data.SoundManager.levelUp()
+        }
         // Web: 3s dwell, extended to 5s when sweep/flawless chips need reading.
         delay(if (result.sweepBonus + result.flawlessBonus > 0) 5000L else 3000L)
         visible = false

@@ -6,7 +6,8 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { softBackground, softBorder, softPill } from '@/lib/soft-surface';
 import { LevelBadge } from '@/components/badges/badge-art';
 import { AchievementUnlockHost } from '@/components/badges/achievement-unlock-host';
-import { celebrateLevelUp } from '@/lib/badges';
+import { celebrateLevelUp, tierChanged } from '@/lib/badges';
+import { feedback } from '@/lib/sound-events';
 import { FINISH_MOTION, HOLD_POLL_MS, resultPopupOpen } from '@/lib/finish-motion';
 
 interface XpToastProps {
@@ -44,6 +45,13 @@ export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, f
     }, HOLD_POLL_MS);
     return () => { clearInterval(id); if (beat != null) clearTimeout(beat); };
   }, []);
+
+  // Level up: the `levelup` jingle as the toast shows "Level up!" (a tier-crossing level-up
+  // plays it on its tier popup instead, so one level-up = one jingle).
+  useEffect(() => {
+    if (held || !leveledUp || !newLevel || tierChanged(newLevel - 1, newLevel)) return;
+    feedback('levelup');
+  }, [held, leveledUp, newLevel]);
 
   useEffect(() => {
     if (held) return;

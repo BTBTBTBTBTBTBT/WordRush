@@ -30,6 +30,7 @@ class FeedbackMapTest {
             FeedbackEvent.VS to (Sfx.VS to Haptic.MEDIUM),
             FeedbackEvent.WHOOSH to (Sfx.WHOOSH to null),
             FeedbackEvent.INTRO to (Sfx.INTRO to null),
+            FeedbackEvent.LEVEL_UP to (Sfx.LEVELUP to Haptic.SUCCESS),
         )
         assertEquals(FeedbackEvent.entries.toSet(), expected.keys)
         expected.forEach { (e, pair) ->
@@ -39,7 +40,7 @@ class FeedbackMapTest {
     }
 
     @Test fun everySoundIsUsedAndNamedLikeItsFile() {
-        assertEquals(27, Sfx.entries.size)
+        assertEquals(28, Sfx.entries.size)
         Sfx.entries.forEach { assertEquals("sfx_" + it.name.lowercase(), it.file) }
         // Every sound is an event's, or a hero's giggle (SoundManager.castLaugh).
         val used = FeedbackEvent.entries.mapNotNull { it.sound }.toSet() +

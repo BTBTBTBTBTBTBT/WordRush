@@ -584,8 +584,8 @@ struct AchievementUnlockPopup: View {
     }
 
     private func start() {
-        // §U: the `unlock` sound + a success haptic.
-        UnlockFeedback.play()
+        // §U: the `unlock` sound + a success haptic (a tier-crossing level-up: the level-up jingle).
+        if isLevel { Feedback.levelUp() } else { UnlockFeedback.play() }
         UIAccessibility.post(notification: .screenChanged, argument: "\(headline.capitalized). \(title)")
         if still { badgeIn = true; return }
         confetti = true

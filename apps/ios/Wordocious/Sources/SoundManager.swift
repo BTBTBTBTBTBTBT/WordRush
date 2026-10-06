@@ -23,6 +23,8 @@ final class SoundManager {
         case celebrate, streak, tick, notify, unlock, vs, whoosh
         /// The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s.
         case intro
+        /// The player's level going up (pick: "Rising Stairs").
+        case levelup
         /// Each header hero's giggle (pick: "Giggles"), file `sfx-laugh-<id>.m4a`.
         case laughW = "laugh-w", laughO1 = "laugh-o1", laughR = "laugh-r", laughD = "laugh-d", laughO2 = "laugh-o2"
         case laughC = "laugh-c", laughI = "laugh-i", laughO3 = "laugh-o3", laughU = "laugh-u", laughS = "laugh-s"
@@ -363,6 +365,12 @@ enum Feedback {
     static func notify() {
         guard once("notify", 1.0) else { return }
         SoundManager.shared.play(.notify); Haptics.light()
+    }
+    /// The level goes up (the XP toast's "Level up!", or the tier popup when it crosses a
+    /// tier — one jingle per level-up): levelup · success.
+    static func levelUp() {
+        guard once("levelup", 1.5) else { return }
+        SoundManager.shared.play(.levelup); Haptics.success()
     }
     /// Achievement unlock: unlock · success.
     static func unlock() {

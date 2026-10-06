@@ -7,12 +7,12 @@ import type { HapticKind } from '@/lib/haptics';
 /**
  * The samples in public/sounds/<name>.m4a (docs/design/brand/sounds/make-sounds.py): the 16-sound
  * pack + the founder's Sound Lab picks (make-sounds.py PICKS) — `intro` = the cold-start jingle,
- * `laugh-<id>` = each header hero's giggle.
+ * `levelup` = the player's level going up, `laugh-<id>` = each header hero's giggle.
  */
 export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
   'lose', 'celebrate', 'streak', 'tick', 'notify', 'unlock', 'vs', 'whoosh',
-  'intro',
+  'intro', 'levelup',
   'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
@@ -60,7 +60,8 @@ export const SECOND_HAPTIC_MS = 140;
 /** The app events that make a sound and/or a haptic. */
 export type FeedbackEvent =
   | 'key' | 'delete' | 'flip' | 'rowLand' | 'invalid' | 'press' | 'release' | 'hop'
-  | 'win' | 'lose' | 'celebrate' | 'streak' | 'tick' | 'notify' | 'unlock' | 'vs' | 'whoosh';
+  | 'win' | 'lose' | 'celebrate' | 'streak' | 'tick' | 'notify' | 'unlock' | 'vs' | 'whoosh'
+  | 'levelup';
 
 /** FINISH_SPEC U event map (sound · haptic). */
 export const FEEDBACK: Record<FeedbackEvent, { sound: SoundName | null; haptics: readonly HapticKind[] }> = {
@@ -81,6 +82,8 @@ export const FEEDBACK: Record<FeedbackEvent, { sound: SoundName | null; haptics:
   unlock: { sound: 'unlock', haptics: ['success'] },
   vs: { sound: 'vs', haptics: ['medium'] },
   whoosh: { sound: 'whoosh', haptics: [] },
+  /** The level goes up: the XP toast's "Level up!", or the tier popup when it crosses a tier. */
+  levelup: { sound: 'levelup', haptics: ['success'] },
 };
 
 /** When each tile of a reveal turns over (ms from the reveal start): one `flip` per tile, REVEAL.stagger apart. */
