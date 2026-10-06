@@ -20,6 +20,7 @@
 // dated (legacy-pinned or curated-stable) and don't drift with curation.
 
 import fs from 'node:fs';
+import { AVATAR_LIVE_CONFIG, AVATAR_POSES, AVATAR_POSES_DATA, AVATAR_REACTION_POSE, avatarLiveFrame, avatarPoseMatrices, avatarPoseWithheld, type AvatarReaction } from '../src/avatar-pose';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTodayForTests } from '../src/dictionary';
@@ -794,6 +795,8 @@ export function renderAvatarConfigFixtures() {
     // 10-05 seasonal parts (Halloween): valid ids all year (a saved look is never stripped)
     { head: 'pumpkinhat', neck: 'batwings', wrap: 'vampirecollar', held: 'candypail', pet: 'ghost' },
     { head: 'mummywrap', neck: 'cattail', pet: 'blackcat' },
+    // 10-06 poses: known ids kept (written only when not 'none'), unknown → none
+    { pose: 'wave' }, { pose: 'hug', body: 'star' }, { pose: 'moonwalk' }, { pose: 'none' }, { pose: 7 },
   ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
   const pro = [true, false].flatMap((isPro) => [
     { isPro, input: { ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) },
@@ -843,6 +846,47 @@ export function renderPodiumLayoutFixtures() {
 
 // Round 2 fit system: the layout every renderer draws (rects per layer), the conflict swaps and the
 // shared pattern shapes. Positions are rounded to 4 decimals; platforms compare within 1e-3.
+// 10-06 poses + the living mascot (avatar-pose.ts): the shared pose data, every pose's matrices on every rigged body,
+// live frames (breath, blink, wave, tap hop + laugh, reactions, Reduce Motion, ambient off, press), and posed
+// layouts (items riding hands / feet / the body, per-pose withholds).
+export function renderAvatarPoseFixtures() {
+  const bodies = Object.keys(AVATAR_POSES_DATA.rigs);
+  const matrices = bodies.flatMap((body) => AVATAR_POSES.slice(1).map((pose) => ({
+    body, pose, m: avatarPoseMatrices(AVATAR_POSES_DATA.rigs[body], AVATAR_POSES_DATA.poses[pose]),
+  })));
+  const frames = [
+    { pose: 'none', t: 0 }, { pose: 'none', t: 1.31 }, { pose: 'none', t: 1.36 }, { pose: 'wave', t: 0.4 }, { pose: 'wave', t: 2.2 },
+    { pose: 'cheer', t: 0.7 }, { pose: 'sit', t: 5 }, { pose: 'none', t: 3, tap: 0.05 }, { pose: 'none', t: 3, tap: 0.3 },
+    { pose: 'hips', t: 3, tap: 0.6 }, { pose: 'flex', t: 3, tap: 1.0 }, { pose: 'none', t: 3, tap: 0.3, still: true },
+    { pose: 'shrug', t: 8, ambient: false }, { pose: 'none', t: 2, press: 1 },
+    ...(['win', 'loss', 'streak', 'levelup'] as AvatarReaction[]).flatMap((kind) => [0.1, 0.5, 2.0].map((rt) => ({ pose: 'hug', t: 4, reaction: { kind, t: rt } }))),
+    { pose: 'jump', t: 4, reaction: { kind: 'win' as AvatarReaction, t: 0.5 }, still: true },
+  ].map((input) => ({ input, frame: avatarLiveFrame(input) }));
+  const base = castPreset('w');
+  const mk = (o: Record<string, string>) => validateAvatar({ ...base, ...o }, base);
+  const layouts = [
+    { body: 'classic', pose: 'wave', held: 'mug', feet: 'sneakers', pet: 'kitten', head: 'cowboy' },
+    { body: 'star', pose: 'cheer', held: 'balloon', neck: 'scarf' },
+    { body: 'bean', pose: 'hug', wrap: 'belt', brows: 'happy' },
+    { body: 'mini', pose: 'jump', feet: 'boots', head: 'crown' },
+    { body: 'tall', pose: 'sit', held: 'book', neck: 'backpack' },
+    { body: 'hex', pose: 'flex', head: 'party', face: 'roundglasses' },
+    { body: 'cloud', pose: 'shrug', neck: 'cape', held: 'umbrella' },
+    { body: 'chunky', pose: 'hips', wrap: 'apron', held: 'spatula' },
+  ].map((o) => {
+    const config = mk(o);
+    return {
+      config,
+      saved: avatarLayout(config, { pose: 'saved' }),
+      small: avatarLayout(config, { small: true, pose: 'saved' }),
+      live: avatarLayout(config, { pose: { id: config.pose ?? 'none', spec: avatarLiveFrame({ pose: config.pose ?? 'none', t: 1.7, tap: 0.3 }).spec } }),
+      none: avatarLayout(config, { pose: null }),
+    };
+  });
+  const withheld = AVATAR_POSES.slice(1).flatMap((pose) => bodies.map((body) => ({ pose, body, items: avatarPoseWithheld(pose, body) })));
+  return { flag: AVATAR_LIVE_CONFIG, poses: AVATAR_POSES, reactionPose: AVATAR_REACTION_POSE, data: AVATAR_POSES_DATA, matrices, frames, layouts, withheld };
+}
+
 export function renderAvatarLayoutFixtures() {
   const base = castPreset('w');
   const mk = (o: Record<string, string>) => validateAvatar({ ...base, ...o }, base);
@@ -1009,6 +1053,7 @@ const FILES: Array<[string, unknown]> = [
   ['podium-layout-fixtures.json', renderPodiumLayoutFixtures()],
   ['avatar-layout-fixtures.json', renderAvatarLayoutFixtures()],
   ['avatar-season-fixtures.json', renderAvatarSeasonFixtures()],
+  ['avatar-pose-fixtures.json', renderAvatarPoseFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

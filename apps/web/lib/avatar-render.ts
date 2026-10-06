@@ -23,6 +23,9 @@ import {
   AVATAR_CHEEKS, AVATAR_INTEGRATED_OPTIONS, AVATAR_NEW_PARTS, avatarColor, avatarLayout, avatarPatternShapes, avatarPickConflict,
   type AvatarBody, type AvatarColor, type AvatarConfig, type AvatarFrame, type AvatarHead, type AvatarPatternShape, type AvatarRect,
 } from '@wordle-duel/core';
+import {
+  AVATAR_LIVE_ROOM, avatarLayoutPoseParts, avatarPoseDef, matMul, type AvatarLayout, type AvatarLayoutPose, type AvatarLiveFrame, type AvatarMatrix,
+} from '@wordle-duel/core';
 import partsJson from '../../../packages/core/src/avatar-parts.json';
 import { darkenHex, hexAlpha, lightenHex } from './avatar-tile';
 
@@ -279,8 +282,53 @@ export function avatarArtName(kind: AvatarArtKind, id: string): string {
  * The art names a config would use (nothing for "none" picks): exactly the layout's layers, so per-body art
  * (the scarf, the 10-05 integrated parts' art-av-<kind>-<id>-<body>-<layer> pieces) is fetched + decoded too.
  */
-export function avatarArtNames(config: AvatarConfig): string[] {
-  return [...new Set(avatarLayout(config).layers.map((l) => l.art))];
+export function avatarArtNames(config: AvatarConfig, live = false): string[] {
+  return [...new Set((live ? avatarLiveLayout(config, false) : avatarLayout(config)).layers.map((l) => l.art))];
+}
+
+// ── Poses + the living mascot (core avatar-pose.ts; behind AVATAR_LIVE_CONFIG.livingMascot) ─────────────────────
+
+/**
+ * The living mascot's layout: rigged (feet / base / arms as their own layers, even in the 'none' pose), in its saved
+ * pose, with room in the fit for its reactions + hop (so it never rescales while it moves).
+ */
+export function avatarLiveLayout(config: AvatarConfig, small: boolean): AvatarLayout {
+  const id = config.pose ?? 'none';
+  return avatarLayout(config, { small, pose: { id, spec: avatarPoseDef(id) ?? {} }, room: AVATAR_LIVE_ROOM });
+}
+
+/** A content-fraction matrix → the svg's 0–100 space (content square C wide at fw). */
+export function svgMatrix(m: AvatarMatrix, C: number, fw: number): string {
+  const n = matMul(matMul([C, 0, 0, C, fw, fw], m), [1 / C, 0, 0, 1 / C, -fw / C, -fw / C]);
+  return `matrix(${n.map((v) => Math.round(v * 10000) / 10000).join(' ')})`;
+}
+
+/**
+ * One live frame's transforms (svg matrix strings) for the mascot groups: per ride (root / armL / armR / feet /
+ * none) and the face (eyes: root + a blink squash about the eyes' center, nudged toward a finger by `look`;
+ * mouth: root + the laugh stretch from its top edge). Shared by the static frame (mascotSvg `liveFrame`) and the
+ * per-frame DOM updates (components/avatar/living-mascot.tsx), so both draw exactly the same.
+ */
+export function avatarLiveTransforms(layout: AvatarLayout, config: AvatarConfig, frame: AvatarLiveFrame, C: number, fw: number, look: [number, number] = [0, 0]): Record<string, string> {
+  const P = avatarLayoutPoseParts(layout, config.body, frame.spec);
+  const out: Record<string, string> = {};
+  if (!P) return out;
+  for (const k of ['root', 'armL', 'armR', 'handL', 'handR', 'feet'] as const) out[k] = svgMatrix(P[k], C, fw);
+  out.none = svgMatrix([1, 0, 0, 1, 0, 0], C, fw);
+  const eyes = layout.layers.find((l) => l.layer === 'eyes');
+  if (eyes) {
+    // the blink squashes the eyes about their center; `look` (−1…1) nudges them toward a finger (pupil offset only)
+    const cy = eyes.rect.y + eyes.rect.h / 2;
+    const lx = Math.max(-1, Math.min(1, look[0])) * 0.012, ly = Math.max(-1, Math.min(1, look[1])) * 0.008;
+    out.eyes = svgMatrix(matMul(P.root, [1, 0, 0, frame.eyes, lx, cy - frame.eyes * cy + ly]), C, fw);
+  }
+  const mouth = layout.layers.find((l) => l.layer === 'mouth');
+  if (mouth) {
+    const k = 1 + 0.25 * frame.laugh;
+    const cx = mouth.rect.x + mouth.rect.w / 2, top = mouth.rect.y + mouth.rect.h * 0.3;
+    out.mouth = svgMatrix(matMul(P.root, [k, 0, 0, k, cx - k * cx, top - k * top]), C, fw);
+  }
+  return out;
 }
 
 /** The pre-v3 art names (one sticker per part): kept for the code-drawn fallback's probes. */
@@ -767,6 +815,20 @@ export interface MascotSvgInput {
    * Everything else (body, pattern, letter, face, accessories, ground shadow) is drawn as usual.
    */
   cutout?: boolean;
+  /**
+   * The living mascot (behind AVATAR_LIVE_CONFIG.livingMascot): draw the rigged layout (avatarLiveLayout) with every
+   * group marked for per-frame transforms (data-lm), at `liveFrame` (default: its saved pose, at rest).
+   */
+  live?: boolean;
+  liveFrame?: AvatarLiveFrame;
+  /** Not live: the pose to lay out (default: the core default — the saved pose while the flag is on, else none). */
+  pose?: AvatarLayoutPose;
+}
+
+/** The layout a mascot svg draws (the live layout for the living mascot). */
+function svgLayout(input: MascotSvgInput): AvatarLayout {
+  return input.live ? avatarLiveLayout(input.config, isSmallAvatar(input.size))
+    : avatarLayout(input.config, input.pose === undefined ? { small: isSmallAvatar(input.size) } : { small: isSmallAvatar(input.size), pose: input.pose });
 }
 
 /** The svg document around a mascot's layers (a cutout lets hats / ears poke past the square). */
@@ -785,7 +847,7 @@ export function mascotSvg(input: MascotSvgInput): string {
   // Draw from art only once EVERY layer of the layout has loaded (fully composed, never a
   // body with its face still popping in); until then the code-drawn mascot stands in whole.
   const bodyArt = has(avatarArtName('body', config.body))
-    && avatarLayout(config, { small: isSmallAvatar(size) }).layers.every((l) => has(l.art));
+    && svgLayout(input).layers.every((l) => has(l.art));
   const fw = frame === 'none' ? 0 : FRAME_WIDTH;
   // The body art fills its square (arms + feet included) and every anchor is a fraction of that square.
   const artBox = bodyArt ? bodyArtSquare(config, fw) : null;
@@ -968,8 +1030,16 @@ function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: 
   const { config, size, art, artSrc } = input;
   const cutout = !!input.cutout;
   const small = isSmallAvatar(size);
-  const L = avatarLayout(config, { small });
+  const L = svgLayout(input);
   const C = 100 - 2 * fw;
+  // posed: each layer sits in a group under its part's matrix (the living mascot re-poses the groups per frame)
+  const live = input.live ? avatarLiveTransforms(L, config, input.liveFrame ?? { spec: avatarPoseDef(config.pose) ?? {}, eyes: 1, laugh: 0 }, C, fw) : null;
+  const group = (ride: string | undefined, m: AvatarMatrix | undefined, inner: string, face?: string) => {
+    if (!m && !live) return inner;
+    const key = face && live?.[face] ? face : ride ?? 'root';
+    const tf = live ? live[key] ?? live.root : svgMatrix(m!, C, fw);
+    return `<g data-lm="${key}" transform="${tf}">${inner}</g>`;
+  };
   const box = (r: AvatarRect): AvatarRect => ({ x: fw + r.x * C, y: fw + r.y * C, w: r.w * C, h: r.h * C });
   const has = (name: string) => !!art && art.has(name);
   const pal = avatarPalette(config);
@@ -997,23 +1067,25 @@ function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: 
     const fontSize = Math.min(lb.h / 0.74, lb.w / 0.9) * 0.94;
     const ch = esc(Array.from(input.initial || '?')[0] ?? '?');
     const cx = lb.x + lb.w / 2, base = lb.y + lb.h / 2 + fontSize * 0.36;
-    out.push(`<text x="${r2(cx)}" y="${r2(base + fontSize * 0.07)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="${pal.edge}" opacity="0.55">${ch}</text>`);
-    out.push(`<text x="${r2(cx)}" y="${r2(base)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="#ffffff" stroke="${hexAlpha('#ffffff', 0.35)}" stroke-width="${r2(fontSize * 0.02)}">${ch}</text>`);
+    out.push(group('root', L.letterM, `<text x="${r2(cx)}" y="${r2(base + fontSize * 0.07)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="${pal.edge}" opacity="0.55">${ch}</text>`
+      + `<text x="${r2(cx)}" y="${r2(base)}" text-anchor="middle" font-family="inherit" font-weight="900" font-size="${r2(fontSize)}" fill="#ffffff" stroke="${hexAlpha('#ffffff', 0.35)}" stroke-width="${r2(fontSize * 0.02)}">${ch}</text>`));
   };
   for (const [i, layer] of L.layers.entries()) {
     if (i === L.letterIndex) letter();
     const r = box(layer.rect);
-    if (layer.layer === 'body') {
-      const bodyFill = swatchFill(avatarColor(config.color), `${ID}-bf`, defs);
-      const pat = !small && config.pattern !== 'solid'
+    if (layer.field === 'body') {
+      // the body (posed: its feet / base / arm layers, each tinted the same; the pattern rides the base)
+      const bodyFill = swatchFill(avatarColor(config.color), `${ID}-bf${i}`, defs);
+      const pat = !small && config.pattern !== 'solid' && (layer.layer === 'body' && !layer.art.endsWith('-feet'))
         ? patternSvg(avatarPatternShapes(config.pattern), bodyR, { ink: pal.pattern, base: pal.base, light: '#ffffff' }, defs)
         : '';
-      out.push(tinted(layer.art, r, bodyFill, pat, 'b'));
+      out.push(group(layer.ride, layer.m, tinted(layer.art, r, bodyFill, pat, i ? `b${i}` : 'b')));
       continue;
     }
     if (!has(layer.art)) continue;   // unreachable while composing (mascotSvg waits for every layer); kept as a guard
     // several pieces of one tinted part (a backpack's pack + straps) each need their own mask id
-    out.push(layer.tint && accFill ? tinted(layer.art, r, accFill, '', `${layer.field}${i}`) : imgAt(layer.art, r));
+    const face = layer.layer === 'eyes' || layer.layer === 'mouth' ? layer.layer : undefined;
+    out.push(group(layer.ride, layer.m, layer.tint && accFill ? tinted(layer.art, r, accFill, '', `${layer.field}${i}`) : imgAt(layer.art, r), face));
   }
   if (L.letterIndex >= L.layers.length) letter();
   if (metal && !input.frameArt) {
@@ -1027,7 +1099,7 @@ function mascotArtSvg(input: MascotSvgInput, frame: AvatarFrame, fw: number, R: 
 /** A stable key for a config (every field, in schema order). */
 export function avatarConfigKey(c: AvatarConfig): string {
   return [c.body, c.color, c.pattern, c.patternColor, c.eyes, c.nose, c.cheeks, c.mouth, c.head, c.face, c.neck, c.accColor, c.frame, c.bg, c.display,
-    c.held ?? 'none', c.wrap ?? 'none', c.feet ?? 'none', c.pet ?? 'none', c.brows ?? 'none', c.extra ?? 'none'].join('.');
+    c.held ?? 'none', c.wrap ?? 'none', c.feet ?? 'none', c.pet ?? 'none', c.brows ?? 'none', c.extra ?? 'none', c.pose ?? 'none'].join('.');
 }
 
 const svgCache = new Map<string, string>();

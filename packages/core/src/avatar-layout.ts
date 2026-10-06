@@ -137,7 +137,7 @@ export interface AvatarLayout {
   /** Posed layouts only: the body's matrix (content fractions): the white initial moves with it. */
   letterM?: AvatarMatrix;
   /** Posed layouts only: the pose drawn (its id), with every part's matrix (content fractions). */
-  pose?: { id: string; parts: Record<'root' | 'armL' | 'armR' | 'feet', AvatarMatrix> };
+  pose?: { id: string; parts: Record<'root' | 'armL' | 'armR' | 'handL' | 'handR' | 'feet', AvatarMatrix> };
 }
 
 /**
@@ -220,7 +220,7 @@ function slotPoint(b: AvatarBodyAnchors, slot: string): { x: number; y: number; 
  * Where every layer of `config` goes. `small` (≤ 28 px) keeps only the body, eyes, mouth, nose and hat.
  * Pure; every renderer draws exactly these rects.
  */
-export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATAR_LIVE_CONFIG.livingMascot ? 'saved' : null }: { small?: boolean; pose?: AvatarLayoutPose } = {}, manifest: AvatarManifest = AVATAR_MANIFEST, poses: AvatarPosesData = AVATAR_POSES_DATA): AvatarLayout {
+export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATAR_LIVE_CONFIG.livingMascot ? 'saved' : null, room = [] }: { small?: boolean; pose?: AvatarLayoutPose; room?: readonly AvatarPoseSpec[] } = {}, manifest: AvatarManifest = AVATAR_MANIFEST, poses: AvatarPosesData = AVATAR_POSES_DATA): AvatarLayout {
   const b = manifest.bodies[config.body] ?? manifest.bodies.classic;
   // the pose (small avatars never pose: they draw only the body + face)
   const poseId = typeof pose === 'string' ? (pose === 'saved' ? config.pose ?? 'none' : pose) : pose?.id ?? 'none';
@@ -290,9 +290,11 @@ export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATA
     if (q.field === 'pet') return 'none';
     if (q.field === 'feet') return 'feet';
     if (q.field === 'held' || q.field === 'wrist') {
+      // held items ride the hand landmark (upright), wrist items the forearm (the whole arm)
       const cx = q.rect.x + q.rect.w / 2, cy = q.rect.y + q.rect.h / 2;
       const d = (h: [number, number]) => (h[0] - cx) ** 2 + (h[1] - cy) ** 2;
-      return d(rig!.armL.hand) <= d(rig!.armR.hand) ? 'armL' : 'armR';
+      const left = d(rig!.armL.hand) <= d(rig!.armR.hand);
+      return q.field === 'wrist' ? (left ? 'armL' : 'armR') : (left ? 'handL' : 'handR');
     }
     return 'root';
   };
@@ -307,13 +309,21 @@ export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATA
   };
   const box4 = (v: [number, number, number, number]): AvatarRect => ({ x: v[0], y: v[1], w: v[2] - v[0], h: v[3] - v[1] });
   const bb = box4(b.bounds as [number, number, number, number]);
-  if (P && rig!.armL.box && rig!.armR.box && rig!.feet.box) {
-    grow(bb, P.root);
-    grow(box4(rig!.armL.box), P.armL);
-    grow(box4(rig!.armR.box), P.armR);
-    grow(box4(rig!.feet.box), P.feet);
-  } else [x0, y0, x1, y1] = b.bounds;
-  for (const p of placed) grow(p.rect, P ? matOf(rideOf(p)) : AVATAR_IDENTITY);
+  // `room`: more poses the fit leaves room for (the living mascot: its reactions + hop never leave the tile)
+  const growPose = (Q: ReturnType<typeof avatarPoseMatrices>) => {
+    grow(bb, Q.root);
+    if (rig!.armL.box) grow(box4(rig!.armL.box), Q.armL);
+    if (rig!.armR.box) grow(box4(rig!.armR.box), Q.armR);
+    if (rig!.feet.box) grow(box4(rig!.feet.box), Q.feet);
+    for (const p of placed) { const r = rideOf(p); grow(p.rect, r === 'none' ? AVATAR_IDENTITY : Q[r]); }
+  };
+  if (P) {
+    growPose(P);
+    for (const sp of room) growPose(avatarPoseMatrices(rig!, sp));
+  } else {
+    [x0, y0, x1, y1] = b.bounds;
+    for (const p of placed) grow(p.rect, AVATAR_IDENTITY);
+  }
   const { pad, maxBody } = manifest.fit;
   const avail = 1 - 2 * pad;
   const s = Math.min(maxBody, avail / (x1 - x0), avail / (y1 - y0));
@@ -330,7 +340,9 @@ export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATA
   const bodyLayer = { layer: 'body', field: 'body', id: config.body, art: `art-av-body-${config.body}`, rect: bodyRect, tint: false };
   type L = AvatarLayoutLayer & { k: number };
   const rank = (layer: string) => order.indexOf(layer);
-  const armRank = (order.includes('wrap') ? rank('wrap') : rank('held') - 1) + 0.5;
+  // the arms draw in front of the hats (a raised hand passes in front of a brim) and behind the neck pieces; what a
+  // hand holds draws just over that hand
+  const armRank = (order.includes('head') ? rank('head') : order.length) + 0.5;
   const rigLayers: L[] = P ? [
     { layer: 'body', field: 'body', id: config.body, art: `art-av-body-${config.body}-feet`, rect: bodyRect, tint: false, m: toContent(P.feet), ride: 'feet', k: rank('body') - 0.5 },
     { layer: 'body', field: 'body', id: config.body, art: `art-av-body-${config.body}-base`, rect: bodyRect, tint: false, m: toContent(P.root), ride: 'root', k: rank('body') },
@@ -340,7 +352,7 @@ export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATA
   const items: L[] = placed.map((p) => {
     if (!P) return { ...p, rect: map(p.rect), k: rank(p.layer) };
     const ride = rideOf(p);
-    return { ...p, rect: map(p.rect), m: toContent(matOf(ride)), ride, k: rank(p.layer) };
+    return { ...p, rect: map(p.rect), m: toContent(matOf(ride)), ride, k: ride === 'armL' || ride === 'armR' || ride === 'handL' || ride === 'handR' ? armRank + 0.25 : rank(p.layer) };
   });
   const layers: AvatarLayoutLayer[] = [...rigLayers, ...items].sort((a, c) => a.k - c.k).map(({ k: _k, ...l }) => l);
   const [lx, ly, lw, lh] = b.letterBox;
@@ -355,9 +367,23 @@ export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATA
   };
   if (P) {
     out.letterM = toContent(P.root);
-    out.pose = { id: poseId, parts: { root: toContent(P.root), armL: toContent(P.armL), armR: toContent(P.armR), feet: toContent(P.feet) } };
+    out.pose = { id: poseId, parts: { root: toContent(P.root), armL: toContent(P.armL), armR: toContent(P.armR), handL: toContent(P.handL), handR: toContent(P.handR), feet: toContent(P.feet) } };
   }
   return out;
+}
+
+/**
+ * The living mascot's per-frame matrices: a pose spec's part matrices (content fractions) at a posed layout's FIXED
+ * fit (so the mascot never rescales while its arms move). Lay the mascot out once with
+ * avatarLayout(config, { pose, room: AVATAR_LIVE_ROOM }), then call this every frame.
+ */
+export function avatarLayoutPoseParts(layout: AvatarLayout, body: string, spec: AvatarPoseSpec, poses: AvatarPosesData = AVATAR_POSES_DATA): Record<'root' | 'armL' | 'armR' | 'handL' | 'handR' | 'feet', AvatarMatrix> | null {
+  const rig = avatarBodyRig(body, poses);
+  if (!rig) return null;
+  const s = layout.body.w, tx = layout.body.x, ty = layout.body.y;
+  const P = avatarPoseMatrices(rig, spec);
+  const toContent = (mm: AvatarMatrix): AvatarMatrix => matMul(matMul([s, 0, 0, s, tx, ty], mm), [1 / s, 0, 0, 1 / s, -tx / s, -ty / s]).map(r5) as AvatarMatrix;
+  return { root: toContent(P.root), armL: toContent(P.armL), armR: toContent(P.armR), handL: toContent(P.handL), handR: toContent(P.handR), feet: toContent(P.feet) };
 }
 
 // ── Patterns (code-drawn, shared) ────────────────────────────────────────────

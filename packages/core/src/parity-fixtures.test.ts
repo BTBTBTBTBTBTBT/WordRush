@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures } from '../scripts/gen-parity-fixtures';
+import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures, renderAvatarPoseFixtures } from '../scripts/gen-parity-fixtures';
 
 // Freshness guard for the cross-platform engine-parity fixtures. The Swift and
 // Kotlin ports assert against the committed JSON; this test asserts the
@@ -43,6 +43,7 @@ describe('engine parity fixtures are fresh and synced', () => {
     ['avatar-resolve-fixtures.json', JSON.stringify(renderAvatarResolveFixtures(), null, 2) + '\n'],
     ['podium-layout-fixtures.json', JSON.stringify(renderPodiumLayoutFixtures(), null, 2) + '\n'],
     ['avatar-layout-fixtures.json', JSON.stringify(renderAvatarLayoutFixtures(), null, 2) + '\n'],
+    ['avatar-pose-fixtures.json', JSON.stringify(renderAvatarPoseFixtures(), null, 2) + '\n'],
   ];
 
   for (const [name, expected] of rendered) {

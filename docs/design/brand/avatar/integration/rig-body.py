@@ -338,6 +338,123 @@ def run(body, ship=False, do_sheet=True):
     return R
 
 
+# ------------------------------------------------------------------------------------------------ per-pose guards
+GUARD_C = 320                 # content px the guards render at
+LAYOUTS = os.path.join(OUT, '_pose-layouts.json')   # written by packages/core/scripts/dump-pose-layouts.ts
+_alpha = {}
+
+
+def art_alpha(name):
+    if name not in _alpha:
+        p = os.path.join(WEB, name + '.webp')
+        _alpha[name] = (np.asarray(Image.open(p).convert('RGBA'))[..., 3].astype(np.float32) / 255) if os.path.exists(p) else None
+    return _alpha[name]
+
+
+def place_alpha(L, C=GUARD_C):
+    """A layout layer's alpha in the content square (C px), through its matrix."""
+    a = art_alpha(L['art'])
+    if a is None:
+        return np.zeros((C, C), np.float32)
+    r = L['rect']
+    h, w = a.shape
+    A_ = np.array([[r['w'] * C / w, 0, r['x'] * C], [0, r['h'] * C / h, r['y'] * C], [0, 0, 1]])
+    m = L.get('m') or [1, 0, 0, 1, 0, 0]
+    Mc = np.array([[m[0], m[2], m[4] * C], [m[1], m[3], m[5] * C], [0, 0, 1]])
+    return cv2.warpAffine(a, (Mc @ A_)[:2].astype(np.float32), (C, C), flags=cv2.INTER_LINEAR)
+
+
+def box_mask(r, m, C=GUARD_C):
+    pts = np.array([[r['x'], r['y']], [r['x'] + r['w'], r['y']], [r['x'] + r['w'], r['y'] + r['h']], [r['x'], r['y'] + r['h']]])
+    m = m or [1, 0, 0, 1, 0, 0]
+    q = np.stack([m[0] * pts[:, 0] + m[2] * pts[:, 1] + m[4], m[1] * pts[:, 0] + m[3] * pts[:, 1] + m[5]], 1) * C
+    im = np.zeros((C, C), np.uint8)
+    cv2.fillPoly(im, [q.astype(np.int32)], 1)
+    return im.astype(np.float32)
+
+
+def guards():
+    """Re-run the fit guards per pose: an item drawn above the arms may not hide a moved arm, a held item may not
+    swing over the face or the letter, and nothing may hang upside down. A failing item is withheld in that pose
+    on that body (avatar-poses.json `withheld`), and logged to rigs/guards.json."""
+    cases = json.load(open(LAYOUTS))
+    fails = {}
+    for c in cases:
+        Ls = c['layers']
+        arms = [i for i, L in enumerate(Ls) if L['art'].endswith(('-armL', '-armR'))]
+        if not arms:
+            continue
+        arm_a = sum(place_alpha(Ls[i]) for i in arms)
+        top_arm = max(arms)
+        face = np.zeros_like(arm_a)
+        for L in Ls:
+            if L['layer'] in ('eyes', 'mouth'):
+                face = np.maximum(face, box_mask(L['rect'], L.get('m')))
+        face = np.maximum(face, box_mask(c['letter'], c.get('letterM')))
+        why = []
+        for i, L in enumerate(Ls):
+            if L['field'] != c['field']:
+                continue
+            ia = place_alpha(L)
+            n = ia.sum() + 1e-6
+            m = L.get('m') or [1, 0, 0, 1, 0, 0]
+            if i > top_arm and L.get('ride') not in ('armL', 'armR', 'handL', 'handR'):
+                cover = np.minimum(ia, arm_a).sum() / (arm_a.sum() + 1e-6)
+                if cover > 0.15:
+                    why.append(f'hides a moved arm ({cover:.0%})')
+            if L.get('ride') in ('armL', 'armR', 'handL', 'handR'):
+                over_face = np.minimum(ia, face).sum() / n
+                ang = abs(np.degrees(np.arctan2(m[1], m[0])))
+                if over_face > 0.02:
+                    why.append(f'swings over the face / letter ({over_face:.0%})')
+                if ang > 100:
+                    why.append(f'upside down ({ang:.0f} deg)')
+        if why:
+            key = f"{'brows' if c['field'] == 'brows' else 'acc'}:{c['id']}"
+            fails.setdefault(c['pose'], {}).setdefault(c['body'], {})[key] = sorted(set(why))
+    json.dump(fails, open(os.path.join(OUT, 'guards.json'), 'w'), indent=1)
+    P = load_poses()
+    P['withheld'] = {pose: {b: sorted(v) for b, v in sorted(bs.items())} for pose, bs in sorted(fails.items())}
+    json.dump(P, open(POSES_JSON, 'w'), indent=1)
+    open(POSES_JSON, 'a').write('\n')
+    n = sum(len(v) for bs in fails.values() for v in bs.values())
+    print('guards:', len(cases), 'cases,', n, 'withheld', {p: sum(len(v) for v in bs.values()) for p, bs in fails.items()})
+
+
+def boxes(body):
+    """Each rig layer's opaque box in body units [x0, y0, x1, y1] (from the saved layers)."""
+    out = {}
+    for n in LIMBS:
+        a = np.asarray(Image.open(os.path.join(OUT, body.replace('@', '-'), 'layers', n + '.png')))[..., 3] > 8
+        ys, xs = np.nonzero(a)
+        out[n] = [round(float(xs.min()) / U, 4), round(float(ys.min()) / U, 4), round(float(xs.max() + 1) / U, 4), round(float(ys.max() + 1) / U, 4)]
+    return out
+
+
+def write_rigs(rigs):
+    P = load_poses()
+    P['rigs'] = {}
+    for b, r in rigs.items():
+        if '@' in b:
+            continue
+        r = {k: v for k, v in r.items() if k != 'restDiff'}
+        for n, bx in boxes(b).items():
+            r[n] = dict(r[n], box=bx)
+        P['rigs'][b] = r
+    json.dump(P, open(POSES_JSON, 'w'), indent=1)
+    open(POSES_JSON, 'a').write('\n')
+    # the shipped-art list in avatar-parts.json (renderers only fetch listed art)
+    mp = os.path.join(REPO, 'packages', 'core', 'src', 'avatar-parts.json')
+    raw = open(mp).read()
+    man = json.loads(raw)
+    names = [f'art-av-body-{b}-{n}' for b in P['rigs'] for n in ('base',) + LIMBS]
+    add = [n for n in names if n not in man['art']]
+    if add:
+        man['art'] = man['art'] + add
+        json.dump(man, open(mp, 'w'), indent=1 if '\n "' in raw[:40] else 2, ensure_ascii=False)
+        open(mp, 'a').write('\n')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bodies', nargs='*')
@@ -345,7 +462,13 @@ def main():
     ap.add_argument('--sizes', default='')
     ap.add_argument('--ship', action='store_true')
     ap.add_argument('--no-sheet', action='store_true')
+    ap.add_argument('--guards', action='store_true', help='re-run the per-pose guards (after dump-pose-layouts.ts)')
+    ap.add_argument('--write-rigs', action='store_true', help='rewrite avatar-poses.json rigs from rigs/rigs.json')
     a = ap.parse_args()
+    if a.guards:
+        return guards()
+    if a.write_rigs:
+        return write_rigs(json.load(open(os.path.join(OUT, 'rigs.json'))))
     bodies = list(a.bodies)
     if a.all:
         bodies += [b for b in MAN['bodies'] if '@' not in b]
@@ -361,10 +484,7 @@ def main():
         rigs[b] = run(b, ship=a.ship and '@' not in b, do_sheet=not a.no_sheet)['rig']
     json.dump(rigs, open(idx, 'w'), indent=1)
     if a.ship:
-        P = load_poses()
-        P['rigs'] = {b: {k: v for k, v in r.items() if k != 'restDiff'} for b, r in rigs.items() if '@' not in b}
-        json.dump(P, open(POSES_JSON, 'w'), indent=1)
-        open(POSES_JSON, 'a').write('\n')
+        write_rigs(rigs)
 
 
 if __name__ == '__main__':

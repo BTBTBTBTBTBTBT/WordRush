@@ -64,8 +64,13 @@ export const AVATAR_POSES_DATA = posesJson as unknown as AvatarPosesData;
 /** The four rig layers, back → front: feet, base, armL, armR. Art: art-av-body-<body>-<part>. */
 export const AVATAR_RIG_PARTS = ['feet', 'base', 'armL', 'armR'] as const;
 export type AvatarRigPart = (typeof AVATAR_RIG_PARTS)[number];
-/** What a layer moves with: a rig part, or 'root' (the body), or 'none' (pets stay on the floor). */
-export type AvatarRide = 'root' | 'armL' | 'armR' | 'feet' | 'none';
+/**
+ * What a layer moves with: a rig part, 'root' (the body), 'none' (pets stay on the floor), or a hand (held items:
+ * they follow the hand's position and tilt with it only a little, so a raised mug stays upright).
+ */
+export type AvatarRide = 'root' | 'armL' | 'armR' | 'handL' | 'handR' | 'feet' | 'none';
+/** A held item tilts with its hand at most this much (degrees). */
+export const AVATAR_HELD_TILT = 30;
 
 export const r5 = (v: number) => Math.round(v * 100000) / 100000;
 
@@ -116,7 +121,16 @@ export function avatarPoseMatrices(rig: AvatarBodyRig, spec: AvatarPoseSpec): Re
   };
   const f = spec.feet ?? {};
   const feet = chain(lift, T(hx, rig.floor + (f.dy ?? 0)), S(f.sx ?? 1, f.sy ?? 1), T(-hx, -rig.floor));
-  return { root, base: root, armL: arm('L'), armR: arm('R'), feet };
+  const armL = arm('L'), armR = arm('R');
+  // a hand: moves the rest hand center to where the arm carries it, tilted by the arm's angle clamped to ±HELD_TILT
+  const hand = (m: AvatarMatrix, h: [number, number]): AvatarMatrix => {
+    const [x, y] = matApply(m, h[0], h[1]);
+    const deg = (Math.atan2(m[1], m[0]) * 180) / Math.PI;
+    const tilt = Math.max(-AVATAR_HELD_TILT, Math.min(AVATAR_HELD_TILT, deg));
+    const k = Math.sqrt(Math.abs(root[0] * root[3] - root[1] * root[2]));
+    return chain(T(x, y), Rd(tilt), S(k, k), T(-h[0], -h[1]));
+  };
+  return { root, base: root, armL, armR, handL: hand(armL, rig.armL.hand), handR: hand(armR, rig.armR.hand), feet };
 }
 
 /** Items withheld in a pose on a body (they fail the per-pose guards; rig-body.py --guards logs why). */
@@ -276,6 +290,12 @@ export function avatarLiveFrame(input: AvatarLiveInput, data: AvatarPosesData = 
     laugh: r5(laugh),
   };
 }
+
+/** The poses the living mascot's fit leaves room for (its reactions + the tap hop never leave the tile). */
+export const AVATAR_LIVE_ROOM: readonly AvatarPoseSpec[] = [
+  AVATAR_POSES_DATA.poses.cheer, AVATAR_POSES_DATA.poses.shrug, AVATAR_POSES_DATA.poses.wave,
+  { body: { dy: -0.09 }, arms: { L: { rot: 40 }, R: { rot: 40 } } },
+].filter(Boolean);
 
 /** The laugh's pitch per body (the cast laugh sounds, pitched: small bodies higher, big ones lower). */
 export const AVATAR_LAUGH_RATE: Readonly<Record<string, number>> = {
