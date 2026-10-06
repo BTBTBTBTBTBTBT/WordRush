@@ -1,5 +1,14 @@
 # Mascot unlocks + item shop (founder 10-05 — plan, not started)
 
+## DECIDED (founder 10-05)
+- **Purchase model = A, direct buy per item** (or earn it). No coin currency.
+- **Pro unlocks most options** (as many already are). Eventually **most options are gated for free users**,
+  except a select handful of free items.
+- **Every item can be tried on:** tapping any item shows the player's mascot wearing it (live preview on the
+  Stage); saving is gated by the item's route — **buy it, go Pro, or earn it** (per item; some items allow more
+  than one route, e.g. Pro OR buy, earn OR buy).
+- The locked card shows the routes that apply to that item (Buy $X · Included with Pro · Earn: <condition>).
+
 "Mascot items unlocking when certain things are achieved… rare items only attainable by purchasing… or by getting a
 certain puzzle at a certain time, a certain streak… when clicking on the item, it tells you that it's locked (with a
 ChatGPT image) and explains you can purchase it or unlock it by (way)… a ton available for purchase or earn…
