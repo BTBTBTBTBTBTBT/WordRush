@@ -28,6 +28,8 @@ struct EditProfileView: View {
     /// (only then is avatar_config written).
     @State private var mascot: AvatarConfig = AvatarCatalog.defaultAvatar(userId: "")
     @State private var mascotTouched = false
+    /// Item gating (AvatarAccessConfig.itemGating, OFF): the SAVED mascot (its parts are never locked — grandfathered).
+    @State private var savedMascot: AvatarConfig?
     @State private var isPrivate = false
     @State private var unlocked: Set<String> = []
     @State private var unlockedDates: [String: String] = [:]
@@ -62,6 +64,11 @@ struct EditProfileView: View {
     private var ink: Color { Theme.isDark ? Theme.textPrimary : FinishInk.title }
     private var labelInk: Color { Theme.isDark ? Theme.textSecondary : Color(hex: 0x7A6AA6) }
     private var featuredName: String? { featured.flatMap { k in catalog.all.first { $0.key == k }?.name } }
+    /// Item gating: the profile's stats + the unlocked achievements (loaded in .task; empty until then).
+    private var accessStats: AvatarEarnStats { MascotAccess.stats(auth.profile, achievements: unlocked) }
+    private var accessContext: AvatarAccessContext {
+        MascotAccess.context(isPro: auth.isProActive, stats: accessStats, saved: savedMascot)
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -97,6 +104,7 @@ struct EditProfileView: View {
                 // No saved mascot: a worn hero showed over the photo (AH); else the photo shows.
                 if MascotLooks.shared.ownConfig(p) == nil { m.display = (has && look.castId == nil) ? "photo" : "mascot" }
                 mascot = m
+                savedMascot = MascotLooks.shared.ownConfig(p)
             }
             openDoor()
             await catalog.load()
@@ -253,7 +261,8 @@ struct EditProfileView: View {
                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { hopToken += 1 }
                           },
                           startTab: roomTab,
-                          onClose: { showRoom = false })
+                          onClose: { showRoom = false },
+                          accessStats: accessStats, savedConfig: savedMascot)
     }
 
     // MARK: - Swatch rows (one tap)
@@ -275,7 +284,9 @@ struct EditProfileView: View {
         return HStack(spacing: 9) {
             ForEach(ids, id: \.self) { id in
                 let on = mascot.bg == id
-                let locked = AvatarCatalog.isProOnly(bg: id) && !auth.isProActive
+                // item gating on: a locked backdrop opens the room (try it on there; Save checks access)
+                let locked = MascotAccess.isOn ? MascotAccess.isLocked("bg", id, accessContext)
+                                               : AvatarCatalog.isProOnly(bg: id) && !auth.isProActive
                 Button {
                     if locked { openRoom(.backdrop); return }
                     Haptics.tap(); mascot.bg = id; mascotTouched = true
@@ -308,9 +319,13 @@ struct EditProfileView: View {
         return HStack(spacing: 8) {
             ForEach(ids, id: \.self) { id in
                 let on = mascot.frame == id
-                let tierLocked = AvatarFrameRules.tier(id) != nil && !AvatarFrameRules.isUnlocked(id, level: level)
-                let proLocked = AvatarCatalog.isProOnly(frame: id) && !auth.isProActive
+                let gated = MascotAccess.isOn
+                let tierLocked = !gated && AvatarFrameRules.tier(id) != nil && !AvatarFrameRules.isUnlocked(id, level: level)
+                let proLocked = !gated && AvatarCatalog.isProOnly(frame: id) && !auth.isProActive
+                // item gating on: a locked frame opens the room on Frame (try it on there; Save checks access)
+                let gatedLocked = gated && MascotAccess.isLocked("frame", id, accessContext)
                 Button {
+                    if gatedLocked { openRoom(.frame); return }
                     if tierLocked || proLocked { return }
                     Haptics.tap(); mascot.frame = id; mascotTouched = true
                 } label: {
@@ -320,11 +335,12 @@ struct EditProfileView: View {
                         .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(on ? Color.white : Color.white.opacity(Theme.isDark ? 0.08 : 0.5)))
                         .shadow(color: on ? Color(hex: 0xA78BFA).opacity(0.6) : .clear, radius: 4)
-                        .opacity(tierLocked || proLocked ? 0.4 : 1)
+                        .opacity(tierLocked || proLocked || gatedLocked ? 0.4 : 1)
                         .overlay { if tierLocked { StageArt("art-dress-lock", height: 15) } }
+                        .overlay(alignment: .bottomTrailing) { if gatedLocked { MascotLockTag(height: 12).offset(x: 3, y: 3) } }
                 }
                 .buttonStyle(.squish)
-                .accessibilityLabel(id == "none" ? "No frame" : "\(AvatarFrameRules.tier(id)?.label ?? id.capitalized) frame\(tierLocked ? ", locked" : "")")
+                .accessibilityLabel(id == "none" ? "No frame" : "\(AvatarFrameRules.tier(id)?.label ?? id.capitalized) frame\(tierLocked || gatedLocked ? ", locked" : "")")
                 .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
             }
         }
@@ -583,6 +599,7 @@ struct EditProfileView: View {
             avatar_emoji: emoji.isEmpty ? nil : emoji,
             is_private: isPrivate)
         saving = true; error = nil
+        let ctx = accessContext
         Task {
             do {
                 try await auth.client.from("profiles").update(payload).eq("id", value: uid).execute()
@@ -594,8 +611,15 @@ struct EditProfileView: View {
                 var frameVal = AvatarFrameRules.effective(frame, level: auth.profile?.level ?? 1)
                 if mascotTouched {
                     let level = auth.profile?.level ?? 1
-                    var m = AvatarCatalog.enforcePro(mascot, isPro: auth.isProActive)
-                    if AvatarFrameRules.tier(m.frame) != nil, !AvatarFrameRules.isUnlocked(m.frame, level: level) { m.frame = "none" }
+                    var m: AvatarConfig
+                    if MascotAccess.isOn {
+                        // item gating: the locked parts come off (owned / earned / saved ones stay) — the room's Save
+                        // already showed the Locked card for them
+                        m = MascotAccess.enforce(mascot, ctx)
+                    } else {
+                        m = AvatarCatalog.enforcePro(mascot, isPro: auth.isProActive)
+                        if AvatarFrameRules.tier(m.frame) != nil, !AvatarFrameRules.isUnlocked(m.frame, level: level) { m.frame = "none" }
+                    }
                     if !hasPhoto { m.display = "mascot" }
                     var mascotAccepted = false
                     do {
