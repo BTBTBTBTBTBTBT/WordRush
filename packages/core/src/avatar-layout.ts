@@ -15,6 +15,10 @@
 
 import partsJson from './avatar-parts.json';
 import { AVATAR_TINTABLE, type AvatarConfig } from './avatar-config';
+import {
+  AVATAR_IDENTITY, AVATAR_LIVE_CONFIG, AVATAR_POSES_DATA, avatarBodyRig, avatarPoseDef, avatarPoseMatrices, avatarPoseWithheld,
+  matApply, matMul, r5, type AvatarMatrix, type AvatarPoseSpec, type AvatarPosesData, type AvatarRide,
+} from './avatar-pose';
 
 export interface AvatarRect { x: number; y: number; w: number; h: number }
 
@@ -111,6 +115,10 @@ export interface AvatarLayoutLayer {
   rect: AvatarRect;
   /** White art that takes the accessory color. */
   tint: boolean;
+  /** Posed layouts only: the layer's affine matrix in content fractions (draw the rect under it). */
+  m?: AvatarMatrix;
+  /** Posed layouts only: what the layer moves with (the living mascot re-poses these groups). */
+  ride?: AvatarRide;
 }
 
 export interface AvatarLayout {
@@ -126,7 +134,18 @@ export interface AvatarLayout {
   letterIndex: number;
   /** The union of everything drawn (content fractions) — always inside the padded frame. */
   bounds: AvatarRect;
+  /** Posed layouts only: the body's matrix (content fractions): the white initial moves with it. */
+  letterM?: AvatarMatrix;
+  /** Posed layouts only: the pose drawn (its id), with every part's matrix (content fractions). */
+  pose?: { id: string; parts: Record<'root' | 'armL' | 'armR' | 'feet', AvatarMatrix> };
 }
+
+/**
+ * The pose to lay out: a pose id (its shared data), 'saved' (the config's own pose), or a live frame
+ * ({ id, spec }: the saved pose id for the per-pose withholds + the spec to draw). null = the body as drawn.
+ * Default: the saved pose while AVATAR_LIVE_CONFIG.livingMascot is on, else none.
+ */
+export type AvatarLayoutPose = string | { id: string; spec: AvatarPoseSpec } | null;
 
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
 
@@ -201,8 +220,14 @@ function slotPoint(b: AvatarBodyAnchors, slot: string): { x: number; y: number; 
  * Where every layer of `config` goes. `small` (≤ 28 px) keeps only the body, eyes, mouth, nose and hat.
  * Pure; every renderer draws exactly these rects.
  */
-export function avatarLayout(config: AvatarConfig, { small = false }: { small?: boolean } = {}, manifest: AvatarManifest = AVATAR_MANIFEST): AvatarLayout {
+export function avatarLayout(config: AvatarConfig, { small = false, pose = AVATAR_LIVE_CONFIG.livingMascot ? 'saved' : null }: { small?: boolean; pose?: AvatarLayoutPose } = {}, manifest: AvatarManifest = AVATAR_MANIFEST, poses: AvatarPosesData = AVATAR_POSES_DATA): AvatarLayout {
   const b = manifest.bodies[config.body] ?? manifest.bodies.classic;
+  // the pose (small avatars never pose: they draw only the body + face)
+  const poseId = typeof pose === 'string' ? (pose === 'saved' ? config.pose ?? 'none' : pose) : pose?.id ?? 'none';
+  const spec = typeof pose === 'object' && pose ? pose.spec : avatarPoseDef(poseId, poses);
+  const rig = avatarBodyRig(config.body, poses);
+  const posed = !small && !!spec && !!rig && (manifest.bodies[config.body] !== undefined);
+  const withheld = posed ? avatarPoseWithheld(poseId, config.body, poses) : [];
   const placed: Array<{ layer: string; field: string; id: string; art: string; rect: AvatarRect; tint: boolean }> = [];
   for (const [field, id] of wornParts(config, small, manifest)) {
     const key = `${FIELD_KIND[field]}:${id}`;
@@ -210,6 +235,7 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
     const p = slotPoint(b, m.slot);
     const o = b.overrides?.[key] ?? {};
     if (o.withheld) continue;   // no room on this body: drop it silently (saved configs keep working)
+    if (withheld.includes(key)) continue;   // fails the guards in this pose: off while posed
     if (m.pieces) {
       // v3 integrated part: its per-body layers (nothing on a body without room for it)
       for (const [layer, x, y, w, h] of m.pieces[config.body] ?? []) {
@@ -258,25 +284,68 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
     const lift = Math.min(0, eyesLayer.rect.y + eyesItem.inkTop * eyesLayer.rect.h - beadyTop);
     if (lift < 0) for (const q of placed) if (q.layer === 'brows') q.rect = { ...q.rect, y: q.rect.y + lift };
   }
-  // the union of the body art's content + every part
-  let x0 = b.bounds[0], y0 = b.bounds[1], x1 = b.bounds[2], y1 = b.bounds[3];
-  for (const p of placed) {
-    x0 = Math.min(x0, p.rect.x); y0 = Math.min(y0, p.rect.y);
-    x1 = Math.max(x1, p.rect.x + p.rect.w); y1 = Math.max(y1, p.rect.y + p.rect.h);
-  }
+  // posed: every layer rides a part (held items the hand they sit in, shoes the feet, pets stay on the floor)
+  const P = posed ? avatarPoseMatrices(rig!, spec!) : null;
+  const rideOf = (q: { field: string; rect: AvatarRect }): AvatarRide => {
+    if (q.field === 'pet') return 'none';
+    if (q.field === 'feet') return 'feet';
+    if (q.field === 'held' || q.field === 'wrist') {
+      const cx = q.rect.x + q.rect.w / 2, cy = q.rect.y + q.rect.h / 2;
+      const d = (h: [number, number]) => (h[0] - cx) ** 2 + (h[1] - cy) ** 2;
+      return d(rig!.armL.hand) <= d(rig!.armR.hand) ? 'armL' : 'armR';
+    }
+    return 'root';
+  };
+  const matOf = (ride: AvatarRide): AvatarMatrix => (ride === 'none' || !P ? AVATAR_IDENTITY : P[ride]);
+  // the union of the body art's content + every part (posed: each through its matrix)
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const grow = (r: AvatarRect, mm: AvatarMatrix) => {
+    for (const [cx, cy] of [[r.x, r.y], [r.x + r.w, r.y], [r.x, r.y + r.h], [r.x + r.w, r.y + r.h]] as const) {
+      const [px, py] = matApply(mm, cx, cy);
+      x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py);
+    }
+  };
+  const box4 = (v: [number, number, number, number]): AvatarRect => ({ x: v[0], y: v[1], w: v[2] - v[0], h: v[3] - v[1] });
+  const bb = box4(b.bounds as [number, number, number, number]);
+  if (P && rig!.armL.box && rig!.armR.box && rig!.feet.box) {
+    grow(bb, P.root);
+    grow(box4(rig!.armL.box), P.armL);
+    grow(box4(rig!.armR.box), P.armR);
+    grow(box4(rig!.feet.box), P.feet);
+  } else [x0, y0, x1, y1] = b.bounds;
+  for (const p of placed) grow(p.rect, P ? matOf(rideOf(p)) : AVATAR_IDENTITY);
   const { pad, maxBody } = manifest.fit;
   const avail = 1 - 2 * pad;
   const s = Math.min(maxBody, avail / (x1 - x0), avail / (y1 - y0));
   const tx = 0.5 - ((x0 + x1) / 2) * s;
   const ty = 0.5 - ((y0 + y1) / 2) * s;
   const map = (r: AvatarRect): AvatarRect => ({ x: r4(tx + r.x * s), y: r4(ty + r.y * s), w: r4(r.w * s), h: r4(r.h * s) });
+  // a body-unit matrix → content fractions (A · M · A⁻¹, A = scale s + translate t)
+  const toContent = (mm: AvatarMatrix): AvatarMatrix => {
+    const c = matMul(matMul([s, 0, 0, s, tx, ty], mm), [1 / s, 0, 0, 1 / s, -tx / s, -ty / s]);
+    return c.map(r5) as AvatarMatrix;
+  };
   const order = manifest.layerOrder;
-  const bodyLayer = { layer: 'body', field: 'body', id: config.body, art: `art-av-body-${config.body}`, rect: map({ x: 0, y: 0, w: 1, h: 1 }), tint: false };
-  const layers = [bodyLayer, ...placed.map((p) => ({ ...p, rect: map(p.rect) }))]
-    .sort((a, c) => order.indexOf(a.layer) - order.indexOf(c.layer));
+  const bodyRect = map({ x: 0, y: 0, w: 1, h: 1 });
+  const bodyLayer = { layer: 'body', field: 'body', id: config.body, art: `art-av-body-${config.body}`, rect: bodyRect, tint: false };
+  type L = AvatarLayoutLayer & { k: number };
+  const rank = (layer: string) => order.indexOf(layer);
+  const armRank = (order.includes('wrap') ? rank('wrap') : rank('held') - 1) + 0.5;
+  const rigLayers: L[] = P ? [
+    { layer: 'body', field: 'body', id: config.body, art: `art-av-body-${config.body}-feet`, rect: bodyRect, tint: false, m: toContent(P.feet), ride: 'feet', k: rank('body') - 0.5 },
+    { layer: 'body', field: 'body', id: config.body, art: `art-av-body-${config.body}-base`, rect: bodyRect, tint: false, m: toContent(P.root), ride: 'root', k: rank('body') },
+    { layer: 'arms', field: 'body', id: config.body, art: `art-av-body-${config.body}-armL`, rect: bodyRect, tint: false, m: toContent(P.armL), ride: 'armL', k: armRank },
+    { layer: 'arms', field: 'body', id: config.body, art: `art-av-body-${config.body}-armR`, rect: bodyRect, tint: false, m: toContent(P.armR), ride: 'armR', k: armRank },
+  ] : [{ ...bodyLayer, k: rank('body') }];
+  const items: L[] = placed.map((p) => {
+    if (!P) return { ...p, rect: map(p.rect), k: rank(p.layer) };
+    const ride = rideOf(p);
+    return { ...p, rect: map(p.rect), m: toContent(matOf(ride)), ride, k: rank(p.layer) };
+  });
+  const layers: AvatarLayoutLayer[] = [...rigLayers, ...items].sort((a, c) => a.k - c.k).map(({ k: _k, ...l }) => l);
   const [lx, ly, lw, lh] = b.letterBox;
   const after = layers.findIndex((l) => !AVATAR_LAYERS_UNDER_LETTER.includes(l.layer));
-  return {
+  const out: AvatarLayout = {
     scale: r4(s),
     body: bodyLayer.rect,
     letter: map({ x: lx, y: ly, w: lw, h: lh }),
@@ -284,6 +353,11 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
     letterIndex: after < 0 ? layers.length : after,
     bounds: map({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 }),
   };
+  if (P) {
+    out.letterM = toContent(P.root);
+    out.pose = { id: poseId, parts: { root: toContent(P.root), armL: toContent(P.armL), armR: toContent(P.armR), feet: toContent(P.feet) } };
+  }
+  return out;
 }
 
 // ── Patterns (code-drawn, shared) ────────────────────────────────────────────
