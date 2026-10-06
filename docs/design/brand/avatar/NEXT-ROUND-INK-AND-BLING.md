@@ -112,6 +112,24 @@ art, pivots, inpainted gaps, rest-pose diff check) — applied to the 12 player 
      day (morning wave, lunchtime stretch, sleepy at night, cheering after a sweep, worried when the streak is at
      risk), the widget's built-in transition on each update, and a reaction right after the player finishes a
      game. iOS 17+ interactive widget buttons could trigger a one-off "poke" frame.
+4c. **More life + interaction ideas (attainable, ranked by value ÷ cost):**
+   1. *Game buddy:* a small copy of their mascot in the game header reacts to each guess (gold/purple tiles =
+      excited, all grey = nervous, last guess = sweating, solve = cheer). Expression swaps only. Cheap, big charm.
+   2. *Eyes follow you:* pupils track the finger / the tile being typed, and glance at the keyboard. Very cheap.
+   3. *Squish + tickle:* press-and-hold squishes it (squash & stretch), a quick double-tap tickles (giggle),
+      drag wiggles it. Physics on transforms only.
+   4. *Emotes for friends:* the existing Friends reactions play as their mascot doing the emote on the friend's
+      screen (wave, cheer, taunt, cry-laugh); mascots wave at each other in the Friends race. Reuses reactions.
+   5. *Photo booth:* pose + backdrop + frame → share image (and a short looping clip later) — a growth lever that
+      feeds the Social Studio with player-made content.
+   6. *Earned moves:* unlock new dances/emotes with achievements and streaks (30-day streak = a dance) — a
+      retention hook that ties the mascot to Stats/Moments.
+   7. *Moods by time + streak:* sleepy at night, energized in the morning, party hat on their join anniversary.
+   8. *Buddies alive too:* pets bounce, peek, nap, and follow the mascot's hop.
+   9. *Tiny voices:* per-body chirps/giggles on tap (pitched sound set from the Sound Lab).
+   10. *iOS Live Activity / Dynamic Island:* their mascot in the island during a VS match or the daily-reset
+       countdown (ActivityKit; small, mostly static frames). Later: Apple Watch complication.
+   Guardrails: smooth over pretty, Reduce Motion respected, no mascot ever blocks gameplay, all opt-out-able.
 5. Pose picker in the Dressing Room (a Pose tab with thumbnails); saved in the avatar config; widget / share
    images / leaderboard show the saved pose (static frame).
 Cost: moderate — rigging 12 bodies + ~6 new limb drawings + per-pose guard runs; very cheap per pose after that.
