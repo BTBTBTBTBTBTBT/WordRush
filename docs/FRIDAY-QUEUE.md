@@ -28,7 +28,9 @@
   every season runs the perf harnesses (apps/ios/scripts/perf-tour.sh, scripts/android-perf-tour.sh,
   scripts/web-perf-tour.mjs) with the season ON vs OFF — Home scroll, game open/close, FINISHED-GAME screens
   (win/lose reveal, celebrations, share card, Sweep/Flawless banners), GAUNTLET stage screens (each stage
-  transition 1→5 incl. the 8-board OctoWord stage, stage-cleared moments, final result), VS, Friends, Stats,
+  transition 1→5 incl. the 8-board OctoWord stage, stage-cleared moments, final result), ALL VS screens (lobby,
+  challenge + pick-a-friend, finding a rival / match found, the VS intro splash, live in-game with opponent
+  updates, results + rematch, bot ladder / Bot of the Day, pocket games), Friends, Stats,
   Leaderboard, Stage/Dressing Room, cast puppets — and may not ship if it's choppier than OFF beyond noise.
 - Add an automated check so it stays fixed: web — a contrast test over every route with ?season=halloween
   (computed colors vs background); iOS/Android — the season palette tokens tested against both surfaces + a
