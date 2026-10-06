@@ -3,8 +3,8 @@ import WordociousCore
 
 /// The game share image (web lib/share-image.ts layouts — single, multi, gauntlet
 /// and the More Games bodies), rendered to PNG via ImageRenderer.
-/// FINISH_SPEC §E1 (finishing-touches `.sharecard`): the game's wallpaper, its title
-/// art (~92% wide), the date line, the result board as GLOSSY tiles on the shared
+/// FINISH_SPEC §E1 (finishing-touches `.sharecard`): the game's wallpaper, its WHOLE title
+/// art (card width inside 90-px margins, pinned to the top — ShareCardPlan), the date line, the result board as GLOSSY tiles on the shared
 /// board tray (§L), three tinted stat windows (purple · blue · gold, soft numbers)
 /// and a footer: a cast pose that is NOT the game's title host, with no bubble,
 /// + "Can you beat me?" / "wordocious.com". Static and always light (see ShareKit).
@@ -87,27 +87,31 @@ struct ShareCardView: View {
     // MARK: §S2 layout — the canvas is sized to its content
 
     static let width: CGFloat = 1080
-    /// The board block's target width (88%) and the aspect clamp (4:5 … 9:16).
+    /// The board block's target width (88%); the 4:5 … 9:16 clamp lives in ShareCardPlan.
     private static let boardWidth: CGFloat = 950
-    private static let minHeight: CGFloat = 1350
-    private static let maxHeight: CGFloat = 1920
 
-    private static let topPad: CGFloat = 44
     private static let infoH: CGFloat = 50
     private static let windowH: CGFloat = 124
     private static let castW: CGFloat = 972
     private static let bottomPad: CGFloat = 40
 
-    /// Title art at ~70% of the width, height from its aspect (capped).
-    private var titleH: CGFloat {
-        guard let art = titleArt, let a = ArtAsset.aspect(art), a > 0 else { return 110 }
-        return min(200, 756 / a)
+    /// The title art's aspect (nil = the lettered fallback).
+    private var titleAspect: Double? {
+        guard let art = titleArt, ArtAsset.exists(art), let a = ArtAsset.aspect(art), a > 0 else { return nil }
+        return Double(a)
+    }
+
+    /// Founder 10-06: the FULL title art, fit to the card width inside 90-px margins (≤ 210 tall).
+    private var titleBox: CGSize {
+        let t = ShareCardPlan.titleSize(aspect: titleAspect)
+        return CGSize(width: t.width, height: t.height)
     }
 
     /// Everything but the board.
     private var fixedH: CGFloat {
-        Self.topPad + titleH + 18 + Self.infoH + 30 + 34 + Self.windowH + 40
-            + ShareCastWordmark.height(Self.castW) + Self.bottomPad
+        CGFloat(ShareCardPlan.fixedHeight(titleAspect: titleAspect, rest: Double(
+            18 + Self.infoH + 30 + 34 + Self.windowH + 40
+                + ShareCastWordmark.height(Self.castW) + Self.bottomPad)))
     }
 
     /// The board body's natural size (measured, else estimated).
@@ -116,17 +120,15 @@ struct ShareCardView: View {
         return boardBox
     }
 
-    /// (board scale, canvas height): fill 88% of the width; tall boards scale by
-    /// height so the canvas stays inside the clamp.
-    private var fit: (scale: CGFloat, height: CGFloat) {
-        let n = natural
-        var s = min(Self.boardWidth / n.width, 1.5)
-        if fixedH + n.height * s > Self.maxHeight { s = max(0.2, (Self.maxHeight - fixedH) / n.height) }
-        let h = min(Self.maxHeight, max(Self.minHeight, fixedH + n.height * s))
-        return (s, h.rounded())
+    /// The card planned top-down (Core ShareCardPlan): fill 88% of the width; tall boards
+    /// scale by height so the canvas stays inside the clamp; title pinned at the top.
+    private var plan: ShareCardPlan.Card {
+        ShareCardPlan.plan(titleAspect: titleAspect, fixed: Double(fixedH),
+                           board: .init(width: Double(natural.width), height: Double(natural.height)),
+                           boardMaxW: Double(Self.boardWidth))
     }
 
-    var size: CGSize { CGSize(width: Self.width, height: fit.height) }
+    var size: CGSize { CGSize(width: Self.width, height: CGFloat(plan.height)) }
 
     /// The result board on its own (what `boardNatural` measures).
     var boardBody: some View { body(for: kind) }
@@ -147,29 +149,25 @@ struct ShareCardView: View {
     private var trayState: GameTrayState { won ? .won : .lost }
 
     var body: some View {
-        let f = fit
+        let p = plan
         let n = natural
-        let boardH = n.height * f.scale
-        ZStack {
+        let scale = CGFloat(p.boardScale)
+        let boardH = CGFloat(p.boardH)
+        ZStack(alignment: .top) {
             if let mode { ShareWall(tint: .forGame(mode)) } else { bg }
             VStack(spacing: 0) {
-                if titleArt != nil {
-                    ShareArt.title(titleArt, height: titleH, maxWidth: 756).padding(.top, Self.topPad)
-                } else {
-                    Text(modeLabel).font(Brand.fixedFont(84, .black)).foregroundStyle(accent)
-                        .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
-                        .lineLimit(1).minimumScaleFactor(0.5)
-                        .frame(height: titleH).padding(.horizontal, 60).padding(.top, Self.topPad)
-                }
+                ShareTitleBand(asset: titleAspect != nil ? titleArt : nil, size: titleBox,
+                               text: modeLabel, color: accent)
+                    .padding(.top, CGFloat(ShareCardPlan.topPad))
                 infoRow.frame(height: Self.infoH).padding(.top, 18)
 
-                // The board block (extra canvas height from the 4:5 floor centers it).
+                // The board block in its planned box (the 4:5 floor's slack centers it).
                 body(for: kind)
                     .fixedSize()
                     .frame(width: n.width, height: n.height)
-                    .scaleEffect(f.scale)
-                    .frame(width: n.width * f.scale, height: boardH)
-                    .frame(maxHeight: .infinity)
+                    .scaleEffect(scale)
+                    .frame(width: n.width * scale, height: boardH)
+                    .frame(height: boardH + CGFloat(p.slack))
                     .padding(.top, 30)
 
                 ShareStatRow(items: windows, height: Self.windowH)
@@ -179,8 +177,12 @@ struct ShareCardView: View {
                     .padding(.top, 40)
                     .padding(.bottom, Self.bottomPad)
             }
+            // Pinned to the top: anything taller than the canvas runs off the bottom,
+            // never pushing the title off the top (founder 10-06).
+            .frame(width: size.width, height: size.height, alignment: .top)
         }
-        .frame(width: size.width, height: size.height)
+        .frame(width: size.width, height: size.height, alignment: .top)
+        .clipped()
     }
 
     /// One compact info line: date · guesses · time, the ProperNoundle category pill,
