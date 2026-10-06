@@ -181,6 +181,8 @@ export function recentlyPlayed(name: SoundName, ms: number): boolean {
 export function playSound(name: SoundName, opts: { rate?: number; gain?: number } = {}): void {
   try {
     if (!isSoundEnabled()) return;
+    // The admin portal is silent (founder 10-06): no game sounds while working in /admin.
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) return;
     const ctx = _ctx;
     const master = _master;
     if (!ctx || !master || ctx.state !== 'running') return;
