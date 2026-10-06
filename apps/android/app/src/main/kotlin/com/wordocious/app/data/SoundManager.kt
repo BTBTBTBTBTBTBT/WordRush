@@ -58,6 +58,7 @@ object SoundManager {
         Sfx.LEVELUP -> R.raw.sfx_levelup
         Sfx.OPEN -> R.raw.sfx_open
         Sfx.CLASSIC_INVALID -> R.raw.sfx_classic_invalid
+        Sfx.CLASSIC_WIN -> R.raw.sfx_classic_win
         Sfx.LAUGH_W -> R.raw.sfx_laugh_w
         Sfx.LAUGH_O1 -> R.raw.sfx_laugh_o1
         Sfx.LAUGH_R -> R.raw.sfx_laugh_r

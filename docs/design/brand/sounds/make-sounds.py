@@ -54,6 +54,7 @@ N = lambda m: 440 * 2 ** ((m - 69) / 12)   # midi -> Hz
 JINGLE, UI, PEAK_CAP = -14.7, -21.0, -1.5
 PICKS = {
     # Classic only (the game screen's sound scope swaps these in; every other game keeps the pack's)
+    'classic-win': ('alt-win-a', 'match:win'),             # Win: A Marimba
     'classic-invalid': ('alt-invalid-a', 'match:invalid'),   # Not a word / too short / already guessed: A Soft "hmm"
     'intro': ('intro-a', JINGLE),          # App intro: A Marimba Parade
     'levelup': ('levelup-b', JINGLE),      # Level up: B Rising Stairs
