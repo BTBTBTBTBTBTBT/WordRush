@@ -51,8 +51,10 @@ Today every mascot's letter is Nunito Black, white. Add a "Letter" control (in t
   (e.g. Chewy / Bubblegum Sans), a bold slab/varsity (e.g. Bungee / Alfa Slab-style), a pixel/arcade
   (e.g. Press Start-style), a serif storybook, and the cast's own puffy ChatGPT lettering for A–Z (26 glyph
   images, drawn once — the premium option, maybe Pro).
-- **Letter color + finish**: white (default), cream, gold, outline-only, two-tone; optional soft 3D/glossy finish
-  to match the bodies.
+- **Letter color + finish** (founder 10-05: change the letter's color): the FULL swatch set of the body Color tab
+  (Brights, Pastels, Deeps, Neutrals, Pro Specials) plus white (default), cream, black; finishes: solid,
+  metallic (gold / silver / rose gold), rainbow gradient (Pro?), glitter, outline-only, two-tone; optional soft
+  3D/glossy finish to match the bodies. A "match body" shortcut (a darker/lighter shade of the body color).
 - Rules: the letter stays centered in the measured letter box (landmark system), auto-sized per font so every
   font fills the same box; contrast guard vs the body color (auto-switch to a dark letter on light bodies);
   saved in the avatar config and drawn identically everywhere (parity tests).
