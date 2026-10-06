@@ -135,9 +135,15 @@ class MainActivity : ComponentActivity() {
         // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
         // starts arrive via onNewIntent below. Before this, the intent-filter
         // matched but the path was silently discarded.
-        com.wordocious.app.data.DeepLinkRouter.handle(intent?.data)
-        // A tapped push carries its route in the `url` extra (VS challenges).
-        com.wordocious.app.data.DeepLinkRouter.handlePushUrl(intent?.getStringExtra("url"))
+        // 2.7.1 review: only on a fresh launch. A recreated activity (rotation, dark mode, font
+        // scale, restore after process death) still carries the launch intent, so re-handling it
+        // sent a small-widget launch (wordocious://home) back to Home on every config change,
+        // undoing the tab kept across rotation (93413361). Warm taps arrive via onNewIntent.
+        if (savedInstanceState == null) {
+            com.wordocious.app.data.DeepLinkRouter.handle(intent?.data)
+            // A tapped push carries its route in the `url` extra (VS challenges).
+            com.wordocious.app.data.DeepLinkRouter.handlePushUrl(intent?.getStringExtra("url"))
+        }
         // Return leg of the browser Google sign-in fallback: parses the session
         // out of wordocious://auth-callback and hands it to the Auth plugin.
         // No-op for every other intent, so it is safe to call unconditionally.

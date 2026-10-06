@@ -185,3 +185,59 @@ describe('integrated parts (v3 pieces)', () => {
     }
   });
 });
+
+// 2.7.1 regression (c08582d9): neck items (chain, capes, vampire collar, scarf, bandana, lei) drew a
+// straight band at the wrap line across both arms ("like a hula hoop"); the fit checks only guarded
+// the face and letter, and the parity fixtures agreed because all three engines read the same bad
+// rects. The pixel-accurate check is apps/web/lib/avatar-wrap-hoops.test.ts; this is the cheap rect
+// rule every platform's manifest copy shares (the pre-fix manifest fails 74 of its 106 wrap layers).
+describe('wrap-line drapes (neck items)', () => {
+  const WAIST = new Set(['acc:apron', 'acc:belt']); // waist garments DO go around the body, under the hands
+  type Rect = [number, number, number, number];
+  const wrapRects = (): Array<{ key: string; body: string; r: Rect }> => {
+    const out: Array<{ key: string; body: string; r: Rect }> = [];
+    for (const [key, it] of Object.entries(AVATAR_MANIFEST.items)) {
+      if (WAIST.has(key)) continue;
+      for (const [body, rows] of Object.entries(it.pieces ?? {})) {
+        for (const [layer, x, y, w, h] of rows) if (layer === 'wrap') out.push({ key, body, r: [x, y, w, h] });
+      }
+      if (it.layer === 'neckFront' || it.layer === 'wrap') {
+        for (const [body, r] of Object.entries(it.perBody ?? {})) out.push({ key, body, r });
+      }
+    }
+    return out;
+  };
+
+  it('every wrap layer starts above the arms or sits between the hands (a drape, never a hoop)', () => {
+    const rects = wrapRects();
+    expect(rects.length).toBeGreaterThanOrEqual(100);
+    const hoops: string[] = [];
+    for (const { key, body, r: [x, y, w] } of rects) {
+      const hands = AVATAR_MANIFEST.bodies[body].hands;
+      expect(hands, `${body} has hand ellipses`).toBeDefined();
+      const { L, R } = hands!;
+      const armTop = Math.min(L[1] - L[3], R[1] - R[3]);
+      const betweenHands = x >= L[0] + L[2] && x + w <= R[0] - R[2];
+      if (!(y < armTop || betweenHands)) hoops.push(`${key} on ${body}`);
+    }
+    expect(hoops).toEqual([]);
+  });
+
+  it('draws a neck drape after the letter and under held items', () => {
+    const L = avatarLayout(mk({ body: 'classic', neck: 'chain', held: 'mug' }));
+    const names = L.layers.map((l) => l.layer);
+    const wrap = names.indexOf('wrap');
+    expect(wrap).toBeGreaterThanOrEqual(L.letterIndex);
+    expect(wrap).toBeLessThan(names.indexOf('held'));
+  });
+
+  it('names only layers that are in layerOrder (an unknown layer would sort under the body and hide the letter)', () => {
+    const order = new Set(AVATAR_MANIFEST.layerOrder);
+    const unknown: string[] = [];
+    for (const [key, it] of Object.entries(AVATAR_MANIFEST.items)) {
+      if (!order.has(it.layer)) unknown.push(`${key}: ${it.layer}`);
+      for (const rows of Object.values(it.pieces ?? {})) for (const [layer] of rows) if (!order.has(layer)) unknown.push(`${key} piece: ${layer}`);
+    }
+    expect([...new Set(unknown)]).toEqual([]);
+  });
+});

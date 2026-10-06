@@ -110,6 +110,28 @@ describe('game reducer', () => {
       );
     });
 
+    // 2.7.1 regression (6f2cf42a): iOS kept ONE board grid across a Gauntlet run and only staged it
+    // on appear, so stage 5 (OctoWord) drew 4 of its 8 boards. The run's board counts are what every
+    // renderer must follow: they only ever grow, and every board of every stage is a real board.
+    it('walks a full run with board counts 1, 4, 4, 4, 8 (never shrinking), every board present', () => {
+      expect(GAUNTLET_STAGES.map((s) => s.boardCount)).toEqual([1, 4, 4, 4, 8]);
+      let state = createInitialState('gauntlet-walk', GameMode.GAUNTLET);
+      const counts: number[] = [];
+      for (let stage = 0; stage < GAUNTLET_STAGES.length; stage++) {
+        expect(state.gauntlet?.currentStage).toBe(stage);
+        counts.push(state.boards.length);
+        expect(state.boards.every((b) => typeof b.solution === 'string' && b.solution.length === 5)).toBe(true);
+        for (const b of [...state.boards]) {
+          if (state.boards.every((x) => x.status === GameStatus.WON)) break;
+          state = gameReducer(state, { type: 'SUBMIT_GUESS', guess: b.solution, applyToAll: true });
+        }
+        expect(state.boards.every((b) => b.status === GameStatus.WON), `stage ${stage} solved`).toBe(true);
+        if (stage < GAUNTLET_STAGES.length - 1) state = gameReducer(state, { type: 'NEXT_STAGE' });
+      }
+      expect(counts).toEqual(GAUNTLET_STAGES.map((s) => s.boardCount));
+      for (let i = 1; i < counts.length; i++) expect(counts[i]).toBeGreaterThanOrEqual(counts[i - 1]);
+    });
+
     it('should progress to next stage on win', () => {
       let state = createInitialState('test', GameMode.GAUNTLET);
       const solution = state.boards[0].solution;
