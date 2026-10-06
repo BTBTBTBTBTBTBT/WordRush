@@ -57,3 +57,13 @@
   any missing character.
 - Animations: letters bounce in on appear (staggered), a gentle wave on idle (rare), and the changing part pops
   when it updates (7 → 8 OF 18 flips/pops) — Reduce Motion = static; same perf rules as the cast.
+
+## 7. Daily Sweep + Flawless Victory banners come alive and vary (founder 10-06)
+- Today the Sweep banner always shows the same O, S and W with a broom. Make it different every day:
+  a rotating cast + scene picked by date (deterministic, so everyone sees the same one that day), never the
+  same combo two days in a row; a library of sweep scenes (brooms, confetti, trophies, dances…) and flawless
+  scenes (crowns, gold, fireworks…), drawn via free ChatGPT on-model.
+- Embed the PLAYER'S OWN living mascot (rigged body, their look, their pose/cheer — cloud/body-rigs) in the
+  banner next to the cast, celebrating with them; cast members animate with the puppet rigs (cheer, hop,
+  W wave, S fist pump…). Seasonal versions during seasons (Halloween sweep).
+- Same performance + Reduce Motion rules; share image of the sweep uses the same day's scene.
