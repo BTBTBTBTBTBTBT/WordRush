@@ -45,6 +45,8 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import com.wordocious.core.avatarColorHex
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +69,7 @@ import com.wordocious.app.data.AvatarSaveResult
 import com.wordocious.app.data.MascotAvatars
 import com.wordocious.app.data.MascotConfigRules
 import com.wordocious.core.AvatarConfig
+import com.wordocious.core.ChangePhoto
 import com.wordocious.core.AvatarOptions
 import com.wordocious.core.defaultAvatar
 import com.wordocious.app.data.SupabaseConfig
@@ -189,7 +192,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 // AH / AN: a fresh photo means "show my photo" — kept right away on a saved
                 // mascot (display = "photo"); the rest of the builder waits for Save.
                 castId = null
-                mascot = mascot?.copy(display = AvatarOptions.DISPLAY_PHOTO)
+                mascot = mascot?.copy(display = ChangePhoto.displayAfter(ChangePhoto.Result.UPLOADED))
                 MascotAvatars.ownConfig(AuthService.profile.value)?.takeIf { it.display != AvatarOptions.DISPLAY_PHOTO }?.let {
                     AvatarSave.saveConfig(it.copy(display = AvatarOptions.DISPLAY_PHOTO))
                 }
@@ -233,6 +236,8 @@ fun EditProfileScreen(onDone: () -> Unit) {
         if (ok) uploadUri(cameraUri)
     }
 
+    // Take photo only on a device with a camera (iOS isSourceTypeAvailable(.camera) parity).
+    val hasCamera = remember { context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_ANY) }
     if (showPhotoChoice) {
         val currentAvatar = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
         // Change Photo — the family action menu (founder 10-05: no plain-text menus; iOS parity); same choices.
@@ -240,33 +245,39 @@ fun EditProfileScreen(onDone: () -> Unit) {
             title = "Change Photo",
             subtitle = "A new photo or one from your library",
             onDismiss = { showPhotoChoice = false },
-            actions = buildList {
-                add(com.wordocious.app.ui.FamilyMenuAction("camera", "Take photo",
-                    com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoCamera)) {
-                    cameraLauncher.launch(cameraUri)
-                })
-                add(com.wordocious.app.ui.FamilyMenuAction("library", "Choose from library",
-                    com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoLibrary),
-                    com.wordocious.app.ui.FamilyMenuInk.TEAL) {
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                })
-                // iOS offers Remove Photo whenever an avatar_url exists —
-                // without it an uploaded photo can never be cleared.
-                if (currentAvatar != null) {
-                    add(com.wordocious.app.ui.FamilyMenuAction("remove", "Remove photo",
+            actions = ChangePhoto.rows(hasCamera, hasPhoto = currentAvatar != null).map { row ->
+                when (row) {
+                    ChangePhoto.Row.CAMERA -> com.wordocious.app.ui.FamilyMenuAction("camera", "Take photo",
+                        com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoCamera)) {
+                        cameraLauncher.launch(cameraUri)
+                    }
+                    ChangePhoto.Row.LIBRARY -> com.wordocious.app.ui.FamilyMenuAction("library", "Choose from library",
+                        com.wordocious.app.ui.FamilyMenuIcon.Vector(androidx.compose.material.icons.Icons.Filled.PhotoLibrary),
+                        com.wordocious.app.ui.FamilyMenuInk.TEAL) {
+                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    }
+                    // Without it an uploaded photo can never be cleared.
+                    ChangePhoto.Row.REMOVE -> com.wordocious.app.ui.FamilyMenuAction("remove", "Remove photo",
                         com.wordocious.app.ui.FamilyMenuIcon.Clay(com.wordocious.app.ui.FamIcon.XMARK), danger = true) {
                         val uid = AuthService.userId ?: return@FamilyMenuAction
+                        uploading = true
                         scope.launch {
-                            runCatching {
+                            val ok = runCatching {
                                 SupabaseConfig.client.postgrest["profiles"]
                                     .update({ set("avatar_url", null as String?) }) { filter { eq("id", uid) } }
+                            }.isSuccess
+                            if (ok) {
+                                com.wordocious.app.data.PlayerAvatars.patchOwn(avatarUrl = "") // BJ5
+                                AuthService.refreshProfile()
+                                avatarOverride = null
+                                // No photo → SHOW falls back to My mascot (saved with Save).
+                                mascot = mascot?.copy(display = ChangePhoto.displayAfter(ChangePhoto.Result.REMOVED))
+                            } else {
+                                error = "Could not remove your photo. Please try again."
                             }
-                            com.wordocious.app.data.PlayerAvatars.patchOwn(avatarUrl = "") // BJ5
-                            AuthService.refreshProfile()
-                            avatarOverride = null
-                            mascot = mascot?.copy(display = AvatarOptions.DISPLAY_MASCOT)
+                            uploading = false
                         }
-                    })
+                    }
                 }
             },
         )
@@ -369,6 +380,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
         unlockedDates = if (DressDemo.active) DressDemo.unlockedDates else com.wordocious.app.data.AchievementService.fetchUnlockedDates(uid)
     }
     val avatarUrl = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
+    // Cloud prompt 07: SHOW reads My photo only with a photo; then the photo is tappable + the Change photo pill shows.
+    val showsPhotoNow = ChangePhoto.showsPhoto(mascot?.display, avatarUrl != null)
+    val canChangePhoto = ChangePhoto.showsChangePhoto(mascot?.display, avatarUrl != null)
     val accentColor = ProfileAccent.color(accent)
     val featuredName = featured?.let { key -> catalog.firstOrNull { it.key == key }?.name }
     val initial = MascotConfigRules.initialOf(username.trim().ifBlank { profile?.username })
@@ -406,8 +420,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
             DressStage(
                 look, initial,
                 modifier = Modifier.clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)),
-                photoUrl = if (wearPhoto) avatarUrl else null,
+                photoUrl = if (showsPhotoNow) avatarUrl else null,
                 height = StageMetrics.height + 20.dp, hopToken = hopToken,
+                onPhotoTap = if (canChangePhoto && !uploading) ({ showPhotoChoice = true }) else null,
             ) {
                 Row(
                     Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 6.dp),
@@ -488,11 +503,26 @@ fun EditProfileScreen(onDone: () -> Unit) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 28.dp)) {
                 QuietRow("SHOW", labelInk) {
                     // The candy segmented (iOS / web parity), never two outlined boxes.
-                    CandySegmentedToggle(listOf(false to "My mascot", true to "My photo"), wearPhoto, onChange = { photo ->
-                        if (photo && avatarUrl == null) { showPhotoChoice = true; return@CandySegmentedToggle }
-                        mascot = look.copy(display = if (photo) AvatarOptions.DISPLAY_PHOTO else AvatarOptions.DISPLAY_MASCOT)
+                    CandySegmentedToggle(listOf(false to "My mascot", true to "My photo"), showsPhotoNow, onChange = { photo ->
+                        // "My photo" with no photo yet opens Change Photo instead of switching.
+                        val pick = ChangePhoto.pickShow(if (photo) AvatarOptions.DISPLAY_PHOTO else AvatarOptions.DISPLAY_MASCOT, avatarUrl != null)
+                        if (pick.openMenu) { showPhotoChoice = true; return@CandySegmentedToggle }
+                        mascot = look.copy(display = pick.display ?: return@CandySegmentedToggle)
                         hopToken++
                     }, width = 200.dp)
+                }
+                // Change photo: a small quiet pill under SHOW while the photo shows; the cast wave while one uploads.
+                if (uploading) {
+                    Box(
+                        Modifier.fillMaxWidth().padding(bottom = 10.dp).clearAndSetSemantics { contentDescription = "Uploading photo" },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CastRow(16.dp, motion = MascotMotion.WAVE, hop = 6.dp)
+                    }
+                } else if (canChangePhoto) {
+                    Box(Modifier.fillMaxWidth().padding(bottom = 10.dp), contentAlignment = Alignment.Center) {
+                        QuietButton("Change photo", onClick = { showPhotoChoice = true }, size = CandySize.SMALL)
+                    }
                 }
                 RowDivider()
                 QuietRow("USERNAME", labelInk) {

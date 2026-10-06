@@ -298,6 +298,8 @@ struct DressStage<Overlay: View>: View {
     var hopToken: Int = 0
     var curtains = true
     var bulbs = false
+    /// Cloud prompt 07: tapping the photo opens Change Photo (nil = not tappable).
+    var onPhotoTap: (() -> Void)? = nil
     @ViewBuilder var overlay: () -> Overlay
 
     var body: some View {
@@ -330,9 +332,16 @@ struct DressStage<Overlay: View>: View {
                 StageArt("art-dress-podium", width: podiumW)
                 Group {
                     if let photo {
-                        AvatarView(url: photo.url, username: photo.username, size: mascotSize * 0.74, userId: photo.userId)
+                        let portrait = AvatarView(url: photo.url, username: photo.username, size: mascotSize * 0.74, userId: photo.userId)
                             .shadow(color: Color(hex: 0x4C1D95).opacity(0.22), radius: 6, y: 4)
-                            .padding(.bottom, mascotSize * 0.06)
+                        if let onPhotoTap {
+                            Button { Haptics.tap(); onPhotoTap() } label: { portrait }
+                                .buttonStyle(.squish)
+                                .accessibilityLabel("Change photo")
+                                .padding(.bottom, mascotSize * 0.06)
+                        } else {
+                            portrait.padding(.bottom, mascotSize * 0.06)
+                        }
                     } else {
                         LiveMascot(config: config, initial: initial, size: mascotSize, hopToken: hopToken)
                     }
