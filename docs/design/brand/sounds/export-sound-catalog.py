@@ -92,7 +92,12 @@ for g in GAMES:
                 cands.append(dict(opt=o['l'].lower(), letter=o['l'], name=o['n'], keys=[o['k']],
                                   clips=[url(o['k'])], live=False,
                                   same=bool(pick_src) and (o['k'] == pick_src or o['k'] == f'cur-{name}')))
-        ev = dict(id=r['id'], title=r['event'], note=r.get('note') or '', grid=r.get('labels') if grid else None,
+        note = r.get('note') or ''
+        same = next((c for c in cands if c.get('same')), None)
+        if same and re.search(r'No sound|[Ss]ilent|Today:|Today every|Today a ', note):
+            # The lab note predates the pick: say what ships now.
+            note = f'Ships option {same["letter"]} ({same["name"]}) today.'
+        ev = dict(id=r['id'], title=r['event'], note=note, grid=r.get('labels') if grid else None,
                   colors=r.get('colors'), candidates=cands)
         events.append(ev)
     sections.append(dict(id=g['id'], title=g['title'], blurb=g['blurb'], events=events))

@@ -162,6 +162,8 @@ const iReview = (ctx: SoundReviewContext) => !!ctx.me && ctx.reviewers.some((r) 
 /** True when the viewer (a reviewer) has approved some candidate of the event; for a non-reviewer, when every reviewer has. */
 export function eventReviewed(ev: Pick<SoundEventView, 'candidates'>, ctx: SoundReviewContext): boolean {
   const who = iReview(ctx) ? [ctx.me!] : ctx.reviewers.map((r) => r.profile_id);
+  // No approvers loaded (setup, or the list failed): nothing counts as reviewed.
+  if (!who.length) return false;
   return who.every((id) => ev.candidates.some((c) => ctx.index.get(c.id)?.get(id)?.decision === 'approve'));
 }
 
@@ -201,6 +203,7 @@ export function groupSoundSections(
 export function soundSectionSummary(s: Pick<SoundSection, 'events' | 'counts'>, ctx: SoundReviewContext): string {
   const { counts } = s;
   if (counts.events > 0 && counts.decided === counts.events) return 'Picked for every event';
+  if (!ctx.reviewers.length) return `${counts.events} ${counts.events === 1 ? 'moment' : 'moments'}`;
   const waitingOn = ctx.reviewers.filter((r) => r.profile_id !== ctx.me
     && s.events.some((ev) => !ev.candidates.some((c) => ctx.index.get(c.id)?.get(r.profile_id)?.decision === 'approve')));
   const waiting = waitingOn.length ? ` · waiting on ${waitingOn.map((r) => r.short_name).join(' and ')}` : '';

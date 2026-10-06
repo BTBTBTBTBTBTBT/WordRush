@@ -6081,7 +6081,7 @@
     {
      "id": "pangram",
      "title": "NEW: a pangram (all seven letters) gets a 1-up",
-     "note": "Today a pangram plays the plain coin.",
+     "note": "Ships option B (Triple Coin Climb) today.",
      "grid": null,
      "colors": null,
      "candidates": [
@@ -9804,7 +9804,7 @@
     {
      "id": "intro",
      "title": "App intro (the cast parades in)",
-     "note": "Today: iOS plays a quick cascade of hops as the cast lands, Android one quiet hop, web nothing. The jingles are cut to the intro's beats: the W pops (0 s), one note per hero (0.6 to 1.3 s), the glide (1.7 s), \"ta-da\" on landing (2.2 s).",
+     "note": "Ships option A (Marimba Parade) today.",
      "grid": null,
      "colors": null,
      "candidates": [
@@ -10092,7 +10092,7 @@
     {
      "id": "open",
      "title": "NEW: opening a game",
-     "note": "Silent today.",
+     "note": "Ships option A (Page Breeze) today.",
      "grid": null,
      "colors": null,
      "candidates": [
@@ -10137,7 +10137,7 @@
     {
      "id": "laugh",
      "title": "NEW: tap a hero in the header to hear it laugh",
-     "note": "No sound or tap target today. Bright for W and O, sleepy for R, nerdy blips for D, a calm hum for U.",
+     "note": "Ships option A (Giggles) today.",
      "grid": [
       "W",
       "O",
@@ -10436,7 +10436,7 @@
     {
      "id": "levelup",
      "title": "NEW: level up",
-     "note": "iOS shows level-up in the achievement popup (plays unlock); web and Android are silent.",
+     "note": "Ships option B (Rising Stairs) today.",
      "grid": null,
      "colors": null,
      "candidates": [

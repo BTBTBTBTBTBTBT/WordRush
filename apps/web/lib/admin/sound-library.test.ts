@@ -101,6 +101,14 @@ describe('grouping', () => {
     expect(eventReviewed(s.events[0], ctxFor(reviews, 'someone-else'))).toBe(false);
   });
 
+  it('with no approvers loaded (SQL not applied), nothing reads as reviewed', () => {
+    const none: SoundReviewContext = { index: indexReviews([]), reviewers: [], me: null };
+    const s = groupSoundSections(new Map(), none)[0];
+    expect(s.done).toBe(false);
+    expect(s.counts.toReview).toBe(s.counts.events);
+    expect(soundSectionSummary(s, none)).toBe(`${s.counts.events} moments`);
+  });
+
   it('summaries read like the Art Library', () => {
     const s = groupSoundSections(new Map(), ctxFor([]))[0];
     expect(soundSectionSummary(s, ctxFor([]))).toBe(`${s.counts.events} to review · waiting on JP`);
