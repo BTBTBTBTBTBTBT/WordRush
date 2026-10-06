@@ -41,6 +41,11 @@ class AvatarFitManifest(val root: JsonObject) {
             fun g(k: String) = (ov[k] as? JsonPrimitive)?.doubleOrNull
             return Triple(g("dx") ?: 0.0, g("dy") ?: 0.0, g("scale") ?: 1.0)
         }
+        private fun ov(key: String) = ((o["overrides"] as? JsonObject)?.get(key) as? JsonObject)
+        /** The layer this item draws on for this body (the medal + bow tie go 'under' — before the letter and the face). */
+        fun overrideLayer(key: String): String? = (ov(key)?.get("layer") as? JsonPrimitive)?.content
+        /** No room on this body: the part draws nothing here (a saved config that wears it shows the body without it). */
+        fun withheld(key: String): Boolean = (ov(key)?.get("withheld") as? JsonPrimitive)?.booleanOrNull ?: false
     }
     class Item(val o: JsonObject) {
         private fun d(k: String) = (o[k] as? JsonPrimitive)?.doubleOrNull ?: 0.0
@@ -195,6 +200,7 @@ object AvatarFit {
         for ((field, id) in wornParts(c, small, m)) {
             val key = "${kind(field)}:$id"
             val it = m.items.getValue(key)
+            if (b.withheld(key)) continue   // no room on this body: drop it silently (saved configs keep working)
             val pieces = it.pieces
             if (pieces != null) {
                 // v3 integrated part: its per-body layers (nothing on a body without room for it)
@@ -214,7 +220,7 @@ object AvatarFit {
             val (dx, dy, sc) = b.override(key)
             val w = base * it.w * sc
             val h = w * it.aspect
-            placed.add(P(it.layer, field, id, "art-av-${kind(field)}-$id", AvatarRect(px - it.anchor[0] * w + dx, py - it.anchor[1] * h + dy, w, h),
+            placed.add(P(b.overrideLayer(key) ?: it.layer, field, id, "art-av-${kind(field)}-$id", AvatarRect(px - it.anchor[0] * w + dx, py - it.anchor[1] * h + dy, w, h),
                 it.tint && id in AvatarOptions.TINTABLE))
         }
         val faceTop = placed.filter { it.layer == "eyes" || (it.layer == "face" && m.items["acc:${it.id}"]?.slot == "glasses") }.minOfOrNull { it.rect.y }

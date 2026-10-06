@@ -17,7 +17,13 @@ public struct AvatarManifest: Decodable {
     public struct XY: Decodable { public var x: Double; public var y: Double }
     public struct XYW: Decodable { public var x: Double; public var y: Double; public var w: Double }
     public struct Y: Decodable { public var y: Double }
-    public struct Override: Decodable { public var dx: Double?; public var dy: Double?; public var scale: Double? }
+    /// Per-body fit override: offset / scale of a one-art item, `layer` = draw it on that layer on this body (the medal +
+    /// bow tie go 'under' — before the letter and the face — where they would overlap it), `withheld` = no room on this
+    /// body: the part draws nothing here (a saved config that wears it shows the body without it).
+    public struct Override: Decodable {
+        public var dx: Double?; public var dy: Double?; public var scale: Double?
+        public var layer: String?; public var withheld: Bool?
+    }
     public struct Body: Decodable {
         public var faceCenter: [Double]
         public var eyeY: Double, mouthY: Double, cheekY: Double
@@ -216,6 +222,8 @@ public enum AvatarFit {
         for (field, id) in wornParts(config, small: small, manifest: manifest) {
             let key = "\(fieldKind[field]!):\(id)"
             let m = manifest.items[key]!
+            let o = b.overrides?[key]
+            if o?.withheld ?? false { continue }   // no room on this body: drop it silently (saved configs keep working)
             if let pieces = m.pieces {
                 // v3 integrated part: its per-body layers (nothing on a body without room for it)
                 for pc in pieces[config.body] ?? [] {
@@ -232,10 +240,9 @@ public enum AvatarFit {
                 continue
             }
             let p = slotPoint(b, m.slot)
-            let o = b.overrides?[key]
             let w = p.base * m.w * (o?.scale ?? 1)
             let h = w * m.aspect
-            placed.append(P(layer: m.layer, field: field, id: id, art: "art-av-\(fieldKind[field]!)-\(id)",
+            placed.append(P(layer: o?.layer ?? m.layer, field: field, id: id, art: "art-av-\(fieldKind[field]!)-\(id)",
                             rect: AvatarRect(x: p.x - m.anchor[0] * w + (o?.dx ?? 0), y: p.y - m.anchor[1] * h + (o?.dy ?? 0), w: w, h: h),
                             tint: (m.tint ?? false) && AvatarCatalog.tintable.contains(id)))
         }

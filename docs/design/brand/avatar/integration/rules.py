@@ -356,14 +356,23 @@ def pendant_rect(key, body):
                 r = [x0 - w / 2, y0 - p['anchor_y'] * h + dy, w, h]
                 if not ((np.asarray(place_rect(im, r).getchannel('A')) > 90) & g).any():
                     return r, MAN['items'][key]['layer']
-    w = p['k'] * span * PENDANT_MIN
-    h = w * m['aspect']
+    # nothing clears at a readable size: UNDER the letter (the letter and the face are drawn on top, so it no longer
+    # shrinks to dodge them) at the biggest size that still hangs on the body, from the drape bottom (prefer clear of
+    # the mouth)
     body_in = ndimage.binary_dilation(pr['A'], iterations=int(0.012 * U))
-    for dy in np.arange(0, 0.12, 0.006):
-        r = [xm - w / 2, ym - p['anchor_y'] * h + dy, w, h]
-        a = np.asarray(place_rect(im, r).getchannel('A')) > 90
-        if not (a & face).any() and (a & ~body_in).sum() <= 0.03 * a.sum():
-            return r, 'under'
+    for f in np.linspace(1.0, PENDANT_MIN, 9):
+        w = p['k'] * span * f
+        h = w * m['aspect']
+        fallback = None
+        for dy in np.arange(0, 0.09, 0.006):
+            r = [xm - w / 2, ym - p['anchor_y'] * h + dy, w, h]
+            a = np.asarray(place_rect(im, r).getchannel('A')) > 90
+            if (a & ~body_in).sum() <= 0.03 * a.sum():
+                if not (a & face).any():
+                    return r, 'under'
+                fallback = fallback or r
+        if fallback:
+            return fallback, 'under'
     return None, 'no room at a readable size: under the mouth it covers the face, lower it leaves the body'
 
 
@@ -461,6 +470,23 @@ def bubbletea(body, side='R'):
     held = PC.avoid(lambda dx, dy: place(t, hx + sg * (rx * 0.5 + dx), hy + ry * 0.55 - dx * 1.5, rx * 3, anchor=(0.5, 0.8),
                                          rot=-6 * sg), body, step=(0.012, 0), masks=('letter',))
     return dict(held=[held], handover=(side,))
+
+
+def backpack(body):
+    """pieces.backpack, with the straps tucked around the torso: below the shoulder tops (where they come over
+    from behind) a strap never shows past the torso edge (tall / bean: they rode on the outline)."""
+    L = PC.backpack(body, 'white')
+    lm = LMS[body]
+    pr = masks(body)
+    keep = ndimage.binary_dilation(pr['torso'], iterations=int(0.008 * U))
+    keep[:int(P(lm['shoulderTop']['y'] + 0.06))] = True
+    soft_ = ndimage.gaussian_filter(keep.astype(np.float32), 1.0)
+    front = []
+    for im in L['front']:
+        a = np.asarray(im).copy()
+        a[..., 3] = (a[..., 3] * soft_).astype(np.uint8)
+        front.append(Image.fromarray(a, 'RGBA'))
+    return dict(L, front=front)
 
 
 def chain(body):
@@ -623,7 +649,7 @@ def build(key, body):
             return NP.cape_drape(body)
         return SS.SEASONAL[pid][3](body)
     if kind == 'backpack':
-        return PC.backpack(body, 'white')
+        return backpack(body)
     if kind == 'wings':
         return SS.SEASONAL[pid][3](body)
     if kind == 'tail':
@@ -685,8 +711,10 @@ def render(key, body):
     if L.get('unsupported'):
         return dict(layers={}, rect=None, fails=[], unsupported=L['unsupported'])
     _, fails = fit_check(key, body, L)
-    if fails and r['kind'] == 'cape' and all('cover' in f for f in fails):
-        # no room for the cord + clasp between the mouth and the letter (wide): the cape still hangs behind
+    if fails and r['kind'] in ('cape', 'apron') and all('cover' in f for f in fails):
+        # no room for the cord + clasp / the apron's neck strap between the mouth and the letter (wide, cloud): the
+        # cape still hangs behind, the apron panel still sits under the letter (it is drawn before it, so the letter
+        # shows on top: exempt from letter coverage)
         L = dict(L, front=[])
         _, fails = fit_check(key, body, L)
     layers = SI.ship_layers(body, field_of(key), L)

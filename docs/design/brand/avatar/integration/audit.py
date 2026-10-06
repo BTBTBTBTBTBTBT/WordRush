@@ -13,7 +13,8 @@ rendered with the apps' recipe (avatar_draw.render). Writes audit-<group>.png.
 Wrap-line hoop check (10-05: the chain "went around his arms like a hula hoop", and the cape cords ran straight
 across the belly; the face/letter fit check passed them): every SHIPPED wrap-line layer (pieces `wrap`, plus the
 per-body scarf art) is drawn at its manifest rect on its body, and FAILS when its opaque pixels
-  - sit on the body's arms (integration/pieces.arm_mask: the hand ellipses) > ARM_MAX of the body square, or
+  - sit on the body's arms > ARM_MAX of the body square (10-06: the MEASURED arm regions of landmarks.py — the same
+    mittens the re-shipped hand-over cut uses; it was the hand-fit ellipses of pieces.arm_mask), or
   - form a hoop: on some row at arm height the layer covers >= HOOP_SPAN of the body's width (a straight band).
 """
 import json, os, re, subprocess, sys
@@ -102,8 +103,8 @@ def wrap_hoops(verbose=True, art=None, manifest=None):
             if it.get('layer') in ('neckFront', 'wrap'):
                 rects.setdefault(body, []).append((f'art-av-{kind}-{pid}-{body}.webp', *r))
         for body, lst in rects.items():
-            R = rig(body)
-            A, arms = R['A'], arm_mask(body, grow=1.0)
+            pr = _lm_masks(body)['_']
+            A, arms = pr['A'], pr['arm_any']
             arm_rows = np.nonzero(arms.any(1))[0]
             m = np.zeros((CW, CW), bool)
             for name, x, y, w, h in lst:

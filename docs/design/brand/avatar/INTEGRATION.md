@@ -182,3 +182,17 @@ a size is not a config field yet (see REPORT-LANDMARKS.md "Shipping").
 5. Guards (`garments.guard`): never past the outline (skirt flare + hood allowed), never over the face, both shoulder
    tops covered symmetrically, sleeves inside their arm, top + bottom overlap at the waist, the arms + sleeves cover
    ≤ 1% of the letter. `python3 integration/garments.py` → `out/landmarks/garments-*.jpg` on every body × size.
+
+## Shipped with the rule-based fit (10-06)
+Every item now ships through `integration/ship-rules.py`: the rules on the measured landmarks, guarded against the
+letter the apps draw. Report + every override and withhold: `integration/REPORT-RESHIP.md`; BEFORE/AFTER sheets:
+`integration/out/reship/`.
+- One-art items (hats, wings, the medal, the bow tie) ship as `bodies.<id>.overrides[key]`. That's `{dx, dy, scale}` from
+  the rule rect, plus two new optional fields read by the core on all three platforms: `layer` (draw on another layer
+  on this body; the medal + bow tie go `under`, before the letter and the face) and `withheld: true` (no room: the
+  part is dropped silently, and saved configs still lay out).
+- Per-body items ship as `pieces` as before (the scarf moved from `perBody` to `pieces`). A body the rule withholds
+  is absent from `pieces`.
+- Re-running `ship-integrated.py` / `ship-seasonal.py` item builders would put the 10-05 hand fits back. Re-ship with
+  `ship-rules.py`, regenerate the parity fixtures, run `audit.py --guards shipped` + `--wraps`, then look at
+  `reship-sheets.py`.

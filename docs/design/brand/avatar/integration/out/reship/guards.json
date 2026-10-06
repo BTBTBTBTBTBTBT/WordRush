@@ -1,0 +1,5456 @@
+{
+"acc:heart-glasses": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:starglasses": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:roundglasses": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:mask": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:eyepatch": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:monocle": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:mustache": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:curlymustache": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:facepaint": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:crown": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:party": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:beanie": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:sprout": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:nightcap": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:headphones": {
+"classic": {
+"before": [
+[
+"face",
+"covers 43.0% of the face"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"face",
+"covers 46.5% of the face"
+]
+],
+"after": []
+},
+"blob": {
+"before": [
+[
+"face",
+"covers 29.1% of the face"
+]
+],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"face",
+"covers 42.6% of the face"
+]
+],
+"after": []
+},
+"chunky": {
+"before": [
+[
+"face",
+"covers 41.9% of the face"
+]
+],
+"after": []
+},
+"mini": {
+"before": [
+[
+"face",
+"covers 56.4% of the face"
+]
+],
+"after": []
+},
+"hex": {
+"before": [
+[
+"face",
+"covers 18.9% of the face"
+]
+],
+"after": []
+}
+},
+"acc:bow": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:wizard": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:pirate": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:cowboy": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:chef": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:grad": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:halo": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:flower": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:tophat": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:propeller": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:catears": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bunnyears": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:tiara": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:viking": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:sweatband": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:cap": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:beret": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:minicrown": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:flowercrown": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bucket": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:santa": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:witch": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:astronaut": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bigbow": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:pombeanie": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bearears": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:mohawk": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"brows:happy": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"brows:worried": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"brows:determined": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"brows:surprised": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"brows:cheeky": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"brows:sleepy": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:pumpkinhat": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:candycornhat": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:witchnight": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:batears": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bowtie": {
+"classic": {
+"before": [
+[
+"face",
+"covers 26.8% of the face"
+],
+[
+"letter",
+"covers 15.4% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"face",
+"covers 29.4% of the face"
+],
+[
+"letter",
+"covers 33.8% of the letter"
+]
+],
+"after": []
+},
+"blob": {
+"before": [
+[
+"face",
+"covers 25.9% of the face"
+],
+[
+"letter",
+"covers 15.8% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [
+[
+"face",
+"covers 3.3% of the face"
+]
+],
+"after": []
+},
+"star": {
+"before": [
+[
+"face",
+"covers 27.2% of the face"
+],
+[
+"letter",
+"covers 28.9% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [
+[
+"face",
+"covers 23.6% of the face"
+]
+],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"face",
+"covers 27.5% of the face"
+],
+[
+"letter",
+"covers 30.2% of the letter"
+]
+],
+"after": []
+},
+"chunky": {
+"before": [
+[
+"face",
+"covers 22.5% of the face"
+],
+[
+"letter",
+"covers 14.3% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [
+[
+"face",
+"covers 27.2% of the face"
+],
+[
+"letter",
+"covers 26.9% of the letter"
+]
+],
+"after": []
+},
+"hex": {
+"before": [
+[
+"face",
+"covers 26.0% of the face"
+],
+[
+"letter",
+"covers 17.9% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:medal": {
+"classic": {
+"before": [
+[
+"outline",
+"4% outside the body"
+],
+[
+"face",
+"covers 2.7% of the face"
+],
+[
+"letter",
+"covers 62.0% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [
+[
+"letter",
+"covers 11.1% of the letter"
+]
+],
+"after": []
+},
+"wide": {
+"before": [
+[
+"torso",
+"wider than the torso on 45 rows"
+],
+[
+"outline",
+"37% outside the body"
+],
+[
+"face",
+"covers 8.9% of the face"
+],
+[
+"letter",
+"covers 80.3% of the letter"
+]
+],
+"after": null
+},
+"blob": {
+"before": [
+[
+"letter",
+"covers 62.8% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [
+[
+"letter",
+"covers 26.4% of the letter"
+]
+],
+"after": []
+},
+"star": {
+"before": [
+[
+"outline",
+"21% outside the body"
+],
+[
+"letter",
+"covers 79.7% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [
+[
+"face",
+"covers 2.6% of the face"
+],
+[
+"letter",
+"covers 73.9% of the letter"
+]
+],
+"after": []
+},
+"pear": {
+"before": [
+[
+"letter",
+"covers 25.2% of the letter"
+]
+],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"outline",
+"27% outside the body"
+],
+[
+"face",
+"covers 5.5% of the face"
+],
+[
+"letter",
+"covers 80.1% of the letter"
+]
+],
+"after": null
+},
+"chunky": {
+"before": [
+[
+"letter",
+"covers 59.4% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [
+[
+"outline",
+"14% outside the body"
+],
+[
+"letter",
+"covers 78.1% of the letter"
+]
+],
+"after": []
+},
+"hex": {
+"before": [
+[
+"letter",
+"covers 66.4% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:chain": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": null,
+"after": null
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [
+[
+"letter",
+"covers 1.3% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 3.5% of the letter"
+]
+],
+"after": null
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": null,
+"after": null
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:scarf": {
+"classic": {
+"before": [
+[
+"letter",
+"covers 3.3% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"letter",
+"covers 10.7% of the letter"
+]
+],
+"after": null
+},
+"blob": {
+"before": [
+[
+"letter",
+"covers 3.9% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [
+[
+"letter",
+"covers 5.5% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 8.8% of the letter"
+]
+],
+"after": null
+},
+"chunky": {
+"before": [
+[
+"letter",
+"covers 2.7% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [
+[
+"letter",
+"covers 4.5% of the letter"
+]
+],
+"after": []
+},
+"hex": {
+"before": [
+[
+"letter",
+"covers 3.8% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:bandana": {
+"classic": {
+"before": [
+[
+"letter",
+"covers 3.7% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"letter",
+"covers 7.6% of the letter"
+]
+],
+"after": null
+},
+"blob": {
+"before": [
+[
+"letter",
+"covers 4.2% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [
+[
+"letter",
+"covers 5.8% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 7.3% of the letter"
+]
+],
+"after": null
+},
+"chunky": {
+"before": [
+[
+"letter",
+"covers 3.3% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [
+[
+"letter",
+"covers 3.2% of the letter"
+]
+],
+"after": []
+},
+"hex": {
+"before": [
+[
+"letter",
+"covers 4.1% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:lei": {
+"classic": {
+"before": [
+[
+"letter",
+"covers 4.2% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"letter",
+"covers 8.3% of the letter"
+]
+],
+"after": null
+},
+"blob": {
+"before": [
+[
+"letter",
+"covers 4.7% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [
+[
+"letter",
+"covers 6.1% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 7.5% of the letter"
+]
+],
+"after": []
+},
+"chunky": {
+"before": [
+[
+"letter",
+"covers 3.7% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [
+[
+"letter",
+"covers 3.8% of the letter"
+]
+],
+"after": []
+},
+"hex": {
+"before": [
+[
+"letter",
+"covers 4.7% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:cape": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"letter",
+"covers 2.4% of the letter"
+]
+],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 2.1% of the letter"
+]
+],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:supercape": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"letter",
+"covers 2.4% of the letter"
+]
+],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 2.1% of the letter"
+]
+],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:cape-drape": {
+"classic": {
+"before": [
+[
+"letter",
+"covers 2.0% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [
+[
+"letter",
+"covers 3.2% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [
+[
+"letter",
+"covers 2.9% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [
+[
+"letter",
+"covers 3.1% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [
+[
+"letter",
+"covers 3.2% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:vampirecollar": {
+"classic": {
+"before": [
+[
+"letter",
+"covers 1.1% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"letter",
+"covers 2.8% of the letter"
+]
+],
+"after": []
+},
+"blob": {
+"before": [
+[
+"letter",
+"covers 1.2% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [
+[
+"letter",
+"covers 1.1% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 2.4% of the letter"
+]
+],
+"after": []
+},
+"chunky": {
+"before": [
+[
+"letter",
+"covers 1.1% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [
+[
+"letter",
+"covers 1.1% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:backpack": {
+"classic": {
+"before": [
+[
+"arm",
+"915 px over the arms"
+]
+],
+"after": []
+},
+"tall": {
+"before": [
+[
+"torso",
+"wider than the torso on 38 rows"
+]
+],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [
+[
+"arm",
+"540 px over the arms"
+]
+],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [
+[
+"arm",
+"1239 px over the arms"
+],
+[
+"torso",
+"wider than the torso on 8 rows"
+]
+],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:wings": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:fairywings": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:batwings": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:cattail": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:belt": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:apron": {
+"classic": {
+"before": [
+[
+"arm",
+"333 px over the arms"
+],
+[
+"letter",
+"covers 4.4% of the letter"
+]
+],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [
+[
+"letter",
+"covers 6.9% of the letter"
+]
+],
+"after": []
+},
+"blob": {
+"before": [
+[
+"letter",
+"covers 5.0% of the letter"
+]
+],
+"after": []
+},
+"bean": {
+"before": [
+[
+"arm",
+"1270 px over the arms"
+]
+],
+"after": []
+},
+"star": {
+"before": [
+[
+"letter",
+"covers 3.8% of the letter"
+]
+],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [
+[
+"letter",
+"covers 6.4% of the letter"
+]
+],
+"after": []
+},
+"chunky": {
+"before": [
+[
+"arm",
+"520 px over the arms"
+],
+[
+"letter",
+"covers 4.2% of the letter"
+]
+],
+"after": []
+},
+"mini": {
+"before": [
+[
+"letter",
+"covers 3.0% of the letter"
+]
+],
+"after": []
+},
+"hex": {
+"before": [
+[
+"letter",
+"covers 4.5% of the letter"
+]
+],
+"after": []
+}
+},
+"acc:sneakers": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:boots": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:slippers": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:skates": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:mug": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:book": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:pencil-big": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:balloon": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:trophy": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:magnifier": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:flashlight": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:umbrella": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:icecream": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:spatula": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:mic": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:wand-star": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:candypail": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bubbletea": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:guitar": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bird": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:snail": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:kitten": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:puppy": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:blackcat": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:bat": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:ghost": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:sweat": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:tear": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:steam": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+},
+"acc:heart": {
+"classic": {
+"before": [],
+"after": []
+},
+"tall": {
+"before": [],
+"after": []
+},
+"wide": {
+"before": [],
+"after": []
+},
+"blob": {
+"before": [],
+"after": []
+},
+"bean": {
+"before": [],
+"after": []
+},
+"star": {
+"before": [],
+"after": []
+},
+"drop": {
+"before": [],
+"after": []
+},
+"pear": {
+"before": [],
+"after": []
+},
+"cloud": {
+"before": [],
+"after": []
+},
+"chunky": {
+"before": [],
+"after": []
+},
+"mini": {
+"before": [],
+"after": []
+},
+"hex": {
+"before": [],
+"after": []
+}
+}
+}

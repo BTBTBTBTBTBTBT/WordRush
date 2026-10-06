@@ -864,6 +864,13 @@ export function renderAvatarLayoutFixtures() {
     { body: 'star', neck: 'guitar', held: 'mic', brows: 'sleepy' },
     { body: 'cloud', neck: 'cape', wrap: 'cape-drape', feet: 'skates', pet: 'puppy' },
     { body: 'mini', neck: 'supercape', held: 'umbrella', wrap: 'bandana', pet: 'snail', accColor: 'pink' },
+    // 10-06 rule-based re-ship: per-body overrides — the medal withheld (no room), the bow tie / medal under the
+    // letter, wraps withheld on the tight bodies (saved configs drop them silently), rule-fitted hats + wings
+    { body: 'wide', neck: 'medal', head: 'crown', wrap: 'lei' },
+    { body: 'classic', neck: 'bowtie', head: 'cowboy' },
+    { body: 'drop', neck: 'medal', head: 'headphones' },
+    { body: 'cloud', neck: 'scarf', wrap: 'bandana', head: 'beanie' },
+    { body: 'tall', neck: 'bowtie', wrap: 'apron' },
   ];
   const cases = configs.flatMap((o) => [false, true].map((small) => ({ config: mk(o), small, layout: avatarLayout(mk(o), { small }) })));
   const picks = [

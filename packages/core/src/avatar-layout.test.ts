@@ -69,6 +69,14 @@ describe('avatar fit system', () => {
         const meta = AVATAR_MANIFEST.items[`acc:${head}`];
         const hat = L.layers.find((l) => l.layer === 'head')!;
         const eye = L.layers.find((l) => l.layer === 'eyes')!;
+        if (!meta.overFace) expect(hat.rect.y + hat.rect.h, `${body} ${head} covers the eyes`).toBeLessThanOrEqual(eye.rect.y + EPS);
+        if (AVATAR_MANIFEST.bodies[body].overrides?.[`acc:${head}`]) {
+          // 10-06 rule-based fit (bodies.<id>.overrides): the opening rests on the measured head-top curve — the hat
+          // reaches down to the body (never floats above it; the halo floats by design)
+          const bodyTop = L.body.y + AVATAR_MANIFEST.bodies[body].bounds[1] * L.body.h;
+          if (head !== 'halo') expect(hat.rect.y + hat.rect.h, `${body} ${head} floats`).toBeGreaterThanOrEqual(bodyTop - EPS);
+          continue;
+        }
         const headY = L.body.y + AVATAR_MANIFEST.bodies[body].headTop.y * L.scale;
         const intended = (meta.overlap ?? 0) * hat.rect.h;
         const actual = hat.rect.y + hat.rect.h - headY;
@@ -77,7 +85,6 @@ describe('avatar fit system', () => {
           expect(meta.overFace).toBeFalsy();
           expect(hat.rect.y + hat.rect.h, `${body} ${head}`).toBeCloseTo(eye.rect.y - HAT_EYE_CLEARANCE * L.scale, 2);
         }
-        if (!meta.overFace) expect(hat.rect.y + hat.rect.h, `${body} ${head} covers the eyes`).toBeLessThanOrEqual(eye.rect.y + EPS);
       }
     }
   });
@@ -101,8 +108,11 @@ describe('avatar fit system', () => {
     const L = avatarLayout(mk({ neck: 'wings', head: 'crown' }));
     expect(L.layers[0].layer).toBe('back');
     expect(L.layers[1].layer).toBe('body');
-    const F = avatarLayout(mk({ neck: 'medal' }));
+    const F = avatarLayout(mk({ body: 'tall', neck: 'medal' }));
     expect(F.layers[F.layers.length - 1].layer).toBe('neckFront');
+    // 10-06: where the medal would overlap the letter it hangs UNDER it (drawn before the letter)
+    const U = avatarLayout(mk({ body: 'classic', neck: 'medal' }));
+    expect(U.layers.findIndex((l) => l.id === 'medal')).toBeLessThan(U.letterIndex);
   });
 
   it('has a manifest entry + pattern for every option', () => {
@@ -129,6 +139,9 @@ describe('integrated parts (v3 pieces)', () => {
           const c = mk({ body, [field]: id } as Partial<AvatarConfig>);
           const L = checkFrame(c);
           const mine = L.layers.filter((l) => l.field === field);
+          // 10-06 rule fit: a body without room for the part (not in its `pieces`) draws nothing for it
+          const item = AVATAR_MANIFEST.items[`${field === 'brows' ? 'brows' : 'acc'}:${id}`];
+          if (!item.pieces?.[body]) { expect(mine.length, `${body} ${field}:${id} withheld`).toBe(0); continue; }
           expect(mine.length, `${body} ${field}:${id}`).toBeGreaterThan(0);
           for (const l of mine) expect(l.art).toBe(`art-av-${field === 'brows' ? 'brows' : 'acc'}-${id}-${body}-${l.layer}`);
           // small avatars keep only the body, face and hat
@@ -146,7 +159,7 @@ describe('integrated parts (v3 pieces)', () => {
     const pack = avatarLayout(mk({ body: 'classic', neck: 'backpack', accColor: 'orange' })).layers.filter((l) => l.id === 'backpack');
     expect(pack.map((l) => l.layer)).toEqual(['back', 'wrap']);
     expect(pack.every((l) => l.tint)).toBe(true);
-    for (const body of ['wide', 'mini']) expect(avatarLayout(mk({ body, neck: 'chain' })).layers.some((l) => l.id === 'chain')).toBe(false);
+    for (const body of ['wide', 'mini', 'cloud']) expect(avatarLayout(mk({ body, neck: 'chain' })).layers.some((l) => l.id === 'chain')).toBe(false);
   });
 
   it('the letter is drawn after the under garments and before every front layer', () => {
@@ -181,6 +194,66 @@ describe('integrated parts (v3 pieces)', () => {
       for (const [field, id] of Object.entries(b.picks)) {
         const c = validateAvatar({ [field]: id });
         expect((c as unknown as Record<string, string>)[field], `${b.id} ${field}`).toBe(id);
+      }
+    }
+  });
+});
+
+// 10-06 re-ship through the rule-based fit (docs/design/brand/avatar/integration/REPORT-RESHIP.md): per-body overrides
+// can move a one-art item to another layer (the medal + bow tie go 'under' the letter where they would cover it) or
+// withhold it (no room on that body). Saved configs keep working: a withheld part is dropped silently.
+describe('rule-based fit: per-body layer + withheld overrides', () => {
+  const clone = () => JSON.parse(JSON.stringify(AVATAR_MANIFEST)) as typeof AVATAR_MANIFEST;
+
+  it('a withheld override drops the part silently and keeps everything else', () => {
+    const m = clone();
+    m.bodies.classic.overrides = { ...(m.bodies.classic.overrides ?? {}), 'acc:crown': { withheld: true } };
+    const c = mk({ body: 'classic', head: 'crown', neck: 'cape' });
+    const L = avatarLayout(c, {}, m);
+    expect(L.layers.some((l) => l.id === 'crown')).toBe(false);
+    expect(L.layers.some((l) => l.id === 'cape')).toBe(true);
+    expect(L.layers.filter((l) => l.field !== 'head').map((l) => l.art)).toEqual(avatarLayout(c).layers.filter((l) => l.field !== 'head').map((l) => l.art));
+  });
+
+  it('a layer override moves a one-art item under the letter (drawn before it and before the face)', () => {
+    const m = clone();
+    m.bodies.classic.overrides = { ...(m.bodies.classic.overrides ?? {}), 'acc:bowtie': { layer: 'under' } };
+    const L = avatarLayout(mk({ body: 'classic', neck: 'bowtie' }), {}, m);
+    const i = L.layers.findIndex((l) => l.id === 'bowtie');
+    expect(L.layers[i].layer).toBe('under');
+    expect(i).toBeLessThan(L.letterIndex);
+    expect(L.layers.findIndex((l) => l.layer === 'mouth')).toBeGreaterThan(i);
+  });
+
+  it('the shipped manifest: bow tie / medal under the letter where they overlap it, the medal withheld without room', () => {
+    for (const body of AVATAR_BODIES) {
+      for (const id of ['bowtie', 'medal']) {
+        const o = AVATAR_MANIFEST.bodies[body].overrides?.[`acc:${id}`];
+        const L = avatarLayout(mk({ body, neck: id }));
+        const mine = L.layers.filter((l) => l.id === id);
+        if (o?.withheld) { expect(mine).toEqual([]); continue; }
+        expect(mine.length, `${body} ${id}`).toBe(1);
+        expect(mine[0].layer).toBe(o?.layer ?? AVATAR_MANIFEST.items[`acc:${id}`].layer);
+        if (mine[0].layer === 'under') expect(L.layers.indexOf(mine[0])).toBeLessThan(L.letterIndex);
+      }
+    }
+  });
+
+  it('saved configs keep working on every body: every worn option lays out, nothing broken is drawn', () => {
+    const art = new Set((AVATAR_MANIFEST as unknown as { art: string[] }).art);
+    const fields: Array<[keyof AvatarConfig, readonly string[]]> = [['head', AVATAR_HEADS], ['face', AVATAR_FACES], ['neck', AVATAR_NECKS],
+      ...Object.entries(AVATAR_INTEGRATED_OPTIONS) as Array<[keyof AvatarConfig, readonly string[]]>];
+    for (const body of AVATAR_BODIES) {
+      for (const [field, ids] of fields) {
+        for (const id of ids.slice(1)) {
+          const c = mk({ body, [field]: id } as Partial<AvatarConfig>);
+          const L = avatarLayout(c);
+          expect(L.layers.some((l) => l.layer === 'body'), `${body} ${String(field)}:${id}`).toBe(true);
+          for (const l of L.layers) {
+            expect(art.has(l.art), `${body} ${String(field)}:${id} draws ${l.art}`).toBe(true);
+            expect(l.rect.w > 0 && l.rect.h > 0 && Number.isFinite(l.rect.x + l.rect.y)).toBe(true);
+          }
+        }
       }
     }
   });

@@ -37,8 +37,16 @@ export interface AvatarBodyAnchors {
   shoulderY?: number;
   wrap?: Array<[number, number, number]>;
   floor?: number;
-  overrides?: Record<string, { dx?: number; dy?: number; scale?: number }>;
+  /**
+   * Per-body fit overrides for an item (key `acc:<id>`): offset / scale of a one-art item, `layer` = draw it on that
+   * layer on this body (10-06 rule fit: the medal + bow tie go 'under' — before the letter and the face — where they
+   * would overlap the letter), `withheld` = no room on this body: the part draws nothing here (a saved config that
+   * wears it simply shows the body without it).
+   */
+  overrides?: Record<string, AvatarItemOverride>;
 }
+
+export interface AvatarItemOverride { dx?: number; dy?: number; scale?: number; layer?: string; withheld?: boolean }
 
 export interface AvatarItemMeta {
   w: number; aspect: number; anchor: [number, number]; slot: string; layer: string; overlap?: number; tint?: boolean;
@@ -200,6 +208,8 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
     const key = `${FIELD_KIND[field]}:${id}`;
     const m = manifest.items[key];
     const p = slotPoint(b, m.slot);
+    const o = b.overrides?.[key] ?? {};
+    if (o.withheld) continue;   // no room on this body: drop it silently (saved configs keep working)
     if (m.pieces) {
       // v3 integrated part: its per-body layers (nothing on a body without room for it)
       for (const [layer, x, y, w, h] of m.pieces[config.body] ?? []) {
@@ -219,11 +229,10 @@ export function avatarLayout(config: AvatarConfig, { small = false }: { small?: 
       });
       continue;
     }
-    const o = b.overrides?.[key] ?? {};
     const w = p.base * m.w * (o.scale ?? 1);
     const h = w * m.aspect;
     placed.push({
-      layer: m.layer, field, id, art: `art-av-${FIELD_KIND[field]}-${id}`,
+      layer: o.layer ?? m.layer, field, id, art: `art-av-${FIELD_KIND[field]}-${id}`,
       rect: { x: p.x - m.anchor[0] * w + (o.dx ?? 0), y: p.y - m.anchor[1] * h + (o.dy ?? 0), w, h },
       tint: !!m.tint && AVATAR_TINTABLE.includes(id),
     });

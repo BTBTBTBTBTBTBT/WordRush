@@ -624,8 +624,6 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-av-acc-roundglasses': [384, 170],
   'art-av-acc-santa': [384, 281],
   'art-av-acc-scarf': [384, 323],
-  // 10-05: the integrated per-body scarf (core avatar-parts items['acc:scarf'].perBody; never covers the letter)
-  'art-av-acc-scarf-classic': [320, 101], 'art-av-acc-scarf-tall': [320, 163], 'art-av-acc-scarf-wide': [320, 127], 'art-av-acc-scarf-blob': [320, 103], 'art-av-acc-scarf-bean': [320, 127], 'art-av-acc-scarf-star': [320, 93], 'art-av-acc-scarf-drop': [320, 106], 'art-av-acc-scarf-pear': [320, 130], 'art-av-acc-scarf-cloud': [320, 111], 'art-av-acc-scarf-chunky': [320, 101], 'art-av-acc-scarf-mini': [320, 145], 'art-av-acc-scarf-hex': [320, 101],
   'art-av-acc-sprout': [384, 264],
   'art-av-acc-starglasses': [384, 173],
   'art-av-acc-supercape': [640, 355],
