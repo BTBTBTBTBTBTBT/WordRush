@@ -17,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.graphicsLayer
@@ -116,9 +118,67 @@ fun LivingCastHeader(
         wave.animateTo(IntroFlourish.TOTAL_MS.toFloat(), tween(IntroFlourish.TOTAL_MS, easing = LinearEasing))
         wave.snapTo(-1f)
     }
-    LaunchedEffect(calm, hidden, scrolling, flourishKey) {
+    // 2.7.1 cast puppets: out of season each figure is its rig (CastPuppets); a tap makes it
+    // hop + laugh. In season the costumes stay, with a transform-only tap hop.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val view = androidx.compose.ui.platform.LocalView.current
+    var rigs by remember { mutableStateOf(CastPuppets.loaded()) }
+    LaunchedEffect(Unit) { if (rigs == null) rigs = CastPuppets.load(context) }
+    val seasonNow = rememberSeason()
+    val puppetsOn = rigs != null && seasonNow == null && live
+    /** Frame clock (ms, System.nanoTime base) — read only while drawing, so a tick redraws without recomposing. */
+    val clock = remember { androidx.compose.runtime.mutableLongStateOf(System.nanoTime() / 1_000_000) }
+    val t0 = remember { System.nanoTime() / 1_000_000 }
+    val gestures = remember { androidx.compose.runtime.mutableStateMapOf<MascotId, Long>() }
+    val taps = remember { androidx.compose.runtime.mutableStateMapOf<MascotId, Long>() }
+    var wake by remember { mutableStateOf(0) }
+    fun busy(now: Long): Boolean {
+        val b = rigs ?: return false
+        if (taps.values.any { now - it < b.tap.dur * 1000 }) return true
+        return gestures.any { (id, at) -> now - at < (b.rigs[id.key]?.gestureSeconds ?: 0.0) * 1000 }
+    }
+    // The puppets breathe at 30 fps (full rate while a move or tap plays); they hold still
+    // while the page scrolls, the tab is hidden, or with Reduce Motion / Battery Saver (a tap
+    // still plays: the laugh face fades; in season, the costume's hop).
+    LaunchedEffect(rigs, puppetsOn, calm, hidden, scrolling, wake) {
+        if (rigs == null || hidden) return@LaunchedEffect
+        var last = 0L
+        while (true) {
+            val now = androidx.compose.runtime.withFrameNanos { it } / 1_000_000
+            val active = busy(now)
+            if (!active && (gestures.isNotEmpty() || taps.isNotEmpty())) { gestures.clear(); taps.clear() }
+            if (!active && (!puppetsOn || calm || scrolling)) { clock.longValue = now; break }
+            if (active || now - last >= 32) { clock.longValue = now; last = now }
+        }
+    }
+    fun tapFigure(id: MascotId) {
+        val now = System.nanoTime() / 1_000_000
+        taps[id] = now
+        if (puppetsOn && !calm && gestures[id]?.let { now - it < (rigs?.rigs?.get(id.key)?.gestureSeconds ?: 0.0) * 1000 } != true) gestures[id] = now
+        com.wordocious.app.data.Haptics.light(view)
+        com.wordocious.app.data.SoundManager.castLaugh(id.key)
+        wake++
+    }
+    LaunchedEffect(calm, hidden, scrolling, flourishKey, puppetsOn) {
         acting = null
         if (calm || hidden || scrolling) return@LaunchedEffect
+        if (puppetsOn) {
+            // One signature move every 6–10 s, never the same character twice in a row.
+            if (flourishKey > 0 && reportAnchor) delay(IntroFlourish.TOTAL_MS.toLong())
+            delay(CastMoves.FIRST_DELAY_MS)
+            val random = Random(System.nanoTime())
+            var last: MascotId? = null
+            while (true) {
+                val now = System.nanoTime() / 1_000_000
+                if (!busy(now)) {
+                    val id = MascotId.entries.filter { it != last }.random(random)
+                    last = id
+                    gestures[id] = now
+                    wake++
+                }
+                delay(6000L + random.nextLong(4000L))
+            }
+        }
         val random = Random(System.nanoTime())
         // The personality moves resume after the flourish.
         if (flourishKey > 0 && reportAnchor) delay(IntroFlourish.TOTAL_MS.toLong())
@@ -155,8 +215,32 @@ fun LivingCastHeader(
             ),
         content = {
             MascotId.entries.forEachIndexed { i, id ->
+                val front = puppetsOn && (gestures.containsKey(id) || taps.containsKey(id))
                 Box(
-                    Modifier.drawWithContent {
+                    Modifier
+                        .zIndex(if (front) 1f else 0f)
+                        .clickable(
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            indication = null,
+                        ) { tapFigure(id) }
+                        .drawWithContent {
+                        // In season: the costume's transform-only tap hop (squash + stretch, no face swap).
+                        val b = rigs
+                        val tapAt = taps[id]
+                        if (!puppetsOn && b != null && tapAt != null && !still) {
+                            val (hop, sq) = b.tap.pose((clock.longValue - tapAt) / 1000.0)
+                            if (hop != 0.0 || sq != 0.0) {
+                                val u = size.height / 470f
+                                val canvas = drawContext.canvas
+                                canvas.save()
+                                canvas.translate(size.width / 2, size.height + (hop * 0.53 * u).toFloat())
+                                canvas.scale((1 - sq * 0.6).toFloat(), (1 + sq).toFloat())
+                                canvas.translate(-size.width / 2, -size.height)
+                                drawContent()
+                                canvas.restore()
+                                return@drawWithContent
+                            }
+                        }
                         val who = acting
                         // The flourish: every character plays the W hop in a left-to-right wave.
                         val hop = if (wave.value >= 0f) IntroFlourish.local(i, wave.value) else null
@@ -181,7 +265,21 @@ fun LivingCastHeader(
                         canvas.restore()
                     },
                 ) {
-                    Image(painters[i], contentDescription = null, contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+                    val rig = rigs?.rigs?.get(id.key)
+                    if (puppetsOn && rig != null) {
+                        val crop = CastCrops.crops.getValue(id)
+                        androidx.compose.foundation.layout.Spacer(
+                            Modifier.fillMaxSize().drawBehind {
+                                val b = rigs ?: return@drawBehind
+                                val now = clock.longValue
+                                val gr = gestures[id]?.let { (now - it) / 1000.0 }?.takeIf { it < rig.gestureSeconds }
+                                val tp = taps[id]?.let { (now - it) / 1000.0 }?.takeIf { it < b.tap.dur }
+                                with(CastPuppets) { drawPuppet(b, rig, crop, (now - t0) / 1000.0, gr, tp, calm) }
+                            },
+                        )
+                    } else {
+                        Image(painters[i], contentDescription = null, contentScale = ContentScale.FillBounds, modifier = Modifier.fillMaxSize())
+                    }
                     if (crown && id == MascotId.W) {
                         CrownOnW(crownTap, twinkle = !calm && !hidden)
                     }
@@ -227,6 +325,9 @@ fun LivingCastHeader(
         }
     }
 }
+
+/** The rig id of a cast member ("w", "o1", …). */
+private val MascotId.key: String get() = name.lowercase()
 
 /** How much headroom the Pro crown takes above the row (fraction of the figure height). */
 private const val CROWN_SPACE = 0.32f

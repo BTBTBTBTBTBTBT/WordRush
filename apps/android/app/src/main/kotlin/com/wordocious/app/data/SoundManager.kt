@@ -150,4 +150,15 @@ object SoundManager {
 
     /** Achievement unlock: `unlock` · success haptic (for the achievement popup). */
     fun achievementUnlocked(view: android.view.View? = null) = fire(FeedbackEvent.UNLOCK, view)
+
+    /**
+     * Sound.castLaugh — a header character was tapped and hops + laughs (CastHeader.kt).
+     * SILENT for now: the founder is picking the laugh in the Sound Lab; wire it here
+     * (e.g. `play(Sfx.<laugh>, volume = 0.6f)`, optionally per character [id]).
+     * Web: castLaugh() in lib/sounds.ts; iOS: SoundManager.castLaugh(_:).
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun castLaugh(id: String) {
+        // intentionally silent until the laugh sound is chosen
+    }
 }
