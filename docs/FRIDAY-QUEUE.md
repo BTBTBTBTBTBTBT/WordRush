@@ -129,3 +129,10 @@
   a **Wordocious coin for Call It** (heads = W with his cape; tails = another design — e.g. the cast's "O" or a
   W-monogram crest; founder picks), win/lose moments, and other fun personalized touches.
 - Same readability + smoothness gates; parity ×3.
+
+## 10. Crosswordocious numbered cells (founder 10-06, screenshot of a finished grid)
+- Cells that carry a clue number draw their letter SMALLER and pushed down/right (C, A, S, T, H, F, L, K in the
+  screenshot) while plain cells show a full-size centered letter. Make every cell's letter the same size and
+  centered; the clue number sits as a tiny badge in the top-left corner that never overlaps the letter (shrink
+  the number, not the letter). Same in play, on the finished screen and the share image, on iOS, Android and web
+  (earlier fix dbc30603 moved numbers "clear of letters" by shrinking/offsetting the letter — redo it this way).
