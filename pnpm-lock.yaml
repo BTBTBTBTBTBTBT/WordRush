@@ -267,6 +267,9 @@ importers:
       '@types/web-push':
         specifier: ^3.6.4
         version: 3.6.4
+      playwright-core:
+        specifier: 1.56.1
+        version: 1.56.1
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
@@ -7371,6 +7374,12 @@ packages:
       confbox: 0.1.8
       mlly: 1.8.0
       pathe: 2.0.3
+    dev: true
+
+  /playwright-core@1.56.1:
+    resolution: {integrity: sha512-hutraynyn31F+Bifme+Ps9Vq59hKuUCz7H1kDOcBs+2oGguKkWTU50bBWrtz34OUWmIwpBTWDxaRPXrIXkgvmQ==}
+    engines: {node: '>=18'}
+    hasBin: true
     dev: true
 
   /plist@3.1.0:

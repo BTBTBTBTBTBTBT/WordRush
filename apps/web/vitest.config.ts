@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import path from 'path';
 
 // Node-only unit tests for the web app's pure logic (no jsdom / no React
@@ -14,5 +14,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // The rendered contrast sweep needs a server + browser: `pnpm test:contrast`.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });

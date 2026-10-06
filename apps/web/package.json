@@ -14,7 +14,8 @@
     "generate-icons": "node scripts/generate-icons.mjs",
     "test:scoring": "node scripts/check-composite-scoring.mjs",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:contrast": "vitest run --config vitest.contrast.config.ts"
   },
   "dependencies": {
     "@apple/app-store-server-library": "^3.1.0",
@@ -95,6 +96,7 @@
   },
   "devDependencies": {
     "@types/web-push": "^3.6.4",
+    "playwright-core": "1.56.1",
     "sharp": "^0.34.5",
     "vitest": "^1.0.4"
   }
