@@ -77,6 +77,8 @@ enum class FeedbackEvent(val sound: Sfx?, val haptic: Haptic?) {
     LEVEL_UP(Sfx.LEVELUP, Haptic.SUCCESS),
     /** A game opens (GameMotion.gameEntered: solo, VS, pocket games). Never on close / back. */
     GAME_OPEN(Sfx.OPEN, null),
+    /** A Hubbub pangram (all seven letters): the 1-up. */
+    PANGRAM(Sfx.PANGRAM, Haptic.LIGHT),
 }
 
 /** The tunables (spec U): master volume, tap pitch spread, tick throttle, squish quiet window. */
