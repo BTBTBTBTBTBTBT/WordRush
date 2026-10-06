@@ -64,9 +64,10 @@ export function collectText(): TextRun[] {
     if (!text || !/[\p{L}\p{N}]/u.test(text)) continue;
     const el = n.parentElement;
     if (!el || el.closest('script, style, noscript, svg, [hidden], option')) continue;
-    // aria-hidden text is decoration or a painted duplicate (wallpaper glyph tiles, the lettering's
-    // stroke layer): WCAG 1.4.3 exempts pure decoration; its accessible twin is checked instead.
-    if (el.closest('[aria-hidden="true"]')) continue;
+    // Pure decoration (WCAG 1.4.3 exempts it): the wallpaper's glyph tiles (.page-bg) and the scrim
+    // under popups. aria-hidden alone is NOT a pass: visible text whose words are read by a group
+    // label is still read by eye.
+    if (el.closest('.page-bg')) continue;
     // Inactive controls are exempt from WCAG 1.4.3.
     if (el.closest(':disabled, [aria-disabled="true"]')) continue;
     const cs = getComputedStyle(el);
@@ -80,6 +81,9 @@ export function collectText(): TextRun[] {
       if (s.backgroundClip === 'text' || (s as unknown as Record<string, string>).webkitBackgroundClip === 'text') clipText = true;
     }
     if (clipText || opacity < 0.05) continue;
+    // Outlined lettering (-webkit-text-stroke) carries its own contrast edge: the stroke, not the fill,
+    // meets the background (the live headline's stroke layer under its gradient face).
+    if (parseFloat(cs.webkitTextStrokeWidth || '0') >= 1) continue;
     const fill = cs.webkitTextFillColor && cs.webkitTextFillColor !== cs.color ? cs.webkitTextFillColor : cs.color;
     const color = parse(fill);
     if (!color || color[3] * opacity < 0.05) continue;
