@@ -114,7 +114,9 @@ function Tile({ card, result, unlimited, onOpen }: {
       : { background: `${GLOSS}, #9ca3af` };
     ink = '#ffffff';
   } else {
-    style = { background: `color-mix(in srgb, ${accent} 12%, #ffffff)` };
+    // Not played: pale out of season; on a dark season's glass a dim night tile with a hint of
+    // the game color (--season-tile-*), so the played tiles' solid color stands out (iOS parity).
+    style = { background: `color-mix(in srgb, ${accent} var(--season-tile-idle-pct, 12%), var(--season-tile-base, #ffffff))` };
     ink = accent;
   }
   const dim = !unlimited && !result ? 0.45 : 1;

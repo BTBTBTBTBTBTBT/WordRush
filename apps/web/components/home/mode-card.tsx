@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, u
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { GameArt } from '@/components/ui/game-art';
 import { isGameArtIcon, onPageShadow } from '@/lib/art';
-import { SOFT, accentInk, softBackground } from '@/lib/soft-surface';
+import { SOFT, accentInk, alphaHex, softBackground } from '@/lib/soft-surface';
 import { formatGuessStat, formatShortTime } from '@/lib/format';
 import type { DailyCompletion } from '@/lib/daily-service';
 import type { HomeCard } from './mode-chrome';
@@ -97,12 +97,18 @@ export const MODE_CARD = {
  * the dark surface under the wash (--color-card-base).
  */
 export function modeCardSurface(accent: string, { done = false, locked = false }: { done?: boolean; locked?: boolean } = {}): CSSProperties {
-  const share = done ? 0.2 : SOFT.tint;
+  if (locked) return { background: softBackground('#9ca3af', SOFT.tint), borderRadius: MODE_CARD.radius, boxShadow: onPageShadow() };
+  // Founder 10-05 (2.7.1, "the finished game color" vanished under Haunted glass): a DARK season
+  // hands the document --season-done-pct / --season-idle-pct / --season-done-glow (season-kit
+  // SEASON_DONE), so a finished daily wears a deep glass of its game color and an accent glow while
+  // an unplayed card stays plain night glass. Out of season the fallbacks are the normal 20% / 13%
+  // wash and no glow. iOS GameCardChrome, Android gameCardBg.
+  const wash = `color-mix(in srgb, ${accent} var(${done ? '--season-done-pct, 20%' : '--season-idle-pct, 13%'}), transparent)`;
   return {
-    background: locked ? softBackground('#9ca3af', SOFT.tint) : softBackground(accent, share),
+    background: `linear-gradient(${wash}, ${wash}), var(--color-card-base, #ffffff)`,
     borderRadius: MODE_CARD.radius,
-    // §11: lifts off the page tint with the page's tinted shadow.
-    boxShadow: onPageShadow(),
+    // §11: lifts off the page tint with the page's tinted shadow (+ the finished glow in a dark season).
+    boxShadow: done ? `0 0 var(--season-done-glow, 0px) ${alphaHex(accent, 0.55)}, ${onPageShadow('0 0 #0000')}` : onPageShadow(),
   };
 }
 

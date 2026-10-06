@@ -506,7 +506,9 @@ private struct BannerTile: View {
                                                            startPoint: .top, endPoint: .bottom)))
                         .shadow(color: result.completed ? accent.opacity(0.55) : .clear, radius: 3.5, x: 0, y: 1.5)
                 } else {
-                    shape.fill(accent.seasonWash(0.12))
+                    // Not played: pale out of season; on a dark season's glass a dim night tile
+                    // (only a hint of the game color), so the played tiles' solid color stands out.
+                    shape.fill(accent.seasonIdleTile)
                 }
                 // BJ6: the icon scales with its tile (iconSize 0 = 56% of the tile's side).
                 GeometryReader { g in
@@ -809,6 +811,13 @@ extension Color {
     func seasonWash(_ amount: Double) -> Color {
         guard let look = SeasonKit.surfaces, let card = look.card else { return wash(amount) }
         return mixed(over: card, look.dark ? min(1, amount * 2.4) : amount * 1.4)
+    }
+
+    /// An unplayed hero progress tile: the pale wash out of season; a dim night tile (a hint of the
+    /// game color over the card) under a dark season, so the played tiles read as the lit ones.
+    var seasonIdleTile: Color {
+        guard let look = SeasonKit.surfaces, look.dark, let card = look.card else { return seasonWash(0.12) }
+        return mixed(over: card, SeasonDone.idleTile)
     }
 
     /// A game color as on-card text under a dark season card (lifted so it reads); as is otherwise.

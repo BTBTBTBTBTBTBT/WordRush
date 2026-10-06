@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -135,10 +136,28 @@ private val MODE_CARD_TITLE_LINE = 20.dp
 private val MODE_CARD_PADDING = PaddingValues(start = 8.dp, end = 10.dp, top = 10.dp, bottom = 10.dp)
 
 /** The game card's surface: shadow, radius-16 clip and fill — NO stroke (FINISH_SPEC BH4). */
-private fun Modifier.gameCardSurface(bg: Color): Modifier {
+private fun Modifier.gameCardSurface(bg: Color, glow: Color? = null): Modifier {
     val shape = RoundedCornerShape(MODE_CARD_CORNER)
-    return this.cardShadow(MODE_CARD_CORNER).clip(shape).background(bg)
+    val lift = if (glow != null) this.shadow(10.dp, shape, clip = false, ambientColor = glow, spotColor = glow)
+        else this.cardShadow(MODE_CARD_CORNER)
+    return lift.clip(shape).background(bg)
 }
+
+/**
+ * A finished daily under a DARK season's glass (founder 10-05, 2.7.1: "the finished game color"
+ * vanished under Haunted glass): the game color's share over the night card (finished / unplayed),
+ * its glow, and an unplayed hero progress tile's hint of color. iOS SeasonDone, web SEASON_DONE.
+ */
+internal object SeasonDone {
+    const val WASH = 0.38f
+    const val IDLE = 0.05f
+    const val GLOW = 0.55f
+    const val IDLE_TILE = 0.10f
+}
+
+/** The finished card's accent glow on a dark season card (null = the normal lift). */
+internal fun gameCardGlow(accent: Color, done: Boolean): Color? =
+    WTheme.season?.takeIf { done && it.dark && it.cardFill != null }?.let { accent.copy(alpha = SeasonDone.GLOW) }
 
 /**
  * FINISH_SPEC A1: a game card is never plain white — an untouched card takes a soft
@@ -148,8 +167,12 @@ private fun Modifier.gameCardSurface(bg: Color): Modifier {
  */
 internal fun gameCardBg(accent: Color, done: Boolean): Color = when {
     // Season surfaces: the season's translucent card (the wall glows through) with a faint accent.
+    // On a DARK season card a finished daily wears its game color (a deep accent glass) while an
+    // unplayed one stays plain night glass, so finished reads at a glance (SeasonDone).
     WTheme.season?.cardFill != null -> WTheme.season!!.let { s ->
-        val tinted = s.wash(accent, if (done) 0.16f else 0.06f)
+        val tinted = if (s.dark && s.card != null) {
+            Color(TintMath.over(accent.copy(alpha = 1f).toArgb(), if (done) SeasonDone.WASH else SeasonDone.IDLE, s.card.toArgb()))
+        } else s.wash(accent, if (done) 0.16f else 0.06f)
         tinted.copy(alpha = s.cardOpacity)
     }
     WTheme.isDark -> if (done) accent.copy(alpha = 0.06f) else WTheme.surface
@@ -219,7 +242,7 @@ internal fun GameCardFrame(
         // A9: the whole card squishes (the press leads the chain).
         modifier.then(if (onClick != null) Modifier.squishClickable(card = true, onClick = onClick) else Modifier)
             .fillMaxWidth()
-            .gameCardSurface(bg = gameCardBg(accent, done)),
+            .gameCardSurface(bg = gameCardBg(accent, done), glow = gameCardGlow(accent, done)),
     ) {
         CardTrim(accent)
         Column(Modifier.fillMaxWidth().padding(MODE_CARD_PADDING), content = content)
@@ -272,7 +295,7 @@ internal fun ModeCardView(
             .gameLaunchSource("home:${card.id}", cardBg, MODE_CARD_CORNER)
             .squishClickable(card = true, onClick = { GameMotion.arm("home:${card.id}"); onClick() })
             .heightIn(min = MODE_CARD_MIN_HEIGHT)
-            .gameCardSurface(cardBg)
+            .gameCardSurface(cardBg, glow = if (isLocked) null else gameCardGlow(card.accent, isDone))
             .then(if (isLocked) Modifier.alpha(0.6f) else Modifier),
     ) {
         Column {

@@ -125,18 +125,24 @@ struct GameCardChrome: ViewModifier {
         let dark = Theme.isDark
         // Season surfaces: the season's translucent card (the wall glows through), its glow for
         // the lift, drawn ONCE (under the clip) so the opacity doesn't stack.
+        // Founder 10-05 (2.7.1, "the finished game color" vanished under Haunted glass): on a DARK
+        // season card a finished daily wears its game color — a deep accent glass (SeasonDone.wash)
+        // and an accent glow instead of the season's orange — while an unplayed card stays plain
+        // night glass, so finished reads at a glance. Android gameCardBg, web modeCardSurface.
         if let look = SeasonKit.surfaces, let seasonFill = look.cardFill {
+            let wash: Double = look.dark ? (done ? SeasonDone.wash : SeasonDone.idle) : (done ? 0.16 : 0.08)
+            let glow: Color = look.dark && done ? bar.opacity(SeasonDone.glow) : (look.glow ?? bar).opacity(look.dark ? 0.30 : 0.22)
             VStack(spacing: 0) {
                 Color.clear.frame(height: Self.band)
                 content
             }
             .background(ZStack(alignment: .top) {
-                shape.fill(bar.opacity(done ? 0.16 : 0.08))
+                shape.fill(bar.opacity(wash))
                 CardTrim(color: bar, locked: locked)
             })
             .clipShape(shape)
             .background(shape.fill(seasonFill)
-                .shadow(color: (look.glow ?? bar).opacity(look.dark ? 0.30 : 0.22), radius: 10, x: 0, y: look.dark ? 0 : 4))
+                .shadow(color: glow, radius: look.dark && done ? 12 : 10, x: 0, y: look.dark ? 0 : 4))
         } else {
             let fill: Color = dark ? Theme.surface : bar.wash(done ? 0.16 : 0.10)
             VStack(spacing: 0) {
@@ -153,6 +159,16 @@ struct GameCardChrome: ViewModifier {
             .background(shape.fill(fill).pageCardShadow())
         }
     }
+}
+
+/// A finished daily under a DARK season's glass (founder 10-05): the share of the game color over
+/// the night card (finished / unplayed) and its glow. Android SeasonDone, web SEASON_DONE.
+enum SeasonDone {
+    static let wash = 0.38
+    static let idle = 0.05
+    static let glow = 0.55
+    /// An unplayed hero progress tile: the game color's share over the night card (its icon dims).
+    static let idleTile = 0.10
 }
 
 /// FINISH_SPEC BH1: the candy cap trim — ONE static shape: a slim glossy band in the game's

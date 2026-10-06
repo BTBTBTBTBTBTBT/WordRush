@@ -506,10 +506,15 @@ private fun BannerTile(
             ink = Color.White
             look = Modifier.clip(shape).background(Color(0xFF9CA3AF)).background(gloss)
         }
-        // Not played: a soft pale tile, the icon dimmed.
+        // Not played: a soft pale tile, the icon dimmed (on a dark season's glass a dim night tile
+        // with a hint of the game color, so the played tiles' solid color stands out; iOS parity).
         else -> {
             ink = accent
-            look = Modifier.clip(shape).background(accentWash(accent, 0.12f))
+            val night = WTheme.season?.takeIf { it.dark }?.card
+            look = Modifier.clip(shape).background(
+                if (night != null) Color(TintMath.over(accent.copy(alpha = 1f).toArgb(), SeasonDone.IDLE_TILE, night.toArgb()))
+                else accentWash(accent, 0.12f),
+            )
         }
     }
     val state = when {

@@ -185,8 +185,23 @@ export function surfaceCssVars(s: SeasonSurfaces): Record<string, string> {
   if (s.bannerGlow) v['--season-banner-glow'] = rgba(s.bannerGlow, s.tone === 'dark' ? 0.34 : 0.26);
   if (s.cobweb) v['--season-cobweb'] = rgba(s.cobweb, s.tone === 'dark' ? 0.42 : 0.38);
   if (s.tone === 'dark') v['--banner-gloss'] = '0.04';
+  // A finished daily on dark glass wears its game color (mode-card modeCardSurface, home-banner Tile).
+  if (s.tone === 'dark' && s.card) {
+    v['--season-done-pct'] = `${SEASON_DONE.wash * 100}%`;
+    v['--season-idle-pct'] = `${SEASON_DONE.idle * 100}%`;
+    v['--season-done-glow'] = `${SEASON_DONE.glow}px`;
+    v['--season-tile-idle-pct'] = `${SEASON_DONE.idleTile * 100}%`;
+    v['--season-tile-base'] = s.card;
+  }
   return v;
 }
+
+/**
+ * A finished daily under a DARK season's glass (founder 10-05): the game color's share over the
+ * night card (finished / unplayed), the finished card's glow blur, and an unplayed hero progress
+ * tile's hint of color. iOS SeasonDone, Android SeasonDone.
+ */
+export const SEASON_DONE = { wash: 0.38, idle: 0.05, glow: 12, idleTile: 0.1 } as const;
 
 /** Every variable surfaceCssVars can set (SeasonDocument clears them out of season). */
 export const SURFACE_CSS_VARS = [
@@ -194,4 +209,5 @@ export const SURFACE_CSS_VARS = [
   '--color-text', '--color-text-muted', '--color-text-secondary', '--banner-ink',
   '--season-cap-0', '--season-cap-1', '--season-cap-2', '--season-cap-tint',
   '--season-glow', '--season-banner-glow', '--season-cobweb', '--banner-gloss',
+  '--season-done-pct', '--season-idle-pct', '--season-done-glow', '--season-tile-idle-pct', '--season-tile-base',
 ] as const;
