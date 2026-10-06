@@ -179,10 +179,14 @@ final class AchievementUnlockCenter: ObservableObject {
         let catalog = AchievementCatalog.shared
         if keys.contains(where: { catalog.find($0) == nil }) { await catalog.load() }
         var unlocked = unlockedCount ?? 0
+        var unlockedKeys = Set(keys)
         if unlockedCount == nil, let uid = AuthService.shared.profile?.id {
-            unlocked = await AchievementService.fetchUnlocked(userId: uid).count
+            let have = await AchievementService.fetchUnlocked(userId: uid)
+            unlocked = have.count
+            unlockedKeys.formUnion(have)
         }
-        let total = catalog.all.count
+        // A secret (the musical cast's tunes) counts toward the total only once it's unlocked.
+        let total = catalog.listed(unlocked: unlockedKeys).count
         let moments: [Moment] = keys.compactMap { key in
             if let d = catalog.find(key) {
                 // Hidden achievements stay hidden (their tracking hasn't shipped).

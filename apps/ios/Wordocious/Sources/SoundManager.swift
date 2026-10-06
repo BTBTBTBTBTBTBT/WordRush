@@ -58,6 +58,17 @@ final class SoundManager {
             return e
         }
         var isLaugh: Bool { rawValue.hasPrefix("laugh-") }
+        /// The musical cast (core MusicalCast; docs/cloud-prompts/10): each header hero's own voice on its scale note
+        /// (W O R D O C I O U S = C4 … E5, docs/design/brand/sounds/make-notes.py), file `sfx-note-<id>.m4a`.
+        case noteW = "note-w", noteO1 = "note-o1", noteR = "note-r", noteD = "note-d", noteO2 = "note-o2"
+        case noteC = "note-c", noteI = "note-i", noteO3 = "note-o3", noteU = "note-u", noteS = "note-s"
+
+        /// A header hero's musical note (`id` = MascotID raw value), nil for an unknown id.
+        static func note(_ id: String) -> Effect? {
+            guard let e = Effect(rawValue: "note-\(id)"), e.isNote else { return nil }
+            return e
+        }
+        var isNote: Bool { rawValue.hasPrefix("note-") }
 
         /// Per-sound gain under the master volume (the tiny UI sounds sit lower).
         var gain: Float {
@@ -89,6 +100,8 @@ final class SoundManager {
             case .intro: return 5
             // One hero's giggle: longer than the longest giggle, so taps never machine-gun it.
             case _ where isLaugh: return 0.7
+            // A note: no laugh throttle — a melody repeats a note fast (Twinkle's C C); just a double-fire guard.
+            case _ where isNote: return 0.05
             default: return 0.5
             }
         }
@@ -460,6 +473,14 @@ extension SoundManager {
     /// Web: castLaugh() in lib/sounds.ts; Android: SoundManager.castLaugh().
     func castLaugh(_ id: String) {
         guard let e = Effect.laugh(id) else { return }
+        play(e)
+    }
+
+    /// Sound.castNote — the musical cast (docs/cloud-prompts/10): a musical header hero was tapped and sings its
+    /// scale note in its own voice (no laugh throttle). Silent with Sound off (the floating note still shows).
+    /// Web: castNote() in lib/sounds.ts; Android: SoundManager.castNote().
+    func castNote(_ id: String) {
+        guard let e = Effect.note(id) else { return }
         play(e)
     }
 

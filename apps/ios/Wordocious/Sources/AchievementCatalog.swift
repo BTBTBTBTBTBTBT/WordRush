@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 /// The achievement display catalog (key/name/description/category/icon), fetched
 /// from wordocious.com/api/achievements so the list stays single-sourced in web
@@ -15,6 +16,13 @@ final class AchievementCatalog: ObservableObject {
     private var everything: [AchievementDef] = []
 
     func find(_ key: String) -> AchievementDef? { everything.first { $0.key == key } }
+
+    /// What a player's lists show (core AchievementRules.listed — web listedAchievements): the visible catalog, a
+    /// `secret` one (the musical cast's tunes) only once `unlocked` holds it. The badge grid, the Title Shelves and
+    /// every "n / total" count go through this, so a locked secret is never seen or counted.
+    func listed(unlocked: Set<String>) -> [AchievementDef] {
+        all.filter { AchievementRules.listed(key: $0.key, hidden: $0.hidden, secret: $0.secret, unlocked: unlocked) }
+    }
 
     private func set(_ list: [AchievementDef]) {
         everything = list

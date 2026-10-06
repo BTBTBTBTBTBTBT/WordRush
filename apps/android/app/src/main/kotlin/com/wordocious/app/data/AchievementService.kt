@@ -26,6 +26,8 @@ object AchievementService {
         val hidden: Boolean = false,
         /** BF2: the XP reward, when the catalog sends one. */
         val xp: Int? = null,
+        /** A secret (the musical cast's tunes): awarded normally, listed only once unlocked (core achievementListed). */
+        val secret: Boolean = false,
     )
 
 
@@ -73,6 +75,40 @@ object AchievementService {
         @SerialName("user_id") val userId: String,
         @SerialName("achievement_key") val achievementKey: String,
     )
+
+    /**
+     * The client unlock for achievements earned outside a game result (port of web unlockAchievements in
+     * lib/achievement-service.ts): insert each of [keys] the player doesn't have yet into the shared
+     * `achievements` table (RLS insert-own) and queue the unlock popup for the fresh ones. Returns them.
+     * Never throws; a blank [userId] (a guest) unlocks nothing.
+     */
+    suspend fun unlockAchievements(userId: String, keys: List<String>): List<String> {
+        val wanted = keys.filter { it.isNotBlank() }.distinct()
+        if (userId.isBlank() || wanted.isEmpty()) return emptyList()
+        return runCatching {
+            val client = SupabaseConfig.client
+            val have = client.postgrest["achievements"]
+                .select(Columns.raw("achievement_key")) { filter { eq("user_id", userId); isIn("achievement_key", wanted) } }
+                .decodeList<Row>()
+                .map { it.achievementKey }
+                .toSet()
+            wanted.filter { it !in have }.filter { key ->
+                runCatching { client.postgrest["achievements"].insert(Insert(userId, key)) }.isSuccess
+            }
+        }.getOrElse { emptyList() }
+            .also { if (it.isNotEmpty()) com.wordocious.app.ui.BadgeMoments.achievements(it) }
+    }
+
+    /**
+     * The musical cast (docs/cloud-prompts/10): a tune played on the header cast unlocks its secret achievement
+     * (core MusicalCast.MELODIES) for the signed-in player; guests have nothing to store.
+     */
+    suspend fun unlockTune(achievementKey: String): List<String> {
+        if (achievementKey !in com.wordocious.core.MusicalCast.ACHIEVEMENT_KEYS) return emptyList()
+        if (AuthService.isGuest.value) return emptyList()
+        val userId = AuthService.userId ?: return emptyList()
+        return unlockAchievements(userId, listOf(achievementKey))
+    }
 
     @Serializable
     private data class TotalWinsRow(@SerialName("total_wins") val totalWins: Int = 0)

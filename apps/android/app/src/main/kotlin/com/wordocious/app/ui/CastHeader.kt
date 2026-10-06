@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -47,6 +48,9 @@ import kotlin.random.Random
 // twice in a row) plays its move (CastMoves). Off with Reduce Motion (the in-app
 // toggle or the system "Remove animations") and while its tab is hidden.
 // Visual reference: the `.castrow` in docs/design/brand/mockups/game-kit.html.
+// The musical cast (docs/cloud-prompts/10, core MusicalCast; behind the musicalCast flag — debug builds only): a
+// long-press on any figure turns all ten "musical" (MusicalCastKit.kt), and a tap then plays that hero's note instead
+// of its laugh. Long-press again → back.
 
 /**
  * Where the header's cast row sits in the window (F2: the cold-start intro glides the
@@ -130,9 +134,14 @@ fun LivingCastHeader(
     val clock = remember { androidx.compose.runtime.mutableLongStateOf(System.nanoTime() / 1_000_000) }
     val t0 = remember { System.nanoTime() / 1_000_000 }
     val gestures = remember { androidx.compose.runtime.mutableStateMapOf<MascotId, Long>() }
+    // The musical cast (MusicalCastKit.kt): the mode is shared by every header; the hops + floating notes are this one's.
+    val musicalOn = MusicalCastState.enabled && live
+    val musicalFx = remember { MusicalCastFx() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val taps = remember { androidx.compose.runtime.mutableStateMapOf<MascotId, Long>() }
     var wake by remember { mutableStateOf(0) }
     fun busy(now: Long): Boolean {
+        if (musicalOn && musicalBusy(musicalFx, now)) return true
         val b = rigs ?: return false
         if (taps.values.any { now - it < b.tap.dur * 1000 }) return true
         return gestures.any { (id, at) -> now - at < (b.rigs[id.key]?.gestureSeconds ?: 0.0) * 1000 }
@@ -143,18 +152,22 @@ fun LivingCastHeader(
     // until the next blink. They also hold while the page scrolls, the tab is hidden, or
     // with Reduce Motion / Battery Saver (a tap still plays: the laugh face fades; in season,
     // the costume's hop).
+    // The musical touches (the transform's pop, a note's hop and floating note) run on this same clock, also
+    // without rigs (the static / costumed figures).
     LaunchedEffect(rigs, puppetsOn, calm, hidden, scrolling, wake) {
-        val b = rigs ?: return@LaunchedEffect
+        val b = rigs
+        if (b == null && !musicalOn) return@LaunchedEffect
         if (hidden) return@LaunchedEffect
         while (true) {
             val now = androidx.compose.runtime.withFrameNanos { it } / 1_000_000
             val active = busy(now)
             if (!active && (gestures.isNotEmpty() || taps.isNotEmpty())) { gestures.clear(); taps.clear() }
+            if (musicalOn) musicalFx.prune(now)
             val tw = (now - t0) / 1000.0
-            val blinking = puppetsOn && !calm && !scrolling && b.rigs.values.any { it.blinking(tw) }
+            val blinking = b != null && puppetsOn && !calm && !scrolling && b.rigs.values.any { it.blinking(tw) }
             clock.longValue = now
             if (!active && !blinking) {
-                if (!puppetsOn || calm || scrolling) break
+                if (b == null || !puppetsOn || calm || scrolling) break
                 val wait = b.rigs.values.minOf { it.nextBlinkIn(tw) }
                 delay((wait * 1000).toLong().coerceAtLeast(16L))
             }
@@ -166,6 +179,23 @@ fun LivingCastHeader(
         if (puppetsOn && !calm && gestures[id]?.let { now - it < (rigs?.rigs?.get(id.key)?.gestureSeconds ?: 0.0) * 1000 } != true) gestures[id] = now
         com.wordocious.app.data.Haptics.light(view)
         com.wordocious.app.data.SoundManager.castLaugh(id.key)
+        wake++
+    }
+    /** Musical mode: a note in this hero's voice (silent with sound off) + a selection haptic + a hop (no laugh) + a floating note. */
+    fun playNote(id: MascotId) {
+        val now = System.nanoTime() / 1_000_000
+        com.wordocious.app.data.SoundManager.castNote(id.key)
+        com.wordocious.app.data.Haptics.selection(view)
+        musicalFx.note(id.key, now, still = still)
+        MusicalCastState.tap(id.key)?.let { tune ->
+            scope.launch { com.wordocious.app.data.AchievementService.unlockTune(tune.achievement) }
+        }
+        wake++
+    }
+    /** The long-press: all ten change over, rippling out from [id] (instant under Reduce Motion). */
+    fun toggleMusical(id: MascotId) {
+        MusicalCastState.toggle(id.key, System.nanoTime() / 1_000_000, reduceMotion = WTheme.reducedMotion)
+        com.wordocious.app.data.Haptics.medium(view)
         wake++
     }
     LaunchedEffect(calm, hidden, scrolling, flourishKey, puppetsOn) {
@@ -227,14 +257,33 @@ fun LivingCastHeader(
             ),
         content = {
             MascotId.entries.forEachIndexed { i, id ->
-                val front = puppetsOn && (gestures.containsKey(id) || taps.containsKey(id))
+                val front = (puppetsOn && (gestures.containsKey(id) || taps.containsKey(id))) || (musicalOn && musicalFx.has(id.key))
+                val figureTap = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                // The long-press detector outlives recompositions: it calls the latest handlers.
+                val onDown by androidx.compose.runtime.rememberUpdatedState { if (MusicalCastState.on) { playNote(id); true } else false }
+                val onTap by androidx.compose.runtime.rememberUpdatedState { tapFigure(id) }
+                val onLong by androidx.compose.runtime.rememberUpdatedState { toggleMusical(id) }
                 Box(
                     Modifier
                         .zIndex(if (front) 1f else 0f)
-                        .clickable(
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                            indication = null,
-                        ) { tapFigure(id) }
+                        .then(
+                            if (musicalOn) {
+                                Modifier.musicalFigureGestures(onDown = { onDown() }, onTap = { onTap() }, onLongPress = { onLong() })
+                            } else {
+                                Modifier.clickable(interactionSource = figureTap, indication = null) { tapFigure(id) }
+                            },
+                        )
+                        .then(
+                            if (musicalOn) {
+                                // The musical touches (glow, badge, pop, hop, floating notes) around the figure. The
+                                // frame clock is read only while this figure moves, so a still row draws nothing new.
+                                Modifier.drawWithContent {
+                                    val wall = System.nanoTime() / 1_000_000
+                                    val now = if (musicalFigureMoving(i, id.key, musicalFx, wall)) clock.longValue else wall
+                                    drawMusicalFigure(i, id.key, musicalFx, now) { this@drawWithContent.drawContent() }
+                                }
+                            } else Modifier,
+                        )
                         .drawWithContent {
                         // In season: the costume's transform-only tap hop (squash + stretch, no face swap).
                         val b = rigs

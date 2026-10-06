@@ -13,6 +13,8 @@ struct AchievementDef: Identifiable, Decodable {
     var icon: String? = nil   // present in the /api/achievements payload (badge fallback)
     /// FINISH_SPEC BE: defined but not shown until its tracking ships.
     var hidden: Bool? = nil
+    /// A secret (the musical cast's tunes): awarded normally, listed only once unlocked (core AchievementRules.listed).
+    var secret: Bool? = nil
     /// BF2: the XP reward, when the catalog carries one.
     var xp: Int? = nil
     var id: String { key }
@@ -40,6 +42,25 @@ enum AchievementService {
         var out: [String: String] = [:]
         for r in rows { out[r.achievement_key] = r.unlocked_at ?? "" }
         return out
+    }
+
+    /// The musical cast's tunes (docs/cloud-prompts/10; core MusicalCast): unlock one secret achievement from the
+    /// client — web unlockAchievements / lib/musical-cast.ts unlockTune (the `achievements` table, RLS insert-own) —
+    /// then celebrate it (the popup reveals the secret). Guests (no session): nothing to store. Never throws.
+    @MainActor
+    static func unlockTune(_ key: String) async {
+        let client = AuthService.shared.client
+        guard let uid = try? await client.auth.session.user.id.uuidString.lowercased() else { return }
+        // Only a key the catalog defines (and never a hidden one) — refresh a stale cached catalog first.
+        let catalog = AchievementCatalog.shared
+        if catalog.find(key) == nil { await catalog.load(force: true) }
+        guard let def = catalog.find(key), def.hidden != true else { return }
+        let have = await fetchUnlocked(userId: uid)
+        guard !have.contains(key) else { return }
+        do {
+            try await client.from("achievements").insert(InsertRow(user_id: uid, achievement_key: key)).execute()
+        } catch { return /* unique-violation or transient — ignore */ }
+        await AchievementUnlockCenter.shared.enqueue(keys: [key], late: false)
     }
 
     // MARK: - Unlock detection (port of checkAchievements)
