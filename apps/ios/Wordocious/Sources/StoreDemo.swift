@@ -552,6 +552,10 @@ enum StoreDemoDriver {
             for w in openers(for: answer).prefix(2) { await PerfDrive.type(w, gap: 0.05); PerfDrive.enter(); await PerfDrive.sleep(1.6) }
             await PerfDrive.type(answer, gap: 0.05); PerfDrive.enter()
         case "octo": await octo()
+        // 2.7.1 Gauntlet bug (only 4 of OctoWord's 8 boards drew): clear stages 1-4, then 3 guesses
+        // into stage 5 (OctoWord). `quad`: an Unlimited QuadWord with a few guesses.
+        case "gauntlet": await gauntlet()
+        case "quad": await multi("QUORDLE")
         // An Unlimited ProperNoundle in play (layout checks; pair with `-pnAnswerLength N`).
         case "propernoundle": PerfDrive.playUnlimited("PROPERNOUNDLE")
         case "stats": PerfTour.send(.selectTab(.stats))
@@ -619,6 +623,31 @@ enum StoreDemoDriver {
         PerfTour.game?.storeDemoAddElapsed(seconds: 214)
         for w in ["CRANE", "MOIST"] { await PerfDrive.type(w, gap: 0.05); PerfDrive.enter(); await PerfDrive.sleep(1.4) }
         for a in answers.prefix(3) { await PerfDrive.type(a, gap: 0.05); PerfDrive.enter(); await PerfDrive.sleep(1.4) }
+    }
+
+    private static func multi(_ dbKey: String) async {
+        PerfDrive.playUnlimited(dbKey)
+        await PerfDrive.sleep(2.5)
+        for w in ["CRANE", "MOIST", "PLUMB"] { await PerfDrive.type(w, gap: 0.05); PerfDrive.enter(); await PerfDrive.sleep(1.4) }
+    }
+
+    private static func gauntlet() async {
+        PerfDrive.playUnlimited("GAUNTLET")
+        await PerfDrive.sleep(2.5)
+        // `-gauntletStage N` (0-based) stops on another stage; default 4 = OctoWord.
+        let a = ProcessInfo.processInfo.arguments
+        let stop = a.firstIndex(of: "-gauntletStage").flatMap { a[safe: $0 + 1] }.flatMap { Int($0) } ?? 4
+        for _ in 0..<stop {
+            guard let vm = PerfTour.game else { return }
+            for a in vm.boards.map({ $0.solution.uppercased() }) {
+                await PerfDrive.type(a, gap: 0.04); PerfDrive.enter(); await PerfDrive.sleep(1.2)
+            }
+            await PerfDrive.sleep(1.5)
+            PerfTour.game?.nextStage()
+            await PerfDrive.sleep(2.0)
+        }
+        let solutions = Set(PerfTour.game?.boards.map { $0.solution.uppercased() } ?? [])
+        for w in ["GHOST", "DRINK", "PLACE"] where !solutions.contains(w) { await PerfDrive.type(w, gap: 0.05); PerfDrive.enter(); await PerfDrive.sleep(1.4) }
     }
 
     /// Three real guesses that build toward the answer (a colorful board, never the answer):

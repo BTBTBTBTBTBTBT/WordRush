@@ -71,6 +71,27 @@ final class BoardSizingTests: XCTestCase {
         XCTAssertNil(m.cellHeight)
         XCTAssertEqual(m.tileWidth, m.tileHeight)
     }
+
+    /// 2.7.1 Gauntlet stage 5 (only 4 of 8 boards drew): OctoWord in play is 2 rows of 4
+    /// that together fill — and never exceed — the band between header and keyboard,
+    /// on the founder's phone (iPhone 17 Pro, ~400 × 600 band) with 13 guess rows.
+    func testOctoWordInPlayIsTwoRowsOfFourFillingTheBand() throws {
+        let width = 402.0, height = 600.0, lip = 4.0
+        let m = BoardSizing.multi(boardCount: 8, wordLength: 5, rowsPerBoard: 13,
+                                  width: width, height: height - 2 * lip / BoardSizing.heightFill,
+                                  boardGap: 8, tileGap: 2, framePad: 10)
+        XCTAssertEqual(m.boardColumns, 4)
+        XCTAssertEqual(m.boardRows, 2)
+        let cellH = try XCTUnwrap(m.cellHeight)
+        let gridH = 2 * (cellH + lip) + 8
+        XCTAssertLessThanOrEqual(gridH, height)
+        // Both rows are used: the grid takes most of the band, not half of it.
+        XCTAssertGreaterThan(gridH, height * 0.9)
+        XCTAssertLessThanOrEqual(4 * m.cellWidth + 3 * 8, width)
+        XCTAssertGreaterThan(m.tileHeight, 10)
+        // Every one of the 8 boards has a slot (rows × columns ≥ boards).
+        XCTAssertGreaterThanOrEqual(m.boardRows * m.boardColumns, 8)
+    }
 }
 
 final class CastMovesTests: XCTestCase {

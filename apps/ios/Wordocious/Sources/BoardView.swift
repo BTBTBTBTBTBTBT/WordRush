@@ -915,6 +915,11 @@ struct BoardLayout: View {
         }
         .frame(width: CGFloat(m.gridWidth), alignment: .top)
         .onAppear { stageBoards() }
+        // 2.7.1 Gauntlet fix: a Gauntlet run keeps ONE BoardLayout across its stages, so
+        // this grid only "appears" once (QuadWord, stage 2). OctoWord (stage 5) then
+        // grew the board count to 8 with `builtBoards` stuck at 4 — boards 5–8 stayed
+        // blank pending slots (the empty band). Stage again whenever the count changes.
+        .onChange(of: vm.boardCount) { _ in stageBoards() }
     }
 
     /// BJ14: a pending mini board's slot height (the cell's sized height + its lip).
