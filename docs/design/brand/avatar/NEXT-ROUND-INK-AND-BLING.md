@@ -19,6 +19,31 @@ Build this BEFORE new bodies / hair / bling so everything uses it.
 4. **One looked-at contact sheet per new body/size** (the "worn, not bolted" judgment stays human).
 Result: new bodies/sizes = measure once + one glance; new items = one rule that works on every body.
 
+## TRENDING WITH KIDS (founder 10-05) — generic versions only, never a brand's name, logo or character
+Wearables:
+- Foam clogs with little charms (feet; charms pick 3)
+- Chunky sneakers / light-up sneakers (feet, a soft glow)
+- Bucket hat; frog hat; mushroom hat; strawberry hat; cowboy hat with stars
+- Claw clip, butterfly clips, big bow, scrunchie (with the HAIR tab)
+- Cat-ear headphones; gaming headset
+- Heart-shaped sunglasses; star face gems / puffy stickers
+- Friendship bracelets (stacked, pick colors)
+- Oversized hoodie (wrap/body tint) with a pocket
+- Sports jersey with their letter as the number (soccer / basketball)
+Held:
+- Big tumbler cup with a straw (sticker-covered); boba (have); slushie
+- Fidget popper (rainbow), slime blob, fidget spinner
+- Game controller; phone with a sparkly case; VR goggles (on head)
+- Pickleball paddle; soccer ball; basketball; skateboard (planned); scooter
+- Glow sticks; bubble wand; balloon (planned)
+Buddies (trending animals, our own cute designs):
+- Capybara, axolotl, frog, red panda, corgi, shiba-style pup, sloth, penguin, duckling (planned), bunny,
+  a mini dragon, a tiny unicorn, a robot (planned)
+- Bag-charm plush (a tiny generic plush clipped on, our own monster/critter design)
+Kawaii food friends (buddy slot): onigiri, dumpling, sushi, taco, donut, cupcake, avocado
+Rules: everything original and generic (no brand silhouettes or names); all-ages; fitted by the landmark rules;
+seasonal items stay in the season system.
+
 ## LETTER STYLE — font options for the mascot's letter (founder 10-05)
 Today every mascot's letter is Nunito Black, white. Add a "Letter" control (in the Body or Color tab) with:
 - **Fonts** (all bundled, OFL-licensed, chunky enough to read at avatar size; same 3 platforms + widget + share
