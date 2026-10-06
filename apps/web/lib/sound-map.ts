@@ -13,7 +13,7 @@ export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
   'lose', 'celebrate', 'streak', 'tick', 'notify', 'unlock', 'vs', 'whoosh',
   'intro', 'levelup', 'open',
-  'classic-invalid', 'classic-lose', 'classic-win',
+  'classic-invalid', 'classic-streak', 'classic-lose', 'classic-win',
   'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
@@ -28,6 +28,7 @@ export function soundUrl(name: SoundName): string {
  */
 export const CLASSIC_SOUNDS: Partial<Record<SoundName, SoundName>> = {
   invalid: 'classic-invalid',
+  streak: 'classic-streak',
   lose: 'classic-lose',
   win: 'classic-win',
 };

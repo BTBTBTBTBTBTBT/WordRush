@@ -7,7 +7,7 @@ describe('sound pack', () => {
   it('names exactly the shipped samples (the 16-sound pack + the Sound Lab picks)', () => {
     const files = readdirSync(path.resolve(__dirname, '../public/sounds')).filter((f) => f.endsWith('.m4a')).map((f) => f.replace(/\.m4a$/, '')).sort();
     expect([...SOUND_NAMES].sort()).toEqual(files);
-    expect(SOUND_NAMES).toHaveLength(32);
+    expect(SOUND_NAMES).toHaveLength(33);
     expect(SOUND_NAMES).toContain('intro');
     expect(soundUrl('tap')).toBe('/sounds/tap.m4a');
   });
@@ -54,6 +54,8 @@ describe('Classic picks (sound scope)', () => {
   it('swaps only the listed sounds, only inside Classic', () => {
     expect(scopedSound('invalid', 'classic')).toBe('classic-invalid');
     expect(scopedSound('invalid', null)).toBe('invalid');
+    expect(scopedSound('streak', 'classic')).toBe('classic-streak');
+    expect(scopedSound('streak', null)).toBe('streak');
     expect(scopedSound('lose', 'classic')).toBe('classic-lose');
     expect(scopedSound('lose', null)).toBe('lose');
     expect(scopedSound('win', 'classic')).toBe('classic-win');
