@@ -133,6 +133,8 @@ await go('/');
 await evaluate("localStorage.setItem('wordocious-guest', '1')");
 // Past the first-run tour (AO) so Home / tabs measure Home, not the welcome overlay.
 await evaluate("localStorage.setItem('onboarded-v2', '1')");
+// A/B: PUPPETS=off measures the static cast header (components/ui/cast-puppets.ts kill switch).
+await evaluate(process.env.PUPPETS === 'off' ? "localStorage.setItem('debug-puppets', 'off')" : "localStorage.removeItem('debug-puppets')");
 await step('launch', 4000, () => send('Page.reload'));
 await step('home.idle', 2000, async () => {});
 await step('home.scroll', 600, scrollPage);
