@@ -374,3 +374,15 @@ extension View {
     /// FINISH_SPEC §U: streak +1 → streak · medium.
     func streakBumpFeedback(_ streak: Int?) -> some View { modifier(StreakBumpFeedback(streak: streak)) }
 }
+
+// MARK: - Sound.castLaugh (2.7.1 cast puppets)
+
+extension SoundManager {
+    /// Sound.castLaugh — a header character was tapped and hops + laughs (LivingCastHeader).
+    /// SILENT for now: the founder is picking the laugh in the Sound Lab; wire it here
+    /// (e.g. `play(.<laugh>, volume: 0.6)`, optionally per character `id`).
+    /// Web: castLaugh() in lib/sounds.ts; Android: SoundManager.castLaugh().
+    func castLaugh(_ id: String) {
+        // intentionally silent until the laugh sound is chosen
+    }
+}
