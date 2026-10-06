@@ -45,3 +45,15 @@
   most options gated for free users except a starter handful, everything try-on-able). Produce a table to
   approve, then build the access rules + owned-items ledger + locked card (ChatGPT lock art) + earn checks;
   purchases (Apple/Google IAP + Stripe on web) after the founder sets up the products.
+
+## 6. Bubble-letter alphabet for live headlines (founder 10-06)
+- Dynamic headlines (e.g. Home "ON A ROLL ★ 7 OF 18", greetings, counters) use the live-font fallback; make them
+  match the ChatGPT title art (DAILIES style).
+- Free ChatGPT draws one consistent glyph set using DAILIES as the style reference: A–Z, 0–9, and ★ ! ? , ' · - &
+  in a NEUTRAL/white base with shading (light map), so code can tint each word (purple, gold, game colors,
+  Halloween) like the button family tint. A few sheets, same prompt + reference each time; keyed + trimmed.
+- One "bubble text" renderer ×3: composes any string from the glyph atlas (baseline, kerning pairs, auto-fit to
+  width, two-tone words), pre-rendered/cached so it's as cheap as an image; falls back to today's live font for
+  any missing character.
+- Animations: letters bounce in on appear (staggered), a gentle wave on idle (rare), and the changing part pops
+  when it updates (7 → 8 OF 18 flips/pops) — Reduce Motion = static; same perf rules as the cast.
