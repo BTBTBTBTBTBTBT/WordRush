@@ -14,8 +14,12 @@ feature ×3 (iOS/Android/web) with disjoint files, time-boxed ~45 min → commit
   extras (3, 4/4b, 2, 5, 18 picks).
 - Gates (Opus): readability + smoothness + final ×3 → Android internal + TestFlight for founder → on OK: iOS 2.8
   submit (auto release) + Play production + web push.
-Founder touchpoints: approve art in the Art Library as batches land (the main bottleneck), test the internal
-builds in the evening, give the submit OK.
+Art approvals (founder 10-07): NO Art Library gating — I pick by judgment from what's been approved so far and
+wire it. The one hard rule: the 10 main characters stay true to their LOOK, SOUND and PERSONALITY whenever they're
+drawn or interact with anything (hero refs + docs/MASCOT_SPEC.md + brand-mascots signature features; face-region
+check vs hero; voices/moods match each character's personality; anything off-model is rejected, never shipped).
+Founder reviews themed items + buttons on his phone (internal/TestFlight) or live while I drive the sim, gives
+feedback, then the final submit OK.
 
 ## RUN ORDER — ONE BUILD: 2.8 (founder 10-07: no separate 2.7.2; one App Store review before Halloween)
 Two dates to protect (handled first thing Friday):
@@ -26,7 +30,7 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button.
-B. Free-ChatGPT art session alongside everything (Art Library review): bubble alphabet (6), banner variants (7),
+B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + coin (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
    scenes (20), waiting lobby (22), all leftover buttons (23).
