@@ -1,5 +1,14 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
+## STANDING RULE for every ChatGPT design on this list (founder 10-07)
+- **Main cast stays exactly on-model:** attach cast/hero/<id>.png (+ refs/poses) to every prompt; prefer layering
+  (ChatGPT draws only boards/props/frames, the canonical cast art is composited in code); any redraw passes the
+  face-region check (eyes, mouth/teeth, brows, letter) side by side with the hero, or it's rejected.
+- **Fonts stay the house fonts:** title lettering matches the existing ChatGPT title family (the WORDOCIOUS /
+  game-title style), UI text uses the app's current typefaces; no new or generic fonts in art or screens.
+- **Aesthetic stays the family's:** glossy purple/gold/grey tiles, soft 3D icons, smooth motion; check every new
+  piece next to the live screens it sits beside before wiring.
+
 ## 1. Cloud results → 2.7.2 (URGENT: content swap cutover is 2026-10-13 → 2.7.2 must be live by ~10-12)
 - Review + merge, running iOS/Android tests + sim checks the cloud couldn't:
   - #46 content fixes (swap batch 4, 283 swaps, banks, everyday words, automatic content gate)
