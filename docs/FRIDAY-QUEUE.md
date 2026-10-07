@@ -4,10 +4,11 @@
 A. 2.7.2 (Fri → live by ~10-12): 1 cloud PRs #41–#50 → 1b readability fixes → 10 crossword cells → interim fix for
    "FLAWLES…"/"SWEPT! 1…" truncation → readability + smoothness + final gates → ship ×3; confirm Play 208.
 B. Free-ChatGPT art session (runs alongside A/C, founder reviews in Art Library): pocket boards + coin (9d), welcome
-   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), bubble alphabet (6),
+   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), speech bubbles (19), bubble alphabet (6),
    banner variants (7), wallpaper cutouts (15), "?" sheets (9c).
 C. 2.8 foundations: 6 bubble lettering + no-clip guard → 14 scroll edge/condensing header → 8 shared game tile.
-D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7 daily banners.
+D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7 daily banners + 19 cast
+   speech-bubble notifications.
 E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
    tutorials (all games).
 F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 15 living wallpapers.
@@ -342,3 +343,18 @@ Titles (88), buttons, achievements, Go Pro, moments, podium, walls are done. Lik
 - Home-screen widgets (iOS + Android) art, push-notification images, store screenshots, app icon B (ship
   when the app matches).
 Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, founder picks the order.
+
+## 19. Home notifications as cast speech bubbles (founder 10-07, "@johnnyauer invited you to Classic" card)
+- The invite/alert cards on Home (plain text + mascot thumbnail + ACCEPT/DECLINE) become a cast member TELLING you:
+  a ChatGPT comic speech bubble (family style, house fonts) coming from the delivering cast member (I brings
+  invites with his envelope, W for achievements, etc. — a cast-per-notification map), sender's mascot inside the
+  bubble, short line ("Johnny wants to race you in Classic!"), buttons in the bubble (family Accept / quiet Not now).
+- Voice: the text types out in the bubble while that cast member "talks" in their own chirpy gibberish voice
+  (Animal Crossing style, pitched per character, from the Sound Library / musical-cast voices, item 4) — not a
+  robot text-to-speech. Respects the sound setting + silent mode; first appearance only, never on repeat views.
+- Several at once: one bubble at a time with a small "1 of 3" and swipe/arrows to the next (cast swaps in), or
+  collapse into a single "3 things for you" bubble; never a stack of cards pushing Home down.
+- Closing: swipe the bubble away, or a small family X; "Not now" snoozes; dismissed ones live in a notifications
+  tray (the bell/inbox from item 18) so nothing is lost.
+- Seasons: Halloween skin (Haunted glass bubble, orange/plum ink, costumed cast) via the season registry; readable
+  per the 1b gate. ×3; Reduce Motion = no typing animation.
