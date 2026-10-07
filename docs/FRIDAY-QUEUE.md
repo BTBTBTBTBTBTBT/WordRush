@@ -243,6 +243,10 @@ what I'm doing")
     step when you climb a rank.
 - Uses real resolver renders only (never mockups); smoothness gate (Leaderboard scroll) ×3; compact, symmetric.
 
-## 14. Bug: Leaderboard day title clipped (founder screenshot 10-07)
-- "WEDNESDAY WIZARDS" title art under the cast header has its top line cut off (WEDNESDAY half hidden behind the
-  cast row). Give it room / scale to fit; add it to the item-6 no-clip guard (all day titles × all widths) ×3.
+## 14. Clean scroll edge under the cast header (founder 10-07)
+- Not a bug: when you scroll a little, content (e.g. the WEDNESDAY WIZARDS title) slides under the cast row and
+  gets sliced by a hard edge, which looks clipped. Make it clean on every tab (Home, Leaderboard, Stats, Friends):
+  - a soft fade at the header's bottom edge (content dissolves as it passes under, no hard cut), and
+  - on scroll the cast header gently condenses (mascots shrink to a slimmer row, stats/settings stay) and
+    expands again at the top — smooth, 60 fps, no jumps; Reduce Motion = fade only.
+- Same ×3; check under Halloween surfaces and in the smoothness gate (Home + Leaderboard scroll).
