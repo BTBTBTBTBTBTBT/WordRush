@@ -155,6 +155,16 @@ H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates 
   wrestling (headgear, singlet), lacrosse, rugby, cycling, skiing/snowboarding, surfing/skating, boxing/martial arts
   (gloves, belt in colors), esports (headset). Team-color items recolor with the jersey picker; numbers + name on
   the jersey back; foam finger, trophy, medal, whistle, megaphone as fan/coach extras. No real team/league logos.
+- Gating for 2.8 (founder 10-07): a good share of the new subculture + sports items are PRO (a few free per pack).
+  Every Pro item can be TRIED ON: tap it → your mascot wears it live on the Stage; saving a look with it opens a
+  ChatGPT-designed "Unlock with Pro" popup (your mascot wearing the item, cast on-model, Go Pro + Keep trying on).
+  Per-item purchase comes later (UNLOCKS-AND-SHOP.md); the popup is built so a "Buy $X" button can slot in.
+- Admin grants per item (founder 10-07): BMT + JP can give any Pro item to any user, like granting Pro today.
+  Server-side owned-items ledger (table: user, item id, source = grant / earn / buy / season, granted_by, at;
+  RLS: users read their own rows, writes only via an admin-checked server route; every grant logged), synced ×3 so
+  an owned item saves without Pro. Admin portal user page: "Grant items" picker (search + category filter, multi-
+  select, revoke). Also the foundation for buy + earn later. Apply the SQL per the standing recipe (backup →
+  psql → read back).
 - If the full round can't finish in the 2.8 push, the first packs (goth, emo, punk + 3 more) and the top sports (football, basketball, baseball,
   soccer, hockey, golf) ship in 2.8 and the
   rest flow in as data in later builds — no code changes needed per item.
