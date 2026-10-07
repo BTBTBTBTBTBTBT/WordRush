@@ -4,13 +4,13 @@
 A. 2.7.2 (Fri → live by ~10-12): 1 cloud PRs #41–#50 → 1b readability fixes → 10 crossword cells → interim fix for
    "FLAWLES…"/"SWEPT! 1…" truncation → readability + smoothness + final gates → ship ×3; confirm Play 208.
 B. Free-ChatGPT art session (runs alongside A/C, founder reviews in Art Library): pocket boards + coin (9d), welcome
-   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), bubble alphabet (6),
+   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), bubble alphabet (6),
    banner variants (7), wallpaper cutouts (15), "?" sheets (9c).
 C. 2.8 foundations: 6 bubble lettering + no-clip guard → 14 scroll edge/condensing header → 8 shared game tile.
 D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7 daily banners.
 E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
    tutorials (all games).
-F. Pages: 11 Leaderboard card → 16 Stats page → 15 living wallpapers.
+F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 15 living wallpapers.
 G. Extras: 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store submission on founder's OK.
 
@@ -312,3 +312,16 @@ what I'm doing")
 - Designed in free ChatGPT (house fonts, family look): small section title art for MY GAMES / HEAD TO HEAD /
   BOTS / GUESSES / ACTIVITY (replacing plain caps labels), the stat icon set (trophy, flame, stopwatch, target),
   the win-rate ring, the record bar; sketch the whole page first, then build ×3.
+
+## 17. Player profile overhaul (founder 10-07, Oliver's profile screenshot) — same treatment as Stats/Home
+- Hero: the player's mascot full-body and alive on a mini Stage (podium + curtains from Edit Profile), not a framed
+  tile; tap = laugh/react. Name in the bubble lettering (6); "played 2 hours ago" as a small online dot/line.
+  Rank (84 PLATINUM) + XP bar as one compact strip under the name.
+- Say each thing once: the 24-day streak shows in LATELY and again as "24" in the bottom tiles → one place; the
+  four bottom number tiles get labels/icons or fold into the hero stats; HIGHLIGHTS shows one lonely tile with an
+  empty half → fill symmetrically (2–4 highlights) or fold into Lately.
+- Trophy case: a ChatGPT trophy shelf with 3D gold/silver/bronze medals and counts (not three flat boxes).
+- With you: a HEAD TO HEAD strip (your record vs them, VS + pocket games, same numbers as Stats 16 and Friends 9e)
+  and one clear action row: Challenge (VS) · Pocket game · React — family buttons.
+- ChatGPT: section title art (TROPHY CASE, HIGHLIGHTS, LATELY, HEAD TO HEAD), medal shelf, highlight icons; house
+  fonts, cast on-model; no bordered boxes; compact + symmetric; ×3, your own profile view included.
