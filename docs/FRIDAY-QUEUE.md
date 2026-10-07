@@ -97,6 +97,8 @@
   counters, Friends headers (YOUR TURN, ON NOW, TODAY'S RACE, streak lines), Leaderboard (TODAY'S BOARD, ranks),
   Stats, VS (match found, results), finished-game + Gauntlet stage headlines, banners, season greetings — and
   switch them all to the bubble renderer. Static titles stay ChatGPT title art.
+- Live example (founder 10-07): Home "WORDOCIOUS FLAWLES…" is truncated today (also "SWEPT! 1…", item 8) —
+  both must fit in full.
 - Fit rules (never clipped, always fills its space): auto-fit to the slot (scale UP to fill the width as well as
   down), keep a min size, then wrap to a balanced 2nd line before ever truncating; no "…" ever. Guard test ×3:
   render every headline template with its LONGEST values (long usernames, 4-digit numbers, longest greeting,
@@ -242,6 +244,13 @@ what I'm doing")
     Stats header, finished-game screens, VS intro (mascot vs mascot), invites (9f). Your own mascot hops up a
     step when you climb a rank.
 - Uses real resolver renders only (never mockups); smoothness gate (Leaderboard scroll) ×3; compact, symmetric.
+- Stats profile card (founder 10-07 screenshot): your mascot is trapped in a small framed square with DRESS UP
+  under it → break it out: large full-body mascot standing on the card's edge (overlapping the top like the Home
+  host), breathing/blinking, tap = laugh/pose; DRESS UP becomes a small family pill by its feet; name, title chip,
+  rank/XP re-flow beside it, symmetric.
+- Home host (the mascot over the Daily Sweep / Flawless card): bigger and alive, and it plays WITH the new bubble
+  headline (item 6): hops onto/leans on the letters, letters bounce when it lands, tap it → the headline does a
+  wave; when the counter changes (7 → 8 OF 18) it reacts (cheer/point). Pairs with item 7's daily banners.
 
 ## 14. Clean scroll edge under the cast header (founder 10-07)
 - Not a bug: when you scroll a little, content (e.g. the WEDNESDAY WIZARDS title) slides under the cast row and
