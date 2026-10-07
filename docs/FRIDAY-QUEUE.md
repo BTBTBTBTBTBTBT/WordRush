@@ -501,7 +501,10 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
      button (opens the board exactly as VIEW BOARD does today).
   Then the podium (big living mascots, 13) starts right below: on a standard iPhone the top of the podium (all
   three mascots) is visible without scrolling.
-- Everyone / Friends toggle + share sit on the podium's header line; Yesterday's winners follows the podium.
+- Everyone / Friends toggle + share sit on the podium's header line.
+- Yesterday's winners folds into the BASE of the stage (founder 10-07), not its own card: under the podium floor a
+  "Yesterday" ledge with yesterday's top 3 as small mascots on mini steps (alive, a little wave/bow), tap to
+  expand the full list in place; same backdrop, no separate island. The whole column = one stage top to bottom.
 - Cohesion (founder 10-07): the new top and the podium read as ONE continuous stage, not a card stacked on a card:
   one shared backdrop that flows down (the title's sky/rays continue behind the picker and into the podium's
   sunburst; no hard card edges between them), the selected game's tint carries through title glow → game strip →
