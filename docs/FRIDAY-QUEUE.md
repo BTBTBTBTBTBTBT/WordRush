@@ -478,6 +478,21 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - New black + orange aesthetic pass across the Halloween surfaces (with 1b readability).
 - Seasonal opening animation: the launch intro with the cast in their Halloween costumes (layered on canonical
   art, on-model, personality-true), short, skippable, once per launch.
+- Automatic end (founder 10-07: "on November first the Halloween theme is gone"): it's already date-driven
+  (SEASON_WINDOWS), but today's window is Oct 17 – Nov 1 INCLUSIVE → change the end to Oct 31 in 2.8 (core
+  level-season.ts + LevelSeason.swift + Season.kt + parity fixtures; live 2.7.1 keeps its baked Nov 1, harmless).
+  At local midnight Nov 1, with no build and no server change: the app returns each player to the theme they had
+  before the changeover (saved when Seasonal was preset), the "Seasonal — Halloween" row disappears, widgets go
+  normal on their next refresh, walls/ambient/opening animation/cast skins/Halloween items' shelf go off-season
+  (saved looks keep their items). The row only reappears when a build with the next season (Thanksgiving) ships
+  and its window opens. Also re-check on app foreground (no restart needed; Android currently picks the season
+  at process start → fix). Clock tests ×3: Oct 31 23:59 = Halloween, Nov 1 00:00 = normal + previous theme back +
+  no Seasonal row; a player who opted out stays on their pick.
+- Icon: the app icon can't change by date unless it's an "alternate icon" — iOS then shows a one-time system
+  "You have changed the icon" alert when the app swaps it (Apple requires it); Android can swap via an activity
+  alias silently. Decision needed: (a) ship Halloween as an alternate icon the app switches on Oct 17 and back on
+  Nov 1 (automatic, one alert each way on iOS), or (b) Halloween icon as primary in 2.8, normal again in the
+  ~Nov 1 2.8.x. Store screenshots/text still need the 2.8.x on iOS either way.
 - Season checklist: added to docs/design/brand/seasons/README.md "Every season ships the full kit" so winter etc.
   get Theme toggle, widgets, ambient, opening animation, gates.
 
