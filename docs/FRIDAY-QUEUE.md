@@ -278,3 +278,20 @@ what I'm doing")
 - Not annoying: slow, low-contrast, behind the glass cards; menus/tabs only — games and VS boards stay still;
   Reduce Motion / Low Power = static; pause when the app is in the background; one-shot events (witch, ghost)
   rate-limited. Must pass the smoothness gate ×3 ON vs OFF (smooth beats pretty: cut effects that cost frames).
+
+## 16. Stats page: cleaner, less wordy, designed (founder 10-07, Stats → per-game screenshot)
+- Game picker: a 4-across grid (two rows of 4 per page, swipe for the next 8, page dots) instead of the clipped
+  sideways strip; the People | Bots toggle smaller, centered, under the grid.
+- Say each thing once:
+  - drop the "Classic" header row (the selected tile already says it); its VS button moves into the toggle row.
+  - 8 stat boxes → 4 hero stats with soft 3D icons: Record 3–2 (wins–losses; GAMES is their sum), Win rate (a
+    ring), Streak 2 (best 2 underneath, small), Fastest 16s; "Best 4" moves into the guess chart. Everything else
+    behind "More stats".
+  - VS Bots: one line, "26–17 · 60%", with the bot's mascot, best streak as a small flame; no dashed box (no
+    bordered boxes rule), and "43 matches" dropped (it's 26+17).
+  - Head-to-head rows (johnnyauer 1–0): friend's mascot + a two-color record bar, not a plain line.
+  - Guess distribution empty state: hide it until there's a win, or a ChatGPT illustrated preview (no plain
+    sentence + icon placeholder).
+- Designed in free ChatGPT (house fonts, family look): small section title art for MY GAMES / HEAD TO HEAD /
+  BOTS / GUESSES / ACTIVITY (replacing plain caps labels), the stat icon set (trophy, flame, stopwatch, target),
+  the win-rate ring, the record bar; sketch the whole page first, then build ×3.
