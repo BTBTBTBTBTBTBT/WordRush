@@ -33,12 +33,12 @@ A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + coin (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
-   scenes (20), waiting lobby (22), all leftover buttons (23).
+   scenes (20), waiting lobby (22), all leftover buttons (23), Ocean/Forest/Dark walls + Settings icons/titles (25).
 C. Foundations: 6 bubble lettering + no-clip guard → 14 scroll edge → 8 shared game tile → 23 every button.
 D. Mascots alive: 13 (podium, Stats, Home host, banner cast) + 7 daily banners + 19 speech bubbles + 19b voices/moods.
 E. Friends + pocket games: 9 → 9e → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome tutorials.
 F. Pages: 11 Leaderboard card → 16 Stats → 17 profiles → 20 Go Pro → 22 waiting rooms → 15 living wallpapers → 24 Halloween kit
-   (Theme setting, widgets, opening animation).
+   (Theme setting, widgets, opening animation) → 25 full themes + Settings redesign.
 G. Extras (first to slip to 2.8.1 if time is short): 18 polish sweep → 3 share titles → 4/4b musical cast →
    2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play production (paired) + web, on founder's OK.
@@ -473,3 +473,16 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   art, on-model, personality-true), short, skippable, once per launch.
 - Season checklist: added to docs/design/brand/seasons/README.md "Every season ships the full kit" so winter etc.
   get Theme toggle, widgets, ambient, opening animation, gates.
+
+## 25. Themes really change the look + Settings page redesign (founder 10-07, Settings screenshot)
+- Ocean / Forest (and Dark) barely change anything in the new aesthetic (only some tile colors). Make each theme a
+  full skin through the SAME slots the season system uses (walls, card surfaces/glass, title tints, button family
+  tints, tiles, tab bar, header, widgets): Ocean = deep blue/teal water walls with drifting bubbles (ambient),
+  Forest = green/earth walls with drifting leaves, Dark = true night version of Default. Themes become data
+  (a "themes" block next to season-registry.json, ×3 identical), season skins sit on top when Seasonal is on.
+  ChatGPT walls + any theme-specific art, cast unchanged; readability + smoothness gates per theme.
+- Settings page: still plain caps section labels and plain rows → ChatGPT section titles + soft 3D row icons
+  (theme, keyboard, sound, haptics, notifications, account, help); theme rows show a real mini preview of the
+  theme's wall + card, not just 4 tiles; the giant MANAGE SUBSCRIPTION pill → compact family button inside a
+  nicer Pro card; Sign out → quiet family button; Delete account → small, calm danger link at the very bottom
+  that opens a designed confirm sheet (never a big red slab). Everything compact, symmetric, no plain text areas.
