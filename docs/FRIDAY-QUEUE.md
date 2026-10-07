@@ -130,6 +130,20 @@
   W-monogram crest; founder picks), win/lose moments, and other fun personalized touches.
 - Same readability + smoothness gates; parity ×3.
 
+### 9b. Pocket games feel LIVE when both players are in the game (founder 10-07)
+- Today the game screen polls every 2 s (web game-screen.tsx POLL_MS; iOS/Android similar), so a friend's move
+  lands up to ~2 s late and nothing shows the other player is there. Goal: instant and alive when both are online.
+- Push, don't poll: Supabase Realtime channel per game (broadcast the move the moment the server accepts it +
+  postgres_changes as backup); keep a slow poll only as a fallback when the socket drops.
+- Optimistic moves: your piece/letter/coin lands instantly with its sound; roll back with a gentle shake only if
+  the server rejects it.
+- Presence: the friend's mascot "here now" in the game header (alive, blinking); "thinking…" while it's their turn;
+  "left the game" when they go; their move animates in (slide/drop/flip) with a sound + light haptic.
+- Your-turn moment: a quick pulse + sound when it becomes your turn while you're watching; reactions (existing
+  emoji reactions) appear live as floating bubbles.
+- Measure it: move → friend's screen < 300 ms on two devices (sim + emulator/web); add to the smoothness gate.
+- ×3 iOS / Android / web, ships with the item-9 pocket-games art overhaul.
+
 ## 10. Crosswordocious numbered cells (founder 10-06, screenshot of a finished grid)
 - Cells that carry a clue number draw their letter SMALLER and pushed down/right (C, A, S, T, H, F, L, K in the
   screenshot) while plain cells show a full-size centered letter. Make every cell's letter the same size and
