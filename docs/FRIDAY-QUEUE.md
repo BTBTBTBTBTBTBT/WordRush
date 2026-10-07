@@ -459,9 +459,12 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Guard test ×3: fails if a screen uses a button outside the family components, so new ones can't slip in.
 
 ## 24. Halloween full kit for 2.8 (founder 10-07) — and the same kit for every future season
-- Settings → Theme: "Seasonal" (default; Halloween preset ON when 2.8 is live in the window) | "Classic" (back to
-  the normal look). Choice synced to the account; a Classic opt-out lasts this season only. Family segmented
-  control, ×3; admin Season preview stays separate.
+- Settings → THEME (founder 10-07 screenshot: Default / Dark / Ocean / Forest rows): add a 5th row at the top,
+  "Seasonal — Halloween" (subtitle "Black & orange · until Nov 1", W-O-R-D preview tiles in Halloween style with a
+  tiny bat). During a season window it's preset ON for everyone; picking any other row opts out for this season
+  (synced to the account). When the season ends, everyone returns to the theme they had before. Outside a season
+  the row hides (or shows "Next: <season> · <date>", disabled). Same rule for every future season. ×3; admin
+  Season preview stays separate.
 - Halloween widgets (iOS + Android, all sizes): black + orange, costumed cast, the living-wallpaper art (bats/moon/
   witch) swapped frame-by-frame on the widget timeline (iOS/Android widgets can't animate continuously — subtle
   changes each refresh + any OS-allowed transitions). Readable + Theme-aware (Classic → normal widgets).

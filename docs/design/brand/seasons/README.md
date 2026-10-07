@@ -88,8 +88,8 @@ order, so each season is ready ≥ 3 weeks before its window opens.
 - [ ] Seasonal opening animation: the costumed cast in the launch/intro animation (on-model, layered costumes)
 - [ ] Seasonal widgets (iOS + Android, every size): season palette, costumed cast, the ambient art (frame-swapped
       on the widget timeline — widgets can't run continuous animation)
-- [ ] Settings → Theme works: Seasonal (default, preset on in the window) / Classic; Classic opt-out lasts this
-      season only, the next season starts on again
+- [ ] Settings → Theme has the "Seasonal — <season>" row (preset on in the window; picking Default/Dark/Ocean/
+      Forest opts out for this season only; season end returns everyone to their previous theme)
 - [ ] Mascot-maker seasonal items (step 8), voices/moods if any seasonal voice
 - [ ] Smoothness gate ON vs OFF on every listed screen
 One registry drives all three apps; a new season is ART + DATA, no code. Halloween is the worked example.
