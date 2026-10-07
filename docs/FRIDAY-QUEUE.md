@@ -170,6 +170,23 @@
   - Compact + symmetric; no bordered boxes; check the 0 / 1 / 6+ games, several friends, Halloween states.
 - Pairs with item 9 (online-first friend list, simplified pending rows).
 
+### 9f. Invites that make sense: one branded link per invite, straight to the right screen (founder 10-07,
+screenshot: Johnny's iMessage "Race me at CLASSIC! ⚡ Code ANT5TTZR" under a generic wordocious.com preview)
+- Today a VS/friend invite arrives as TWO things: a generic site card ("Daily Word Games") + a text line with a code,
+  and the receiver can't easily find where to type the code.
+- One link per invite (e.g. wordocious.com/vs/<CODE>, /play/<game>/<CODE>, /friend/<CODE>) whose share PREVIEW is a
+  custom image of exactly what's being sent: sender's mascot vs a "?" / receiver's slot, the game's title art,
+  "Johnny challenges you to CLASSIC", the time to beat if it's a race-my-run, the code small as a fallback.
+  Generated per invite (OG image route, cached), frame + VS art designed in free ChatGPT, one per invite type
+  (live VS, race my run, pocket game, friend request).
+- Short share text beside it ("Johnny wants to race you in Classic"); no separate code line needed.
+- Tapping opens the app straight to that invite's accept screen (iOS universal links / Android app links); not
+  installed → a branded web page with Accept (plays on web) + App Store / Play buttons that keep the code through
+  install (deferred deep link or a "paste your code" prompt on first open).
+- Inbound invites also land on the Friends tab as an "Invites" row at the top (accept / decline), and "Have a code?"
+  sits in one obvious place on Friends + VS (not partly hidden).
+- ×3; test from iMessage, WhatsApp and SMS previews on both platforms; guests too.
+
 ## 10. Crosswordocious numbered cells (founder 10-06, screenshot of a finished grid)
 - Cells that carry a clue number draw their letter SMALLER and pushed down/right (C, A, S, T, H, F, L, K in the
   screenshot) while plain cells show a full-size centered letter. Make every cell's letter the same size and
