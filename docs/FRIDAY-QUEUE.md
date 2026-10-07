@@ -251,6 +251,12 @@ what I'm doing")
 - Home host (the mascot over the Daily Sweep / Flawless card): bigger and alive, and it plays WITH the new bubble
   headline (item 6): hops onto/leans on the letters, letters bounce when it lands, tap it → the headline does a
   wave; when the counter changes (7 → 8 OF 18) it reacts (cheer/point). Pairs with item 7's daily banners.
+- The banner cast (founder 10-07: the D / O / I scene etc. under the headline) come alive too: idle breathe/blink
+  with offset timing, small signature moves (D taps his pencil, O holds up the gem, I sways), and they REACT to
+  the day's moments: a game finished (a little cheer), the banner changing through the day (they hop in / out as
+  the scene swaps), Daily Sweep or Flawless reached (the banner flips with a celebration: confetti, the cast jumps,
+  the bunting swings). Your mascot (host) reacts in sync on the same beat — one choreographed moment, no
+  separate pops. Rig-based from canonical art (on-model), Reduce Motion = static, smoothness gate ×3.
 
 ## 14. Clean scroll edge under the cast header (founder 10-07)
 - Not a bug: when you scroll a little, content (e.g. the WEDNESDAY WIZARDS title) slides under the cast row and
