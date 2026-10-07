@@ -5,14 +5,14 @@ A. 2.7.2 (Fri → live by ~10-12): 1 cloud PRs #41–#50 → 1b readability fixe
    "Take the tour" from game help → interim fix for
    "FLAWLES…"/"SWEPT! 1…" truncation → readability + smoothness + final gates → ship ×3; confirm Play 208.
 B. Free-ChatGPT art session (runs alongside A/C, founder reviews in Art Library): pocket boards + coin (9d), welcome
-   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), speech bubbles (19), Go Pro scenes (20), bubble alphabet (6),
+   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), speech bubbles (19), Go Pro scenes (20), waiting-room lobby (22), bubble alphabet (6),
    banner variants (7), wallpaper cutouts (15), "?" sheets (9c).
 C. 2.8 foundations: 6 bubble lettering + no-clip guard → 14 scroll edge/condensing header → 8 shared game tile.
 D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7 daily banners + 19 cast
    speech-bubble notifications.
 E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
    tutorials (all games).
-F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 20 Go Pro pages → 15 living wallpapers.
+F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 20 Go Pro pages → 22 VS waiting rooms → 15 living wallpapers.
 G. Extras: 18 polish sweep (founder-picked order) → 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store submission on founder's OK.
 
@@ -403,3 +403,16 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Fix ×3: remove "Take the tour" from per-game help; in its place "Watch how" plays THAT game's own quick tutorial
   (item 12). The app tour stays only in Settings → Help as "Replay the app tour". Check nothing auto-opens the
   onboarding for signed-in returning players.
+
+## 22. VS waiting rooms are fun, not empty (founder 10-07, Private Match "waiting for your friend" screenshot)
+- Today: a plain card (PRIVATE MATCH caps, huge spaced code, SHARE INVITE), a 0:00 circle, "SEARCHING" +
+  "WAITING FOR YOUR FRIEND" (says it twice), Cancel, and an empty bottom half.
+- Make it a little lobby scene (ChatGPT, family style): your mascot full-body and alive center stage, an empty
+  spot opposite with a "?" where your friend will appear; when they join, their mascot runs in → the VS intro.
+- Something mindless to do while you wait: tap your mascot to keep a letter tile bouncing (keepy-uppy with a
+  little count), pop floating letter bubbles, or spell a quick warm-up word from drifting tiles — no stakes, no
+  score saved, stops instantly when the match starts. Your mascot does idle bits (checks its watch, yawns, waves at
+  the door) and chirps in its voice (19b).
+- One clear status line in the bubble lettering ("Waiting for Johnny…" with a live timer that actually counts);
+  the invite shown as the branded invite card (9f) with Share + Copy code; Cancel as a quiet family button.
+- Same treatment for bot / random searching and pocket-game waits; Halloween skin; ×3; smoothness gate.
