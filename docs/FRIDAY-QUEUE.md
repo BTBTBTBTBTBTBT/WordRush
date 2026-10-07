@@ -11,7 +11,7 @@ D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7
 E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
    tutorials (all games).
 F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 15 living wallpapers.
-G. Extras: 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
+G. Extras: 18 polish sweep (founder-picked order) → 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store submission on founder's OK.
 
 ## STANDING RULE for every ChatGPT design on this list (founder 10-07)
@@ -329,3 +329,16 @@ what I'm doing")
   tap to cancel); they asked you → Accept / Decline right there. Unfriend / Block / Report move into the "⋯" menu.
 - ChatGPT: section title art (TROPHY CASE, HIGHLIGHTS, LATELY, HEAD TO HEAD), medal shelf, highlight icons, friendship badge; house
   fonts, cast on-model; no bordered boxes; compact + symmetric; ×3, your own profile view included.
+
+## 18. Polish sweep: surfaces with no ChatGPT design pass yet (proposed 10-07, confirm with a screenshot sweep)
+Titles (88), buttons, achievements, Go Pro, moments, podium, walls are done. Likely still plain:
+- Settings (rows, toggles, section icons) and Help / FAQ / Support pages beyond their titles.
+- Sign-in / sign-up / username / onboarding tour screens (titles exist; layouts + illustrations don't).
+- In-game keyboards (keycaps — the button-family leftover), hint / reveal / shuffle bars per game.
+- Finished-game screens per game (result scenes, guess grids, share card) and Gauntlet stage map/progress.
+- VS lobby, bot ladder portraits/cards, searching / match found screens beyond the titles.
+- Empty / error / offline / loading states (no-placeholder rule) and the launch splash.
+- Streak calendar, shields / streak-saver popup, achievements list page, notifications inbox.
+- Home-screen widgets (iOS + Android) art, push-notification images, store screenshots, app icon B (ship
+  when the app matches).
+Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, founder picks the order.
