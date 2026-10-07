@@ -1,20 +1,25 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
-## RUN ORDER (agreed 10-07)
-A. 2.7.2 (Fri → live by ~10-12): 1 cloud PRs #41–#50 → 1b readability fixes → 10 crossword cells → 21 remove
-   "Take the tour" from game help → interim fix for
-   "FLAWLES…"/"SWEPT! 1…" truncation → readability + smoothness + final gates → ship ×3; confirm Play 208.
-B. Free-ChatGPT art session (runs alongside A/C, founder reviews in Art Library): pocket boards + coin (9d), welcome
-   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), speech bubbles (19), Go Pro scenes (20), waiting-room lobby (22), bubble alphabet (6),
-   banner variants (7), wallpaper cutouts (15), "?" sheets (9c).
-C. 2.8 foundations: 6 bubble lettering + no-clip guard → 14 scroll edge/condensing header → 8 shared game tile.
-D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7 daily banners + 19 cast
-   speech-bubble notifications.
-E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
-   tutorials (all games).
-F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 20 Go Pro pages → 22 VS waiting rooms → 23 every button → 15 living wallpapers.
-G. Extras: 18 polish sweep (founder-picked order) → 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
-H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store submission on founder's OK.
+## RUN ORDER — ONE BUILD: 2.8 (founder 10-07: no separate 2.7.2; one App Store review before Halloween)
+Two dates to protect (handled first thing Friday):
+- Content swap batch 4 (PR #46) is set to cut over 2026-10-13 → move its cutover to 2.8's go-live date, after
+  checking that no flagged word is scheduled in the gap (if one is, swap that day's answer in the new date's data).
+- Halloween turns on by itself Oct 17 in the live 2.7.1 (baked in; confirm there's no remote switch) → aim to submit
+  2.8 by ~Oct 14 so it's live by the 17th. Build order puts Halloween-facing work first; anything not gate-ready
+  by the submit day rides in 2.8.1 after launch instead of holding the build.
+Order:
+A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button.
+B. Free-ChatGPT art session alongside everything (Art Library review): bubble alphabet (6), banner variants (7),
+   pocket boards + coin (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
+   wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
+   scenes (20), waiting lobby (22), all leftover buttons (23).
+C. Foundations: 6 bubble lettering + no-clip guard → 14 scroll edge → 8 shared game tile → 23 every button.
+D. Mascots alive: 13 (podium, Stats, Home host, banner cast) + 7 daily banners + 19 speech bubbles + 19b voices/moods.
+E. Friends + pocket games: 9 → 9e → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome tutorials.
+F. Pages: 11 Leaderboard card → 16 Stats → 17 profiles → 20 Go Pro → 22 waiting rooms → 15 living wallpapers.
+G. Extras (first to slip to 2.8.1 if time is short): 18 polish sweep → 3 share titles → 4/4b musical cast →
+   2 Sound Library → 5 mascot content round.
+H. Gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play production (paired) + web, on founder's OK.
 
 ## STANDING RULE for every ChatGPT design on this list (founder 10-07)
 - **Main cast stays exactly on-model:** attach cast/hero/<id>.png (+ refs/poses) to every prompt; prefer layering
@@ -27,7 +32,7 @@ H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store 
 - **Aesthetic stays the family's:** glossy purple/gold/grey tiles, soft 3D icons, smooth motion; check every new
   piece next to the live screens it sits beside before wiring.
 
-## 1. Cloud results → 2.7.2 (URGENT: content swap cutover is 2026-10-13 → 2.7.2 must be live by ~10-12)
+## 1. Cloud results → 2.8 (move PR #46's 10-13 cutover to 2.8's go-live date; see RUN ORDER)
 - Review + merge, running iOS/Android tests + sim checks the cloud couldn't:
   - #46 content fixes (swap batch 4, 283 swaps, banks, everyday words, automatic content gate)
   - #45 change/remove profile photo ×3 + web upload
@@ -37,7 +42,7 @@ H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store 
 - Android 208 (widget fix): confirm Play approval.
 - Cut + gate + submit 2.7.2 (iOS + Play), push web, bible entry.
 
-## 1b. Halloween readability audit — MUST be in 2.7.2 (founder 10-06)
+## 1b. Halloween readability audit — MUST be in 2.8 (founder 10-06)
 - Founder: "a lot of areas where the font is impossible to read" under the Halloween skin.
 - NOTE: 2.7.1 (live) turns Halloween ON automatically on Oct 17 — so these fixes must be live in 2.7.2 before
   Oct 17, or every player sees unreadable text. (2.7.2 target: live by ~Oct 12 for the content cutover anyway.)
