@@ -141,7 +141,7 @@ One registry drives all three apps; a new season is ART + DATA, no code. Hallowe
    No app code changes: core `avatar-season.ts` (Swift `AvatarSeason`, Kotlin `AvatarSeason`) derives the shelf from the
    parts' `season` field. The shelf (first tab, the season's first hat as its icon, "<Season>" label) shows during the
    window or the admin Season preview; tiles wear the season tag; items are free; a SAVED seasonal item stays on the
-   mascot (and in its tab) after the season; unsaved ones hide until next year; Randomize skips them out of season;
+   mascot (and in its tab) after the season; unsaved ones STAY in their normal category off-season with buy / Pro / earn routes (founder 10-07: items never disappear; only the highlighted seasonal shelf changes); Randomize skips them out of season;
    Home shows "Dress up for <Season>?" once per season per year to players not already wearing one (Yes opens the
    shelf). Check it: iOS `-storeDemo -storeShot room-season -debug-season <id>` (`hostplain` for the nudge,
    `-storeDemoLook head=<id>` for a saved look); Android `--es dressDemo room-season|nudge --es dressSeason <id>|off

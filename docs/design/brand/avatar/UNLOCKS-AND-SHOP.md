@@ -8,6 +8,9 @@
   Stage); saving is gated by the item's route — **buy it, go Pro, or earn it** (per item; some items allow more
   than one route, e.g. Pro OR buy, earn OR buy).
 - The locked card shows the routes that apply to that item (Buy $X · Included with Pro · Earn: <condition>).
+- **Seasonal items never disappear (founder 10-07):** the season only changes which items are HIGHLIGHTED (the
+  seasonal shelf); every item stays in its normal category year-round — free/featured in its season, buy / Pro /
+  earn off-season — so the catalog of things players can get keeps growing.
 
 "Mascot items unlocking when certain things are achieved… rare items only attainable by purchasing… or by getting a
 certain puzzle at a certain time, a certain streak… when clicking on the item, it tells you that it's locked (with a
@@ -20,7 +23,7 @@ Every item gets an `access` rule in avatar-parts.json (core-validated, mirrored 
 - **earn** — one or more unlock conditions (below); once earned it's yours forever
 - **buy** — a direct purchase (no random packs, ever)
 - **earn OR buy** — the main model for rare items: grinders earn it, impatient players buy it
-- **limited** — earnable/buyable only in a window (holiday, event), then retired (returns rarely, if ever)
+- ~~limited~~ — dropped (founder 10-07): items never leave the store; seasons only change what's highlighted
 
 ## Unlock conditions (data, checked server-side, tied to Stats/Moments)
 - Streaks: 7 / 30 / 100 / 365-day play streak; sweep streaks
@@ -54,7 +57,7 @@ Server is the source of truth (no client-side unlock hacks); unlock = a row in a
 
 ## Catalog plan
 - Re-tag existing items: some become earn / earn-or-buy rares (e.g. crowns, golden chain, rainbow mohawk,
-  supercape, the Halloween witch hat after the season = "limited").
+  supercape; the Halloween witch hat stays in Hats off-season as buy / Pro / earn).
 - New premium lines: metallic + glitter variants of favorites, animated items (sparkle trails, glowing halos —
   ties into the rig), legendary sets (Royal, Space, Ocean, Dragon), team jerseys' pro templates, rare buddies
   (golden capybara, tiny dragon), rare letter finishes (gold, rainbow, glitter), rare poses/dances (ties to
