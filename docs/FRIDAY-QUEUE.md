@@ -416,3 +416,7 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - One clear status line in the bubble lettering ("Waiting for Johnny…" with a live timer that actually counts);
   the invite shown as the branded invite card (9f) with Share + Copy code; Cancel as a quiet family button.
 - Same treatment for bot / random searching and pocket-game waits; Halloween skin; ×3; smoothness gate.
+- The SHARE INVITE button is ugly (founder 10-07): oversized full-width purple pill, huge type, a tiny washed-out
+  share icon. Redesign in ChatGPT as part of the invite card: a compact family button sized to its label, a real
+  3D share icon, plus a matching small Copy-code chip; same for Cancel. Then sweep every other oversized
+  full-width pill left in VS / Friends / Leaderboard (e.g. VIEW BOARD, item 11) to the same family style.
