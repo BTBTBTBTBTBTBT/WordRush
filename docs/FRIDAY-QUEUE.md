@@ -37,7 +37,7 @@ B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy i
 C. Foundations: 6 bubble lettering + no-clip guard → 14 scroll edge → 8 shared game tile → 23 every button.
 D. Mascots alive: 13 (podium, Stats, Home host, banner cast) + 7 daily banners + 19 speech bubbles + 19b voices/moods.
 E. Friends + pocket games: 9 → 9e → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome tutorials.
-F. Pages: 11 Leaderboard card → 16 Stats → 17 profiles → 20 Go Pro → 22 waiting rooms → 15 living wallpapers → 24 Halloween kit
+F. Pages: 11 + 11b Leaderboard living top section → 16 Stats → 17 profiles → 20 Go Pro → 22 waiting rooms → 15 living wallpapers → 24 Halloween kit
    (Theme setting, widgets, opening animation) → 25 full themes + Settings redesign.
 G. Extras (first to slip to 2.8.1 if time is short): 18 polish sweep → 3 share titles → 4/4b musical cast →
    2 Sound Library → 5 mascot content round.
@@ -486,3 +486,21 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   theme's wall + card, not just 4 tiles; the giant MANAGE SUBSCRIPTION pill → compact family button inside a
   nicer Pro card; Sign out → quiet family button; Delete account → small, calm danger link at the very bottom
   that opens a designed confirm sheet (never a big red slab). Everything compact, symmetric, no plain text areas.
+
+## 11b. Leaderboard top = ONE living section (founder 10-07, "WEDNESDAY WIZARDS" screenshot) — supersedes 11's layout
+- Today: a small centered day-title image (U wizard + WEDNESDAY WIZARDS), then a date/reset card with two game rows,
+  then a separate CLASSIC strip with VIEW BOARD, then TODAY'S BOARD — four stacked blocks, the podium half off-screen.
+- One combined section, top to bottom:
+  1. Day title, alive: the day name in the bubble lettering (6), animated (Wizards: letters sparkle in with a wand
+     swish; each weekday its own little motion), with YOUR mascot interacting with it (leans on it, taps a letter
+     that bounces; on Wizard Wednesday it wears the day's wizard hat for the day only), and the day's cast host
+     (U for Wednesday) beside it, both on-model and in character. Fills the width (no small centered image).
+  2. Game picker in the same card: the two rows (WORDOCIOUS / PUZZLES) compact, "Oct 7 · resets in 07:11" as a
+     small line under the title, not its own header.
+  3. Selected game strip (from 11): the game's title art, "7 today", your rank + stats, one compact "Your board"
+     button (opens the board exactly as VIEW BOARD does today).
+  Then the podium (big living mascots, 13) starts right below: on a standard iPhone the top of the podium (all
+  three mascots) is visible without scrolling.
+- Everyone / Friends toggle + share sit on the podium's header line; Yesterday's winners follows the podium.
+- Keep every function: game switching, board view, Everyone/Friends, share, reset timer, yesterday's winners;
+  tests for each ×3. Smoothness gate (Leaderboard scroll + game switch).
