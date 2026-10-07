@@ -323,5 +323,9 @@ what I'm doing")
 - Trophy case: a ChatGPT trophy shelf with 3D gold/silver/bronze medals and counts (not three flat boxes).
 - With you: a HEAD TO HEAD strip (your record vs them, VS + pocket games, same numbers as Stats 16 and Friends 9e)
   and one clear action row: Challenge (VS) · Pocket game · React — family buttons.
-- ChatGPT: section title art (TROPHY CASE, HIGHLIGHTS, LATELY, HEAD TO HEAD), medal shelf, highlight icons; house
+- Friendship status (founder 10-07: the teal "FRIENDS" pill top-right is ugly): remove it. Show it on the hero:
+  friends → a small ChatGPT friendship badge by the name (two linked mascot hands / heart tag) + "Friends since
+  Sep 2026"; not friends → a clear "Add friend" family button in the action row; request sent → "Requested" (quiet,
+  tap to cancel); they asked you → Accept / Decline right there. Unfriend / Block / Report move into the "⋯" menu.
+- ChatGPT: section title art (TROPHY CASE, HIGHLIGHTS, LATELY, HEAD TO HEAD), medal shelf, highlight icons, friendship badge; house
   fonts, cast on-model; no bordered boxes; compact + symmetric; ×3, your own profile view included.
