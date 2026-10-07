@@ -12,7 +12,7 @@ D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7
    speech-bubble notifications.
 E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
    tutorials (all games).
-F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 20 Go Pro pages → 22 VS waiting rooms → 15 living wallpapers.
+F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 20 Go Pro pages → 22 VS waiting rooms → 23 every button → 15 living wallpapers.
 G. Extras: 18 polish sweep (founder-picked order) → 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store submission on founder's OK.
 
@@ -22,6 +22,8 @@ H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store 
   face-region check (eyes, mouth/teeth, brows, letter) side by side with the hero, or it's rejected.
 - **Fonts stay the house fonts:** title lettering matches the existing ChatGPT title family (the WORDOCIOUS /
   game-title style), UI text uses the app's current typefaces; no new or generic fonts in art or screens.
+- **Every button is covered (founder 10-07: "All buttons should be covered"):** no button ships outside the
+  ChatGPT family style — not just the ones named in items. Item 23 does the full sweep.
 - **Aesthetic stays the family's:** glossy purple/gold/grey tiles, soft 3D icons, smooth motion; check every new
   piece next to the live screens it sits beside before wiring.
 
@@ -420,3 +422,11 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   share icon. Redesign in ChatGPT as part of the invite card: a compact family button sized to its label, a real
   3D share icon, plus a matching small Copy-code chip; same for Cancel. Then sweep every other oversized
   full-width pill left in VS / Friends / Leaderboard (e.g. VIEW BOARD, item 11) to the same family style.
+
+## 23. Every button in the app on the ChatGPT family style (founder 10-07)
+- Inventory ALL buttons ×3 (code scan for raw Button / Pressable / <button> + CandyLabel / old candy pills, and a
+  screenshot pass of every screen incl. sheets, popups, empty states, settings, sign-in, admin-facing excluded):
+  primary, secondary/quiet, icon, chip, toggle/segmented, keycaps, close X, share/copy, menu ⋯.
+- Redesign the leftovers in ChatGPT (the ~110 old candy buttons noted 10-05 + anything newer), sized to their
+  label, real 3D icons, per-context tint, Halloween tints via the season registry; wire ×3.
+- Guard test ×3: fails if a screen uses a button outside the family components, so new ones can't slip in.
