@@ -370,6 +370,11 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Built as a tiny procedural "babble" synth (syllables → pitched blips per voice, so any text works, no recordings,
   offline, identical ×3 from one shared voice spec in packages/core); voices approved in the Sound Library (item 2);
   saved with the look, synced; respects sound settings + silent mode.
+- Emotions per voice (founder 10-07): every voice has moods — cheer (win, sweep, flawless), happy/chatty
+  (default), upset/grumpy (a loss, streak lost — cartoon "hmph!", never harsh or scary), surprised (close call,
+  rare find), laugh (tapped), sleepy (idle), nervous (last guess). Each mood shifts pitch, speed and rhythm and
+  pairs with the matching face + pose on the rig (13), for your mascot and the cast alike. Mood is chosen by the
+  moment (finished screens, VS results, Gauntlet, podium, bubbles); Sound Library previews every voice × mood.
 
 ### 19b. Your mascot has a voice — a Voice tab in the Dressing Room (founder 10-07)
 - Your own mascot talks too: YOUR news (streak, level up, your achievements, "your turn") comes from your mascot's
