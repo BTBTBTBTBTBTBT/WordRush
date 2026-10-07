@@ -230,3 +230,19 @@ what I'm doing")
   player (synced, so a new device doesn't re-show it); "How to Play" from the "?" opens the same content later.
 - Designed in free ChatGPT first (welcome card frame, step illustrations per game); American spelling; ×3.
 - Pocket games: also explain turns with a friend. Works for guests too.
+
+## 13. Mascots BIG and alive wherever they appear (founder 10-07, Leaderboard podium screenshot)
+- Today the podium shows small mascots inside framed tiles floating above the steps (MJT/Oliver tiny). Make the
+  player's custom mascot the star:
+  - Podium: full-body mascots STANDING on their steps, no tile frame, ~2–3× today's size (1st biggest, crown on
+    its head, not floating above); name + score on a plaque on the step; the stats line simplified (game · time).
+  - Alive (rig from cloud 06): breathe + blink; pose by place (1st cheers, 2nd claps, 3rd waves); confetti burst
+    when the podium loads; tap a mascot → their mini Stage card (look, title, streak) + a reaction.
+  - Same rule elsewhere: Yesterday's winners, ranks 4+ rows (mascot heads), Friends race pills + friend cards,
+    Stats header, finished-game screens, VS intro (mascot vs mascot), invites (9f). Your own mascot hops up a
+    step when you climb a rank.
+- Uses real resolver renders only (never mockups); smoothness gate (Leaderboard scroll) ×3; compact, symmetric.
+
+## 14. Bug: Leaderboard day title clipped (founder screenshot 10-07)
+- "WEDNESDAY WIZARDS" title art under the cast header has its top line cut off (WEDNESDAY half hidden behind the
+  cast row). Give it room / scale to fit; add it to the item-6 no-clip guard (all day titles × all widths) ×3.
