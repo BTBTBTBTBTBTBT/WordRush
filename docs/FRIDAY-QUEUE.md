@@ -37,7 +37,8 @@ B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy i
 C. Foundations: 6 bubble lettering + no-clip guard → 14 scroll edge → 8 shared game tile → 23 every button.
 D. Mascots alive: 13 (podium, Stats, Home host, banner cast) + 7 daily banners + 19 speech bubbles + 19b voices/moods.
 E. Friends + pocket games: 9 → 9e → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome tutorials.
-F. Pages: 11 Leaderboard card → 16 Stats → 17 profiles → 20 Go Pro → 22 waiting rooms → 15 living wallpapers.
+F. Pages: 11 Leaderboard card → 16 Stats → 17 profiles → 20 Go Pro → 22 waiting rooms → 15 living wallpapers → 24 Halloween kit
+   (Theme setting, widgets, opening animation).
 G. Extras (first to slip to 2.8.1 if time is short): 18 polish sweep → 3 share titles → 4/4b musical cast →
    2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play production (paired) + web, on founder's OK.
@@ -456,3 +457,16 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Redesign the leftovers in ChatGPT (the ~110 old candy buttons noted 10-05 + anything newer), sized to their
   label, real 3D icons, per-context tint, Halloween tints via the season registry; wire ×3.
 - Guard test ×3: fails if a screen uses a button outside the family components, so new ones can't slip in.
+
+## 24. Halloween full kit for 2.8 (founder 10-07) — and the same kit for every future season
+- Settings → Theme: "Seasonal" (default; Halloween preset ON when 2.8 is live in the window) | "Classic" (back to
+  the normal look). Choice synced to the account; a Classic opt-out lasts this season only. Family segmented
+  control, ×3; admin Season preview stays separate.
+- Halloween widgets (iOS + Android, all sizes): black + orange, costumed cast, the living-wallpaper art (bats/moon/
+  witch) swapped frame-by-frame on the widget timeline (iOS/Android widgets can't animate continuously — subtle
+  changes each refresh + any OS-allowed transitions). Readable + Theme-aware (Classic → normal widgets).
+- New black + orange aesthetic pass across the Halloween surfaces (with 1b readability).
+- Seasonal opening animation: the launch intro with the cast in their Halloween costumes (layered on canonical
+  art, on-model, personality-true), short, skippable, once per launch.
+- Season checklist: added to docs/design/brand/seasons/README.md "Every season ships the full kit" so winter etc.
+  get Theme toggle, widgets, ambient, opening animation, gates.

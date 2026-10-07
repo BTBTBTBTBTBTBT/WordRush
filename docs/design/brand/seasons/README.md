@@ -80,6 +80,18 @@ Next upcoming season first (Halloween now; see HALLOWEEN-2026-PLAN.md), then the
 order, so each season is ready ≥ 3 weeks before its window opens.
 
 ## How to add a season (the season preview workflow, 10-05)
+
+**Every season ships the full kit (founder 10-07)** — a season isn't done until each of these exists and passes:
+- [ ] Surfaces + walls + titles + cast skins + banner + props (steps below)
+- [ ] Its own palette/aesthetic (Halloween = black + orange), readable: the readability gate passes (WCAG AA vs pixels)
+- [ ] Living background: the season's subtle ambient animation (`ambient` registry slot — e.g. bats, witch fly-by)
+- [ ] Seasonal opening animation: the costumed cast in the launch/intro animation (on-model, layered costumes)
+- [ ] Seasonal widgets (iOS + Android, every size): season palette, costumed cast, the ambient art (frame-swapped
+      on the widget timeline — widgets can't run continuous animation)
+- [ ] Settings → Theme works: Seasonal (default, preset on in the window) / Classic; Classic opt-out lasts this
+      season only, the next season starts on again
+- [ ] Mascot-maker seasonal items (step 8), voices/moods if any seasonal voice
+- [ ] Smoothness gate ON vs OFF on every listed screen
 One registry drives all three apps; a new season is ART + DATA, no code. Halloween is the worked example.
 1. **Art.** Make it here: `<season>/titles/` (one per game / screen key), `<season>/walls/` (code-drawn with the
    Halloween engine: `wall-<page>.webp` night + `wall-<page>-light.webp` light twin, `-wide` for desktop; pages are
