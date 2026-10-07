@@ -42,6 +42,11 @@ F. Pages: 11 + 11b Leaderboard living top section → 16 Stats → 17 profiles �
 G. Extras (first to slip to 2.8.1 if time is short): 18 polish sweep → 3 share titles → 4/4b musical cast →
    2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play production (paired) + web, on founder's OK.
+   Expedited review (founder 10-07): request it right after submitting. Honest grounds: the live 2.7.1 turns on the
+   Halloween theme by itself on Oct 17 and has readability problems in it (text contrast on the Halloween screens,
+   found by our audit); 2.8 fixes them and must be live before the 17th. Draft the request text ready to paste;
+   founder fills Apple's form (the app picker resists automation). Last expedite was 10-06 (2.7.1) — Apple may say
+   no on a big release, so submit as early as possible regardless.
 
 ## STANDING RULE for every ChatGPT design on this list (founder 10-07)
 - **Main cast stays exactly on-model:** attach cast/hero/<id>.png (+ refs/poses) to every prompt; prefer layering
