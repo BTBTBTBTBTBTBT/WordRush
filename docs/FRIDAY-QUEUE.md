@@ -144,6 +144,14 @@
 - Measure it: move → friend's screen < 300 ms on two devices (sim + emulator/web); add to the smoothness gate.
 - ×3 iOS / Android / web, ships with the item-9 pocket-games art overhaul.
 
+### 9c. Pocket games get a "?" + How to Play like every other game (founder 10-07)
+- In each pocket game, a family "?" button in the top-right corner (same placement, size and style as the other
+  games' headers) opens a How to Play sheet in the same format as the other games' rules screens: short steps,
+  example boards/illustrations, the win rule, plus how turns work with a friend (your game waits for you).
+- Themed to each pocket game's new ChatGPT art (item 9), with its cast member; American spelling; first-time
+  auto-show once per game, then only on tap.
+- iOS / Android / web, built together with the item-9 art overhaul and 9b live play.
+
 ## 10. Crosswordocious numbered cells (founder 10-06, screenshot of a finished grid)
 - Cells that carry a clue number draw their letter SMALLER and pushed down/right (C, A, S, T, H, F, L, K in the
   screenshot) while plain cells show a full-size centered letter. Make every cell's letter the same size and
