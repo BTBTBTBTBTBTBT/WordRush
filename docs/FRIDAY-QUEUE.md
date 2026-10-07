@@ -131,6 +131,24 @@ H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates 
   approve, then build the access rules + owned-items ledger + locked card (ChatGPT lock art) + earn checks;
   purchases (Apple/Google IAP + Stripe on web) after the founder sets up the products.
 
+### 5b. Subculture packs — something for everyone (founder 10-07)
+- Plentiful new options across every menu they fit (hair, head, face/eyes, neck, wraps/outerwear, held, back, feet,
+  buddies, letter styles): goth (lace choker, black lipstick + winged liner, velvet cape, bat-wing hair clip),
+  emo/scene (side-swept fringe with streaks, studded belt, striped arm warmers, checker wristbands), punk (liberty-
+  spike + mohawk hair in colors, safety-pin + stud jacket, plaid wrap, combat boots), plus grunge, skater, metal/
+  rocker, hip-hop, K-pop/idol, kawaii/harajuku, cottagecore, western, surfer, gamer, anime, preppy, hippie, steampunk,
+  cyber/techwear, raver/neon, sporty/athleisure. Target ~8–15 items per pack (≈150+ items), colorable where it makes
+  sense (hair colors, primary/secondary).
+- All-ages rules: no brands or band logos, no weapons/drug/alcohol references, no hate or political symbols (incl.
+  anarchy A), no religious garments as costume; cartoon skulls/studs/spikes OK, kept cute and on-family.
+- Built through the cloud landmark autofit (#41) + body rigs (#47): ChatGPT draws each piece on transparent in the
+  family style → one rule per item → fits all 12 bodies + sizes automatically → audit guards (arms, face, letter,
+  outline) + contact sheet check before shipping. Letter styles per pack (gothic blackletter, graffiti, pixel…)
+  join the letter-font work. Gated per the unlock model (some free per pack, most Pro / buy / earn), each pack a
+  Dressing Room collection with a set-bonus item (collect the set).
+- If the full round can't finish in the 2.8 push, the first packs (goth, emo, punk + 3 more) ship in 2.8 and the
+  rest flow in as data in later builds — no code changes needed per item.
+
 ## 6. Bubble-letter alphabet for live headlines (founder 10-06)
 - Dynamic headlines (e.g. Home "ON A ROLL ★ 7 OF 18", greetings, counters) use the live-font fallback; make them
   match the ChatGPT title art (DAILIES style).
