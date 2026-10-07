@@ -280,8 +280,11 @@ what I'm doing")
   rate-limited. Must pass the smoothness gate ×3 ON vs OFF (smooth beats pretty: cut effects that cost frames).
 
 ## 16. Stats page: cleaner, less wordy, designed (founder 10-07, Stats → per-game screenshot)
-- Game picker: a 4-across grid (two rows of 4 per page, swipe for the next 8, page dots) instead of the clipped
-  sideways strip; the People | Bots toggle smaller, centered, under the grid.
+- VS game picker: all 9 VS games (each has bots) fit at once, no swipe: 5 on top, 4 centered under, equal tiles;
+  the People | Bots toggle smaller, centered, under the grid (replaces the clipped sideways strip).
+- Pocket games get stats too: a POCKET GAMES section (6 game tiles; record per game vs friends, e.g. Ghost 3–1,
+  best Word Chain run) and per-friend pocket records in HEAD TO HEAD; the same numbers show on that friend's card
+  on the Friends tab (item 9e) so the two pages agree.
 - Say each thing once:
   - drop the "Classic" header row (the selected tile already says it); its VS button moves into the toggle row.
   - 8 stat boxes → 4 hero stats with soft 3D icons: Record 3–2 (wins–losses; GAMES is their sum), Win rate (a
