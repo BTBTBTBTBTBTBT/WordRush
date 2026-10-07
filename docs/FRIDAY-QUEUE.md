@@ -1,17 +1,18 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
 ## RUN ORDER (agreed 10-07)
-A. 2.7.2 (Fri → live by ~10-12): 1 cloud PRs #41–#50 → 1b readability fixes → 10 crossword cells → interim fix for
+A. 2.7.2 (Fri → live by ~10-12): 1 cloud PRs #41–#50 → 1b readability fixes → 10 crossword cells → 21 remove
+   "Take the tour" from game help → interim fix for
    "FLAWLES…"/"SWEPT! 1…" truncation → readability + smoothness + final gates → ship ×3; confirm Play 208.
 B. Free-ChatGPT art session (runs alongside A/C, founder reviews in Art Library): pocket boards + coin (9d), welcome
-   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), speech bubbles (19), bubble alphabet (6),
+   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), profile trophy shelf + titles (17), speech bubbles (19), Go Pro scenes (20), bubble alphabet (6),
    banner variants (7), wallpaper cutouts (15), "?" sheets (9c).
 C. 2.8 foundations: 6 bubble lettering + no-clip guard → 14 scroll edge/condensing header → 8 shared game tile.
 D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7 daily banners + 19 cast
    speech-bubble notifications.
 E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
    tutorials (all games).
-F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 15 living wallpapers.
+F. Pages: 11 Leaderboard card → 16 Stats page → 17 player profiles → 20 Go Pro pages → 15 living wallpapers.
 G. Extras: 18 polish sweep (founder-picked order) → 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
 H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store submission on founder's OK.
 
@@ -387,3 +388,18 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Built as a tiny procedural "babble" synth (syllables → pitched blips per voice, so any text works, no recordings,
   offline, ×3 identical from one shared voice spec in packages/core); voices approved in the Sound Library (item 2);
   saved with the look (avatar config v-next), synced; respects sound settings + silent mode.
+
+## 20. Go Pro pages: your mascot alive + each page distinct (founder 10-07)
+- Free players' own mascot animates on every Go Pro screen (breathe/blink, tries on a Pro item, cheers on the
+  benefits, voice mood from 19b), not a static image.
+- The Go Pro pages all look alike → each reason gets its own scene: the feature it's selling shown in action
+  (e.g. Unlimited: mascot racing through boards; Pro items: mascot in the Dressing Room wearing a locked item;
+  VS/bots, stats, no limits…). ChatGPT scenes in the family style, cast on-model; Halloween skin; ×3.
+
+## 21. "Take the tour" inside game help sends players to the generic welcome slides (founder 10-07)
+- Cause (iOS, same on Android/web to verify): every game's "?" help sheet (GuideSheet.swift ~:197) and How to Play
+  (HowToPlayView.swift ~:113) carry a "Take the tour" button that replays the first-run app onboarding (welcome +
+  four cards) — the same slides for every game, which makes no sense to a seasoned player.
+- Fix ×3: remove "Take the tour" from per-game help; in its place "Watch how" plays THAT game's own quick tutorial
+  (item 12). The app tour stays only in Settings → Help as "Replay the app tour". Check nothing auto-opens the
+  onboarding for signed-in returning players.
