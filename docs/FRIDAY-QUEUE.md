@@ -41,7 +41,7 @@ F. Pages: 11 + 11b Leaderboard living top section → 16 Stats → 17 profiles �
    (Theme setting, widgets, opening animation) → 25 full themes + Settings redesign.
 G. Extras (first to slip to 2.8.1 if time is short): 18 polish sweep → 3 share titles → 4/4b musical cast →
    2 Sound Library → 5 mascot content round.
-H. Gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play production (paired) + web, on founder's OK.
+H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play production (paired) + web, on founder's OK.
    Expedited review (founder 10-07): request it right after submitting. Honest grounds: the live 2.7.1 turns on the
    Halloween theme by itself on Oct 17 and has readability problems in it (text contrast on the Halloween screens,
    found by our audit); 2.8 fixes them and must be live before the 17th. Draft the request text ready to paste;
@@ -520,3 +520,25 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   whole column first, then ChatGPT the backdrop; check every game tint + Halloween.
 - Keep every function: game switching, board view, Everyone/Friends, share, reset timer, yesterday's winners;
   tests for each ×3. Smoothness gate (Leaderboard scroll + game switch).
+
+## 26. Halloween app icon (founder 10-07)
+- Same icon as today, recolored black + orange (Halloween palette; character on-model, no costume drift), shipped as
+  the PRIMARY icon in 2.8 on iOS + Android (+ web favicon/PWA icons); Play hi-res 512 icon + App Store icon match.
+- The icon lives in the binary → it goes back to normal with the next build (see "After Halloween").
+
+## 27. Halloween store listing for 2.8 (founder 10-07)
+- New screenshots once the build is complete: Halloween-themed captures of the NEW pages (living Home, Leaderboard
+  stage, Stats, profiles, Friends + invites, pocket games, Dressing Room + voices) and the Halloween widgets, with
+  Halloween captions in the store-screenshot style (scripts/store-screenshots); iPhone + iPad sizes, Play phone +
+  tablet + feature graphic.
+- Store text rewritten for 2.8: What's New, promo text, description, keywords (iOS) and short/full description (Play)
+  — American spelling, no British spellings, ≤500 chars for Play notes.
+- Ships with the 2.8 submission (iOS screenshots/description change only with a version); Play updated the same day.
+
+## After Halloween (plan, founder 10-07)
+- Nov 1–2: back to normal: normal icon + normal (non-seasonal) screenshots of the new pages + normal store text.
+  iOS screenshots and the icon can only change with a new version → a small 2.8.x submitted ~Nov 1 (icon + listing,
+  plus any October polish); Play listing swapped the same day (no build needed for the listing).
+- ~1 week later (first week of November): the Thanksgiving build — the full seasonal kit from the seasons README
+  (theme row, walls, ambient, opening animation, widgets, icon, screenshots/captions), using the seasonality playbook
+  we keep polishing through October.

@@ -92,6 +92,9 @@ order, so each season is ready ≥ 3 weeks before its window opens.
       Forest opts out for this season only; season end returns everyone to their previous theme)
 - [ ] Mascot-maker seasonal items (step 8), voices/moods if any seasonal voice
 - [ ] Smoothness gate ON vs OFF on every listed screen
+- [ ] Seasonal app icon (same icon, season palette) in the season's build; normal icon restored in the next build
+- [ ] Seasonal store listing: screenshots + captions of the current pages/widgets, store text; reverted to normal
+      right after the season (iOS needs a version for both → small 2.x.y; Play listing anytime)
 One registry drives all three apps; a new season is ART + DATA, no code. Halloween is the worked example.
 1. **Art.** Make it here: `<season>/titles/` (one per game / screen key), `<season>/walls/` (code-drawn with the
    Halloween engine: `wall-<page>.webp` night + `wall-<page>-light.webp` light twin, `-wide` for desktop; pages are
