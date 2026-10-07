@@ -358,3 +358,15 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   tray (the bell/inbox from item 18) so nothing is lost.
 - Seasons: Halloween skin (Haunted glass bubble, orange/plum ink, costumed cast) via the season registry; readable
   per the 1b gate. ×3; Reduce Motion = no typing animation.
+
+### 19b. Your mascot has a voice — a Voice tab in the Dressing Room (founder 10-07)
+- Your own mascot talks too: YOUR news (streak, level up, your achievements, "your turn") comes from your mascot's
+  bubble in your voice; cast members deliver app/social news. Tap your mascot anywhere → it chirps/laughs in it.
+- Dressing Room gets a VOICE tab: ~8–12 voices (e.g. squeaky, bubbly, deep, sing-song, raspy, robot, whisper,
+  giggly) × a pitch slider; tap to preview ("Hi, I'm BMT!"); default picked from body + letter; None = silent.
+  Some voices free, more with Pro / earn / buy per the unlock model (item 5, UNLOCKS-AND-SHOP.md); seasonal voices
+  (spooky for Halloween) via the season registry.
+- Friends hear your voice when your mascot shows up for them (podium, invites, Friends card, VS intro).
+- Built as a tiny procedural "babble" synth (syllables → pitched blips per voice, so any text works, no recordings,
+  offline, ×3 identical from one shared voice spec in packages/core); voices approved in the Sound Library (item 2);
+  saved with the look (avatar config v-next), synced; respects sound settings + silent mode.
