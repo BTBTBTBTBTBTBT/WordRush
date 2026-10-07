@@ -132,6 +132,8 @@ H. Gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play producti
 - Free ChatGPT draws one consistent glyph set using DAILIES as the style reference: A–Z, 0–9, and ★ ! ? , ' · - &
   in a NEUTRAL/white base with shading (light map), so code can tint each word (purple, gold, game colors,
   Halloween) like the button family tint. A few sheets, same prompt + reference each time; keyed + trimmed.
+- Acceptance test (founder 10-07): render "DAILIES" tinted purple and "PUZZLES" tinted teal from the glyph set and put
+  them next to today's ChatGPT title art — they must look like the same lettering (shape, puffiness, gloss, rim).
 - One "bubble text" renderer ×3: composes any string from the glyph atlas (baseline, kerning pairs, auto-fit to
   width, two-tone words), pre-rendered/cached so it's as cheap as an image; falls back to today's live font for
   any missing character.
