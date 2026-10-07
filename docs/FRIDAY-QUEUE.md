@@ -152,6 +152,24 @@
   auto-show once per game, then only on tap.
 - iOS / Android / web, built together with the item-9 art overhaul and 9b live play.
 
+### 9d. Pocket-game boards designed in ChatGPT (founder 10-07)
+- Every pocket game gets a custom ChatGPT board/play surface in the family style (Word Chain, Ghost, Rock Paper
+  Scissors, Pass the Puzzle, Call It, Tic-Tac-Tile + any others): themed board, pieces, letter tiles, result
+  moments. Today they read as unfinished. Same pipeline as the other game art (key, ship ×3, Art Library approve).
+
+### 9e. Friends tab while a game streak is going — way less busy (founder 10-07, screenshot: 6 games with Johnny)
+- Today: six identical full-width cards, each with a colored top bar, a "1" badge, "vs @johnnyauer" repeated and a
+  huge pink PLAY pill, plus a race card with the race told twice (the "ends in · you're 2nd" line AND the pills).
+- Direction (sketch first, any new elements made in free ChatGPT):
+  - Group by FRIEND: one card per friend: their living mascot + name + "6 games waiting on you", and under it
+    a compact strip of game tiles (the game's art + a one-word state: "E…", "Your pick", "1 of 6"). Tap a tile to
+    go straight in. No per-row PLAY pills, no repeated "vs @name", one count badge on the friend card, not per game.
+  - "Their turn" games collapse into a quiet line ("3 waiting on Johnny"), expanded on tap.
+  - Race card: say the race ONCE (the pills, with the countdown small in the header); "On now" folds into the
+    friend card (the green dot + "playing Classic" under the mascot) instead of its own section.
+  - Compact + symmetric; no bordered boxes; check the 0 / 1 / 6+ games, several friends, Halloween states.
+- Pairs with item 9 (online-first friend list, simplified pending rows).
+
 ## 10. Crosswordocious numbered cells (founder 10-06, screenshot of a finished grid)
 - Cells that carry a clue number draw their letter SMALLER and pushed down/right (C, A, S, T, H, F, L, K in the
   screenshot) while plain cells show a full-size centered letter. Make every cell's letter the same size and
@@ -168,3 +186,11 @@
 - Delete the card under the podium; "Yesterday's winners" follows right under the podium.
 - Every game on the Leaderboard, iOS + Android + web; compact + symmetric; check unplayed / guest / no-friends
   / Friends-tab states and Halloween surfaces.
+
+## 12. First-play welcome + quick tutorial for EVERY game (founder 10-07: "first time playing Word Chain, no clue
+what I'm doing")
+- Before a game's first play (all 18 main games AND every pocket game), a custom pop-up: the game's ChatGPT title
+  art + its cast member, a 3-step animated mini tutorial (show, don't tell), and "Let's play!". Once per game per
+  player (synced, so a new device doesn't re-show it); "How to Play" from the "?" opens the same content later.
+- Designed in free ChatGPT first (welcome card frame, step illustrations per game); American spelling; ×3.
+- Pocket games: also explain turns with a friend. Works for guests too.
