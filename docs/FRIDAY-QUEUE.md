@@ -502,5 +502,11 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   Then the podium (big living mascots, 13) starts right below: on a standard iPhone the top of the podium (all
   three mascots) is visible without scrolling.
 - Everyone / Friends toggle + share sit on the podium's header line; Yesterday's winners follows the podium.
+- Cohesion (founder 10-07): the new top and the podium read as ONE continuous stage, not a card stacked on a card:
+  one shared backdrop that flows down (the title's sky/rays continue behind the picker and into the podium's
+  sunburst; no hard card edges between them), the selected game's tint carries through title glow → game strip →
+  podium rays/base, and the motion is linked (switching games sweeps the tint and the podium mascots re-pose
+  together; your mascot hops down from the title toward its podium step when you're on the board). Sketch the
+  whole column first, then ChatGPT the backdrop; check every game tint + Halloween.
 - Keep every function: game switching, board view, Everyone/Friends, share, reset timer, yesterday's winners;
   tests for each ×3. Smoothness gate (Leaderboard scroll + game switch).
