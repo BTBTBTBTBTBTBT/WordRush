@@ -146,7 +146,17 @@ H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates 
   outline) + contact sheet check before shipping. Letter styles per pack (gothic blackletter, graffiti, pixel…)
   join the letter-font work. Gated per the unlock model (some free per pack, most Pro / buy / earn), each pack a
   Dressing Room collection with a set-bonus item (collect the set).
-- If the full round can't finish in the 2.8 push, the first packs (goth, emo, punk + 3 more) ship in 2.8 and the
+- Sports packs, plentiful (founder 10-07), built to pair with the jersey feature (sport templates + primary /
+  secondary team colors, NEXT-ROUND-INK-AND-BLING.md): per sport a jersey template + matching gear in the same two
+  team colors — football (helmet, shoulder pads, eye black, ball), basketball (headband, wristbands, ball, high-tops),
+  baseball/softball (cap, batting helmet, glove, bat, cleats), soccer (shin guards, ball, captain armband, keeper
+  gloves), hockey (helmet + cage, stick, skates, puck), golf (visor, glove, club, polo), tennis/pickleball (sweatband,
+  racket/paddle), volleyball, track (spikes, bib number), swimming (cap, goggles), gymnastics, cheer (pom-poms, bow),
+  wrestling (headgear, singlet), lacrosse, rugby, cycling, skiing/snowboarding, surfing/skating, boxing/martial arts
+  (gloves, belt in colors), esports (headset). Team-color items recolor with the jersey picker; numbers + name on
+  the jersey back; foam finger, trophy, medal, whistle, megaphone as fan/coach extras. No real team/league logos.
+- If the full round can't finish in the 2.8 push, the first packs (goth, emo, punk + 3 more) and the top sports (football, basketball, baseball,
+  soccer, hockey, golf) ship in 2.8 and the
   rest flow in as data in later builds — no code changes needed per item.
 
 ## 6. Bubble-letter alphabet for live headlines (founder 10-06)
