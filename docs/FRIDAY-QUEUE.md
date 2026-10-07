@@ -92,6 +92,16 @@
   any missing character.
 - Animations: letters bounce in on appear (staggered), a gentle wave on idle (rare), and the changing part pops
   when it updates (7 → 8 OF 18 flips/pops) — Reduce Motion = static; same perf rules as the cast.
+- EVERYWHERE the wording changes, not just Home (founder 10-07): first inventory every live/changing headline
+  ×3 — Home greetings that change through the day (GOOD MORNING/AFTERNOON/EVENING, BMT), ON A ROLL / sweep
+  counters, Friends headers (YOUR TURN, ON NOW, TODAY'S RACE, streak lines), Leaderboard (TODAY'S BOARD, ranks),
+  Stats, VS (match found, results), finished-game + Gauntlet stage headlines, banners, season greetings — and
+  switch them all to the bubble renderer. Static titles stay ChatGPT title art.
+- Fit rules (never clipped, always fills its space): auto-fit to the slot (scale UP to fill the width as well as
+  down), keep a min size, then wrap to a balanced 2nd line before ever truncating; no "…" ever. Guard test ×3:
+  render every headline template with its LONGEST values (long usernames, 4-digit numbers, longest greeting,
+  Halloween strings) at the narrowest widths (iPhone SE/mini, small Android, 360 px web) up to Pro Max / iPad /
+  wide web and assert nothing clips, overflows or leaves the slot under-filled; screenshot sheet per width.
 
 ## 7. Daily Sweep + Flawless Victory banners come alive and vary (founder 10-06)
 - Today the Sweep banner always shows the same O, S and W with a broom. Make it different every day:
