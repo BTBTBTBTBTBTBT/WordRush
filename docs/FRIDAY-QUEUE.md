@@ -1,5 +1,22 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
+## FRIDAY GAME PLAN (founder 10-07: all of it Friday, submit 2.8 for review; thorough but usage-efficient)
+Models: Opus = me (orchestrate, specs, merges, reviews, release, final gate); Sonnet = build threads + ChatGPT art
+driver; Haiku = inventories/scans/screenshot sweeps. Max 3 agents at once, each in its own worktree, owning a
+feature ×3 (iOS/Android/web) with disjoint files, time-boxed ~45 min → commit + report; serial native builds, one sim.
+- 1:00 Opus: merge #41–#50, move #46 cutover, tests ×3; write short specs for every thread; start wave 1.
+- Wave 1: [Sonnet] ChatGPT art driver in Chrome (all art in RUN ORDER B, batches → Art Library) · [Sonnet]
+  foundations (6 lettering + guard, 14 header, 8 tile) · [Sonnet] 1b readability + 10 + 21 + truncation.
+  [Haiku] button + plain-surface inventory (18/23) feeds wave 3.
+- Wave 2: [Sonnet] mascots alive + banners (13, 7) + voices/moods synth (19b, spec from Opus) · [Sonnet]
+  Friends/pocket (9, 9e, 9c, 12) · [Opus-reviewed Sonnet] invites + live play (9f deep links/OG images, 9b realtime).
+- Wave 3: [Sonnet] pages (11, 16, 17, 20, 22, 15) · [Sonnet] wire approved art + every button (23) · [Sonnet]
+  extras (3, 4/4b, 2, 5, 18 picks).
+- Gates (Opus): readability + smoothness + final ×3 → Android internal + TestFlight for founder → on OK: iOS 2.8
+  submit (auto release) + Play production + web push.
+Founder touchpoints: approve art in the Art Library as batches land (the main bottleneck), test the internal
+builds in the evening, give the submit OK.
+
 ## RUN ORDER — ONE BUILD: 2.8 (founder 10-07: no separate 2.7.2; one App Store review before Halloween)
 Two dates to protect (handled first thing Friday):
 - Content swap batch 4 (PR #46) is set to cut over 2026-10-13 → move its cutover to 2.8's go-live date, after
