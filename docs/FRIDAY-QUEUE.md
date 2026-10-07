@@ -250,3 +250,16 @@ what I'm doing")
   - on scroll the cast header gently condenses (mascots shrink to a slimmer row, stats/settings stay) and
     expands again at the top — smooth, 60 fps, no jumps; Reduce Motion = fade only.
 - Same ×3; check under Halloween surfaces and in the smoothness gate (Home + Leaderboard scroll).
+
+## 15. Living wallpapers — subtle background motion (founder 10-07: keep both current wallpapers, add fun, not annoying)
+- Regular: the background letter tiles softly drift (slow float + tiny rotation, each on its own path, wrap
+  around the edges); a rare tile flips to a new letter; tap a tile → it bops (easter egg); optional faint
+  tilt parallax.
+- Halloween (Midnight walls): bats flap and drift in small loops; a witch on a broom crosses the moon about once a
+  minute (never over a card); stars twinkle; low fog drifts; jack-o'-lantern glow flickers; a tiny spider drops on
+  its thread now and then; a ghost peeks from a corner rarely. Cutouts from the existing wallpaper art (ChatGPT
+  only fills missing pieces, family style), animated in code — no video.
+- Data-driven: an "ambient" slot in season-registry.json so future seasons plug in (snow, leaves, fireworks…).
+- Not annoying: slow, low-contrast, behind the glass cards; menus/tabs only — games and VS boards stay still;
+  Reduce Motion / Low Power = static; pause when the app is in the background; one-shot events (witch, ghost)
+  rate-limited. Must pass the smoothness gate ×3 ON vs OFF (smooth beats pretty: cut effects that cost frames).
