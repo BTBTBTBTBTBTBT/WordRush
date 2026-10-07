@@ -1,5 +1,19 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
+## RUN ORDER (agreed 10-07)
+A. 2.7.2 (Fri → live by ~10-12): 1 cloud PRs #41–#50 → 1b readability fixes → 10 crossword cells → interim fix for
+   "FLAWLES…"/"SWEPT! 1…" truncation → readability + smoothness + final gates → ship ×3; confirm Play 208.
+B. Free-ChatGPT art session (runs alongside A/C, founder reviews in Art Library): pocket boards + coin (9d), welcome
+   tutorials (12), invite VS images (9f), Leaderboard button (11), Stats titles/icons/ring (16), bubble alphabet (6),
+   banner variants (7), wallpaper cutouts (15), "?" sheets (9c).
+C. 2.8 foundations: 6 bubble lettering + no-clip guard → 14 scroll edge/condensing header → 8 shared game tile.
+D. Mascots alive: 13 (podium, Stats, Home host + headline play, banner cast) + 7 daily banners.
+E. Friends + pocket games: 9 cleanup → 9e calmer Friends → 9f invites → 9b live play → 9c "?" → 9d boards → 12 welcome
+   tutorials (all games).
+F. Pages: 11 Leaderboard card → 16 Stats page → 15 living wallpapers.
+G. Extras: 3 share titles → 4/4b musical cast → 2 Sound Library → 5 mascot content round.
+H. Gates (readability, smoothness, final) → 2.8 to internal/TestFlight; store submission on founder's OK.
+
 ## STANDING RULE for every ChatGPT design on this list (founder 10-07)
 - **Main cast stays exactly on-model:** attach cast/hero/<id>.png (+ refs/poses) to every prompt; prefer layering
   (ChatGPT draws only boards/props/frames, the canonical cast art is composited in code); any redraw passes the
