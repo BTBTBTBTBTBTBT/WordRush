@@ -10,7 +10,7 @@ builds, one sim.
   stage backdrop, Stats/profile/Settings titles + icons, speech bubbles, Go Pro scenes, lobby, buttons, theme walls,
   Halloween icon/widgets/opening, age-check screen, subculture + sports packs) · [Sonnet] foundations: 6 lettering +
   no-clip guard, 14 header, 8 tile, 23 buttons + guard · [Sonnet] fixes: 1b readability, 10 crossword, 21 tour,
-  28 widgets, truncations, 30 Spyglass generator. [Haiku] button / plain-surface / headline inventories.
+  28 widgets, truncations, 30 Spyglass generator, 31 message toasts. [Haiku] button / plain-surface / headline inventories.
 - Wave 2: [Sonnet] mascots alive 13 + 7 banners/flawless messages/centered popups + 19 bubbles + 19b voices/moods ·
   [Sonnet] Friends + pocket 9, 9e, 9c, 9d, 12, 22 · [Sonnet, Opus-reviewed] 9f invites + 9b realtime + 29 13+ age check.
 - Wave 3: [Sonnet] pages 11/11b, 16, 17, 20, 15, 25 · [Sonnet] Halloween kit 24 + 26 icon + seasonal widgets ·
@@ -35,7 +35,7 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
-   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids.
+   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts.
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + every game piece (X/O, RPS hands, coin, tiles) (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -688,3 +688,13 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   - a weekday ramp (Mon gentler → Sat/Sun hardest, maybe a 12 × 12 weekend grid if it fits the screen).
 - Difficulty score per puzzle (direction mix, overlaps, camouflage) checked in a test so the bank can't drift easy again;
   a playtest sample sheet before shipping. Same in iOS/Android/web (shared bank). Hidden-list + hint/reveal unchanged.
+
+## 31. In-game messages never move the screen (founder 10-08, Codebreaker "S used for two code letters")
+- Today the message is inserted into the layout under the board, so the board/keyboard jump and the animation is
+  choppy. Fix: every in-game status message (Codebreaker conflicts, Hubbub "Already found" / "not in today's
+  letters", Ladder, Muddle, Kindred, crossword, VS…) shows in an OVERLAY toast at a reserved spot that never pushes
+  or resizes anything (no layout shift; fade/scale in, auto-dismiss, tap to dismiss), one shared component ×3.
+- Designed in ChatGPT: a little family-style popup graphic per message type (warning / info / nice), optionally with
+  the game's cast host peeking + its voice chirp (19b), game-tinted; Halloween skin. Readable (1b gate).
+- Sweep all 18 games + pocket games for inline messages; add "message appears" to the smoothness gate (no frame drops,
+  zero layout shift measured).
