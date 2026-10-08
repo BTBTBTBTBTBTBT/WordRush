@@ -29,7 +29,8 @@ Two dates to protect (handled first thing Friday):
   2.8 by ~Oct 14 so it's live by the 17th. Build order puts Halloween-facing work first; anything not gate-ready
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
-A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button.
+A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
+   28 widget fixes (large widget taps, wordmark, live countdown).
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + coin (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -608,3 +609,18 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - ~1 week later (first week of November): the Thanksgiving build — the full seasonal kit from the seasons README
   (theme row, walls, ambient, opening animation, widgets, icon, screenshots/captions), using the seasonality playbook
   we keep polishing through October.
+
+## 28. Widgets: large widget broken, brand + live countdown (founder 10-08, widget showcase screenshot)
+- Bug: the big (large) widget "doesn't work on the phone" — expanding to the larger size / tapping it does nothing.
+  Reproduce first on the iOS sim + Android emulator ("wordo" AVD, logcat) before fixing. Leads: iOS large uses
+  `.widgetURL(snap.nextUp.flatMap(dailyURL))` (WordociousWidget.swift ~:774) → when nothing is "next up" there's no
+  URL and taps do nothing; check the PUZZLES chips have their own Link like the dailies (~:415). Android: resizing
+  the daily widget to large — check the provider (widget_daily_info.xml) switches to widget_daily_large.xml and that
+  every cell has a PendingIntent. Every tap anywhere on every widget size must open something sensible (the game,
+  else Home).
+- Every widget size shows "WORDOCIOUS" (small wordmark/lettering), including the small ones that don't today.
+- Live countdowns: "resets in" ticks hours:minutes:seconds in real time — iOS `Text(timerInterval:)` / `.timer`
+  style (no timeline cost), Android RemoteViews Chronometer counting down (API 24+); falls back to h/m on lock-screen
+  accessory widgets where seconds aren't allowed.
+- All of this applies to the Halloween widgets (item 24) and every future season's widgets, plus the store
+  showcase screen ("Widgets with your mascot") matches what really ships. ×2 (iOS + Android); web n/a.
