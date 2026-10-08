@@ -35,7 +35,7 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
-   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars → 33 Hubbub everyday-word audit → 34 push notifications redesign.
+   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars → 33 Hubbub everyday-word audit → 34 push notifications redesign → 35 custom game order + easier-first default.
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + every game piece (X/O, RPS hands, coin, tiles) (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -770,3 +770,18 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - ×3, screenshot every type on iOS lock screen + banner, Android shade, web; 13+ age check gates push registration (29).
 - All visuals designed in ChatGPT (founder 10-08): the long-press card, mascot avatar framing, game thumbnails,
   Android expanded layout, monochrome W status icon + Halloween variants; cast on-model, house lettering.
+
+## 35. Your own game order + a gentler default puzzle order (founder 10-08; JP: "Muddle is hard and should not be the
+second game on the puzzles list")
+- Not reinventing anything: the lists are already data-driven (modes.generated.ts canonical order + homeSlot), and
+  the finished screen's NEXT already walks that order (that's why moving Gauntlet changed the "next game"). Make the
+  order per player:
+  - Home → "Edit order" (also long-press a tile): tiles wiggle, drag to reorder within Dailies and within Puzzles
+    (and the More/pocket rows), Done / Reset to default; smooth drag with haptics, family style, ×3.
+  - Saved per account (profile prefs, synced across devices; guests local); every place that lists games uses it:
+    Home strips + cards, Leaderboard picker (11b), Stats picker (16), widgets (28), Sweep/Flawless lists (7), and
+    NEXT on finished screens = next unplayed game in YOUR order.
+  - Sweep rules + canonical ids unchanged (order is display-only); new games append to the end of a custom order.
+- New default Puzzles order, easiest → hardest, from real data (completion/win rate + median time per game in the
+  DB, read-only query), so Muddle moves down; Dailies default reviewed the same way. Founder/JP see the proposed
+  order before ship.
