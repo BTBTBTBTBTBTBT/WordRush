@@ -8,7 +8,7 @@ builds, one sim.
 - Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, tests ×3, write thread specs.
 - Wave 1: [Sonnet] ChatGPT art driver — all art (lettering, banners, boards + every game piece (X's and O's, RPS hands, coin, tiles), invites, "?" + tutorials, Leaderboard
   stage backdrop, Stats/profile/Settings titles + icons, speech bubbles, Go Pro scenes, lobby, buttons, theme walls,
-  Halloween icon/widgets/opening, age-check screen, subculture + sports packs) · [Sonnet] foundations: 6 lettering +
+  Halloween icon/widgets/opening, age-check screen, push notification card/avatars/thumbnails + W status icon, subculture + sports packs) · [Sonnet] foundations: 6 lettering +
   no-clip guard, 14 header, 8 tile, 23 buttons + guard · [Sonnet] fixes: 1b readability, 10 crossword, 21 tour,
   28 widgets, truncations, 30 Spyglass generator, 31 message toasts + Codebreaker chips/buttons design. [Haiku] button / plain-surface / headline inventories.
 - Wave 2: [Sonnet] mascots alive 13 + 7 banners/flawless messages/centered popups + 19 bubbles + 19b voices/moods ·
@@ -753,3 +753,5 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Less noise: group by friend/game (thread ids / Android groups with a summary "Johnny · 6 moves waiting"),
   collapse rapid-fire moves, respect quiet hours; still one tap → the exact game.
 - ×3, screenshot every type on iOS lock screen + banner, Android shade, web; 13+ age check gates push registration (29).
+- All visuals designed in ChatGPT (founder 10-08): the long-press card, mascot avatar framing, game thumbnails,
+  Android expanded layout, monochrome W status icon + Halloween variants; cast on-model, house lettering.
