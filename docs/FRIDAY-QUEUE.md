@@ -6,7 +6,7 @@ driver (all day); HAIKU = inventories, numbers, sweeps (shift, compression, scre
 builders A/B), own worktrees, one feature ×3 each, ~45-min boxes → commit + report; serial native builds, one sim.
 Release-critical work runs early so anything that slips is cosmetic.
 0. Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, 38 off-switch framework, tests ×3,
-   thread specs. [Haiku] inventories (buttons, plain surfaces, headlines, all copy, art sizes) + 43 capacity numbers.
+   thread specs. [Haiku] inventories (buttons, plain surfaces, headlines, all copy, art sizes, every share path) + 43 capacity numbers.
    [Sonnet art driver] starts with what wave 1–2 need: alphabet, buttons, toasts/chips, age-check screen, Halloween
    icon + widgets, push card/avatars, invite images.
 1. Wave 1 — foundations + must-fix
@@ -27,7 +27,8 @@ Release-critical work runs early so anything that slips is cosmetic.
    B: 25 full themes + Settings redesign, 24 Seasonal theme row + costumed opening, 15 living wallpapers + 45 trims.
 5. Wave 5 — content + maker
    A: 5/5b subculture + sports packs, Pro try-on popup, admin item grants.
-   B: 30 harder Spyglass, 33 Hubbub everyday words, 3 share titles, 4/4b musical cast, 2 Sound Library.
+   B: 46 every share image redesigned (+ 3 share titles), 30 harder Spyglass, 33 Hubbub everyday words,
+      4/4b musical cast, 2 Sound Library.
 6. Wave 6 — finish
    A: 36 content rewrite (How to Play, guides, FAQ, every info menu), 41 "What's new in 2.8", 18 polish picks.
    B: 39 old-version compatibility tests (Opus reviews), 40 screen-reader sweep.
@@ -864,3 +865,17 @@ second game on the puzzles list")
 - **45. Older phones / Low Power (Sonnet, light touch):** only trims extra ambient motion (fewer drifting tiles,
   slower ambient frame rate) when the device is struggling or in Low Power Mode — never lower art quality, never
   removes mascot animation or anything of the finished look.
+
+## 46. Every share image gets the new look + the sender's mascot celebrating (founder 10-08, JP's leaderboard shares)
+- Today's leaderboard share ("THURSDAY THUNDER · Daily leaderboard"): plain rows, a big empty middle, the cast only as a
+  strip at the bottom, nobody's own mascot. Redesign every share image in the new aesthetic (absorbs item 3, share
+  titles):
+  - the SENDER's mascot big and celebrating, pose by result (win cheer + crown, flawless gold, loss = good-sport
+    shrug/grumpy-cute), other players' mascots on a mini podium for leaderboards, the game's ChatGPT title art + the day
+    title in bubble lettering, scores in the family style, fills the frame (no empty middle), season skin (Halloween).
+  - Inventory first ([Haiku]): leaderboard, finished-game results (every game), Daily Sweep / Flawless, VS results,
+    pocket-game results, Stats / profile, achievements / level-up, invites (9f), streaks — every share path ×3.
+  - One shared share-card renderer (server/OG for links + on-device for images), consistent sizes for iMessage /
+    Instagram story / square; real resolver mascot renders only; text always complete.
+- Assign: [Sonnet] in wave 5 B (with the old item 3), ChatGPT frames from the art driver; Opus reviews a sheet of every
+  share type × win/loss × season before release.
