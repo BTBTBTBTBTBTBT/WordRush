@@ -625,5 +625,10 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Live countdowns: "resets in" ticks hours:minutes:seconds in real time — iOS `Text(timerInterval:)` / `.timer`
   style (no timeline cost), Android RemoteViews Chronometer counting down (API 24+); falls back to h/m on lock-screen
   accessory widgets where seconds aren't allowed.
+- Flawless on widgets (founder 10-08: flawless ×2 today, widget only said SWEPT): when today's dailies are
+  flawless the ring reads FLAWLESS (gold ring, the header's flawless trophy + streak count "×2"), otherwise SWEPT
+  when swept, otherwise n/8 — every size (small, medium, large, lock screen). The widget snapshot written by the app
+  must carry the flawless flag + flawless streak (iOS app-group snapshot, Android widget prefs); refresh the widget
+  the moment a flawless lands; parity tests with the in-app header trophy.
 - All of this applies to the Halloween widgets (item 24) and every future season's widgets, plus the store
   showcase screen ("Widgets with your mascot") matches what really ships. ×2 (iOS + Android); web n/a.
