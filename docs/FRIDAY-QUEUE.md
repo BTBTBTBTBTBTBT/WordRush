@@ -630,5 +630,9 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   when swept, otherwise n/8 — every size (small, medium, large, lock screen). The widget snapshot written by the app
   must carry the flawless flag + flawless streak (iOS app-group snapshot, Android widget prefs); refresh the widget
   the moment a flawless lands; parity tests with the in-app header trophy.
+- Trophy + flame alignment (founder 10-08): the flawless trophy and the day-streak flame sit as a matched pair —
+  same icon size, same baseline, numbers in the same weight/size, even spacing, centered as a group (like the app
+  header's flame · trophy · shield row); flame alone when there's no flawless streak, without leaving a gap.
+  Screenshot check on every widget size + lock screen, light/dark/Halloween.
 - All of this applies to the Halloween widgets (item 24) and every future season's widgets, plus the store
   showcase screen ("Widgets with your mascot") matches what really ships. ×2 (iOS + Android); web n/a.
