@@ -603,6 +603,11 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Ships with the 2.8 submission (iOS screenshots/description change only with a version); Play updated the same day.
 
 ## After Halloween (plan, founder 10-07)
+- LevelPlay ads (founder 10-08): after 2.8 is submitted, I drive the LevelPlay setup in Chrome (account made
+  10-08 on bt@showloud.com, org "btmuzrpsb3" — rename to ShowLoud, LLC). Add the iOS + Android apps, ad units,
+  networks (NEVER the AdMob / Google Ad Manager adapter); founder accepts terms and enters tax + payout details
+  himself. The keys are compiled into the apps → ads switch on with the ~Nov 1 2.8.x build (2.8's 13+ age check
+  means ads only start after a player passes it); docs/LEVELPLAY_SETUP.md.
 - Nov 1–2: back to normal: normal icon + normal (non-seasonal) screenshots of the new pages + normal store text.
   iOS screenshots and the icon can only change with a new version → a small 2.8.x submitted ~Nov 1 (icon + listing,
   plus any October polish); Play listing swapped the same day (no build needed for the listing).
