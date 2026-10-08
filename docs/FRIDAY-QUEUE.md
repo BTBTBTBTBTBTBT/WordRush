@@ -35,7 +35,7 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
-   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars → 33 Hubbub everyday-word audit.
+   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars → 33 Hubbub everyday-word audit → 34 push notifications redesign.
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + every game piece (X/O, RPS hands, coin, tiles) (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -733,3 +733,23 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   bonus); obscure/archaic words stay bonus-only or drop. Report the adds per puzzle; profanity filter + American
   spelling rules still apply; sha/parity + "max" recomputed; past dates untouched. Add a guard test with known
   everyday words (RECOLLECT, AUNTY, RECYCLER…) so this can't regress.
+
+## 34. Push notifications match the aesthetic: mascot + game icon, complete text, Halloween (founder 10-08, lock screen)
+- Today: every push is the plain app icon + system text, titles cut off ("johnnyauer played. Your tur…", "johnnyauer
+  started Pass th…", "BeanAndBuckwheat just be…"), 10+ separate pushes from one friend's games.
+- What the OS allows (the collapsed text font/colors are always the system's — design goes into images + layout):
+  - iOS: Communication Notifications (INSendMessageIntent via a Notification Service Extension) → the SENDER's
+    mascot as the big avatar with the app icon as a small badge (friend moves, challenges, invites); a rich image
+    attachment (thumbnail) = the game's ChatGPT icon; long-press opens a Notification Content Extension we fully
+    design (game title art, both mascots, board snapshot / score, family buttons like Play / Later). Icon follows
+    the app icon (Halloween icon in 2.8).
+  - Android: large icon = sender's mascot, MessagingStyle with the friend as a Person (mascot avatar), BigPicture
+    = game art, accent color per game (Halloween orange in season), custom decorated layout with the game icon;
+    the small status-bar icon = a new monochrome W silhouette (+ Halloween variant).
+  - Web push: icon = sender mascot, image = game art, badge = monochrome W.
+- Copy that never truncates: titles ≤ ~28 chars that read complete ("Johnny played Ghost", "Johnny beat your
+  QuadWord"), the detail in the body ("Your turn · your word starts with E"); per-type templates, American spelling,
+  emoji sparingly; Halloween copy + art variants in season (registry-driven like other season slots).
+- Less noise: group by friend/game (thread ids / Android groups with a summary "Johnny · 6 moves waiting"),
+  collapse rapid-fire moves, respect quiet hours; still one tap → the exact game.
+- ×3, screenshot every type on iOS lock screen + banner, Android shade, web; 13+ age check gates push registration (29).
