@@ -30,7 +30,7 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
-   28 widget fixes (large widget taps, wordmark, live countdown) → 29 COPPA mixed-audience setup.
+   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA).
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + coin (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -637,22 +637,21 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - All of this applies to the Halloween widgets (item 24) and every future season's widgets, plus the store
   showcase screen ("Widgets with your mascot") matches what really ships. ×2 (iOS + Android); web n/a.
 
-## 29. COPPA: mixed-audience setup (founder 10-08: "add to this Friday's plan") — get a lawyer's review too
-- Why: the app appeals to kids (cartoon cast, costumes, dress-up), so "not intended for under 13" in the privacy
-  policy isn't enough. Today: no age check at sign-up; LevelPlay set COPPA=false + ATT/IDFA prompt (AdsManager.swift
-  ~:120–138, Android AdsManager.kt); profile photo upload, free-typed public usernames, friends/invites/reactions,
-  push, Sentry. No ads serve yet — this must be done before ads are ever switched on.
-- Neutral age screen at sign-up AND for existing accounts on next launch (birth year picker, no default, no
-  "you must be 13" hint; stored as an under-13 flag + year only; can't be retried to a different answer on the
-  same device/account without support). Guests get it before any social feature.
-- Under-13 protected mode ×3: no photo upload (mascot avatar only; existing photo hidden + deleted), pre-made
-  username generator (adjective + noun) instead of free text, friends by invite code only (no search/discovery),
-  no reactions to non-friends, no marketing pushes (game reminders only, opt-in), ads: COPPA=true / child-directed,
-  no ATT prompt, no IDFA/GAID, contextual-only; Sentry scrubbed (no user id/email/IP; sendDefaultPii off for all).
-- Server: under-13 flag in profiles (RLS: user can't flip it themselves), enforced server-side (photo upload,
-  username, friend search routes reject); admin view shows it; parent data-deletion request path (support email +
-  in-app "Delete my data" that works without a password for kid accounts).
-- Privacy policy rewrite: a real children's section (what we collect from kids, why, retention, parent rights,
-  contact), effective date; Terms aligned. Store settings: App Store age rating + privacy labels, Google Play
-  target audience + Families policy check (LevelPlay Families-compliant config), data safety form.
-- Tests ×3 for every protected-mode rule; SQL via the standing recipe (backup → psql → read back).
+## 29. COPPA: Wordocious is 13+ with a neutral, on-brand age check (founder 10-08 — replaces protected mode)
+- Founder: "let's do that… I don't mind losing the under-13 players if it's safer." Lawyer quick review recommended.
+- Stores + policy: App Store age rating set to 13+ (age-rating questionnaire) + privacy labels; Google Play target
+  audience 13+ only (stays out of Families), data safety form; privacy policy + terms say 13+ and explain the age
+  check (kept: "we don't knowingly collect data from under 13s"; contact to delete); web footer/sign-up copy too.
+- Age check ×3 — ON BRAND (ChatGPT-designed screen: cast on-model, house lettering, family buttons): a friendly
+  cast member asks "When's your birthday year?" with a scrolling year wheel (no default, no hint that 13 matters,
+  no "you must be 13" before answering). Shown at sign-up, before guest play, and once to existing accounts on
+  their next launch. Store only "13+ confirmed" (+ year), never the full date.
+- Under 13: a kind, on-brand "Wordocious is for players 13 and up — see you soon!" screen (cast waving); nothing is
+  created or stored about them (no account, no guest profile, no push token, no crash reports — Sentry not started
+  until the check passes); the answer sticks on that device (no retry to a different year) and existing under-13
+  accounts are signed out + scheduled for deletion; support email for parents.
+- Ads: LevelPlay stays general-audience (COPPA=false is now accurate) but no ad SDK, ATT prompt or push
+  registration runs before the age check passes.
+- Server: profiles get age_confirmed_13 (RLS: not user-writable after set); sign-up / social routes reject accounts
+  without it; admin view shows it. SQL via the standing recipe (backup → psql → read back). Tests ×3.
+
