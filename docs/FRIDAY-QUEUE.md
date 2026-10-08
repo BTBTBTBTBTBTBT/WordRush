@@ -7,7 +7,7 @@ agents at once, own worktrees, one feature ×3 each, disjoint files, ~45-min box
 builds, one sim.
 - Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, tests ×3, write thread specs.
 - Wave 1: [Sonnet] ChatGPT art driver — all art (lettering, banners, boards + every game piece (X's and O's, RPS hands, coin, tiles), invites, "?" + tutorials, Leaderboard
-  stage backdrop, Stats/profile/Settings titles + icons, speech bubbles, Go Pro scenes, lobby, buttons, theme walls,
+  stage backdrop, Stats/profile/Settings titles + icons, speech bubbles, Sweep/Flawless celebration kit (+ Halloween), Go Pro scenes, lobby, buttons, theme walls,
   Halloween icon/widgets/opening, age-check screen, push notification card/avatars/thumbnails + W status icon, subculture + sports packs) · [Sonnet] foundations: 6 lettering +
   no-clip guard, 14 header, 8 tile, 23 buttons + guard · [Sonnet] fixes: 1b readability, 10 crossword, 21 tour,
   28 widgets, truncations, 30 Spyglass generator, 31 message toasts + Codebreaker chips/buttons design. [Haiku] button / plain-surface / headline inventories.
@@ -223,6 +223,19 @@ H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates 
   (today they sit off-center), and they feature YOUR mascot celebrating (cheer mood + voice, 19b) alongside the
   existing moment art + the bubble headline; Reduce Motion = still pose. Check iPhone SE → Pro Max, iPad, Android
   small → large, web narrow → wide.
+- Sweep / Flawless screens polish (founder 10-08, Puzzles SWEEP! screenshot):
+  - Game list: 10 puzzles in a 3-column grid leaves Starsweep alone on a 4th row and squeezes "Crosswordocious" to a
+    smaller font → 2 columns × 5 rows (or 5 × 2 icon tiles), every name the same size, W/L badges aligned; the
+    Dailies version the same rule for its 8.
+  - Copy: "All 10 More Games puzzles completed today" → current naming ("All 10 Puzzles done today!"), bubble lettering.
+  - SHARE oversized pill + CLOSE → family buttons sized to their labels (item 23).
+  - More alive (ChatGPT-designed celebration kit): confetti + streamer burst on open, the cast host animated with its
+    rig (S actually sweeps, letters tumble in), YOUR mascot cheering beside it with its voice (19b), stats count up,
+    each game's W badge stamps in one by one with a little sound, a sparkle sweep across the headline; Flawless gets
+    a gold version (crown, gold confetti, trophy + streak count from item 7).
+  - Seasonal: the celebration skins by season via the registry (Halloween: S on a witch's broom, bats + candy
+    confetti, pumpkin glow, orange/black; future seasons plug in their own).
+  - Smoothness gate (open/close of these screens), Reduce Motion = static art, centered on every screen size.
 
 ## 8. One game-tile style everywhere: W / L badges + matching spacing (founder 10-06, screenshots)
 - Reference = the Sudocious finished screen's tile rows (WORDOCIOUS + PUZZLES): each completed game tile shows the
