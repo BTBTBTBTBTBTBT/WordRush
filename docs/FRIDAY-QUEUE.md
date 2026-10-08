@@ -25,8 +25,8 @@ feedback, then the final submit OK.
 Two dates to protect (handled first thing Friday):
 - Content swap batch 4 (PR #46) is set to cut over 2026-10-13 → move its cutover to 2.8's go-live date, after
   checking that no flagged word is scheduled in the gap (if one is, swap that day's answer in the new date's data).
-- Halloween turns on by itself Oct 17 in the live 2.7.1 (baked in; confirm there's no remote switch) → aim to submit
-  2.8 by ~Oct 14 so it's live by the 17th. Build order puts Halloween-facing work first; anything not gate-ready
+- Halloween is ON as soon as 2.8 is live (2.8 window starts Oct 9; founder 10-08); live 2.7.1 would turn it on by itself
+  Oct 17, so 2.8 (with the readability fixes) is submitted Friday night + expedited. Build order puts Halloween-facing work first; anything not gate-ready
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
@@ -531,6 +531,9 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
 - Automatic end (founder 10-07: "on November first the Halloween theme is gone"): it's already date-driven
   (SEASON_WINDOWS), but today's window is Oct 17 – Nov 1 INCLUSIVE → change the end to Oct 31 in 2.8 (core
   level-season.ts + LevelSeason.swift + Season.kt + parity fixtures; live 2.7.1 keeps its baked Nov 1, harmless).
+  START (founder 10-08): Halloween is ON the moment 2.8 is live — not waiting for Oct 17. 2.8's window starts
+  Oct 9 (so every 2.8 install/update and the web are Halloween immediately); web 2.8 is pushed when the stores
+  approve so all three flip together. Live 2.7.1 keeps its baked Oct 17 start (players who haven't updated).
   At local midnight Nov 1, with no build and no server change: the app returns each player to the theme they had
   before the changeover (saved when Seasonal was preset), the "Seasonal — Halloween" row disappears, widgets go
   normal on their next refresh, walls/ambient/opening animation/cast skins go off-season.
