@@ -6,7 +6,7 @@ store text); SONNET = build threads + the ChatGPT art driver; HAIKU = inventorie
 agents at once, own worktrees, one feature ×3 each, disjoint files, ~45-min boxes → commit + report; serial native
 builds, one sim.
 - Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, tests ×3, write thread specs.
-- Wave 1: [Sonnet] ChatGPT art driver — all art (lettering, banners, boards/coin, invites, "?" + tutorials, Leaderboard
+- Wave 1: [Sonnet] ChatGPT art driver — all art (lettering, banners, boards + every game piece (X's and O's, RPS hands, coin, tiles), invites, "?" + tutorials, Leaderboard
   stage backdrop, Stats/profile/Settings titles + icons, speech bubbles, Go Pro scenes, lobby, buttons, theme walls,
   Halloween icon/widgets/opening, age-check screen, subculture + sports packs) · [Sonnet] foundations: 6 lettering +
   no-clip guard, 14 header, 8 tile, 23 buttons + guard · [Sonnet] fixes: 1b readability, 10 crossword, 21 tour,
@@ -37,7 +37,7 @@ Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
    28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA).
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
-   pocket boards + coin (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
+   pocket boards + every game piece (X/O, RPS hands, coin, tiles) (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
    scenes (20), waiting lobby (22), all leftover buttons (23), Ocean/Forest/Dark walls + Settings icons/titles (25).
 C. Foundations: 6 bubble lettering + no-clip guard → 14 scroll edge → 8 shared game tile → 23 every button.
@@ -284,6 +284,9 @@ H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates 
 - Every pocket game gets a custom ChatGPT board/play surface in the family style (Word Chain, Ghost, Rock Paper
   Scissors, Pass the Puzzle, Call It, Tic-Tac-Tile + any others): themed board, pieces, letter tiles, result
   moments. Today they read as unfinished. Same pipeline as the other game art (key, ship ×3, Art Library approve).
+- Every piece IN the games too (founder 10-08), not just the boards: Tic-Tac-Tile X and O pieces (glossy 3D family
+  tiles, maybe cast-styled), Rock Paper Scissors hands/icons, Call It coin heads/tails, Word Chain + Ghost + Pass the
+  Puzzle letter tiles, turn markers, win lines/strikes, score pips, result badges — each with place/win animations.
 
 ### 9e. Friends tab while a game streak is going — way less busy (founder 10-07, screenshot: 6 games with Johnny)
 - Today: six identical full-width cards, each with a colored top bar, a "1" badge, "vs @johnnyauer" repeated and a
