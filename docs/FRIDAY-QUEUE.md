@@ -22,7 +22,11 @@ ChatGPT art driver (runs all day); HAIKU = inventories/scans/screenshot sweeps. 
    Settings, 24 Seasonal theme row + opening animation.
 5. Wave 5 — [Sonnet A] 5/5b mascot packs (subculture + sports) + Pro try-on popup + admin item grants ·
    [Sonnet B] 36 content rewrite + extras 3 share titles, 4/4b musical cast, 2 Sound Library, 18 polish picks.
-6. Release (Opus): readability + smoothness + final gates ×3 → [Sonnet] store screenshots, Opus captions + store
+   Woven in: 38 off-switches (Opus, wave 1 so every new feature registers a flag), 44 art compression (Sonnet
+   wave 1 tooling → applied to all art as it ships; Haiku runs), 40 screen-reader labels (owning threads + a Sonnet
+   sweep in wave 5), 41 What's new (Sonnet, wave 5), 45 low-power trims (with 15 living wallpapers), 43 capacity
+   check (Haiku → Opus, wave 4), 39 version-compat tests (Sonnet, wave 5, Opus review).
+6. Release (Opus): 42 testers get the builds first → readability + smoothness + final gates ×3 → [Sonnet] store screenshots, Opus captions + store
    text (27) → Android internal + TestFlight → founder feedback (phone / live sim) → fixes → iOS 2.8 submit (auto
    release) + expedite request (Halloween readability + truncation) + Play production → web on store approval.
 7. After submit: LevelPlay setup in Chrome (ads live in the ~Nov 1 2.8.x).
@@ -826,3 +830,31 @@ second game on the puzzles list")
   [Haiku] runs the sweep across all 18 games + pocket games + popups/banners/notifications after each wave and
   files a short failures list; the owning thread fixes; Opus checks the final run before release.
 - Standing rule for every thread meanwhile: nothing resizes or moves during play except the piece being played.
+
+## 38–44. Launch safety + speed (founder 10-08: do these; skip staged Android rollout)
+- **38. Off-switches (Opus builds, server + ×3 clients):** remote feature flags read at launch/foreground (Supabase
+  table, cached, safe defaults) for live play/realtime, voices, living wallpapers/ambient, speech bubbles, new push
+  formats, age check, pocket games, Halloween season itself — flip in the admin portal, takes effect in minutes.
+- **39. Old-version compatibility (Sonnet builds tests, Opus reviews):** 2.7.1 ↔ 2.8 players together — invites,
+  VS, pocket games, realtime, new avatar items / voices / owned items, age flag; unknown ids are skipped (never
+  crash), server routes accept both versions. Test matrix run on sim + emulator.
+- **40. Screen readers (Sonnet):** every image title / bubble-lettering headline / icon button gets a text label
+  (VoiceOver, TalkBack, web aria); Dynamic Type doesn't break layouts; checked by an automated accessibility scan.
+- **41. "What's new in 2.8" (Sonnet + ChatGPT art):** a one-time designed tour after updating (Halloween + Seasonal
+  theme, living mascots + voices, reorder your games, branded invites, pocket games, new widgets), skippable, cast
+  on-model; never shown to brand-new players (they get onboarding).
+- **42. Testers (Opus):** Doug + Johnny get TestFlight + Android internal the moment the build exists, with a short
+  "what to try" list; their feedback folds into the fix pass before submit.
+- **43. Capacity check (Haiku gathers, Opus decides):** Supabase plan limits (realtime connections, messages, DB
+  CPU on Micro) vs expected live-play load; upgrade compute only if needed (founder OK before any spend).
+- **44. Art compression everywhere — no visible quality loss (Sonnet builds, Haiku runs, Opus spot-checks):**
+  today iOS ships ~137 MB of PNG art vs ~33 MB of WebP on web/Android. (1) Right-size every image to the largest it
+  is ever shown (biggest device × 3 for iOS, × density for Android, srcset on web); (2) re-encode — iOS PNG →
+  optimized PNG/HEIF/lossless WebP as the asset type allows, web/Android WebP (AVIF on web where supported); (3)
+  automatic quality guard: each image compared to the original (SSIM ≥ 0.995, max pixel diff threshold, alpha edges
+  checked) — any image that fails keeps its original; (4) web + admin portal: lazy-load off-screen art, proper
+  sizes, long-cache headers, thumbnails in the Art Library grid. Goal: smaller download (stay well under Apple's
+  200 MB cellular limit), faster screens on app, web and portal. ship-art.py does it by default from now on.
+- **45. Older phones / Low Power (Sonnet, light touch):** only trims extra ambient motion (fewer drifting tiles,
+  slower ambient frame rate) when the device is struggling or in Low Power Mode — never lower art quality, never
+  removes mascot animation or anything of the finished look.
