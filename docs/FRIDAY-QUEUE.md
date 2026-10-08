@@ -35,7 +35,8 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
-   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars → 33 Hubbub everyday-word audit → 34 push notifications redesign → 35 custom game order + easier-first default.
+   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars → 33 Hubbub everyday-word audit → 34 push notifications redesign → 35 custom game order + easier-first default → 36 content audit (How to Play,
+   guides, FAQ, every info menu).
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + every game piece (X/O, RPS hands, coin, tiles) (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -785,3 +786,17 @@ second game on the puzzles list")
 - New default Puzzles order, easiest → hardest, from real data (completion/win rate + median time per game in the
   DB, read-only query), so Muddle moves down; Dailies default reviewed the same way. Founder/JP see the proposed
   order before ship.
+
+## 36. Content audit: How to Play, guides, FAQ and every info menu up to date (founder 10-08, How to Play screenshot)
+- How to Play is stale: "More Games — Ten Extra Dailies" (now Puzzles; says they don't change the sweep, but Puzzles
+  has its own sweep now) lumps ten games into one paragraph; pocket games are missing entirely; plain wall of text.
+- Rebuild it as sections — Dailies (8) · Puzzles (10) · VS Battle (+ bots) · Pocket games (6) · Sweeps, Flawless,
+  streaks, shields, XP/medals — with EVERY game its own entry (icon + title art + 2–3 plain lines + "Full guide"
+  and "Watch how" (12) links). Current names everywhere (Puzzles, Crosswordocious, Codebreaker, Spyglass, Starsweep,
+  Hubbub, Kindred, Letter Ladder, Muddle, ProperNoundle, Sudocious…), current rules (Daily Sweep 8, Puzzles sweep 10,
+  Flawless, 13+). ChatGPT section titles; compact, not a wall of text.
+- Then the same audit everywhere words describe the app: Guides list + each game's guide/"?" sheet, FAQ / Help /
+  Support, About, onboarding/tour copy, Settings row descriptions, Go Pro benefits, achievements descriptions, push
+  copy (34), widget showcase, What's New, web pages (about/privacy/terms), store text (27), emails. Flag anything old
+  ("More Games", removed features, wrong counts), lumped, inconsistent or British-spelled; fix ×3 from shared copy
+  where possible. [Haiku] string inventory → [Sonnet] rewrite → Opus review.
