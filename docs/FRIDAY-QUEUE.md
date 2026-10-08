@@ -1,35 +1,41 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
-## FRIDAY GAME PLAN (final, 10-08; items 1–36; founder: all of it Friday, submit 2.8)
-Models: OPUS = me (kickoff, specs, review of every thread, sensitive code, release); SONNET = build threads + the
-ChatGPT art driver (runs all day); HAIKU = inventories/scans/screenshot sweeps. Max 3 agents at once (art driver +
-2 build threads), own worktrees, one feature ×3 each, ~45-min boxes → commit + report; serial native builds, one sim.
-0. Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, tests ×3, thread specs.
-   [Haiku] inventories: every button, plain surface, changing headline, and all app copy (for 36).
-   [Sonnet, all day] ChatGPT art driver (free ChatGPT, cast on-model) in the order the threads need it.
-1. Wave 1 — [Sonnet A] foundations: 6 bubble lettering + no-clip guard, 14 scroll header, 8 shared tile, 23 every
-   button + guard · [Sonnet B] fixes: 1b Halloween readability, 10 crossword cells, 21 tour button, 31 overlay
-   toasts + Codebreaker resize/chips, truncations, 37 screen-shift harness (web + iOS + Android).
-   [Haiku] runs the 37 shift sweep after every wave → failures to the owning thread.
-2. Wave 2 — [Sonnet A] widgets 28 (large widget, wordmark, live countdown, FLAWLESS, trophy/flame) + Halloween
-   widgets + 26 icon · [Sonnet B] data + order: 30 Spyglass generator, 33 Hubbub everyday words, 35 game order
-   (Classic pinned, default Dailies order, designed reorder, easier-first Puzzles).
-3. Wave 3 — [Sonnet A] mascots alive 13 + 7 (banners, flawless messages, centered + celebratory Sweep/Flawless with
-   seasonal kits) + 19 speech bubbles + 19b voices/moods · [Sonnet B] Friends + pocket 9, 9e, 9c, 9d (boards +
-   every piece), 12 first-play tutorials, 22 waiting rooms, 32 Hubbub + all game control bars.
-4. Wave 4 — [Sonnet A, Opus-reviewed] 9f invites + 9b realtime + 29 13+ age check + 34 push notifications ·
-   [Sonnet B] pages 11/11b Leaderboard stage, 16 Stats, 17 profiles, 20 Go Pro, 15 living wallpapers, 25 themes +
-   Settings, 24 Seasonal theme row + opening animation.
-5. Wave 5 — [Sonnet A] 5/5b mascot packs (subculture + sports) + Pro try-on popup + admin item grants ·
-   [Sonnet B] 36 content rewrite + extras 3 share titles, 4/4b musical cast, 2 Sound Library, 18 polish picks.
-   Woven in: 38 off-switches (Opus, wave 1 so every new feature registers a flag), 44 art compression (Sonnet
-   wave 1 tooling → applied to all art as it ships; Haiku runs), 40 screen-reader labels (owning threads + a Sonnet
-   sweep in wave 5), 41 What's new (Sonnet, wave 5), 45 low-power trims (with 15 living wallpapers), 43 capacity
-   check (Haiku → Opus, wave 4), 39 version-compat tests (Sonnet, wave 5, Opus review).
-6. Release (Opus): 42 testers get the builds first → readability + smoothness + final gates ×3 → [Sonnet] store screenshots, Opus captions + store
-   text (27) → Android internal + TestFlight → founder feedback (phone / live sim) → fixes → iOS 2.8 submit (auto
-   release) + expedite request (Halloween readability + truncation) + Play production → web on store approval.
-7. After submit: LevelPlay setup in Chrome (ads live in the ~Nov 1 2.8.x).
+## FRIDAY GAME PLAN (final v2, 10-08; items 1–45; reordered: foundations → release-critical → living → pages → content)
+Models: OPUS = me (kickoff, flags, specs, reviews, sensitive code, release); SONNET = builders + the free-ChatGPT art
+driver (all day); HAIKU = inventories, numbers, sweeps (shift, compression, screenshots). Max 3 agents (art driver +
+builders A/B), own worktrees, one feature ×3 each, ~45-min boxes → commit + report; serial native builds, one sim.
+Release-critical work runs early so anything that slips is cosmetic.
+0. Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, 38 off-switch framework, tests ×3,
+   thread specs. [Haiku] inventories (buttons, plain surfaces, headlines, all copy, art sizes) + 43 capacity numbers.
+   [Sonnet art driver] starts with what wave 1–2 need: alphabet, buttons, toasts/chips, age-check screen, Halloween
+   icon + widgets, push card/avatars, invite images.
+1. Wave 1 — foundations + must-fix
+   A: 6 lettering + no-clip guard, 14 scroll header, 8 shared tile, 23 every button + guard, 44 compression tool.
+   B: 1b Halloween readability, 10 crossword, 21 tour button, 31 toasts + Codebreaker, truncations, 37 shift harness.
+2. Wave 2 — release-critical (Opus reviews closely)
+   A: 29 13+ age check, 34 push notifications, 28 widgets (large fix, wordmark, live countdown, FLAWLESS, trophy/
+      flame) + Halloween widgets, 26 Halloween icon.
+   B: 9f branded invites + 9b live play. Opus: 43 capacity decision.
+3. Wave 3 — alive
+   A: 13 big living mascots, 7 banners + flawless messages + celebratory centered Sweep/Flawless (seasonal kits),
+      19 speech bubbles, 19b voices + moods.
+   B: 9 Friends cleanup, 9e calmer Friends, 9c "?" help, 9d boards + every piece, 12 first-play tutorials,
+      22 waiting rooms, 32 Hubbub + all game control bars.
+4. Wave 4 — pages
+   A: 35 game order (Classic pinned, default Dailies order, designed reorder, easier-first Puzzles) → 11/11b
+      Leaderboard stage, 16 Stats, 17 profiles, 20 Go Pro.
+   B: 25 full themes + Settings redesign, 24 Seasonal theme row + costumed opening, 15 living wallpapers + 45 trims.
+5. Wave 5 — content + maker
+   A: 5/5b subculture + sports packs, Pro try-on popup, admin item grants.
+   B: 30 harder Spyglass, 33 Hubbub everyday words, 3 share titles, 4/4b musical cast, 2 Sound Library.
+6. Wave 6 — finish
+   A: 36 content rewrite (How to Play, guides, FAQ, every info menu), 41 "What's new in 2.8", 18 polish picks.
+   B: 39 old-version compatibility tests (Opus reviews), 40 screen-reader sweep.
+   [Haiku] after EVERY wave: 37 shift sweep, 44 compression run, screenshot sweep → failures to the owning thread.
+7. Release (Opus): 42 Doug + Johnny get TestFlight / Android internal → readability + smoothness + final gates ×3 →
+   [Sonnet] store screenshots, Opus captions + store text (27) → founder feedback (phone / live sim) → fixes →
+   iOS 2.8 submit (auto release) + expedite request + Play production → web on store approval.
+8. After submit: LevelPlay setup in Chrome (ads live in the ~Nov 1 2.8.x).
 Art approvals (founder 10-07): NO Art Library gating — I pick by judgment from what's been approved so far and
 wire it. The one hard rule: the 10 main characters stay true to their LOOK, SOUND and PERSONALITY whenever they're
 drawn or interact with anything (hero refs + docs/MASCOT_SPEC.md + brand-mascots signature features; face-region
