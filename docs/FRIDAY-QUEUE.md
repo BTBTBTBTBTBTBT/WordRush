@@ -877,5 +877,10 @@ second game on the puzzles list")
     pocket-game results, Stats / profile, achievements / level-up, invites (9f), streaks — every share path ×3.
   - One shared share-card renderer (server/OG for links + on-device for images), consistent sizes for iMessage /
     Instagram story / square; real resolver mascot renders only; text always complete.
+- Rule (founder 10-08): each share image MIRRORS its rebranded page — the leaderboard share is a snapshot-style
+  version of the new Leaderboard stage (11b: day title + mascot, podium with big living-pose mascots, game tint
+  backdrop), result shares mirror the new finished/Sweep/Flawless screens (7), profile/Stats shares mirror 16/17,
+  VS shares mirror the new VS results — same art, lettering and components, so the app and what people send match.
+  That's why it runs in wave 5, right after the page redesigns land.
 - Assign: [Sonnet] in wave 5 B (with the old item 3), ChatGPT frames from the art driver; Opus reviews a sheet of every
   share type × win/loss × season before release.
