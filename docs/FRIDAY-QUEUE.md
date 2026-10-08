@@ -35,7 +35,7 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
-   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars.
+   28 widget fixes (large widget taps, wordmark, live countdown) → 29 13+ age check (COPPA) → 30 harder Spyglass grids → 31 in-game message toasts → 32 Hubbub + all game control bars → 33 Hubbub everyday-word audit.
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + every game piece (X/O, RPS hands, coin, tiles) (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -723,3 +723,13 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   only, ≤ ~400 ms, 60 fps on the slowest test devices or it falls back to a quick cross-fade; Reduce Motion = fade.
 - Apply the same finish to every game's in-game control bar (hint / reveal / shuffle / delete / enter / check) on all
   18 games + pocket games (ties into 23 every button), ×3, Halloween skin.
+
+## 33. Hubbub rejects real everyday words (founder 10-08: RECOLLECT wasn't counted)
+- Confirmed in today's puzzle (hb0016, letters LCEORTY, center L): RECOLLECT is in neither `words` nor `bonus` —
+  nor are RECYCLER and REELECT — while obscure words like CERCELEE / CEORL / ELYTROCELE are accepted as bonus.
+  Same family as Doug's AUNTY report (cloud 05b everyday words) — check what PR #46 already fixed first.
+- Fix: audit every FUTURE Hubbub puzzle against a broad common-English list (app dictionary + a word-frequency list):
+  every common word that fits the letters + center must be accepted (main list if common enough for "max", else
+  bonus); obscure/archaic words stay bonus-only or drop. Report the adds per puzzle; profanity filter + American
+  spelling rules still apply; sha/parity + "max" recomputed; past dates untouched. Add a guard test with known
+  everyday words (RECOLLECT, AUNTY, RECYCLER…) so this can't regress.
