@@ -30,7 +30,7 @@ Two dates to protect (handled first thing Friday):
   by the submit day rides in 2.8.1 after launch instead of holding the build.
 Order:
 A. Merge cloud PRs #41–#50 (+ cutover date move) → 1b readability fixes → 10 crossword cells → 21 tour button →
-   28 widget fixes (large widget taps, wordmark, live countdown).
+   28 widget fixes (large widget taps, wordmark, live countdown) → 29 COPPA mixed-audience setup.
 B. Free-ChatGPT art session alongside everything (I pick + wire; cast accuracy is the only hard gate): bubble alphabet (6), banner variants (7),
    pocket boards + coin (9d), invite images (9f), "?" sheets (9c), Leaderboard button (11), welcome tutorials (12),
    wallpaper cutouts (15), Stats titles/icons/ring (16), profile shelf + titles (17), speech bubbles (19), Go Pro
@@ -636,3 +636,23 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   Screenshot check on every widget size + lock screen, light/dark/Halloween.
 - All of this applies to the Halloween widgets (item 24) and every future season's widgets, plus the store
   showcase screen ("Widgets with your mascot") matches what really ships. ×2 (iOS + Android); web n/a.
+
+## 29. COPPA: mixed-audience setup (founder 10-08: "add to this Friday's plan") — get a lawyer's review too
+- Why: the app appeals to kids (cartoon cast, costumes, dress-up), so "not intended for under 13" in the privacy
+  policy isn't enough. Today: no age check at sign-up; LevelPlay set COPPA=false + ATT/IDFA prompt (AdsManager.swift
+  ~:120–138, Android AdsManager.kt); profile photo upload, free-typed public usernames, friends/invites/reactions,
+  push, Sentry. No ads serve yet — this must be done before ads are ever switched on.
+- Neutral age screen at sign-up AND for existing accounts on next launch (birth year picker, no default, no
+  "you must be 13" hint; stored as an under-13 flag + year only; can't be retried to a different answer on the
+  same device/account without support). Guests get it before any social feature.
+- Under-13 protected mode ×3: no photo upload (mascot avatar only; existing photo hidden + deleted), pre-made
+  username generator (adjective + noun) instead of free text, friends by invite code only (no search/discovery),
+  no reactions to non-friends, no marketing pushes (game reminders only, opt-in), ads: COPPA=true / child-directed,
+  no ATT prompt, no IDFA/GAID, contextual-only; Sentry scrubbed (no user id/email/IP; sendDefaultPii off for all).
+- Server: under-13 flag in profiles (RLS: user can't flip it themselves), enforced server-side (photo upload,
+  username, friend search routes reject); admin view shows it; parent data-deletion request path (support email +
+  in-app "Delete my data" that works without a password for kid accounts).
+- Privacy policy rewrite: a real children's section (what we collect from kids, why, retention, parent rights,
+  contact), effective date; Terms aligned. Store settings: App Store age rating + privacy labels, Google Play
+  target audience + Families policy check (LevelPlay Families-compliant config), data safety form.
+- Tests ×3 for every protected-mode rule; SQL via the standing recipe (backup → psql → read back).
