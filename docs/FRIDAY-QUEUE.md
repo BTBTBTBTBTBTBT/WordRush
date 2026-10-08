@@ -682,8 +682,9 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   - all 8 directions incl. backwards (founder-era "nothing reads backwards" rule retired for difficulty; matching
     already accepts either direction), with a mix rule per puzzle (e.g. ≥3 diagonals, ≥2 backwards, ≤3 plain E/S);
   - overlaps/crossings between words; long words never span a full edge-to-edge row/column every time;
-  - camouflage filler: filler letters drawn from the theme words' own letters + planted decoy fragments ("TOWTRU",
-    "DIESE") — decoys stay on the existing near-miss list so they're never punished as misses;
+  - camouflage filler: filler letters drawn from the theme words' own letters so words don't stand out — but NO
+    planted decoys/fake partial words (founder 10-08: with a hidden list they'd feel like false finds); the
+    generator also rejects grids where filler accidentally spells an on-theme word or a long partial of one;
   - a weekday ramp (Mon gentler → Sat/Sun hardest, maybe a 12 × 12 weekend grid if it fits the screen).
-- Difficulty score per puzzle (direction mix, overlaps, decoys) checked in a test so the bank can't drift easy again;
+- Difficulty score per puzzle (direction mix, overlaps, camouflage) checked in a test so the bank can't drift easy again;
   a playtest sample sheet before shipping. Same in iOS/Android/web (shared bank). Hidden-list + hint/reveal unchanged.
