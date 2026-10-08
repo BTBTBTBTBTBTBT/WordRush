@@ -1,19 +1,24 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
-## FRIDAY GAME PLAN (founder 10-07: all of it Friday, submit 2.8 for review; thorough but usage-efficient)
-Models: Opus = me (orchestrate, specs, merges, reviews, release, final gate); Sonnet = build threads + ChatGPT art
-driver; Haiku = inventories/scans/screenshot sweeps. Max 3 agents at once, each in its own worktree, owning a
-feature ×3 (iOS/Android/web) with disjoint files, time-boxed ~45 min → commit + report; serial native builds, one sim.
-- 1:00 Opus: merge #41–#50, move #46 cutover, tests ×3; write short specs for every thread; start wave 1.
-- Wave 1: [Sonnet] ChatGPT art driver in Chrome (all art in RUN ORDER B, batches → Art Library) · [Sonnet]
-  foundations (6 lettering + guard, 14 header, 8 tile) · [Sonnet] 1b readability + 10 + 21 + truncation.
-  [Haiku] button + plain-surface inventory (18/23) feeds wave 3.
-- Wave 2: [Sonnet] mascots alive + banners (13, 7) + voices/moods synth (19b, spec from Opus) · [Sonnet]
-  Friends/pocket (9, 9e, 9c, 12) · [Opus-reviewed Sonnet] invites + live play (9f deep links/OG images, 9b realtime).
-- Wave 3: [Sonnet] pages (11, 16, 17, 20, 22, 15) · [Sonnet] wire approved art + every button (23) · [Sonnet]
-  extras (3, 4/4b, 2, 5, 18 picks).
-- Gates (Opus): readability + smoothness + final ×3 → Android internal + TestFlight for founder → on OK: iOS 2.8
-  submit (auto release) + Play production + web push.
+## FRIDAY GAME PLAN (updated 10-08; founder: all of it Friday, submit 2.8; thorough but usage-efficient)
+Models: OPUS = me (kickoff merges, specs, reviews of every thread, security/legal-sensitive code, release, gates,
+store text); SONNET = build threads + the ChatGPT art driver; HAIKU = inventories, scans, screenshot sweeps. Max 3
+agents at once, own worktrees, one feature ×3 each, disjoint files, ~45-min boxes → commit + report; serial native
+builds, one sim.
+- Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, tests ×3, write thread specs.
+- Wave 1: [Sonnet] ChatGPT art driver — all art (lettering, banners, boards/coin, invites, "?" + tutorials, Leaderboard
+  stage backdrop, Stats/profile/Settings titles + icons, speech bubbles, Go Pro scenes, lobby, buttons, theme walls,
+  Halloween icon/widgets/opening, age-check screen, subculture + sports packs) · [Sonnet] foundations: 6 lettering +
+  no-clip guard, 14 header, 8 tile, 23 buttons + guard · [Sonnet] fixes: 1b readability, 10 crossword, 21 tour,
+  28 widgets, truncations. [Haiku] button / plain-surface / headline inventories.
+- Wave 2: [Sonnet] mascots alive 13 + 7 banners/flawless messages/centered popups + 19 bubbles + 19b voices/moods ·
+  [Sonnet] Friends + pocket 9, 9e, 9c, 9d, 12, 22 · [Sonnet, Opus-reviewed] 9f invites + 9b realtime + 29 13+ age check.
+- Wave 3: [Sonnet] pages 11/11b, 16, 17, 20, 15, 25 · [Sonnet] Halloween kit 24 + 26 icon + seasonal widgets ·
+  [Sonnet] 5/5b packs + Pro try-on popup + admin item grants; extras 3, 4/4b, 2, 18.
+- Gates + release (Opus): readability, smoothness, final ×3 → [Sonnet] store screenshots, Opus captions + store text
+  (27) → Android internal + TestFlight → founder feedback (phone or live sim) → fixes → iOS 2.8 submit (auto release)
+  + expedite request + Play production → web pushed on store approval (all three flip to Halloween together).
+- After submit: LevelPlay setup in Chrome (ads go live in the ~Nov 1 2.8.x).
 Art approvals (founder 10-07): NO Art Library gating — I pick by judgment from what's been approved so far and
 wire it. The one hard rule: the 10 main characters stay true to their LOOK, SOUND and PERSONALITY whenever they're
 drawn or interact with anything (hero refs + docs/MASCOT_SPEC.md + brand-mascots signature features; face-region
