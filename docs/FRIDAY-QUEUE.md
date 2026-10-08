@@ -56,6 +56,8 @@ H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates 
    no on a big release, so submit as early as possible regardless.
 
 ## STANDING RULE for every ChatGPT design on this list (founder 10-07)
+- **Always the FREE ChatGPT in the browser** (founder 10-08) — never the paid OpenAI image API unless the founder
+  specifically says so for that job.
 - **Main cast stays exactly on-model:** attach cast/hero/<id>.png (+ refs/poses) to every prompt; prefer layering
   (ChatGPT draws only boards/props/frames, the canonical cast art is composited in code); any redraw passes the
   face-region check (eyes, mouth/teeth, brows, letter) side by side with the hero, or it's rejected.
