@@ -9,7 +9,8 @@ ChatGPT art driver (runs all day); HAIKU = inventories/scans/screenshot sweeps. 
    [Sonnet, all day] ChatGPT art driver (free ChatGPT, cast on-model) in the order the threads need it.
 1. Wave 1 — [Sonnet A] foundations: 6 bubble lettering + no-clip guard, 14 scroll header, 8 shared tile, 23 every
    button + guard · [Sonnet B] fixes: 1b Halloween readability, 10 crossword cells, 21 tour button, 31 overlay
-   toasts + Codebreaker resize/chips, truncations.
+   toasts + Codebreaker resize/chips, truncations, 37 screen-shift harness (web + iOS + Android).
+   [Haiku] runs the 37 shift sweep after every wave → failures to the owning thread.
 2. Wave 2 — [Sonnet A] widgets 28 (large widget, wordmark, live countdown, FLAWLESS, trophy/flame) + Halloween
    widgets + 26 icon · [Sonnet B] data + order: 30 Spyglass generator, 33 Hubbub everyday words, 35 game order
    (Classic pinned, default Dailies order, designed reorder, easier-first Puzzles).
@@ -812,3 +813,16 @@ second game on the puzzles list")
   copy (34), widget showcase, What's New, web pages (about/privacy/terms), store text (27), emails. Flag anything old
   ("More Games", removed features, wrong counts), lumped, inconsistent or British-spelled; fix ×3 from shared copy
   where possible. [Haiku] string inventory → [Sonnet] rewrite → Opus review.
+
+## 37. Screen-shift audit everywhere (founder 10-08: "no screen shifting anywhere like Codebreaker")
+- One automated harness, run on every game + key screens, all seasons/themes:
+  - Web: Playwright scripts play each game (type letters, place pieces, hint, shuffle, messages, finish) and record
+    layout shift (PerformanceObserver "layout-shift" / CLS) plus the bounding boxes of the board, keyboard, header
+    and control bar before vs after every action → any move > 1 px that isn't the piece being played = fail.
+  - iOS (XCUITest) + Android (Compose UI test): same scripted actions, compare the frames of the same named
+    elements before/after each action; screenshots of every failure.
+- Runs as part of the smoothness gate and CI from then on, so a new shift can't sneak in.
+- Assignment: [Sonnet] builds the harness in wave 1 (alongside the Codebreaker fix, so it proves that fix);
+  [Haiku] runs the sweep across all 18 games + pocket games + popups/banners/notifications after each wave and
+  files a short failures list; the owning thread fixes; Opus checks the final run before release.
+- Standing rule for every thread meanwhile: nothing resizes or moves during play except the piece being played.
