@@ -783,6 +783,12 @@ second game on the puzzles list")
     Home strips + cards, Leaderboard picker (11b), Stats picker (16), widgets (28), Sweep/Flawless lists (7), and
     NEXT on finished screens = next unplayed game in YOUR order.
   - Sweep rules + canonical ids unchanged (order is display-only); new games append to the end of a custom order.
+- Dailies default order (founder 10-08, final): Classic, QuadWord, OctoWord, Succession, Six, Seven, Deliverance,
+  Gauntlet. Classic is ALWAYS first / top-left (pinned, even in a custom order); everyone keeps this until they
+  choose to edit. Don't overthink it.
+- The edit-order control must be designed, not bolted on: no generic "Edit" button stuck on the page — an
+  integrated, ChatGPT-designed affordance in the family style (e.g. a small pencil glyph built into the section
+  title art, plus long-press on a tile), with a designed edit mode (wiggle, drop-target glow, family Done / Reset).
 - New default Puzzles order, easiest → hardest, from real data (completion/win rate + median time per game in the
   DB, read-only query), so Muddle moves down; Dailies default reviewed the same way. Founder/JP see the proposed
   order before ship.
