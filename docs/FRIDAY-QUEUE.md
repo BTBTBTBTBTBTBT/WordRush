@@ -44,7 +44,8 @@ G. Extras (first to slip to 2.8.1 if time is short): 18 polish sweep → 3 share
 H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates (readability, smoothness, final) ×3 → iOS 2.8 submit + Play production (paired) + web, on founder's OK.
    Expedited review (founder 10-07): request it right after submitting. Honest grounds: the live 2.7.1 turns on the
    Halloween theme by itself on Oct 17 and has readability problems in it (text contrast on the Halloween screens,
-   found by our audit); 2.8 fixes them and must be live before the 17th. Draft the request text ready to paste;
+   found by our audit), plus formatting problems in the live build (the Home headline is cut off — "WORDOCIOUS
+   FLAWLES…" — and other truncated titles, off-center celebration popups); 2.8 fixes them and must be live before the 17th. Draft the request text ready to paste;
    founder fills Apple's form (the app picker resists automation). Last expedite was 10-06 (2.7.1) — Apple may say
    no on a big release, so submit as early as possible regardless.
 
@@ -204,6 +205,16 @@ H. 26 Halloween icon + 27 Halloween screenshots/captions + store text → gates 
   banner next to the cast, celebrating with them; cast members animate with the puppet rigs (cheer, hop,
   W wave, S fist pump…). Seasonal versions during seasons (Halloween sweep).
 - Same performance + Reduce Motion rules; share image of the sweep uses the same day's scene.
+- Flawless streak messages (founder 10-08): the banner headline (bubble lettering, item 6) speaks to the flawless
+  streak that the new header trophy counts (🏆 2): "FLAWLESS ★ 2 DAYS IN A ROW", milestone lines at 3 / 5 / 7 / 10 /
+  14 / 30 ("A WHOLE WEEK FLAWLESS!"), "NEW BEST!" when it beats your record, and a kind restart line after a break;
+  the same for Sweep streaks. Your living mascot celebrates with the cast (bigger cheer at milestones), and the
+  header trophy pops/glows the moment the banner flips. Copy varies by day so it never repeats flatly; American
+  spelling; everything fits (no "FLAWLES…").
+- The Flawless + Daily Sweep celebration popups: centered both vertically and horizontally on every screen size
+  (today they sit off-center), and they feature YOUR mascot celebrating (cheer mood + voice, 19b) alongside the
+  existing moment art + the bubble headline; Reduce Motion = still pose. Check iPhone SE → Pro Max, iPad, Android
+  small → large, web narrow → wide.
 
 ## 8. One game-tile style everywhere: W / L badges + matching spacing (founder 10-06, screenshots)
 - Reference = the Sudocious finished screen's tile rows (WORDOCIOUS + PUZZLES): each completed game tile shows the
