@@ -10,7 +10,7 @@ builds, one sim.
   stage backdrop, Stats/profile/Settings titles + icons, speech bubbles, Go Pro scenes, lobby, buttons, theme walls,
   Halloween icon/widgets/opening, age-check screen, subculture + sports packs) · [Sonnet] foundations: 6 lettering +
   no-clip guard, 14 header, 8 tile, 23 buttons + guard · [Sonnet] fixes: 1b readability, 10 crossword, 21 tour,
-  28 widgets, truncations, 30 Spyglass generator, 31 message toasts. [Haiku] button / plain-surface / headline inventories.
+  28 widgets, truncations, 30 Spyglass generator, 31 message toasts + Codebreaker chips/buttons design. [Haiku] button / plain-surface / headline inventories.
 - Wave 2: [Sonnet] mascots alive 13 + 7 banners/flawless messages/centered popups + 19 bubbles + 19b voices/moods ·
   [Sonnet] Friends + pocket 9, 9e, 9c, 9d, 12, 22 · [Sonnet, Opus-reviewed] 9f invites + 9b realtime + 29 13+ age check.
 - Wave 3: [Sonnet] pages 11/11b, 16, 17, 20, 15, 25 · [Sonnet] Halloween kit 24 + 26 icon + seasonal widgets ·
@@ -702,5 +702,11 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   scrolls), and the board's size is computed once per puzzle/screen size, never from content that changes while
   playing. Rule for every game: nothing resizes or moves during play except the piece being played — measure
   layout shift in the smoothness gate for each game while typing/placing.
+- Codebreaker chip tray + action row get a ChatGPT design pass (founder 10-08 crop): the code-letter chips
+  ("G 6 → O") become family-style mini key tiles — code letter, a small count badge, and a solved slot that fills
+  with the answer letter (tinted, little pop when solved), same fixed size solved or not; selected chip = clear
+  game-tint glow; most-used letters first in a tidy fixed grid. DELETE / CHECK / HINT / REVEAL become the family
+  helper buttons with 3D icons (backspace, check, lightbulb, eye) sized to their labels, REVEAL's countdown as a
+  small timer badge. Halloween skin; readable.
 - Sweep all 18 games + pocket games for inline messages; add "message appears" to the smoothness gate (no frame drops,
   zero layout shift measured).
