@@ -696,5 +696,11 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   or resizes anything (no layout shift; fade/scale in, auto-dismiss, tap to dismiss), one shared component ×3.
 - Designed in ChatGPT: a little family-style popup graphic per message type (warning / info / nice), optionally with
   the game's cast host peeking + its voice chirp (19b), game-tinted; Halloween skin. Readable (1b gate).
+- Codebreaker board shrinks when a CORRECT letter is entered too (founder 10-08). Likely cause: the letter-count chips
+  ("G 6 → O") get wider when a mapping is added, wrap to an extra row, and the auto-fit board shrinks to make room.
+  Fix: chips have a fixed width with the "→ X" slot reserved from the start (or a fixed-height chip tray that
+  scrolls), and the board's size is computed once per puzzle/screen size, never from content that changes while
+  playing. Rule for every game: nothing resizes or moves during play except the piece being played — measure
+  layout shift in the smoothness gate for each game while typing/placing.
 - Sweep all 18 games + pocket games for inline messages; add "message appears" to the smoothness gate (no frame drops,
   zero layout shift measured).
