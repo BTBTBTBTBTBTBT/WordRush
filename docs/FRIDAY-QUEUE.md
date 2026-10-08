@@ -618,7 +618,10 @@ Run: screenshot every screen ×3 (light, dark, Halloween), mark plain ones, foun
   the daily widget to large — check the provider (widget_daily_info.xml) switches to widget_daily_large.xml and that
   every cell has a PendingIntent. Every tap anywhere on every widget size must open something sensible (the game,
   else Home).
-- Every widget size shows "WORDOCIOUS" (small wordmark/lettering), including the small ones that don't today.
+- Every widget size shows WORDOCIOUS — never plain text (founder 10-08): the ChatGPT title lettering (the same
+  bubble style as the app's titles, or the mini cast-tile wordmark W-O-R-D-O-C-I-O-U-S) as an image sized per widget,
+  tinted per theme/season (Halloween orange/black), legible at small-widget size; replaces the plain caps
+  "WORDOCIOUS · TODAY'S DAILIES" label on the large/medium widgets too.
 - Live countdowns: "resets in" ticks hours:minutes:seconds in real time — iOS `Text(timerInterval:)` / `.timer`
   style (no timeline cost), Android RemoteViews Chronometer counting down (API 24+); falls back to h/m on lock-screen
   accessory widgets where seconds aren't allowed.
