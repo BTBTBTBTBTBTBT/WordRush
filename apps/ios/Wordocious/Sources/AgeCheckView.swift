@@ -60,9 +60,8 @@ struct AgeCheckQuestionView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.933, green: 0.894, blue: 1.0), Color(red: 1.0, green: 0.925, blue: 0.965)],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            // The app's own wall (the season's wall in season), so the scene sits in the same world as Home.
+            PageBackground(tint: .home, lightOnly: true).ignoresSafeArea()
             ScrollView {
                 VStack(spacing: 12) {
                     // The live WORDOCIOUS cast row stays on top; the question lives below it.
@@ -90,13 +89,16 @@ struct AgeCheckQuestionView: View {
     }
 
     private var wheel: some View {
-        ZStack {
+        // In season the wheel is the same black-violet glass as D's bubble, so it belongs to the night scene.
+        let night = CastSkin.season != nil
+        let edge = night ? Color(red: 0.165, green: 0.063, blue: 0.251).opacity(0.80) : Color(red: 0.77, green: 0.71, blue: 0.99).opacity(0.6)
+        let mid = night ? Color(red: 0.247, green: 0.106, blue: 0.369).opacity(0.88) : Color(red: 0.914, green: 0.835, blue: 1.0)
+        return ZStack {
             RoundedRectangle(cornerRadius: 34, style: .continuous)
-                .fill(LinearGradient(colors: [Color(red: 0.77, green: 0.71, blue: 0.99).opacity(0.6),
-                                              Color(red: 0.914, green: 0.835, blue: 1.0),
-                                              Color(red: 0.77, green: 0.71, blue: 0.99).opacity(0.6)],
-                                     startPoint: .top, endPoint: .bottom))
-                .shadow(color: Color(red: 0.486, green: 0.227, blue: 0.929).opacity(0.22), radius: 14, y: 8)
+                .fill(LinearGradient(colors: [edge, mid, edge], startPoint: .top, endPoint: .bottom))
+                .overlay(RoundedRectangle(cornerRadius: 34, style: .continuous)
+                    .strokeBorder(night ? Color.orange.opacity(0.35) : .clear, lineWidth: 1.5))
+                .shadow(color: (night ? Color.orange : Color(red: 0.486, green: 0.227, blue: 0.929)).opacity(0.22), radius: 14, y: 8)
             // The gold answer band.
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(LinearGradient(colors: [Color.yellow.opacity(0.55), Color.orange.opacity(0.32)],
@@ -107,10 +109,12 @@ struct AgeCheckQuestionView: View {
             Picker("Year you were born", selection: $row) {
                 // Neutral placeholder: no year is ever pre-selected.
                 Text("\u{2022}  \u{2022}  \u{2022}")
-                    .font(.system(size: 22, weight: .black, design: .rounded)).tag(0)
+                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .foregroundColor(night ? Color(red: 1.0, green: 0.86, blue: 0.55) : Color(red: 0.357, green: 0.129, blue: 0.714)).tag(0)
                 ForEach(Array(years.enumerated()), id: \.offset) { i, y in
                     Text(String(y))
                         .font(.system(size: 26, weight: .black, design: .rounded))
+                        .foregroundColor(night ? Color(red: 1.0, green: 0.86, blue: 0.55) : Color(red: 0.357, green: 0.129, blue: 0.714))
                         .tag(i + 1)
                 }
             }
@@ -142,7 +146,7 @@ private struct AgeSpeechBubble: View {
             .resizable().scaledToFit()
             .overlay {
                 GeometryReader { g in
-                    BubbleTextView(text: text, palette: halloween ? .celebration : .home, maxSize: 40, minSize: 20, alignment: .center)
+                    BubbleTextView(text: text, palette: halloween ? .celebration : .home, maxSize: 46, minSize: 20, alignment: .center)
                         .frame(width: g.size.width * 0.82, height: g.size.height * (halloween ? 0.62 : 0.64))
                         .position(x: g.size.width / 2, y: g.size.height * (halloween ? 0.40 : 0.41))
                 }
@@ -159,7 +163,7 @@ private struct AgeAskScene: View {
     var body: some View {
         VStack(spacing: 0) {
             AgeSpeechBubble(text: "WHAT YEAR WERE YOU BORN?", halloween: halloween)
-                .frame(maxWidth: 318)
+                .frame(maxWidth: 286)
                 .frame(maxWidth: .infinity, alignment: .leading)
             GeometryReader { g in
                 let w = g.size.width
@@ -172,7 +176,7 @@ private struct AgeAskScene: View {
                         .position(x: w / 2, y: g.size.height - 17)
                     AgeContact(width: w * 0.38).position(x: w * 0.74, y: g.size.height - 12)
                     AgeContact(width: w * 0.30).position(x: w * 0.27, y: g.size.height - 8)
-                    Image(MascotID.d.assetName).resizable().scaledToFit().frame(width: 142, height: 142)
+                    Image(CastSkin.assetName(for: .d)).resizable().scaledToFit().frame(width: 142, height: 142)
                         .position(x: w * 0.74, y: g.size.height - 4 - 71)
                     Image("age-cake").resizable().scaledToFit().frame(width: 84)
                         .shadow(color: Color(red: 0.298, green: 0.114, blue: 0.584).opacity(0.18), radius: 3, y: 3)
@@ -237,9 +241,8 @@ private struct AgeSeeYouScene: View {
 struct AgeCheckUnderView: View {
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Color(red: 0.894, green: 0.925, blue: 1.0), Color(red: 0.992, green: 0.945, blue: 0.894)],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            // The app's own wall (the season's wall in season), so the scene sits in the same world as Home.
+            PageBackground(tint: .home, lightOnly: true).ignoresSafeArea()
             ScrollView {
                 VStack(spacing: 12) {
                     // The live WORDOCIOUS cast row stays on top.
