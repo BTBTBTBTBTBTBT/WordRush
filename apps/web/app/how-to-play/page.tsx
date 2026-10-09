@@ -1,19 +1,16 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { HOW_TO_PLAY, type HTPTileColor } from '@/lib/how-to-play-content';
 import { LetterTile, type TileLook } from '@/components/game/letter-tile';
 import { CandyLink } from '@/components/ui/candy-button';
 import { InfoPageLayout } from '@/components/ui/info-page';
-import { GuideBody, GuideHeroCard, GuideSectionHead, GuideTakeaway } from '@/components/strategy/guide-family';
-import { gameArtSrc } from '@/lib/art';
-import { accentInk } from '@/lib/soft-surface';
-import { MODE_BY_ID } from '@/lib/modes.generated';
-import { howToPlayAccent, howToPlayModeId } from '@/lib/strategy-games';
+import { GuideBody, GuideHeroCard, GuideTakeaway } from '@/components/strategy/guide-family';
+import { HtpGameEntry, HtpSectionHead } from '@/components/help/htp-parts';
+import { howToPlayAccent } from '@/lib/strategy-games';
 
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
   description:
-    'Learn how to play Wordocious. Complete guide to every game mode: Classic, VS Battle, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, and the ten Puzzles dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Scoring, streaks, medals, and tips for beginners.',
+    'Learn how to play Wordocious. Every game has its own entry: the eight Dailies, the ten Puzzles, VS Battle with bots, and the six pocket games, each with a quick walk-through and a full guide. Plus Sweeps, Flawless Victory, streaks, shields, XP and scoring.',
 };
 
 /** HTP tile colors → the glossy game tile looks (B1). Unrevealed letters show on the frosted empty tile. */
@@ -43,7 +40,7 @@ export default function HowToPlayPage() {
           const accent = howToPlayAccent(i);
           return (
             <section key={i} className="flex flex-col gap-3">
-              <GuideSectionHead n={i + 1} accent={accent}>{s.title}</GuideSectionHead>
+              <HtpSectionHead n={i + 1} accent={accent} title={s.title} />
 
               {s.intro && <GuideTakeaway accent={accent}>{s.intro}</GuideTakeaway>}
 
@@ -76,26 +73,9 @@ export default function HowToPlayPage() {
                 </div>
               )}
 
-              {s.modes && (
-                <div className="flex flex-col gap-4">
-                  {s.modes.map((m, j) => {
-                    const id = howToPlayModeId(m.name);
-                    const icon = gameArtSrc(id);
-                    const modeAccent = (id && MODE_BY_ID[id]?.accentHex) || m.accent;
-                    // The game accent on light; its pastel on dark (legible on the dark surface).
-                    const ink = accentInk(modeAccent, modeAccent);
-                    return (
-                      <div key={j} className="flex gap-3 items-start">
-                        {icon && (
-                          <Image src={icon} alt="" aria-hidden width={256} height={256} sizes="32px" loading="lazy" draggable={false} className="shrink-0" style={{ width: 32, height: 32 }} />
-                        )}
-                        <div className="min-w-0">
-                          <h3 className={`m-0 font-black leading-snug ${ink.className}`} style={{ ...ink.style, fontSize: 14 }}>{m.name}</h3>
-                          <p className="m-0 mt-0.5" style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--color-text-secondary)' }}>{m.body}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
+              {s.games && (
+                <div className="flex flex-col gap-5">
+                  {s.games.map((g) => <HtpGameEntry key={g.id} game={g} />)}
                 </div>
               )}
 
