@@ -10,6 +10,14 @@ import slice_grid as sg
 from packs import PACKS
 import subprocess
 
+VORONOI = set()   # (careers handled by the merged-piece cut below)
+MERGED = {'careers': [('astronaut-helmet', 'detective-cap-magnifier (cap + glass: split in code)')]}   # a component that joins two neighbours
+
+
+def sheet_w_of(rgba):
+    return rgba.width
+
+
 def run(pack):
     cols, rows, items = PACKS[pack]
     sheet = f'{HERE}/{pack}/raw/sheet.png'
@@ -17,8 +25,20 @@ def run(pack):
     rgba = sg.key_sheet(sheet, all_pockets=True, decyan=False, crop=True)
     alpha = np.asarray(rgba.getchannel('A'))
     names = [i[0] for i in items]
-    parts = sg.split_cells(rgba, names, cols, rows)
-    for n, (bb, mk) in parts.items():
+    parts = sg.split(rgba, names, cols, rows) if pack in VORONOI else sg.split_cells(rgba, names, cols, rows)
+    for a_name, b_name in MERGED.get(pack, []):
+        if a_name in parts and b_name not in parts:
+            bb, mk = parts[a_name]
+            cols_alpha = mk.sum(axis=0)
+            lo, hi = bb[0], bb[2]
+            mid = int(sheet_w_of(rgba) / cols * (names.index(b_name) % cols))      # the cell boundary between them
+            win = range(max(lo + 5, mid - 60), min(hi - 5, mid + 60))
+            cut = min(win, key=lambda x: cols_alpha[x])
+            ma = mk.copy(); ma[:, cut:] = False; mb = mk.copy(); mb[:, :cut] = False
+            ys, xs = np.nonzero(ma); parts[a_name] = ((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1), ma)
+            ys, xs = np.nonzero(mb); parts[b_name] = ((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1), mb)
+    for n, v in parts.items():
+        bb, mk = (v[0], v[1])
         p = rgba.copy(); p.putalpha(Image.fromarray((alpha * mk).astype(np.uint8))); p.crop(bb).save(f'{out}/{n}.png')
     missing = [n for n in names if n not in parts]
     subprocess.run(['/opt/homebrew/bin/python3', f'{HERE}/../tools/contact.py', out, f'{HERE}/{pack}/contact-sheet.png', '4', '300'], check=True, stdout=subprocess.DEVNULL)
