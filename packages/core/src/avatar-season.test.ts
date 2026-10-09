@@ -9,8 +9,11 @@ const pumpkin = { field: 'head', id: 'pumpkinhat' };
 describe('seasonal mascot items (10-05)', () => {
   it('the Halloween shelf: hats first, every part a shipped seasonal item in a catalog', () => {
     const shelf = seasonalShelf('halloween');
-    expect(shelf.map((p) => p.id)).toEqual(['pumpkinhat', 'candycornhat', 'witchnight', 'batears', 'batwings', 'cattail', 'vampirecollar', 'candypail', 'bat', 'ghost', 'blackcat']);
-    for (const p of shelf) expect(AVATAR_MANIFEST.items[`acc:${p.id}`]?.season).toBe('halloween');
+    // 2.8 (item 50): the four Halloween BODIES lead the shelf, then the hats and everything else
+    expect(shelf.filter((p) => p.field === 'body').map((p) => p.id)).toEqual(['pumpkin', 'ghost', 'cone', 'bat']);
+    expect(shelf.filter((p) => p.field !== 'body').map((p) => p.id)).toEqual(['pumpkinhat', 'candycornhat', 'witchnight', 'batears', 'batwings', 'cattail', 'vampirecollar', 'candypail', 'bat', 'ghost', 'blackcat']);
+    for (const p of shelf.filter((x) => x.field !== 'body')) expect(AVATAR_MANIFEST.items[`acc:${p.id}`]?.season).toBe('halloween');
+    for (const p of shelf.filter((x) => x.field === 'body')) expect(AVATAR_MANIFEST.bodies[p.id]?.season).toBe('halloween');
   });
 
   it('every manifest season is a real season window, and every seasonal item sits in a catalog', () => {

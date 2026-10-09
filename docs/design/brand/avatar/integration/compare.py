@@ -148,7 +148,7 @@ def main():
     bodies = list(json.load(open(os.path.join(HERE, 'landmarks.json')))['bodies'])
     layouts = fits.shipped_layouts(bodies)
     allres = {}
-    with ProcessPoolExecutor(max_workers=4) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('AV_WORKERS', '1'))) as ex:
         for body, res in ex.map(worker, [(b, j, layouts) for j, b in enumerate(bodies)]):
             allres[body] = res
             print(body, 'done', flush=True)

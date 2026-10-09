@@ -84,6 +84,7 @@ enum MascotNew {
     static let ids: Set<String> = ["head:santa", "head:witch", "neck:scarf", "neck:bubbletea", "neck:guitar", "neck:fairywings"]
     /// The 10-05 additions + the 7 rebuilt parts (WordociousCore AvatarCatalog.newParts).
     static func integrated(slot: String, value: String) -> Bool {
+        if slot == "body" { return AvatarCatalog.newBodies.contains(value) }   // 2.8: the new shapes carry the NEW tag
         guard value != "none", ["held", "wrap", "feet", "pet", "brows", "extra", "neck"].contains(slot) else { return false }
         return AvatarCatalog.newParts.contains(slot == "brows" ? "brows:\(value)" : value)
     }

@@ -14,10 +14,11 @@ public struct AvatarPart: Equatable, Codable {
 
 public enum AvatarSeason {
     /// The maker fields that can hold a seasonal part, in shelf order (hats first, the buddy last).
-    public static let fields = ["head", "neck", "wrap", "held", "face", "feet", "pet", "extra"]
+    public static let fields = ["body", "head", "neck", "wrap", "held", "face", "feet", "pet", "extra"]
 
     static func options(_ field: String) -> [String] {
         switch field {
+        case "body": return AvatarCatalog.bodies
         case "head": return AvatarCatalog.heads
         case "neck": return AvatarCatalog.necks
         case "face": return AvatarCatalog.faces

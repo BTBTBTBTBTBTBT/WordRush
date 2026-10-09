@@ -114,7 +114,7 @@ def main():
     SI_WEB, SI_DROID, SI_IOS = SI.WEB, SI.DROID, SI.IOS
     bodies = [b for b in MAN['bodies'] if '@' not in b and (not ONLY_BODIES or b in ONLY_BODIES)]
     res = {}
-    with ProcessPoolExecutor(max_workers=4) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('SHIP_WORKERS', '1'))) as ex:
         for body, out in ex.map(_worker, bodies):
             res[body] = out
             print(body, 'withheld', sorted(k for k, v in out.items() if v.get('withheld')), flush=True)

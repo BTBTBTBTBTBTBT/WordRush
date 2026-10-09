@@ -481,7 +481,7 @@ def main():
     sizes = ['base'] + list(SZ.SIZES)
     vids = [b if s == 'base' else SZ.vid(b, s) for s in sizes for b in base]
     allres = {}
-    with ProcessPoolExecutor(max_workers=4) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('AV_WORKERS', '1'))) as ex:
         for v, res in ex.map(_worker, vids):
             allres[v] = res
             print(v, {k: [c for c, _ in x['guards']] for k, x in res.items() if x['guards']}, flush=True)

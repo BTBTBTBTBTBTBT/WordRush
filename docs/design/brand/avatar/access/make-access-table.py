@@ -54,6 +54,8 @@ ALWAYS_FREE = {"none", "solid", "auto", "default"}
 PARTS = json.load(open(os.path.join(CORE, "avatar-parts.json")))
 FIELD_KIND = {"eyes": "eyes", "mouth": "mouth", "nose": "nose", "cheeks": "cheeks", "brows": "brows"}
 def season_of(field, pid):
+    if field == "body":     # 2.8 seasonal bodies (pumpkin, ghost, bat, cone): avatar-parts.json bodies.<id>.season
+        return PARTS["bodies"].get(pid, {}).get("season")
     kind = FIELD_KIND.get(field, "acc")
     return PARTS["items"].get(f"{kind}:{pid}", {}).get("season")
 
@@ -64,7 +66,7 @@ TIERS = {"t1": 0.99, "t2": 1.99, "t3": 2.99, "t4": 4.99}
 # DEFAULT_EYES, DEFAULT_MOUTHS, the first 16 swatches; castPreset: classic + beady + smile), so no player's
 # default look is ever locked. Plus a small taste of every tab.
 STARTER = {
-    "body": ["classic", "tall", "wide", "blob", "bean"],
+    "body": ["classic", "tall", "wide", "blob", "bean", "heart", "egg", "gumdrop", "can"],   # + 4 of the 2.8 shapes free
     "color": colors()[:16],
     "pattern": ["twotone", "stripes", "dots"],
     "eyes": ["beady", "happy", "sparkly", "wink", "sleepy"],
@@ -216,6 +218,8 @@ EXACT_FIELDS = {"frame"}
 
 def rule_for(field, pid):
     season = season_of(field, pid)
+    if season and field == "body":     # seasonal bodies never leave: free in season, then Pro or buy
+        return {"season": season, "pro": True, "buy": SEASON_BUY}
     if season:
         return {"season": season, "limited": True, "buy": SEASON_BUY}
     if pid in STARTER[field]:

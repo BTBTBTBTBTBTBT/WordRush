@@ -383,6 +383,103 @@
    "acc:candypail": [
     "swings over the face / letter (12%)"
    ]
+  },
+  "heart": {
+   "acc:medal": [
+    "hides a moved arm (16%)"
+   ]
+  },
+  "egg": {
+   "acc:bowtie": [
+    "hides a moved arm (21%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (50%)"
+   ]
+  },
+  "bell": {
+   "acc:bowtie": [
+    "hides a moved arm (39%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (55%)"
+   ]
+  },
+  "triangle": {
+   "acc:bowtie": [
+    "hides a moved arm (44%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (50%)"
+   ]
+  },
+  "diamond": {
+   "acc:bowtie": [
+    "hides a moved arm (18%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (23%)"
+   ]
+  },
+  "shield": {
+   "acc:bowtie": [
+    "hides a moved arm (22%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (38%)"
+   ]
+  },
+  "gumdrop": {
+   "acc:bowtie": [
+    "hides a moved arm (20%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (48%)"
+   ]
+  },
+  "can": {
+   "acc:medal": [
+    "hides a moved arm (45%)"
+   ]
+  },
+  "potato": {
+   "acc:bowtie": [
+    "hides a moved arm (15%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (50%)"
+   ]
+  },
+  "catear": {
+   "acc:medal": [
+    "hides a moved arm (23%)"
+   ]
+  },
+  "bunnyear": {
+   "acc:bowtie": [
+    "hides a moved arm (17%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (47%)"
+   ]
+  },
+  "pumpkin": {
+   "acc:medal": [
+    "hides a moved arm (20%)"
+   ]
+  },
+  "ghost": {
+   "acc:medal": [
+    "hides a moved arm (43%)"
+   ]
+  },
+  "cone": {
+   "acc:bowtie": [
+    "hides a moved arm (33%)"
+   ],
+   "acc:medal": [
+    "hides a moved arm (37%)"
+   ]
   }
  },
  "hips": {

@@ -77,7 +77,7 @@ def main(commit='0d560b2'):
     a_man = json.load(open(os.path.join(REPO, 'packages', 'core', 'src', 'avatar-parts.json')))
     args = [(b, j, (b_art, b_man, b_lay), (fits.ART, a_man, a_lay)) for j, b in enumerate(bodies)]
     allres = {}
-    with ProcessPoolExecutor(max_workers=4) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('AV_WORKERS', '1'))) as ex:
         for body, res in ex.map(worker, args):
             allres[body] = res
             print(body, 'after guard fails', {k: [c for c, _ in v['after']] for k, v in res.items() if v['after']}, flush=True)

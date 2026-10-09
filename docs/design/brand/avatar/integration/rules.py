@@ -785,7 +785,7 @@ def main(argv):
     bodies = [b for b in json.load(open(LM.JSON))['bodies'] if not [a for a in argv if not a.startswith('-')] or b in argv]
     keys = list(RULES)
     out = {}
-    with ProcessPoolExecutor(max_workers=4) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('AV_WORKERS', '1'))) as ex:
         for body, res in ex.map(_worker, [(b, keys, True) for b in bodies]):
             out[body] = res
             print(body, 'unsupported', [k for k, v in res.items() if v.get('unsupported')], 'fit fails',

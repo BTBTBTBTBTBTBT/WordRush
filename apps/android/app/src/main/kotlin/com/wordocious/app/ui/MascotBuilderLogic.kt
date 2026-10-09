@@ -115,7 +115,7 @@ object MascotBuilderLogic {
     val INTEGRATED_SLOTS: Set<String> get() = AvatarOptions.INTEGRATED.map { it.first }.toSet()
 
     /** The maker's NEW tag: the 10-05 additions + the 7 rebuilt parts (AvatarOptions.NEW_PARTS). */
-    fun isNew(o: BuilderOption): Boolean = o.id != NONE && seasonOf(o) == null && (o.slot in INTEGRATED_SLOTS || o.slot == "neck") &&
+    fun isNew(o: BuilderOption): Boolean = (o.slot == "body" && o.id in AvatarOptions.NEW_BODIES) || o.id != NONE && seasonOf(o) == null && (o.slot in INTEGRATED_SLOTS || o.slot == "neck") &&
         (if (o.slot == "brows") "brows:${o.id}" else o.id) in AvatarOptions.NEW_PARTS
 
     /** The (slot, id) a pick would swap out (it doesn't fit with it), else null. */

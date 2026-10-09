@@ -66,6 +66,74 @@
         "label": "Complete the entire Gauntlet"
       }
     },
+    "body:heart": {
+      "free": true
+    },
+    "body:egg": {
+      "free": true
+    },
+    "body:bell": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:triangle": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:diamond": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:shield": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:burst": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:flower": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:gumdrop": {
+      "free": true
+    },
+    "body:can": {
+      "free": true
+    },
+    "body:potato": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:catear": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:bunnyear": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:pumpkin": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:ghost": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:cone": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:bat": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
     "color:purple": {
       "free": true
     },

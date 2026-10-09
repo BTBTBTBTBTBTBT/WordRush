@@ -18,11 +18,11 @@ players except a small starter set, everything try-on-able). The mechanism reads
 - Not listed (always free): every `none`, the solid pattern, the auto backdrop, the default accessory color.
 - A part the player already **saved** is never stripped (grandfathered) even if it's gated later.
 
-**Totals** (241 options): 56 starter-free · 170 in Pro · 179 buyable · 60 earnable · 11 seasonal.
+**Totals** (258 options): 60 starter-free · 183 in Pro · 192 buyable · 60 earnable · 15 seasonal.
 
 ## Recommended free starter set
 
-- **body**: classic, tall, wide, blob, bean
+- **body**: classic, tall, wide, blob, bean, heart, egg, gumdrop, can
 - **color**: purple, violet, pink, red, orange, amber, yellow, green, emerald, teal, sky, blue, lilac, peach, mint, slate
 - **pattern**: twotone, stripes, dots
 - **eyes**: beady, happy, sparkly, wink, sleepy
@@ -66,6 +66,23 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | chunky | Pro · buy $1.99 |
 | mini | Pro · buy $1.99 |
 | hex | Pro · buy $2.99 · earn: Complete the entire Gauntlet (achievement `gauntlet_master`) |
+| heart | free (starter) |
+| egg | free (starter) |
+| bell | Pro · buy $1.99 |
+| triangle | Pro · buy $1.99 |
+| diamond | Pro · buy $1.99 |
+| shield | Pro · buy $1.99 |
+| burst | Pro · buy $1.99 |
+| flower | Pro · buy $1.99 |
+| gumdrop | free (starter) |
+| can | free (starter) |
+| potato | Pro · buy $1.99 |
+| catear | Pro · buy $1.99 |
+| bunnyear | Pro · buy $1.99 |
+| pumpkin | free in halloween season · Pro · buy $1.99 |
+| ghost | free in halloween season · Pro · buy $1.99 |
+| cone | free in halloween season · Pro · buy $1.99 |
+| bat | free in halloween season · Pro · buy $1.99 |
 
 ### color
 

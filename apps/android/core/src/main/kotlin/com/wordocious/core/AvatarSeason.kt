@@ -12,9 +12,10 @@ data class AvatarPart(val field: String, val id: String)
 
 object AvatarSeason {
     /** The maker fields that can hold a seasonal part, in shelf order (hats first, the buddy last). */
-    val FIELDS: List<String> = listOf("head", "neck", "wrap", "held", "face", "feet", "pet", "extra")
+    val FIELDS: List<String> = listOf("body", "head", "neck", "wrap", "held", "face", "feet", "pet", "extra")
 
     private fun options(field: String): List<String> = when (field) {
+        "body" -> AvatarOptions.BODIES
         "head" -> AvatarOptions.HEADS
         "neck" -> AvatarOptions.NECKS
         "face" -> AvatarOptions.FACES
