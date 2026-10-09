@@ -12,7 +12,7 @@ P8="$HOME/.appstoreconnect/private_keys/AuthKey_$KEY_ID.p8"
 EXPECTED_TEAM_NAME="Showloud, LLC"   # what Apple names team Q32F6GRDYG post-conversion
 # The two App Store profiles the export signs with (ExportOptions.plist names
 # the same two). Both API-created, both decode to TeamName "Showloud, LLC".
-LLC_PROFILES=("Wordocious AppStore w/ groups" "Wordocious Widgets App Store LLC")
+LLC_PROFILES=("Wordocious AppStore w/ groups" "Wordocious Widgets App Store LLC" "Wordocious PushService App Store" "Wordocious PushContent App Store")
 [ -f "$P8" ] || { echo "Missing App Store Connect API key: $P8" >&2; exit 1; }
 BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION:' "$IOS/project.yml" | sed -E 's/.*"([0-9]+)".*/\1/')"
 MARKETING="$(grep -m1 'MARKETING_VERSION:' "$IOS/project.yml" | sed -E 's/.*"([0-9.]+)".*/\1/')"
