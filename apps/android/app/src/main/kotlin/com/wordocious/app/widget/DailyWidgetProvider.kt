@@ -379,7 +379,8 @@ class DailyWidgetProvider : AppWidgetProvider() {
         private fun peekRes(snap: WidgetBridge.Snapshot): Int {
             val pose = WidgetCast.peekPose(snap.modes.count { it.played }, snap.modes.size, snap.streak,
                 java.time.LocalDate.now().toEpochDay())
-            val season = com.wordocious.app.ui.SeasonSkins.current()
+            // The `season_halloween` off-switch: normal cast even inside the window.
+            val season = if (halloweenOn(snap)) com.wordocious.app.ui.SeasonSkins.current() else null
             if (season != null) {
                 val id = runCatching { MascotId.valueOf(pose.substringBefore('-').uppercase()) }.getOrNull()
                 if (id != null) return com.wordocious.app.ui.SeasonSkins.fullRes(id, season)
@@ -440,8 +441,8 @@ class DailyWidgetProvider : AppWidgetProvider() {
             views.setViewVisibility(R.id.w_peek, if (bmp != null) View.VISIBLE else View.GONE)
         }
 
-        private fun applyMascot(views: RemoteViews) {
-            val season = com.wordocious.app.ui.SeasonSkins.current()
+        private fun applyMascot(views: RemoteViews, snap: WidgetBridge.Snapshot) {
+            val season = if (halloweenOn(snap)) com.wordocious.app.ui.SeasonSkins.current() else null
             views.setImageViewResource(R.id.w_mascot, com.wordocious.app.ui.SeasonSkins.fullRes(MascotId.W, season))
         }
 
@@ -487,7 +488,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             applyChrome(context, views, snap, WordmarkSize.LARGE)
             // BI13c: the player's own look (mascot cutout / framed photo) heads the large widget; W otherwise.
             val own = WidgetAvatarSnapshot.load(context)
-            if (own != null) views.setImageViewBitmap(R.id.w_mascot, own.first) else applyMascot(views)
+            if (own != null) views.setImageViewBitmap(R.id.w_mascot, own.first) else applyMascot(views, snap)
             renderChips(context, views, DAILY_CHIPS, snap.modes, requestBase = 1)
             val puzzles = snap.puzzles.orEmpty()
             if (puzzles.isEmpty()) {

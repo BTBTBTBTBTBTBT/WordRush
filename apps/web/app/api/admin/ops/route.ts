@@ -21,6 +21,7 @@ const CRON_SCHEDULE: Record<string, { label: string; maxAgeHours: number }> = {
   'daily-reminder': { label: 'Daily reminder push (14:00 UTC)', maxAgeHours: 26 },
   'friends-recap': { label: 'Friends weekly recap (Mon 13:00 UTC)', maxAgeHours: 7 * 24 + 2 },
   'social-publish': { label: 'Social Studio publisher (every 15 min)', maxAgeHours: 1 },
+  'purge-under13': { label: 'Under-13 account purge (13:30 UTC)', maxAgeHours: 26 },
   integrity: { label: 'Data integrity sweep (11:30 UTC)', maxAgeHours: 26 },
 };
 
