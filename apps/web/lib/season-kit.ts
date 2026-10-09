@@ -201,7 +201,7 @@ export function surfaceCssVars(s: SeasonSurfaces): Record<string, string> {
  * night card (finished / unplayed), the finished card's glow blur, and an unplayed hero progress
  * tile's hint of color. iOS SeasonDone, Android SeasonDone.
  */
-export const SEASON_DONE = { wash: 0.38, idle: 0.05, glow: 12, idleTile: 0.1 } as const;
+export const SEASON_DONE = { wash: 0.34, idle: 0.05, glow: 12, idleTile: 0.1 } as const;
 
 /** Every variable surfaceCssVars can set (SeasonDocument clears them out of season). */
 export const SURFACE_CSS_VARS = [
