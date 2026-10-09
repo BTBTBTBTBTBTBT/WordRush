@@ -97,8 +97,8 @@ object AvatarOptions {
     /** Hats (21 + round 2: 12, + none). Pro-only: crown, halo, tiara. */
     val HEADS: List<String> = listOf(
         "none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "emo-pink-headphones", "bow", "wizard", "pirate", "cowboy", "chef",
-        "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara", "viking", "sweatband",
-        "cap", "punk-studded-cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "goth-skull-bow", "goth-bat-wing-clip", "pombeanie", "bearears", "mohawk", "punk-mohawk", "punk-liberty-spikes",
+        "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara", "viking", "sweatband", 
+        "cap", "baseball-cap", "baseball-batting-helmet", "football-helmet", "punk-studded-cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "goth-skull-bow", "goth-bat-wing-clip", "pombeanie", "bearears", "mohawk", "punk-mohawk", "punk-liberty-spikes",
         // seasonal (avatar-parts.json `season`; AvatarSeason decides when they show): Halloween 10-05
         "pumpkinhat", "candycornhat", "witchnight", "batears",
     )
@@ -167,11 +167,11 @@ object AvatarOptions {
     val DISPLAYS: List<String> = listOf(DISPLAY_MASCOT, DISPLAY_PHOTO)
 
     /** 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on. */
-    val HELD: List<String> = listOf("none", "mug", "book", "pencil-big", "balloon", "emo-heart-balloons", "trophy", "magnifier", "flashlight", "umbrella", "goth-lace-umbrella", "goth-purple-lantern", "icecream", "spatula", "mic", "wand-star", "candypail")
+    val HELD: List<String> = listOf("none", "mug", "book", "pencil-big", "balloon", "emo-heart-balloons", "trophy", "baseball-bat", "baseball-glove", "football-football", "soccer-corner-flag", "magnifier", "flashlight", "umbrella", "goth-lace-umbrella", "goth-purple-lantern", "icecream", "spatula", "mic", "wand-star", "candypail")
     /** Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter). */
     val WRAPS: List<String> = listOf("none", "bandana", "belt", "apron", "lei", "cape-drape", "vampirecollar")
-    val FEET: List<String> = listOf("none", "sneakers", "emo-checker-high-tops", "boots", "punk-combat-boots", "goth-platform-boots", "slippers", "skates")
-    val PETS: List<String> = listOf("none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat", "goth-black-cat-plush", "punk-skull-plush")
+    val FEET: List<String> = listOf("none", "sneakers", "baseball-cleats", "soccer-cleats", "emo-checker-high-tops", "boots", "punk-combat-boots", "goth-platform-boots", "slippers", "skates", "hockey-skates")
+    val PETS: List<String> = listOf("none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat", "goth-black-cat-plush", "punk-skull-plush", "football-kicking-tee", "soccer-ball", "hockey-puck")
     val BROWS: List<String> = listOf("none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy")
     val EXTRAS: List<String> = listOf("none", "sweat", "tear", "steam", "heart")
     /** The integrated config fields + their options, in the maker's tab order. */

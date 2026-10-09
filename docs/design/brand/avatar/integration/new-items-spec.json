@@ -12,6 +12,22 @@
     "punk": {
       "label": "Punk",
       "bonus": "punk-skull-plush"
+    },
+    "baseball": {
+      "label": "Baseball",
+      "bonus": "baseball-glove"
+    },
+    "football": {
+      "label": "Football",
+      "bonus": "football-helmet"
+    },
+    "soccer": {
+      "label": "Soccer",
+      "bonus": "soccer-cleats"
+    },
+    "hockey": {
+      "label": "Hockey",
+      "bonus": "hockey-skates"
     }
   },
   "withheld": {
@@ -33,7 +49,23 @@
     "punk-spike-wristband": "needs an arm-wrap builder",
     "punk-studded-choker": "choker as a one-art pendant reads as a beard (see goth)",
     "punk-fishnet-sleeves": "needs an arm-wrap builder",
-    "punk-safety-pins": "extras builder is hard-wired"
+    "punk-safety-pins": "extras builder is hard-wired",
+    "baseball-wristband": "needs an arm-wrap builder",
+    "football-eye-black": "identical art to baseball-eye-black (one copy ships)",
+    "football-shoulder-pads": "garment (garments.py) not wired to the maker yet",
+    "football-wristband": "needs an arm-wrap builder",
+    "soccer-captain-armband": "needs an arm-wrap builder",
+    "soccer-goalie-gloves": "a pair of gloves in one art: needs a hand-wrap builder",
+    "soccer-shin-guards": "needs a leg-wrap builder",
+    "soccer-whistle": "near-identical to football-whistle (one whistle ships)",
+    "hockey-gloves": "a pair of gloves in one art: needs a hand-wrap builder",
+    "baseball-ball": "held ball finds no room beside the body on any body (rule withholds it everywhere): needs a smaller / higher grip; retune then re-ship",
+    "baseball-eye-black": "sits on the eyes (reads as black bars / a mustache) instead of under them: needs a lower anchor; retune then re-ship",
+    "football-cleats": "the pair art overlaps (no gap to split on): shoes come out crushed; needs the pair split by hand",
+    "football-whistle": "the cord loop tangles across the letter as a one-art pendant; needs a neck-cord + whistle split",
+    "soccer-headband": "floats above the head like a halo on most bodies: needs a lower anchor / band-wrap rule; retune then re-ship",
+    "hockey-stick": "held stick finds no room beside the body on any body (rule withholds it everywhere); retune the grip then re-ship",
+    "hockey-helmet": "floats high and the visor drops over the face: needs a lower anchor + visor split"
   },
   "items": [
     {
@@ -429,6 +461,311 @@
         ],
         "slot": "back",
         "layer": "pet"
+      }
+    },
+    {
+      "id": "baseball-cap",
+      "pack": "baseball",
+      "piece": "cap",
+      "field": "head",
+      "kind": "hat",
+      "pro": false,
+      "near": "cap",
+      "label": "Baseball cap",
+      "manifest": {
+        "w": 0.98,
+        "anchor": [
+          0.5,
+          0.75
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.25
+      }
+    },
+    {
+      "id": "baseball-batting-helmet",
+      "pack": "baseball",
+      "piece": "batting-helmet",
+      "field": "head",
+      "kind": "hat",
+      "pro": true,
+      "near": "baseball-cap",
+      "label": "Batting helmet",
+      "manifest": {
+        "w": 1.08,
+        "anchor": [
+          0.5,
+          0.7
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3
+      }
+    },
+    {
+      "id": "baseball-bat",
+      "pack": "baseball",
+      "piece": "bat",
+      "field": "held",
+      "kind": "held",
+      "pro": false,
+      "near": "baseball-ball",
+      "label": "Baseball bat",
+      "held": {
+        "grip": [
+          0.5,
+          0.72
+        ],
+        "w": 0.75,
+        "rot": 12,
+        "side": "R",
+        "tall": true
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "held"
+      }
+    },
+    {
+      "id": "baseball-glove",
+      "pack": "baseball",
+      "piece": "glove",
+      "field": "held",
+      "kind": "held",
+      "pro": true,
+      "near": "baseball-bat",
+      "label": "Baseball glove",
+      "held": {
+        "grip": [
+          0.5,
+          0.5
+        ],
+        "w": 1.9,
+        "rot": 0,
+        "side": "L",
+        "tall": false
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "held"
+      }
+    },
+    {
+      "id": "baseball-cleats",
+      "pack": "baseball",
+      "piece": "cleats-pair",
+      "field": "feet",
+      "kind": "shoes",
+      "pro": true,
+      "near": "sneakers",
+      "label": "Baseball cleats",
+      "shoe_keep": 0.7,
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "feet"
+      }
+    },
+    {
+      "id": "football-football",
+      "pack": "football",
+      "piece": "football",
+      "field": "held",
+      "kind": "held",
+      "pro": false,
+      "near": "baseball-glove",
+      "label": "Football",
+      "held": {
+        "grip": [
+          0.5,
+          0.5
+        ],
+        "w": 1.6,
+        "rot": -25,
+        "side": "R",
+        "tall": false
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "held"
+      }
+    },
+    {
+      "id": "football-helmet",
+      "pack": "football",
+      "piece": "helmet",
+      "field": "head",
+      "kind": "hat",
+      "pro": true,
+      "near": "baseball-batting-helmet",
+      "label": "Football helmet",
+      "manifest": {
+        "w": 1.12,
+        "anchor": [
+          0.5,
+          0.62
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.4
+      }
+    },
+    {
+      "id": "football-kicking-tee",
+      "pack": "football",
+      "piece": "kicking-tee",
+      "field": "pet",
+      "kind": "buddy",
+      "pro": true,
+      "near": "punk-skull-plush",
+      "label": "Kicking tee",
+      "buddy": {
+        "where": "floor",
+        "k": 0.3
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "pet"
+      }
+    },
+    {
+      "id": "soccer-ball",
+      "pack": "soccer",
+      "piece": "ball",
+      "field": "pet",
+      "kind": "buddy",
+      "pro": false,
+      "near": "football-kicking-tee",
+      "label": "Soccer ball",
+      "buddy": {
+        "where": "floor",
+        "k": 0.3
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "pet"
+      }
+    },
+    {
+      "id": "soccer-cleats",
+      "pack": "soccer",
+      "piece": "cleats-pair",
+      "field": "feet",
+      "kind": "shoes",
+      "pro": false,
+      "near": "baseball-cleats",
+      "label": "Soccer cleats",
+      "shoe_keep": 0.7,
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "feet"
+      }
+    },
+    {
+      "id": "soccer-corner-flag",
+      "pack": "soccer",
+      "piece": "corner-flag",
+      "field": "held",
+      "kind": "held",
+      "pro": true,
+      "near": "football-football",
+      "label": "Corner flag",
+      "held": {
+        "grip": [
+          0.22,
+          0.55
+        ],
+        "w": 1.7,
+        "rot": 6,
+        "side": "R",
+        "tall": true
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "held"
+      }
+    },
+    {
+      "id": "hockey-puck",
+      "pack": "hockey",
+      "piece": "puck",
+      "field": "pet",
+      "kind": "buddy",
+      "pro": false,
+      "near": "soccer-ball",
+      "label": "Hockey puck",
+      "buddy": {
+        "where": "floor",
+        "k": 0.22
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "pet"
+      }
+    },
+    {
+      "id": "hockey-skates",
+      "pack": "hockey",
+      "piece": "skates",
+      "field": "feet",
+      "kind": "shoes",
+      "pro": true,
+      "near": "skates",
+      "label": "Hockey skates",
+      "shoe_keep": 0.78,
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "feet"
       }
     }
   ]

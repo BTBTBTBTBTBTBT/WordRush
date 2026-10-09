@@ -705,6 +705,17 @@
     "head:cap": {
       "free": true
     },
+    "head:baseball-cap": {
+      "free": true
+    },
+    "head:baseball-batting-helmet": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:football-helmet": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:punk-studded-cap": {
       "pro": true,
       "buy": "t2"
@@ -977,6 +988,20 @@
         "label": "Win today's friends race"
       }
     },
+    "held:baseball-bat": {
+      "free": true
+    },
+    "held:baseball-glove": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:football-football": {
+      "free": true
+    },
+    "held:soccer-corner-flag": {
+      "pro": true,
+      "buy": "t2"
+    },
     "held:magnifier": {
       "pro": true,
       "buy": "t1",
@@ -1065,6 +1090,13 @@
     "feet:sneakers": {
       "free": true
     },
+    "feet:baseball-cleats": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "feet:soccer-cleats": {
+      "free": true
+    },
     "feet:emo-checker-high-tops": {
       "free": true
     },
@@ -1095,6 +1127,10 @@
         "achievement": "speed_sweep",
         "label": "Finish the Daily Sweep in under 15 minutes"
       }
+    },
+    "feet:hockey-skates": {
+      "pro": true,
+      "buy": "t1"
     },
     "pet:bird": {
       "pro": true,
@@ -1148,6 +1184,16 @@
       "free": true
     },
     "pet:punk-skull-plush": {
+      "free": true
+    },
+    "pet:football-kicking-tee": {
+      "pro": true,
+      "buy": "t3"
+    },
+    "pet:soccer-ball": {
+      "free": true
+    },
+    "pet:hockey-puck": {
       "free": true
     },
     "frame:bronze": {

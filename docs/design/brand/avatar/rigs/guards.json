@@ -13,6 +13,18 @@
    "acc:trophy": [
     "swings over the face / letter (10%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (37%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (48%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (16%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (4%)"
    ],
@@ -63,6 +75,18 @@
    "acc:trophy": [
     "swings over the face / letter (52%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (21%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (43%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (21%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (31%)"
    ],
@@ -107,6 +131,18 @@
    "acc:trophy": [
     "swings over the face / letter (6%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (27%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (40%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (12%)"
+   ],
    "acc:flashlight": [
     "swings over the face / letter (13%)"
    ],
@@ -144,6 +180,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (10%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (36%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (46%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (11%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (4%)"
@@ -189,6 +237,18 @@
    "acc:trophy": [
     "swings over the face / letter (51%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (42%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (77%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (15%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (33%)"
    ],
@@ -221,6 +281,12 @@
    ]
   },
   "star": {
+   "acc:baseball-glove": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (17%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (15%)"
    ],
@@ -237,6 +303,12 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (3%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (20%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (20%)"
    ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (16%)"
@@ -257,6 +329,12 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (9%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (27%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (25%)"
    ],
    "acc:flashlight": [
     "swings over the face / letter (8%)"
@@ -295,6 +373,15 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (25%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (29%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (2%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (3%)"
@@ -339,6 +426,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (10%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (37%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (48%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (13%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (4%)"
@@ -387,6 +486,18 @@
    "acc:trophy": [
     "swings over the face / letter (30%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (39%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (45%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (18%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (12%)"
    ],
@@ -428,6 +539,18 @@
    "acc:trophy": [
     "swings over the face / letter (8%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (33%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (6%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (2%)"
    ],
@@ -466,6 +589,15 @@
    "acc:trophy": [
     "swings over the face / letter (2%)"
    ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (20%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (22%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (4%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (19%)"
    ],
@@ -485,6 +617,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (5%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (27%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (29%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (6%)"
    ],
    "acc:flashlight": [
     "swings over the face / letter (7%)"
@@ -517,6 +661,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (9%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (35%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (45%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (13%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (3%)"
@@ -562,6 +718,18 @@
    "acc:trophy": [
     "swings over the face / letter (27%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (57%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (76%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (32%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (10%)"
    ],
@@ -606,6 +774,18 @@
    "acc:trophy": [
     "swings over the face / letter (18%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (43%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (10%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (6%)"
    ],
@@ -638,6 +818,15 @@
    ]
   },
   "diamond": {
+   "acc:baseball-glove": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (3%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (15%)"
    ],
@@ -657,6 +846,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (28%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (33%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (9%)"
    ],
    "acc:flashlight": [
     "swings over the face / letter (8%)"
@@ -683,6 +884,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (5%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (29%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (32%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (8%)"
    ],
    "acc:flashlight": [
     "swings over the face / letter (7%)"
@@ -713,6 +926,18 @@
    "acc:trophy": [
     "swings over the face / letter (5%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (30%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (10%)"
+   ],
    "acc:flashlight": [
     "swings over the face / letter (7%)"
    ],
@@ -741,6 +966,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (13%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (35%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (44%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (9%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (5%)"
@@ -786,6 +1023,18 @@
    "acc:trophy": [
     "swings over the face / letter (30%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (30%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (52%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (12%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (14%)"
    ],
@@ -829,6 +1078,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (14%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (45%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (51%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (12%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (7%)"
@@ -874,6 +1135,18 @@
    "acc:trophy": [
     "swings over the face / letter (11%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (41%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (47%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (13%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (4%)"
    ],
@@ -917,6 +1190,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (15%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (39%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (45%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (9%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (7%)"
@@ -962,6 +1247,18 @@
    "acc:trophy": [
     "swings over the face / letter (4%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (29%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (10%)"
+   ],
    "acc:flashlight": [
     "swings over the face / letter (8%)"
    ],
@@ -990,6 +1287,18 @@
    ],
    "acc:trophy": [
     "swings over the face / letter (25%)"
+   ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (50%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (57%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (14%)"
    ],
    "acc:magnifier": [
     "swings over the face / letter (14%)"
@@ -1038,6 +1347,18 @@
    "acc:trophy": [
     "swings over the face / letter (33%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (21%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (61%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (18%)"
+   ],
    "acc:magnifier": [
     "swings over the face / letter (17%)"
    ],
@@ -1076,6 +1397,18 @@
    "acc:trophy": [
     "swings over the face / letter (2%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (26%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (25%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (11%)"
+   ],
    "acc:flashlight": [
     "swings over the face / letter (4%)"
    ],
@@ -1103,6 +1436,12 @@
    "acc:trophy": [
     "swings over the face / letter (3%)"
    ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (19%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (13%)"
    ],
@@ -1126,6 +1465,12 @@
   "bean": {
    "acc:pencil-big": [
     "swings over the face / letter (2%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (16%)"
    ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (10%)"
@@ -1160,6 +1505,12 @@
    "acc:trophy": [
     "swings over the face / letter (2%)"
    ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (19%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (16%)"
    ],
@@ -1192,6 +1543,18 @@
    "acc:trophy": [
     "swings over the face / letter (2%)"
    ],
+   "acc:baseball-bat": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:baseball-glove": [
+    "swings over the face / letter (15%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (9%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (30%)"
    ],
@@ -1203,6 +1566,12 @@
    ]
   },
   "triangle": {
+   "acc:baseball-glove": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (3%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (7%)"
    ],
@@ -1214,6 +1583,12 @@
    ]
   },
   "gumdrop": {
+   "acc:baseball-glove": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (4%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (8%)"
    ],
@@ -1225,6 +1600,9 @@
    ]
   },
   "can": {
+   "acc:football-football": [
+    "swings over the face / letter (11%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (13%)"
    ],
@@ -1260,6 +1638,12 @@
    ]
   },
   "ghost": {
+   "acc:baseball-glove": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (10%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (14%)"
    ],
@@ -1271,6 +1655,15 @@
    ]
   },
   "cone": {
+   "acc:baseball-bat": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:football-football": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:soccer-corner-flag": [
+    "swings over the face / letter (3%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (16%)"
    ],
@@ -1413,6 +1806,9 @@
    ]
   },
   "bell": {
+   "acc:football-football": [
+    "swings over the face / letter (2%)"
+   ],
    "acc:goth-lace-umbrella": [
     "swings over the face / letter (5%)"
    ],
