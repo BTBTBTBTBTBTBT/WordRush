@@ -13,3 +13,7 @@ firefighter helmet), pets (12), music (12), gaming (8). ~130 images, ~1 min each
 Composite splits done in code from the sheets: careers pilot-cap + aviator-shades + safety-goggles; basketball-golf headband + wristbands; metal studded-cuff +
 fingerless-glove. Two overlapping composites could not be cut cleanly (beret + palette, detective cap + magnifier): regenerate those four singles; the
 scientist coat+flask also needs two singles.
+
+## Progress (2026-10-09)
+Done one-per-image (63 of 258): goth 12, emo 12, punk 12, baseball 8, football 8 (eye-black reused from baseball), soccer 8, hockey 4 (helmet, stick, puck, skates, gloves).
+Remaining list: items/hires-remaining.txt (195). Stopped when the founder's ChatGPT Plus image limit was reached ("resets in 22 hours"); resume when it resets. No paid API used.
