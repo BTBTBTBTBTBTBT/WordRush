@@ -18,7 +18,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 - Not listed (always free): every `none`, the solid pattern, the auto backdrop, the default accessory color.
 - A part the player already **saved** is never stripped (grandfathered) even if it's gated later.
 
-**Totals** (277 options): 68 starter-free · 205 in Pro · 203 buyable · 60 earnable · 15 seasonal.
+**Totals** (290 options): 74 starter-free · 212 in Pro · 210 buyable · 60 earnable · 15 seasonal.
 
 ## Recommended free starter set
 
@@ -260,6 +260,9 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | viking | Pro · buy $1.99 · earn: Win 5 VS matches in a row (achievement `unstoppable`) |
 | sweatband | Pro · buy $0.99 · earn: Win Classic in 2 guesses (achievement `no_sweat`) |
 | cap | free (starter) |
+| baseball-cap | free (starter) |
+| baseball-batting-helmet | Pro · buy $1.99 |
+| football-helmet | Pro · buy $1.99 |
 | punk-studded-cap | Pro · buy $1.99 |
 | beret | Pro · buy $1.99 |
 | minicrown | Pro · buy $1.99 · earn: Clear five rungs of the bot ladder (achievement `halfway_hero`) |
@@ -327,6 +330,10 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | balloon | Pro · buy $1.99 |
 | emo-heart-balloons | Pro · buy $1.99 |
 | trophy | Pro · buy $1.99 · earn: Win today's friends race (achievement `race_day`) |
+| baseball-bat | free (starter) |
+| baseball-glove | Pro · buy $1.99 |
+| football-football | free (starter) |
+| soccer-corner-flag | Pro · buy $1.99 |
 | magnifier | Pro · buy $0.99 · earn: Solve 25 Spyglass word searches (achievement `sharp_spotter`) |
 | flashlight | Pro · buy $0.99 · earn: Solve 25 Codebreakers (achievement `code_cracker`) |
 | umbrella | Pro · buy $1.99 |
@@ -354,12 +361,15 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | id | routes |
 |---|---|
 | sneakers | free (starter) |
+| baseball-cleats | Pro · buy $0.99 |
+| soccer-cleats | free (starter) |
 | emo-checker-high-tops | free (starter) |
 | boots | Pro · buy $0.99 · earn: Solve 25 Letter Ladders (achievement `ladder_climber`) |
 | punk-combat-boots | Pro · buy $0.99 |
 | goth-platform-boots | Pro · buy $0.99 |
 | slippers | Pro · buy $0.99 |
 | skates | Pro · buy $1.99 · earn: Finish the Daily Sweep in under 15 minutes (achievement `speed_sweep`) |
+| hockey-skates | Pro · buy $0.99 |
 
 ### pet
 
@@ -374,6 +384,9 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | blackcat | free in halloween season · Pro · buy $1.99 |
 | goth-black-cat-plush | free (starter) |
 | punk-skull-plush | free (starter) |
+| football-kicking-tee | Pro · buy $2.99 |
+| soccer-ball | free (starter) |
+| hockey-puck | free (starter) |
 
 ### frame
 
