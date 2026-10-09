@@ -945,9 +945,15 @@ second game on the puzzles list")
     arcade token, VR goggles, pixel letter style (with gamer pack).
   - Pets/buddies: dogs (several breeds), bunny, hamster, parrot, frog, turtle, axolotl, mini dragon, mini robot,
     dinosaur.
-  - Careers/hobbies: scientist (goggles, lab coat), doctor/nurse scrubs + stethoscope, firefighter helmet, builder
+  - Careers/hobbies: scientist (goggles, lab coat), doctor/nurse scrubs + stethoscope, firefighter helmet, police
+    officer cap + badge (founder: firefighter AND police — friendly, no weapons), builder
     hard hat, pilot cap + wings, artist beret + palette, gardener, photographer camera, bookworm reading glasses.
   - Fantasy: wizard staff, unicorn horn, fairy wings, knight helmet + shield, dragon wings, crown variants.
   - Food fun: donut float, ice-cream cone held, boba tea, pizza slice, taco buddy.
+- Menu placement (founder 10-09): every new item sorts next to its like items in its tab — new wings beside the
+  existing wings, new hats grouped with hat kinds (caps with caps, helmets with helmets), new buddies by animal type,
+  glasses with glasses — via a sort key per item (category → kind → order) in avatar-parts.json, never appended at
+  the end. Applies to 5b packs, 50 bodies and all future items; pack/collection views still show a pack's items
+  together.
 - Runs with 5b in wave 5 A (art in free ChatGPT from kickoff). Anything not done Friday rides in the ~Nov 1 2.8.x as
   data (no code needed).
