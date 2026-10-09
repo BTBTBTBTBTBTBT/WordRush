@@ -40,6 +40,10 @@ import { useUtcClock, useVsCounts, useVsLobbyData } from './use-vs-lobby';
 import { CardBar, InitialAvatar, SectionLabel, SoftPill, TealButton, VS_ACCENT, VS_LIGHT_VARS, VsCard, VsModeIcon, VsModeTile, VsNav, vsCard } from './vs-ui';
 import { GameSquare } from '@/components/ui/game-tile';
 import { CastLoader } from '@/components/ui/cast-loader';
+import { InvitesRow } from '@/components/invites/invites-row';
+import { HaveACodeButton } from '@/components/invites/have-a-code';
+import { useFlags } from '@/hooks/use-flags';
+import { BRANDED_INVITES_SWITCH } from '@wordle-duel/core';
 import { PageBackground } from '@/components/ui/page-background';
 
 const MODES = VS_MODE_ORDER as readonly string[];
@@ -48,6 +52,10 @@ export function VsLobby() {
   const router = useRouter();
   const { profile, isProActive, isGuest, exitGuest, loading: authLoading } = useAuth();
   const isPro = isProActive;
+  const { isLive: flagLive } = useFlags();
+  // 9f: with branded_invites live, ONE Invites row (live invites + race challenges, Accept/Decline) and ONE
+  // obvious Have a code? button replace the incoming notices and the buried code field at the bottom.
+  const brandedInvites = flagLive(BRANDED_INVITES_SWITCH);
   const free = !isPro;
   const data = useVsLobbyData(profile?.id ?? null);
   const clock = useUtcClock();
@@ -165,8 +173,15 @@ export function VsLobby() {
               onBotOfDay={playBotOfDay}
             />
 
+            {brandedInvites && (
+              <>
+                <InvitesRow userId={profile?.id} />
+                <HaveACodeButton block />
+              </>
+            )}
+
             {/* Incoming challenges, newest first — K1 notices (teal, the sender's tile, a fitting pose). */}
-            {data.incoming.slice(0, 3).map((c, i) => (
+            {!brandedInvites && data.incoming.slice(0, 3).map((c, i) => (
               <VsNotice
                 key={c.code}
                 index={i}
@@ -317,9 +332,9 @@ export function VsLobby() {
               </>
             )}
 
-            {/* HAVE A CODE? — a challenge code first, then a live private-match code. */}
-            <SectionLabel>Have a code?</SectionLabel>
-            <VsCard>
+            {/* HAVE A CODE? — a challenge code first, then a live private-match code. (Off-switch fallback: the 9f button above replaces it.) */}
+            {!brandedInvites && <SectionLabel>Have a code?</SectionLabel>}
+            {!brandedInvites && <VsCard>
             <div className="p-3">
               <div className="flex gap-2 items-center">
                 <input
@@ -343,7 +358,7 @@ export function VsLobby() {
               </div>
               {codeError && <p className="text-xs font-bold mt-2" style={{ color: '#dc2626' }}>{codeError}</p>}
             </div>
-            </VsCard>
+            </VsCard>}
           </>
         )}
       </div>
