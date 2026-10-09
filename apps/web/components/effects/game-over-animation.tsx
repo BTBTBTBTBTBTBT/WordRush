@@ -1,5 +1,6 @@
 'use client';
 
+import { emitMascotMoment } from '@/lib/living-mascot';
 import { useEffect } from 'react';
 import { haptic } from '@/lib/haptics';
 import { playGameOver } from '@/lib/sounds';
@@ -35,7 +36,7 @@ interface GameOverAnimationProps {
 }
 
 export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain, mode, solvedMask }: GameOverAnimationProps) {
-  useEffect(() => { haptic('medium'); playGameOver(); }, []);
+  useEffect(() => { haptic('medium'); playGameOver(); emitMascotMoment('loss'); }, []);
   const { definition: singleDef } = useWordDefinition(solution || null);
   const multiDefs = useWordDefinitions(solutions || []);
   const accent = (mode && MODE_BY_DBKEY[mode]?.accentHex) || ROSE;

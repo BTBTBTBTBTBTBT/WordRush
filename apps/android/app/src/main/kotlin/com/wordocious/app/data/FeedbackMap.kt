@@ -47,6 +47,12 @@ enum class Sfx(val file: String) {
     LAUGH_W("sfx_laugh_w"), LAUGH_O1("sfx_laugh_o1"), LAUGH_R("sfx_laugh_r"), LAUGH_D("sfx_laugh_d"),
     LAUGH_O2("sfx_laugh_o2"), LAUGH_C("sfx_laugh_c"), LAUGH_I("sfx_laugh_i"), LAUGH_O3("sfx_laugh_o3"),
     LAUGH_U("sfx_laugh_u"), LAUGH_S("sfx_laugh_s"),
+
+    /** The musical cast's notes (docs/cloud-prompts/10): each hero's voice pitched to its scale step (C4 … E5,
+     *  core MusicalCast.SCALE; cut by docs/design/brand/sounds/make-notes.py), played by SoundManager.castNote. */
+    NOTE_W("sfx_note_w"), NOTE_O1("sfx_note_o1"), NOTE_R("sfx_note_r"), NOTE_D("sfx_note_d"),
+    NOTE_O2("sfx_note_o2"), NOTE_C("sfx_note_c"), NOTE_I("sfx_note_i"), NOTE_O3("sfx_note_o3"),
+    NOTE_U("sfx_note_u"), NOTE_S("sfx_note_s"),
 }
 
 /** The haptic vocabulary (spec U): iOS UIImpactFeedbackGenerator / UINotificationFeedbackGenerator names. */
@@ -126,6 +132,9 @@ object FeedbackRules {
 
     /** A header hero's giggle ([id] = MascotId.key: w, o1, r, … s), or null for an unknown id. */
     fun laughSfx(id: String): Sfx? = Sfx.entries.firstOrNull { it.file == "sfx_laugh_$id" }
+
+    /** A header hero's musical-cast note ([id] = MascotId.key), or null for an unknown id. */
+    fun noteSfx(id: String): Sfx? = Sfx.entries.firstOrNull { it.file == "sfx_note_$id" }
 
     /** Classic's version of a pack sound (null = Classic plays the pack's). */
     fun classicVariant(s: Sfx): Sfx? = when (s) {

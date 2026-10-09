@@ -1,5 +1,6 @@
 'use client';
 
+import { emitMascotMoment } from '@/lib/living-mascot';
 import { useEffect } from 'react';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { haptic } from '@/lib/haptics';
@@ -42,7 +43,7 @@ interface VictoryAnimationProps {
 }
 
 export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions, points, guessLabel = 'Guesses', onPlayAgain, actions, mode, streakDay, flawless, newRecord }: VictoryAnimationProps) {
-  useEffect(() => { haptic('heavy'); playSuccess(); }, []);
+  useEffect(() => { haptic('heavy'); playSuccess(); emitMascotMoment('win'); }, []);
   const { definition } = useWordDefinition(solution || null);
   const accent = (mode && MODE_BY_DBKEY[mode]?.accentHex) || POPUP_ACCENT.brand;
   // FINISH_SPEC R1: the shared win popup (components/effects/result-popup.tsx).

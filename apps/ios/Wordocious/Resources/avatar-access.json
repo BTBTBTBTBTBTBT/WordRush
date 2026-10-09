@@ -1,0 +1,1177 @@
+{
+  "version": 1,
+  "status": "PROPOSED \u2014 founder approval pending (docs/cloud-prompts/11). Read only while itemGating is on (OFF).",
+  "tiers": {
+    "t1": 0.99,
+    "t2": 1.99,
+    "t3": 2.99,
+    "t4": 4.99
+  },
+  "stats": [
+    "level",
+    "currentStreak",
+    "bestStreak",
+    "bestLoginStreak"
+  ],
+  "parts": {
+    "body:classic": {
+      "free": true
+    },
+    "body:tall": {
+      "free": true
+    },
+    "body:wide": {
+      "free": true
+    },
+    "body:blob": {
+      "free": true
+    },
+    "body:bean": {
+      "free": true
+    },
+    "body:star": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "stat": "bestStreak",
+        "min": 30,
+        "label": "Keep a 30-day play streak"
+      }
+    },
+    "body:drop": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:pear": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:cloud": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:chunky": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:mini": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:hex": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "gauntlet_master",
+        "label": "Complete the entire Gauntlet"
+      }
+    },
+    "color:purple": {
+      "free": true
+    },
+    "color:violet": {
+      "free": true
+    },
+    "color:pink": {
+      "free": true
+    },
+    "color:red": {
+      "free": true
+    },
+    "color:orange": {
+      "free": true
+    },
+    "color:amber": {
+      "free": true
+    },
+    "color:yellow": {
+      "free": true
+    },
+    "color:green": {
+      "free": true
+    },
+    "color:emerald": {
+      "free": true
+    },
+    "color:teal": {
+      "free": true
+    },
+    "color:sky": {
+      "free": true
+    },
+    "color:blue": {
+      "free": true
+    },
+    "color:lilac": {
+      "free": true
+    },
+    "color:peach": {
+      "free": true
+    },
+    "color:mint": {
+      "free": true
+    },
+    "color:slate": {
+      "free": true
+    },
+    "color:rose": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:lime": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:bubblegum": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:babyblue": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:butter": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:coral": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:seafoam": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:navy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:plum": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:forest": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:maroon": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:charcoal": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:chocolate": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:white": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:cream": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:sand": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:stone": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "color:gold": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "golden_touch",
+        "label": "Earn 10 gold medals"
+      }
+    },
+    "color:silver": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "medal_10",
+        "label": "Earn 10 medals"
+      }
+    },
+    "color:rainbow": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "flawless_victory",
+        "label": "Win every Daily Sweep game in one day"
+      }
+    },
+    "color:holo": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "grand_sweep",
+        "label": "Sweep every daily and every Puzzle in one day"
+      }
+    },
+    "color:neon": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "lightning_round",
+        "label": "Finish the Daily Sweep in under 20 minutes"
+      }
+    },
+    "pattern:twotone": {
+      "free": true
+    },
+    "pattern:stripes": {
+      "free": true
+    },
+    "pattern:dots": {
+      "free": true
+    },
+    "pattern:gradient": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pattern:sparkle": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "daily_sweep",
+        "label": "Complete every Daily Sweep game in one day"
+      }
+    },
+    "pattern:hearts": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pattern:stars": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pattern:zigzag": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pattern:checkers": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pattern:tiedye": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "pattern:leopard": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "pattern:galaxy": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "night_owl",
+        "label": "Finish a daily between midnight and 4 AM"
+      }
+    },
+    "pattern:colorblock": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:beady": {
+      "free": true
+    },
+    "eyes:happy": {
+      "free": true
+    },
+    "eyes:sparkly": {
+      "free": true
+    },
+    "eyes:sleepy": {
+      "free": true
+    },
+    "eyes:wink": {
+      "free": true
+    },
+    "eyes:hearts": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "best_buds",
+        "label": "Add your first friend"
+      }
+    },
+    "eyes:stars": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "perfectionist",
+        "label": "Solve a game in 1 guess"
+      }
+    },
+    "eyes:glasses": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:cyclops": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "eyes:sunglasses": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:determined": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:anime": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "eyes:joy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:droopy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:biground": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:sideglance": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "eyes:dizzy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "brows:happy": {
+      "free": true
+    },
+    "brows:worried": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "brows:determined": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "brows:surprised": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "brows:cheeky": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "brows:sleepy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "nose:button": {
+      "free": true
+    },
+    "nose:red": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "nose:pointy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "nose:bignose": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "nose:cat": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "nose:piggy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "nose:clownstar": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "cheeks:blush": {
+      "free": true
+    },
+    "cheeks:freckles": {
+      "free": true
+    },
+    "cheeks:hearts": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "cheeks:starfreckles": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "cheeks:sparkle": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "cheeks:bandage": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:smile": {
+      "free": true
+    },
+    "mouth:grin": {
+      "free": true
+    },
+    "mouth:tongue": {
+      "free": true
+    },
+    "mouth:o": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:cat": {
+      "free": true
+    },
+    "mouth:toothy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:smirk": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:tiny": {
+      "free": true
+    },
+    "mouth:gasp": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:laugh": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:whistle": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:fang": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:kissy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:braces": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:oops": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:tongueside": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "mouth:teeth": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "extra:sweat": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "extra:tear": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "extra:steam": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "extra:heart": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "head:crown": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "boss_battle",
+        "label": "Beat Webster, the final boss"
+      }
+    },
+    "head:party": {
+      "free": true
+    },
+    "head:beanie": {
+      "free": true
+    },
+    "head:sprout": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "daily_debut",
+        "label": "Complete your first daily"
+      }
+    },
+    "head:nightcap": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "night_owl",
+        "label": "Finish a daily between midnight and 4 AM"
+      }
+    },
+    "head:headphones": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:bow": {
+      "free": true
+    },
+    "head:wizard": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "pangram_hunter",
+        "label": "Find 10 Hubbub pangrams"
+      }
+    },
+    "head:pirate": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:cowboy": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:chef": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:grad": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "century_club",
+        "label": "Win 100 games"
+      }
+    },
+    "head:halo": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "year_one",
+        "label": "Play 365 days in a row"
+      }
+    },
+    "head:flower": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:tophat": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "vs_veteran",
+        "label": "Win 10 VS matches"
+      }
+    },
+    "head:propeller": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "blitz",
+        "label": "Win any game in under 15 seconds"
+      }
+    },
+    "head:catears": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:bunnyears": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:tiara": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "flawless_streak",
+        "label": "Win a Flawless Victory 3 days in a row"
+      }
+    },
+    "head:viking": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "unstoppable",
+        "label": "Win 5 VS matches in a row"
+      }
+    },
+    "head:sweatband": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "no_sweat",
+        "label": "Win Classic in 2 guesses"
+      }
+    },
+    "head:cap": {
+      "free": true
+    },
+    "head:beret": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:minicrown": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "halfway_hero",
+        "label": "Clear five rungs of the bot ladder"
+      }
+    },
+    "head:flowercrown": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "squad_goals",
+        "label": "Have 10 friends"
+      }
+    },
+    "head:bucket": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:santa": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:witch": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:astronaut": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "stat": "level",
+        "min": 50,
+        "label": "Reach level 50"
+      }
+    },
+    "head:bigbow": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:pombeanie": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:bearears": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "head:mohawk": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "stat": "bestStreak",
+        "min": 100,
+        "label": "Keep a 100-day play streak"
+      }
+    },
+    "head:pumpkinhat": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "head:candycornhat": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "head:witchnight": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "head:batears": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "face:mustache": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "face:heart-glasses": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "cheerleader",
+        "label": "Send 25 reactions"
+      }
+    },
+    "face:monocle": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "boss_battle",
+        "label": "Beat Webster, the final boss"
+      }
+    },
+    "face:starglasses": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "hive_mind",
+        "label": "Reach the top rank in Hubbub"
+      }
+    },
+    "face:roundglasses": {
+      "free": true
+    },
+    "face:eyepatch": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "face:facepaint": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "face:mask": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "face:curlymustache": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "neck:cape": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "wake_up_call",
+        "label": "Beat Rip in a VS battle"
+      }
+    },
+    "neck:wings": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "iron_will",
+        "label": "Complete the Daily Sweep 30 days in a row"
+      }
+    },
+    "neck:bowtie": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "neck:scarf": {
+      "free": true
+    },
+    "neck:chain": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "gold_rush",
+        "label": "Earn 50 gold medals"
+      }
+    },
+    "neck:medal": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "medal_10",
+        "label": "Earn 10 medals"
+      }
+    },
+    "neck:backpack": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "neck:bubbletea": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "neck:guitar": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "hat_trick",
+        "label": "Win 3 dailies in under 60 seconds each in one day"
+      }
+    },
+    "neck:supercape": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "meet_the_cast",
+        "label": "Beat all ten cast bots"
+      }
+    },
+    "neck:fairywings": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "stat": "bestLoginStreak",
+        "min": 50,
+        "label": "Open Wordocious 50 days in a row"
+      }
+    },
+    "neck:batwings": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "neck:cattail": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "held:mug": {
+      "free": true
+    },
+    "held:book": {
+      "free": true
+    },
+    "held:pencil-big": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "kindred_regular",
+        "label": "Solve 25 Kindreds"
+      }
+    },
+    "held:balloon": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:trophy": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "race_day",
+        "label": "Win today's friends race"
+      }
+    },
+    "held:magnifier": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "sharp_spotter",
+        "label": "Solve 25 Spyglass word searches"
+      }
+    },
+    "held:flashlight": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "code_cracker",
+        "label": "Solve 25 Codebreakers"
+      }
+    },
+    "held:umbrella": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:icecream": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:spatula": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:mic": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "untouchable",
+        "label": "Win 10 VS matches in a row"
+      }
+    },
+    "held:wand-star": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "puzzle_week",
+        "label": "Sweep the Puzzles 7 days in a row"
+      }
+    },
+    "held:candypail": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "wrap:bandana": {
+      "free": true
+    },
+    "wrap:belt": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "wrap:apron": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "wrap:lei": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "wrap:cape-drape": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "grand_sweep",
+        "label": "Sweep every daily and every Puzzle in one day"
+      }
+    },
+    "wrap:vampirecollar": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "feet:sneakers": {
+      "free": true
+    },
+    "feet:boots": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "ladder_climber",
+        "label": "Solve 25 Letter Ladders"
+      }
+    },
+    "feet:slippers": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "feet:skates": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "speed_sweep",
+        "label": "Finish the Daily Sweep in under 15 minutes"
+      }
+    },
+    "pet:bird": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "early_bird",
+        "label": "Finish a daily before 7 AM"
+      }
+    },
+    "pet:kitten": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "stat": "bestStreak",
+        "min": 7,
+        "label": "Keep a 7-day play streak"
+      }
+    },
+    "pet:puppy": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "ride_or_die",
+        "label": "Keep a 7-day friend streak"
+      }
+    },
+    "pet:snail": {
+      "pro": true,
+      "buy": "t3",
+      "earn": {
+        "achievement": "dedicated",
+        "label": "Play 500 games"
+      }
+    },
+    "pet:bat": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "pet:ghost": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "pet:blackcat": {
+      "season": "halloween",
+      "limited": true,
+      "buy": "t2"
+    },
+    "frame:bronze": {
+      "earn": {
+        "stat": "level",
+        "min": 1,
+        "label": "Reach level 1"
+      }
+    },
+    "frame:silver": {
+      "earn": {
+        "stat": "level",
+        "min": 11,
+        "label": "Reach level 11"
+      }
+    },
+    "frame:gold": {
+      "earn": {
+        "stat": "level",
+        "min": 26,
+        "label": "Reach level 26"
+      }
+    },
+    "frame:platinum": {
+      "earn": {
+        "stat": "level",
+        "min": 51,
+        "label": "Reach level 51"
+      }
+    },
+    "frame:diamond": {
+      "pro": true
+    },
+    "frame:pro": {
+      "pro": true
+    },
+    "bg:lilac": {
+      "free": true
+    },
+    "bg:bubblegum": {
+      "free": true
+    },
+    "bg:sky": {
+      "free": true
+    },
+    "bg:mint": {
+      "free": true
+    },
+    "bg:lemon": {
+      "free": true
+    },
+    "bg:peach": {
+      "free": true
+    },
+    "bg:cloud": {
+      "free": true
+    },
+    "bg:night": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "bg:sunset": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "bg:ocean": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "bg:cottoncandy": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "bg:aurora": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "sweep_streak_7",
+        "label": "Complete the Daily Sweep 7 days in a row"
+      }
+    },
+    "bg:galaxy": {
+      "pro": true,
+      "buy": "t2",
+      "earn": {
+        "achievement": "starstruck",
+        "label": "Solve 25 Starsweeps"
+      }
+    },
+    "bg:polka": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "bg:starry": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "perfect_constellation",
+        "label": "Solve a Starsweep with no wrong stars"
+      }
+    },
+    "bg:sunburst": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "bg:checkers": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "bg:confetti": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "first_win",
+        "label": "Win any game"
+      }
+    },
+    "pose:wave": {
+      "free": true
+    },
+    "pose:cheer": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "first_win",
+        "label": "Win any game"
+      }
+    },
+    "pose:hips": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pose:shrug": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pose:flex": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "achievement": "century_club",
+        "label": "Win 100 games"
+      }
+    },
+    "pose:hug": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pose:sit": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "pose:jump": {
+      "pro": true,
+      "buy": "t1",
+      "earn": {
+        "stat": "level",
+        "min": 10,
+        "label": "Reach level 10"
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Lock } from 'lucide-react';
-import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPartSeason, avatarPickConflict, castPreset, enforceAvatarPro, isPartAvailable, seasonalShelf, type AvatarConfig, type AvatarFrame } from '@wordle-duel/core';
+import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPartSeason, avatarPickConflict, castPreset, enforceAvatarAccess, enforceAvatarPro, isPartAvailable, seasonalShelf, avatarPartAccess, avatarSaveCheck, type AvatarAccessContext, type AvatarConfig, type AvatarEarnStats, type AvatarFrame, type AvatarPart } from '@wordle-duel/core';
 
 import { ProPill } from '@/components/game/finished-kit';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
@@ -16,10 +16,13 @@ import {
   effectiveAvatarFrame, frameLevelLocked, randomAvatar, swatchCss, type BuilderField, type BuilderTab,
 } from '@/lib/avatar-render';
 import { MascotAvatar } from './mascot-avatar';
+import { LIVING_MASCOT_ON } from '@/lib/living-mascot';
 import { DressStage, StageArt, StageClose, backdropCss, warmDressArt } from '@/components/profile/dress-up';
 import { CastButton } from '@/components/ui/cast-button';
 import { artSrc } from '@/lib/art';
 import { useSeason } from '@/lib/season';
+import { ITEM_GATING_ON } from '@/lib/avatar-access';
+import { LockedItemCard } from './locked-item-card';
 
 /**
  * FINISH_SPEC AN4 (+ addendum): Edit Profile → "Make your mascot". A big live
@@ -47,6 +50,12 @@ export interface MascotBuilderProps {
   initialTab?: string;
   /** The player's SAVED look: a seasonal part they saved stays offered after its season (never strip a look). */
   saved?: AvatarConfig | null;
+  /**
+   * Item gating (behind itemGating, OFF): the earn evaluator's stats (profile + achievements) and the owned item keys.
+   * With the flag on, locked parts can still be tried on; Done shows the Locked card instead of saving them.
+   */
+  earnStats?: AvatarEarnStats | null;
+  owned?: readonly string[];
 }
 
 const ACCENT = '#7c3aed';
@@ -79,14 +88,26 @@ const TAB_FIELDS: Record<BuilderTab, Array<{ field: BuilderField; heading?: stri
   frame: [{ field: 'frame' }],
 };
 
-export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl, saving = false, onSave, onBack, initialTab, saved }: MascotBuilderProps) {
+export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl, saving = false, onSave, onBack, initialTab, saved, earnStats, owned }: MascotBuilderProps) {
   // 10-05 seasonal items (core avatar-season.ts): the season = the admin preview, else the calendar's window.
   const season = useSeason();
   const savedRef = React.useRef<AvatarConfig | null>(saved ?? value);
   const shelf = React.useMemo(() => seasonalShelf(season), [season]);
   const available = React.useCallback((field: string, id: string) => isPartAvailable({ field, id }, new Date(), season ?? 'none', savedRef.current), [season]);
-  const [tab, setTab] = React.useState<BuilderTab | 'season'>(
-    initialTab === 'season' ? 'season' : (BUILDER_TABS.some((t) => t.id === initialTab) ? initialTab as BuilderTab : 'body'));
+  // Item gating (OFF): try anything on; saving checks access (core avatar-access.ts).
+  const accessCtx = React.useMemo<AvatarAccessContext>(() => ({
+    isPro, owned: owned ?? [], stats: earnStats ?? null, date: new Date(), previewSeason: season ?? 'none', saved: savedRef.current, gating: ITEM_GATING_ON,
+  }), [isPro, owned, earnStats, season]);
+  const gatedLocked = React.useCallback((field: string, id: string) => ITEM_GATING_ON && !avatarPartAccess({ field, id }, accessCtx).unlocked, [accessCtx]);
+  const [lockedCard, setLockedCard] = React.useState<AvatarPart[] | null>(null);
+  const done = () => {
+    if (!ITEM_GATING_ON) { onSave(enforceAvatarPro(value, isPro)); return; }
+    const check = avatarSaveCheck(value, accessCtx);
+    if (check.ok) onSave(value);
+    else setLockedCard(check.locked);
+  };
+  const [tab, setTab] = React.useState<BuilderTab | 'season' | 'pose'>(
+    initialTab === 'season' ? 'season' : initialTab === 'pose' && LIVING_MASCOT_ON ? 'pose' : (BUILDER_TABS.some((t) => t.id === initialTab) ? initialTab as BuilderTab : 'body'));
   React.useEffect(() => { if (tab === 'season' && season && shelf.length === 0) setTab('head'); }, [tab, season, shelf.length]);
   /** "Swapped out the heart shades" — a pick that doesn't fit with something worn replaces it (fit system). */
   const [note, setNote] = React.useState<string | null>(null);
@@ -120,11 +141,12 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   void stageRef; void prefersReducedMotion;
 
   const set = (field: BuilderField, id: string) => {
-    if (!isPro && avatarProOnly(field, id)) {
+    // Gating on: every part can be tried on (the Locked card comes at Done); off: today's Pro pill → Go Pro.
+    if (!ITEM_GATING_ON && !isPro && avatarProOnly(field, id)) {
       openGoProPopup({ reason: 'Pro mascot styles' });
       return;
     }
-    if (field === 'frame' && frameLevelLocked(id as AvatarFrame, level)) return;
+    if (!ITEM_GATING_ON && field === 'frame' && frameLevelLocked(id as AvatarFrame, level)) return;
     let next = { ...value, [field]: id } as AvatarConfig;
     if (PART_FIELDS.includes(field)) {
       const hit = avatarPickConflict(value, field, id);
@@ -141,7 +163,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   /** A glossy round swatch (no tile, no outline): selected = a white check + a gentle scale. */
   const swatchTile = (field: BuilderField, id: string) => {
     const selected = value[field as keyof AvatarConfig] === id;
-    const proLocked = !isPro && avatarProOnly(field, id);
+    const proLocked = !ITEM_GATING_ON && !isPro && avatarProOnly(field, id);
+    const gated = gatedLocked(field, id);
     const label = avatarOptionLabel(field, id);
     const hex = id === 'default' ? '#ffffff' : avatarColorHex(id);
     return (
@@ -149,7 +172,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
         key={`${field}-${id}`}
         type="button"
         onClick={() => set(field, id)}
-        aria-label={proLocked ? `${label}, Pro only` : label}
+        aria-label={proLocked ? `${label}, Pro only` : gated ? `${label}, locked — try it on` : label}
         aria-pressed={selected}
         disabled={saving}
         className="relative flex items-center justify-center"
@@ -174,6 +197,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
           {id === 'default' && !selected && <span className="text-[9px] font-black" style={{ color: '#7c3aed' }}>AUTO</span>}
         </span>
         {proLocked && <span className="absolute" style={{ top: -6, right: -8 }}><ProPill /></span>}
+        {gated && <StageArt name="art-dress-lock" height={14} className="absolute" style={{ top: -4, right: -4 }} />}
       </button>
     );
   };
@@ -199,6 +223,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
       case 'body': return <MascotAvatar config={bodyOnly({ ...value, body: id } as AvatarConfig)} initial=" " size={50} cutout />;
       case 'pattern': return <MascotAvatar config={bodyOnly({ ...value, pattern: id } as AvatarConfig)} initial=" " size={50} cutout />;
       case 'bg': return <span className="block w-full h-full rounded-full" style={{ background: backdropFill(id, value.color) }} />;
+      // 10-06 Pose tab (flag on only): the mascot itself in each pose (a static pose frame)
+      case 'pose': return <MascotAvatar config={{ ...value, pose: id, frame: 'none', display: 'mascot' } as AvatarConfig} initial={initial} size={50} cutout />;
       case 'frame': return <MascotAvatar config={{ ...bodyOnly(value), frame: id } as AvatarConfig} initial=" " size={46} pro={id === 'pro' ? true : null} />;
       default: {
         // eslint-disable-next-line @next/next/no-img-element
@@ -209,13 +235,16 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   const NEW_IDS = new Set(['head:santa', 'head:witch', 'neck:scarf', 'neck:bubbletea', 'neck:guitar', 'neck:fairywings']);
   const tile = (field: BuilderField, id: string) => {
     // Pro players always wear a frame (AA2): their "none" is the Pro gold frame.
-    const selected = field === 'frame' ? effectiveAvatarFrame(value.frame, { pro: isPro }) === id : value[field as keyof AvatarConfig] === id;
-    const proLocked = !isPro && avatarProOnly(field, id);
-    const levelLocked = field === 'frame' && frameLevelLocked(id as AvatarFrame, level);
+    const selected = field === 'frame' ? effectiveAvatarFrame(value.frame, { pro: isPro }) === id
+      : field === 'pose' ? (value.pose ?? 'none') === id : value[field as keyof AvatarConfig] === id;
+    const proLocked = !ITEM_GATING_ON && !isPro && avatarProOnly(field, id);
+    const levelLocked = !ITEM_GATING_ON && field === 'frame' && frameLevelLocked(id as AvatarFrame, level);
+    // Gating on: locked tiles dim with a lock tag but stay tappable (try-on).
+    const gated = gatedLocked(field, id);
     const label = id === 'none' ? 'None' : avatarOptionLabel(field, id);
     const a11y = levelLocked
       ? `${label}, unlocks at level ${FRAME_UNLOCK_LEVEL[id as AvatarFrame]}`
-      : proLocked ? `${label}, Pro only` : label;
+      : proLocked ? `${label}, Pro only` : gated ? `${label}, locked — try it on` : label;
     const swatch = field === 'patternColor';
     const seasonOf = avatarPartSeason(field, id);
     return (
@@ -235,7 +264,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
             borderRadius: '50%',
             background: selected ? '#ffffff' : '#eae2fa',
             boxShadow: selected ? '0 0 0 3px #f5b82e, 0 4px 14px rgba(245,158,11,0.4)' : undefined,
-            opacity: levelLocked ? 0.5 : 1,
+            opacity: levelLocked ? 0.5 : gated && !selected ? 0.62 : 1,
             padding: field === 'bg' ? 0 : 6,
           }}
         >
@@ -244,6 +273,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
           ) : partArt(field, id)}
           {levelLocked && <span className="absolute inset-0 flex items-center justify-center"><StageArt name="art-dress-lock" height={20} /></span>}
         </span>
+        {gated && <StageArt name="art-dress-lock" height={16} className="absolute" style={{ top: -3, left: -4 }} />}
         {seasonOf && <StageArt name={`art-dress-tag-${seasonOf}`} height={13} className="absolute" style={{ top: -3, right: -8 }} />}
         {!seasonOf && (NEW_IDS.has(`${field}:${id}`) || avatarOptionIsNew(field, id)) && !proLocked && <StageArt name="art-dress-tag-new" height={15} className="absolute" style={{ top: -3, right: -4 }} />}
         {proLocked && <StageArt name="art-dress-tag-pro" height={15} className="absolute" style={{ bottom: -2, right: -6 }} />}
@@ -260,6 +290,8 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
     ['body', 'body', 'Body'], ['color', 'color', 'Color'], ['pattern', 'pattern', 'Pattern'], ['eyes', 'eyes', 'Eyes'], ['nose', 'nose', 'Nose'],
     ['mouth', 'mouth', 'Mouth'], ['head', 'hats', 'Hats'], ['extras', 'extras', 'Extras'], ['bg', 'backdrop', 'Backdrop'], ['frame', 'frame', 'Frame'],
   ];
+  // 10-06: the Pose tab (behind the livingMascot flag; its icon borrows the body tab art until a pose icon is drawn)
+  const roomTabs: Array<[BuilderTab | 'pose', string, string]> = LIVING_MASCOT_ON ? [...ROOM_TABS, ['pose', 'body', 'Pose']] : ROOM_TABS;
   const round = (label: string, glyph: React.ReactNode, colors: [string, string], onClick: () => void, disabled = false) => (
     <button type="button" aria-label={label} onClick={onClick} disabled={disabled || saving}
       className="w-[38px] h-[38px] rounded-full flex items-center justify-center border-0 p-0 cursor-pointer"
@@ -278,7 +310,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
           <div className="absolute inset-x-0 top-0 flex items-center justify-between px-2.5" style={{ paddingTop: 40 }}>
             <StageClose label="Close without saving" onClick={onBack} disabled={saving} />
             {/* The finished cast primary (the frost helper pill read pale on the stage). */}
-            <CastButton color="purple" size="s" onClick={() => onSave(enforceAvatarPro(value, isPro))} disabled={saving}>{saving ? 'Saving…' : 'Done'}</CastButton>
+            <CastButton color="purple" size="s" onClick={done} disabled={saving}>{saving ? 'Saving…' : 'Done'}</CastButton>
           </div>
           <div className="absolute left-3 flex flex-col gap-2.5" style={{ top: 92 }}>
             {round('Randomize', <DiceGlyph />, ['#5eead4', '#0d9488'], () => onChange(randomAvatar(value, Math.random, { isPro, available })))}
@@ -304,7 +336,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
               </button>
             );
           })()}
-          {ROOM_TABS.map(([id, art, label]) => {
+          {roomTabs.map(([id, art, label]) => {
             const on = tab === id || (id === 'nose' && tab === 'cheeks');
             return (
               <button key={id} type="button" role="tab" aria-selected={on} aria-controls="mascot-tabpanel" id={`mascot-tab-${id}`} onClick={() => setTab(id)}
@@ -330,7 +362,16 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
             <p className="text-[11px] font-bold mt-2.5 text-center" style={{ color: 'var(--color-text-muted)' }}>Free for the season. Save a look and it stays yours.</p>
           </div>
         )}
-        {tab !== 'season' && TAB_FIELDS[tab]
+        {tab === 'pose' && (
+          <div key="pose">
+            <div className="h-2" />
+            <div className="grid grid-cols-5 gap-2.5" role="group" aria-label="Pose">
+              {optionIds('pose').map((id) => tile('pose', id))}
+            </div>
+            <p className="text-[11px] font-bold mt-2.5 text-center" style={{ color: 'var(--color-text-muted)' }}>Your mascot holds its pose everywhere it shows.</p>
+          </div>
+        )}
+        {tab !== 'season' && tab !== 'pose' && TAB_FIELDS[tab]
           // the accessory color row only shows when a white (tintable) accessory is worn
           .filter(({ field }) => field !== 'accColor' || [value.head, value.neck].some((x) => AVATAR_TINTABLE.includes(x)))
           .map(({ field, heading: h }) => (
@@ -347,6 +388,11 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
         ))}
         {note && <p role="status" className="text-xs font-bold mt-2 text-center" style={{ color: '#6d28d9' }}>{note}</p>}
       </div>
+      {lockedCard && (
+        <LockedItemCard config={value} initial={initial} locked={lockedCard} ctx={accessCtx}
+          onSaveWithout={() => { setLockedCard(null); onSave(enforceAvatarAccess(value, accessCtx)); }}
+          onClose={() => setLockedCard(null)} />
+      )}
     </div>
   );
 }

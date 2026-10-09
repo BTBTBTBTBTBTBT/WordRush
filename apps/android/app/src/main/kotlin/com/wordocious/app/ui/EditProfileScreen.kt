@@ -210,8 +210,10 @@ fun EditProfileScreen(onDone: () -> Unit) {
     fun mascotPlan(): MascotPlan {
         val lvl = profile?.level ?: 1
         val photoNow = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
-        val look = MascotBuilderLogic.sanitize(
+        // item gating (flag OFF → null → sanitize as before): core enforce keeps earned / grandfathered parts
+        val look = MascotBuilderLogic.saveLook(
             mascot ?: defaultAvatar(profile?.username?.lowercase(), profile?.accentColor, hasPhoto = photoNow != null), AuthService.isProActive, lvl,
+            ownAccessContext(AuthService.isProActive, unlocked),
         )
         val showPhoto = look.display == AvatarOptions.DISPLAY_PHOTO && photoNow != null
         return MascotPlan(
@@ -421,7 +423,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 look, initial,
                 modifier = Modifier.clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)),
                 photoUrl = if (showsPhotoNow) avatarUrl else null,
-                height = StageMetrics.height + 20.dp, hopToken = hopToken,
+                height = StageMetrics.height + 20.dp, hopToken = hopToken, followFinger = true,
                 onPhotoTap = if (canChangePhoto && !uploading) ({ showPhotoChoice = true }) else null,
             ) {
                 Row(
@@ -595,6 +597,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 config = roomStart ?: look,
                 initial = initial, level = profile?.level ?: 1, isPro = proSelf, startTab = roomTab,
                 onClose = { showRoom = false },
+                achievements = unlocked,
                 onDone = { c ->
                     val keepPhoto = wearPhoto && DressUp.pendingDoor == DressDoor.Stage && avatarUrl != null
                     mascot = c.copy(display = if (keepPhoto) AvatarOptions.DISPLAY_PHOTO else AvatarOptions.DISPLAY_MASCOT)

@@ -1,0 +1,9202 @@
+{
+  "contexts": [
+    {
+      "name": "free",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-07-01",
+        "gating": true
+      }
+    },
+    {
+      "name": "pro",
+      "ctx": {
+        "isPro": true,
+        "date": "2026-07-01",
+        "gating": true
+      }
+    },
+    {
+      "name": "owned",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-07-01",
+        "gating": true,
+        "owned": [
+          "head:cowboy",
+          "pet:kitten",
+          "color:navy"
+        ]
+      }
+    },
+    {
+      "name": "earner",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-07-01",
+        "gating": true,
+        "stats": {
+          "level": 30,
+          "bestStreak": 31,
+          "bestLoginStreak": 12,
+          "achievements": [
+            "boss_battle",
+            "night_owl"
+          ]
+        }
+      }
+    },
+    {
+      "name": "progress",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-07-01",
+        "gating": true,
+        "stats": {
+          "level": 3,
+          "bestStreak": 12,
+          "bestLoginStreak": 49
+        }
+      }
+    },
+    {
+      "name": "saved",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-07-01",
+        "gating": true,
+        "saved": {
+          "v": 1,
+          "body": "classic",
+          "color": "navy",
+          "pattern": "solid",
+          "patternColor": "purple",
+          "eyes": "beady",
+          "nose": "none",
+          "cheeks": "none",
+          "mouth": "smile",
+          "head": "cowboy",
+          "face": "none",
+          "neck": "none",
+          "pet": "ghost",
+          "accColor": "default",
+          "frame": "none",
+          "bg": "auto",
+          "display": "mascot"
+        }
+      }
+    },
+    {
+      "name": "halloween",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-10-20",
+        "gating": true
+      }
+    },
+    {
+      "name": "preview",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-07-01",
+        "gating": true,
+        "previewSeason": "halloween"
+      }
+    },
+    {
+      "name": "off",
+      "ctx": {
+        "isPro": false,
+        "date": "2026-07-01",
+        "gating": false
+      }
+    },
+    {
+      "name": "off-pro",
+      "ctx": {
+        "isPro": true,
+        "date": "2026-07-01",
+        "gating": false,
+        "stats": {
+          "level": 30
+        }
+      }
+    }
+  ],
+  "rules": [
+    {
+      "field": "head",
+      "id": "party",
+      "gating": true,
+      "key": "head:party",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "head",
+      "id": "party",
+      "gating": false,
+      "key": "head:party",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "head",
+      "id": "cowboy",
+      "gating": true,
+      "key": "head:cowboy",
+      "rule": {
+        "pro": true,
+        "buy": "t2"
+      }
+    },
+    {
+      "field": "head",
+      "id": "cowboy",
+      "gating": false,
+      "key": "head:cowboy",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "head",
+      "id": "crown",
+      "gating": true,
+      "key": "head:crown",
+      "rule": {
+        "pro": true,
+        "buy": "t3",
+        "earn": {
+          "achievement": "boss_battle",
+          "label": "Beat Webster, the final boss"
+        }
+      }
+    },
+    {
+      "field": "head",
+      "id": "crown",
+      "gating": false,
+      "key": "head:crown",
+      "rule": {
+        "pro": true
+      }
+    },
+    {
+      "field": "head",
+      "id": "pumpkinhat",
+      "gating": true,
+      "key": "head:pumpkinhat",
+      "rule": {
+        "season": "halloween",
+        "limited": true,
+        "buy": "t2"
+      }
+    },
+    {
+      "field": "head",
+      "id": "pumpkinhat",
+      "gating": false,
+      "key": "head:pumpkinhat",
+      "rule": {
+        "season": "halloween"
+      }
+    },
+    {
+      "field": "head",
+      "id": "none",
+      "gating": true,
+      "key": "head:none",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "head",
+      "id": "none",
+      "gating": false,
+      "key": "head:none",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "body",
+      "id": "star",
+      "gating": true,
+      "key": "body:star",
+      "rule": {
+        "pro": true,
+        "buy": "t3",
+        "earn": {
+          "stat": "bestStreak",
+          "min": 30,
+          "label": "Keep a 30-day play streak"
+        }
+      }
+    },
+    {
+      "field": "body",
+      "id": "star",
+      "gating": false,
+      "key": "body:star",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "body",
+      "id": "classic",
+      "gating": true,
+      "key": "body:classic",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "body",
+      "id": "classic",
+      "gating": false,
+      "key": "body:classic",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "color",
+      "id": "navy",
+      "gating": true,
+      "key": "color:navy",
+      "rule": {
+        "pro": true,
+        "buy": "t1"
+      }
+    },
+    {
+      "field": "color",
+      "id": "navy",
+      "gating": false,
+      "key": "color:navy",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "accColor",
+      "id": "rainbow",
+      "gating": true,
+      "key": "color:rainbow",
+      "rule": {
+        "pro": true,
+        "buy": "t3",
+        "earn": {
+          "achievement": "flawless_victory",
+          "label": "Win every Daily Sweep game in one day"
+        }
+      }
+    },
+    {
+      "field": "accColor",
+      "id": "rainbow",
+      "gating": false,
+      "key": "color:rainbow",
+      "rule": {
+        "pro": true
+      }
+    },
+    {
+      "field": "patternColor",
+      "id": "purple",
+      "gating": true,
+      "key": "color:purple",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "patternColor",
+      "id": "purple",
+      "gating": false,
+      "key": "color:purple",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "pattern",
+      "id": "galaxy",
+      "gating": true,
+      "key": "pattern:galaxy",
+      "rule": {
+        "pro": true,
+        "buy": "t3",
+        "earn": {
+          "achievement": "night_owl",
+          "label": "Finish a daily between midnight and 4 AM"
+        }
+      }
+    },
+    {
+      "field": "pattern",
+      "id": "galaxy",
+      "gating": false,
+      "key": "pattern:galaxy",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "pattern",
+      "id": "solid",
+      "gating": true,
+      "key": "pattern:solid",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "pattern",
+      "id": "solid",
+      "gating": false,
+      "key": "pattern:solid",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "frame",
+      "id": "gold",
+      "gating": true,
+      "key": "frame:gold",
+      "rule": {
+        "earn": {
+          "stat": "level",
+          "min": 26,
+          "label": "Reach level 26"
+        }
+      }
+    },
+    {
+      "field": "frame",
+      "id": "gold",
+      "gating": false,
+      "key": "frame:gold",
+      "rule": {
+        "earn": {
+          "label": "Reach level 26",
+          "stat": "level",
+          "min": 26
+        }
+      }
+    },
+    {
+      "field": "frame",
+      "id": "diamond",
+      "gating": true,
+      "key": "frame:diamond",
+      "rule": {
+        "pro": true
+      }
+    },
+    {
+      "field": "frame",
+      "id": "diamond",
+      "gating": false,
+      "key": "frame:diamond",
+      "rule": {
+        "pro": true
+      }
+    },
+    {
+      "field": "bg",
+      "id": "auto",
+      "gating": true,
+      "key": "bg:auto",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "bg",
+      "id": "auto",
+      "gating": false,
+      "key": "bg:auto",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "bg",
+      "id": "aurora",
+      "gating": true,
+      "key": "bg:aurora",
+      "rule": {
+        "pro": true,
+        "buy": "t2",
+        "earn": {
+          "achievement": "sweep_streak_7",
+          "label": "Complete the Daily Sweep 7 days in a row"
+        }
+      }
+    },
+    {
+      "field": "bg",
+      "id": "aurora",
+      "gating": false,
+      "key": "bg:aurora",
+      "rule": {
+        "pro": true
+      }
+    },
+    {
+      "field": "pet",
+      "id": "kitten",
+      "gating": true,
+      "key": "pet:kitten",
+      "rule": {
+        "pro": true,
+        "buy": "t3",
+        "earn": {
+          "stat": "bestStreak",
+          "min": 7,
+          "label": "Keep a 7-day play streak"
+        }
+      }
+    },
+    {
+      "field": "pet",
+      "id": "kitten",
+      "gating": false,
+      "key": "pet:kitten",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "pet",
+      "id": "ghost",
+      "gating": true,
+      "key": "pet:ghost",
+      "rule": {
+        "season": "halloween",
+        "limited": true,
+        "buy": "t2"
+      }
+    },
+    {
+      "field": "pet",
+      "id": "ghost",
+      "gating": false,
+      "key": "pet:ghost",
+      "rule": {
+        "season": "halloween"
+      }
+    },
+    {
+      "field": "pose",
+      "id": "jump",
+      "gating": true,
+      "key": "pose:jump",
+      "rule": {
+        "pro": true,
+        "buy": "t1",
+        "earn": {
+          "stat": "level",
+          "min": 10,
+          "label": "Reach level 10"
+        }
+      }
+    },
+    {
+      "field": "pose",
+      "id": "jump",
+      "gating": false,
+      "key": "pose:jump",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "brows",
+      "id": "worried",
+      "gating": true,
+      "key": "brows:worried",
+      "rule": {
+        "pro": true,
+        "buy": "t1"
+      }
+    },
+    {
+      "field": "brows",
+      "id": "worried",
+      "gating": false,
+      "key": "brows:worried",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "held",
+      "id": "wand-star",
+      "gating": true,
+      "key": "held:wand-star",
+      "rule": {
+        "pro": true,
+        "buy": "t3",
+        "earn": {
+          "achievement": "puzzle_week",
+          "label": "Sweep the Puzzles 7 days in a row"
+        }
+      }
+    },
+    {
+      "field": "held",
+      "id": "wand-star",
+      "gating": false,
+      "key": "held:wand-star",
+      "rule": {
+        "pro": true
+      }
+    },
+    {
+      "field": "eyes",
+      "id": "stars",
+      "gating": true,
+      "key": "eyes:stars",
+      "rule": {
+        "pro": true,
+        "buy": "t1",
+        "earn": {
+          "achievement": "perfectionist",
+          "label": "Solve a game in 1 guess"
+        }
+      }
+    },
+    {
+      "field": "eyes",
+      "id": "stars",
+      "gating": false,
+      "key": "eyes:stars",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "neck",
+      "id": "fairywings",
+      "gating": true,
+      "key": "neck:fairywings",
+      "rule": {
+        "pro": true,
+        "buy": "t3",
+        "earn": {
+          "stat": "bestLoginStreak",
+          "min": 50,
+          "label": "Open Wordocious 50 days in a row"
+        }
+      }
+    },
+    {
+      "field": "neck",
+      "id": "fairywings",
+      "gating": false,
+      "key": "neck:fairywings",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "head",
+      "id": "not-a-hat",
+      "gating": true,
+      "key": "head:not-a-hat",
+      "rule": {
+        "free": true
+      }
+    },
+    {
+      "field": "head",
+      "id": "not-a-hat",
+      "gating": false,
+      "key": "head:not-a-hat",
+      "rule": {
+        "free": true
+      }
+    }
+  ],
+  "access": [
+    {
+      "ctx": "free",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (0 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (0 / 26)"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (0 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (0 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (0 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "free",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (0 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (0 / 26)"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (0 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (0 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (0 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "pro",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": true,
+      "reason": "owned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (0 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": true,
+      "reason": "owned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (0 / 26)"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": true,
+      "reason": "owned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (0 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (0 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (0 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "owned",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 1,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 30,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (30 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 1,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 26,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (26 / 26)"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 7,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (7 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 10,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (10 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 12,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (12 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "earner",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 12,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (12 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 3,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (3 / 26)"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 7,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (7 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 3,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (3 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 49,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (49 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "progress",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": true,
+      "reason": "saved",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (0 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": true,
+      "reason": "saved",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (0 / 26)"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (0 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": true,
+      "reason": "saved",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (0 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (0 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "saved",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": true,
+      "reason": "season",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        }
+      ],
+      "lines": [
+        "Buy $1.99",
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (0 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (0 / 26)"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (0 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": true,
+      "reason": "season",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        }
+      ],
+      "lines": [
+        "Buy $1.99",
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (0 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (0 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "halloween",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Beat Webster, the final boss"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Beat Webster, the final boss",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": true,
+      "reason": "season",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        }
+      ],
+      "lines": [
+        "Buy $1.99",
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 30,
+            "label": "Keep a 30-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 30-day play streak (0 / 30)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Win every Daily Sweep game in one day"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Win every Daily Sweep game in one day",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Finish a daily between midnight and 4 AM"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Finish a daily between midnight and 4 AM",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (0 / 26)"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Complete the Daily Sweep 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Complete the Daily Sweep 7 days in a row",
+        "Included with Pro",
+        "Buy $1.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 7,
+            "label": "Keep a 7-day play streak"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Keep a 7-day play streak (0 / 7)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": true,
+      "reason": "season",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        }
+      ],
+      "lines": [
+        "Buy $1.99",
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 10,
+            "label": "Reach level 10"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 10 (0 / 10)",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Sweep the Puzzles 7 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Sweep the Puzzles 7 days in a row",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t1",
+          "price": 0.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 1,
+            "label": "Solve a game in 1 guess"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Solve a game in 1 guess",
+        "Included with Pro",
+        "Buy $0.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "buy",
+          "tier": "t3",
+          "price": 2.99
+        },
+        {
+          "kind": "pro"
+        },
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 50,
+            "label": "Open Wordocious 50 days in a row"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Open Wordocious 50 days in a row (0 / 50)",
+        "Included with Pro",
+        "Buy $2.99"
+      ]
+    },
+    {
+      "ctx": "preview",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": false,
+            "current": 0,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (0 / 26)"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "head",
+        "id": "party"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "head",
+        "id": "cowboy"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "head",
+        "id": "crown"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "head",
+        "id": "pumpkinhat"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "head",
+        "id": "none"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "body",
+        "id": "star"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "body",
+        "id": "classic"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "color",
+        "id": "navy"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "accColor",
+        "id": "rainbow"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "patternColor",
+        "id": "purple"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "pattern",
+        "id": "galaxy"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "pattern",
+        "id": "solid"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "frame",
+        "id": "gold"
+      },
+      "unlocked": true,
+      "reason": "earned",
+      "routes": [
+        {
+          "kind": "earn",
+          "progress": {
+            "met": true,
+            "current": 26,
+            "target": 26,
+            "label": "Reach level 26"
+          }
+        }
+      ],
+      "lines": [
+        "Earn: Reach level 26 (26 / 26)"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "frame",
+        "id": "diamond"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "bg",
+        "id": "auto"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "bg",
+        "id": "aurora"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "pet",
+        "id": "kitten"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "pet",
+        "id": "ghost"
+      },
+      "unlocked": false,
+      "reason": "locked",
+      "routes": [
+        {
+          "kind": "season",
+          "season": "halloween"
+        }
+      ],
+      "lines": [
+        "Free during Halloween"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "pose",
+        "id": "jump"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "brows",
+        "id": "worried"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "held",
+        "id": "wand-star"
+      },
+      "unlocked": true,
+      "reason": "pro",
+      "routes": [
+        {
+          "kind": "pro"
+        }
+      ],
+      "lines": [
+        "Included with Pro"
+      ]
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "eyes",
+        "id": "stars"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "neck",
+        "id": "fairywings"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    },
+    {
+      "ctx": "off-pro",
+      "part": {
+        "field": "head",
+        "id": "not-a-hat"
+      },
+      "unlocked": true,
+      "reason": "free",
+      "routes": [],
+      "lines": []
+    }
+  ],
+  "saves": [
+    {
+      "ctx": "free",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "navy"
+        },
+        {
+          "field": "head",
+          "id": "cowboy"
+        },
+        {
+          "field": "pet",
+          "id": "kitten"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "free",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "head",
+          "id": "crown"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "free",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "body",
+          "id": "star"
+        },
+        {
+          "field": "pattern",
+          "id": "galaxy"
+        },
+        {
+          "field": "patternColor",
+          "id": "navy"
+        },
+        {
+          "field": "brows",
+          "id": "worried"
+        },
+        {
+          "field": "held",
+          "id": "wand-star"
+        },
+        {
+          "field": "pose",
+          "id": "jump"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "free",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        },
+        {
+          "field": "pet",
+          "id": "ghost"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "free",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "free",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "pro",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        },
+        {
+          "field": "pet",
+          "id": "ghost"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "owned",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "owned",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "head",
+          "id": "crown"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "owned",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "body",
+          "id": "star"
+        },
+        {
+          "field": "pattern",
+          "id": "galaxy"
+        },
+        {
+          "field": "brows",
+          "id": "worried"
+        },
+        {
+          "field": "held",
+          "id": "wand-star"
+        },
+        {
+          "field": "pose",
+          "id": "jump"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "owned",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        },
+        {
+          "field": "pet",
+          "id": "ghost"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "owned",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "owned",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "earner",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "navy"
+        },
+        {
+          "field": "head",
+          "id": "cowboy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "earner",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "earner",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "patternColor",
+          "id": "navy"
+        },
+        {
+          "field": "brows",
+          "id": "worried"
+        },
+        {
+          "field": "held",
+          "id": "wand-star"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "earner",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        },
+        {
+          "field": "pet",
+          "id": "ghost"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "earner",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "earner",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "progress",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "navy"
+        },
+        {
+          "field": "head",
+          "id": "cowboy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "progress",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "head",
+          "id": "crown"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "progress",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "body",
+          "id": "star"
+        },
+        {
+          "field": "pattern",
+          "id": "galaxy"
+        },
+        {
+          "field": "patternColor",
+          "id": "navy"
+        },
+        {
+          "field": "brows",
+          "id": "worried"
+        },
+        {
+          "field": "held",
+          "id": "wand-star"
+        },
+        {
+          "field": "pose",
+          "id": "jump"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "progress",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        },
+        {
+          "field": "pet",
+          "id": "ghost"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "progress",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "progress",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "saved",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "pet",
+          "id": "kitten"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "saved",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "head",
+          "id": "crown"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "saved",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "body",
+          "id": "star"
+        },
+        {
+          "field": "pattern",
+          "id": "galaxy"
+        },
+        {
+          "field": "brows",
+          "id": "worried"
+        },
+        {
+          "field": "held",
+          "id": "wand-star"
+        },
+        {
+          "field": "pose",
+          "id": "jump"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "saved",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "saved",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "saved",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "halloween",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "navy"
+        },
+        {
+          "field": "head",
+          "id": "cowboy"
+        },
+        {
+          "field": "pet",
+          "id": "kitten"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "halloween",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "head",
+          "id": "crown"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "halloween",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "body",
+          "id": "star"
+        },
+        {
+          "field": "pattern",
+          "id": "galaxy"
+        },
+        {
+          "field": "patternColor",
+          "id": "navy"
+        },
+        {
+          "field": "brows",
+          "id": "worried"
+        },
+        {
+          "field": "held",
+          "id": "wand-star"
+        },
+        {
+          "field": "pose",
+          "id": "jump"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "halloween",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "halloween",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "halloween",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "preview",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "navy"
+        },
+        {
+          "field": "head",
+          "id": "cowboy"
+        },
+        {
+          "field": "pet",
+          "id": "kitten"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "preview",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "head",
+          "id": "crown"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "preview",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "body",
+          "id": "star"
+        },
+        {
+          "field": "pattern",
+          "id": "galaxy"
+        },
+        {
+          "field": "patternColor",
+          "id": "navy"
+        },
+        {
+          "field": "brows",
+          "id": "worried"
+        },
+        {
+          "field": "held",
+          "id": "wand-star"
+        },
+        {
+          "field": "pose",
+          "id": "jump"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "preview",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "preview",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "preview",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "color",
+          "id": "gold"
+        },
+        {
+          "field": "head",
+          "id": "crown"
+        },
+        {
+          "field": "neck",
+          "id": "wings"
+        },
+        {
+          "field": "accColor",
+          "id": "rainbow"
+        },
+        {
+          "field": "frame",
+          "id": "diamond"
+        },
+        {
+          "field": "bg",
+          "id": "galaxy"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "held",
+          "id": "wand-star"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        },
+        {
+          "field": "pet",
+          "id": "ghost"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "frame",
+          "id": "gold"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off-pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "navy",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "cowboy",
+        "face": "none",
+        "neck": "none",
+        "pet": "kitten",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off-pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "gold",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "crown",
+        "face": "none",
+        "neck": "wings",
+        "accColor": "rainbow",
+        "frame": "diamond",
+        "bg": "galaxy",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off-pro",
+      "draft": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "star",
+        "color": "purple",
+        "pattern": "galaxy",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "held": "wand-star",
+        "brows": "worried",
+        "pose": "jump",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off-pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "pumpkinhat",
+        "face": "none",
+        "neck": "none",
+        "pet": "ghost",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": false,
+      "locked": [
+        {
+          "field": "head",
+          "id": "pumpkinhat"
+        },
+        {
+          "field": "pet",
+          "id": "ghost"
+        }
+      ],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "purple",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off-pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "purple",
+        "pattern": "solid",
+        "patternColor": "navy",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "gold",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "ctx": "off-pro",
+      "draft": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      },
+      "ok": true,
+      "locked": [],
+      "enforced": {
+        "v": 1,
+        "body": "classic",
+        "color": "red",
+        "pattern": "solid",
+        "patternColor": "red",
+        "eyes": "beady",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "smile",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    }
+  ],
+  "earn": [
+    {
+      "cond": {
+        "label": "Beat Webster",
+        "achievement": "boss_battle"
+      },
+      "stats": null,
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 1,
+        "label": "Beat Webster"
+      }
+    },
+    {
+      "cond": {
+        "label": "Beat Webster",
+        "achievement": "boss_battle"
+      },
+      "stats": {},
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 1,
+        "label": "Beat Webster"
+      }
+    },
+    {
+      "cond": {
+        "label": "Beat Webster",
+        "achievement": "boss_battle"
+      },
+      "stats": {
+        "level": 26,
+        "bestStreak": 12,
+        "currentStreak": 7,
+        "bestLoginStreak": 60,
+        "achievements": [
+          "boss_battle"
+        ]
+      },
+      "progress": {
+        "met": true,
+        "current": 1,
+        "target": 1,
+        "label": "Beat Webster"
+      }
+    },
+    {
+      "cond": {
+        "label": "Beat Webster",
+        "achievement": "boss_battle"
+      },
+      "stats": {
+        "level": -3,
+        "bestStreak": 99.7
+      },
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 1,
+        "label": "Beat Webster"
+      }
+    },
+    {
+      "cond": {
+        "label": "30-day streak",
+        "stat": "bestStreak",
+        "min": 30
+      },
+      "stats": null,
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 30,
+        "label": "30-day streak"
+      }
+    },
+    {
+      "cond": {
+        "label": "30-day streak",
+        "stat": "bestStreak",
+        "min": 30
+      },
+      "stats": {},
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 30,
+        "label": "30-day streak"
+      }
+    },
+    {
+      "cond": {
+        "label": "30-day streak",
+        "stat": "bestStreak",
+        "min": 30
+      },
+      "stats": {
+        "level": 26,
+        "bestStreak": 12,
+        "currentStreak": 7,
+        "bestLoginStreak": 60,
+        "achievements": [
+          "boss_battle"
+        ]
+      },
+      "progress": {
+        "met": false,
+        "current": 12,
+        "target": 30,
+        "label": "30-day streak"
+      }
+    },
+    {
+      "cond": {
+        "label": "30-day streak",
+        "stat": "bestStreak",
+        "min": 30
+      },
+      "stats": {
+        "level": -3,
+        "bestStreak": 99.7
+      },
+      "progress": {
+        "met": true,
+        "current": 30,
+        "target": 30,
+        "label": "30-day streak"
+      }
+    },
+    {
+      "cond": {
+        "label": "Level 26",
+        "stat": "level",
+        "min": 26
+      },
+      "stats": null,
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 26,
+        "label": "Level 26"
+      }
+    },
+    {
+      "cond": {
+        "label": "Level 26",
+        "stat": "level",
+        "min": 26
+      },
+      "stats": {},
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 26,
+        "label": "Level 26"
+      }
+    },
+    {
+      "cond": {
+        "label": "Level 26",
+        "stat": "level",
+        "min": 26
+      },
+      "stats": {
+        "level": 26,
+        "bestStreak": 12,
+        "currentStreak": 7,
+        "bestLoginStreak": 60,
+        "achievements": [
+          "boss_battle"
+        ]
+      },
+      "progress": {
+        "met": true,
+        "current": 26,
+        "target": 26,
+        "label": "Level 26"
+      }
+    },
+    {
+      "cond": {
+        "label": "Level 26",
+        "stat": "level",
+        "min": 26
+      },
+      "stats": {
+        "level": -3,
+        "bestStreak": 99.7
+      },
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 26,
+        "label": "Level 26"
+      }
+    },
+    {
+      "cond": {
+        "label": "Login 50",
+        "stat": "bestLoginStreak",
+        "min": 50
+      },
+      "stats": null,
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 50,
+        "label": "Login 50"
+      }
+    },
+    {
+      "cond": {
+        "label": "Login 50",
+        "stat": "bestLoginStreak",
+        "min": 50
+      },
+      "stats": {},
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 50,
+        "label": "Login 50"
+      }
+    },
+    {
+      "cond": {
+        "label": "Login 50",
+        "stat": "bestLoginStreak",
+        "min": 50
+      },
+      "stats": {
+        "level": 26,
+        "bestStreak": 12,
+        "currentStreak": 7,
+        "bestLoginStreak": 60,
+        "achievements": [
+          "boss_battle"
+        ]
+      },
+      "progress": {
+        "met": true,
+        "current": 50,
+        "target": 50,
+        "label": "Login 50"
+      }
+    },
+    {
+      "cond": {
+        "label": "Login 50",
+        "stat": "bestLoginStreak",
+        "min": 50
+      },
+      "stats": {
+        "level": -3,
+        "bestStreak": 99.7
+      },
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 50,
+        "label": "Login 50"
+      }
+    },
+    {
+      "cond": {
+        "label": "Current 7",
+        "stat": "currentStreak",
+        "min": 7
+      },
+      "stats": null,
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 7,
+        "label": "Current 7"
+      }
+    },
+    {
+      "cond": {
+        "label": "Current 7",
+        "stat": "currentStreak",
+        "min": 7
+      },
+      "stats": {},
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 7,
+        "label": "Current 7"
+      }
+    },
+    {
+      "cond": {
+        "label": "Current 7",
+        "stat": "currentStreak",
+        "min": 7
+      },
+      "stats": {
+        "level": 26,
+        "bestStreak": 12,
+        "currentStreak": 7,
+        "bestLoginStreak": 60,
+        "achievements": [
+          "boss_battle"
+        ]
+      },
+      "progress": {
+        "met": true,
+        "current": 7,
+        "target": 7,
+        "label": "Current 7"
+      }
+    },
+    {
+      "cond": {
+        "label": "Current 7",
+        "stat": "currentStreak",
+        "min": 7
+      },
+      "stats": {
+        "level": -3,
+        "bestStreak": 99.7
+      },
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 7,
+        "label": "Current 7"
+      }
+    },
+    {
+      "cond": {
+        "label": "Nothing"
+      },
+      "stats": null,
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 1,
+        "label": "Nothing"
+      }
+    },
+    {
+      "cond": {
+        "label": "Nothing"
+      },
+      "stats": {},
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 1,
+        "label": "Nothing"
+      }
+    },
+    {
+      "cond": {
+        "label": "Nothing"
+      },
+      "stats": {
+        "level": 26,
+        "bestStreak": 12,
+        "currentStreak": 7,
+        "bestLoginStreak": 60,
+        "achievements": [
+          "boss_battle"
+        ]
+      },
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 1,
+        "label": "Nothing"
+      }
+    },
+    {
+      "cond": {
+        "label": "Nothing"
+      },
+      "stats": {
+        "level": -3,
+        "bestStreak": 99.7
+      },
+      "progress": {
+        "met": false,
+        "current": 0,
+        "target": 1,
+        "label": "Nothing"
+      }
+    }
+  ],
+  "earned": [
+    {
+      "stats": null,
+      "keys": []
+    },
+    {
+      "stats": {},
+      "keys": []
+    },
+    {
+      "stats": {
+        "level": 26,
+        "bestStreak": 12,
+        "currentStreak": 7,
+        "bestLoginStreak": 60,
+        "achievements": [
+          "boss_battle"
+        ]
+      },
+      "keys": [
+        "head:crown",
+        "face:monocle",
+        "neck:fairywings",
+        "pet:kitten",
+        "frame:bronze",
+        "frame:silver",
+        "frame:gold",
+        "pose:jump"
+      ]
+    },
+    {
+      "stats": {
+        "level": -3,
+        "bestStreak": 99.7
+      },
+      "keys": [
+        "body:star",
+        "pet:kitten"
+      ]
+    }
+  ],
+  "tableSize": 241
+}

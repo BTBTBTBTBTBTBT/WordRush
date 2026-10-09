@@ -1,5 +1,6 @@
 'use client';
 
+import { emitMascotMoment } from '@/lib/living-mascot';
 import { Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SoftNum } from '@/components/ui/soft-number';
@@ -52,6 +53,12 @@ export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, f
     if (held || !leveledUp || !newLevel || tierChanged(newLevel - 1, newLevel)) return;
     feedback('levelup');
   }, [held, leveledUp, newLevel]);
+  // 10-06: the living mascot reacts (level up = cheer, streak +1 = hop); no-ops while the flag is off
+  useEffect(() => {
+    if (held) return;
+    if (leveledUp) emitMascotMoment('levelup');
+    else if (streakBonus > 0) emitMascotMoment('streak');
+  }, [held, leveledUp, streakBonus]);
 
   useEffect(() => {
     if (held) return;

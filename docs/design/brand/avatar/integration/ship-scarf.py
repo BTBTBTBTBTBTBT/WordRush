@@ -4,6 +4,8 @@ and the letter, the tail down the side) as PER-BODY art: art-av-acc-scarf-<body>
 written into avatar-parts.json items['acc:scarf'].perBody (core avatarLayout draws that art at that rect).
 Founder rule: a part never covers the face or the letter (fitcheck: face/letter <= 1%).
   python3 docs/design/brand/avatar/integration/ship-scarf.py
+SUPERSEDED (10-06): the scarf ships as per-body `pieces` from ship-rules.py; running this would bring back the
+one-layer `perBody` art and its old fit.
 """
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -12,6 +14,8 @@ from rig import U, M, MAN, REPO, Image  # noqa: E402
 from pieces import scarf  # noqa: E402
 from fitcheck import check  # noqa: E402
 
+if '--force' not in sys.argv:
+    sys.exit('superseded by ship-rules.py (10-06); pass --force to run anyway')
 PARTS = os.path.join(os.path.dirname(HERE), 'parts')
 WEB = os.path.join(REPO, 'apps', 'web', 'public', 'art')
 IOS = os.path.join(REPO, 'apps', 'ios', 'Wordocious', 'Resources', 'Assets.xcassets')

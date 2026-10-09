@@ -777,7 +777,11 @@ private fun AchievementUnlockPopup(key: String, waiting: Int, onNice: () -> Unit
     val accent = AchievementInk.accent(def?.category)
     val name = def?.name ?: BadgeMath.fallbackName(key)
     val context = LocalContext.current
-    val total = catalog.size.takeIf { it > 0 }
+    // "N of M": a secret (the musical cast's tunes) counts only once the player has it (this one included).
+    val total = remember(catalog, key) {
+        val have = runCatching { com.wordocious.app.data.AchievementSeen.seenNow() }.getOrDefault(emptySet()) + key
+        AchievementCatalog.listed(catalog) { it in have }.size
+    }.takeIf { it > 0 }
     val unlocked = BadgeMoments.unlockedCount
     // BF2: the celebration — the badge presented by a mascot pair (the art-scene-achievement
     // frame when it ships; until then two cast poses flank the badge), the gold live lettering,

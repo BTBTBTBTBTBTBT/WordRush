@@ -69,7 +69,7 @@ export function HomeHost({ choice, initial, level, pro, hidden = false, size = H
     }
     if (c.kind === 'mascot') {
       // BJ6 round 5: the host's mascot is a full-body cutout (no tile, backdrop or frame) — like W.
-      return <MascotAvatar config={c.config} initial={initial} size={size} cutout />;
+      return <MascotAvatar config={c.config} initial={initial} size={size} cutout living />;
     }
     if (wArtFailed) {
       // Never an empty host: if W's pose art can't load, the code-drawn W mascot stands in.

@@ -13,6 +13,7 @@ import { SoftSwitch } from '@/components/settings/settings-kit';
 import { softBackground, softBorder } from '@/lib/soft-surface';
 import { GameArt } from '@/components/ui/game-art';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
+import { ITEM_GATING_ON, earnStatsFromProfile } from '@/lib/avatar-access';
 import { MascotBuilder } from '@/components/avatar/mascot-builder';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { choiceForConfig, saveProfileWithAvatar, type ProfilesUpdater } from '@/lib/avatar-cast';
@@ -319,6 +320,7 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
               onBack={() => setView('profile')}
               initialTab={door.kind === 'room' ? door.tab : undefined}
               saved={ownLook.config}
+              earnStats={ITEM_GATING_ON ? earnStatsFromProfile(profile as unknown as Record<string, unknown>, unlocked) : null}
               onSave={(config) => {
                 // Done returns to the Stage with a soft hop (saved with the one Save).
                 setLookTouched({ ...config, display: look?.display === 'photo' && avatarUrl && door.kind === 'stage' ? 'photo' : 'mascot' });

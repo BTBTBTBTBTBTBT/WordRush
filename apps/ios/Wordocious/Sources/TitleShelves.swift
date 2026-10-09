@@ -49,7 +49,8 @@ struct TitleShelvesView: View {
         _pick = State(initialValue: selected)
     }
 
-    private var visible: [AchievementDef] { catalog.all.filter { !($0.hidden ?? false) } }
+    /// Hidden ones never; a secret (the musical cast's tunes) only once earned (core AchievementRules.listed).
+    private var visible: [AchievementDef] { catalog.listed(unlocked: Set(unlockedDates.keys)) }
     private func earned(_ d: AchievementDef) -> Bool { unlockedDates[d.key] != nil }
     private func matches(_ d: AchievementDef) -> Bool {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()

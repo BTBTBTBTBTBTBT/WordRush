@@ -22,6 +22,10 @@ Dropped (visual review 10-05, contact sheets via contact-integrated.py):
   sash  the face guard pushes it down to the letter band on every body: a short pink stripe across the letter
 Fixed: sneakers (whole upper + laces, squashed to the stubby foot, not white soles), boots (wider: no foot peeks
 out), shoe keying fringe removed, sleepy brows (relaxed + droopy instead of slanting in like angry brows).
+
+10-06: the per-body layer art + overrides of every item now come from ship-rules.py (the rule-based fit on the measured
+landmarks, the app-size letter guard). Re-running this script's item builders would put the 10-05 hand fits back;
+see REPORT-RESHIP.md. It still owns what ship-rules.py does not touch (tile icons, tags, eyes inkTop, body anchors).
 """
 import json, os, sys
 from concurrent.futures import ProcessPoolExecutor
@@ -295,6 +299,8 @@ def eyes_ink_top():
 
 
 def main(only):
+    print('NOTE: the shipped per-body fits come from ship-rules.py (10-06); this re-ships the 10-05 hand fits '
+          'for the ids given', file=sys.stderr)
     keys = [k for k in ITEMS() if not only or k.split(':')[-1] in only or k in only]
     with ProcessPoolExecutor(max_workers=6) as ex:
         results = list(ex.map(build_one, keys))

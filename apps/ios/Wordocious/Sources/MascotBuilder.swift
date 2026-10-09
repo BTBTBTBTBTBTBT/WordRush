@@ -25,6 +25,8 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
     case body, color, pattern, eyes, nose, cheeks, mouth, hats, extras, backdrop, frame
     /// 10-05: the season's shelf (AvatarSeason), first in the row while a season is on.
     case season
+    /// 10-06: the saved pose (AvatarPose), last in the room's row — only while AvatarLiveConfig.livingMascot is on.
+    case pose
     var id: String { rawValue }
 
     var title: String {
@@ -41,11 +43,14 @@ enum MascotBuilderTab: String, CaseIterable, Identifiable, Hashable {
         case .backdrop: return "Backdrop"
         case .frame: return "Frame"
         case .season: return MascotSeasonal.title ?? "Season"
+        case .pose: return "Pose"
         }
     }
 
     /// The Dressing Room's tabs (all visible in one row): Cheeks joins Nose.
     static let roomTabs: [MascotBuilderTab] = [.body, .color, .pattern, .eyes, .nose, .mouth, .hats, .extras, .backdrop, .frame]
+    /// The tabs the room shows: + Pose while the living mascot ships (AvatarLiveConfig.livingMascot; hidden while off).
+    static var shownRoomTabs: [MascotBuilderTab] { roomTabs + (AvatarLiveConfig.livingMascot ? [.pose] : []) }
 
     /// The tab's ChatGPT icon (art-dress-tab-<id>).
     var artId: String { self == .cheeks ? "nose" : rawValue }
@@ -213,6 +218,10 @@ struct MascotBuilderView: View {
     var saving: Bool = false
     /// `.room`: closes without keeping the changes.
     var onClose: (() -> Void)? = nil
+    /// Item gating (AvatarAccessConfig.itemGating, OFF): the earn evaluator's stats (nil = the level alone) and the
+    /// player's SAVED look (its parts are never locked — grandfathered).
+    var accessStats: AvatarEarnStats? = nil
+    var savedConfig: AvatarConfig? = nil
 
     @State private var config: AvatarConfig
     @State private var tab: MascotBuilderTab = .body
@@ -231,11 +240,15 @@ struct MascotBuilderView: View {
     @State private var note: String?
     /// The look the room opened on (the saved look): its seasonal parts stay offered after their season.
     private let savedLook: AvatarConfig
+    /// Item gating: the worn parts that blocked Save (the Locked card lists them).
+    @State private var lockedParts: [AvatarPart] = []
+    @State private var showLocked = false
 
     init(initial: String, config: AvatarConfig, mode: MascotBuilderMode = .profile, hasPhoto: Bool = false,
          level: Int = 1, isPro: Bool = false, saveTitle: String = "Save", saving: Bool = false,
          onChange: ((AvatarConfig) -> Void)? = nil, onSave: ((AvatarConfig) -> Void)? = nil, onSkip: (() -> Void)? = nil,
-         startTab: MascotBuilderTab = .body, onClose: (() -> Void)? = nil) {
+         startTab: MascotBuilderTab = .body, onClose: (() -> Void)? = nil,
+         accessStats: AvatarEarnStats? = nil, savedConfig: AvatarConfig? = nil) {
         self.initial = initial
         self.mode = mode
         self.hasPhoto = hasPhoto
@@ -247,6 +260,8 @@ struct MascotBuilderView: View {
         self.onSave = onSave
         self.onSkip = onSkip
         self.onClose = onClose
+        self.accessStats = accessStats
+        self.savedConfig = savedConfig
         _config = State(initialValue: config)
         _previous = State(initialValue: config)
         savedLook = config
@@ -295,7 +310,48 @@ struct MascotBuilderView: View {
             }
         }
         #endif
+        .softSheet(isPresented: $showLocked) {
+            LockedItemCard(config: config, initial: initial, locked: lockedParts, ctx: accessContext,
+                           onSaveWithout: {
+                               let next = MascotAccess.enforce(config, accessContext)
+                               showLocked = false
+                               // after the card is down (the room's onSave closes its full-screen cover)
+                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { onSave?(next) }
+                           },
+                           onClose: { showLocked = false })
+            .presentationDetents([.medium, .large])
+        }
         .softSheet(isPresented: $showPro) { ProView() }
+    }
+
+    // MARK: Item gating (AvatarAccessConfig.itemGating, OFF)
+
+    /// Gating on: every part can be tried on; Save checks access (WordociousCore AvatarAccess).
+    private var gated: Bool { MascotAccess.isOn }
+
+    private var accessContext: AvatarAccessContext {
+        MascotAccess.context(isPro: isPro, stats: accessStats ?? AvatarEarnStats(level: Double(level)), saved: savedConfig)
+    }
+
+    /// A part the player can try on but not save yet (always false while gating is off).
+    private func gatedLock(_ slot: String, _ id: String) -> Bool {
+        gated && MascotAccess.isLocked(slot, id, accessContext)
+    }
+
+    /// Save: gating off = today (the Pro strip); on = the save check, and the Locked card when parts are locked.
+    private func save() {
+        guard let onSave else { return }
+        guard let check = MascotAccess.saveCheck(config, accessContext) else {
+            onSave(AvatarCatalog.enforcePro(config, isPro: isPro))
+            return
+        }
+        if check.ok {
+            onSave(config)
+        } else {
+            Haptics.tap()
+            lockedParts = check.locked
+            showLocked = true
+        }
     }
 
     // MARK: The Dressing Room (founder 10-05)
@@ -308,8 +364,8 @@ struct MascotBuilderView: View {
                     HStack(alignment: .center) {
                         StageCloseButton(label: "Close without saving") { onClose?() }
                         Spacer(minLength: 0)
-                        if let onSave {
-                            Button { onSave(AvatarCatalog.enforcePro(config, isPro: isPro)) } label: {
+                        if onSave != nil {
+                            Button { save() } label: {
                                 CandyLabel(title: saving ? "Saving…" : saveTitle)
                             }
                             // The finished cast primary (the frost helper pill read pale on the stage).
@@ -365,7 +421,7 @@ struct MascotBuilderView: View {
     /// All ten tabs in one row: the ChatGPT tab icon over a tiny label; the open tab lifts on a white pad.
     private var iconTabs: some View {
         HStack(spacing: 1) {
-            ForEach((MascotSeasonal.shelf.isEmpty ? [] : [MascotBuilderTab.season]) + MascotBuilderTab.roomTabs) { t in
+            ForEach((MascotSeasonal.shelf.isEmpty ? [] : [MascotBuilderTab.season]) + MascotBuilderTab.shownRoomTabs) { t in
                 let on = tab == t || (t == .nose && tab == .cheeks)
                 Button { Haptics.tap(); tab = t } label: {
                     VStack(spacing: 2) {
@@ -375,6 +431,9 @@ struct MascotBuilderView: View {
                                 .shadow(color: Color(hex: 0x7C3AED).opacity(on ? 0.3 : 0), radius: 6, y: 3)
                             if t == .season, let first = MascotSeasonal.shelf.first {
                                 StageArt("art-av-acc-\(first.id)", height: 24)   // the season's first hat (the pumpkin)
+                            } else if t == .pose {
+                                // no tab art yet: the player's own mascot, waving
+                                MascotPoseThumb(config: config, pose: "wave", initial: initial, size: 30)   // > 28 pt: small mascots never pose
                             } else {
                                 StageArt("art-dress-tab-\(t.artId)", height: 24)
                             }
@@ -587,6 +646,12 @@ struct MascotBuilderView: View {
                     .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                     .frame(maxWidth: .infinity)
             }
+        case .pose:
+            VStack(alignment: .leading, spacing: 8) {
+                grid(AvatarPose.ids.map { Option(slot: "pose", value: $0) })
+                Text("Your mascot holds this pose and comes alive on your Stage and Home.")
+                    .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
+            }
         case .backdrop: grid(AvatarCatalog.backdropIds.map { Option(slot: "bg", value: $0) })
         case .frame:
             VStack(alignment: .leading, spacing: 8) {
@@ -639,7 +704,9 @@ struct MascotBuilderView: View {
                 let o = Option(slot: slot, value: id)
                 let on = isSelected(o)
                 let sw = AvatarCatalog.color(id)
-                let proLocked = id != "default" && sw.pro && !isPro
+                let proLocked = !gated && id != "default" && sw.pro && !isPro
+                // gating on: locked swatches dim with a lock tag but stay tappable (try-on)
+                let locked = gatedLock(slot, id)
                 let fill: AnyShapeStyle = id == "default"
                     ? AnyShapeStyle(Color.white)
                     : sw.stops.count >= 2
@@ -661,14 +728,16 @@ struct MascotBuilderView: View {
                         }
                     }
                     .frame(width: 32, height: 32)
+                    .opacity(locked && !on ? 0.55 : 1)
                     .shadow(color: Color(hex: AvatarCatalog.colorValue(id)).opacity(0.4), radius: 3, y: 2)
                     .scaleEffect(on ? 1.14 : 1)
                     .animation(.spring(response: 0.25, dampingFraction: 0.6), value: on)
                     .overlay(alignment: .topTrailing) { if proLocked { MascotProPill().scaleEffect(0.7).offset(x: 10, y: -8) } }
+                    .overlay(alignment: .bottomTrailing) { if locked { MascotLockTag(height: 12).offset(x: 4, y: 3) } }
                     .frame(width: 40, height: 40)
                 }
                 .buttonStyle(.squish)
-                .accessibilityLabel("\(MascotOptionNames.name(id))\(proLocked ? ", Pro only" : "")")
+                .accessibilityLabel("\(MascotOptionNames.name(id))\(proLocked ? ", Pro only" : locked ? ", locked, try it on" : "")")
                 .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
             }
         }
@@ -695,6 +764,7 @@ struct MascotBuilderView: View {
             if let fit = MascotParts.fit { c = AvatarFit.applyPick(c, field: o.slot, id: o.value, manifest: fit) }
         case "bg": c.bg = o.value
         case "frame": c.frame = o.value
+        case "pose": c.pose = o.value
         default: break
         }
         return c
@@ -727,6 +797,7 @@ struct MascotBuilderView: View {
         case "held", "wrap", "feet", "pet", "brows", "extra": return AvatarFit.value(config, o.slot) == o.value
         case "bg": return config.bg == o.value
         case "frame": return config.frame == o.value
+        case "pose": return config.pose == o.value
         default: return false
         }
     }
@@ -752,6 +823,7 @@ struct MascotBuilderView: View {
     private func label(_ o: Option) -> String {
         if o.slot == "color" || o.slot == "patternColor" { return MascotOptionNames.name(o.value) }
         if o.slot == "frame", let t = AvatarFrameRules.tier(o.value) { return t.label }
+        if o.slot == "pose" { return o.value == "none" ? "Standing" : AvatarPosesData.bundled?.poses[o.value]?.label ?? MascotOptionNames.name(o.value) }
         return MascotOptionNames.name(o.value)
     }
 
@@ -771,11 +843,13 @@ struct MascotBuilderView: View {
             case "brows": return "brows"
             case "bg": return "backdrop"
             case "frame": return "frame"
+            case "pose": return "pose"
             default: return ""
             }
         }()
         var s = o.value == "none" ? "No \(kind)" : "\(label(o)) \(kind)"
-        if let t = tierLock(o) { s += ", locked, reach level \(t.minLevel)" }
+        if gated { if gatedLock(o.slot, o.value) { s += ", locked, try it on" } }
+        else if let t = tierLock(o) { s += ", locked, reach level \(t.minLevel)" }
         else if isProOnly(o) && !isPro { s += ", Pro only" }
         return s
     }
@@ -784,8 +858,10 @@ struct MascotBuilderView: View {
     /// thumbnails); the selected one glows gold. NEW / PRO tags are the ChatGPT tag art.
     private func tile(_ o: Option) -> some View {
         let on = isSelected(o)
-        let proLocked = isProOnly(o) && !isPro
-        let tier = tierLock(o)
+        // gating on: no Pro pill / level lock — locked parts dim with a lock tag and stay tappable (try-on)
+        let proLocked = !gated && isProOnly(o) && !isPro
+        let tier = gated ? nil : tierLock(o)
+        let locked = gatedLock(o.slot, o.value)
         let seasonOf = MascotSeasonal.partSeason(o.slot, o.value)
         let isNew = seasonOf == nil && (MascotNew.ids.contains("\(o.slot):\(o.value)") || MascotNew.integrated(slot: o.slot, value: o.value)) && !seenNew.contains(tab)
         let dark = Theme.isDark
@@ -808,7 +884,7 @@ struct MascotBuilderView: View {
                     PartThumb(slot: o.slot, value: o.value, config: config, initial: initial)
                         .padding(o.slot == "bg" ? 0 : 7)
                         .clipShape(Circle())
-                        .opacity(tier != nil ? 0.45 : 1)
+                        .opacity(tier != nil ? 0.45 : locked && !on ? 0.55 : 1)
                     if tier != nil { StageArt("art-dress-lock", height: 20) }
                 }
                 .aspectRatio(1, contentMode: .fit)
@@ -817,6 +893,7 @@ struct MascotBuilderView: View {
                 .overlay(alignment: .topTrailing) { if isNew && !proLocked { StageArt("art-dress-tag-new", height: 15).offset(x: 4, y: -3) } }
                 .overlay(alignment: .topTrailing) { if let seasonOf { StageArt("art-dress-tag-\(seasonOf)", height: 13).offset(x: 8, y: -3) } }
                 .overlay(alignment: .bottomTrailing) { if proLocked { StageArt("art-dress-tag-pro", height: 15).offset(x: 6, y: 2) } }
+                .overlay(alignment: .bottomTrailing) { if locked { MascotLockTag().offset(x: 5, y: 2) } }
                 if let tier {
                     Text("Lv \(tier.minLevel)").font(Brand.font(9, .black)).foregroundStyle(FinishInk.secondary)
                 }
@@ -837,8 +914,8 @@ struct MascotBuilderView: View {
                 .buttonStyle(CandyButtonStyle(variant: .teal, size: .medium, fullWidth: true))
                 .accessibilityHint("Makes a random mascot")
                 .builderAnchor(.randomize)
-            if let onSave {
-                Button { onSave(AvatarCatalog.enforcePro(config, isPro: isPro)) } label: {
+            if onSave != nil {
+                Button { save() } label: {
                     CandyLabel(title: saving ? "Saving…" : saveTitle, symbol: "checkmark")
                 }
                 .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: true))
@@ -907,7 +984,9 @@ struct PartThumb: View {
     var body: some View {
         let dark = Theme.isDark
         let base = Color(hex: AvatarCatalog.colorValue(config.color))
-        if value == "none" || (slot == "pattern" && value == "solid") {
+        if slot == "pose" {
+            MascotPoseThumb(config: config, pose: value, initial: initial, size: 56)
+        } else if value == "none" || (slot == "pattern" && value == "solid") {
             NoneGlyph()
         } else {
         switch slot {

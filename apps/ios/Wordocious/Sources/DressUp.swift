@@ -300,6 +300,8 @@ struct DressStage<Overlay: View>: View {
     var bulbs = false
     /// Cloud prompt 07: tapping the photo opens Change Photo (nil = not tappable).
     var onPhotoTap: (() -> Void)? = nil
+    /// The living mascot's eyes follow the finger (the Edit Profile Stage; AvatarLiveConfig.livingMascot only).
+    var follow = false
     @ViewBuilder var overlay: () -> Overlay
 
     var body: some View {
@@ -342,6 +344,9 @@ struct DressStage<Overlay: View>: View {
                         } else {
                             portrait.padding(.bottom, mascotSize * 0.06)
                         }
+                    } else if LivingMascotView.canAnimate(config) {
+                        // 10-06 (behind AvatarLiveConfig.livingMascot, off): the rigged living mascot in its saved pose
+                        LivingMascotView(config: config, initial: initial, size: mascotSize, cutout: true, follow: follow, hopToken: hopToken)
                     } else {
                         LiveMascot(config: config, initial: initial, size: mascotSize, hopToken: hopToken)
                     }

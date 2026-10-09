@@ -32,6 +32,11 @@ fun PlayerAvatar(
     accentHex: String? = null,
     pro: Boolean = isOwnProAvatar(username),
     contentDescription: String? = null,
+    /**
+     * 10-06: draw the player's OWN mascot as the living mascot (the Stats card; only while
+     * AvatarLiveConfig.LIVING_MASCOT is on). Lists never pass it: they stay still.
+     */
+    live: Boolean = false,
 ) {
     val row = remember(userId, username, avatarUrl, config, castId, frame, accentHex) {
         AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)
@@ -55,6 +60,8 @@ fun PlayerAvatar(
         )
     } else {
         val initial = remember(username) { MascotConfigRules.initialOf(username) }
-        MascotAvatar(resolved.config, initial, size, modifier, pro = pro)
+        if (live && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT && PlayerAvatars.isOwn(userId, username)) {
+            LivingMascot(resolved.config, initial, size, modifier, pro = pro, label = null)
+        } else MascotAvatar(resolved.config, initial, size, modifier, pro = pro)
     }
 }

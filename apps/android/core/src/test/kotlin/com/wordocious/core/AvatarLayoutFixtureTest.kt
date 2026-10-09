@@ -52,6 +52,31 @@ class AvatarLayoutFixtureTest {
         }
     }
 
+    /**
+     * 10-06 rule-based re-ship: a per-body `withheld` override drops the part silently (a saved config that wears it
+     * still lays out); a `layer` override moves a one-art item under the letter (the medal + bow tie).
+     */
+    @Test
+    fun overrides_withheld_and_layer() {
+        val raw = root["manifest"]!!.jsonObject
+        val bodies = raw["bodies"]!!.jsonObject
+        val classic = bodies["classic"]!!.jsonObject
+        val ov: MutableMap<String, kotlinx.serialization.json.JsonElement> = ((classic["overrides"] as? JsonObject) ?: JsonObject(emptyMap())).toMutableMap()
+        ov["acc:crown"] = JsonObject(mapOf("withheld" to JsonPrimitive(true)))
+        ov["acc:bowtie"] = JsonObject(mapOf("layer" to JsonPrimitive("under")))
+        val newClassic = JsonObject(classic.toMutableMap().apply { put("overrides", JsonObject(ov)) })
+        val newBodies = JsonObject(bodies.toMutableMap().apply { put("classic", newClassic) })
+        val mm = AvatarFitManifest(JsonObject(raw.toMutableMap().apply { put("bodies", newBodies) }))
+        val c = AvatarConfig().copy(body = "classic", head = "crown", neck = "bowtie")
+        val l = AvatarFit.layout(c, false, mm)
+        assertTrue(l.layers.any { it.layer == "body" })
+        assertTrue(l.layers.none { it.id == "crown" })
+        val i = l.layers.indexOfFirst { it.id == "bowtie" }
+        assertTrue(i >= 0)
+        assertEquals("under", l.layers[i].layer)
+        assertTrue(i < l.letterIndex)
+    }
+
     @Test
     fun picks_match() {
         for ((i, r) in root["picks"]!!.jsonArray.map { it.jsonObject }.withIndex()) {

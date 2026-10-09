@@ -6,6 +6,7 @@
 
 import { captionHash } from './share-captions';
 import { BOT_CAST } from './bot-cast';
+import { AVATAR_POSES } from './avatar-pose';
 
 // Round 2 (founder 10-03: "more body styles, parts and accessories … more options of everything"):
 // ~2× every category, a CHEEKS category (blush + freckles moved out of noses), 32 colors + Pro specials,
@@ -186,6 +187,11 @@ export interface AvatarConfig {
   pet?: string;
   brows?: string;
   extra?: string;
+  /**
+   * 10-06 poses (avatar-pose.ts, the Dressing Room's Pose tab): a pose id from AVATAR_POSES. Missing = 'none'
+   * (validateAvatar writes it only when set). Drawn only while AVATAR_LIVE_CONFIG.livingMascot is on.
+   */
+  pose?: string;
   /** The tint for white accessories (AVATAR_TINTABLE): a swatch id, or 'default' (their own white). */
   accColor: string;
   frame: AvatarFrame;
@@ -302,6 +308,7 @@ export function validateAvatar(raw: unknown, fallback: AvatarConfig = defaultAva
     face: pick(r.face, AVATAR_FACES, fallback.face),
     neck: pick(r.neck, AVATAR_NECKS, fallback.neck),
     ...integratedPicks(r, fallback),
+    ...posePick(r, fallback),
     accColor: typeof r.accColor === 'string' && (r.accColor === 'default' || COLOR_IDS.has(r.accColor)) ? r.accColor : fallback.accColor ?? 'default',
     frame: pick(r.frame, AVATAR_FRAMES, fallback.frame),
     bg: typeof r.bg === 'string' && AVATAR_BACKDROP_IDS.includes(r.bg) ? r.bg : fallback.bg ?? 'auto',
@@ -320,6 +327,12 @@ function integratedPicks(r: Record<string, unknown>, fallback: AvatarConfig): Pa
     if (id !== 'none') out[f] = id;
   }
   return out;
+}
+
+/** The saved pose: written only when it is a known pose other than 'none' (older configs stay byte-identical). */
+function posePick(r: Record<string, unknown>, fallback: AvatarConfig): { pose?: string } {
+  const id = pick(r.pose, AVATAR_POSES, (fallback.pose ?? 'none') as (typeof AVATAR_POSES)[number]);
+  return id !== 'none' ? { pose: id } : {};
 }
 
 function stripProIntegrated(c: AvatarConfig): AvatarConfig {

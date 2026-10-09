@@ -10,7 +10,7 @@
 // lib/sound-map.ts; lib/sound-events.ts `feedback(event)` plays both.
 
 import { haptic } from '@/lib/haptics';
-import { INTRO_QUIET_MS, INTRO_QUIETS, LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, scopedSound, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
+import { INTRO_QUIET_MS, INTRO_QUIETS, LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, noteSound, scopedSound, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
 
 export { SOUND_NAMES, type SoundName } from '@/lib/sound-map';
 
@@ -326,6 +326,14 @@ const laughGates = new Map<string, (now: number) => boolean>();
  * costume tap hop (cast-header.tsx): that hero's own giggle (Sound Lab pick "Giggles").
  * iOS: SoundManager.castLaugh(_:); Android: SoundManager.castLaugh(id).
  */
+/** The musical cast: a hero's note in its own voice (no throttle — a melody can repeat a note fast). */
+export function castNote(id: string): void {
+  try {
+    const name = noteSound(id);
+    if (name) playSound(name);
+  } catch { /* never throw from a sound */ }
+}
+
 export function castLaugh(id: string): void {
   try {
     const name = laughSound(id);

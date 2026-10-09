@@ -72,6 +72,16 @@ object SoundManager {
         Sfx.LAUGH_O3 -> R.raw.sfx_laugh_o3
         Sfx.LAUGH_U -> R.raw.sfx_laugh_u
         Sfx.LAUGH_S -> R.raw.sfx_laugh_s
+        Sfx.NOTE_W -> R.raw.sfx_note_w
+        Sfx.NOTE_O1 -> R.raw.sfx_note_o1
+        Sfx.NOTE_R -> R.raw.sfx_note_r
+        Sfx.NOTE_D -> R.raw.sfx_note_d
+        Sfx.NOTE_O2 -> R.raw.sfx_note_o2
+        Sfx.NOTE_C -> R.raw.sfx_note_c
+        Sfx.NOTE_I -> R.raw.sfx_note_i
+        Sfx.NOTE_O3 -> R.raw.sfx_note_o3
+        Sfx.NOTE_U -> R.raw.sfx_note_u
+        Sfx.NOTE_S -> R.raw.sfx_note_s
     }
 
     /** Load all 16 sounds once (idempotent; the decode itself runs on SoundPool's thread). */
@@ -91,7 +101,9 @@ object SoundManager {
             p.setOnLoadCompleteListener { _, sampleId, status -> if (status == 0) loaded.add(sampleId) }
             val ctx = App.instance
             // The intro jingle loads first: it plays a moment after launch.
-            (listOf(Sfx.INTRO) + Sfx.entries.filter { it != Sfx.INTRO })
+            // The musical cast's notes load only where its flag is on (debug builds until the founder approves).
+            val notes = com.wordocious.core.MusicalCast.enabled(com.wordocious.app.BuildConfig.DEBUG)
+            (listOf(Sfx.INTRO) + Sfx.entries.filter { it != Sfx.INTRO && (notes || !it.file.startsWith("sfx_note_")) })
                 .forEach { s -> sampleIds[s.ordinal] = p.load(ctx, rawRes(s), 1) }
             pool = p
         }
@@ -213,6 +225,16 @@ object SoundManager {
         val s = FeedbackRules.laughSfx(id) ?: return
         val gate = laughGates.getOrPut(s) { FeedbackThrottle(FeedbackRules.LAUGH_MIN_GAP_MS) }
         if (!gate.allow(SystemClock.uptimeMillis())) return
+        play(s)
+    }
+
+    /**
+     * Sound.castNote — the musical cast easter egg (docs/cloud-prompts/10): a tapped hero sings its note
+     * (core MusicalCast.note). Muted with Sound Effects off like every sound; no laugh throttle, so quick
+     * repeated notes (Hot Cross Buns' C C C C) all play. Web: castNote() in lib/sounds.ts; iOS: SoundManager.castNote(_:).
+     */
+    fun castNote(id: String) {
+        val s = FeedbackRules.noteSfx(id) ?: return
         play(s)
     }
 }

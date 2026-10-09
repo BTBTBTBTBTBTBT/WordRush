@@ -73,6 +73,9 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
         if (result.leveledUp && !com.wordocious.app.ui.BadgeMath.tierChangedOnLevelUp(true, result.newLevel)) {
             com.wordocious.app.data.SoundManager.levelUp()
         }
+        // 10-06 the living mascot: level up = cheer, else a streak bonus = a hop (web xp-toast; no-op with the flag off)
+        if (result.leveledUp) com.wordocious.app.data.MascotMoments.emit(com.wordocious.core.AvatarReaction.LEVELUP)
+        else if (result.streakBonus > 0) com.wordocious.app.data.MascotMoments.emit(com.wordocious.core.AvatarReaction.STREAK)
         // Web: 3s dwell, extended to 5s when sweep/flawless chips need reading.
         delay(if (result.sweepBonus + result.flawlessBonus > 0) 5000L else 3000L)
         visible = false
