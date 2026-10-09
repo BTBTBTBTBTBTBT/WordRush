@@ -136,7 +136,7 @@ struct ReorderableTile: ViewModifier {
             .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.5).onEnded { _ in
                     guard store.canEdit, !isEditing else { return }
-                    Feedback.medium()
+                    Haptics.medium()
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { editing = section }
                 }
             )
@@ -145,7 +145,7 @@ struct ReorderableTile: ViewModifier {
         if isEditing && !pinned {
             base.onDrag {
                 dragging = id
-                Feedback.light()
+                Haptics.light()
                 return NSItemProvider(object: id as NSString)
             }
         } else {
@@ -170,7 +170,7 @@ private struct ReorderDropDelegate: DropDelegate {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             store.set(section: section, ids: GameOrder.move(ids, from: a, to: b, pinnedFirst: GameOrder.pinned(for: section)), persist: false)
         }
-        Feedback.selection()
+        Haptics.selection()
     }
     func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: active ? .move : .cancel) }
     func performDrop(info: DropInfo) -> Bool {
@@ -197,7 +197,7 @@ struct GameOrderTitleAccessory: View {
 
     var body: some View {
         if store.canEdit, editing != section {
-            Button { Feedback.light(); withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { editing = section } } label: {
+            Button { Haptics.light(); withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { editing = section } } label: {
                 CandyLabel(title: "", symbol: "pencil")
             }
             .buttonStyle(HelperButtonStyle(fallback: Color(hex: 0x7C3AED), circle: true))
@@ -222,10 +222,10 @@ struct GameOrderEditBar: View {
             Text("DRAG TO REORDER")
                 .font(Brand.font(11.5, .black)).tracking(0.5)
                 .foregroundStyle(Color(hex: 0x7C3AED).opacity(0.85))
-            Button { Feedback.light(); store.reset(section: section) } label: { CandyLabel(title: "Reset", symbol: "arrow.counterclockwise") }
+            Button { Haptics.light(); store.reset(section: section) } label: { CandyLabel(title: "Reset", symbol: "arrow.counterclockwise") }
                 .buttonStyle(QuietButtonStyle(size: .small))
                 .disabled(atDefault)
-            Button { Feedback.medium(); store.commit(); withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editing = nil } } label: { CandyLabel(title: "Done", symbol: "checkmark") }
+            Button { Haptics.medium(); store.commit(); withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { editing = nil } } label: { CandyLabel(title: "Done", symbol: "checkmark") }
                 .buttonStyle(HelperButtonStyle(fallback: Color(hex: 0x7C3AED), selected: true))
         }
         .frame(maxWidth: .infinity)
