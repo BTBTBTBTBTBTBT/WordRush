@@ -349,6 +349,25 @@ public struct FriendlyGameView: Decodable, Identifiable, Equatable {
     public var isActive: Bool { status == "active" }
 }
 
+/// An array that skips any element this build cannot read, instead of failing the whole list (item 39). A newer server
+/// can send a pocket game kind, a state or a field an older app has never heard of: that one row is dropped, every other
+/// row still shows, and nothing throws.
+public struct LossyList<Element: Decodable>: Decodable {
+    public let items: [Element]
+
+    /// Consumes one element without reading it (decoding it as this succeeds for any JSON value).
+    private struct Skip: Decodable { init(from decoder: Decoder) throws {} }
+
+    public init(from decoder: Decoder) throws {
+        var c = try decoder.unkeyedContainer()
+        var out: [Element] = []
+        while !c.isAtEnd {
+            if let v = try? c.decode(Element.self) { out.append(v) } else { _ = try? c.decode(Skip.self) }
+        }
+        items = out
+    }
+}
+
 public struct FriendsBannerInput: Codable, Equatable {
     public var friendCount: Int
     /// Usernames of friends on now.

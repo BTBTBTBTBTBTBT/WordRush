@@ -1,0 +1,176 @@
+{
+  "_doc": "Item 39: 2.7.1 <-> 2.8 players together. Hand-written cases that web (compat-2-7-1.test.ts), Swift (OldVersionCompatTests) and Kotlin (OldVersionCompatTest) all read. Every case is a data shape one version can send that the other must read without crashing: unknown ids are skipped (never thrown on), unknown keys are ignored, missing newer keys fall back. Byte-identical copies live in apps/ios/Tests/Fixtures and apps/android/core/src/test/resources/fixtures.",
+  "invites": [
+    { "input": "https://wordocious.com/vs/ANT5TTZR", "parse": { "kind": "vs", "code": "ANT5TTZR" }, "typed": { "kind": "vs", "code": "ANT5TTZR" }, "note": "2.8 branded one-link" },
+    { "input": "https://wordocious.com/vs/join/ANT5TTZR", "parse": { "kind": "vs", "code": "ANT5TTZR" }, "typed": { "kind": "vs", "code": "ANT5TTZR" }, "note": "2.7.1 live invite link" },
+    { "input": "https://www.wordocious.com/vs/challenge/ant5ttzr", "parse": { "kind": "vs", "code": "ANT5TTZR" }, "typed": { "kind": "vs", "code": "ANT5TTZR" }, "note": "2.7.1 race-my-run link, any case, www" },
+    { "input": "/vs/ANT5TTZR?utm_source=sms#top", "parse": { "kind": "vs", "code": "ANT5TTZR" }, "typed": { "kind": "vs", "code": "ANT5TTZR" }, "note": "query + fragment ignored" },
+    { "input": "https://wordocious.com/friend/ABC234", "parse": { "kind": "friend", "code": "ABC234" }, "typed": { "kind": "friend", "code": "ABC234" }, "note": "friend / gift invite" },
+    { "input": "https://wordocious.com/join/ABC234", "parse": { "kind": "friend", "code": "ABC234" }, "typed": { "kind": "friend", "code": "ABC234" }, "note": "2.7.1 friend join link" },
+    { "input": "ant5 ttzr", "parse": null, "typed": { "kind": "vs", "code": "ANT5TTZR" }, "note": "typed by hand" },
+    { "input": "https://wordocious.com/vs/rematch/ANT5TTZR", "parse": null, "typed": null, "note": "a path a future build might add: skipped, not an error" },
+    { "input": "https://wordocious.com/vs/ANT5TTZR/extra", "parse": null, "typed": null },
+    { "input": "https://wordocious.com/vs/ANT5TTZ", "parse": null, "typed": null, "note": "7 characters" },
+    { "input": "https://wordocious.com/vs/ANT5TT0R", "parse": null, "typed": null, "note": "0 is not in the invite alphabet" },
+    { "input": "https://evil.example/vs/ANT5TTZR", "parse": null, "typed": null, "note": "another host" },
+    { "input": "https://wordocious.com/friend/AB", "parse": null, "typed": null, "note": "too short" },
+    { "input": "https://wordocious.com/vs/bots", "parse": null, "typed": null },
+    { "input": "/vs/live", "parse": null, "typed": null },
+    { "input": "https://wordocious.com/vs/join/", "parse": null, "typed": null },
+    { "input": "", "parse": null, "typed": null }
+  ],
+  "avatars": [
+    {
+      "name": "a 2.8-only body and head fall back to the seeded mascot, the rest of the look survives",
+      "source": { "username": "compat", "config": { "body": "orb-2-9", "head": "halo-2-9", "neck": "cape", "eyes": "happy" } },
+      "kind": "config", "photoUrl": null,
+      "config": { "neck": "cape", "eyes": "happy" },
+      "seeded": ["body", "head"]
+    },
+    {
+      "name": "unknown integrated parts are dropped (a missing field is none)",
+      "source": { "username": "compat", "config": { "held": "lantern-2-9", "wrap": "cloak-2-9", "feet": "hoverboots", "pet": "phoenix", "extra": "aura", "brows": "future" } },
+      "kind": "config", "photoUrl": null,
+      "absent": ["held", "wrap", "feet", "pet", "extra", "brows"]
+    },
+    {
+      "name": "a known 2.8 pose is kept, an unknown one is dropped",
+      "source": { "username": "compat", "config": { "pose": "cheer", "body": "star" } },
+      "kind": "config", "photoUrl": null,
+      "config": { "pose": "cheer", "body": "star" }
+    },
+    {
+      "name": "an unknown pose never crashes",
+      "source": { "username": "compat", "config": { "pose": "moonwalk-2-9", "body": "star" } },
+      "kind": "config", "photoUrl": null,
+      "config": { "body": "star" },
+      "absent": ["pose"]
+    },
+    {
+      "name": "unknown frame, backdrop, color and display fall back",
+      "source": { "username": "compat", "config": { "frame": "mythic", "bg": "aurora-2-9", "color": "ultraviolet", "display": "hologram", "body": "star" } },
+      "kind": "config", "photoUrl": null,
+      "config": { "frame": "none", "bg": "auto", "display": "mascot", "body": "star" },
+      "seeded": ["color"]
+    },
+    {
+      "name": "wrong types are ignored",
+      "source": { "username": "compat", "config": { "body": 7, "head": ["crown"], "eyes": {}, "color": null, "pose": true, "frame": 3 } },
+      "kind": "config", "photoUrl": null,
+      "seeded": ["body", "head", "color"],
+      "absent": ["pose"],
+      "config": { "frame": "none" }
+    },
+    {
+      "name": "unknown extra keys (a voice, a mood) are ignored and not carried",
+      "source": { "username": "compat", "config": { "voice": "tenor-2-9", "mood": "sparkly", "body": "star" } },
+      "kind": "config", "photoUrl": null,
+      "config": { "body": "star" },
+      "absent": ["voice", "mood"]
+    },
+    {
+      "name": "an unknown cast hero id is not worn",
+      "source": { "username": "compat", "castId": "q9" },
+      "kind": "seeded", "photoUrl": null
+    },
+    {
+      "name": "a known cast hero id still works",
+      "source": { "username": "compat", "castId": "W" },
+      "kind": "cast", "photoUrl": null
+    },
+    {
+      "name": "an unknown profile frame is ignored",
+      "source": { "username": "compat", "frame": "mythic" },
+      "kind": "seeded", "photoUrl": null,
+      "config": { "frame": "none" }
+    },
+    {
+      "name": "a photo avatar with a 2.8-only head keeps the photo and the seeded head",
+      "source": { "username": "compat", "avatarUrl": "https://x.supabase.co/storage/v1/object/public/avatars/u1.png", "config": { "display": "photo", "head": "halo-2-9" } },
+      "kind": "photo", "photoUrl": "https://x.supabase.co/storage/v1/object/public/avatars/u1.png",
+      "seeded": ["head"]
+    },
+    {
+      "name": "a config that is not an object is the seeded mascot",
+      "source": { "username": "compat", "config": "mascot-v3" },
+      "kind": "seeded", "photoUrl": null
+    },
+    {
+      "name": "an empty config is the seeded mascot",
+      "source": { "username": "compat", "config": {} },
+      "kind": "seeded", "photoUrl": null
+    }
+  ],
+  "live": {
+    "topic": { "gameId": "9f3a", "topic": "fg:9f3a" },
+    "events": { "move": "move", "react": "react" },
+    "reactions": { "known": ["clap", "fire", "wow", "grr", "rematch"], "unknown": ["confetti", "CLAP", "clap ", "", "boo-2-9"] }
+  },
+  "games": {
+    "list": {
+      "active": [
+        { "id": "g1", "kind": "rps", "title": "Rock Paper Scissors", "me": "a", "opponent": { "id": "u2", "username": "Ava", "avatarUrl": null, "avatarEmoji": null }, "state": { "kind": "rps", "picks": {}, "rounds": [], "score": { "a": 0, "b": 0 } }, "status": "active", "yourTurn": true, "result": null, "line": "Round 1", "answer": null, "createdAt": "2026-10-09T12:00:00.000Z", "updatedAt": "2026-10-09T12:00:00.000Z", "spectators": 3, "futureField": { "x": 1 } },
+        { "id": "g2", "kind": "chess-2-9", "title": "Chess", "me": "a", "opponent": { "id": "u3", "username": "Bo" }, "state": { "kind": "chess-2-9", "fen": "start" }, "status": "active", "yourTurn": false, "result": null, "line": "", "createdAt": "2026-10-09T12:00:00.000Z", "updatedAt": "2026-10-09T12:00:00.000Z" },
+        "not-a-game",
+        null,
+        { "id": "g3", "kind": "coin", "title": "Call It", "me": "b", "opponent": { "id": "u4", "username": "Cy", "avatarUrl": null, "avatarEmoji": null }, "state": { "kind": "coin", "caller": "a", "rounds": [], "score": { "a": 0, "b": 0 }, "stake": "Bragging rights" }, "status": "active", "yourTurn": false, "result": null, "line": "Cy calls", "answer": null, "createdAt": "2026-10-09T12:00:00.000Z", "updatedAt": "2026-10-09T12:01:00.000Z" }
+      ],
+      "recent": [],
+      "keptIds": ["g1", "g3"]
+    },
+    "moves": [
+      { "name": "a move for another kind", "state": { "kind": "rps", "picks": {}, "rounds": [], "score": { "a": 0, "b": 0 } }, "by": "a", "move": { "kind": "chess-2-9", "pick": "e4" }, "ok": false },
+      { "name": "a move with no kind", "state": { "kind": "rps", "picks": {}, "rounds": [], "score": { "a": 0, "b": 0 } }, "by": "a", "move": {}, "ok": false },
+      { "name": "an RPS pick from either version", "state": { "kind": "rps", "picks": {}, "rounds": [], "score": { "a": 0, "b": 0 } }, "by": "a", "move": { "kind": "rps", "pick": "rock" }, "ok": true },
+      { "name": "a tile outside the board", "state": { "kind": "ttt", "board": ["", "", "", "", "", "", "", "", ""], "starter": "a", "turn": "a", "games": [], "score": { "a": 0, "b": 0 } }, "by": "a", "move": { "kind": "ttt", "cell": 99 }, "ok": false }
+    ]
+  },
+  "age": {
+    "nowYear": 2026,
+    "stored": [
+      { "raw": null, "expect": null, "note": "a 2.7.1 account / device never wrote one: asked on the first 2.8 launch" },
+      { "raw": "", "expect": null },
+      { "raw": "{\"state\":\"ok\",\"year\":1990}", "expect": { "state": "ok", "year": 1990 } },
+      { "raw": "{\"state\":\"ok\",\"year\":1990,\"v\":2,\"note\":\"a newer build wrote more\"}", "expect": { "state": "ok", "year": 1990 } },
+      { "raw": "{\"state\":\"ok\",\"year\":2020}", "expect": { "state": "under", "year": 2020 } },
+      { "raw": "{\"state\":\"under\",\"year\":1990}", "expect": { "state": "under", "year": 1990 } },
+      { "raw": "{\"state\":\"maybe\",\"year\":1990}", "expect": null },
+      { "raw": "{\"state\":\"ok\",\"year\":\"1990\"}", "expect": null },
+      { "raw": "{\"state\":\"ok\",\"year\":1990.5}", "expect": null },
+      { "raw": "{\"state\":\"ok\"}", "expect": null },
+      { "raw": "{\"state\":\"ok\",\"year\":1800}", "expect": null },
+      { "raw": "{\"state\":\"ok\",\"year\":2027}", "expect": null },
+      { "raw": "not json", "expect": null }
+    ]
+  },
+  "push": {
+    "required": ["senderId", "senderName", "senderAvatar", "gameId", "gameTitle", "gameImage", "thread", "accent", "halloween", "url"],
+    "rich": [
+      {
+        "name": "a complete 2.8 payload",
+        "fields": { "senderId": "u1", "senderName": "Ava", "senderAvatar": "https://wordocious.com/api/push/art/avatar/u1", "youAvatar": "https://wordocious.com/api/push/art/avatar/me", "gameId": "pocket-rps", "gameTitle": "Rock Paper Scissors", "gameImage": "https://wordocious.com/api/push/art/game/pocket-rps", "thread": "game:g1", "accent": "#16a34a", "halloween": "0", "score": "1-0", "url": "/friends/games/g1" },
+        "expect": { "senderId": "u1", "senderName": "Ava", "senderAvatar": "https://wordocious.com/api/push/art/avatar/u1", "youAvatar": "https://wordocious.com/api/push/art/avatar/me", "gameId": "pocket-rps", "gameTitle": "Rock Paper Scissors", "gameImage": "https://wordocious.com/api/push/art/game/pocket-rps", "thread": "game:g1", "accent": "#16a34a", "halloween": false, "score": "1-0", "url": "/friends/games/g1" }
+      },
+      {
+        "name": "an older server (no youAvatar, no score) and a field this build does not know",
+        "fields": { "senderId": "u1", "senderName": "Ava", "senderAvatar": "https://wordocious.com/api/push/art/avatar/u1", "gameId": "classic", "gameTitle": "Classic", "gameImage": "https://wordocious.com/api/push/art/game/classic", "thread": "friend:u1", "accent": "#7c3aed", "halloween": "1", "url": "/vs", "voiceClip": "https://wordocious.com/x.m4a" },
+        "expect": { "senderId": "u1", "senderName": "Ava", "senderAvatar": "https://wordocious.com/api/push/art/avatar/u1", "youAvatar": null, "gameId": "classic", "gameTitle": "Classic", "gameImage": "https://wordocious.com/api/push/art/game/classic", "thread": "friend:u1", "accent": "#7c3aed", "halloween": true, "score": null, "url": "/vs" }
+      },
+      {
+        "name": "a missing accent is the brand purple; a non-https image is dropped",
+        "fields": { "senderId": "u1", "senderName": "Ava", "senderAvatar": "http://wordocious.com/a.png", "gameId": "classic", "gameTitle": "Classic", "gameImage": "https://wordocious.com/g.png", "thread": "t", "halloween": "0", "url": "/daily" },
+        "expect": { "senderId": "u1", "senderName": "Ava", "senderAvatar": null, "youAvatar": null, "gameId": "classic", "gameTitle": "Classic", "gameImage": "https://wordocious.com/g.png", "thread": "t", "accent": "#7c3aed", "halloween": false, "score": null, "url": "/daily" }
+      },
+      {
+        "name": "no sender name is not a rich push (the plain alert still shows)",
+        "fields": { "senderId": "u1", "senderName": "  ", "gameId": "classic", "url": "/daily" },
+        "expect": null
+      },
+      {
+        "name": "an empty payload (a legacy push) is not a rich push",
+        "fields": {},
+        "expect": null
+      }
+    ]
+  }
+}
