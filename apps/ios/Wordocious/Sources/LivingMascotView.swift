@@ -49,6 +49,8 @@ struct LivingMascotView: View {
     /// Bump to hop from outside (the Dressing Room's part changes).
     var hopToken: Int = 0
     var stroke: Bool = true
+    /// 2.8 item 40: what VoiceOver says; nil = "Your mascot" for your own, "Mascot" for anyone else's.
+    var label: String? = nil
 
     /// Whether this config can come alive: the flag, the fit manifest, the pose data and the body's rig art.
     static func canAnimate(_ c: AvatarConfig) -> Bool {
@@ -108,7 +110,7 @@ struct LivingMascotView: View {
         }
         .onChange(of: hopToken) { _ in hop(sound: false) }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Your mascot")
+        .accessibilityLabel(label ?? (own ? "Your mascot" : "Mascot"))
         .accessibilityAddTraits(interactive ? .isButton : [])
         .accessibilityHint(interactive ? "Makes your mascot hop" : "")
         .accessibilityAction { if interactive { hop(sound: true) } }

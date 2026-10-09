@@ -455,6 +455,8 @@ struct PodiumView: View {
     var onTap: ((PodiumEntry) -> Void)? = nil
     /// 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
     @State private var stageTarget: PodiumStageTarget?
+    private var cardOn: Bool { FlagsService.shared.isLive("podium_stage_card") }
+    private var burstOn: Bool { FlagsService.shared.isLive("podium_burst") }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
@@ -475,7 +477,7 @@ struct PodiumView: View {
         .background { if let stage { PodiumStage(accent: stage) } }
         .softSheet(item: $stageTarget) { t in
             PodiumStageCard(entry: t.entry, place: t.place, onProfile: onTap.map { tap in { tap(t.entry) } })
-                .presentationDetents([.height(400)])
+                .presentationDetents([.height(400), .large])
         }
     }
 
@@ -529,11 +531,11 @@ struct PodiumView: View {
             }
             VStack(spacing: 4) {
                 Group {
-                    if DressUp.isOwn(e.id) || stands || onTap != nil {
+                    if DressUp.isOwn(e.id) || (stands && cardOn) || onTap != nil {
                         // Founder 10-05 (door 1): your own place opens your Stage; a standing mascot opens its mini Stage card.
                         Button {
                             if DressUp.isOwn(e.id) { DressUp.shared.open() }
-                            else if stands { Haptics.tap(); stageTarget = PodiumStageTarget(entry: e, place: tone) }
+                            else if stands, cardOn { Haptics.tap(); stageTarget = PodiumStageTarget(entry: e, place: tone) }
                             else { onTap?(e) }
                         } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
                     } else {
@@ -541,10 +543,11 @@ struct PodiumView: View {
                     }
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Place \(e.rank ?? place): \(e.name), \(e.value)\(e.detail.map { ", \($0)" } ?? "")")
+                .accessibilityLabel(A11yLabels.podiumPlace(e.rank ?? place, name: e.name, points: e.value, detail: e.detail))
+                .accessibilityHint(stands && cardOn && !DressUp.isOwn(e.id) ? "Opens their stage" : "")
                 .background(alignment: .top) {
                     // the winner's confetti burst opens once on load
-                    if stands && place == 1 { PodiumBurst().offset(y: -6) }
+                    if stands && place == 1 && burstOn { PodiumBurst().offset(y: -6) }
                 }
                 .zIndex(1)
                 if let bell = e.bell {
@@ -865,7 +868,8 @@ struct PodiumFigure: View {
             let big = size * Self.scale
             let posed: AvatarConfig = { var c = r.config; c.pose = AvatarPose.placePose(place); return c }()
             let initial = AvatarCatalog.initial(entry.username)
-            LivingMascotView(config: posed, initial: initial, size: big, cutout: true, interactive: false, own: DressUp.isOwn(entry.id))
+            LivingMascotView(config: posed, initial: initial, size: big, cutout: true, interactive: false, own: DressUp.isOwn(entry.id),
+                             label: A11yLabels.mascot(own: DressUp.isOwn(entry.id), name: entry.name))
                 .frame(width: big, height: big)
                 .overlay(alignment: .top) {
                     // the crown sits ON the first place's head
@@ -927,7 +931,7 @@ struct PodiumStageCard: View {
         VStack(spacing: 0) {
             DressStage(config: posed, initial: AvatarCatalog.initial(entry.username),
                        photo: r.photoUrl != nil ? (r.photoUrl, entry.username, entry.id) : nil,
-                       height: 250, mascotSize: 160) {
+                       height: 250, mascotSize: 160, mascotLabel: A11yLabels.mascot(own: false, name: entry.name)) {
                 VStack {
                     HStack {
                         Spacer(minLength: 0)

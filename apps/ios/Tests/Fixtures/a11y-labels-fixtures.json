@@ -1,0 +1,139 @@
+{
+  "places": [
+    {
+      "place": 1,
+      "word": "First",
+      "open": "First place, open spot"
+    },
+    {
+      "place": 2,
+      "word": "Second",
+      "open": "Second place, open spot"
+    },
+    {
+      "place": 3,
+      "word": "Third",
+      "open": "Third place, open spot"
+    },
+    {
+      "place": 4,
+      "word": "#4",
+      "open": "#4 place, open spot"
+    },
+    {
+      "place": 10,
+      "word": "#10",
+      "open": "#10 place, open spot"
+    }
+  ],
+  "podium": [
+    {
+      "place": 1,
+      "name": "doug",
+      "points": "2,005",
+      "detail": "4 Guesses · 1m 45s",
+      "label": "First place, doug, 2,005, 4 Guesses · 1m 45s",
+      "card": "doug, first place. Opens their stage"
+    },
+    {
+      "place": 2,
+      "name": "Sam",
+      "points": "1,980",
+      "detail": null,
+      "label": "Second place, Sam, 1,980",
+      "card": "Sam, second place. Opens their stage"
+    },
+    {
+      "place": 3,
+      "name": "Ava",
+      "points": "1,500",
+      "detail": "  ",
+      "label": "Third place, Ava, 1,500",
+      "card": "Ava, third place. Opens their stage"
+    }
+  ],
+  "seals": [
+    {
+      "days": 1,
+      "label": "1 Flawless day in a row"
+    },
+    {
+      "days": 2,
+      "label": "2 Flawless days in a row"
+    },
+    {
+      "days": 7,
+      "label": "7 Flawless days in a row"
+    },
+    {
+      "days": 30,
+      "label": "30 Flawless days in a row"
+    }
+  ],
+  "headlines": [
+    {
+      "lines": [
+        "ALL 8 DAILIES",
+        "WON TODAY!"
+      ],
+      "label": "ALL 8 DAILIES WON TODAY!"
+    },
+    {
+      "lines": [
+        "  GOOD   MORNING,  doug "
+      ],
+      "label": "GOOD MORNING, doug"
+    },
+    {
+      "lines": [
+        "FLAWLESS · 3 IN A ROW!"
+      ],
+      "label": "FLAWLESS · 3 IN A ROW!"
+    },
+    {
+      "lines": [
+        ""
+      ],
+      "label": "Headline"
+    }
+  ],
+  "mascots": [
+    {
+      "own": true,
+      "name": null,
+      "label": "Your mascot"
+    },
+    {
+      "own": false,
+      "name": "doug",
+      "label": "doug's mascot"
+    },
+    {
+      "own": false,
+      "name": "  ",
+      "label": "Mascot"
+    },
+    {
+      "own": false,
+      "name": null,
+      "label": "Mascot"
+    }
+  ],
+  "progress": [
+    {
+      "played": 0,
+      "total": 18,
+      "label": "0 of 18 played today"
+    },
+    {
+      "played": 7,
+      "total": 18,
+      "label": "7 of 18 played today"
+    },
+    {
+      "played": 18,
+      "total": 18,
+      "label": "18 of 18 played today"
+    }
+  ]
+}

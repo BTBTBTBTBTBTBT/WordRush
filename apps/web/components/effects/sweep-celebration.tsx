@@ -25,6 +25,8 @@ import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { emitMascotMoment } from '@/lib/living-mascot';
 import { seasonEntry } from '@/lib/season-kit';
+import { useFlags } from '@/hooks/use-flags';
+import { flawlessSealLabel } from '@wordle-duel/core';
 import { useSeason } from '@/lib/season';
 
 // One-time full-screen celebration shown when the player completes every daily
@@ -108,6 +110,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
   // 2.8 items 7 + 13: YOUR mascot celebrates beside the art — living (cheer + hops) when the living mascot is on,
   // else its static cutout; nothing for a player on the plain cast host. The reaction fires a beat after it mounts.
   const host = useHomeHost();
+  const sealOn = useFlags().isLive('flawless_seal');
   // 2.8 item 7 kit (docs/design/brand/2.8/celebrate): a prop's art, the season's swap when the registry has one.
   const season = useSeason();
   const prop = (name: string): string => {
@@ -206,9 +209,9 @@ export function SweepCelebration({ completions, onClose, variant = 'daily', flaw
               // eslint-disable-next-line @next/next/no-img-element
               <img aria-hidden="true" alt="" src={prop('crown-gold')} width={84} className="absolute celebrate-crown pointer-events-none" style={{ left: '50%', top: -22, marginLeft: -42 }} draggable={false} />
             )}
-            {flawless && !more && flawlessStreak >= 2 && (
+            {flawless && !more && flawlessStreak >= 2 && sealOn && (
               // the gold seal (Halloween: the glowing pumpkin) stamps on with the Flawless run's day count
-              <span aria-label={`${flawlessStreak} Flawless days in a row`} role="img" className="absolute celebrate-stamp pointer-events-none"
+              <span aria-label={flawlessSealLabel(flawlessStreak)} role="img" className="absolute celebrate-stamp pointer-events-none"
                 style={{ left: -10, bottom: -6, width: 62, height: 62, ['--k' as string]: 2 } as React.CSSProperties}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img alt="" aria-hidden="true" src={prop('seal-gold')} width={62} height={62} draggable={false} style={{ width: 62, height: 62, objectFit: 'contain' }} />

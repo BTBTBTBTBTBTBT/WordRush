@@ -37,6 +37,7 @@ import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadde
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { streakHeadline } from '../src/streak-headline';
 import { ageGateView, AGE_GATE_MAX_WAIT_MS } from '../src/age-check';
+import { flawlessSealLabel, headlineLabel, mascotLabel, placeWord, podiumOpenSpotLabel, podiumPlaceLabel, podiumStageCardLabel, progressLabel } from '../src/a11y-labels';
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
@@ -1273,6 +1274,29 @@ function renderAgeGateFixtures() {
   return { maxWaitMs: AGE_GATE_MAX_WAIT_MS, cases: cases.map((c) => ({ ...c, view: ageGateView(c) })) };
 }
 
+/** 2.8 item 40: the spoken labels (VoiceOver / TalkBack / ARIA say the same words). */
+function renderA11yLabelFixtures() {
+  return {
+    places: [1, 2, 3, 4, 10].map((place) => ({ place, word: placeWord(place), open: podiumOpenSpotLabel(place) })),
+    podium: [
+      { place: 1, name: 'doug', points: '2,005', detail: '4 Guesses · 1m 45s' },
+      { place: 2, name: 'Sam', points: '1,980', detail: null },
+      { place: 3, name: 'Ava', points: '1,500', detail: '  ' },
+    ].map((c) => ({ ...c, label: podiumPlaceLabel(c.place, c.name, c.points, c.detail), card: podiumStageCardLabel(c.name, c.place) })),
+    seals: [1, 2, 7, 30].map((days) => ({ days, label: flawlessSealLabel(days) })),
+    headlines: [
+      { lines: ['ALL 8 DAILIES', 'WON TODAY!'] },
+      { lines: ['  GOOD   MORNING,  doug '] },
+      { lines: ['FLAWLESS · 3 IN A ROW!'] },
+      { lines: [''] },
+    ].map((c) => ({ ...c, label: headlineLabel(c.lines) })),
+    mascots: [
+      { own: true, name: null as string | null }, { own: false, name: 'doug' }, { own: false, name: '  ' }, { own: false, name: null },
+    ].map((c) => ({ ...c, label: mascotLabel(c.own, c.name) })),
+    progress: [[0, 18], [7, 18], [18, 18]].map(([played, total]) => ({ played, total, label: progressLabel(played, total) })),
+  };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -1308,6 +1332,7 @@ const FILES: Array<[string, unknown]> = [
   ['pocket-help-fixtures.json', renderPocketHelpFixtures()],
   ['waiting-room-fixtures.json', renderWaitingRoomFixtures()],
   ['age-gate-fixtures.json', renderAgeGateFixtures()],
+  ['a11y-labels-fixtures.json', renderA11yLabelFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

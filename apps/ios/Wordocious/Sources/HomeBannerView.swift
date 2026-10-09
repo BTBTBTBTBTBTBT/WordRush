@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WordociousCore
 
 /// The home banner (founder-approved home redesign, 2026-10-01; spec:
@@ -352,6 +353,15 @@ struct HomeBannerView: View {
             // The lettering's line box carries ~0.3 em above the caps and ~0.35 em under the
             // baseline: trimmed, so the host / switch sit right against the words.
             .padding(.top, -fit.size * 0.24).padding(.bottom, -fit.size * 0.28)
+            // 2.8 item 40: the wrapped lettering is ONE heading that reads the whole sentence (never line fragments);
+            // a changed headline is announced politely while VoiceOver is on.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(A11yLabels.headline(fit.layout.lines))
+            .accessibilityAddTraits(.isHeader)
+            .onChange(of: headline) { new in
+                guard UIAccessibility.isVoiceOverRunning, !new.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                UIAccessibility.post(notification: .announcement, argument: A11yLabels.headline([new]))
+            }
         }
         .frame(maxWidth: .infinity, alignment: .center)
     }

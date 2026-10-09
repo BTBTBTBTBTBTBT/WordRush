@@ -23,7 +23,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -176,6 +178,8 @@ fun BubbleText(
     minSize: Int = BUBBLE_MIN_SIZE,
     sound: Boolean = true,
     align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
+    /** 2.8 item 40: a headline whose words change while it is on screen: TalkBack announces each new sentence politely. */
+    live: Boolean = false,
 ) {
     // Item 25: a non-default theme tints page headlines with its accent (a season / the gold celebration keep theirs).
     val seasonOn = rememberSeason() != null
@@ -184,8 +188,16 @@ fun BubbleText(
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val width = maxWidth.value.toDouble()
         val fit = remember(text, width, maxSize, minSize) { bubbleFit(text, width, maxSize, minSize) }
+        // 2.8 item 40: ONE heading speaks the whole sentence (a wrapped headline is never read as line fragments).
+        val spoken = if (text.isBlank()) null else com.wordocious.core.A11yLabels.headline(listOf(text))
         Column(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().clearAndSetSemantics {
+                if (spoken != null) {
+                    contentDescription = spoken
+                    heading()
+                    if (live) liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+                }
+            },
             horizontalAlignment = when (align) {
                 androidx.compose.ui.text.style.TextAlign.Start, androidx.compose.ui.text.style.TextAlign.Left -> Alignment.Start
                 androidx.compose.ui.text.style.TextAlign.End, androidx.compose.ui.text.style.TextAlign.Right -> Alignment.End

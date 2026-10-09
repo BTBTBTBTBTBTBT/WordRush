@@ -5,6 +5,7 @@ import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { headlineLabel } from '@wordle-duel/core';
 import { BubbleLine } from '@/components/ui/bubble-text';
 import { readSurfacesChoice, useSeason } from '@/lib/season';
 import { seasonBanner, seasonHeadlineSpec, seasonSurfaces } from '@/lib/season-kit';
@@ -362,7 +363,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
         <div className="relative flex items-start">
           {/* Z + BJ6 round 4: the headline box is as tall as the taller mode's laid-out lines. */}
           <div ref={headSlot} className="flex-1 min-w-0 flex flex-col justify-center" style={{ height: slots.headline }}>
-            <span className="sr-only" role="heading" aria-level={2}>{headLayout.lines.join(' ')}</span>
+            <span className="sr-only" role="heading" aria-level={2} aria-live="polite" aria-atomic="true">{headlineLabel(headLayout.lines)}</span>
             {/* FINISH_SPEC AR: the live lettering (purple → magenta, gold numbers; the double-flawless
                 gold day celebrates). BJ6 round 4: every line at the device's ONE size; a stacked name
                 is the gold hero line(s); line 1 wears the gold sparkles. FitOneLine is only a

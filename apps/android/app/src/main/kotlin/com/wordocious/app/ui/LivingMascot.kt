@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -180,7 +181,11 @@ fun LivingMascot(
     hopToken: Int = 0,
     tappable: Boolean = true,
     label: String? = "Your mascot, tap to laugh",
+    /** 2.8 item 40: what TalkBack calls the picture ("Your mascot", "doug's mascot"); null = the caller's row speaks for it. */
+    description: String? = null,
 ) {
+    @Suppress("NAME_SHADOWING")
+    val modifier = if (description != null) modifier.semantics { contentDescription = description } else modifier
     val context = LocalContext.current
     val fm = remember { MascotComposer.fitManifest(context) }
     val data = remember { MascotComposer.posesData(context) }

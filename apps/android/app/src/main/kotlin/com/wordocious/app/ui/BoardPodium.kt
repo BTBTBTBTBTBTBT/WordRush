@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.A11yLabels
 import com.wordocious.core.PodiumLayout
 import com.wordocious.core.podiumLayout
 import com.wordocious.core.podiumOpenSpot
@@ -237,6 +238,8 @@ fun BoardPodium(
     // 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
     var stageSpot by remember { mutableStateOf<BoardPodiumSpot?>(null) }
     stageSpot?.let { PodiumStageCard(it, it.place) { stageSpot = null } }
+    // 2.8 item 40: the steps are fixed-height art, so huge system text is capped at 1.3x here (reflow lives on the rows below)
+    CappedFontScale {
     Box(modifier.fillMaxWidth().then(if (bare) Modifier else Modifier.podiumStage(accent, dark)).padding(start = 10.dp, end = 10.dp, top = 8.dp)) {
     PodiumFloor(Modifier.align(Alignment.BottomCenter))
     Row(
@@ -249,16 +252,16 @@ fun BoardPodium(
             val a = if (place == 1) avatar * 1.22f else avatar
             val stepH = when (place) { 1 -> 74.dp; 2 -> 54.dp; else -> 40.dp }
             val stands = s != null && podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
-            val opensCard = stands && s != null && !com.wordocious.app.data.PlayerAvatars.isOwn(s.userId, s.username ?: s.name)
+            val opensCard = stands && s != null && com.wordocious.app.data.FlagsService.isLive("podium_stage_card") && !com.wordocious.app.data.PlayerAvatars.isOwn(s.userId, s.username ?: s.name)
             Column(
                 Modifier.weight(1f).then(
                     when {
-                        s != null && (opensCard || s.onClick != null) -> Modifier.squishClickable(label = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}${s.detail?.let { ", $it" } ?: ""}${if (opensCard) ". Opens their stage" else ""}") {
+                        s != null && (opensCard || s.onClick != null) -> Modifier.squishClickable(label = A11yLabels.podiumPlace(place, s.name, s.points, s.detail) + (if (opensCard) ". Opens their stage" else "")) {
                             if (opensCard) stageSpot = s else s.onClick?.invoke()
                         }
-                        s != null -> Modifier.semantics(mergeDescendants = true) { contentDescription = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}${s.detail?.let { ", $it" } ?: ""}" }
+                        s != null -> Modifier.semantics(mergeDescendants = true) { contentDescription = A11yLabels.podiumPlace(place, s.name, s.points, s.detail) }
                         place in open -> Modifier.semantics(mergeDescendants = true) {
-                            contentDescription = "${podiumPlaceWord(place)} place, open spot"
+                            contentDescription = A11yLabels.podiumOpenSpot(place)
                         }
                         else -> Modifier
                     },
@@ -271,7 +274,7 @@ fun BoardPodium(
                     if (stands) {
                         Box(Modifier.padding(bottom = 0.dp).offset(y = PODIUM_FOOT_OVERLAP).zIndex(1f), contentAlignment = Alignment.TopCenter) {
                             // the winner's confetti burst opens once on load
-                            if (place == 1) PodiumBurst()
+                            if (place == 1 && com.wordocious.app.data.FlagsService.isLive("podium_burst")) PodiumBurst()
                             PlayerAvatar(
                                 s.username ?: s.name, a * PODIUM_FIGURE_SCALE, Modifier,
                                 userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
@@ -346,9 +349,9 @@ fun BoardPodium(
         }
     }
     }
+    }
 }
 
-private fun podiumPlaceWord(place: Int) = when (place) { 1 -> "First"; 2 -> "Second"; 3 -> "Third"; else -> "#$place" }
 
 
 /**
@@ -397,7 +400,7 @@ private fun PodiumStageCard(spot: BoardPodiumSpot, place: Int, onDismiss: () -> 
             Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (dark) WTheme.surface else Color.White),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            DressStage(posed, initial, photoUrl = resolved.photoUrl, height = 250.dp, mascotSize = 160.dp) {
+            DressStage(posed, initial, photoUrl = resolved.photoUrl, height = 250.dp, mascotSize = 160.dp, mascotDescription = A11yLabels.mascot(false, spot.name)) {
                 StageCloseButton(label = "Close", modifier = Modifier.align(Alignment.TopEnd).padding(8.dp), onClick = onDismiss)
             }
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {

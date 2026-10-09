@@ -39,6 +39,7 @@ export * from './podium-layout';
 export * from './headline-tokens';
 export * from './bubble-text';
 export * from './streak-headline';
+export * from './a11y-labels';
 export * from './bubble-atlas-metrics';
 export * from './achievement-rules';
 export * from './mode-coverage';
