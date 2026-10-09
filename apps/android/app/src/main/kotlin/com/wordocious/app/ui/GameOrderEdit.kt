@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -202,7 +203,7 @@ fun GameOrderPencil(state: GameOrderEditState, section: GameOrderSection, modifi
 @Composable
 fun GameOrderEditBar(state: GameOrderEditState, section: GameOrderSection) {
     if (state.editing != section) return
-    val saved = com.wordocious.app.data.GameOrderStore.prefs.collectAsStateCompat().value
+    val saved by GameOrderStore.prefs.collectAsState()
     val atDefault = GameOrder.isDefault(
         if (section == GameOrderSection.DAILIES) GameOrder.DEFAULT_DAILIES else GameOrder.DEFAULT_PUZZLES,
         saved?.let { if (section == GameOrderSection.DAILIES) it.dailies else it.puzzles },
@@ -221,6 +222,3 @@ fun GameOrderEditBar(state: GameOrderEditState, section: GameOrderSection) {
         HelperButton("Done", onClick = { state.done() }, icon = FamIcon.CHECK, selected = true)
     }
 }
-
-@Composable
-private fun <T> kotlinx.coroutines.flow.StateFlow<T>.collectAsStateCompat() = androidx.compose.runtime.collectAsState(this)

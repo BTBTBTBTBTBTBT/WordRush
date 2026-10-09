@@ -3,7 +3,7 @@
 import { BubbleText } from '@/components/ui/bubble-text';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { holidayKeyForDay, leaderboardTitle } from '@wordle-duel/core';
+import { dayHost, holidayKeyForDay, leaderboardTitle } from '@wordle-duel/core';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
@@ -21,6 +21,7 @@ import { softPill } from '@/lib/soft-surface';
 import { LB_GOLD } from './board-rows';
 import { useSeason, halloweenPropSrc, HALLOWEEN_PROPS } from '@/lib/season';
 import { SeasonArt } from '@/components/ui/season-art';
+import { Host, OwnMascot } from './leaderboard-stage';
 
 // The Leaderboard top (docs/FINISH_SPEC.md A6, C2, C2b; mockup
 // docs/design/brand/mockups/leaderboard-polish.html `.headline` + `.picker`):
@@ -106,6 +107,33 @@ function dayArtH(art: ArtName): number {
   return Math.round((dayArtW(art) * h) / w);
 }
 
+/**
+ * Row 1 of the stage: [your mascot] · the day's title in bubble lettering · [the day's cast host].
+ * Fills the width (no small centered image); the date + reset clock is ONE small line under it.
+ */
+export function StageTitle({ today }: { today: string | null }) {
+  const host = today ? dayHost(today) : null;
+  const title = today ? dayTitle(today) : '';
+  const date = today
+    ? new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+    : null;
+  return (
+    <div style={{ padding: '10px 10px 0' }}>
+      <h1 className="m-0 flex items-end justify-between gap-1" style={{ minHeight: 76 }} aria-label={title || 'Leaderboard'}>
+        <OwnMascot size={62} />
+        <span className="flex-1 min-w-0 self-center">
+          <BubbleText text={title || ' '} palette="leaderboard" maxSize={30} minSize={20} level={2} />
+        </span>
+        {host ? <Host castId={host.castId} pose={host.pose} size={66} flip /> : <span style={{ width: 66 }} />}
+      </h1>
+      <div className="text-center font-extrabold lb-gold-ink" style={{ fontSize: 10.5, letterSpacing: 0.6, marginTop: 1 }}>
+        <ResetLine lead={date} />
+      </div>
+    </div>
+  );
+}
+
+
 interface Props {
   /** The player's local YYYY-MM-DD; null until hydrated (the title waits for it). */
   today: string | null;
@@ -114,7 +142,6 @@ interface Props {
 }
 
 export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
-  const season = useSeason();
   // 2.8 item 8: today's W / L on each picker tile — the same badges as Home and the finish screens.
   const { todayDailies } = useDailyCompletions();
   const { isOn: flagOn } = useFlags();
@@ -122,54 +149,21 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
     () => todayBadges(pickerRows(flagOn), todayDailies, sweepModesFor(getTodayLocal())),
     [flagOn, todayDailies],
   );
-  const title = today ? dayTitle(today) : NBSP;
-  // The weekday's title art (docs/ART_SPEC.md §1). A holiday shows the whole
-  // cast around LEADERBOARD with "<HOLIDAY> HEROES" as a small caps subtitle (§8).
-  const holiday = today ? holidayTitle(holidayKeyForDay(today, HOLIDAY_TABLE)) : null;
-  const art = today && !holiday ? dayArtName(today) : null;
-  const date = today
-    ? new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
-    : null;
-
+  // 11b: the top of the ONE living stage — the day's bubble title with your mascot and the day's cast host
+  // (StageTitle: date · reset is its one small line), then the game picker with no card of its own. The page
+  // wraps this, the game strip and the podium in <LeaderboardStage>. (The weekday title art + holiday
+  // cast-around-LEADERBOARD art are retired here; the Halloween props return with the season pass.)
   return (
     <>
-      {art ? (
-        // One designed graphic per weekday, its host drawn in.
-        season === 'halloween' && today ? (
-          <div className="relative mb-2">
-            {/* Room for a prop + gap on each side: the art narrows (never shrinks the props). */}
-            <PageHeadline name={art} label={title} rule={DAY_HEADLINE} maxHeight={dayArtH(art)} />
-            <HalloweenDayProps today={today} artW={dayArtW(art)} />
-          </div>
-        ) : (
-          <PageHeadline name={art} label={title} rule={DAY_HEADLINE} className="mb-2" />
-        )
-      ) : holiday ? (
-        <h1 className="relative m-0 mb-3 flex flex-col items-center gap-1">
-          <PageHeadline name="art-titlecast-leaderboard" label="Leaderboard" as="div" />
-          {/* FINISH_SPEC AR: the holiday title in live lettering (gold → amber). */}
-          <BubbleText text={title} palette="leaderboard" maxSize={18} minSize={13} level={2} />
-          {season === 'halloween' && today && <HalloweenDayProps today={today} artW={headlineMaxWidth(...ART_SIZE['art-titlecast-leaderboard'], PAGE_HEADLINE)} />}
-        </h1>
-      ) : (
-        // Until the local day is known, hold the headline's slot so it doesn't jump.
-        <div aria-hidden="true" className="mb-3" style={{ height: DAY_HEADLINE.maxHeight }} />
-      )}
-
+      <StageTitle today={today} />
       <GamePicker
+        bare
         selected={selectedMode}
         onSelect={onSelect}
         accent={LB_GOLD}
-        // BB3: the same two-row grid as Stats (every game visible, no sideways
-        // scroll) at compact ≤ 32 px tiles; BB4: no all-time button (it lives in Stats).
         density="compact"
         badges={badges}
         label="Pick a leaderboard"
-        header={
-          <div className={PICKER_HEADER_CLASS} style={PICKER_HEADER_STYLE}>
-            <span className="flex-1 min-w-0 truncate text-center"><ResetLine lead={date} /></span>
-          </div>
-        }
       />
     </>
   );

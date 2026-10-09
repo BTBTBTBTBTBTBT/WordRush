@@ -311,6 +311,8 @@ export type NightArtName =
   | `art-toggle-${'light' | 'dark'}-${'track' | 'switch' | 'thumb-on' | 'thumb-off' | 'knob' | 'switch-on'}`
   | `art-podium-${1 | 2 | 3}${'' | '-plain'}`
   | 'art-podium-floor'
+  // 2.8 item 11b: the Leaderboard stage (clouds, floor disc, Yesterday ledge, sunburst light, compact Your board pill)
+  | `art-lb-${string}`
   | `art-titlecast-${string}`
   | `art-btn-${string}`
   | `art-btnlabel-${string}`
@@ -705,6 +707,11 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-podium-3': [300, 159],
   'art-podium-3-plain': [300, 159],
   'art-podium-floor': [1080, 184],
+  'art-lb-clouds': [420, 149],
+  'art-lb-floor-disc': [418, 151],
+  'art-lb-ledge': [394, 160],
+  'art-lb-sunburst': [1200, 600],
+  'art-lb-btn-yourboard': [420, 133],
   // Cast-color titles + button skins (founder 10-03; not wired yet — the menu mapping is pending)
   'art-titlecast-about': [683, 208],
   'art-titlecast-achievement': [947, 262],

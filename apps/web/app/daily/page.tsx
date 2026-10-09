@@ -16,6 +16,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { PROFILE_MODES, modeByKey } from '@/components/profile/mode-picker';
 import { LeaderboardBanner } from '@/components/leaderboard/leaderboard-banner';
+import { LeaderboardStage, YesterdayLedge, YourBoardButton } from '@/components/leaderboard/leaderboard-stage';
 import { MASCOT_LINES } from '@/lib/mascots';
 import { PAGE_SCENES, artSrc } from '@/lib/art';
 import { preloadMascotArt } from '@/components/avatar/mascot-avatar';
@@ -765,251 +766,213 @@ export default function DailyPage() {
           three columns — the day headline + picker (kept in view), TODAY'S BOARD,
           then the play card, your board and YESTERDAY'S WINNERS (globals.css .lb-desk). */}
       <div className="lb-desk max-w-lg page-wide mx-auto px-4">
-        {/* A6 + C2: the day's title as the headline on the wallpaper, then the
-            one game picker card (date · reset clock + ALL-TIME → on top, the
-            WORDOCIOUS row with the Sweep broom tile, then PUZZLES). */}
+        {/* 11 + 11b (founder 10-07): the Leaderboard top is ONE living stage — the day's bubble title with
+            your mascot + the day's host, the game picker in the same card, the selected-game strip (art ·
+            N today · your rank + stats · compact Your board), Everyone/Friends + share on the podium's
+            header line, the podium, and Yesterday's winners as the stage's base ledge — on one continuous
+            backdrop whose tint is the selected game's. Ranks 4+ list below it. */}
         <div className="mb-3 page-col">
-          <LeaderboardBanner today={today} selectedMode={selectedMode} onSelect={setSelectedMode} />
+          <PullToRefresh onRefresh={loadLeaderboard} accentColor={color}>
+          <LeaderboardStage accent={color}>
+            <LeaderboardBanner today={today} selectedMode={selectedMode} onSelect={setSelectedMode} />
+
+            <div className="flex items-center gap-2.5" style={{ padding: '2px 14px 4px', minHeight: 46 }}>
+              <GameArt
+                id={isSweep ? 'sweep' : mode.id}
+                size={34}
+                fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-[12.5px] font-extrabold leading-[15px] truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                  <span className="font-black" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
+                  <span aria-hidden="true">{' · '}</span>
+                  <span className="whitespace-nowrap">
+                    <Users className="inline-block w-3.5 h-3.5 mr-1 align-[-2px]" />
+                    {playerCount}
+                  </span>
+                  {isSweep ? ' swept' : ' today'}
+                </div>
+                {/* your rank + stats, one line ("#2 of 5 · 2,005 PTS · 4 guesses · 48s") */}
+                <div className="flex items-center gap-1.5 text-[11.5px] font-black leading-[15px] min-w-0" style={{ color: 'var(--color-text-secondary)' }}>
+                  {showResult ? (
+                    <>
+                      <span className="truncate">{compactRankLine({
+                        rank: userRank?.rank ?? null,
+                        total: userRank?.totalPlayers ?? null,
+                        friends: friendsOnly && !isSweep,
+                        points: resultPoints,
+                        semantics: modeMeta?.guessSemantics,
+                        guessBase: modeMeta?.guessBase,
+                        guesses: myCompletion?.guesses ?? myEntry?.guess_count ?? null,
+                        timeSeconds: myCompletion?.timeSeconds ?? myEntry?.time_seconds ?? null,
+                        detail: isSweep ? mySolved : null,
+                      })}</span>
+                      {userRank && (
+                        <RankDeltaBadge
+                          mode={selectedMode}
+                          playType="solo"
+                          pageKey={friendsOnly && user && !isSweep ? 'daily-friends' : 'daily'}
+                          currentRank={userRank.rank}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <span className="truncate">{isSweep ? 'Ranked by points' : 'Not played yet'}</span>
+                  )}
+                </div>
+              </div>
+              {/* Sweep isn't a playable puzzle — no button. After today's daily: the compact Your board
+                  pill (= the old VIEW BOARD); before: PLAY. */}
+              {!isSweep && (playedSelected
+                ? <YourBoardButton onClick={handlePlayDaily} />
+                : <CandyButton size="sm" color="purple" icon="play" onClick={handlePlayDaily} className="shrink-0">Play</CandyButton>)}
+            </div>
+
+            {/* the podium's header line: Everyone | Friends and share */}
+            <div className="flex items-center justify-between gap-2 px-3" style={{ minHeight: 34 }}>
+              <div className="flex items-center">
+                {!isSweep && user && (
+                  <SegmentedPill
+                    label="Everyone or Friends"
+                    accent={color}
+                    value={friendsOnly}
+                    onChange={setFriendsOnly}
+                    options={[[false, 'Everyone'], [true, 'Friends']] as const}
+                  />
+                )}
+              </div>
+              {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
+                <HeaderGlyph
+                  icon="share"
+                  size={20}
+                  label="Share leaderboard"
+                  onClick={handleShareLeaderboard}
+                  disabled={sharingLb}
+                  style={{ minWidth: 40, opacity: sharingLb ? 0.4 : 1 }}
+                />
+              )}
+            </div>
+
+            {/* The podium (or its empty state) — right under the strip, all three visible on a standard phone. */}
+            <div>
+              {boardLoading ? (
+                <div className="px-3 pb-2"><LeaderboardSkeleton /></div>
+              ) : isSweep ? (
+                sweepLeaderboard.length === 0 ? (
+                  <BrandEmptyState scene={PAGE_SCENES.empty} artHeight={96} accent="leaderboard" className="py-6" title="NO SWEEPS TODAY" line="Nobody's swept today. Be the first!" />
+                ) : (
+                  <Podium places={sweepPodium} label="Top three sweepers" bare accent={color} />
+                )
+              ) : leaderboard.length === 0 ? (
+                friendsOnly && ghostFriends.length > 0 ? null : friendsOnly ? (
+                  <BrandEmptyState
+                    scene={PAGE_SCENES.addFriend}
+                    artHeight={96}
+                    accent="friends"
+                    className="py-6"
+                    title="NO FRIENDS ON THE BOARD"
+                    line={MASCOT_LINES.addFriend}
+                    actionLabel="Add friends"
+                    actionHref="/friends"
+                    actionIcon="plus"
+                  />
+                ) : (
+                  <BrandEmptyState scene={PAGE_SCENES.empty} artHeight={96} accent="leaderboard" className="py-6" title="NO RESULTS YET" line="Nobody's finished today's daily. Be the first!" />
+                )
+              ) : (
+                <Podium places={lbPodium} accent={color} bare />
+              )}
+            </div>
+
+            {/* The stage's base: Yesterday's winners on a ledge with mini steps; tap to expand in place. */}
+            <YesterdayLedge
+              places={isSweep ? ySweepPodium : yLbPodium}
+              open={showYesterday}
+              onToggle={() => setShowYesterday(!showYesterday)}
+              loading={showYesterday && yesterdayLoading}
+              share={
+                (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) ? (
+                  <HeaderGlyph
+                    icon="share"
+                    size={20}
+                    label="Share yesterday's podium"
+                    onClick={handleSharePodium}
+                    disabled={sharingPodium}
+                    style={{ minWidth: 40, opacity: sharingPodium ? 0.4 : 1 }}
+                  />
+                ) : null
+              }
+            >
+              <BoardCard className="mb-2">
+                {yesterdayLoading ? (
+                  <LeaderboardSkeleton />
+                ) : isSweep ? (
+                  yesterdaySweep.length === 0 ? (
+                    <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>No sweeps yesterday</div>
+                  ) : (
+                    <div>
+                      {ySweepSplit.podium.length > 0 && <Podium places={ySweepPodium} label="Yesterday's top sweepers" />}
+                      {ySweepSplit.rest.map(({ entry }, i) => renderSweepRow(entry, i + (ySweepPodium.length > 0 ? 1 : 0), ySweepOpts))}
+                    </div>
+                  )
+                ) : yesterdayLeaderboard.length === 0 ? (
+                  <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>No results from yesterday</div>
+                ) : (
+                  <div>
+                    <Podium places={yLbPodium} accent={color} label="Yesterday's top three" />
+                    {yLbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (yLbPodium.length > 0 ? 1 : 0), yLbScoreLabels))}
+                  </div>
+                )}
+              </BoardCard>
+            </YesterdayLedge>
+          </LeaderboardStage>
+          </PullToRefresh>
         </div>
 
         <div className="page-grid-2">
         <div>
-        {/* Founder 10-05: the game card sits RIGHT under the picker, so a tile tap reads at
-            once which game's board this is — small art, one line, a small candy button (PLAY
-            before today's daily, VIEW BOARD after). Fixed height: switching games never moves the board. */}
-        <div className="relative overflow-hidden mb-3" style={softCard(color, { radius: 16 })}>
-          <div aria-hidden="true" style={cardBarStyle(color)} />
-          <div className="flex items-center gap-2.5" style={{ padding: '7px 10px 8px', minHeight: 46 }}>
-            <GameArt
-              id={isSweep ? 'sweep' : mode.id}
-              size={30}
-              fallback={<GameTileGlyph accent={color} icon={Icon} romanNumeral={mode.romanNumeral} />}
-            />
-            {/* Two lines allowed (2026-10-05, Android 201 parity): at 360 px a long title
-                (Crosswordocious) beside VIEW BOARD truncated the count, and the Sweep line
-                lost "ranked by points". Normal widths still fit on one line. */}
-            <div className="flex-1 min-w-0 line-clamp-2 text-[12px] font-extrabold leading-[15px]" style={{ color: 'var(--color-text-secondary)' }}>
-              <span className="font-black" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweep' : mode.title}</span>
-              <span aria-hidden="true">{' · '}</span>
-              <span className="whitespace-nowrap">
-                <Users className="inline-block w-3.5 h-3.5 mr-1 align-[-2px]" />
-                {playerCount}
-              </span>
-              {/* §223: the sweep board ranks by total points across all modes. */}
-              {isSweep ? ' swept · ranked by points' : ' today'}
-            </div>
-            {/* Sweep isn't a playable puzzle — no Play button. */}
-            {!isSweep && (
-              <CandyButton
-                size="sm"
-                color="purple"
-                icon={playedSelected ? 'eye' : 'play'}
-                onClick={handlePlayDaily}
-                className="shrink-0"
-              >
-                {playedSelected ? 'View board' : 'Play'}
-              </CandyButton>
-            )}
-          </div>
-        </div>
-
-        {/* TODAY'S BOARD — daily games only (the Play card says so), so an
-            Unlimited session never shows here. */}
-        <div className="flex items-center justify-between gap-2 mb-2 px-1">
-          <div style={SECTION_LABEL}>TODAY&apos;S BOARD</div>
-          <div className="flex items-center gap-1">
-            {/* Everyone | Friends — the tinted segmented control. */}
-            {!isSweep && user && (
-              <SegmentedPill
-                label="Everyone or Friends"
-                accent={color}
-                value={friendsOnly}
-                onChange={setFriendsOnly}
-                options={[[false, 'Everyone'], [true, 'Friends']] as const}
-              />
-            )}
-            {!boardLoading && (isSweep ? sweepLeaderboard.length > 0 : leaderboard.length > 0) && (
-              <HeaderGlyph
-                icon="share"
-                size={20}
-                label="Share leaderboard"
-                onClick={handleShareLeaderboard}
-                disabled={sharingLb}
-                style={{ minWidth: 40, opacity: sharingLb ? 0.4 : 1 }}
-              />
-            )}
-          </div>
-        </div>
-        <PullToRefresh onRefresh={loadLeaderboard} accentColor={color}>
-        <BoardCard>
-          {boardLoading ? (
-            <LeaderboardSkeleton />
-          ) : isSweep ? (
-            sweepLeaderboard.length === 0 ? (
-              <BrandEmptyState
-                scene={PAGE_SCENES.empty}
-                artHeight={96}
-                accent="leaderboard"
-                className="py-6"
-                title="NO SWEEPS TODAY"
-                line="Nobody's swept today. Be the first!"
-              />
-            ) : (
+        {/* Ranks 4+ (and the ghost friends / your neighborhood) — the stage above holds the top three. */}
+        {!boardLoading && (isSweep ? sweepSplit.rest.length > 0 : (leaderboard.length > 0 || (friendsOnly && ghostFriends.length > 0))) && (
+          <BoardCard className="mb-3">
+            {isSweep ? (
               <div>
-                <Podium places={sweepPodium} label="Top three sweepers" />
                 {sweepSplit.rest.map(({ entry }, i) => renderSweepRow(entry, i + (sweepPodium.length > 0 ? 1 : 0), sweepRowOpts))}
               </div>
-            )
-          ) : leaderboard.length === 0 ? (
-            friendsOnly && ghostFriends.length > 0 ? (
-              // Nobody's played yet, but the friends list still renders as
-              // ghost rows — the board should feel alive (and tauntable).
+            ) : leaderboard.length === 0 ? (
+              // Nobody's played yet, but the friends list still renders as ghost rows — the board should feel alive (and tauntable).
               <div>{ghostFriends.map((f, i) => renderGhostRow(f, i))}</div>
             ) : (
-              friendsOnly ? (
-                <BrandEmptyState
-                  scene={PAGE_SCENES.addFriend}
-                  artHeight={96}
-                  accent="friends"
-                  className="py-6"
-                  title="NO FRIENDS ON THE BOARD"
-                  line={MASCOT_LINES.addFriend}
-                  actionLabel="Add friends"
-                  actionHref="/friends"
-                  actionIcon="plus"
-                />
-              ) : (
-                <BrandEmptyState
-                  scene={PAGE_SCENES.empty}
-                  artHeight={96}
-                  accent="leaderboard"
-                  className="py-6"
-                  title="NO RESULTS YET"
-                  line="Nobody's finished today's daily. Be the first!"
-                />
-              )
-            )
-          ) : (
-            <div>
-              <Podium places={lbPodium} accent={color} />
-              {/* Ranks 4+ (the stripes start after the podium). */}
-              {lbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (lbPodium.length > 0 ? 1 : 0)))}
-              {/* Friends who haven't played this mode today. */}
-              {friendsOnly && ghostFriends.map((f, i) => renderGhostRow(f, lbSplit.rest.length + i + 1))}
-              {/* "Your neighborhood" — the rows around the user's rank when they
-                  placed past the top 50 (e.g. #425 sees ~421–429, own row
-                  highlighted). Same ordering as the list, so ranks agree. */}
-              {rankWindow && (
-                <>
-                  <div
-                    className="text-center py-1 text-sm font-black tracking-widest"
-                    style={{ color: 'var(--color-text-secondary)', borderTop: `1px solid ${alphaHex(LB_GOLD, 0.16)}` }}
-                  >
-                    ···
-                  </div>
-                  {rankWindow.entries
-                    .map((entry, index) => ({ entry, rank: rankWindow.startRank + index }))
-                    .filter(({ entry }) => !isBlocked(entry.user_id))
-                    .map(({ entry, rank }, i) => renderLbRow(entry, rank, i))}
-                </>
-              )}
-            </div>
-          )}
-        </BoardCard>
-        </PullToRefresh>
-
+              <div>
+                {lbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (lbPodium.length > 0 ? 1 : 0)))}
+                {/* Friends who haven't played this mode today. */}
+                {friendsOnly && ghostFriends.map((f, i) => renderGhostRow(f, lbSplit.rest.length + i + 1))}
+                {/* "Your neighborhood" — the rows around the user's rank when they placed past the top 50. */}
+                {rankWindow && (
+                  <>
+                    <div
+                      className="text-center py-1 text-sm font-black tracking-widest"
+                      style={{ color: 'var(--color-text-secondary)', borderTop: `1px solid ${alphaHex(LB_GOLD, 0.16)}` }}
+                    >
+                      ···
+                    </div>
+                    {rankWindow.entries
+                      .map((entry, index) => ({ entry, rank: rankWindow.startRank + index }))
+                      .filter(({ entry }) => !isBlocked(entry.user_id))
+                      .map(({ entry, rank }, i) => renderLbRow(entry, rank, i))}
+                  </>
+                )}
+              </div>
+            )}
+          </BoardCard>
+        )}
         </div>
 
         <div>
-        {/* AU2: YOUR result as ONE compact row ("#2 of 5 · 2,005 PTS · 4 guesses · 48s"
-            + the completed check); founder 10-05: under the standings, with your board under it. */}
-        {showResult && (
-          <CompactResultRow
-            line={compactRankLine({
-              rank: userRank?.rank ?? null,
-              total: userRank?.totalPlayers ?? null,
-              friends: friendsOnly && !isSweep,
-              points: resultPoints,
-              semantics: modeMeta?.guessSemantics,
-              guessBase: modeMeta?.guessBase,
-              guesses: myCompletion?.guesses ?? myEntry?.guess_count ?? null,
-              timeSeconds: myCompletion?.timeSeconds ?? myEntry?.time_seconds ?? null,
-              detail: isSweep ? mySolved : null,
-            })}
-            won={isSweep ? (mySweepEntry ? true : null) : myCompletion ? myCompletion.won : myEntry ? !!myEntry.completed : null}
-            delta={
-              userRank ? (
-                <RankDeltaBadge
-                  mode={selectedMode}
-                  playType="solo"
-                  // The friends board keeps its own rank history (SWEEP is always global).
-                  pageKey={friendsOnly && user && !isSweep ? 'daily-friends' : 'daily'}
-                  currentRank={userRank.rank}
-                />
-              ) : null
-            }
-          />
-        )}
-
-        {/* Your finished board (§254), collapsible under the result — per-mode
-            only; Sweep has no board. */}
+        {/* Your finished board (§254), collapsible — per-mode only; Sweep has no board. */}
         {!isSweep && (
           <SoftCompletedCards underRank={showResult}>
             <CompletedDailyBoard modeId={selectedMode} />
           </SoftCompletedCards>
-        )}
-
-        {/* YESTERDAY'S WINNERS — per-mode top 5, or yesterday's top sweepers;
-            collapsible, the same tinted card and rows as today's board. */}
-        <DisclosureHeader
-          label={<>YESTERDAY&apos;S WINNERS</>}
-          open={showYesterday}
-          onToggle={() => setShowYesterday(!showYesterday)}
-          right={
-            // Settled-podium share — only once the dropdown is open with rows.
-            showYesterday && (isSweep ? yesterdaySweep.length > 0 : yesterdayLeaderboard.length > 0) ? (
-              <HeaderGlyph
-                icon="share"
-                size={20}
-                label="Share yesterday's podium"
-                onClick={handleSharePodium}
-                disabled={sharingPodium}
-                style={{ minWidth: 40, opacity: sharingPodium ? 0.4 : 1 }}
-              />
-            ) : null
-          }
-        />
-
-        {showYesterday && (
-          <BoardCard className="mb-4">
-            {yesterdayLoading ? (
-              <LeaderboardSkeleton />
-            ) : isSweep ? (
-              yesterdaySweep.length === 0 ? (
-                <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>
-                  No sweeps yesterday
-                </div>
-              ) : (
-                <div>
-                  {/* BJ4: yesterday's top sweepers on the podium, then full sweep rows
-                      (founder ask, Aug 17) — shown like today's board. */}
-                  <Podium places={ySweepPodium} label="Yesterday's top sweepers" />
-                  {ySweepSplit.rest.map(({ entry }, i) => renderSweepRow(entry, i + (ySweepPodium.length > 0 ? 1 : 0), ySweepOpts))}
-                </div>
-              )
-            ) : yesterdayLeaderboard.length === 0 ? (
-              <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-secondary)' }}>
-                No results from yesterday
-              </div>
-            ) : (
-              <div>
-                {/* BJ4: yesterday's top three on the podium, then full daily rows (founder
-                    ask, Aug 11): clickable profiles, guesses + time, W/L — same renderer as today. */}
-                <Podium places={yLbPodium} accent={color} label="Yesterday's top three" />
-                {yLbSplit.rest.map(({ entry, rank }, i) => renderLbRow(entry, rank, i + (yLbPodium.length > 0 ? 1 : 0), yLbScoreLabels))}
-              </div>
-            )}
-          </BoardCard>
         )}
         </div>
         </div>
