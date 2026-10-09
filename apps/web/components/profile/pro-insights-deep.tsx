@@ -13,6 +13,9 @@ import { alphaHex } from '@/lib/soft-surface';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Icon3D } from '@/components/ui/icon3d';
 import { UiIcon } from '@/components/ui/ui-icon';
+import { FriendAvatar } from '@/components/friends/friends-ui';
+import { RecordBar } from '@/components/stats/stat-hero';
+import { isFriend } from '@/lib/friends-service';
 
 // Pro Insights deep layer (restat R4): the stat-nerd centerpiece. Every card
 // self-fetches (SWR) so pages just drop them in; all data derives from stored
@@ -119,7 +122,7 @@ export function SkillRadarCard({ userId, isPro, compact = true }: { userId: stri
 
 export function RivalriesCard({ userId, isPro, compact = true }: { userId: string; isPro: boolean; compact?: boolean }) {
   const { data } = useSWR(isPro ? ['rivalries', userId] : null, () => fetchRivalries(userId, 5));
-  const rows = data ?? [];
+  const rows = (data ?? []).filter((r) => !isFriend(r.opponentId));
   if (!isPro) {
     return (
       <div className="animate-fade-in-up">
@@ -129,35 +132,33 @@ export function RivalriesCard({ userId, isPro, compact = true }: { userId: strin
     );
   }
   if (rows.length === 0) {
-    if (!data) return null; // still loading
-    return <StatsEmptyCard title="Rivalries" accent="#ec4899" hint="Face the same opponent a few times to start a rivalry." />;
+    if (!data || data.length > 0) return null; // still loading, or every rival is a friend (shown in HEAD TO HEAD)
+    return <StatsEmptyCard title="Rivals" accent="#ec4899" hint="Face the same opponent a few times to start a rivalry." />;
   }
+  // Item 16: friends already read in the HEAD TO HEAD section above; rivals are the most-faced opponents who are not.
   const card = (
     <KitCard tint="#ec4899">
-      <div className="space-y-1.5">
-        {rows.map((r) => {
-          const pct = r.total > 0 ? (r.wins / r.total) * 100 : 0;
-          return (
-            <div key={r.opponentId} className="p-2" style={{ background: alphaHex('#ec4899', 0.08), borderRadius: '10px' }}>
-              <div className="flex items-center gap-2">
-                <Swords className="w-3.5 h-3.5 shrink-0" style={{ color: '#7c3aed' }} />
-                <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{r.username}</span>
-                <span className="text-xs font-black" style={{ color: r.wins >= r.losses ? WIN_FG : '#dc2626' }}>
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div key={r.opponentId} className="flex items-center gap-3">
+            <FriendAvatar name={r.username} userId={r.opponentId} size={34} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{r.username}</span>
+                <span className="text-xs font-black shrink-0" style={{ color: 'var(--color-text)' }}>
                   {r.wins}–{r.losses}{r.draws > 0 ? `–${r.draws}` : ''}
                 </span>
               </div>
-              <div className="h-1.5 rounded-full overflow-hidden mt-1.5" style={{ background: '#dc262633' }}>
-                <div className="h-full" style={{ width: `${pct}%`, background: WIN_FG }} />
-              </div>
+              <RecordBar wins={r.wins} losses={r.losses} height={7} className="mt-1" />
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </KitCard>
   );
   return (
     <div className="animate-fade-in-up">
-      <SectionHeader label="Rivalries" accent="#ec4899" />
+      <SectionHeader label="Rivals" accent="#ec4899" />
       {card}
     </div>
   );

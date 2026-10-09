@@ -19,7 +19,9 @@ import { ProDeepModeCard } from './pro-insights-deep';
 import { fetchModeDetail } from '@/lib/stats-service';
 import { statPanels, modeAggregates, guessNoun, distributionSpec, avg1, type MatchRow } from '@/lib/mode-stats';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
-import { isGameArtIcon } from '@/lib/art';
+import { BrandEmptyState } from '@/components/ui/brand-empty-state';
+import { formatGuessStat } from '@/lib/format';
+import { isGameArtIcon, PAGE_SCENES } from '@/lib/art';
 import { CandyButton } from '@/components/ui/candy-button';
 import { softCard, softIconTile, softPill } from '@/lib/soft-surface';
 
@@ -56,14 +58,49 @@ interface ModeDetailPanelProps {
    *  the panel holds its skeleton instead of claiming "No games played" and then
    *  popping the real cards in (founder, 2026-09-29). */
   statsLoading?: boolean;
+  /** Item 16: the picker's selected tile / title already names the game, so the panel drops its own header row. */
+  hideHeader?: boolean;
 }
 
-export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'solo', statsLoading = false }: ModeDetailPanelProps) {
+/**
+ * The Challenge button (Pro, own profile): creates a live invite for `gameMode` and shares / copies it. Split out of
+ * the panel header (item 16: the duplicate "Classic" header row is gone) so the VS page can seat it in its toggle row.
+ */
+export function ModeChallengeButton({ gameMode, isPro, userId }: { gameMode: string; isPro: boolean; userId: string }) {
   const { user } = useAuth();
   const { isLive: flagLive } = useFlags();
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { setCopied(false); }, [gameMode]);
+  if (!(isPro && user?.id === userId)) return null;
+  const title = PROFILE_MODES.find((m) => m.dbKey === gameMode)?.title;
+  const go = async () => {
+    if (!user || loading) return;
+    setLoading(true);
+    try {
+      const { invite } = await createInvite({ inviterId: user.id, gameMode });
+      if (invite?.invite_code) {
+        const url = shareUrlFor(flagLive(BRANDED_INVITES_SWITCH), 'live', invite.invite_code, window.location.origin);
+        if (navigator.share) await navigator.share({ title: `Challenge me in ${title}!`, url });
+        else {
+          await navigator.clipboard.writeText(url);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
+      }
+    } catch {}
+    setLoading(false);
+  };
+  return (
+    <CandyButton onClick={go} disabled={loading} color="pink" size="sm"
+      icon={copied ? 'check' : <Swords className="w-3.5 h-3.5" color="#fff" strokeWidth={3} aria-hidden="true" />}>
+      {copied ? 'Copied!' : 'Challenge'}
+    </CandyButton>
+  );
+}
+
+export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'solo', statsLoading = false, hideHeader = false }: ModeDetailPanelProps) {
   const tab = playType;
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [inviteCopied, setInviteCopied] = useState(false);
 
   const mode = PROFILE_MODES.find((m) => m.dbKey === gameMode);
   const accentColor = mode?.accentColor || '#7c3aed';
@@ -74,7 +111,6 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
   const panels = statPanels(gameMode, semantics);
   const noun = guessNoun(semantics);
   const Icon = mode?.icon;
-  const isOwnProfile = user?.id === userId;
 
   const { data, isLoading: dataLoading } = useSWR(
     ['mode-detail', userId, gameMode, playType],
@@ -89,33 +125,10 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
   const agg = data ? modeAggregates(gameMode, data.matches ?? [], meta?.guessBase ?? 1) : undefined;
   const loading = dataLoading || statsLoading;
 
-  useEffect(() => {
-    setInviteCopied(false);
-  }, [gameMode]);
-
-  const handleChallenge = async () => {
-    if (!user || inviteLoading) return;
-    setInviteLoading(true);
-    try {
-      const { invite, error } = await createInvite({ inviterId: user.id, gameMode });
-      if (invite?.invite_code) {
-        const url = shareUrlFor(flagLive(BRANDED_INVITES_SWITCH), 'live', invite.invite_code, window.location.origin);
-        if (navigator.share) {
-          await navigator.share({ title: `Challenge me in ${mode?.title}!`, url });
-        } else {
-          await navigator.clipboard.writeText(url);
-          setInviteCopied(true);
-          setTimeout(() => setInviteCopied(false), 2000);
-        }
-      }
-    } catch {}
-    setInviteLoading(false);
-  };
-
   return (
     <div className="space-y-3">
-      {/* Mode Header */}
-      <div className="flex items-center justify-between">
+      {/* Mode Header (hidden where the picker already names the game — item 16) */}
+      {!hideHeader && <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
             className="w-8 h-8 flex items-center justify-center"
@@ -131,18 +144,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Challenge button (Pro only, own profile only) */}
-          {isPro && isOwnProfile && (
-            <CandyButton
-              onClick={handleChallenge}
-              disabled={inviteLoading}
-              color="pink"
-              size="sm"
-              icon={inviteCopied ? 'check' : <Swords className="w-3.5 h-3.5" color="#fff" strokeWidth={3} aria-hidden="true" />}
-            >
-              {inviteCopied ? 'Copied!' : 'Challenge'}
-            </CandyButton>
-          )}
+          <ModeChallengeButton gameMode={gameMode} isPro={isPro} userId={userId} />
 
           {/* Play-type chip — reflects the page-level toggle (no inner toggle). */}
           <span
@@ -153,7 +155,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
             {tab === 'solo' ? 'Solo' : tab === 'vs' ? 'VS People' : 'VS Bots'}
           </span>
         </div>
-      </div>
+      </div>}
 
       {/* Loading skeleton */}
       {loading && (
@@ -219,7 +221,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
               across 21 boards, a histogram is meaningless). Every Puzzles game draws one in
               its own unit (distributionSpec); Hubbub counts every game's rank. */}
           {data && panels.guessDistribution && (
-            <GuessDistribution data={data.guessDist} accentColor={accentColor} noun={noun} unit={distributionSpec(gameMode)?.countsAll ? 'games' : 'wins'} />
+            <GuessDistribution data={data.guessDist} accentColor={accentColor} noun={noun} best={stats.best_score > 0 ? formatGuessStat(semantics, meta?.guessBase ?? 1, stats.best_score) : null} unit={distributionSpec(gameMode)?.countsAll ? 'games' : 'wins'} />
           )}
 
           {/* Solve Time Trend */}
@@ -271,14 +273,13 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
       )}
 
       {!loading && !stats && (
-        <div
-          className="p-6 text-center"
-          style={softCard(accentColor, { radius: 18 })}
-        >
-          <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            No {tab === 'solo' ? 'solo' : tab === 'vs' ? 'VS People' : 'VS Bots'} games played in this mode yet
-          </p>
-        </div>
+        <BrandEmptyState
+          scene={PAGE_SCENES.empty}
+          artHeight={72}
+          accent={tab === 'solo' ? 'brand' : 'vs'}
+          title="NO GAMES YET"
+          line={`Your ${tab === 'solo' ? 'solo' : tab === 'vs' ? 'VS People' : 'VS Bots'} record starts with the first one.`}
+        />
       )}
     </div>
   );
