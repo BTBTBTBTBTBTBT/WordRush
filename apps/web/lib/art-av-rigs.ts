@@ -118,4 +118,8 @@ export const AVATAR_RIG_SIZE: Record<`art-av-body-${string}`, readonly [number, 
   'art-av-body-bat-feet': [640, 640],
   'art-av-body-bat-armL': [640, 640],
   'art-av-body-bat-armR': [640, 640],
+  'art-av-body-moon-base': [640, 640],
+  'art-av-body-moon-feet': [640, 640],
+  'art-av-body-moon-armL': [640, 640],
+  'art-av-body-moon-armR': [640, 640],
 };

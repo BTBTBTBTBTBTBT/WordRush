@@ -159,6 +159,14 @@
 201,
 69
 ],
+"art-av-acc-apron-moon-under": [
+215,
+89
+],
+"art-av-acc-apron-moon-wrap": [
+173,
+66
+],
 "art-av-acc-apron-pear-under": [
 206,
 121
@@ -375,6 +383,14 @@
 190,
 96
 ],
+"art-av-acc-backpack-moon-back": [
+199,
+185
+],
+"art-av-acc-backpack-moon-wrap": [
+234,
+218
+],
 "art-av-acc-backpack-pear-back": [
 200,
 126
@@ -519,6 +535,10 @@
 146,
 240
 ],
+"art-av-acc-balloon-moon-held": [
+123,
+203
+],
 "art-av-acc-balloon-pear-held": [
 141,
 233
@@ -625,6 +645,10 @@
 ],
 "art-av-acc-bandana-mini-wrap": [
 200,
+82
+],
+"art-av-acc-bandana-moon-wrap": [
+175,
 82
 ],
 "art-av-acc-bandana-pear-wrap": [
@@ -743,6 +767,10 @@
 132,
 74
 ],
+"art-av-acc-bat-moon-pet": [
+164,
+92
+],
 "art-av-acc-bat-pear-pet": [
 170,
 96
@@ -854,6 +882,10 @@
 "art-av-acc-batwings-mini-back": [
 432,
 189
+],
+"art-av-acc-batwings-moon-back": [
+379,
+165
 ],
 "art-av-acc-batwings-pear-back": [
 379,
@@ -1047,6 +1079,14 @@
 42,
 38
 ],
+"art-av-acc-belt-moon-under": [
+197,
+38
+],
+"art-av-acc-belt-moon-wrap": [
+41,
+38
+],
 "art-av-acc-belt-pear-wrap": [
 201,
 35
@@ -1191,6 +1231,10 @@
 69,
 69
 ],
+"art-av-acc-bird-moon-pet": [
+86,
+86
+],
 "art-av-acc-bird-pear-pet": [
 90,
 90
@@ -1310,6 +1354,10 @@
 "art-av-acc-blackcat-mini-pet": [
 99,
 107
+],
+"art-av-acc-blackcat-moon-pet": [
+124,
+132
 ],
 "art-av-acc-blackcat-pear-pet": [
 129,
@@ -1431,6 +1479,10 @@
 98,
 148
 ],
+"art-av-acc-book-moon-held": [
+73,
+111
+],
 "art-av-acc-book-pear-held": [
 98,
 152
@@ -1551,6 +1603,10 @@
 242,
 46
 ],
+"art-av-acc-boots-moon-feet": [
+256,
+48
+],
 "art-av-acc-boots-pear-feet": [
 258,
 50
@@ -1666,6 +1722,10 @@
 "art-av-acc-bubbletea-mini-held": [
 91,
 128
+],
+"art-av-acc-bubbletea-moon-held": [
+75,
+113
 ],
 "art-av-acc-bubbletea-pear-held": [
 88,
@@ -1790,6 +1850,10 @@
 "art-av-acc-candypail-mini-held": [
 134,
 154
+],
+"art-av-acc-candypail-moon-held": [
+114,
+135
 ],
 "art-av-acc-candypail-pear-held": [
 130,
@@ -2091,6 +2155,14 @@
 28,
 2
 ],
+"art-av-acc-cape-drape-moon-back": [
+338,
+214
+],
+"art-av-acc-cape-drape-moon-wrap": [
+58,
+14
+],
 "art-av-acc-cape-drape-pear-back": [
 326,
 113
@@ -2210,6 +2282,14 @@
 "art-av-acc-cape-mini-wrap": [
 201,
 68
+],
+"art-av-acc-cape-moon-back": [
+405,
+206
+],
+"art-av-acc-cape-moon-wrap": [
+172,
+64
 ],
 "art-av-acc-cape-pear-back": [
 391,
@@ -2451,6 +2531,10 @@
 298,
 66
 ],
+"art-av-acc-chain-moon-wrap": [
+172,
+69
+],
 "art-av-acc-chain-pear-wrap": [
 191,
 77
@@ -2562,6 +2646,10 @@
 "art-av-acc-flashlight-mini-held": [
 78,
 164
+],
+"art-av-acc-flashlight-moon-held": [
+58,
+119
 ],
 "art-av-acc-flashlight-pear-held": [
 78,
@@ -2683,6 +2771,10 @@
 108,
 89
 ],
+"art-av-acc-ghost-moon-pet": [
+134,
+111
+],
 "art-av-acc-ghost-pear-pet": [
 139,
 115
@@ -2802,6 +2894,10 @@
 "art-av-acc-guitar-mini-held": [
 84,
 178
+],
+"art-av-acc-guitar-moon-held": [
+104,
+221
 ],
 "art-av-acc-guitar-pear-held": [
 107,
@@ -2923,6 +3019,10 @@
 20,
 17
 ],
+"art-av-acc-heart-moon-extra": [
+15,
+14
+],
 "art-av-acc-heart-pear-extra": [
 16,
 14
@@ -3042,6 +3142,10 @@
 "art-av-acc-icecream-mini-held": [
 101,
 189
+],
+"art-av-acc-icecream-moon-held": [
+83,
+166
 ],
 "art-av-acc-icecream-pear-held": [
 98,
@@ -3163,6 +3267,10 @@
 106,
 117
 ],
+"art-av-acc-kitten-moon-pet": [
+132,
+145
+],
 "art-av-acc-kitten-pear-pet": [
 138,
 151
@@ -3279,6 +3387,10 @@
 200,
 85
 ],
+"art-av-acc-lei-moon-wrap": [
+174,
+84
+],
 "art-av-acc-lei-pear-wrap": [
 191,
 83
@@ -3394,6 +3506,10 @@
 "art-av-acc-magnifier-mini-held": [
 108,
 169
+],
+"art-av-acc-magnifier-moon-held": [
+88,
+145
 ],
 "art-av-acc-magnifier-pear-held": [
 104,
@@ -3515,6 +3631,10 @@
 92,
 181
 ],
+"art-av-acc-mic-moon-held": [
+76,
+156
+],
 "art-av-acc-mic-pear-held": [
 90,
 175
@@ -3635,6 +3755,10 @@
 180,
 194
 ],
+"art-av-acc-mug-moon-held": [
+152,
+164
+],
 "art-av-acc-mug-pear-held": [
 174,
 189
@@ -3754,6 +3878,10 @@
 "art-av-acc-pencil-big-mini-held": [
 59,
 140
+],
+"art-av-acc-pencil-big-moon-held": [
+48,
+119
 ],
 "art-av-acc-pencil-big-pear-held": [
 58,
@@ -3879,6 +4007,10 @@
 106,
 95
 ],
+"art-av-acc-puppy-moon-pet": [
+132,
+118
+],
 "art-av-acc-puppy-pear-pet": [
 138,
 122
@@ -3982,6 +4114,10 @@
 "art-av-acc-scarf-mini-wrap": [
 199,
 87
+],
+"art-av-acc-scarf-moon-wrap": [
+174,
+84
 ],
 "art-av-acc-scarf-pear-wrap": [
 194,
@@ -4098,6 +4234,10 @@
 "art-av-acc-skates-mini-feet": [
 232,
 46
+],
+"art-av-acc-skates-moon-feet": [
+244,
+48
 ],
 "art-av-acc-skates-pear-feet": [
 248,
@@ -4219,6 +4359,10 @@
 232,
 46
 ],
+"art-av-acc-slippers-moon-feet": [
+243,
+48
+],
 "art-av-acc-slippers-pear-feet": [
 248,
 50
@@ -4334,6 +4478,10 @@
 "art-av-acc-snail-mini-pet": [
 63,
 52
+],
+"art-av-acc-snail-moon-pet": [
+78,
+64
 ],
 "art-av-acc-snail-pear-pet": [
 81,
@@ -4455,6 +4603,10 @@
 232,
 46
 ],
+"art-av-acc-sneakers-moon-feet": [
+244,
+48
+],
 "art-av-acc-sneakers-pear-feet": [
 247,
 50
@@ -4570,6 +4722,10 @@
 "art-av-acc-spatula-mini-held": [
 103,
 192
+],
+"art-av-acc-spatula-moon-held": [
+88,
+169
 ],
 "art-av-acc-spatula-pear-held": [
 100,
@@ -4690,6 +4846,10 @@
 "art-av-acc-steam-mini-extra": [
 54,
 45
+],
+"art-av-acc-steam-moon-extra": [
+41,
+34
 ],
 "art-av-acc-steam-pear-extra": [
 42,
@@ -4895,6 +5055,14 @@
 201,
 68
 ],
+"art-av-acc-supercape-moon-back": [
+405,
+206
+],
+"art-av-acc-supercape-moon-wrap": [
+172,
+64
+],
 "art-av-acc-supercape-pear-back": [
 391,
 109
@@ -5043,6 +5211,10 @@
 18,
 25
 ],
+"art-av-acc-sweat-moon-extra": [
+14,
+19
+],
 "art-av-acc-sweat-pear-extra": [
 15,
 20
@@ -5162,6 +5334,10 @@
 "art-av-acc-tear-mini-extra": [
 13,
 18
+],
+"art-av-acc-tear-moon-extra": [
+10,
+13
 ],
 "art-av-acc-tear-pear-extra": [
 11,
@@ -5283,6 +5459,10 @@
 137,
 141
 ],
+"art-av-acc-trophy-moon-held": [
+113,
+121
+],
 "art-av-acc-trophy-pear-held": [
 133,
 138
@@ -5402,6 +5582,10 @@
 "art-av-acc-umbrella-mini-held": [
 99,
 341
+],
+"art-av-acc-umbrella-moon-held": [
+81,
+292
 ],
 "art-av-acc-umbrella-pear-held": [
 96,
@@ -5595,6 +5779,14 @@
 201,
 69
 ],
+"art-av-acc-vampirecollar-moon-back": [
+345,
+219
+],
+"art-av-acc-vampirecollar-moon-wrap": [
+172,
+66
+],
 "art-av-acc-vampirecollar-pear-back": [
 334,
 214
@@ -5743,6 +5935,10 @@
 122,
 219
 ],
+"art-av-acc-wand-star-moon-held": [
+102,
+190
+],
 "art-av-acc-wand-star-pear-held": [
 118,
 211
@@ -5867,6 +6063,10 @@
 101,
 11
 ],
+"art-av-brows-cheeky-moon-brows": [
+78,
+9
+],
 "art-av-brows-cheeky-pear-brows": [
 79,
 9
@@ -5986,6 +6186,10 @@
 "art-av-brows-determined-mini-brows": [
 101,
 11
+],
+"art-av-brows-determined-moon-brows": [
+78,
+9
 ],
 "art-av-brows-determined-pear-brows": [
 79,
@@ -6107,6 +6311,10 @@
 101,
 10
 ],
+"art-av-brows-happy-moon-brows": [
+78,
+8
+],
 "art-av-brows-happy-pear-brows": [
 79,
 8
@@ -6226,6 +6434,10 @@
 "art-av-brows-sleepy-mini-brows": [
 101,
 9
+],
+"art-av-brows-sleepy-moon-brows": [
+78,
+7
 ],
 "art-av-brows-sleepy-pear-brows": [
 79,
@@ -6347,6 +6559,10 @@
 101,
 11
 ],
+"art-av-brows-surprised-moon-brows": [
+78,
+8
+],
 "art-av-brows-surprised-pear-brows": [
 79,
 9
@@ -6466,6 +6682,10 @@
 "art-av-brows-worried-mini-brows": [
 101,
 14
+],
+"art-av-brows-worried-moon-brows": [
+78,
+11
 ],
 "art-av-brows-worried-pear-brows": [
 79,

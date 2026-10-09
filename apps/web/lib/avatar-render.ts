@@ -114,6 +114,7 @@ export const BODY_BOX: Record<AvatarBody, Box> = {
   bean: { x: 21, y: 20, w: 58, h: 67 },
   star: { x: 14, y: 19, w: 72, h: 68 },
   // 2.8 bodies (item 50): placeholder boxes from the art's bounds (shown only until the art loads)
+  moon: { x: 24, y: 21, w: 52, h: 66 },
   heart: { x: 20, y: 33, w: 60, h: 54 },
   egg: { x: 22, y: 21, w: 55, h: 66 },
   bell: { x: 25, y: 21, w: 50, h: 66 },
@@ -403,7 +404,7 @@ export function bodyPath(body: AvatarBody): string {
   };
   switch (body) {
     // 2.8 bodies: the placeholder (until the art loads) is a rounded block
-    case 'heart': case 'egg': case 'bell': case 'triangle': case 'diamond': case 'shield': case 'burst': case 'flower': case 'gumdrop': case 'can': case 'potato': case 'catear': case 'bunnyear': case 'pumpkin': case 'ghost': case 'cone': case 'bat':
+    case 'heart': case 'moon': case 'egg': case 'bell': case 'triangle': case 'diamond': case 'shield': case 'burst': case 'flower': case 'gumdrop': case 'can': case 'potato': case 'catear': case 'bunnyear': case 'pumpkin': case 'ghost': case 'cone': case 'bat':
     case 'classic': case 'chunky': case 'hex': return rect(Math.min(b.w, b.h) * 0.3);
     case 'cloud': return rect(b.h * 0.4);
     case 'drop': case 'pear': case 'mini':

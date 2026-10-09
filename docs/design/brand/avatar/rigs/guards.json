@@ -385,100 +385,522 @@
    ]
   },
   "heart": {
-   "acc:medal": [
-    "hides a moved arm (16%)"
+   "acc:book": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (13%)"
+   ]
+  },
+  "moon": {
+   "acc:book": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (13%)"
    ]
   },
   "egg": {
-   "acc:bowtie": [
-    "hides a moved arm (21%)"
+   "acc:mug": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (50%)"
+   "acc:book": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (30%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (19%)"
    ]
   },
   "bell": {
-   "acc:bowtie": [
-    "hides a moved arm (39%)"
+   "acc:mug": [
+    "swings over the face / letter (12%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (55%)"
+   "acc:book": [
+    "swings over the face / letter (37%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (51%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (27%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (35%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (15%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (29%)"
    ]
   },
   "triangle": {
-   "acc:bowtie": [
-    "hides a moved arm (44%)"
+   "acc:mug": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (50%)"
+   "acc:book": [
+    "swings over the face / letter (22%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (18%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (28%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (17%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (14%)"
    ]
   },
   "diamond": {
-   "acc:bowtie": [
-    "hides a moved arm (18%)"
-   ],
-   "acc:medal": [
-    "hides a moved arm (23%)"
+   "acc:candypail": [
+    "swings over the face / letter (16%)"
    ]
   },
   "shield": {
-   "acc:bowtie": [
-    "hides a moved arm (22%)"
+   "acc:book": [
+    "swings over the face / letter (7%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (38%)"
+   "acc:pencil-big": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (16%)"
+   ]
+  },
+  "burst": {
+   "acc:book": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (17%)"
+   ]
+  },
+  "flower": {
+   "acc:book": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (17%)"
    ]
   },
   "gumdrop": {
-   "acc:bowtie": [
-    "hides a moved arm (20%)"
+   "acc:mug": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (48%)"
+   "acc:book": [
+    "swings over the face / letter (20%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (37%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (9%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (13%)"
    ]
   },
   "can": {
-   "acc:medal": [
-    "hides a moved arm (45%)"
+   "acc:mug": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (36%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (65%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (30%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (37%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (22%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (12%)"
    ]
   },
   "potato": {
-   "acc:bowtie": [
-    "hides a moved arm (15%)"
+   "acc:mug": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (50%)"
+   "acc:book": [
+    "swings over the face / letter (23%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (48%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (34%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (12%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (17%)"
    ]
   },
   "catear": {
-   "acc:medal": [
-    "hides a moved arm (23%)"
+   "acc:mug": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (20%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (37%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (28%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (10%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (5%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (19%)"
    ]
   },
   "bunnyear": {
-   "acc:bowtie": [
-    "hides a moved arm (17%)"
+   "acc:mug": [
+    "swings over the face / letter (3%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (47%)"
+   "acc:book": [
+    "swings over the face / letter (27%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (44%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (15%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (28%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (13%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (12%)"
    ]
   },
   "pumpkin": {
-   "acc:medal": [
-    "hides a moved arm (20%)"
+   "acc:mug": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (6%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (7%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (8%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (18%)"
    ]
   },
   "ghost": {
-   "acc:medal": [
-    "hides a moved arm (43%)"
+   "acc:mug": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:book": [
+    "swings over the face / letter (37%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (67%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (25%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (42%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (21%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (21%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (11%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (14%)"
    ]
   },
   "cone": {
-   "acc:bowtie": [
-    "hides a moved arm (33%)"
+   "acc:mug": [
+    "swings over the face / letter (7%)"
    ],
-   "acc:medal": [
-    "hides a moved arm (37%)"
+   "acc:book": [
+    "swings over the face / letter (43%)"
+   ],
+   "acc:pencil-big": [
+    "swings over the face / letter (67%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (33%)"
+   ],
+   "acc:magnifier": [
+    "swings over the face / letter (17%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (46%)"
+   ],
+   "acc:umbrella": [
+    "swings over the face / letter (17%)"
+   ],
+   "acc:icecream": [
+    "swings over the face / letter (28%)"
+   ],
+   "acc:spatula": [
+    "swings over the face / letter (16%)"
+   ],
+   "acc:mic": [
+    "swings over the face / letter (29%)"
+   ],
+   "acc:wand-star": [
+    "swings over the face / letter (14%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (18%)"
+   ]
+  },
+  "bat": {
+   "acc:book": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:flashlight": [
+    "swings over the face / letter (4%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (32%)"
    ]
   }
  },
@@ -541,6 +963,67 @@
   "hex": {
    "acc:candypail": [
     "swings over the face / letter (2%)"
+   ]
+  },
+  "moon": {
+   "acc:candypail": [
+    "swings over the face / letter (2%)"
+   ]
+  },
+  "egg": {
+   "acc:candypail": [
+    "swings over the face / letter (9%)"
+   ]
+  },
+  "bell": {
+   "acc:book": [
+    "swings over the face / letter (3%)"
+   ],
+   "acc:trophy": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:candypail": [
+    "swings over the face / letter (28%)"
+   ]
+  },
+  "triangle": {
+   "acc:candypail": [
+    "swings over the face / letter (10%)"
+   ]
+  },
+  "gumdrop": {
+   "acc:candypail": [
+    "swings over the face / letter (10%)"
+   ]
+  },
+  "can": {
+   "acc:candypail": [
+    "swings over the face / letter (11%)"
+   ]
+  },
+  "potato": {
+   "acc:candypail": [
+    "swings over the face / letter (10%)"
+   ]
+  },
+  "catear": {
+   "acc:candypail": [
+    "swings over the face / letter (9%)"
+   ]
+  },
+  "bunnyear": {
+   "acc:candypail": [
+    "swings over the face / letter (9%)"
+   ]
+  },
+  "ghost": {
+   "acc:candypail": [
+    "swings over the face / letter (13%)"
+   ]
+  },
+  "cone": {
+   "acc:candypail": [
+    "swings over the face / letter (19%)"
    ]
   }
  },
@@ -666,6 +1149,21 @@
   "mini": {
    "acc:candypail": [
     "swings over the face / letter (4%)"
+   ]
+  },
+  "bell": {
+   "acc:candypail": [
+    "swings over the face / letter (15%)"
+   ]
+  },
+  "ghost": {
+   "acc:candypail": [
+    "swings over the face / letter (2%)"
+   ]
+  },
+  "cone": {
+   "acc:candypail": [
+    "swings over the face / letter (6%)"
    ]
   }
  }

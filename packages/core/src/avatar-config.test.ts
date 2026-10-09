@@ -4,7 +4,7 @@ import parts from './avatar-parts.json';
 
 describe('avatar config (FINISH_SPEC AN3)', () => {
   it('has the spec catalog sizes', () => {
-    expect(AVATAR_BODIES).toHaveLength(29);   // 12 + the 17 new 2.8 shapes (item 50)
+    expect(AVATAR_BODIES).toHaveLength(30);   // 12 + the 18 new 2.8 shapes (item 50)
     expect(AVATAR_COLORS).toHaveLength(38);
     expect(AVATAR_COLORS.filter((c) => !c.pro)).toHaveLength(33);
     expect(AVATAR_HEADS.filter((h) => h !== 'none')).toHaveLength(37);   // 33 + 4 Halloween (10-05)

@@ -41,8 +41,7 @@ S = 1024
 # shape is narrow up top (cone, bell, triangle, bunny) the face sits lower; where the lobe is (moon) it sits in the lobe.
 DESIGN = {
     'heart':    (.30, .45, .50, .78),
-    # 'moon' (.40, .55, .60, .84): HELD BACK: the crescent's right mitten hangs from the lower horn and landmarks.py finds no
-    # notch pair for it (no arm = no rig). Needs a hand-placed mitten (LANDMARK_OVERRIDES) or a redraw with a clear arm.
+    'moon':     (.40, .55, .60, .84),   # the fat lobe (its right mitten is hand-placed: landmarks.ARM_OVERRIDES)
     'egg':      (.32, .48, .54, .84),
     'bell':     (.40, .54, .60, .84),
     'triangle': (.50, .61, .66, .88),

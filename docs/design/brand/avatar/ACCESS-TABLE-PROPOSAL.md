@@ -18,7 +18,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 - Not listed (always free): every `none`, the solid pattern, the auto backdrop, the default accessory color.
 - A part the player already **saved** is never stripped (grandfathered) even if it's gated later.
 
-**Totals** (258 options): 60 starter-free · 194 in Pro · 192 buyable · 60 earnable · 15 seasonal.
+**Totals** (259 options): 60 starter-free · 195 in Pro · 193 buyable · 60 earnable · 15 seasonal.
 
 ## Recommended free starter set
 
@@ -67,6 +67,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | mini | Pro · buy $1.99 |
 | hex | Pro · buy $2.99 · earn: Complete the entire Gauntlet (achievement `gauntlet_master`) |
 | heart | free (starter) |
+| moon | Pro · buy $1.99 |
 | egg | free (starter) |
 | bell | Pro · buy $1.99 |
 | triangle | Pro · buy $1.99 |

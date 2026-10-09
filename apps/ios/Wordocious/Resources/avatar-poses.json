@@ -1792,6 +1792,62 @@
    },
    "floor": 0.9625,
    "hips": 0.7727
+  },
+  "moon": {
+   "armL": {
+    "pivot": [
+     0.2202,
+     0.5094
+    ],
+    "hand": [
+     0.1721,
+     0.593
+    ],
+    "handR": [
+     0.0518,
+     0.0836
+    ],
+    "box": [
+     0.1187,
+     0.4953,
+     0.2672,
+     0.6844
+    ]
+   },
+   "armR": {
+    "pivot": [
+     0.7784,
+     0.5672
+    ],
+    "hand": [
+     0.826,
+     0.62
+    ],
+    "handR": [
+     0.062,
+     0.078
+    ],
+    "box": [
+     0.7172,
+     0.5656,
+     0.8812,
+     0.7125
+    ]
+   },
+   "feet": {
+    "pivot": [
+     0.4937,
+     0.8109
+    ],
+    "box": [
+     0.2203,
+     0.7781,
+     0.7688,
+     0.9656
+    ]
+   },
+   "floor": 0.9625,
+   "hips": 0.8109
   }
  },
  "withheld": {
@@ -1817,7 +1873,21 @@
     "acc:candypail",
     "acc:pencil-big"
    ],
+   "bell": [
+    "acc:book",
+    "acc:candypail",
+    "acc:trophy"
+   ],
    "blob": [
+    "acc:candypail"
+   ],
+   "bunnyear": [
+    "acc:candypail"
+   ],
+   "can": [
+    "acc:candypail"
+   ],
+   "catear": [
     "acc:candypail"
    ],
    "chunky": [
@@ -1829,6 +1899,18 @@
    "cloud": [
     "acc:candypail"
    ],
+   "cone": [
+    "acc:candypail"
+   ],
+   "egg": [
+    "acc:candypail"
+   ],
+   "ghost": [
+    "acc:candypail"
+   ],
+   "gumdrop": [
+    "acc:candypail"
+   ],
    "hex": [
     "acc:candypail"
    ],
@@ -1837,16 +1919,31 @@
     "acc:candypail",
     "acc:trophy"
    ],
+   "moon": [
+    "acc:candypail"
+   ],
+   "potato": [
+    "acc:candypail"
+   ],
    "tall": [
     "acc:book",
     "acc:candypail",
     "acc:trophy"
+   ],
+   "triangle": [
+    "acc:candypail"
    ],
    "wide": [
     "acc:candypail"
    ]
   },
   "hug": {
+   "bat": [
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:trophy"
+   ],
    "bean": [
     "acc:book",
     "acc:candypail",
@@ -1862,8 +1959,18 @@
     "acc:wand-star"
    ],
    "bell": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "blob": [
     "acc:book",
@@ -1880,14 +1987,55 @@
     "acc:wand-star"
    ],
    "bunnyear": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
+   ],
+   "burst": [
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:pencil-big",
+    "acc:trophy",
+    "acc:umbrella"
    ],
    "can": [
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "catear": [
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "chunky": [
     "acc:book",
@@ -1931,12 +2079,21 @@
     "acc:wand-star"
    ],
    "cone": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "diamond": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:candypail"
    ],
    "drop": [
     "acc:book",
@@ -1945,18 +2102,59 @@
     "acc:trophy"
    ],
    "egg": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
+   ],
+   "flower": [
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:pencil-big",
+    "acc:trophy",
+    "acc:umbrella"
    ],
    "ghost": [
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "gumdrop": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "heart": [
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:trophy"
    ],
    "hex": [
     "acc:book",
@@ -1985,6 +2183,15 @@
     "acc:umbrella",
     "acc:wand-star"
    ],
+   "moon": [
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella"
+   ],
    "pear": [
     "acc:book",
     "acc:candypail",
@@ -1998,15 +2205,35 @@
     "acc:wand-star"
    ],
    "potato": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "pumpkin": [
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:trophy",
+    "acc:umbrella"
    ],
    "shield": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:pencil-big",
+    "acc:trophy",
+    "acc:umbrella"
    ],
    "star": [
     "acc:candypail"
@@ -2027,8 +2254,18 @@
     "acc:wand-star"
    ],
    "triangle": [
-    "acc:bowtie",
-    "acc:medal"
+    "acc:book",
+    "acc:candypail",
+    "acc:flashlight",
+    "acc:icecream",
+    "acc:magnifier",
+    "acc:mic",
+    "acc:mug",
+    "acc:pencil-big",
+    "acc:spatula",
+    "acc:trophy",
+    "acc:umbrella",
+    "acc:wand-star"
    ],
    "wide": [
     "acc:book",
@@ -2079,6 +2316,15 @@
   },
   "wave": {
    "bean": [
+    "acc:candypail"
+   ],
+   "bell": [
+    "acc:candypail"
+   ],
+   "cone": [
+    "acc:candypail"
+   ],
+   "ghost": [
     "acc:candypail"
    ],
    "mini": [

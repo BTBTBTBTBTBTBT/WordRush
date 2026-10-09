@@ -646,6 +646,7 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-av-body-cloud': [640, 640],
   'art-av-body-drop': [640, 640],
   'art-av-body-hex': [640, 640],
+  'art-av-body-moon': [640, 640],
   'art-av-body-bat': [640, 640],
   'art-av-body-cone': [640, 640],
   'art-av-body-ghost': [640, 640],

@@ -13,9 +13,9 @@ import { AVATAR_POSES } from './avatar-pose';
 // 14 patterns, tintable white accessories (accColor). New ids are appended so stored configs stay valid.
 export const AVATAR_BODIES = ['classic', 'tall', 'wide', 'blob', 'bean', 'star', 'drop', 'pear', 'cloud', 'chunky', 'mini', 'hex',
   // item 50 (2.8): the new shapes; pumpkin / ghost / bat / cone are the Halloween bodies (manifest bodies.<id>.season)
-  'heart', 'egg', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'gumdrop', 'can', 'potato', 'catear', 'bunnyear', 'pumpkin', 'ghost', 'cone', 'bat'] as const;
+  'heart', 'moon', 'egg', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'gumdrop', 'can', 'potato', 'catear', 'bunnyear', 'pumpkin', 'ghost', 'cone', 'bat'] as const;
 /** The bodies added in 2.8: the maker's Body tab tags them NEW. */
-export const AVATAR_NEW_BODIES: readonly string[] = ['heart', 'egg', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'gumdrop', 'can', 'potato', 'catear', 'bunnyear', 'pumpkin', 'ghost', 'cone', 'bat'];
+export const AVATAR_NEW_BODIES: readonly string[] = ['heart', 'moon', 'egg', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'gumdrop', 'can', 'potato', 'catear', 'bunnyear', 'pumpkin', 'ghost', 'cone', 'bat'];
 export const AVATAR_PATTERNS = [
   'solid', 'twotone', 'stripes', 'dots', 'gradient', 'sparkle',
   'hearts', 'stars', 'zigzag', 'checkers', 'tiedye', 'leopard', 'galaxy', 'colorblock',
@@ -214,7 +214,7 @@ export type AvatarDisplay = 'mascot' | 'photo';
 /** Pro-only options (free players see the gold PRO pill → the Go Pro popup). */
 export const AVATAR_PRO_ONLY: Readonly<{ body: readonly string[]; head: readonly AvatarHead[]; neck: readonly AvatarNeck[]; held: readonly string[]; wrap: readonly string[]; frame: readonly AvatarFrame[]; bg: readonly string[]; color: readonly string[] }> = {
   // 2.8 bodies (item 50): four free (heart, egg, gumdrop, can), nine Pro; the Halloween four are free in season
-  body: ['bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'catear', 'bunnyear', 'potato'],
+  body: ['moon', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'catear', 'bunnyear', 'potato'],
   head: ['crown', 'halo', 'tiara'],
   neck: ['wings', 'chain'],
   held: ['wand-star'],

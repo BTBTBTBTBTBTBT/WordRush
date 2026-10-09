@@ -206,9 +206,9 @@ public enum AvatarCatalog {
     // Round 2 (founder 10-03): ~2× every category, CHEEKS, 33 colors + 5 Pro specials, 14 patterns, accColor.
     public static let bodies = ["classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex",
         // item 50 (2.8): the new shapes; pumpkin / ghost / bat / cone are the Halloween bodies (manifest bodies.<id>.season)
-        "heart", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat"]
+        "heart", "moon", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat"]
     /// The bodies added in 2.8: the maker's Body tab tags them NEW.
-    public static let newBodies: Set<String> = ["heart", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat"]
+    public static let newBodies: Set<String> = ["heart", "moon", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat"]
     public static let patterns = ["solid", "twotone", "stripes", "dots", "gradient", "sparkle",
                                   "hearts", "stars", "zigzag", "checkers", "tiedye", "leopard", "galaxy", "colorblock"]
     public static let eyes = ["beady", "happy", "sparkly", "sleepy", "wink", "hearts", "stars", "glasses", "cyclops",
@@ -321,7 +321,7 @@ public enum AvatarCatalog {
     public static func color(_ id: String) -> AvatarColor { colors.first { $0.id == id } ?? colors[0] }
 
     /// Pro-only options (free players see the gold PRO pill → the Go Pro page).
-    public static let proOnlyBodies = ["bell", "triangle", "diamond", "shield", "burst", "flower", "catear", "bunnyear", "potato"]
+    public static let proOnlyBodies = ["moon", "bell", "triangle", "diamond", "shield", "burst", "flower", "catear", "bunnyear", "potato"]
     public static let proOnlyHeads = ["crown", "halo", "tiara"]
     public static let proOnlyNecks = ["wings", "chain"]
     public static let proOnlyFrames = ["diamond", "pro"]

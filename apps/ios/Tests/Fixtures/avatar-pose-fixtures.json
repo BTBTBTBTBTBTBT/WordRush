@@ -1859,6 +1859,62 @@
         },
         "floor": 0.9625,
         "hips": 0.7727
+      },
+      "moon": {
+        "armL": {
+          "pivot": [
+            0.2202,
+            0.5094
+          ],
+          "hand": [
+            0.1721,
+            0.593
+          ],
+          "handR": [
+            0.0518,
+            0.0836
+          ],
+          "box": [
+            0.1187,
+            0.4953,
+            0.2672,
+            0.6844
+          ]
+        },
+        "armR": {
+          "pivot": [
+            0.7784,
+            0.5672
+          ],
+          "hand": [
+            0.826,
+            0.62
+          ],
+          "handR": [
+            0.062,
+            0.078
+          ],
+          "box": [
+            0.7172,
+            0.5656,
+            0.8812,
+            0.7125
+          ]
+        },
+        "feet": {
+          "pivot": [
+            0.4937,
+            0.8109
+          ],
+          "box": [
+            0.2203,
+            0.7781,
+            0.7688,
+            0.9656
+          ]
+        },
+        "floor": 0.9625,
+        "hips": 0.8109
       }
     },
     "withheld": {
@@ -1884,7 +1940,21 @@
           "acc:candypail",
           "acc:pencil-big"
         ],
+        "bell": [
+          "acc:book",
+          "acc:candypail",
+          "acc:trophy"
+        ],
         "blob": [
+          "acc:candypail"
+        ],
+        "bunnyear": [
+          "acc:candypail"
+        ],
+        "can": [
+          "acc:candypail"
+        ],
+        "catear": [
           "acc:candypail"
         ],
         "chunky": [
@@ -1896,6 +1966,18 @@
         "cloud": [
           "acc:candypail"
         ],
+        "cone": [
+          "acc:candypail"
+        ],
+        "egg": [
+          "acc:candypail"
+        ],
+        "ghost": [
+          "acc:candypail"
+        ],
+        "gumdrop": [
+          "acc:candypail"
+        ],
         "hex": [
           "acc:candypail"
         ],
@@ -1904,16 +1986,31 @@
           "acc:candypail",
           "acc:trophy"
         ],
+        "moon": [
+          "acc:candypail"
+        ],
+        "potato": [
+          "acc:candypail"
+        ],
         "tall": [
           "acc:book",
           "acc:candypail",
           "acc:trophy"
+        ],
+        "triangle": [
+          "acc:candypail"
         ],
         "wide": [
           "acc:candypail"
         ]
       },
       "hug": {
+        "bat": [
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:trophy"
+        ],
         "bean": [
           "acc:book",
           "acc:candypail",
@@ -1929,8 +2026,18 @@
           "acc:wand-star"
         ],
         "bell": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "blob": [
           "acc:book",
@@ -1947,14 +2054,55 @@
           "acc:wand-star"
         ],
         "bunnyear": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
+        ],
+        "burst": [
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:pencil-big",
+          "acc:trophy",
+          "acc:umbrella"
         ],
         "can": [
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "catear": [
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "chunky": [
           "acc:book",
@@ -1998,12 +2146,21 @@
           "acc:wand-star"
         ],
         "cone": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "diamond": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:candypail"
         ],
         "drop": [
           "acc:book",
@@ -2012,18 +2169,59 @@
           "acc:trophy"
         ],
         "egg": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
+        ],
+        "flower": [
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:pencil-big",
+          "acc:trophy",
+          "acc:umbrella"
         ],
         "ghost": [
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "gumdrop": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "heart": [
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:trophy"
         ],
         "hex": [
           "acc:book",
@@ -2052,6 +2250,15 @@
           "acc:umbrella",
           "acc:wand-star"
         ],
+        "moon": [
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella"
+        ],
         "pear": [
           "acc:book",
           "acc:candypail",
@@ -2065,15 +2272,35 @@
           "acc:wand-star"
         ],
         "potato": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "pumpkin": [
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:trophy",
+          "acc:umbrella"
         ],
         "shield": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:pencil-big",
+          "acc:trophy",
+          "acc:umbrella"
         ],
         "star": [
           "acc:candypail"
@@ -2094,8 +2321,18 @@
           "acc:wand-star"
         ],
         "triangle": [
-          "acc:bowtie",
-          "acc:medal"
+          "acc:book",
+          "acc:candypail",
+          "acc:flashlight",
+          "acc:icecream",
+          "acc:magnifier",
+          "acc:mic",
+          "acc:mug",
+          "acc:pencil-big",
+          "acc:spatula",
+          "acc:trophy",
+          "acc:umbrella",
+          "acc:wand-star"
         ],
         "wide": [
           "acc:book",
@@ -2146,6 +2383,15 @@
       },
       "wave": {
         "bean": [
+          "acc:candypail"
+        ],
+        "bell": [
+          "acc:candypail"
+        ],
+        "cone": [
+          "acc:candypail"
+        ],
+        "ghost": [
           "acc:candypail"
         ],
         "mini": [
@@ -16542,6 +16788,502 @@
           -0.07299999999999995
         ]
       }
+    },
+    {
+      "body": "moon",
+      "pose": "wave",
+      "m": {
+        "root": [
+          0.9993908270190958,
+          0.03489949670250097,
+          -0.03489949670250097,
+          0.9993908270190958,
+          0.02860075057673045,
+          -0.016735903151809506
+        ],
+        "base": [
+          0.9993908270190958,
+          0.03489949670250097,
+          -0.03489949670250097,
+          0.9993908270190958,
+          0.02860075057673045,
+          -0.016735903151809506
+        ],
+        "armL": [
+          -0.4999999999999998,
+          0.8660254037844389,
+          -0.8660254037844389,
+          -0.4999999999999998,
+          0.7425155096401356,
+          0.552649971253984
+        ],
+        "armR": [
+          0.9993908270190958,
+          0.03489949670250097,
+          -0.03489949670250097,
+          0.9993908270190958,
+          0.028600750576730505,
+          -0.016735903151809506
+        ],
+        "handL": [
+          0.8660254037844387,
+          0.49999999999999994,
+          -0.49999999999999994,
+          0.8660254037844387,
+          0.2903694732046614,
+          -0.19441012119888607
+        ],
+        "handR": [
+          0.9993908270190958,
+          0.03489949670250097,
+          -0.03489949670250097,
+          0.9993908270190958,
+          0.028600750576730505,
+          -0.016735903151809506
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "pose": "cheer",
+      "m": {
+        "root": [
+          0.985,
+          0,
+          0,
+          1.03,
+          0.007405500000000009,
+          -0.024326999999999988
+        ],
+        "base": [
+          0.985,
+          0,
+          0,
+          1.03,
+          0.007405500000000009,
+          -0.024326999999999988
+        ],
+        "armL": [
+          -0.6965001794687492,
+          0.728319984622144,
+          -0.6965001794687493,
+          -0.7283199846221439,
+          0.6979940309403995,
+          0.6903851395527238
+        ],
+        "armR": [
+          -0.6965001794687492,
+          -0.728319984622144,
+          0.6965001794687493,
+          -0.7283199846221439,
+          0.9557053379037997,
+          1.519316371307557
+        ],
+        "handL": [
+          0.8723029863527926,
+          0.5036243639856991,
+          -0.5036243639856991,
+          0.8723029863527926,
+          0.31362764752106337,
+          -0.22011416592388122
+        ],
+        "handR": [
+          0.8723029863527926,
+          -0.5036243639856991,
+          0.5036243639856991,
+          0.8723029863527926,
+          -0.2205430714653025,
+          0.34133154665739285
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "pose": "hips",
+      "m": {
+        "root": [
+          1.01,
+          0,
+          0,
+          1,
+          -0.004937000000000025,
+          0
+        ],
+        "base": [
+          1.01,
+          0,
+          0,
+          1,
+          -0.004937000000000025,
+          0
+        ],
+        "armL": [
+          0.9490895469937676,
+          -0.3420201433256687,
+          0.3454403447589254,
+          0.9396926207859084,
+          -0.16749182986822422,
+          0.15603341453197056
+        ],
+        "armR": [
+          0.9490895469937676,
+          0.3420201433256687,
+          -0.3454403447589254,
+          0.9396926207859084,
+          0.2384094601673139,
+          -0.18202213407446777
+        ],
+        "handL": [
+          0.9454696427035735,
+          -0.3407156508380221,
+          0.3407156508380221,
+          0.9454696427035735,
+          -0.16406710084478612,
+          0.15238313737767117
+        ],
+        "handR": [
+          0.9454696427035735,
+          0.3407156508380221,
+          -0.3407156508380221,
+          0.9454696427035735,
+          0.23847019088005417,
+          -0.18452637686862405
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "pose": "shrug",
+      "m": {
+        "root": [
+          1.0075396907624226,
+          -0.07045403848156656,
+          0.06871012663796343,
+          0.9826005895059268,
+          -0.05943938702013252,
+          0.048892340767993314
+        ],
+        "base": [
+          1.0075396907624226,
+          -0.07045403848156656,
+          0.06871012663796343,
+          0.9826005895059268,
+          -0.05943938702013252,
+          0.048892340767993314
+        ],
+        "armL": [
+          0.5336786741110695,
+          0.8345086576955022,
+          -0.8573472941365674,
+          0.5235102580341745,
+          0.5142336045567126,
+          0.04908914928880587
+        ],
+        "armR": [
+          0.41234379227102586,
+          -0.9006609927965389,
+          0.9218621952004498,
+          0.39909581066519567,
+          -0.08245160735540036,
+          0.991698323932523
+        ],
+        "handL": [
+          0.8637925098077663,
+          0.49871083806149624,
+          -0.49871083806149624,
+          0.8637925098077663,
+          0.24474959498079388,
+          -0.0949074212539216
+        ],
+        "handR": [
+          0.8637925098077663,
+          -0.49871083806149624,
+          0.49871083806149624,
+          0.8637925098077663,
+          -0.19299440661459677,
+          0.371575542652984
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "pose": "flex",
+      "m": {
+        "root": [
+          1.025,
+          0,
+          0,
+          0.99,
+          -0.012342499999999923,
+          0.008109000000000033
+        ],
+        "base": [
+          1.025,
+          0,
+          0,
+          0.99,
+          -0.012342499999999923,
+          0.008109000000000033
+        ],
+        "armL": [
+          -0.03577198412006325,
+          0.9893969187489048,
+          -1.024375597694573,
+          -0.034550501735475726,
+          0.7328064203688534,
+          0.2626498240755425
+        ],
+        "armR": [
+          -0.03577198412006325,
+          -0.9893969187489048,
+          1.024375597694573,
+          -0.034550501735475726,
+          0.24258657342669543,
+          1.3098806061385093
+        ],
+        "handL": [
+          0.8723889614157208,
+          0.5036740017114243,
+          -0.5036740017114243,
+          0.8723889614157208,
+          0.2677358752241379,
+          -0.19157236355096663
+        ],
+        "handR": [
+          0.8723889614157208,
+          -0.5036740017114243,
+          0.5036740017114243,
+          0.8723889614157208,
+          -0.1847193780763099,
+          0.3463710095118086
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "pose": "hug",
+      "m": {
+        "root": [
+          0.975,
+          0,
+          0,
+          1,
+          0.012342500000000034,
+          0
+        ],
+        "base": [
+          0.975,
+          0,
+          0,
+          1,
+          0.012342500000000034,
+          0
+        ],
+        "armL": [
+          0.6524023411998867,
+          -0.7431448254773942,
+          0.7245662048404594,
+          0.6691306063588582,
+          -0.18821552027794503,
+          0.43218535969091976
+        ],
+        "armR": [
+          0.6524023411998867,
+          0.7431448254773942,
+          -0.7245662048404594,
+          0.6691306063588582,
+          0.5769264689955169,
+          -0.290794812078348
+        ],
+        "handL": [
+          0.8551315688243535,
+          -0.4937104414532874,
+          0.4937104414532874,
+          0.8551315688243535,
+          -0.08620775266352271,
+          0.2789591314583323
+        ],
+        "handR": [
+          0.8551315688243535,
+          0.4937104414532874,
+          -0.4937104414532874,
+          0.8551315688243535,
+          0.26634155367766066,
+          -0.20008260760304275
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "pose": "sit",
+      "m": {
+        "root": [
+          1.02,
+          0,
+          0,
+          0.95,
+          -0.00987400000000005,
+          0.07554500000000008
+        ],
+        "base": [
+          1.02,
+          0,
+          0,
+          0.95,
+          -0.00987400000000005,
+          0.07554500000000008
+        ],
+        "armL": [
+          0.9700776466210567,
+          0.2935661446562,
+          -0.31519733426244634,
+          0.9035036904803958,
+          0.16168042428733342,
+          0.07258695501599122
+        ],
+        "armR": [
+          0.9700776466210567,
+          -0.2935661446562,
+          0.31519733426244634,
+          0.9035036904803958,
+          -0.14979436812349012,
+          0.3684295937599056
+        ],
+        "handL": [
+          0.942180636969327,
+          0.28512391572800966,
+          -0.28512391572800966,
+          0.942180636969327,
+          0.14864796245747516,
+          0.051104433346596645
+        ],
+        "handR": [
+          0.942180636969327,
+          -0.28512391572800966,
+          0.28512391572800966,
+          0.942180636969327,
+          -0.10810591865981078,
+          0.33747660584208306
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0.03500000000000003
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "pose": "jump",
+      "m": {
+        "root": [
+          0.98,
+          0,
+          0,
+          1.03,
+          0.009873999999999994,
+          -0.10932699999999995
+        ],
+        "base": [
+          0.98,
+          0,
+          0,
+          1.03,
+          0.009873999999999994,
+          -0.10932699999999995
+        ],
+        "armL": [
+          -0.33517974045915533,
+          0.9678833994094858,
+          -0.9208987683701902,
+          -0.35228074762543876,
+          0.7685824114568809,
+          0.36107888829042967
+        ],
+        "armR": [
+          -0.33517974045915533,
+          -0.9678833994094858,
+          0.9208987683701902,
+          -0.35228074762543876,
+          0.5112761285538344,
+          1.4075030781534927
+        ],
+        "handL": [
+          0.870086202625924,
+          0.5023445033042563,
+          -0.5023445033042563,
+          0.870086202625924,
+          0.3129534634678398,
+          -0.28366546918891844
+        ],
+        "handR": [
+          0.870086202625924,
+          -0.5023445033042563,
+          0.5023445033042563,
+          0.870086202625924,
+          -0.22476989609356213,
+          0.2651004408147283
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          -0.07299999999999995
+        ]
+      }
     }
   ],
   "frames": [
@@ -24814,7 +25556,9 @@
     {
       "pose": "wave",
       "body": "bell",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "wave",
@@ -24874,16 +25618,25 @@
     {
       "pose": "wave",
       "body": "ghost",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "wave",
       "body": "cone",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "wave",
       "body": "bat",
+      "items": []
+    },
+    {
+      "pose": "wave",
+      "body": "moon",
       "items": []
     },
     {
@@ -25037,6 +25790,11 @@
     {
       "pose": "cheer",
       "body": "bat",
+      "items": []
+    },
+    {
+      "pose": "cheer",
+      "body": "moon",
       "items": []
     },
     {
@@ -25130,17 +25888,25 @@
     {
       "pose": "hips",
       "body": "egg",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
       "body": "bell",
-      "items": []
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:trophy"
+      ]
     },
     {
       "pose": "hips",
       "body": "triangle",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
@@ -25165,27 +25931,37 @@
     {
       "pose": "hips",
       "body": "gumdrop",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
       "body": "can",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
       "body": "potato",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
       "body": "catear",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
       "body": "bunnyear",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
@@ -25195,17 +25971,28 @@
     {
       "pose": "hips",
       "body": "ghost",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
       "body": "cone",
-      "items": []
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "hips",
       "body": "bat",
       "items": []
+    },
+    {
+      "pose": "hips",
+      "body": "moon",
+      "items": [
+        "acc:candypail"
+      ]
     },
     {
       "pose": "shrug",
@@ -25359,6 +26146,11 @@
       "items": []
     },
     {
+      "pose": "shrug",
+      "body": "moon",
+      "items": []
+    },
+    {
       "pose": "flex",
       "body": "classic",
       "items": []
@@ -25504,6 +26296,11 @@
     {
       "pose": "flex",
       "body": "bat",
+      "items": []
+    },
+    {
+      "pose": "flex",
+      "body": "moon",
       "items": []
     },
     {
@@ -25702,123 +26499,270 @@
       "pose": "hug",
       "body": "heart",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:trophy"
       ]
     },
     {
       "pose": "hug",
       "body": "egg",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "bell",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "triangle",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "diamond",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:candypail"
       ]
     },
     {
       "pose": "hug",
       "body": "shield",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
       ]
     },
     {
       "pose": "hug",
       "body": "burst",
-      "items": []
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
+      ]
     },
     {
       "pose": "hug",
       "body": "flower",
-      "items": []
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
+      ]
     },
     {
       "pose": "hug",
       "body": "gumdrop",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "can",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "potato",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "catear",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "bunnyear",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "pumpkin",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
       ]
     },
     {
       "pose": "hug",
       "body": "ghost",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "cone",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "hug",
       "body": "bat",
-      "items": []
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:trophy"
+      ]
+    },
+    {
+      "pose": "hug",
+      "body": "moon",
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella"
+      ]
     },
     {
       "pose": "sit",
@@ -25974,6 +26918,11 @@
       "items": []
     },
     {
+      "pose": "sit",
+      "body": "moon",
+      "items": []
+    },
+    {
       "pose": "jump",
       "body": "classic",
       "items": []
@@ -26125,6 +27074,11 @@
     {
       "pose": "jump",
       "body": "bat",
+      "items": []
+    },
+    {
+      "pose": "jump",
+      "body": "moon",
       "items": []
     },
     {
@@ -26323,123 +27277,270 @@
       "pose": "clap",
       "body": "heart",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:trophy"
       ]
     },
     {
       "pose": "clap",
       "body": "egg",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "bell",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "triangle",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "diamond",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:candypail"
       ]
     },
     {
       "pose": "clap",
       "body": "shield",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
       ]
     },
     {
       "pose": "clap",
       "body": "burst",
-      "items": []
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
+      ]
     },
     {
       "pose": "clap",
       "body": "flower",
-      "items": []
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
+      ]
     },
     {
       "pose": "clap",
       "body": "gumdrop",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "can",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "potato",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "catear",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "bunnyear",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "pumpkin",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:trophy",
+        "acc:umbrella"
       ]
     },
     {
       "pose": "clap",
       "body": "ghost",
       "items": [
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "cone",
       "items": [
-        "acc:bowtie",
-        "acc:medal"
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:icecream",
+        "acc:magnifier",
+        "acc:mic",
+        "acc:mug",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella",
+        "acc:wand-star"
       ]
     },
     {
       "pose": "clap",
       "body": "bat",
-      "items": []
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:trophy"
+      ]
+    },
+    {
+      "pose": "clap",
+      "body": "moon",
+      "items": [
+        "acc:book",
+        "acc:candypail",
+        "acc:flashlight",
+        "acc:pencil-big",
+        "acc:spatula",
+        "acc:trophy",
+        "acc:umbrella"
+      ]
     }
   ],
   "codePoses": {
@@ -28249,6 +29350,67 @@
           0.8595056718835543,
           0.2540599940687028,
           -0.33160821088323733
+        ],
+        "feet": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "body": "moon",
+      "m": {
+        "root": [
+          0.985,
+          0,
+          0,
+          1,
+          0.007405500000000009,
+          0
+        ],
+        "base": [
+          0.985,
+          0,
+          0,
+          1,
+          0.007405500000000009,
+          0
+        ],
+        "armL": [
+          0.40063559342966315,
+          -0.9135454576426009,
+          0.8998422757779618,
+          0.40673664307580015,
+          -0.2237971129545055,
+          0.5133710637900881
+        ],
+        "armR": [
+          0.40063559342966315,
+          0.9135454576426009,
+          -0.8998422757779618,
+          0.40673664307580015,
+          0.8741652928956103,
+          -0.36460480818159424
+        ],
+        "handL": [
+          0.8595056718835543,
+          -0.49623583103198016,
+          0.49623583103198016,
+          0.8595056718835543,
+          -0.06343003172205314,
+          0.17306004296740213
+        ],
+        "handR": [
+          0.8595056718835543,
+          0.49623583103198016,
+          -0.49623583103198016,
+          0.8595056718835543,
+          0.24490261235018757,
+          -0.3006238544620292
         ],
         "feet": [
           1,
