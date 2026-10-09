@@ -49,6 +49,10 @@ object AgeCheck {
     fun parse(raw: String?, now: Int = currentYear()): Stored? {
         if (raw.isNullOrBlank()) return null
         return runCatching {
+            // Parity with core parseAgeCheckStored: the year must be a JSON NUMBER (kotlinx would coerce "1990").
+            val yearEl = (Json.parseToJsonElement(raw) as? kotlinx.serialization.json.JsonObject)?.get("year")
+                as? kotlinx.serialization.json.JsonPrimitive
+            if (yearEl == null || yearEl.isString) return null
             val d = lenient.decodeFromString<Dto>(raw)
             when (verdict(d.year, now)) {
                 Verdict.INVALID -> null

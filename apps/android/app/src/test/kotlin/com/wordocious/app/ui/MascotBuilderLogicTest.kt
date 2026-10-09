@@ -29,9 +29,9 @@ class MascotBuilderLogicTest {
         assertEquals(10, MascotBuilderLogic.options(BuilderTab.PRESETS).size)
         // The full catalogs (round 2): 33 hats + None, 9 face + 11 neck/back extras + None, auto + 18 backdrops.
         // no fit manifest here: seasons are unknown, so the 4 Halloween hats list too (seasonalPartsFollowTheSeason covers the filter)
-        assertEquals(38, MascotBuilderLogic.options(BuilderTab.HATS).size)
+        assertEquals(44, MascotBuilderLogic.options(BuilderTab.HATS).size)   // + goth/emo/punk hats (10-09)
         // None + 9 faces + 11 neck items + the 10-05 integrated parts (12 held, 5 wraps, 4 shoes, 4 buddies, 6 brows, 4 extras)
-        assertEquals(21 + 35 + 7, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)   // + 7 Halloween (bat wings, cat tail, collar, pail, 3 buddies)
+        assertEquals(21 + 35 + 7 + 12, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)   // + 7 Halloween (bat wings, cat tail, collar, pail, 3 buddies) + 12 goth/emo/punk extras (10-09)
         assertEquals(19, MascotBuilderLogic.options(BuilderTab.BACKDROP).size)
         assertEquals("none", MascotBuilderLogic.options(BuilderTab.HATS).first().id)
         assertEquals("auto", MascotBuilderLogic.options(BuilderTab.BACKDROP).first().id)
@@ -94,9 +94,9 @@ class MascotBuilderLogicTest {
         pro.forEach { assertTrue(it.toString(), MascotBuilderLogic.proLocked(it, isPro = false)) }
         assertFalse(MascotBuilderLogic.proLocked(BuilderOption("head", "wizard"), isPro = false))
         assertFalse(MascotBuilderLogic.proLocked(BuilderOption("bg", "sunset"), isPro = false))
-        // Exactly the ★ items are Pro only.
+        // The ★ items stay Pro only (the 10-09 packs add their own Pro pieces on top).
         val all = BuilderTab.entries.flatMap { MascotBuilderLogic.options(it) }
-        assertEquals(pro.toSet(), all.filter { MascotBuilderLogic.isProOnly(it) }.toSet())
+        assertTrue(all.filter { MascotBuilderLogic.isProOnly(it) }.toSet().containsAll(pro))
         // Pro players never see a PRO lock.
         all.forEach { assertFalse(MascotBuilderLogic.proLocked(it, isPro = true)) }
         val crown = BuilderOption("head", "crown")
@@ -177,14 +177,15 @@ class MascotBuilderLogicTest {
             MascotBuilderLogic.fit = fit
             MascotBuilderLogic.season = null
             MascotBuilderLogic.saved = null
-            assertFalse(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "pumpkinhat" })
+            // Seasonal parts never disappear (10-09): off-season they stay in their own tab; only the Season shelf empties.
+            assertTrue(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "pumpkinhat" })
             assertTrue(MascotBuilderLogic.options(BuilderTab.SEASON).isEmpty())
             repeat(40) { assertFalse(MascotBuilderLogic.randomize(AvatarConfig(), true, 100).head in setOf("pumpkinhat", "candycornhat", "witchnight", "batears")) }
             MascotBuilderLogic.saved = AvatarConfig().copy(head = "pumpkinhat")
             assertTrue(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "pumpkinhat" })
-            assertFalse(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "witchnight" })
+            assertTrue(MascotBuilderLogic.options(BuilderTab.HATS).any { it.id == "witchnight" })
             MascotBuilderLogic.season = "halloween"
-            assertEquals("pumpkinhat", MascotBuilderLogic.options(BuilderTab.SEASON).first().id)
+            assertTrue(MascotBuilderLogic.options(BuilderTab.SEASON).any { it.id == "pumpkinhat" })   // the shelf now leads with the season bodies
             assertTrue(MascotBuilderLogic.options(BuilderTab.EXTRAS).any { it.id == "batwings" })
             assertEquals("halloween", MascotBuilderLogic.seasonOf(BuilderOption("pet", "ghost")))
             assertFalse(MascotBuilderLogic.isNew(BuilderOption("pet", "ghost")))

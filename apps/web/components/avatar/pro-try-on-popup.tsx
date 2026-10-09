@@ -3,6 +3,7 @@
 import * as React from 'react';
 import type { AvatarConfig, AvatarPart } from '@wordle-duel/core';
 import { CastButton } from '@/components/ui/cast-button';
+import { QuietButton } from '@/components/ui/family-button';
 import { POPUP_DIM, POPUP_SHADOW, PopupBar, popupCard } from '@/components/ui/soft-popup';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { avatarOptionLabel, type BuilderField } from '@/lib/avatar-render';
@@ -39,9 +40,9 @@ export function ProTryOnPopup({ config, initial, parts, onKeepTrying, onSaveWith
             <CastButton color="gold" size="md" block onClick={() => openGoProPopup({ reason: 'Pro mascot styles' })}>Go Pro</CastButton>
             {buy}
             <CastButton color="peach" size="md" block onClick={onKeepTrying}>Keep trying on</CastButton>
-            <button type="button" onClick={onSaveWithout} className="text-[12.5px] font-black py-1.5 border-0 bg-transparent cursor-pointer" style={{ color: '#9a3412' }}>
+            <QuietButton size="sm" block onClick={onSaveWithout}>
               Save without {names.length === 1 ? 'it' : 'them'}
-            </button>
+            </QuietButton>
           </div>
         </div>
       </div>

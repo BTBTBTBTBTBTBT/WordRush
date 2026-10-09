@@ -48,6 +48,8 @@ fun PlayerAvatar(
      * Photos keep the framed tile, and with the living mascot off the tile is drawn.
      */
     standing: Boolean = false,
+    /** Item 11b: wear this head part for this one drawing only (the Wednesday wizard hat on the Leaderboard stage). */
+    headOverride: String? = null,
 ) {
     val row = remember(userId, username, avatarUrl, config, castId, frame, accentHex) {
         AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)

@@ -876,7 +876,7 @@ struct HighlightsReel: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.squishCard)
                 .disabled(!item.tapsCalendar)
             } else {
                 VStack(alignment: .leading, spacing: 8) {

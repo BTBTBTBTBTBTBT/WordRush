@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.wordocious.app.ui
 
 import androidx.compose.animation.core.Animatable
