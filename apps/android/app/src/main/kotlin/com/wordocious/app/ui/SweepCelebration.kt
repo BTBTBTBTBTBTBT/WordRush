@@ -66,7 +66,8 @@ fun SweepCelebration(
     val rows = remember(byMode, more) { DailySweepShare.rows(byMode, more) }
     val title = if (flawless) (if (more) MoreSweepTier.FLAWLESS.title else "FLAWLESS VICTORY!")
                 else (if (more) MoreSweepTier.SWEEP.title else "DAILY SWEEP!")
-    val noun = if (more) "puzzles" else "daily puzzles"
+    // 2.8 item 7: current naming ("All 10 Puzzles done today!").
+    val noun = if (more) "Puzzles" else "Dailies"
     // G3: the moment's color — pink for Flawless, gold for the Sweep.
     val accent = if (flawless) MomentInk.flawless else MomentInk.sweep
     val ink = darkenInk(accent)
@@ -108,7 +109,8 @@ fun SweepCelebration(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp).padding(bottom = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            // 2.8 item 7: centered on BOTH axes on every screen size (the Column is the screen tall).
+            verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 PopupClose(closeAndMaybeReview, tint = if (dark) WTheme.text else ink)
@@ -125,7 +127,7 @@ fun SweepCelebration(
                 height = 210.dp, glow = Color.White, delayMs = 120,
             )
             Text(
-                if (flawless) "All ${totals.total} $noun won today" else "All ${totals.total} $noun completed today",
+                "All ${totals.total} $noun ${if (flawless) "won" else "done"} today!",
                 fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (dark) WTheme.text else ink,
                 textAlign = TextAlign.Center,
             )
@@ -140,24 +142,24 @@ fun SweepCelebration(
                 accent, Modifier.fillMaxWidth(), corner = 18.dp,
                 contentPadding = PaddingValues(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                rows.chunked(3).forEach { triple ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        triple.forEach { r -> SweepResultCell(r, Modifier.weight(1f)) }
-                        repeat(3 - triple.size) { Spacer(Modifier.weight(1f)) }
+                // 2 columns: every name the same size, W/L badges in one aligned column (3 columns orphaned Starsweep).
+                rows.chunked(2).forEach { pair ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        pair.forEach { r -> SweepResultCell(r, Modifier.weight(1f)) }
+                        repeat(2 - pair.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
             Spacer(Modifier.height(2.dp))
-            CastButton(
-                "Share", onClick = onShare,
-                color = (if (flawless) CandyColor.PINK else CandyColor.AMBER).cast(null),
-                size = CastSize.L, fill = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            CandyButton(
-                "Close", onClick = closeAndMaybeReview, color = CandyColor.PEACH, size = CandySize.MEDIUM,
-                fill = true, modifier = Modifier.fillMaxWidth(0.6f),
-            )
+            // 2.8 item 23: family buttons sized to their labels (SHARE cast medium, CLOSE the family QUIET).
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                CastButton(
+                    "Share", onClick = onShare,
+                    color = (if (flawless) CandyColor.PINK else CandyColor.AMBER).cast(null),
+                    size = CastSize.M, fill = false,
+                )
+                QuietButton("Close", onClick = closeAndMaybeReview, size = CandySize.MEDIUM)
+            }
         }
         // G3: confetti in the moment's colors (off with Reduce Motion).
         PopupConfetti(if (flawless) MomentInk.flawlessConfetti else MomentInk.sweepConfetti)
@@ -181,7 +183,7 @@ private fun SweepResultCell(r: DailySweepShare.Row, modifier: Modifier) {
         }
         // weight(1f, fill = false) so the LABEL absorbs the squeeze, not the badge.
         Text(
-            r.label, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+            r.label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
             color = if (WTheme.isDark) WTheme.text else FinishInk.heading, maxLines = 1,
             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false),
