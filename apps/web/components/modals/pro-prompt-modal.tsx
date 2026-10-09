@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import Image from 'next/image';
+import { ProScene } from '@/components/pro/pro-scene';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { CandyLink } from '@/components/ui/candy-button';
 import { HeaderBack } from '@/components/ui/page-header';
 import { PopupBar, popupCard, POPUP_ACCENT } from '@/components/ui/soft-popup';
-import { ART_SIZE, artSrc } from '@/lib/art';
 import { HeadingArt } from '@/components/ui/heading-art';
 
 // The Go Pro nudge after a 7-day streak (docs/FINISH_SPEC.md G1): the gold
@@ -17,7 +16,6 @@ import { HeadingArt } from '@/components/ui/heading-art';
 // star (art-scene-pro-crown) at the side, and one large amber candy CTA.
 // Same trigger, same dismissal write.
 
-const CROWN = 'art-scene-pro-crown' as const;
 
 export function ProPromptModal() {
   const { user, profile, refreshProfile, isProActive } = useAuth();
@@ -52,7 +50,6 @@ export function ProPromptModal() {
     await refreshProfile();
   };
 
-  const [cw, ch] = ART_SIZE[CROWN];
   return (
     <>
       {show && (
@@ -69,17 +66,8 @@ export function ProPromptModal() {
             <PopupBar accent={POPUP_ACCENT.gold} gradient="linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)" />
             <HeaderBack kind="close" onClick={dismiss} size={32} label="Dismiss" className="absolute top-3 right-2 z-10" />
             <div className="flex items-center gap-3" style={{ padding: '10px 40px 12px 12px' }}>
-              <Image
-                src={artSrc(CROWN)}
-                alt=""
-                aria-hidden="true"
-                width={cw}
-                height={ch}
-                draggable={false}
-                sizes="64px"
-                className="shrink-0 select-none pointer-events-none"
-                style={{ height: 78, width: 'auto', filter: 'drop-shadow(0 4px 8px rgba(180, 83, 9, 0.25))' }}
-              />
+              {/* Item 20: the free player's own mascot on the pedestal with the No-limits scene. */}
+              <div className="shrink-0"><ProScene benefit="noLimits" height={84} caption={false} /></div>
               <div className="flex-1 min-w-0">
                 {/* BJ16: the ON A STREAK! lettering. */}
                 <HeadingArt slug="onastreak" label="You're on a streak!" height={28} maxWidth={200} align="left" />
