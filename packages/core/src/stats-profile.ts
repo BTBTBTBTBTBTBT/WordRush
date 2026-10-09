@@ -173,9 +173,9 @@ export interface ProfileActions {
 /**
  * Challenge · Pocket game · React · Add friend, by who they are to you:
  * - friends: Challenge · Pocket game · React (Unfriend in the menu)
- * - not friends: Challenge · Add friend (pocket games + reactions are for friends)
- * - request sent: Challenge · Requested (quiet, tap cancels)
- * - they asked you: Accept · Decline (Challenge waits until you are friends)
+ * - not friends: a clear Add friend (challenges, pocket games and reactions are for friends)
+ * - request sent: Requested (quiet, tap cancels)
+ * - they asked you: Accept · Decline right there
  * - yourself: no row
  * Block + Report are always in the menu for someone else; Unfriend only for friends.
  */
@@ -184,8 +184,8 @@ export function profileActions(state: FriendshipState): ProfileActions {
     case 'self': return { row: [], menu: [] };
     case 'friends': return { row: ['challenge', 'pocket', 'react'], menu: ['unfriend', 'block', 'report'] };
     case 'incoming': return { row: ['accept', 'decline'], menu: ['block', 'report'] };
-    case 'requested': return { row: ['challenge', 'requested'], menu: ['block', 'report'] };
-    default: return { row: ['challenge', 'addFriend'], menu: ['block', 'report'] };
+    case 'requested': return { row: ['requested'], menu: ['block', 'report'] };
+    default: return { row: ['addFriend'], menu: ['block', 'report'] };
   }
 }
 

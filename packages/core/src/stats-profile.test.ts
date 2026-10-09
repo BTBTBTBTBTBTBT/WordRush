@@ -83,8 +83,8 @@ describe('player profile rules', () => {
     const a = (o: Partial<Parameters<typeof friendshipState>[0]>) =>
       profileActions(friendshipState({ isSelf: false, isFriend: false, incoming: false, requested: false, ...o }));
     expect(a({ isFriend: true })).toEqual({ row: ['challenge', 'pocket', 'react'], menu: ['unfriend', 'block', 'report'] });
-    expect(a({})).toEqual({ row: ['challenge', 'addFriend'], menu: ['block', 'report'] });
-    expect(a({ requested: true }).row).toEqual(['challenge', 'requested']);
+    expect(a({})).toEqual({ row: ['addFriend'], menu: ['block', 'report'] });
+    expect(a({ requested: true }).row).toEqual(['requested']);
     expect(a({ incoming: true }).row).toEqual(['accept', 'decline']);
     expect(a({ isSelf: true })).toEqual({ row: [], menu: [] });
   });
