@@ -29,6 +29,8 @@ export interface SeasonSlots {
   props?: string[];
   banner?: string;
   extras?: Record<string, string>;
+  /** Seasonal sound slots (item 49): `intro` = the cold-start jingle, `note` = the musical cast's note, `{id}` = the cast id. */
+  sounds?: { intro?: string; note?: string };
 }
 
 /**
@@ -111,6 +113,17 @@ export function seasonalWall(name: string, season: string | null | undefined, sc
   if (!swap) return null;
   if (scheme === 'light' && seasonArtShips(`${swap}-light`)) return `${swap}-light`;
   return seasonArtShips(swap) ? swap : null;
+}
+
+/** The season's cold-start jingle sample name (public/sounds/<name>.m4a), else null = the normal jingle. */
+export function seasonIntroSound(season: string | null | undefined): string | null {
+  return seasonEntry(season)?.slots.sounds?.intro ?? null;
+}
+
+/** The season's musical-cast note sample for a cast id (item 49: the spooky voicing), else null = the normal voice. */
+export function seasonNoteSound(season: string | null | undefined, castId: string): string | null {
+  const pattern = seasonEntry(season)?.slots.sounds?.note;
+  return pattern ? pattern.replace('{id}', castId) : null;
 }
 
 /** The season's Home banner art (shipped), else null. */

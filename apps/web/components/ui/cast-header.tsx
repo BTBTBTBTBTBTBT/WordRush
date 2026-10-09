@@ -17,6 +17,7 @@ import { haptic } from '@/lib/haptics';
 import { castLaugh, castNote } from '@/lib/sounds';
 import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyTap, musicalTransformDelays, type MelodyState } from '@wordle-duel/core';
 import { MUSICAL_CAST_ON, NOTE_SVG, noteColor, unlockTune } from '@/lib/musical-cast';
+import { melodyCell, toggleMusicalOn, useMusical } from '@/lib/musical-store';
 
 // The living cast header (docs/FINISH_SPEC.md A5, option A; mockup
 // game-kit.html §5 `.castrow`): the ten cast heroes (/mascots/<id>.png) as
@@ -95,11 +96,12 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puppets.cheer, puppets.bundle]);
   // The musical cast (see above).
-  const [musical, setMusical] = useState(false);
+  // Item 4b: the shared app-wide store, so the cast stays musical across pages until a long-press (reload = normal).
+  const musical = useMusical();
   const [rippleFrom, setRippleFrom] = useState<string>('w');
   const musicalRef = useRef(false);
   musicalRef.current = musical;
-  const melody = useRef<MelodyState>(MELODY_START);
+  const melody = melodyCell;
   const press = useRef<{ id: string; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null>(null);
   const floats = useRef(0);
   const cancelPress = () => { if (press.current) { clearTimeout(press.current.timer); press.current = null; } };
@@ -112,7 +114,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
     const delays = musicalTransformDelays(from, reduce);
     melody.current = MELODY_START;
     setRippleFrom(from);
-    setMusical((m) => !m);
+    toggleMusicalOn();
     haptic('medium');
     if (!row || reduce) return;
     CAST.forEach((id, i) => {
@@ -127,7 +129,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
 
   /** One note: the voice (silent with sound off), a selection haptic, the hop, a floating note, the melody matcher. */
   const playNote = (id: MascotId, el: HTMLElement) => {
-    castNote(id);
+    castNote(id, season);
     haptic('selection');
     const reduce = prefersReducedMotion();
     if (puppetsOnRef.current) puppets.tap(id, { silent: true });
@@ -153,7 +155,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
         a.onfinish = done; a.oncancel = done;
       } else setTimeout(done, 600);
     }
-    const r = melodyTap(melody.current, id, performance.now());
+    const r = melodyTap(melody.current, id, performance.now(), season);
     melody.current = r.state;
     if (r.matched) void unlockTune(r.matched.achievement);
   };

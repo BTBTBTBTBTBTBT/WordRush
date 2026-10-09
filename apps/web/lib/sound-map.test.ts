@@ -1,19 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync } from 'fs';
 import path from 'path';
-import { FEEDBACK, LAUGH_MIN_MS, MASTER_GAIN, SOUND_NAMES, TICK_MIN_MS, CLASSIC_SOUNDS, laughSound, noteSound, makeThrottle, scopedSound, revealFlipDelays, soundUrl, tapRate } from './sound-map';
+import { FEEDBACK, LAUGH_MIN_MS, MASTER_GAIN, SOUND_NAMES, TICK_MIN_MS, CLASSIC_SOUNDS, laughSound, noteSound, introSound, makeThrottle, scopedSound, revealFlipDelays, soundUrl, tapRate } from './sound-map';
 
 describe('sound pack', () => {
   it('names exactly the shipped samples (the 16-sound pack + the Sound Lab picks)', () => {
     const files = readdirSync(path.resolve(__dirname, '../public/sounds')).filter((f) => f.endsWith('.m4a')).map((f) => f.replace(/\.m4a$/, '')).sort();
     expect([...SOUND_NAMES].sort()).toEqual(files);
-    expect(SOUND_NAMES).toHaveLength(44);
+    expect(SOUND_NAMES).toHaveLength(55);
     expect(SOUND_NAMES).toContain('intro');
     expect(soundUrl('tap')).toBe('/sounds/tap.m4a');
   });
   it('has a musical-cast note per hero (W O R D O C I O U S)', () => {
-    expect(['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'].map(noteSound)).toEqual(['note-w', 'note-o1', 'note-r', 'note-d', 'note-o2', 'note-c', 'note-i', 'note-o3', 'note-u', 'note-s']);
+    expect(['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'].map((id) => noteSound(id))).toEqual(['note-w', 'note-o1', 'note-r', 'note-d', 'note-o2', 'note-c', 'note-i', 'note-o3', 'note-u', 'note-s']);
     expect(noteSound('zz')).toBeNull();
+  });
+  it('has the Halloween voicings: a spooky note per hero and the re-orchestrated intro (item 49)', () => {
+    expect(['w', 'o1', 's'].map((id) => noteSound(id, `note-h-${id}`))).toEqual(['note-h-w', 'note-h-o1', 'note-h-s']);
+    expect(noteSound('w', 'note-h-zz')).toBe('note-w');
+    expect(introSound('intro-halloween')).toBe('intro-halloween');
+    expect(introSound(null)).toBe('intro');
+    expect(introSound('intro-nope')).toBe('intro');
   });
   it('plays at ~0.6 master volume', () => {
     expect(MASTER_GAIN).toBeCloseTo(0.6);

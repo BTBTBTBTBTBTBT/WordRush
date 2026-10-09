@@ -21,11 +21,11 @@ const rev = (asset_id: string, reviewer_id: string, decision: SoundReview['decis
 const ctxFor = (reviews: SoundReview[], me: string | null = BMT): SoundReviewContext => ({ index: indexReviews(reviews), reviewers: REVIEWERS, me });
 
 describe('the catalog (export-sound-catalog.py)', () => {
-  it('has every Sound Lab section in lab order', () => {
+  it('has every Sound Lab section in lab order, then the seasonal ones (add-halloween-to-catalog.py)', () => {
     expect(SOUND_CATALOG.sections.map((s) => s.id)).toEqual([
       'classic', 'six', 'seven', 'quadword', 'octoword', 'succession', 'deliverance', 'gauntlet', 'propernoundle',
       'hubbub', 'sudocious', 'muddle', 'crossword', 'codebreaker', 'kindred', 'ladder', 'spyglass', 'starsweep',
-      'vs', 'pocket', 'app',
+      'vs', 'pocket', 'app', 'halloween',
     ]);
   });
 
