@@ -17,8 +17,21 @@ from scipy import ndimage
 LO, HI = 60, 150
 
 
-def key_sheet(path, edge_px=6, all_pockets=False, decyan=False):
+def autocrop_to_key(im):
+    """The capture may include viewer margins around a non-square image: crop to the bbox of the dominant (key) color."""
+    a = np.asarray(im)
+    q = (a // 32).reshape(-1, 3)
+    keys, counts = np.unique(q, axis=0, return_counts=True)
+    k = keys[np.argmax(counts)] * 32 + 16
+    d = np.sqrt(((a.astype(np.float32) - k) ** 2).sum(axis=2))
+    ys, xs = np.nonzero(d < 70)
+    return im.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+
+
+def key_sheet(path, edge_px=6, all_pockets=False, decyan=False, crop=False):
     im = Image.open(path).convert('RGB')
+    if crop:
+        im = autocrop_to_key(im)
     w, h = im.size
     corners = [im.getpixel((4, 4)), im.getpixel((w - 5, 4)), im.getpixel((4, h - 5)), im.getpixel((w - 5, h - 5))]
     K = np.array([sum(c[i] for c in corners) / 4 for i in range(3)], np.float32)
@@ -127,7 +140,7 @@ def main():
     opts = dict(a[2:].split('=') for a in sys.argv[1:] if a.startswith('--') and '=' in a)
     sheet, cols, rows, outdir, names = args[0], int(args[1]), int(args[2]), args[3], args[4:]
     os.makedirs(outdir, exist_ok=True)
-    rgba = key_sheet(sheet, all_pockets=opts.get('pockets') == 'all', decyan=opts.get('decyan') == '1')
+    rgba = key_sheet(sheet, all_pockets=opts.get('pockets') == 'all', decyan=opts.get('decyan') == '1', crop=opts.get('autocrop') == '1')
     alpha = np.asarray(rgba.getchannel('A'))
     parts = split_cells(rgba, names, cols, rows, float(opts.get('margin', 0))) if opts.get('mode') == 'cells' else split(rgba, names, cols, rows)
     for name, (bb, mk) in parts.items():
