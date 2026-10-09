@@ -2,17 +2,16 @@
 
 import { avatarAchievements, unlockAchievements } from '@/lib/achievement-service';
 import { useEffect, useRef, useState } from 'react';
-import { validateUsername } from '@wordle-duel/core';
+import { changePhotoRows, displayAfter, pickShow, showsChangePhoto, showsPhoto, validateUsername } from '@wordle-duel/core';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
-import { Pencil, Star, Lock, Globe } from 'lucide-react';
+import { Pencil, Camera, ImageIcon } from 'lucide-react';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
-import { POPUP_DIM, PoseArt, PopupBar, popupCard, softInput, softRow } from '@/components/ui/soft-popup';
+import { POPUP_DIM } from '@/components/ui/soft-popup';
 import { SoftSwitch } from '@/components/settings/settings-kit';
 import { softBackground, softBorder } from '@/lib/soft-surface';
 import { GameArt } from '@/components/ui/game-art';
-import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { MascotBuilder } from '@/components/avatar/mascot-builder';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
@@ -36,6 +35,10 @@ import { DressStage, STAGE_SIDE_SLOT, StageClose, TitleRibbon, backdropCss, devD
 import { TitleShelves } from '@/components/profile/title-shelves';
 import { applyAvatarPick, castPreset, validateAvatar } from '@wordle-duel/core';
 import { randomAvatar } from '@/lib/avatar-render';
+import { avatarPhotoProblem, canTakePhoto, removeAvatarPhoto, uploadAvatarPhoto } from '@/lib/avatar-photo';
+import { QuietButton } from '@/components/ui/family-button';
+import { FamilyActionMenu, FAMILY_MENU_INK, familyMenuInk, type FamilyMenuAction } from '@/components/ui/family-action-menu';
+import { CastLoader } from '@/components/ui/cast-loader';
 
 interface Props {
   open: boolean;
@@ -74,6 +77,11 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
   const [hop, setHop] = useState(0);
   const [sheet, setSheet] = useState<'titles' | 'socials' | 'privacy' | 'favorite' | null>(null);
   const [dates, setDates] = useState<Record<string, string>>({});
+  // Change Photo (cloud prompt 07): the family menu, the upload in flight, the two pickers (library / camera).
+  const [photoMenu, setPhotoMenu] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const libraryInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
   // The signed-in player's avatar as it shows everywhere (saved config, a locally kept one, or the default).
   const ownLook = usePlayerAvatar({ name: profile?.username ?? null, userId: profile?.id ?? null });
 
@@ -86,6 +94,7 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
     setAvatarNote('');
     setTouched(false);
     setSheet(null);
+    setPhotoMenu(false);
     const base = { ...ownLook.config };
     setLook(base);
     if (door.kind === 'room') { setDraft({ ...base, display: 'mascot' }); setView('mascot'); }
@@ -156,10 +165,11 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    // Escape inside the Change Photo menu closes just the menu (it has its own handler).
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape' && !photoMenu) onClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, onClose]);
+  }, [open, onClose, photoMenu]);
 
   if (!open || !profile) return null;
 
@@ -234,7 +244,8 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
     onClose();
   };
 
-  const photoShows = look?.display === 'photo' && !!avatarUrl;
+  const photoShows = showsPhoto(look?.display, !!avatarUrl);
+  const canChangePhoto = showsChangePhoto(look?.display, !!avatarUrl);
   const muted = '#7a6aa6';
   const rowLabel = (t: string) => <span className="w-[84px] shrink-0 text-[10px] font-black uppercase tracking-[1px]" style={{ color: muted }}>{t}</span>;
   const row = (t: string, content: React.ReactNode, onClick?: () => void) => {
@@ -244,6 +255,53 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
       : <div className="w-full flex items-center gap-2.5 py-2.5" style={{ borderTop: '1px solid rgba(124,58,237,0.08)' }}>{inner}</div>;
   };
   const setLookTouched = (c: AvatarConfig) => { setLook(c); setTouched(true); };
+
+  // Change Photo: the same three rows as iOS / Android (Take photo on a device with a camera, Choose from library,
+  // Remove photo when one is set). A new photo shows at once; a removed one falls back to the mascot.
+  const onPhotoPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const problem = avatarPhotoProblem(file);
+    if (problem) { setError(problem); return; }
+    setError('');
+    setPhotoBusy(true);
+    try {
+      await uploadAvatarPhoto(profile.id, file);
+      await refreshProfile();
+      setLook((l) => (l ? { ...l, display: displayAfter('uploaded') } : l));
+      setTouched(true);
+      setHop((h) => h + 1);
+    } catch {
+      setError('Avatar upload failed. Please try again.');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+  const removePhoto = async () => {
+    setError('');
+    setPhotoBusy(true);
+    try {
+      await removeAvatarPhoto(profile.id);
+      await refreshProfile();
+      setLook((l) => (l ? { ...l, display: displayAfter('removed') } : l));
+      setTouched(true);
+      setHop((h) => h + 1);
+    } catch {
+      setError('Could not remove your photo. Please try again.');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+  const photoMenuRows: FamilyMenuAction[] = changePhotoRows(canTakePhoto(), !!avatarUrl).map((r) => {
+    if (r === 'camera') {
+      return { id: 'camera', title: 'Take photo', icon: <Camera className="w-[22px] h-[22px]" color={familyMenuInk(FAMILY_MENU_INK.purple)} strokeWidth={2.6} />, run: () => cameraInput.current?.click() };
+    }
+    if (r === 'library') {
+      return { id: 'library', title: 'Choose from library', tint: FAMILY_MENU_INK.teal, icon: <ImageIcon className="w-[22px] h-[22px]" color={familyMenuInk(FAMILY_MENU_INK.teal)} strokeWidth={2.6} />, run: () => libraryInput.current?.click() };
+    }
+    return { id: 'remove', title: 'Remove photo', icon: 'xmark', danger: true, run: () => { void removePhoto(); } };
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center" style={{ background: POPUP_DIM }}>
@@ -274,7 +332,12 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
           <>
             <DressStage
               config={look} initial={initial} height={320} hopToken={hop}
-              photo={photoShows ? <MascotAvatar config={look} initial={initial} size={130} photoUrl={avatarUrl} pro={isProActive} level={level} /> : undefined}
+              photo={photoShows ? (
+                <button type="button" aria-label="Change photo" disabled={photoBusy} onClick={() => setPhotoMenu(true)}
+                  className="border-0 bg-transparent p-0 cursor-pointer transition-transform duration-100 active:scale-[0.96] motion-reduce:active:scale-100">
+                  <MascotAvatar config={look} initial={initial} size={130} photoUrl={avatarUrl} pro={isProActive} level={level} />
+                </button>
+              ) : undefined}
             >
               {/* × and SAVE in equal side slots (the heading centers, both stay inside the stage); SAVE is the
                   finished cast primary (the frost helper pill read pale on the stage). */}
@@ -327,7 +390,12 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
                 <span className="flex rounded-full p-[3px] w-full" style={{ background: 'rgba(124,58,237,0.1)' }}>
                   {(['mascot', 'photo'] as const).map((d) => (
                     <button key={d} type="button" aria-pressed={(photoShows ? 'photo' : 'mascot') === d}
-                      disabled={d === 'photo' && !avatarUrl} onClick={() => { setLookTouched({ ...look, display: d }); setHop((h) => h + 1); }}
+                      onClick={() => {
+                        // "My photo" with no photo yet opens Change Photo (iOS / Android parity) instead of a dead button.
+                        const pick = pickShow(d, !!avatarUrl);
+                        if (pick.openMenu) { setPhotoMenu(true); return; }
+                        if (pick.display) { setLookTouched({ ...look, display: pick.display }); setHop((h) => h + 1); }
+                      }}
                       className="flex-1 text-xs font-black py-1.5 rounded-full border-0 cursor-pointer"
                       style={(photoShows ? 'photo' : 'mascot') === d ? { background: 'linear-gradient(#8b5cf6, #6d28d9)', color: '#fff' } : { background: 'transparent', color: '#6d28d9' }}>
                       {d === 'mascot' ? 'My mascot' : 'My photo'}
@@ -335,6 +403,14 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
                   ))}
                 </span>
               ))}
+              {/* Change photo: a small quiet pill under SHOW while the photo shows; the cast wave while one uploads. */}
+              {photoBusy ? (
+                <div role="status" aria-label="Uploading photo" className="flex justify-center pb-2.5"><CastLoader size={16} /></div>
+              ) : canChangePhoto && (
+                <div className="flex justify-center pb-2.5">
+                  <QuietButton size="sm" onClick={() => setPhotoMenu(true)}>Change photo</QuietButton>
+                </div>
+              )}
               {row('Username', <input ref={inputRef} value={username} onChange={(e) => setUsername(e.target.value)} maxLength={20} disabled={saving} aria-label="Username"
                 className="w-full bg-transparent border-0 outline-none text-[15px] font-extrabold" style={{ color: '#2a1650' }} />)}
               {row('Bio', <input value={bio} onChange={(e) => setBio(Array.from(e.target.value).slice(0, BIO_MAX).join(''))} placeholder="A short tagline…" disabled={saving} aria-label="Bio"
@@ -354,6 +430,12 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
               {row('Socials', <span className="text-[13px] font-bold" style={{ color: muted }}>{(() => { const n = PLATFORMS.filter((p) => (socials[p.key] ?? '').trim()).length; return n === 0 ? 'Add links' : `${n} link${n === 1 ? '' : 's'}`; })()}</span>, () => setSheet('socials'))}
             </div>
           </>
+        )}
+        <input ref={libraryInput} type="file" accept="image/*" className="hidden" aria-hidden="true" tabIndex={-1} onChange={onPhotoPicked} />
+        <input ref={cameraInput} type="file" accept="image/*" capture="user" className="hidden" aria-hidden="true" tabIndex={-1} onChange={onPhotoPicked} />
+        {photoMenu && (
+          <FamilyActionMenu title="Change Photo" subtitle="A new photo or one from your library" label="Change photo"
+            actions={photoMenuRows} onClose={() => setPhotoMenu(false)} />
         )}
         {(sheet === 'socials' || sheet === 'privacy' || sheet === 'favorite') && (
           <div className="fixed inset-0 z-[55] flex items-end justify-center" style={{ background: 'rgba(30,16,60,0.35)' }} onClick={() => setSheet(null)}>

@@ -58,7 +58,9 @@ struct EditProfileView: View {
     private var dailyModes: [HomeMode] { homeModes.filter { $0.dbKey != nil && $0.dbKey != "VS" } }
     private var accentColor: Color { ProfileAccent.color(accent) }
     private var initial: String { AvatarCatalog.initial(username.isEmpty ? auth.profile?.username : username) }
-    private var showsPhoto: Bool { mascot.display == "photo" && hasPhoto }
+    private var showsPhoto: Bool { ChangePhoto.showsPhoto(display: mascot.display, hasPhoto: hasPhoto) }
+    /// Cloud prompt 07: the quiet Change photo button + a tappable photo, while the photo shows.
+    private var canChangePhoto: Bool { ChangePhoto.showsChangePhoto(display: mascot.display, hasPhoto: hasPhoto) }
     private var ink: Color { Theme.isDark ? Theme.textPrimary : FinishInk.title }
     private var labelInk: Color { Theme.isDark ? Theme.textSecondary : Color(hex: 0x7A6AA6) }
     private var featuredName: String? { featured.flatMap { k in catalog.all.first { $0.key == k }?.name } }
@@ -170,7 +172,8 @@ struct EditProfileView: View {
     private var stage: some View {
         DressStage(config: mascot, initial: initial,
                    photo: showsPhoto ? (auth.profile?.avatarUrl, auth.profile?.username ?? username, auth.profile?.id) : nil,
-                   height: StageMetrics.height + 44, hopToken: hopToken) {
+                   height: StageMetrics.height + 44, hopToken: hopToken,
+                   onPhotoTap: canChangePhoto && !uploadingAvatar ? { showPhotoChoice = true } : nil) {
             VStack {
                 // × and SAVE sit in equal side slots, so the heading centers and both stay inside the stage.
                 HStack(alignment: .center, spacing: 4) {
@@ -337,10 +340,26 @@ struct EditProfileView: View {
             row("SHOW") {
                 SoftSegmented(options: [(key: "mascot", label: "My mascot"), (key: "photo", label: "My photo")],
                               selection: Binding(get: { showsPhoto ? "photo" : "mascot" }, set: { v in
-                                  if v == "photo" && !hasPhoto { showPhotoChoice = true; return }
-                                  mascot.display = v; mascotTouched = true; hopToken += 1
+                                  // "My photo" with no photo yet opens Change Photo instead of switching.
+                                  let pick = ChangePhoto.pickShow(v, hasPhoto: hasPhoto)
+                                  if pick.openMenu { showPhotoChoice = true; return }
+                                  guard let d = pick.display else { return }
+                                  mascot.display = d; mascotTouched = true; hopToken += 1
                               }),
                               accent: G5Accent.purple, accessibilityLabel: "Which avatar shows")
+            }
+            // Change photo: a small quiet pill under SHOW while the photo shows; the cast wave while one uploads.
+            if uploadingAvatar {
+                CastRow(size: 16, motion: .wave)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 10)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Uploading photo")
+            } else if canChangePhoto {
+                Button { Haptics.tap(); showPhotoChoice = true } label: { CandyLabel(title: "Change photo", symbol: "camera.fill") }
+                    .buttonStyle(QuietButtonStyle(size: .small))
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 10)
             }
             divider
             row("USERNAME") {
@@ -527,7 +546,15 @@ struct EditProfileView: View {
             try c.encode(is_private, forKey: .is_private)
         }
     }
-    private struct AvatarUpdate: Encodable { let avatar_url: String? }
+    /// avatar_url, with nil SENT as null (synthesized Encodable skips a nil key, so Remove photo wrote nothing).
+    private struct AvatarUpdate: Encodable {
+        let avatar_url: String?
+        enum CodingKeys: String, CodingKey { case avatar_url }
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(avatar_url, forKey: .avatar_url)
+        }
+    }
     /// §AN3: profiles.avatar_config, written in its OWN best-effort update (the
     /// column may not exist yet).
     private struct MascotUpdate: Encodable {
@@ -661,22 +688,27 @@ struct EditProfileView: View {
         // §AH / §AN: a fresh photo means the player wants their photo — show it (saved
         // with Save). The mascot itself is kept; only `display` flips.
         castId = nil
-        mascot.display = "photo"
+        mascot.display = ChangePhoto.displayAfter(.uploaded)
         mascotTouched = true
         await auth.refreshProfile()
+        hopToken += 1
     }
     /// Change Photo's rows: Take Photo (when there's a camera), Choose from Library, Remove Photo (when one is set).
     private func photoMenuModel() -> FamilyActionMenuModel {
-        var rows: [FamilyMenuAction] = []
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            rows.append(FamilyMenuAction(id: "camera", title: "Take photo", icon: .symbol("camera.fill")) { showCamera = true })
-        }
-        rows.append(FamilyMenuAction(id: "library", title: "Choose from library", icon: .symbol("photo.on.rectangle"),
-                                     tint: FamilyMenuInk.teal) { showLibraryPicker = true })
-        if auth.profile?.avatarUrl != nil {
-            rows.append(FamilyMenuAction(id: "remove", title: "Remove photo", icon: .clay("xmark"), danger: true) {
-                Task { await removeAvatar() }
-            })
+        let rows: [FamilyMenuAction] = ChangePhoto.rows(hasCamera: UIImagePickerController.isSourceTypeAvailable(.camera),
+                                                        hasPhoto: hasPhoto).map { row in
+            switch row {
+            case .camera:
+                return FamilyMenuAction(id: "camera", title: "Take photo", icon: .symbol("camera.fill")) { showCamera = true }
+            case .library:
+                return FamilyMenuAction(id: "library", title: "Choose from library", icon: .symbol("photo.on.rectangle"),
+                                        tint: FamilyMenuInk.teal) { showLibraryPicker = true }
+            case .remove:
+                return FamilyMenuAction(id: "remove", title: "Remove photo", icon: .clay("xmark"), danger: true) {
+                    uploadingAvatar = true
+                    Task { await removeAvatar(); uploadingAvatar = false }
+                }
+            }
         }
         return FamilyActionMenuModel(title: "Change Photo", subtitle: "A new photo or one from your library",
                                      actions: rows)
@@ -684,8 +716,16 @@ struct EditProfileView: View {
 
     private func removeAvatar() async {
         guard let uid = auth.profile?.id else { return }
-        _ = try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: nil)).eq("id", value: uid).execute()
+        do {
+            _ = try await auth.client.from("profiles").update(AvatarUpdate(avatar_url: nil)).eq("id", value: uid).execute()
+        } catch {
+            self.error = "Could not remove your photo. Please try again."; return
+        }
         await auth.refreshProfile()
+        // No photo → SHOW falls back to My mascot (saved with Save).
+        mascot.display = ChangePhoto.displayAfter(.removed)
+        mascotTouched = true
+        hopToken += 1
     }
 }
 

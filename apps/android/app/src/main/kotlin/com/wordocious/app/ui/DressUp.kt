@@ -364,6 +364,8 @@ fun DressStage(
     hopToken: Int = 0,
     curtains: Boolean = true,
     bulbs: Boolean = false,
+    /** Cloud prompt 07: tapping the photo opens Change Photo (null = not tappable). */
+    onPhotoTap: (() -> Unit)? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val podiumW = minOf(StageMetrics.podiumWidth, mascotSize * 1.34f)
@@ -384,7 +386,12 @@ fun DressStage(
         Box(Modifier.padding(bottom = 10.dp), contentAlignment = Alignment.BottomCenter) {
             StageArt(R.drawable.art_dress_podium, podiumH, width = podiumW)
             Box(Modifier.padding(bottom = podiumH * 0.42f)) {
-                if (photoUrl != null) PhotoAvatar(photoUrl, mascotSize * 0.74f, Modifier.padding(bottom = mascotSize * 0.06f), contentDescription = "Your photo")
+                if (photoUrl != null) PhotoAvatar(
+                    photoUrl, mascotSize * 0.74f,
+                    Modifier.padding(bottom = mascotSize * 0.06f)
+                        .then(if (onPhotoTap != null) Modifier.squishClickable(label = "Change photo", onClick = onPhotoTap) else Modifier),
+                    contentDescription = if (onPhotoTap != null) null else "Your photo",
+                )
                 else LiveMascot(config, initial, mascotSize, hopToken = hopToken)
             }
         }

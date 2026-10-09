@@ -34,3 +34,4 @@ export * from './podium-layout';
 export * from './headline-tokens';
 export * from './achievement-rules';
 export * from './mode-coverage';
+export * from './change-photo';
