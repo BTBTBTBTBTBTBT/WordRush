@@ -324,7 +324,7 @@ internal fun FamLabel(text: String, fontSize: Float, ink: Color) {
  * The HELPER pill (game helpers: Hint, Shuffle, Reveal, Undo …): 34 dp, the [tint]'s wash, the tinted 3D [icon]
  * (or a Material [vector] mapped to its art, else drawn in the ink; or any [leading]) + the uppercase label in the
  * deep tint. Inside a game the tint is always the game's accent ([LocalGameTint]); off a game [tint] (null = purple). [circle] = the icon-only 34 × 34 helper.
- * [selected] = a toggle that is on: the solid tint with white ink. [used] = the spent / disabled look.
+ * [selected] = a toggle that is on: the solid tint with white ink (dark on a bright tint, [InkContrast.onSolid]). [used] = the spent / disabled look.
  */
 @Composable
 fun HelperButton(
@@ -352,7 +352,7 @@ fun HelperButton(
     val dark = WTheme.isDark
     val spent = used || !enabled
     val c = remember(t, dark, selected, spent) {
-        val base = if (selected) HelperColors(t, famMix(t, Color.Black, 0.15f), Color.White) else helperColors(t, dark)
+        val base = if (selected) HelperColors(t, famMix(t, Color.Black, 0.15f), Color(InkContrast.onSolid(t.toArgb()))) else helperColors(t, dark)
         if (spent) base.spent() else base
     }
     val art = icon ?: vector?.let { FamIcon.of(it) }

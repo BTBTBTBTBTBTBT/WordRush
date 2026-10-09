@@ -38,6 +38,14 @@ enum FamilyInk {
     static func helperInk(_ tint: Color, dark: Bool) -> Color {
         dark ? Color.white.mixed(over: tint, 0.65) : Color.black.mixed(over: tint, 0.32)
     }
+    /// The label on a selected (solid-tint) helper: white, or near-black on a bright tint (readability gate).
+    static func selectedInk(_ tint: Color) -> Color {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard UIColor(tint).getRed(&r, green: &g, blue: &b, alpha: &a) else { return .white }
+        func c(_ v: CGFloat) -> UInt32 { UInt32(max(0, min(255, (v * 255).rounded()))) }
+        let ink = InkContrast.onSolid((c(r) << 16) | (c(g) << 8) | c(b))
+        return ink == 0xFFFFFF ? .white : Color(hex: UInt(ink))
+    }
     static func quietFill(dark: Bool, pressed: Bool) -> Color {
         dark ? Color(hex: pressed ? 0x463A74 : 0x3B3163) : Color(hex: pressed ? 0xE2D7FF : 0xECE4FF)
     }
@@ -277,7 +285,7 @@ struct HelperButtonStyle: ButtonStyle {
             // Season preview: in season every helper takes the season's button tint (registry palette).
             let tint = style.tint ?? SeasonKit.buttonTint ?? page.gameAccent ?? style.fallback ?? Color(hex: 0x7C3AED)
             let h = FamilyMetrics.helperHeight
-            let ink = style.selected ? Color.white : FamilyInk.helperInk(tint, dark: dark)
+            let ink = style.selected ? FamilyInk.selectedInk(tint) : FamilyInk.helperInk(tint, dark: dark)
             let fill = style.selected ? (pressed ? Color.black.mixed(over: tint, 0.12) : tint)
                                       : FamilyInk.helperFill(tint, dark: dark, pressed: pressed)
             let dim = style.used || !enabled

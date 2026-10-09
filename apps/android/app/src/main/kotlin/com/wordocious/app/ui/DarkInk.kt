@@ -37,6 +37,16 @@ object InkContrast {
         val b = luminance(bg)
         return (maxOf(a, b) + 0.05) / (minOf(a, b) + 0.05)
     }
+
+    /**
+     * The label ink for text on a SOLID [fill] (a selected helper): white when it clears 4.5:1 on the
+     * fill and on the fill pressed (black 15% over it), else near-black #1A1A2E — a bright season tint
+     * (Halloween orange #F97316) carries dark text, never white at 2.8:1.
+     */
+    fun onSolid(fill: Int): Int {
+        val pressed = TintMath.over(0xFF000000.toInt(), 0.15f, fill)
+        return if (minOf(ratio(0xFFFFFFFF.toInt(), fill), ratio(0xFFFFFFFF.toInt(), pressed)) >= AA) 0xFFFFFFFF.toInt() else 0xFF1A1A2E.toInt()
+    }
 }
 
 /** The dark theme's lifted text inks (Tailwind 300 stops), each ≥ 4.5:1 on the dark surface. */

@@ -223,8 +223,10 @@ final class SeasonContrastTests: XCTestCase {
     /// (black 12% over it pressed) with a white 12.5-pt label.
     func testSelectedHelperOnButtonTint() throws {
         for l in try Self.looks() {
-            expect(0xFFFFFF, on: l.buttonTint, 4.5, "\(l.id) selected helper label")
-            expect(0xFFFFFF, on: InkContrast.mix(0x000000, over: l.buttonTint, 0.12), 4.5, "\(l.id) selected helper label (pressed)")
+            // FamilyInk.selectedInk: white, or near-black on a bright tint (InkContrast.onSolid).
+            let ink = InkContrast.onSolid(l.buttonTint)
+            expect(ink, on: l.buttonTint, 4.5, "\(l.id) selected helper label")
+            expect(ink, on: InkContrast.mix(0x000000, over: l.buttonTint, 0.12), 4.5, "\(l.id) selected helper label (pressed)")
         }
     }
 }

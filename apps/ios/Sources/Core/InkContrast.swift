@@ -30,4 +30,12 @@ public enum InkContrast {
         }
         return (out(16) << 16) | (out(8) << 8) | out(0)
     }
+
+    /// The label ink for text on a SOLID fill: white when it clears 4.5:1 (also on the fill pressed,
+    /// black 12% over it), else the near-black #1A1A2E — a bright season tint (Halloween orange
+    /// #F97316) carries dark text, never white at 2.8:1.
+    public static func onSolid(_ fill: UInt32) -> UInt32 {
+        let pressed = mix(0x000000, over: fill, 0.12)
+        return min(ratio(0xFFFFFF, fill), ratio(0xFFFFFF, pressed)) >= 4.5 ? 0xFFFFFF : 0x1A1A2E
+    }
 }
