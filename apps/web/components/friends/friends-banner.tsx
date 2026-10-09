@@ -1,6 +1,6 @@
 'use client';
 
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import Image from 'next/image';
 import { Icon3D } from '@/components/ui/icon3d';
 import { CandyButton } from '@/components/ui/candy-button';
@@ -75,7 +75,7 @@ export function FriendsBanner({ input, clock, online, nobodyLine, chips, streak,
 
       <div className="relative flex flex-col gap-1" style={{ padding: `10px ${HOST_CLEARANCE}px 2px 12px`, minHeight: 56 }}>
         {/* FINISH_SPEC AR: live lettering (pink → orange; names in the accent, numbers gold). */}
-        <LiveHeadline text={headline} palette="friends" names={[input.leaderName, ...input.online, ...chips.map((c) => c.username)]} size={20} align="left" />
+        <BubbleText text={headline} palette="friends" names={[input.leaderName, ...input.online, ...chips.map((c) => c.username)]} maxSize={20} minSize={14} align="left" />
         <span className="font-black uppercase" style={{ fontSize: 11, letterSpacing: 0.6, color: FR_LOOK.bannerClock }}>{clockLine}</span>
       </div>
 

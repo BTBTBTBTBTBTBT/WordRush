@@ -529,7 +529,7 @@ struct AchievementUnlockPopup: View {
                         Button { shareBadge() } label: {
                             Icon3D(.share, size: 26).frame(width: 44, height: 44).contentShape(Rectangle())
                         }
-                        .buttonStyle(.squishIcon)
+                        .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
                         .accessibilityLabel("Share achievement")
                     }
                 }

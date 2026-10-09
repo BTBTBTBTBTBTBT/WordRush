@@ -78,6 +78,8 @@ fun AppHeader(
     onSignIn: () -> Unit = {},
     /** BJ6: Home's "Share today's progress" control beside ? and the gear (the Home tab only). */
     homeShare: Boolean = false,
+    /** 2.8 item 14: the active tab's scroll — the cast row slims as the page scrolls (null = never). */
+    scroll: HeaderScrollState? = null,
 ) {
     val profile by AuthService.profile.collectAsState()
     val isGuest by AuthService.isGuest.collectAsState()
@@ -90,7 +92,7 @@ fun AppHeader(
         // WORDOCIOUS cast row under it.
         HeaderControlsRow(profile, isGuest, onNav, onSettings, onSignIn, homeShare)
         Spacer(Modifier.height(4.dp))
-        CastTitle(pro = AuthService.isProActive)
+        CastTitle(pro = AuthService.isProActive, modifier = Modifier.condensesWith(scroll, com.wordocious.app.ui.theme.WTheme.calmMotion || !com.wordocious.app.data.FlagsService.isLive("header_condense")))
     }
 }
 
@@ -99,12 +101,12 @@ fun AppHeader(
  * glow line beneath the row.
  */
 @Composable
-private fun CastTitle(pro: Boolean) {
+private fun CastTitle(pro: Boolean, modifier: Modifier = Modifier) {
     // FINISH_SPEC N3: the cast row at ≈90% of the width, centered (not edge to edge), on a
     // soft elliptical ground shadow in the page accent (~14%, blurred by its own falloff).
     val accent = LocalPageTint.current?.accent ?: Color(0xFF7C3AED)
     Box(
-        Modifier.fillMaxWidth(CAST_ROW_WIDTH_FRACTION)
+        modifier.fillMaxWidth(CAST_ROW_WIDTH_FRACTION)
             .drawBehind {
                 val w = size.width * 0.92f
                 val h = 14.dp.toPx()

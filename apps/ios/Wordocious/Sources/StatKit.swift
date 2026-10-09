@@ -320,20 +320,6 @@ struct ProStatsInvite: View {
     }
 }
 
-/// Tactile press feedback (F2): a subtle scale-down + light haptic on touch,
-/// so profile buttons/chips feel responsive like the game keyboard. Reusable
-/// across the app via `.buttonStyle(PressableStyle())`.
-struct PressableStyle: ButtonStyle {
-    /// FINISH_SPEC §A9: the shared squish (~.92; a caller's deeper press wins).
-    var scale: CGFloat = 0.92
-    func makeBody(configuration: Configuration) -> some View {
-        let s = min(scale, 0.92)
-        return SquishButtonStyle(squash: CGSize(width: s, height: s)).makeBody(configuration: configuration)
-            .onChange(of: configuration.isPressed) { pressed in
-                if pressed { Haptics.tap() }
-            }
-    }
-}
 
 /// A number that counts up from 0 to `value` on first appear (F4). For the
 /// marquee profile stats — respects Reduced Motion (snaps to final).

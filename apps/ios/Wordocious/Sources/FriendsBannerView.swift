@@ -79,8 +79,8 @@ struct FriendsBannerView: View {
             VStack(alignment: .leading, spacing: 4) {
                 // FINISH_SPEC §AR: the race headline in live lettering (pink → orange,
                 // the leader's name in the accent, gold numbers).
-                LiveHeadline(text: FriendlyGames.friendsBannerHeadline(input), palette: .friends, size: 20,
-                             names: [input.leaderName], alignment: .leading, maxLines: 2, minimumScale: 0.8)
+                BubbleTextView(text: FriendlyGames.friendsBannerHeadline(input), palette: .friends,
+                               names: [input.leaderName], maxSize: 20, minSize: 15, alignment: .leading)
                     .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
                     .padding(.trailing, 72)
                 Text(FriendlyGames.friendsBannerClockLine(input, clock: clock))

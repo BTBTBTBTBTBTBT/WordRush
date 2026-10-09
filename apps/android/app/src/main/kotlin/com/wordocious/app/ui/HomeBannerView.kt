@@ -234,13 +234,15 @@ fun HomeBannerView(
                 // remembered by (headline, name, width). Gold sparkles flank line 1, mirrored.
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val lineW = maxWidth - HOME_HEADLINE_SIDES
-                    val fit = remember(lineW) { homeHeadlineFit(lineW.value) }
-                    val dailyLayout = remember(dailyHeadline, name, fit) { com.wordocious.core.headlineLayout(dailyHeadline, name, fit.maxEm) }
-                    val unlimitedLayout = remember(unlimitedHeadline, name, fit) { com.wordocious.core.headlineLayout(unlimitedHeadline, name, fit.maxEm) }
+                    // 2.8 item 6: core's bubble-text fit — the name keeps its stacked gold lines; every
+                    // other headline that is too long wraps in balanced lines (never "…", never a clip).
+                    val usable = (lineW.value - HOME_HEADLINE_ART_PAD).coerceAtLeast(1f).toDouble()
+                    val dailyLayout = remember(dailyHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(dailyHeadline, name, usable) }
+                    val unlimitedLayout = remember(unlimitedHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(unlimitedHeadline, name, usable) }
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
                     Box(Modifier.fillMaxWidth()) {
-                        BannerHeadlineLayer(dailyHeadline, dailyLayout, fit.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
-                        BannerHeadlineLayer(unlimitedHeadline, unlimitedLayout, fit.size, false, alpha = modeFade, active = unlimited, name = name)
+                        BannerHeadlineLayer(dailyHeadline, dailyLayout, dailyLayout.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
+                        BannerHeadlineLayer(unlimitedHeadline, unlimitedLayout, unlimitedLayout.size, false, alpha = modeFade, active = unlimited, name = name)
                     }
                 }
                 // R3 (founder 10-02): everyone sees the switch; BI21: the PRO chip sits inside
@@ -498,16 +500,11 @@ private fun BannerTile(
             look = Modifier.shadow(3.dp, shape, ambientColor = accent.copy(alpha = 0.18f), spotColor = accent.copy(alpha = 0.18f))
                 .clip(shape).background(accentWash(accent, 0.16f))
         }
-        // Won: a glossy tile in the game's color with an accent glow, white icon + check.
-        result?.completed == true -> {
-            ink = Color.White
-            look = Modifier.shadow(4.dp, shape, ambientColor = accent.copy(alpha = 0.55f), spotColor = accent.copy(alpha = 0.55f))
-                .clip(shape).background(accent).background(gloss)
-        }
-        // Lost: a glossy gray tile, white icon.
+        // 2.8 item 8: played (won OR lost) = THE one game-tile style (the Sudocious finish screen's
+        // picker tile, miniGameCard): the game's wash + top band, plus today's W / L badge below.
         result != null -> {
-            ink = Color.White
-            look = Modifier.clip(shape).background(Color(0xFF9CA3AF)).background(gloss)
+            ink = accent
+            look = Modifier.miniGameCard(accent, radius)
         }
         // Not played: a soft pale tile, the icon dimmed (on a dark season's glass a dim night tile
         // with a hint of the game color, so the played tiles' solid color stands out; iOS parity).
@@ -524,12 +521,11 @@ private fun BannerTile(
         unlimited -> ""
         result == null -> ", not played yet"
         result.completed -> ", won"
-        else -> ", played"
+        else -> ", lost"
     }
-    Box(
-        Modifier.squishClickable(card.title + state, card = true, onClick = onClick).size(size).then(look),
-        contentAlignment = Alignment.Center,
-    ) {
+    // The outer box is unclipped so the W / L badge can overhang the tile's corner.
+    Box(Modifier.squishClickable(card.title + state, card = true, onClick = onClick).size(size)) {
+      Box(Modifier.fillMaxSize().then(look), contentAlignment = Alignment.Center) {
         // A played tile shows the real full-color 3D art on a small pale disc (iOS BannerGlyph
         // `solid` parity), so it never melts into its own accent fill. ModeGlyph's white ink
         // tints the art into a flat white silhouette, so it is used only for the unplayed /
@@ -537,26 +533,20 @@ private fun BannerTile(
         val playedArt = if (!unlimited && result != null) gameArtRes(card.id) else null
         Box(Modifier.graphicsLayer { alpha = if (!unlimited && result == null) 0.45f else 1f }, contentAlignment = Alignment.Center) {
             if (playedArt != null) {
-                val icon = size * 0.56f
-                Box(
-                    Modifier.size(icon * 1.3f)
-                        .shadow(1.5.dp, androidx.compose.foundation.shape.CircleShape, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.12f))
-                        .background(Wash.mix(accent, 0.12f), androidx.compose.foundation.shape.CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    androidx.compose.foundation.Image(
-                        artPainter(playedArt, icon * 1.12f), contentDescription = null,
-                        modifier = Modifier.size(icon * 1.12f),
-                    )
-                }
+                val icon = size * 0.56f * 1.25f
+                androidx.compose.foundation.Image(
+                    artPainter(playedArt, icon), contentDescription = null,
+                    modifier = Modifier.size(icon),
+                )
             } else {
                 ModeGlyph(card, ink, box = size)
             }
         }
-        if (!unlimited && result?.completed == true) {
-            androidx.compose.material3.Icon(
-                Icons.Filled.Check, null, tint = Color.White,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(1.5.dp).size(9.dp),
+      }
+        if (!unlimited && result != null) {
+            ResultBadge(
+                result.completed, size = 13.dp,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp),
             )
         }
     }
@@ -703,20 +693,17 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
  * violet→pink; the double-flawless gold day keeps the celebration palette + trophy). BJ6
  * round 4: [layout]'s lines each at exactly [size] dp, centered — never shrunk, clipped or
  * scrolled; the name lines ([HeadlineLayout.nameLines], when stacked) in the gold lettering.
- * A headline without the name stays one line and may shrink to fit (core parity). Both modes'
+ * A headline without the name goes through core's bubble fit: one line scaled to the slot, else a
+ * balanced wrap — never an ellipsis (2.8 item 6). Both modes'
  * layers are laid out; [alpha] crossfades them and the hidden one is silent to screen readers.
  */
 @Composable
 private fun BannerHeadlineLayer(
-    headline: String, layout: com.wordocious.core.HeadlineLayout, size: Int, double: Boolean,
+    headline: String, layout: com.wordocious.core.BubbleFit, size: Int, double: Boolean,
     alpha: Float, active: Boolean, name: String? = null,
 ) {
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    // Exactly [size] dp whatever the (capped) font scale: the fit was decided in dp.
-    val sizeSp = with(density) { size.dp.toSp() }
     val stacked = layout.lines.size > 1
     val nameList = listOfNotNull(name?.takeIf { it.isNotBlank() })
-    val fixedSize = homeHeadlineFixedSize(headline, name, stacked)
     Column(
         Modifier.fillMaxWidth()
             .graphicsLayer { this.alpha = alpha }
@@ -741,7 +728,7 @@ private fun BannerHeadlineLayer(
                 ) {
                     if (double && i == 0) Icon3D(Icon3DName.TROPHY, 22.dp)
                     // AR: the live lettering (purple → magenta, gold numbers, the star separator).
-                    LiveHeadline(
+                    BubbleLine(
                         line,
                         when {
                             double -> HeadlinePalette.CELEBRATION
@@ -749,12 +736,11 @@ private fun BannerHeadlineLayer(
                             else -> HeadlinePalette.season(WTheme.season?.headline)
                                 ?: if (gold) HeadlinePalette.LEADERBOARD else HeadlinePalette.HOME
                         },
+                        size,
                         Modifier.weight(1f),
                         // A gold name line is the name itself (no second accent inside it).
                         names = if (gold) emptyList() else nameList,
-                        // Name headlines never shrink; a nameless one-liner may (core parity).
-                        maxSize = sizeSp, minSize = if (fixedSize) sizeSp else 11.sp,
-                        maxLines = 1, sound = active && i == 0,
+                        sound = active && i == 0,
                     )
                 }
                 if (i == 0) GoldSparkle(HOME_SPARKLE) else Spacer(Modifier.width(HOME_SPARKLE))

@@ -157,7 +157,7 @@ struct FinishedShareButton: View {
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.squishIcon)
+        .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
         .accessibilityLabel("Share")
         .softSheet(isPresented: $showShareOptions,
                onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {

@@ -62,3 +62,31 @@ describe('BJ6 round 4: the personal Home headline (web mapping of core headlineL
     expect(l.lines.length).toBe(1);
   });
 });
+
+describe('2.8 item 6: nameless long headlines wrap instead of truncating (no clip at any width)', () => {
+  const texts = [
+    'WORDOCIOUS FLAWLESS! 10 PUZZLES LEFT', 'PUZZLES FLAWLESS! 4 PUZZLES LEFT', 'WORDOCIOUS SWEPT! 1 PUZZLE LEFT',
+    'ON A ROLL \u00b7 11 OF 18', 'HOME STRETCH \u00b7 12 LEFT', 'FLAWLESS + SWEEP!', 'UNLIMITED PLAY',
+  ];
+  // 360 px web column (card 360 - 24 padding - sparkles) up to a wide desktop column.
+  for (const w of [296, SE, PHONE, 400, WIDE, 760]) {
+    it(`every status headline fits a ${w}px slot in full`, () => {
+      for (const t of texts) {
+        for (const name of ['', 'BMT']) {
+          const l = homeHeadlineLayout(w, t, name);
+          const strip = (s: string) => s.replace(/[^A-Z0-9!+\u00b7]/g, '');
+          expect(strip(l.lines.join('')), t).toBe(strip(t));
+          for (const line of l.lines) {
+            expect(line).not.toContain('\u2026');
+            expect(headlineWidthEm(line) * l.size, `${w} ${t} "${line}"`).toBeLessThanOrEqual(l.textWidth + 1e-6);
+          }
+        }
+      }
+    });
+  }
+
+  it('the long flawless line is two balanced lines on a phone', () => {
+    const l = homeHeadlineLayout(PHONE, 'WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT', '');
+    expect(l.lines).toEqual(['WORDOCIOUS FLAWLESS!', '3 PUZZLES LEFT']);
+  });
+});

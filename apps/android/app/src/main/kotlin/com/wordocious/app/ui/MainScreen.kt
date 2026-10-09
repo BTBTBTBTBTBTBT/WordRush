@@ -617,6 +617,8 @@ fun MainScreen() {
                     }
                 },
             ) { innerPadding ->
+                // 2.8 item 14: one scroll model per tab; the shared header follows the active tab's.
+                val headerScrolls = remember { List(4) { HeaderScrollState() } }
                 androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield).
                     // FINISH_SPEC AG: inside the page column on a tablet (the cast stays 90% of it).
@@ -626,6 +628,7 @@ fun MainScreen() {
                             onNav = { infoRoute = it },
                             onSignIn = { showSignIn = true },
                             homeShare = selectedTab == 0, // BJ6: Home's share control
+                            scroll = headerScrolls[selectedTab.coerceIn(0, 3)], // 2.8 item 14
                         )
                     }
                     Box(modifier = Modifier.weight(1f).fillMaxSize()) {
@@ -646,8 +649,12 @@ fun MainScreen() {
                             // FINISH_SPEC AG: a centered ~600 dp page column on a tablet (phones untouched).
                             // AQ2: one scroll watcher per tab — ambient loops hold still while any list in it moves.
                             val scrollWatch = remember(tab) { ScrollActivity() }
+                            val headerScroll = headerScrolls[tab.coerceIn(0, 3)]
+                            // A re-tap scrolls the tab to the top: the header expands again.
+                            androidx.compose.runtime.LaunchedEffect(tabReselect.getOrElse(tab) { 0 }) { headerScroll.reset() }
                             Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab()).contentColumn()
-                                .nestedScroll(scrollWatch)) {
+                                .nestedScroll(scrollWatch).nestedScroll(headerScroll)
+                                .then(if (activeTab) Modifier.headerScrollFade(headerScroll) else Modifier)) {
                               androidx.compose.runtime.CompositionLocalProvider(LocalTabHidden provides tabHidden, LocalScrollActive provides scrollWatch.active, LocalPageTint provides tabPageTint(tab), LocalTabReselect provides tabReselect.getOrElse(tab) { 0 }) {
                                 when (tab) {
                                     0 -> HomeScreen(

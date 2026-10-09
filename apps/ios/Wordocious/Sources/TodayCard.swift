@@ -79,8 +79,8 @@ struct TodayCard: View {
                     HStack(spacing: 8) {
                         SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
                         // FINISH_SPEC §AR: the day's summary in live lettering (gold on Flawless).
-                        LiveHeadline(text: flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!",
-                                     palette: flawless ? .celebration : .stats, size: 18, maxLines: 1)
+                        BubbleTextView(text: flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!",
+                                       palette: flawless ? .celebration : .stats, maxSize: 18, minSize: 12)
                         SymbolGlyph(flawless ? "trophy.fill" : "sparkles", size: flawless ? 18 : 15, color: flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
                     }
                 } else {

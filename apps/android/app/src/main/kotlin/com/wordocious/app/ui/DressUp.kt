@@ -197,7 +197,7 @@ fun StageCloseButton(onStage: Boolean = true, label: String = "Close", modifier:
             },
         ) else androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF8B5CF6), androidx.compose.ui.graphics.BlendMode.Modulate)
     }
-    Box(modifier.size(44.dp).squishClickable(label = label, icon = true, onClick = onClick), contentAlignment = Alignment.Center) {
+    RoundIconButton(onClick, label, modifier) {   // 2.8 item 23: the family round icon tap
         if (img != null) {
             // a soft drop: the same X in deep violet, 2 dp down, under the face
             Image(img, null, contentScale = ContentScale.Fit,

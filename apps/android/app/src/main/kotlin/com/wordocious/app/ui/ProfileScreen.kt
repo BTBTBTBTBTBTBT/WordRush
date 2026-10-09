@@ -515,9 +515,9 @@ fun ProfileScreen(
             profile?.let { pr ->
                 val total = pr.totalWins + pr.totalLosses
                 if (total > 0) {
-                    LiveHeadline(
+                    BubbleText(
                         statsSummaryHeadline(pr.totalWins, total, pr.currentStreak),
-                        HeadlinePalette.STATS, Modifier.fillMaxWidth().padding(top = 10.dp), maxSize = 22.sp, minSize = 14.sp,
+                        HeadlinePalette.STATS, Modifier.fillMaxWidth().padding(top = 10.dp), maxSize = 22, minSize = 14,
                     )
                 }
             }

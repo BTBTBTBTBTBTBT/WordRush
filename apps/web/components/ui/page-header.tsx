@@ -5,7 +5,7 @@ import { ART_SIZE, type TitleArtName } from '@/lib/art';
 import { HEADLINE, PAGE_HEADLINE, headlineMaxWidth } from '@/lib/headline';
 import { Mascot, type MascotMotion } from '@/components/ui/mascot';
 import type { MascotId } from '@/lib/mascots';
-import { FamCloseGlyph } from '@/components/ui/family-button';
+import { FamCloseGlyph, RoundIconSlot } from '@/components/ui/family-button';
 
 // One header style for every page, screen and sheet (docs/HEADER_SPEC.md §4):
 // the title in caps 900 with the purple→pink gradient (or the page's accent:
@@ -75,9 +75,9 @@ export function HeaderCircle({ label, onClick, href, size = 34, className = '', 
     );
   }
   return (
-    <button type="button" onClick={onClick} aria-label={label} className={`${circleClass} ${className}`} style={s}>
+    <RoundIconSlot onClick={onClick} label={label} className={`shrink-0 flex items-center justify-center ${className}`} style={s}>
       {children}
-    </button>
+    </RoundIconSlot>
   );
 }
 

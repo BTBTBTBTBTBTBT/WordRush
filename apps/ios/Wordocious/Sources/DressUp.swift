@@ -394,7 +394,7 @@ struct StageCloseButton: View {
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.squishIcon)
+        .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
         .accessibilityLabel(label)
     }
 }

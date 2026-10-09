@@ -145,12 +145,8 @@ fun HeaderCircle(
     size: Dp = 38.dp,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    Box(
-        modifier.size(maxOf(size, SOFT_CONTROL_TAP))
-            .squishClickable(contentDescription, icon = true, onClick = onClick),
-        contentAlignment = Alignment.Center,
-        content = content,
-    )
+    // 2.8 item 23: the family round icon tap (was a hand-rolled squishClickable box).
+    RoundIconButton(onClick, contentDescription, modifier, tap = size, content = content)
 }
 
 /** A header action from the icon set (A3): the bare 3D icon, 23 dp, in a 44 dp tap area. */

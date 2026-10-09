@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -408,14 +409,19 @@ fun QuietButton(
     }
 }
 
-/** The ROUND icon button: a bare 3D icon ([size], 28 dp) in a 44 dp hit area, squish .9 — no bubble (founder rule). */
+/**
+ * The family ROUND icon tap (2.8 item 23): ANY bare glyph in a [tap] dp hit area (min 44), the family squish
+ * (.9), Button semantics. Header circles, popup closes and the sign-in eye route through this instead of
+ * hand-rolled `squishClickable(icon = true)` boxes.
+ */
 @Composable
 fun RoundIconButton(
-    @DrawableRes res: Int,
-    contentDescription: String,
     onClick: () -> Unit,
+    contentDescription: String?,
     modifier: Modifier = Modifier,
-    size: Dp = 28.dp,
+    tap: Dp = 44.dp,
+    enabled: Boolean = true,
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -426,14 +432,27 @@ fun RoundIconButton(
         else androidx.compose.animation.core.spring(dampingRatio = 0.3f, stiffness = 700f),
         label = "famRoundPress",
     )
-    val img = famBitmap(res)
     Box(
-        modifier.size(44.dp)
+        modifier.size(maxOf(tap, 44.dp))
             .graphicsLayer { val s = 1f - 0.1f * press; scaleX = s; scaleY = s }
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .semantics { role = Role.Button; this.contentDescription = contentDescription },
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .semantics { role = Role.Button; if (contentDescription != null) this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
-    ) {
+        content = content,
+    )
+}
+
+/** The ROUND icon button: a bare 3D icon ([size], 28 dp) in a 44 dp hit area, squish .9 — no bubble (founder rule). */
+@Composable
+fun RoundIconButton(
+    @DrawableRes res: Int,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 28.dp,
+) {
+    val img = famBitmap(res)
+    RoundIconButton(onClick, contentDescription, modifier) {
         if (img != null) Image(img, null, contentScale = ContentScale.Fit, modifier = Modifier.size(size))
     }
 }

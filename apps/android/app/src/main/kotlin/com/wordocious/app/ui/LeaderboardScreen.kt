@@ -572,7 +572,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             // C2 / C2b: THE game picker (Sweep = the 9th Wordocious tile); its tinted header
             // strip carries the date · reset clock and the ALL-TIME door. Same selectMode path.
             item(key = "picker") {
-                LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords)
+                LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords,
+                    badge = { key -> if (key == SWEEP_ID) null else completions[key]?.completed })
                 Spacer(Modifier.height(LB_CARD_GAP))
             }
             // Founder 10-05: the game card (title art · N today · Play / View board) sits
@@ -1100,9 +1101,9 @@ internal fun UserRankCard(
     val top = if (showTopPercent && total > 1) " · TOP ${maxOf(1, Math.round(rank.toDouble() / total * 100).toInt())}%" else ""
     // AR: the dynamic rank headline in the live lettering (gold → amber, gold numbers).
     androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-    LiveHeadline(
+    BubbleText(
         rankHeadline(rank, friends, totalNoun), HeadlinePalette.LEADERBOARD,
-        Modifier.fillMaxWidth(), maxSize = 22.sp, minSize = 14.sp, maxLines = 1,
+        Modifier.fillMaxWidth(), maxSize = 22, minSize = 14,
     )
     LbResultCard(
         rank = rank,

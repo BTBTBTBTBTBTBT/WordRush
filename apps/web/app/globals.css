@@ -2134,6 +2134,30 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 .lh-calm .lh-ch { animation: none; }
 @media (prefers-reduced-motion: reduce) { .lh-ch, .lh-sweeping .lh-gloss { animation: none !important; } }
 [data-reduced-motion="true"] .lh-ch, [data-reduced-motion="true"] .lh-sweeping .lh-gloss { animation: none !important; }
+/* 2.8 item 14: Reduce Motion = the desktop bar's soft fade only; it never slims (rules live in the desktop block). */
+@media (prefers-reduced-motion: reduce) { .app-hdr > .hdr-cast { animation: none !important; } }
+[data-reduced-motion="true"] .app-hdr > .hdr-cast { animation: none !important; }
+
+/* ── 2.8 item 6 · bubble lettering from the glyph atlas (components/ui/bubble-text.tsx). The glyph
+   art is a neutral white base with shading; the word's tint multiplies over it and the glyph's own
+   alpha clips the result — one element per glyph, no canvas, no per-frame work. ── */
+.bt-box { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; }
+.bt-line { display: inline-flex; align-items: flex-end; justify-content: center; white-space: nowrap; }
+.bt-space { display: inline-block; height: 1px; }
+.bt-glyph {
+  display: inline-block; height: 100%;
+  background-image: var(--bt-img), linear-gradient(180deg, var(--bt-top), var(--bt-bottom));
+  background-blend-mode: multiply, normal;
+  background-size: contain, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  -webkit-mask-image: var(--bt-img); mask-image: var(--bt-img);
+  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+  filter: drop-shadow(0 2px 2px rgba(30, 10, 70, 0.25));
+  animation: lh-pop 340ms cubic-bezier(0.3, 1.5, 0.5, 1) both; animation-delay: calc(var(--i, 0) * 25ms);
+}
+@media (prefers-reduced-motion: reduce) { .bt-glyph { animation: none !important; } }
+[data-reduced-motion="true"] .bt-glyph { animation: none !important; }
 
 /* ── FINISH_SPEC AU3 · the Gauntlet stage card (components/gauntlet/stage-transition.tsx):
    one fade + slide/spring in, one fade + lift out — transforms and opacity only
@@ -2225,6 +2249,19 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
   }
   .app-hdr > .hdr-cast { grid-row: 1; grid-column: 1; justify-self: start; width: 220px !important; margin: 0 !important; }
+  /* 2.8 item 14 (founder 10-07): a clean scroll edge under the sticky top bar. Content dissolves into
+     the bar's own color instead of being cut by a hard line, and the bar slims as the page scrolls
+     (CSS scroll-driven transform only, so it runs off the main thread). Reduce Motion = the fade only. Phones keep
+     the header in the page flow (it scrolls away), so nothing slides under a pinned edge there. */
+  .app-hdr.page-col::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 16px; pointer-events: none;
+    background: linear-gradient(var(--tab-dock-2), transparent);
+    opacity: 0.9;
+  }
+  @supports (animation-timeline: scroll()) {
+    .app-hdr[data-condense="on"] > .hdr-cast { transform-origin: left center; animation: hdr-condense-cast linear both; animation-timeline: scroll(root); animation-range: 0 64px; }
+  }
+  @keyframes hdr-condense-cast { from { transform: scale(1); } to { transform: scale(0.72); } }
   .app-hdr > .dk-tabs { grid-row: 1; grid-column: 2; display: flex; align-items: center; gap: 8px; }
   .app-hdr > .hdr-row { grid-row: 1; grid-column: 3; justify-self: end; justify-content: flex-end; gap: 10px; padding: 0; min-width: 0; }
   .dk-tab.candy img { width: 18px !important; height: 18px !important; }

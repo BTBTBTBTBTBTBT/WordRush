@@ -39,6 +39,7 @@ import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, da
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
 import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEADLINE_SIZING_LINE } from '../src/headline-tokens';
+import { bubbleFit, bubbleWidthEm, bubbleGlyphName, homeHeadlineFit, BUBBLE_GLYPHS } from '../src/bubble-text';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
 import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
@@ -1112,6 +1113,28 @@ export function renderMusicalCastFixtures() {
   };
 }
 
+// 2.8 item 6: the bubble-lettering fit (widths, balanced wraps, scale-up, hard split, Home name stack).
+export function renderBubbleTextFixtures() {
+  const texts = [
+    'DAILIES', 'PUZZLES', 'W', 'DOUBLE SWEEP!', 'WARMING UP \u00b7 3 DOWN', 'ON A ROLL \u00b7 11 OF 18', 'HOME STRETCH \u00b7 12 LEFT',
+    'WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT', 'WORDOCIOUS SWEPT! 10 PUZZLES LEFT', 'PUZZLES FLAWLESS! 4 PUZZLES LEFT',
+    'GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!', 'SATURDAY SUPERSTARS', "FRIDAY\u2019S FINEST", 'DOUG & BMT \u00b7 9,999 \u2605',
+    'SUPERCALIFRAGILISTICEXPIALIDOCIOUS',
+  ];
+  const widths = texts.map((text) => ({ text, em: bubbleWidthEm(text) }));
+  const fits: Array<{ text: string; slot: number; maxSize: number; minSize: number; fit: ReturnType<typeof bubbleFit> }> = [];
+  for (const text of texts) for (const slot of [200, 285, 334, 520]) {
+    for (const [maxSize, minSize] of [[38, 26], [60, 30]] as const) fits.push({ text, slot, maxSize, minSize, fit: bubbleFit(text, slot, { maxSize, minSize }) });
+  }
+  const home: Array<{ text: string; name: string; slot: number; fit: ReturnType<typeof homeHeadlineFit> }> = [];
+  for (const [text, name] of [
+    ['GOOD AFTERNOON, BMT!', 'BMT'], ['GOOD EVENING, MAXIMILLIAN_THE_GREAT!', 'Maximillian_The_Great'],
+    ['WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT', 'BMT'], ['ON A ROLL \u00b7 11 OF 18', ''], ['UP LATE, BMT?', 'BMT'],
+  ] as const) for (const slot of [220, 285, 334, 520]) home.push({ text, name, slot, fit: homeHeadlineFit(text, name, slot) });
+  const glyphs = Array.from(BUBBLE_GLYPHS).map((ch) => ({ ch, name: bubbleGlyphName(ch) }));
+  return { widths, fits, home, glyphs };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -1134,6 +1157,7 @@ const FILES: Array<[string, unknown]> = [
   ['push-copy-fixtures.json', renderPushCopyFixtures()],
   ['avatar-config-fixtures.json', renderAvatarConfigFixtures()],
   ['headline-tokens-fixtures.json', renderHeadlineTokenFixtures()],
+  ['bubble-text-fixtures.json', renderBubbleTextFixtures()],
   ['achievement-rules-fixtures.json', renderAchievementRuleFixtures()],
   ['avatar-resolve-fixtures.json', renderAvatarResolveFixtures()],
   ['podium-layout-fixtures.json', renderPodiumLayoutFixtures()],

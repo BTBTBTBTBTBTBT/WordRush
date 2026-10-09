@@ -259,9 +259,11 @@ fun GamePickerCard(
                 verticalArrangement = Arrangement.spacedBy(if (dense) 4.dp else 8.dp),
             ) {
                 PickerLabel("WORDOCIOUS", labelColor)
-                PickerRow(words, selected, onSelect, gap = 6.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel)
+                // 2.8 item 8: both rows share ONE tile size (sized for the longer row) and one gap, centered.
+                val slots = maxOf(words.size, puzzles.size)
+                PickerRow(words, selected, onSelect, gap = 6.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel, slots = slots)
                 PickerLabel("PUZZLES", labelColor, Modifier.padding(top = if (dense) 2.dp else 4.dp))
-                PickerRow(puzzles, selected, onSelect, gap = 5.dp, corner = 10.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel)
+                PickerRow(puzzles, selected, onSelect, gap = 6.dp, corner = 12.dp, badge = badge, badgeShown = badgeShown, sweepLabel = sweepLabel, slots = slots)
             }
         }
     }
@@ -286,13 +288,17 @@ private fun PickerRow(
     badge: ((String) -> Boolean?)?,
     badgeShown: ((String) -> Boolean)?,
     sweepLabel: String,
+    slots: Int = tiles.size,
 ) {
     if (tiles.isEmpty()) return
+    val spare = (slots - tiles.size).coerceAtLeast(0) / 2f
     // Room for the selected tile's 3 dp ring + the press scale.
     Row(Modifier.fillMaxWidth().padding(horizontal = 1.dp), horizontalArrangement = Arrangement.spacedBy(gap)) {
+        if (spare > 0f) Spacer(Modifier.weight(spare))
         tiles.forEach { t ->
             PickerTileBox(t, Modifier.weight(1f).aspectRatio(1f), t.key == selected, onSelect, corner, badge, badgeShown, sweepLabel)
         }
+        if (spare > 0f) Spacer(Modifier.weight(spare))
     }
 }
 

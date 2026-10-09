@@ -10,7 +10,7 @@ import { fetchQuizState, saveQuizAnswer, type QuizAnswer } from '@/lib/home-stre
 import { HomeSectionTitle } from '@/components/home/home-section-title';
 import { GUIDE_BAR, GuideStage, ReadChip, guideCardStyle } from '@/components/strategy/guide-family';
 import { LetterTile } from '@/components/game/letter-tile';
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import { SoftNum } from '@/components/ui/soft-number';
 import { POSE_SIZE, poseSrc } from '@/lib/art';
 import { accentInk, alphaHex } from '@/lib/soft-surface';
@@ -242,7 +242,7 @@ export function WordOfTheDay() {
             <GuideStage host="i" accent={WOTD_ACCENT} size={44} />
           </div>
           <div className="flex-1 min-w-0">
-            <LiveHeadline text={info.word} palette="home" size={22} align="left" level={3} />
+            <BubbleText text={info.word} palette="home" maxSize={22} minSize={16} align="left" level={3} />
             {(info.phonetic || partOfSpeech) && (
               <div className="mt-1 flex items-center gap-2 min-w-0">
                 {info.phonetic && (

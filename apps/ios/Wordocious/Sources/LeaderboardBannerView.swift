@@ -14,6 +14,9 @@ struct LeaderboardBannerView: View {
     @Binding var isSweep: Bool
     /// The page's horizontal padding (the headline bleeds past it to the screen edges).
     var bleed: CGFloat = 16
+    /// 2.8 item 8: today's W / L per game (the same badges as Home and the finish screens).
+    var results: [String: Bool] = [:]
+    var sweepResult: Bool? = nil
 
     private static let ink = Color(hex: 0x8A4A12)
 
@@ -23,7 +26,8 @@ struct LeaderboardBannerView: View {
         VStack(spacing: 6) {
             LeaderboardHeadline(bleed: bleed)   // founder 10-05: the big day title (LeaderboardArt.dayCap)
             GamePickerCard(selection: isSweep ? GamePicker.sweep : selected.rawValue,
-                           accent: LbStyle.gold, ink: Self.ink, compact: true,
+                           accent: LbStyle.gold, ink: Self.ink, results: results,
+                           sweepResult: sweepResult, compact: true,
                            onSelect: select) {
                 strip
             }
