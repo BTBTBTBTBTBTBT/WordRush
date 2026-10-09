@@ -234,13 +234,15 @@ fun HomeBannerView(
                 // remembered by (headline, name, width). Gold sparkles flank line 1, mirrored.
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
                     val lineW = maxWidth - HOME_HEADLINE_SIDES
-                    val fit = remember(lineW) { homeHeadlineFit(lineW.value) }
-                    val dailyLayout = remember(dailyHeadline, name, fit) { com.wordocious.core.headlineLayout(dailyHeadline, name, fit.maxEm) }
-                    val unlimitedLayout = remember(unlimitedHeadline, name, fit) { com.wordocious.core.headlineLayout(unlimitedHeadline, name, fit.maxEm) }
+                    // 2.8 item 6: core's bubble-text fit — the name keeps its stacked gold lines; every
+                    // other headline that is too long wraps in balanced lines (never "…", never a clip).
+                    val usable = (lineW.value - HOME_HEADLINE_ART_PAD).coerceAtLeast(1f).toDouble()
+                    val dailyLayout = remember(dailyHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(dailyHeadline, name, usable) }
+                    val unlimitedLayout = remember(unlimitedHeadline, name, usable) { com.wordocious.core.homeHeadlineFit(unlimitedHeadline, name, usable) }
                     // Z: both modes' headlines share one slot (the taller of the two), crossfading.
                     Box(Modifier.fillMaxWidth()) {
-                        BannerHeadlineLayer(dailyHeadline, dailyLayout, fit.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
-                        BannerHeadlineLayer(unlimitedHeadline, unlimitedLayout, fit.size, false, alpha = modeFade, active = unlimited, name = name)
+                        BannerHeadlineLayer(dailyHeadline, dailyLayout, dailyLayout.size, dailyDouble, alpha = 1f - modeFade, active = !unlimited, name = name)
+                        BannerHeadlineLayer(unlimitedHeadline, unlimitedLayout, unlimitedLayout.size, false, alpha = modeFade, active = unlimited, name = name)
                     }
                 }
                 // R3 (founder 10-02): everyone sees the switch; BI21: the PRO chip sits inside
@@ -703,20 +705,17 @@ private fun DailyUnlimitedSwitch(value: PlayMode, locked: Boolean, onChange: (Pl
  * violet→pink; the double-flawless gold day keeps the celebration palette + trophy). BJ6
  * round 4: [layout]'s lines each at exactly [size] dp, centered — never shrunk, clipped or
  * scrolled; the name lines ([HeadlineLayout.nameLines], when stacked) in the gold lettering.
- * A headline without the name stays one line and may shrink to fit (core parity). Both modes'
+ * A headline without the name goes through core's bubble fit: one line scaled to the slot, else a
+ * balanced wrap — never an ellipsis (2.8 item 6). Both modes'
  * layers are laid out; [alpha] crossfades them and the hidden one is silent to screen readers.
  */
 @Composable
 private fun BannerHeadlineLayer(
-    headline: String, layout: com.wordocious.core.HeadlineLayout, size: Int, double: Boolean,
+    headline: String, layout: com.wordocious.core.BubbleFit, size: Int, double: Boolean,
     alpha: Float, active: Boolean, name: String? = null,
 ) {
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    // Exactly [size] dp whatever the (capped) font scale: the fit was decided in dp.
-    val sizeSp = with(density) { size.dp.toSp() }
     val stacked = layout.lines.size > 1
     val nameList = listOfNotNull(name?.takeIf { it.isNotBlank() })
-    val fixedSize = homeHeadlineFixedSize(headline, name, stacked)
     Column(
         Modifier.fillMaxWidth()
             .graphicsLayer { this.alpha = alpha }
@@ -741,7 +740,7 @@ private fun BannerHeadlineLayer(
                 ) {
                     if (double && i == 0) Icon3D(Icon3DName.TROPHY, 22.dp)
                     // AR: the live lettering (purple → magenta, gold numbers, the star separator).
-                    LiveHeadline(
+                    BubbleLine(
                         line,
                         when {
                             double -> HeadlinePalette.CELEBRATION
@@ -749,12 +748,11 @@ private fun BannerHeadlineLayer(
                             else -> HeadlinePalette.season(WTheme.season?.headline)
                                 ?: if (gold) HeadlinePalette.LEADERBOARD else HeadlinePalette.HOME
                         },
+                        size,
                         Modifier.weight(1f),
                         // A gold name line is the name itself (no second accent inside it).
                         names = if (gold) emptyList() else nameList,
-                        // Name headlines never shrink; a nameless one-liner may (core parity).
-                        maxSize = sizeSp, minSize = if (fixedSize) sizeSp else 11.sp,
-                        maxLines = 1, sound = active && i == 0,
+                        sound = active && i == 0,
                     )
                 }
                 if (i == 0) GoldSparkle(HOME_SPARKLE) else Spacer(Modifier.width(HOME_SPARKLE))
