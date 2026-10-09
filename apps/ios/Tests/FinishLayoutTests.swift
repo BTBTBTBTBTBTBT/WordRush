@@ -184,14 +184,35 @@ final class StreakWeekTests: XCTestCase {
     // MARK: F2 fix — landing flourish
 
     func testFlourishHopsLeftToRightThenRests() {
-        XCTAssertEqual(CastMoves.flourishDuration(count: 10), 0.42 + 9 * 0.05, accuracy: 1e-9)
+        XCTAssertEqual(CastMoves.flourishDuration(count: 10), 0.56 + 9 * 0.05, accuracy: 1e-9)
         // Before its turn and after its hop, a character stands still.
         XCTAssertEqual(CastMoves.flourishPose(index: 3, elapsed: 0.1), .identity)
-        XCTAssertEqual(CastMoves.flourishPose(index: 0, elapsed: 0.5), .identity)
+        XCTAssertEqual(CastMoves.flourishPose(index: 0, elapsed: 0.6), .identity)
         // Mid-hop, a character is off the ground (negative ty) — W's hop keyframes.
-        XCTAssertLessThan(CastMoves.flourishPose(index: 0, elapsed: 0.42 * 0.45).ty, 0)
-        XCTAssertLessThan(CastMoves.flourishPose(index: 9, elapsed: 9 * 0.05 + 0.42 * 0.45).ty, 0)
+        XCTAssertLessThan(CastMoves.flourishPose(index: 0, elapsed: 0.56 * 0.46).ty, 0)
+        XCTAssertLessThan(CastMoves.flourishPose(index: 9, elapsed: 9 * 0.05 + 0.56 * 0.46).ty, 0)
         XCTAssertEqual(CastMoves.flourishPose(index: 9, elapsed: CastMoves.flourishDuration(count: 10) + 0.01), .identity)
+    }
+
+    /// Item 47: the hop is one continuous arc — it begins and ends at rest (no snap) and never overshoots the apex.
+    func testFlourishIsOneSoftArcWithNoSnap() {
+        let hop = CastMoves.flourishHop
+        XCTAssertEqual(CastMoves.flourishPose(index: 0, elapsed: 0.0001), .identity, "starts at rest")
+        var maxRise = 0.0
+        var last = CastMoves.flourishPose(index: 0, elapsed: 0.001)
+        var t = 0.002
+        while t < hop {
+            let p = CastMoves.flourishPose(index: 0, elapsed: t)
+            XCTAssertLessThan(abs(p.ty - last.ty), 0.02, "no jump in height at \(t)")
+            XCTAssertLessThan(abs(p.sy - last.sy), 0.02, "no jump in squash at \(t)")
+            maxRise = max(maxRise, -p.ty)
+            last = p
+            t += 0.004
+        }
+        XCTAssertLessThanOrEqual(maxRise, 0.145, "no overshoot past the apex")
+        let end = CastMoves.flourishPose(index: 0, elapsed: hop - 0.004)
+        XCTAssertEqual(end.sx, 1, accuracy: 0.01)
+        XCTAssertEqual(end.sy, 1, accuracy: 0.01)
     }
 }
 

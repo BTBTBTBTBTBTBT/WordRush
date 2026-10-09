@@ -115,7 +115,7 @@ export const CrosswordBoard = memo(function CrosswordBoard({ state, selected, ac
               data-s={look}
               data-wash={inActive ? 'true' : undefined}
               data-sel={isSel ? 'true' : undefined}
-              data-num={n === undefined ? undefined : cell !== undefined && cell < 26 ? 'small' : 'true'}
+              data-num={n === undefined ? undefined : 'true'}
               data-wrong={wrong ? 'true' : undefined}
               style={{
                 ['--gt-font' as string]: font,

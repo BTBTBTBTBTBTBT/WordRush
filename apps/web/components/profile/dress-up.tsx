@@ -354,7 +354,7 @@ export function PartyHatOffer() {
       <StageArt name="art-dress-partyhat" height={50} />
       <div className="flex-1 min-w-0">
         <div className="text-[15px] font-black truncate" style={{ color: '#6d28d9' }}>First win! Party hat?</div>
-        <div className="text-[11px] font-bold truncate" style={{ color: '#7a6aa6' }}>Your mascot wants to celebrate.</div>
+        <div className="text-[11px] font-bold truncate" style={{ color: '#6b5a96' }}>Your mascot wants to celebrate.</div>
       </div>
       <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'partyhat' }); }}><span className="candy-label">Yes!</span></button>
       <RoundIconButton icon="close" label="No thanks" size={22} onClick={done} className="-my-1" />
@@ -402,7 +402,7 @@ export function SeasonDressOffer() {
       <div className="flex-1 min-w-0">
         {/* 14 px so "Dress up for Halloween?" fits a 390 px phone beside Yes + × */}
         <div className="text-[14px] font-black truncate tracking-[-0.2px]" style={{ color: '#6d28d9' }}>Dress up for {title}?</div>
-        <div className="text-[11px] font-bold truncate" style={{ color: '#7a6aa6' }}>Free looks for the season.</div>
+        <div className="text-[11px] font-bold truncate" style={{ color: '#6b5a96' }}>Free looks for the season.</div>
       </div>
       <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'room', tab: 'season' }); }}><span className="candy-label">Yes!</span></button>
       <RoundIconButton icon="close" label="No thanks" size={22} onClick={done} className="-my-1" />

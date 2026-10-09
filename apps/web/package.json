@@ -17,7 +17,8 @@
     "content:sync": "node scripts/content-sync.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:contrast": "vitest run --config vitest.contrast.config.ts"
+    "test:contrast": "vitest run --config vitest.contrast.config.ts",
+    "test:shift": "vitest run --config vitest.shift.config.ts"
   },
   "dependencies": {
     "@apple/app-store-server-library": "^3.1.0",

@@ -247,7 +247,7 @@ export function ProfileEditModal({ open, onClose, door = { kind: 'stage' } }: Pr
 
   const photoShows = showsPhoto(look?.display, !!avatarUrl);
   const canChangePhoto = showsChangePhoto(look?.display, !!avatarUrl);
-  const muted = '#7a6aa6';
+  const muted = '#6b5a96';
   const rowLabel = (t: string) => <span className="w-[84px] shrink-0 text-[10px] font-black uppercase tracking-[1px]" style={{ color: muted }}>{t}</span>;
   const row = (t: string, content: React.ReactNode, onClick?: () => void) => {
     const inner = <>{rowLabel(t)}<span className="flex-1 min-w-0 flex items-center gap-1.5">{content}</span>{onClick && <span className="font-black" style={{ color: '#a78bfa' }}>›</span>}</>;

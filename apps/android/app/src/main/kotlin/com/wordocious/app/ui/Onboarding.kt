@@ -78,7 +78,7 @@ import kotlinx.coroutines.launch
 // (the AN builder with W coaching) → 5 ALL SET. Every screen: the wallpaper, lettering
 // headline, cast art, candy buttons, squish, a whoosh between steps, page dots, Skip
 // top-right on 2–4; Reduce Motion / calm motion = crossfades. Existing players never see
-// it (their flag is set silently); How to Play → "Take the tour" replays steps 1–2.
+// it (their flag is set silently); Settings → Help → "Replay the app tour" replays steps 1–2.
 // The routing is the pure OnboardingFlow (OnboardingFlowTest); steps 3–5 live in
 // OnboardingProfile.kt and OnboardingMascot.kt.
 
@@ -141,7 +141,7 @@ object OnboardingGate {
 
 /** AO the runtime side: the flags, the launch prime, the step on screen and the replay. */
 object Onboarding {
-    /** True while a replay (How to Play → Take the tour) is asked for. */
+    /** True while a replay (Settings → Replay the app tour) is asked for. */
     var replaying by mutableStateOf(false)
         private set
 
@@ -196,7 +196,7 @@ object Onboarding {
         }
     }
 
-    /** How to Play / the in-game help → "Take the tour": steps 1–2 again. */
+    /** Settings → Help → "Replay the app tour": steps 1–2 again. */
     fun replay() { replaying = true }
 
     internal fun begin(replay: Boolean, signedIn: Boolean, guest: Boolean) {

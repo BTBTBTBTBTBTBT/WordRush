@@ -49,7 +49,7 @@ import { ArtTitle } from '@/components/ui/art-title';
 //   5. ALL SET — the new mascot hops in next to W, confetti, "Play today's Classic" / "Explore first".
 // Wallpaper, lettering-style headlines in soft-number ink, candy buttons,
 // `whoosh` between steps, page dots, Skip top-right on 2–4; Reduce Motion =
-// crossfades. How to Play's "Take the tour" (/?tour=1 or the `wordocious:tour`
+// crossfades. Settings -> Help "Replay the app tour" (/?tour=1 or the `wordocious:tour`
 // event) replays steps 1–2 only. Mounted once in app/layout.tsx.
 
 const CLASSIC = 'DUEL';

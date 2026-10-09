@@ -16,7 +16,7 @@ import { CastRow } from '@/components/ui/mascot';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton, TextLink, TextLinkA } from '@/components/ui/cast-button';
 import { softRow } from '@/components/ui/soft-popup';
-import { softBackground } from '@/lib/soft-surface';
+import { liftedInk, softBackground } from '@/lib/soft-surface';
 import { ART_SIZE } from '@/lib/art';
 import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
 import { MODES as CATALOG } from '@/lib/modes.generated';
@@ -84,7 +84,7 @@ function ModeCard({ m }: { m: LandingMode }) {
       </div>
       <p className="text-xs font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{m.desc}</p>
       {m.guide && (
-        <Link href={`/guides/${m.guide}`} className="inline-block text-[11px] font-extrabold mt-1.5" style={{ color: m.accent }}>
+        <Link href={`/guides/${m.guide}`} className="inline-block text-[11px] font-extrabold mt-1.5" style={{ color: liftedInk(m.accent) }}>
           Rules, scoring &amp; strategy →
         </Link>
       )}
@@ -164,7 +164,7 @@ export function Landing() {
           {MODES.map((m) => <ModeCard key={m.title} m={m} />)}
         </div>
 
-        <h2 className="text-xs font-black uppercase tracking-widest mt-8 mb-1" style={{ color: '#4f46e5' }}>
+        <h2 className="text-xs font-black uppercase tracking-widest mt-8 mb-1" style={{ color: liftedInk('#4f46e5') }}>
           More Games
         </h2>
         <p className="text-xs font-medium mb-3 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
@@ -182,7 +182,7 @@ export function Landing() {
           <ModeCard m={VS_MODE} />
         </div>
         <p className="text-xs font-medium mt-3" style={{ color: 'var(--color-text-secondary)' }}>
-          Want the deep dives? The <Link href="/guides" style={{ color: '#7c3aed', fontWeight: 800 }}>mode guides</Link> cover
+          Want the deep dives? The <Link href="/guides" style={{ color: liftedInk('#7c3aed'), fontWeight: 800 }}>mode guides</Link> cover
           exact scoring formulas, hint economics, and leaderboard strategy for every mode.
         </p>
       </section>
@@ -193,9 +193,9 @@ export function Landing() {
         <div className="p-5 space-y-2" style={softRow('#7c3aed', { radius: 16 })}>
           <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
             Guess the hidden word. After each guess, every tile flips to show how close you were:
-            <strong style={{ color: '#7c3aed' }}> purple</strong> means the right letter in the right spot,
+            <strong style={{ color: liftedInk('#7c3aed') }}> purple</strong> means the right letter in the right spot,
             <strong style={{ color: '#f59e0b' }}> amber</strong> means the letter is in the word but elsewhere, and
-            <strong style={{ color: '#6b7280' }}> gray</strong> means it isn&apos;t in the word at all. Use those clues to
+            <strong style={{ color: liftedInk('#6b7280') }}> gray</strong> means it isn&apos;t in the word at all. Use those clues to
             narrow it down before you run out of tries.
           </p>
           <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
@@ -203,7 +203,7 @@ export function Landing() {
             Finish faster and in fewer guesses to score higher on the daily leaderboard — and even a loss banks partial
             credit for how far you got, so getting close still counts.
           </p>
-          <Link href="/how-to-play" className="inline-block text-sm font-extrabold pt-1" style={{ color: '#7c3aed' }}>
+          <Link href="/how-to-play" className="inline-block text-sm font-extrabold pt-1" style={{ color: liftedInk('#7c3aed') }}>
             Read the full guide →
           </Link>
         </div>

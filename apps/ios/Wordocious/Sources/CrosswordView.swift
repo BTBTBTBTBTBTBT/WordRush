@@ -631,12 +631,10 @@ struct CrosswordGridView: View {
         // gold ring when revealed, red when a Check just cleared it.
         let face: GlossyFace = wrong ? .bad : (revealed || locked) ? .correct : (letter.isEmpty ? .empty : .typed)
         let radius = side * 0.22
-        // Doug / founder 10-05: the number sits fully inside the corner; a numbered cell's letter steps clear of it.
-        let nudge = number == nil ? (scale: 1.0, dx: 0.0, dy: 0.0) : CrosswordCellSpec.numberedGlyph(cell: Double(side))
+        // Founder 10-06: every cell's letter is the same size and centered; the number is the small corner badge.
         return Button { vm.selectCell(i) } label: {
             ZStack(alignment: .topLeading) {
-                GlossyTile(face: face, letter: letter, width: side, letterScale: (side < 26 ? 0.56 : 0.5) * CGFloat(nudge.scale),
-                           letterOffset: CGSize(width: side * CGFloat(nudge.dx), height: side * CGFloat(nudge.dy)),
+                GlossyTile(face: face, letter: letter, width: side, letterScale: side < 26 ? 0.56 : 0.5,
                            glowAmount: revealed ? 0.85 : 0, goldRing: revealed)
                     .modifier(TypePop(letter: (locked || revealed) ? "" : letter, size: CGSize(width: side, height: side)))
                 // The active entry wears a soft accent wash over its tiles.

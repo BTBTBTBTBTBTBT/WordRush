@@ -180,8 +180,9 @@ class SeasonContrastTest {
     @Test fun selectedHelperOnButtonTint() {
         for (e in seasons) {
             val t = e.palette.buttonTint
-            expect(Color.White.toArgb(), t.toArgb(), 4.5, "${e.id} selected helper label")
-            expect(Color.White.toArgb(), famMix(t, Color.Black, 0.15f).toArgb(), 4.5, "${e.id} selected helper label (pressed)")
+            val ink = InkContrast.onSolid(t.toArgb())
+            expect(ink, t.toArgb(), 4.5, "${e.id} selected helper label")
+            expect(ink, famMix(t, Color.Black, 0.15f).toArgb(), 4.5, "${e.id} selected helper label (pressed)")
         }
     }
 }

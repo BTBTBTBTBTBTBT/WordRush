@@ -181,24 +181,19 @@ public func crosswordNextEntryCursor(_ s: CrosswordState, entry: CrosswordEntry)
     return nil
 }
 
-/// A crossword cell's clue number vs its letter (Doug 10-05, Android: "5" jammed against a T; founder 10-05, iOS:
-/// the badge straddled the cell border and the cursor ring covered it). Fractions of the cell side: the number
-/// is ~27% of the cell, fully INSIDE the top-left corner with an 11% inset (never on the border, never under the
-/// ring, which sits outside the tile); in a numbered cell the letter is a touch smaller and dropped — on small
-/// cells it also steps right and shrinks more. Mirrors Android CrosswordCellSpec / web crossword-board.
+/// A crossword cell's clue number vs its letter (founder 10-06 redo of the 10-05 fix: every cell's letter is the SAME
+/// size and exactly centered, numbered or not; the number is the small thing). Fractions of the cell side: the number
+/// is ~20% of the cell, fully INSIDE the top-left corner (7% inset), never on the border and never under the cursor
+/// ring (which sits outside the tile); it is small enough that it ends above the centered letter's cap line.
+/// Mirrors Android CrosswordCellSpec / web crossword-board (+ globals.css .pz-num).
 public enum CrosswordCellSpec {
-    public static let number: Double = 0.27
-    public static let numberMin: Double = 5
-    /// Clear of the glossy tile's own ring (≈3.5% of the side) with room to spare.
-    public static let numberInset: Double = 0.11
-    public static let numberInsetMin: Double = 2.5
+    public static let number: Double = 0.2
+    public static let numberMin: Double = 4.5
+    /// Clear of the glossy tile's own ring (about 3.5% of the side).
+    public static let numberInset: Double = 0.07
+    public static let numberInsetMin: Double = 2
     public static func inset(cell: Double) -> Double { max(numberInsetMin, cell * numberInset) }
-    public static let smallCell: Double = 26
     public static func numberSize(cell: Double) -> Double { max(numberMin, cell * number) }
-    /// (scale, dx, dy) for the letter in a numbered cell, dx/dy as fractions of the cell.
-    public static func numberedGlyph(cell: Double) -> (scale: Double, dx: Double, dy: Double) {
-        cell < smallCell ? (0.7, 0.14, 0.15) : (0.92, 0, 0.06)
-    }
 }
 
 // MARK: - Reducer
