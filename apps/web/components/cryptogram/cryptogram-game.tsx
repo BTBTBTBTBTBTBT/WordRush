@@ -163,6 +163,9 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   }, [completion, profile, mode]);
 
   const flash = useCallback((m: string) => { setMessage(m); setTimeout(() => setMessage(''), 1400); }, []);
+  // "S used for two code letters" is the shared overlay toast (founder 10-08), shown when a new conflict forms.
+  const conflictKey = state ? cryptogramConflicts(state.mapping).join(',') : '';
+  useEffect(() => { if (conflictKey) flash(`${conflictKey.split(',').join(', ')} used for two code letters`); }, [conflictKey, flash]);
 
   const dispatch = useCallback((a: CryptogramAction) => {
     setState((s) => {
@@ -324,7 +327,6 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
   const finished = state.status !== 'playing';
   const codes = cryptogramCodeLetters(state.cipher);
   const resolved = codes.filter((c) => state.locked.includes(c) || state.mapping[c]).length;
-  const conflicts = cryptogramConflicts(state.mapping);
   const holiday = holidayTitle(sessionPuzzle?.holiday ?? null);
   const checksLabel = state.checks === 0 ? 'No checks' : `${state.checks} check${state.checks === 1 ? '' : 's'}`;
   // FINISH_SPEC A8: the action capsules are small glossy candy buttons (components/ui/candy-button.tsx).
@@ -379,15 +381,6 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
             <div className="my-auto w-full max-w-3xl self-center flex flex-col items-center gap-3">
               <CipherBoard state={state} selected={selected} onSelect={(c) => { setSelected(c); playKeyTap(); }} finished={false} cell={cell} width={boardWidth} />
             </div>
-            {/* An overlay at the band's foot, never a line in the flow: the board is fitted to the
-                band exactly, so an in-flow line pushed it up (lib/hint-layout.ts). */}
-            {conflicts.length > 0 && (
-              <div className="absolute inset-x-0 bottom-1 z-10 flex justify-center pointer-events-none px-3" role="status" aria-live="polite">
-                <span className="text-[11px] font-bold rounded-full px-2.5 py-0.5" style={{ color: '#dc2626', background: 'linear-gradient(rgba(220, 38, 38, 0.1), rgba(220, 38, 38, 0.1)), var(--color-card-base, #ffffff)', boxShadow: '0 2px 6px rgba(220, 38, 38, 0.18)' }}>
-                  {conflicts.join(', ')} used for two code letters
-                </span>
-              </div>
-            )}
           </div>
           {/* Pinned (founder, 2026-09-26): the letter frequencies always sit right above the buttons and keyboard. */}
           <div className="shrink-0 px-2 pt-1 flex justify-center">
