@@ -2134,6 +2134,9 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 .lh-calm .lh-ch { animation: none; }
 @media (prefers-reduced-motion: reduce) { .lh-ch, .lh-sweeping .lh-gloss { animation: none !important; } }
 [data-reduced-motion="true"] .lh-ch, [data-reduced-motion="true"] .lh-sweeping .lh-gloss { animation: none !important; }
+/* 2.8 item 14: Reduce Motion = the desktop bar's soft fade only; it never slims (rules live in the desktop block). */
+@media (prefers-reduced-motion: reduce) { .app-hdr.page-col, .app-hdr > .hdr-cast { animation: none !important; } }
+[data-reduced-motion="true"] .app-hdr.page-col, [data-reduced-motion="true"] .app-hdr > .hdr-cast { animation: none !important; }
 
 /* ── 2.8 item 6 · bubble lettering from the glyph atlas (components/ui/bubble-text.tsx). The glyph
    art is a neutral white base with shading; the word's tint multiplies over it and the glyph's own
@@ -2243,6 +2246,21 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
   }
   .app-hdr > .hdr-cast { grid-row: 1; grid-column: 1; justify-self: start; width: 220px !important; margin: 0 !important; }
+  /* 2.8 item 14 (founder 10-07): a clean scroll edge under the sticky top bar. Content dissolves into
+     the bar's own color instead of being cut by a hard line, and the bar slims as the page scrolls
+     (CSS scroll-driven, so it runs off the main thread). Reduce Motion = the fade only. Phones keep
+     the header in the page flow (it scrolls away), so nothing slides under a pinned edge there. */
+  .app-hdr.page-col::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 16px; pointer-events: none;
+    background: linear-gradient(var(--tab-dock-2), transparent);
+    opacity: 0.9;
+  }
+  @supports (animation-timeline: scroll()) {
+    .app-hdr.page-col { animation: hdr-condense-bar linear both; animation-timeline: scroll(root); animation-range: 0 64px; }
+    .app-hdr > .hdr-cast { transform-origin: left center; animation: hdr-condense-cast linear both; animation-timeline: scroll(root); animation-range: 0 64px; }
+  }
+  @keyframes hdr-condense-bar { from { padding-top: 8px; padding-bottom: 10px; } to { padding-top: 4px; padding-bottom: 5px; } }
+  @keyframes hdr-condense-cast { from { transform: scale(1); } to { transform: scale(0.72); } }
   .app-hdr > .dk-tabs { grid-row: 1; grid-column: 2; display: flex; align-items: center; gap: 8px; }
   .app-hdr > .hdr-row { grid-row: 1; grid-column: 3; justify-self: end; justify-content: flex-end; gap: 10px; padding: 0; min-width: 0; }
   .dk-tab.candy img { width: 18px !important; height: 18px !important; }
