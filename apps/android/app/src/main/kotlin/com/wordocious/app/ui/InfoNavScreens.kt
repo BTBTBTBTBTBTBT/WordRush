@@ -545,8 +545,10 @@ object HowToPlayService {
     @Serializable data class Section(
         val title: String, val intro: String? = null, val bullets: List<Bullet>? = null,
         val tilesHeading: String? = null, val tiles: List<TileRow>? = null,
-        val modes: List<ModeItem>? = null, val outro: String? = null,
+        val modes: List<ModeItem>? = null, val games: List<Game>? = null, val outro: String? = null,
     )
+    /** 2.8 item 36: one entry per game (id = catalog mode id, "vs", or "pocket-<kind>"). */
+    @Serializable data class Game(val id: String, val title: String, val accent: String, val lines: List<String> = emptyList())
     @Serializable data class Bullet(val strong: String? = null, val text: String = "")
     @Serializable data class ModeItem(val name: String, val accent: String, val body: String)
     @Serializable data class Letter(val ch: String, val color: String)

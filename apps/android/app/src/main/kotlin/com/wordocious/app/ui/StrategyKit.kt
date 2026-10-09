@@ -19,12 +19,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +42,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -599,14 +604,87 @@ fun HowToPlayBody(
         }
         if (sections.isEmpty()) {
             if (!loadFailed) CastLoader(null, Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally))
-        } else sections.forEachIndexed { i, s -> HtpSection(i + 1, s, HTP_ACCENTS[i % HTP_ACCENTS.size], tile) }
+        } else {
+            var sheet by remember { mutableStateOf<HtpSheet?>(null) }
+            sections.forEachIndexed { i, s ->
+                HtpSection(i + 1, s, HTP_ACCENTS[i % HTP_ACCENTS.size], HTP_PALETTES[i % HTP_PALETTES.size], tile) { sheet = it }
+            }
+            when (val sh = sheet) {
+                is HtpSheet.Guide -> com.wordocious.app.ui.game.GuideSheet(sh.mode, onDismiss = { sheet = null }, startExpanded = sh.expanded)
+                is HtpSheet.Pocket -> com.wordocious.app.ui.friends.PocketHelpDialog(sh.kind, onDismiss = { sheet = null })
+                null -> Unit
+            }
+        }
+    }
+}
+
+/** "Full guide" / "Watch how" targets (item 36). */
+private sealed interface HtpSheet {
+    data class Guide(val mode: GameMode, val expanded: Boolean) : HtpSheet
+    data class Pocket(val kind: com.wordocious.core.FriendlyKind) : HtpSheet
+}
+
+/** The section titles' bubble lettering, by section order. */
+private val HTP_PALETTES = listOf(
+    HeadlinePalette.HOME, HeadlinePalette.STATS, HeadlinePalette.STATS, HeadlinePalette.VS, HeadlinePalette.FRIENDS,
+    HeadlinePalette.LEADERBOARD, HeadlinePalette.HOME, HeadlinePalette.STATS, HeadlinePalette.VS, HeadlinePalette.FRIENDS,
+)
+
+/** A numbered head in bubble lettering: the soft numeral, then the title (item 36). */
+@Composable
+private fun HtpHeading(n: Int, title: String, accent: Color, palette: HeadlinePalette) {
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "$n. $title"; heading() },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            Modifier.size(40.dp).clip(CircleShape).background(field(accent, 0.16f, 0.32f)).clearAndSetSemantics { },
+            contentAlignment = Alignment.Center,
+        ) { SoftNumber("$n", 26.sp, color = if (WTheme.isDark) Wash.mix(accent, 0.7f) else accent) }
+        BubbleText(title.uppercase(), palette, Modifier.weight(1f), maxSize = 24, minSize = 16, align = TextAlign.Start)
+    }
+}
+
+/** One game's entry: icon, title art, a few plain lines, then "Full guide" and "Watch how" (its first-play walk-through). */
+@Composable
+private fun HtpGameEntry(g: HowToPlayService.Game, accent: Color, onSheet: (HtpSheet) -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val kind = remember(g.id) { if (g.id.startsWith("pocket-")) com.wordocious.core.FriendlyKind.from(g.id.removePrefix("pocket-")) else null }
+    val gen = remember(g.id) { if (kind == null) ModeGen.byId(g.id) else null }
+    val mode = remember(g.id) { gen?.dbKey?.let { k -> runCatching { GameMode.valueOf(k) }.getOrNull() } }
+    val icon = if (kind != null) ctx.resources.getIdentifier("game_pocket_${kind.raw}", "drawable", ctx.packageName).takeIf { it != 0 } else gameArtRes(g.id)
+    val titleArt = if (kind != null) ctx.resources.getIdentifier("art_titlecast_pocket_${kind.raw}", "drawable", ctx.packageName).takeIf { it != 0 }
+        else gameTitleArtRes(g.id)
+    val c = gen?.accent ?: hexColor(g.accent, accent)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (icon != null) Image(artPainter(icon, 40.dp), contentDescription = null, modifier = Modifier.size(40.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            if (titleArt != null) {
+                Image(
+                    artPainter(titleArt, 30.dp), contentDescription = g.title,
+                    modifier = Modifier.height(30.dp).widthIn(max = 220.dp).semantics { heading() },
+                    contentScale = ContentScale.Fit, alignment = Alignment.CenterStart,
+                )
+            } else {
+                Text(g.title, fontFamily = Nunito, fontSize = 15.sp, fontWeight = FontWeight.Black, color = nameInk(c), modifier = Modifier.semantics { heading() })
+            }
+            g.lines.forEach { Text(it, fontSize = 14.sp, fontWeight = FontWeight.Normal, color = InfoInk.body, lineHeight = 1.45.em) }
+            if (mode != null && gen?.guideSlug != null) {
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    QuietButton("Full guide", onClick = { onSheet(HtpSheet.Guide(mode, true)) }, size = CandySize.SMALL, contentDescription = "Full guide: ${g.title}")
+                    QuietButton("Watch how", onClick = { onSheet(HtpSheet.Guide(mode, false)) }, size = CandySize.SMALL, icon = FamIcon.PLAY, contentDescription = "Watch how to play ${g.title}")
+                }
+            } else if (kind != null) {
+                QuietButton("Watch how", onClick = { onSheet(HtpSheet.Pocket(kind)) }, size = CandySize.SMALL, icon = FamIcon.PLAY, contentDescription = "Watch how to play ${g.title}")
+            }
+        }
     }
 }
 
 @Composable
-private fun HtpSection(n: Int, s: HowToPlayService.Section, accent: Color, tile: @Composable (HowToPlayService.Letter) -> Unit) {
+private fun HtpSection(n: Int, s: HowToPlayService.Section, accent: Color, palette: HeadlinePalette, tile: @Composable (HowToPlayService.Letter) -> Unit, onSheet: (HtpSheet) -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        NumberedHeading(n, s.title, accent)
+        HtpHeading(n, s.title, accent, palette)
         s.intro?.let { TakeawayField(it, accent) }
         s.bullets?.let { bullets ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -642,7 +720,9 @@ private fun HtpSection(n: Int, s: HowToPlayService.Section, accent: Color, tile:
                 }
             }
         }
-        s.modes?.let { modes ->
+        s.games?.let { games ->
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) { games.forEach { HtpGameEntry(it, accent, onSheet) } }
+        } ?: s.modes?.let { modes ->
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 modes.forEach { m ->
                     val id = StrategyCatalog.htpModeId(m.name)

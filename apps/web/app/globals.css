@@ -2625,3 +2625,24 @@ html[data-season-tone="dark"] { --ink-lift: 65%; }
 .age-wave { animation: age-wave 2.4s ease-in-out infinite; animation-delay: calc(var(--k, 0) * 140ms); transform-origin: 50% 100%; }
 @keyframes age-wave { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-4%) rotate(-3deg); } 65% { transform: translateY(0) rotate(2.5deg); } }
 @media (prefers-reduced-motion: reduce) { .age-wave { animation: none; } }
+
+/* Items 11b leftovers: the weekday prop beside the Leaderboard title, your mascot's lean + hop (components/leaderboard/leaderboard-banner.tsx). */
+.lb-prop { transform-origin: 50% 50%; }
+.lb-prop-spin { animation: lb-spin 18s linear infinite; }
+.lb-prop-bob { animation: lb-bob 2.8s ease-in-out infinite; }
+.lb-prop-hover { animation: lb-hover 3.2s ease-in-out infinite; }
+.lb-prop-swish { animation: lb-swish 3.6s ease-in-out infinite; }
+.lb-prop-flash { animation: lb-flash 3.4s ease-in-out infinite; }
+.lb-prop-drift { animation: lb-drift 6s ease-in-out infinite alternate; }
+@keyframes lb-spin { to { transform: rotate(360deg); } }
+@keyframes lb-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-4px) rotate(3deg); } }
+@keyframes lb-hover { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+@keyframes lb-swish { 0%, 55%, 100% { transform: rotate(0); } 62% { transform: rotate(-24deg); } 72% { transform: rotate(20deg); } 82% { transform: rotate(-8deg); } 90% { transform: rotate(0); } }
+@keyframes lb-flash { 0%, 70%, 100% { transform: scale(1); opacity: 1; } 74% { transform: scale(1.22); opacity: 1; } 78% { transform: scale(0.96); opacity: 0.75; } 84% { transform: scale(1.12); opacity: 1; } 92% { transform: scale(1); opacity: 1; } }
+@keyframes lb-drift { from { transform: translateX(-6px); } to { transform: translateX(6px); } }
+.lb-lean { animation: lb-lean 5s ease-in-out infinite; }
+@keyframes lb-lean { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(1.5deg); } }
+.lb-hop { animation: lb-hop 520ms cubic-bezier(0.3, 1.5, 0.5, 1); }
+@keyframes lb-hop { 0% { transform: translateY(0) scale(1, 1); } 30% { transform: translateY(-14px) scale(0.96, 1.06); } 60% { transform: translateY(0) scale(1.06, 0.94); } 100% { transform: translateY(0) scale(1, 1); } }
+@media (prefers-reduced-motion: reduce) { .lb-prop, .lb-lean, .lb-hop { animation: none !important; } }
+[data-reduced-motion="true"] .lb-prop, [data-reduced-motion="true"] .lb-lean, [data-reduced-motion="true"] .lb-hop { animation: none !important; }

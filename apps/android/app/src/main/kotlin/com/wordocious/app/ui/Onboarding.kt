@@ -529,7 +529,7 @@ private val TOUR = listOf(
     TourCard(R.drawable.art_scene_onboard_tiles, "Daily games", "New puzzles every day. Guess the word, solve the board.", Heading.TOUR_DAILY),
     TourCard(R.drawable.art_scene_onboard_score, "Score big", "Fewer guesses and faster times earn more points.", Heading.TOUR_SCORE),
     TourCard(R.drawable.art_scene_shield_guard, "Keep your streak", "Play daily to grow your streak. Shields save it.", Heading.TOUR_STREAK),
-    TourCard(R.drawable.art_scene_friends_match, "Play together", "Race friends, react, and battle the cast.", Heading.TOUR_TOGETHER),
+    TourCard(R.drawable.art_scene_friends_match, "Play together", "Race friends, play pocket games, and battle the cast.", Heading.TOUR_TOGETHER),
 )
 
 /** AO step 2: four swipe cards, one sentence each, with their own card dots. */

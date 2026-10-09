@@ -27,4 +27,13 @@ class LeaderboardStageTest {
         assertTrue(LeaderboardStage.podiumFits(LeaderboardStage.TOP_MAX_HEIGHT))
         assertFalse(LeaderboardStage.podiumFits(LeaderboardStage.TOP_MAX_HEIGHT + 200))
     }
+
+    @Test fun dayPropsAndWizardHat() {
+        assertEquals(7, LeaderboardStage.DAY_PROPS.size)
+        assertEquals(LeaderboardStage.DayProp("art-lb-day-wand-swish", "swish"), LeaderboardStage.dayProp("2026-10-07"))
+        assertEquals(LeaderboardStage.DayProp("art-lb-day-lightning", "flash"), LeaderboardStage.dayProp("2026-10-08"))
+        assertTrue(LeaderboardStage.DAY_PROPS.map { it.motion }.toSet().size >= 5)
+        assertTrue(LeaderboardStage.wearsWizardHat("2026-10-07"))
+        listOf("2026-10-04", "2026-10-05", "2026-10-06", "2026-10-08", "2026-10-09", "2026-10-10").forEach { assertFalse(LeaderboardStage.wearsWizardHat(it)) }
+    }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DAY_PROPS, MASCOT_LEAN_DEGREES, dayProp, wearsWizardHat,
   DAY_HOSTS, LEDGE_STEPS, STAGE_TOP_MAX_HEIGHT, dayHost, podiumFits, stageWeekday,
 } from './leaderboard-stage';
 import { leaderboardTitle } from './leaderboard-title';
@@ -23,5 +24,17 @@ describe('leaderboard stage (11b)', () => {
   it('the stage top leaves room for the whole podium on a standard phone', () => {
     expect(podiumFits(STAGE_TOP_MAX_HEIGHT)).toBe(true);
     expect(podiumFits(STAGE_TOP_MAX_HEIGHT + 200)).toBe(false);
+  });
+  it('every weekday has a prop with a motion; Wednesday swishes a wand, Thursday flashes lightning', () => {
+    expect(DAY_PROPS).toHaveLength(7);
+    expect(dayProp('2026-10-07')).toEqual({ art: 'art-lb-day-wand-swish', motion: 'swish' });
+    expect(dayProp('2026-10-08')).toEqual({ art: 'art-lb-day-lightning', motion: 'flash' });
+    expect(new Set(DAY_PROPS.map((p) => p.motion)).size).toBeGreaterThanOrEqual(5);
+  });
+  it('the wizard hat is Wednesday only; the mascot leans a few degrees', () => {
+    expect(wearsWizardHat('2026-10-07')).toBe(true);
+    for (const d of ['2026-10-04', '2026-10-05', '2026-10-06', '2026-10-08', '2026-10-09', '2026-10-10']) expect(wearsWizardHat(d)).toBe(false);
+    expect(MASCOT_LEAN_DEGREES).toBeGreaterThan(0);
+    expect(MASCOT_LEAN_DEGREES).toBeLessThan(15);
   });
 });

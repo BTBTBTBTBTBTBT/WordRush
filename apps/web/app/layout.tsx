@@ -16,6 +16,7 @@ import { AchievementUnlockHost } from '@/components/badges/achievement-unlock-ho
 import { AchievementWatcher } from '@/components/badges/achievement-watcher';
 import { WelcomeModal } from '@/components/modals/welcome-modal';
 import { FirstRunTour } from '@/components/onboarding/first-run-tour';
+import { WhatsNewTour } from '@/components/modals/whats-new-tour';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { ShareVariantHost } from '@/components/share/share-variant-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
@@ -186,6 +187,7 @@ export default function RootLayout({
                     <RotateOverlay />
                     <WelcomeModal />
                     <FirstRunTour />
+                    <WhatsNewTour />
                     <ProPromptModal />
                     <GoProPopupHost />
                     <ProWelcomeHost />

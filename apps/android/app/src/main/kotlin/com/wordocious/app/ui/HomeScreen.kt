@@ -471,6 +471,8 @@ fun HomeScreen(
     // Pro-only "Invite a friend to VS" modal (web InviteModal / iOS InviteSheet).
     if (inviteOpen) InviteSheet(onDismiss = { inviteOpen = false })
     // CelebrationGate: Home's own sheets / modals keep late celebrations waiting.
+    // Item 41: the one-time "What's new in 2.8" tour (existing players only), never over a sheet or a celebration.
+    WhatsNewHost(blocked = inviteOpen || limitModal != null || showingSweep != null)
     ReportPresented(inviteOpen || limitModal != null)
 }
 

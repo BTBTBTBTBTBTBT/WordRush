@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { castPreset, LEDGE_FIGURE_FRACTION, LEDGE_STEPS, STAGE_ART, STAGE_TINT } from '@wordle-duel/core';
+import { castPreset, LEDGE_FIGURE_FRACTION, LEDGE_STEPS, STAGE_ART, STAGE_TINT, WIZARD_HAT_PART } from '@wordle-duel/core';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { useAuth } from '@/lib/auth-context';
@@ -66,17 +66,47 @@ export function Host({ castId, pose, size, flip = false }: { castId: string; pos
 }
 
 /** The player's own mascot, full body, alive when the living switch is on (their look; W for a guest). */
-export function OwnMascot({ size }: { size: number }) {
+export function OwnMascot({ size, wizardHat = false, lean = 0, onTap, hopKey = 0 }: {
+  size: number;
+  /** Wizard Wednesday: the wizard hat for the day (display-only, never saved). */
+  wizardHat?: boolean;
+  /** Lean toward the title, degrees (base fixed). */
+  lean?: number;
+  /** Tapping the mascot (the Leaderboard title: the letters bounce). */
+  onTap?: () => void;
+  /** Bumped on each tap: replays the hop. */
+  hopKey?: number;
+}) {
   const { profile } = useAuth();
   const look = usePlayerAvatar({
     name: profile?.username, userId: profile?.id, url: profile?.avatar_url,
     level: profile?.level, pro: profile?.is_pro,
   });
-  const cfg = profile ? look.config : WHITE_FALLBACK;
-  return (
-    <span className="shrink-0 block" style={{ width: size, height: size, lineHeight: 0 }} aria-hidden="true">
-      <MascotAvatar config={cfg} initial={profile ? look.initial : 'W'} size={size} cutout living />
+  const base = profile ? look.config : WHITE_FALLBACK;
+  const cfg = wizardHat ? { ...base, head: WIZARD_HAT_PART as typeof base.head } : base;
+  const figure = (
+    <span
+      key={hopKey}
+      className={`block ${hopKey > 0 ? 'lb-hop' : ''}`}
+      style={{ width: size, height: size, lineHeight: 0, transformOrigin: '50% 100%', transform: lean ? `rotate(${lean}deg)` : undefined }}
+    >
+      <span className={lean ? 'lb-lean block' : 'block'} style={{ transformOrigin: '50% 100%', ['--lean' as string]: `${lean}deg` }}>
+        <MascotAvatar config={cfg} initial={profile ? look.initial : 'W'} size={size} cutout living />
+      </span>
     </span>
+  );
+  if (!onTap) return <span className="shrink-0 block" style={{ width: size, height: size, lineHeight: 0 }} aria-hidden="true">{figure}</span>;
+  return (
+    <button
+      data-squish
+      type="button"
+      onClick={onTap}
+      aria-label="Your mascot"
+      className="shrink-0 block border-0 bg-transparent p-0 cursor-pointer"
+      style={{ width: size, height: size, lineHeight: 0 }}
+    >
+      {figure}
+    </button>
   );
 }
 

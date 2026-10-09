@@ -10,6 +10,8 @@ struct HomeView: View {
     @State private var limitModal: HomeMode?     // free user tapped a completed daily
     @State private var solvedMode: HomeMode?      // "View Solved Puzzle"
     @State private var showProSheet = false
+    /// Item 41: the one-time "What's new in 2.8" tour (existing players only).
+    @State private var showWhatsNew = false
     // Session-scoped by design: WordociousApp resets this to .daily on every
     // cold start (and on a day-rollover foreground return) so reopening the
     // app always lands on the Daily surface. UserDefaults is still used so the
@@ -639,6 +641,18 @@ struct HomeView: View {
             .task(id: effectiveMode) { await loadUnlimitedCounts() }
             // Item 35: load this account's saved game order (local mirror first, then the profile row).
             .task(id: auth.profile?.id) { orderStore.bind(userId: auth.profile?.id) }
+            // Item 41: decide once the profile + seen list are known; a beat after Home settles, and never over a game or celebration.
+            .task(id: auth.profile?.id) {
+                guard await WhatsNewGate.decide() == .show else { return }
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                if sweepCeleb == nil && pendingGame == nil && celebQueue.isEmpty { showWhatsNew = true }
+            }
+            .softSheet(isPresented: $showWhatsNew) {
+                WhatsNewTour {
+                    TutorialsSeen.shared.mark(WhatsNew.key)
+                    showWhatsNew = false
+                }
+            }
             // The row streaks once today's result has LANDED, so a sweep's flame ticks up right away.
             .onDailyRecorded { refreshSweptRowStreaks(afterAward: true) }
             // BI16: queued celebrations present from presentNextCelebrationWhenCalm
