@@ -331,7 +331,7 @@ struct UnlimitedKeepPlayingCard: View {
         .softSheet(isPresented: $showPro, onDismiss: {
             if startAfterPurchase && auth.isProActive { ProWelcomeCenter.shared.afterWelcome { action() } }
             startAfterPurchase = false
-        }) { ProView() }
+        }) { ProView(reason: "Unlimited play") }
         .onChange(of: auth.isProActive) { pro in
             if pro && showPro { showPro = false }
         }
@@ -422,7 +422,7 @@ struct UnlimitedKeepPlayingCard: View {
             // Unlimited game starts once LET'S PLAY closes it (immediately otherwise).
             if startAfterPurchase && auth.isProActive { ProWelcomeCenter.shared.afterWelcome { action() } }
             startAfterPurchase = false
-        }) { ProView() }
+        }) { ProView(reason: "Unlimited play") }
         .onChange(of: auth.isProActive) { pro in
             if pro && showPro { showPro = false }
         }

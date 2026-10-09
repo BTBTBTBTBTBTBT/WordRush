@@ -144,7 +144,7 @@ struct VSLobbyView: View {
         .toolbar(.hidden, for: .navigationBar)
         .swipeToGoBack { dismiss() }
         .softSheet(isPresented: $showAuth) { AuthView() }
-        .softSheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView(reason: "VS bots") }
         // Launch a private match once a live code resolves.
         .gameCover(item: $pendingInvite) { inv in
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }

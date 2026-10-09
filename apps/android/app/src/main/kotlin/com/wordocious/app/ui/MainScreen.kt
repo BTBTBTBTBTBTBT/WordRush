@@ -766,6 +766,16 @@ fun MainScreen() {
                                         // Profile-to-profile hop (nemesis row / podium rows):
                                         // same push-inside-the-tab pattern, new target id.
                                         onOpenProfile = { if (DressUp.isOwn(it)) DressUp.open() else publicProfileId = it },
+                                        // 2.8 item 17: the action row's doors (pocket game, Challenge's private lobby, Race my run).
+                                        onOpenGame = { publicProfileId = null; friendlyGameId = it },
+                                        onJoinInvite = { mode, code -> publicProfileId = null; vsInvite = mode to code },
+                                        onRaceRun = { friendId ->
+                                            if (com.wordocious.app.data.AuthService.isProActive) {
+                                                publicProfileId = null
+                                                vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Friend(friendId)
+                                                vsLobby = true
+                                            } else infoRoute = "pro"
+                                        },
                                     )
                                 }
                             }
@@ -874,7 +884,7 @@ fun MainScreen() {
             com.wordocious.app.ui.vs.VSGameScreen(
                 mode = inviteMode, isDaily = false, inviteCode = code,
                 onHome = { vsInvite = null },
-                onGoPro = { vsInvite = null; infoRoute = "pro" },
+                onGoPro = { vsInvite = null; infoRoute = "pro:VS bots" },
             )
         } else if (active != null) {
             // VS match (fullscreen, no bottom nav). VS HOME returns to the lobby.
@@ -882,7 +892,7 @@ fun MainScreen() {
             com.wordocious.app.ui.vs.VSGameScreen(
                 mode = active.mode, isDaily = active.isDaily, launch = active.launch,
                 onHome = { vsActive = null; vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main; vsLobby = true },
-                onGoPro = { vsActive = null; infoRoute = "pro" },
+                onGoPro = { vsActive = null; infoRoute = "pro:VS bots" },
                 // Pro "Play Unlimited VS" from the already-played daily screen → lobby.
                 onPlayUnlimited = { vsActive = null; vsLobby = true },
                 // CHALLENGE BACK → the Friend page with that friend picked (§5).
@@ -903,7 +913,7 @@ fun MainScreen() {
                     vsActive = com.wordocious.app.ui.vs.VsRoute(m, false, com.wordocious.app.ui.vs.VsLaunch.Race(c))
                 },
                 onHome = { vsChallengeCode = null; vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Main; vsLobby = true },
-                onGoPro = { vsChallengeCode = null; infoRoute = "pro" },
+                onGoPro = { vsChallengeCode = null; infoRoute = "pro:VS bots" },
                 onChallengeBack = { friendId ->
                     vsChallengeCode = null
                     vsLobbyPage = com.wordocious.app.ui.vs.VsLobbyPage.Friend(friendId)
@@ -918,7 +928,7 @@ fun MainScreen() {
                 onEnterInvite = { m, code -> vsLobby = false; vsInvite = m to code },
                 onOpenChallenge = { code -> vsChallengeCode = code },
                 onSeeRivals = { vsLobby = false; publicProfileId = null; showRecords = false; selectedTab = 2; statsVsJump++ },
-                onGoPro = { vsLobby = false; infoRoute = "pro" },
+                onGoPro = { vsLobby = false; infoRoute = "pro:VS bots" },
                 onClose = { vsLobby = false },
             )
         } else if (card?.engineMode?.isCustomEngine == true) {
@@ -1153,7 +1163,9 @@ fun MainScreen() {
                 "pastwords" -> WordsScreen(onDone = { infoRoute = null }, navTitle = "Word of the Day")
                 "pro" -> ProScreen(onDone = { infoRoute = null })
                 "edit" -> EditProfileScreen(onDone = { infoRoute = null })
-                else -> InfoScreen(kind = route, onDone = { infoRoute = null })
+                // 2.8 item 20: "pro:<reason>" opens Go Pro on the scene of what the player reached for.
+                else -> if (route.startsWith("pro:")) ProScreen(onDone = { infoRoute = null }, reason = route.removePrefix("pro:"))
+                else InfoScreen(kind = route, onDone = { infoRoute = null })
             }
           }
         } else if (showSignIn) {

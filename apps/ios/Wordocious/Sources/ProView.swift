@@ -7,6 +7,9 @@ import WordociousCore
 /// via StoreManager; prices come live from the App Store (App Store Connect /
 /// the local .storekit config). Per Apple rules we never link to web checkout.
 struct ProView: View {
+    /// 2.8 item 20: what the player reached for ("Pro mascot styles", "Unlimited QuadWord"); picks the benefit scene
+    /// next to their mascot. nil = the five scenes take turns (the Pro page opened directly).
+    var reason: String? = nil
     @ObservedObject var auth = AuthService.shared
     @ObservedObject var store = StoreManager.shared
     @Environment(\.dismiss) private var dismiss
@@ -107,10 +110,17 @@ struct ProView: View {
     private var header: some View {
         VStack(spacing: 6) {
             PageHeadline(.gopro)
-            if ArtAsset.exists("art-scene-pro-crown") {
-                Image("art-scene-pro-crown").resizable().interpolation(.high).scaledToFit()
-                    .frame(maxWidth: 300, maxHeight: 170)
-                    .accessibilityHidden(true)
+            if auth.isProActive {
+                if ArtAsset.exists("art-scene-pro-crown") {
+                    Image("art-scene-pro-crown").resizable().interpolation(.high).scaledToFit()
+                        .frame(maxWidth: 300, maxHeight: 170)
+                        .accessibilityHidden(true)
+                }
+            } else if let reason {
+                // Item 20: the free player's own mascot (alive) on the pedestal + the scene of what they reached for.
+                ProScene(benefit: StatsProfile.proBenefit(forReason: reason), height: 180)
+            } else {
+                ProSceneCarousel(height: 190)
             }
             Text("Play unlimited & ad-free — every mode, any time")
                 .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)

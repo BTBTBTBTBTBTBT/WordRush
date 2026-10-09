@@ -105,7 +105,12 @@ private fun shortDayLabel(day: String): String = runCatching {
 /** Card header caption — mock .cardtitle, as the finishing kit's FinishLabel. */
 @Composable
 private fun CardTitle(text: String, accent: Color = SOCIAL_PURPLE) {
-    FinishLabel(text, color = darkenInk(accent))
+    // 2.8 item 17: the named sections (TROPHY CASE, HIGHLIGHTS, LATELY, HEAD TO HEAD) wear the bubble lettering in their cast
+    // color; composite captions ("YOU vs NAME") keep the quiet caps line.
+    val hex = com.wordocious.core.StatsProfile.SECTION_TITLE_COLORS[text]
+    if (hex != null) {
+        BubbleText(text, ThemeKit.accentPalette(coreHexColor(hex)), Modifier.widthIn(max = 240.dp), maxSize = 20, minSize = 13, align = androidx.compose.ui.text.style.TextAlign.Start)
+    } else FinishLabel(text, color = darkenInk(accent))
 }
 
 /**
@@ -648,11 +653,7 @@ fun TrophyCaseCard(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             CardTitle("TROPHY CASE", SOCIAL_GOLD)
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            TrophyShelf(GlyphArt.GOLD, gold, "GOLD", PodiumInk.medal(1), Modifier.weight(1f))
-            TrophyShelf(GlyphArt.SILVER, silver, "SILVER", PodiumInk.medal(2), Modifier.weight(1f))
-            TrophyShelf(GlyphArt.BRONZE, bronze, "BRONZE", PodiumInk.medal(3), Modifier.weight(1f))
-        }
+        TrophyShelfView(gold, silver, bronze)
         flawless?.takeIf { it.count > 0 }?.let { fl ->
             Row(
                 Modifier
@@ -668,22 +669,6 @@ fun TrophyCaseCard(
                 Text("held by ${fl.pctOfPlayers}% of players", fontSize = 10.sp, fontWeight = FontWeight.Black, color = BrandPink)
             }
         }
-    }
-}
-
-@Composable
-private fun TrophyShelf(art: GlyphArt, count: Int, cap: String, medal: Color, modifier: Modifier = Modifier) {
-    // A1: each shelf in its medal's tint with the 4 dp band; A2: the soft count.
-    Column(
-        modifier
-            .tintedPill(medal, 13.dp)
-            .padding(top = 8.dp, bottom = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(1.dp),
-    ) {
-        GlyphArtImage(art, 24.dp)
-        SoftNumber("$count", 22.sp)
-        Text(cap, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, letterSpacing = 0.8.sp)
     }
 }
 
@@ -811,24 +796,39 @@ data class ProfileHighlight(val art: GlyphArt, val big: String, val cap: String,
 @Composable
 fun HighlightsCard(highlights: List<ProfileHighlight>) {
     if (highlights.isEmpty()) return
-    SocialCard(SOCIAL_PURPLE) {
-        CardTitle("HIGHLIGHTS")
+    // Item 17: never a lonely tile with an empty half — one highlight folds into a single centered line above Lately, two or more
+    // fill an even 2-column grid (core highlightsLayout drops an odd last one).
+    val layout = com.wordocious.core.StatsProfile.highlightsLayout(highlights.size)
+    val shown = highlights.take(layout.shown)
+    if (layout.fold) {
+        val h = shown.first()
         Row(
-            Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
+            Modifier.fillMaxWidth().then(if (h.onTap != null) Modifier.clickableNoRipple(h.onTap) else Modifier).padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
         ) {
-            highlights.forEach { h ->
-                Column(
-                    Modifier
-                        .widthIn(min = 108.dp)
-                        .then(if (h.onTap != null) Modifier.clickableNoRipple(h.onTap) else Modifier)
-                        .tintedPill(SOCIAL_PINK, 13.dp)
-                        .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    GlyphArtImage(h.art, 22.dp)
-                    Text(h.big, style = softNumberStyle(16.sp), maxLines = 1)
-                    Text(h.cap, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+            GlyphArtImage(h.art, 20.dp)
+            Text(h.big, style = softNumberStyle(15.sp), maxLines = 1)
+            Text(h.cap, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+        }
+        return
+    }
+    SocialCard(Color(0xFFF97316)) {
+        CardTitle("HIGHLIGHTS")
+        shown.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                pair.forEach { h ->
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .then(if (h.onTap != null) Modifier.clickableNoRipple(h.onTap) else Modifier)
+                            .tintedPill(Color(0xFFF97316), 13.dp)
+                            .padding(start = 10.dp, end = 10.dp, top = 10.dp, bottom = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        GlyphArtImage(h.art, 22.dp)
+                        Text(h.big, style = softNumberStyle(16.sp), maxLines = 1)
+                        Text(h.cap, fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+                    }
                 }
             }
         }

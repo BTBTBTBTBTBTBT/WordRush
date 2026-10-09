@@ -70,7 +70,10 @@ private struct LegacyChartCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                FinishLabel(title)
+                // 2.8 item 16: chart titles in the bubble lettering, tinted in the section's cast color.
+                BubbleTextView(text: title.uppercased(), palette: .accent(.cast(StatsProfile.sectionTitleColor(title))),
+                               maxSize: 20, minSize: 13, alignment: .leading)
+                    .frame(maxWidth: 220)
                 Spacer()
                 if let hint { Text(hint).font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary) }
             }
@@ -157,14 +160,18 @@ private struct GuessDistributionChart: View {
     var body: some View {
         // Gauntlet runs can take up to 50 guesses across 21 boards — a guess
         // histogram is meaningless there, so the chart is hidden (all platforms).
-        if mode == .gauntlet { EmptyView() } else {
+        // 2.8 item 16: hidden until there is a win (core showGuessDistribution) — no placeholder sentence.
+        let hidden = mode == .gauntlet || (loaded && !StatsProfile.showGuessDistribution(data.map(\.count)))
+        Group {
+        if hidden {
+            // keeps the .task below alive; the negative padding cancels the parent stack's spacing
+            Color.clear.frame(height: 0).padding(.vertical, -8)
+        } else {
         // All-time: word games only here (one histogram cannot mix guesses,
         // mistakes and checks); each game page has its own.
-        LegacyChartCard(title: "\(noun.one.uppercased()) DISTRIBUTION", hint: mode == nil ? "word games" : nil) {
+        LegacyChartCard(title: noun.many.uppercased(), hint: mode == nil ? "word games" : bestHint) {
             if !loaded {
                 SkeletonBlock(height: 130, cornerRadius: 10)
-            } else if totalWins == 0 {
-                EmptyChart(copy: "\(spec?.countsAll == true ? "Play" : "Win") a game to see your \(noun.one) distribution")
             } else {
                 if wideLabels {
                     // Founder, 2026-10-01 stats audit: word labels (Par, +5+, Pandemonium) read
@@ -192,6 +199,8 @@ private struct GuessDistributionChart: View {
                 }
             }
         }
+        }
+        }
         .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
             // P-cache: seed from the session memo (instant repaint), then
             // fetch fresh exactly as before and store back.
@@ -202,7 +211,12 @@ private struct GuessDistributionChart: View {
             loaded = true
             StatsMemo.shared.set(key, fresh)
         }
-        }
+    }
+
+    /// "Best 4": the fewest guesses / lowest bucket with a result (moved here from the stat grid, item 16).
+    private var bestHint: String? {
+        guard let b = data.first(where: { $0.count > 0 }) else { return nil }
+        return "Best \(barLabel(b))"
     }
 
     /// Horizontal rows for word labels: label column · bar · count. Tap a row to select it.

@@ -58,6 +58,7 @@ import com.wordocious.app.data.ProfileService
 import com.wordocious.app.data.SupabaseConfig
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
+import com.wordocious.core.StatsProfile
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.delay
@@ -137,7 +138,13 @@ private val SOCIAL_PLATFORMS = listOf(
 )
 
 @Composable
-fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (String) -> Unit = {}) {
+fun PublicProfileScreen(
+    userId: String, onClose: () -> Unit, onOpenProfile: (String) -> Unit = {},
+    /** 2.8 item 17: the action row's doors — a pocket game's screen, the private VS lobby (Challenge), Race my run, Go Pro. */
+    onOpenGame: (String) -> Unit = {},
+    onJoinInvite: (GameMode, String) -> Unit = { _, _ -> },
+    onRaceRun: (String) -> Unit = {},
+) {
     // iOS PublicProfileView keeps `loading` and `notFound` apart — a null result
     // after the fetch settles means the profile is gone, not still in flight.
     val load by produceState(initialValue = true to null as PublicProfile?, userId) {
@@ -240,6 +247,16 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
 
     // FRIENDS (§207): Add Friend button state (iOS addFriendButton parity).
     var confirmUnfriend by remember(userId) { mutableStateOf(false) }
+    // 2.8 item 17: the hero's friendship state (core rules), "Friends since", and the action row's sheets.
+    val friendState = StatsProfile.friendshipState(
+        isSelf = isOwnProfile, isFriend = viewerIsFriend,
+        incoming = friendsVersion >= 0 && !isOwnProfile && FriendsService.hasIncomingFrom(userId),
+        requested = friendsVersion >= 0 && !isOwnProfile && FriendsService.hasRequested(userId),
+    )
+    val friendsSince = if (viewerIsFriend) FriendsService.friends.firstOrNull { it.id == userId }?.since else null
+    var quickPlay by remember { mutableStateOf<com.wordocious.app.ui.friends.QuickPlayRequest?>(null) }
+    var reactOpen by remember { mutableStateOf(false) }
+    var actionBusy by remember { mutableStateOf(false) }
     LaunchedEffect(confirmUnfriend) { if (confirmUnfriend) { delay(3_000); confirmUnfriend = false } }
 
     // ── Profile-social layer loads — every one best-effort: a failed fetch
@@ -285,6 +302,45 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
     var boardSeed by remember { mutableStateOf<String?>(null) }
     var podiumTarget by remember { mutableStateOf<Pair<String, String>?>(null) }   // (day, mode)
 
+    // 2.8 item 17: Pocket game opens the quick-play sheet with this friend preselected (the Friends tab's flow); React sends one
+    // canned note (the Friends taunts), one per day per friend.
+    quickPlay?.let { req ->
+        com.wordocious.app.ui.friends.QuickPlaySheet(
+            request = req, friends = FriendsService.friends,
+            onDismiss = { quickPlay = null },
+            onOpenGame = { id -> quickPlay = null; onOpenGame(id) },
+            onVsBattle = { f ->
+                quickPlay = null
+                moderationScope.launch {
+                    when (val r = FriendsService.challenge(f.id, "DUEL")) {
+                        is FriendsService.ChallengeOutcome.Sent -> onJoinInvite(GameMode.DUEL, r.code)
+                        is FriendsService.ChallengeOutcome.Failed -> moderationToast = r.message
+                    }
+                }
+            },
+            onRaceRun = { id -> quickPlay = null; onRaceRun(id) },
+        )
+    }
+    if (reactOpen) {
+        FamilyActionMenu(
+            title = "React", subtitle = "Send $targetName a quick note",
+            onDismiss = { reactOpen = false },
+            actions = com.wordocious.app.data.FriendTaunts.ALL.map { t ->
+                // No emoji in UI (§AM3): the id's canned line without its leading emoji.
+                val line = t.text.substringAfter(' ')
+                FamilyMenuAction(t.id, line, FamilyMenuIcon.Clay(FamIcon.HEART), FamilyMenuInk.PINK, contentDescription = line) {
+                    moderationScope.launch {
+                        moderationToast = when (FriendsService.taunt(userId, t.id, com.wordocious.app.todayLocalDate())) {
+                            FriendsService.TauntOutcome.SENT -> "Sent!"
+                            FriendsService.TauntOutcome.ALREADY_SENT -> "You already reacted to $targetName today"
+                            FriendsService.TauntOutcome.FAILED -> "Could not send. Try again."
+                        }
+                    }
+                }
+            },
+        )
+    }
+
     Column(
         Modifier.fillMaxSize().pageBackground(PageTint.HOME)
             .verticalScroll(rememberScrollState())
@@ -310,7 +366,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                 // FRIENDS (§207): Add Friend pill beside the moderation kebab —
                 // iOS addFriendButton states: Add Friend → Requested (tap =
                 // cancel) · Accept request · Friends ✓ (tap → confirm unfriend).
-                if (sessionUserId != null && !blocked) {
+                if (gated && sessionUserId != null && !blocked) {
                     // A8: every friend state is a small candy button (same taps as before).
                     when {
                         viewerIsFriend && confirmUnfriend -> CandyButton(
@@ -361,6 +417,9 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                             },
                             onDismiss = { menuOpen = false },
                             actions = buildList {
+                                // 2.8 item 17: Unfriend / Block / Report all live in the ⋯ menu (Unfriend only for friends).
+                                if (viewerIsFriend && !gated) add(FamilyMenuAction("unfriend", "Unfriend", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true,
+                                    contentDescription = "Unfriend this player") { moderationScope.launch { FriendsService.remove(userId) } })
                                 add(FamilyMenuAction("report", "Report user", FamilyMenuIcon.Clay(FamIcon.FLAG), danger = true,
                                     contentDescription = "Report this user") { showReportDialog = true })
                                 if (blocked) {
@@ -434,42 +493,23 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
 
         // ── Header: avatar / gradient username / level badge / XP bar / socials ──
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
-            val customAccent = ProfileAccent.isCustom(p.accentColor)
-            // Today-progress ring — the target's completed SWEEP dailies today
-            // (ring + "N/total today" capsule around the avatar). A More Games
-            // result (ProperNoundle, Sudoku…) is not part of the sweep ring.
-            val todayCount = com.wordocious.app.todayLocalDate().let { today ->
-                val sweepSet = com.wordocious.app.ModeGen.sweepModesFor(today)
-                targetDailies.count { it.day == today && it.completed && it.gameMode in sweepSet }
+            // Today-progress pill — the target's completed SWEEP dailies today ("N/total today"). A More Games
+            // result (ProperNoundle, Sudoku…) is not part of the sweep.
+            val sweepSet = com.wordocious.app.ModeGen.sweepModesFor(com.wordocious.app.todayLocalDate())
+            val todayCount = targetDailies.count { it.day == com.wordocious.app.todayLocalDate() && it.completed && it.gameMode in sweepSet }
+            // Item 17: the mascot full-body on a mini Stage (alive while living_mascot is on) with the today pill.
+            ProfileStageHero(
+                p.username ?: "Player", p.id, p.avatarUrl?.takeIf { it.isNotBlank() }, p.avatarConfig, p.avatarCastId, p.avatarFrame, p.accentColor,
+            ) {
+                if (todayCount > 0) {
+                    Text(
+                        "$todayCount/${sweepSet.size} today", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp)
+                            .clip(RoundedCornerShape(50)).background(WTheme.primary).padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
             }
-            // ART_SPEC §20: photo in a circle (round ring), else the letter tile (rounded-square ring).
-            // AA2: the signed-in Pro member's own profile wears the crown (other players' rows
-            // carry no Pro flag yet).
-            val proAvatar = isOwnProAvatar(p.username)
-            // AN6: photo and mascot are both rounded squares (the ring follows).
-            // BJ5: THE shared resolver (photo / saved mascot / worn cast / seeded; own = local look).
-            TodayRingAvatar(completed = todayCount, square = true, avatarSize = 84.dp) {
-                val f = p.avatarFields()
-                PlayerAvatar(
-                    p.username ?: "P", 84.dp, userId = f.userId, avatarUrl = avatarUrl, config = f.config,
-                    castId = f.castId, frame = f.frame, accentHex = f.accentHex, pro = proAvatar, contentDescription = "Avatar",
-                )
-            }
-            if (customAccent) {
-                Text(p.username ?: "Player", fontSize = 30.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(p.accentColor))
-            } else {
-                Text(
-                    p.username ?: "Player",
-                    fontSize = 30.sp, fontWeight = FontWeight.Black,
-                    style = TextStyle(
-                        fontFamily = com.wordocious.app.ui.theme.Nunito,
-                        brush = Brush.horizontalGradient(
-                            listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA)),
-                        ),
-                    ),
-                )
-            }
+            ProfileIdentityBlock(p.username ?: "Player", p.accentColor, viewerIsFriend, friendsSince)
             // PRIVATE PROFILES: the owner (and admins) still see the full page
             // — this muted pill is the reminder that everyone else doesn't.
             if (p.isPrivate) {
@@ -492,16 +532,30 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // Chips row: Level (relocated from the old standalone badge) +
             // archetype + best percentile + signature opener (mock .idchips).
             IdentityChipsRow(level = p.level, persona = persona, onArchetypeTap = { showArchetype = true })
-            // XP bar to next level
-            val intoLevel = p.xp % 1000
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Box(Modifier.width(160.dp).height(6.dp).clip(RoundedCornerShape(50)).background(accentWash(Color(0xFFF97316), 0.2f))) {
-                    Box(
-                        Modifier.fillMaxSize().fillMaxWidth(intoLevel / 1000f)
-                            .background(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFF97316)))),
-                    )
-                }
-                Text("${1000 - intoLevel} XP to next level", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            ProfileRankStrip(p.level, p.xp)
+            // Challenge · Pocket game · React · Add friend / Requested / Accept–Decline (core profileActions).
+            if (!isOwnProfile && sessionUserId != null && !blocked) {
+                ProfileActionRow(
+                    state = friendState, busy = actionBusy,
+                    onChallenge = {
+                        if (!actionBusy) {
+                            actionBusy = true
+                            moderationScope.launch {
+                                when (val r = FriendsService.challenge(userId, "DUEL")) {
+                                    is FriendsService.ChallengeOutcome.Sent -> onJoinInvite(GameMode.DUEL, r.code)
+                                    is FriendsService.ChallengeOutcome.Failed -> moderationToast = r.message
+                                }
+                                actionBusy = false
+                            }
+                        }
+                    },
+                    onPocket = { quickPlay = com.wordocious.app.ui.friends.QuickPlayRequest(userId) },
+                    onReact = { reactOpen = true },
+                    onAddFriend = { moderationScope.launch { FriendsService.request(addresseeId = userId) } },
+                    onCancelRequest = { moderationScope.launch { FriendsService.decline(userId) } },
+                    onAccept = { moderationScope.launch { FriendsService.accept(userId) } },
+                    onDecline = { moderationScope.launch { FriendsService.decline(userId) } },
+                )
             }
             // Socials — iOS socialLinksRow(): 30×30 gray circles with an
             // @/globe/chat glyph, not brand-colored word pills (those wrapped
@@ -539,6 +593,9 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
         // ── Profile-social sections (approved mock): You-vs-Them → Trophy Case →
         // Highlights → Lately. All render above the existing stat cards; each
         // hides itself when its data didn't load. ───────────────────────────────
+        if (!isOwnProfile && viewerIsFriend) {
+            FriendsService.friends.firstOrNull { it.id == userId }?.let { ProfileHeadToHeadStrip(it, targetName) }
+        }
         if (!isOwnProfile && h2h != null && h2h.shared.isNotEmpty()) {
             val todayShared = h2h.shared.firstOrNull { it.day == com.wordocious.app.todayLocalDate() }
             YouVsThemCard(
@@ -591,14 +648,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             onNemesisTap = { onOpenProfile(it) },
         )
 
-        // ── Overall stat cards (iOS: one 4-across row) ──────────────────────────
-        val games = p.totalWins + p.totalLosses
-        val winRate = if (games > 0) "%.1f".format(p.totalWins * 100.0 / games) else "0.0"
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OverallCard(Icon3DName.TROPHY, Color(0xFF7C3AED), "${p.totalWins}", "Wins", "$winRate% win rate", Modifier.weight(1f))
-            OverallCard(Icon3DName.FLAME, Color(0xFFEA580C), "${p.currentStreak}", "Win Streak", "Best: ${p.bestStreak}", Modifier.weight(1f))
-            OverallCard(Icons.Filled.Bolt, Color(0xFF7C3AED), "${p.dailyLoginStreak}", "Daily", "Best: ${p.bestDailyLoginStreak}", Modifier.weight(1f))
-            OverallCard(Icons.Filled.TrackChanges, Color(0xFF2563EB), "$games", "Games", "${p.totalLosses} losses", Modifier.weight(1f))
+        // ── The headline numbers, once (item 17): the four hero stats. The daily streak lives in LATELY; level + XP are the strip above. ──
+        val fastestSolo = stats.filter { it.playType == "solo" }.mapNotNull { it.fastestTime?.takeIf { t -> t > 0 } }.minOrNull() ?: 0
+        KitCard(accent = Color(0xFF7C3AED)) {
+            HeroStatsRow(p.totalWins, p.totalLosses, p.currentStreak, p.bestStreak, fastestSolo.toDouble(), Color(0xFF7C3AED))
         }
 
         // ── Game mode statistics ────────────────────────────────────────────────

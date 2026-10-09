@@ -65,7 +65,7 @@ struct SnapshotHero: View {
                 .buttonStyle(CandyButtonStyle(variant: .amber, size: .small))
             }
         }
-        .softSheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView(reason: "Extended stats") }
     }
 }
 

@@ -129,7 +129,7 @@ struct LockedItemCard: View {
             .padding(.horizontal, 18).padding(.top, 22).padding(.bottom, 24)
         }
         .background((Theme.isDark ? Theme.surface : Color.white).ignoresSafeArea())
-        .softSheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView(reason: "Pro mascot styles") }
     }
 
     private var header: some View {

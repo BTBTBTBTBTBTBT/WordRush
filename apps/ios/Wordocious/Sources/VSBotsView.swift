@@ -40,7 +40,7 @@ struct VSBotsView: View {
         .pageBackground(.vs, lightOnly: true)
         .toolbar(.hidden, for: .navigationBar)
         .swipeToGoBack { dismiss() }
-        .softSheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView(reason: "VS bots") }
         .navigationDestination(isPresented: Binding(get: { launch != nil }, set: { if !$0 { launch = nil } })) {
             if let l = launch { VSGameView(mode: l.mode, intent: .bot(l.kind, ghost: l.ghost)) }
         }

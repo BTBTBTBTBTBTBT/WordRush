@@ -75,7 +75,16 @@ func socialDayLabel(_ day: String) -> String {
 
 /// Uppercase tracked caption used by every social card title (§C4 card label).
 private func socialCaption(_ text: String) -> some View {
-    FinishLabel(text)
+    // 2.8 item 17: the named sections (TROPHY CASE, HIGHLIGHTS, LATELY, HEAD TO HEAD) wear the bubble lettering in their
+    // cast color; composite captions ("YOU vs NAME", "NAME · LAST 60 DAYS") keep the quiet caps line.
+    Group {
+        if let hex = StatsProfile.sectionTitleColors[text] {
+            BubbleTextView(text: text, palette: .accent(.cast(hex)), maxSize: 20, minSize: 13, alignment: .leading)
+                .frame(maxWidth: 240)
+        } else {
+            FinishLabel(text)
+        }
+    }
 }
 
 /// FINISH_SPEC §A1: every social card is a tinted card in its own accent with the
@@ -634,11 +643,7 @@ struct TrophyCaseCard: View {
                 socialCaption("TROPHY CASE")
                 Spacer()
             }
-            HStack(spacing: 8) {
-                shelf("crown.fill", profile.goldMedals, "GOLD", Color(hex: 0xD97706), highlight: true)
-                shelf("medal.fill", profile.silverMedals, "SILVER", Theme.textMuted)
-                shelf("medal.fill", profile.bronzeMedals, "BRONZE", Color(hex: 0xB45309))
-            }
+            TrophyShelfView(gold: profile.goldMedals, silver: profile.silverMedals, bronze: profile.bronzeMedals)
             if let flawless = persona?.flawless, flawless.count > 0 {
                 HStack(spacing: 8) {
                     Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Theme.primary)
@@ -664,17 +669,6 @@ struct TrophyCaseCard: View {
         .softSheet(isPresented: $showHistory) {
             MedalHistorySheet(username: profile.username, medals: medals)
         }
-    }
-
-    private func shelf(_ icon: String, _ count: Int, _ label: String, _ color: Color, highlight: Bool = false) -> some View {
-        VStack(spacing: 2) {
-            SymbolGlyph(icon, size: 16, color: color)
-            Text("\(count)").softNumber(22)
-            Text(label).font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 7)
-        // §A1: each shelf a tinted tile in its medal color (gold stronger when won).
-        .socialTile(color, radius: 13, strong: highlight && count > 0)
     }
 }
 
@@ -864,28 +858,42 @@ struct HighlightsReel: View {
     }
 
     var body: some View {
-        let items = self.items
-        if !items.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                socialCaption("HIGHLIGHTS")
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 9) {
+        let all = self.items
+        // Item 17: never a lonely tile with an empty half — one highlight folds into a single centered line above Lately,
+        // two or more fill an even 2-column grid (core highlightsLayout drops an odd last one).
+        let layout = StatsProfile.highlightsLayout(count: all.count)
+        let items = Array(all.prefix(layout.shown))
+        Group {
+            if items.isEmpty {
+                EmptyView()
+            } else if layout.fold {
+                let item = items[0]
+                Button { if item.tapsCalendar { showCalendar = true } } label: {
+                    HStack(spacing: 8) {
+                        SymbolGlyph(item.symbol, size: 15, color: item.color)
+                        Text(item.big).softNumber(15)
+                        Text(item.caption).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                .disabled(!item.tapsCalendar)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    socialCaption("HIGHLIGHTS")
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 9), GridItem(.flexible(), spacing: 9)], spacing: 9) {
                         ForEach(items) { item in
-                            if item.tapsCalendar {
-                                Button { showCalendar = true } label: { card(item) }
-                                    .buttonStyle(.squish)
-                            } else {
-                                card(item)
-                            }
+                            card(item)
+                                .contentShape(Rectangle())
+                                .onTapGesture { if item.tapsCalendar { Haptics.tap(); showCalendar = true } }
                         }
                     }
-                    .padding(.horizontal, 1)
                 }
+                .socialCard(Color(hex: 0xF97316))
             }
-            .socialCard(Color(hex: 0x7C3AED))
-            .softSheet(isPresented: $showCalendar) {
-                StreakCalendarSheet(username: profile.username, calendar: calendar)
-            }
+        }
+        .softSheet(isPresented: $showCalendar) {
+            StreakCalendarSheet(username: profile.username, calendar: calendar)
         }
     }
 
@@ -897,7 +905,7 @@ struct HighlightsReel: View {
             Text(item.caption).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)
                 .lineLimit(2).multilineTextAlignment(.leading)
         }
-        .frame(minWidth: 104, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .socialTile(item.color, radius: 13)
     }
