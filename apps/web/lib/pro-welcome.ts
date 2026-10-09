@@ -1,3 +1,5 @@
+import { ADS_SERVING } from '@wordle-duel/core';
+
 // "Welcome to Pro" (docs/FINISH_SPEC.md AP): the one-time full-screen moment
 // right after a player's FIRST Pro purchase, or the first activation of a
 // gifted week. Never again (localStorage flag `pro-welcomed:<user id>`), never
@@ -124,11 +126,14 @@ export function letsPlayHref(pathname: string): string | null {
 export type ProBenefitArt =
   | { scene: 'unlimited-loop' | 'ladder-cleared' | 'shield-guard' | 'gift-pro' }
   | { badge: 'swords' | 'level-pro' | 'trending-up' }
-  | { icon: 'badge-check' };
+  | { icon: 'badge-check' | 'bell' };
 
 export const PRO_WELCOME_BENEFITS: readonly { title: string; line: string; accent: string; art: ProBenefitArt }[] = [
   { title: 'Play unlimited', line: 'Fresh puzzles in every game, no waiting.', accent: '#fb923c', art: { scene: 'unlimited-loop' } },
-  { title: 'No ads, ever', line: 'Nothing between you and the next puzzle.', accent: '#10b981', art: { icon: 'badge-check' } },
+  // Ads aren't serving, so "No ads, ever" would promise nothing (core ads.ts): the card becomes a real perk, keeping the 2-column grid even.
+  ADS_SERVING
+    ? { title: 'No ads, ever', line: 'Nothing between you and the next puzzle.', accent: '#10b981', art: { icon: 'badge-check' } }
+    : { title: 'First in line', line: 'Early access to new game modes.', accent: '#f97316', art: { icon: 'bell' } },
   { title: 'VS everything', line: 'Live VS in every mode, plus private matches.', accent: '#0d9488', art: { badge: 'swords' } },
   { title: 'Battle the cast', line: 'Take on all ten of the cast, anytime.', accent: '#7c3aed', art: { scene: 'ladder-cleared' } },
   { title: '4 shields a cycle', line: 'Four streak shields every billing period.', accent: '#6366f1', art: { scene: 'shield-guard' } },

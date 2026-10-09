@@ -1801,7 +1801,7 @@ private struct DailyVsAlreadyPlayed: View {
                 window
                 Text(isPro
                      ? "Want more? Jump into unlimited VS battles with fresh puzzles."
-                     : "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.")
+                     : (AdCopy.adsServing ? "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles." : "Upgrade to Pro for unlimited VS matches and rematches."))
                     .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                     .multilineTextAlignment(.center).padding(.horizontal, 16)
                 if isPro {

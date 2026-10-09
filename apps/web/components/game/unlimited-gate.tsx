@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Home } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { GameMode } from '@wordle-duel/core';
+import { ADS_SERVING, GameMode } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
 import { lookupInviteByCode } from '@/lib/invite-service';
 import { loadCpuProgression } from '@/lib/bot/cpu-progression';
@@ -130,7 +130,7 @@ export function UnlimitedGate({ isDaily, modeSlug, children }: {
   return (
     <GateCard
       title="Unlimited play is a Pro perk"
-      blurb="Free players get a fresh daily puzzle in every mode. Go Pro for unlimited replays, no ads, and rematches."
+      blurb={ADS_SERVING ? 'Free players get a fresh daily puzzle in every mode. Go Pro for unlimited replays, no ads, and rematches.' : 'Free players get a fresh daily puzzle in every mode. Go Pro for unlimited replays and rematches.'}
       fallbackHref={`/${modeSlug}?daily=true`}
       fallbackLabel="Play today's daily"
       unlimited

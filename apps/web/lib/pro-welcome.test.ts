@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ADS_SERVING } from '@wordle-duel/core';
 import {
   BENEFIT_STAGGER_MS,
   PRO_WELCOME_BENEFITS,
@@ -93,6 +94,11 @@ describe('copy + routing', () => {
     expect(PRO_WELCOME_BENEFITS).toHaveLength(8);
     expect(BENEFIT_STAGGER_MS).toBe(70);
     for (const b of PRO_WELCOME_BENEFITS) expect(`${b.title} ${b.line}`).not.toMatch(/—/);
+  });
+  it('no ad promise while ads are not serving (core ADS_SERVING), and the grid stays even', () => {
+    expect(ADS_SERVING).toBe(false);
+    for (const b of PRO_WELCOME_BENEFITS) expect(`${b.title} ${b.line}`).not.toMatch(/\bads?\b|ad-free|interrupt/i);
+    expect(PRO_WELCOME_BENEFITS.length % 2).toBe(0);
   });
 });
 

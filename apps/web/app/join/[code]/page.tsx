@@ -11,6 +11,7 @@ import {
 import { softBackground } from '@/lib/soft-surface';
 import { useAuth } from '@/lib/auth-context';
 import { logLandingVisit } from '@/lib/landing-visits';
+import { ADS_SERVING } from '@wordle-duel/core';
 
 // Referral landing — wordocious.com/join/<CODE>. Modeled on vs/join/[code]
 // (same centered card) but for the Pro gift-trial program. Signed-out
@@ -150,8 +151,7 @@ export default function JoinReferralPage() {
   const headline = inviterName ? <>{inviterName} wants to play with you!</> : <>You&apos;ve been invited!</>;
   const giftLine = (
     <>
-      They sent you <span style={{ color: '#b45309' }}>7 days of Wordocious Pro</span>, free. Ad-free play,
-      unlimited replays, VS in every mode, and more.
+      They sent you <span style={{ color: '#b45309' }}>7 days of Wordocious Pro</span>, free. {ADS_SERVING ? 'Ad-free play, unlimited' : 'Unlimited'} replays, VS in every mode, and more.
     </>
   );
 

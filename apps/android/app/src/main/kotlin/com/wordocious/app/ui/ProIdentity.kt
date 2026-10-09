@@ -106,7 +106,7 @@ object ProIdentityText {
 
     /** The plan line. Play doesn't tell the client which plan is active, so it names the membership. */
     fun planLine(expiresAt: String?): String =
-        if (expiresAt == null) "Wordocious Pro · no end date" else "Wordocious Pro · every game unlimited, no ads"
+        if (expiresAt == null) "Wordocious Pro · no end date" else if (com.wordocious.core.ADS_SERVING) "Wordocious Pro · every game unlimited, no ads" else "Wordocious Pro · every game unlimited"
 
     /** PostgREST timestamptz (…Z or …+00:00, optional fraction) to an Instant. */
     fun parseInstant(ts: String?): Instant? {
@@ -403,7 +403,7 @@ fun ProSettingsCard(modifier: Modifier = Modifier) {
                     // BJ11: a former member's upsell names the day their Pro ended.
                     val lapsed = com.wordocious.app.data.SubscriptionCopy.lapsedLine(profile?.proExpiresAt, AuthService.isProActive)
                     Text(
-                        lapsed?.let { "$it. Switch it back on any time." } ?: "Every game unlimited, no ads, VS on every mode.",
+                        lapsed?.let { "$it. Switch it back on any time." } ?: (if (com.wordocious.core.ADS_SERVING) "Every game unlimited, no ads, VS on every mode." else "Every game unlimited, VS on every mode."),
                         fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         color = if (dark) WTheme.textMuted else FinishInk.muted,
                     )

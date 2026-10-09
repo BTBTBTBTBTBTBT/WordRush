@@ -544,7 +544,7 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             HeadingArt(Heading.ONASTREAK, height = 22.dp, maxWidth = 150.dp, contentDescription = "You're on a streak!", alignment = Alignment.CenterStart)   // BJ16
             Text(
-                "Upgrade to Pro for ad-free play, stats, shields, and more.",
+                if (com.wordocious.core.ADS_SERVING) "Upgrade to Pro for ad-free play, stats, shields, and more." else "Upgrade to Pro for unlimited play, stats, shields, and more.",
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
         }

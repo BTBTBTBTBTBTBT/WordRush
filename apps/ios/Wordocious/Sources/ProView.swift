@@ -37,17 +37,22 @@ struct ProView: View {
     /// §G1: each benefit row wears a 3D icon (a game icon where one fits).
     private enum BenefitIcon { case icon(Icon3DName), game(String) }
     private struct Benefit { let icon: BenefitIcon; let text: String }
-    private let benefits: [Benefit] = [
-        .init(icon: .icon(.lock), text: "Ad-free experience — no interruptions, ever"),
-        .init(icon: .game("game-practice"), text: "Unlimited replays of every game mode, any time"),
-        .init(icon: .game("game-vs"), text: "VS mode on every game — challenge friends in every mode"),
-        .init(icon: .icon(.trophy), text: "Battle all ten of the cast — Rip to Webster, any time"),
-        .init(icon: .icon(.addFriend), text: "Invite friends to private matches by link or username"),
-        .init(icon: .icon(.shield), text: "4 streak shields credited each billing period"),
-        .init(icon: .icon(.crown), text: "Pro badge on profile & leaderboards"),
-        .init(icon: .icon(.tabStats), text: "Extended stats — win rate trends & avg speed per mode"),
-        .init(icon: .icon(.flame), text: "Early access to new game modes"),
-    ]
+    /// The "Ad-free experience" row only exists while ads actually serve (AdCopy.adsServing);
+    /// otherwise it is dropped so the list has no gap and no empty promise.
+    private let benefits: [Benefit] = {
+        var rows: [Benefit] = [
+            .init(icon: .game("game-practice"), text: "Unlimited replays of every game mode, any time"),
+            .init(icon: .game("game-vs"), text: "VS mode on every game — challenge friends in every mode"),
+            .init(icon: .icon(.trophy), text: "Battle all ten of the cast — Rip to Webster, any time"),
+            .init(icon: .icon(.addFriend), text: "Invite friends to private matches by link or username"),
+            .init(icon: .icon(.shield), text: "4 streak shields credited each billing period"),
+            .init(icon: .icon(.crown), text: "Pro badge on profile & leaderboards"),
+            .init(icon: .icon(.tabStats), text: "Extended stats — win rate trends & avg speed per mode"),
+            .init(icon: .icon(.flame), text: "Early access to new game modes"),
+        ]
+        if AdCopy.adsServing { rows.insert(Benefit(icon: .icon(.lock), text: "Ad-free experience — no interruptions, ever"), at: 0) }
+        return rows
+    }()
 
     var body: some View {
         NavigationStack {
@@ -122,7 +127,7 @@ struct ProView: View {
             } else {
                 ProSceneCarousel(height: 190)
             }
-            Text("Play unlimited & ad-free — every mode, any time")
+            Text(AdCopy.adsServing ? "Play unlimited & ad-free — every mode, any time" : "Play unlimited — every mode, any time")
                 .font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
         }
         .padding(.top, 4).padding(.bottom, 18)

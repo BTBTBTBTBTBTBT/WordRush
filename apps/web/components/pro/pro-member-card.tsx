@@ -9,6 +9,7 @@ import { memberSince, proPlanLine } from '@/lib/pro-identity';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { proLapsedLine } from '@/lib/payment/subscription-copy';
 import { softBackground, softBorder, softShadow } from '@/lib/soft-surface';
+import { ADS_SERVING } from '@wordle-duel/core';
 
 // FINISH_SPEC AA3: the slot at the top of Settings. Pro members get a
 // gold-tinted "WORDOCIOUS PRO" member card — the level-pro badge, "Member
@@ -87,7 +88,7 @@ export function ProMemberCard({ onManage, onGoPro, manageBusy = false, webBillin
               </>
             ) : (
               <p className="m-0 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                {lapsed ? `${lapsed}. Switch it back on any time.` : 'Every game unlimited, no ads, VS on every mode.'}
+                {lapsed ? `${lapsed}. Switch it back on any time.` : (ADS_SERVING ? 'Every game unlimited, no ads, VS on every mode.' : 'Every game unlimited, VS on every mode.')}
               </p>
             )}
           </div>

@@ -277,7 +277,9 @@ private data class WelcomeBenefit(val title: String, val line: String, @Drawable
 
 private val WELCOME_BENEFITS = listOf(
     WelcomeBenefit("Play unlimited", "Fresh puzzles in every game, any time", R.drawable.art_scene_unlimited_loop, Color(0xFFF97316)),
-    WelcomeBenefit("No ads, ever", "Nothing between you and the next word", R.drawable.icon3d_badge_check, Color(0xFF10B981)),
+    // Ads aren't serving (core ADS_SERVING), so "No ads, ever" would promise nothing: the card becomes a real perk, keeping the 2-column grid even.
+    if (com.wordocious.core.ADS_SERVING) WelcomeBenefit("No ads, ever", "Nothing between you and the next word", R.drawable.icon3d_badge_check, Color(0xFF10B981))
+    else WelcomeBenefit("First in line", "Early access to new game modes", R.drawable.icon3d_bell, Color(0xFFF97316)),
     WelcomeBenefit("VS everything", "Challenge anyone in every mode", R.drawable.art_badge_swords, Color(0xFF0D9488)),
     WelcomeBenefit("Battle the cast", "Take on all ten of the cast", R.drawable.art_scene_ladder_cleared, Color(0xFF7C3AED)),
     WelcomeBenefit("4 shields a cycle", "Fresh streak shields every billing period", R.drawable.art_scene_shield_guard, Color(0xFF2563EB)),

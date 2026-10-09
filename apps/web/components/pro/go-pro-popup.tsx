@@ -19,7 +19,7 @@ import { CHECKOUT_HANDOFF_LINE, webRenewalDisclosure } from '@/lib/payment/subsc
 import { HeadingArt } from '@/components/ui/heading-art';
 import { ArtTitle } from '@/components/ui/art-title';
 import { ProScene } from '@/components/pro/pro-scene';
-import { proBenefitForReason } from '@wordle-duel/core';
+import { ADS_SERVING, proBenefitForReason } from '@wordle-duel/core';
 
 // The redesigned Go Pro popup (docs/FINISH_SPEC.md G1, R3): W crowned with
 // the golden star, the plan picker (Yearly preselected, Monthly), and one
@@ -126,7 +126,7 @@ export function GoProPopupHost() {
               <ArtTitle name="art-titlecast-gopro" label="Go Pro" as="h2" maxHeight={48} className="mt-1" />
             )}
             <p className="m-0 mt-0.5 text-[12px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              Fresh puzzles in every game, no waiting, no ads.
+              {ADS_SERVING ? 'Fresh puzzles in every game, no waiting, no ads.' : 'Fresh puzzles in every game, no waiting.'}
             </p>
             <div role="radiogroup" aria-label="Choose your plan" className="grid grid-cols-2 gap-2.5 mt-3 pt-1.5">
               {plans.map((p) => {

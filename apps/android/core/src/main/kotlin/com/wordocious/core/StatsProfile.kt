@@ -198,7 +198,7 @@ object StatsProfile {
     const val PRO_PEDESTAL = "art_pro_stage_pedestal"
     val PRO_BENEFIT_CAPTION = mapOf(
         ProBenefit.UNLIMITED to "Every game, any time", ProBenefit.ITEMS to "Wear every Pro mascot item",
-        ProBenefit.VS_BOTS to "VS on every game, bots included", ProBenefit.STATS to "Stats that go deeper", ProBenefit.NO_LIMITS to "No limits. No ads.",
+        ProBenefit.VS_BOTS to "VS on every game, bots included", ProBenefit.STATS to "Stats that go deeper", ProBenefit.NO_LIMITS to if (ADS_SERVING) "No limits. No ads." else "No limits. No waiting.",
     )
 
     fun proBenefitForReason(reason: String?): ProBenefit {

@@ -10,6 +10,7 @@ import { CandyLink } from '@/components/ui/candy-button';
 import { HeaderBack } from '@/components/ui/page-header';
 import { PopupBar, popupCard, POPUP_ACCENT } from '@/components/ui/soft-popup';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { ADS_SERVING } from '@wordle-duel/core';
 
 // The Go Pro nudge after a 7-day streak (docs/FINISH_SPEC.md G1): the gold
 // card family — a gold wash with the gold top bar, W crowned with the golden
@@ -72,7 +73,7 @@ export function ProPromptModal() {
                 {/* BJ16: the ON A STREAK! lettering. */}
                 <HeadingArt slug="onastreak" label="You're on a streak!" height={28} maxWidth={200} align="left" />
                 <p className="text-[11px] font-bold leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-                  Upgrade to Pro for ad-free play, stats, shields, and more.
+                  {ADS_SERVING ? 'Upgrade to Pro for ad-free play, stats, shields, and more.' : 'Upgrade to Pro for unlimited play, stats, shields, and more.'}
                 </p>
                 <CandyLink href="/pro" onClick={dismiss} color="amber" size="md" className="mt-2">
                   Go Pro

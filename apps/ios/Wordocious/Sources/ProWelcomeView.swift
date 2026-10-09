@@ -322,8 +322,12 @@ struct ProWelcomeView: View {
     private static let benefits: [Benefit] = [
         .init(id: 0, asset: "art-scene-unlimited-loop", fallback: .flame, title: "Play unlimited",
               line: "Fresh puzzles in every game, no waiting", accent: Color(hex: 0xFB923C)),
-        .init(id: 1, asset: "icon3d-badge-check", fallback: .badgeCheck, title: "No ads, ever",
-              line: "Nothing between you and the next puzzle", accent: Color(hex: 0x14B8A6)),
+        // Ads aren't serving (AdCopy.adsServing), so "No ads, ever" would promise nothing: the card becomes a real perk, keeping the 2-column grid even.
+        AdCopy.adsServing
+            ? .init(id: 1, asset: "icon3d-badge-check", fallback: .badgeCheck, title: "No ads, ever",
+                    line: "Nothing between you and the next puzzle", accent: Color(hex: 0x14B8A6))
+            : .init(id: 1, asset: "icon3d-bell", fallback: .bell, title: "First in line",
+                    line: "Early access to new game modes", accent: Color(hex: 0xF97316)),
         .init(id: 2, asset: "game-vs", fallback: .trophy, title: "VS everything",
               line: "Race friends in every game mode", accent: Color(hex: 0xEC4899)),
         .init(id: 3, asset: "art-scene-ladder-cleared", fallback: .trophy, title: "Battle the cast",

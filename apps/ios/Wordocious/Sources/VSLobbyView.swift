@@ -578,7 +578,7 @@ struct VSLobbyView: View {
                             .frame(width: 44, height: 44).foregroundStyle(Theme.textMuted)
                     }
                     HeadingArtView(.vsused)   // BJ16
-                    Text("You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.")
+                    Text(AdCopy.adsServing ? "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow." : "You've played your free daily VS match for today. Upgrade to Pro for unlimited battles and rematches, or come back tomorrow.")
                         .font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                         .multilineTextAlignment(.center)
                     HStack(spacing: 6) {

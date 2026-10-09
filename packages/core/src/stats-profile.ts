@@ -9,6 +9,7 @@
 // assert against stats-profile-fixtures.json (scripts/gen-parity-fixtures.ts).
 
 import type { FriendlyKind } from './friendly-games';
+import { ADS_SERVING } from './ads';
 
 // ---- VS picker: 9 games, 5 on top and 4 centered under, no swipe --------------------------
 
@@ -264,7 +265,7 @@ export const PRO_BENEFIT_CAPTION: Record<ProBenefit, string> = {
   items: 'Wear every Pro mascot item',
   vsBots: 'VS on every game, bots included',
   stats: 'Stats that go deeper',
-  noLimits: 'No limits. No ads.',
+  noLimits: ADS_SERVING ? 'No limits. No ads.' : 'No limits. No waiting.',
 };
 
 /** Which benefit scene a Go Pro request shows, from the reason the surface gave ("Pro mascot styles", "Unlimited QuadWord"). */

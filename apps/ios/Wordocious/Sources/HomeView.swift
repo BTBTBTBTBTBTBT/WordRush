@@ -803,7 +803,7 @@ struct HomeView: View {
             Icon3D(.crown, size: 32)
             VStack(alignment: .leading, spacing: 1) {
                 HeadingArtView(.onastreak, height: 22, maxWidth: 150, label: "You're on a streak!", alignment: .leading)   // BJ16
-                Text("Upgrade to Pro for ad-free play, stats, shields, and more.")
+                Text(AdCopy.adsServing ? "Upgrade to Pro for ad-free play, stats, shields, and more." : "Upgrade to Pro for unlimited play, stats, shields, and more.")
                     .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(2)
             }
             Spacer(minLength: 4)
@@ -1100,7 +1100,7 @@ struct ModeLimitModal: View {
                 Text(mode.title.uppercased()).font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center).padding(.bottom, 4)
                     .accessibilityHidden(true)
-                Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.")
+                Text(AdCopy.adsServing ? "You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode." : "You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays across every mode.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                     .multilineTextAlignment(.center)
                     // Release gate: never truncated (it lost "…ad-free gameplay across every mode").
