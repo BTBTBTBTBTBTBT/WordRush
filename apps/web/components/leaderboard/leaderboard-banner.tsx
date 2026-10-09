@@ -2,6 +2,7 @@
 
 import { LiveHeadline } from '@/components/ui/live-headline';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { holidayKeyForDay, leaderboardTitle } from '@wordle-duel/core';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
@@ -9,6 +10,12 @@ import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
 import { PageHeadline } from '@/components/ui/page-headline';
 import { DAY_HEADLINE, DAY_PROP_SIZE, PAGE_HEADLINE, dayPropPair, headlineMaxWidth } from '@/lib/headline';
 import { GamePicker } from '@/components/ui/game-picker';
+import { useDailyCompletions } from '@/lib/daily-completions-context';
+import { todayBadges } from '@/lib/stats-view';
+import { pickerRows } from '@/lib/game-picker';
+import { useFlags } from '@/hooks/use-flags';
+import { sweepModesFor } from '@/lib/daily-modes';
+import { getTodayLocal } from '@/lib/daily-service';
 import { ART_SIZE, dayArtName, type ArtName } from '@/lib/art';
 import { softPill } from '@/lib/soft-surface';
 import { LB_GOLD } from './board-rows';
@@ -108,6 +115,13 @@ interface Props {
 
 export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
   const season = useSeason();
+  // 2.8 item 8: today's W / L on each picker tile — the same badges as Home and the finish screens.
+  const { todayDailies } = useDailyCompletions();
+  const { isOn: flagOn } = useFlags();
+  const badges = useMemo(
+    () => todayBadges(pickerRows(flagOn), todayDailies, sweepModesFor(getTodayLocal())),
+    [flagOn, todayDailies],
+  );
   const title = today ? dayTitle(today) : NBSP;
   // The weekday's title art (docs/ART_SPEC.md §1). A holiday shows the whole
   // cast around LEADERBOARD with "<HOLIDAY> HEROES" as a small caps subtitle (§8).
@@ -149,6 +163,7 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
         // BB3: the same two-row grid as Stats (every game visible, no sideways
         // scroll) at compact ≤ 32 px tiles; BB4: no all-time button (it lives in Stats).
         density="compact"
+        badges={badges}
         label="Pick a leaderboard"
         header={
           <div className={PICKER_HEADER_CLASS} style={PICKER_HEADER_STYLE}>

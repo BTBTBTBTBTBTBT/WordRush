@@ -500,16 +500,11 @@ private fun BannerTile(
             look = Modifier.shadow(3.dp, shape, ambientColor = accent.copy(alpha = 0.18f), spotColor = accent.copy(alpha = 0.18f))
                 .clip(shape).background(accentWash(accent, 0.16f))
         }
-        // Won: a glossy tile in the game's color with an accent glow, white icon + check.
-        result?.completed == true -> {
-            ink = Color.White
-            look = Modifier.shadow(4.dp, shape, ambientColor = accent.copy(alpha = 0.55f), spotColor = accent.copy(alpha = 0.55f))
-                .clip(shape).background(accent).background(gloss)
-        }
-        // Lost: a glossy gray tile, white icon.
+        // 2.8 item 8: played (won OR lost) = THE one game-tile style (the Sudocious finish screen's
+        // picker tile, miniGameCard): the game's wash + top band, plus today's W / L badge below.
         result != null -> {
-            ink = Color.White
-            look = Modifier.clip(shape).background(Color(0xFF9CA3AF)).background(gloss)
+            ink = accent
+            look = Modifier.miniGameCard(accent, radius)
         }
         // Not played: a soft pale tile, the icon dimmed (on a dark season's glass a dim night tile
         // with a hint of the game color, so the played tiles' solid color stands out; iOS parity).
@@ -526,12 +521,11 @@ private fun BannerTile(
         unlimited -> ""
         result == null -> ", not played yet"
         result.completed -> ", won"
-        else -> ", played"
+        else -> ", lost"
     }
-    Box(
-        Modifier.squishClickable(card.title + state, card = true, onClick = onClick).size(size).then(look),
-        contentAlignment = Alignment.Center,
-    ) {
+    // The outer box is unclipped so the W / L badge can overhang the tile's corner.
+    Box(Modifier.squishClickable(card.title + state, card = true, onClick = onClick).size(size)) {
+      Box(Modifier.fillMaxSize().then(look), contentAlignment = Alignment.Center) {
         // A played tile shows the real full-color 3D art on a small pale disc (iOS BannerGlyph
         // `solid` parity), so it never melts into its own accent fill. ModeGlyph's white ink
         // tints the art into a flat white silhouette, so it is used only for the unplayed /
@@ -539,26 +533,20 @@ private fun BannerTile(
         val playedArt = if (!unlimited && result != null) gameArtRes(card.id) else null
         Box(Modifier.graphicsLayer { alpha = if (!unlimited && result == null) 0.45f else 1f }, contentAlignment = Alignment.Center) {
             if (playedArt != null) {
-                val icon = size * 0.56f
-                Box(
-                    Modifier.size(icon * 1.3f)
-                        .shadow(1.5.dp, androidx.compose.foundation.shape.CircleShape, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.12f))
-                        .background(Wash.mix(accent, 0.12f), androidx.compose.foundation.shape.CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    androidx.compose.foundation.Image(
-                        artPainter(playedArt, icon * 1.12f), contentDescription = null,
-                        modifier = Modifier.size(icon * 1.12f),
-                    )
-                }
+                val icon = size * 0.56f * 1.25f
+                androidx.compose.foundation.Image(
+                    artPainter(playedArt, icon), contentDescription = null,
+                    modifier = Modifier.size(icon),
+                )
             } else {
                 ModeGlyph(card, ink, box = size)
             }
         }
-        if (!unlimited && result?.completed == true) {
-            androidx.compose.material3.Icon(
-                Icons.Filled.Check, null, tint = Color.White,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(1.5.dp).size(9.dp),
+      }
+        if (!unlimited && result != null) {
+            ResultBadge(
+                result.completed, size = 13.dp,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp),
             )
         }
     }

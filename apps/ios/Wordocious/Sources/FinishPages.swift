@@ -251,13 +251,15 @@ struct GamePickerCard<Header: View>: View {
             // sideways scroll); `compact` (the Leaderboard) shrinks the tiles + gaps.
             VStack(alignment: .leading, spacing: compact ? 5 : 8) {
                 FinishLabel("Wordocious", color: ink)
-                PickerTileRow(gap: compact ? 5 : 6, maxSide: compact ? 32 : 44) {
+                // 2.8 item 8: both rows share ONE tile size (sized for the longer row) and one gap, like Home's banner rows.
+                let slots = max(words.count + (showSweep ? 1 : 0), puzzles.count)
+                PickerTileRow(gap: compact ? 5 : 6, maxSide: compact ? 34 : 44, slots: slots) {
                     ForEach(words) { m in tile(m) }
                     if showSweep { sweepTile }
                 }
                 if !puzzles.isEmpty {
                     FinishLabel("Puzzles", color: ink).padding(.top, compact ? 1 : 4)
-                    PickerTileRow(gap: compact ? 4 : 5, maxSide: compact ? 30 : 40) {
+                    PickerTileRow(gap: compact ? 5 : 6, maxSide: compact ? 34 : 44, slots: slots) {
                         ForEach(puzzles) { m in tile(m) }
                     }
                 }
@@ -319,6 +321,10 @@ struct PickerTile<Icon: View>: View {
     let accent: Color
     var selected: Bool = false
     var result: Bool? = nil
+    /// 2.8 item 8: the same tile at Home's banner size (smaller radius / bar / badge).
+    var radius: CGFloat = 12
+    var bar: CGFloat = 4
+    var badge: CGFloat = 15
     @ViewBuilder var icon: (CGFloat) -> Icon
 
     var body: some View {
@@ -329,10 +335,10 @@ struct PickerTile<Icon: View>: View {
                 .padding(.top, 2)
         }
         .aspectRatio(1, contentMode: .fit)
-        .gameTile(accent: accent, selected: selected, radius: 12, bar: 4)
+        .gameTile(accent: accent, selected: selected, radius: radius, bar: bar)
         .overlay(alignment: .topTrailing) {
             if let won = result {
-                RowResultBadge(won: won, size: 15, label: won ? "Won today" : "Lost today")
+                RowResultBadge(won: won, size: badge, label: won ? "Won today" : "Lost today")
                     .offset(x: 4, y: -4)
             }
         }
@@ -344,11 +350,14 @@ struct PickerTile<Icon: View>: View {
 struct PickerTileRow: Layout {
     var gap: CGFloat = 6
     var maxSide: CGFloat = 44
+    /// 2.8 item 8: size the tiles for this many slots (so two rows of different counts share one tile size).
+    var slots: Int? = nil
 
     private func side(_ width: CGFloat?, _ n: Int) -> CGFloat {
         guard n > 0 else { return 0 }
         guard let w = width, w.isFinite else { return maxSide }
-        return max(16, min(maxSide, floor((w - gap * CGFloat(n - 1)) / CGFloat(n))))
+        let count = max(n, slots ?? n)
+        return max(16, min(maxSide, floor((w - gap * CGFloat(count - 1)) / CGFloat(count))))
     }
 
     private func total(_ s: CGFloat, _ n: Int) -> CGFloat { s * CGFloat(n) + gap * CGFloat(max(0, n - 1)) }

@@ -490,48 +490,38 @@ private struct BannerTile: View {
     var body: some View {
         let accent = mode.accent
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        let solid = !unlimited && result != nil
-        let won = !unlimited && result?.completed == true
         Button(action: onTap) {
             ZStack {
-                if unlimited {
+                if !unlimited, let result {
+                    // 2.8 item 8: the ONE game-tile style (the Sudocious finish screen's picker tile):
+                    // the game's color wash + top band, and today's W / L badge in the corner.
+                    PickerTile(accent: accent, result: result.completed, radius: radius, bar: 3, badge: 13) { side in
+                        BannerGlyph(icon: mode.icon, ink: accent, accent: accent, solid: false,
+                                    size: iconSize > 0 ? iconSize : floor(side * 0.56))
+                    }
+                } else if unlimited {
                     shape.fill(accent.seasonWash(0.16))
                         .shadow(color: accent.opacity(0.18), radius: 3, x: 0, y: 2)
-                } else if let result {
-                    // Glossy: the fill plus a soft white sheen over its top half.
-                    shape.fill(result.completed ? accent : Color(hex: 0x9CA3AF))
-                        .overlay(shape.fill(LinearGradient(stops: [.init(color: .white.opacity(0.38), location: 0),
-                                                                   .init(color: .white.opacity(0), location: 0.55)],
-                                                           startPoint: .top, endPoint: .bottom)))
-                        .shadow(color: result.completed ? accent.opacity(0.55) : .clear, radius: 3.5, x: 0, y: 1.5)
                 } else {
                     // Not played: pale out of season; on a dark season's glass a dim night tile
                     // (only a hint of the game color), so the played tiles' solid color stands out.
                     shape.fill(accent.seasonIdleTile)
                 }
                 // BJ6: the icon scales with its tile (iconSize 0 = 56% of the tile's side).
-                GeometryReader { g in
-                    BannerGlyph(icon: mode.icon, ink: solid ? .white : accent, accent: accent, solid: solid,
-                                size: iconSize > 0 ? iconSize : floor(min(g.size.width, g.size.height) * 0.56))
-                        .frame(width: g.size.width, height: g.size.height)
+                if unlimited || result == nil {
+                    GeometryReader { g in
+                        BannerGlyph(icon: mode.icon, ink: accent, accent: accent, solid: false,
+                                    size: iconSize > 0 ? iconSize : floor(min(g.size.width, g.size.height) * 0.56))
+                            .frame(width: g.size.width, height: g.size.height)
+                    }
+                    .opacity(!unlimited && result == nil ? 0.45 : 1)
                 }
-                .opacity(!unlimited && result == nil ? 0.45 : 1)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(alignment: .bottomTrailing) {
-                if won {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 7, weight: .black))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 0.8, x: 0, y: 0.5)
-                        .padding(2.5)
-                        .accessibilityHidden(true)
-                }
-            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
-        .accessibilityLabel(mode.title + (unlimited ? "" : result.map { $0.completed ? ", won" : ", played" } ?? ", not played yet"))
+        .accessibilityLabel(mode.title + (unlimited ? "" : result.map { $0.completed ? ", won" : ", lost" } ?? ", not played yet"))
     }
 }
 

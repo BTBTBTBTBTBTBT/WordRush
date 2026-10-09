@@ -26,7 +26,7 @@ describe('AU2 the compact rank row', () => {
     expect(banner).toContain('density="compact"');
     expect(banner).not.toContain('layout="strip"');
     expect(banner).not.toContain('href="/records"');
-    expect(read('components/ui/game-picker.tsx')).toContain('maxSize={compact ? 32 : 44}');
+    expect(read('components/ui/game-picker.tsx')).toContain('maxSize={compact ? 34 : 44}');
   });
 });
 

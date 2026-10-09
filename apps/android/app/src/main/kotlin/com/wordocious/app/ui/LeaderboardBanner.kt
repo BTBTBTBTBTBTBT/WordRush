@@ -111,6 +111,8 @@ internal fun LeaderboardPicker(
     selected: String,
     onSelect: (String) -> Unit,
     @Suppress("UNUSED_PARAMETER") onOpenRecords: () -> Unit = {},
+    /** 2.8 item 8: today's W / L per game (key → won), the same badges as Home and Stats. */
+    badge: ((String) -> Boolean?)? = null,
 ) {
     GamePickerCard(
         selected = selected,
@@ -118,6 +120,7 @@ internal fun LeaderboardPicker(
         // BB3: the SAME two-row grid as Stats (every game visible, no sideways scroll), dense
         // (~30–32 dp tiles, tight gaps) so the podium still shows on arrival.
         dense = true,
+        badge = badge,
         accent = LB_GOLD,
         labelColor = LB_LABEL,
         withSweep = true,

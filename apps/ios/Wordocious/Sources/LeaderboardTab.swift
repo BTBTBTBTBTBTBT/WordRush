@@ -316,7 +316,9 @@ struct LeaderboardTab: View {
                 // window (date + reset clock + ALL-TIME on its header strip; the Sweep
                 // is the 9th WORDOCIOUS tile).
                 LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
-                                      bleed: 16)
+                                      bleed: 16,
+                                      results: completions.dataDay == LeaderboardService.todayLocal() ? completions.byMode.mapValues { $0.completed } : [:],
+                                      sweepResult: completions.dataDay == LeaderboardService.todayLocal() && completions.allDone ? true : nil)
                 if isSweep {
                     sweepBoard
                 } else {
