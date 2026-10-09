@@ -607,6 +607,10 @@
       "pro": true,
       "buy": "t2"
     },
+    "head:emo-pink-headphones": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:bow": {
       "free": true
     },
@@ -701,6 +705,10 @@
     "head:cap": {
       "free": true
     },
+    "head:punk-studded-cap": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:beret": {
       "pro": true,
       "buy": "t2"
@@ -770,6 +778,13 @@
         "label": "Keep a 100-day play streak"
       }
     },
+    "head:punk-mohawk": {
+      "free": true
+    },
+    "head:punk-liberty-spikes": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:pumpkinhat": {
       "season": "halloween",
       "pro": true,
@@ -801,6 +816,12 @@
         "achievement": "cheerleader",
         "label": "Send 25 reactions"
       }
+    },
+    "face:punk-heart-shades": {
+      "free": true
+    },
+    "face:emo-star-shades": {
+      "free": true
     },
     "face:monocle": {
       "pro": true,
@@ -944,6 +965,10 @@
       "pro": true,
       "buy": "t2"
     },
+    "held:emo-heart-balloons": {
+      "pro": true,
+      "buy": "t2"
+    },
     "held:trophy": {
       "pro": true,
       "buy": "t2",
@@ -1040,6 +1065,9 @@
     "feet:sneakers": {
       "free": true
     },
+    "feet:emo-checker-high-tops": {
+      "free": true
+    },
     "feet:boots": {
       "pro": true,
       "buy": "t1",
@@ -1047,6 +1075,10 @@
         "achievement": "ladder_climber",
         "label": "Solve 25 Letter Ladders"
       }
+    },
+    "feet:punk-combat-boots": {
+      "pro": true,
+      "buy": "t1"
     },
     "feet:goth-platform-boots": {
       "pro": true,
@@ -1113,6 +1145,9 @@
       "buy": "t2"
     },
     "pet:goth-black-cat-plush": {
+      "free": true
+    },
+    "pet:punk-skull-plush": {
       "free": true
     },
     "frame:bronze": {

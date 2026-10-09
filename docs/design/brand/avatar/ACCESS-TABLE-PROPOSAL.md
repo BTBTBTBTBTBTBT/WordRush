@@ -18,7 +18,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 - Not listed (always free): every `none`, the solid pattern, the auto backdrop, the default accessory color.
 - A part the player already **saved** is never stripped (grandfathered) even if it's gated later.
 
-**Totals** (267 options): 63 starter-free · 200 in Pro · 198 buyable · 60 earnable · 15 seasonal.
+**Totals** (277 options): 68 starter-free · 205 in Pro · 203 buyable · 60 earnable · 15 seasonal.
 
 ## Recommended free starter set
 
@@ -243,6 +243,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | sprout | Pro · buy $0.99 · earn: Complete your first daily (achievement `daily_debut`) |
 | nightcap | Pro · buy $0.99 · earn: Finish a daily between midnight and 4 AM (achievement `night_owl`) |
 | headphones | Pro · buy $1.99 |
+| emo-pink-headphones | Pro · buy $1.99 |
 | bow | free (starter) |
 | wizard | Pro · buy $1.99 · earn: Find 10 Hubbub pangrams (achievement `pangram_hunter`) |
 | pirate | Pro · buy $1.99 |
@@ -259,6 +260,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | viking | Pro · buy $1.99 · earn: Win 5 VS matches in a row (achievement `unstoppable`) |
 | sweatband | Pro · buy $0.99 · earn: Win Classic in 2 guesses (achievement `no_sweat`) |
 | cap | free (starter) |
+| punk-studded-cap | Pro · buy $1.99 |
 | beret | Pro · buy $1.99 |
 | minicrown | Pro · buy $1.99 · earn: Clear five rungs of the bot ladder (achievement `halfway_hero`) |
 | flowercrown | Pro · buy $1.99 · earn: Have 10 friends (achievement `squad_goals`) |
@@ -272,6 +274,8 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | pombeanie | Pro · buy $1.99 |
 | bearears | Pro · buy $1.99 |
 | mohawk | Pro · buy $2.99 · earn: Keep a 100-day play streak (`bestStreak` ≥ 100) |
+| punk-mohawk | free (starter) |
+| punk-liberty-spikes | Pro · buy $1.99 |
 | pumpkinhat | free in halloween season · Pro · buy $1.99 |
 | candycornhat | free in halloween season · Pro · buy $1.99 |
 | witchnight | free in halloween season · Pro · buy $1.99 |
@@ -283,6 +287,8 @@ players except a small starter set, everything try-on-able). The mechanism reads
 |---|---|
 | mustache | Pro · buy $0.99 |
 | heart-glasses | Pro · buy $0.99 · earn: Send 25 reactions (achievement `cheerleader`) |
+| punk-heart-shades | free (starter) |
+| emo-star-shades | free (starter) |
 | monocle | Pro · buy $1.99 · earn: Beat Webster, the final boss (achievement `boss_battle`) |
 | starglasses | Pro · buy $1.99 · earn: Reach the top rank in Hubbub (achievement `hive_mind`) |
 | goth-bat-sunglasses | free (starter) |
@@ -319,6 +325,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | book | free (starter) |
 | pencil-big | Pro · buy $0.99 · earn: Solve 25 Kindreds (achievement `kindred_regular`) |
 | balloon | Pro · buy $1.99 |
+| emo-heart-balloons | Pro · buy $1.99 |
 | trophy | Pro · buy $1.99 · earn: Win today's friends race (achievement `race_day`) |
 | magnifier | Pro · buy $0.99 · earn: Solve 25 Spyglass word searches (achievement `sharp_spotter`) |
 | flashlight | Pro · buy $0.99 · earn: Solve 25 Codebreakers (achievement `code_cracker`) |
@@ -347,7 +354,9 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | id | routes |
 |---|---|
 | sneakers | free (starter) |
+| emo-checker-high-tops | free (starter) |
 | boots | Pro · buy $0.99 · earn: Solve 25 Letter Ladders (achievement `ladder_climber`) |
+| punk-combat-boots | Pro · buy $0.99 |
 | goth-platform-boots | Pro · buy $0.99 |
 | slippers | Pro · buy $0.99 |
 | skates | Pro · buy $1.99 · earn: Finish the Daily Sweep in under 15 minutes (achievement `speed_sweep`) |
@@ -364,6 +373,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | ghost | free in halloween season · Pro · buy $1.99 |
 | blackcat | free in halloween season · Pro · buy $1.99 |
 | goth-black-cat-plush | free (starter) |
+| punk-skull-plush | free (starter) |
 
 ### frame
 

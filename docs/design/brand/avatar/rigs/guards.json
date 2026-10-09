@@ -57,6 +57,9 @@
    "acc:balloon": [
     "swings over the face / letter (4%)"
    ],
+   "acc:emo-heart-balloons": [
+    "swings over the face / letter (15%)"
+   ],
    "acc:trophy": [
     "swings over the face / letter (52%)"
    ],
@@ -376,6 +379,9 @@
     "swings over the face / letter (40%)"
    ],
    "acc:balloon": [
+    "swings over the face / letter (2%)"
+   ],
+   "acc:emo-heart-balloons": [
     "swings over the face / letter (2%)"
    ],
    "acc:trophy": [
@@ -1025,6 +1031,9 @@
    ],
    "acc:pencil-big": [
     "swings over the face / letter (67%)"
+   ],
+   "acc:emo-heart-balloons": [
+    "swings over the face / letter (4%)"
    ],
    "acc:trophy": [
     "swings over the face / letter (33%)"

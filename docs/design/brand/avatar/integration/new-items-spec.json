@@ -4,13 +4,36 @@
     "goth": {
       "label": "Goth",
       "bonus": "goth-black-cat-plush"
+    },
+    "emo": {
+      "label": "Emo",
+      "bonus": "emo-heart-balloons"
+    },
+    "punk": {
+      "label": "Punk",
+      "bonus": "punk-skull-plush"
     }
   },
   "withheld": {
     "goth-velvet-cape": "cape builder is hard-wired to the shipped capes; needs a generic cape rule",
     "goth-long-side-hair": "hair frames the face: needs the hair layer (back + front split), not a hat rule",
     "goth-winged-liner-lips": "one art over the eyes AND the mouth: split into liner (brows layer) + lips (mouth layer)",
-    "goth-lace-choker": "reads as a beard under the mouth as a one-art pendant; needs the necklace-drape builder (a chain-style wrap)"
+    "goth-lace-choker": "reads as a beard under the mouth as a one-art pendant; needs the necklace-drape builder (a chain-style wrap)",
+    "emo-fringe-hair": "hair: needs the hair layer",
+    "emo-hair-clips": "a cluster of five clips in one art: split into single clips",
+    "emo-studded-belt": "belt builder is hard-wired to the shipped belt art",
+    "emo-striped-arm-warmers": "needs an arm-wrap builder",
+    "emo-checker-wristbands": "needs an arm-wrap builder",
+    "emo-hoodie": "garment (garments.py) not wired to the maker yet",
+    "emo-skinny-tie": "a one-art tie covers the letter: needs a tie builder",
+    "emo-heart-plasters": "cheek stickers: needs a two-piece cheek rule",
+    "punk-liberty-spikes-hair": "(shipped as a hat)",
+    "punk-studded-vest": "garment",
+    "punk-plaid-tie-wrap": "needs a tie / wrap builder",
+    "punk-spike-wristband": "needs an arm-wrap builder",
+    "punk-studded-choker": "choker as a one-art pendant reads as a beard (see goth)",
+    "punk-fishnet-sleeves": "needs an arm-wrap builder",
+    "punk-safety-pins": "extras builder is hard-wired"
   },
   "items": [
     {
@@ -195,6 +218,217 @@
         ],
         "slot": "back",
         "layer": "held"
+      }
+    },
+    {
+      "id": "emo-checker-high-tops",
+      "pack": "emo",
+      "piece": "checker-high-tops",
+      "field": "feet",
+      "kind": "shoes",
+      "pro": false,
+      "near": "sneakers",
+      "label": "Checker high-tops",
+      "shoe_keep": 0.55,
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "feet"
+      }
+    },
+    {
+      "id": "emo-star-shades",
+      "pack": "emo",
+      "piece": "star-shades",
+      "field": "face",
+      "kind": "face",
+      "pro": false,
+      "near": "heart-glasses",
+      "label": "Star shades",
+      "manifest": {
+        "w": 0.9,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "glasses",
+        "layer": "face"
+      }
+    },
+    {
+      "id": "emo-pink-headphones",
+      "pack": "emo",
+      "piece": "pink-headphones",
+      "field": "head",
+      "kind": "hat",
+      "pro": true,
+      "near": "headphones",
+      "label": "Pink headphones",
+      "manifest": {
+        "w": 1.18,
+        "anchor": [
+          0.5,
+          0.45
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.55,
+        "overFace": true
+      }
+    },
+    {
+      "id": "emo-heart-balloons",
+      "pack": "emo",
+      "piece": "heart-balloon",
+      "field": "held",
+      "kind": "held",
+      "pro": true,
+      "near": "balloon",
+      "label": "Heart balloons",
+      "held": {
+        "grip": [
+          0.42,
+          0.97
+        ],
+        "w": 1.7,
+        "rot": 8,
+        "side": "R",
+        "tall": true
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "held"
+      }
+    },
+    {
+      "id": "punk-combat-boots",
+      "pack": "punk",
+      "piece": "combat-boots",
+      "field": "feet",
+      "kind": "shoes",
+      "pro": true,
+      "near": "boots",
+      "label": "Combat boots",
+      "shoe_keep": 0.58,
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "feet"
+      }
+    },
+    {
+      "id": "punk-heart-shades",
+      "pack": "punk",
+      "piece": "heart-shades",
+      "field": "face",
+      "kind": "face",
+      "pro": false,
+      "near": "heart-glasses",
+      "label": "Heart shades",
+      "manifest": {
+        "w": 0.92,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "glasses",
+        "layer": "face"
+      }
+    },
+    {
+      "id": "punk-mohawk",
+      "pack": "punk",
+      "piece": "mohawk",
+      "field": "head",
+      "kind": "hat",
+      "pro": false,
+      "near": "mohawk",
+      "label": "Punk mohawk",
+      "manifest": {
+        "w": 0.95,
+        "anchor": [
+          0.5,
+          0.85
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3
+      }
+    },
+    {
+      "id": "punk-liberty-spikes",
+      "pack": "punk",
+      "piece": "liberty-spikes",
+      "field": "head",
+      "kind": "hat",
+      "pro": true,
+      "near": "punk-mohawk",
+      "label": "Liberty spikes",
+      "manifest": {
+        "w": 1.15,
+        "anchor": [
+          0.5,
+          0.8
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3
+      }
+    },
+    {
+      "id": "punk-studded-cap",
+      "pack": "punk",
+      "piece": "studded-cap",
+      "field": "head",
+      "kind": "hat",
+      "pro": true,
+      "near": "cap",
+      "label": "Studded cap",
+      "manifest": {
+        "w": 1.0,
+        "anchor": [
+          0.5,
+          0.78
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.2
+      }
+    },
+    {
+      "id": "punk-skull-plush",
+      "pack": "punk",
+      "piece": "skull-plush",
+      "field": "pet",
+      "kind": "buddy",
+      "pro": false,
+      "near": "goth-black-cat-plush",
+      "label": "Skull plush",
+      "buddy": {
+        "where": "floor",
+        "k": 0.3
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "pet"
       }
     }
   ]
