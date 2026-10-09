@@ -628,8 +628,9 @@ private struct WordmarkImage: View {
 /// The friendly W (the one mascot; its Halloween skin in season).
 private struct MascotW: View {
     let date: Date
+    var seasonOn = true
     var body: some View {
-        let skin = WidgetCast.asset("w", day: localDay(date))
+        let skin = WidgetCast.asset("w", day: localDay(date), seasonOn: seasonOn)
         Image(UIImage(named: skin) != nil ? skin : "mascot-w")
             .resizable().interpolation(.high).scaledToFit()
             .accessibilityHidden(true)
@@ -674,11 +675,12 @@ enum OwnLook {
 private struct HeaderHost: View {
     let date: Date
     let own: OwnLook.Look?
+    var seasonOn = true
     var body: some View {
         if let own {
             Image(uiImage: own.image).resizable().interpolation(.high).scaledToFit().accessibilityHidden(true)
         } else {
-            MascotW(date: date)
+            MascotW(date: date, seasonOn: seasonOn)
         }
     }
 }
@@ -708,7 +710,8 @@ extension WSnapshot {
     /// BI13b: the peeking cast member's image set at `date` (by the dailies' state + the day).
     func peekAsset(at date: Date) -> String {
         let day = localDay(date)
-        return WidgetCast.peekAsset(WidgetCast.peekPose(played: word.played, total: modes.count, streak: streak, day: day), day: day)
+        return WidgetCast.peekAsset(WidgetCast.peekPose(played: word.played, total: modes.count, streak: streak, day: day), day: day,
+                                    seasonOn: seasonHalloween != false)
     }
 
     /// BI13c: on a big day (swept / streak milestone) the player's own look peeks in instead of
@@ -890,7 +893,7 @@ struct LargeView: View {
                         // BI13c: the player's own look heads the large widget (W for guests / no look).
                         // ~1.5× the old 42 pt, standing just over the header baseline like the Home host:
                         // the figure overflows upward into the top margin, so the layout keeps its 42 pt row.
-                        HeaderHost(date: date, own: OwnLook.load())
+                        HeaderHost(date: date, own: OwnLook.load(), seasonOn: snap.seasonHalloween != false)
                             .frame(width: 60, height: 60, alignment: .bottom)
                             .offset(y: 5)
                             .frame(width: 60, height: 42, alignment: .bottom)

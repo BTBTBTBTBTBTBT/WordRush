@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FRIENDLY_KINDS, FRIENDLY_TITLES, newFriendlyState, type FriendlyKind } from '@wordle-duel/core';
+import { FRIENDLY_KINDS, FRIENDLY_TITLES, newFriendlyState, richPushTitle, type FriendlyKind } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, areFriends, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -85,12 +85,13 @@ export async function POST(req: NextRequest) {
   const title = FRIENDLY_TITLES[kind];
   void broadcastPush(
     {
-      title: `${who} started ${title} with you`,
+      title: richPushTitle('started', who, title),
       body: kind === 'rps' ? 'Make your pick. Best of 3.' : kind === 'coin' ? 'Best of 5. They call first.' : `${who} goes first. You're up next.`,
       url: `/friends/games/${row.id}`,
     },
     new Set([body.friendId]),
     'challenge',
+    { senderId: me, senderName: who, gameId: `pocket-${kind}`, gameTitle: title, gameRowId: row.id, kind: 'move', url: `/friends/games/${row.id}` },
   ).catch(() => {});
 
   return NextResponse.json({ game: gameView(row as GameRow, me, profs.get(body.friendId)), existing: false });

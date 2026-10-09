@@ -115,6 +115,29 @@ object ShareHelper {
     fun inviteText(url: String): String =
         ShareCaptions.caption(ShareCaptions.Kind.INVITE, ShareCaptions.Vars(date = "", game = "Wordocious", url = url))
 
+    // 9f branded one-link invites (FlagsService branded_invites): ONE wordocious.com/vs/<CODE> link
+    // whose preview image carries the game + code, with a single short line beside it. Off = today's
+    // /vs/join + /vs/challenge links and the "Race me at X!" line.
+    private fun brandedOn(): Boolean = FlagsService.isLive(com.wordocious.core.BrandedInvite.SWITCH_KEY)
+
+    /** The link to share for a live VS invite code. */
+    fun liveInviteUrl(code: String): String =
+        if (brandedOn()) com.wordocious.core.BrandedInvite.url(com.wordocious.core.BrandedInvite.Kind.VS, code)
+        else "https://wordocious.com/vs/join/$code"
+
+    /** The link to share for a race-my-run challenge code. */
+    fun challengeUrl(code: String): String =
+        if (brandedOn()) com.wordocious.core.BrandedInvite.url(com.wordocious.core.BrandedInvite.Kind.VS, code)
+        else "https://wordocious.com/vs/challenge/$code"
+
+    /** The share text for a live invite / challenge: [url] comes from liveInviteUrl / challengeUrl. */
+    fun inviteShareText(race: Boolean, game: String, url: String): String =
+        if (brandedOn()) {
+            val sender = AuthService.profile.value?.username ?: "A friend"
+            val v = if (race) com.wordocious.core.BrandedInvite.Variant.RACE else com.wordocious.core.BrandedInvite.Variant.LIVE
+            "${com.wordocious.core.BrandedInvite.shareLine(v, sender, game)} $url"
+        } else vsInviteText(game, url)
+
     /** "Race me at <Game>! ⚡ <url>" — VS join / challenge links keep their link. */
     fun vsInviteText(game: String, url: String): String =
         ShareCaptions.caption(ShareCaptions.Kind.VS_INVITE, ShareCaptions.Vars(date = "", game = game, url = url))

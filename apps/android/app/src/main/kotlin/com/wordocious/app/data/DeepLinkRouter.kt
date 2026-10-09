@@ -94,6 +94,19 @@ object DeepLinkRouter {
             return true
         }
 
+        // Branded one-link invite (9f): wordocious.com/vs/<8-char CODE> is a live VS invite OR a
+        // race-my-run challenge; the server knows which. Try the live invite, then the challenge.
+        if (parts.size == 2 && parts[0] == "vs") {
+            val code = parts[1].uppercase()
+            if (code.length != 8 || code.any { it !in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" }) return false
+            CoroutineScope(Dispatchers.IO).launch {
+                val modeStr = InviteService.lookupMode(code)
+                val mode = modeStr?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
+                if (mode != null) vsInvite.value = mode to code else vsChallenge.value = code
+            }
+            return true
+        }
+
         if (parts.size == 3 && parts[0] == "vs" && parts[1] == "join") {
             val code = parts[2].uppercase()
             CoroutineScope(Dispatchers.IO).launch {

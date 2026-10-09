@@ -6,6 +6,7 @@
         "components": [
           { "/": "/vs/join/*", "comment": "VS invite links open the app when installed" },
           { "/": "/vs/challenge/*", "comment": "Race-my-run challenge links open the race in the app" },
+          { "/": "/vs/????????", "comment": "Branded one-link invites (9f): wordocious.com/vs/<8-char CODE>, live VS or race-my-run. Exactly 8 characters, so /vs/bots, /vs/live, /vs/friend never match" },
           { "/": "/auth/reset*", "comment": "Password recovery completes natively (NewPasswordSheet)" },
           { "/": "/auth/confirm*", "comment": "Email confirmation exchanges the code in-app" }
         ]

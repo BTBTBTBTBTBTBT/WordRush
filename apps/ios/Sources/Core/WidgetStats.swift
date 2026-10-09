@@ -122,8 +122,9 @@ public enum WidgetCast {
 
     /// The image set for a cast id on `day`: the Halloween skin during the Halloween season window
     /// (core SEASON_WINDOWS via Season.current — Oct 9 – Oct 31 since 2.8; it used to be its own Oct 24 – Nov 1).
-    public static func asset(_ id: String, day: String) -> String {
-        Season.current(day: day) == .halloween ? "art-halloween-\(id)" : "mascot-\(id)"
+    /// `seasonOn` = the `season_halloween` off-switch as the app last wrote it (false = normal cast everywhere).
+    public static func asset(_ id: String, day: String, seasonOn: Bool = true) -> String {
+        seasonOn && Season.current(day: day) == .halloween ? "art-halloween-\(id)" : "mascot-\(id)"
     }
 
     /// BI13b (founder 10-03: "sprinkle a mascot or two … just a little personality"): the
@@ -160,9 +161,9 @@ public enum WidgetCast {
     }
 
     /// The image set: the pose, or in Halloween season that character's costume.
-    public static func peekAsset(_ pose: String, day: String) -> String {
+    public static func peekAsset(_ pose: String, day: String, seasonOn: Bool = true) -> String {
         let id = String(pose.split(separator: "-").first ?? "r")
-        let costume = asset(id, day: day)
+        let costume = asset(id, day: day, seasonOn: seasonOn)
         return costume.hasPrefix("art-halloween-") ? costume : "art-pose-\(pose)"
     }
 

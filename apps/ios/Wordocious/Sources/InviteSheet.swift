@@ -199,7 +199,11 @@ struct InviteSheet: View {
         Task {
             let r = await InviteService.createInvite(gameMode: mode, inviteeUsername: nil)
             busy = false
-            if let code = r.code { inviteURL = "https://wordocious.com/vs/join/\(code)" }
+            if let code = r.code {
+                // 9f: one branded link (per-invite preview image) when branded_invites is live.
+                inviteURL = FlagsService.shared.isLive(BrandedInvite.switchKey)
+                    ? BrandedInvite.url(.vs, code) : "https://wordocious.com/vs/join/\(code)"
+            }
             else { error = r.error ?? "Failed to create invite" }
         }
     }

@@ -736,6 +736,14 @@
 }
 .animate-foil-sweep { animation: foil-sweep 2.4s ease-in-out infinite; }
 /* Home banner (redesign, 2026-10-01): ONE band across the whole two-color card, a ~2.2 s pass then a rest. */
+/* 9b live pocket games: a reaction floats up from the board and fades. */
+@keyframes live-float {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { transform: translateY(-14px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-130px) scale(1); opacity: 0; }
+}
+.live-float { animation: live-float 2.4s ease-out forwards; }
+
 @keyframes banner-shimmer {
   0%        { transform: translateX(-140%) skewX(-18deg); }
   55%, 100% { transform: translateX(320%) skewX(-18deg); }

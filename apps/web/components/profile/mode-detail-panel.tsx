@@ -1,5 +1,8 @@
 'use client';
 
+import { useFlags } from '@/hooks/use-flags';
+import { BRANDED_INVITES_SWITCH } from '@wordle-duel/core';
+import { shareUrlFor } from '@/lib/invite-links';
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { User, Swords, Share2, Copy } from 'lucide-react';
@@ -57,6 +60,7 @@ interface ModeDetailPanelProps {
 
 export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'solo', statsLoading = false }: ModeDetailPanelProps) {
   const { user } = useAuth();
+  const { isLive: flagLive } = useFlags();
   const tab = playType;
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -95,7 +99,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
     try {
       const { invite, error } = await createInvite({ inviterId: user.id, gameMode });
       if (invite?.invite_code) {
-        const url = `${window.location.origin}/vs/join/${invite.invite_code}`;
+        const url = shareUrlFor(flagLive(BRANDED_INVITES_SWITCH), 'live', invite.invite_code, window.location.origin);
         if (navigator.share) {
           await navigator.share({ title: `Challenge me in ${mode?.title}!`, url });
         } else {

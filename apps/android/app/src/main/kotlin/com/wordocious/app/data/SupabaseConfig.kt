@@ -3,6 +3,7 @@ package com.wordocious.app.data
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
 import io.ktor.client.engine.android.Android
@@ -18,6 +19,20 @@ object SupabaseConfig {
     const val URL = "https://eniiqqsxpmuyrspvepiw.supabase.co"
     const val ANON_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuaWlxcXN4cG11eXJzcHZlcGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NTYwMjksImV4cCI6MjA4OTUzMjAyOX0.1_KbkFzL1eHm2xcnLmfzal5TCnFNhCYgPgklG6w4vSQ"
+
+    /**
+     * Realtime-only client for the live pocket games (FriendlyLiveChannel). Separate from [client] on
+     * purpose: Realtime needs a WebSocket-capable engine (OkHttp; the Android engine has none) and the
+     * main client's engine, session handling and retry config stay exactly as they were. It has no Auth
+     * plugin, so channels join with the anon key and FriendlyLiveChannel hands them the player's JWT
+     * (channel.updateAuth) after subscribing.
+     */
+    val realtimeClient by lazy {
+        createSupabaseClient(supabaseUrl = URL, supabaseKey = ANON_KEY) {
+            install(Realtime)
+            httpEngine = io.ktor.client.engine.okhttp.OkHttp.create()
+        }
+    }
 
     @OptIn(io.github.jan.supabase.annotations.SupabaseInternal::class)
     val client by lazy {

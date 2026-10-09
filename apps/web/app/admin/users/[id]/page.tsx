@@ -84,6 +84,9 @@ export default function AdminUserDetailPage() {
             {p.is_pro && <span className="text-xs font-extrabold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">PRO</span>}
             {p.is_banned && <span className="text-xs font-extrabold text-red-600 bg-red-50 px-2 py-0.5 rounded">BANNED</span>}
             {p.role === 'admin' && <span className="text-xs font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">ADMIN</span>}
+            {p.age_confirmed_13 && <span className="text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">13+ CONFIRMED</span>}
+            {p.age_under13_at && !p.age_confirmed_13 && <span className="text-xs font-extrabold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">UNDER 13 (purge {new Date(new Date(p.age_under13_at).getTime() + 7 * 86400000).toLocaleDateString()})</span>}
+            {p.age_confirmed_13 === false && !p.age_under13_at && <span className="text-xs font-bold text-gray-400">13+ not asked yet</span>}
           </h1>
           <p className="text-xs text-gray-400 font-medium">ID: {p.id}</p>
         </div>
