@@ -104,6 +104,7 @@ import com.wordocious.app.ui.modeAccent
 import com.wordocious.app.ui.modeTitle
 import com.wordocious.app.ui.modeTitleGradient
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.ADS_SERVING
 import com.wordocious.core.BoardState
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
@@ -1676,7 +1677,7 @@ private fun AlreadyPlayedDaily(answer: String, isPro: Boolean, won: Boolean?, on
                     }
                     Text(
                         if (isPro) "Want more? Jump into unlimited VS battles with fresh puzzles."
-                        else "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.",
+                        else if (ADS_SERVING) "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles." else "Upgrade to Pro for unlimited VS matches and rematches.",
                         fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center,
                     )
                 }
@@ -1711,7 +1712,7 @@ private fun vsSecondsUntilLocalMidnight(): Long {
 private fun VSLimitUpsellModal(onGoPro: () -> Unit, onClose: () -> Unit, exclude: com.wordocious.app.ui.MascotId? = null) {
     VsLimitWindow(
         title = "DAILY VS USED",
-        body = "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.",
+        body = if (ADS_SERVING) "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow." else "You've played your free daily VS match for today. Upgrade to Pro for unlimited battles and rematches, or come back tomorrow.",
         secondsUntilReset = ::vsSecondsUntilLocalMidnight,
         onGoPro = onGoPro, onClose = onClose,
         pose = vsSpareCast(exclude, com.wordocious.app.ui.Mascots.vsWin, com.wordocious.app.ui.Mascots.vsLoss) to "waiting",

@@ -11,6 +11,7 @@ import { badgeSrc, poseSrc } from '@/lib/art';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { ADS_SERVING } from '@wordle-duel/core';
 
 interface VsLimitModalProps {
   open: boolean;
@@ -63,7 +64,7 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
             {/* BJ16: the DAILY VS USED lettering, not plain text. */}
             <HeadingArt slug="vsused" as="h2" className="mb-1" />
             <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
-              You&apos;ve played your free daily VS match for today. Upgrade to Pro for unlimited ad-free VS matches and rematches, or come back tomorrow.
+              You&apos;ve played your free daily VS match for today. Upgrade to Pro for unlimited {ADS_SERVING ? 'ad-free ' : ''}VS matches and rematches, or come back tomorrow.
             </p>
 
             <div

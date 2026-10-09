@@ -57,6 +57,8 @@ import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIn
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
 import { friendsLayout, tileWord, waitingHeadline, theirTurnLine, cardPresence, allFriendsLabel, type CardFriend, type CardGame } from '../src/friend-cards';
 import { POCKET_HELP, FIRST_PLAY_FLAG, shouldAutoShowTutorial, tutorialShouldRecordSeen, withTutorialSeen, mergeTutorialsSeen, pocketTutorialKey } from '../src/pocket-help';
+import { ADS_SERVING } from '../src/ads';
+import { PRO_BENEFIT_CAPTION, proBenefitForReason } from '../src/stats-profile';
 import { waitingStatusLine, waitClock, waitedSeconds, keepyLine, idleBit, type WaitingKind } from '../src/waiting-room';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
@@ -1319,6 +1321,15 @@ function renderA11yLabelFixtures() {
   };
 }
 
+/** Ad copy switch (ads.ts): all three platforms must agree on whether ads serve and on the caption it drives. */
+export function renderAdCopyFixtures() {
+  return {
+    adsServing: ADS_SERVING,
+    noLimitsCaption: PRO_BENEFIT_CAPTION.noLimits,
+    reasons: ['No limits', 'Go ad-free', 'remove ads', 'Pro mascot styles', 'Unlimited QuadWord', ''].map((reason) => ({ reason, benefit: proBenefitForReason(reason) })),
+  };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -1355,6 +1366,7 @@ const FILES: Array<[string, unknown]> = [
   ['waiting-room-fixtures.json', renderWaitingRoomFixtures()],
   ['age-gate-fixtures.json', renderAgeGateFixtures()],
   ['a11y-labels-fixtures.json', renderA11yLabelFixtures()],
+  ['ad-copy-fixtures.json', renderAdCopyFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

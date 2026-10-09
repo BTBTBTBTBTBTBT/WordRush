@@ -9,6 +9,8 @@
 // pre-sign-in compliance. Edit copy HERE and it propagates everywhere.
 // ─────────────────────────────────────────────────────────────────────────
 
+import { ADS_SERVING } from '@wordle-duel/core';
+
 export interface FaqItem { q: string; a: string }
 export interface FaqSection { heading: string; items: FaqItem[] }
 export interface HelpMode { title: string; desc: string; accent: string; glyph?: string }
@@ -20,7 +22,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
   {
     heading: 'Getting Started',
     items: [
-      { q: 'Is Wordocious free?', a: 'Yes — a new daily puzzle in every mode is free, every day. An optional Pro subscription removes ads and unlocks unlimited replays beyond the daily, but the daily puzzles and leaderboards are always free.' },
+      { q: 'Is Wordocious free?', a: `Yes — a new daily puzzle in every mode is free, every day. An optional Pro subscription ${ADS_SERVING ? 'removes ads and ' : ''}unlocks unlimited replays beyond the daily, but the daily puzzles and leaderboards are always free.` },
       { q: 'Do I need an account to play?', a: 'No. You can try the daily puzzles as a guest, and read every guide, without an account. To save streaks, earn medals, appear on the daily leaderboards, play VS and play with friends, sign in with Google, Apple, or an email address.' },
       { q: 'Who can play Wordocious?', a: 'Wordocious is for players 13 and older. The app asks for your birth year once, and an account is never created for someone under 13.' },
       { q: 'How often do new puzzles appear?', a: 'Every mode gets one fresh puzzle per day, resetting at your local midnight. Everyone worldwide gets the same daily words, so scores are directly comparable.' },
@@ -52,7 +54,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       { q: 'Does Puzzles count toward the Daily Sweep?', a: 'No. The ten Puzzles titles (including ProperNoundle, which moved under the tile) are extra: they earn XP, medals, achievements and leaderboard places like every other mode, and they have their own Puzzles Sweep. They never change your Daily Sweep count or Flawless Victory, and skipping them never spoils a sweep. The Daily Sweep is the eight word games on the home grid.' },
       { q: 'How do medals work?', a: 'Each daily puzzle has a leaderboard; the top finishers earn gold, silver, and bronze medals that accumulate on your profile. Medal counts feed several collection achievements.' },
       { q: 'Are there achievements to earn?', a: 'Yes — 75 achievements span five categories: beginner milestones, consistency (streaks and daily sweeps), skill (speed solves, perfect games, beating the Gauntlet), social (VS wins), and collection (medals). They unlock automatically as you hit each milestone, and your full set — locked and unlocked, with progress toward each — is displayed on your profile, so there is always a next goal to chase.' },
-      { q: 'What does Pro unlock?', a: 'Pro removes ads, unlocks unlimited replays of every mode beyond the free daily (free players get one play per mode per day), adds Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches. The daily puzzles stay free for everyone.' },
+      { q: 'What does Pro unlock?', a: `Pro ${ADS_SERVING ? 'removes ads, unlocks' : 'unlocks'} unlimited replays of every mode beyond the free daily (free players get one play per mode per day), adds Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches. The daily puzzles stay free for everyone.` },
     ],
   },
 ];
@@ -100,7 +102,7 @@ export const HELP_FAQ: FaqItem[] = [
   { q: 'Are there achievements?', a: 'Yes — 75 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.' },
   { q: "What's a streak?", a: 'Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it.' },
   { q: 'What are Streak Shields?', a: 'A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header.' },
-  { q: 'What does Pro unlock?', a: 'Pro removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches.' },
+  { q: 'What does Pro unlock?', a: `Pro ${ADS_SERVING ? 'removes all ads and unlocks' : 'unlocks'} unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches.` },
   { q: 'What are pocket games?', a: 'Six quick games to play with a friend from the Friends tab: Rock Paper Scissors, Tic-Tac-Tile, Call It, Pass the Puzzle, Ghost and Word Chain. Take your turn any time; your friend gets a ping, and the game waits for you both for three days.' },
   { q: 'Who can play Wordocious?', a: 'Wordocious is for players 13 and older.' },
   { q: 'Do daily puzzles use the same words for everyone?', a: 'Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard.' },
@@ -180,7 +182,7 @@ export const ABOUT_SECTIONS: ContentSection[] = [
     heading: 'Free to Play',
     paragraphs: [
       'Wordocious is completely free to play. Every game mode, every daily puzzle, and every leaderboard is accessible without paying. Free players get one attempt per game mode per day.',
-      'Wordocious Pro removes ads and unlocks unlimited replays across all game modes, plus Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, and VS extras like invites and rematches.',
+      `Wordocious Pro ${ADS_SERVING ? 'removes ads and unlocks' : 'unlocks'} unlimited replays across all game modes, plus Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, and VS extras like invites and rematches.`,
     ],
   },
 ];
@@ -192,7 +194,7 @@ export const SUPPORT_SECTIONS: ContentSection[] = [
   { heading: 'How are daily scores calculated?', paragraphs: ['Your daily score is a composite that puts guesses first: a base score of 1,000 points for completing the puzzle, a guess bonus for every guess you did not need (300 points each in Classic — other modes scale to their guess budget), a speed bonus scaled by how far under the time cap you finish (always worth less than one guess, so it breaks ties rather than beating efficiency), and — on multi-board modes — a completion bonus based on how many boards you solved. For example, Classic solved in 3 guesses at 30 seconds: 1,000 base + 900 guess bonus + 216 speed + 200 completion = 2,316 points. A loss still earns a little partial credit for how far you got — correct letters on a single-board near-miss, boards solved on the multi-board modes, or stages reached in the Gauntlet — so a close miss outscores a total whiff.'] },
   { heading: 'How do XP and levels work?', paragraphs: ['You earn XP after every game. Winning awards 100 XP and losing awards 25 XP. You can earn bonus XP from win streaks (+50), completing daily challenges (+50), and earning medals (gold +100, silver +50, bronze +25). Your level is based on your total XP — every 1,000 XP advances you one level. Check your progress on your profile page.'] },
   { heading: 'How do streaks work?', paragraphs: ['Your streak counts how many consecutive days you’ve completed a daily puzzle. Play and solve at least one daily puzzle each day to keep your streak alive. If you miss a day, your current streak resets to zero — but your best streak is always saved. Streaks reset at midnight based on your local time.'] },
-  { heading: 'What is Wordocious Pro?', paragraphs: ['Pro is an optional subscription for players who want even more from Wordocious. It removes ads and unlocks unlimited replays beyond the free daily, plus Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, and VS extras like invites and rematches. Every mode and every daily puzzle stays free — Pro is a bonus, not a paywall. You can subscribe from the Pro page and cancel anytime; access continues through the end of your billing period.'] },
+  { heading: 'What is Wordocious Pro?', paragraphs: [`Pro is an optional subscription for players who want even more from Wordocious. It ${ADS_SERVING ? 'removes ads and unlocks' : 'unlocks'} unlimited replays beyond the free daily, plus Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, and VS extras like invites and rematches. Every mode and every daily puzzle stays free — Pro is a bonus, not a paywall. You can subscribe from the Pro page and cancel anytime; access continues through the end of your billing period.`] },
   { heading: 'How do I cancel my Pro subscription?', paragraphs: ['Open Settings and tap Manage Subscription — it takes you to wherever you subscribed (the App Store, Google Play, or our web billing portal), where you can cancel in a couple of taps. Once canceled, you keep Pro access until the end of your current billing cycle. No questions asked, no hidden fees.'] },
   { heading: 'My stats aren’t showing up. What do I do?', paragraphs: ['Make sure you’re signed in to your account. Game stats are saved to your profile, so if you played while signed out, those results may not be linked to your account. Try restarting the app (or refreshing the page on the web), or signing out and back in. If the issue persists, reach out to us and we’ll help sort it out.'] },
   { heading: 'I found a bug or have a suggestion!', paragraphs: ['We love hearing from players. Whether it’s a bug report, a feature idea, or just a kind word, feel free to reach out. Your feedback helps make Wordocious better for everyone.'] },

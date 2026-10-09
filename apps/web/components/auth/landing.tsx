@@ -24,6 +24,7 @@ import dynamic from 'next/dynamic';
 // Loaded on the "Sign in" tap only (founder, 2026-09-29).
 const LoginScreen = dynamic(() => import('./login-screen').then((m) => m.LoginScreen));
 import { useAuth } from '@/lib/auth-context';
+import { ADS_SERVING } from '@wordle-duel/core';
 
 type IconCmp = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
@@ -93,7 +94,7 @@ function ModeCard({ m }: { m: LandingMode }) {
 }
 
 const FAQ: { q: string; a: string }[] = [
-  { q: 'Is Wordocious free to play?', a: 'Yes. A new daily puzzle in every mode is free every day. An optional Pro subscription removes ads and unlocks unlimited replays.' },
+  { q: 'Is Wordocious free to play?', a: ADS_SERVING ? 'Yes. A new daily puzzle in every mode is free every day. An optional Pro subscription removes ads and unlocks unlimited replays.' : 'Yes. A new daily puzzle in every mode is free every day. An optional Pro subscription unlocks unlimited replays.' },
   { q: 'How is it different from other word games?', a: 'Wordocious bundles nineteen ways to play — single-board Classic, multi-board QuadWord and OctoWord, the sequential Succession, prefilled Deliverance, longer Six and Seven, a five-stage Gauntlet, ten Puzzles dailies from sudoku and star logic to word searches, cryptograms, crosswords and famous names, and live VS matches with friends — all sharing one daily seed so everyone plays the same puzzles.' },
   { q: 'Do I need an account?', a: 'You can read about every mode here without signing in. To play, save your streaks, and climb the daily leaderboards, sign in with Google, Apple or email.' },
   { q: 'How do daily challenges work?', a: 'Each mode has one shared daily puzzle that resets at local midnight. Finish all eight word games for a Daily Sweep, or win them all for a Flawless Victory and bonus XP.' },

@@ -368,7 +368,7 @@ struct SettingsProCard: View {
                     // BJ11: a former member's upsell names the day their Pro ended.
                     Text(SubscriptionCopy.lapsedLine(expiresAt: auth.profile?.proExpiryDate, proActive: auth.isProActive)
                             .map { "\($0). Switch it back on any time." }
-                         ?? "Unlimited games, VS on every mode, no ads and 4 streak shields every month.")
+                         ?? (AdCopy.adsServing ? "Unlimited games, VS on every mode, no ads and 4 streak shields every month." : "Unlimited games, VS on every mode and 4 streak shields every month."))
                         .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

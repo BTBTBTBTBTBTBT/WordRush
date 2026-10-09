@@ -14,6 +14,7 @@ import { softPill } from '@/lib/soft-surface';
 import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { ADS_SERVING } from '@wordle-duel/core';
 
 interface ModeLimitModalProps {
   open: boolean;
@@ -74,7 +75,7 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle, unlimite
               <HeadingArt slug="playedtoday" as="h2" label={`${modeName} — Played Today`} />
               <p aria-hidden="true" className="text-xs font-black uppercase mb-1" style={{ color: 'var(--color-text-muted)', letterSpacing: 0.6 }}>{modeName}</p>
               <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
-                You've used your free play of {modeName} for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.
+                You've used your free play of {modeName} for today. Upgrade to Pro for unlimited replays {ADS_SERVING ? 'and ad-free gameplay ' : ''}across every mode.
               </p>
 
               <div className="inline-flex flex-col items-center px-5 pt-2.5 pb-2 mb-4" style={softPill(POPUP_ACCENT.brand, { radius: 16 })}>

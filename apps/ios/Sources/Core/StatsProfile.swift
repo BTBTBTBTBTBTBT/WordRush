@@ -218,7 +218,7 @@ public enum StatsProfile {
     public static let proPedestal = "art-pro-stage-pedestal"
     public static let proBenefitCaption: [ProBenefit: String] = [
         .unlimited: "Every game, any time", .items: "Wear every Pro mascot item", .vsBots: "VS on every game, bots included",
-        .stats: "Stats that go deeper", .noLimits: "No limits. No ads.",
+        .stats: "Stats that go deeper", .noLimits: AdCopy.adsServing ? "No limits. No ads." : "No limits. No waiting.",
     ]
 
     public static func proBenefit(forReason reason: String?) -> ProBenefit {

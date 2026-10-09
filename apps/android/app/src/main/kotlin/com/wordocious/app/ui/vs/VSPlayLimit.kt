@@ -59,7 +59,7 @@ private fun vsLimitSecondsUntilMidnight(): Long {
 fun VSDailyLimitModal(onGoPro: () -> Unit, onClose: () -> Unit) {
     VsLimitWindow(
         title = "DAILY VS USED",
-        body = "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.",
+        body = if (com.wordocious.core.ADS_SERVING) "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow." else "You've played your free daily VS match for today. Upgrade to Pro for unlimited battles and rematches, or come back tomorrow.",
         secondsUntilReset = ::vsLimitSecondsUntilMidnight,
         onGoPro = onGoPro, onClose = onClose,
         // A7: the lobby's host is S (and W stands in the faceoff) — U waits for tomorrow.

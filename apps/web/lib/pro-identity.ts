@@ -1,3 +1,5 @@
+import { ADS_SERVING } from '@wordle-duel/core';
+
 // FINISH_SPEC AA2 / AA3: the Pro identifier on avatars and the Settings member
 // card. Pure bits (tested in pro-identity.test.ts); the components are
 // components/ui/letter-tile-avatar.tsx (ProAvatarDecor), components/pro/pro-avatar.tsx
@@ -20,7 +22,7 @@ export function memberSince(createdAt: string | null | undefined): string | null
 
 /** The member card's plan line. */
 export function proPlanLine({ webBilling }: { webBilling: boolean }): string {
-  return webBilling ? 'Wordocious Pro · billed on wordocious.com' : 'Wordocious Pro · every game unlimited, no ads';
+  return webBilling ? 'Wordocious Pro · billed on wordocious.com' : (ADS_SERVING ? 'Wordocious Pro · every game unlimited, no ads' : 'Wordocious Pro · every game unlimited');
 }
 
 /**

@@ -76,8 +76,10 @@ private val PRO_GOLD = Color(0xFFF5A524)
 
 private data class Benefit(val text: String, val icon3d: Icon3DName? = null, @DrawableRes val art: Int? = null)
 
-private val BENEFITS = listOf(
-    Benefit("Ad-free experience — no interruptions, ever", Icon3DName.BADGE_CHECK),
+// The "Ad-free experience" row only exists while ads actually serve (core ADS_SERVING); otherwise it is
+// dropped so the list has no gap and no empty promise.
+private val BENEFITS = listOfNotNull(
+    if (com.wordocious.core.ADS_SERVING) Benefit("Ad-free experience — no interruptions, ever", Icon3DName.BADGE_CHECK) else null,
     Benefit("Unlimited replays of every game mode, any time", art = R.drawable.game_practice),
     Benefit("VS mode on every game — challenge friends in every mode", art = R.drawable.game_vs),
     // AP: the bots are the cast now (BotCast) — not the old Easy / Medium / Hard tiers.
@@ -248,7 +250,7 @@ private fun ProHero(isPro: Boolean, reason: String?) {
         else if (reason != null) ProScene(com.wordocious.core.StatsProfile.proBenefitForReason(reason), height = 180.dp)
         else ProSceneCarousel(height = 190.dp)
         Text(
-            "Play unlimited & ad-free — every mode, any time",
+            if (com.wordocious.core.ADS_SERVING) "Play unlimited & ad-free — every mode, any time" else "Play unlimited — every mode, any time",
             fontSize = 15.sp, fontWeight = FontWeight.Black, color = proInk, textAlign = TextAlign.Center,
             lineHeight = 1.25.em, modifier = Modifier.fillMaxWidth(),
         )

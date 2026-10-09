@@ -1,0 +1,30 @@
+{
+  "adsServing": false,
+  "noLimitsCaption": "No limits. No waiting.",
+  "reasons": [
+    {
+      "reason": "No limits",
+      "benefit": "noLimits"
+    },
+    {
+      "reason": "Go ad-free",
+      "benefit": "noLimits"
+    },
+    {
+      "reason": "remove ads",
+      "benefit": "noLimits"
+    },
+    {
+      "reason": "Pro mascot styles",
+      "benefit": "items"
+    },
+    {
+      "reason": "Unlimited QuadWord",
+      "benefit": "unlimited"
+    },
+    {
+      "reason": "",
+      "benefit": "unlimited"
+    }
+  ]
+}

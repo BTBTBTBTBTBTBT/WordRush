@@ -18,6 +18,7 @@ import { GiftProCard } from '@/components/friends/invite-screens';
 import { softBackground, softBorder, softIconTile, softShadow, liftedInk } from '@/lib/soft-surface';
 import { PoseArt } from '@/components/ui/soft-popup';
 import { ProSceneCarousel } from '@/components/pro/pro-scene';
+import { ADS_SERVING } from '@wordle-duel/core';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { ManageSubscriptionRows, useStripePortal } from '@/components/pro/manage-subscription';
 import { proRenewalLabel } from '@/lib/pro-crown';
@@ -38,7 +39,8 @@ const GOLD_BAR = 'linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)';
 type FeatureIcon = { icon: Icon3DName } | { game: string };
 
 const benefits: { art: FeatureIcon; accent: string; text: string }[] = [
-  { art: { icon: 'badge-check' }, accent: '#10b981', text: 'Ad-free experience — no interruptions, ever' },
+  // Only a selling point while ads actually serve (ADS_SERVING, core ads.ts); otherwise the row is dropped.
+  ...(ADS_SERVING ? [{ art: { icon: 'badge-check' } as FeatureIcon, accent: '#10b981', text: 'Ad-free experience — no interruptions, ever' }] : []),
   { art: { game: 'practice' }, accent: '#7c3aed', text: 'Unlimited replays of every game mode, any time' },
   { art: { game: 'vs' }, accent: '#0d9488', text: 'VS mode on every game — challenge friends in every mode' },
   { art: { game: 'gauntlet' }, accent: '#f97316', text: 'Battle all ten of the cast, anytime' },
@@ -150,7 +152,7 @@ export default function ProPage() {
           artLabel="Go Pro"
           sub={(
             <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              Play unlimited &amp; ad-free — every mode, any time
+              {ADS_SERVING ? 'Play unlimited & ad-free — every mode, any time' : 'Play unlimited — every mode, any time'}
             </p>
           )}
         />
@@ -368,7 +370,7 @@ export default function ProPage() {
               Puzzles dailies, from ProperNoundle and Sudocious to Codebreaker and Muddle, are playable
               once a day at no cost, with the full daily leaderboard and your complete stats
               history included. Pro is for players who finish the daily slate and want to keep going.
-              It removes the interstitial ads, unlocks unlimited replays of every mode, opens VS head-to-head
+              It {ADS_SERVING ? 'removes the interstitial ads, unlocks' : 'unlocks'} unlimited replays of every mode, opens VS head-to-head
               on every mode rather than the daily rotation, and lets you battle all ten of the cast as bot
               opponents so you can drill a weak mode without burning your daily attempt.
             </p>

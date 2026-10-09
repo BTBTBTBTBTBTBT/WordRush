@@ -1,7 +1,7 @@
 'use client';
 
 import { useFlags } from '@/hooks/use-flags';
-import { BRANDED_INVITES_SWITCH, inviteShareLine } from '@wordle-duel/core';
+import { ADS_SERVING, BRANDED_INVITES_SWITCH, inviteShareLine } from '@wordle-duel/core';
 import { shareUrlFor } from '@/lib/invite-links';
 import { botAchievements, unlockAchievements } from '@/lib/achievement-service';
 import { setLeaveGuard } from '@/lib/nav-home';
@@ -2507,7 +2507,7 @@ function DailyVsAlreadyPlayed({
         <p className="text-[12.5px] font-bold px-2 animate-fade-in" style={{ color: 'var(--vs-sub, #4b5563)', animationDelay: '0.35s' }}>
           {isPro
             ? 'Want more? Jump into unlimited VS battles with fresh puzzles.'
-            : 'Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.'}
+            : (ADS_SERVING ? 'Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.' : 'Upgrade to Pro for unlimited VS matches and rematches.')}
         </p>
 
         {/* Actions */}

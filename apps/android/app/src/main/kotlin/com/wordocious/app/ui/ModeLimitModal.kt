@@ -108,7 +108,7 @@ fun ModeLimitModal(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "You've used your free play of $modeName for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode.",
+                        if (com.wordocious.core.ADS_SERVING) "You've used your free play of $modeName for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode." else "You've used your free play of $modeName for today. Upgrade to Pro for unlimited replays across every mode.",
                         fontSize = 13.sp, fontWeight = FontWeight.Bold,
                         color = if (dark) WTheme.textSecondary else FinishInk.muted, textAlign = TextAlign.Center,
                     )
