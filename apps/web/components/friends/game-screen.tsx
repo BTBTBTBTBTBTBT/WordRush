@@ -16,7 +16,7 @@ import { feedback } from '@/lib/sound-events';
 import { ReactionIcon } from './reaction-icon';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
-import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
+import { fetchGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
 import { FR, KIND_COLOR, KIND_GRADIENT, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
 import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
 import { FriendAvatar, GameGlyph, Sheet } from './friends-ui';
@@ -40,9 +40,6 @@ import { softMix } from '@/lib/soft-surface';
 // in the close confirm while the game is still going. Finishing build (A1, A2,
 // A8, L): the Friends wallpaper (light-only), the score card with the game's
 // top bar and soft numbers, every board on the shared game tray, candy actions.
-
-/** A danger candy (Resign): the candy look recolored red. */
-const DANGER = { ['--candy-1' as string]: '#fb7185', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: '#8f1919' } as React.CSSProperties;
 
 /** Floating live reactions currently on screen. */
 interface Floater { id: number; reaction: LiveReaction; mine: boolean; x: number }
@@ -230,13 +227,6 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       setBusy(false);
     }
   }, [id, accept, publish]);
-
-  const resign = async () => {
-    setConfirmClose(false);
-    const g = await resignGame(id);
-    if (g) accept(g, true);
-    else setError('Could not resign. Try again.');
-  };
 
   const rematch = async () => {
     if (!game || rematching) return;
@@ -454,20 +444,16 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       )}
 
       {confirmClose && (
+        // 2.8 item 9: ONE themed button. No Resign in-game (it lives in the friend's ⋯ menu on the Friends tab);
+        // tapping the scrim or Escape keeps you playing.
         <Sheet onClose={() => setConfirmClose(false)} label="Leave the game">
-          <div className="space-y-2.5">
-            <p className="text-[16px] font-black" style={{ color: FR.ink }}>LEAVE THE GAME?</p>
+          <div className="space-y-3 text-center pb-1">
+            <p className="text-[16px] font-black" style={{ color: FR.ink }}>Your game waits for you</p>
             <p className="text-[12.5px] font-bold" style={{ color: FR.label }}>
-              It keeps going. Come back from YOUR TURN on the Friends tab any time in the next 3 days.
+              {them.name} gets a ping. It keeps going for 3 days.
             </p>
             <CastButton screen="pink" color="pink" size="md" block onClick={() => router.push('/friends')}>
               Back to Friends
-            </CastButton>
-            <CandyButton color="peach" size="md" block onClick={() => setConfirmClose(false)}>
-              Keep playing
-            </CandyButton>
-            <CastButton screen="pink" size="sm" block onClick={resign} style={DANGER}>
-              Resign ({them.name} wins)
             </CastButton>
           </div>
         </Sheet>

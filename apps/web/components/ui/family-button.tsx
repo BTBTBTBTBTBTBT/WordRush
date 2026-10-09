@@ -14,9 +14,12 @@ import { artSrc, type ArtName } from '@/lib/art';
 /** The helper icons (`art-fam-ic-*`): white clay, tinted by multiply with the ink. */
 export type FamIconName =
   | 'delete' | 'shuffle' | 'enter' | 'hint' | 'eye' | 'flag' | 'check' | 'undo' | 'next' | 'refresh'
-  | 'sparkles' | 'pencil' | 'erase' | 'xmark' | 'play' | 'chart';
+  | 'sparkles' | 'pencil' | 'erase' | 'xmark' | 'play' | 'chart'
+  // 2.8 wave 3 (icons/out): share, copy, the three-dot menu and friends
+  | 'share' | 'copy' | 'more' | 'plus' | 'minus' | 'link' | 'trash' | 'bell' | 'search' | 'lock' | 'heart';
 export const FAM_ICONS: readonly FamIconName[] = [
   'delete', 'shuffle', 'enter', 'hint', 'eye', 'flag', 'check', 'undo', 'next', 'refresh', 'sparkles', 'pencil', 'erase', 'xmark', 'play', 'chart',
+  'share', 'copy', 'more', 'plus', 'minus', 'link', 'trash', 'bell', 'search', 'lock', 'heart',
 ];
 /** The chrome icons (`art-fam-cic-*`): drawn as they are (no tint). */
 export type FamChromeIcon = 'close' | 'info' | 'gem';
