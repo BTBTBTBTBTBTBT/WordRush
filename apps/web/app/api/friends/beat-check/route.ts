@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
+import { pushCopy, richPushTitle } from '@wordle-duel/core';
+import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, acceptedFriendIds } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -93,12 +94,13 @@ export async function POST(req: NextRequest) {
       return broadcastPush(
         {
           // FINISH_SPEC AE: the shared cast-voice push copy (core pushCopy).
-          title: pushCopy('friendBeat', { name: myName, game: label }),
-          body: `${label}: ${fmt(mine.composite_score)} to your ${fmt(row.composite_score)}`,
+          title: richPushTitle('passed', myName, label),
+          body: `${pushCopy('friendBeat', { name: myName, game: label })} ${label}: ${fmt(mine.composite_score)} to your ${fmt(row.composite_score)}`,
           url: '/daily',
         },
         new Set([row.user_id]),
         'race',
+        { senderId: me, senderName: myName, gameId: MODE_BY_DBKEY[gameMode]?.id ?? 'practice', gameTitle: label, accentHex: MODE_BY_DBKEY[gameMode]?.accentHex, kind: 'pass', url: '/daily' },
       );
     }),
   );

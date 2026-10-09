@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { richPushTitle } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -35,11 +36,13 @@ export async function POST(req: NextRequest) {
   const { data: meProf } = await admin.from('profiles').select('username').eq('id', me).maybeSingle();
   void broadcastPush(
     {
-      title: 'Friend request accepted 🎉',
-      body: `You and ${meProf?.username ?? 'a player'} are now friends on Wordocious`,
+      title: richPushTitle('accepted', meProf?.username ?? 'A player'),
+      body: `You and ${meProf?.username ?? 'a player'} are now friends on Wordocious 🎉`,
       url: `/profile/${me}`,
     },
     new Set([body.requesterId]),
+    undefined,
+    { senderId: me, senderName: meProf?.username ?? 'A player', gameId: 'practice', gameTitle: 'Wordocious', kind: 'friend', url: `/profile/${me}` },
   ).catch(() => {});
 
   return NextResponse.json({ status: 'accepted', friendId: body.requesterId });

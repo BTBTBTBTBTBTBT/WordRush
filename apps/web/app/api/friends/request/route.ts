@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
+import { pushCopy, richPushTitle } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, pairBlocked, getFriendship, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -85,8 +85,10 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     const myName = await usernameOf(admin, me);
     void broadcastPush(
-      { title: 'Friend request accepted 🎉', body: `You and ${myName} are now friends on Wordocious`, url: `/profile/${me}` },
+      { title: richPushTitle('accepted', myName), body: `You and ${myName} are now friends on Wordocious 🎉`, url: `/profile/${me}` },
       new Set([target.id]),
+      undefined,
+      { senderId: me, senderName: myName, gameId: 'practice', gameTitle: 'Wordocious', kind: 'friend', url: `/profile/${me}` },
     ).catch(() => {});
     return NextResponse.json({ status: 'accepted', friendId: target.id });
   }
@@ -107,8 +109,10 @@ export async function POST(req: NextRequest) {
   const myName = await usernameOf(admin, me);
   void broadcastPush(
     // FINISH_SPEC AE: the shared cast-voice push copy.
-    { title: PUSH_TITLE, body: pushCopy('friendRequest', { name: myName }), url: `/profile/${me}` },
+    { title: richPushTitle('friendRequest', myName), body: pushCopy('friendRequest', { name: myName }), url: `/profile/${me}` },
     new Set([target.id]),
+    undefined,
+    { senderId: me, senderName: myName, gameId: 'practice', gameTitle: 'Wordocious', kind: 'friend', url: `/profile/${me}` },
   ).catch(() => {});
 
   return NextResponse.json({ status: 'pending', friendId: target.id });

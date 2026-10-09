@@ -272,6 +272,15 @@ export function friendlyCardLine(i: GameLineInput): string {
   return myTurn ? `Your move · ${i.them} moved ${ago(i.minutesAgo)}` : `Waiting on ${i.them} · ${mine}–${theirs}`;
 }
 
+/** The running score as "sender–recipient" for the rich push card (sender's mascot on the left, yours on the right);
+ *  undefined for Pass the Puzzle (no score) and for a 0–0 start. `sender` = the side that just moved. */
+export function friendlyScoreLabel(s: FriendlyState, sender: Side): string | undefined {
+  if (s.kind === 'pass') return undefined;
+  const mine = s.score[sender];
+  const theirs = s.score[sender === 'a' ? 'b' : 'a'];
+  return mine === 0 && theirs === 0 ? undefined : `${mine}\u2013${theirs}`;
+}
+
 /** The big headline on the game screen: "ROUND 2 OF 3", "YOUR MOVE", "YOU WIN!". */
 export function friendlyHeadline(s: FriendlyState, me: Side): string {
   const w = friendlyWinner(s);

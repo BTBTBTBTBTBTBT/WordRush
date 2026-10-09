@@ -376,9 +376,8 @@ struct FriendlyGameScreen: View {
                     if live.sendReaction(key) { addFloater(key); Feedback.keyTap() }
                 } label: {
                     ReactionGlyph(key: key, size: 30)
-                        .frame(minWidth: 38, minHeight: 38)
                 }
-                .buttonStyle(.squish)
+                .buttonStyle(RoundIconButtonStyle())
                 .accessibilityLabel("Send \(Reaction.word(key))")
             }
         }

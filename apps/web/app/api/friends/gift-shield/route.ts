@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { richPushTitle } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, areFriends, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -58,12 +59,13 @@ export async function POST(req: NextRequest) {
 
   void broadcastPush(
     {
-      title: `🛡️ ${meProf.username ?? 'A friend'} sent you a streak shield`,
-      body: 'Your streak is covered for a missed night — it will be offered when you need it.',
+      title: richPushTitle('shield', meProf.username ?? 'A friend'),
+      body: '🛡️ A streak shield: your streak is covered for a missed night. It is offered when you need it.',
       url: '/friends',
     },
     new Set([body.friendId]),
     'feed',
+    { senderId: me, senderName: meProf.username ?? 'A friend', gameId: 'practice', gameTitle: 'Wordocious', kind: 'shield', url: '/friends' },
   ).catch(() => {});
 
   return NextResponse.json({ sent: true, shieldsLeft: Math.max(0, (meProf.streak_shields ?? 0) - 1) });

@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { PUSH_TITLE, pushCopy, richPushTitle } from '@wordle-duel/core';
 import { NextRequest, NextResponse } from 'next/server';
-import { FRIENDLY_TITLES, applyFriendlyMove, containsBlockedTerm, friendlyCardLine, type FriendlyMove } from '@wordle-duel/core';
+import { FRIENDLY_TITLES, friendlyScoreLabel, applyFriendlyMove, containsBlockedTerm, friendlyCardLine, type FriendlyMove } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       { title: richPushTitle('played', who, title), body: result.done ? `${line} It's over. Rematch?` : `${pushCopy('yourTurn', { name: who })} ${line}`.trim(), url: `/friends/games/${row.id}` },
       new Set([oppId]),
       'challenge',
-      { senderId: me, senderName: who, gameId: `pocket-${row.kind}`, gameTitle: title, gameRowId: row.id, kind: 'move', url: `/friends/games/${row.id}` },
+      { senderId: me, senderName: who, gameId: `pocket-${row.kind}`, gameTitle: title, gameRowId: row.id, score: friendlyScoreLabel(next.state, side), kind: 'move', url: `/friends/games/${row.id}` },
     ).catch(() => {});
   }
 

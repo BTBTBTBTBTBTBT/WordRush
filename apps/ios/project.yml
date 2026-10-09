@@ -95,9 +95,6 @@ targets:
           - UIInterfaceOrientationPortrait
         UIAppFonts:
           - Nunito.ttf
-        # Communication Notifications (item 34): the app must declare the intent it donates.
-        NSUserActivityTypes:
-          - INSendMessageIntent
         CFBundleURLTypes:
           - CFBundleURLName: com.wordocious.app.auth
             CFBundleURLSchemes:

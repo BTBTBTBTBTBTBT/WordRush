@@ -10,7 +10,8 @@
 export const PUSH_TITLE_MAX = 28;
 
 export type RichTitleKind =
-  | 'played' | 'started' | 'challenge' | 'taunt' | 'reaction' | 'rematch' | 'friendRequest' | 'gift' | 'looking';
+  | 'played' | 'started' | 'challenge' | 'taunt' | 'reaction' | 'rematch' | 'friendRequest' | 'gift' | 'looking'
+  | 'beatRun' | 'tiedRun' | 'heldRun' | 'accepted' | 'nudge' | 'shield' | 'passed';
 
 /** Candidate titles from most to least specific; the first that fits PUSH_TITLE_MAX wins. */
 function candidates(kind: RichTitleKind, name: string, game?: string): string[] {
@@ -24,6 +25,13 @@ function candidates(kind: RichTitleKind, name: string, game?: string): string[] 
     case 'rematch': return [`${name} wants a rematch`, `${name} wants more`, name];
     case 'friendRequest': return [`${name} wants to be friends`, `${name} friend request`, name];
     case 'gift': return [`${name} sent you a gift`, name];
+    case 'beatRun': return [g ? `${name} beat your ${g} run` : '', `${name} beat your run`, `${name} beat you`, name];
+    case 'tiedRun': return [g ? `${name} tied your ${g} run` : '', `${name} tied your run`, name];
+    case 'heldRun': return [g ? `Your ${g} run held up` : '', 'Your run held up'];
+    case 'accepted': return [`${name} is now a friend`, `${name} accepted`, name];
+    case 'nudge': return [`${name} nudged you`, name];
+    case 'shield': return [`${name} sent a shield`, `${name} sent you a gift`, name];
+    case 'passed': return [g ? `${name} passed you in ${g}` : '', `${name} passed you`, name];
     case 'looking': return [g ? `${name} is on ${g}` : '', `${name} is online`, name];
   }
 }
@@ -72,6 +80,8 @@ export interface RichPushFields {
   thread: string;
   accent: string;
   halloween: '1' | '0';
+  /** The RECIPIENT's own avatar PNG (the long-press card's "you"): set per device by broadcastPush. */
+  youAvatar?: string;
   /** "2-1" style score for the long-press card (optional). */
   score?: string;
   /** The route a tap opens: always the exact game. */

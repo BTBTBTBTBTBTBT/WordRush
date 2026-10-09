@@ -3,6 +3,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
+import { richPushTitle } from '@wordle-duel/core';
 import { isProActive } from '@/lib/pro';
 import { VS_MODES, isPro } from '@/lib/vs-challenges-server';
 
@@ -71,11 +72,13 @@ export async function POST(req: NextRequest) {
     const title = MODE_BY_DBKEY[gameMode]?.title ?? gameMode;
     void broadcastPush(
       {
-        title: `Someone's looking for a ${title} match`,
-        body: `${meProf?.username ?? 'A player'} is waiting in VS right now. Tap to race them live.`,
+        title: richPushTitle('looking', meProf?.username ?? 'A player', title),
+        body: `Waiting in VS right now for a ${title} match. Tap to race them live.`,
         url: `/vs/live/${gameMode}`,
       },
       new Set(recipients),
+      undefined,
+      { senderId: me, senderName: meProf?.username ?? 'A player', gameId: MODE_BY_DBKEY[gameMode]?.id ?? 'practice', gameTitle: title, accentHex: MODE_BY_DBKEY[gameMode]?.accentHex, kind: 'looking', url: `/vs/live/${gameMode}` },
     ).catch(() => {});
   }
 

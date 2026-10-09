@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyFriendlyMove, friendStreak, friendlyCardLine, friendlyHeadline, friendlyStateFor, friendlyWinner,
+  applyFriendlyMove, friendStreak, friendlyCardLine, friendlyScoreLabel, friendlyHeadline, friendlyStateFor, friendlyWinner,
   friendsBannerClockLine, friendsBannerHeadline, isOnline, newFriendlyState, presenceLine, tttLine, whoseTurn,
   type FriendlyState,
 } from './friendly-games';
@@ -131,5 +131,16 @@ describe('ghost and word chain', () => {
     s = play(s, [['b', { kind: 'chain', word: 'eagles' }], ['a', { kind: 'chain', word: 'salad' }], ['b', { kind: 'chain', word: 'dough' }], ['a', { kind: 'chain', word: 'house' }], ['b', { kind: 'chain', word: 'eagle' }]], ctx);
     expect((s as any).score).toEqual({ a: 15, b: 16 });
     expect(friendlyCardLine({ kind: 'chain', state: s, me: 'a', them: 'Doug', minutesAgo: 1 })).toBe('Your word · starts with E');
+  });
+});
+
+describe('friendlyScoreLabel (rich push card)', () => {
+  it('reads sender-recipient and skips a 0-0 start and Pass the Puzzle', () => {
+    const fresh = newFriendlyState('rps');
+    expect(friendlyScoreLabel(fresh, 'a')).toBeUndefined();
+    const s = { ...(fresh as any), score: { a: 2, b: 1 } };
+    expect(friendlyScoreLabel(s, 'a')).toBe('2\u20131');
+    expect(friendlyScoreLabel(s, 'b')).toBe('1\u20132');
+    expect(friendlyScoreLabel(newFriendlyState('pass'), 'a')).toBeUndefined();
   });
 });

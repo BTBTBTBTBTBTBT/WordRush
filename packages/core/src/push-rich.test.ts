@@ -9,7 +9,7 @@ describe('rich push copy', () => {
     // game name too long for the full phrase: drops the game, keeps a complete sentence
     expect(richPushTitle('played', 'Maximilian', 'Rock Paper Scissors')).toBe('Maximilian played');
     expect(richPushTitle('started', 'Ava', 'Rock Paper Scissors')).toBe('Ava started a game');
-    for (const kind of ['played', 'started', 'challenge', 'taunt', 'reaction', 'rematch', 'friendRequest', 'gift', 'looking'] as const) {
+    for (const kind of ['played', 'started', 'challenge', 'taunt', 'reaction', 'rematch', 'friendRequest', 'gift', 'looking', 'beatRun', 'tiedRun', 'heldRun', 'accepted', 'nudge', 'shield', 'passed'] as const) {
       for (const name of ['Al', 'Maximilian', 'AVeryLongUsername123', 'AnExtremelyLongUsernameThatOverflows']) {
         expect(richPushTitle(kind, name, 'Pass the Puzzle').length).toBeLessThanOrEqual(PUSH_TITLE_MAX);
       }
