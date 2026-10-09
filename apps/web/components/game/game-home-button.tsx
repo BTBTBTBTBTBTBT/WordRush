@@ -1,5 +1,6 @@
 'use client';
 
+import { RoundIconSlot } from '@/components/ui/family-button';
 import Link from 'next/link';
 import { Icon3D } from '@/components/ui/icon3d';
 import { useRouter } from 'next/navigation';
@@ -52,16 +53,15 @@ export function GameHomeButton({
 
   if (onClick) {
     return (
-      <button
-        type="button"
+      <RoundIconSlot
         // AY: single-fire; closes overlays; the handler itself lands on the root.
         onClick={() => { if (!claimHomeTap()) return; closeAllOverlays(); onClick(); }}
-        aria-label="Back to Home"
-        className={className}
+        label="Back to Home"
+        className={className.replace('hdr-glyph ', '')}
         style={style}
       >
         <Icon3D name="tab-home" size={GAME_HEADER_GLYPH} priority />
-      </button>
+      </RoundIconSlot>
     );
   }
 

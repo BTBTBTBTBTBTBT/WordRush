@@ -1283,14 +1283,6 @@ struct SweepModeDots: View {
         .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.14)))
 }
 
-/// Selector buttons (banner game tiles, pill switches): no pressed-state fade: `.plain` dims a tile while pressed and eases it back after release, so the
-/// newly selected tile read as unselected for ~0.15 s after every tap (founder, 2026-09-29).
-struct InstantButtonStyle: ButtonStyle {
-    /// FINISH_SPEC §A9: still no fade, but the shared squish.
-    func makeBody(configuration: Configuration) -> some View {
-        SquishButtonStyle().makeBody(configuration: configuration).contentShape(Rectangle())
-    }
-}
 
 /// One un-animated transaction: a selection and the cached content it paints land in the SAME
 /// frame, with nothing easing in (founder, 2026-09-29).

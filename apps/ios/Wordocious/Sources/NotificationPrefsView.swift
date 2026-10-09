@@ -36,7 +36,7 @@ struct NotificationPrefsButton: View {
                 HeaderCircleLabel(glyph: anyOff ? .mutedIcon(.bell) : .icon(.bell), size: 32,
                                   tint: anyOff ? Theme.textMuted : PageHeaderStyle.ink)
             }
-            .buttonStyle(.squishIcon)
+            .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
             .accessibilityLabel("Friends notification settings")
             .softSheet(isPresented: $open) {
                 NotificationPrefsSheet().presentationDetents([.medium])

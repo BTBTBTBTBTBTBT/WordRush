@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
-import { HEADER_SHADOW } from '@/components/ui/page-header';
+import { RoundIconSlot } from '@/components/ui/family-button';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 
@@ -51,17 +51,17 @@ export function NotificationPrefs() {
 
   return (
     <div ref={ref} className="relative">
-      <button
-        type="button"
+      {/* 2.8 item 23: the family round icon — the bare 3D bell, no white bubble behind it. */}
+      <RoundIconSlot
         onClick={() => setOpen((o) => !o)}
-        aria-label="Friends notification settings"
+        label="Friends notification settings"
         aria-expanded={open}
-        className="rounded-full flex items-center justify-center active:scale-95 transition-transform"
-        style={{ width: 34, height: 34, background: '#ffffff', boxShadow: HEADER_SHADOW }}
+        className="shrink-0 flex items-center justify-center"
+        style={{ width: 34, height: 34 }}
       >
         {/* The 3D bell (docs/ART_SPEC.md §5); muted (any category off) reads grayed out. */}
-        <Icon3D name="bell" size={20} style={anyOff ? { filter: 'grayscale(1)', opacity: 0.55 } : undefined} />
-      </button>
+        <Icon3D name="bell" size={23} style={anyOff ? { filter: 'grayscale(1)', opacity: 0.55 } : undefined} />
+      </RoundIconSlot>
       {open && (
         <div
           className="absolute right-0 top-9 z-40 w-64 p-3 space-y-2"

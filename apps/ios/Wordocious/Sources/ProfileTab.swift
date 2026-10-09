@@ -1096,7 +1096,7 @@ struct ProfileTab: View {
                     Button { Haptics.tap(); shareProfile(p) } label: {
                         Icon3D(.share, size: 23).frame(width: 40, height: 44).contentShape(Rectangle())
                     }
-                    .buttonStyle(.squishIcon)
+                    .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
                     .accessibilityLabel("Share profile card")
                 }
                 .softSheet(isPresented: $showEditProfile) { EditProfileView() }

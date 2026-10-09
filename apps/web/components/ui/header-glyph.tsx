@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
+import { RoundIconSlot } from '@/components/ui/family-button';
 
 // Header controls (docs/FINISH_SPEC.md A3): the soft 3D icons drawn bare — no
 // circle or pill behind them — 23 px tall, numbers in 17 px soft type, a full
@@ -56,8 +57,8 @@ export function HeaderGlyph({
     );
   }
   return (
-    <button type="button" onClick={onClick} aria-label={label} className={cls} style={{ minWidth: TAP, minHeight: TAP, ...style }} disabled={disabled} {...aria}>
+    <RoundIconSlot onClick={onClick} label={label} className={className} style={{ minWidth: TAP, minHeight: TAP, ...style }} disabled={disabled} {...aria}>
       {body}
-    </button>
+    </RoundIconSlot>
   );
 }
