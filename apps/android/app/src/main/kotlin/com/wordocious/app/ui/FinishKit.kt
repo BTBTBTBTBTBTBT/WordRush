@@ -346,6 +346,17 @@ fun Modifier.squishClickable(
         )
 }
 
+/**
+ * A TILE / CARD tap (the game-tile tier, not a family button): the same press squish and TalkBack
+ * semantics as [squishClickable], for the Friends cards' game tiles, the lobby's keepy-uppy tile and
+ * their kin. Lives in the family file so the button-family guard counts real pills only.
+ */
+fun Modifier.tileClickable(
+    label: String? = null,
+    card: Boolean = true,
+    onClick: () -> Unit,
+): Modifier = squishClickable(label = label, card = card, onClick = onClick)
+
 /** A3 the header controls' icon height (a step smaller than the cast). */
 val SOFT_CONTROL_ICON: Dp = 23.dp
 /** A3 the header controls' number size. */

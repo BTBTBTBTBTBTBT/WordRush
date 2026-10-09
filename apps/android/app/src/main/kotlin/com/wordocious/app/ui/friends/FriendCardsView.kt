@@ -31,7 +31,7 @@ import com.wordocious.app.data.FriendsService
 import com.wordocious.app.ui.FamIcon
 import com.wordocious.app.ui.FamIconImage
 import com.wordocious.app.ui.RoundIconButton
-import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.tileClickable
 import com.wordocious.core.CardFriend
 import com.wordocious.core.CardGame
 import com.wordocious.core.FriendCard
@@ -84,7 +84,7 @@ private fun FriendCardView(
     var expanded by remember(card.friendId) { mutableStateOf(false) }
     Column(
         Modifier.fillMaxWidth()
-            .then(if (friend != null) Modifier.squishClickable(label = "Play a game with ${card.name}", card = true) { onPlayWith(friend) } else Modifier)
+            .then(if (friend != null) Modifier.tileClickable(label = "Play a game with ${card.name}", card = true) { onPlayWith(friend) } else Modifier)
             .friendsCard(16.dp)
             .padding(start = 12.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -126,7 +126,7 @@ private fun FriendCardView(
         if (card.theirTurnLine.isNotEmpty()) {
             Row(
                 Modifier.padding(end = 8.dp)
-                    .squishClickable(label = card.theirTurnLine + if (expanded) ", expanded" else ", collapsed") { expanded = !expanded },
+                    .tileClickable(card = false, label = card.theirTurnLine + if (expanded) ", expanded" else ", collapsed") { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(card.theirTurnLine, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1)
@@ -158,7 +158,7 @@ private fun TileGrid(tiles: List<GameTile>, quiet: Boolean, onOpen: (String) -> 
 @Composable
 private fun TileCell(t: GameTile, quiet: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Column(
-        modifier.squishClickable(label = "${t.kind.title}, ${t.word}", onClick = onClick).alpha(if (quiet) 0.72f else 1f),
+        modifier.tileClickable(card = false, label = "${t.kind.title}, ${t.word}", onClick = onClick).alpha(if (quiet) 0.72f else 1f),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         FriendlyGameIcon(t.kind, 48.dp)

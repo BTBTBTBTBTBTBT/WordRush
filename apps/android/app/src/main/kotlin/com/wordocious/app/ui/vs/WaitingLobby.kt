@@ -42,7 +42,7 @@ import com.wordocious.app.ui.BubbleText
 import com.wordocious.app.ui.HeadlinePalette
 import com.wordocious.app.ui.MascotId
 import com.wordocious.app.ui.PlayerAvatar
-import com.wordocious.app.ui.squishClickable
+import com.wordocious.app.ui.tileClickable
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.WaitingKind
 import com.wordocious.core.WaitingRoom
@@ -145,7 +145,7 @@ private fun KeepyUppy() {
                 painterResource(R.drawable.art_pocket_tile_purple), null, contentScale = ContentScale.Fit,
                 modifier = Modifier.size(56.dp)
                     .graphicsLayer { translationY = y.value * 34f * density }
-                    .squishClickable(label = "Bounce the tile. ${WaitingRoom.keepyLine(count, best)}") {
+                    .tileClickable(card = false, label = "Bounce the tile. ${WaitingRoom.keepyLine(count, best)}") {
                         count += 1
                         tapTick += 1
                     },

@@ -63,7 +63,7 @@ export function KeepyUppy({ letter = 'W' }: { letter?: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5 select-none">
       <div style={{ height: 76 }} className="flex items-end">
-        <button type="button" ref={tileRef} onClick={bounce} aria-label="Bounce the tile" className="block active:scale-95" style={{ width: 52, height: 52, position: 'relative' }}>
+        <button data-tile type="button" ref={tileRef} onClick={bounce} aria-label="Bounce the tile" className="block active:scale-95" style={{ width: 52, height: 52, position: 'relative' }}>
           <Art name="art-pocket-tile-purple" width={52} />
           <span className="absolute inset-0 flex items-center justify-center font-black text-white" style={{ fontSize: 24, textShadow: '0 1px 2px rgba(60,20,120,0.5)' }}>{letter}</span>
         </button>

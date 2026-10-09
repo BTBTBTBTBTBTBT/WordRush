@@ -126,7 +126,7 @@ struct MiniKeepyUppy: View {
                     .frame(width: 60, height: 100, alignment: .bottom)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squishCard)
             .disabled(paused)
             .opacity(paused ? 0.4 : 1)
             .accessibilityLabel("Keep the tile bouncing")

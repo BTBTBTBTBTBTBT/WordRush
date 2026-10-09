@@ -163,7 +163,7 @@
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/WordOfTheDayQuiz.kt": 2,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/YourRecords.kt": 1,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/friends/FriendlyGameScreen.kt": 3,
-    "apps/android/app/src/main/kotlin/com/wordocious/app/ui/friends/FriendsBanner.kt": 2,
+    "apps/android/app/src/main/kotlin/com/wordocious/app/ui/friends/FriendsBanner.kt": 1,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/friends/FriendsNotice.kt": 1,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/friends/QuickPlaySheet.kt": 3,
     "apps/android/app/src/main/kotlin/com/wordocious/app/ui/game/CodebreakerScreen.kt": 1,

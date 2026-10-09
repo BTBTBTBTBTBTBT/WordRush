@@ -5,7 +5,7 @@ import XCTest
 /// words, art names and first-play decisions as packages/core/src/pocket-help.ts.
 /// Regenerate: packages/core/scripts/gen-parity-fixtures.ts
 final class PocketHelpFixtureTests: XCTestCase {
-    private struct Decision: Decodable { let live: Bool; let seen: [String]; let key: String; let show: Bool }
+    private struct Decision: Decodable { let live: Bool; let seen: [String]?; let key: String; let show: Bool }
     private struct Seen: Decodable { let seen: [String]; let key: String; let result: [String] }
     private struct Merge: Decodable { let a: [String]; let b: [String]; let result: [String] }
     private struct Fixtures: Decodable {
@@ -35,7 +35,7 @@ final class PocketHelpFixtureTests: XCTestCase {
 
     func testFirstPlayDecisionsMatchCore() throws {
         for d in try load().decisions {
-            XCTAssertEqual(PocketHelp.shouldAutoShowTutorial(live: d.live, seen: d.seen, key: d.key), d.show, "\(d.key) live=\(d.live) seen=\(d.seen)")
+            XCTAssertEqual(PocketHelp.shouldAutoShowTutorial(live: d.live, seen: d.seen, key: d.key), d.show, "\(d.key) live=\(d.live) seen=\(String(describing: d.seen))")
         }
         // Still loading: never show on a guess.
         XCTAssertFalse(PocketHelp.shouldAutoShowTutorial(live: true, seen: nil, key: "hub"))
