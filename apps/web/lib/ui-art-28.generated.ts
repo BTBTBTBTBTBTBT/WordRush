@@ -2,7 +2,8 @@
 // pixel sizes. Spread into ART_SIZE (art.ts).
 export type UiArt28Name = `art-pocket-${string}` | `art-tut-${string}` | `art-lobby-${string}` | `art-toast-${string}`
   | 'art-fam-ic-share' | 'art-fam-ic-copy' | 'art-fam-ic-more' | 'art-fam-ic-plus' | 'art-fam-ic-minus' | 'art-fam-ic-link'
-  | 'art-fam-ic-trash' | 'art-fam-ic-bell' | 'art-fam-ic-search' | 'art-fam-ic-lock' | 'art-fam-ic-heart';
+  | 'art-fam-ic-trash' | 'art-fam-ic-bell' | 'art-fam-ic-search' | 'art-fam-ic-lock' | 'art-fam-ic-heart'
+  | `art-stat-${string}` | `art-pf-${string}` | `art-pro-${string}`;
 
 export const UI_ART_28_SIZE: Record<string, readonly [number, number]> = {
   'art-pocket-arena-plate': [269, 168],
@@ -65,4 +66,22 @@ export const UI_ART_28_SIZE: Record<string, readonly [number, number]> = {
   'art-fam-ic-search': [177, 179],
   'art-fam-ic-share': [168, 180],
   'art-fam-ic-trash': [161, 195],
+  'art-stat-bolt': [290, 395],
+  'art-stat-crown': [394, 357],
+  'art-stat-donut': [367, 372],
+  'art-stat-star': [376, 355],
+  'art-stat-stopwatch': [333, 392],
+  'art-stat-target': [388, 357],
+  'art-pf-friendship-badge': [250, 255],
+  'art-pf-heart-tag': [238, 247],
+  'art-pf-medal-bronze': [256, 351],
+  'art-pf-medal-gold': [256, 351],
+  'art-pf-medal-silver': [255, 350],
+  'art-pf-trophy-shelf': [343, 247],
+  'art-pro-items': [402, 424],
+  'art-pro-no-limits': [333, 317],
+  'art-pro-stage-pedestal': [412, 306],
+  'art-pro-stats': [354, 356],
+  'art-pro-unlimited': [392, 307],
+  'art-pro-vs-bots': [416, 257],
 };

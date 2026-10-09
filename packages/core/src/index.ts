@@ -50,4 +50,5 @@ export * from './feature-switches';
 export * from './age-check';
 export * from './push-rich';
 export * from './game-order';
+export * from './stats-profile';
 export * from './theme-choice';
