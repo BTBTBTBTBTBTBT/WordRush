@@ -159,6 +159,12 @@ struct HeaderPopupHost: View {
             }
             .padding(.horizontal, 14).padding(.top, 6)
             weekRow(streak: streak)
+            if streak > 0 {
+                // Item 46: the streak calendar share (the sender's mascot celebrating, the week as dots).
+                Button { shareStreak(streak: streak, best: max(best, streak)) } label: { CandyLabel(title: "Share my streak") }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                    .padding(.top, 10)
+            }
 
             sectionLabel("SWEEP STREAKS", Self.purpleInk)
             HStack(spacing: 8) {
@@ -326,6 +332,18 @@ struct HeaderPopupHost: View {
     }
 
     /// This week, Monday first: filled orange for each day the streak covers.
+    /// This week, Monday first: true = played (the same days the week row paints).
+    private func weekDays(streak: Int) -> [Bool] {
+        let cal = Calendar(identifier: .gregorian)
+        let today = StreakWeek.mondayIndex(weekday: cal.component(.weekday, from: Date()))
+        let played = DailyCompletionsStore.cachedTodayCount() > 0
+        return StreakWeek.days(streak: streak, playedToday: played, todayIndex: today)
+    }
+
+    private func shareStreak(streak: Int, best: Int) {
+        ShareService.shareMoment(MomentShare.streak(streak, best: best, lastDays: weekDays(streak: streak)))
+    }
+
     private func weekRow(streak: Int) -> some View {
         let cal = Calendar(identifier: .gregorian)
         let today = StreakWeek.mondayIndex(weekday: cal.component(.weekday, from: Date()))

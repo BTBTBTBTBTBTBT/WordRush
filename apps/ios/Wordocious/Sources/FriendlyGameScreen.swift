@@ -1217,12 +1217,24 @@ struct FriendlyGameScreen: View {
             }
             .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
             .disabled(rematching)
+            // Item 46: the pocket-game result card (the sender's mascot cheering, or the good-sport shrug, and the final score).
+            Button { shareResult(g) } label: {
+                CandyLabel(title: "Share result", symbol: "square.and.arrow.up")
+            }
+            .buttonStyle(CandyButtonStyle(variant: .peach, size: .large))
             Button { dismiss() } label: {
                 CandyLabel(title: "Friends", symbol: "chevron.left")
             }
             .buttonStyle(CandyButtonStyle(variant: .pink, size: .large))
         }
         .padding(.top, 4)
+    }
+
+    private func shareResult(_ g: FriendlyGameView) {
+        let won: Bool? = g.result == "win" ? true : g.result == "loss" ? false : nil
+        let score = g.state.score
+        ShareService.shareMoment(MomentShare.pocketResult(
+            gameTitle: g.kind.title, won: won, mine: score?[g.me], theirs: score?[g.me.other], opponent: g.opponent.username))
     }
 }
 

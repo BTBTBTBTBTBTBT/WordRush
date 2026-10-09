@@ -1,0 +1,31 @@
+{
+  "_doc": "Item 46: the moment shares (level-up, pocket-game result, streak calendar). web builders (apps/web/lib/moment-share.ts, pinned by lib/moment-share.test.ts), Swift MomentShare and Kotlin MomentShare all produce exactly these cards from the same arguments. Byte-identical copies live in apps/ios/Tests/Fixtures and apps/android/{core,app}/src/test/resources/fixtures.",
+  "cases": [
+    { "kind": "levelUp", "args": { "level": 12, "tier": "Gold", "xpToNext": 340 },
+      "expect": { "title": "LEVEL UP!", "accentHex": "#7c3aed", "big": "12", "bigLabel": "Level", "lines": ["Gold tier", "340 XP to level 13"], "hero": "win" } },
+    { "kind": "levelUp", "args": { "level": 5, "tier": "Bronze" },
+      "expect": { "title": "LEVEL UP!", "accentHex": "#7c3aed", "big": "5", "bigLabel": "Level", "lines": ["Bronze tier"], "hero": "win" } },
+    { "kind": "levelUp", "args": { "level": 20, "tier": "Platinum", "xpToNext": 1250 },
+      "expect": { "title": "LEVEL UP!", "accentHex": "#7c3aed", "big": "20", "bigLabel": "Level", "lines": ["Platinum tier", "1,250 XP to level 21"], "hero": "win" } },
+    { "kind": "levelUp", "args": { "level": 9, "tier": "Silver", "xpToNext": 0, "accentHex": "#2563eb" },
+      "expect": { "title": "LEVEL UP!", "accentHex": "#2563eb", "big": "9", "bigLabel": "Level", "lines": ["Silver tier"], "hero": "win" } },
+    { "kind": "pocket", "args": { "gameTitle": "Rock Paper Scissors", "won": true, "mine": 2, "theirs": 1, "opponent": "Ava" },
+      "expect": { "title": "ROCK PAPER SCISSORS", "accentHex": "#7c3aed", "big": "2–1", "bigLabel": "Final score", "lines": ["I beat Ava", "Play me on Wordocious"], "won": true, "hero": "win" } },
+    { "kind": "pocket", "args": { "gameTitle": "Tic-Tac-Tile", "won": false, "mine": 1, "theirs": 3, "opponent": "Bo" },
+      "expect": { "title": "TIC-TAC-TILE", "accentHex": "#7c3aed", "big": "1–3", "bigLabel": "Final score", "lines": ["Good game, Bo", "Play me on Wordocious"], "won": false, "hero": "loss" } },
+    { "kind": "pocket", "args": { "gameTitle": "Call It", "won": null, "mine": null, "theirs": null, "opponent": "Cy" },
+      "expect": { "title": "CALL IT", "accentHex": "#7c3aed", "big": "DRAW", "bigLabel": "Final score", "lines": ["A draw with Cy", "Play me on Wordocious"], "hero": "neutral" } },
+    { "kind": "pocket", "args": { "gameTitle": "Pass the Puzzle", "won": true, "mine": null, "theirs": null, "opponent": "Di" },
+      "expect": { "title": "PASS THE PUZZLE", "accentHex": "#7c3aed", "big": "WIN", "bigLabel": "Final score", "lines": ["I beat Di", "Play me on Wordocious"], "won": true, "hero": "win" } },
+    { "kind": "pocket", "args": { "gameTitle": "Pass the Puzzle", "won": false, "mine": null, "theirs": null, "opponent": "Di" },
+      "expect": { "title": "PASS THE PUZZLE", "accentHex": "#7c3aed", "big": "LOSS", "bigLabel": "Final score", "lines": ["Good game, Di", "Play me on Wordocious"], "won": false, "hero": "loss" } },
+    { "kind": "streak", "args": { "streak": 1, "best": 1, "lastDays": [false, false, false, false, false, false, true] },
+      "expect": { "title": "ON A STREAK", "accentHex": "#f59e0b", "big": "1", "bigLabel": "Day streak", "lines": ["One day down", "A new personal best"], "dots": [false, false, false, false, false, false, true], "hero": "flawless" } },
+    { "kind": "streak", "args": { "streak": 7, "best": 21, "lastDays": [true, true, true, true, true, true, true] },
+      "expect": { "title": "ON A STREAK", "accentHex": "#f59e0b", "big": "7", "bigLabel": "Day streak", "lines": ["7 days in a row", "Best: 21 days"], "dots": [true, true, true, true, true, true, true], "hero": "flawless" } },
+    { "kind": "streak", "args": { "streak": 3, "best": 0, "lastDays": [true, false, true, true, true] },
+      "expect": { "title": "ON A STREAK", "accentHex": "#f59e0b", "big": "3", "bigLabel": "Day streak", "lines": ["3 days in a row"], "dots": [true, false, true, true, true], "hero": "flawless" } },
+    { "kind": "streak", "args": { "streak": 21, "best": 21, "lastDays": [false, true, true, true, true, true, true, true, true] },
+      "expect": { "title": "ON A STREAK", "accentHex": "#f59e0b", "big": "21", "bigLabel": "Day streak", "lines": ["21 days in a row", "A new personal best"], "dots": [true, true, true, true, true, true, true], "hero": "flawless" } }
+  ]
+}

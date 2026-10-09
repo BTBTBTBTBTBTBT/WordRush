@@ -472,6 +472,22 @@ private fun StreakPopup(p: com.wordocious.app.data.Profile, onDismiss: () -> Uni
             }
         }
 
+        if (current > 0) {
+            // Item 46: the streak calendar share (the sender's mascot celebrating, the week as dots).
+            val shareContext = androidx.compose.ui.platform.LocalContext.current
+            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.Center) {
+                CandyButton(
+                    "Share my streak", color = CandyColor.PEACH, size = CandySize.SMALL,
+                    onClick = {
+                        com.wordocious.app.data.MomentCard.share(
+                            shareContext,
+                            com.wordocious.core.MomentShare.streak(current, maxOf(best, current), week),
+                        )
+                    },
+                )
+            }
+        }
+
         StreakSectionLabel("SWEEP STREAKS")
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StreakChip("WORDOCIOUS", summary.wordSweep, null, gold = false, Modifier.weight(1f)) { Icon3D(Icon3DName.FLAME, 24.dp) }

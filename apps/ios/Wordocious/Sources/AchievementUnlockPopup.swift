@@ -521,6 +521,14 @@ struct AchievementUnlockPopup: View {
                 Button(action: onNice) { CandyLabel(title: isLevel ? "Nice!" : "Awesome!") }
                     .buttonStyle(CastButtonStyle(size: .large))
                     .padding(.top, 4)
+                if case .levelUp(let level) = moment {
+                    // Item 46: the level-up share (the sender's mascot celebrating, the new level in soft numbers).
+                    Button { shareLevelUp(level) } label: {
+                        Icon3D(.share, size: 26).frame(width: 44, height: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(RoundIconButtonStyle())
+                    .accessibilityLabel("Share level up")
+                }
                 if !isLevel {
                     // BF2: See all (→ Stats achievements) + share the badge card.
                     HStack(spacing: 10) {
@@ -572,6 +580,14 @@ struct AchievementUnlockPopup: View {
         AchievementUnlockCenter.shared.dismissAll()
         TabRouterModel.dismissAllOverlays(animated: true)
         StatsJump.requestAchievements()
+    }
+
+    /// Item 46: share the level-up card (MomentShare, the shared hero-band look), after the popup closes.
+    private func shareLevelUp(_ level: Int) {
+        let tier = LevelTier.forLevel(level)
+        let moment = MomentShare.levelUp(level: level, tier: tier.label, accentHex: BadgeArt.tierAccent(tier).shareHexString)
+        AchievementUnlockCenter.shared.dismissAll()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { ShareService.shareMoment(moment) }
     }
 
     /// BF2: share the badge card as an image (S-style), after the popup closes.

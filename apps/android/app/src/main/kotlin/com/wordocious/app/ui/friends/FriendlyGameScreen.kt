@@ -447,6 +447,16 @@ fun FriendlyGameScreen(
             }
             if (!g.active) {
                 PinkButton("REMATCH", modifier = Modifier.fillMaxWidth(), enabled = !busy) { rematch() }
+                // Item 46: the pocket-game result card (the sender's mascot cheering, or the good-sport shrug, and the final score).
+                val shareContext = androidx.compose.ui.platform.LocalContext.current
+                PinkButton("SHARE RESULT", modifier = Modifier.fillMaxWidth(), solid = false) {
+                    val sc = scoreOf(g.state)
+                    val won = when (g.result) { "win" -> true; "loss" -> false; else -> null }
+                    com.wordocious.app.data.MomentCard.share(
+                        shareContext,
+                        com.wordocious.core.MomentShare.pocketResult(g.kind.title, won, sc?.get(g.me), sc?.get(g.me.other), g.opponent.username),
+                    )
+                }
                 PinkButton("FRIENDS", modifier = Modifier.fillMaxWidth(), solid = false, onClick = onFriends)
             }
             Spacer(Modifier.height(28.dp))
