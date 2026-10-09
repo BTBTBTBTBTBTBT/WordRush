@@ -1,0 +1,2517 @@
+{
+ "generatedBy": "scripts/puzzles/spyglass-harder.mjs",
+ "generatedOn": "2026-10-09",
+ "note": "PREVIEW ONLY — not applied to apps/web/data/wordsearch-puzzles.json. Grids are deterministic per (id, date, level). `near` must be recomputed with apps/web/scripts/wordsearch/add-near.mjs when applied (the generator already rejects off-list theme words, so it should come out empty).",
+ "bank": {
+  "epoch": "2026-09-23",
+  "version": 1
+ },
+ "puzzles": [
+  {
+   "index": 17,
+   "day": "2026-10-10",
+   "weekday": "Sat",
+   "level": 6,
+   "requestedLevel": 6,
+   "id": "ws0018",
+   "theme": "hiking",
+   "title": "Hiking Trail",
+   "current": {
+    "grid": "SSNACKINYCBWELEOEHUHLNIEOEEEREIFRTTOTHETSCTNCIKRERTIARSHEOAIECSPASBTUTRHMOEISAOTSAILYILSCECMVEVEAESK",
+    "words": [
+     {
+      "w": "SWITCHBACK",
+      "r": 0,
+      "c": 0,
+      "d": "SE"
+     },
+     {
+      "w": "CAMPSITE",
+      "r": 9,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "LOOKOUT",
+      "r": 1,
+      "c": 3,
+      "d": "SE"
+     },
+     {
+      "w": "CANTEEN",
+      "r": 6,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "BLISTER",
+      "r": 1,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "SNACK",
+      "r": 0,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "TRAIL",
+      "r": 4,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "CREEK",
+      "r": 4,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "VISTA",
+      "r": 9,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "POLE",
+      "r": 6,
+      "c": 3,
+      "d": "S"
+     }
+    ],
+    "score": {
+     "total": 47,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 0,
+      "plainPenalty": 7,
+      "crossings": 7,
+      "edges": 7,
+      "camouflage": 11
+     },
+     "stats": {
+      "diagonal": 7,
+      "backwards": 0,
+      "plainES": 3,
+      "edgeToEdge": 3,
+      "crossings": 2,
+      "camouflage": 0.714
+     }
+    }
+   },
+   "proposed": {
+    "grid": "KKPEAAECKPTCMOSNACKOTLAILMLEAPLIIBPELRNBTAKSHOTEAVTRIEOCETIEETAKETTSSBEEOSNRTICBAUIATACLWITCCCORCBSS",
+    "words": [
+     {
+      "w": "SWITCHBACK",
+      "r": 9,
+      "c": 9,
+      "d": "NW"
+     },
+     {
+      "w": "CAMPSITE",
+      "r": 0,
+      "c": 7,
+      "d": "SW"
+     },
+     {
+      "w": "LOOKOUT",
+      "r": 3,
+      "c": 6,
+      "d": "SW"
+     },
+     {
+      "w": "CANTEEN",
+      "r": 9,
+      "c": 2,
+      "d": "NE"
+     },
+     {
+      "w": "BLISTER",
+      "r": 9,
+      "c": 7,
+      "d": "N"
+     },
+     {
+      "w": "SNACK",
+      "r": 1,
+      "c": 4,
+      "d": "E"
+     },
+     {
+      "w": "TRAIL",
+      "r": 6,
+      "c": 1,
+      "d": "N"
+     },
+     {
+      "w": "CREEK",
+      "r": 8,
+      "c": 6,
+      "d": "NW"
+     },
+     {
+      "w": "VISTA",
+      "r": 4,
+      "c": 9,
+      "d": "SW"
+     },
+     {
+      "w": "POLE",
+      "r": 0,
+      "c": 2,
+      "d": "SE"
+     }
+    ],
+    "score": {
+     "total": 91,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 9,
+      "crossings": 17,
+      "edges": 8,
+      "camouflage": 22
+     },
+     "stats": {
+      "diagonal": 7,
+      "backwards": 7,
+      "plainES": 1,
+      "edgeToEdge": 2,
+      "crossings": 5,
+      "camouflage": 0.946
+     }
+    },
+    "attempts": 1
+   }
+  },
+  {
+   "index": 18,
+   "day": "2026-10-11",
+   "weekday": "Sun",
+   "level": 6,
+   "requestedLevel": 6,
+   "id": "ws0019",
+   "theme": "woodland",
+   "title": "Woodland Creatures",
+   "current": {
+    "grid": "WEMOOSEIURCOWEASELITFROISOSECNASLDAHLRKUWCHIPMUNKBNASREEUNCELNATEKCEGAYENYSWMKRVDEERHKNAEEELBRABBITR",
+    "words": [
+     {
+      "w": "WOODPECKER",
+      "r": 0,
+      "c": 0,
+      "d": "SE"
+     },
+     {
+      "w": "CHIPMUNK",
+      "r": 4,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "RABBIT",
+      "r": 9,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "WEASEL",
+      "r": 1,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "BEAVER",
+      "r": 4,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "SHREW",
+      "r": 3,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "MOOSE",
+      "r": 0,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "SKUNK",
+      "r": 7,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "DEER",
+      "r": 8,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "FAWN",
+      "r": 2,
+      "c": 0,
+      "d": "S"
+     }
+    ],
+    "score": {
+     "total": 45,
+     "parts": {
+      "diagonals": 9,
+      "backwards": 0,
+      "plainPenalty": 3,
+      "crossings": 13,
+      "edges": 5,
+      "camouflage": 15
+     },
+     "stats": {
+      "diagonal": 3,
+      "backwards": 0,
+      "plainES": 7,
+      "edgeToEdge": 5,
+      "crossings": 4,
+      "camouflage": 0.81
+     }
+    }
+   },
+   "proposed": {
+    "grid": "WESKRCPMKTEOEFASWNIMREOTBFUBOWHAMDAMBOUMSERWPASWLAOHNIREREEDACHKWKCCSCOCKNUKSKAERVAIBEAVERTULEVNBUWR",
+    "words": [
+     {
+      "w": "WOODPECKER",
+      "r": 0,
+      "c": 0,
+      "d": "SE"
+     },
+     {
+      "w": "CHIPMUNK",
+      "r": 7,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "RABBIT",
+      "r": 5,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "WEASEL",
+      "r": 9,
+      "c": 8,
+      "d": "N"
+     },
+     {
+      "w": "BEAVER",
+      "r": 8,
+      "c": 4,
+      "d": "E"
+     },
+     {
+      "w": "SHREW",
+      "r": 4,
+      "c": 0,
+      "d": "N"
+     },
+     {
+      "w": "MOOSE",
+      "r": 1,
+      "c": 9,
+      "d": "SW"
+     },
+     {
+      "w": "SKUNK",
+      "r": 7,
+      "c": 6,
+      "d": "W"
+     },
+     {
+      "w": "DEER",
+      "r": 5,
+      "c": 9,
+      "d": "W"
+     },
+     {
+      "w": "FAWN",
+      "r": 2,
+      "c": 5,
+      "d": "SW"
+     }
+    ],
+    "score": {
+     "total": 92,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 9,
+      "crossings": 20,
+      "edges": 8,
+      "camouflage": 20
+     },
+     "stats": {
+      "diagonal": 5,
+      "backwards": 6,
+      "plainES": 1,
+      "edgeToEdge": 2,
+      "crossings": 6,
+      "camouflage": 0.905
+     }
+    },
+    "attempts": 2
+   }
+  },
+  {
+   "index": 19,
+   "day": "2026-10-12",
+   "weekday": "Mon",
+   "level": 1,
+   "requestedLevel": 1,
+   "id": "ws0020",
+   "theme": "winterday",
+   "title": "Winter Day",
+   "current": {
+    "grid": "FCCSEOSFEFLGCGDRIFTRUNHLERIADORBIMITTENSRBLIZZARDTYELLROOCOIESHOVELNEASNOWMANEAOASWOOLENSOLESLEDDING",
+    "words": [
+     {
+      "w": "SLEDDING",
+      "r": 9,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "BLIZZARD",
+      "r": 4,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "MITTENS",
+      "r": 3,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "SNOWMAN",
+      "r": 7,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "WOOLENS",
+      "r": 8,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "FLURRY",
+      "r": 0,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "SHOVEL",
+      "r": 6,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "CHILL",
+      "r": 1,
+      "c": 2,
+      "d": "S"
+     },
+     {
+      "w": "FROST",
+      "r": 0,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "DRIFT",
+      "r": 1,
+      "c": 4,
+      "d": "E"
+     }
+    ],
+    "score": {
+     "total": 25,
+     "parts": {
+      "diagonals": 0,
+      "backwards": 0,
+      "plainPenalty": 0,
+      "crossings": 7,
+      "edges": 7,
+      "camouflage": 11
+     },
+     "stats": {
+      "diagonal": 0,
+      "backwards": 0,
+      "plainES": 10,
+      "edgeToEdge": 3,
+      "crossings": 2,
+      "camouflage": 0.729
+     }
+    }
+   },
+   "proposed": {
+    "grid": "NCSNOWMANHLEBNALZDDBRGSLSCSHWYDENOINHONRARSIEZOISRSLITDLZHLUTSTFEDOAELCISNTVEWRFMESDENBLLDGWBLHFROST",
+    "words": [
+     {
+      "w": "SLEDDING",
+      "r": 9,
+      "c": 8,
+      "d": "NW"
+     },
+     {
+      "w": "BLIZZARD",
+      "r": 1,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "MITTENS",
+      "r": 8,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "SNOWMAN",
+      "r": 0,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "WOOLENS",
+      "r": 2,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "FLURRY",
+      "r": 7,
+      "c": 9,
+      "d": "N"
+     },
+     {
+      "w": "SHOVEL",
+      "r": 4,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "CHILL",
+      "r": 2,
+      "c": 5,
+      "d": "SE"
+     },
+     {
+      "w": "FROST",
+      "r": 9,
+      "c": 5,
+      "d": "E"
+     },
+     {
+      "w": "DRIFT",
+      "r": 3,
+      "c": 0,
+      "d": "SE"
+     }
+    ],
+    "score": {
+     "total": 68,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 16,
+      "plainPenalty": 8,
+      "crossings": 7,
+      "edges": 7,
+      "camouflage": 15
+     },
+     "stats": {
+      "diagonal": 7,
+      "backwards": 4,
+      "plainES": 2,
+      "edgeToEdge": 3,
+      "crossings": 2,
+      "camouflage": 0.799
+     }
+    },
+    "attempts": 1
+   }
+  },
+  {
+   "index": 20,
+   "day": "2026-10-13",
+   "weekday": "Tue",
+   "level": 2,
+   "requestedLevel": 2,
+   "id": "ws0021",
+   "theme": "cakedecorating",
+   "title": "Cake Decorating",
+   "current": {
+    "grid": "CSSTENCILGARPHTIERRCFNCRCWMNTHLOYPIPINGEOSNLANLNHRWUODETKCDREGEEAEALOYRAMALNCRECLRMEAETRESSOCGEICING",
+    "words": [
+     {
+      "w": "SPRINKLES",
+      "r": 0,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "STENCIL",
+      "r": 0,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "GANACHE",
+      "r": 9,
+      "c": 3,
+      "d": "NE"
+     },
+     {
+      "w": "FONDANT",
+      "r": 2,
+      "c": 0,
+      "d": "SE"
+     },
+     {
+      "w": "PIPING",
+      "r": 3,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "FLOWER",
+      "r": 2,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "CHERRY",
+      "r": 1,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "SUGAR",
+      "r": 4,
+      "c": 1,
+      "d": "S"
+     },
+     {
+      "w": "ICING",
+      "r": 9,
+      "c": 5,
+      "d": "E"
+     },
+     {
+      "w": "TIER",
+      "r": 1,
+      "c": 4,
+      "d": "E"
+     }
+    ],
+    "score": {
+     "total": 41,
+     "parts": {
+      "diagonals": 9,
+      "backwards": 0,
+      "plainPenalty": 3,
+      "crossings": 13,
+      "edges": 4,
+      "camouflage": 12
+     },
+     "stats": {
+      "diagonal": 3,
+      "backwards": 0,
+      "plainES": 7,
+      "edgeToEdge": 6,
+      "crossings": 4,
+      "camouflage": 0.746
+     }
+    }
+   },
+   "proposed": {
+    "grid": "NTOHRMEMFSATINEESOTSIPCIIANEEOLAIWTDNLGCRRNPACKWARARGNINILNHNATLINMAAHOGPRRTGSCIAUPGYRREHCRSOOFLOWER",
+    "words": [
+     {
+      "w": "SPRINKLES",
+      "r": 9,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "STENCIL",
+      "r": 0,
+      "c": 9,
+      "d": "SW"
+     },
+     {
+      "w": "GANACHE",
+      "r": 3,
+      "c": 8,
+      "d": "S"
+     },
+     {
+      "w": "FONDANT",
+      "r": 0,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "PIPING",
+      "r": 2,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "FLOWER",
+      "r": 9,
+      "c": 4,
+      "d": "E"
+     },
+     {
+      "w": "CHERRY",
+      "r": 8,
+      "c": 9,
+      "d": "W"
+     },
+     {
+      "w": "SUGAR",
+      "r": 9,
+      "c": 1,
+      "d": "N"
+     },
+     {
+      "w": "ICING",
+      "r": 1,
+      "c": 2,
+      "d": "S"
+     },
+     {
+      "w": "TIER",
+      "r": 3,
+      "c": 4,
+      "d": "N"
+     }
+    ],
+    "score": {
+     "total": 79,
+     "parts": {
+      "diagonals": 12,
+      "backwards": 20,
+      "plainPenalty": 7,
+      "crossings": 17,
+      "edges": 8,
+      "camouflage": 15
+     },
+     "stats": {
+      "diagonal": 4,
+      "backwards": 5,
+      "plainES": 3,
+      "edgeToEdge": 2,
+      "crossings": 5,
+      "camouflage": 0.799
+     }
+    },
+    "attempts": 1
+   }
+  },
+  {
+   "index": 21,
+   "day": "2026-10-14",
+   "weekday": "Wed",
+   "level": 3,
+   "requestedLevel": 3,
+   "id": "ws0022",
+   "theme": "citybreak",
+   "title": "City Getaway",
+   "current": {
+    "grid": "RPFASUBWAYIBDNRHPYEIMIWAVSORNAEHTOURHTAHNIGHTLIFEMRCCSENMMALRSITRAERICRBTAXITNLEPLAZAPRERTVDTOEAOLRO",
+    "words": [
+     {
+      "w": "NIGHTLIFE",
+      "r": 4,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "THEATER",
+      "r": 3,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "BISTRO",
+      "r": 7,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "SUBWAY",
+      "r": 0,
+      "c": 4,
+      "d": "E"
+     },
+     {
+      "w": "PLAZA",
+      "r": 8,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "METRO",
+      "r": 5,
+      "c": 6,
+      "d": "S"
+     },
+     {
+      "w": "HOTEL",
+      "r": 1,
+      "c": 5,
+      "d": "SE"
+     },
+     {
+      "w": "TRAM",
+      "r": 7,
+      "c": 6,
+      "d": "NE"
+     },
+     {
+      "w": "TOUR",
+      "r": 3,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "TAXI",
+      "r": 7,
+      "c": 2,
+      "d": "E"
+     }
+    ],
+    "score": {
+     "total": 60,
+     "parts": {
+      "diagonals": 12,
+      "backwards": 0,
+      "plainPenalty": 4,
+      "crossings": 20,
+      "edges": 9,
+      "camouflage": 15
+     },
+     "stats": {
+      "diagonal": 4,
+      "backwards": 0,
+      "plainES": 6,
+      "edgeToEdge": 1,
+      "crossings": 8,
+      "camouflage": 0.8
+     }
+    }
+   },
+   "proposed": {
+    "grid": "EOETTATLPNURSAIYOLFIGITTALATAGWTOWLZHMAHNOBEAEEATTAURTAIFRGLSHOTELXTIIMUEESHHAHFRRFEFITRTEORTEMABGEI",
+    "words": [
+     {
+      "w": "NIGHTLIFE",
+      "r": 0,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "THEATER",
+      "r": 2,
+      "c": 7,
+      "d": "SW"
+     },
+     {
+      "w": "BISTRO",
+      "r": 9,
+      "c": 6,
+      "d": "NW"
+     },
+     {
+      "w": "SUBWAY",
+      "r": 6,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "PLAZA",
+      "r": 0,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "METRO",
+      "r": 9,
+      "c": 4,
+      "d": "W"
+     },
+     {
+      "w": "HOTEL",
+      "r": 6,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "TRAM",
+      "r": 6,
+      "c": 7,
+      "d": "N"
+     },
+     {
+      "w": "TOUR",
+      "r": 5,
+      "c": 3,
+      "d": "SW"
+     },
+     {
+      "w": "TAXI",
+      "r": 8,
+      "c": 8,
+      "d": "NW"
+     }
+    ],
+    "score": {
+     "total": 82,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 8,
+      "crossings": 10,
+      "edges": 8,
+      "camouflage": 21
+     },
+     "stats": {
+      "diagonal": 6,
+      "backwards": 7,
+      "plainES": 2,
+      "edgeToEdge": 2,
+      "crossings": 3,
+      "camouflage": 0.917
+     }
+    },
+    "attempts": 1
+   }
+  },
+  {
+   "index": 22,
+   "day": "2026-10-15",
+   "weekday": "Thu",
+   "level": 4,
+   "requestedLevel": 4,
+   "id": "ws0023",
+   "theme": "formalwear",
+   "title": "Formal Wear",
+   "current": {
+    "grid": "NCLCLUTCHSMERIYSARVPOUCPEARLSLVHMKOSHRTCEMTSTHFEOOLMSELIEMLRVUIERAEEESEOLMYDPEEATLKCGOIEBGETUXEDOALE",
+    "words": [
+     {
+      "w": "CORSAGE",
+      "r": 3,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "NECKTIE",
+      "r": 0,
+      "c": 0,
+      "d": "SE"
+     },
+     {
+      "w": "TUXEDO",
+      "r": 9,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "VELVET",
+      "r": 3,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "PEARLS",
+      "r": 2,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "CLUTCH",
+      "r": 0,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "STOLE",
+      "r": 2,
+      "c": 8,
+      "d": "S"
+     },
+     {
+      "w": "LAPEL",
+      "r": 5,
+      "c": 4,
+      "d": "SE"
+     },
+     {
+      "w": "SILK",
+      "r": 5,
+      "c": 2,
+      "d": "S"
+     },
+     {
+      "w": "SASH",
+      "r": 1,
+      "c": 5,
+      "d": "S"
+     }
+    ],
+    "score": {
+     "total": 34,
+     "parts": {
+      "diagonals": 6,
+      "backwards": 0,
+      "plainPenalty": 2,
+      "crossings": 7,
+      "edges": 6,
+      "camouflage": 13
+     },
+     "stats": {
+      "diagonal": 2,
+      "backwards": 0,
+      "plainES": 8,
+      "edgeToEdge": 4,
+      "crossings": 2,
+      "camouflage": 0.761
+     }
+    }
+   },
+   "proposed": {
+    "grid": "SNCLUTCHAESOEOSASHEETOOCRCGLPNLTDKKSOEEGIAEXVTASWHEDXVSRIGLPSEUPLLHEEEPHTSKEPCLKGEDRCAVTKOKSLDLLTMCK",
+    "words": [
+     {
+      "w": "CORSAGE",
+      "r": 0,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "NECKTIE",
+      "r": 0,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "TUXEDO",
+      "r": 7,
+      "c": 2,
+      "d": "N"
+     },
+     {
+      "w": "VELVET",
+      "r": 8,
+      "c": 6,
+      "d": "NW"
+     },
+     {
+      "w": "PEARLS",
+      "r": 2,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "CLUTCH",
+      "r": 0,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "STOLE",
+      "r": 5,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "LAPEL",
+      "r": 9,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "SILK",
+      "r": 4,
+      "c": 7,
+      "d": "SW"
+     },
+     {
+      "w": "SASH",
+      "r": 1,
+      "c": 4,
+      "d": "E"
+     }
+    ],
+    "score": {
+     "total": 88,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 16,
+      "plainPenalty": 8,
+      "crossings": 20,
+      "edges": 9,
+      "camouflage": 20
+     },
+     "stats": {
+      "diagonal": 7,
+      "backwards": 4,
+      "plainES": 2,
+      "edgeToEdge": 1,
+      "crossings": 7,
+      "camouflage": 0.896
+     }
+    },
+    "attempts": 2
+   }
+  },
+  {
+   "index": 23,
+   "day": "2026-10-16",
+   "weekday": "Fri",
+   "level": 5,
+   "requestedLevel": 5,
+   "id": "ws0024",
+   "theme": "insects",
+   "title": "Bug Hunt",
+   "current": {
+    "grid": "OTUSASMEYIICHRYSALISDRAGONFLYASWARMROTENNFIREFLYGTHNTTUHDNEEUTTSAUIEWNOUEARWIGYNBUMBLEBEEAHTERMITERT",
+    "words": [
+     {
+      "w": "BUTTERFLY",
+      "r": 8,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "BUMBLEBEE",
+      "r": 8,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "DRAGONFLY",
+      "r": 2,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "CHRYSALIS",
+      "r": 1,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "TERMITE",
+      "r": 9,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "FIREFLY",
+      "r": 4,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "ANTENNA",
+      "r": 2,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "EARWIG",
+      "r": 7,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "SWARM",
+      "r": 3,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "WING",
+      "r": 7,
+      "c": 5,
+      "d": "NE"
+     }
+    ],
+    "score": {
+     "total": 42,
+     "parts": {
+      "diagonals": 6,
+      "backwards": 0,
+      "plainPenalty": 2,
+      "crossings": 17,
+      "edges": 7,
+      "camouflage": 10
+     },
+     "stats": {
+      "diagonal": 2,
+      "backwards": 0,
+      "plainES": 8,
+      "edgeToEdge": 3,
+      "crossings": 5,
+      "camouflage": 0.705
+     }
+    }
+   },
+   "proposed": {
+    "grid": "ETTRRIYGSSEBBEIGIRDIATUBRWNRWLUNTMRMAIFARRTABGIIWSWMEEOLRTSYETRNNEETERTFFAFNBBAHALLLWFAAECYEYSMSHMLE",
+    "words": [
+     {
+      "w": "BUTTERFLY",
+      "r": 1,
+      "c": 2,
+      "d": "S"
+     },
+     {
+      "w": "BUMBLEBEE",
+      "r": 1,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "DRAGONFLY",
+      "r": 1,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "CHRYSALIS",
+      "r": 8,
+      "c": 9,
+      "d": "N"
+     },
+     {
+      "w": "TERMITE",
+      "r": 0,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "FIREFLY",
+      "r": 3,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "ANTENNA",
+      "r": 2,
+      "c": 0,
+      "d": "SE"
+     },
+     {
+      "w": "EARWIG",
+      "r": 5,
+      "c": 2,
+      "d": "NE"
+     },
+     {
+      "w": "SWARM",
+      "r": 9,
+      "c": 5,
+      "d": "NW"
+     },
+     {
+      "w": "WING",
+      "r": 4,
+      "c": 8,
+      "d": "NW"
+     }
+    ],
+    "score": {
+     "total": 92,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 9,
+      "crossings": 20,
+      "edges": 9,
+      "camouflage": 19
+     },
+     "stats": {
+      "diagonal": 8,
+      "backwards": 5,
+      "plainES": 1,
+      "edgeToEdge": 1,
+      "crossings": 6,
+      "camouflage": 0.88
+     }
+    },
+    "attempts": 1773
+   }
+  },
+  {
+   "index": 24,
+   "day": "2026-10-17",
+   "weekday": "Sat",
+   "level": 6,
+   "requestedLevel": 6,
+   "id": "ws0025",
+   "theme": "railway",
+   "title": "Railroad",
+   "current": {
+    "grid": "VREXPRESSGIENGINEERCAANHSIWHORDPLATFORMOUHNRAILDHSCETNTIIECSTRSWITCHTITDANOETPANMSIGNALDEGOIUCABOOSE",
+    "words": [
+     {
+      "w": "PLATFORM",
+      "r": 3,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "CROSSING",
+      "r": 1,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "ENGINEER",
+      "r": 1,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "EXPRESS",
+      "r": 0,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "VIADUCT",
+      "r": 0,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "STATION",
+      "r": 2,
+      "c": 4,
+      "d": "S"
+     },
+     {
+      "w": "CABOOSE",
+      "r": 9,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "SWITCH",
+      "r": 6,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "SIGNAL",
+      "r": 8,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "RAIL",
+      "r": 4,
+      "c": 3,
+      "d": "E"
+     }
+    ],
+    "score": {
+     "total": 33,
+     "parts": {
+      "diagonals": 0,
+      "backwards": 0,
+      "plainPenalty": 0,
+      "crossings": 13,
+      "edges": 6,
+      "camouflage": 14
+     },
+     "stats": {
+      "diagonal": 0,
+      "backwards": 0,
+      "plainES": 10,
+      "edgeToEdge": 4,
+      "crossings": 4,
+      "camouflage": 0.773
+     }
+    }
+   },
+   "proposed": {
+    "grid": "EVHGAOCLMRRICRLIARGGRATEINONNTEDIOGFIOCEEUWITSIAOLNCSASTBPASITLOAORTCEGPRTOFONSENCSSERPXEAENEVELRDSL",
+    "words": [
+     {
+      "w": "PLATFORM",
+      "r": 7,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "CROSSING",
+      "r": 8,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "ENGINEER",
+      "r": 9,
+      "c": 0,
+      "d": "N"
+     },
+     {
+      "w": "EXPRESS",
+      "r": 8,
+      "c": 8,
+      "d": "W"
+     },
+     {
+      "w": "VIADUCT",
+      "r": 0,
+      "c": 1,
+      "d": "S"
+     },
+     {
+      "w": "STATION",
+      "r": 8,
+      "c": 2,
+      "d": "NE"
+     },
+     {
+      "w": "CABOOSE",
+      "r": 3,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "SWITCH",
+      "r": 5,
+      "c": 2,
+      "d": "N"
+     },
+     {
+      "w": "SIGNAL",
+      "r": 5,
+      "c": 2,
+      "d": "NE"
+     },
+     {
+      "w": "RAIL",
+      "r": 1,
+      "c": 7,
+      "d": "W"
+     }
+    ],
+    "score": {
+     "total": 89,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 9,
+      "crossings": 17,
+      "edges": 9,
+      "camouflage": 19
+     },
+     "stats": {
+      "diagonal": 5,
+      "backwards": 5,
+      "plainES": 1,
+      "edgeToEdge": 1,
+      "crossings": 5,
+      "camouflage": 0.874
+     }
+    },
+    "attempts": 48
+   }
+  },
+  {
+   "index": 25,
+   "day": "2026-10-18",
+   "weekday": "Sun",
+   "level": 6,
+   "requestedLevel": 6,
+   "id": "ws0026",
+   "theme": "woodworking",
+   "title": "Woodworking",
+   "current": {
+    "grid": "VBTVNGRAINERINANADYLNTRRERRTETEELEDANSNDECKAOHIIUGRLNBCHOKSTEAOOCQRULHFMTEIAULSNTPUEDUEEHESAWDUSTERO",
+    "words": [
+     {
+      "w": "BIRDHOUSE",
+      "r": 0,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "LACQUER",
+      "r": 3,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "SAWDUST",
+      "r": 9,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "VARNISH",
+      "r": 0,
+      "c": 3,
+      "d": "SE"
+     },
+     {
+      "w": "CHISEL",
+      "r": 6,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "VENEER",
+      "r": 0,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "CLAMP",
+      "r": 4,
+      "c": 1,
+      "d": "S"
+     },
+     {
+      "w": "GRAIN",
+      "r": 0,
+      "c": 5,
+      "d": "E"
+     },
+     {
+      "w": "BOARD",
+      "r": 5,
+      "c": 3,
+      "d": "NE"
+     },
+     {
+      "w": "KNOT",
+      "r": 4,
+      "c": 2,
+      "d": "S"
+     }
+    ],
+    "score": {
+     "total": 37,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 0,
+      "plainPenalty": 5,
+      "crossings": 0,
+      "edges": 5,
+      "camouflage": 12
+     },
+     "stats": {
+      "diagonal": 5,
+      "backwards": 0,
+      "plainES": 5,
+      "edgeToEdge": 5,
+      "crossings": 0,
+      "camouflage": 0.738
+     }
+    }
+   },
+   "proposed": {
+    "grid": "UTBDSCAOEVGROOOETEEEANENAHSSSNRIHUKRUAVEEASCQODAPESRIHHCWMSRUGNDSIAOUIRURERLSLLBUIAQCAAEERBTVQISKELR",
+    "words": [
+     {
+      "w": "BIRDHOUSE",
+      "r": 9,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "LACQUER",
+      "r": 7,
+      "c": 7,
+      "d": "NW"
+     },
+     {
+      "w": "SAWDUST",
+      "r": 7,
+      "c": 6,
+      "d": "N"
+     },
+     {
+      "w": "VARNISH",
+      "r": 9,
+      "c": 2,
+      "d": "N"
+     },
+     {
+      "w": "CHISEL",
+      "r": 4,
+      "c": 3,
+      "d": "SE"
+     },
+     {
+      "w": "VENEER",
+      "r": 0,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "CLAMP",
+      "r": 8,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "GRAIN",
+      "r": 6,
+      "c": 1,
+      "d": "N"
+     },
+     {
+      "w": "BOARD",
+      "r": 0,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "KNOT",
+      "r": 3,
+      "c": 4,
+      "d": "NW"
+     }
+    ],
+    "score": {
+     "total": 93,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 9,
+      "crossings": 20,
+      "edges": 9,
+      "camouflage": 20
+     },
+     "stats": {
+      "diagonal": 6,
+      "backwards": 5,
+      "plainES": 1,
+      "edgeToEdge": 1,
+      "crossings": 7,
+      "camouflage": 0.896
+     }
+    },
+    "attempts": 3
+   }
+  },
+  {
+   "index": 26,
+   "day": "2026-10-19",
+   "weekday": "Mon",
+   "level": 1,
+   "requestedLevel": 1,
+   "id": "ws0027",
+   "theme": "theater",
+   "title": "At the Theater",
+   "current": {
+    "grid": "STAGEYIIIUCPHCDPAGASIYPOOLCRTHSTRSEATOIECCOTEYRKCRESPUHBEEKSNAVMNISNEVELBEFLSSTORSPOTLIGHTYBOAWINGSB",
+    "words": [
+     {
+      "w": "SPOTLIGHT",
+      "r": 8,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "PLAYBILL",
+      "r": 1,
+      "c": 5,
+      "d": "S"
+     },
+     {
+      "w": "SCENERY",
+      "r": 3,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "COSTUME",
+      "r": 1,
+      "c": 3,
+      "d": "S"
+     },
+     {
+      "w": "ACTRESS",
+      "r": 1,
+      "c": 6,
+      "d": "S"
+     },
+     {
+      "w": "TICKET",
+      "r": 2,
+      "c": 8,
+      "d": "S"
+     },
+     {
+      "w": "STAGE",
+      "r": 0,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "WINGS",
+      "r": 9,
+      "c": 4,
+      "d": "E"
+     },
+     {
+      "w": "USHER",
+      "r": 0,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "PROP",
+      "r": 2,
+      "c": 2,
+      "d": "S"
+     }
+    ],
+    "score": {
+     "total": 22,
+     "parts": {
+      "diagonals": 0,
+      "backwards": 0,
+      "plainPenalty": 0,
+      "crossings": 3,
+      "edges": 6,
+      "camouflage": 13
+     },
+     "stats": {
+      "diagonal": 0,
+      "backwards": 0,
+      "plainES": 10,
+      "edgeToEdge": 4,
+      "crossings": 1,
+      "camouflage": 0.768
+     }
+    }
+   },
+   "proposed": {
+    "grid": "RSWINGSLDTGTPLAYBILLLCYORUPKNBICSRTUEOSIOTOSELSVRVNELSENIHLPEKGMTREGEARCKAGUTCHROISSTTMCSTATRPESTEAT",
+    "words": [
+     {
+      "w": "SPOTLIGHT",
+      "r": 0,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "PLAYBILL",
+      "r": 1,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "SCENERY",
+      "r": 8,
+      "c": 8,
+      "d": "NW"
+     },
+     {
+      "w": "COSTUME",
+      "r": 3,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "ACTRESS",
+      "r": 9,
+      "c": 8,
+      "d": "NW"
+     },
+     {
+      "w": "TICKET",
+      "r": 9,
+      "c": 1,
+      "d": "N"
+     },
+     {
+      "w": "STAGE",
+      "r": 9,
+      "c": 5,
+      "d": "NW"
+     },
+     {
+      "w": "WINGS",
+      "r": 0,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "USHER",
+      "r": 3,
+      "c": 5,
+      "d": "SE"
+     },
+     {
+      "w": "PROP",
+      "r": 5,
+      "c": 9,
+      "d": "NW"
+     }
+    ],
+    "score": {
+     "total": 77,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 8,
+      "crossings": 7,
+      "edges": 8,
+      "camouflage": 19
+     },
+     "stats": {
+      "diagonal": 7,
+      "backwards": 5,
+      "plainES": 2,
+      "edgeToEdge": 2,
+      "crossings": 2,
+      "camouflage": 0.879
+     }
+    },
+    "attempts": 1
+   }
+  },
+  {
+   "index": 27,
+   "day": "2026-10-20",
+   "weekday": "Tue",
+   "level": 2,
+   "requestedLevel": 2,
+   "id": "ws0028",
+   "theme": "parade",
+   "title": "Parade Day",
+   "current": {
+    "grid": "OURTBBURNIMSEMAYORBAATPTNFLOATRRNEDRDTNACNOCCWYUNCHHNDOTNFEHIROREWALRENRCROFITMEGFHLSANEORHCCAAEYTPR",
+    "words": [
+     {
+      "w": "SPECTATOR",
+      "r": 1,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "MARCHING",
+      "r": 1,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "BANNER",
+      "r": 1,
+      "c": 8,
+      "d": "S"
+     },
+     {
+      "w": "CHEER",
+      "r": 4,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "CROWD",
+      "r": 7,
+      "c": 2,
+      "d": "NE"
+     },
+     {
+      "w": "HORSE",
+      "r": 5,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "FLOAT",
+      "r": 2,
+      "c": 5,
+      "d": "E"
+     },
+     {
+      "w": "CLOWN",
+      "r": 9,
+      "c": 2,
+      "d": "NE"
+     },
+     {
+      "w": "MAYOR",
+      "r": 1,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "BAND",
+      "r": 0,
+      "c": 4,
+      "d": "S"
+     }
+    ],
+    "score": {
+     "total": 49,
+     "parts": {
+      "diagonals": 12,
+      "backwards": 0,
+      "plainPenalty": 4,
+      "crossings": 7,
+      "edges": 8,
+      "camouflage": 18
+     },
+     "stats": {
+      "diagonal": 4,
+      "backwards": 0,
+      "plainES": 6,
+      "edgeToEdge": 2,
+      "crossings": 2,
+      "camouflage": 0.859
+     }
+    }
+   },
+   "proposed": {
+    "grid": "ESCLWHMATCRPMHTCRFMKGETAOLFDDKCCEYRENNABITMHPCANDBCAATCBHWOELTYDOOOIMROOOIRRRWNLWRRSCRREWGNREAARORRR",
+    "words": [
+     {
+      "w": "SPECTATOR",
+      "r": 0,
+      "c": 1,
+      "d": "S"
+     },
+     {
+      "w": "MARCHING",
+      "r": 1,
+      "c": 2,
+      "d": "SE"
+     },
+     {
+      "w": "BANNER",
+      "r": 3,
+      "c": 9,
+      "d": "W"
+     },
+     {
+      "w": "CHEER",
+      "r": 5,
+      "c": 4,
+      "d": "NW"
+     },
+     {
+      "w": "CROWD",
+      "r": 8,
+      "c": 4,
+      "d": "NE"
+     },
+     {
+      "w": "HORSE",
+      "r": 5,
+      "c": 6,
+      "d": "SW"
+     },
+     {
+      "w": "FLOAT",
+      "r": 2,
+      "c": 6,
+      "d": "W"
+     },
+     {
+      "w": "CLOWN",
+      "r": 5,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "MAYOR",
+      "r": 4,
+      "c": 2,
+      "d": "S"
+     },
+     {
+      "w": "BAND",
+      "r": 5,
+      "c": 5,
+      "d": "NE"
+     }
+    ],
+    "score": {
+     "total": 82,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 16,
+      "plainPenalty": 7,
+      "crossings": 17,
+      "edges": 9,
+      "camouflage": 18
+     },
+     "stats": {
+      "diagonal": 5,
+      "backwards": 4,
+      "plainES": 3,
+      "edgeToEdge": 1,
+      "crossings": 5,
+      "camouflage": 0.866
+     }
+    },
+    "attempts": 1
+   }
+  },
+  {
+   "index": 28,
+   "day": "2026-10-21",
+   "weekday": "Wed",
+   "level": 3,
+   "requestedLevel": 3,
+   "id": "ws0029",
+   "theme": "park",
+   "title": "City Park",
+   "current": {
+    "grid": "ESQUIRRELBSTROLLERDNFPFRISBEESTBANDSTANDPLAYGROUNDFLOWERBEDNLPIGEONNWIOAIEITOANGHEDGEPLICDTIIOANGHOT",
+    "words": [
+     {
+      "w": "PLAYGROUND",
+      "r": 4,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "BANDSTAND",
+      "r": 3,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "FLOWERBED",
+      "r": 5,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "SQUIRREL",
+      "r": 0,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "STROLLER",
+      "r": 1,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "FRISBEE",
+      "r": 2,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "PIGEON",
+      "r": 6,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "HEDGE",
+      "r": 8,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "POND",
+      "r": 8,
+      "c": 5,
+      "d": "NE"
+     },
+     {
+      "w": "LAWN",
+      "r": 8,
+      "c": 6,
+      "d": "NE"
+     }
+    ],
+    "score": {
+     "total": 28,
+     "parts": {
+      "diagonals": 6,
+      "backwards": 0,
+      "plainPenalty": 2,
+      "crossings": 3,
+      "edges": 8,
+      "camouflage": 9
+     },
+     "stats": {
+      "diagonal": 2,
+      "backwards": 0,
+      "plainES": 8,
+      "edgeToEdge": 2,
+      "crossings": 1,
+      "camouflage": 0.676
+     }
+    }
+   },
+   "proposed": {
+    "grid": "TDHGAKMTDYRNLEESLNDRGUNEOTAEEEGOWRRTBLGLORANSRLPDTBGLDEOIPEIDYNWRGOUHLRAOTENWSQEBLSODLIWISFPNEEBSIRF",
+    "words": [
+     {
+      "w": "PLAYGROUND",
+      "r": 9,
+      "c": 1,
+      "d": "N"
+     },
+     {
+      "w": "BANDSTAND",
+      "r": 8,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "FLOWERBED",
+      "r": 9,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "SQUIRREL",
+      "r": 8,
+      "c": 9,
+      "d": "NW"
+     },
+     {
+      "w": "STROLLER",
+      "r": 8,
+      "c": 2,
+      "d": "NE"
+     },
+     {
+      "w": "FRISBEE",
+      "r": 9,
+      "c": 9,
+      "d": "W"
+     },
+     {
+      "w": "PIGEON",
+      "r": 4,
+      "c": 7,
+      "d": "SW"
+     },
+     {
+      "w": "HEDGE",
+      "r": 6,
+      "c": 8,
+      "d": "N"
+     },
+     {
+      "w": "POND",
+      "r": 5,
+      "c": 7,
+      "d": "SW"
+     },
+     {
+      "w": "LAWN",
+      "r": 5,
+      "c": 2,
+      "d": "N"
+     }
+    ],
+    "score": {
+     "total": 85,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 10,
+      "crossings": 17,
+      "edges": 7,
+      "camouflage": 16
+     },
+     "stats": {
+      "diagonal": 6,
+      "backwards": 7,
+      "plainES": 0,
+      "edgeToEdge": 3,
+      "crossings": 5,
+      "camouflage": 0.823
+     }
+    },
+    "attempts": 1
+   }
+  },
+  {
+   "index": 29,
+   "day": "2026-10-22",
+   "weekday": "Thu",
+   "level": 4,
+   "requestedLevel": 4,
+   "id": "ws0030",
+   "theme": "river",
+   "title": "Down by the River",
+   "current": {
+    "grid": "SINASREEDSWEPEBBLECRCURRENTLTISMEANDERDPMLDMDELTAPWEEDIEEUALURAPIDSSIESHALLOWSEFNPADDLEINESSVWILLOWA",
+    "words": [
+     {
+      "w": "SHALLOWS",
+      "r": 7,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "CURRENT",
+      "r": 2,
+      "c": 0,
+      "d": "E"
+     },
+     {
+      "w": "MEANDER",
+      "r": 3,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "PADDLE",
+      "r": 8,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "PEBBLE",
+      "r": 1,
+      "c": 2,
+      "d": "E"
+     },
+     {
+      "w": "WILLOW",
+      "r": 9,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "RIPPLE",
+      "r": 1,
+      "c": 9,
+      "d": "S"
+     },
+     {
+      "w": "RAPIDS",
+      "r": 6,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "REEDS",
+      "r": 0,
+      "c": 5,
+      "d": "E"
+     },
+     {
+      "w": "DELTA",
+      "r": 4,
+      "c": 4,
+      "d": "E"
+     }
+    ],
+    "score": {
+     "total": 21,
+     "parts": {
+      "diagonals": 0,
+      "backwards": 0,
+      "plainPenalty": 0,
+      "crossings": 0,
+      "edges": 7,
+      "camouflage": 14
+     },
+     "stats": {
+      "diagonal": 0,
+      "backwards": 0,
+      "plainES": 10,
+      "edgeToEdge": 3,
+      "crossings": 0,
+      "camouflage": 0.776
+     }
+    }
+   },
+   "proposed": {
+    "grid": "TAHESWDDARLNHNLDSUREEMEANDERPSPLLRIDDEHAOPBPREEAROONABLULLPDSRPPELCNTWSRPAOPARPAEIEWILLOWRRPSBAHMORR",
+    "words": [
+     {
+      "w": "SHALLOWS",
+      "r": 2,
+      "c": 9,
+      "d": "SW"
+     },
+     {
+      "w": "CURRENT",
+      "r": 6,
+      "c": 6,
+      "d": "NW"
+     },
+     {
+      "w": "MEANDER",
+      "r": 2,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "PADDLE",
+      "r": 5,
+      "c": 8,
+      "d": "NW"
+     },
+     {
+      "w": "PEBBLE",
+      "r": 7,
+      "c": 5,
+      "d": "NW"
+     },
+     {
+      "w": "WILLOW",
+      "r": 8,
+      "c": 3,
+      "d": "E"
+     },
+     {
+      "w": "RIPPLE",
+      "r": 9,
+      "c": 0,
+      "d": "NE"
+     },
+     {
+      "w": "RAPIDS",
+      "r": 6,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "REEDS",
+      "r": 4,
+      "c": 8,
+      "d": "NW"
+     },
+     {
+      "w": "DELTA",
+      "r": 3,
+      "c": 5,
+      "d": "SE"
+     }
+    ],
+    "score": {
+     "total": 87,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 8,
+      "crossings": 20,
+      "edges": 9,
+      "camouflage": 15
+     },
+     "stats": {
+      "diagonal": 8,
+      "backwards": 5,
+      "plainES": 2,
+      "edgeToEdge": 1,
+      "crossings": 6,
+      "camouflage": 0.795
+     }
+    },
+    "attempts": 8
+   }
+  },
+  {
+   "index": 30,
+   "day": "2026-10-23",
+   "weekday": "Fri",
+   "level": 5,
+   "requestedLevel": 5,
+   "id": "ws0031",
+   "theme": "golf",
+   "title": "Golf Course",
+   "current": {
+    "grid": "AOCHHAZARDHBDOYCAYLTMUAOILADSFDNSKRUTSELRKFOBBCLAAIEOTBHAISGVREEOORCPFEYTEGUTEUORLHDESTGTRRAETYEIATE",
+    "words": [
+     {
+      "w": "CLUBHOUSE",
+      "r": 1,
+      "c": 5,
+      "d": "S"
+     },
+     {
+      "w": "BUNKER",
+      "r": 1,
+      "c": 1,
+      "d": "S"
+     },
+     {
+      "w": "HAZARD",
+      "r": 0,
+      "c": 4,
+      "d": "E"
+     },
+     {
+      "w": "DRIVER",
+      "r": 3,
+      "c": 0,
+      "d": "S"
+     },
+     {
+      "w": "BOGEY",
+      "r": 5,
+      "c": 4,
+      "d": "S"
+     },
+     {
+      "w": "SLICE",
+      "r": 3,
+      "c": 7,
+      "d": "S"
+     },
+     {
+      "w": "CART",
+      "r": 4,
+      "c": 6,
+      "d": "S"
+     },
+     {
+      "w": "PUTT",
+      "r": 6,
+      "c": 8,
+      "d": "S"
+     },
+     {
+      "w": "HOOK",
+      "r": 0,
+      "c": 3,
+      "d": "S"
+     },
+     {
+      "w": "FLAG",
+      "r": 2,
+      "c": 9,
+      "d": "S"
+     }
+    ],
+    "score": {
+     "total": 23,
+     "parts": {
+      "diagonals": 0,
+      "backwards": 0,
+      "plainPenalty": 0,
+      "crossings": 0,
+      "edges": 7,
+      "camouflage": 16
+     },
+     "stats": {
+      "diagonal": 0,
+      "backwards": 0,
+      "plainES": 10,
+      "edgeToEdge": 3,
+      "crossings": 0,
+      "camouflage": 0.819
+     }
+    }
+   },
+   "proposed": {
+    "grid": "VEBIKORRBRHEOODBTEDESTOYEGOBSCDHAZARDUBRYRGALFOUSOSTIGUHNEIBBCTVBKLCACHSAUEEBIGEUKLRPROLBOECEUTBCSKK",
+    "words": [
+     {
+      "w": "CLUBHOUSE",
+      "r": 9,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "BUNKER",
+      "r": 3,
+      "c": 8,
+      "d": "SW"
+     },
+     {
+      "w": "HAZARD",
+      "r": 3,
+      "c": 1,
+      "d": "E"
+     },
+     {
+      "w": "DRIVER",
+      "r": 3,
+      "c": 0,
+      "d": "SE"
+     },
+     {
+      "w": "BOGEY",
+      "r": 2,
+      "c": 7,
+      "d": "W"
+     },
+     {
+      "w": "SLICE",
+      "r": 9,
+      "c": 7,
+      "d": "N"
+     },
+     {
+      "w": "CART",
+      "r": 6,
+      "c": 1,
+      "d": "SE"
+     },
+     {
+      "w": "PUTT",
+      "r": 8,
+      "c": 4,
+      "d": "NW"
+     },
+     {
+      "w": "HOOK",
+      "r": 3,
+      "c": 1,
+      "d": "NE"
+     },
+     {
+      "w": "FLAG",
+      "r": 4,
+      "c": 5,
+      "d": "W"
+     }
+    ],
+    "score": {
+     "total": 84,
+     "parts": {
+      "diagonals": 15,
+      "backwards": 20,
+      "plainPenalty": 9,
+      "crossings": 13,
+      "edges": 9,
+      "camouflage": 18
+     },
+     "stats": {
+      "diagonal": 6,
+      "backwards": 5,
+      "plainES": 1,
+      "edgeToEdge": 1,
+      "crossings": 4,
+      "camouflage": 0.864
+     }
+    },
+    "attempts": 6
+   }
+  }
+ ]
+}
