@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { TUTORIAL_BUTTON_AGAIN, TUTORIAL_BUTTON_FIRST } from '@wordle-duel/core';
 import { ArtTitle } from '@/components/ui/art-title';
 import { CandyButton } from '@/components/ui/candy-button';
 import { HeaderBack } from '@/components/ui/page-header';
@@ -32,13 +33,15 @@ interface Props {
   slug: string;
   accent: string;
   onClose: () => void;
+  /** The first-play welcome (2.8 item 12): the same card, the button says Let's play! */
+  firstPlay?: boolean;
 }
 
 /** When the first step's tiles start turning (after the card springs in), and the gap between steps. */
 const FIRST_FLIP_MS = 450;
 const STEP_GAP_MS = 650;
 
-export function GameHelpCard({ slug, accent, onClose }: Props) {
+export function GameHelpCard({ slug, accent, onClose, firstPlay = false }: Props) {
   const guide = getGuide(slug);
   const help = helpSteps(slug);
   // A7: the title art already draws the game's host, so the stage holds the
@@ -166,7 +169,7 @@ export function GameHelpCard({ slug, accent, onClose }: Props) {
 
             <div className="mt-4 flex flex-col items-center gap-2.5">
               <CandyButton size="md" style={candyAccent} icon="check" onClick={onClose}>
-                Got it
+                {firstPlay ? TUTORIAL_BUTTON_FIRST : TUTORIAL_BUTTON_AGAIN}
               </CandyButton>
             </div>
 

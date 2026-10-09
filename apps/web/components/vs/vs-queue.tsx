@@ -11,7 +11,7 @@ import { VS, keepWaitingPingLine } from '@/lib/vs-lobby';
 import { alphaHex } from '@/lib/soft-surface';
 import { BotFigure, VS_ACCENT, VsCard, VsModeTile, vsCard } from './vs-ui';
 import { CastLoader } from '@/components/ui/cast-loader';
-import { HeadingArt } from '@/components/ui/heading-art';
+import { InviteChips, LobbyScene } from './lobby-stage';
 
 // Live search (VS overhaul §6) — never a dead end. A ring timer counts up
 // while we look for a person; a bot steps in at 0:15 unless the player taps
@@ -30,8 +30,10 @@ interface Props {
   searching: boolean;
   onPlayBot: () => void;
   onCancel: () => void;
-  /** Extra content under the headline (the private-match share card). */
+  /** Extra content under the scene. */
   children?: React.ReactNode;
+  /** A private match: the code, with the compact Share + Copy chips under the scene (item 22). */
+  invite?: { code: string; friendName?: string | null; onShare: () => void; onCopy: () => void };
   /**
    * "Ping me when someone's looking" (§13) — Pro, live random queue only: the
    * switch row under the step-in card, and KEEP WAITING pings the opted-in.
@@ -45,7 +47,7 @@ interface Props {
   };
 }
 
-export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPlayBot, onCancel, children, looking }: Props) {
+export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPlayBot, onCancel, children, looking, invite }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [keepWaiting, setKeepWaiting] = useState(false);
   const [pingLine, setPingLine] = useState<string | null>(null);
@@ -55,21 +57,17 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
   // from the exact elapsed milliseconds, written straight to the DOM (no
   // re-render per frame). Only the digits tick once a second.
   const elapsedMsRef = useRef(0);
-  const ringRef = useRef<SVGCircleElement>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
   const hasStepIn = !!stepIn;
 
   useEffect(() => {
     if (!searching) return;
     const start = Date.now() - elapsedMsRef.current;
-    const ringLen = 2 * Math.PI * 52;
     let raf = 0;
     const frame = () => {
       const ms = Date.now() - start;
       elapsedMsRef.current = ms;
       const stepFrac = Math.min(1, ms / (STEP_IN_SECONDS * 1000));
-      const ringFrac = hasStepIn ? stepFrac : (ms % 60000) / 60000;
-      ringRef.current?.setAttribute('stroke-dashoffset', String(ringLen * (1 - ringFrac)));
       // Smoothness pass: the fill slides (transform) instead of growing its width (a layout per frame).
       if (barRef.current) barRef.current.style.transform = `translateX(${(stepFrac - 1) * 100}%)`;
       raf = requestAnimationFrame(frame);
@@ -88,8 +86,6 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
     }
   }, [elapsed, searching, stepIn, keepWaiting, onPlayBot]);
 
-  const clock = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
-  const ring = 2 * Math.PI * 52;
   const waitingLine = othersWaiting === null
     ? `Searching ${modeName}`
     : othersWaiting > 0
@@ -97,29 +93,15 @@ export function VsQueueScreen({ modeName, othersWaiting, stepIn, searching, onPl
     : `Nobody else is waiting in ${modeName} right now`;
 
   return (
-    <div className="max-w-sm w-full mx-auto px-5 text-center space-y-5">
-      <div className="relative mx-auto" style={{ width: 132, height: 132 }}>
-        <span className="absolute inset-3 rounded-full animate-ping" style={{ background: VS.soft, opacity: 0.6 }} />
-        <svg width="132" height="132" viewBox="0 0 132 132" className="relative">
-          <circle cx="66" cy="66" r="52" fill={alphaHex(VS_ACCENT, 0.1)} stroke={VS.soft} strokeWidth="10" />
-          {/* strokeDashoffset is animated per frame through ringRef (a constant
-              prop here, so React never overwrites the live value). */}
-          <circle
-            ref={ringRef}
-            cx="66" cy="66" r="52" fill="none" stroke={VS.ink} strokeWidth="10" strokeLinecap="round"
-            strokeDasharray={ring} strokeDashoffset={ring}
-            transform="rotate(-90 66 66)"
-          />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center"><SoftNum size={28}>{clock}</SoftNum></span>
-      </div>
-
-      <div className="space-y-1">
-        <div className="text-[11px] font-black" style={{ color: VS.ink, letterSpacing: 1.2 }}>SEARCHING</div>
-        {/* BJ16: the FINDING A RIVAL lettering, not plain text. */}
-        <HeadingArt slug="findingrival" as="h1" label="Looking for a rival" height={40} maxWidth={320} />
-        <p className="text-[13px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>{waitingLine}</p>
-      </div>
+    <div className="max-w-sm w-full mx-auto px-5 text-center space-y-4">
+      {/* 2.8 item 22: the lobby scene replaces the ring + the doubled "SEARCHING / WAITING FOR YOUR FRIEND". */}
+      <LobbyScene kind={invite ? 'friend' : 'random'} name={invite?.friendName} elapsed={elapsed}>
+        {invite ? (
+          <InviteChips code={invite.code} onShare={invite.onShare} onCopy={invite.onCopy} />
+        ) : (
+          <p className="text-[12.5px] font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>{waitingLine}</p>
+        )}
+      </LobbyScene>
 
       {children}
 

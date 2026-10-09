@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { HeaderBack } from '@/components/ui/page-header';
+import { GAME_HEADER_GLYPH, HeaderBack } from '@/components/ui/page-header';
+import { PocketHelpCard } from './pocket-help-card';
+import { useTutorialsSeen } from '@/lib/tutorials-seen';
 import { Icon3D } from '@/components/ui/icon3d';
 import {
-  FRIENDLY_TITLES, LIVE_OPTIMISTIC_TIMEOUT_MS, LIVE_PLAY_SWITCH, LIVE_REACTIONS, LIVE_REACT_LIFETIME_MS, PRESENCE_COPY,
-  beginMove, confirmMove, displayed, emptySnapshot, pollIntervalMs, presenceLabel, receiveView, rejectMove, whoseTurn,
+  FIRST_PLAY_FLAG, FRIENDLY_TITLES, LIVE_OPTIMISTIC_TIMEOUT_MS, LIVE_PLAY_SWITCH, LIVE_REACTIONS, LIVE_REACT_LIFETIME_MS, PRESENCE_COPY,
+  beginMove, confirmMove, displayed, emptySnapshot, pocketTutorialKey, pollIntervalMs, presenceLabel, receiveView, rejectMove, shouldAutoShowTutorial, whoseTurn,
   type FriendlyMove, type LiveReaction, type LiveSnapshot,
 } from '@wordle-duel/core';
 import { useFlags } from '@/hooks/use-flags';
@@ -64,6 +66,11 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
+  // 2.8 items 9c + 12: the "?" How to Play card; it also opens once by itself the first time (synced).
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpFirst, setHelpFirst] = useState(false);
+  const helpAuto = useRef(false);
+  const { seen: tutorialsSeen, mark: markTutorial } = useTutorialsSeen();
   const [rematching, setRematching] = useState(false);
   const [revealKey, setRevealKey] = useState(0);
   const [, setFriendsTick] = useState(0);
@@ -237,6 +244,20 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     router.push(`/friends/games/${r.game.id}`);
   };
 
+  const gameKind = game?.kind ?? null;
+  useEffect(() => {
+    if (helpAuto.current || !gameKind) return;
+    if (shouldAutoShowTutorial({ live: isLive(FIRST_PLAY_FLAG), seen: tutorialsSeen, key: pocketTutorialKey(gameKind) })) {
+      helpAuto.current = true;
+      setHelpFirst(true);
+      setHelpOpen(true);
+    }
+  }, [gameKind, tutorialsSeen, isLive]);
+  const closeHelp = () => {
+    setHelpOpen(false);
+    if (helpFirst && gameKind) { markTutorial(pocketTutorialKey(gameKind)); setHelpFirst(false); }
+  };
+
   const close = () => {
     if (game?.status === 'active') setConfirmClose(true);
     else router.push('/friends');
@@ -258,6 +279,18 @@ export function FriendlyGameScreen({ id }: { id: string }) {
           {title}
         </span>
       </span>
+      {/* 9c: the family "?" in the top-right corner, where every other game keeps it. */}
+      {game && (
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          aria-label="How to play"
+          aria-haspopup="dialog"
+          className="absolute right-0 hdr-glyph w-11 h-11 flex items-center justify-center"
+        >
+          <Icon3D name="help" size={GAME_HEADER_GLYPH} />
+        </button>
+      )}
     </div>
   );
 
@@ -442,6 +475,8 @@ export function FriendlyGameScreen({ id }: { id: string }) {
           </CandyButton>
         </div>
       )}
+
+      {helpOpen && game && <PocketHelpCard kind={game.kind} onClose={closeHelp} firstPlay={helpFirst} />}
 
       {confirmClose && (
         // 2.8 item 9: ONE themed button. No Resign in-game (it lives in the friend's ⋯ menu on the Friends tab);

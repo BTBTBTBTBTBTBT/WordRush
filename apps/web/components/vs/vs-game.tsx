@@ -1690,6 +1690,25 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             searching={!showIntro && !showCountdown && !opponentUserId}
             onPlayBot={stepInBot}
             onCancel={handleCancel}
+            // 2.8 item 22: a private match shows the code with compact Share + Copy chips under the lobby scene.
+            invite={inviteCode && !isCpu ? {
+              code: inviteCode,
+              friendName: null,
+              onShare: async () => {
+                const url = shareUrlFor(brandedInvites, 'live', inviteCode, window.location.origin);
+                // Branded: the preview image carries the game + code, so the text is one short line.
+                const text = brandedInvites
+                  ? inviteShareLine({ variant: 'live', sender: profile?.username ?? 'A friend', game: modeTitle(mode) })
+                  : `Join my Wordocious VS match — code ${inviteCode}`;
+                if ('share' in navigator) {
+                  try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch {}
+                }
+                try { await navigator.clipboard.writeText(url); setMessage('Invite link copied'); } catch {}
+              },
+              onCopy: async () => {
+                try { await navigator.clipboard.writeText(inviteCode); setMessage('Code copied'); } catch { setMessage(`Code: ${inviteCode}`); }
+              },
+            } : undefined}
             looking={lookingApplies ? {
               label: lookingRowLabel(mode),
               on: lookingOn,
@@ -1698,35 +1717,6 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
               ping: () => pingVsLooking(mode),
             } : undefined}
           >
-            {inviteCode && !isCpu && (
-              <VsCard className="w-full max-w-xs mx-auto">
-              <div className="p-4 space-y-2">
-                <div className="text-[11px] font-black uppercase" style={{ color: VS.label, letterSpacing: 1.2 }}>
-                  Private match
-                </div>
-                <SoftNum size={30} as="div" style={{ letterSpacing: 6 }}>{inviteCode}</SoftNum>
-                <p className="text-xs font-bold" style={{ color: 'var(--vs-sub, #4b5563)' }}>
-                  Share this code — the match starts when your friend joins.
-                </p>
-                <button
-                  onClick={async () => {
-                    const url = shareUrlFor(brandedInvites, 'live', inviteCode, window.location.origin);
-                    // Branded: the preview image carries the game + code, so the text is one short line.
-                    const text = brandedInvites
-                      ? inviteShareLine({ variant: 'live', sender: profile?.username ?? 'A friend', game: modeTitle(mode) })
-                      : `Join my Wordocious VS match — code ${inviteCode}`;
-                    if ('share' in navigator) {
-                      try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch {}
-                    }
-                    try { await navigator.clipboard.writeText(url); setMessage('Invite link copied'); } catch {}
-                  }}
-                  className="candy candy-teal candy-md candy-block"
-                >
-                  <span className="candy-label">Share invite</span>
-                </button>
-              </div>
-              </VsCard>
-            )}
 
           </VsQueueScreen>
         ) : (
