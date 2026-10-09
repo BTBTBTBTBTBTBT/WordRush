@@ -24,7 +24,7 @@ export function earnStatsFromProfile(profile: Record<string, unknown> | null | u
 
 /**
  * The player's owned item keys: the owned_items ledger through the my_owned_items view (RLS: your own active rows;
- * supabase/manual-migrations/20261009000005_owned_items.sql). [] when signed out, offline, or before the SQL is applied.
+ * supabase/manual-migrations/20261009000009_owned_items.sql). [] when signed out, offline, or before the SQL is applied.
  */
 export async function loadOwnedItems(): Promise<string[]> {
   try {

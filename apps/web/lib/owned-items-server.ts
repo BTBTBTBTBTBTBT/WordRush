@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { AVATAR_ACCESS_TABLE } from '@wordle-duel/core';
 
 /**
- * The owned-items ledger, server side (supabase/manual-migrations/20261009000005_owned_items.sql). The ledger is
+ * The owned-items ledger, server side (supabase/manual-migrations/20261009000009_owned_items.sql). The ledger is
  * written ONLY here, through admin-checked routes (service role); every grant / revoke is also logged to
  * owned_items_log. An owned row makes a mascot part saveable without Pro (core avatarPartAccess reads it).
  */

@@ -35,7 +35,7 @@ enum MascotAccess {
                             previewSeason: MascotSeasonal.season ?? "none", saved: saved)
     }
 
-    /// The owned_items ledger (my_owned_items: your own active rows; supabase/manual-migrations/20261009000005_owned_items.sql).
+    /// The owned_items ledger (my_owned_items: your own active rows; supabase/manual-migrations/20261009000009_owned_items.sql).
     /// Admin grants, earns and purchases land here; an owned part saves without Pro. Empty until loaded / signed out.
     static var ownedKeys: [String] = []
 

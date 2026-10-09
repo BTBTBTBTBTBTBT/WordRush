@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * The player's owned mascot items: the owned_items ledger through the my_owned_items view (RLS: your own active rows;
- * supabase/manual-migrations/20261009000005_owned_items.sql). Keys are access-table keys ("head:crown"). An owned part
+ * supabase/manual-migrations/20261009000009_owned_items.sql). Keys are access-table keys ("head:crown"). An owned part
  * saves without Pro (core AvatarAccess.keepOwned / partAccess). Empty when signed out, offline, or before the SQL is
  * applied. Written only by the server (admin grants, earns, purchases): the app only reads.
  */
