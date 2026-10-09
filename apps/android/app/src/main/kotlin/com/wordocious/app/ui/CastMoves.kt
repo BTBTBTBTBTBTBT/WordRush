@@ -121,6 +121,15 @@ object CastMoves {
             listOf(k(0f), k(0.15f, tx = -0.06f, skewX = 8f), k(0.35f, tx = 0.10f, skewX = -10f), k(0.55f, tx = -0.04f, skewX = 4f), k(0.75f, tx = 0.03f), k(1f))),
     ).associateBy { it.id }
 
+    /**
+     * Item 47 (founder 10-09): the landing hop of the intro flourish — ONE continuous eased arc (soft anticipation
+     * squash, a low hop, a soft landing squash, a small rebound) on an ease-in-out curve with no overshoot, so the
+     * cast settles into the header without a snap. Mirrored by web `m-flourish` and iOS `CastMoves.flourishFrames`.
+     */
+    val flourish: CastMove = CastMove(MascotId.W, "flourish", 560, Bezier.EASE_IN_OUT,
+        listOf(k(0f), k(0.14f, sx = 1.03f, sy = 0.96f), k(0.46f, ty = -0.14f, sx = 0.98f, sy = 1.03f),
+            k(0.78f, sx = 1.04f, sy = 0.96f), k(0.90f, sx = 0.99f, sy = 1.01f), k(1f)))
+
     /** The move's transform at linear time fraction [t] (0..1), eased per keyframe segment like CSS. */
     fun sample(move: CastMove, t: Float): CastXf {
         val keys = move.keys

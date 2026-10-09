@@ -1752,7 +1752,18 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
    the real header row stays laid out but hidden while the intro runs; after
    landing every character hops once (the W hop, 420 ms, 50 ms apart). ── */
 [data-intro-running] [data-cast-row] { opacity: 0 !important; }
-.castrow .cm.cast-flourish { animation: m-hop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--fl-d, 0ms) both; }
+/* Item 47 (founder 10-09): the landing hop is ONE continuous eased arc with a soft squash / settle and a small
+   rebound (no overshoot curve, so no snap into the resting header). 560 ms = INTRO.flourishMs; the same keyframes
+   on iOS (CastMoves.flourishFrames) and Android (CastMoves.flourish). */
+.castrow .cm.cast-flourish { animation: m-flourish 560ms cubic-bezier(0.42, 0, 0.58, 1) var(--fl-d, 0ms) both; }
+@keyframes m-flourish {
+  0% { transform: none; }
+  14% { transform: scale(1.03, 0.96); }
+  46% { transform: translateY(-14%) scale(0.98, 1.03); }
+  78% { transform: translateY(0) scale(1.04, 0.96); }
+  90% { transform: scale(0.99, 1.01); }
+  100% { transform: none; }
+}
 @media (prefers-reduced-motion: reduce) { .castrow .cm.cast-flourish { animation: none !important; } }
 [data-reduced-motion="true"] .castrow .cm.cast-flourish { animation: none !important; }
 
