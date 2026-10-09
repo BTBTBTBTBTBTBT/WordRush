@@ -66,8 +66,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberUpdatedState
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FriendlyGamesService
+import com.wordocious.app.data.FriendlyLiveChannel
+import com.wordocious.core.FriendlyLive
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.ui.bannerShimmer
 import com.wordocious.app.ui.clickableNoRipple
@@ -121,6 +128,26 @@ private val DEEP = Color(0xFF4C1D95)
 /** A1 the leave dialog's soft pink wash. */
 private val DIALOG_TINT = Color(0xFFFFF3F9)
 
+/** One live reaction floating up from the board (9b). [x] is -0.35..0.35 of the board width off center. */
+private data class LiveFloater(val id: Long, val key: String, val x: Float)
+
+@Composable
+private fun LiveFloat(f: LiveFloater, onDone: () -> Unit) {
+    val t = remember { Animatable(0f) }
+    LaunchedEffect(f.id) {
+        t.animateTo(1f, tween(FriendlyLive.REACT_LIFETIME_MS.toInt(), easing = FastOutSlowInEasing))
+        onDone()
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val dx = maxWidth * f.x
+        Box(
+            Modifier.align(Alignment.BottomCenter)
+                .offset(x = dx, y = (-130).dp * t.value)
+                .graphicsLayer { alpha = 1f - t.value; val sc = 0.6f + 0.4f * minOf(1f, t.value * 6f); scaleX = sc; scaleY = sc },
+        ) { com.wordocious.app.ui.ReactionGlyph(f.key, 34.dp, FriendsPink.solid) }
+    }
+}
+
 /**
  * A pocket game's screen (Friends overhaul §4, board AE): close + the game's
  * gradient title, the split score window (YOU | @THEM, frosted headline strip
@@ -138,27 +165,89 @@ fun FriendlyGameScreen(
     onOpenGame: (String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var game by remember(gameId) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    // 9b live play (FlagsService live_play; off = today's 2 s poll, no optimistic moves, no presence).
+    val flags by com.wordocious.app.data.FlagsService.flags.collectAsState()
+    val liveOn = com.wordocious.app.data.FlagsService.isLive(FriendlyLive.SWITCH_KEY, flags)
+    val liveOnNow by rememberUpdatedState(liveOn)
+    // The confirmed game plus my in-flight prediction (core FriendlyLive.Snapshot); `game` is what it displays.
+    var snap by remember(gameId) {
         mutableStateOf(
-            FriendlyGamesService.active.value.firstOrNull { it.id == gameId }
-                ?: FriendlyGamesService.recent.value.firstOrNull { it.id == gameId },
+            FriendlyLive.Snapshot(
+                FriendlyGamesService.active.value.firstOrNull { it.id == gameId }
+                    ?: FriendlyGamesService.recent.value.firstOrNull { it.id == gameId },
+            ),
         )
     }
+    val game: FriendlyGamesService.GameView? = snap.displayed { v, s, mine -> v.copy(state = s, yourTurn = mine) }
     var busy by remember(gameId) { mutableStateOf(false) }
     var error by remember(gameId) { mutableStateOf<String?>(null) }
     var notFound by remember(gameId) { mutableStateOf(false) }
     var confirmClose by remember { mutableStateOf(false) }
+    var arriveTick by remember(gameId) { mutableIntStateOf(0) }
+    var pulseTick by remember(gameId) { mutableIntStateOf(0) }
+    var shakeTick by remember(gameId) { mutableIntStateOf(0) }
+    val floaters = remember(gameId) { mutableStateListOf<LiveFloater>() }
+    val live = remember(gameId) { FriendlyLiveChannel(scope) }
+    val socketUp by live.socketUp.collectAsState()
+    val peerPresent by live.peerPresent.collectAsState()
+    val peerEverSeen by live.peerEverSeen.collectAsState()
+    DisposableEffect(gameId) { onDispose { live.stop() } }
 
-    // 2 s poll while the screen is on and the app is in the foreground.
+    fun addFloater(key: String) {
+        floaters.add(LiveFloater(System.nanoTime(), key, (Math.random() * 0.7 - 0.35).toFloat()))
+        while (floaters.size > 6) floaters.removeAt(0)
+    }
+
+    /**
+     * Take a fresh game (poll, broadcast, backup refetch) only if it is strictly newer than the one on
+     * screen. [own] = the reply to MY move, which replaces my prediction.
+     */
+    fun accept(g: FriendlyGamesService.GameView, own: Boolean = false) {
+        if (g.id != gameId) return
+        if (own) { snap = snap.confirmMove(g); return }
+        val r = snap.receive(g)
+        if (!r.applied) return
+        snap = r.snap
+        // A change that lands while my own move is in flight is my move, not the friend's.
+        if (liveOnNow && !busy) {
+            if (r.change.moved && g.active) {
+                com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
+                arriveTick++
+            }
+            if (r.change.yourTurnStarted) {
+                pulseTick++
+                scope.launch { delay(140); com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.NOTIFY, view) }
+            }
+        }
+    }
+
+    // Open the game's Realtime channel once the opponent is known (live_play on, game still going).
+    val oppId = game?.opponent?.id
+    val gameActive = game?.active == true
+    LaunchedEffect(liveOn, oppId, gameActive) {
+        val uid = AuthService.userId
+        if (liveOn && gameActive && oppId != null && !oppId.isEmpty() && uid != null) {
+            live.onView = { accept(it) }
+            live.onRefetch = { scope.launch { FriendlyGamesService.get(gameId)?.let { accept(it) } } }
+            live.onReaction = { addFloater(it) }
+            if (!live.isStarted) live.start(gameId, uid, oppId)
+        } else live.stop()
+    }
+
+    // Poll while the screen is on and the app is in the foreground: live play on + socket up = a slow
+    // keep-alive (it also stamps "watching" and repairs a missed broadcast); socket down = 4 s fallback;
+    // switch off = today's 2 s.
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(gameId) {
         var misses = 0
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
                 val g = FriendlyGamesService.get(gameId)
-                if (g != null) { if (!busy) game = g; misses = 0; notFound = false }
-                else if (game == null && ++misses >= 3) notFound = true
-                delay(2_000)
+                if (g != null) { accept(g); misses = 0; notFound = false }
+                else if (snap.confirmed == null && ++misses >= 3) notFound = true
+                var waited = 0L
+                while (waited < FriendlyLive.pollIntervalMs(liveOnNow, live.socketUp.value)) { delay(250); waited += 250 }
             }
         }
     }
@@ -167,13 +256,37 @@ fun FriendlyGameScreen(
         if (busy) return
         busy = true
         error = null
+        // Optimistic: my piece / pick / word lands at once with its sound; the server can still say no.
+        var optimistic = false
+        if (liveOn) {
+            val (next, attached) = snap.beginMove(move)
+            if (attached) {
+                snap = next
+                optimistic = true
+                com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
+            }
+        }
+        val wasOptimistic = optimistic
+        fun rollBack() {
+            val (next, rolled) = snap.rejectMove()
+            snap = next
+            if (rolled) {
+                shakeTick++
+                com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.INVALID, view)
+            }
+        }
         scope.launch {
-            when (val r = FriendlyGamesService.move(gameId, move)) {
-                is FriendlyGamesService.MoveOutcome.Moved -> game = r.game
+            val r = if (wasOptimistic)
+                kotlinx.coroutines.withTimeoutOrNull(FriendlyLive.OPTIMISTIC_TIMEOUT_MS) { FriendlyGamesService.move(gameId, move) }
+                    ?: FriendlyGamesService.MoveOutcome.Failed("Network error. Try again.")
+            else FriendlyGamesService.move(gameId, move)
+            if (wasOptimistic && r !is FriendlyGamesService.MoveOutcome.Moved) rollBack()
+            when (r) {
+                is FriendlyGamesService.MoveOutcome.Moved -> accept(r.game, own = true)
                 is FriendlyGamesService.MoveOutcome.Rejected -> error = r.message
                 is FriendlyGamesService.MoveOutcome.Retry -> {
                     error = r.message
-                    FriendlyGamesService.get(gameId)?.let { game = it }
+                    FriendlyGamesService.get(gameId)?.let { accept(it) }
                 }
                 is FriendlyGamesService.MoveOutcome.Failed -> error = r.message
             }
@@ -237,17 +350,64 @@ fun FriendlyGameScreen(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            ScoreWindow(g, theyOn)
+            // 9b presence: the friend's mascot is "here now" (alive ring) while they are in the channel,
+            // "thinking…" on their turn, "left the game" when they go. Off / socket down = the old online dot.
+            val presence = if (liveOn && socketUp && g.active)
+                FriendlyLive.presenceLabel(peerPresent, peerEverSeen, theirTurn = whoseTurn(g.state)?.includes(g.me.other) == true && !myTurn)
+            else null
+            ScoreWindow(g, if (presence != null) peerPresent else theyOn, presence)
             // L: every pocket board sits in the shared game tray in the game's color (won = purple, lost = slate).
             val tray = when (g.result) { "win" -> TrayState.WON; "loss" -> TrayState.LOST; else -> TrayState.PLAYING }
-            GameTray(g.kind.color, Modifier.fillMaxWidth(), state = tray) {
-                when (val s = g.state) {
-                    is RpsState -> RpsBoard(s, g.me, them, enabled = myTurn && !busy) { send(FriendlyMove.Rps(it)) }
-                    is TttState -> TttBoard(s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Ttt(it)) }
-                    is CoinState -> CoinBoard(gameId, s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Coin(it)) }
-                    is PassState -> PassBoard(gameId, s, g.me, g.opponent, myTurn = myTurn, busy = busy, answer = g.answer) { send(FriendlyMove.Pass(it)) }
-                    is GhostState -> GhostBoard(s, g.me, them, myTurn = myTurn, busy = busy) { send(FriendlyMove.Ghost(it.toString())) }
-                    is ChainState -> ChainBoard(gameId, s, g.me, them, myTurn = myTurn, busy = busy, onError = { error = it }) { send(FriendlyMove.Chain(it)) }
+            val reduce = WTheme.reducedMotion
+            val boardScale = remember { Animatable(1f) }
+            val shakeX = remember { Animatable(0f) }
+            val ring = remember { Animatable(0f) }
+            LaunchedEffect(arriveTick) {
+                if (arriveTick > 0 && !reduce) { boardScale.animateTo(1.014f, tween(130)); boardScale.animateTo(1f, tween(130)) }
+            }
+            LaunchedEffect(shakeTick) {
+                if (shakeTick > 0 && !reduce) { for (x in listOf(-6f, 5f, -3f, 0f)) shakeX.animateTo(x, tween(70)) }
+            }
+            LaunchedEffect(pulseTick) {
+                if (pulseTick > 0 && !reduce) { ring.animateTo(1f, tween(450)); ring.animateTo(0f, tween(500)) }
+            }
+            Box(
+                Modifier.fillMaxWidth().graphicsLayer {
+                    scaleX = boardScale.value; scaleY = boardScale.value; translationX = shakeX.value * density
+                },
+            ) {
+                GameTray(g.kind.color, Modifier.fillMaxWidth(), state = tray) {
+                    when (val s = g.state) {
+                        is RpsState -> RpsBoard(s, g.me, them, enabled = myTurn && !busy) { send(FriendlyMove.Rps(it)) }
+                        is TttState -> TttBoard(s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Ttt(it)) }
+                        is CoinState -> CoinBoard(gameId, s, g.me, them, myTurn = myTurn && !busy) { send(FriendlyMove.Coin(it)) }
+                        is PassState -> PassBoard(gameId, s, g.me, g.opponent, myTurn = myTurn, busy = busy, answer = g.answer) { send(FriendlyMove.Pass(it)) }
+                        is GhostState -> GhostBoard(s, g.me, them, myTurn = myTurn, busy = busy) { send(FriendlyMove.Ghost(it.toString())) }
+                        is ChainState -> ChainBoard(gameId, s, g.me, them, myTurn = myTurn, busy = busy, onError = { error = it }) { send(FriendlyMove.Chain(it)) }
+                    }
+                }
+                // Your-turn pulse: a soft ring that breathes once when the move comes back to you.
+                if (ring.value > 0f) {
+                    Box(Modifier.matchParentSize().alpha(ring.value).border(2.5.dp, g.kind.color.copy(alpha = 0.55f), RoundedCornerShape(20.dp)))
+                }
+                // Live reactions float up from the bottom of the board.
+                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(0.dp)) {
+                    floaters.forEach { f -> key(f.id) { LiveFloat(f, onDone = { floaters.remove(f) }) } }
+                }
+            }
+            if (g.active && liveOn && socketUp) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                    FriendlyLive.REACTIONS.forEach { key ->
+                        Box(
+                            Modifier.size(40.dp).squishClickable(label = "Send ${com.wordocious.app.ui.ReactionArt.word(key)}") {
+                                if (live.sendReaction(key)) {
+                                    addFloater(key)
+                                    com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
+                                }
+                            },
+                            Alignment.Center,
+                        ) { com.wordocious.app.ui.ReactionGlyph(key, 30.dp, FriendsPink.solid) }
+                    }
                 }
             }
             error?.let {
@@ -285,7 +445,7 @@ fun FriendlyGameScreen(
                     com.wordocious.app.ui.CandyButton(
                         "RESIGN", onClick = {
                             confirmClose = false
-                            scope.launch { FriendlyGamesService.resign(gameId)?.let { game = it } }
+                            scope.launch { FriendlyGamesService.resign(gameId)?.let { accept(it, own = true) } }
                         },
                         color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
                         modifier = Modifier.fillMaxWidth(), fill = true,
@@ -344,7 +504,7 @@ private fun subLineFor(g: FriendlyGamesService.GameView, theyOn: Boolean): Strin
 }
 
 @Composable
-private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
+private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean, presence: FriendlyLive.PresenceLabel? = null) {
     val won = g.result == "win"
     val lost = g.result == "loss"
     val leftBg = if (won) YOU_WON else YOU_TINT
@@ -385,7 +545,15 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
             val turn = if (g.active) whoseTurn(g.state) else null
             Row(Modifier.fillMaxWidth().padding(vertical = 14.dp)) {
                 ScoreSide("YOU", me?.username ?: "You", me?.avatarUrl, me?.avatarEmoji, false, score?.get(g.me), turn?.includes(g.me) == true, Modifier.weight(1f), accentHex = me?.accentColor)
-                ScoreSide("@${g.opponent.username.uppercase()}", g.opponent.username, g.opponent.avatarUrl, g.opponent.avatarEmoji, theyOn, score?.get(g.me.other), turn?.includes(g.me.other) == true, Modifier.weight(1f))
+                // 9b presence: THINKING… / HERE NOW / LEFT THE GAME takes the TO PLAY marker's slot.
+                val theirToPlay = turn?.includes(g.me.other) == true
+                val chip: Pair<String, Color>? = when (presence) {
+                    FriendlyLive.PresenceLabel.THINKING -> FriendlyLive.presenceCopy(presence) to Color(0xFFD97706)
+                    FriendlyLive.PresenceLabel.HERE -> if (theirToPlay) null else FriendlyLive.presenceCopy(presence) to Color(0xFF16A34A)
+                    FriendlyLive.PresenceLabel.LEFT -> FriendlyLive.presenceCopy(presence) to Color(0xFF94A3B8)
+                    else -> null
+                }
+                ScoreSide("@${g.opponent.username.uppercase()}", g.opponent.username, g.opponent.avatarUrl, g.opponent.avatarEmoji, theyOn, score?.get(g.me.other), theirToPlay, Modifier.weight(1f), chip = chip)
             }
         }
         if (host != null) com.wordocious.app.ui.Mascot(
@@ -397,12 +565,13 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean) {
 }
 
 @Composable
-private fun ScoreSide(label: String, name: String, url: String?, emoji: String?, online: Boolean, score: Int?, toPlay: Boolean, modifier: Modifier, accentHex: String? = null) {
+private fun ScoreSide(label: String, name: String, url: String?, emoji: String?, online: Boolean, score: Int?, toPlay: Boolean, modifier: Modifier, accentHex: String? = null, chip: Pair<String, Color>? = null) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        // The half whose turn it is wears a small TO PLAY marker (an invisible one keeps both halves level).
+        // The half whose turn it is wears a small TO PLAY marker (an invisible one keeps both halves level);
+        // live play swaps in the friend's presence (THINKING… / HERE NOW / LEFT THE GAME) in the same slot.
         Text(
-            "TO PLAY", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color.White, maxLines = 1,
-            modifier = Modifier.alpha(if (toPlay) 1f else 0f).clip(RoundedCornerShape(50)).background(FriendsPink.solid)
+            chip?.first ?: "TO PLAY", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color.White, maxLines = 1,
+            modifier = Modifier.alpha(if (toPlay || chip != null) 1f else 0f).clip(RoundedCornerShape(50)).background(chip?.second ?: FriendsPink.solid)
                 .padding(horizontal = 7.dp, vertical = 2.dp),
         )
         FriendFace(name, url, emoji, 44.dp, online = online, accentHex = accentHex)

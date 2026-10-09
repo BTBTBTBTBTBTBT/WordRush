@@ -32,24 +32,24 @@ object FriendlyGamesService {
 
     /** One game as the viewer sees it (the server's GameView). */
     data class GameView(
-        val id: String,
+        override val id: String,
         val kind: FriendlyKind,
         val title: String,
-        val me: Side,
+        override val me: Side,
         val opponent: Opponent,
-        val state: FriendlyState,
+        override val state: FriendlyState,
         /** active | done | resigned | expired */
         val status: String,
-        val yourTurn: Boolean,
+        override val yourTurn: Boolean,
         /** win | loss | draw, or null while active. */
         val result: String?,
         val line: String,
         /** Pass the Puzzle's answer, once it is over. */
         val answer: String?,
         val createdAt: String,
-        val updatedAt: String,
-    ) {
-        val active: Boolean get() = status == "active"
+        override val updatedAt: String,
+    ) : com.wordocious.core.FriendlyLive.View {
+        override val active: Boolean get() = status == "active"
         val updatedMs: Long? get() = runCatching { java.time.OffsetDateTime.parse(updatedAt).toInstant().toEpochMilli() }
             .recoverCatching { java.time.Instant.parse(updatedAt).toEpochMilli() }.getOrNull()
     }

@@ -68,9 +68,10 @@ export function useLiveGame({ gameId, userId, opponentId, enabled, onView, onRef
     });
     sub.on('presence', { event: 'sync' }, () => {
       if (!alive) return;
-      const state = sub.presenceState() as Record<string, Array<{ thinking?: boolean }>>;
-      const metas = state[opponentId];
-      const present = !!metas && metas.length > 0;
+      // Peers are identified by the tracked `user` field (Android's channel cannot set a presence key).
+      const state = sub.presenceState() as Record<string, Array<{ user?: string; thinking?: boolean }>>;
+      const metas = Object.values(state).flat().filter((m) => (m.user ?? '').toLowerCase() === opponentId.toLowerCase());
+      const present = metas.length > 0;
       setPeer((p) => ({ present, everSeen: p.everSeen || present, thinking: present && !!metas[metas.length - 1]?.thinking }));
     });
 
@@ -78,7 +79,7 @@ export function useLiveGame({ gameId, userId, opponentId, enabled, onView, onRef
       if (!alive) return;
       if (status === 'SUBSCRIBED') {
         setSocketUp(true);
-        void sub.track({ thinking: thinkingRef.current });
+        void sub.track({ user: userId, thinking: thinkingRef.current });
         cbs.current.onRefetch(); // catch up on anything missed while connecting
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         setSocketUp(false);
@@ -98,8 +99,8 @@ export function useLiveGame({ gameId, userId, opponentId, enabled, onView, onRef
   const setThinking = useCallback((thinking: boolean) => {
     if (thinkingRef.current === thinking) return;
     thinkingRef.current = thinking;
-    void chRef.current?.track({ thinking });
-  }, []);
+    void chRef.current?.track({ user: userId, thinking });
+  }, [userId]);
 
   /** Send a live reaction (throttled). Returns true if it went out. */
   const sendReaction = useCallback((reaction: LiveReaction): boolean => {

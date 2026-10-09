@@ -61,7 +61,7 @@ final class FriendlyLiveChannel: ObservableObject {
                     switch s {
                     case .subscribed:
                         self.socketUp = true
-                        await ch.track(state: ["thinking": false])
+                        await ch.track(state: ["user": .string(self.myId), "thinking": false])
                         self.onRefetch?()   // catch up on anything missed while connecting
                     case .unsubscribed:
                         self.socketUp = false
@@ -117,12 +117,14 @@ final class FriendlyLiveChannel: ObservableObject {
     }
 
     private func handlePresence(_ action: any PresenceAction) {
-        if action.joins.keys.contains(where: { $0.lowercased() == oppId }) {
+        // Peers are identified by the tracked `user` field (Android's channel cannot set a presence key).
+        let opp = oppId
+        func isPeer(_ p: PresenceV2) -> Bool { p.state["user"]?.stringValue?.lowercased() == opp }
+        let joined = action.joins.values.contains(where: isPeer)
+        if joined {
             peerPresent = true
             peerEverSeen = true
-        }
-        if action.leaves.keys.contains(where: { $0.lowercased() == oppId }),
-           !action.joins.keys.contains(where: { $0.lowercased() == oppId }) {
+        } else if action.leaves.values.contains(where: isPeer) {
             peerPresent = false
         }
     }
