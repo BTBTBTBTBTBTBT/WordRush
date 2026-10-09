@@ -248,8 +248,27 @@ private fun LobbyMain(
                     botOfDayId = botOfDayBot.id,
                 )
 
-                // Incoming challenges: up to 3, newest first.
-                incoming.take(3).forEach { c -> IncomingCard(c) { onOpenChallenge(c.code) } }
+                // 9f: with branded_invites live, ONE Invites row (live invites + race challenges, Accept / Decline)
+                // and ONE obvious Have a code? button replace the incoming notices and the code field at the bottom.
+                val flagsNow by com.wordocious.app.data.FlagsService.flags.collectAsState()
+                val branded = com.wordocious.app.data.FlagsService.isLive(com.wordocious.core.BrandedInvite.SWITCH_KEY, flagsNow)
+                if (branded) {
+                    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                    com.wordocious.app.ui.InvitesRow(onAccept = { item ->
+                        if (item.variant == com.wordocious.core.InviteRowItem.Variant.RACE) onOpenChallenge(item.code)
+                        else runCatching { GameMode.valueOf(item.gameMode) }.getOrNull()?.let { onEnterInvite(it, item.code) }
+                    })
+                    com.wordocious.app.ui.HaveACodeButton(onResolved = { r ->
+                        when (r) {
+                            is com.wordocious.app.ui.HaveACodeResult.Race -> onOpenChallenge(r.code)
+                            is com.wordocious.app.ui.HaveACodeResult.Live -> onEnterInvite(r.mode, r.code)
+                            is com.wordocious.app.ui.HaveACodeResult.Friend -> uriHandler.openUri("https://wordocious.com/join/${r.code}")
+                        }
+                    })
+                } else {
+                    // Incoming challenges: up to 3, newest first.
+                    incoming.take(3).forEach { c -> IncomingCard(c) { onOpenChallenge(c.code) } }
+                }
 
                 // PLAY
                 val shownMode = if (free) GameMode.DUEL else mode
@@ -384,7 +403,7 @@ private fun LobbyMain(
                     }
                 }
 
-                CodeRow(onOpenChallenge, onEnterInvite)
+                if (!branded) CodeRow(onOpenChallenge, onEnterInvite)
                 Spacer(Modifier.height(24.dp))
             }
         }
