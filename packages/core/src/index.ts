@@ -30,6 +30,7 @@ export * from './avatar-layout';
 export * from './avatar-season';
 export * from './avatar-pose';
 export * from './friendly-games';
+export * from './friendly-live';
 export * from './leaderboard-title';
 export * from './podium-layout';
 export * from './headline-tokens';
