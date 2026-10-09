@@ -223,6 +223,8 @@ fun GamePickerCard(
     dense: Boolean = false,
     /** BB1: the card's centered title under the header strip (Stats: the selected game's title art). */
     title: (@Composable () -> Unit)? = null,
+    /** 11b: no card chrome and no header strip — the picker sits directly on the Leaderboard stage's backdrop. */
+    bare: Boolean = false,
 ) {
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
@@ -237,13 +239,13 @@ fun GamePickerCard(
     val shape = RoundedCornerShape(20.dp)
     CappedFontScale {
         Column(
-            modifier.fillMaxWidth()
+            if (bare) modifier.fillMaxWidth() else modifier.fillMaxWidth()
                 .shadow(6.dp, shape, clip = false, ambientColor = Color(0x1F78350F), spotColor = Color(0x1F78350F))
                 .clip(shape)
                 .background(accentWash(accent, 0.10f))
                 .border(1.5.dp, accentLine(accent), shape),
         ) {
-            if (header != null) {
+            if (header != null && !bare) {
                 Row(
                     Modifier.fillMaxWidth()
                         .background(if (dark) WTheme.surface else Wash.mix(accent, 0.18f))
@@ -257,7 +259,7 @@ fun GamePickerCard(
                 Box(Modifier.fillMaxWidth().padding(top = 8.dp, start = 12.dp, end = 12.dp), contentAlignment = Alignment.Center) { title() }
             }
             Column(
-                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = if (dense) 7.dp else 12.dp, bottom = if (dense) 9.dp else 14.dp),
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = if (bare) 4.dp else if (dense) 7.dp else 12.dp, bottom = if (bare) 6.dp else if (dense) 9.dp else 14.dp),
                 verticalArrangement = Arrangement.spacedBy(if (dense) 4.dp else 8.dp),
             ) {
                 PickerLabel("WORDOCIOUS", labelColor)

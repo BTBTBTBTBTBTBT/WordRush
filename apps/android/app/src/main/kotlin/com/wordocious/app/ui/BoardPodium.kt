@@ -213,10 +213,12 @@ fun BoardPodium(
     accent: Color,
     modifier: Modifier = Modifier,
     avatar: Dp = 44.dp,
+    /** 11b: on the Leaderboard stage the shared backdrop already draws the light + glow — no stage of its own. */
+    bare: Boolean = false,
 ) {
     val byPlace = spots.associateBy { it.place }
     val dark = WTheme.isDark
-    Box(modifier.fillMaxWidth().podiumStage(accent, dark).padding(start = 10.dp, end = 10.dp, top = 8.dp)) {
+    Box(modifier.fillMaxWidth().then(if (bare) Modifier else Modifier.podiumStage(accent, dark)).padding(start = 10.dp, end = 10.dp, top = 8.dp)) {
     PodiumFloor(Modifier.align(Alignment.BottomCenter))
     Row(
         Modifier.fillMaxWidth().padding(bottom = PodiumArt.FLOOR_RISE),

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -565,121 +566,89 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             state = lbListState, modifier = Modifier.fillMaxSize().padding(horizontal = LB_SIDE),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = TAB_CONTENT_BOTTOM_PAD), // AS3
         ) {
-            // A6: the day title is the page headline — full width, edge to edge, on the wallpaper.
-            item(key = "headline") {
-                Box(Modifier.padding(top = 4.dp, bottom = LB_CARD_GAP)) { LeaderboardHeadline(bleed = LB_SIDE) }
-            }
-            // C2 / C2b: THE game picker (Sweep = the 9th Wordocious tile); its tinted header
-            // strip carries the date · reset clock and the ALL-TIME door. Same selectMode path.
-            item(key = "picker") {
-                LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords,
-                    badge = { key -> if (key == SWEEP_ID) null else completions[key]?.completed })
-                Spacer(Modifier.height(LB_CARD_GAP))
-            }
-            // Founder 10-05: the game card (title art · N today · Play / View board) sits
-            // RIGHT under the picker, so a tile tap reads at once which game's board this is.
-            // Fixed height + pre-decoded art: it swaps in place, the board never jumps.
-            // The Sweep board has no single mode to play, so its card carries the ranking explanation.
-            item(key = "play") {
-                if (isSweep) {
-                    SweepInfoCard(sweepers = playerCount)
-                } else {
-                    ModeInfoCard(
-                        modeId = selectedMode, players = playerCount,
-                        // iOS: cached completions answer instantly; the rank confirms.
-                        played = completions[selectedMode] != null || userRank != null,
-                        onPlay = onPlay,
-                    )
-                }
-                Spacer(Modifier.height(LB_CARD_GAP))
-            }
-            // §2.4 TODAY'S BOARD: label + Everyone | Friends + the bare 3D share icon.
-            item(key = "board-head") {
-                Row(
-                    Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    LbBoardLabel("TODAY’S BOARD", Modifier.weight(1f).semantics { heading() })
-                    // FRIENDS toggle (§207) — per-mode boards only, as before.
-                    if (!isSweep && userId != null) {
-                        FriendsSegment(friendsOnly) { selectFriendsOnly(it) }
-                    }
-                    val canShare = if (isSweep) !loading && sweepEntries.isNotEmpty() else !boardLoading && entries.isNotEmpty()
-                    if (canShare) {
-                        SoftControl(
-                            Icon3DName.SHARE,
-                            contentDescription = if (isSweep) "Share sweep board" else "Share leaderboard",
-                            alpha = if (sharingLb) 0.4f else 1f,
-                            onClick = {
-                                if (!sharingLb) {
-                                    sharingLb = true
-                                    shareScope.launch {
-                                        try {
-                                            if (isSweep) {
-                                                // Today's sweep-board share (§231).
-                                                com.wordocious.app.data.LeaderboardShare.shareDailySweepCard(
-                                                    shareContext, sweepEntries, userId, sweepRank,
-                                                )
-                                            } else {
-                                                com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
-                                                    shareContext, selectedMode, "solo",
-                                                    entries, rankWindow, userId, userRank,
-                                                    friends = friendsOnly,
-                                                )
-                                            }
-                                        } finally { sharingLb = false }
-                                    }
-                                }
-                            },
+            // 11 + 11b (founder 10-07): the Leaderboard top is ONE living stage — the day's bubble title with your
+            // mascot + the day's host, the game picker with no card, the selected-game strip (art · N today · YOUR
+            // rank + stats · compact Your board), Everyone/Friends + share on the podium's header line, the podium,
+            // and Yesterday's winners as the stage's base ledge, on one continuous backdrop in the game's tint.
+            // Ranks 4+ and your finished board list below it.
+            item(key = "stage") {
+                val stageAccent = if (isSweep) LB_SWEEP_GOLD else (modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED))
+                val myPoints = if (isSweep) mySweep?.totalScore
+                    else myEntry?.compositeScore ?: completions[selectedMode]?.score
+                val solved = if (isSweep) mySweep?.let { sweepSolvedLine(it.isFlawless, it.modesWon, it.totalTime, com.wordocious.app.todayLocalDate()) }
+                else myEntry?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds, it.boardsSolved, it.totalBoards) }
+                    ?: completions[selectedMode]?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds) }
+                val myRank = if (isSweep) sweepRank else userRank
+                // "#2 of 5 · 2,005 pts · 4 guesses · 48s" — your rank + stats on ONE line.
+                val rankLine = myRank?.let { r ->
+                    "#${r.rank} " + compactRankLine(r.totalPlayers, friendsOnly && !isSweep, myPoints?.let { formatScore(it) }, solved)
+                } ?: if (isSweep) "Ranked by total points across all modes" else "Not played yet"
+                LeaderboardStageCard(stageAccent) {
+                    StageTitleRow()
+                    LeaderboardPicker(selected = selectedMode, onSelect = { selectMode(it) }, onOpenRecords = onOpenRecords, bare = true,
+                        badge = { key -> if (key == SWEEP_ID) null else completions[key]?.completed })
+                    if (isSweep) {
+                        SweepStageStrip(sweepers = playerCount, rankLine = rankLine)
+                    } else {
+                        ModeStageStrip(
+                            modeId = selectedMode, players = playerCount,
+                            // iOS: cached completions answer instantly; the rank confirms.
+                            played = completions[selectedMode] != null || userRank != null,
+                            rankLine = rankLine, rank = userRank?.rank, friends = friendsOnly, onPlay = onPlay,
                         )
                     }
-                }
-            }
-            // Leaderboard body: one cream card — the top-3 podium, then soft striped rows.
-            item(key = "board") {
-                if (boardLoading) {
-                    // Web parity: animate-pulse skeleton rows, not a spinner.
-                    Column(Modifier.lbBoardCard().padding(horizontal = 12.dp, vertical = 10.dp)) { LeaderboardSkeleton() }
-                } else if (isSweep) {
-                    if (sweepEntries.isEmpty()) {
-                        EmptyBoardCard("Finish all of today's dailies to land on this board.")
-                    } else {
-                        Column(Modifier.lbBoardCard()) {
-                            // BJ4: the Sweep board's leaders on the podium too (gold stage).
+                    // The podium's header line: Everyone | Friends (§207) left, the bare 3D share icon right.
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 34.dp).padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        if (!isSweep && userId != null) FriendsSegment(friendsOnly) { selectFriendsOnly(it) }
+                        Box(Modifier.weight(1f))
+                        val canShare = if (isSweep) !loading && sweepEntries.isNotEmpty() else !boardLoading && entries.isNotEmpty()
+                        if (canShare) {
+                            SoftControl(
+                                Icon3DName.SHARE,
+                                contentDescription = if (isSweep) "Share sweep board" else "Share leaderboard",
+                                alpha = if (sharingLb) 0.4f else 1f,
+                                onClick = {
+                                    if (!sharingLb) {
+                                        sharingLb = true
+                                        shareScope.launch {
+                                            try {
+                                                if (isSweep) {
+                                                    com.wordocious.app.data.LeaderboardShare.shareDailySweepCard(shareContext, sweepEntries, userId, sweepRank)
+                                                } else {
+                                                    com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
+                                                        shareContext, selectedMode, "solo", entries, rankWindow, userId, userRank, friends = friendsOnly,
+                                                    )
+                                                }
+                                            } finally { sharingLb = false }
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                    }
+                    // The podium (or its empty state) right under the strip: all three visible on a standard phone.
+                    if (boardLoading) {
+                        // Web parity: animate-pulse skeleton rows, not a spinner.
+                        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) { LeaderboardSkeleton() }
+                    } else if (isSweep) {
+                        if (sweepEntries.isEmpty()) {
+                            EmptyBoardCard("Finish all of today's dailies to land on this board.")
+                        } else {
+                            // BJ4: the Sweep board's leaders on the podium too.
                             val sp = boardPodium(sweepEntries.indices.map { it + 1 })
                             BoardPodium(
                                 sweepPodiumSpots(sweepEntries.take(sp.filled), userId, sweepScoreLabels, onOpenProfile, sweepDetails, com.wordocious.app.todayLocalDate()),
-                                sp.open, PODIUM_SWEEP_GOLD,
+                                sp.open, PODIUM_SWEEP_GOLD, bare = true,
                             )
-                            sweepEntries.drop(sp.filled).forEachIndexed { i, entry ->
-                                val index = sp.filled + i
-                                SweepRow(
-                                    rank = index + 1, entry = entry,
-                                    isCurrentUser = entry.userId == userId,
-                                    onOpenProfile = onOpenProfile,
-                                    scoreLabel = sweepScoreLabels[entry.totalScore],
-                                    details = sweepDetails[entry.userId],
-                                    day = com.wordocious.app.todayLocalDate(),
-                                    flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
-                                    index = i, topRule = i > 0,
-                                )
-                            }
                         }
-                    }
-                } else if (entries.isEmpty()) {
-                    if (friendsOnly && ghostFriends.isNotEmpty()) {
-                        // Nobody's played yet — the friends list still renders
-                        // as ghost rows so the board feels alive (and tauntable).
-                        Column(Modifier.lbBoardCard()) {
-                            ghostFriends.forEachIndexed { index, f ->
-                                GhostFriendRow(f, onOpenProfile, index = index) { tauntTarget = f }
-                            }
-                        }
-                    } else {
-                        // R asleep on an empty board; I's invite scene on an empty Friends board (ART_SPEC §7).
-                        // BI24: headline + one line + the candy CTA (recruit, or play today's daily).
-                        if (friendsOnly) {
+                    } else if (entries.isEmpty()) {
+                        if (friendsOnly && ghostFriends.isNotEmpty()) {
+                            // the ghost rows list below the stage
+                        } else if (friendsOnly) {
                             BrandEmptyState(
                                 title = "NO FRIENDS HERE YET",
                                 line = Mascots.addFriendLine,
@@ -700,12 +669,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 onAction = playMode?.let { gm -> { onPlay(gm) } },
                             )
                         }
-                    }
-                } else {
-                    Column(Modifier.lbBoardCard()) {
-                        // BJ4: the leaders on the podium on EVERY board (Everyone AND Friends,
-                        // every game) once one result is in; free places are open spots. The
-                        // Friends board keeps the taunt bell under each friend on the podium.
+                    } else {
+                        // BJ4: the leaders on the podium on EVERY board (Everyone AND Friends, every game) once one result
+                        // is in; free places are open spots. The Friends board keeps the taunt bell under each friend.
                         val layout = boardPodium(entries.indices.map { LeaderboardService.competitionRank(entries, it) })
                         val tauntOf: ((LeaderboardService.LeaderboardEntry) -> (() -> Unit)?) = { e ->
                             if (friendsOnly && e.userId != userId) {
@@ -718,76 +684,192 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         }
                         BoardPodium(
                             lbPodiumSpots(entries.take(layout.filled), userId, lbScoreLabels, onOpenProfile, tauntOf, mode = selectedMode),
-                            layout.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED),
+                            layout.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED), bare = true,
                         )
-                        val podium = layout.filled > 0
-                        val rows = entries.drop(layout.filled)
-                        val first = layout.filled
-                        rows.forEachIndexed { i, entry ->
-                            val index = first + i
-                            LeaderboardRow(
-                                // §217: exact (score, time) ties share the rank.
-                                rank = LeaderboardService.competitionRank(entries, index),
-                                entry = entry, mode = selectedMode,
-                                isCurrentUser = entry.userId == userId,
-                                onOpenProfile = onOpenProfile,
-                                // Friends board: one-tap canned taunt (§207).
-                                onTaunt = if (friendsOnly && entry.userId != userId) {
-                                    {
-                                        tauntTarget = FriendsService.FriendProfile(
-                                            id = entry.userId, username = entry.username ?: "Player",
-                                            avatarUrl = entry.avatarUrl,
-                                        )
-                                    }
-                                } else null,
-                                scoreLabel = lbScoreLabels[entry.compositeScore],
-                                crownId = crownId,
-                                index = i,
-                                topRule = !(podium && i == 0),
-                            )
-                        }
-                        // "Your neighborhood" — rows around the user's rank when
-                        // they placed past the top 50 (web/iOS parity).
-                        rankWindow?.let { win ->
-                            NeighborhoodGap()
-                            win.entries.forEachIndexed { index, entry ->
-                                LeaderboardRow(
-                                    rank = win.startRank + index, entry = entry, mode = selectedMode,
-                                    isCurrentUser = entry.userId == userId,
-                                    onOpenProfile = onOpenProfile,
-                                    scoreLabel = lbScoreLabels[entry.compositeScore],
-                                    index = index,
+                    }
+                    // The stage's base: Yesterday's top three on the ledge; tap to expand the full list in place.
+                    val yMinis: List<BoardPodiumSpot> = if (isSweep) {
+                        val ysp = boardPodium(yesterdaySweep.mapIndexed { i, e -> e.rank.toInt().takeIf { it > 0 } ?: (i + 1) })
+                        sweepPodiumSpots(yesterdaySweep.take(ysp.filled), userId, ySweepScoreLabels, onOpenProfile, ySweepDetails, com.wordocious.app.yesterdayLocalDate())
+                    } else {
+                        val yl = boardPodium(yesterday.indices.map { LeaderboardService.competitionRank(yesterday, it) })
+                        lbPodiumSpots(yesterday.take(yl.filled), userId, yLbScoreLabels, onOpenProfile, mode = selectedMode)
+                    }
+                    StageYesterdayLedge(
+                        minis = yMinis, open = showYesterday, loading = showYesterday && yesterdayPending,
+                        onToggle = {
+                            showYesterday = !showYesterday
+                            if (showYesterday) paintCachedYesterday(selectedMode)
+                        },
+                        share = {
+                            // Settled-podium share — only with rows (the Sweep tile shares yesterday's sweep podium, §231).
+                            if ((if (isSweep) yesterdaySweep else yesterday).isNotEmpty()) {
+                                SoftControl(
+                                    Icon3DName.SHARE, contentDescription = "Share yesterday's podium",
+                                    alpha = if (sharingPodium) 0.4f else 1f,
+                                    onClick = {
+                                        if (!sharingPodium) {
+                                            sharingPodium = true
+                                            shareScope.launch {
+                                                try {
+                                                    if (isSweep) {
+                                                        com.wordocious.app.data.LeaderboardShare.shareYesterdaySweepPodiumCard(shareContext, yesterdaySweep, userId)
+                                                    } else {
+                                                        com.wordocious.app.data.LeaderboardShare.shareYesterdayPodiumCard(
+                                                            shareContext, selectedMode, "solo", yesterday, userId, friends = friendsOnly,
+                                                        )
+                                                    }
+                                                } finally { sharingPodium = false }
+                                            }
+                                        }
+                                    },
                                 )
                             }
-                        }
-                        // FRIENDS ghost rows — friends who haven't played this
-                        // mode today, muted, with the taunt bell (§207).
-                        if (friendsOnly) {
-                            ghostFriends.forEachIndexed { i, f ->
-                                GhostFriendRow(f, onOpenProfile, index = rows.size + i) { tauntTarget = f }
+                        },
+                        expanded = {
+                            Column(Modifier.lbBoardCard()) {
+                                if (yesterdayPending) {
+                                    // Not this mode's rows yet — the empty-state's footprint, blank, instead of the previous
+                                    // mode's podium or a false "No results" (founder, 2026-09-29).
+                                    Text(
+                                        " ", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                    )
+                                } else if (isSweep) {
+                                    if (yesterdaySweep.isEmpty()) {
+                                        LbEmptyLine("Nobody swept every daily yesterday.", title = "NO SWEEPS YESTERDAY")
+                                    } else {
+                                        // BJ4: yesterday's sweep leaders on the podium (gold stage).
+                                        val ysp = boardPodium(yesterdaySweep.mapIndexed { i, e -> e.rank.toInt().takeIf { it > 0 } ?: (i + 1) })
+                                        BoardPodium(
+                                            sweepPodiumSpots(yesterdaySweep.take(ysp.filled), userId, ySweepScoreLabels, onOpenProfile, ySweepDetails, com.wordocious.app.yesterdayLocalDate()),
+                                            ysp.open, PODIUM_SWEEP_GOLD,
+                                        )
+                                        yesterdaySweep.drop(ysp.filled).forEachIndexed { i, e ->
+                                            SweepRow(
+                                                rank = e.rank.toInt(), entry = e,
+                                                isCurrentUser = e.userId == userId,
+                                                onOpenProfile = onOpenProfile,
+                                                scoreLabel = ySweepScoreLabels[e.totalScore],
+                                                details = ySweepDetails[e.userId],
+                                                day = com.wordocious.app.yesterdayLocalDate(),
+                                                flawlessStreak = yFlawlessStreaks[e.userId] ?: 0,
+                                                index = i, topRule = true,
+                                            )
+                                        }
+                                    }
+                                } else if (yesterday.isEmpty()) {
+                                    LbEmptyLine("No one finished this daily yesterday.", title = "NO RESULTS YESTERDAY")
+                                } else {
+                                    // BJ4: yesterday's leaders on the podium, then the full daily rows (founder ask, Aug 11).
+                                    val yl = boardPodium(yesterday.indices.map { LeaderboardService.competitionRank(yesterday, it) })
+                                    BoardPodium(
+                                        lbPodiumSpots(yesterday.take(yl.filled), userId, yLbScoreLabels, onOpenProfile, mode = selectedMode),
+                                        yl.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED),
+                                    )
+                                    yesterday.drop(yl.filled).forEachIndexed { j, e ->
+                                        val i = yl.filled + j
+                                        LeaderboardRow(
+                                            // §217: exact (score, time) ties share the rank.
+                                            rank = LeaderboardService.competitionRank(yesterday, i),
+                                            entry = e, mode = selectedMode,
+                                            isCurrentUser = e.userId == userId,
+                                            onOpenProfile = onOpenProfile,
+                                            scoreLabel = yLbScoreLabels[e.compositeScore],
+                                            index = i, topRule = true,
+                                        )
+                                    }
+                                }
                             }
+                        },
+                    )
+                }
+                Spacer(Modifier.height(LB_CARD_GAP))
+            }
+            // Ranks 4+ (plus your neighborhood and the friends' ghost rows) — the stage above holds the top three.
+            item(key = "rows") {
+                if (!boardLoading) {
+                    if (isSweep) {
+                        val sp = boardPodium(sweepEntries.indices.map { it + 1 })
+                        if (sweepEntries.size > sp.filled) {
+                            Column(Modifier.lbBoardCard()) {
+                                sweepEntries.drop(sp.filled).forEachIndexed { i, entry ->
+                                    SweepRow(
+                                        rank = sp.filled + i + 1, entry = entry,
+                                        isCurrentUser = entry.userId == userId,
+                                        onOpenProfile = onOpenProfile,
+                                        scoreLabel = sweepScoreLabels[entry.totalScore],
+                                        details = sweepDetails[entry.userId],
+                                        day = com.wordocious.app.todayLocalDate(),
+                                        flawlessStreak = flawlessStreaks[entry.userId] ?: 0,
+                                        index = i, topRule = i > 0,
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(LB_CARD_GAP))
+                        }
+                    } else if (entries.isEmpty()) {
+                        if (friendsOnly && ghostFriends.isNotEmpty()) {
+                            // Nobody's played yet — the friends list still renders as ghost rows so the board feels alive (and tauntable).
+                            Column(Modifier.lbBoardCard()) {
+                                ghostFriends.forEachIndexed { index, f ->
+                                    GhostFriendRow(f, onOpenProfile, index = index) { tauntTarget = f }
+                                }
+                            }
+                            Spacer(Modifier.height(LB_CARD_GAP))
+                        }
+                    } else {
+                        val layout = boardPodium(entries.indices.map { LeaderboardService.competitionRank(entries, it) })
+                        val rows = entries.drop(layout.filled)
+                        if (rows.isNotEmpty() || rankWindow != null || (friendsOnly && ghostFriends.isNotEmpty())) {
+                            Column(Modifier.lbBoardCard()) {
+                                val first = layout.filled
+                                rows.forEachIndexed { i, entry ->
+                                    val index = first + i
+                                    LeaderboardRow(
+                                        // §217: exact (score, time) ties share the rank.
+                                        rank = LeaderboardService.competitionRank(entries, index),
+                                        entry = entry, mode = selectedMode,
+                                        isCurrentUser = entry.userId == userId,
+                                        onOpenProfile = onOpenProfile,
+                                        // Friends board: one-tap canned taunt (§207).
+                                        onTaunt = if (friendsOnly && entry.userId != userId) {
+                                            {
+                                                tauntTarget = FriendsService.FriendProfile(
+                                                    id = entry.userId, username = entry.username ?: "Player",
+                                                    avatarUrl = entry.avatarUrl,
+                                                )
+                                            }
+                                        } else null,
+                                        scoreLabel = lbScoreLabels[entry.compositeScore],
+                                        crownId = crownId,
+                                        index = i,
+                                        topRule = i > 0 || layout.filled == 0,
+                                    )
+                                }
+                                // "Your neighborhood" — rows around the user's rank when they placed past the top 50 (web/iOS parity).
+                                rankWindow?.let { win ->
+                                    NeighborhoodGap()
+                                    win.entries.forEachIndexed { index, entry ->
+                                        LeaderboardRow(
+                                            rank = win.startRank + index, entry = entry, mode = selectedMode,
+                                            isCurrentUser = entry.userId == userId,
+                                            onOpenProfile = onOpenProfile,
+                                            scoreLabel = lbScoreLabels[entry.compositeScore],
+                                            index = index,
+                                        )
+                                    }
+                                }
+                                // FRIENDS ghost rows — friends who haven't played this mode today, muted, with the taunt bell (§207).
+                                if (friendsOnly) {
+                                    ghostFriends.forEachIndexed { i, f ->
+                                        GhostFriendRow(f, onOpenProfile, index = rows.size + i) { tauntTarget = f }
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(LB_CARD_GAP))
                         }
                     }
-                }
-            }
-            // Founder 10-05: headline · picker · the game card · the standings · then YOUR rank
-            // row with your board under it (where the game card used to be) · yesterday.
-            // §2.3 / C2: ONE result card — crown + your rank (true total; shows even when you
-            // sit outside the visible top 50), how you solved it, your points. For SWEEP this
-            // is your daily-sweep rank.
-            (if (isSweep) sweepRank else userRank)?.let { rank ->
-                item(key = "result") {
-                    val myPoints = if (isSweep) mySweep?.totalScore
-                        else myEntry?.compositeScore ?: completions[selectedMode]?.score
-                    val solved = if (isSweep) mySweep?.let { sweepSolvedLine(it.isFlawless, it.modesWon, it.totalTime, com.wordocious.app.todayLocalDate()) }
-                    else myEntry?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds, it.boardsSolved, it.totalBoards) }
-                        ?: completions[selectedMode]?.let { solvedLine(selectedMode, it.completed, it.guessCount, it.timeSeconds) }
-                    // AU2: ONE compact row ("#2 of 5 · 2,005 pts · 4 guesses · 48s" + the check).
-                    Spacer(Modifier.height(LB_CARD_GAP))
-                    CompactRankRow(
-                        rank = rank.rank, total = rank.totalPlayers, mode = selectedMode,
-                        friends = friendsOnly && !isSweep, points = myPoints, solvedLine = solved,
-                    )
                 }
             }
             item(key = "result-gap") { Spacer(Modifier.height(LB_CARD_GAP)) }
@@ -800,121 +882,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     ) { com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode) }
                 }
             }
-            // §2.5 YESTERDAY'S WINNERS (collapsible) — per-mode top 3, or yesterday's
-            // top sweepers when the Sweep tile is selected. One cream card: the caps
-            // header (chevron + bare share) and, open, the striped rows under it.
-            item(key = "yesterday") {
-                Spacer(Modifier.height(LB_CARD_GAP))
-                Column(Modifier.lbBoardCard()) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Row(
-                            Modifier.weight(1f)
-                                .squishClickable(
-                                    label = "Yesterday's winners, " + if (showYesterday) "expanded" else "collapsed",
-                                ) {
-                                    showYesterday = !showYesterday
-                                    if (showYesterday) paintCachedYesterday(selectedMode)
-                                }
-                                .padding(vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            LbBoardLabel("YESTERDAY’S WINNERS")
-                            Spacer(Modifier.width(4.dp))
-                            Icon(
-                                if (showYesterday) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                                null, tint = if (WTheme.isDark) WTheme.textSecondary else LB_SECTION_INK, modifier = Modifier.size(18.dp),
-                            )
-                        }
-                        // Settled-podium share — only once the dropdown is open with
-                        // rows (web parity). The Sweep tile shares yesterday's
-                        // sweep podium instead (§231).
-                        if (showYesterday && (if (isSweep) yesterdaySweep else yesterday).isNotEmpty()) {
-                            SoftControl(
-                                Icon3DName.SHARE, contentDescription = "Share yesterday's podium",
-                                alpha = if (sharingPodium) 0.4f else 1f,
-                                onClick = {
-                                    if (!sharingPodium) {
-                                        sharingPodium = true
-                                        shareScope.launch {
-                                            try {
-                                                if (isSweep) {
-                                                    com.wordocious.app.data.LeaderboardShare.shareYesterdaySweepPodiumCard(
-                                                        shareContext, yesterdaySweep, userId,
-                                                    )
-                                                } else {
-                                                    com.wordocious.app.data.LeaderboardShare.shareYesterdayPodiumCard(
-                                                        shareContext, selectedMode, "solo", yesterday, userId,
-                                                        friends = friendsOnly,
-                                                    )
-                                                }
-                                            } finally { sharingPodium = false }
-                                        }
-                                    }
-                                },
-                            )
-                        }
-                    }
-                    if (showYesterday) {
-                        if (yesterdayPending) {
-                            // Not this mode's rows yet — the empty-state's footprint, blank, instead
-                            // of the previous mode's podium or a false "No results" (founder, 2026-09-29).
-                            Text(
-                                " ", fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            )
-                        } else if (isSweep) {
-                            if (yesterdaySweep.isEmpty()) {
-                                LbEmptyLine("Nobody swept every daily yesterday.", title = "NO SWEEPS YESTERDAY")
-                            } else {
-                                // BJ4: yesterday's sweep leaders on the podium (gold stage).
-                                val ysp = boardPodium(yesterdaySweep.mapIndexed { i, e -> e.rank.toInt().takeIf { it > 0 } ?: (i + 1) })
-                                BoardPodium(
-                                    sweepPodiumSpots(yesterdaySweep.take(ysp.filled), userId, ySweepScoreLabels, onOpenProfile, ySweepDetails, com.wordocious.app.yesterdayLocalDate()),
-                                    ysp.open, PODIUM_SWEEP_GOLD,
-                                )
-                                yesterdaySweep.drop(ysp.filled).forEachIndexed { i, e ->
-                                    SweepRow(
-                                        rank = e.rank.toInt(), entry = e,
-                                        isCurrentUser = e.userId == userId,
-                                        onOpenProfile = onOpenProfile,
-                                        scoreLabel = ySweepScoreLabels[e.totalScore],
-                                        details = ySweepDetails[e.userId],
-                                        day = com.wordocious.app.yesterdayLocalDate(),
-                                        flawlessStreak = yFlawlessStreaks[e.userId] ?: 0,
-                                        index = i, topRule = true,
-                                    )
-                                }
-                            }
-                        } else if (yesterday.isEmpty()) {
-                            LbEmptyLine("No one finished this daily yesterday.", title = "NO RESULTS YESTERDAY")
-                        } else {
-                            // BJ4: yesterday's leaders on the podium, then the full daily rows
-                            // (founder ask, Aug 11): profile taps, guesses + time, W/L column.
-                            val yl = boardPodium(yesterday.indices.map { LeaderboardService.competitionRank(yesterday, it) })
-                            BoardPodium(
-                                lbPodiumSpots(yesterday.take(yl.filled), userId, yLbScoreLabels, onOpenProfile, mode = selectedMode),
-                                yl.open, modeCardForKey(selectedMode)?.accent ?: Color(0xFF7C3AED),
-                            )
-                            yesterday.drop(yl.filled).forEachIndexed { j, e ->
-                                val i = yl.filled + j
-                                LeaderboardRow(
-                                    // §217: exact (score, time) ties share the rank.
-                                    rank = LeaderboardService.competitionRank(yesterday, i),
-                                    entry = e, mode = selectedMode,
-                                    isCurrentUser = e.userId == userId,
-                                    onOpenProfile = onOpenProfile,
-                                    scoreLabel = yLbScoreLabels[e.compositeScore],
-                                    index = i, topRule = true,
-                                )
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(24.dp))
-            }
+            item(key = "end-pad") { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
