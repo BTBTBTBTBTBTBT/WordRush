@@ -1731,13 +1731,14 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
 .gtile.sdk-cell[data-sdk="wash"][data-s="given"] { --gt-face: #eadfff; --gt-edge: #c9b0f3; }
 [data-theme="dark"] .gtile.sdk-cell[data-sdk="wash"][data-s="empty"] { --gt-face: rgba(167, 139, 250, 0.3); --gt-edge: rgba(167, 139, 250, 0.5); --gt-ring: inset 0 0 0 2px rgba(167, 139, 250, 0.4); }
 .pz-num {
-  /* Doug / founder 10-05: a small muted superscript fully INSIDE the top-left corner (no chip, never on the
-     border; the selection ring is an outer box-shadow, so it never covers it). Android/iOS CrosswordCellSpec. */
+  /* Founder 10-06: the clue number is a SMALL badge fully INSIDE the top-left corner (~20% of the cell, never on
+     the border; the selection ring is an outer box-shadow, so it never covers it). It never shrinks or moves the
+     letter: every cell's letter is the same size and exactly centered. iOS/Android CrosswordCellSpec. */
   position: absolute;
   z-index: 4;
   /* clear of the tile's inner ring (2.5px) on small web cells too */
-  top: max(4px, 10%);
-  left: max(4.5px, 11%);
+  top: max(3px, 7%);
+  left: max(3.5px, 8%);
   font-size: var(--pz-num, 8px);
   font-weight: 900;
   line-height: 0.8;
@@ -1746,9 +1747,6 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
 }
 .gtile.pz-cell[data-s="correct"] .pz-num { color: rgba(255, 255, 255, 0.85); }
 [data-theme="dark"] .pz-num { color: rgba(233, 221, 255, 0.8); }
-/* A numbered cell's letter steps clear of its number: a touch smaller and lower; on small cells also right. */
-.gtile.pz-cell[data-num] > b { translate: 0 6%; scale: 0.92; }
-.gtile.pz-cell[data-num="small"] > b { translate: 14% 15%; scale: 0.7; }
 
 /* ── F2 fix · one cast row at a time (components/providers/cold-start-intro.tsx):
    the real header row stays laid out but hidden while the intro runs; after
