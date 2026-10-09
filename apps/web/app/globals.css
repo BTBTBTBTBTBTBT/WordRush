@@ -961,6 +961,8 @@ html[data-season-tone="dark"] [data-page-tint="friends"] {
   --fr-page: var(--color-surface);
   --fr-flame: #fdba74;
   --fr-teal: #5eead4;
+  /* 2.8 wave 3: the friend cards' "playing Classic" line (green) lifted for the night glass */
+  --fr-online: #6ee7b7;
 }
 /* Content ends above the docked bar (A4): never less than the page's own
    bottom padding, and at least the bar's room (--bottom-nav-h, published by

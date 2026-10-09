@@ -120,7 +120,7 @@ export function LobbyScene({ kind, name, elapsed, seatLabel, children }: {
         </div>
         {/* An idle bit from your mascot, as a tiny speech chip. */}
         {bit && (
-          <span className="absolute left-2 top-2 px-2 py-0.5 rounded-full text-[10.5px] font-extrabold animate-fade-in" style={{ background: softMix('#ffffff', 0.9), color: VS.ink }}>
+          <span className="absolute left-2 top-2 px-2 py-0.5 rounded-full text-[10.5px] font-extrabold animate-fade-in" style={{ background: 'var(--vs-soft, #e6fffb)', color: VS.deep }}>
             …{bit}
           </span>
         )}
