@@ -2135,6 +2135,24 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 @media (prefers-reduced-motion: reduce) { .lh-ch, .lh-sweeping .lh-gloss { animation: none !important; } }
 [data-reduced-motion="true"] .lh-ch, [data-reduced-motion="true"] .lh-sweeping .lh-gloss { animation: none !important; }
 
+/* ── 2.8 item 6 · bubble lettering from the glyph atlas (components/ui/bubble-text.tsx). The glyph
+   art is a neutral white base with shading; the word's tint multiplies over it and the glyph's own
+   alpha clips the result — one element per glyph, no canvas, no per-frame work. ── */
+.bt-box { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; }
+.bt-line { display: inline-flex; align-items: flex-end; justify-content: center; white-space: nowrap; }
+.bt-space { display: inline-block; height: 1px; }
+.bt-glyph {
+  display: inline-block; height: 100%;
+  background-image: var(--bt-img), linear-gradient(180deg, var(--bt-top), var(--bt-bottom));
+  background-blend-mode: multiply, normal;
+  background-size: contain, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  -webkit-mask-image: var(--bt-img); mask-image: var(--bt-img);
+  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+  filter: drop-shadow(0 2px 2px rgba(30, 10, 70, 0.25));
+}
+
 /* ── FINISH_SPEC AU3 · the Gauntlet stage card (components/gauntlet/stage-transition.tsx):
    one fade + slide/spring in, one fade + lift out — transforms and opacity only
    (the old backdrop blur re-rasterized the board under it every frame). ── */

@@ -5,7 +5,7 @@ import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleLine } from '@/components/ui/bubble-text';
 import { readSurfacesChoice, useSeason } from '@/lib/season';
 import { seasonBanner, seasonHeadlineSpec, seasonSurfaces } from '@/lib/season-kit';
 import { SeasonArt } from '@/components/ui/season-art';
@@ -381,7 +381,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
                       <span className="inline-flex items-center" style={{ gap: 6 }}>
                         {i === 0 && content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
                         {i === 0 && <GoldSparkle />}
-                        <LiveHeadline
+                        <BubbleLine
                           text={line}
                           names={headLayout.lines.length === 1 && name ? [name] : undefined}
                           palette={gold ? 'leaderboard' : double ? 'celebrate' : 'home'}
