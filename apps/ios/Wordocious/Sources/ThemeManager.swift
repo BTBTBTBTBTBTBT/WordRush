@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 /// Active-theme palette: the subset of design tokens that change per theme
 /// (surfaces / borders / text). Tiles, keyboard, and brand colors stay constant
@@ -42,6 +43,24 @@ final class ThemeManager: ObservableObject {
     @Published var theme: String {
         didSet { UserDefaults.standard.set(theme, forKey: "pref-theme") }
     }
+    /// Item 24: "<season>:<year>" the player opted out of Seasonal for (Settings > Theme); synced to the account.
+    @Published var seasonOptOut: String? {
+        didSet { UserDefaults.standard.set(seasonOptOut, forKey: CastSkin.optOutKey) }
+    }
+    /// Bumps when the season resolves differently (a pick, the off-switch flipping): the app root rebuilds on it.
+    @Published var seasonEpoch = 0
+    var rebuildKey: String { "\(theme)-\(seasonEpoch)" }
+
+    /// Settings > Theme row tap ("seasonal" or a base theme): the core rules, then a rebuild.
+    func pick(_ picked: String) {
+        let next = ThemeChoiceRules.pick(.init(theme: theme, seasonOptOut: seasonOptOut), picked: picked,
+                                         season: CastSkin.calendarSeason()?.rawValue, date: CastSkin.localDay())
+        theme = next.theme
+        seasonOptOut = next.seasonOptOut
+        CastSkin.invalidate()
+        seasonEpoch += 1
+    }
+
     /// High-contrast tile palette (orange=correct, blue=present) for red-green
     /// color blindness. Read by `Theme.correct/present/...` at render time, so
     /// it applies to the next game screen without a root rebuild.
@@ -55,7 +74,8 @@ final class ThemeManager: ObservableObject {
 
     private init() {
         let d = UserDefaults.standard
-        theme = d.string(forKey: "pref-theme") ?? "default"
+        theme = ThemeChoiceRules.parseBase(d.string(forKey: "pref-theme"))
+        seasonOptOut = d.string(forKey: CastSkin.optOutKey)
         // Toggles default ON only if explicitly set; absent → false.
         colorblind = d.bool(forKey: "pref-colorblind")
         reducedMotion = d.bool(forKey: "pref-reduced-motion")

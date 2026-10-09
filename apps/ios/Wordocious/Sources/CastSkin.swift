@@ -38,9 +38,41 @@ enum CastSkin {
 
     private static func resolve(_ now: Date) -> Season? {
         if let o = UserDefaults.standard.string(forKey: debugKey), let s = Season(rawValue: o) { return s }
+        guard let s = calendarSeason(now) else { return nil }
+        // Item 24: the player opted out of Seasonal for this season (Settings > Theme).
+        if UserDefaults.standard.string(forKey: optOutKey) == ThemeChoiceRules.optOutKey(season: s.rawValue, date: localDay(now)) { return nil }
+        return s
+    }
+
+    /// UserDefaults key of "no Seasonal for this season" ("<season>:<year>"; synced to the account).
+    static let optOutKey = "pref-season-optout"
+
+    /// The calendar's season on the local date, honoring the `season_halloween` off-switch (nil = none / switched off).
+    static func calendarSeason(_ now: Date = Date()) -> Season? {
+        guard switchOn else { return nil }
         let c = Calendar(identifier: .gregorian).dateComponents([.month, .day], from: now)
         guard let m = c.month, let d = c.day else { return nil }
         return Season.current(month: m, day: d)
+    }
+
+    static func localDay(_ date: Date = Date()) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX"); f.calendar = Calendar(identifier: .gregorian); f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
+    // The `season_halloween` off-switch, as FlagsService last read it (fail-open: on until a row says off).
+    private static var switchState = true
+    static var switchOn: Bool { lock.lock(); defer { lock.unlock() }; return switchState }
+
+    /// FlagsService calls this after every load: a flip re-resolves the season and rebuilds the UI.
+    static func setSwitch(_ on: Bool) {
+        lock.lock()
+        let changed = switchState != on
+        switchState = on
+        if changed { cached = nil }
+        lock.unlock()
+        if changed { DispatchQueue.main.async { ThemeManager.shared.seasonEpoch += 1 } }
     }
 
     /// The image set to draw for a cast member: its season skin when one is active

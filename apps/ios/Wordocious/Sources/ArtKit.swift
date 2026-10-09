@@ -686,8 +686,14 @@ struct PageBackground: View {
         // the backdrop tiles stay off on it.
         let seasonal = SeasonKit.wall(tint.wallpaper, dark: dark)
         let wall = seasonal ?? tint.wallpaper
+        // Item 25: Ocean / Forest / Dark skin the wall in code (menus + tab pages only: never a game screen);
+        // a season's own wall (above) always wins.
+        let isGame: Bool = { if case .game = tint { return true } else { return false } }()
+        let themeWall = (isGame || (lightOnly && ThemeManager.shared.theme == "dark")) ? nil : ThemeKit.wallLook(theme: ThemeManager.shared.theme, seasonActive: seasonal != nil || SeasonKit.current != nil)
         Group {
-            if ArtAsset.exists(wall) {
+            if let themeWall {
+                ThemeWall(look: themeWall).ignoresSafeArea()
+            } else if ArtAsset.exists(wall) {
                 GeometryReader { geo in
                     Image(wall)
                         .resizable()
@@ -708,6 +714,8 @@ struct PageBackground: View {
                     .ignoresSafeArea()
             }
         }
+        // Items 15 + 45: the living wallpaper, menus only (never behind a game board / VS board).
+        .overlay { if !isGame { LivingWallpaper(theme: ThemeManager.shared.theme, season: SeasonKit.current?.id).ignoresSafeArea() } }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }

@@ -1,0 +1,28 @@
+{
+  "_doc": "Pins theme-choice.ts (web) = ThemeChoice.swift = ThemeChoice.kt. effective: [theme, seasonOptOut, season, switchOn, date] -> [base, seasonal]. pick: [theme, seasonOptOut, picked, season, date] -> [theme, seasonOptOut].",
+  "effective": [
+    { "in": ["default", null, "halloween", true, "2026-10-09"], "out": ["default", true] },
+    { "in": ["dark", null, "halloween", true, "2026-10-20"], "out": ["dark", true] },
+    { "in": ["ocean", "halloween:2026", "halloween", true, "2026-10-20"], "out": ["ocean", false] },
+    { "in": ["ocean", "halloween:2025", "halloween", true, "2026-10-20"], "out": ["ocean", true] },
+    { "in": ["forest", null, "halloween", false, "2026-10-20"], "out": ["forest", false] },
+    { "in": ["forest", null, null, true, "2026-11-01"], "out": ["forest", false] },
+    { "in": ["default", null, null, true, "2026-10-08"], "out": ["default", false] }
+  ],
+  "pick": [
+    { "in": ["default", null, "ocean", "halloween", "2026-10-12"], "out": ["ocean", "halloween:2026"] },
+    { "in": ["ocean", "halloween:2026", "seasonal", "halloween", "2026-10-12"], "out": ["ocean", null] },
+    { "in": ["dark", null, "forest", null, "2026-11-05"], "out": ["forest", null] },
+    { "in": ["dark", "halloween:2025", "ocean", null, "2026-11-05"], "out": ["ocean", "halloween:2025"] },
+    { "in": ["default", null, "seasonal", "halloween", "2026-10-12"], "out": ["default", null] }
+  ],
+  "showRow": [
+    { "in": ["halloween", true], "out": true },
+    { "in": ["halloween", false], "out": false },
+    { "in": [null, true], "out": false }
+  ],
+  "endLabel": [
+    { "in": "halloween", "out": "Oct 31" },
+    { "in": "easter", "out": null }
+  ]
+}
