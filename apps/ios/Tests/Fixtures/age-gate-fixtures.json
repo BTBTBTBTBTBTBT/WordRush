@@ -1,0 +1,773 @@
+{
+  "maxWaitMs": 2000,
+  "cases": [
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": "ok",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "under"
+    },
+    {
+      "stored": "under",
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "under"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "placeholder"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "placeholder"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": true,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "question"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": true,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": true,
+      "elapsedMs": 6000,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 0,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 1999,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 2000,
+      "view": "pass"
+    },
+    {
+      "stored": null,
+      "live": false,
+      "hadSession": false,
+      "serverCheckDone": false,
+      "elapsedMs": 6000,
+      "view": "pass"
+    }
+  ]
+}

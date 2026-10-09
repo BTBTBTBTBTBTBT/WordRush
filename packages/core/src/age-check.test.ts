@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  ageGateView,
+  AGE_GATE_MAX_WAIT_MS,
   ageCheckVerdict,
   ageCheckYears,
   parseAgeCheckStored,
@@ -39,3 +41,25 @@ describe('age check', () => {
     expect(parseAgeCheckStored(JSON.stringify({ state: 'ok', year: 3000 }), NOW)).toBeNull();
   });
 });
+
+describe('the age gate decision', () => {
+  const base = { stored: null, live: true, hadSession: true, serverCheckDone: false, elapsedMs: 0 } as const;
+  it('shows the placeholder only for a returning player, only until the server answers, and never past the cap', () => {
+    expect(ageGateView({ ...base })).toBe('placeholder');
+    expect(ageGateView({ ...base, elapsedMs: AGE_GATE_MAX_WAIT_MS - 1 })).toBe('placeholder');
+    expect(ageGateView({ ...base, elapsedMs: AGE_GATE_MAX_WAIT_MS })).toBe('question');
+    expect(ageGateView({ ...base, elapsedMs: 60000 })).toBe('question');
+    expect(ageGateView({ ...base, serverCheckDone: true })).toBe('question');
+    expect(ageGateView({ ...base, hadSession: false })).toBe('question');
+  });
+  it('passes a device that answered ok (or with the switch off) and keeps an under answer on the under screen', () => {
+    expect(ageGateView({ ...base, stored: 'ok' })).toBe('pass');
+    expect(ageGateView({ ...base, live: false })).toBe('pass');
+    expect(ageGateView({ ...base, stored: 'under' })).toBe('under');
+    expect(ageGateView({ ...base, stored: 'under', live: false })).toBe('under');
+  });
+  it('the wait is at most about two seconds', () => {
+    expect(AGE_GATE_MAX_WAIT_MS).toBeLessThanOrEqual(2000);
+  });
+});
+

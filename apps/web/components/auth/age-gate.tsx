@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useFlags } from '@/hooks/use-flags';
+import { ageGateView, AGE_GATE_MAX_WAIT_MS } from '@wordle-duel/core';
 import { readAgeCheck, saveAgeCheck, syncAgeCheck } from '@/lib/age-check';
 import { startSentry } from '@/lib/sentry-start';
 import { AgeCheckQuestion, AgeCheckUnder } from './age-check-screen';
@@ -56,6 +57,12 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
   const { user, profile, session, signOut, refreshProfile } = useAuth();
   const { status, year, answer } = useDeviceAgeCheck();
   const synced = useRef(false);
+  // The wait for the server's answer is capped (a timer on this component, which always renders).
+  const [waitedOut, setWaitedOut] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setWaitedOut(true), AGE_GATE_MAX_WAIT_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   // A confirmed account on a fresh device skips the question (the server already knows).
   const serverConfirmed = !!profile?.age_confirmed_13;
@@ -92,8 +99,10 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
 
   if (status === 'under') return <AgeCheckUnder />;
   if (status === 'ask') {
-    // Existing signed-in account whose profile hasn't loaded yet may already be confirmed on the server.
-    if (user && !profile) return null;
+    // Existing signed-in account whose profile hasn't loaded yet may already be confirmed on the server: wait for that,
+    // but never past AGE_GATE_MAX_WAIT_MS and never on a blank page (core ageGateView).
+    const view = ageGateView({ stored: null, live: true, hadSession: !!user, serverCheckDone: !!profile, elapsedMs: waitedOut ? AGE_GATE_MAX_WAIT_MS : 0 });
+    if (view === 'placeholder') return <div aria-hidden="true" className="fixed inset-0 z-[200]" style={{ background: 'linear-gradient(180deg, #eee4ff, #ffecf6)' }} />;
     return <AgeCheckQuestion onAnswer={answer} />;
   }
   if (status === 'loading') return null;

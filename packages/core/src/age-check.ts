@@ -1,8 +1,8 @@
 // ============================================================
 // 13+ age check (FRIDAY-QUEUE item 29 — COPPA)
 // ============================================================
-// Wordocious is for players 13 and up. The check asks ONE neutral question, "When's your
-// birthday year?", on a wheel with no default and no hint that 13 matters. Only the year is
+// Wordocious is for players 13 and up. The check asks ONE neutral question, "What year
+// were you born?", on a wheel with no default and no hint that 13 matters. Only the year is
 // ever stored (never a full date), and only as the flag `age_confirmed_13` + the year.
 //
 // A year alone cannot tell a 13th birthday that has passed from one that has not, so we are
@@ -64,3 +64,32 @@ export function parseAgeCheckStored(raw: string | null | undefined, now: Date = 
 
 /** Support address shown on the under-13 screen (parents). */
 export const AGE_CHECK_SUPPORT_EMAIL = 'privacy@wordocious.com';
+
+// ── The gate's decision (2026-10-10 fix: a returning player sat on a black screen) ─────────────────────────────
+// What the age gate shows. A signed-in returning player on a fresh device may already be confirmed server-side, so the
+// gate waits for that lookup, but NEVER longer than AGE_GATE_MAX_WAIT_MS and never on a plain black screen (the
+// placeholder is the normal app background). The caller measures `elapsedMs` on a real, full-size container.
+export type AgeGateView = 'pass' | 'under' | 'placeholder' | 'question';
+
+/** The longest the gate shows its placeholder before it just asks. */
+export const AGE_GATE_MAX_WAIT_MS = 2000;
+
+export interface AgeGateInput {
+  /** What this device remembers (null = never answered). */
+  stored: 'ok' | 'under' | null;
+  /** The `age_check` off-switch is live (fail open: an unknown flag = live). */
+  live: boolean;
+  /** A signed-in session was persisted on this device (a returning player). */
+  hadSession: boolean;
+  /** The server lookup (is this account already confirmed?) has finished, either way. */
+  serverCheckDone: boolean;
+  /** Milliseconds since the gate appeared. */
+  elapsedMs: number;
+}
+
+export function ageGateView(i: AgeGateInput): AgeGateView {
+  if (i.stored === 'under') return 'under';
+  if (i.stored === 'ok' || !i.live) return 'pass';
+  if (i.hadSession && !i.serverCheckDone && i.elapsedMs < AGE_GATE_MAX_WAIT_MS) return 'placeholder';
+  return 'question';
+}

@@ -68,7 +68,7 @@ export default function PrivacyPage() {
       </SectionCard>
       <SectionCard heading={<>Children&apos;s Privacy</>}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-          Wordocious is for players 13 and up. The first time you open it we ask for your birthday year (only the year) to confirm that. If the answer is under 13, we do not create an account or a profile, and nothing else about you is collected: no crash reports, notifications or ads start. We keep only a &ldquo;13 and up confirmed&rdquo; flag and the year you picked, never a full birthdate, and the answer is remembered on your device so the question is not asked twice. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has given us personal data, email privacy@wordocious.com and we will delete it promptly.
+          Wordocious is for players 13 and up. The first time you open it we ask the year you were born (only the year) to confirm that. If the answer is under 13, we do not create an account or a profile, and nothing else about you is collected: no crash reports, notifications or ads start. We keep only a &ldquo;13 and up confirmed&rdquo; flag and the year you picked, never a full birthdate, and the answer is remembered on your device so the question is not asked twice. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has given us personal data, email privacy@wordocious.com and we will delete it promptly.
         </p>
       </SectionCard>
       <SectionCard heading="Changes to This Policy">

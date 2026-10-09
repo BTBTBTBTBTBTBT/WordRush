@@ -13,7 +13,7 @@ export default function TermsPage() {
       </IntroCard>
       <SectionCard heading="Eligibility">
         <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-          Wordocious is for players <strong>13 and up</strong>. You must be at least 13 years of age to create an account or use the Service, and we ask for your birthday year to confirm it. By using the Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have the consent of a parent or legal guardian.
+          Wordocious is for players <strong>13 and up</strong>. You must be at least 13 years of age to create an account or use the Service, and we ask the year you were born to confirm it. By using the Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have the consent of a parent or legal guardian.
         </p>
       </SectionCard>
       <SectionCard heading="Your Account">

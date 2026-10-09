@@ -1,7 +1,7 @@
 import Foundation
 
 /// 13+ age check (FRIDAY-QUEUE item 29 — COPPA). Pure rules; mirrors core age-check.ts and
-/// AgeCheck.kt (Android). One neutral question, "When's your birthday year?", no default, no hint
+/// AgeCheck.kt (Android). One neutral question, "What year were you born?", no default, no hint
 /// that 13 matters; only the year is ever stored.
 ///
 /// A year alone cannot tell a passed 13th birthday from an upcoming one, so the rule is STRICT
@@ -45,3 +45,21 @@ public enum AgeCheck {
         }
     }
 }
+
+/// What the age gate shows (2026-10-10 fix: a returning signed-in player sat on a black screen). A returning player on a
+/// fresh device may already be confirmed server-side, so the gate waits for that lookup, but NEVER longer than
+/// `maxWaitMs` and never on a plain black screen. Mirrors core ageGateView (pinned by age-gate-fixtures.json).
+public enum AgeGate {
+    public enum View: String, Equatable, Sendable { case pass, under, placeholder, question }
+
+    /// The longest the gate shows its placeholder before it just asks.
+    public static let maxWaitMs = 2000
+
+    public static func view(stored: AgeCheck.State?, live: Bool, hadSession: Bool, serverCheckDone: Bool, elapsedMs: Int) -> View {
+        if stored == .under { return .under }
+        if stored == .ok || !live { return .pass }
+        if hadSession && !serverCheckDone && elapsedMs < maxWaitMs { return .placeholder }
+        return .question
+    }
+}
+
