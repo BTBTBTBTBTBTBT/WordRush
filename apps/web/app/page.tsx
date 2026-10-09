@@ -561,7 +561,7 @@ export default function HomePage() {
         <SweepCelebration variant="more" completions={moreCeleb} onClose={() => setMoreCeleb(null)} />
       )}
       {sweepCeleb && (
-        <SweepCelebration completions={sweepCeleb} onClose={() => setSweepCeleb(null)} />
+        <SweepCelebration completions={sweepCeleb} flawlessStreak={sweepStreaks.flawless} onClose={() => setSweepCeleb(null)} />
       )}
     </PageBackground>
   );

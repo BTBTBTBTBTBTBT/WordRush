@@ -244,5 +244,22 @@ export function useCastPuppets(rowRef: React.RefObject<HTMLDivElement | null>, e
     S.kick();
   }, []);
 
-  return { ready, tap, bundle };
+  /**
+   * 2.8 item 13: the whole cast cheers together (a Sweep / Flawless moment): every figure hops in a quick ripple and every
+   * third one plays its signature move. Nothing under Reduce Motion (the caller never calls it then).
+   */
+  const cheer = useCallback((ids: readonly MascotId[], staggerMs = 70) => {
+    if (prefersReducedMotion()) return;
+    const S = state.current;
+    ids.forEach((id, i) => {
+      setTimeout(() => {
+        const now = performance.now();
+        S.tap[id] = now;
+        if (i % 3 === 0 && S.gesture[id] === undefined) S.gesture[id] = now;
+        S.kick();
+      }, i * staggerMs);
+    });
+  }, []);
+
+  return { ready, tap, cheer, bundle };
 }

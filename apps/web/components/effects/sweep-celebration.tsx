@@ -81,9 +81,11 @@ interface Props {
   onClose: () => void;
   /** 'daily' (default) = the Daily Sweep; 'more' = the More Games Sweep. */
   variant?: 'daily' | 'more';
+  /** 2.8 item 7: the current Flawless run (days in a row); a gold seal with the count shows from 2 up. */
+  flawlessStreak?: number;
 }
 
-export function SweepCelebration({ completions, onClose, variant = 'daily' }: Props) {
+export function SweepCelebration({ completions, onClose, variant = 'daily', flawlessStreak = 0 }: Props) {
   const more = variant === 'more';
   const totals = useMemo(() => {
     if (!more) return computeDailyTotals(completions);
@@ -203,6 +205,18 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
               // the crown drops onto the star (Halloween: the witch hat)
               // eslint-disable-next-line @next/next/no-img-element
               <img aria-hidden="true" alt="" src={prop('crown-gold')} width={84} className="absolute celebrate-crown pointer-events-none" style={{ left: '50%', top: -22, marginLeft: -42 }} draggable={false} />
+            )}
+            {flawless && !more && flawlessStreak >= 2 && (
+              // the gold seal (Halloween: the glowing pumpkin) stamps on with the Flawless run's day count
+              <span aria-label={`${flawlessStreak} Flawless days in a row`} role="img" className="absolute celebrate-stamp pointer-events-none"
+                style={{ left: -10, bottom: -6, width: 62, height: 62, ['--k' as string]: 2 } as React.CSSProperties}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img alt="" aria-hidden="true" src={prop('seal-gold')} width={62} height={62} draggable={false} style={{ width: 62, height: 62, objectFit: 'contain' }} />
+                <span aria-hidden="true" className="absolute font-black text-white tabular-nums"
+                  style={{ right: -6, bottom: -4, minWidth: 24, height: 24, padding: '0 6px', borderRadius: 12, background: 'linear-gradient(180deg, #8B5CF6, #6D28D9)', fontSize: 13, lineHeight: '24px', textAlign: 'center', textShadow: '0 1px 0 rgba(0,0,0,0.25)' }}>
+                  {flawlessStreak}
+                </span>
+              </span>
             )}
             {host.choice.kind === 'mascot' && (
               <span aria-hidden="true" className="absolute pointer-events-none" style={{ right: -8, bottom: -6, width: 96, height: 96 }}>

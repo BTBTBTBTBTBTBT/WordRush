@@ -33,6 +33,7 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Edit
@@ -1078,9 +1079,18 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
             val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() && !com.wordocious.app.data.MascotAvatars.wearsMascot(profile.username) }
             // Founder 10-05 (door 1): your avatar IS the way in — a tap opens the Stage; the small
             // "Dress up" tag replaces the old pencil.
-            Box(Modifier.padding(bottom = 6.dp).squishClickable(label = "Dress up your mascot. Opens Edit Profile", onClick = onEditProfile)) {
+            // 2.8 item 13: a custom mascot stands free on the card edge (no box); a photo keeps its frame.
+            val standing = avatarUrl == null && rememberHomeHost().pick is HomeHostPick.Mascot
+            Box(
+                (if (standing) Modifier.size(width = 62.dp, height = 52.dp) else Modifier)
+                    .padding(bottom = 6.dp)
+                    .squishClickable(label = "Dress up your mascot. Opens Edit Profile", onClick = onEditProfile),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
                 // AA2/AN6: a rounded-square photo in its frame (Pro gold + crown for a Pro member).
-                if (avatarUrl != null) {
+                if (standing) {
+                    OwnMascotCutout(70.dp, Modifier.wrapContentSize(unbounded = true, align = Alignment.BottomCenter))
+                } else if (avatarUrl != null) {
                     PhotoAvatar(
                         avatarUrl, 52.dp, frame = com.wordocious.app.data.MascotAvatars.photoFrame(profile.username),
                         pro = isProActive, contentDescription = "Avatar",

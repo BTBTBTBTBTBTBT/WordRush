@@ -25,6 +25,9 @@ enum HomeHostChoice: Hashable {
 
 struct HomeHostMascot: View {
     var size: CGFloat = 84
+    /// 2.8 item 13: the Stats card reuses the host standing free, without Home's one-time wave or invite bubble.
+    var showsInvite: Bool = true
+    var waves: Bool = true
 
     @ObservedObject private var directory = AvatarDirectory.shared
     @ObservedObject private var mascots = MascotLooks.shared
@@ -61,10 +64,10 @@ struct HomeHostMascot: View {
         }
         .frame(width: size, height: size)
         .overlay(alignment: .topLeading) {
-            if choice == .w, directory.ownHostInvite() != nil { inviteBubble }
+            if showsInvite, choice == .w, directory.ownHostInvite() != nil { inviteBubble }
         }
         .animation(.easeInOut(duration: HostLookRules.crossfadeSeconds), value: directory.ownHostInvite() != nil)
-        .onAppear(perform: waveOnce)
+        .onAppear { if waves { waveOnce() } }
         .onAppear { DressUp.prewarm() }
     }
 

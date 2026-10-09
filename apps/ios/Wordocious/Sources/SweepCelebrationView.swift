@@ -15,6 +15,8 @@ struct SweepCelebrationView: View {
     /// the same celebration over the ten More Games dailies, indigo instead of violet,
     /// never awarding anything and never using the Daily Sweep wording.
     var variant: Variant = .daily
+    /// 2.8 item 7: the current Flawless run (days in a row); the gold seal with the count shows from 2 up (Daily only).
+    var flawlessStreak: Int = 0
 
     private var more: Bool { variant == .more }
     private var moreT: MoreTotals { moreTotals(byMode: byMode) }
@@ -126,6 +128,25 @@ struct SweepCelebrationView: View {
                                     kitImage("celebrate-crown-gold", width: 78).offset(y: -22)
                                         .scaleEffect(kitIn || still ? 1 : 0.7).offset(y: kitIn || still ? 0 : -42)
                                         .opacity(kitIn || still ? 1 : 0)
+                                }
+                            }
+                            // the gold seal (Halloween: the glowing pumpkin) stamps on with the Flawless run's day count
+                            .overlay(alignment: .bottomLeading) {
+                                if flawless, !more, flawlessStreak >= 2 {
+                                    ZStack(alignment: .bottomTrailing) {
+                                        kitImage("celebrate-seal-gold", width: 62)
+                                        Text("\(flawlessStreak)")
+                                            .font(Brand.font(13, .black)).monospacedDigit().foregroundStyle(.white)
+                                            .shadow(color: .black.opacity(0.25), radius: 0, x: 0, y: 1)
+                                            .padding(.horizontal, 6).frame(minWidth: 24, minHeight: 24)
+                                            .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0x8B5CF6), Color(hex: 0x6D28D9)], startPoint: .top, endPoint: .bottom)))
+                                            .offset(x: 6, y: 4)
+                                    }
+                                    .scaleEffect(kitIn || still ? 1 : 2.2).rotationEffect(.degrees(kitIn || still ? 0 : -14))
+                                    .opacity(kitIn || still ? 1 : 0)
+                                    .offset(x: -10, y: 6)
+                                    .accessibilityElement(children: .ignore)
+                                    .accessibilityLabel("\(flawlessStreak) Flawless days in a row")
                                 }
                             }
                             .overlay(alignment: .bottomTrailing) {

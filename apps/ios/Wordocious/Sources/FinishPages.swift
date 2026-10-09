@@ -447,6 +447,8 @@ struct PodiumView: View {
     /// BJ4: the stage backdrop in the game's accent (nil = none).
     var stage: Color? = nil
     var onTap: ((PodiumEntry) -> Void)? = nil
+    /// 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
+    @State private var stageTarget: PodiumStageTarget?
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
@@ -465,6 +467,10 @@ struct PodiumView: View {
         }
         .padding(.horizontal, 10).padding(.top, stage == nil ? 12 : 8)
         .background { if let stage { PodiumStage(accent: stage) } }
+        .softSheet(item: $stageTarget) { t in
+            PodiumStageCard(entry: t.entry, place: t.place, onProfile: onTap.map { tap in { tap(t.entry) } })
+                .presentationDetents([.height(400)])
+        }
     }
 
     private func stepHeight(_ tone: Int) -> CGFloat {
@@ -478,13 +484,9 @@ struct PodiumView: View {
             let tone = min(e.rank ?? place, 3)
             let first = tone == 1
             let avatar: CGFloat = compact ? (first ? 48 : 40) : (first ? 54 : 44)
-            let content = VStack(spacing: 4) {
-                if place == 1 && !PodiumFigure.standsFull(e) {
-                    Icon3D(.crown, size: compact ? 24 : 26).padding(.bottom, -8).zIndex(1)
-                }
-                // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
-                // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.
-                PodiumFigure(entry: e, place: place, tone: tone, size: avatar, compact: compact)
+            let stands = PodiumFigure.standsFull(e)
+            // Name, points and detail: on a standing podium they ride on a soft plaque that overlaps the step's top edge.
+            let plaque = VStack(spacing: 2) {
                 Text(e.name)
                     .font(Brand.font(compact ? 12 : 13, .black))
                     .foregroundStyle(lightOnly ? FinishInk.title : FinishInk.heading)
@@ -500,22 +502,45 @@ struct PodiumView: View {
                         .font(Brand.font(compact ? 9 : 10, first ? .heavy : .bold)).monospacedDigit()
                         .foregroundStyle((lightOnly ? FinishInk.muted : FinishInk.secondary).opacity(first ? 0.95 : 0.8))
                         .lineLimit(1).minimumScaleFactor(0.6)
-                        .padding(.top, -2)
+                }
+            }
+            let content = VStack(spacing: 4) {
+                if place == 1 && !stands {
+                    Icon3D(.crown, size: compact ? 24 : 26).padding(.bottom, -8).zIndex(1)
+                }
+                // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
+                // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.
+                PodiumFigure(entry: e, place: place, tone: tone, size: avatar, compact: compact)
+                if stands {
+                    plaque
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Theme.isDark ? Theme.surface.opacity(0.8) : Color.white.opacity(0.72)))
+                        .padding(.bottom, -12)
+                } else {
+                    plaque.padding(.top, 0)
                 }
             }
             VStack(spacing: 4) {
                 Group {
-                    if DressUp.isOwn(e.id) {
-                        // Founder 10-05 (door 1): your own place opens your Stage.
-                        Button { DressUp.shared.open() } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
-                    } else if let onTap {
-                        Button { onTap(e) } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
+                    if DressUp.isOwn(e.id) || stands || onTap != nil {
+                        // Founder 10-05 (door 1): your own place opens your Stage; a standing mascot opens its mini Stage card.
+                        Button {
+                            if DressUp.isOwn(e.id) { DressUp.shared.open() }
+                            else if stands { Haptics.tap(); stageTarget = PodiumStageTarget(entry: e, place: tone) }
+                            else { onTap?(e) }
+                        } label: { content.contentShape(Rectangle()) }.buttonStyle(.squish)
                     } else {
                         content
                     }
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Place \(e.rank ?? place): \(e.name), \(e.value)\(e.detail.map { ", \($0)" } ?? "")")
+                .background(alignment: .top) {
+                    // the winner's confetti burst opens once on load
+                    if stands && place == 1 { PodiumBurst().offset(y: -6) }
+                }
+                .zIndex(1)
                 if let bell = e.bell {
                     Button(action: bell) {
                         Icon3D(.bell, size: 16).frame(width: 30, height: 24).contentShape(Rectangle())
@@ -846,5 +871,81 @@ struct PodiumFigure: View {
             AvatarView(url: entry.avatarUrl, username: entry.username, size: size, accentHex: entry.accentHex, emoji: entry.emoji,
                        pro: entry.pro, userId: entry.id)
         }
+    }
+}
+
+
+/// 2.8 item 13: which podium mascot was tapped (its mini Stage card).
+struct PodiumStageTarget: Identifiable {
+    let entry: PodiumEntry
+    let place: Int
+    var id: String { entry.id }
+}
+
+/// 2.8 item 13: the winner's confetti burst, once, as the podium opens (the celebration kit's party burst, the season's
+/// swap when there is one). Transform + opacity only; nothing under Reduce Motion / Low Power.
+private struct PodiumBurst: View {
+    @State private var up = false
+    @State private var gone = false
+
+    var body: some View {
+        Group {
+            if !Motion.calm(), let n = SeasonKit.extra("celebrate-burst-party"), ArtAsset.exists(n) {
+                Image(n).resizable().interpolation(.high).scaledToFit().frame(width: 170)
+                    .scaleEffect(up ? 1.05 : 0.4)
+                    .opacity(gone ? 0 : (up ? 1 : 0))
+                    .onAppear {
+                        withAnimation(.easeOut(duration: 0.55)) { up = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { withAnimation(.easeIn(duration: 0.5)) { gone = true } }
+                    }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// 2.8 item 13: the mini Stage card a podium mascot opens: that player's mascot standing on the stage in their backdrop,
+/// posed for the place they hold, then their name, points and a quiet View profile pill. Nothing new is fetched.
+struct PodiumStageCard: View {
+    let entry: PodiumEntry
+    let place: Int
+    var onProfile: (() -> Void)? = nil
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let r = AvatarDirectory.shared.look(username: entry.username, userId: entry.id, url: entry.avatarUrl, castId: nil, frame: nil,
+                                            mascot: nil, accentHex: LetterTileAvatar.defaultAccentHex(username: entry.username, accentHex: entry.accentHex),
+                                            lookup: true).resolved
+        let posed: AvatarConfig = { var c = r.config; c.pose = AvatarPose.placePose(place); return c }()
+        VStack(spacing: 0) {
+            DressStage(config: posed, initial: AvatarCatalog.initial(entry.username),
+                       photo: r.photoUrl != nil ? (r.photoUrl, entry.username, entry.id) : nil,
+                       height: 250, mascotSize: 160) {
+                VStack {
+                    HStack {
+                        Spacer(minLength: 0)
+                        StageCloseButton(label: "Close") { dismiss() }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(8)
+            }
+            VStack(spacing: 4) {
+                Text(entry.name).font(Brand.font(20, .black)).foregroundStyle(FinishInk.heading)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                Text(entry.value).font(Brand.font(15, .heavy)).monospacedDigit().foregroundStyle(FinishInk.secondary)
+                if let onProfile {
+                    Button { Haptics.tap(); dismiss(); onProfile() } label: { Text("View profile") }
+                        .buttonStyle(QuietButtonStyle(size: .small))
+                        .padding(.top, 6)
+                }
+            }
+            .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 16)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Theme.isDark ? Theme.surface : Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .accessibilityElement(children: .contain)
     }
 }

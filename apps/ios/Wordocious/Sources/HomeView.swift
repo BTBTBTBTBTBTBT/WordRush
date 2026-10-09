@@ -665,10 +665,10 @@ struct HomeView: View {
             }
             .fullScreenCover(item: $sweepCeleb, onDismiss: celebrationClosed) { celeb in
                 if #available(iOS 16.4, *) {
-                    SweepCelebrationView(byMode: celeb.byMode) { sweepCeleb = nil }
+                    SweepCelebrationView(byMode: celeb.byMode, onClose: { sweepCeleb = nil }, flawlessStreak: wordStreaks.flawless)
                         .presentationBackground(.clear)
                 } else {
-                    SweepCelebrationView(byMode: celeb.byMode) { sweepCeleb = nil }
+                    SweepCelebrationView(byMode: celeb.byMode, onClose: { sweepCeleb = nil }, flawlessStreak: wordStreaks.flawless)
                 }
             }
             // BI24: an in-app sheet with a host + brand headline, not a system alert.

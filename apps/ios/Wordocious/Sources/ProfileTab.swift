@@ -1065,18 +1065,9 @@ struct ProfileTab: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 12) {
                 // Founder 10-05 (door 1): your avatar IS the way in — a tap opens the Stage; the small
-                // "Dress up" tag replaces the old pencil.
-                Button { DressUp.shared.open() } label: {
-                    AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive,
-                               living: true)
-                        .overlay(alignment: .bottom) {
-                            StageArt("art-dress-tag-dressup", height: 17).offset(y: 9)
-                        }
-                        .padding(.bottom, 6)
-                }
-                .buttonStyle(.squish)
-                .accessibilityLabel("Dress up your mascot")
-                .accessibilityHint("Opens Edit Profile")
+                // "Dress up" tag replaces the old pencil. 2.8 item 13: a mascot player stands out of the
+                // box on the card edge (a photo keeps its framed portrait).
+                StatsAvatarSlot(profile: p, pro: auth.isProActive)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(p.username).font(Brand.font(20, .black))
@@ -1622,5 +1613,46 @@ struct ProfileTab: View {
 
     private func fmtTime(_ s: Int) -> String {
         s <= 0 ? "-" : (s < 60 ? "\(s)s" : (s % 60 > 0 ? "\(s/60)m \(s%60)s" : "\(s/60)m"))
+    }
+}
+
+
+/// 2.8 item 13: the Stats card's avatar. A custom mascot is a full-body cutout standing free on the card's
+/// top edge, alive while living_mascot is on (HomeHostMascot's rig, no wave, no invite bubble), with the
+/// small dress-up tag by its feet; a photo or the plain look keeps the framed 56 pt avatar. One tap opens the Stage.
+private struct StatsAvatarSlot: View {
+    let profile: Profile
+    let pro: Bool
+    @ObservedObject private var directory = AvatarDirectory.shared
+    @ObservedObject private var mascots = MascotLooks.shared
+    @ObservedObject private var looks = CastAvatars.shared
+    @ObservedObject private var dressUp = DressUp.shared
+
+    private var standing: Bool {
+        if case .mascot = directory.ownHostChoice() { return true }
+        return false
+    }
+
+    var body: some View {
+        Button { DressUp.shared.open() } label: {
+            if standing {
+                HomeHostMascot(size: 70, showsInvite: false, waves: false)
+                    .frame(width: 66, height: 56, alignment: .bottom)
+                    .overlay(alignment: .bottom) {
+                        StageArt("art-dress-tag-dressup", height: 17).offset(y: 9)
+                    }
+                    .padding(.bottom, 6)
+            } else {
+                AvatarView(url: profile.avatarUrl, username: profile.username, size: 56, accentHex: profile.accentColor,
+                           emoji: profile.avatarEmoji, pro: pro, living: true)
+                    .overlay(alignment: .bottom) {
+                        StageArt("art-dress-tag-dressup", height: 17).offset(y: 9)
+                    }
+                    .padding(.bottom, 6)
+            }
+        }
+        .buttonStyle(.squish)
+        .accessibilityLabel("Dress up your mascot")
+        .accessibilityHint("Opens Edit Profile")
     }
 }

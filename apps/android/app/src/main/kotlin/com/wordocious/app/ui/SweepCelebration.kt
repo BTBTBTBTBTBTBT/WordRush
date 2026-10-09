@@ -76,6 +76,10 @@ fun SweepCelebration(
         else moreTotals(byMode).let { t -> DailyCompletionsService.Totals(t.completed, t.won, t.total, 0, t.totalTimeSeconds, t.totalScore) }
     }
     val flawless = if (more) moreSweepTier(byMode) == MoreSweepTier.FLAWLESS else totals.flawless
+    // 2.8 item 7: the current Flawless run (days in a row) for the gold seal; the Daily only, from 2 up.
+    val flawlessStreak by androidx.compose.runtime.produceState(0, flawless, more) {
+        value = if (flawless && !more) com.wordocious.app.data.MatchStatsService.dailySweepStats().currentFlawlessStreak else 0
+    }
     val rows = remember(byMode, more) { DailySweepShare.rows(byMode, more) }
     val title = if (flawless) (if (more) MoreSweepTier.FLAWLESS.title else "FLAWLESS VICTORY!")
                 else (if (more) MoreSweepTier.SWEEP.title else "DAILY SWEEP!")
@@ -248,6 +252,26 @@ fun SweepCelebration(
                     Modifier.align(Alignment.BottomEnd).offset(x = 18.dp, y = 6.dp)
                         .graphicsLayer { val k = kit.value.coerceIn(0f, 1f); alpha = k; scaleX = 0.4f + 0.6f * k; scaleY = 0.4f + 0.6f * k; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f) },
                 )
+                // the gold seal (Halloween: the glowing pumpkin) stamps on with the Flawless run's day count
+                val seal = if (flawless && !more && flawlessStreak >= 2) kitRes("celebrate-seal-gold") else 0
+                if (seal != 0) {
+                    Box(
+                        Modifier.align(Alignment.BottomStart).offset(x = (-10).dp, y = 6.dp)
+                            .graphicsLayer {
+                                val k = kit.value.coerceIn(0f, 1f)
+                                alpha = k; scaleX = 2.2f - 1.2f * k; scaleY = 2.2f - 1.2f * k; rotationZ = (1f - k) * -14f
+                            }
+                            .semantics(mergeDescendants = true) { contentDescription = "$flawlessStreak Flawless days in a row" },
+                    ) {
+                        Image(painterResource(seal), null, contentScale = ContentScale.Fit, modifier = Modifier.size(62.dp))
+                        Text(
+                            "$flawlessStreak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            modifier = Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp)
+                                .background(Brush.verticalGradient(listOf(Color(0xFF8B5CF6), Color(0xFF6D28D9))), androidx.compose.foundation.shape.RoundedCornerShape(50))
+                                .padding(horizontal = 7.dp, vertical = 3.dp),
+                        )
+                    }
+                }
                 // Flawless: the crown drops onto the star (Halloween: the witch hat)
                 val crown = if (flawless) kitRes("celebrate-crown-gold") else 0
                 if (crown != 0) {

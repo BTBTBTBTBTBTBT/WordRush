@@ -481,7 +481,7 @@ export default function StatsPage() {
             {/* Founder 10-05 (door 1): your avatar IS the way in; the small "Dress up" tag replaces the pencil. */}
             <button type="button" onClick={() => openDressUp()} aria-label="Dress up your mascot. Opens Edit Profile"
               className="relative shrink-0 border-0 bg-transparent p-0 pb-2 cursor-pointer">
-              <AvatarUpload size={64} editable={false} living />
+              <AvatarUpload size={72} editable={false} living cutout />
               <StageArt name="art-dress-tag-dressup" height={17} className="absolute left-1/2 -translate-x-1/2" style={{ bottom: -2 }} />
             </button>
             <div className="flex-1 min-w-0">
