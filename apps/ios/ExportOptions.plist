@@ -29,6 +29,10 @@
 		<string>Wordocious AppStore w/ groups</string>
 		<key>com.wordocious.app.widgets</key>
 		<string>Wordocious Widgets App Store LLC</string>
+		<key>com.wordocious.app.pushservice</key>
+		<string>Wordocious PushService App Store</string>
+		<key>com.wordocious.app.pushcontent</key>
+		<string>Wordocious PushContent App Store</string>
 	</dict>
 </dict>
 </plist>

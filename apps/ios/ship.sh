@@ -73,16 +73,15 @@ echo "== RESIGN =="
 W="$IOS/build/resign"; mkdir -p "$W"; cd "$W"
 unzip -q "$IOS/build/export/Wordocious.ipa"
 APP=Payload/Wordocious.app
-APPEX="$(ls -d $APP/PlugIns/*.appex | head -1)"
 codesign -d --entitlements :- --xml "$APP" > app_ent.plist
-codesign -d --entitlements :- --xml "$APPEX" > widget_ent.plist
 # The archive is built CODE_SIGNING_ALLOWED=NO, so export derives entitlements
 # from the profile rather than carrying Wordocious.entitlements through — every
 # entitlement the app needs must be re-stated HERE or it silently disappears
 # from the shipped binary (build 134/135 lost applinks + push exactly this way).
 # Keep this list in sync with Wordocious/Wordocious.entitlements.
 for k in "com.apple.developer.applesignin" "com.apple.security.application-groups" \
-         "com.apple.developer.associated-domains" "aps-environment"; do
+         "com.apple.developer.associated-domains" "aps-environment" \
+         "com.apple.developer.usernotifications.communication"; do
   /usr/libexec/PlistBuddy -c "Delete :$k" app_ent.plist 2>/dev/null || true
 done
 /usr/libexec/PlistBuddy -c "Add :com.apple.developer.applesignin array" app_ent.plist
@@ -92,11 +91,21 @@ done
 /usr/libexec/PlistBuddy -c "Add :com.apple.developer.associated-domains array" app_ent.plist
 /usr/libexec/PlistBuddy -c "Add :com.apple.developer.associated-domains:0 string applinks:wordocious.com" app_ent.plist
 /usr/libexec/PlistBuddy -c "Add :aps-environment string production" app_ent.plist
-/usr/libexec/PlistBuddy -c "Delete :com.apple.security.application-groups" widget_ent.plist 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :com.apple.security.application-groups array" widget_ent.plist
-/usr/libexec/PlistBuddy -c "Add :com.apple.security.application-groups:0 string group.com.wordocious.app" widget_ent.plist
+/usr/libexec/PlistBuddy -c "Add :com.apple.developer.usernotifications.communication bool true" app_ent.plist
 if [ -d "$APP/Frameworks" ]; then for f in "$APP"/Frameworks/*; do codesign -f -s "$ID" --timestamp "$f"; done; fi
-codesign -f -s "$ID" --timestamp --entitlements widget_ent.plist "$APPEX"
+# EVERY extension (widget, push service, push content — 2.8 added the two push ones): its own profile-derived
+# entitlements plus the shared app group (WordociousWidget/PushService/PushContent .entitlements all list it).
+for APPEX in "$APP"/PlugIns/*.appex; do
+  [ -d "$APPEX" ] || continue
+  codesign -d --entitlements :- --xml "$APPEX" > appex_ent.plist
+  /usr/libexec/PlistBuddy -c "Delete :com.apple.security.application-groups" appex_ent.plist 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Add :com.apple.security.application-groups array" appex_ent.plist
+  /usr/libexec/PlistBuddy -c "Add :com.apple.security.application-groups:0 string group.com.wordocious.app" appex_ent.plist
+  codesign -f -s "$ID" --timestamp --entitlements appex_ent.plist "$APPEX"
+  if ! codesign -d --entitlements :- --xml "$APPEX" 2>/dev/null | grep -q "group.com.wordocious.app"; then
+    echo "  MISSING app group on $(basename "$APPEX") — aborting before upload"; exit 1
+  fi
+done
 codesign -f -s "$ID" --timestamp --entitlements app_ent.plist "$APP"
 
 # Fail LOUDLY if a required entitlement didn't survive signing. Apple happily
@@ -105,7 +114,8 @@ codesign -f -s "$ID" --timestamp --entitlements app_ent.plist "$APP"
 echo "== ENTITLEMENT CHECK =="
 SIGNED_ENT="$(codesign -d --entitlements :- --xml "$APP" 2>/dev/null)"
 for k in "com.apple.developer.associated-domains" "aps-environment" \
-         "com.apple.developer.applesignin" "com.apple.security.application-groups"; do
+         "com.apple.developer.applesignin" "com.apple.security.application-groups" \
+         "com.apple.developer.usernotifications.communication"; do
   if echo "$SIGNED_ENT" | grep -q "$k"; then
     echo "  ok: $k"
   else
