@@ -1,6 +1,6 @@
 'use client';
 
-import { Undo2, Eraser, X, Lightbulb } from 'lucide-react';
+import { FamIcon } from '@/components/ui/family-button';
 import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
 import { candyClass } from '@/components/ui/candy-button';
@@ -32,18 +32,18 @@ export function RegionsPad({ onUndo, onErase, onToggleAutoCross, onHint, autoCro
   return (
     <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 px-1 max-w-xl mx-auto w-full" role="group" aria-label="Starsweep controls">
       <button type="button" onClick={tap(onUndo)} disabled={disabled || !canUndo} className={capsule(false, disabled || !canUndo)} aria-label="Undo">
-        <Undo2 className={icon} strokeWidth={3} /><span className="candy-label">Undo</span>
+        <FamIcon name="undo" /><span className="candy-label">Undo</span>
       </button>
       <button type="button" onClick={tap(onErase)} disabled={disabled || !canErase} className={capsule(false, disabled || !canErase)} aria-label="Erase">
-        <Eraser className={icon} strokeWidth={3} /><span className="candy-label">Erase</span>
+        <FamIcon name="erase" /><span className="candy-label">Erase</span>
       </button>
       <button type="button" onClick={tap(onToggleAutoCross)} disabled={disabled} className={capsule(autoCross, disabled)} aria-pressed={autoCross} aria-label="Auto-cross">
-        <X className={icon} strokeWidth={3.5} /><span className="candy-label">Auto-cross</span>
+        <FamIcon name="xmark" /><span className="candy-label">Auto-cross</span>
       </button>
       {/* The count is a corner coin, never in the label: "Hint · 1" widened the row,
           it wrapped to two lines and the board above shrank (lib/hint-layout.ts). */}
       <button type="button" onClick={tap(onHint)} disabled={disabled} className={capsule(false, disabled)} aria-label={hintsUsed > 0 ? `Hint (${hintsUsed} used)` : 'Hint'}>
-        <Lightbulb className={icon} strokeWidth={3} /><span className="candy-label">Hint</span><HintCountBadge count={hintsUsed} />
+        <FamIcon name="hint" /><span className="candy-label">Hint</span><HintCountBadge count={hintsUsed} />
       </button>
     </div>
   );

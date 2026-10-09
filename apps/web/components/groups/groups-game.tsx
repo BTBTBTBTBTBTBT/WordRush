@@ -6,7 +6,8 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, Shuffle, XCircle, CheckCircle2, Tag, Link2 } from 'lucide-react';
+import { Clock, Shuffle } from 'lucide-react';
+import { FamIcon } from '@/components/ui/family-button';
 import {
   groupsPuzzleForDay, groupsPuzzleForSeed, groupsDailyNumber, createGroupsState, groupsReduce, groupsMatchRow, groupsGuessCount, groupsBoardsSolved,
   groupsUnsolved, groupsLabelTarget, groupsPairTarget, GROUPS_MAX_MISTAKES, GROUPS_TOTAL_BOARDS, generateDailySeed,
@@ -359,22 +360,22 @@ export function GroupsGame({ isDaily = false }: GroupsGameProps) {
           <div className="shrink-0 pb-3 px-2 pt-1 flex flex-col gap-2">
             <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Kindred controls">
               <button type="button" onClick={() => { haptic('light'); playKeyTap(); dispatch({ type: 'SHUFFLE' }); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Shuffle the words">
-                <Shuffle className="w-3.5 h-3.5" /> Shuffle
+                <FamIcon name="shuffle" /> Shuffle
               </button>
               <button type="button" onClick={() => { playKeyTap(); dispatch({ type: 'DESELECT' }); }} disabled={!state.selected.length} className={capsule(!state.selected.length)} style={capsuleStyle(!state.selected.length)} aria-label="Deselect all">
-                <XCircle className="w-3.5 h-3.5" /> Deselect
+                <FamIcon name="xmark" /> Deselect
               </button>
               <button type="button" onClick={() => { haptic('light'); submit(); }} disabled={state.selected.length !== 4} className={capsule(state.selected.length !== 4)} style={capsuleStyle(state.selected.length !== 4, true)} aria-label="Submit the four selected words">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Submit
+                <FamIcon name="check" /> Submit
               </button>
             </div>
             <div className="flex justify-center gap-2 px-1" role="group" aria-label="Hints">
               <button type="button" onClick={hintLabel} className={capsule(false)} style={capsuleStyle(false)} aria-label="Hint: name a category">
-                <Tag className="w-3.5 h-3.5" /> Name a category
+                <FamIcon name="hint" /> Name a category
               </button>
               {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
               <button type="button" onClick={hintPair} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: show a pair (${state.hintsUsed} hints used)` : 'Hint: show a pair'}>
-                <Link2 className="w-3.5 h-3.5" /> Show a pair<HintCountBadge count={state.hintsUsed} />
+                <FamIcon name="sparkles" /> Show a pair<HintCountBadge count={state.hintsUsed} />
               </button>
             </div>
           </div>

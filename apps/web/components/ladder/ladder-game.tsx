@@ -8,7 +8,8 @@ import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, Undo2, Lightbulb } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { FamIcon } from '@/components/ui/family-button';
 import {
   ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, ladderGuessCount, ladderMaxMoves,
   generateDailySeed, type LadderState, type LadderAction, type LadderBank, type LadderPuzzle, type LadderReject,
@@ -312,11 +313,11 @@ function LadderGameInner({ isDaily = false }: LadderGameProps) {
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
             <div className="flex justify-center gap-2 px-1" role="group" aria-label="Ladder controls">
               <button type="button" onClick={() => { haptic('light'); playKeyTap(); undo(); }} disabled={state.words.length <= 1} className={capsule(state.words.length <= 1)} style={capsuleStyle(state.words.length <= 1)} aria-label="Undo">
-                <Undo2 className="w-3.5 h-3.5" /> Undo
+                <FamIcon name="undo" /> Undo
               </button>
               {/* The count is a corner coin, never in the label, so the row never shifts (lib/hint-layout.ts). */}
               <button type="button" onClick={() => { haptic('light'); playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
-                <Lightbulb className="w-3.5 h-3.5" /> Hint<HintCountBadge count={state.hintsUsed} />
+                <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
               </button>
             </div>
             <Keyboard onKey={onKey} />

@@ -5,7 +5,8 @@ import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, Delete, CheckCheck, Lightbulb, Eye } from 'lucide-react';
+import { Clock, Delete } from 'lucide-react';
+import { FamIcon } from '@/components/ui/family-button';
 import {
   cryptogramPuzzleForDay, cryptogramPuzzleForSeed, cryptogramDailyNumber, createCryptogramState, cryptogramReduce, cryptogramMatchRow,
   cryptogramGuessCount, cryptogramCodeLetters, cryptogramConflicts, CRYPTOGRAM_ALPHABET, CRYPTOGRAM_REVEAL_AFTER_SECONDS, CRYPTOGRAM_TOTAL_BOARDS,
@@ -389,20 +390,20 @@ export function CryptogramGame({ isDaily = false }: CryptogramGameProps) {
           <div className="shrink-0 pb-2 px-2 pt-1 flex flex-col gap-2">
             <div className="flex justify-center gap-2 px-1 flex-wrap" role="group" aria-label="Codebreaker controls">
               <button type="button" onClick={() => { haptic('light'); clearLetter(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the selected letter">
-                <Delete className="w-3.5 h-3.5" /> Delete
+                <FamIcon name="delete" /> Delete
               </button>
               {/* Labels never change width (lib/hint-layout.ts): counts are corner coins and the
                   countdown keeps its widest width — a wider label wrapped this row and shrank the board. */}
               <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.checks > 0 ? `Check the penciled letters (${state.checks} used)` : 'Check the penciled letters'}>
-                <CheckCheck className="w-3.5 h-3.5" /> Check<HintCountBadge count={state.checks} />
+                <FamIcon name="check" /> Check<HintCountBadge count={state.checks} />
               </button>
               <button type="button" onClick={() => { playKeyTap(); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint: reveal one letter (${state.hintsUsed} used)` : 'Hint: reveal one letter'}>
-                <Lightbulb className="w-3.5 h-3.5" /> Hint<HintCountBadge count={state.hintsUsed} />
+                <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
               </button>
               {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
               <PlayClock timer={timer}>{(sec) => { const revealIn = Math.max(0, CRYPTOGRAM_REVEAL_AFTER_SECONDS - sec); return (
               <button type="button" onClick={() => { haptic('medium'); reveal(); }} disabled={revealIn > 0} className={capsule(revealIn > 0)} style={capsuleStyle(revealIn > 0)} aria-label={revealIn > 0 ? `Reveal available in ${formatTime(revealIn)}` : 'Reveal the answer (records a loss)'}>
-                <Eye className="w-3.5 h-3.5" /> <StableLabel value={revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'} reserve={[`Reveal · ${formatTime(CRYPTOGRAM_REVEAL_AFTER_SECONDS)}`]} />
+                <FamIcon name="eye" /> <StableLabel value={revealIn > 0 ? `Reveal · ${formatTime(revealIn)}` : 'Reveal'} reserve={[`Reveal · ${formatTime(CRYPTOGRAM_REVEAL_AFTER_SECONDS)}`]} />
               </button>); }}</PlayClock>
             </div>
             <Keyboard onKey={onKey} keyFills={usedKeyFills} />

@@ -5,7 +5,8 @@ import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, Delete, XCircle } from 'lucide-react';
+import { Clock, Delete } from 'lucide-react';
+import { FamIcon } from '@/components/ui/family-button';
 import {
   scramblePuzzleForDay, scramblePuzzleForSeed, scrambleDailyNumber, createScrambleState, scrambleReduce, scrambleMatchRow, scrambleGuessCount, scrambleBoardsSolved,
   scrambleActiveRow, scrambleFinalOpen, scrambleFinalLetters, SCRAMBLE_FINAL, SCRAMBLE_MAX_CHECKS, SCRAMBLE_TOTAL_BOARDS, generateDailySeed,
@@ -415,10 +416,10 @@ export function MuddleGame({ isDaily = false }: MuddleGameProps) {
       <div className="shrink-0 pb-1.5 px-2 pt-1 flex flex-col gap-1.5">
         <div className="flex justify-center gap-2 px-1" role="group" aria-label="Muddle controls">
           <button type="button" onClick={() => { dispatch({ type: 'BACK', row }); playKeyTap(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete the last letter">
-            <Delete className="w-3.5 h-3.5" /> Delete
+            <FamIcon name="delete" /> Delete
           </button>
           <button type="button" onClick={() => { dispatch({ type: 'CLEAR', row }); playKeyTap(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Clear the active word">
-            <XCircle className="w-3.5 h-3.5" /> Clear
+            <FamIcon name="xmark" /> Clear
           </button>
         </div>
         {/* A plain block wrapper: as a direct item of this flex column the keyboard's

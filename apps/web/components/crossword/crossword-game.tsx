@@ -5,7 +5,8 @@ import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, CheckCheck, Lightbulb, Eye, Flag, ArrowLeftRight, ListOrdered, Grid3x3 } from 'lucide-react';
+import { Clock, ArrowLeftRight, ListOrdered, Grid3x3 } from 'lucide-react';
+import { FamIcon } from '@/components/ui/family-button';
 import {
   crosswordPuzzleForDay, crosswordPuzzleForSeed, crosswordDailyNumber, createCrosswordState, crosswordReduce, crosswordMatchRow, crosswordGuessCount,
   crosswordEntryCells, crosswordEntriesAt, crosswordActiveEntry, crosswordCursorAfterType, crosswordNextEntryCursor, crosswordToggleDir, crosswordCorrectCount, crosswordLetterCount, CROSSWORD_BLOCK, CROSSWORD_EMPTY, CROSSWORD_TOTAL_BOARDS,
@@ -409,16 +410,16 @@ export function CrosswordGame({ isDaily = false }: CrosswordGameProps) {
             )}
             <div className="flex justify-center gap-1.5 px-1 flex-wrap" role="group" aria-label="Crossword controls">
               <button type="button" onClick={() => { haptic('light'); playKeyTap(); check(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Check the filled letters">
-                <CheckCheck className="w-3.5 h-3.5" /> Check<HintCountBadge count={state.checks} />
+                <FamIcon name="check" /> Check<HintCountBadge count={state.checks} />
               </button>
               <button type="button" onClick={() => { playKeyTap(); revealLetter(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Reveal the selected letter">
-                <Lightbulb className="w-3.5 h-3.5" /> Letter
+                <FamIcon name="hint" /> Letter
               </button>
               <button type="button" onClick={() => { playKeyTap(); revealWord(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Reveal the active word">
-                <Eye className="w-3.5 h-3.5" /> Word<HintCountBadge count={state.hintsUsed} />
+                <FamIcon name="eye" /> Word<HintCountBadge count={state.hintsUsed} />
               </button>
               <button type="button" onClick={revealPuzzle} className={capsule(false)} style={capsuleStyle(false, armReveal)} aria-label="Reveal the whole puzzle (records a loss)">
-                <Flag className="w-3.5 h-3.5" /> <StableLabel value={armReveal ? 'Reveal all?' : 'Reveal all'} reserve={['Reveal all?']} />
+                <FamIcon name="flag" /> <StableLabel value={armReveal ? 'Reveal all?' : 'Reveal all'} reserve={['Reveal all?']} />
               </button>
             </div>
             <Keyboard onKey={onKey} keyHeight={shortScreen ? 44 : undefined} />
