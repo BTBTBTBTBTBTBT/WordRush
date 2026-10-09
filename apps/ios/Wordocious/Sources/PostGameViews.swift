@@ -594,19 +594,22 @@ struct NextDailyCTA: View {
     /// eligible — ProperNoundle among them since Stage 9), then to the sweep.
     /// More Games titles are never "next" after a sweep game.
     private var nextMode: HomeMode? {
-        let unplayed: (HomeMode) -> Bool = { m in
-            guard let key = m.dbKey, key != currentMode else { return false }
-            return completions.byMode[key] == nil
+        // Item 35: NEXT = the next unplayed game in the PLAYER'S order (default: the catalog's), wrapping.
+        let store = GameOrderStore.shared
+        let currentId = currentMode.flatMap { key in (homeModes + moreModes).first { $0.dbKey == key }?.id }
+        func pick(_ list: [HomeMode]) -> HomeMode? {
+            let played = Set(list.filter { m in m.dbKey.map { completions.byMode[$0] != nil } ?? false }.map(\.id))
+            let ids = list.map(\.id)
+            if let cur = currentId, ids.contains(cur) {
+                return GameOrder.nextUnplayed(order: ids, currentId: cur, played: played).flatMap { id in list.first { $0.id == id } }
+            }
+            return list.first { !played.contains($0.id) && $0.dbKey != currentMode }
         }
         let fromMoreGames = currentMode.map { key in moreModes.contains { $0.dbKey == key } } ?? false
-        if fromMoreGames,
-           let next = moreModes.first(where: { $0.dailyEligible && FlagsService.shared.isOn($0.flagKey) && unplayed($0) }) {
-            return next
-        }
-        return homeModes.first { m in
-            guard let key = m.dbKey, DailyCompletionsStore.sweepKeys.contains(key) else { return false }
-            return unplayed(m)
-        }
+        let puzzles = store.ordered(moreModes.filter { $0.dailyEligible && FlagsService.shared.isOn($0.flagKey) }, section: .puzzles)
+        if fromMoreGames, let next = pick(puzzles) { return next }
+        let words = store.ordered(homeModes.filter { m in m.dbKey.map { DailyCompletionsStore.sweepKeys.contains($0) } ?? false }, section: .dailies)
+        return pick(words)
     }
 
     var body: some View {

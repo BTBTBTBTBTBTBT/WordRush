@@ -236,12 +236,17 @@ struct HomeView: View {
     private static let puzzlesAnchor = "home-puzzles"
 
     /// WORDOCIOUS DAILIES: the eight sweep cards (grid order).
-    private var wordModes: [HomeMode] { visibleHomeModes.filter { !$0.homeWide } }
+    private var wordModes: [HomeMode] { orderStore.ordered(visibleHomeModes.filter { !$0.homeWide }, section: .dailies) }
     /// PUZZLES: the More Games dailies, catalog order, each behind its remote flag.
     /// The old More tile's flag (menu.more) still switches the whole group off.
     private var puzzleModes: [HomeMode] {
-        visibleHomeModes.contains { $0.id == "more" } ? moreDailyModes(visibleMoreModes) : []
+        visibleHomeModes.contains { $0.id == "more" } ? orderStore.ordered(moreDailyModes(visibleMoreModes), section: .puzzles) : []
     }
+    /// Item 35: the player's saved game order (profile-synced; guests local) + the edit-mode state.
+    @ObservedObject private var orderStore = GameOrderStore.shared
+    @State private var editingOrder: GameOrderSection?
+    @State private var draggingTile: String?
+    @State private var targetedTile: String?
 
     private func progress(_ modes: [HomeMode]) -> GroupProgress {
         let keys = modes.compactMap(\.dbKey)
@@ -352,17 +357,27 @@ struct HomeView: View {
                             // ART_SPEC §12 / §19.2: the whole-cast DAILIES art, centered on the
                             // same width rule as PUZZLES and WORD OF THE DAY below.
                             SectionTitleArt(.dailies, compact: true)
+                                .overlay(alignment: .trailing) { GameOrderTitleAccessory(section: .dailies, editing: $editingOrder, store: orderStore) }
+                            if editingOrder == .dailies { GameOrderEditBar(section: .dailies, editing: $editingOrder, store: orderStore) }
                             LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
-                                ForEach(wordModes) { mode in card(mode) }
+                                ForEach(wordModes) { mode in
+                                    card(mode).reorderableTile(id: mode.id, section: .dailies, editing: $editingOrder, dragging: $draggingTile,
+                                                               targeted: $targetedTile, ids: wordModes.map(\.id), store: orderStore)
+                                }
                             }
                             .homeCardNames(wordModes.map(\.title))
                             // The More Games dailies as plain cards (the band and its sheet are gone).
                             if !puzzleModes.isEmpty {
                                 // ART_SPEC §2 / §19.2: the whole-cast PUZZLES art, centered.
                                 SectionTitleArt(.puzzles, compact: true)
+                                    .overlay(alignment: .trailing) { GameOrderTitleAccessory(section: .puzzles, editing: $editingOrder, store: orderStore) }
                                     .id(Self.puzzlesAnchor)
+                                if editingOrder == .puzzles { GameOrderEditBar(section: .puzzles, editing: $editingOrder, store: orderStore) }
                                 LazyVGrid(columns: columns, spacing: HomeCardSpec.gap) {
-                                    ForEach(puzzleModes) { mode in card(mode) }
+                                    ForEach(puzzleModes) { mode in
+                                        card(mode).reorderableTile(id: mode.id, section: .puzzles, editing: $editingOrder, dragging: $draggingTile,
+                                                                   targeted: $targetedTile, ids: puzzleModes.map(\.id), store: orderStore)
+                                    }
                                 }
                                 .homeCardNames(puzzleModes.map(\.title))
                             }
@@ -618,6 +633,8 @@ struct HomeView: View {
             }
             // Unlimited's per-row "N PLAYED TODAY": fetched when the switch flips to Unlimited.
             .task(id: effectiveMode) { await loadUnlimitedCounts() }
+            // Item 35: load this account's saved game order (local mirror first, then the profile row).
+            .task(id: auth.profile?.id) { orderStore.bind(userId: auth.profile?.id) }
             // The row streaks once today's result has LANDED, so a sweep's flame ticks up right away.
             .onDailyRecorded { refreshSweptRowStreaks(afterAward: true) }
             // BI16: queued celebrations present from presentNextCelebrationWhenCalm
@@ -912,7 +929,11 @@ struct HomeView: View {
     private func card(_ mode: HomeMode) -> some View {
         // BJ9: the tap arms this card as the game's source (the shell grows from it
         // and the close shrinks back into it); the probe reads its frame on demand.
-        Button { GameTransition.shared.arm("home:\(mode.id)"); open(mode) } label: { cardBody(mode, locked: isLocked(mode)) }
+        Button {
+            // Item 35: while a list is being reordered a tap does nothing (no game opens under the finger).
+            guard editingOrder == nil else { return }
+            GameTransition.shared.arm("home:\(mode.id)"); open(mode)
+        } label: { cardBody(mode, locked: isLocked(mode)) }
             // FINISH_SPEC §AK: the card squish (0.95 → spring back past 1).
             .buttonStyle(.squishCard)
             .gameLaunchSource("home:\(mode.id)", color: Theme.isDark ? Theme.surface : mode.accent.wash(0.10),
