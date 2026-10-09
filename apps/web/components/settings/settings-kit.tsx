@@ -73,7 +73,8 @@ export function SettingsOption({ selected, accent, label, description, onClick, 
         className="absolute inset-0 pointer-events-none"
         style={{
           borderRadius: 16,
-          background: `linear-gradient(180deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0) 50%), linear-gradient(180deg, color-mix(in srgb, ${accent} 78%, #fff) 0%, ${accent} 55%, color-mix(in srgb, ${accent} 88%, #000) 100%)`,
+          // 1b: the selected row carries WHITE text, so the face stays deep (the accent 20% toward black at its lightest stop, 4.5:1+).
+          background: `linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 50%), linear-gradient(180deg, color-mix(in srgb, ${accent} 80%, #000) 0%, color-mix(in srgb, ${accent} 72%, #000) 55%, color-mix(in srgb, ${accent} 62%, #000) 100%)`,
           boxShadow: `0 4px 12px ${alphaHex(accent, 0.35)}`,
           opacity: selected ? 1 : 0,
           transition: 'opacity 180ms ease-out',
@@ -81,7 +82,7 @@ export function SettingsOption({ selected, accent, label, description, onClick, 
       />
       <span className="relative flex-1 min-w-0">
         <span className="block font-black text-sm" style={{ color: selected ? '#ffffff' : 'var(--color-text)' }}>{label}</span>
-        <span className="block text-[10px] font-bold truncate" style={{ color: selected ? 'rgba(255,255,255,0.88)' : 'var(--color-text-muted)' }}>{description}</span>
+        <span className="block text-[10px] font-bold truncate" style={{ color: selected ? 'rgba(255,255,255,0.94)' : 'var(--color-text-muted)' }}>{description}</span>
       </span>
       {preview && <span className="relative shrink-0">{preview}</span>}
       <span
