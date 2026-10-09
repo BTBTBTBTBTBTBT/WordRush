@@ -85,6 +85,24 @@ object InviteService {
             .decodeSingleOrNull<GameModeRow>()?.gameMode
     }.getOrNull()
 
+    @Serializable
+    private data class InviteeRow(@SerialName("invitee_id") val inviteeId: String? = null)
+
+    /**
+     * The friend a named invite is waiting on (waiting lobby: "Waiting for <name>..."): the invite row's invitee,
+     * resolved to a username. Null for an open link/code invite (no invitee), a lookup failure, or yourself, so the
+     * lobby falls back to "Waiting for your friend..." (web twin: lib/invite-service.ts).
+     */
+    suspend fun inviteeNameForCode(code: String): String? {
+        val inviteeId = runCatching {
+            client.postgrest["match_invites"]
+                .select(Columns.raw("invitee_id")) { filter { eq("invite_code", code) }; limit(1) }
+                .decodeSingleOrNull<InviteeRow>()?.inviteeId
+        }.getOrNull() ?: return null
+        if (inviteeId.equals(AuthService.userId, ignoreCase = true)) return null
+        return lookupInviterUsernames(listOf(inviteeId))[inviteeId]
+    }
+
     /** Flip an invite to accepted once the server has paired both players. */
     suspend fun markInviteAccepted(code: String, matchId: String?) {
         runCatching {

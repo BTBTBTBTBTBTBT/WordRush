@@ -1,6 +1,9 @@
 package com.wordocious.app.ui.game
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +27,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -73,6 +80,8 @@ import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.tintedPill
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
@@ -140,7 +149,12 @@ fun hexInk(center: Boolean): Color = if (center) Color(0xFF7A3D00) else Color.Wh
  * squish + the type pop. [label] is what TalkBack reads.
  */
 @Composable
-fun HubHex(letter: Char, center: Boolean, side: Dp, enabled: Boolean, label: String, modifier: Modifier = Modifier, onTap: () -> Unit) {
+fun HubHex(
+    letter: Char, center: Boolean, side: Dp, enabled: Boolean, label: String, modifier: Modifier = Modifier,
+    /** Item 32: the shuffle tile flip's turn (degrees about the vertical axis), read in the draw pass only. */
+    flipDegrees: () -> Float = { 0f },
+    onTap: () -> Unit,
+) {
     val still = WTheme.reducedMotion
     val pop = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
@@ -160,7 +174,11 @@ fun HubHex(letter: Char, center: Boolean, side: Dp, enabled: Boolean, label: Str
                     onTap()
                 } else Modifier.clearAndSetSemantics { if (!blank) contentDescription = label },
             )
-            .graphicsLayer { scaleX = pop.value; scaleY = pop.value },
+            .graphicsLayer {
+                scaleX = pop.value; scaleY = pop.value
+                val flip = flipDegrees()
+                if (flip != 0f) { rotationY = flip; cameraDistance = 14f * density }
+            },
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -199,20 +217,54 @@ fun HubHoneycomb(
     modifier: Modifier = Modifier,
     state: TrayState = TrayState.PLAYING,
     trayPadding: Dp = 10.dp,
+    /** Item 32: bump on every shuffle; the six outer hexes flip over to their new letters. */
+    shuffleTick: Int = 0,
     onTap: (Char) -> Unit,
 ) {
     val offsets = remember { Honeycomb.outerOffsets() }
     val w = side * Honeycomb.width()
     val h = side * Honeycomb.height()
+    // 2.8 item 32: Shuffle = a staggered tile flip of the six outer hexes (rotationY on the GPU, 220 ms each, 36 ms
+    // apart: about 400 ms in all; the center stays). Each hex keeps its OLD letter until it is edge-on, swaps there,
+    // then turns back to flat. [shuffleTick] bumps on every shuffle; Reduce Motion / calm motion = an instant swap.
+    val calm = WTheme.reducedMotion
+    var settled by remember { mutableStateOf(outer) }
+    var shown by remember { mutableStateOf(outer) }
+    var flipping by remember { mutableStateOf(false) }
+    val flips = remember { List(6) { Animatable(0f) } }
+    var lastTick by remember { mutableIntStateOf(shuffleTick) }
+    LaunchedEffect(shuffleTick, outer) {
+        if (shuffleTick == lastTick || calm) {
+            lastTick = shuffleTick
+            flipping = false; settled = outer; shown = outer
+            return@LaunchedEffect
+        }
+        lastTick = shuffleTick
+        val target = outer
+        shown = settled
+        flipping = true
+        for (f in flips) f.snapTo(0f)
+        coroutineScope {
+            for (i in 0 until 6) launch {
+                delay(i * 36L)
+                flips[i].animateTo(90f, tween(110, easing = FastOutLinearInEasing))
+                shown = shown.toMutableList().also { l -> while (l.size <= i) l.add(' '); l[i] = target.getOrElse(i) { ' ' } }
+                flips[i].snapTo(-90f)
+                flips[i].animateTo(0f, tween(110, easing = LinearOutSlowInEasing))
+            }
+        }
+        flipping = false; settled = target; shown = target
+    }
     GameTray(accent, modifier, state = state, padding = androidx.compose.foundation.layout.PaddingValues(trayPadding)) {
         Box(Modifier.size(w, h)) {
             val cx = (w - side) / 2
             val cy = (h - side) / 2
             HubHex(centerLetter, true, side, enabled, "$centerLetter, center letter", Modifier.offset(cx, cy)) { onTap(centerLetter) }
             for (i in 0 until 6) {
-                val ch = outer.getOrElse(i) { ' ' }
+                val real = outer.getOrElse(i) { ' ' }
+                val ch = if (flipping) shown.getOrElse(i) { ' ' } else if (shuffleTick != lastTick && !calm) settled.getOrElse(i) { ' ' } else real
                 val (dx, dy) = offsets[i]
-                HubHex(ch, false, side, enabled, ch.toString(), Modifier.offset(cx + side * dx, cy + side * dy)) { onTap(ch) }
+                HubHex(ch, false, side, enabled, ch.toString(), Modifier.offset(cx + side * dx, cy + side * dy), flipDegrees = { flips[i].value }) { onTap(real) }
             }
         }
     }
@@ -287,6 +339,23 @@ fun Modifier.glossyCapsule(accent: Color, glow: Float = 1f, corner: Dp? = null):
         topLeft = Offset(gx, 1.5f), size = Size(size.width - gx * 2, faceH * 0.48f),
         cornerRadius = CornerRadius(r * 0.7f),
     )
+}
+
+/**
+ * 2.8 item 32 a neat game-tinted mini tile (Hubbub's found words): a soft vertical wash of [tone] over a 2 dp darker
+ * lip, 8 dp corners, no outline. [strong] = the pangram's gold, a deeper wash. Dark mode: the tone at low alpha.
+ */
+fun Modifier.miniWordTile(tone: Color, strong: Boolean = false): Modifier = composed {
+    val dark = WTheme.isDark
+    this.drawBehind {
+        val r = CornerRadius(8.dp.toPx())
+        val lip = 2.dp.toPx()
+        val lipColor = if (dark) tone.copy(alpha = 0.55f) else Wash.mix(tone, 0.34f)
+        val top = if (dark) tone.copy(alpha = if (strong) 0.42f else 0.30f) else Wash.mix(tone, if (strong) 0.42f else 0.20f)
+        val bottom = if (dark) tone.copy(alpha = if (strong) 0.30f else 0.20f) else Wash.mix(tone, if (strong) 0.26f else 0.12f)
+        drawRoundRect(lipColor, cornerRadius = r)
+        drawRoundRect(Brush.verticalGradient(listOf(top, bottom), endY = size.height - lip), size = Size(size.width, size.height - lip), cornerRadius = r)
+    }
 }
 
 /**

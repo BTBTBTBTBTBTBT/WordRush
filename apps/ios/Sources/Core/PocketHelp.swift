@@ -117,10 +117,19 @@ public enum PocketHelp {
 
     /// Whether the welcome card opens by itself: the switch is live and this game's
     /// key is not in the player's seen list. `seen` is nil while it is still loading
-    /// (never show on a guess: wait).
-    public static func shouldAutoShowTutorial(live: Bool, seen: [String]?, key: String) -> Bool {
+    /// (never show on a guess: wait). `hasResults` = the player already has results in
+    /// this game (they know it), so the card never auto-shows; see tutorialShouldRecordSeen.
+    public static func shouldAutoShowTutorial(live: Bool, seen: [String]?, key: String, hasResults: Bool = false) -> Bool {
         guard live, let seen = seen else { return false }
+        if hasResults { return false }
         return !seen.contains(key)
+    }
+
+    /// The player already has results in a game whose key is not in the seen list: silently
+    /// record the key (no card) so it stays synced and never shows later.
+    public static func tutorialShouldRecordSeen(live: Bool, seen: [String]?, key: String, hasResults: Bool = false) -> Bool {
+        guard live, let seen = seen else { return false }
+        return hasResults && !seen.contains(key)
     }
 
     /// The seen list after the card closes: the key added once, kept sorted (stable for sync).

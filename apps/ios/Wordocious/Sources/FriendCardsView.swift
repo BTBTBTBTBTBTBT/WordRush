@@ -85,7 +85,7 @@ struct FriendCardView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.squish)
+            .buttonStyle(.squishCard)
             .accessibilityLabel([card.name, card.presence, card.headline.isEmpty ? nil : card.headline]
                 .compactMap { $0 }.joined(separator: ", "))
             if let onMenu {
@@ -151,7 +151,7 @@ struct FriendCardView: View {
             .opacity(quiet ? 0.85 : 1)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.squish)
+        .buttonStyle(.squishCard)
         .accessibilityLabel("\(t.kind.title), \(t.word)")
     }
 
@@ -166,7 +166,7 @@ struct FriendCardView: View {
                             .fill(FriendsKit.tileAccent(k).wash(0.10)))
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.squish)
+                .buttonStyle(.squishCard)
                 .accessibilityLabel("Play \(k.title) with \(card.name)")
             }
         }
@@ -183,7 +183,7 @@ struct FriendCardView: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.squish)
+        .buttonStyle(.squishCard)
         .accessibilityLabel(card.theirTurnLine)
         .accessibilityHint(expanded ? "Hides those games" : "Shows those games")
     }

@@ -304,16 +304,23 @@ fun VSGameScreen(
  * screen. [sub] names who is coming (a bot, a race) when known.
  */
 @Composable
-private fun VsLoadingScreen(mode: GameMode, sub: String? = null, botArtId: String? = null) {
+private fun VsLoadingScreen(mode: GameMode, sub: String? = null, botArtId: String? = null, warmUp: Boolean = false) {
     Column(
         Modifier.fillMaxSize().pageBackground(PageTint.VS, alwaysLight = true).statusBarsPadding().navigationBarsPadding().padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
     ) {
-        VsModeTile(mode, 60.dp)
-        // The cast's staggered wave replaces the spinner (MASCOT_SPEC §3); the label stays.
-        com.wordocious.app.ui.CastRow(22.dp, motion = com.wordocious.app.ui.MascotMotion.WAVE)
-        VsCapsLabel("LOADING ${vsModeName(mode).uppercase()}", color = VsTeal.label, fontSize = 12.sp)
+        if (warmUp) {
+            // 2.8 item 22: the bot warm-up is the little lobby too (your mascot on the stage, the "?" seat, ONE status line,
+            // the counting clock, the keepy-uppy tile) instead of a spinner screen.
+            val waitStart = remember { System.currentTimeMillis() }
+            WaitingScene(com.wordocious.core.WaitingKind.BOT, name = null, startedAtMs = waitStart, modifier = Modifier.widthIn(max = 380.dp))
+        } else {
+            VsModeTile(mode, 60.dp)
+            // The cast's staggered wave replaces the spinner (MASCOT_SPEC §3); the label stays.
+            com.wordocious.app.ui.CastRow(22.dp, motion = com.wordocious.app.ui.MascotMotion.WAVE)
+            VsCapsLabel("LOADING ${vsModeName(mode).uppercase()}", color = VsTeal.label, fontSize = 12.sp)
+        }
         if (sub != null) {
             // D3: the bot coming to play waits in its own "waiting" pose on a tinted card.
             VsTintedCard(Modifier.widthIn(max = 360.dp).fillMaxWidth(), corner = 18.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp)) {
@@ -339,6 +346,7 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
                 ?: vm.sendLaunch?.let { "Setting up a fresh puzzle…" }
                 ?: persona?.let { "Matching you with ${it.name}…" },
             botArtId = persona?.artId,
+            warmUp = vm.race == null && vm.sendLaunch == null && persona != null,
         )
         return
     }
@@ -357,7 +365,11 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
                 val waitStart = androidx.compose.runtime.remember { System.currentTimeMillis() }
                 var copied by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
                 androidx.compose.runtime.LaunchedEffect(copied) { if (copied) { kotlinx.coroutines.delay(1_600); copied = false } }
-                WaitingScene(com.wordocious.core.WaitingKind.FRIEND, name = null, startedAtMs = waitStart, modifier = Modifier.widthIn(max = 380.dp))
+                // The invited friend's name when the invite is named (the row's invitee); an open code stays "your friend".
+                val invitedName by androidx.compose.runtime.produceState<String?>(null, inviteCode) {
+                    value = com.wordocious.app.data.InviteService.inviteeNameForCode(inviteCode)
+                }
+                WaitingScene(com.wordocious.core.WaitingKind.FRIEND, name = invitedName, startedAtMs = waitStart, modifier = Modifier.widthIn(max = 380.dp))
                 VsNumber(inviteCode, 24.sp, Modifier.semantics { contentDescription = "Invite code " + inviteCode.toCharArray().joinToString(" ") })
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     com.wordocious.app.ui.HelperButton(

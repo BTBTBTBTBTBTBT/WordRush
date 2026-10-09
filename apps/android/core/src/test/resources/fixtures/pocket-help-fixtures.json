@@ -360,6 +360,134 @@
       "show": false
     }
   ],
+  "withResults": [
+    {
+      "live": true,
+      "seen": [],
+      "hasResults": true,
+      "key": "practice",
+      "show": false,
+      "record": true
+    },
+    {
+      "live": true,
+      "seen": [],
+      "hasResults": true,
+      "key": "hub",
+      "show": false,
+      "record": true
+    },
+    {
+      "live": true,
+      "seen": [],
+      "hasResults": true,
+      "key": "pocket-rps",
+      "show": false,
+      "record": true
+    },
+    {
+      "live": true,
+      "seen": [
+        "hub"
+      ],
+      "hasResults": true,
+      "key": "practice",
+      "show": false,
+      "record": true
+    },
+    {
+      "live": true,
+      "seen": [
+        "hub"
+      ],
+      "hasResults": true,
+      "key": "hub",
+      "show": false,
+      "record": false
+    },
+    {
+      "live": true,
+      "seen": [
+        "hub"
+      ],
+      "hasResults": true,
+      "key": "pocket-rps",
+      "show": false,
+      "record": true
+    },
+    {
+      "live": false,
+      "seen": [],
+      "hasResults": true,
+      "key": "practice",
+      "show": false,
+      "record": false
+    },
+    {
+      "live": false,
+      "seen": [],
+      "hasResults": true,
+      "key": "hub",
+      "show": false,
+      "record": false
+    },
+    {
+      "live": false,
+      "seen": [],
+      "hasResults": true,
+      "key": "pocket-rps",
+      "show": false,
+      "record": false
+    },
+    {
+      "live": true,
+      "seen": null,
+      "hasResults": true,
+      "key": "practice",
+      "show": false,
+      "record": false
+    },
+    {
+      "live": true,
+      "seen": null,
+      "hasResults": true,
+      "key": "hub",
+      "show": false,
+      "record": false
+    },
+    {
+      "live": true,
+      "seen": null,
+      "hasResults": true,
+      "key": "pocket-rps",
+      "show": false,
+      "record": false
+    },
+    {
+      "live": true,
+      "seen": [],
+      "hasResults": false,
+      "key": "practice",
+      "show": true,
+      "record": false
+    },
+    {
+      "live": true,
+      "seen": [],
+      "hasResults": false,
+      "key": "hub",
+      "show": true,
+      "record": false
+    },
+    {
+      "live": true,
+      "seen": [],
+      "hasResults": false,
+      "key": "pocket-rps",
+      "show": true,
+      "record": false
+    }
+  ],
   "seen": [
     {
       "seen": [],

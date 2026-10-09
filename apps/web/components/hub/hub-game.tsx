@@ -54,7 +54,10 @@ import { FeedbackToast } from '@/components/game/feedback-toast';
 import { FinishedDock, MoreDisclosure, ResultStrip } from '@/components/game/finished-kit';
 import { CandyButton, candyClass } from '@/components/ui/candy-button';
 import { hubTileSize } from '@/lib/hint-layout';
-import { softPill } from '@/lib/soft-surface';
+import { softPill, softMix, darken } from '@/lib/soft-surface';
+import { HelperButton, QuietButton, famChromeSrc } from '@/components/ui/family-button';
+import { BubbleText } from '@/components/ui/bubble-text';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 
 // Hubbub (More Games §12): seven letters, one required center, words of 4+
 // letters. The game finalizes ONCE — reaching Hubbub (50% of max) is the win,
@@ -426,17 +429,28 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   // Every word of the puzzle once it has ended: found ones solid (pangrams in the accent), the rest muted.
   const allWordChips = (s: HubState) => <HubAllWordChips state={s} />;
 
-  const wordChips = (words: string[], dim = false) => words.map((w) => {
+  // 2.8 item 32: the found words are neat game-tinted mini tiles (a soft lip, no outline): lilac for a word,
+  // violet for a revealed one, gold with the gem for a pangram; the newest one pops in.
+  const wordChips = (words: string[], dim = false) => words.map((w, idx) => {
     const pangram = state.pangrams.includes(w);
     const revealed = state.revealed.includes(w);
     // A rarer word scores but sits outside the N/M words count: the corner gem (button family, 10-05).
     const bonus = !pangram && hubIsBonus(state.bonusFound, w);
+    const tint = pangram ? '#f5a524' : revealed ? '#8b5cf6' : '#7c3aed';
     return (
-      <span key={w} className={`relative inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${dim ? 'opacity-60' : ''}`}
-        aria-label={bonus ? hubRareLabel(w) : undefined}
-        // A1: tinted chips — pangrams in the accent, revealed words violet, the rest brand lilac.
-        style={pangram ? { ...softPill(HUB_ACCENT, { bar: false }), color: HUB_ACCENT } : revealed ? { ...softPill('#8b5cf6', { bar: false }), color: '#8b5cf6' } : { ...softPill('#7c3aed', { bar: false }), color: 'var(--color-text)' }}>
-        {w}{pangram ? ' ★' : ''}{bonus && <HubRareGem />}
+      <span key={w} className={`relative inline-flex items-center gap-1 text-[11.5px] font-black px-2.5 py-1 rounded-lg ${dim ? 'opacity-60' : ''} ${!dim && idx === 0 && !prefersReducedMotion() ? 'gt-pop' : ''}`}
+        aria-label={bonus ? hubRareLabel(w) : pangram ? `${w}, pangram` : undefined}
+        style={{
+          background: `linear-gradient(${softMix(tint, pangram ? 0.42 : 0.2)}, ${softMix(tint, pangram ? 0.26 : 0.12)})`,
+          boxShadow: `inset 0 -2px 0 ${softMix(tint, 0.34)}`,
+          color: pangram ? '#7a3d00' : revealed ? '#6d28d9' : darken('#7c3aed', 0.2),
+        }}>
+        {w}
+        {pangram && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={famChromeSrc('gem')} alt="" aria-hidden="true" width={13} height={11} draggable={false} style={{ width: 13, height: 'auto' }} />
+        )}
+        {bonus && <HubRareGem />}
       </span>
     );
   });
@@ -481,20 +495,22 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       </div>
       <div ref={setFixed(2)} className="shrink-0 flex flex-col items-center gap-2 pt-3 pb-2">
         <div className="flex justify-center gap-2" role="group" aria-label="Entry controls">
-          <button type="button" onClick={() => { haptic('light'); playDelete(); del(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label="Delete"><Delete className="w-3.5 h-3.5" /> Delete</button>
-          <button type="button" onClick={shuffle} className={capsule(false)} style={capsuleStyle(false)} aria-label="Shuffle"><Shuffle className="w-3.5 h-3.5" /> Shuffle</button>
-          <button type="button" onClick={() => { haptic('light'); submit(); }} className={capsule(false, true)} style={capsuleStyle(false, true)} aria-label="Enter"><CornerDownLeft className="w-3.5 h-3.5" /> Enter</button>
+          <HelperButton tint={HUB_ACCENT} icon="delete" onClick={() => { haptic('light'); playDelete(); del(); }} aria-label="Delete">Delete</HelperButton>
+          <HelperButton tint={HUB_ACCENT} icon="shuffle" onClick={shuffle} aria-label="Shuffle">Shuffle</HelperButton>
+          {/* Enter is the primary: the solid tint. */}
+          <HelperButton tint={HUB_ACCENT} icon="enter" on onClick={() => { haptic('light'); submit(); }} aria-label="Enter">Enter</HelperButton>
         </div>
         <div className="flex justify-center gap-2" role="group" aria-label="Hints">
-          <button type="button" onClick={hintStart} className={capsule(false)} style={capsuleStyle(false)} aria-label="Starts with"><Lightbulb className="w-3.5 h-3.5" /> Starts with…</button>
-          <button type="button" onClick={hintReveal} className={capsule(false)} style={capsuleStyle(false)} aria-label="Reveal a word"><Eye className="w-3.5 h-3.5" /> Reveal a word</button>
+          <HelperButton tint="#f5a524" icon="hint" onClick={hintStart} aria-label="Starts with">Starts with…</HelperButton>
+          <HelperButton tint="#f5a524" icon="eye" onClick={hintReveal} aria-label="Reveal a word">Reveal a word</HelperButton>
         </div>
       </div>
       {/* Found words — header, then a wrapping chip flow that fills the lower area and scrolls once it overflows. */}
       <div className="flex-1 min-h-0 flex flex-col w-full max-w-md mx-auto">
-        <div ref={setFixed(3)} className="shrink-0 text-[10px] font-black tracking-wider pb-1 text-center" style={{ color: 'var(--color-text-muted)' }}>
-          {/* A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18). */}
-          {HUB_FOUND_LABEL}
+        <div ref={setFixed(3)} className="shrink-0 pb-1 flex justify-center" aria-label={HUB_FOUND_LABEL}>
+          {/* A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
+              2.8 item 32: it is bubble lettering now (the game's color), not small caps. */}
+          <div style={{ width: 150 }}><BubbleText text={HUB_FOUND_LABEL} palette="celebrate" maxSize={22} minSize={16} level={2} className="w-full" /></div>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* Pending "Starts with…" hints lead the found-words flow (which already scrolls). As a row
@@ -505,7 +521,9 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       <div ref={setFixed(4)} className="shrink-0 pb-3 pt-2 flex justify-center gap-3 text-xs font-bold">
         {won
           ? <button type="button" onClick={finish} className={candyClass({ color: 'amber' })}><Flag className="w-3.5 h-3.5" /> Finish</button>
-          : <button type="button" onClick={endPuzzle} className={candyClass({ color: 'peach' })}><Flag className="w-3.5 h-3.5" /> End puzzle and see answers</button>}
+          : <QuietButton size="sm" icon="flag" onClick={async () => {
+              if (await confirmDialog({ title: 'End the puzzle?', message: 'You will see every word, and today’s Hubbub is over.', confirmText: 'End puzzle', cancelText: 'Keep playing' })) endPuzzle();
+            }}>End puzzle</QuietButton>}
       </div>
     </div>
   );

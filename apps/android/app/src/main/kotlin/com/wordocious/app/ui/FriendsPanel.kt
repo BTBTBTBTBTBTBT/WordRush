@@ -258,8 +258,24 @@ fun FriendsScreen(
         // K1: the note as a notice card — springs in, squishes, taps or swipes away.
         FriendsNotice(note, onDismiss = { note = null })
 
-        // WAVE2-INVITES-SLOT: the branded Invites row and the "Have a code?" entry (wave2/invites-2) mount HERE,
-        // at the top of the tab, above the banner. Nothing else lives in this spot.
+        // 9f: the branded Invites row and ONE obvious "Have a code?" button (both hide themselves when
+        // branded_invites is off). Accepting hands the code to the same DeepLinkRouter state the app links use,
+        // so MainScreen opens the private match / the race exactly like a tapped link.
+        val inviteUriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+        InvitesRow(onAccept = { item ->
+            if (item.variant == com.wordocious.core.InviteRowItem.Variant.RACE) {
+                com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = item.code
+            } else {
+                runCatching { com.wordocious.core.GameMode.valueOf(item.gameMode) }.getOrNull()?.let { com.wordocious.app.data.DeepLinkRouter.vsInvite.value = it to item.code }
+            }
+        })
+        HaveACodeButton(color = CandyColor.PINK, onResolved = { r ->
+            when (r) {
+                is HaveACodeResult.Race -> com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = r.code
+                is HaveACodeResult.Live -> com.wordocious.app.data.DeepLinkRouter.vsInvite.value = r.mode to r.code
+                is HaveACodeResult.Friend -> inviteUriHandler.openUri("https://wordocious.com/join/${r.code}")
+            }
+        })
 
         // 2. The Friends banner (the race, told once: the pills; the countdown small in its header)
         FriendsBannerView(
@@ -405,6 +421,7 @@ fun FriendsScreen(
         FriendMenuHost(
             f = f, nowMs = now, canGift = (myProfile?.streakShields ?: 0) > 0, challengingId = challenging,
             games = games.filter { it.opponent.id == f.id },
+            isFriend = friends.any { it.id == f.id },
             onDismiss = { menuFriend = null },
             onOpenProfile = onOpenProfile,
             onPlay = { quickPlay = QuickPlayRequest(it.id) },
@@ -925,6 +942,7 @@ private fun FriendMenuHost(
     canGift: Boolean,
     challengingId: String?,
     games: List<FriendlyGamesService.GameView>,
+    isFriend: Boolean,
     onDismiss: () -> Unit,
     onOpenProfile: (String) -> Unit,
     onPlay: (FriendsService.FriendProfile) -> Unit,
@@ -939,12 +957,20 @@ private fun FriendMenuHost(
     val played = f.playedToday ?: 0
     FamilyActionMenu(
         title = f.username,
-        subtitle = presenceLine(f.lastSeenMs, f.activity, nowMs)
+        subtitle = if (!isFriend) "In a game with you" else presenceLine(f.lastSeenMs, f.activity, nowMs)
             ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today",
         avatar = { FriendAvatar44(f) },
         onDismiss = onDismiss,
         actions = buildList {
             add(FamilyMenuAction("profile", "View profile", FamilyMenuIcon.Clay(FamIcon.EYE)) { onOpenProfile(f.id) })
+            // Someone not on the friend list (a game left over with them): only View profile and the Resign rows apply.
+            if (!isFriend) {
+                games.forEach { g ->
+                    add(FamilyMenuAction("resign-${g.id}", "Resign ${g.title}", FamilyMenuIcon.Clay(FamIcon.FLAG), danger = true,
+                        contentDescription = "Resign ${g.title} against ${f.username}") { onResign(g) })
+                }
+                return@buildList
+            }
             add(FamilyMenuAction("play", "Play a game", FamilyMenuIcon.Clay(FamIcon.PLAY), FamilyMenuInk.PINK) { onPlay(f) })
             add(FamilyMenuAction("taunt", "Taunt", FamilyMenuIcon.Art(Icon3DName.BELL.res), FamilyMenuInk.AMBER,
                 contentDescription = "Taunt ${f.username}") { onTaunt(f) })

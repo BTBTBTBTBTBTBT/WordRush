@@ -106,12 +106,19 @@ object PocketHelp {
     /**
      * Whether the welcome card opens by itself: the switch is live and this game's key
      * is not in the player's seen list. `seen` is null while it is still loading
-     * (never show on a guess: wait).
+     * (never show on a guess: wait). [hasResults] = the player already has results in
+     * this game (an existing player): the card never opens by itself, and the caller
+     * quietly records the key as seen ([tutorialShouldRecordSeen]) so it stays synced.
      */
-    fun shouldAutoShowTutorial(live: Boolean, seen: Collection<String>?, key: String): Boolean {
+    fun shouldAutoShowTutorial(live: Boolean, seen: Collection<String>?, key: String, hasResults: Boolean = false): Boolean {
         if (!live || seen == null) return false
+        if (hasResults) return false
         return key !in seen
     }
+
+    /** An existing player (results in this game) whose key is not yet recorded: record it silently, show nothing. */
+    fun tutorialShouldRecordSeen(live: Boolean, seen: Collection<String>?, key: String, hasResults: Boolean = false): Boolean =
+        live && seen != null && hasResults && key !in seen
 
     /** The seen list after the card closes: the key added once, kept sorted. */
     fun withTutorialSeen(seen: Collection<String>, key: String): List<String> =

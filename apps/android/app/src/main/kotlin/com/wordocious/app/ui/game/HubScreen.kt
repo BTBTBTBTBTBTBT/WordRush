@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -56,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -253,7 +255,9 @@ class HubSession(val seed: String, val isDaily: Boolean, private val scope: kotl
     }
     fun type(ch: Char) { if (!state.ended && typing.length < 19) { typing += ch; SoundManager.playKeyTap() } }
     fun delete() { if (typing.isNotEmpty()) typing = typing.dropLast(1) }
-    fun shuffle() { outer.shuffle(); SoundManager.playKeyTap() }
+    /** Item 32: bumped on every shuffle so the hive flips its six outer hexes to the new letters. */
+    var shuffleTick by mutableStateOf(0)
+    fun shuffle() { outer.shuffle(); shuffleTick++; SoundManager.playKeyTap() }
     fun submit() {
         if (state.ended) return
         toastSeq++
@@ -443,37 +447,48 @@ private fun RankBar(session: HubSession, points: Boolean = true) {
 }
 
 @Composable
-private fun Chip(session: HubSession, w: String, dim: Boolean = false) =
-    HubChip(w, pangram = w in session.state.pangrams, revealed = w in session.state.revealed, dim = dim, bonus = hubIsBonus(session.state.bonusFound, w))
+private fun Chip(session: HubSession, w: String, dim: Boolean = false, pop: Boolean = false) =
+    HubChip(w, pangram = w in session.state.pangrams, revealed = w in session.state.revealed, dim = dim, bonus = hubIsBonus(session.state.bonusFound, w), pop = pop)
 
 /** A found word: a soft tinted chip (A1); a pangram a glossy capsule in the accent (J3); a revealed word violet;
  *  a rarer word (scores, outside the N/M words count) the plain chip wearing the corner gem. */
 @Composable
-private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean = false, bonus: Boolean = false) {
-    val tone = if (revealed && !pangram) Color(0xFF8B5CF6) else HUB_ACCENT
+private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean = false, bonus: Boolean = false, pop: Boolean = false) {
+    // 2.8 item 32: neat game-tinted mini tiles (a soft lip, no outline): the game's tint for a word, violet for a revealed
+    // one, gold with the gem for a pangram; the newest one pops in (260 ms scale, calm motion = no pop).
+    val tone = if (pangram) Color(0xFFF5A524) else if (revealed) Color(0xFF8B5CF6) else HUB_ACCENT
     val rare = bonus && !pangram
+    val popScale = remember(w) { androidx.compose.animation.core.Animatable(if (pop && !WTheme.reducedMotion) 0.7f else 1f) }
+    LaunchedEffect(w, pop) {
+        if (pop && !WTheme.reducedMotion && popScale.value != 1f) popScale.animateTo(1f, androidx.compose.animation.core.tween(260, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+    }
     // A rarer word (scores, outside the N/M count) wears the corner gem (button family: art_fam_cic_gem,
     // 13 dp, 6 right / 7 up outside the chip's top-right corner) — no text tag. Spoken "WORD, rare word".
     Box(
-        Modifier.then(
+        Modifier.graphicsLayer { scaleX = popScale.value; scaleY = popScale.value }.then(
             if (pangram) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, pangram" }
             else if (rare) Modifier.semantics(mergeDescendants = true) { contentDescription = "$w, rare word" } else Modifier,
         ),
     ) {
         androidx.compose.foundation.layout.Row(
             Modifier.alpha(if (dim) 0.6f else 1f)
-                .then(if (pangram) Modifier.glossyCapsule(HUB_ACCENT, glow = 0.6f) else Modifier.softChip(tone))
-                .padding(start = 9.dp, end = 9.dp, top = 3.dp, bottom = if (pangram) 5.5.dp else 3.dp),
+                .miniWordTile(tone, strong = pangram)
+                .padding(start = 9.dp, end = 9.dp, top = 3.dp, bottom = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(3.dp),
         ) {
             Text(
-                w, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                color = if (pangram) Color.White else if (revealed) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
+                w, fontSize = 11.5.sp, fontWeight = FontWeight.Black,
+                color = if (pangram) Color(0xFF7A3D00) else if (revealed) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
                 modifier = if (pangram || rare) Modifier.clearAndSetSemantics { } else Modifier,
             )
-            // AL addendum 2: a pangram wears the gold star art, not a ★ glyph.
-            if (pangram) com.wordocious.app.ui.GlyphArtImage(com.wordocious.app.ui.GlyphArt.STAR, 12.dp)
+            // A pangram wears the gem (button family: art_fam_cic_gem), 13 dp wide.
+            if (pangram) {
+                androidx.compose.foundation.Image(
+                    androidx.compose.ui.res.painterResource(com.wordocious.app.ui.FamChrome.GEM.res), contentDescription = null,
+                    modifier = Modifier.size(13.dp, 10.75.dp).clearAndSetSemantics { },
+                )
+            }
         }
         if (rare) {
             androidx.compose.foundation.Image(
@@ -538,7 +553,7 @@ private val HUB_CONTROL_ROW_H = 38.dp  // a small candy row (34 dp + its 4 dp li
 private val HUB_END_LINK_H = 38.dp     // "End puzzle and see answers" (a small candy too)
 private val HUB_ROW_GAP = 8.dp         // Column spacedBy between the stacked rows
 /** The "FOUND" label over the found-word flow (10 sp black caps; no count, see hubWordsLabel). */
-private val HUB_FOUND_HEADER_H = 14.dp
+private val HUB_FOUND_HEADER_H = 30.dp
 /**
  * The found-word flow's guaranteed height: two chip rows (a ~22 dp chip, 5 dp apart) plus a
  * little slack. Doug (Android, 2026-10-05: "I've lost the ability to see what words I've already
@@ -573,16 +588,20 @@ private fun HubBoard(session: HubSession) {
             val enabled = !s.ended
             // The cluster sits vertically centered in its band between the entry line and the controls.
             Box(Modifier.fillMaxWidth().height(band), contentAlignment = Alignment.Center) {
-                HubHoneycomb(session.centre, o, side, HUB_ACCENT, enabled, trayPadding = HUB_TRAY_PAD, state = hubTrayState(s)) { session.type(it) }
+                HubHoneycomb(session.centre, o, side, HUB_ACCENT, enabled, trayPadding = HUB_TRAY_PAD, state = hubTrayState(s), shuffleTick = session.shuffleTick) { session.type(it) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Capsule("Delete", Icons.AutoMirrored.Filled.Backspace) { session.delete() }
                 Capsule("Shuffle", Icons.Filled.Shuffle) { session.shuffle() }
-                Capsule("Enter", Icons.AutoMirrored.Filled.KeyboardReturn, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.submit() }
+                // Enter is the primary: the solid tint (family helper, selected look), the 3D enter art.
+                com.wordocious.app.ui.HelperButton(
+                    "Enter", onClick = { session.submit() }, icon = com.wordocious.app.ui.FamIcon.ENTER, selected = true, contentDescription = "Enter",
+                )
             }
+            // The hint pair: smaller game-tinted helpers (30 dp) with the 3D hint / eye art.
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Capsule("Starts with…", Icons.Filled.Lightbulb, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintStart() }
-                Capsule("Reveal a word", Icons.Filled.Visibility, color = com.wordocious.app.ui.CandyColor.AMBER) { session.hintReveal() }
+                com.wordocious.app.ui.HelperButton("Starts with…", onClick = { session.hintStart() }, icon = com.wordocious.app.ui.FamIcon.HINT, height = 30.dp)
+                com.wordocious.app.ui.HelperButton("Reveal a word", onClick = { session.hintReveal() }, icon = com.wordocious.app.ui.FamIcon.EYE, height = 30.dp)
             }
             // BI22: the pending "Starts with…" hints are NOT a row in this column any more (that row
             // appearing moved everything under the hint capsules): they lead the found-words flow
@@ -591,20 +610,48 @@ private fun HubBoard(session: HubSession) {
             // "FOUND" heads the found-words area directly under the hint capsules — a label, never a
             // second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
             // The chips wrap newest-first and fill the rest, scrolling once they overflow.
-            Text(HUB_FOUND_LABEL, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
+            // 2.8 item 32: it is bubble lettering now (the celebration gold), not small caps; still no second count.
+            Box(Modifier.width(150.dp).height(HUB_FOUND_HEADER_H), contentAlignment = Alignment.Center) {
+                com.wordocious.app.ui.BubbleText(
+                    HUB_FOUND_LABEL.uppercase(), com.wordocious.app.ui.HeadlinePalette.CELEBRATION, Modifier.fillMaxWidth(),
+                    maxSize = 22, minSize = 16,
+                )
+            }
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 // Room above the first row and between rows for a rare word's corner gem (7 dp up).
                 FlowRow(Modifier.fillMaxWidth().padding(top = 7.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (w in pending) PendingHintChip(w)
                     // Every accepted word, newest first, in the order found (the event log spans both lists).
-                    for (w in hubFoundInOrder(s).asReversed()) Chip(session, w)
+                    hubFoundInOrder(s).asReversed().forEachIndexed { idx, w -> androidx.compose.runtime.key(w) { Chip(session, w, pop = idx == 0) } }
                 }
             }
             // Pinned at the very bottom; the navigation-bar inset is respected by the BoxWithConstraints above.
             // Won: "Finish" is the same as the card's "I'm done" — ends the game at the recorded time.
             // A8: candy buttons, never a text link.
             if (s.status == HubStatus.WON) Capsule("Finish", Icons.Filled.Flag, color = com.wordocious.app.ui.CandyColor.PURPLE) { session.end() }
-            else Capsule("End puzzle and see answers", Icons.Filled.Flag) { session.end() }
+            else {
+                // 2.8 item 32: a quiet small family button (not the long pill) with a designed confirm.
+                var confirmEnd by remember { mutableStateOf(false) }
+                com.wordocious.app.ui.QuietButton(
+                    "End puzzle", onClick = { confirmEnd = true }, size = com.wordocious.app.ui.CandySize.SMALL,
+                    icon = com.wordocious.app.ui.FamIcon.FLAG, contentDescription = "End puzzle and see answers",
+                )
+                if (confirmEnd) {
+                    androidx.compose.material3.AlertDialog(
+                        modifier = com.wordocious.app.ui.PopupWidth,
+                        onDismissRequest = { confirmEnd = false },
+                        containerColor = WTheme.surface,
+                        title = { Text("End the puzzle?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = WTheme.text) },
+                        text = { Text("You will see every word, and today’s Hubbub is over.", fontFamily = Nunito, fontWeight = FontWeight.Bold, color = WTheme.textMuted) },
+                        confirmButton = {
+                            com.wordocious.app.ui.CastButton("End puzzle", onClick = { confirmEnd = false; session.end() }, color = com.wordocious.app.ui.CastColor.PINK, size = com.wordocious.app.ui.CastSize.M)
+                        },
+                        dismissButton = {
+                            com.wordocious.app.ui.CastButton("Keep playing", onClick = { confirmEnd = false }, color = com.wordocious.app.ui.CastColor.PURPLE, size = com.wordocious.app.ui.CastSize.M)
+                        },
+                    )
+                }
+            }
             Spacer(Modifier.height(6.dp))
         }
     }

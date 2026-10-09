@@ -10,10 +10,13 @@
 // iOS: VSLobbyView.swift · Android: VSLobbyScreen.kt. Also used for bot / random search + pocket waits.
 
 import { useEffect, useRef, useState } from 'react';
-import { idleBit, keepyLine, waitClock, waitingStatusLine, type WaitingKind } from '@wordle-duel/core';
+import { idleBit, keepyLine, waitClock, waitedSeconds, waitingStatusLine, type WaitingKind } from '@wordle-duel/core';
 import { BubbleText } from '@/components/ui/bubble-text';
 import { FamIcon } from '@/components/ui/family-button';
 import { FriendAvatar } from '@/components/friends/friends-ui';
+import { MascotAvatar } from '@/components/avatar/mascot-avatar';
+import { usePlayerAvatar } from '@/components/avatar/player-avatar';
+import { useLivingMascotOn } from '@/hooks/use-flags';
 import { ART_SIZE, artSrc, type ArtName } from '@/lib/art';
 import { prefersReducedMotion } from '@/lib/motion';
 import { softMix } from '@/lib/soft-surface';
@@ -63,7 +66,7 @@ export function KeepyUppy({ letter = 'W' }: { letter?: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5 select-none">
       <div style={{ height: 76 }} className="flex items-end">
-        <button type="button" ref={tileRef} onClick={bounce} aria-label="Bounce the tile" className="block active:scale-95" style={{ width: 52, height: 52, position: 'relative' }}>
+        <button data-tile type="button" ref={tileRef} onClick={bounce} aria-label="Bounce the tile" className="block active:scale-95" style={{ width: 52, height: 52, position: 'relative' }}>
           <Art name="art-pocket-tile-purple" width={52} />
           <span className="absolute inset-0 flex items-center justify-center font-black text-white" style={{ fontSize: 24, textShadow: '0 1px 2px rgba(60,20,120,0.5)' }}>{letter}</span>
         </button>
@@ -88,6 +91,11 @@ export function LobbyScene({ kind, name, elapsed, seatLabel, children }: {
   const bit = idleBit(elapsed);
   const line = waitingStatusLine({ kind, name });
   const myName = profile?.username ?? 'You';
+  const livingOn = useLivingMascotOn();
+  const look = usePlayerAvatar({
+    name: myName, userId: user?.id, url: profile?.avatar_url ?? null,
+    accent: (profile as { accent_color?: string | null } | null)?.accent_color ?? null, level: profile?.level, pro: undefined,
+  });
   return (
     <div className="w-full flex flex-col items-center gap-3">
       <div className="relative flex items-end justify-center" style={{ width: '100%', maxWidth: 340, height: 172 }}>
@@ -95,7 +103,14 @@ export function LobbyScene({ kind, name, elapsed, seatLabel, children }: {
         {/* You, center stage on the left platform; the empty "?" seat opposite. */}
         <div className="relative flex items-end justify-center gap-8" style={{ paddingBottom: 26 }}>
           <div className={calm ? '' : 'rp-bob'} style={{ textAlign: 'center' }}>
-            <FriendAvatar name={myName} userId={user?.id} url={profile?.avatar_url ?? null} accent={(profile as { accent_color?: string | null } | null)?.accent_color ?? null} size={84} />
+            {/* The full-body mascot standing on the stage (living, cutout) when the player has one; else the framed tile. */}
+            {livingOn && !look.url ? (
+              <span className="relative block mx-auto" style={{ width: 112, height: 112, lineHeight: 0, marginBottom: -4 }}>
+                <MascotAvatar config={look.config} initial={look.initial} size={112} cutout living />
+              </span>
+            ) : (
+              <FriendAvatar name={myName} userId={user?.id} url={profile?.avatar_url ?? null} accent={(profile as { accent_color?: string | null } | null)?.accent_color ?? null} size={84} />
+            )}
             <p className="mt-1 text-[11px] font-black truncate max-w-[96px]" style={{ color: VS.ink }}>{myName}</p>
           </div>
           <div style={{ textAlign: 'center' }} aria-label="Waiting for your opponent">
@@ -132,6 +147,37 @@ export function InviteChips({ code, onShare, onCopy }: { code: string; onShare: 
         <button type="button" onClick={onShare} className="candy candy-sm"><FamIcon name="share" /><span className="candy-label">Share</span></button>
         <button type="button" onClick={onCopy} className="candy candy-sm candy-peach"><FamIcon name="copy" /><span className="candy-label">Copy code</span></button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The pocket-game wait (item 22): when it is their turn, a quiet strip above the board — their mascot,
+ * ONE status line ("Waiting for Johnny…") in the bubble lettering, how long they have had it while that
+ * is still a live number (under an hour), and a tap-to-open keepy-uppy so the wait is not dead air.
+ */
+export function PocketWaitStrip({ name, since, avatar }: { name: string; since: string | null; avatar: React.ReactNode }) {
+  const [now, setNow] = useState(() => Date.now());
+  const [play, setPlay] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const waited = since ? waitedSeconds(Date.parse(since), now) : 0;
+  const line = waitingStatusLine({ kind: 'pocket', name });
+  return (
+    <div className="flex flex-col items-center gap-1.5" role="status" aria-live="polite" aria-label={line}>
+      <div className="flex items-center gap-3 w-full justify-center">
+        <Art name="art-lobby-seat-medallion" width={34} style={{ opacity: 0.9 }} />
+        <div className="min-w-0 flex-1" style={{ maxWidth: 240 }}>
+          <BubbleText text={line} palette="friends" maxSize={22} minSize={16} level={2} className="w-full" />
+        </div>
+        {avatar}
+      </div>
+      {since && waited < 3600 && <p className="text-[12px] font-black tabular-nums" style={{ color: VS.label }}>{waitClock(waited)}</p>}
+      {play ? <KeepyUppy /> : (
+        <button data-squish type="button" onClick={() => setPlay(true)} className="text-[11px] font-extrabold underline" style={{ color: VS.label }}>Bounce a tile while you wait</button>
+      )}
     </div>
   );
 }

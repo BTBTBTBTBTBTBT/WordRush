@@ -54,7 +54,7 @@ import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, season
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
 import { friendsLayout, tileWord, waitingHeadline, theirTurnLine, cardPresence, allFriendsLabel, type CardFriend, type CardGame } from '../src/friend-cards';
-import { POCKET_HELP, FIRST_PLAY_FLAG, shouldAutoShowTutorial, withTutorialSeen, mergeTutorialsSeen, pocketTutorialKey } from '../src/pocket-help';
+import { POCKET_HELP, FIRST_PLAY_FLAG, shouldAutoShowTutorial, tutorialShouldRecordSeen, withTutorialSeen, mergeTutorialsSeen, pocketTutorialKey } from '../src/pocket-help';
 import { waitingStatusLine, waitClock, waitedSeconds, keepyLine, idleBit, type WaitingKind } from '../src/waiting-room';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
@@ -1182,11 +1182,16 @@ export function renderPocketHelpFixtures() {
     { live: true, seen: [] }, { live: true, seen: ['hub'] }, { live: true, seen: ['pocket-rps', 'hub'] }, { live: false, seen: [] }, { live: true, seen: null },
   ];
   const decisions = decisionCases.flatMap((d) => keys.map((key) => ({ ...d, key, show: shouldAutoShowTutorial({ live: d.live, seen: d.seen, key }) })));
+  // Existing players (results in the game): never auto-show; record the key quietly when it is missing.
+  const resultsCases: Array<{ live: boolean; seen: string[] | null; hasResults: boolean }> = [
+    { live: true, seen: [], hasResults: true }, { live: true, seen: ['hub'], hasResults: true }, { live: false, seen: [], hasResults: true }, { live: true, seen: null, hasResults: true }, { live: true, seen: [], hasResults: false },
+  ];
+  const withResults = resultsCases.flatMap((d) => keys.map((key) => ({ ...d, key, show: shouldAutoShowTutorial({ live: d.live, seen: d.seen, key, hasResults: d.hasResults }), record: tutorialShouldRecordSeen({ live: d.live, seen: d.seen, key, hasResults: d.hasResults }) })));
   const seenCases: Array<[string[], string]> = [[[], 'hub'], [['hub'], 'hub'], [['pocket-ttt', 'hub'], 'practice']];
   const seen = seenCases.map(([list, key]) => ({ seen: list, key, result: withTutorialSeen(list, key) }));
   const mergeCases: Array<[string[], string[]]> = [[['a', 'c'], ['b', 'c']], [[], ['z']], [['q'], []]];
   const merged = mergeCases.map(([a, b]) => ({ a, b, result: mergeTutorialsSeen(a, b) }));
-  return { flag: FIRST_PLAY_FLAG, help: POCKET_HELP, keys: Object.keys(POCKET_HELP).map((k) => pocketTutorialKey(k as any)), decisions, seen, merged };
+  return { flag: FIRST_PLAY_FLAG, help: POCKET_HELP, keys: Object.keys(POCKET_HELP).map((k) => pocketTutorialKey(k as any)), decisions, withResults, seen, merged };
 }
 
 export function renderWaitingRoomFixtures() {

@@ -5,7 +5,8 @@ import { MORE_HOME_HREF } from '@/lib/more-games';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { Clock, Lightbulb, List, Eye } from 'lucide-react';
+import { Clock, List } from 'lucide-react';
+import { FamIcon } from '@/components/ui/family-button';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, wordsearchGuessCount, wordsearchNearWord,
   generateDailySeed, type WordsearchState, type WordsearchAction, type WordsearchBank, type WordsearchPuzzle,
@@ -279,7 +280,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
             {/* Labels never change width (lib/hint-layout.ts): the hint count is a corner coin,
                 the toggles and the countdown keep their widest variant's width. */}
             <button type="button" onClick={() => { haptic('light'); hint(); }} className={capsule(false)} style={capsuleStyle(false)} aria-label={state.hintsUsed > 0 ? `Hint (${state.hintsUsed} used)` : 'Hint'}>
-              <Lightbulb className="w-3.5 h-3.5" /> Hint<HintCountBadge count={state.hintsUsed} />
+              <FamIcon name="hint" /> Hint<HintCountBadge count={state.hintsUsed} />
             </button>
             <button type="button" onClick={() => { if (!state.wordsShown) { haptic('light'); showWords(); } }} className={capsule(!!state.wordsShown)} style={capsuleStyle(!!state.wordsShown)} aria-label="Show words" aria-disabled={!!state.wordsShown}>
               <List className="w-3.5 h-3.5" /> <StableLabel value={state.wordsShown ? 'Words shown' : 'Show words'} reserve={['Show words', 'Words shown']} />
@@ -287,7 +288,7 @@ export function SpyglassGame({ isDaily = false }: SpyglassGameProps) {
             {/* Counts down on the clock's own tick, not the board's (founder, 2026-09-29). */}
             <PlayClock timer={timer}>{(sec) => { const canReveal = sec >= REVEAL_AFTER_SECONDS; return (
             <button type="button" onClick={() => { haptic('light'); reveal(); }} className={capsule(!canReveal)} style={capsuleStyle(!canReveal)} aria-label="Reveal" aria-disabled={!canReveal}>
-              <Eye className="w-3.5 h-3.5" /> <StableLabel value={canReveal ? 'Reveal' : `Reveal · ${formatTime(REVEAL_AFTER_SECONDS - sec)}`} reserve={['Reveal · 0:00']} />
+              <FamIcon name="eye" /> <StableLabel value={canReveal ? 'Reveal' : `Reveal · ${formatTime(REVEAL_AFTER_SECONDS - sec)}`} reserve={['Reveal · 0:00']} />
             </button>); }}</PlayClock>
           </div>
           </div>

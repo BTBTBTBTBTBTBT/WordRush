@@ -56,6 +56,23 @@ enum InviteService {
         return InviteResult(code: nil, error: "Could not generate a unique code")
     }
 
+    /// The other person on an invite code, for the waiting room's "Waiting for Johnny…": the invited friend
+    /// when I am the host, the host when I joined. nil for a link invite with nobody named, or offline.
+    static func counterpartName(code: String) async -> String? {
+        struct Row: Decodable { let inviter_id: String; let invitee_id: String? }
+        struct NameRow: Decodable { let username: String? }
+        let client = AuthService.shared.client
+        guard let me = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
+        let row: Row? = try? await client.from("match_invites")
+            .select("inviter_id, invitee_id").eq("invite_code", value: code).limit(1).single().execute().value
+        guard let row else { return nil }
+        let other = row.inviter_id.lowercased() == me ? row.invitee_id : row.inviter_id
+        guard let other, !other.isEmpty else { return nil }
+        let name: NameRow? = try? await client.from("profiles")
+            .select("username").eq("id", value: other).limit(1).single().execute().value
+        return name?.username
+    }
+
     /// Create an invite for a mode; returns the shareable code (nil on failure).
     /// Tries a few times on the unlikely unique-code collision.
     static func createInvite(gameMode: GameMode) async -> String? {

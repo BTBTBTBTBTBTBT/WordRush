@@ -29,7 +29,7 @@ const STRIP = { scrollbarWidth: 'none' } as const;
 function Tile({ tile, quiet, onOpen }: { tile: GameTile; quiet?: boolean; onOpen: () => void }) {
   const color = KIND_COLOR[tile.kind];
   return (
-    <button
+    <button data-tile
       type="button"
       onClick={onOpen}
       aria-label={`${FRIENDLY_TITLES[tile.kind]}, ${tile.word}`}
@@ -90,14 +90,14 @@ export function FriendCards({ cards, profiles, onOpenGame, onStart, onMenu, onPr
           >
             {/* Top line: mascot (with the count badge), name + presence, streak, the ⋯. */}
             <div className="flex items-start gap-2.5">
-              <button type="button" onClick={() => onProfile(c.friendId)} className="relative shrink-0" aria-label={`${c.name}'s profile`}>
+              <button data-squish type="button" onClick={() => onProfile(c.friendId)} className="relative shrink-0" aria-label={`${c.name}'s profile`}>
                 <FriendAvatar
                   name={c.name} userId={c.friendId} url={f?.avatar_url} config={f?.avatar_config} castId={f?.avatar_cast_id}
                   frame={f?.avatar_frame} pro={f?.is_pro} level={f?.level} size={44} online={c.online} pulse={c.online && !calm}
                 />
                 {c.waiting > 0 && <CandyBadge count={c.waiting} size={16} label={c.headline} style={{ position: 'absolute', top: -6, right: -6 }} />}
               </button>
-              <button type="button" onClick={() => onProfile(c.friendId)} className="flex-1 min-w-0 text-left">
+              <button data-squish type="button" onClick={() => onProfile(c.friendId)} className="flex-1 min-w-0 text-left">
                 <span className="block text-[14px] font-black truncate" style={{ color: FR_LOOK.ink }}>@{c.name}</span>
                 {c.presence ? (
                   <span className="block text-[11px] font-bold truncate mt-1" style={{ color: '#047857' }}>{c.presence}</span>
@@ -132,7 +132,7 @@ export function FriendCards({ cards, profiles, onOpenGame, onStart, onMenu, onPr
             {/* Their turn: one quiet line; the tiles open on tap. */}
             {c.theirTurn.length > 0 && (
               <div className={c.tiles.length > 0 || c.theirTurn.length > 0 ? 'mt-2' : ''}>
-                <button
+                <button data-squish
                   type="button"
                   onClick={() => setOpen((o) => ({ ...o, [c.friendId]: !expanded }))}
                   aria-expanded={expanded}

@@ -15,6 +15,8 @@ struct WaitingRoomStage: View {
     let startedAt: Date
     /// true once the match is starting: the mini-play stops.
     var paused = false
+    /// A bot warming up: it stands in the seat in its "ready" pose instead of the "?".
+    var seatBot: MascotID? = nil
 
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
@@ -31,7 +33,6 @@ struct WaitingRoomStage: View {
     // MARK: Stage
 
     private var scene: some View {
-        let profile = AuthService.shared.profile
         return ZStack {
             if ArtAsset.exists("art-lobby-stage") {
                 Image("art-lobby-stage").resizable().interpolation(.high).scaledToFit()
@@ -39,8 +40,7 @@ struct WaitingRoomStage: View {
             }
             HStack(alignment: .bottom, spacing: 30) {
                 VStack(spacing: 4) {
-                    AvatarView(url: profile?.avatarUrl, username: profile?.username ?? "You", size: 116,
-                               emoji: profile?.avatarEmoji, userId: profile?.id, stroke: false, living: true)
+                    LobbyFigure(size: 116)
                     idleCaption
                 }
                 seat
@@ -51,7 +51,17 @@ struct WaitingRoomStage: View {
     }
 
     /// The empty seat: the medallion with a "?" until the opponent walks in.
-    private var seat: some View {
+    @ViewBuilder private var seat: some View {
+        if let bot = seatBot {
+            PoseImage(bot, "ready", height: 112)
+                .frame(width: 96, height: 112)
+                .accessibilityLabel("Your opponent is getting ready")
+        } else {
+            emptySeat
+        }
+    }
+
+    private var emptySeat: some View {
         ZStack {
             if ArtAsset.exists("art-lobby-seat-medallion") {
                 Image("art-lobby-seat-medallion").resizable().interpolation(.high).scaledToFit()
@@ -126,7 +136,7 @@ struct MiniKeepyUppy: View {
                     .frame(width: 60, height: 100, alignment: .bottom)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.squishCard)
             .disabled(paused)
             .opacity(paused ? 0.4 : 1)
             .accessibilityLabel("Keep the tile bouncing")
@@ -153,5 +163,86 @@ struct MiniKeepyUppy: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) {
             withAnimation(.easeIn(duration: 0.3)) { lift = 0 }
         }
+    }
+}
+
+/// The player's own mascot on the lobby stage: the full-body, free-standing living figure (the same
+/// cutout the podium and Dressing Room stage use) when it can come alive, else the framed avatar tile
+/// exactly as before (photo players, the living-mascot switch off, art not shipped yet).
+struct LobbyFigure: View {
+    /// The old tile size; the standing figure draws 1.3x it.
+    let size: CGFloat
+    @ObservedObject private var directory = AvatarDirectory.shared
+
+    var body: some View {
+        let profile = AuthService.shared.profile
+        let username = profile?.username ?? "You"
+        let r = directory.look(username: username, userId: profile?.id, url: profile?.avatarUrl, castId: nil, frame: nil,
+                               mascot: nil, accentHex: nil, lookup: true).resolved
+        if AvatarLiveConfig.livingMascot, r.photoUrl == nil, LivingMascotView.canAnimate(r.config) {
+            let big = size * 1.3
+            LivingMascotView(config: r.config, initial: AvatarCatalog.initial(username), size: big, cutout: true,
+                             interactive: true, own: true)
+                .frame(width: big, height: big)
+        } else {
+            AvatarView(url: profile?.avatarUrl, username: username, size: size,
+                       emoji: profile?.avatarEmoji, userId: profile?.id, stroke: false, living: true)
+        }
+    }
+}
+
+/// The pocket-game "their turn" wait: a slim lobby strip above the board (the board stays visible and
+/// is never covered). Your mascot, ONE status line ("Waiting for Johnny...") and a real counting clock
+/// from the move that passed the turn. The keepy-uppy tile is collapsed behind a tap on the strip.
+struct PocketWaitStrip: View {
+    let name: String
+    /// ISO time of the move that passed the turn (FriendlyGameView.updatedAt).
+    let since: String
+
+    @State private var open = false
+    @State private var fallbackStart = Date()
+    @Environment(\.accessibilityReduceMotion) private var envReduceMotion
+    private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
+
+    private var start: Date {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = f.date(from: since) { return d }
+        f.formatOptions = [.withInternetDateTime]
+        return f.date(from: since) ?? fallbackStart
+    }
+
+    var body: some View {
+        let line = WaitingRoom.statusLine(kind: .pocket, name: name)
+        return VStack(spacing: 6) {
+            Button { withAnimation(still ? nil : .easeOut(duration: 0.2)) { open.toggle() } } label: {
+                HStack(spacing: 10) {
+                    LobbyFigure(size: 40)
+                        .frame(width: 56, height: 56)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(line)
+                            .font(Brand.font(15, .black)).foregroundStyle(FriendsInk.heading)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                            Text(WaitingRoom.waitClock(Double(WaitingRoom.waitedSeconds(since: start, now: ctx.date))))
+                                .font(Brand.font(12, .heavy)).monospacedDigit().foregroundStyle(FriendsInk.muted)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: open ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 12, weight: .heavy)).foregroundStyle(FriendsInk.muted)
+                }
+                .padding(.horizontal, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.squishCard)
+            .accessibilityLabel(line)
+            .accessibilityHint(open ? "Hides the tile game" : "Shows a tile to keep bouncing while you wait")
+            if open {
+                MiniKeepyUppy(paused: false, still: still)
+                    .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: 360)
     }
 }

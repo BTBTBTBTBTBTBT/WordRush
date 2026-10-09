@@ -34,6 +34,10 @@ struct VSGameView: View {
     @State private var waitingInMode: Int?
     /// The waiting room's Copy code chip says "Copied" once tapped.
     @State private var codeCopied = false
+    /// The invited friend's username for the status line ("Waiting for Johnny…"); nil = "your friend".
+    @State private var invitedName: String?
+    /// When the bot warm-up screen opened (its real clock).
+    @State private var botWaitStart = Date()
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     @State private var confirmForfeit = false
     /// FINISH_SPEC §D3 banter (CPU matches only — never people or the ghost): the
@@ -298,9 +302,27 @@ struct VSGameView: View {
         if vm.isCpu {
             // A bot: a brief branded warmup while it spins up (the intro splash
             // covers it a beat later).
-            VSLoadingView(mode: mode, botArt: vm.cpuPersona?.art,
-                          line: vm.cpuPersona.map { "Matching you with \($0.name)…" })
+            // Item 22: the same little lobby as the live wait: your mascot on the stage, the bot standing in the
+            // seat in its "ready" pose, "Warming up your opponent…" and a real clock.
+            if let bot = VsLobbyKit.mascot(fromArt: vm.cpuPersona?.art) {
+                VStack(spacing: 14) {
+                    Spacer(minLength: 0)
+                    WaitingRoomStage(kind: .bot, startedAt: botWaitStart, paused: vm.showIntro || vm.countdown != nil, seatBot: bot)
+                    if let persona = vm.cpuPersona {
+                        Text("Matching you with \(persona.name)…").font(Brand.font(13, .heavy))
+                            .foregroundStyle(VsLobbyKit.mutedInk).multilineTextAlignment(.center)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .pageBackground(.vs, lightOnly: true)
                 .onAppear { pickStartBanter() }
+            } else {
+                VSLoadingView(mode: mode, botArt: vm.cpuPersona?.art,
+                              line: vm.cpuPersona.map { "Matching you with \($0.name)…" })
+                    .onAppear { pickStartBanter() }
+            }
         } else if vm.isRace || vm.isSend {
             VSLoadingView(mode: mode)
         } else {
@@ -318,6 +340,7 @@ struct VSGameView: View {
                 // Wave 3 (item 22): the waiting room is a little lobby: your mascot on the stage, a "?" seat
                 // opposite, ONE status line, a real counting timer and a tile to keep in the air.
                 WaitingRoomStage(kind: vm.inviteCode == nil ? .random : .friend,
+                                 name: invitedName,
                                  startedAt: vm.searchStartedAt ?? Date(),
                                  paused: vm.showIntro || vm.countdown != nil)
                     .padding(.top, vm.inviteCode == nil ? 20 : 4)
@@ -339,6 +362,9 @@ struct VSGameView: View {
             .frame(maxWidth: .infinity)
         }
         .pageBackground(.vs, lightOnly: true)
+        .task(id: vm.inviteCode) {
+            if let code = vm.inviteCode { invitedName = await InviteService.counterpartName(code: code) }
+        }
         .task {
             // This mode's queue, minus yourself, every 5 s while searching.
             while !Task.isCancelled && vm.screen == .queue {

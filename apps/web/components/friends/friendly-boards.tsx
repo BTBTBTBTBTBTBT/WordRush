@@ -82,6 +82,25 @@ function PocketPiece({ name, height, style, className }: { name: ArtName; height
 }
 
 /**
+ * A glossy word tile from the pocket set (art-pocket-tile-purple / gold / white), the letter drawn live on
+ * top in the house ink; it pops in when placed (<= 250 ms; Reduce Motion: static).
+ */
+function ArtTile({ tone, size, fontSize, radius = 8, pop = false, style, children }: {
+  tone: 'purple' | 'gold' | 'white'; size: number; fontSize: number; radius?: number; pop?: boolean; style?: React.CSSProperties; children?: React.ReactNode;
+}) {
+  return (
+    <span
+      className={`relative inline-flex items-center justify-center font-black uppercase ${pop && !prefersReducedMotion() ? 'gt-pop' : ''}`}
+      style={{ width: size, height: size, fontSize, borderRadius: radius, color: '#2a1650', ...style }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={artSrc(`art-pocket-tile-${tone}` as ArtName)} alt="" aria-hidden="true" draggable={false} decoding="async" className="absolute inset-0 w-full h-full pointer-events-none" style={{ objectFit: 'fill' }} />
+      <span className="relative" style={{ textShadow: tone === 'white' ? undefined : '0 1px 0 rgba(255,255,255,0.45)' }}>{children}</span>
+    </span>
+  );
+}
+
+/**
  * The Call It coin (2.8 item 9d): heads is the canonical W coin, tails the crest. A fresh flip plays the
  * set's frames — face, tilt, edge, tilt, the landed face — with a lift and a soft shadow (transform/opacity
  * only, about 0.9 s). Reduce Motion: the landed face, nothing else.
@@ -99,11 +118,12 @@ function CoinFlip({ face, flipKey }: { face: CoinFace; flipKey: number }) {
     return () => { ids.forEach(clearTimeout); clearTimeout(end); };
   }, [flipKey, landed]);
   return (
-    <div className="relative flex flex-col items-center" style={{ width: 150, height: 170 }}>
-      <div style={{ height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: lift ? 'translateY(-22px)' : 'none', transition: 'transform 340ms cubic-bezier(.2,.7,.3,1)', willChange: 'transform' }}>
-        <PocketPiece name={frame} height={frame === 'art-pocket-coin-edge' ? 40 : 140} />
+    // The Call It table (art-pocket-board-call-it-table): the coin hovers over its cushion and lands on it.
+    <div className="relative" style={{ width: 210, height: 214 }}>
+      <PocketPiece name="art-pocket-board-call-it-table" height={138} className="absolute" style={{ left: '50%', bottom: 0, marginLeft: -105, width: 210 }} />
+      <div className="absolute left-0 right-0 flex items-center justify-center" style={{ top: 0, height: 130, transform: lift ? 'translateY(-26px)' : 'translateY(8px)', transition: 'transform 340ms cubic-bezier(.2,.7,.3,1)', willChange: 'transform' }}>
+        <PocketPiece name={frame} height={frame === 'art-pocket-coin-edge' ? 36 : 118} />
       </div>
-      <PocketPiece name="art-pocket-coin-shadow" height={26} style={{ marginTop: -6, opacity: lift ? 0.5 : 0.9, transform: lift ? 'scale(0.8)' : 'none', transition: 'transform 340ms, opacity 340ms' }} />
     </div>
   );
 }
@@ -137,58 +157,66 @@ export function RpsBoard({ state, me, them, active, busy, revealKey, onMove, acc
     if (!ok) setPending(null);
   };
 
-  const revealCard = (side: Side, label: string) => {
+  // 2.8 item 9d: the arena (art-pocket-board-rps-arena) is the stage: the two hands sit in its two wells.
+  // Before the reveal the left well holds your locked pick and the right the hidden fist; on a reveal both
+  // hands flip in together with the clash burst between them. Reduce Motion: no flip, no burst.
+  const calm = prefersReducedMotion();
+  const ARENA_W = 300;
+  const ARENA_H = Math.round((ARENA_W * ART_SIZE['art-pocket-board-rps-arena'][1]) / ART_SIZE['art-pocket-board-rps-arena'][0]);
+  const wellStyle = (leftPct: number): React.CSSProperties => ({
+    position: 'absolute', left: `${leftPct * 100}%`, top: '43%', width: 84, height: 84, marginLeft: -42, marginTop: -42,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  });
+  const hand = (side: Side, leftPct: number) => {
     const p = last![side];
     const won = last!.winner === side;
-    const glow = side === me ? TILE.you : TILE.them;
     return (
-      <div className="flex flex-col items-center gap-1.5">
-        <div
-          key={`${revealKey}-${side}`}
-          className="flex items-center justify-center"
-          style={{
-            width: 104, height: 118, borderRadius: 16, ...EMPTY,
-            boxShadow: won ? `0 0 0 2px ${glow}, 0 0 18px ${glow}99` : LIP,
-            animation: revealing ? 'friends-flip 0.45s ease-out both' : undefined,
-          }}
-        >
-          <Art name={p} size={78} />
-        </div>
-        <span className="text-[10px] font-black uppercase" style={{ color: won ? glow : FR.label, letterSpacing: 0.8 }}>
-          {label}{won ? ' · WON' : ''}
-        </span>
+      <div key={`${revealKey}-${side}`} style={{ ...wellStyle(leftPct), animation: revealing && !calm ? 'friends-flip 0.45s ease-out both' : undefined, filter: won ? `drop-shadow(0 0 10px ${side === me ? TILE.you : TILE.them})` : undefined }}>
+        <Art name={p} size={80} />
       </div>
     );
   };
+  const reveal = showReveal && !!last;
+  const lastLine = last
+    ? last.winner === null ? 'Tie' : last.winner === me ? 'You won the round' : `${them.name} won the round`
+    : null;
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <GameTray accent={accent} state={tray} className="w-full flex justify-center">
-      {showReveal ? (
-        <div className="flex items-start justify-center gap-4">
-          {revealCard(me, 'YOU')}
-          {revealCard(theirSide, them.name)}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-1.5">
-          <div
-            className="flex items-center justify-center"
-            style={{ width: 104, height: 118, borderRadius: 16, background: 'linear-gradient(135deg, #fce7f3, #ede9fe)', boxShadow: FR.cardShadow }}
-            aria-label={theirPick ? `${them.name} picked` : `${them.name} has not picked`}
-          >
-            <span className="font-black" style={{ fontSize: 46, color: FR.ink, opacity: theirPick ? 1 : 0.35 }}>?</span>
-          </div>
-          {active && (theirPick
-            ? <span className="text-[11px] font-black" style={{ color: FR.online, letterSpacing: 0.6 }}>✓ {THEM} PICKED</span>
-            : <span className="text-[11px] font-black" style={{ color: FR.label, letterSpacing: 0.6 }}>{THEM} IS PICKING</span>)}
-          {last && (
-            <span className="flex items-center gap-1 text-[10.5px] font-bold" style={{ color: FR.label }}>
-              Last round: <Art name={last[me]} size={18} /> vs <Art name={last[theirSide]} size={18} />
-              {last.winner === null ? ' · tie' : last.winner === me ? ' · you won' : ` · ${them.name} won`}
-            </span>
+      <GameTray accent={accent} state={tray} className="w-full flex flex-col items-center gap-1.5">
+        <div className="relative" style={{ width: ARENA_W, height: ARENA_H }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={artSrc('art-pocket-board-rps-arena')} alt="" aria-hidden="true" width={ARENA_W} height={ARENA_H} draggable={false} decoding="async" style={{ width: ARENA_W, height: ARENA_H }} />
+          {reveal ? (
+            <>
+              {hand(me, 0.30)}
+              {hand(theirSide, 0.74)}
+              {revealing && !calm && (
+                <PocketPiece name="art-pocket-clash-burst" height={70} className="absolute pointer-events-none"
+                  style={{ left: '52%', top: '43%', marginLeft: -35, marginTop: -35, animation: 'friends-flip 0.35s ease-out both', opacity: 0.95 }} />
+              )}
+            </>
+          ) : (
+            <>
+              <div style={wellStyle(0.30)}>{chosen ? <Art name={chosen} size={80} /> : null}</div>
+              <div style={wellStyle(0.74)} aria-label={theirPick ? `${them.name} picked` : `${them.name} has not picked`}>
+                <PocketPiece name="art-pocket-rps-hidden" height={80} style={{ opacity: theirPick ? 1 : 0.4 }} />
+              </div>
+            </>
           )}
         </div>
-      )}
+        <div className="w-full flex justify-between px-6 text-[10px] font-black uppercase" style={{ letterSpacing: 0.8, color: FR.label }}>
+          <span style={{ color: reveal && last!.winner === me ? TILE.you : undefined }}>YOU{reveal && last!.winner === me ? ' · WON' : ''}</span>
+          <span className="truncate" style={{ maxWidth: 120, color: reveal && last!.winner === theirSide ? TILE.them : undefined }}>{them.name}{reveal && last!.winner === theirSide ? ' · WON' : ''}</span>
+        </div>
+        {!reveal && active && (theirPick
+          ? <span className="text-[11px] font-black" style={{ color: FR.online, letterSpacing: 0.6 }}>✓ {THEM} PICKED</span>
+          : <span className="text-[11px] font-black" style={{ color: FR.label, letterSpacing: 0.6 }}>{THEM} IS PICKING</span>)}
+        {!reveal && last && (
+          <span className="flex items-center gap-1 text-[10.5px] font-bold" style={{ color: FR.label }}>
+            Last round: <Art name={last[me]} size={18} /> vs <Art name={last[theirSide]} size={18} /> · {lastLine}
+          </span>
+        )}
       </GameTray>
 
       {active && (
@@ -478,6 +506,15 @@ export function PassBoard({ state, me, you, them, active, busy, onMove, answer, 
                   const style: React.CSSProperties = g
                     ? passTileStyle(tileState(g.tiles[i] ?? 'ABSENT'))
                     : { ...EMPTY, color: '#2a1650', boxShadow: letter ? `0 0 0 2px #c4b5fd` : current ? `0 0 0 1.5px ${softMix('#7c3aed', 0.3)}` : undefined };
+                  if (g) {
+                    const st = tileState(g.tiles[i] ?? 'ABSENT');
+                    return (
+                      <ArtTile key={i} tone={st === 'correct' ? 'purple' : st === 'present' ? 'gold' : 'white'} size={PASS_TILE} fontSize={20} pop
+                        style={st === 'absent' ? { opacity: 0.62 } : undefined}>
+                        {letter}
+                      </ArtTile>
+                    );
+                  }
                   return (
                     <span
                       key={i}
@@ -621,13 +658,9 @@ export function GhostBoard({ state, me, them, active, busy, revealKey, onMove, a
       <GameTray accent={accent} state={tray} className="w-full">
       <div className="flex justify-center items-center" style={{ gap: 6, minHeight: 56 }}>
         {tiles.map((t, i) => (
-          <span
-            key={i}
-            className="flex items-center justify-center font-black uppercase"
-            style={{ width: size, height: size, borderRadius: 10, fontSize: Math.round(size * 0.46), color: '#ffffff', background: sideColor(t.mine), boxShadow: sideGlow(t.mine) }}
-          >
+          <ArtTile key={i} tone={t.mine ? 'purple' : 'gold'} size={size} fontSize={Math.round(size * 0.46)} radius={10} pop={i === tiles.length - 1}>
             {t.letter}
-          </span>
+          </ArtTile>
         ))}
         {showSlot && (
           <span
@@ -722,17 +755,13 @@ export function ChainBoard({ state, me, you, them, active, busy, onMove, accent,
                 {[...w.word].map((ch, i) => {
                   const glow = newest && i === w.word.length - 1;
                   return (
-                    <span
+                    <ArtTile
                       key={i}
-                      className="flex items-center justify-center font-black uppercase"
-                      style={{
-                        width: CHAIN_TILE, height: CHAIN_TILE, borderRadius: 6, fontSize: 14, color: '#ffffff',
-                        background: sideColor(mine),
-                        boxShadow: glow ? `0 0 0 2px #ffffff, 0 0 0 4px ${FR.solid}, 0 0 14px ${FR.solid}` : undefined,
-                      }}
+                      tone={mine ? 'purple' : 'gold'} size={CHAIN_TILE} fontSize={14} radius={6} pop={glow}
+                      style={glow ? { boxShadow: `0 0 0 2px #ffffff, 0 0 0 4px ${FR.solid}, 0 0 14px ${FR.solid}` } : undefined}
                     >
                       {ch}
-                    </span>
+                    </ArtTile>
                   );
                 })}
               </div>

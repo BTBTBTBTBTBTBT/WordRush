@@ -324,7 +324,9 @@ fun FriendlyGameScreen(
     androidx.activity.compose.BackHandler { requestClose() }
 
     val kind = game?.kind ?: FriendlyKind.RPS
-    val firstPlay = rememberFirstPlayAutoShow(PocketHelp.pocketTutorialKey(kind)) && game != null
+    // Finished games of this kind in the recent list = an existing player: no card, the key is recorded quietly.
+    val recentGames by FriendlyGamesService.recent.collectAsState()
+    val firstPlay = rememberFirstPlayAutoShow(PocketHelp.pocketTutorialKey(kind), recentGames.any { it.kind == kind }) && game != null
     LaunchedEffect(firstPlay) { if (firstPlay) showHelp = true }
     // A1: the Friends wallpaper (fixed light), never a flat white page.
     Column(Modifier.fillMaxSize().pageBackground(com.wordocious.app.ui.PageTint.FRIENDS, alwaysLight = true)) {
@@ -371,6 +373,14 @@ fun FriendlyGameScreen(
                 FriendlyLive.presenceLabel(peerPresent, peerEverSeen, theirTurn = whoseTurn(g.state)?.includes(g.me.other) == true && !myTurn)
             else null
             ScoreWindow(g, if (presence != null) peerPresent else theyOn, presence)
+            // 22: their turn = a compact stage strip above the board (the board stays visible): "Waiting for <name>…",
+            // how long they have had it, their face, and the keepy-uppy tile behind one small tap.
+            if (g.active && !myTurn && whoseTurn(g.state)?.includes(g.me.other) == true) {
+                com.wordocious.app.ui.vs.PocketWaitStrip(
+                    name = them, sinceMs = g.updatedMs,
+                    avatar = { FriendFace(them, g.opponent.avatarUrl, g.opponent.avatarEmoji, 32.dp, online = theyOn) },
+                )
+            }
             // 9d: the YOUR TURN flag (shipped art) when the move is yours.
             if (g.active && myTurn) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
@@ -584,11 +594,14 @@ private fun ScoreSide(label: String, name: String, url: String?, emoji: String?,
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         // The half whose turn it is wears a small TO PLAY marker (an invisible one keeps both halves level);
         // live play swaps in the friend's presence (THINKING… / HERE NOW / LEFT THE GAME) in the same slot.
-        Text(
-            chip?.first ?: "TO PLAY", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color.White, maxLines = 1,
-            modifier = Modifier.alpha(if (toPlay || chip != null) 1f else 0f).clip(RoundedCornerShape(50)).background(chip?.second ?: FriendsPink.solid)
-                .padding(horizontal = 7.dp, vertical = 2.dp),
-        )
+        // 9d: the shipped turn marker (the gold arrow disc) sits beside the TO PLAY pill (an invisible one keeps both halves level).
+        Row(Modifier.alpha(if (toPlay || chip != null) 1f else 0f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (chip == null) Image(painterResource(R.drawable.art_pocket_turn_marker), null, contentScale = ContentScale.Fit, modifier = Modifier.size(15.dp).clearAndSetSemantics { })
+            Text(
+                chip?.first ?: "TO PLAY", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color.White, maxLines = 1,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(chip?.second ?: FriendsPink.solid).padding(horizontal = 7.dp, vertical = 2.dp),
+            )
+        }
         FriendFace(name, url, emoji, 44.dp, online = online, accentHex = accentHex)
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = DEEP, maxLines = 1, overflow = TextOverflow.Ellipsis)
         // A2: the score as a soft number.
@@ -626,14 +639,21 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 FriendsLabel("ROUND ${s.rounds.size}")
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    RevealArt("YOU", if (me == Side.A) r.a else r.b, glow = r.winner == me)
-                    // 9d: the clash burst between the two hands.
+                // 9d: the shipped arena plate sits under the two hands (a soft stage, quiet behind the pieces).
+                Box(contentAlignment = Alignment.BottomCenter) {
                     Image(
-                        painterResource(R.drawable.art_pocket_clash_burst), null, contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(40.dp).clearAndSetSemantics { },
+                        painterResource(R.drawable.art_pocket_arena_plate), null, contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(width = 252.dp, height = 82.dp).offset(y = 6.dp).alpha(0.9f).clearAndSetSemantics { },
                     )
-                    RevealArt(them.uppercase(), if (me == Side.A) r.b else r.a, glow = r.winner == me.other)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        RevealArt("YOU", if (me == Side.A) r.a else r.b, glow = r.winner == me)
+                        // 9d: the clash burst between the two hands.
+                        Image(
+                            painterResource(R.drawable.art_pocket_clash_burst), null, contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(40.dp).clearAndSetSemantics { },
+                        )
+                        RevealArt(them.uppercase(), if (me == Side.A) r.b else r.a, glow = r.winner == me.other)
+                    }
                 }
             }
         }
@@ -863,6 +883,16 @@ private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTu
     val hop = sin(Math.PI * t).toFloat()
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
         Box(Modifier.size(width = 170.dp, height = 170.dp), contentAlignment = Alignment.Center) {
+            // 9d: a won call wears the shipped sparkle ring once the coin has landed (a fade, no spin; static under Reduce Motion).
+            val ringAlpha by androidx.compose.animation.core.animateFloatAsState(
+                if (last?.winner == me && t >= 0.999f) 1f else 0f, tween(if (WTheme.reducedMotion) 0 else 320), label = "coinRing",
+            )
+            if (ringAlpha > 0f) {
+                Image(
+                    painterResource(R.drawable.art_pocket_coin_sparkle_ring), null, contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(170.dp).alpha(ringAlpha).clearAndSetSemantics { },
+                )
+            }
             Image(
                 painterResource(R.drawable.art_pocket_coin_shadow), null, contentScale = ContentScale.Fit,
                 modifier = Modifier.align(Alignment.BottomCenter).size(130.dp, 40.dp)

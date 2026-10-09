@@ -333,8 +333,8 @@ struct CodebreakerView: View {
                         // the Reveal countdown could flip it to two rows and shrink the board.
                         let wide = Self.pillsInOneRow
                         let delete = capsule("Delete", nil, variant: .peach) { Haptics.tap(); vm.clearLetter() }
-                        let check = capsule("Check", nil, variant: .purple, count: vm.state.checks) { Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check() }
-                        let hint = capsule("Hint", wide ? nil : "lightbulb", variant: .amber, count: vm.state.hintsUsed) { SoundManager.shared.playKeyTap(); vm.hint() }
+                        let check = capsule("Check", wide ? nil : "checkmark", variant: .purple, count: vm.state.checks, primary: true) { Haptics.tap(); SoundManager.shared.playKeyTap(); vm.check() }
+                        let hint = capsule("Hint", wide ? nil : "lightbulb", variant: .amber, count: vm.state.hintsUsed, tint: Color(hex: 0xF5A524)) { SoundManager.shared.playKeyTap(); vm.hint() }
                         let reveal = capsule(vm.revealIn > 0 ? "Reveal · \(timeText(vm.revealIn, clock: true))" : "Reveal", wide ? nil : "eye", variant: .peach, dim: vm.revealIn > 0) { vm.reveal() }
                         Group {
                             if wide {
@@ -412,8 +412,8 @@ struct CodebreakerView: View {
 
     /// §A8: a small candy pill; `dim` disables it (the candy fades).
     private func capsule(_ label: String, _ symbol: String?, variant: CandyButtonStyle.Variant, dim: Bool = false,
-                         count: Int = 0, action: @escaping () -> Void) -> some View {
-        PuzCandyAction(title: label, symbol: symbol, variant: variant, fullWidth: true, count: count, action: action)
+                         count: Int = 0, primary: Bool = false, tint: Color? = nil, action: @escaping () -> Void) -> some View {
+        PuzCandyAction(title: label, symbol: symbol, variant: variant, fullWidth: true, count: count, primary: primary, tint: tint, action: action)
             .disabled(dim)
     }
 

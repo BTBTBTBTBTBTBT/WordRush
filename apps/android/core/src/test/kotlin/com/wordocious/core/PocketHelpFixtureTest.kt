@@ -61,6 +61,21 @@ class PocketHelpFixtureTest {
     }
 
     @Test
+    fun existing_player_decisions_match() {
+        val rows = root["withResults"]!!.jsonArray
+        assertTrue(rows.isNotEmpty())
+        for (d in rows) {
+            val o = d.jsonObject
+            val seen = (o["seen"] as? JsonArray)?.map { it.jsonPrimitive.content }
+            val live = o["live"]!!.jsonPrimitive.boolean
+            val key = o["key"]!!.jsonPrimitive.content
+            val has = o["hasResults"]!!.jsonPrimitive.boolean
+            assertEquals("show $o", o["show"]!!.jsonPrimitive.boolean, PocketHelp.shouldAutoShowTutorial(live, seen, key, has))
+            assertEquals("record $o", o["record"]!!.jsonPrimitive.boolean, PocketHelp.tutorialShouldRecordSeen(live, seen, key, has))
+        }
+    }
+
+    @Test
     fun seen_list_math_matches() {
         for (c in root["seen"]!!.jsonArray) {
             val o = c.jsonObject

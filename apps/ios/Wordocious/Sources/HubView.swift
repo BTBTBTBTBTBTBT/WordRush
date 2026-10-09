@@ -221,6 +221,13 @@ struct HubView: View {
     @State private var adShown = false
     @State private var showOverlay = false
     @State private var showGuide = false
+    /// Item 32: End puzzle asks first (a designed card, not a system dialog).
+    @State private var confirmEnd = false
+    /// Item 32: the shuffle tile flip. `shownOuter` holds the OLD letters until each hex is edge-on, `flip` is each
+    /// outer hex's rotation about Y (degrees), `flipToken` drops a stale flip when a second shuffle starts.
+    @State private var shownOuter: [Character]?
+    @State private var flip: [Double] = Array(repeating: 0, count: 6)
+    @State private var flipToken = 0
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: HubVM(seed: seed)); self.onPlayAgain = onPlayAgain
@@ -240,6 +247,17 @@ struct HubView: View {
                 .padding(.horizontal, 10)
             }
             if let xp = vm.xpResult { XpToastView(result: xp) { vm.xpResult = nil } }
+            if confirmEnd {
+                VSConfirmCard(
+                    title: "END THE PUZZLE?",
+                    message: vm.isDaily ? "You will see every word, and today’s Hubbub is over." : "You will see every word.",
+                    primary: "KEEP PLAYING",
+                    secondary: "END PUZZLE",
+                    secondaryDestructive: true,
+                    onPrimary: { withAnimation(Theme.animation(.easeOut(duration: 0.18))) { confirmEnd = false } },
+                    onSecondary: { confirmEnd = false; vm.end() })
+                    .zIndex(8)
+            }
             if showOverlay {
                 let won = vm.state.status == .won
                 VictoryOverlay(won: won, guesses: vm.state.found.count, maxGuesses: 0, timeSeconds: vm.displaySeconds,
@@ -269,7 +287,7 @@ struct HubView: View {
             switch key {
             case .enter: vm.submit()
             case .delete: vm.delete()
-            case .space: vm.shuffle()
+            case .space: shuffleFlip()
             case .letter(let l):
                 guard let ch = l.first, vm.state.letters.contains(ch) else { return false }
                 vm.type(ch)
@@ -300,10 +318,42 @@ struct HubView: View {
         GameCornerButton(kind: symbol == "questionmark" ? .help : .home, action: action)
     }
 
-    /// §A8: the control row's small candy pills (purple Enter, teal Shuffle, amber
-    /// hint, pink reveal, peach Delete).
-    private func capsule(_ label: String, _ symbol: String, variant: CandyButtonStyle.Variant, action: @escaping () -> Void) -> some View {
-        PuzCandyAction(title: label, symbol: symbol, variant: variant, action: action)
+    /// Item 32: the family helper pills with the 3D icons (art-fam-ic-*), in the game's color; `primary` is the solid
+    /// tint (Enter, Finish), `tint` an explicit color (the amber hint pair). Web twin: HelperButton in hub-game.tsx.
+    private func helper(_ label: String, _ symbol: String, tint: Color? = nil, primary: Bool = false,
+                        action: @escaping () -> Void) -> some View {
+        Button(action: action) { CandyLabel(title: label, symbol: symbol) }
+            .buttonStyle(HelperButtonStyle(tint: tint, selected: primary))
+            .accessibilityLabel(label)
+    }
+
+    /// The shuffle as a staggered tile flip (item 32): the six outer hexes turn over about Y, 220 ms each, 36 ms apart
+    /// (~400 ms in all), and the letter swaps at the midpoint when the hex is edge-on; the center stays. GPU transforms only.
+    /// Reduce Motion (or Low Power): an instant swap.
+    private func shuffleFlip() {
+        let before = vm.outer
+        vm.shuffle()
+        let after = vm.outer
+        guard !Theme.reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled, before.count == 6, after.count == 6 else { return }
+        flipToken += 1
+        let token = flipToken
+        shownOuter = before
+        for i in 0..<6 {
+            let delay = Double(i) * 0.036
+            withAnimation(.easeIn(duration: 0.11).delay(delay)) { flip[i] = 90 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.11) {
+                guard token == flipToken else { return }
+                var jump = Transaction()
+                jump.disablesAnimations = true
+                withTransaction(jump) { shownOuter?[i] = after[i]; flip[i] = -90 }
+                withAnimation(.easeOut(duration: 0.11)) { flip[i] = 0 }
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22 + 6 * 0.036 + 0.05) {
+            guard token == flipToken else { return }
+            shownOuter = nil
+            flip = Array(repeating: 0, count: 6)
+        }
     }
 
     /// `counts: false` on results, where the result line carries the word count.
@@ -360,20 +410,35 @@ struct HubView: View {
         HubHexKey(letter: ch, centre: centre, side: side, disabled: vm.state.ended) { vm.type(ch) }
     }
 
-    private func chip(_ w: String, dim: Bool = false) -> some View {
+    /// Item 32: found words are neat game-tinted mini tiles (a soft lip, no outline): lilac for a word, violet for a
+    /// revealed one, gold with the gem for a pangram; `newest` pops in. A rarer word (scores, outside the N/M words count)
+    /// wears the tiny corner gem (button family, 10-05 — no "bonus" on player screens since 09-25).
+    private func chip(_ w: String, dim: Bool = false, newest: Bool = false) -> some View {
         let s = vm.state, pangram = s.pangrams.contains(w), revealed = s.revealed.contains(w)
         let bonus = !pangram && hubIsBonus(s.bonusFound, w)
-        // §A1: found words are tinted pills in the accent (pangrams stronger); a rarer word
-        // (scores, outside the N/M words count) wears a tiny glossy gem on its corner (button family,
-        // 10-05 — no "bonus" on player screens since 09-25).
-        return Text(pangram ? "\(w) ★" : w).font(Brand.font(11, .black))
-        .accessibilityElement(children: .ignore).accessibilityLabel(bonus ? "\(w), rare word" : pangram ? "\(w), pangram" : w)
-        .foregroundStyle(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.ink)
-        .padding(.horizontal, 8).padding(.vertical, 3)
-        .background(Capsule().fill(PuzKit.face(hubAccent, pangram ? 0.2 : 0.09)))
-        .overlay(Capsule().stroke(pangram ? hubAccent : revealed ? Color(hex: 0x8B5CF6) : PuzKit.line(hubAccent, 0.28), lineWidth: 1))
+        let tint = pangram ? Color(hex: 0xF5A524) : revealed ? Color(hex: 0x8B5CF6) : Color(hex: 0x7C3AED)
+        let ink = pangram ? Color(hex: 0x7A3D00) : revealed ? Color(hex: 0x6D28D9) : Color.black.mixed(over: Color(hex: 0x7C3AED), 0.2)
+        let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+        return HStack(spacing: 4) {
+            Text(w).font(Brand.font(11.5, .black)).foregroundStyle(ink)
+            if pangram, let gem = FamilyArt.shared.image("art-fam-cic-gem") {
+                Image(uiImage: gem).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
+                    .frame(width: 13, height: 13).accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6)
+        .background {
+            ZStack {
+                shape.fill(tint.mixed(over: .white, 0.34))   // the lip
+                shape.fill(LinearGradient(colors: [tint.mixed(over: .white, pangram ? 0.42 : 0.2), tint.mixed(over: .white, pangram ? 0.26 : 0.12)],
+                                          startPoint: .top, endPoint: .bottom))
+                    .padding(.bottom, 2)
+            }
+        }
         .overlay(alignment: .topTrailing) { if bonus { RareWordGem() } }
         .opacity(dim ? 0.6 : 1)
+        .modifier(HubChipPop(on: newest))
+        .accessibilityElement(children: .ignore).accessibilityLabel(bonus ? "\(w), rare word" : pangram ? "\(w), pangram" : w)
     }
 
     /// §BI22: a pending "Starts with…" hint — a soft filled amber candy chip with a
@@ -402,13 +467,15 @@ struct HubView: View {
     private static let rankBarHeight: CGFloat = 27      // rank name + 8 pt capsules
     private static let entryLineHeight: CGFloat = 44    // 28 pt entry, min height
     private static let controlRowHeight: CGFloat = 38   // one candy row (34 pt + lip, ×2)
-    private static let foundHeaderHeight: CGFloat = 12  // "N OF M WORDS"
+    private static let foundHeaderHeight: CGFloat = 26  // the FOUND bubble lettering (22 pt)
     private static let endLinkHeight: CGFloat = 44      // pinned End candy + bottom pad
     /// §L: the honeycomb's tray (padding both sides + the 4-pt lip).
     private static let trayHeight: CGFloat = GameTray.padding * 2 + GameTray.lip
     private static let boardRowSpacing: CGFloat = 8
     private static let boardFixedRows = 7               // rows around the cluster band
     private static let tileMin: CGFloat = 64, tileMax: CGFloat = 100
+    /// The hint pair's tint (web: #f5a524).
+    private static let hintAmber = Color(hex: 0xF5A524)
 
     private static func tileSide(boardHeight h: CGFloat) -> CGFloat {
         let reserved = rankBarHeight + entryLineHeight + controlRowHeight * 2 + foundHeaderHeight + endLinkHeight + trayHeight + boardRowSpacing * CGFloat(boardFixedRows)
@@ -442,7 +509,8 @@ struct HubView: View {
     /// hexagons around it (flat-top pieces: one above, one below, two each side),
     /// sitting on the shared game tray (§L).
     private func cluster(side: CGFloat) -> some View {
-        let o = vm.outer + Array(repeating: Character(" "), count: max(0, 6 - vm.outer.count))
+        let shown = shownOuter ?? vm.outer
+        let o = shown + Array(repeating: Character(" "), count: max(0, 6 - shown.count))
         // Piece centers relative to the middle: vertical step ≈ the hex's height,
         // side neighbors ¾ of its width across and half a step up / down.
         let v = side * 0.95, h = side * 0.77
@@ -453,7 +521,9 @@ struct HubView: View {
         let w = side + 2 * h, ht = side + 2 * v
         return ZStack {
             ForEach(0..<6, id: \.self) { i in
-                letterTile(o[i], centre: false, side: side).offset(x: spots[i].x, y: spots[i].y)
+                letterTile(o[i], centre: false, side: side)
+                    .rotation3DEffect(.degrees(flip[i]), axis: (x: 0, y: 1, z: 0), perspective: 0.5)
+                    .offset(x: spots[i].x, y: spots[i].y)
             }
             letterTile(vm.centre, centre: true, side: side)
         }
@@ -477,16 +547,20 @@ struct HubView: View {
                 cluster(side: side)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 HStack(spacing: 8) {
-                    capsule("Delete", "delete.left", variant: .peach) { vm.delete() }
-                    capsule("Shuffle", "shuffle", variant: .teal) { vm.shuffle() }
-                    capsule("Enter", "return", variant: .purple) { vm.submit() }
+                    helper("Delete", "delete.left") { vm.delete() }
+                    helper("Shuffle", "shuffle") { shuffleFlip() }
+                    // Enter is the primary: the solid tint.
+                    helper("Enter", "return", primary: true) { vm.submit() }
                 }
                 HStack(spacing: 8) {
-                    capsule("Starts with…", "lightbulb", variant: .amber) { vm.hintStart() }
-                    capsule("Reveal a word", "eye", variant: .pink) { vm.hintReveal() }
+                    helper("Starts with…", "lightbulb", tint: Self.hintAmber) { vm.hintStart() }
+                    helper("Reveal a word", "eye", tint: Self.hintAmber) { vm.hintReveal() }
                 }
                 // A label, never a second count: the header's hubWordsLabel is the one word count (Doug 10-05: 8 vs 18).
-                Text(HUB_FOUND_LABEL).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                // Item 32: it is the bubble lettering in the game's color (web: BubbleText), not small caps.
+                BubbleTextView(text: HUB_FOUND_LABEL, palette: .accent(hubAccent), maxSize: 22, minSize: 16, slotWidth: 150, animated: false)
+                    .frame(width: 150, height: Self.foundHeaderHeight)
+                    .accessibilityElement(children: .ignore).accessibilityLabel(HUB_FOUND_LABEL).accessibilityAddTraits(.isHeader)
                 // Found words: newest first in a wrapping flow that fills the lower area
                 // and scrolls once it overflows.
                 ScrollView(showsIndicators: false) {
@@ -496,15 +570,20 @@ struct HubView: View {
                         // which squeezed the honeycomb band (the board shrank on a hint).
                         ForEach(pending, id: \.self) { hintChip($0) }
                         // Every accepted word, newest first, in the order found (the event log spans both lists).
-                        ForEach(hubFoundInOrder(s).reversed(), id: \.self) { chip($0) }
+                        ForEach(Array(hubFoundInOrder(s).reversed().enumerated()), id: \.element) { i, w in chip(w, newest: i == 0) }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 7).padding(.horizontal, 7)   // room for a rare word's corner gem (the scroll clips)
                     .padding(.vertical, 2)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                if s.status == .won { PuzCandyAction(title: "Finish", symbol: "flag", variant: .purple) { vm.end() } }
-                else { PuzCandyAction(title: "End puzzle and see answers", symbol: "flag", variant: .peach) { vm.end() } }
+                // Item 32: End puzzle is a quiet small family button that asks first; Finish (after the win) stays the primary helper.
+                if s.status == .won { helper("Finish", "flag", primary: true) { vm.end() } }
+                else {
+                    Button { withAnimation(Theme.animation(.easeOut(duration: 0.18))) { confirmEnd = true } } label: { CandyLabel(title: "End puzzle", symbol: "flag") }
+                        .buttonStyle(QuietButtonStyle(size: .small))
+                        .accessibilityLabel("End puzzle and see answers")
+                }
             }
             .padding(.bottom, 6)
             .frame(width: geo.size.width, height: geo.size.height)
@@ -533,7 +612,7 @@ struct HubView: View {
                         let all = (s.words + s.bonusFound).sorted()
                         let rows = stride(from: 0, to: all.count, by: 4).map { Array(all[$0..<min($0 + 4, all.count)]) }
                         VStack(spacing: 5) { ForEach(0..<rows.count, id: \.self) { r in HStack(spacing: 5) { ForEach(rows[r], id: \.self) { w in
-                            if s.found.contains(w) || s.bonusFound.contains(w) { chip(w) } else { Text(w).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x8D99B0)).padding(.horizontal, 8).padding(.vertical, 3).background(Capsule().fill(PuzKit.face(Color(hex: 0x6B7891), 0.08))).overlay(Capsule().stroke(PuzKit.line(Color(hex: 0x6B7891), 0.22), lineWidth: 1)) }
+                            if s.found.contains(w) || s.bonusFound.contains(w) { chip(w) } else { Text(w).font(Brand.font(11.5, .bold)).foregroundStyle(Color(hex: 0x8D99B0)).padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6).background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color(hex: 0x6B7891).wash(0.1))) }
                         } } } }
                     } else { chipRows((s.found + s.bonusFound).sorted()) }
                 }
@@ -621,6 +700,21 @@ func hubFoundInOrder(_ s: HubState) -> [String] {
         let w = String(ev.dropFirst()); if !out.contains(w) { out.append(w) }
     }
     return out
+}
+
+/// The newest found word pops in (<= 280 ms spring); nothing moves under Reduce Motion or for older chips.
+private struct HubChipPop: ViewModifier {
+    @State private var landed: Bool
+    init(on: Bool) { _landed = State(initialValue: !on || Theme.reduceMotion) }
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(landed ? 1 : 0.7)
+            .opacity(landed ? 1 : 0.3)
+            .onAppear {
+                guard !landed else { return }
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.6)) { landed = true }
+            }
+    }
 }
 
 /// FINISH_SPEC §J1: one hive letter as a glossy hexagon — `art-piece-hex-center`
