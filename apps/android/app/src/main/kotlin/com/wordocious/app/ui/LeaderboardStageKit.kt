@@ -100,7 +100,7 @@ internal fun LeaderboardStageCard(accent: Color, content: @Composable ColumnScop
 
 /** The player's own mascot beside the title: the full-body standing figure (alive when the living mascot is on). */
 @Composable
-private fun StageOwnMascot(size: androidx.compose.ui.unit.Dp) {
+internal fun StageOwnMascot(size: androidx.compose.ui.unit.Dp) {
     val profile by AuthService.profile.collectAsState()
     val p = profile
     if (p != null) {
