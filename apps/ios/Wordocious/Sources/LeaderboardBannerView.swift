@@ -23,13 +23,16 @@ struct LeaderboardBannerView: View {
     var body: some View {
         // FINISH_SPEC §AU2 / BB3: a compact top so the podium shows on arrival — the
         // day title ≤ 90 pt and the compact two-row picker grid.
-        VStack(spacing: 6) {
-            LeaderboardHeadline(bleed: bleed)   // founder 10-05: the big day title (LeaderboardArt.dayCap)
+        // 11b: the top of the ONE living stage — the day's bubble title with your mascot and the day's cast host
+        // (the date + reset clock is its one small line), then the picker with no card of its own. LeaderboardTab
+        // wraps this, the game strip and the podium in LeaderboardStageCard.
+        VStack(spacing: 2) {
+            StageTitleRow()
             GamePickerCard(selection: isSweep ? GamePicker.sweep : selected.rawValue,
                            accent: LbStyle.gold, ink: Self.ink, results: results,
-                           sweepResult: sweepResult, compact: true,
+                           sweepResult: sweepResult, compact: true, bare: true,
                            onSelect: select) {
-                strip
+                EmptyView()
             }
         }
     }
