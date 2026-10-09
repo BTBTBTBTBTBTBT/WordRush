@@ -644,7 +644,7 @@ struct EditProfileView: View {
                         // already showed the Locked card for them
                         m = MascotAccess.enforce(mascot, ctx)
                     } else {
-                        m = AvatarCatalog.enforcePro(mascot, isPro: auth.isProActive)
+                        m = MascotAccess.legacySave(mascot, ctx)
                         if AvatarFrameRules.tier(m.frame) != nil, !AvatarFrameRules.isUnlocked(m.frame, level: level) { m.frame = "none" }
                     }
                     if !hasPhoto { m.display = "mascot" }

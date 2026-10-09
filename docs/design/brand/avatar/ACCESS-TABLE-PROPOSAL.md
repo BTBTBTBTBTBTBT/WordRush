@@ -18,7 +18,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 - Not listed (always free): every `none`, the solid pattern, the auto backdrop, the default accessory color.
 - A part the player already **saved** is never stripped (grandfathered) even if it's gated later.
 
-**Totals** (258 options): 60 starter-free · 183 in Pro · 192 buyable · 60 earnable · 15 seasonal.
+**Totals** (258 options): 60 starter-free · 194 in Pro · 192 buyable · 60 earnable · 15 seasonal.
 
 ## Recommended free starter set
 
@@ -269,10 +269,10 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | pombeanie | Pro · buy $1.99 |
 | bearears | Pro · buy $1.99 |
 | mohawk | Pro · buy $2.99 · earn: Keep a 100-day play streak (`bestStreak` ≥ 100) |
-| pumpkinhat | free in halloween season · buy $1.99 (in season only) |
-| candycornhat | free in halloween season · buy $1.99 (in season only) |
-| witchnight | free in halloween season · buy $1.99 (in season only) |
-| batears | free in halloween season · buy $1.99 (in season only) |
+| pumpkinhat | free in halloween season · Pro · buy $1.99 |
+| candycornhat | free in halloween season · Pro · buy $1.99 |
+| witchnight | free in halloween season · Pro · buy $1.99 |
+| batears | free in halloween season · Pro · buy $1.99 |
 
 ### face
 
@@ -303,8 +303,8 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | guitar | Pro · buy $1.99 · earn: Win 3 dailies in under 60 seconds each in one day (achievement `hat_trick`) |
 | supercape | Pro · buy $2.99 · earn: Beat all ten cast bots (achievement `meet_the_cast`) |
 | fairywings | Pro · buy $2.99 · earn: Open Wordocious 50 days in a row (`bestLoginStreak` ≥ 50) |
-| batwings | free in halloween season · buy $1.99 (in season only) |
-| cattail | free in halloween season · buy $1.99 (in season only) |
+| batwings | free in halloween season · Pro · buy $1.99 |
+| cattail | free in halloween season · Pro · buy $1.99 |
 
 ### held
 
@@ -322,7 +322,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | spatula | Pro · buy $1.99 |
 | mic | Pro · buy $1.99 · earn: Win 10 VS matches in a row (achievement `untouchable`) |
 | wand-star | Pro · buy $2.99 · earn: Sweep the Puzzles 7 days in a row (achievement `puzzle_week`) |
-| candypail | free in halloween season · buy $1.99 (in season only) |
+| candypail | free in halloween season · Pro · buy $1.99 |
 
 ### wrap
 
@@ -333,7 +333,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | apron | Pro · buy $0.99 |
 | lei | Pro · buy $0.99 |
 | cape-drape | Pro · buy $2.99 · earn: Sweep every daily and every Puzzle in one day (achievement `grand_sweep`) |
-| vampirecollar | free in halloween season · buy $1.99 (in season only) |
+| vampirecollar | free in halloween season · Pro · buy $1.99 |
 
 ### feet
 
@@ -352,9 +352,9 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | kitten | Pro · buy $2.99 · earn: Keep a 7-day play streak (`bestStreak` ≥ 7) |
 | puppy | Pro · buy $2.99 · earn: Keep a 7-day friend streak (achievement `ride_or_die`) |
 | snail | Pro · buy $2.99 · earn: Play 500 games (achievement `dedicated`) |
-| bat | free in halloween season · buy $1.99 (in season only) |
-| ghost | free in halloween season · buy $1.99 (in season only) |
-| blackcat | free in halloween season · buy $1.99 (in season only) |
+| bat | free in halloween season · Pro · buy $1.99 |
+| ghost | free in halloween season · Pro · buy $1.99 |
+| blackcat | free in halloween season · Pro · buy $1.99 |
 
 ### frame
 

@@ -75,6 +75,7 @@ fun DressingRoom(
     achievements: Collection<String>? = null,
 ) {
     val ctx = LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(Unit) { com.wordocious.app.data.OwnedItems.load() }
     remember { MascotBuilderLogic.fit = MascotComposer.fitManifest(ctx); MascotBuilderLogic.saved = config; loadAvatarAccess(ctx); true }
     // 10-05 seasonal items: the active season (admin preview first, else the calendar) drives the shelf + filters
     val season = rememberSeason()

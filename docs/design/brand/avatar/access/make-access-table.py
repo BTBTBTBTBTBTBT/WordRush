@@ -209,19 +209,16 @@ DEFAULT_TIER = {
     "feet": "t1", "pet": "t3", "frame": "t2", "bg": "t1", "pose": "t1",
 }
 
-# Limited: none of today's everyday items. Seasonal items keep the 10-05 rules (free in season, kept if saved);
-# the proposal adds a buy route that only opens INSIDE the season window (`limited`), so a player who missed the
-# free window can't pick one up out of season (it comes back next year).
+# Seasonal items (founder 10-07, decided): free in their season window, kept if saved, and they NEVER leave the catalog:
+# out of season they stay in their normal tab with Pro / buy routes (`limited` is retired).
 SEASON_BUY = "t2"
 # Fields whose overrides are the WHOLE rule (not merged onto Pro + buy): the frames keep today's routes exactly.
 EXACT_FIELDS = {"frame"}
 
 def rule_for(field, pid):
     season = season_of(field, pid)
-    if season and field == "body":     # seasonal bodies never leave: free in season, then Pro or buy
+    if season:     # seasonal parts NEVER disappear (founder 10-07): free in their season, then Pro or buy (earn per item)
         return {"season": season, "pro": True, "buy": SEASON_BUY}
-    if season:
-        return {"season": season, "limited": True, "buy": SEASON_BUY}
     if pid in STARTER[field]:
         return {"free": True}
     over = RULES.get(field, {}).get(pid)

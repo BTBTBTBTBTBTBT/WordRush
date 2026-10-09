@@ -67,7 +67,7 @@ internal fun ownAccessContext(isPro: Boolean, achievements: Collection<String>?)
     val p = AuthService.profile.value
     val stats = p?.let { MascotBuilderLogic.earnStats(it.level, it.currentStreak, it.bestStreak, it.bestDailyLoginStreak, achievements) }
     val saved = runCatching { MascotAvatars.ownConfig(p) }.getOrNull()
-    return MascotBuilderLogic.accessContext(isPro = isPro, stats = stats, saved = saved, owned = emptyList())
+    return MascotBuilderLogic.accessContext(isPro = isPro, stats = stats, saved = saved, owned = MascotBuilderLogic.owned)
 }
 
 /**

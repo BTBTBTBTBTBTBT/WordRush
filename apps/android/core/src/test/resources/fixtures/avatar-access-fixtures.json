@@ -191,7 +191,7 @@
       "key": "head:pumpkinhat",
       "rule": {
         "season": "halloween",
-        "limited": true,
+        "pro": true,
         "buy": "t2"
       }
     },
@@ -201,7 +201,8 @@
       "gating": false,
       "key": "head:pumpkinhat",
       "rule": {
-        "season": "halloween"
+        "season": "halloween",
+        "pro": true
       }
     },
     {
@@ -481,7 +482,7 @@
       "key": "pet:ghost",
       "rule": {
         "season": "halloween",
-        "limited": true,
+        "pro": true,
         "buy": "t2"
       }
     },
@@ -491,7 +492,8 @@
       "gating": false,
       "key": "pet:ghost",
       "rule": {
-        "season": "halloween"
+        "season": "halloween",
+        "pro": true
       }
     },
     {
@@ -706,9 +708,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -1007,9 +1019,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -1252,15 +1274,25 @@
         "field": "head",
         "id": "pumpkinhat"
       },
-      "unlocked": false,
-      "reason": "locked",
+      "unlocked": true,
+      "reason": "pro",
       "routes": [
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -1553,15 +1585,25 @@
         "field": "pet",
         "id": "ghost"
       },
-      "unlocked": false,
-      "reason": "locked",
+      "unlocked": true,
+      "reason": "pro",
       "routes": [
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -1810,9 +1852,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -2111,9 +2163,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -2362,9 +2424,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -2663,9 +2735,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -2914,9 +2996,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -3215,9 +3307,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -3466,9 +3568,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -3767,9 +3879,19 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "buy",
+          "tier": "t2",
+          "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
+        "Buy $1.99",
         "Free during Halloween"
       ]
     },
@@ -4023,9 +4145,13 @@
           "kind": "buy",
           "tier": "t2",
           "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Buy $1.99",
         "Free during Halloween"
       ]
@@ -4330,9 +4456,13 @@
           "kind": "buy",
           "tier": "t2",
           "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Buy $1.99",
         "Free during Halloween"
       ]
@@ -4587,9 +4717,13 @@
           "kind": "buy",
           "tier": "t2",
           "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Buy $1.99",
         "Free during Halloween"
       ]
@@ -4894,9 +5028,13 @@
           "kind": "buy",
           "tier": "t2",
           "price": 1.99
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Buy $1.99",
         "Free during Halloween"
       ]
@@ -5118,9 +5256,13 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Free during Halloween"
       ]
     },
@@ -5309,9 +5451,13 @@
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Free during Halloween"
       ]
     },
@@ -5432,15 +5578,19 @@
         "field": "head",
         "id": "pumpkinhat"
       },
-      "unlocked": false,
-      "reason": "locked",
+      "unlocked": true,
+      "reason": "pro",
       "routes": [
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Free during Halloween"
       ]
     },
@@ -5623,15 +5773,19 @@
         "field": "pet",
         "id": "ghost"
       },
-      "unlocked": false,
-      "reason": "locked",
+      "unlocked": true,
+      "reason": "pro",
       "routes": [
         {
           "kind": "season",
           "season": "halloween"
+        },
+        {
+          "kind": "pro"
         }
       ],
       "lines": [
+        "Included with Pro",
         "Free during Halloween"
       ]
     },
@@ -6189,17 +6343,8 @@
         "bg": "auto",
         "display": "mascot"
       },
-      "ok": false,
-      "locked": [
-        {
-          "field": "head",
-          "id": "pumpkinhat"
-        },
-        {
-          "field": "pet",
-          "id": "ghost"
-        }
-      ],
+      "ok": true,
+      "locked": [],
       "enforced": {
         "v": 1,
         "body": "classic",
@@ -6210,9 +6355,10 @@
         "nose": "none",
         "cheeks": "none",
         "mouth": "smile",
-        "head": "none",
+        "head": "pumpkinhat",
         "face": "none",
         "neck": "none",
+        "pet": "ghost",
         "accColor": "default",
         "frame": "none",
         "bg": "auto",
@@ -8652,17 +8798,8 @@
         "bg": "auto",
         "display": "mascot"
       },
-      "ok": false,
-      "locked": [
-        {
-          "field": "head",
-          "id": "pumpkinhat"
-        },
-        {
-          "field": "pet",
-          "id": "ghost"
-        }
-      ],
+      "ok": true,
+      "locked": [],
       "enforced": {
         "v": 1,
         "body": "classic",
@@ -8673,9 +8810,10 @@
         "nose": "none",
         "cheeks": "none",
         "mouth": "smile",
-        "head": "none",
+        "head": "pumpkinhat",
         "face": "none",
         "neck": "none",
+        "pet": "ghost",
         "accColor": "default",
         "frame": "none",
         "bg": "auto",

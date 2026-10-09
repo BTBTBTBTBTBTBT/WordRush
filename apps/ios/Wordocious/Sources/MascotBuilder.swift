@@ -302,6 +302,7 @@ struct MascotBuilderView: View {
         }
         .onChange(of: tab) { MascotNew.markSeen($0) }
         .onAppear { MascotNew.markSeen(tab) }
+        .task { await MascotAccess.loadOwned() }
         #if DEBUG
         .onPerfTour { c in
             switch c {
@@ -343,7 +344,7 @@ struct MascotBuilderView: View {
     private func save() {
         guard let onSave else { return }
         guard let check = MascotAccess.saveCheck(config, accessContext) else {
-            onSave(AvatarCatalog.enforcePro(config, isPro: isPro))
+            onSave(MascotAccess.legacySave(config, accessContext))
             return
         }
         if check.ok {
@@ -666,8 +667,8 @@ struct MascotBuilderView: View {
     private func grid(_ opts: [Option]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             LazyVGrid(columns: columns, spacing: 8) {
-                // seasonal parts: only while their season is on, or when the saved look wears them
-                ForEach(opts.filter { MascotSeasonal.available($0.slot, $0.value, saved: savedLook) }) { o in tile(o) }
+                // seasonal parts never disappear (founder 10-07): they stay in their tab, free in season, Pro / owned otherwise
+                ForEach(opts) { o in tile(o) }
             }
             if let note {
                 Text(note).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x6D28D9))

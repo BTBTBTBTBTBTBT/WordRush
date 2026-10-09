@@ -88,8 +88,9 @@ export const AVATAR_FRAME_LEVEL: Readonly<Record<string, number>> = { bronze: 1,
 /** Today's rules (gating OFF): Pro-only lists, level frames, seasons; everything else free. */
 export function avatarLegacyRule(field: string, id: string, manifest: AvatarManifest = AVATAR_MANIFEST): AvatarAccessRule {
   if (avatarAccessAlwaysFree(field, id)) return { free: true };
+  // Seasonal parts never disappear (founder 10-07): free in their season, Pro the rest of the year (buy / earn come with gating).
   const season = avatarPartSeason(field, id, manifest);
-  if (season) return { season };
+  if (season) return { season, pro: true };
   if (field === 'frame' && AVATAR_FRAME_LEVEL[id] != null) {
     const n = AVATAR_FRAME_LEVEL[id];
     return { earn: { label: `Reach level ${n}`, stat: 'level', min: n } };
@@ -268,6 +269,26 @@ export function enforceAvatarAccess(draft: AvatarConfig, ctx: AvatarAccessContex
   for (const p of locked) {
     const prior = wornId(ctx.saved, p.field);
     const priorOk = !!prior && prior !== p.id && (avatarAccessAlwaysFree(p.field, prior) || avatarPartAccess({ field: p.field, id: prior }, ctx, opts).unlocked);
+    const next = priorOk ? prior! : ACCESS_FALLBACK[p.field] ?? 'none';
+    if (next === 'none' && ['held', 'wrap', 'feet', 'pet', 'brows', 'extra', 'pose'].includes(p.field)) delete out[p.field];
+    else out[p.field] = next;
+  }
+  return out as unknown as AvatarConfig;
+}
+
+/**
+ * The gating-OFF save path for seasonal parts: a seasonal part is free in its season and Pro (or owned, or already on the
+ * SAVED look) the rest of the year. Reverts each part a free player can't keep, like enforceAvatarAccess but ONLY for
+ * seasonal parts (the Pro lists and level frames keep their own enforcement).
+ */
+export function enforceSeasonalAccess(draft: AvatarConfig, ctx: AvatarAccessContext, opts: { table?: AvatarAccessTable; manifest?: AvatarManifest } = {}): AvatarConfig {
+  const manifest = opts.manifest ?? AVATAR_MANIFEST;
+  const locked = avatarWornParts(draft).filter((p) => avatarPartSeason(p.field, p.id, manifest) && !avatarPartAccess(p, { ...ctx, gating: false }, opts).unlocked);
+  if (locked.length === 0) return draft;
+  const out = { ...draft } as Record<string, unknown>;
+  for (const p of locked) {
+    const prior = wornId(ctx.saved, p.field);
+    const priorOk = !!prior && prior !== p.id && (avatarAccessAlwaysFree(p.field, prior) || avatarPartAccess({ field: p.field, id: prior }, { ...ctx, gating: false }, opts).unlocked);
     const next = priorOk ? prior! : ACCESS_FALLBACK[p.field] ?? 'none';
     if (next === 'none' && ['held', 'wrap', 'feet', 'pet', 'brows', 'extra', 'pose'].includes(p.field)) delete out[p.field];
     else out[p.field] = next;

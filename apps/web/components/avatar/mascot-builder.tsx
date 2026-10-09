@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Lock } from 'lucide-react';
-import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPartSeason, avatarPickConflict, castPreset, enforceAvatarAccess, enforceAvatarPro, isPartAvailable, seasonalShelf, avatarPartAccess, avatarSaveCheck, type AvatarAccessContext, type AvatarConfig, type AvatarEarnStats, type AvatarFrame, type AvatarPart } from '@wordle-duel/core';
+import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPartSeason, avatarPickConflict, castPreset, enforceAvatarAccess, enforceAvatarPro, enforceSeasonalAccess, isPartAvailable, seasonalShelf, avatarPartAccess, avatarSaveCheck, type AvatarAccessContext, type AvatarConfig, type AvatarEarnStats, type AvatarFrame, type AvatarPart } from '@wordle-duel/core';
 
 import { ProPill } from '@/components/game/finished-kit';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
@@ -101,7 +101,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   const gatedLocked = React.useCallback((field: string, id: string) => ITEM_GATING_ON && !avatarPartAccess({ field, id }, accessCtx).unlocked, [accessCtx]);
   const [lockedCard, setLockedCard] = React.useState<AvatarPart[] | null>(null);
   const done = () => {
-    if (!ITEM_GATING_ON) { onSave(keepOwnedParts(value, enforceAvatarPro(value, isPro), owned ?? [])); return; }
+    if (!ITEM_GATING_ON) { onSave(enforceSeasonalAccess(keepOwnedParts(value, enforceAvatarPro(value, isPro), owned ?? []), accessCtx)); return; }
     const check = avatarSaveCheck(value, accessCtx);
     if (check.ok) onSave(value);
     else setLockedCard(check.locked);
@@ -382,7 +382,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
               <div role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>{swatchGrid(field)}</div>
             ) : (
               <div className="grid grid-cols-5 gap-2.5" role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>
-                {optionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none') && available(field, id)).map((id) => tile(field, id))}
+                {optionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none')).map((id) => tile(field, id))}
               </div>
             )}
           </div>

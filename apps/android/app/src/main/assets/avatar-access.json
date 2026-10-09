@@ -761,22 +761,22 @@
     },
     "head:pumpkinhat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "head:candycornhat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "head:witchnight": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "head:batears": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "face:mustache": {
@@ -900,12 +900,12 @@
     },
     "neck:batwings": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "neck:cattail": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "held:mug": {
@@ -980,7 +980,7 @@
     },
     "held:candypail": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "wrap:bandana": {
@@ -1008,7 +1008,7 @@
     },
     "wrap:vampirecollar": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "feet:sneakers": {
@@ -1069,17 +1069,17 @@
     },
     "pet:bat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "pet:ghost": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "pet:blackcat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "frame:bronze": {

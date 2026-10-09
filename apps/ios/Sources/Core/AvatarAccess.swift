@@ -252,7 +252,7 @@ public enum AvatarAccess {
 
     /// The season a part belongs to (only the manifest's part fields carry one), or nil.
     static func partSeason(field: String, id: String, manifest: AvatarManifest) -> String? {
-        guard AvatarFit.fieldKind[field] != nil else { return nil }
+        guard AvatarFit.fieldKind[field] != nil || field == "body" else { return nil }
         return AvatarSeason.partSeason(field: field, id: id, manifest: manifest)
     }
 
@@ -272,7 +272,8 @@ public enum AvatarAccess {
     /// Today's rules (gating OFF): Pro-only lists, level frames, seasons; everything else free.
     public static func legacyRule(field: String, id: String, manifest: AvatarManifest) -> AvatarAccessRule {
         if alwaysFree(field: field, id: id) { return AvatarAccessRule(free: true) }
-        if let season = partSeason(field: field, id: id, manifest: manifest) { return AvatarAccessRule(season: season) }
+        // Seasonal parts never disappear (founder 10-07): free in their season, Pro the rest of the year.
+        if let season = partSeason(field: field, id: id, manifest: manifest) { return AvatarAccessRule(pro: true, season: season) }
         if field == "frame", let n = frameLevel[id] {
             return AvatarAccessRule(earn: AvatarEarnCondition(label: "Reach level \(n)", stat: "level", min: Double(n)))
         }
@@ -430,6 +431,44 @@ public enum AvatarAccess {
                 next = prior
             }
             out = setting(out, p.field, next)
+        }
+        return out
+    }
+
+    /// The gating-OFF save path for seasonal parts: free in season, Pro (or owned, or already on the SAVED look) the rest
+    /// of the year. Reverts only seasonal parts a free player can't keep (the Pro lists and level frames keep their own
+    /// enforcement). Mirrors enforceSeasonalAccess in avatar-access.ts.
+    public static func enforceSeasonal(_ draft: AvatarConfig, _ ctx: AvatarAccessContext, table: AvatarAccessTable,
+                                       manifest: AvatarManifest) -> AvatarConfig {
+        var legacy = ctx
+        legacy.gating = false
+        let locked = wornParts(draft).filter {
+            partSeason(field: $0.field, id: $0.id, manifest: manifest) != nil
+                && !partAccess($0, legacy, table: table, manifest: manifest).unlocked
+        }
+        if locked.isEmpty { return draft }
+        var out = draft
+        for p in locked {
+            let prior = ctx.saved?[p.field]
+            var next = fallback[p.field] ?? "none"
+            if let prior, !prior.isEmpty, prior != p.id,
+               alwaysFree(field: p.field, id: prior)
+                || partAccess(AvatarPart(field: p.field, id: prior), legacy, table: table, manifest: manifest).unlocked {
+                next = prior
+            }
+            out = setting(out, p.field, next)
+        }
+        return out
+    }
+
+    /// Owned items save without Pro. enforcePro (the gating-OFF save path) strips every Pro-only part for a free player; this
+    /// puts back the ones the player OWNS (an admin grant, an earn, a purchase). Mirrors keepOwnedParts (web).
+    public static func keepOwned(original: AvatarConfig, enforced: AvatarConfig, owned: [String]) -> AvatarConfig {
+        if owned.isEmpty { return enforced }
+        let was = fieldMap(original), now = fieldMap(enforced)
+        var out = enforced
+        for (field, id) in was where now[field] != id && !id.isEmpty && owned.contains(key(field: field, id: id)) {
+            out = setting(out, field, id)
         }
         return out
     }

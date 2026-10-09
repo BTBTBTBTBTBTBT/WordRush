@@ -31,9 +31,29 @@ enum MascotAccess {
 
     /// The access context for today: the maker's season (the admin preview or the calendar's, like MascotSeasonal).
     static func context(isPro: Bool, stats: AvatarEarnStats?, saved: AvatarConfig?) -> AvatarAccessContext {
-        // TODO(owned): load the owned_items ledger (my_owned_items, docs/sql/20261010-owned-items.sql) once it's applied.
-        AvatarAccessContext(isPro: isPro, owned: [], stats: stats, date: AvatarSeason.today(),
+        AvatarAccessContext(isPro: isPro, owned: ownedKeys, stats: stats, date: AvatarSeason.today(),
                             previewSeason: MascotSeasonal.season ?? "none", saved: saved)
+    }
+
+    /// The owned_items ledger (my_owned_items: your own active rows; supabase/manual-migrations/20261009000005_owned_items.sql).
+    /// Admin grants, earns and purchases land here; an owned part saves without Pro. Empty until loaded / signed out.
+    static var ownedKeys: [String] = []
+
+    /// Reload the ledger (no-throw; keeps the last good list on failure).
+    static func loadOwned() async {
+        struct Row: Decodable { let item_key: String }
+        guard AuthService.shared.profile != nil else { ownedKeys = []; return }
+        if let rows: [Row] = try? await AuthService.shared.client.from("my_owned_items").select("item_key").execute().value {
+            ownedKeys = rows.map(\.item_key)
+        }
+    }
+
+    /// The gating-OFF save: today's Pro strip, then the OWNED parts come back (they save without Pro), then a seasonal part is
+    /// free only in its season (Pro / owned / already on the saved look otherwise: seasonal parts never disappear).
+    static func legacySave(_ c: AvatarConfig, _ ctx: AvatarAccessContext) -> AvatarConfig {
+        let kept = AvatarAccess.keepOwned(original: c, enforced: AvatarCatalog.enforcePro(c, isPro: ctx.isPro), owned: ctx.owned)
+        guard let fit = MascotParts.fit else { return kept }
+        return AvatarAccess.enforceSeasonal(kept, ctx, table: table, manifest: fit)
     }
 
     static func access(_ part: AvatarPart, _ ctx: AvatarAccessContext) -> AvatarPartAccess? {
