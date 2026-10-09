@@ -1,0 +1,1 @@
+PUZZLES title: puzzles[@2x|@3x].png + puzzles-halloween*.png (glyph atlas, Puzzles teal #0891b2). compare-old-vs-new.png = shipped art / new / Halloween. Wire as the .moregames title (iOS MenuScaffold) and TitleArt.MOREGAMES (Android); or render live with the atlas.
