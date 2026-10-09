@@ -898,3 +898,7 @@ second game on the puzzles list")
 - Widgets: FLAWLESS ring shows "×3 streak" with the trophy badge sized up by tier and a subtle shimmer frame swapped
   on the timeline; small widget too (not just the word FLAWLESS). Halloween versions.
 - Designed in free ChatGPT (streak badges/tiers, counter art), creative and alive, never cluttered; readable, ×3.
+- Home headline example (founder 10-09 screenshot, trophy 3): instead of the cut-off "WORDOCIOUS FLAWLES…" it
+  celebrates the streak in fun names by length — "FLAWLESS 3-PEAT!" (3), "FOUR-MIDABLE!"-style playful lines at 4+,
+  "FLAWLESS WEEK!" (7), etc. — a curated, varied list (American spelling, never repeats flatly), sized to fit in
+  full (6's guard), with the streak number popping in and the mascot cheering.
