@@ -42,6 +42,8 @@ object SeasonKit {
         val props: List<String>,
         val banner: String?,
         val surfaces: com.wordocious.app.ui.theme.SeasonSurfaces? = null,
+        /** Normal art name -> seasonal art name for the small extras (the celebration kit: `celebrate-burst-party` ...). */
+        val extras: Map<String, String> = emptyMap(),
     )
 
     @Volatile private var loaded: List<Entry>? = null
@@ -75,6 +77,7 @@ object SeasonKit {
                 props = (slots["props"] as? JsonArray)?.map { it.jsonPrimitive.content } ?: emptyList(),
                 banner = str(slots, "banner"),
                 surfaces = (s["surfaces"] as? JsonObject)?.let(::parseSurfaces),
+                extras = map("extras"),
             )
         }
     }
@@ -113,6 +116,16 @@ object SeasonKit {
         com.wordocious.app.ui.theme.WTheme.palette = look?.palette(
             if (look.dark) com.wordocious.app.ui.theme.Palettes.Dark else com.wordocious.app.ui.theme.Palettes.Light,
         ) ?: base
+    }
+
+    /**
+     * 2.8 item 7: a celebration-kit prop's art name for [season] — its registry swap, else the normal name; nulls for the
+     * `celebrate-float-*` props out of season (they have no normal counterpart). Drawable = the name with underscores.
+     */
+    fun extra(context: Context, season: String?, name: String): String? {
+        val swap = entry(context, season)?.extras?.get(name)
+        if (swap != null) return swap
+        return if (name.startsWith("celebrate-float")) null else name
     }
 
     fun entry(context: Context, id: String?): Entry? = id?.let { k -> registry(context).firstOrNull { it.id == k } }

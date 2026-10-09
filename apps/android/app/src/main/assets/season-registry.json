@@ -125,7 +125,15 @@
           "art-halloween-prop-ghost"
         ],
         "banner": "art-scene-banner-halloween",
-        "extras": {}
+        "extras": {
+          "celebrate-burst-party": "celebrate-h-candy-burst",
+          "celebrate-burst-gold": "celebrate-h-candy-burst",
+          "celebrate-streamers-pair": "celebrate-h-streamers",
+          "celebrate-crown-gold": "celebrate-h-witch-hat",
+          "celebrate-seal-gold": "celebrate-h-pumpkin-glow",
+          "celebrate-float-1": "celebrate-h-bats",
+          "celebrate-float-2": "celebrate-h-broom"
+        }
       },
       "surfaces": {
         "tone": "dark",

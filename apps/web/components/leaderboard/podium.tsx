@@ -3,7 +3,8 @@ import { openDressUp } from '@/components/profile/dress-up';
 import type { ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
-import { BoardAvatar, type BoardAvatarData } from '@/components/leaderboard/board-rows';
+import { type BoardAvatarData } from '@/components/leaderboard/board-rows';
+import { PodiumFigure } from '@/components/leaderboard/podium-figure';
 import { LevelBadge } from '@/components/badges/badge-art';
 import { PODIUM_STEP_HEIGHT, PODIUM_TONE_PLACE, podiumColumn, podiumPedestalArt, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
 import { alphaHex } from '@/lib/soft-surface';
@@ -116,16 +117,15 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
   const first = tone === 'gold';
   return (
     <div className="relative flex flex-col items-center min-w-0" style={{ gap: 4, gridColumn: podiumColumn(index), gridRow: 1 }}>
-      {first && <Icon3D name="crown" size={26} style={{ marginBottom: -8, position: 'relative', zIndex: 2 }} />}
       <span className="sr-only">Rank {place.rank}</span>
       {place.isMe ? (
         // Founder 10-05 (door 1): your own place opens your Stage.
         <button type="button" onClick={() => openDressUp()} aria-label="Dress up your mascot" className="block border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
-          <BoardAvatar url={place.avatarUrl} name={place.username} userId={place.userId} level={place.level} size={first ? 54 : 44} ring="#f59e0b" {...place.avatar} />
+          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} ring="#f59e0b" />
         </button>
       ) : (
         <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
-          <BoardAvatar url={place.avatarUrl} name={place.username} userId={place.userId} level={place.level} size={first ? 54 : 44} {...place.avatar} />
+          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} />
         </Link>
       )}
       <Link

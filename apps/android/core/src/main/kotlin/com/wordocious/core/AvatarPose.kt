@@ -29,7 +29,8 @@ import kotlin.math.sqrt
 /** The feature flag + performance rules (founder: smooth over pretty). */
 object AvatarLiveConfig {
     /** OFF until verified on devices: poses, the Pose tab and the living mascot all stand down. */
-    const val LIVING_MASCOT: Boolean = false
+    /** 2.8 item 13: defaults OFF; the app turns it on from the remote `living_mascot` off-switch (FlagsService) once flags load. */
+    @JvmStatic var LIVING_MASCOT: Boolean = false
     /** At most this many mascots animate on one screen (the player's own first); the rest hold their pose frame. */
     const val MAX_ANIMATED: Int = 3
     /** Android holds still between moves (like the cast): breathing only while a move / reaction plays. */
@@ -58,7 +59,9 @@ data class AvatarPoseSpec(
 
 data class AvatarPoseWave(val limb: String, val amp: Double, val period: Double)
 data class AvatarPoseBounce(val amp: Double, val period: Double)
-data class AvatarPoseLive(val wave: AvatarPoseWave? = null, val bounce: AvatarPoseBounce? = null)
+/** Both arms swing together (the podium's 2nd-place applause). */
+data class AvatarPoseClap(val amp: Double, val period: Double)
+data class AvatarPoseLive(val wave: AvatarPoseWave? = null, val bounce: AvatarPoseBounce? = null, val clap: AvatarPoseClap? = null)
 
 /** A pose's shared data: its label, its spec, and its living extras (a waving arm, a cheer bounce). */
 data class AvatarPoseDef(val label: String, val spec: AvatarPoseSpec, val live: AvatarPoseLive? = null)
@@ -98,7 +101,8 @@ class AvatarPosesData(
             val live = (o["live"] as? JsonObject)?.let { l ->
                 val w = (l["wave"] as? JsonObject)?.let { AvatarPoseWave(str(it["limb"]) ?: "L", num(it["amp"]) ?: 0.0, num(it["period"]) ?: 1.0) }
                 val b = (l["bounce"] as? JsonObject)?.let { AvatarPoseBounce(num(it["amp"]) ?: 0.0, num(it["period"]) ?: 1.0) }
-                AvatarPoseLive(w, b)
+                val c = (l["clap"] as? JsonObject)?.let { AvatarPoseClap(num(it["amp"]) ?: 0.0, num(it["period"]) ?: 1.0) }
+                AvatarPoseLive(w, b, c)
             }
             return AvatarPoseDef(str(o["label"]) ?: id, spec(o), live)
         }
@@ -154,12 +158,18 @@ data class AvatarPoseParts(
     fun map(f: (AvatarMatrix) -> AvatarMatrix) = AvatarPoseParts(f(root), f(armL), f(armR), f(handL), f(handR), f(feet))
 }
 
-/** A moment the mascot reacts to (win = cheer, loss = shrug, streak +1 = hop, level up = cheer). */
+/**
+ * A moment the mascot reacts to (win = cheer, loss = shrug, streak +1 = hop, level up = cheer; 2.8 item 13: a sweep /
+ * flawless is a bigger, longer cheer, "progress" — a counter ticked up, 7 -> 8 OF 18 — a short wave).
+ */
 enum class AvatarReaction(val id: String) {
-    WIN("win"), LOSS("loss"), STREAK("streak"), LEVELUP("levelup");
+    WIN("win"), LOSS("loss"), STREAK("streak"), LEVELUP("levelup"), SWEEP("sweep"), FLAWLESS("flawless"), PROGRESS("progress");
 
     companion object { fun of(id: String?): AvatarReaction? = entries.firstOrNull { it.id == id } }
 }
+
+/** The hops a reaction makes: [n] of them, one every [per] s, [amp] tall (body units). */
+data class AvatarReactionHops(val n: Double, val per: Double, val amp: Double)
 
 data class AvatarReactionPlay(val kind: AvatarReaction, val t: Double)
 
@@ -224,7 +234,25 @@ object AvatarPoses {
 
     fun bodyRig(body: String, data: AvatarPosesData): AvatarBodyRig? = data.rigs[body]
 
-    fun poseDef(pose: String?, data: AvatarPosesData): AvatarPoseDef? = if (pose != null && pose.isNotEmpty() && pose != "none") data.poses[pose] else null
+    fun poseDef(pose: String?, data: AvatarPosesData): AvatarPoseDef? =
+        if (pose != null && pose.isNotEmpty() && pose != "none") data.poses[pose] ?: CODE_POSES[pose] else null
+
+    /**
+     * Poses composed in code, never saved by a player and never in the Pose tab: the podium's 2nd-place applause. Its
+     * arms start from the shipped hug-self pose's rig fit (same withheld list), brought up to chest height, and swing together.
+     */
+    val CODE_POSES: Map<String, AvatarPoseDef> = mapOf(
+        "clap" to AvatarPoseDef(
+            "Clap",
+            AvatarPoseSpec(armL = AvatarPoseLimb(-66.0, -0.1, 0.01), armR = AvatarPoseLimb(-66.0, -0.1, 0.01), body = AvatarPoseBody(sx = 0.985)),
+            AvatarPoseLive(clap = AvatarPoseClap(12.0, 0.36)),
+        ),
+    )
+    /** A code pose's shipped stand-in for the per-pose guards (withheld items). */
+    private val CODE_POSE_GUARD: Map<String, String> = mapOf("clap" to "hug")
+
+    /** The pose a podium place stands in: 1st cheers, 2nd claps, 3rd waves, everyone else the body as drawn. */
+    fun placePose(place: Int): String = when (place) { 1 -> "cheer"; 2 -> "clap"; 3 -> "wave"; else -> "none" }
 
     /**
      * The per-part matrices (body units) of a pose spec on a rigged body. Arm rot is OUTWARD-positive degrees about
@@ -261,17 +289,28 @@ object AvatarPoses {
     /** Items withheld in a pose on a body (they fail the per-pose guards). */
     fun withheld(pose: String?, body: String, data: AvatarPosesData): List<String> {
         if (pose == null || pose.isEmpty() || pose == "none") return emptyList()
-        return data.withheld[pose]?.get(body) ?: emptyList()
+        return data.withheld[CODE_POSE_GUARD[pose] ?: pose]?.get(body) ?: emptyList()
     }
 
     // ── The living mascot ─────────────────────────────────────────────────
 
     val REACTION_POSE: Map<AvatarReaction, String> = mapOf(
         AvatarReaction.WIN to "cheer", AvatarReaction.LOSS to "shrug", AvatarReaction.STREAK to "none", AvatarReaction.LEVELUP to "cheer",
+        AvatarReaction.SWEEP to "cheer", AvatarReaction.FLAWLESS to "cheer", AvatarReaction.PROGRESS to "wave",
     )
     /** How long a reaction plays (s); streak is a hop. */
     val REACTION_SECONDS: Map<AvatarReaction, Double> = mapOf(
         AvatarReaction.WIN to 2.4, AvatarReaction.LOSS to 2.2, AvatarReaction.STREAK to 0.9, AvatarReaction.LEVELUP to 2.6,
+        AvatarReaction.SWEEP to 3.2, AvatarReaction.FLAWLESS to 4.0, AvatarReaction.PROGRESS to 1.6,
+    )
+    /** The hops a reaction makes (reactions not listed do not hop). */
+    val REACTION_HOPS: Map<AvatarReaction, AvatarReactionHops> = mapOf(
+        AvatarReaction.STREAK to AvatarReactionHops(1.0, 0.6, 0.06),
+        AvatarReaction.WIN to AvatarReactionHops(2.0, 0.55, 0.06),
+        AvatarReaction.LEVELUP to AvatarReactionHops(2.0, 0.55, 0.06),
+        AvatarReaction.SWEEP to AvatarReactionHops(3.0, 0.55, 0.07),
+        AvatarReaction.FLAWLESS to AvatarReactionHops(4.0, 0.55, 0.09),
+        AvatarReaction.PROGRESS to AvatarReactionHops(1.0, 0.5, 0.04),
     )
 
     /** The tap: hop + laugh (same feel as the cast's tap). */
@@ -348,12 +387,10 @@ object AvatarPoses {
                 val target = poseDef(REACTION_POSE.getValue(rx.kind), data)?.spec ?: saved?.spec ?: AvatarPoseSpec()
                 val k = smooth(min(rx.t, dur - rx.t) / POSE_BLEND)
                 spec = lerp(spec, target, k)
-                if (rx.kind == AvatarReaction.STREAK || rx.kind == AvatarReaction.WIN || rx.kind == AvatarReaction.LEVELUP) {
-                    // a hop (the cheers hop twice)
-                    val per = if (rx.kind == AvatarReaction.STREAK) 0.6 else 0.55
-                    val n = if (rx.kind == AvatarReaction.STREAK) 1 else 2
+                REACTION_HOPS[rx.kind]?.let { h ->
+                    // a hop (the cheers hop twice; a sweep three times, a flawless four)
                     val tt = rx.t - 0.1
-                    if (tt > 0 && tt < per * n) hop = max(hop, 0.06 * sin(((tt % per) / per) * PI))
+                    if (tt > 0 && tt < h.per * h.n) hop = max(hop, h.amp * sin(((tt % h.per) / h.per) * PI))
                 }
             }
         }
@@ -373,6 +410,12 @@ object AvatarPoses {
                 if (w.limb == "L") lRot = (lRot ?: 0.0) + add else rRot = (rRot ?: 0.0) + add
             }
             live?.bounce?.let { bo -> bDy -= bo.amp * abs(sin((t / bo.period) * PI)) }
+            live?.clap?.let { cl ->
+                // both arms swing together
+                val swing = cl.amp * sin((t / cl.period) * PI * 2)
+                lRot = (lRot ?: 0.0) + swing
+                rRot = (rRot ?: 0.0) + swing
+            }
         }
         // the tap: hop + squash + laugh (Reduce Motion: only the laugh)
         var laugh = 0.0

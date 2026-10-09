@@ -242,7 +242,19 @@ fun BoardPodium(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 if (s != null) {
-                    Box(contentAlignment = Alignment.TopCenter) {
+                    // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step (2x, no tile, posed by place).
+                    val stands = podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
+                    if (stands) {
+                        Box(Modifier.padding(bottom = 0.dp).offset(y = PODIUM_FOOT_OVERLAP), contentAlignment = Alignment.TopCenter) {
+                            PlayerAvatar(
+                                s.username ?: s.name, a * PODIUM_FIGURE_SCALE, Modifier,
+                                userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
+                                frame = s.frame, accentHex = s.accentHex, podiumPlace = place,
+                            )
+                            // the crown sits ON the first place's head
+                            if (place == 1) Icon3D(Icon3DName.CROWN, 34.dp, Modifier.offset(y = -(a * PODIUM_FIGURE_SCALE * 0.05f)))
+                        }
+                    } else Box(contentAlignment = Alignment.TopCenter) {
                         PlayerAvatar(
                             s.username ?: s.name, a, Modifier.padding(top = if (place == 1) 18.dp else 0.dp),
                             userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AVATAR_LIVE_CONFIG, AVATAR_POSES, avatarLiveFrame, defaultAvatar, type AvatarConfig } from '@wordle-duel/core';
 import { avatarArtNames, avatarLiveLayout, avatarLiveTransforms, avatarOptionIds, avatarOptionLabel, cachedMascotSvg, mascotSvg } from './avatar-render';
-import { LIVING_MASCOT_ON, claimLivingSlot, emitMascotMoment, livingSlotsInUse } from './living-mascot';
+import { livingMascotOn, claimLivingSlot, emitMascotMoment, livingSlotsInUse } from './living-mascot';
 
 // 10-06 poses + the living mascot (docs/cloud-prompts/06): everything ships behind AVATAR_LIVE_CONFIG.livingMascot.
 const base: AvatarConfig = { ...defaultAvatar('player-1', '#7c3aed'), body: 'classic', held: 'mug', feet: 'sneakers' };
@@ -12,7 +12,7 @@ const svg = (c: AvatarConfig, extra: Partial<Parameters<typeof mascotSvg>[0]> = 
 describe('the living-mascot flag', () => {
   it('ships OFF: no saved pose is drawn and moments are no-ops', () => {
     expect(AVATAR_LIVE_CONFIG.livingMascot).toBe(false);
-    expect(LIVING_MASCOT_ON).toBe(false);
+    expect(livingMascotOn()).toBe(false);
     const posed = { ...base, pose: 'wave' };
     // the default layout ignores the saved pose while the flag is off: byte-identical to no pose
     expect(svg(posed)).toBe(svg(base));

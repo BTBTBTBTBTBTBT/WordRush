@@ -20,7 +20,7 @@
 // dated (legacy-pinned or curated-stable) and don't drift with curation.
 
 import fs from 'node:fs';
-import { AVATAR_LIVE_CONFIG, AVATAR_POSES, AVATAR_POSES_DATA, AVATAR_REACTION_POSE, avatarLiveFrame, avatarPoseMatrices, avatarPoseWithheld, type AvatarReaction } from '../src/avatar-pose';
+import { AVATAR_CODE_POSES, AVATAR_LIVE_CONFIG, AVATAR_POSES, AVATAR_POSES_DATA, AVATAR_REACTION_HOPS, AVATAR_REACTION_POSE, AVATAR_REACTION_SECONDS, avatarLiveFrame, avatarPlacePose, avatarPoseMatrices, avatarPoseWithheld, type AvatarReaction } from '../src/avatar-pose';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTodayForTests } from '../src/dictionary';
@@ -886,7 +886,10 @@ export function renderAvatarPoseFixtures() {
     { pose: 'cheer', t: 0.7 }, { pose: 'sit', t: 5 }, { pose: 'none', t: 3, tap: 0.05 }, { pose: 'none', t: 3, tap: 0.3 },
     { pose: 'hips', t: 3, tap: 0.6 }, { pose: 'flex', t: 3, tap: 1.0 }, { pose: 'none', t: 3, tap: 0.3, still: true },
     { pose: 'shrug', t: 8, ambient: false }, { pose: 'none', t: 2, press: 1 },
-    ...(['win', 'loss', 'streak', 'levelup'] as AvatarReaction[]).flatMap((kind) => [0.1, 0.5, 2.0].map((rt) => ({ pose: 'hug', t: 4, reaction: { kind, t: rt } }))),
+    ...(['win', 'loss', 'streak', 'levelup', 'sweep', 'flawless', 'progress'] as AvatarReaction[]).flatMap((kind) => [0.1, 0.5, 1.3, 2.0, 3.4].map((rt) => ({ pose: 'hug', t: 4, reaction: { kind, t: rt } }))),
+    // 2.8 item 13: the podium's place poses (1st cheers, 2nd claps, 3rd waves) and the code-composed clap's swing
+    ...[1, 2, 3, 4].flatMap((place) => [0.4, 1.1].map((t) => ({ pose: avatarPlacePose(place), t }))),
+    { pose: 'clap', t: 0.09 }, { pose: 'clap', t: 0.27, still: true }, { pose: 'clap', t: 2, ambient: false },
     { pose: 'jump', t: 4, reaction: { kind: 'win' as AvatarReaction, t: 0.5 }, still: true },
   ].map((input) => ({ input, frame: avatarLiveFrame(input) }));
   const base = castPreset('w');
@@ -910,8 +913,13 @@ export function renderAvatarPoseFixtures() {
       none: avatarLayout(config, { pose: null }),
     };
   });
-  const withheld = AVATAR_POSES.slice(1).flatMap((pose) => bodies.map((body) => ({ pose, body, items: avatarPoseWithheld(pose, body) })));
-  return { flag: AVATAR_LIVE_CONFIG, poses: AVATAR_POSES, reactionPose: AVATAR_REACTION_POSE, data: AVATAR_POSES_DATA, matrices, frames, layouts, withheld };
+  const withheld = [...AVATAR_POSES.slice(1), 'clap'].flatMap((pose) => bodies.map((body) => ({ pose, body, items: avatarPoseWithheld(pose, body) })));
+  const placePoses = [1, 2, 3, 4, 10].map((place) => ({ place, pose: avatarPlacePose(place) }));
+  const clapMatrices = bodies.map((body) => ({ body, m: avatarPoseMatrices(AVATAR_POSES_DATA.rigs[body], AVATAR_CODE_POSES.clap) }));
+  return {
+    flag: AVATAR_LIVE_CONFIG, poses: AVATAR_POSES, reactionPose: AVATAR_REACTION_POSE, reactionSeconds: AVATAR_REACTION_SECONDS, reactionHops: AVATAR_REACTION_HOPS,
+    data: AVATAR_POSES_DATA, matrices, frames, layouts, withheld, codePoses: AVATAR_CODE_POSES, placePoses, clapMatrices,
+  };
 }
 
 export function renderAvatarLayoutFixtures() {
