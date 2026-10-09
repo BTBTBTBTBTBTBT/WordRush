@@ -6,6 +6,7 @@ import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { SoftNum } from '@/components/ui/soft-number';
 import { cardBarStyle, softCard } from '@/lib/soft-surface';
 import { HeroStatsRow } from '@/components/stats/stat-hero';
+import { HelperButton } from '@/components/ui/family-button';
 
 interface ModeStatsCardProps {
   /** daily_results / user_stats key ("DUEL", "SUDOKU", …). Picks the stats profile. */
@@ -48,15 +49,11 @@ export function ModeStatsCard({ gameMode, wins, losses, totalGames, bestScore, f
           accent={accentColor}
           input={{ wins, losses, streak: winStreak?.current || 0, bestStreak: winStreak?.best || 0, fastestSeconds: fastestTime }}
         />
-        <button
-          type="button"
-          onClick={() => setMore((v) => !v)}
-          aria-expanded={more}
-          className="mt-3 mx-auto flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] active:scale-95 transition-transform"
-          style={{ color: accentColor }}
-        >
-          More stats <span aria-hidden="true" style={{ display: 'inline-block', transform: more ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
-        </button>
+        <div className="mt-3 flex justify-center">
+          <HelperButton tint={accentColor} on={more} aria-expanded={more} onClick={() => setMore((v) => !v)}>
+            {more ? 'Fewer stats' : 'More stats'}
+          </HelperButton>
+        </div>
         {more && (
           <div className="grid grid-cols-4 gap-3 mt-3 animate-fade-in-up">
             {stats.map((s) => (

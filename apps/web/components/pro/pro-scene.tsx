@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PRO_BENEFIT_CAPTION, PRO_BENEFIT_ORDER, PRO_PEDESTAL, PRO_SCENES, type ProBenefit } from '@wordle-duel/core';
 import { useAuth } from '@/lib/auth-context';
+import { HelperButton } from '@/components/ui/family-button';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { useLivingMascotOn } from '@/hooks/use-flags';
@@ -83,11 +84,9 @@ export function ProSceneCarousel({ height = 190 }: { height?: number }) {
       <ProScene benefit={PRO_BENEFIT_ORDER[i]} height={height} />
       <div className="flex items-center justify-center gap-1.5" role="tablist" aria-label="Pro benefits">
         {PRO_BENEFIT_ORDER.map((b, n) => (
-          <button key={b} type="button" role="tab" aria-selected={n === i} aria-label={PRO_BENEFIT_CAPTION[b]}
+          <HelperButton key={b} circle on={n === i} tint="#f5a524" role="tab" aria-selected={n === i} aria-label={PRO_BENEFIT_CAPTION[b]}
             onClick={() => { setHeld(true); setI(n); }}
-            className="p-1.5 -m-1.5 border-0 bg-transparent cursor-pointer">
-            <span className="block rounded-full transition-all" style={{ width: n === i ? 18 : 7, height: 7, background: n === i ? '#f5a524' : 'rgba(245,165,36,0.35)' }} />
-          </button>
+            icon={/* eslint-disable-next-line @next/next/no-img-element */ <img src={artSrc(PRO_SCENES[b])} alt="" aria-hidden="true" draggable={false} width={20} height={20} style={{ width: 20, height: 20, objectFit: 'contain' }} />} />
         ))}
       </div>
     </div>
