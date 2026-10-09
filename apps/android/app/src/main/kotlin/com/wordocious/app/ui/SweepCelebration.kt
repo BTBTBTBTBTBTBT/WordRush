@@ -1,7 +1,20 @@
 package com.wordocious.app.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -95,6 +108,49 @@ fun SweepCelebration(
     val appear = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
     LaunchedEffect(Unit) { if (appear.value < 1f) appear.animateTo(1f, tween(220)) }
 
+    // 2.8 item 7 kit (docs/design/brand/2.8/celebrate): props only; the season's swap via the registry extras.
+    val still = WTheme.calmMotion
+    val ctx = LocalContext.current
+    val season = remember { SeasonSkins.current() }
+    @androidx.annotation.DrawableRes fun kitRes(name: String): Int {
+        val n = SeasonKit.extra(ctx, season, name) ?: return 0
+        return ctx.resources.getIdentifier(n.replace('-', '_'), "drawable", ctx.packageName)
+    }
+    // one clock for the kit: 0 -> 1 as it blooms; a second for the sparkle sweep; the stats count up; the badges stamp in
+    val kit = remember { Animatable(if (still) 1f else 0f) }
+    val sweep = remember { Animatable(if (still) 2.6f else -1.4f) }
+    var progress by remember { mutableStateOf(if (still) 1f else 0f) }
+    var stamped by remember { mutableIntStateOf(if (still) Int.MAX_VALUE else 0) }
+    LaunchedEffect(Unit) {
+        if (still) return@LaunchedEffect
+        kit.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = 90f))
+    }
+    LaunchedEffect(Unit) {
+        if (still) return@LaunchedEffect
+        delay(450)
+        sweep.animateTo(2.6f, tween(1100))
+    }
+    LaunchedEffect(Unit) {
+        if (still) return@LaunchedEffect
+        delay(650)
+        val steps = 28
+        for (i in 1..steps) {
+            val k = i / steps.toFloat()
+            progress = 1f - (1f - k) * (1f - k) * (1f - k)
+            delay(32)
+        }
+        progress = 1f
+    }
+    LaunchedEffect(Unit) {
+        if (still) return@LaunchedEffect
+        delay(700)
+        for (k in 1..maxOf(1, rows.size)) {
+            stamped = k
+            com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.PRESS, feedbackView)
+            delay(110)
+        }
+    }
+
     androidx.activity.compose.BackHandler(onBack = closeAndMaybeReview)
     Box(
         Modifier.fillMaxSize()
@@ -116,16 +172,84 @@ fun SweepCelebration(
                 PopupClose(closeAndMaybeReview, tint = if (dark) WTheme.text else ink)
             }
             // Moment lettering (ART_SPEC §6): SWEEP! / FLAWLESS!, read as the full title.
-            MomentTitle(
-                if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
-                contentDescription = titleCaseLabel(title),
-                widthFraction = 0.82f, maxHeight = 84.dp,
-            )
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                MomentTitle(
+                    if (flawless) MomentArt.FLAWLESS else MomentArt.SWEEP,
+                    contentDescription = titleCaseLabel(title),
+                    widthFraction = 0.82f, maxHeight = 84.dp,
+                )
+                // the streamers swing in either side; one sparkle trail sweeps across the lettering
+                val streamers = kitRes("celebrate-streamers-pair")
+                if (streamers != 0) {
+                    for (left in listOf(true, false)) {
+                        Image(
+                            painterResource(streamers), null, contentScale = ContentScale.Fit,
+                            modifier = Modifier.align(if (left) Alignment.TopStart else Alignment.TopEnd).width(56.dp).offset(y = (-22).dp)
+                                .graphicsLayer {
+                                    val k = kit.value.coerceIn(0f, 1f)
+                                    alpha = k
+                                    rotationZ = (1f - k) * (if (left) -24f else 24f)
+                                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(if (left) 1f else 0f, 0f)
+                                    scaleX = if (left) 1f else -1f
+                                },
+                        )
+                    }
+                }
+                val sparkle = kitRes("celebrate-sparkle-sweep")
+                if (sparkle != 0 && !still) {
+                    Box(Modifier.matchParentSize().clipToBounds()) {
+                        Image(
+                            painterResource(sparkle), null, contentScale = ContentScale.FillHeight,
+                            modifier = Modifier.height(100.dp).align(Alignment.CenterStart)
+                                .graphicsLayer { translationX = sweep.value * size.width * 1.2f },
+                        )
+                    }
+                }
+            }
             // G3: the big scene art springing in with a bounce on a soft glow.
-            SceneArtPop(
-                if (flawless) R.drawable.art_scene_flawless_star else R.drawable.art_scene_sweep_broom,
-                height = 210.dp, glow = Color.White, delayMs = 120,
-            )
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                // the confetti + streamer burst blooms BEHIND the art (gold for Flawless)
+                val burst = kitRes(if (flawless) "celebrate-burst-gold" else "celebrate-burst-party")
+                if (burst != 0) {
+                    Image(
+                        painterResource(burst), null, contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(330.dp).graphicsLayer {
+                            val k = kit.value.coerceIn(0f, 1f)
+                            scaleX = 0.35f + 0.65f * k; scaleY = 0.35f + 0.65f * k
+                            rotationZ = (1f - k) * -6f
+                            alpha = 0.92f * k
+                        },
+                    )
+                }
+                SceneArtPop(
+                    if (flawless) R.drawable.art_scene_flawless_star else R.drawable.art_scene_sweep_broom,
+                    height = 210.dp, glow = Color.White, delayMs = 120,
+                )
+                // Halloween: bats + a broom drift in at the corners (registry extras; none out of season)
+                for ((name, left, w) in listOf(Triple("celebrate-float-1", true, 70), Triple("celebrate-float-2", false, 58))) {
+                    val f = kitRes(name)
+                    if (f != 0) {
+                        Image(
+                            painterResource(f), null, contentScale = ContentScale.Fit,
+                            modifier = Modifier.align(if (left) Alignment.TopStart else Alignment.TopEnd).width(w.dp)
+                                .graphicsLayer { val k = kit.value.coerceIn(0f, 1f); alpha = k; translationY = (1f - k) * 12.dp.toPx() },
+                        )
+                    }
+                }
+                // Flawless: the crown drops onto the star (Halloween: the witch hat)
+                val crown = if (flawless) kitRes("celebrate-crown-gold") else 0
+                if (crown != 0) {
+                    Image(
+                        painterResource(crown), null, contentScale = ContentScale.Fit,
+                        modifier = Modifier.align(Alignment.TopCenter).width(78.dp).offset(y = (-6).dp)
+                            .graphicsLayer {
+                                val k = kit.value.coerceIn(0f, 1f)
+                                alpha = k; translationY = (1f - k) * -42.dp.toPx()
+                                scaleX = 0.7f + 0.3f * k; scaleY = 0.7f + 0.3f * k
+                            },
+                    )
+                }
+            }
             Text(
                 "All ${totals.total} $noun ${if (flawless) "won" else "done"} today!",
                 fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (dark) WTheme.text else ink,
@@ -133,9 +257,9 @@ fun SweepCelebration(
             )
             // A2: the totals as soft-number stat tiles in the moment's color.
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TintedStatTile(accent, "WON", "${totals.won}/${totals.total}", Modifier.weight(1f), valueSize = 22.sp, bar = true)
-                TintedStatTile(accent, "TOTAL TIME", fmt(totals.totalTimeSeconds), Modifier.weight(1f), valueSize = 22.sp, bar = true)
-                TintedStatTile(accent, "TOTAL PTS", formatScore(totals.totalScore.toDouble()), Modifier.weight(1f), valueSize = 22.sp, bar = true)
+                TintedStatTile(accent, "WON", "${(totals.won * progress).toInt()}/${totals.total}", Modifier.weight(1f), valueSize = 22.sp, bar = true)
+                TintedStatTile(accent, "TOTAL TIME", fmt((totals.totalTimeSeconds * progress).toInt()), Modifier.weight(1f), valueSize = 22.sp, bar = true)
+                TintedStatTile(accent, "TOTAL PTS", formatScore((totals.totalScore.toDouble() * progress).toInt().toDouble()), Modifier.weight(1f), valueSize = 22.sp, bar = true)
             }
             // Per-game results: mini game cards (tinted by game) with their W / L badge.
             TintedCard(
@@ -143,9 +267,9 @@ fun SweepCelebration(
                 contentPadding = PaddingValues(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 // 2 columns: every name the same size, W/L badges in one aligned column (3 columns orphaned Starsweep).
-                rows.chunked(2).forEach { pair ->
+                rows.chunked(2).forEachIndexed { rowIdx, pair ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        pair.forEach { r -> SweepResultCell(r, Modifier.weight(1f)) }
+                        pair.forEachIndexed { col, r -> SweepResultCell(r, Modifier.weight(1f), stamped > rowIdx * 2 + col) }
                         repeat(2 - pair.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
@@ -168,7 +292,7 @@ fun SweepCelebration(
 
 /** One game in the results grid: its icon as a mini game card, the short label, the W / L badge. */
 @Composable
-private fun SweepResultCell(r: DailySweepShare.Row, modifier: Modifier) {
+private fun SweepResultCell(r: DailySweepShare.Row, modifier: Modifier, stamped: Boolean = true) {
     val accent = Color(r.accent)
     val card = runCatching { com.wordocious.core.GameMode.valueOf(r.dbKey) }.getOrNull()?.let { modeCardFor(it) }
         ?: modeCardForKey(r.dbKey)
@@ -189,7 +313,17 @@ private fun SweepResultCell(r: DailySweepShare.Row, modifier: Modifier) {
             modifier = Modifier.weight(1f, fill = false),
         )
         Spacer(Modifier.weight(1f))
-        ResultBadge(r.won, size = 16.dp)
+        // each game's W / L badge stamps in one by one (scale 2.4 -> 1, a quarter turn of tilt, fading in)
+        val st by androidx.compose.animation.core.animateFloatAsState(
+            if (stamped) 1f else 0f, spring(dampingRatio = 0.55f, stiffness = 500f), label = "sweepStamp",
+        )
+        ResultBadge(
+            r.won, size = 16.dp,
+            modifier = Modifier.graphicsLayer {
+                val s = 2.4f - 1.4f * st
+                scaleX = s; scaleY = s; rotationZ = (1f - st) * -14f; alpha = st.coerceIn(0f, 1f)
+            },
+        )
     }
 }
 

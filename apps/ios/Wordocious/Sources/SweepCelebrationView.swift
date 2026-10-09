@@ -39,6 +39,12 @@ struct SweepCelebrationView: View {
         return nil
     }
 
+    /// 2.8 item 7: 0 -> 1 once the popup is up (the stats count up); 1 at once under Reduce Motion.
+    @State private var progress: Double = 0
+    /// How many row badges have stamped in so far.
+    @State private var stamped = 0
+    @State private var kitIn = false
+    @State private var sweepX: CGFloat = -1.4
     @State private var burst = false
     /// §G3: the big art springs in with a bounce (Reduce Motion: a plain fade).
     @State private var artIn = false
@@ -78,6 +84,20 @@ struct SweepCelebrationView: View {
                             .font(Brand.font(more ? 24 : 28, .black)).minimumScaleFactor(0.7).lineLimit(1)
                             .foregroundStyle(accentText)
                     }
+                    // 2.8 item 7 kit: streamers swing in either side, one sparkle trail sweeps across it (props only).
+                    .overlay(alignment: .topLeading) { kitImage("celebrate-streamers-pair", width: 56).offset(x: -4, y: -22)
+                        .rotationEffect(.degrees(kitIn || still ? 0 : -24), anchor: .topTrailing).opacity(kitIn || still ? 1 : 0) }
+                    .overlay(alignment: .topTrailing) { kitImage("celebrate-streamers-pair", width: 56).scaleEffect(x: -1, y: 1).offset(x: 4, y: -22)
+                        .rotationEffect(.degrees(kitIn || still ? 0 : 24), anchor: .topLeading).opacity(kitIn || still ? 1 : 0) }
+                    .overlay {
+                        if !still {
+                            GeometryReader { g in
+                                kitImage("celebrate-sparkle-sweep", width: g.size.height * 1.2)
+                                    .offset(x: g.size.width * sweepX, y: -g.size.height * 0.1)
+                            }
+                            .clipped().allowsHitTesting(false)
+                        }
+                    }
                     // §G3: the big art springing in.
                     if ArtAsset.exists(artName) {
                         Image(artName).resizable().interpolation(.high).scaledToFit()
@@ -85,6 +105,29 @@ struct SweepCelebrationView: View {
                             .scaleEffect(artIn ? 1 : (still ? 1 : 0.6))
                             .opacity(artIn ? 1 : 0)
                             .accessibilityHidden(true)
+                            // 2.8 item 7 kit: the confetti + streamer burst blooms BEHIND the art (gold for Flawless).
+                            .background {
+                                kitImage(flawless ? "celebrate-burst-gold" : "celebrate-burst-party", width: 330)
+                                    .scaleEffect(kitIn || still ? 1 : 0.35)
+                                    .rotationEffect(.degrees(kitIn || still ? 0 : -6))
+                                    .opacity(kitIn || still ? 0.92 : 0)
+                                    .allowsHitTesting(false)
+                            }
+                            // Halloween: bats + a broom drift in at the corners (registry extras; nil out of season).
+                            .overlay(alignment: .topLeading) {
+                                if let f = SeasonKit.extra("celebrate-float-1") { kitImage(f, width: 70).offset(x: -16, y: -6).opacity(kitIn || still ? 1 : 0).offset(y: kitIn || still ? 0 : 12) }
+                            }
+                            .overlay(alignment: .topTrailing) {
+                                if let f = SeasonKit.extra("celebrate-float-2") { kitImage(f, width: 58).offset(x: 12, y: 4).opacity(kitIn || still ? 1 : 0).offset(y: kitIn || still ? 0 : 12) }
+                            }
+                            // Flawless: the crown drops onto the star (Halloween: the witch hat).
+                            .overlay(alignment: .top) {
+                                if flawless {
+                                    kitImage("celebrate-crown-gold", width: 78).offset(y: -22)
+                                        .scaleEffect(kitIn || still ? 1 : 0.7).offset(y: kitIn || still ? 0 : -42)
+                                        .opacity(kitIn || still ? 1 : 0)
+                                }
+                            }
                             .overlay(alignment: .bottomTrailing) {
                                 if let c = ownMascot {
                                     let initial = AvatarCatalog.initial(AuthService.shared.profile?.username ?? HostLookCache.load()?.username)
@@ -110,9 +153,9 @@ struct SweepCelebrationView: View {
 
                     // §G3: soft-number stat tiles (tinted, top bars).
                     HStack(spacing: 8) {
-                        stat("\(wonCount)/\(totalCount)", "Won", Color(hex: 0x7C3AED))
-                        stat(fmt(Int(timeSum.rounded())), "Total Time", Color(hex: 0x2563EB))
-                        stat(formatScore(scoreSum), "Total Pts", Color(hex: 0xF5A524))
+                        stat("\(Int((Double(wonCount) * progress).rounded()))/\(totalCount)", "Won", Color(hex: 0x7C3AED))
+                        stat(fmt(Int((timeSum * progress).rounded())), "Total Time", Color(hex: 0x2563EB))
+                        stat(formatScore((scoreSum * progress).rounded()), "Total Pts", Color(hex: 0xF5A524))
                     }
                     .padding(.top, 2)
 
@@ -120,7 +163,7 @@ struct SweepCelebrationView: View {
                     // (3 columns left Starsweep alone on a 4th row and squeezed "Crosswordocious").
                     let cols = [GridItem(.flexible(), spacing: 14), GridItem(.flexible())]
                     LazyVGrid(columns: cols, spacing: 8) {
-                        ForEach(rows) { r in
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { k, r in
                             HStack(spacing: 5) {
                                 // Real game icon (same as the home cards), mapped by dbKey;
                                 // falls back to the letter glyph if a mode isn't found.
@@ -135,6 +178,10 @@ struct SweepCelebrationView: View {
                                 Spacer(minLength: 0)
                                 // ART_SPEC §4: the 3D W / L badge per daily.
                                 ResultBadge(won: r.won, size: 18)
+                                    // each game's W / L badge stamps in one by one
+                                    .scaleEffect(stamped > k || still ? 1 : 2.4)
+                                    .rotationEffect(.degrees(stamped > k || still ? 0 : -14))
+                                    .opacity(stamped > k || still ? 1 : 0)
                             }
                         }
                     }
@@ -165,7 +212,10 @@ struct SweepCelebrationView: View {
             // Your mascot cheers with the celebration (a no-op while the living mascot is off) — a beat after it mounts.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { MascotMoment.post(flawless ? .flawless : .sweep) }
             Feedback.celebrate()   // §U: celebrate · success+heavy
-            if still { artIn = true } else {
+            if still { artIn = true; kitIn = true; progress = 1; stamped = rows.count } else {
+                withAnimation(.spring(response: 0.7, dampingFraction: 0.62)) { kitIn = true }
+                withAnimation(.easeInOut(duration: 1.1).delay(0.45)) { sweepX = 2.6 }
+                runCountUp()
                 withAnimation(.spring(response: 0.55, dampingFraction: 0.55).delay(0.15)) { artIn = true }
             }
         }
@@ -179,6 +229,36 @@ struct SweepCelebrationView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, 12).padding(.bottom, 8).padding(.horizontal, 4)
         .tintedPill(c, radius: 14)
+    }
+
+    /// The stats count up (≈0.9 s) after the art lands, then each row's badge stamps in (≈0.11 s apart) with a tick.
+    private func runCountUp() {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 650_000_000)
+            let steps = 28
+            for i in 1...steps {
+                let k = Double(i) / Double(steps)
+                progress = 1 - pow(1 - k, 3)
+                try? await Task.sleep(nanoseconds: 32_000_000)
+            }
+            progress = 1
+        }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            for k in 1...max(1, rows.count) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) { stamped = k }
+                Haptics.tap()
+                try? await Task.sleep(nanoseconds: 110_000_000)
+            }
+        }
+    }
+
+    /// A celebration-kit prop (the season's swap when the registry has one; nothing when the art isn't shipped).
+    @ViewBuilder private func kitImage(_ name: String, width: CGFloat) -> some View {
+        if let n = SeasonKit.extra(name), ArtAsset.exists(n) {
+            Image(n).resizable().interpolation(.high).scaledToFit().frame(width: width)
+                .accessibilityHidden(true).allowsHitTesting(false)
+        }
     }
 
     private func fmt(_ s: Int) -> String { "\(s / 60):\(String(format: "%02d", s % 60))" }
