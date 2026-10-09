@@ -34,4 +34,22 @@ class AgeCheckTest {
         assertNull(AgeCheck.parse("garbage", now))
         assertNull(AgeCheck.parse(null, now))
     }
+
+    // The gate decision (2026-10-10: the black screen that never cleared).
+    private fun gate(stored: State? = null, live: Boolean = true, session: Boolean = true, done: Boolean = false, ms: Long = 0) =
+        AgeGate.view(stored, live, session, done, ms)
+
+    @Test fun `the gate waits for a returning player but never past the cap`() {
+        assertEquals(AgeGate.View.PLACEHOLDER, gate())
+        assertEquals(AgeGate.View.PLACEHOLDER, gate(ms = AgeGate.MAX_WAIT_MS - 1))
+        assertEquals(AgeGate.View.QUESTION, gate(ms = AgeGate.MAX_WAIT_MS))
+        assertEquals(AgeGate.View.QUESTION, gate(ms = 60_000))
+        assertEquals(AgeGate.View.QUESTION, gate(done = true))
+        assertEquals(AgeGate.View.QUESTION, gate(session = false))
+        assertEquals(AgeGate.View.PASS, gate(State.OK))
+        assertEquals(AgeGate.View.PASS, gate(live = false))
+        assertEquals(AgeGate.View.UNDER, gate(State.UNDER))
+        assertEquals(true, AgeGate.MAX_WAIT_MS <= 2000L)
+    }
 }
+

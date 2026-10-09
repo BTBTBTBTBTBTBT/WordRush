@@ -77,7 +77,9 @@ final class AgeCheckStore: ObservableObject {
     /// and sign an under-13 account out. Safe to call repeatedly.
     func syncWithServer() async {
         let auth = AuthService.shared
-        guard let id = auth.profile?.id, !syncing else { return }
+        // 2026-10-10: the lookup rides the persisted session when the profile has not loaded yet (it can load only after the
+        // launch gate), so the gate never waits on something that waits behind it.
+        guard let id = auth.profile?.id ?? auth.client.auth.currentSession?.user.id.uuidString, !syncing else { return }
         syncing = true
         defer { syncing = false }
 

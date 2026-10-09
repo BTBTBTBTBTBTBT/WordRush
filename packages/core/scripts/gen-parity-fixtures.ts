@@ -36,6 +36,7 @@ import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, recons
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
 import { streakHeadline } from '../src/streak-headline';
+import { ageGateView, AGE_GATE_MAX_WAIT_MS } from '../src/age-check';
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
@@ -1261,6 +1262,17 @@ export function renderBubbleTextFixtures() {
   return { widths, fits, home, glyphs, layouts };
 }
 
+/** 2026-10-10: the age gate's decision (placeholder / question / pass / under), with the wait cap. */
+function renderAgeGateFixtures() {
+  const cases: Array<{ stored: 'ok' | 'under' | null; live: boolean; hadSession: boolean; serverCheckDone: boolean; elapsedMs: number }> = [];
+  for (const stored of ['ok', 'under', null] as const)
+    for (const live of [true, false])
+      for (const hadSession of [true, false])
+        for (const serverCheckDone of [true, false])
+          for (const elapsedMs of [0, 1999, 2000, 6000]) cases.push({ stored, live, hadSession, serverCheckDone, elapsedMs });
+  return { maxWaitMs: AGE_GATE_MAX_WAIT_MS, cases: cases.map((c) => ({ ...c, view: ageGateView(c) })) };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -1295,6 +1307,7 @@ const FILES: Array<[string, unknown]> = [
   ['friend-cards-fixtures.json', renderFriendCardFixtures()],
   ['pocket-help-fixtures.json', renderPocketHelpFixtures()],
   ['waiting-room-fixtures.json', renderWaitingRoomFixtures()],
+  ['age-gate-fixtures.json', renderAgeGateFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

@@ -2607,3 +2607,9 @@ html[data-season-tone="dark"] { --ink-lift: 65%; }
 .order-pencil { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); }
 @media (prefers-reduced-motion: reduce) { .order-wiggle { animation: none !important; } }
 [data-reduced-motion="true"] .order-wiggle { animation: none !important; }
+
+
+/* 2026-10-10 · the "13 and up" scene: the cast waves in a gentle staggered bob (transform only; none under Reduce Motion). */
+.age-wave { animation: age-wave 2.4s ease-in-out infinite; animation-delay: calc(var(--k, 0) * 140ms); transform-origin: 50% 100%; }
+@keyframes age-wave { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-4%) rotate(-3deg); } 65% { transform: translateY(0) rotate(2.5deg); } }
+@media (prefers-reduced-motion: reduce) { .age-wave { animation: none; } }

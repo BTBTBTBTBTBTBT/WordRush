@@ -8,8 +8,8 @@ import kotlinx.serialization.json.Json
 
 /**
  * 13+ age check rules (FRIDAY-QUEUE item 29 — COPPA). Pure (JVM-unit-tested: AgeCheckTest);
- * mirrors core age-check.ts and WordociousCore AgeCheck.swift. One neutral question, "When's your
- * birthday year?", no default, no hint that 13 matters; only the year is ever stored.
+ * mirrors core age-check.ts and WordociousCore AgeCheck.swift. One neutral question, "What year were you
+ * born?", no default, no hint that 13 matters; only the year is ever stored.
  *
  * A year alone cannot tell a passed 13th birthday from an upcoming one, so the rule is STRICT (founder:
  * "I don't mind losing the under-13 players if it's safer"): pass only when `currentYear - birthYear >=
@@ -59,3 +59,23 @@ object AgeCheck {
         }.getOrNull()
     }
 }
+
+/**
+ * What the age gate shows (2026-10-10 fix: a returning signed-in player sat on a black screen on iOS; same rule here). A
+ * returning player on a fresh device may already be confirmed server-side, so the gate waits for that lookup, but NEVER
+ * longer than [MAX_WAIT_MS] and never on a plain black screen. Mirrors core ageGateView.
+ */
+object AgeGate {
+    enum class View { PASS, UNDER, PLACEHOLDER, QUESTION }
+
+    /** The longest the gate shows its placeholder before it just asks. */
+    const val MAX_WAIT_MS = 2000L
+
+    fun view(stored: AgeCheck.State?, live: Boolean, hadSession: Boolean, serverCheckDone: Boolean, elapsedMs: Long): View = when {
+        stored == AgeCheck.State.UNDER -> View.UNDER
+        stored == AgeCheck.State.OK || !live -> View.PASS
+        hadSession && !serverCheckDone && elapsedMs < MAX_WAIT_MS -> View.PLACEHOLDER
+        else -> View.QUESTION
+    }
+}
+
