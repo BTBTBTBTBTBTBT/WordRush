@@ -31,6 +31,7 @@ enum ShareService {
             reveal: reveal, letters: letters, solutionDisplay: solutionDisplay,
             mode: mode, points: points
         )
+        card.heroEnabled = ShareHeroBand.available   // item 46: the sender's mascot celebrating
         // §S2: measure the board so the canvas fits the puzzle (no dead space).
         card.boardNatural = naturalSize(card.boardBody)
         guard let image = renderCard(card, size: card.size) else { return }

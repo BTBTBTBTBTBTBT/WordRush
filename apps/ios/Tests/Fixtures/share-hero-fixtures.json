@@ -1,0 +1,167 @@
+{
+  "_doc": "share-hero.ts spec per result + season (pose, crown, glow, gold) and the frame limits. Regenerate: UPDATE_SHARE_HERO_FIXTURES=1 vitest run src/share-hero.test.ts. ShareHero.swift + ShareHero.kt tests read this.",
+  "specs": [
+    {
+      "result": "win",
+      "halloween": false,
+      "pose": "cheer",
+      "crown": true,
+      "glow": "#A78BFA",
+      "gold": false
+    },
+    {
+      "result": "win",
+      "halloween": true,
+      "pose": "cheer",
+      "crown": true,
+      "glow": "#FB923C",
+      "gold": false
+    },
+    {
+      "result": "flawless",
+      "halloween": false,
+      "pose": "jump",
+      "crown": true,
+      "glow": "#FCD34D",
+      "gold": true
+    },
+    {
+      "result": "flawless",
+      "halloween": true,
+      "pose": "jump",
+      "crown": true,
+      "glow": "#FCD34D",
+      "gold": true
+    },
+    {
+      "result": "sweep",
+      "halloween": false,
+      "pose": "cheer",
+      "crown": true,
+      "glow": "#A78BFA",
+      "gold": false
+    },
+    {
+      "result": "sweep",
+      "halloween": true,
+      "pose": "cheer",
+      "crown": true,
+      "glow": "#FB923C",
+      "gold": false
+    },
+    {
+      "result": "loss",
+      "halloween": false,
+      "pose": "shrug",
+      "crown": false,
+      "glow": "#94A3B8",
+      "gold": false
+    },
+    {
+      "result": "loss",
+      "halloween": true,
+      "pose": "shrug",
+      "crown": false,
+      "glow": "#94A3B8",
+      "gold": false
+    },
+    {
+      "result": "neutral",
+      "halloween": false,
+      "pose": "wave",
+      "crown": false,
+      "glow": "#A78BFA",
+      "gold": false
+    },
+    {
+      "result": "neutral",
+      "halloween": true,
+      "pose": "wave",
+      "crown": false,
+      "glow": "#FB923C",
+      "gold": false
+    },
+    {
+      "result": "rank1",
+      "halloween": false,
+      "pose": "cheer",
+      "crown": true,
+      "glow": "#FCD34D",
+      "gold": false
+    },
+    {
+      "result": "rank1",
+      "halloween": true,
+      "pose": "cheer",
+      "crown": true,
+      "glow": "#FB923C",
+      "gold": false
+    },
+    {
+      "result": "rank2",
+      "halloween": false,
+      "pose": "cheer",
+      "crown": false,
+      "glow": "#A78BFA",
+      "gold": false
+    },
+    {
+      "result": "rank2",
+      "halloween": true,
+      "pose": "cheer",
+      "crown": false,
+      "glow": "#FB923C",
+      "gold": false
+    },
+    {
+      "result": "rank3",
+      "halloween": false,
+      "pose": "cheer",
+      "crown": false,
+      "glow": "#A78BFA",
+      "gold": false
+    },
+    {
+      "result": "rank3",
+      "halloween": true,
+      "pose": "cheer",
+      "crown": false,
+      "glow": "#FB923C",
+      "gold": false
+    },
+    {
+      "result": "ranked",
+      "halloween": false,
+      "pose": "wave",
+      "crown": false,
+      "glow": "#A78BFA",
+      "gold": false
+    },
+    {
+      "result": "ranked",
+      "halloween": true,
+      "pose": "wave",
+      "crown": false,
+      "glow": "#FB923C",
+      "gold": false
+    }
+  ],
+  "frames": {
+    "message": {
+      "minH": 1350,
+      "maxH": 1920
+    },
+    "story": {
+      "minH": 1920,
+      "maxH": 1920
+    },
+    "square": {
+      "minH": 1080,
+      "maxH": 1080
+    }
+  },
+  "hero": {
+    "height": 300,
+    "gap": 12
+  }
+}
