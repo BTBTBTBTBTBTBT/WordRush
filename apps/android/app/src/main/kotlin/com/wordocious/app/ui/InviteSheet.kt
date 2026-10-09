@@ -202,7 +202,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                             scope.launch {
                                 val r = InviteService.createInvite(card.engineMode!!.name, null)
                                 busy = false
-                                if (r.code != null) inviteUrl = "https://wordocious.com/vs/join/${r.code}"
+                                if (r.code != null) inviteUrl = com.wordocious.app.data.ShareHelper.liveInviteUrl(r.code)
                                 else error = r.error ?: "Failed to create invite"
                             }
                         }

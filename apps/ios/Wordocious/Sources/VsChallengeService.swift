@@ -219,8 +219,15 @@ enum VsChallengeService {
     }
 
     /// The link a challenge shares, and the text that rides with it.
-    static func shareURL(_ code: String) -> URL { URL(string: "https://wordocious.com/vs/challenge/\(code)")! }
+    static func shareURL(_ code: String) -> URL {
+        // 9f: one branded link (per-invite preview image) when branded_invites is live.
+        if FlagsService.shared.isLive(BrandedInvite.switchKey) { return URL(string: BrandedInvite.url(.vs, code))! }
+        return URL(string: "https://wordocious.com/vs/challenge/\(code)")!
+    }
     static func shareText(mode: GameMode, code: String) -> String {
+        if FlagsService.shared.isLive(BrandedInvite.switchKey) {
+            return BrandedInvite.shareLine(.race, sender: AuthService.shared.profile?.username ?? "A friend", game: VsLobbyKit.modeName(mode))
+        }
         // FINISH_SPEC §S4: the shared VS invite copy; the link rides as the ShareLink item.
         ShareCopy.vsInvite(game: VsLobbyKit.modeName(mode), url: "").trimmingCharacters(in: .whitespaces)
     }

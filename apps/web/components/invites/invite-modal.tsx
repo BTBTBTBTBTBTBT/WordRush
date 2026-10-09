@@ -1,5 +1,8 @@
 'use client';
 
+import { useFlags } from '@/hooks/use-flags';
+import { BRANDED_INVITES_SWITCH } from '@wordle-duel/core';
+import { shareUrlFor } from '@/lib/invite-links';
 import { shareCaption } from '@wordle-duel/core';
 import { useEffect, useState } from 'react';
 import { Link as LinkIcon, User as UserIcon, TrendingUp, Shield, Skull, Crown, Swords, ChevronDown } from 'lucide-react';
@@ -92,6 +95,7 @@ interface Props {
 
 export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
   const { profile, isProActive } = useAuth();
+  const { isLive: flagLive } = useFlags();
   const [tab, setTab] = useState<'link' | 'username'>('link');
   const [modeId, setModeId] = useState<string>('DUEL');
   const [modeOpen, setModeOpen] = useState(false);
@@ -126,7 +130,7 @@ export function InviteModal({ open, onClose, initialMode, initialTab }: Props) {
     setBusy(false);
     if (e || !invite) { setError(e ?? 'Failed to create invite'); return; }
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    setInviteUrl(`${origin}/vs/join/${invite.invite_code}`);
+    setInviteUrl(shareUrlFor(flagLive(BRANDED_INVITES_SWITCH), 'live', invite.invite_code, origin));
   };
 
   const handleSendToUsername = async () => {

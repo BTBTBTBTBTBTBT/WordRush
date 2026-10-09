@@ -1,5 +1,8 @@
 'use client';
 
+import { useFlags } from '@/hooks/use-flags';
+import { BRANDED_INVITES_SWITCH, inviteShareLine } from '@wordle-duel/core';
+import { shareUrlFor } from '@/lib/invite-links';
 import { botAchievements, unlockAchievements } from '@/lib/achievement-service';
 import { setLeaveGuard } from '@/lib/nav-home';
 import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from 'react';
@@ -289,6 +292,8 @@ export function VsGame(props: VsGameProps) {
 }
 
 function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
+  const { isLive: flagLive } = useFlags();
+  const brandedInvites = flagLive(BRANDED_INVITES_SWITCH);
 
   const { profile, session, isProActive, isGuest, exitGuest, refreshProfile } = useAuth();
   const isPro = isProActive;
@@ -1705,8 +1710,11 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
                 </p>
                 <button
                   onClick={async () => {
-                    const url = `${window.location.origin}/vs/join/${inviteCode}`;
-                    const text = `Join my Wordocious VS match — code ${inviteCode}`;
+                    const url = shareUrlFor(brandedInvites, 'live', inviteCode, window.location.origin);
+                    // Branded: the preview image carries the game + code, so the text is one short line.
+                    const text = brandedInvites
+                      ? inviteShareLine({ variant: 'live', sender: profile?.username ?? 'A friend', game: modeTitle(mode) })
+                      : `Join my Wordocious VS match — code ${inviteCode}`;
                     if ('share' in navigator) {
                       try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch {}
                     }
@@ -1743,8 +1751,10 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
   if (screen === 'result' && flow === 'send' && challengeRun) {
     const shareLink = async () => {
       if (!sendResult?.code) return;
-      const url = `https://wordocious.com/vs/challenge/${sendResult.code}`;
-      const text = challengeShareText(mode, sendResult.code);
+      const url = shareUrlFor(brandedInvites, 'race', sendResult.code);
+      const text = brandedInvites
+        ? inviteShareLine({ variant: 'race', sender: profile?.username ?? 'A friend', game: modeTitle(mode) })
+        : challengeShareText(mode, sendResult.code);
       if (typeof navigator !== 'undefined' && 'share' in navigator) {
         try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch { /* fall back to copy */ }
       }

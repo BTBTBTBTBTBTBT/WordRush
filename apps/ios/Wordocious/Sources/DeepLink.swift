@@ -92,6 +92,20 @@ final class DeepLink: ObservableObject {
               host == "wordocious.com" || host == "www.wordocious.com" else { return false }
         let parts = url.pathComponents.filter { $0 != "/" }
 
+        // Branded one-link invite (9f): wordocious.com/vs/<8-char CODE> is a live VS invite OR a
+        // race-my-run challenge; the server knows which. Try the live invite, then the challenge.
+        if parts.count == 2, parts[0] == "vs", BrandedInvite.isBrandedVsCode(parts[1]) {
+            let code = parts[1].uppercased()
+            Task {
+                if let mode = await InviteService.lookupMode(code: code) {
+                    self.vsInvite = VSInviteLink(mode: mode, code: code)
+                } else {
+                    self.vsChallenge = VSChallengeLink(code: code)
+                }
+            }
+            return true
+        }
+
         // VS invite: wordocious.com/vs/join/<code>
         if parts.count == 3, parts[0] == "vs", parts[1] == "join" {
             let code = parts[2].uppercased()

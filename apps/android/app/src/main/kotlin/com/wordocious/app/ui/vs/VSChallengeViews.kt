@@ -428,7 +428,7 @@ fun ChallengeSentScreen(vm: VSMatchViewModel, onHome: () -> Unit) {
                             com.wordocious.app.data.ShareEvents.log("link_invite", vm.mode.name.lowercase(), "vs_challenge")
                             com.wordocious.app.data.ShareHelper.share(
                                 context,
-                                com.wordocious.app.data.ShareHelper.vsInviteText(vsModeName(vm.mode), "https://wordocious.com/vs/challenge/${state.code}"),
+                                com.wordocious.app.data.ShareHelper.inviteShareText(true, vsModeName(vm.mode), com.wordocious.app.data.ShareHelper.challengeUrl(state.code)),
                                 "Invite a friend",
                             )
                         }

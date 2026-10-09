@@ -69,6 +69,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/vs/join/" />
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/vs/challenge/" />
+                <!-- Branded one-link invites (9f): wordocious.com/vs/<8-char CODE>. A pathPattern (not
+                     a prefix) so /vs/bots, /vs/live, /vs/friend stay in the browser. -->
+                <data android:scheme="https" android:host="wordocious.com" android:pathPattern="/vs/[A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9][A-Za-z0-9]" />
                 <!-- Referral / gift-a-week invites (/join/<CODE>): the native landing
                      (ui/JoinLanding.kt) with signup attribution — the code is kept until
                      the invitee signs in, then redeemed. Without the app, the web page. -->
