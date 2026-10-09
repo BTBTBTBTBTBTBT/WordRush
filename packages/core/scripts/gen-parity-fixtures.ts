@@ -53,6 +53,9 @@ import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-r
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
+import { friendsLayout, tileWord, waitingHeadline, theirTurnLine, cardPresence, allFriendsLabel, type CardFriend, type CardGame } from '../src/friend-cards';
+import { POCKET_HELP, FIRST_PLAY_FLAG, shouldAutoShowTutorial, withTutorialSeen, mergeTutorialsSeen, pocketTutorialKey } from '../src/pocket-help';
+import { waitingStatusLine, waitClock, waitedSeconds, keepyLine, idleBit, type WaitingKind } from '../src/waiting-room';
 import { vsBannerHeadline, vsBannerClockLine, vsTodayStatus, vsRecordLine, vsOutcome, vsMargin, challengeHeadline, ladderAfterGame, ladderRungs, type VsBannerInput, type VsDayResult, type VsRun } from '../src/vs-lobby';
 import { hubPuzzleForDay, hubPuzzleForSeed, hubDailyNumber, createHubState, hubReduce, hubMatchRow, reconstructHub, hubRankIndex, hubRankThreshold, hubWordScore, hubBoardsSolved, hubGuessCount, type HubBank, type HubAction } from '../src/games/hub';
 
@@ -1103,6 +1106,92 @@ export function renderAvatarAccessFixtures() {
   return { contexts, rules, access, saves, earn, earned, tableSize: Object.keys(AVATAR_ACCESS_TABLE.parts).length };
 }
 
+export function renderFriendCardFixtures() {
+  // The Friends tab's one-card-per-friend layout (friend-cards.ts). Games carry real states from the engine.
+  const st = (kind: any, moves: Array<[string, any]>, ctx: any = {}) => {
+    let s: FriendlyState = newFriendlyState(kind);
+    for (const [by, mv] of moves) { const r = applyFriendlyMove(s, by as any, mv, ctx); if (r.ok) s = r.state; }
+    return s;
+  };
+  const any = { isWord: () => false, hasPrefix: () => true };
+  const states = {
+    rpsOpen: st('rps', []),
+    rpsPickedA: st('rps', [['a', { kind: 'rps', pick: 'rock' }]]),
+    tttA: st('ttt', [['a', { kind: 'ttt', cell: 0 }]]),
+    tttB: st('ttt', [['a', { kind: 'ttt', cell: 0 }], ['b', { kind: 'ttt', cell: 4 }]]),
+    coin: st('coin', []),
+    pass0: st('pass', [], { solution: 'RISKS' }),
+    pass2: st('pass', [['a', { kind: 'pass', word: 'CRANE' }], ['b', { kind: 'pass', word: 'ROUTS' }]], { solution: 'RISKS' }),
+    ghost0: st('ghost', []),
+    ghost3: st('ghost', [['a', { kind: 'ghost', letter: 'G' }], ['b', { kind: 'ghost', letter: 'H' }], ['a', { kind: 'ghost', letter: 'O' }]], any),
+    chain0: st('chain', []),
+    chain1: st('chain', [['a', { kind: 'chain', word: 'CRANE' }]], { isWord: () => true, hasPrefix: () => true }),
+  };
+  const tileCases: Array<[any, FriendlyState, 'a' | 'b', boolean]> = [
+    ['rps', states.rpsOpen, 'a', true], ['rps', states.rpsPickedA, 'a', false], ['rps', states.rpsPickedA, 'b', true],
+    ['ttt', states.tttA, 'b', true], ['ttt', states.tttB, 'b', false], ['ttt', states.tttB, 'a', true],
+    ['coin', states.coin, 'a', true], ['coin', states.coin, 'b', false],
+    ['pass', states.pass0, 'a', true], ['pass', states.pass2, 'a', true], ['pass', states.pass2, 'b', false],
+    ['ghost', states.ghost0, 'a', true], ['ghost', states.ghost3, 'b', true], ['ghost', states.ghost3, 'a', false],
+    ['chain', states.chain0, 'a', true], ['chain', states.chain1, 'b', true], ['chain', states.chain1, 'a', false],
+  ];
+  const tiles = tileCases.map(([kind, state, me, yourTurn]) => ({ kind, state, me, yourTurn, word: tileWord(kind, state, me, yourTurn) }));
+  const f = (id: string, username: string, online: boolean, activity: string | null = null, lastSeenMs: number | null = null): CardFriend => ({ id, username, online, activity, lastSeenMs });
+  const g = (id: string, kind: any, opponentId: string, state: FriendlyState, yourTurn: boolean, updatedAt: string, me: 'a' | 'b' = 'a'): CardGame => ({ id, kind, opponentId, opponentName: opponentId.toUpperCase(), me, state, yourTurn, updatedAt });
+  const layoutCases: Array<{ name: string; friends: CardFriend[]; games: CardGame[] }> = [
+    { name: 'empty', friends: [], games: [] },
+    { name: 'no-games', friends: [f('d', 'Doug', false), f('c', 'cara', false), f('b', 'Bea', true, 'Muddle')], games: [] },
+    {
+      name: 'six-with-johnny',
+      friends: [f('j', 'johnnyauer', true, 'Classic'), f('d', 'Doug', true), f('k', 'Kate', false)],
+      games: [
+        g('1', 'rps', 'j', states.rpsOpen, true, '2026-10-09T10:00:00Z'), g('2', 'ttt', 'j', states.tttB, true, '2026-10-09T10:05:00Z', 'a'),
+        g('3', 'coin', 'j', states.coin, true, '2026-10-09T09:00:00Z'), g('4', 'pass', 'j', states.pass2, true, '2026-10-09T11:00:00Z'),
+        g('5', 'ghost', 'j', states.ghost3, true, '2026-10-09T08:00:00Z'), g('6', 'chain', 'j', states.chain1, false, '2026-10-09T07:00:00Z', 'b'),
+        g('7', 'ttt', 'k', states.tttA, false, '2026-10-08T07:00:00Z', 'a'),
+      ],
+    },
+    {
+      name: 'offline-with-turn-beats-offline-without',
+      friends: [f('a', 'Aaron', false), f('z', 'Zed', false), f('m', 'Mo', true)],
+      games: [g('1', 'rps', 'z', states.rpsOpen, true, '2026-10-09T10:00:00Z'), g('2', 'ttt', 'a', states.tttA, false, '2026-10-09T12:00:00Z')],
+    },
+    { name: 'stranger-game', friends: [f('d', 'Doug', false)], games: [g('1', 'rps', 'gone', states.rpsOpen, true, '2026-10-09T10:00:00Z')] },
+  ];
+  const layouts = layoutCases.map((c) => ({ ...c, layout: friendsLayout(c.friends, c.games) }));
+  const words = {
+    waiting: [0, 1, 2, 6].map((n) => ({ n, text: waitingHeadline(n) })),
+    theirTurn: [0, 1, 3].map((n) => ({ n, name: 'Johnny', text: theirTurnLine(n, 'Johnny') })),
+    presence: ([[false, null], [true, null], [true, 'Classic'], [true, '']] as Array<[boolean, string | null]>).map(([online, activity]) => ({ online, activity, text: cardPresence(online, activity) })),
+    all: [0, 1, 12].map((n) => ({ n, text: allFriendsLabel(n) })),
+  };
+  return { tiles, layouts, words };
+}
+
+export function renderPocketHelpFixtures() {
+  const keys = ['practice', 'hub', 'pocket-rps'];
+  const decisionCases: Array<{ live: boolean; seen: string[] | null }> = [
+    { live: true, seen: [] }, { live: true, seen: ['hub'] }, { live: true, seen: ['pocket-rps', 'hub'] }, { live: false, seen: [] }, { live: true, seen: null },
+  ];
+  const decisions = decisionCases.flatMap((d) => keys.map((key) => ({ ...d, key, show: shouldAutoShowTutorial({ live: d.live, seen: d.seen, key }) })));
+  const seenCases: Array<[string[], string]> = [[[], 'hub'], [['hub'], 'hub'], [['pocket-ttt', 'hub'], 'practice']];
+  const seen = seenCases.map(([list, key]) => ({ seen: list, key, result: withTutorialSeen(list, key) }));
+  const mergeCases: Array<[string[], string[]]> = [[['a', 'c'], ['b', 'c']], [[], ['z']], [['q'], []]];
+  const merged = mergeCases.map(([a, b]) => ({ a, b, result: mergeTutorialsSeen(a, b) }));
+  return { flag: FIRST_PLAY_FLAG, help: POCKET_HELP, keys: Object.keys(POCKET_HELP).map((k) => pocketTutorialKey(k as any)), decisions, seen, merged };
+}
+
+export function renderWaitingRoomFixtures() {
+  const kinds: WaitingKind[] = ['friend', 'random', 'bot', 'pocket'];
+  const names = [undefined, null, '', '  Johnny ', '@johnnyauer'];
+  const lines = kinds.flatMap((kind) => names.map((name) => ({ kind, name: name ?? null, text: waitingStatusLine({ kind, name }) })));
+  const clocks = [-5, 0, 0.9, 7, 59, 60, 65, 599, 3599, 3600, 3725, Number.NaN].map((s) => ({ seconds: Number.isNaN(s) ? null : s, text: waitClock(s) }));
+  const waited = [[1000, 1000], [1000, 8999], [5000, 1000], [0, 61_500]].map(([a, b]) => ({ startMs: a, nowMs: b, seconds: waitedSeconds(a, b) }));
+  const keepy = [[0, 0], [0, 4], [3, 0], [3, 4], [5, 4], [4, 4]].map(([count, best]) => ({ count, best, text: keepyLine(count, best) }));
+  const idle = [0, 5, 6, 11, 12, 18, 24, 30].map((s) => ({ seconds: s, bit: idleBit(s) }));
+  return { lines, clocks, waited, keepy, idle };
+}
+
 export function renderMusicalCastFixtures() {
   // The musical cast (musical-cast.ts): the note map, the transform timing, the melody matcher + tap reducer, secrets.
   const notes = [...MUSICAL_CAST_IDS, 'zz'].map((id) => ({ id, note: musicalNote(id) }));
@@ -1190,6 +1279,9 @@ const FILES: Array<[string, unknown]> = [
   ['avatar-pose-fixtures.json', renderAvatarPoseFixtures()],
   ['avatar-access-fixtures.json', renderAvatarAccessFixtures()],
   ['musical-cast-fixtures.json', renderMusicalCastFixtures()],
+  ['friend-cards-fixtures.json', renderFriendCardFixtures()],
+  ['pocket-help-fixtures.json', renderPocketHelpFixtures()],
+  ['waiting-room-fixtures.json', renderWaitingRoomFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

@@ -1,0 +1,242 @@
+{
+  "lines": [
+    {
+      "kind": "friend",
+      "name": null,
+      "text": "Waiting for your friend…"
+    },
+    {
+      "kind": "friend",
+      "name": null,
+      "text": "Waiting for your friend…"
+    },
+    {
+      "kind": "friend",
+      "name": "",
+      "text": "Waiting for your friend…"
+    },
+    {
+      "kind": "friend",
+      "name": "  Johnny ",
+      "text": "Waiting for Johnny…"
+    },
+    {
+      "kind": "friend",
+      "name": "@johnnyauer",
+      "text": "Waiting for johnnyauer…"
+    },
+    {
+      "kind": "random",
+      "name": null,
+      "text": "Finding you an opponent…"
+    },
+    {
+      "kind": "random",
+      "name": null,
+      "text": "Finding you an opponent…"
+    },
+    {
+      "kind": "random",
+      "name": "",
+      "text": "Finding you an opponent…"
+    },
+    {
+      "kind": "random",
+      "name": "  Johnny ",
+      "text": "Finding you an opponent…"
+    },
+    {
+      "kind": "random",
+      "name": "@johnnyauer",
+      "text": "Finding you an opponent…"
+    },
+    {
+      "kind": "bot",
+      "name": null,
+      "text": "Warming up your opponent…"
+    },
+    {
+      "kind": "bot",
+      "name": null,
+      "text": "Warming up your opponent…"
+    },
+    {
+      "kind": "bot",
+      "name": "",
+      "text": "Warming up your opponent…"
+    },
+    {
+      "kind": "bot",
+      "name": "  Johnny ",
+      "text": "Warming up your opponent…"
+    },
+    {
+      "kind": "bot",
+      "name": "@johnnyauer",
+      "text": "Warming up your opponent…"
+    },
+    {
+      "kind": "pocket",
+      "name": null,
+      "text": "Waiting for your friend…"
+    },
+    {
+      "kind": "pocket",
+      "name": null,
+      "text": "Waiting for your friend…"
+    },
+    {
+      "kind": "pocket",
+      "name": "",
+      "text": "Waiting for your friend…"
+    },
+    {
+      "kind": "pocket",
+      "name": "  Johnny ",
+      "text": "Waiting for Johnny…"
+    },
+    {
+      "kind": "pocket",
+      "name": "@johnnyauer",
+      "text": "Waiting for johnnyauer…"
+    }
+  ],
+  "clocks": [
+    {
+      "seconds": -5,
+      "text": "0:00"
+    },
+    {
+      "seconds": 0,
+      "text": "0:00"
+    },
+    {
+      "seconds": 0.9,
+      "text": "0:00"
+    },
+    {
+      "seconds": 7,
+      "text": "0:07"
+    },
+    {
+      "seconds": 59,
+      "text": "0:59"
+    },
+    {
+      "seconds": 60,
+      "text": "1:00"
+    },
+    {
+      "seconds": 65,
+      "text": "1:05"
+    },
+    {
+      "seconds": 599,
+      "text": "9:59"
+    },
+    {
+      "seconds": 3599,
+      "text": "59:59"
+    },
+    {
+      "seconds": 3600,
+      "text": "1:00:00"
+    },
+    {
+      "seconds": 3725,
+      "text": "1:02:05"
+    },
+    {
+      "seconds": null,
+      "text": "0:00"
+    }
+  ],
+  "waited": [
+    {
+      "startMs": 1000,
+      "nowMs": 1000,
+      "seconds": 0
+    },
+    {
+      "startMs": 1000,
+      "nowMs": 8999,
+      "seconds": 7
+    },
+    {
+      "startMs": 5000,
+      "nowMs": 1000,
+      "seconds": 0
+    },
+    {
+      "startMs": 0,
+      "nowMs": 61500,
+      "seconds": 61
+    }
+  ],
+  "keepy": [
+    {
+      "count": 0,
+      "best": 0,
+      "text": "Tap to bounce the tile"
+    },
+    {
+      "count": 0,
+      "best": 4,
+      "text": "Tap to bounce · best 4"
+    },
+    {
+      "count": 3,
+      "best": 0,
+      "text": "3"
+    },
+    {
+      "count": 3,
+      "best": 4,
+      "text": "3"
+    },
+    {
+      "count": 5,
+      "best": 4,
+      "text": "5 · new best!"
+    },
+    {
+      "count": 4,
+      "best": 4,
+      "text": "4"
+    }
+  ],
+  "idle": [
+    {
+      "seconds": 0,
+      "bit": null
+    },
+    {
+      "seconds": 5,
+      "bit": null
+    },
+    {
+      "seconds": 6,
+      "bit": "checks its watch"
+    },
+    {
+      "seconds": 11,
+      "bit": "checks its watch"
+    },
+    {
+      "seconds": 12,
+      "bit": "yawns"
+    },
+    {
+      "seconds": 18,
+      "bit": "waves at the door"
+    },
+    {
+      "seconds": 24,
+      "bit": "checks its watch"
+    },
+    {
+      "seconds": 30,
+      "bit": "yawns"
+    }
+  ]
+}
