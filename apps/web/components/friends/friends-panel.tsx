@@ -45,6 +45,8 @@ import { TodaysRace } from './todays-race';
 import { ActivityFeed } from './activity-feed';
 import { FriendsBanner } from './friends-banner';
 import { FriendCards } from './friend-cards';
+import { InvitesRow } from '@/components/invites/invites-row';
+import { HaveACodeButton } from '@/components/invites/have-a-code';
 import { QuickPlaySheet } from './quick-play-sheet';
 import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, SectionLabel, Sheet, cardStyle } from './friends-ui';
 import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
@@ -477,8 +479,11 @@ export function FriendsPanel() {
           friends, invites, moments and add a friend on the right. */}
       <div className="page-grid-2 space-y-3">
       <div className="space-y-3">
-      {/* 3b. INVITES row + "Have a code?" (wave2/invites-2 supplies both components; they go here, at the top of
-          Friends, once that branch lands. Do not build second versions.) */}
+      {/* 3b. INVITES row + ONE obvious "Have a code?" (wave2/invites-2's self-contained components; both hide
+          themselves when branded_invites is off). */}
+      <InvitesRow userId={profile?.id} screen="pink" />
+      <HaveACodeButton screen="pink" block />
+
 
       {/* 4. FRIEND CARDS (2.8 items 9 + 9e): one card per friend, online first, "N games waiting on you",
           a strip of game tiles (tap = straight in), their-turn games collapsed. */}

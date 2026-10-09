@@ -95,8 +95,23 @@ struct FriendsPanelView: View {
                                   onFace: { quickPlay = QuickPlay(friend: $0, kind: nil) },
                                   onRace: { showRace = true })
             }
-            // WAVE2-INVITES-SLOT (wave2/invites-2): the branded Invites row and "Have a code?"
-            // entry go HERE, directly under the race banner and above the friend cards.
+            // 9f: the branded Invites row and ONE obvious "Have a code?" button (both hide themselves when
+            // branded_invites is off). Accepting hands the code to the same DeepLink state the universal links use,
+            // so RootTabView presents the private match / the race exactly like a tapped link.
+            InvitesRow { item in
+                switch item.variant {
+                case .race: DeepLink.shared.vsChallenge = DeepLink.VSChallengeLink(code: item.code)
+                case .live:
+                    if let m = GameMode(rawValue: item.gameMode) { DeepLink.shared.vsInvite = DeepLink.VSInviteLink(mode: m, code: item.code) }
+                }
+            }
+            HaveACodeButton(color: .pink) { result in
+                switch result {
+                case .race(let code): DeepLink.shared.vsChallenge = DeepLink.VSChallengeLink(code: code)
+                case .live(let mode, let code): DeepLink.shared.vsInvite = DeepLink.VSInviteLink(mode: mode, code: code)
+                case .friend(let code): if let u = URL(string: "https://wordocious.com/join/\(code)") { UIApplication.shared.open(u) }
+                }
+            }
             // Wave 3 (items 9 + 9e): the friends list at the top, one card per friend (online
             // first), their games as tiles inside the card, the rest under "All friends".
             yourFriendsSection(friends, incoming: incoming, outgoing: outgoing)

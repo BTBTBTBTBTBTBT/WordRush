@@ -258,8 +258,24 @@ fun FriendsScreen(
         // K1: the note as a notice card — springs in, squishes, taps or swipes away.
         FriendsNotice(note, onDismiss = { note = null })
 
-        // WAVE2-INVITES-SLOT: the branded Invites row and the "Have a code?" entry (wave2/invites-2) mount HERE,
-        // at the top of the tab, above the banner. Nothing else lives in this spot.
+        // 9f: the branded Invites row and ONE obvious "Have a code?" button (both hide themselves when
+        // branded_invites is off). Accepting hands the code to the same DeepLinkRouter state the app links use,
+        // so MainScreen opens the private match / the race exactly like a tapped link.
+        val inviteUriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+        InvitesRow(onAccept = { item ->
+            if (item.variant == com.wordocious.core.InviteRowItem.Variant.RACE) {
+                com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = item.code
+            } else {
+                runCatching { com.wordocious.core.GameMode.valueOf(item.gameMode) }.getOrNull()?.let { com.wordocious.app.data.DeepLinkRouter.vsInvite.value = it to item.code }
+            }
+        })
+        HaveACodeButton(color = CandyColor.PINK, onResolved = { r ->
+            when (r) {
+                is HaveACodeResult.Race -> com.wordocious.app.data.DeepLinkRouter.vsChallenge.value = r.code
+                is HaveACodeResult.Live -> com.wordocious.app.data.DeepLinkRouter.vsInvite.value = r.mode to r.code
+                is HaveACodeResult.Friend -> inviteUriHandler.openUri("https://wordocious.com/join/${r.code}")
+            }
+        })
 
         // 2. The Friends banner (the race, told once: the pills; the countdown small in its header)
         FriendsBannerView(
