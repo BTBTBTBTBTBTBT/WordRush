@@ -3,9 +3,14 @@ package com.wordocious.app.ui
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.wordocious.app.ModeGen
+import com.wordocious.app.ui.friends.FRIENDS_CARD_ACCENT
+import com.wordocious.app.ui.friends.FriendsPink
+import com.wordocious.app.ui.friends.PocketNight
+import com.wordocious.app.ui.friends.gradient
 import com.wordocious.app.ui.theme.Palettes
 import com.wordocious.app.ui.theme.SeasonSurfaces
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.FriendlyKind
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -170,6 +175,80 @@ class SeasonContrastTest {
                 }
             }
         }
+    }
+
+    /**
+     * 2.8 item 24: the wave-3 surfaces under every DARK season (Halloween: card #1C0F30, text #F7EEFF, accent #F97316) —
+     * the Friends cards (pink wash over the season card), the pocket boards' chips / cells / keys (PocketNight), the
+     * pocket help card and the first-play guide card, the game title lettering, the waiting strip's inks and Hubbub's
+     * found tiles + rank line. Body text 4.5:1; the large display lettering (titles) and the key glyph 3:1.
+     */
+    @Test fun wave3SurfacesOnTheDarkSeasonCard() {
+        for (e in seasons) {
+            val s = e.surfaces?.takeIf { it.dark && it.card != null } ?: continue
+            val id = e.id
+            val card = s.card!!.toArgb()
+            val raised = (s.raised ?: s.card!!).toArgb()
+
+            // The pocket boards' chips, cells, keys and the card's own inks.
+            for ((name, t) in PocketNight.inkPairs(s)) expect(t.first.toArgb(), t.second.toArgb(), t.third, "$id $name")
+
+            // The Friends cards (friendsCard = the pink wash over the season card): name, muted, headline, presence.
+            val friendCard = s.wash(FRIENDS_CARD_ACCENT, Wash.CARD * 0.5f).toArgb()
+            for ((n, ink) in listOf(
+                "name" to s.text!!, "muted" to s.textMuted!!, "headline" to PocketNight.pinkInk(s), "presence" to FriendsPink.green,
+            )) expect(ink.toArgb(), friendCard, 4.5, "$id Friends card $n")
+
+            // The waiting strip / lobby: the status timer and idle bits are VsTeal.label / sub (the season's muted / secondary text) on the card.
+            expect(s.textMuted!!.toArgb(), card, 4.5, "$id waiting timer")
+            expect(s.textSecondary!!.toArgb(), card, 4.5, "$id waiting idle line")
+
+            // The title lettering (24 sp / 18 sp Black, large text): every pocket game's lifted gradient stop, on the game
+            // screen's card and on the help card's two stops.
+            for (kind in FriendlyKind.entries) {
+                for (stop in PocketNight.title(kind.gradient, s)) {
+                    for (bg in listOf(card, raised)) expect(stop.toArgb(), bg, 3.0, "$id ${kind.name} title")
+                }
+            }
+            val help = PocketNight.helpCard(darkTheme = true, s = s)
+            for (bg in listOf(help.first, help.second)) {
+                for ((n, ink) in listOf("step" to s.text!!, "label" to s.textMuted!!, "win" to s.text!!)) {
+                    expect(ink.toArgb(), bg.toArgb(), 4.5, "$id help card $n")
+                }
+            }
+
+            // The first-play guide card: the section headings take SeasonSurfaces.onCard(game color) on the season card.
+            for (m in ModeGen.enabled) expect(s.onCard(m.accent).toArgb(), card, 4.5, "$id guide heading ${m.id}")
+
+            // Hubbub: the found tiles are the tone at low alpha over the tray (the season card / raised / the darkest wall).
+            val trays = listOf(card, raised, walls(e).first())
+            for (tray in trays) {
+                fun tile(tone: Long, alpha: Float) = TintMath.over(Color(tone).toArgb(), alpha, tray)
+                for ((name, ink, fill) in listOf(
+                    Triple("pangram", PocketNight.hubPangramInk(true), tile(0xFFF5A524, 0.42f)),
+                    Triple("pangram (bottom)", PocketNight.hubPangramInk(true), tile(0xFFF5A524, 0.30f)),
+                    Triple("revealed", PocketNight.hubRevealedInk(true), tile(0xFF8B5CF6, 0.30f)),
+                    Triple("word", s.text!!, tile(0xFFC026D3, 0.30f)),
+                    Triple("word (bottom)", s.text!!, tile(0xFFC026D3, 0.20f)),
+                )) expect(ink.toArgb(), fill, 4.5, "$id Hubbub $name tile on ${hex(tray)}")
+            }
+            expect(PocketNight.hubSolvedInk(true).toArgb(), card, 4.5, "$id Hubbub solved rank line")
+        }
+    }
+
+    /** Out of season / a light season the wave-3 surfaces are exactly the original light ones (nothing changes). */
+    @Test fun wave3SurfacesAreUnchangedOutOfSeason() {
+        assertTrue(PocketNight.youTint(null) == Color(0xFFEDE9FE))
+        assertTrue(PocketNight.themTint(null) == Color(0xFFFEF3C7))
+        assertTrue(PocketNight.ink(null) == Color(0xFF4C1D95))
+        assertTrue(PocketNight.cell(null) == Color.White)
+        assertTrue(PocketNight.keyFace(null) == Color(0xFFF1EAFF))
+        assertTrue(PocketNight.pinkInk(null) == Color(0xFFDB2777))
+        assertTrue(PocketNight.title(listOf(Color.Red), null) == listOf(Color.Red))
+        // The light twins pass on their own light fills.
+        for (kind in FriendlyKind.entries) assertTrue(kind.name, PocketNight.title(kind.gradient, null) == kind.gradient)
+        expect(PocketNight.ink(null).toArgb(), PocketNight.youTint(null).toArgb(), 4.5, "light ink on your chip")
+        expect(PocketNight.hubPangramInk(false).toArgb(), TintMath.over(0xFFF5A524.toInt(), 0.42f, 0xFFFFFFFF.toInt()), 4.5, "light Hubbub pangram")
     }
 
     /**

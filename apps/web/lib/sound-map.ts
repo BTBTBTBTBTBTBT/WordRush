@@ -17,6 +17,9 @@ export const SOUND_NAMES = [
   'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
   // the musical cast (core musical-cast.ts): each hero's own voice on its scale note (make-notes.py), C4 … E5
   'note-w', 'note-o1', 'note-r', 'note-d', 'note-o2', 'note-c', 'note-i', 'note-o3', 'note-u', 'note-s',
+  // Halloween (item 49): the spooky voicing of each note (the same voice with an organ / bones / celesta / low strings under it) and the re-orchestrated intro
+  'note-h-w', 'note-h-o1', 'note-h-r', 'note-h-d', 'note-h-o2', 'note-h-c', 'note-h-i', 'note-h-o3', 'note-h-u', 'note-h-s',
+  'intro-halloween',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
 
@@ -47,9 +50,16 @@ export function laughSound(id: string): SoundName | null {
 }
 
 /** A hero's musical note (the musical cast easter egg), or null for an unknown id. */
-export function noteSound(id: string): SoundName | null {
-  const name = `note-${id}`;
-  return (SOUND_NAMES as readonly string[]).includes(name) ? (name as SoundName) : null;
+export function noteSound(id: string, seasonal: string | null = null): SoundName | null {
+  for (const name of [seasonal, `note-${id}`]) {
+    if (name && (SOUND_NAMES as readonly string[]).includes(name)) return name as SoundName;
+  }
+  return null;
+}
+
+/** The cold-start jingle: the season's re-orchestration when it ships, else the everyday `intro`. */
+export function introSound(seasonal: string | null = null): SoundName {
+  return seasonal && (SOUND_NAMES as readonly string[]).includes(seasonal) ? (seasonal as SoundName) : 'intro';
 }
 
 /** One hero's giggle at most this often: longer than the longest giggle, so it never overlaps itself. */

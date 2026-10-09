@@ -109,7 +109,7 @@ private fun FriendCardView(
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (card.headline.isNotEmpty()) {
-                    Text(card.headline, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.solid, maxLines = 1)
+                    Text(card.headline, fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold, color = PocketNight.pinkInk(), maxLines = 1)
                 } else if (card.theirTurn.isEmpty()) {
                     Text("Tap to pick a game", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1)
                 }

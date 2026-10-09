@@ -133,6 +133,10 @@
           "celebrate-seal-gold": "celebrate-h-pumpkin-glow",
           "celebrate-float-1": "celebrate-h-bats",
           "celebrate-float-2": "celebrate-h-broom"
+        },
+        "sounds": {
+          "intro": "intro-halloween",
+          "note": "note-h-{id}"
         }
       },
       "surfaces": {

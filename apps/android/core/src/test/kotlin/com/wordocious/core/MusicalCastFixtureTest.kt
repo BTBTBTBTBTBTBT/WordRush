@@ -76,6 +76,61 @@ class MusicalCastFixtureTest {
         assertEquals(secrets, SECRET_ACHIEVEMENT_KEYS)
     }
 
+    /** A fixture's nullable string (absent / JSON null → null). */
+    private fun JsonObject.str(k: String): String? = this[k]?.takeIf { it !is JsonNull }?.jsonPrimitive?.contentOrNull
+
+    // ── Halloween (item 49): the season's tunes, spooky voicing and season-aware matching ──────────────────────
+
+    @Test fun halloween_melodies_todo_and_prefix() {
+        val h = f["halloween"]!!.jsonObject
+        val ms = h["melodies"]!!.jsonArray.map { it.jsonObject }
+        assertEquals(ms.size, MusicalCast.HALLOWEEN_MELODIES.size)
+        ms.forEachIndexed { i, m ->
+            val g = MusicalCast.HALLOWEEN_MELODIES[i]
+            assertEquals(m["id"]!!.jsonPrimitive.content, g.id)
+            assertEquals(m["name"]!!.jsonPrimitive.content, g.name)
+            assertEquals(m["achievement"]!!.jsonPrimitive.content, g.achievement)
+            assertEquals(ints(m, "notes"), g.notes)
+            assertEquals(ints(m, "intervals"), MusicalCast.melodyIntervals(g.notes))
+            assertTrue(g.id, g.notes.all { it in MusicalCast.SCALE })
+        }
+        assertEquals(h["todo"]!!.jsonArray.map { it.jsonPrimitive.content }, MusicalCast.HALLOWEEN_TUNES_TODO)
+        val prefixes = h["notePrefix"]!!.jsonObject.mapValues { it.value.jsonPrimitive.content }
+        assertEquals(prefixes, MusicalCast.SEASON_NOTE_PREFIX)
+    }
+
+    @Test fun halloween_sounds_per_season() {
+        for (e in f["halloween"]!!.jsonObject["sounds"]!!.jsonArray.map { it.jsonObject }) {
+            val season = e.str("season")
+            val id = e["id"]!!.jsonPrimitive.content
+            assertEquals("$season/$id", e.str("sound"), MusicalCast.note(id, season)?.sound)
+        }
+    }
+
+    @Test fun halloween_active_melodies_per_season() {
+        for (e in f["halloween"]!!.jsonObject["active"]!!.jsonArray.map { it.jsonObject }) {
+            val season = e.str("season")
+            assertEquals("$season", e["ids"]!!.jsonArray.map { it.jsonPrimitive.content }, MusicalCast.activeMelodies(season).map { it.id })
+        }
+    }
+
+    @Test fun halloween_taps_are_season_aware() {
+        for (c in f["halloween"]!!.jsonObject["taps"]!!.jsonArray.map { it.jsonObject }) {
+            val name = c["name"]!!.jsonPrimitive.content
+            val season = c.str("season")
+            var state = MusicalCast.MELODY_START
+            c["steps"]!!.jsonArray.forEachIndexed { i, se ->
+                val s = se.jsonObject
+                val r = MusicalCast.melodyTap(state, s["id"]!!.jsonPrimitive.content, s["at"]!!.jsonPrimitive.long, season)
+                val label = "$name step $i"
+                assertEquals(label, s["midi"]!!.jsonPrimitive.intOrNull, r.note?.midi)
+                assertEquals(label, s.str("sound"), r.note?.sound)
+                assertEquals(label, s.str("matched"), r.matched?.id)
+                state = r.state
+            }
+        }
+    }
+
     @Test fun secrets_match_the_achievement_catalog() {
         val catalog = Json.parseToJsonElement(loadFixture("achievement-rules-fixtures.json")).jsonObject["catalog"]!!.jsonArray
         val secret = catalog.map { it.jsonObject }.filter { it["secret"]?.jsonPrimitive?.booleanOrNull == true }

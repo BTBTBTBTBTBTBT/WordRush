@@ -109,7 +109,7 @@ struct FriendCardView: View {
             .overlay(alignment: .bottomTrailing) {
                 if card.online {
                     Circle().fill(FriendsInk.online).frame(width: 13, height: 13)
-                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                        .overlay(Circle().stroke(FriendsInk.nightCard ?? Color.white, lineWidth: 2))
                         .offset(x: 2, y: 2)
                 }
             }
@@ -147,7 +147,7 @@ struct FriendCardView: View {
             .padding(.vertical, 8).padding(.horizontal, 6)
             .frame(maxWidth: .infinity)
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(FriendsKit.tileAccent(t.kind).wash(quiet ? 0.07 : 0.14)))
+                .fill(FriendsKit.tileAccent(t.kind).vsWash(quiet ? 0.07 : 0.14)))
             .opacity(quiet ? 0.85 : 1)
             .contentShape(Rectangle())
         }
@@ -163,7 +163,7 @@ struct FriendCardView: View {
                     gameArt(k, size: 30)
                         .frame(maxWidth: .infinity).padding(.vertical, 7)
                         .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(FriendsKit.tileAccent(k).wash(0.10)))
+                            .fill(FriendsKit.tileAccent(k).vsWash(0.10)))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.squishCard)

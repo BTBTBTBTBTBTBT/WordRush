@@ -219,6 +219,108 @@ final class SeasonContrastTests: XCTestCase {
         }
     }
 
+    // MARK: Wave 5 — the wave-3 surfaces under a dark season (Halloween)
+
+    /// The pocket-game / Friends accents (FriendsKit.tileAccent for rps, ttt, coin, pass, ghost, chain) + the Friends pink / amber.
+    private static let pocketAccents: [UInt32] = [0xF97316, 0x7C3AED, 0xEAB308, 0x0EA5E9, 0x8B5CF6, 0x10B981, 0xEC4899, 0xF59E0B]
+
+    /// Friends cards (FriendCardsView): the friend card is the season card, its game tiles `accent.vsWash(0.14)` (quiet
+    /// 0.07 at 85% opacity) = the accent at 1.8x over the OPAQUE card (Color.vsWash under a dark season), with the
+    /// heading / rowSub inks (FriendsInk -> the season's text / textMuted); the presence line in FriendsKit.green and the
+    /// bannerHead / bannerLabel inks on the card. Waiting room (WaitingRoomView): numberInk / mutedInk = text / textMuted,
+    /// the teal lobby ink, on the season card.
+    func testFriendCardsAndWaitingRoomUnderTheDarkSeason() throws {
+        for l in try Self.looks() where l.dark && l.card != nil {
+            let card = l.card!
+            for base in l.cardOverWalls + [card] {
+                expect(0x10B981, on: base, 4.5, "\(l.id) presence green on the card")
+                expect(0x2DD4BF, on: base, 4.5, "\(l.id) waiting-room teal on the card")
+                expect(0xFBCFE8, on: base, 4.5, "\(l.id) bannerHead on the card")
+                expect(0xF9A8D4, on: base, 4.5, "\(l.id) bannerLabel on the card")
+                expect(l.text, on: base, 4.5, "\(l.id) waiting-room clock / heading")
+                expect(l.textMuted, on: base, 4.5, "\(l.id) waiting-room caption / rowSub")
+            }
+            for accent in Self.pocketAccents {
+                let tile = InkContrast.mix(accent, over: card, min(1, 0.14 * 1.8))
+                expect(l.text, on: tile, 4.5, "\(l.id) friend tile word \(Self.label(accent))")
+                let quiet = InkContrast.mix(accent, over: card, min(1, 0.07 * 1.8))
+                // the quiet tile is drawn at 85% opacity over the card
+                for wall in l.cardOverWalls {
+                    let fill = InkContrast.mix(quiet, over: wall, 0.85)
+                    let ink = InkContrast.mix(l.textMuted, over: wall, 0.85)
+                    expect(ink, on: fill, 4.5, "\(l.id) quiet friend tile word \(Self.label(accent))")
+                }
+            }
+        }
+    }
+
+    /// Pocket help sheet (PocketHelpSheet): the opaque season card washed with the game accent (PocketHelpLook.nightTop /
+    /// nightBottom), the steps tray `accent.vsWash(0.10)` over it, the heading / joiner inks; and the game screen's score
+    /// window (FriendlyGameScreen.scoreWindow: your purple / their amber halves over the card, pink header strip), the RPS
+    /// pick buttons (`vsWash(0.13)`), the TTT cells and the reveal cards (label in the tint at 50% over white when it won).
+    func testPocketHelpAndGameBoardsUnderTheDarkSeason() throws {
+        for l in try Self.looks() where l.dark && l.card != nil {
+            let card = l.card!
+            for accent in Self.pocketAccents {
+                for k in [0.16, 0.07] {   // PocketHelpLook.nightTop, nightBottom
+                    let face = InkContrast.mix(accent, over: card, k)
+                    expect(l.text, on: face, 4.5, "\(l.id) pocket help heading on \(Self.label(accent)) at \(k)")
+                    // the steps tray: accent.vsWash(0.10) = 18% over the card (the gradient face is under it)
+                    let tray = InkContrast.mix(accent, over: card, 0.18)
+                    expect(l.text, on: tray, 4.5, "\(l.id) pocket help step text \(Self.label(accent))")
+                    expect(l.textMuted, on: tray, 4.5, "\(l.id) pocket help joiner \(Self.label(accent))")
+                    // the win / turns lines' icon: the accent at 60% over white under a dark season (non-text, 3:1)
+                    expect(InkContrast.mix(accent, over: 0xFFFFFF, 0.6), on: face, 3, "\(l.id) pocket help icon \(Self.label(accent)) at \(k)")
+                }
+                let pick = InkContrast.mix(accent, over: card, min(1, 0.13 * 1.8))
+                expect(l.text, on: pick, 4.5, "\(l.id) RPS pick word \(Self.label(accent))")
+            }
+            // Score window halves + header strip.
+            let strip = InkContrast.mix(0xEC4899, over: card, min(1, 0.08 * 1.8))
+            expect(0xFBCFE8, on: strip, 4.5, "\(l.id) score headline")
+            expect(0xF9A8D4, on: strip, 4.5, "\(l.id) score sub line")
+            for won in [true, false] {
+                let you = InkContrast.mix(0x7C3AED, over: card, won ? 0.34 : 0.2)
+                expect(0xC4B5FD, on: you, 4.5, "\(l.id) YOU label (won \(won))")
+                expect(l.text, on: you, 4.5, "\(l.id) your score (won \(won))")
+            }
+            for lost in [true, false] {
+                let them = InkContrast.mix(0xF59E0B, over: card, lost ? 0.3 : 0.16)
+                expect(0xFCD34D, on: them, 4.5, "\(l.id) their label / score (lost \(lost))")
+            }
+            // Reveal cards: the tint wash (0.18 win / 0.10), label in tint at 50% over white when it won, else muted.
+            for tint in [UInt32(0x7C3AED), UInt32(0xF59E0B)] {
+                let win = InkContrast.mix(tint, over: card, min(1, 0.18 * 1.8))
+                expect(InkContrast.mix(tint, over: 0xFFFFFF, 0.5), on: win, 4.5, "\(l.id) reveal winner label \(Self.label(tint))")
+                let plain = InkContrast.mix(tint, over: card, min(1, 0.10 * 1.8))
+                expect(l.textMuted, on: plain, 4.5, "\(l.id) reveal label \(Self.label(tint))")
+            }
+        }
+    }
+
+    /// Hubbub controls (HubView): the hint pair is an explicit amber helper (#F5A524) that does not take the season tint,
+    /// so its dark-scheme label (FamilyInk.helperInk on helperFill, 34% / 42% pressed over #231C40) must still read; the
+    /// found-word tiles are self-contained (fixed ink on their own fill, like GlossyTile) and the unfound pill follows
+    /// PuzKit.face (the tint over the season surface) with its slate label.
+    func testHubbubControlsUnderTheDarkSeason() throws {
+        for l in try Self.looks() where l.dark {
+            let amber: UInt32 = 0xF5A524
+            let ink = InkContrast.mix(0xFFFFFF, over: amber, 0.65)
+            for pressed in [false, true] {
+                let fill = InkContrast.mix(amber, over: 0x231C40, pressed ? 0.42 : 0.34)
+                expect(ink, on: fill, 4.5, "\(l.id) Hubbub hint helper\(pressed ? " (pressed)" : "")")
+            }
+            if let card = l.card {
+                // an unfound word: slate #8D99B0 on PuzKit.face(#6B7891, 0.10) = the slate at 16% over the surface (card)
+                let pill = InkContrast.mix(0x6B7891, over: card, 0.16)
+                expect(0x8D99B0, on: pill, 4.5, "\(l.id) Hubbub unfound word")
+            }
+        }
+        // The found-word tiles: fixed inks on fixed light fills in every season.
+        expect(0x7A3D00, on: InkContrast.mix(0xF5A524, over: 0xFFFFFF, 0.42), 4.5, "Hubbub pangram tile")
+        expect(0x6D28D9, on: InkContrast.mix(0x8B5CF6, over: 0xFFFFFF, 0.2), 4.5, "Hubbub revealed tile")
+    }
+
     /// A selected helper (a toggle that is on, e.g. Sudoku's notes pad): the solid buttonTint
     /// (black 12% over it pressed) with a white 12.5-pt label.
     func testSelectedHelperOnButtonTint() throws {

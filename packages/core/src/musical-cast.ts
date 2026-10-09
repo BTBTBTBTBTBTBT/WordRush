@@ -24,14 +24,22 @@ export function midiNoteName(midi: number): string {
   return `${NAMES[((midi % 12) + 12) % 12]}${Math.floor(midi / 12) - 1}`;
 }
 
-export interface MusicalNote { castId: string; index: number; midi: number; name: string; /** The sound name: note-<id>. */ sound: string }
+export interface MusicalNote { castId: string; index: number; midi: number; name: string; /** The sound name: note-<id> (note-h-<id> in a season with its own voicing). */ sound: string }
 
-/** A cast member's note (unknown id → null). */
-export function musicalNote(castId: string): MusicalNote | null {
+/**
+ * In a season with its own spooky voicing (item 49), each cast member's note is the same voice with an instrument
+ * layered under it (organ, xylophone "bones", celesta, low strings): the sound is `<prefix><id>`. Other seasons: none.
+ * The registry's `slots.sounds.note` names the same prefix; this is the core's mirror so the three apps agree.
+ */
+export const SEASON_NOTE_PREFIX: Readonly<Record<string, string>> = { halloween: 'note-h-' };
+
+/** A cast member's note (unknown id → null). `season` = the active season id (null/unknown = the normal voices). */
+export function musicalNote(castId: string, season: string | null = null): MusicalNote | null {
   const index = (MUSICAL_CAST_IDS as readonly string[]).indexOf(castId);
   if (index < 0) return null;
   const midi = MUSICAL_SCALE[index];
-  return { castId, index, midi, name: midiNoteName(midi), sound: `note-${castId}` };
+  const prefix = (season && SEASON_NOTE_PREFIX[season]) || 'note-';
+  return { castId, index, midi, name: midiNoteName(midi), sound: `${prefix}${castId}` };
 }
 
 // ── The transform ─────────────────────────────────────────────────────────────────────────────────────────
@@ -93,6 +101,34 @@ export const MUSICAL_MELODIES: readonly MusicalMelody[] = [
   { id: 'buns', name: 'Hot Cross Buns', achievement: 'tune_hot_cross_buns', notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4] },
 ];
 
+const A4h = 69, B4h = 71, C5h = 72, D5h = 74, E5h = 76, G4h = 67, F4h = 65, E4h = 64, D4h = 62, C4h = 60;
+
+/**
+ * The Halloween tunes (item 49): public-domain compositions played on the cast's own white keys (realized in A minor,
+ * which is the cast's C major scale shifted: matching is by interval shape, so the tune keeps its contour). Only
+ * active in season. Each is a hidden achievement.
+ *   - In the Hall of the Mountain King (Grieg, 1875): B C# D E F# D F# . E C# E, here A B C D E C E . D B D.
+ *   - Toccata and Fugue in D minor (Bach, BWV 565) opening: A G A . G F E D . C# D. The cast has no C#, so the cast's
+ *     version plays the C natural: A G A G F E D C D.
+ * More (Danse Macabre, Chopin's Funeral March, Night on Bald Mountain, Funeral March of a Marionette, The Sorcerer's
+ * Apprentice) are listed in HALLOWEEN_TUNES_TODO until their notation is checked against a score.
+ */
+export const HALLOWEEN_MELODIES: readonly MusicalMelody[] = [
+  { id: 'mountain_king', name: 'In the Hall of the Mountain King', achievement: 'tune_mountain_king', notes: [A4h, B4h, C5h, D5h, E5h, C5h, E5h, D5h, B4h, D5h] },
+  { id: 'toccata', name: 'Toccata and Fugue in D minor', achievement: 'tune_toccata', notes: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h] },
+];
+
+/** Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line). */
+export const HALLOWEEN_TUNES_TODO: readonly string[] = [
+  'Danse Macabre (Saint-Saens)', 'Funeral March (Chopin, Piano Sonata No. 2)', 'Night on Bald Mountain (Mussorgsky)',
+  'Funeral March of a Marionette (Gounod)', "The Sorcerer's Apprentice (Dukas)",
+];
+
+/** The tunes that count right now: the everyday five, plus the season's own (halloween). */
+export function activeMelodies(season: string | null = null): readonly MusicalMelody[] {
+  return season === 'halloween' ? [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES] : MUSICAL_MELODIES;
+}
+
 /** The steps between consecutive notes (the shape of a tune, key-free). */
 export function melodyIntervals(notes: readonly number[]): number[] {
   const out: number[] = [];
@@ -132,14 +168,14 @@ export interface MelodyTap {
 }
 
 /** One tap in musical mode at `atMs` (any clock in ms). Pure: returns the next state. */
-export function melodyTap(state: MelodyState, castId: string, atMs: number): MelodyTap {
-  const note = musicalNote(castId);
+export function melodyTap(state: MelodyState, castId: string, atMs: number, season: string | null = null): MelodyTap {
+  const note = musicalNote(castId, season);
   if (!note) return { state, note: null, matched: null };
   const fresh = state.lastAt === null || atMs - state.lastAt > MELODY_GAP_MS || atMs < state.lastAt;
   const notes = [...(fresh ? [] : state.notes), note.midi].slice(-MELODY_BUFFER);
-  const matched = matchMelody(notes);
+  const matched = matchMelody(notes, activeMelodies(season));
   return { state: { notes: matched ? [] : notes, lastAt: atMs }, note, matched };
 }
 
 /** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */
-export const MUSICAL_ACHIEVEMENT_KEYS: readonly string[] = MUSICAL_MELODIES.map((m) => m.achievement);
+export const MUSICAL_ACHIEVEMENT_KEYS: readonly string[] = [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES].map((m) => m.achievement);

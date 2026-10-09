@@ -844,7 +844,11 @@ values
   ('app/hop/now', 'app', 'Across the app', 'hop', 'Mascot hops (mascot builder, onboarding)', 'now', 'hop', '{}', 'hop', true, 705),
   ('app/hop/a', 'app', 'Across the app', 'hop', 'Mascot hops (mascot builder, onboarding)', 'a', 'Soft boing', '{alt-hop-a}', null, false, 706),
   ('app/hop/b', 'app', 'Across the app', 'hop', 'Mascot hops (mascot builder, onboarding)', 'b', 'Spring', '{alt-hop-b}', null, false, 707),
-  ('app/hop/c', 'app', 'Across the app', 'hop', 'Mascot hops (mascot builder, onboarding)', 'c', 'Boing-oing', '{alt-hop-c}', null, false, 708)
+  ('app/hop/c', 'app', 'Across the app', 'hop', 'Mascot hops (mascot builder, onboarding)', 'c', 'Boing-oing', '{alt-hop-c}', null, false, 708),
+  ('halloween/intro/now', 'halloween', 'Halloween (in season only)', 'intro', 'Halloween intro (same melody, minor key)', 'now', 'intro', '{}', 'intro', true, 709),
+  ('halloween/intro/a', 'halloween', 'Halloween (in season only)', 'intro', 'Halloween intro (same melody, minor key)', 'a', 'Spooky parade', '{intro-halloween-a}', null, false, 710),
+  ('halloween/notes/now', 'halloween', 'Halloween (in season only)', 'notes', 'The musical cast, spooky voicings', 'now', 'What plays today', '{}', null, true, 711),
+  ('halloween/notes/a', 'halloween', 'Halloween (in season only)', 'notes', 'The musical cast, spooky voicings', 'a', 'Spooky voicings', '{note-h-w,note-h-o1,note-h-r,note-h-d,note-h-o2,note-h-c,note-h-i,note-h-o3,note-h-u,note-h-s}', null, false, 712)
 on conflict (id) do update set section = excluded.section, section_title = excluded.section_title, event = excluded.event,
   event_title = excluded.event_title, option = excluded.option, option_name = excluded.option_name, clips = excluded.clips,
   shipped_name = excluded.shipped_name, live = excluded.live, sort = excluded.sort, updated_at = now();

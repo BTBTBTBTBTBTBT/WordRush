@@ -205,7 +205,7 @@ fun LivingCastHeader(
         com.wordocious.app.data.SoundManager.castNote(id.key)
         com.wordocious.app.data.Haptics.selection(view)
         musicalFx.note(id.key, now, still = still)
-        MusicalCastState.tap(id.key)?.let { tune ->
+        MusicalCastState.tap(id.key, SeasonSkins.current())?.let { tune ->
             scope.launch { com.wordocious.app.data.AchievementService.unlockTune(tune.achievement) }
         }
         wake++

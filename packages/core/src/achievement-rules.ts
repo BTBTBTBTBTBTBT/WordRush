@@ -95,6 +95,9 @@ export const NEW_ACHIEVEMENTS: readonly AchievementCatalogEntry[] = [
   secret('tune_ode_to_joy', 'Ode to Joy', 'Played Ode to Joy on the cast'),
   secret('tune_happy_birthday', 'Happy Birthday', 'Played Happy Birthday on the cast'),
   secret('tune_hot_cross_buns', 'Hot Cross Buns', 'Played Hot Cross Buns on the cast'),
+  // Halloween tunes (item 49): playable only in season; the achievements stay forever
+  secret('tune_mountain_king', 'Mountain King', 'Played In the Hall of the Mountain King on the cast'),
+  secret('tune_toccata', 'Toccata', 'Played the Toccata and Fugue in D minor on the cast'),
 ];
 
 /** The secret keys: awarded, but a locked one is never listed (it appears once unlocked). */

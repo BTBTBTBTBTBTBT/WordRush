@@ -479,7 +479,7 @@ private fun HubChip(w: String, pangram: Boolean, revealed: Boolean, dim: Boolean
         ) {
             Text(
                 w, fontSize = 11.5.sp, fontWeight = FontWeight.Black,
-                color = if (pangram) Color(0xFF7A3D00) else if (revealed) Color(0xFF6D28D9) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
+                color = if (pangram) com.wordocious.app.ui.friends.PocketNight.hubPangramInk(WTheme.isDark) else if (revealed) com.wordocious.app.ui.friends.PocketNight.hubRevealedInk(WTheme.isDark) else if (WTheme.isDark) WTheme.text else com.wordocious.app.ui.FinishInk.heading,
                 modifier = if (pangram || rare) Modifier.clearAndSetSemantics { } else Modifier,
             )
             // A pangram wears the gem (button family: art_fam_cic_gem), 13 dp wide.
@@ -779,7 +779,7 @@ private fun hubTrayState(s: HubState): TrayState = when {
 internal fun HubFinishedBoard(r: com.wordocious.core.HubReconstruction) {
     val o = r.letters.drop(1).toList()
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("${r.rankName} · ${r.points}/${r.max} pts", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (r.solved) Color(0xFF7C3AED) else WTheme.textMuted, fontFamily = Nunito)
+        Text("${r.rankName} · ${r.points}/${r.max} pts", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (r.solved) com.wordocious.app.ui.friends.PocketNight.hubSolvedInk(WTheme.isDark) else WTheme.textMuted, fontFamily = Nunito)
         // J1 + L the read-only hive: the honeycomb in its tray, purple when solved, slate when not.
         HubHoneycomb(r.letters[0], o, 46.dp, HUB_ACCENT, enabled = false, state = if (r.solved) TrayState.WON else TrayState.LOST, trayPadding = 8.dp) {}
         val words = (r.found + r.bonusFound).distinct().sorted()

@@ -86,7 +86,7 @@ export function FriendCards({ cards, profiles, onOpenGame, onStart, onMenu, onPr
             key={c.friendId}
             aria-label={c.name}
             className="relative"
-            style={{ borderRadius: 18, padding: '12px 12px 10px', background: softMix(c.online ? '#10b981' : FR_LOOK.lavender, c.online ? 0.07 : 0.1), boxShadow: '0 6px 14px rgba(60,30,110,0.07)' }}
+            style={{ borderRadius: 18, padding: '12px 12px 10px', background: `var(--fr-season-card, ${softMix(c.online ? '#10b981' : FR_LOOK.lavender, c.online ? 0.07 : 0.1)})`, boxShadow: '0 6px 14px rgba(60,30,110,0.07)' }}
           >
             {/* Top line: mascot (with the count badge), name + presence, streak, the ⋯. */}
             <div className="flex items-start gap-2.5">
@@ -100,7 +100,7 @@ export function FriendCards({ cards, profiles, onOpenGame, onStart, onMenu, onPr
               <button data-squish type="button" onClick={() => onProfile(c.friendId)} className="flex-1 min-w-0 text-left">
                 <span className="block text-[14px] font-black truncate" style={{ color: FR_LOOK.ink }}>@{c.name}</span>
                 {c.presence ? (
-                  <span className="block text-[11px] font-bold truncate mt-1" style={{ color: '#047857' }}>{c.presence}</span>
+                  <span className="block text-[11px] font-bold truncate mt-1" style={{ color: 'var(--fr-online, #047857)' }}>{c.presence}</span>
                 ) : null}
                 {c.headline ? (
                   <span className="block text-[11.5px] font-extrabold truncate mt-0.5" style={{ color: FR_LOOK.bannerClock }}>{c.headline}</span>

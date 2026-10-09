@@ -10,7 +10,9 @@
 // lib/sound-map.ts; lib/sound-events.ts `feedback(event)` plays both.
 
 import { haptic } from '@/lib/haptics';
-import { INTRO_QUIET_MS, INTRO_QUIETS, LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, makeThrottle, noteSound, scopedSound, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
+import { INTRO_QUIET_MS, INTRO_QUIETS, LAUGH_MIN_MS, MASTER_GAIN, PARTIAL_GAIN, SOUND_DEDUPE_MS, SOUND_NAMES, laughSound, introSound, makeThrottle, noteSound, scopedSound, soundUrl, tapRate, type SoundName } from '@/lib/sound-map';
+import { activeSeason } from '@/lib/season';
+import { seasonIntroSound, seasonNoteSound } from '@/lib/season-kit';
 
 export { SOUND_NAMES, type SoundName } from '@/lib/sound-map';
 
@@ -240,7 +242,7 @@ export function warmIntroSound(): void {
   try {
     if (!isSoundEnabled()) return;
     const ctx = getCtx();
-    if (ctx) warm(ctx, 'intro');
+    if (ctx) warm(ctx, introSound(seasonIntroSound(activeSeason())));
   } catch { /* never throw from a sound */ }
 }
 
@@ -255,11 +257,13 @@ export function playIntroJingle(): void {
     if (!isSoundEnabled()) return;
     const ctx = getCtx();
     if (!ctx) return;
-    if (ctx.state === 'running') { playSound('intro'); return; }
+    // Item 49: in season the intro is the season's re-orchestration (the registry's sounds.intro slot).
+    const intro = introSound(seasonIntroSound(activeSeason()));
+    if (ctx.state === 'running') { playSound(intro); return; }
     const t0 = now();
     const r = ctx.resume();
     if (r && typeof r.then === 'function') {
-      r.then(() => { if (ctx.state === 'running' && now() - t0 < 250) playSound('intro'); }).catch(() => {});
+      r.then(() => { if (ctx.state === 'running' && now() - t0 < 250) playSound(intro); }).catch(() => {});
     }
   } catch { /* never throw from a sound */ }
 }
@@ -327,9 +331,9 @@ const laughGates = new Map<string, (now: number) => boolean>();
  * iOS: SoundManager.castLaugh(_:); Android: SoundManager.castLaugh(id).
  */
 /** The musical cast: a hero's note in its own voice (no throttle — a melody can repeat a note fast). */
-export function castNote(id: string): void {
+export function castNote(id: string, season: string | null = null): void {
   try {
-    const name = noteSound(id);
+    const name = noteSound(id, seasonNoteSound(season, id));
     if (name) playSound(name);
   } catch { /* never throw from a sound */ }
 }

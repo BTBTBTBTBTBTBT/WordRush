@@ -29,11 +29,17 @@ public enum MusicalCast {
         return "\(names[((midi % 12) + 12) % 12])\(octave)"
     }
 
-    /// A cast member's note (unknown id → nil).
-    public static func note(_ castId: String) -> MusicalNote? {
+    /// In a season with its own spooky voicing (item 49), each cast member's note is the same voice with an instrument
+    /// layered under it: the sound is `<prefix><id>`. Other seasons: none. The registry's `slots.sounds.note` names the
+    /// same prefix; this is the core's mirror so the three apps agree.
+    public static let seasonNotePrefix: [String: String] = ["halloween": "note-h-"]
+
+    /// A cast member's note (unknown id → nil). `season` = the active season id (nil/unknown = the normal voices).
+    public static func note(_ castId: String, season: String? = nil) -> MusicalNote? {
         guard let index = ids.firstIndex(of: castId) else { return nil }
         let midi = scale[index]
-        return MusicalNote(castId: castId, index: index, midi: midi, name: noteName(midi), sound: "note-\(castId)")
+        let prefix = season.flatMap { seasonNotePrefix[$0] } ?? "note-"
+        return MusicalNote(castId: castId, index: index, midi: midi, name: noteName(midi), sound: "\(prefix)\(castId)")
     }
 
     // MARK: The transform
@@ -74,7 +80,7 @@ public enum MusicalCast {
 
     // MARK: Melodies
 
-    private static let C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, B4 = 71, C5 = 72, D5 = 74
+    private static let C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, B4 = 71, C5 = 72, D5 = 74, E5 = 76
 
     /// Public-domain tunes (their best-known opening, every note on a cast key).
     public static let melodies: [MusicalMelody] = [
@@ -89,6 +95,28 @@ public enum MusicalCast {
         MusicalMelody(id: "buns", name: "Hot Cross Buns", achievement: "tune_hot_cross_buns",
                       notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4]),
     ]
+
+    /// The Halloween tunes (item 49): public-domain compositions played on the cast's own white keys (matching is by
+    /// interval shape). Only active in season. Each is a hidden achievement.
+    ///   - In the Hall of the Mountain King (Grieg, 1875): A B C D E C E . D B D.
+    ///   - Toccata and Fugue in D minor (Bach, BWV 565) opening; the cast has no C#, so it plays the C natural.
+    public static let halloweenMelodies: [MusicalMelody] = [
+        MusicalMelody(id: "mountain_king", name: "In the Hall of the Mountain King", achievement: "tune_mountain_king",
+                      notes: [A4, B4, C5, D5, E5, C5, E5, D5, B4, D5]),
+        MusicalMelody(id: "toccata", name: "Toccata and Fugue in D minor", achievement: "tune_toccata",
+                      notes: [A4, G4, A4, G4, F4, E4, D4, C4, D4]),
+    ]
+
+    /// Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line).
+    public static let halloweenTunesTodo: [String] = [
+        "Danse Macabre (Saint-Saens)", "Funeral March (Chopin, Piano Sonata No. 2)", "Night on Bald Mountain (Mussorgsky)",
+        "Funeral March of a Marionette (Gounod)", "The Sorcerer's Apprentice (Dukas)",
+    ]
+
+    /// The tunes that count right now: the everyday five, plus the season's own (halloween).
+    public static func activeMelodies(season: String? = nil) -> [MusicalMelody] {
+        season == "halloween" ? melodies + halloweenMelodies : melodies
+    }
 
     /// The steps between consecutive notes (the shape of a tune, key-free).
     public static func intervals(_ notes: [Int]) -> [Int] {
@@ -113,18 +141,18 @@ public enum MusicalCast {
     public static let bufferSize = 32
 
     /// One tap in musical mode at `atMs` (any clock in ms). Pure: returns the next state.
-    public static func tap(_ state: MelodyState, castId: String, atMs: Double) -> MelodyTap {
-        guard let played = MusicalCast.note(castId) else { return MelodyTap(state: state, note: nil, matched: nil) }
+    public static func tap(_ state: MelodyState, castId: String, atMs: Double, season: String? = nil) -> MelodyTap {
+        guard let played = MusicalCast.note(castId, season: season) else { return MelodyTap(state: state, note: nil, matched: nil) }
         let fresh: Bool
         if let last = state.lastAt { fresh = atMs - last > gapMs || atMs < last } else { fresh = true }
         let kept: [Int] = fresh ? [] : state.notes
         let notes = Array((kept + [played.midi]).suffix(bufferSize))
-        let matched = match(notes)
+        let matched = match(notes, melodies: activeMelodies(season: season))
         return MelodyTap(state: MelodyState(notes: matched != nil ? [] : notes, lastAt: atMs), note: played, matched: matched)
     }
 
     /// The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked).
-    public static let achievementKeys: [String] = melodies.map(\.achievement)
+    public static let achievementKeys: [String] = (melodies + halloweenMelodies).map(\.achievement)
 }
 
 /// How long a press must hold to toggle musical mode, and the transform's timing (same perf rules as the puppets).
@@ -143,7 +171,7 @@ public struct MusicalNote: Equatable {
     public let index: Int
     public let midi: Int
     public let name: String
-    /// The sound name: note-<id>.
+    /// The sound name: note-<id> (note-h-<id> in a season with its own voicing).
     public let sound: String
 
     public init(castId: String, index: Int, midi: Int, name: String, sound: String) {

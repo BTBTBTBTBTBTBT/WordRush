@@ -299,6 +299,22 @@
       "category": "mascot",
       "icon": "sparkles",
       "secret": true
+    },
+    {
+      "key": "tune_mountain_king",
+      "name": "Mountain King",
+      "description": "Played In the Hall of the Mountain King on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_toccata",
+      "name": "Toccata",
+      "description": "Played the Toccata and Fugue in D minor on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
     }
   ],
   "hidden": [

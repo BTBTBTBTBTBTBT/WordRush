@@ -44,7 +44,12 @@ object SeasonKit {
         val surfaces: com.wordocious.app.ui.theme.SeasonSurfaces? = null,
         /** Normal art name -> seasonal art name for the small extras (the celebration kit: `celebrate-burst-party` ...). */
         val extras: Map<String, String> = emptyMap(),
+        /** 2.8 item 49: the season's own sound slots (intro jingle, musical-cast note voicing); null = the normal sounds. */
+        val sounds: Sounds? = null,
     )
+
+    /** `slots.sounds`: [intro] = the cold-start jingle's sample name, [note] = the cast note's name pattern (`{id}` = the cast id). */
+    data class Sounds(val intro: String?, val note: String?)
 
     @Volatile private var loaded: List<Entry>? = null
 
@@ -78,6 +83,7 @@ object SeasonKit {
                 banner = str(slots, "banner"),
                 surfaces = (s["surfaces"] as? JsonObject)?.let(::parseSurfaces),
                 extras = map("extras"),
+                sounds = (slots["sounds"] as? JsonObject)?.let { Sounds(str(it, "intro"), str(it, "note")) },
             )
         }
     }
@@ -127,6 +133,21 @@ object SeasonKit {
         if (swap != null) return swap
         return if (name.startsWith("celebrate-float")) null else name
     }
+
+    /** The season's cold-start jingle sample name ("intro-halloween"), null = the normal jingle (pure; item 49). */
+    fun introSound(entry: Entry?): String? = entry?.sounds?.intro
+
+    /** The season's musical-cast note sample name for a cast id ("note-h-w"), null = the normal voice (pure; item 49). */
+    fun noteSound(entry: Entry?, castId: String): String? = entry?.sounds?.note?.replace("{id}", castId)
+
+    /** [introSound] for [season] from the shipped registry. */
+    fun introSound(context: Context, season: String?): String? = introSound(entry(context, season))
+
+    /** [noteSound] for [season] from the shipped registry. */
+    fun noteSound(context: Context, season: String?, castId: String): String? = noteSound(entry(context, season), castId)
+
+    /** A sound slot name ("note-h-w", "intro-halloween") as its res/raw file name (sfx_note_h_w, sfx_intro_halloween). */
+    fun rawName(sound: String): String = "sfx_" + sound.replace('-', '_')
 
     fun entry(context: Context, id: String?): Entry? = id?.let { k -> registry(context).firstOrNull { it.id == k } }
 

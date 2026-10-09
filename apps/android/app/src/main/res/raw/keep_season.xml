@@ -5,6 +5,7 @@
      shrinking: cast skins + props (art_<season>_*), titles (art_title_<season>_*), walls
      (art_wall_<season>_*), Home banners (art_scene_banner_*). The normal titles / walls these
      wildcards also match are referenced from code anyway. 2.8: the bubble-letter glyphs (bubble_*, BubbleGlyphTint) and the
-     celebration kit (celebrate_*, SweepCelebration) are looked up by name too. -->
+     celebration kit (celebrate_*, SweepCelebration) are looked up by name too. 2.8 item 49: a season's sounds
+     (registry slots.sounds: sfx_intro_<season>, sfx_note_h_<id> ...) are loaded by name from res/raw (SoundManager.seasonSample). -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/art_halloween_*,@drawable/art_title_*,@drawable/art_wall_*,@drawable/art_scene_banner_*,@drawable/bubble_*,@drawable/celebrate_*" />
+    tools:keep="@drawable/art_halloween_*,@drawable/art_title_*,@drawable/art_wall_*,@drawable/art_scene_banner_*,@drawable/bubble_*,@drawable/celebrate_*,@raw/sfx_intro_*,@raw/sfx_note_*" />

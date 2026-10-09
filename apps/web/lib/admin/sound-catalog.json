@@ -10595,6 +10595,138 @@
      ]
     }
    ]
+  },
+  {
+   "id": "halloween",
+   "title": "Halloween (in season only)",
+   "blurb": "Oct 17 - Nov 1 only. The registry swaps these in (slots.sounds); the everyday sounds return Nov 1. All synthesized in-house, nothing recorded.",
+   "events": [
+    {
+     "id": "intro",
+     "title": "Halloween intro (same melody, minor key)",
+     "note": "The same melody and timing as the app intro, in C minor: bone-xylophone and celesta, a church bell and an organ swell on the landing.",
+     "grid": null,
+     "colors": null,
+     "candidates": [
+      {
+       "opt": "now",
+       "letter": "Now",
+       "name": "intro",
+       "clips": [
+        "/sounds/intro.m4a"
+       ],
+       "live": true,
+       "shipped": "intro"
+      },
+      {
+       "opt": "a",
+       "letter": "A",
+       "name": "Spooky parade",
+       "keys": [
+        "intro-halloween-a"
+       ],
+       "clips": [
+        "/admin/sound-library/intro-halloween-a.m4a"
+       ],
+       "live": false,
+       "same": false
+      }
+     ]
+    },
+    {
+     "id": "notes",
+     "title": "The musical cast, spooky voicings",
+     "note": "Each hero keeps its own voice; an organ (W, S, O), celesta (R, C, U), bone-xylophone (O, I) or low strings (D, O) plays under it. Tap the cast in musical mode.",
+     "grid": [
+      "W",
+      "O",
+      "R",
+      "D",
+      "O",
+      "C",
+      "I",
+      "O",
+      "U",
+      "S"
+     ],
+     "colors": [
+      "#7c3aed",
+      "#f59e0b",
+      "#94a3b8",
+      "#2563eb",
+      "#ec4899",
+      "#0891b2",
+      "#059669",
+      "#f97316",
+      "#7e22ce",
+      "#ca8a04"
+     ],
+     "candidates": [
+      {
+       "opt": "now",
+       "letter": "Now",
+       "name": "What plays today",
+       "clips": [
+        "/sounds/note-w.m4a",
+        "/sounds/note-o1.m4a",
+        "/sounds/note-r.m4a",
+        "/sounds/note-d.m4a",
+        "/sounds/note-o2.m4a",
+        "/sounds/note-c.m4a",
+        "/sounds/note-i.m4a",
+        "/sounds/note-o3.m4a",
+        "/sounds/note-u.m4a",
+        "/sounds/note-s.m4a"
+       ],
+       "live": true,
+       "shipped": [
+        "note-w",
+        "note-o1",
+        "note-r",
+        "note-d",
+        "note-o2",
+        "note-c",
+        "note-i",
+        "note-o3",
+        "note-u",
+        "note-s"
+       ]
+      },
+      {
+       "opt": "a",
+       "letter": "A",
+       "name": "Spooky voicings",
+       "detail": "Each hero + an organ / celesta / bones / strings layer",
+       "keys": [
+        "note-h-w",
+        "note-h-o1",
+        "note-h-r",
+        "note-h-d",
+        "note-h-o2",
+        "note-h-c",
+        "note-h-i",
+        "note-h-o3",
+        "note-h-u",
+        "note-h-s"
+       ],
+       "clips": [
+        "/admin/sound-library/note-h-w.m4a",
+        "/admin/sound-library/note-h-o1.m4a",
+        "/admin/sound-library/note-h-r.m4a",
+        "/admin/sound-library/note-h-d.m4a",
+        "/admin/sound-library/note-h-o2.m4a",
+        "/admin/sound-library/note-h-c.m4a",
+        "/admin/sound-library/note-h-i.m4a",
+        "/admin/sound-library/note-h-o3.m4a",
+        "/admin/sound-library/note-h-u.m4a",
+        "/admin/sound-library/note-h-s.m4a"
+       ],
+       "live": false,
+       "same": false
+      }
+     ]
+    }
+   ]
   }
  ]
 }

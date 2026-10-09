@@ -16,7 +16,7 @@ data class MusicalNote(
     val index: Int,
     val midi: Int,
     val name: String,
-    /** The sound name: note-<id> (res/raw/sfx_note_<id>). */
+    /** The sound name: note-<id> (res/raw/sfx_note_<id>); note-h-<id> (sfx_note_h_<id>) in a season with its own voicing. */
     val sound: String,
 )
 
@@ -69,12 +69,19 @@ object MusicalCast {
     /** "C4", "E5" … */
     fun midiNoteName(midi: Int): String = "${NAMES[((midi % 12) + 12) % 12]}${floor(midi / 12.0).toInt() - 1}"
 
-    /** A cast member's note (unknown id → null). */
-    fun note(castId: String): MusicalNote? {
+    /**
+     * In a season with its own spooky voicing (item 49) each cast member's note is `<prefix><id>`; other seasons: none.
+     * The registry's `slots.sounds.note` names the same prefix; this is the core's mirror so the three apps agree.
+     */
+    val SEASON_NOTE_PREFIX: Map<String, String> = mapOf("halloween" to "note-h-")
+
+    /** A cast member's note (unknown id → null). [season] = the active season id (null / unknown = the normal voices). */
+    fun note(castId: String, season: String? = null): MusicalNote? {
         val index = CAST_IDS.indexOf(castId)
         if (index < 0) return null
         val midi = SCALE[index]
-        return MusicalNote(castId, index, midi, midiNoteName(midi), "note-$castId")
+        val prefix = season?.let { SEASON_NOTE_PREFIX[it] } ?: "note-"
+        return MusicalNote(castId, index, midi, midiNoteName(midi), "$prefix$castId")
     }
 
     // ── The transform ──────────────────────────────────────────────────────────────────────────────────────
@@ -138,6 +145,28 @@ object MusicalCast {
         MusicalMelody("buns", "Hot Cross Buns", "tune_hot_cross_buns", listOf(E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4)),
     )
 
+    private const val E5 = 76
+
+    /**
+     * The Halloween tunes (item 49): public-domain compositions on the cast's own keys (matched by interval shape).
+     * In the Hall of the Mountain King (Grieg, 1875) and the Toccata and Fugue in D minor (Bach, BWV 565) opening; the
+     * cast has no C#, so the Toccata plays the C natural. Only active in season; each is a hidden achievement.
+     */
+    val HALLOWEEN_MELODIES: List<MusicalMelody> = listOf(
+        MusicalMelody("mountain_king", "In the Hall of the Mountain King", "tune_mountain_king", listOf(A4, B4, C5, D5, E5, C5, E5, D5, B4, D5)),
+        MusicalMelody("toccata", "Toccata and Fugue in D minor", "tune_toccata", listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4)),
+    )
+
+    /** Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line). */
+    val HALLOWEEN_TUNES_TODO: List<String> = listOf(
+        "Danse Macabre (Saint-Saens)", "Funeral March (Chopin, Piano Sonata No. 2)", "Night on Bald Mountain (Mussorgsky)",
+        "Funeral March of a Marionette (Gounod)", "The Sorcerer's Apprentice (Dukas)",
+    )
+
+    /** The tunes that count right now: the everyday five, plus the season's own (halloween). */
+    fun activeMelodies(season: String? = null): List<MusicalMelody> =
+        if (season == "halloween") MELODIES + HALLOWEEN_MELODIES else MELODIES
+
     /** The steps between consecutive notes (the shape of a tune, key-free). */
     fun melodyIntervals(notes: List<Int>): List<Int> = (1 until notes.size).map { notes[it] - notes[it - 1] }
 
@@ -162,17 +191,17 @@ object MusicalCast {
     val MELODY_START = MelodyState()
 
     /** One tap in musical mode at [atMs] (any clock in ms, e.g. SystemClock.uptimeMillis). Pure: returns the next state. */
-    fun melodyTap(state: MelodyState, castId: String, atMs: Long): MelodyTap {
-        val note = note(castId) ?: return MelodyTap(state, null, null)
+    fun melodyTap(state: MelodyState, castId: String, atMs: Long, season: String? = null): MelodyTap {
+        val note = note(castId, season) ?: return MelodyTap(state, null, null)
         val last = state.lastAt
         val fresh = last == null || atMs - last > MELODY_GAP_MS || atMs < last
         val notes = ((if (fresh) emptyList() else state.notes) + note.midi).takeLast(MELODY_BUFFER)
-        val matched = matchMelody(notes)
+        val matched = matchMelody(notes, activeMelodies(season))
         return MelodyTap(MelodyState(if (matched != null) emptyList() else notes, atMs), note, matched)
     }
 
     /** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */
-    val ACHIEVEMENT_KEYS: List<String> = MELODIES.map { it.achievement }
+    val ACHIEVEMENT_KEYS: List<String> = (MELODIES + HALLOWEEN_MELODIES).map { it.achievement }
 }
 
 // ── Achievement listing (achievement-rules.ts SECRET_ACHIEVEMENT_KEYS / achievementListed) ─────────────────

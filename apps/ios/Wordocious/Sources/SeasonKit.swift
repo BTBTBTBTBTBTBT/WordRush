@@ -26,6 +26,15 @@ enum SeasonKit {
         let props: [String]?
         let banner: String?
         let extras: [String: String]?
+        /// Item 49: the season's sound slots (names of `sfx-<name>.m4a` in Resources/Sounds).
+        let sounds: Sounds?
+    }
+
+    /// `slots.sounds`: `intro` = the cold-start jingle's sample name, `note` = the musical cast's note pattern (`{id}` = the
+    /// cast id). A future season adds its own here (plus the samples and their SoundManager.Effect cases).
+    struct Sounds: Decodable {
+        let intro: String?
+        let note: String?
     }
 
     struct Entry: Decodable {
@@ -200,6 +209,14 @@ enum SeasonKit {
     static func extra(_ name: String) -> String? {
         if let swap = current?.slots.extras?[name], ArtAsset.exists(swap) { return swap }
         return name.hasPrefix("celebrate-float") ? nil : name
+    }
+
+    /// Item 49: the season's cold-start jingle sample name (nil out of season = the normal jingle).
+    static var introSound: String? { current?.slots.sounds?.intro }
+
+    /// Item 49: the season's musical-cast note sample for a cast id (the spooky voicing), nil out of season = the normal voice.
+    static func noteSound(_ id: String) -> String? {
+        current?.slots.sounds?.note?.replacingOccurrences(of: "{id}", with: id)
     }
 
     /// The season's props (shipped ones only).

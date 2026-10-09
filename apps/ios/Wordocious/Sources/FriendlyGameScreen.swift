@@ -138,7 +138,7 @@ struct FriendlyGameScreen: View {
             }
             .padding(20)
             .frame(maxWidth: 320)
-            .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(hex: 0xFFF0F7))
+            .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(FriendsInk.nightCard ?? Color(hex: 0xFFF0F7))
                 .shadow(color: FriendsKit.ink.opacity(0.25), radius: 18, y: 8))
             .padding(.horizontal, 24)
         }
@@ -360,7 +360,7 @@ struct FriendlyGameScreen: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12).padding(.vertical, 10)
-            .background(FriendsInk.pink.wash(0.08))
+            .background(FriendsInk.pink.vsWash(0.08))
             HStack(spacing: 0) {
                 half(label: "YOU", url: profile?.avatarUrl, name: profile?.username ?? "You", emoji: profile?.avatarEmoji,
                      score: score?[g.me], online: false, leading: true, toPlay: toPlay(g, g.me))
@@ -372,17 +372,25 @@ struct FriendlyGameScreen: View {
         .background {
             ZStack {
                 // Your half lavender, theirs amber — deeper on the match winner's side.
-                HStack(spacing: 0) {
-                    Color(hex: won ? 0xDDD6FE : 0xEDE9FE)
-                    Color(hex: g.result == "loss" ? 0xFDE68A : 0xFEF3C7)
+                if let night = FriendsInk.nightCard {
+                    // Halloween: the halves are the season's night glass with your purple / their amber over it.
+                    HStack(spacing: 0) {
+                        FriendsKit.purple.mixed(over: night, won ? 0.34 : 0.2)
+                        FriendsKit.amber.mixed(over: night, g.result == "loss" ? 0.3 : 0.16)
+                    }
+                } else {
+                    HStack(spacing: 0) {
+                        Color(hex: won ? 0xDDD6FE : 0xEDE9FE)
+                        Color(hex: g.result == "loss" ? 0xFDE68A : 0xFEF3C7)
+                    }
+                    LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
                 }
-                LinearGradient(stops: [.init(color: .white.opacity(0.35), location: 0), .init(color: .white.opacity(0), location: 0.55)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
                 if won && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
             }
         }
         .clipShape(shape)
-        .overlay(shape.stroke(accent.wash(0.30), lineWidth: 1.5).allowsHitTesting(false))
+        .overlay(shape.stroke(accent.vsWash(0.30), lineWidth: 1.5).allowsHitTesting(false))
         .shadow(color: won ? FriendsKit.purple.opacity(0.35) : FriendsKit.ink.opacity(0.08), radius: won ? 10 : 7, x: 0, y: 4)
     }
 
@@ -476,7 +484,8 @@ struct FriendlyGameScreen: View {
             if leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online) }
             VStack(alignment: leading ? .leading : .trailing, spacing: 0) {
                 Text(label).font(Brand.font(10, .black)).tracking(0.8)
-                    .foregroundStyle(leading ? FriendsKit.purple : Color(hex: 0xB45309)).lineLimit(1).minimumScaleFactor(0.7)
+                    .foregroundStyle(leading ? (FriendsInk.dark ? FriendsInk.lavender : FriendsKit.purple)
+                                                 : (FriendsInk.dark ? FriendsInk.gold : Color(hex: 0xB45309))).lineLimit(1).minimumScaleFactor(0.7)
                 if let status {
                     // 9b presence: THINKING… / HERE NOW / LEFT THE GAME takes the TO PLAY chip's slot.
                     Text(status.text).font(Brand.font(8.5, .black)).tracking(0.6).foregroundStyle(.white)
@@ -659,11 +668,11 @@ struct FriendlyGameScreen: View {
                                 // §A1: tinted pick cards (selected = filled purple).
                                 .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .fill(selected ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA66BFF), FriendsKit.purple], startPoint: .top, endPoint: .bottom))
-                                                   : AnyShapeStyle(rps.wash(0.13)))
+                                                   : AnyShapeStyle(rps.vsWash(0.13)))
                                     .shadow(color: selected ? FriendsKit.purple.opacity(0.55) : rps.opacity(0.18),
                                             radius: selected ? 9 : 5, y: 3))
                                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .stroke(selected ? Color(hex: 0x6D28D9) : rps.wash(0.34), lineWidth: 1.5))
+                                    .stroke(selected ? Color(hex: 0x6D28D9) : rps.vsWash(0.34), lineWidth: 1.5))
                                 .opacity(mine != nil && !selected ? 0.45 : 1)
                             }
                             .buttonStyle(.squish)
@@ -725,8 +734,8 @@ struct FriendlyGameScreen: View {
         let tint = mine ? FriendsKit.purple : FriendsInk.pink
         return ZStack {
             if mark != nil {
-                shape.fill(tint.wash(0.16))
-                shape.stroke(tint.wash(glow ? 0.9 : 0.4), lineWidth: glow ? 2.5 : 1.5)
+                shape.fill(tint.vsWash(0.16))
+                shape.stroke(tint.vsWash(glow ? 0.9 : 0.4), lineWidth: glow ? 2.5 : 1.5)
                 tttPiece(mine: mine)
                     .padding(10)
                     .shadow(color: glow ? tint.opacity(0.75) : .clear, radius: glow ? 12 : 0)
@@ -843,8 +852,8 @@ struct FriendlyGameScreen: View {
                                     .overlay(AvatarOutline(tile: AvatarView.showsTile(g.opponent.avatarUrl)).stroke(FriendsKit.amber, lineWidth: 2))
                             }
                         } else {
-                            Circle().fill(FriendsKit.tileAccent(.pass).wash(0.14)).frame(width: 26, height: 26)
-                                .overlay(Circle().stroke(FriendsKit.tileAccent(.pass).wash(0.4), lineWidth: 1))
+                            Circle().fill(FriendsKit.tileAccent(.pass).vsWash(0.14)).frame(width: 26, height: 26)
+                                .overlay(Circle().stroke(FriendsKit.tileAccent(.pass).vsWash(0.4), lineWidth: 1))
                         }
                     }
                     .frame(width: 28)
@@ -1276,13 +1285,13 @@ private struct RpsReveal: View {
         VStack(spacing: 3) {
             Image(PocketArt.rps(p)).resizable().interpolation(.high).scaledToFit().frame(width: 58, height: 58)
                 .accessibilityLabel(p.rawValue.capitalized)   // §AB: the pick, not the asset name
-            Text(label).font(Brand.font(9.5, .black)).tracking(0.5).foregroundStyle(win ? tint : FriendsInk.muted).lineLimit(1)
+            Text(label).font(Brand.font(9.5, .black)).tracking(0.5).foregroundStyle(win ? (FriendsInk.dark ? tint.mixed(over: .white, 0.5) : tint) : FriendsInk.muted).lineLimit(1)
         }
         .frame(width: 84, height: 92)
         // §A1: tinted in the player's color, never plain white.
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(tint.wash(win ? 0.18 : 0.10))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(tint.vsWash(win ? 0.18 : 0.10))
             .shadow(color: win ? tint.opacity(0.6) : Color(hex: 0x4C1D95).opacity(0.08), radius: win ? 10 : 4, y: 2))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(win ? tint : tint.wash(0.32), lineWidth: win ? 2 : 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(win ? tint : tint.vsWash(0.32), lineWidth: win ? 2 : 1.5))
         .rotation3DEffect(.degrees(flipped ? 0 : 90), axis: (x: 0, y: 1, z: 0))
         .opacity(flipped ? 1 : 0)
     }

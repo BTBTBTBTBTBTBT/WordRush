@@ -60,7 +60,7 @@ struct PocketHelpSheet: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(accent.wash(0.10)))
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(accent.vsWash(0.10)))
             line(symbol: "trophy.fill", text: help.win)
             line(symbol: "bell.fill", text: help.turns)
             Button { dismiss() } label: {
@@ -70,11 +70,18 @@ struct PocketHelpSheet: View {
             .padding(.top, 2)
         }
         .padding(.horizontal, 18).padding(.top, 20).padding(.bottom, 18)
-        .background(shape.fill(LinearGradient(colors: [accent.mixed(over: Color(hex: 0xFFF8F1), 0.10),
-                                                       accent.mixed(over: Color(hex: 0xFFF8F1), 0.04)],
-                                              startPoint: .top, endPoint: .bottom)))
+        .background(shape.fill(cardFill))
         .clipShape(shape)
         .shadow(color: accent.opacity(0.18), radius: 14, y: 6)
+    }
+
+    /// The card: the accent at ~10% to ~4% over warm cream, or (Halloween) a deeper tint of the season's night card, so the
+    /// season's light inks read on it (wave 5).
+    private var cardFill: LinearGradient {
+        let night = FriendsInk.nightCard
+        let base = night ?? Color(hex: 0xFFF8F1)
+        let k = night == nil ? (0.10, 0.04) : (PocketHelpLook.nightTop, PocketHelpLook.nightBottom)
+        return LinearGradient(colors: [accent.mixed(over: base, k.0), accent.mixed(over: base, k.1)], startPoint: .top, endPoint: .bottom)
     }
 
     /// The game's title art (labeled), else its name in the live lettering.
@@ -124,7 +131,8 @@ struct PocketHelpSheet: View {
 
     private func line(symbol: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: symbol).font(.system(size: 13, weight: .bold)).foregroundStyle(accent)
+            Image(systemName: symbol).font(.system(size: 13, weight: .bold))
+                .foregroundStyle(FriendsInk.dark ? accent.mixed(over: .white, 0.6) : accent)
                 .frame(width: 20).accessibilityHidden(true)
             Text(text).font(Brand.font(13, .bold)).foregroundStyle(FriendsInk.heading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -132,4 +140,11 @@ struct PocketHelpSheet: View {
         }
         .padding(.horizontal, 4)
     }
+}
+
+/// Wave 5: how much of the game's accent the pocket help card washes over the season's night card (top, bottom) —
+/// SeasonContrastTests checks the inks against both.
+enum PocketHelpLook {
+    static let nightTop = 0.16
+    static let nightBottom = 0.07
 }
