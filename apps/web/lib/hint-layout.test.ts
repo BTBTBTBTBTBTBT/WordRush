@@ -82,11 +82,17 @@ describe('hint layout guard (source)', () => {
     expect(KINDRED_LABEL_SLOT_PX).toBeGreaterThan(0);
   });
 
-  it('Codebreaker: the conflict warning is an overlay, not a line in the fitted band', () => {
+  it('Codebreaker: the conflict warning is the shared overlay toast, never a line in the fitted band', () => {
     const src = read('components/cryptogram/cryptogram-game.tsx');
-    const at = src.indexOf('conflicts.length > 0 && (');
-    expect(at).toBeGreaterThan(0);
-    expect(src.slice(at, at + 200)).toContain('absolute');
+    expect(src).not.toContain('conflicts.length > 0 && (');
+    expect(src).toContain('used for two code letters`');
+    expect(src).toContain('flash(');
+  });
+
+  it('Codebreaker: every frequency chip reserves its arrow-letter slot so a letter landing never re-wraps the strip', () => {
+    const src = read('components/cryptogram/cipher-board.tsx');
+    expect(src).toContain('invisible');
+    expect(src).toContain('→W');
   });
 
   it('every in-game FeedbackToast sits in a position: relative anchor', () => {

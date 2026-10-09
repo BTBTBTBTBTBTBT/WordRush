@@ -172,7 +172,7 @@ final class SeasonContrastTests: XCTestCase {
         for l in try Self.looks() where l.card != nil {
             for (accent, daily) in games {
                 let title = l.dark ? InkContrast.mix(accent, over: 0xFFFFFF, 0.55) : accent
-                let washes = l.dark ? (daily ? [0.05, 0.34] : [0.05]) : (daily ? [0.08, 0.16] : [0.08])
+                let washes = l.dark ? (daily ? [0.05, 0.355] : [0.05]) : (daily ? [0.08, 0.16] : [0.08])
                 for c in l.cardOverWalls {
                     for w in washes {
                         let bg = InkContrast.mix(accent, over: c, w)

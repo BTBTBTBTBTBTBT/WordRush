@@ -149,7 +149,7 @@ private fun Modifier.gameCardSurface(bg: Color, glow: Color? = null): Modifier {
  * its glow, and an unplayed hero progress tile's hint of color. iOS SeasonDone, web SEASON_DONE.
  */
 internal object SeasonDone {
-    const val WASH = 0.34f
+    const val WASH = 0.355f
     const val IDLE = 0.05f
     const val GLOW = 0.55f
     const val IDLE_TILE = 0.10f
