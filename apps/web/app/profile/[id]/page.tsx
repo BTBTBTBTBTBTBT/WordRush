@@ -76,6 +76,13 @@ import { readPageCache, sameData, writePageCache } from '@/lib/page-cache';
 import { CastLoadingStack } from '@/components/game/game-loading';
 import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { friendshipState } from '@wordle-duel/core';
+import { ProfileStage, ProfileIdentity, ProfileActionRow, RankStrip, HeadToHeadStrip, type HeroProfile } from '@/components/profile/profile-hero';
+import { HeroStatsRow } from '@/components/stats/stat-hero';
+import { QuickPlaySheet } from '@/components/friends/quick-play-sheet';
+import { openDressUp } from '@/components/profile/dress-up';
+import { getFriends, sendTaunt } from '@/lib/friends-service';
+import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -168,7 +175,7 @@ function AddFriendButton({ profileId }: { profileId: string }) {
 
 /** ⋯ report/block menu (App Review 1.2 parity) — only rendered when a
  *  signed-in user is viewing SOMEONE ELSE's profile. */
-function ModerationMenu({ viewerId, profileId, person }: { viewerId: string; profileId: string; person?: Profile | null }) {
+function ModerationMenu({ viewerId, profileId, person, isFriend: friendNow = false, onUnfriend }: { viewerId: string; profileId: string; person?: Profile | null; isFriend?: boolean; onUnfriend?: () => void }) {
   const [open, setOpen] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -213,6 +220,7 @@ function ModerationMenu({ viewerId, profileId, person }: { viewerId: string; pro
       config={(look.avatar_config ?? null) as Parameters<typeof FriendAvatar>[0]['config']} />
   ) : undefined;
   const actions: FamilyMenuAction[] = !showReasons ? [
+    ...(friendNow && onUnfriend ? [{ id: 'unfriend', title: 'Unfriend', icon: 'xmark', danger: true, label: 'Unfriend this player', run: () => { setOpen(false); onUnfriend(); } } as FamilyMenuAction] : []),
     { id: 'report', title: 'Report user', icon: 'flag', danger: true, label: 'Report this user', stay: true, run: () => setShowReasons(true) },
     blocked
       ? { id: 'unblock', title: 'Unblock user', icon: 'check', tint: FAMILY_MENU_INK.teal, run: () => { void handleBlockToggle(); } }
@@ -296,6 +304,23 @@ export default function PublicProfilePage() {
   }, [user]);
   const viewerIsFriend = Boolean(user && !isOwnProfile && isFriend(profileId));
   const gated = isPrivate && !isOwnProfile && !viewerIsAdmin && !viewerIsFriend;
+  // Item 17: the hero's friendship state (core rules), "Friends since", and the action row's sheets.
+  const friendState = friendshipState({
+    isSelf: isOwnProfile,
+    isFriend: viewerIsFriend,
+    incoming: Boolean(user) && !isOwnProfile && hasIncomingFrom(profileId),
+    requested: Boolean(user) && !isOwnProfile && hasRequested(profileId),
+  });
+  const friendsSince = viewerIsFriend ? (getFriends().find((f) => f.id === profileId)?.since ?? null) : null;
+  const [actionBusy, setActionBusy] = useState(false);
+  const [playSheet, setPlaySheet] = useState(false);
+  const [reactOpen, setReactOpen] = useState(false);
+  const [reactNote, setReactNote] = useState<string | null>(null);
+  const act = async (fn: () => Promise<unknown>) => {
+    if (actionBusy) return;
+    setActionBusy(true);
+    try { await fn(); } finally { setActionBusy(false); }
+  };
 
   useEffect(() => {
     if (!profileId) return;
@@ -549,93 +574,33 @@ export default function PublicProfilePage() {
       <div className="max-w-6xl mx-auto space-y-3">
         {/* HEADER_SPEC §4: the shared page header; the back circle goes where the Back button below goes. */}
         <PageHeader title={<HeadingArt slug="profile" height={40} />} titleTag="div" back={{ href: '/' }} />
-        {/* Header Section */}
-        <div className="flex flex-col items-center gap-2.5 animate-fade-in-up">
-          {/* Avatar with today-progress ring + "N/total today" pill */}
-          <div className="relative" style={{ width: 128, height: 128 }}>
-            {todayRing && profile.avatar_url && (
-              <svg
-                className="absolute inset-0 w-full h-full"
-                viewBox="0 0 86 86"
-                style={{ transform: 'rotate(-90deg)' }}
-                aria-hidden="true"
-              >
-                <circle cx="43" cy="43" r="40.5" fill="none" strokeWidth={4} stroke="var(--color-border)" />
-                <circle
-                  cx="43" cy="43" r="40.5" fill="none" strokeWidth={4} strokeLinecap="round"
-                  stroke="#8B5CF6" strokeDasharray={254}
-                  strokeDashoffset={254 * (1 - todayRing.done / todayRing.total)}
-                  style={{ transition: 'stroke-dashoffset 0.6s ease' }}
-                />
-              </svg>
-            )}
-            {/* No photo → letter tile (ART_SPEC §20): the today ring becomes a rounded square
-                concentric with the tile, starting at top-center and running clockwise. */}
-            {todayRing && !profile.avatar_url && (
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 86 86" aria-hidden="true">
-                <path d={TODAY_SQUARE_RING} fill="none" strokeWidth={4} stroke="var(--color-border)" />
-                <path
-                  d={TODAY_SQUARE_RING} fill="none" strokeWidth={4} strokeLinecap="round"
-                  stroke="#8B5CF6" pathLength={100} strokeDasharray={100}
-                  strokeDashoffset={100 * (1 - todayRing.done / todayRing.total)}
-                  style={{ transition: 'stroke-dashoffset 0.6s ease' }}
-                />
-              </svg>
-            )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <AvatarUpload
-                size={112}
-                editable={false}
-                avatarUrl={profile.avatar_url ?? null}
-                username={profile.username}
-                userId={profile.id}
-                emoji={(profile as any).avatar_emoji ?? null}
-                accent={(profile as any).accent_color ?? null}
-              config={(profile as any).avatar_config ?? null}
-              pro={!!(profile as any).is_pro}
-                castId={(profile as any).avatar_cast_id ?? null}
-                frame={(profile as any).avatar_frame ?? null}
-                level={profile.level ?? null}
-              />
-            </div>
+        {/* Item 17: the mascot full-body on a mini Stage, the name in bubble lettering with the friendship badge,
+            rank + XP as one strip, then one family-button action row. */}
+        <div className="flex flex-col items-stretch gap-3 max-w-xl mx-auto w-full animate-fade-in-up">
+          <ProfileStage profile={profile as unknown as HeroProfile}>
             {todayRing && (
               <div
-                className="absolute left-1/2 -translate-x-1/2 -bottom-1 px-2 py-0.5 rounded-full text-[9.5px] font-black text-white whitespace-nowrap"
+                className="absolute left-1/2 -translate-x-1/2 bottom-1 px-2 py-0.5 rounded-full text-[9.5px] font-black text-white whitespace-nowrap"
                 style={{ background: 'linear-gradient(90deg, #a855f7, #ec4899)', boxShadow: '0 2px 6px rgba(124, 58, 237, 0.3)' }}
               >
                 {todayRing.done}/{todayRing.total} today
               </div>
             )}
-          </div>
+          </ProfileStage>
 
-          <div className="text-center">
-            {(profile as any).accent_color ? (
-              <h1 className="text-5xl font-black drop-shadow-lg" style={{ color: resolveAccent((profile as any).accent_color) }}>{profile.username}</h1>
-            ) : (
-              <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-lg">
-                {profile.username}
-              </h1>
-            )}
-
-            {/* Private profile, owner/admin looking at the full page — the
-                subtle "this is what everyone else can't see" reminder. */}
+          <ProfileIdentity profile={profile as unknown as HeroProfile} isFriend={viewerIsFriend} friendsSince={friendsSince}>
             {isPrivate && (
-              <div className="mt-1.5 flex justify-center">
-                <span
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide"
-                  style={{ ...softPill('#64748b', { bar: false }), color: 'var(--color-text-muted)' }}
-                >
-                  <Lock className="w-3 h-3" /> {isOwnProfile ? 'Your profile is private' : 'Private profile'}
-                </span>
-              </div>
+              <span
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide"
+                style={{ ...softPill('#64748b', { bar: false }), color: 'var(--color-text-muted)' }}
+              >
+                <Lock className="w-3 h-3" /> {isOwnProfile ? 'Your profile is private' : 'Private profile'}
+              </span>
             )}
 
             {/* Presence line — "Played X minutes ago" with a live pulse dot */}
             {presence && (
-              <div
-                className="mt-1 flex items-center justify-center gap-1.5 text-[11.5px] font-bold"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
+              <div className="flex items-center justify-center gap-1.5 text-[11.5px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 {presence.live && (
                   <span className="relative flex w-2 h-2" aria-hidden="true">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-40" style={{ background: '#22c55e' }} />
@@ -648,7 +613,7 @@ export default function PublicProfilePage() {
 
             {/* Persona chips: archetype (tap → explainer), best percentile, signature opener */}
             {persona && (
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
                 <button
                   onClick={() => setShowArchetype(true)}
                   className="inline-flex items-center gap-1 text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full transition-transform active:scale-95"
@@ -685,7 +650,7 @@ export default function PublicProfilePage() {
               const favMode = (profile as any).favorite_mode
                 ? PROFILE_MODES.find((m) => m.dbKey === (profile as any).favorite_mode) : null;
               return (
-                <div className="mt-2 flex flex-col items-center gap-1.5">
+                <div className="flex flex-col items-center gap-1.5">
                   {featuredName && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wide px-3 py-0.5 rounded-full" style={{ ...softPill(accentHex, { bar: false }), color: accentHex }}>
                       <AchievementArt achKey={featuredDef!.key} fallback={achievementBadge(featuredDef!.icon)} size={18} className="-my-1" /> {featuredName}
@@ -700,40 +665,42 @@ export default function PublicProfilePage() {
                 </div>
               );
             })()}
+          </ProfileIdentity>
 
-            {/* Level Badge & XP Bar */}
-            <div className="mt-3 flex flex-col items-center gap-2">
-              <div className="inline-flex items-center rounded-full px-4 py-1"
-                style={softPill(TIER_ACCENT[levelTier(profile.level ?? 1)], { bar: false })}>
-                <LevelBadge level={profile.level ?? 1} size={40} numberSize={20} prefix="Lvl" tier />
-              </div>
-              <div className="w-48">
-                <div className="h-2.5 rounded-full overflow-hidden" style={{ background: alphaHex('#7c3aed', 0.14) }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #a855f7, #ec4899)' }}
-                  />
-                </div>
-                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{xpToNextLevel} XP to next level</p>
-              </div>
-            </div>
-          </div>
+          <RankStrip level={profile.level ?? 1} xp={profile.xp} />
 
-          {/* Add Friend + Report / Block (signed in, viewing someone else) */}
-          {user && user.id !== profileId && (
-            <div className="flex justify-center items-center gap-2">
-              <AddFriendButton profileId={profileId} />
-              <ModerationMenu viewerId={user.id} profileId={profileId} person={profile} />
+          {/* Challenge · Pocket game · React · Add friend / Requested / Accept–Decline; Unfriend · Block · Report in the ⋯ */}
+          {user && !isOwnProfile && (
+            <ProfileActionRow
+              state={friendState}
+              busy={actionBusy}
+              h={{
+                onChallenge: () => setPlaySheet(true),
+                onPocket: () => setPlaySheet(true),
+                onReact: () => setReactOpen(true),
+                onAddFriend: () => act(() => requestFriend({ addresseeId: profileId })),
+                onCancelRequest: () => act(() => declineFriend(profileId)),
+                onAccept: () => act(() => acceptFriend(profileId)),
+                onDecline: () => act(() => declineFriend(profileId)),
+              }}
+              menu={<ModerationMenu viewerId={user.id} profileId={profileId} person={profile} isFriend={viewerIsFriend} onUnfriend={() => act(() => removeFriend(profileId))} />}
+            />
+          )}
+          {isOwnProfile && (
+            <div className="flex justify-center">
+              <CandyButton onClick={() => openDressUp()} color="purple" size="sm">Dress up</CandyButton>
             </div>
           )}
+          {reactNote && <p className="text-center text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{reactNote}</p>}
 
           <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
-
-          <CandyLink href="/" color="peach" size="md" icon={<ArrowLeft className="w-4 h-4" aria-hidden="true" />}>Back</CandyLink>
         </div>
 
         {/* Profile-social cards — You-vs-Them, Trophy Case, Highlights, Lately */}
         <div className="max-w-xl mx-auto w-full space-y-3">
+          {user && !isOwnProfile && viewerIsFriend && (
+            <HeadToHeadStrip friend={getFriends().find((f) => f.id === profileId) ?? null} name={profile.username} />
+          )}
           {user && !isOwnProfile && (
             <YouVsThemCard viewerId={user.id} targetId={profileId} targetName={profile.username} />
           )}
@@ -749,39 +716,13 @@ export default function PublicProfilePage() {
           <LatelyCard targetId={profileId} persona={persona} />
         </div>
 
-        {/* Overall Stats Row (C3 cont look): each headline on its own color with a 3D icon and a soft number. */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-xl lg:max-w-none mx-auto w-full">
-          {([
-            { accent: '#7c3aed', ink: '#6d28d9', icon: <BadgeArt name={levelBadge(profile.level ?? 1)} size={24} />, label: 'Level', value: profile.level, sub: `${xpToNextLevel} XP to next level`, delay: '0.1s' },
-            { accent: '#16a34a', ink: '#137a3d', icon: <MedalArt medal="trophy" size={22} />, label: 'Total Wins', value: profile.total_wins, sub: `${winRate}% win rate`, delay: '0.2s' },
-            { accent: '#f5a524', ink: '#a2560c', icon: <Icon3D name="badge-w" size={22} />, label: 'Win Streak', value: profile.current_streak, sub: `Best: ${profile.best_streak}`, delay: '0.3s' },
-            { accent: '#ec4899', ink: '#a0336b', icon: <Icon3D name="flame" size={22} />, label: 'Daily Streak', value: (profile as any).daily_login_streak ?? 0, sub: `Best: ${(profile as any).best_daily_login_streak ?? 0}`, delay: '0.35s' },
-          ]).map((t) => (
-            <div
-              key={t.label}
-              className="p-4 animate-fade-in-scale grid gap-1"
-              style={{ ...softCard(t.accent, { radius: 18 }), animationDelay: t.delay, animationFillMode: 'both' }}
-            >
-              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tint-ink" style={{ letterSpacing: '0.1em', color: t.ink }}>{t.icon}{t.label}</span>
-              <SoftNum size={30} as="div" className="soft-num-auto">{t.value}</SoftNum>
-              <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{t.sub}</span>
-            </div>
-          ))}
-          <div
-            className="col-span-2 lg:col-span-4 px-4 py-3 flex items-center justify-between gap-3 animate-fade-in-scale"
-            style={{ ...softCard('#2563eb', { radius: 18 }), animationDelay: '0.4s', animationFillMode: 'both' }}
-          >
-            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tint-ink" style={{ letterSpacing: '0.1em', color: '#1d4ed8' }}>
-              <Target className="w-5 h-5" style={{ color: '#2563eb' }} /> Total Games
-            </span>
-            <span className="flex items-baseline gap-2">
-              <SoftNum size={24} className="soft-num-auto">{profile.total_wins + profile.total_losses}</SoftNum>
-              <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{profile.total_losses} losses</span>
-            </span>
-          </div>
-          {/* Level progress in the purple→pink gradient. */}
-          <div className="col-span-2 lg:col-span-4 h-2.5 rounded-full overflow-hidden" style={{ background: alphaHex('#7c3aed', 0.14) }} aria-hidden="true">
-            <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #a855f7, #ec4899)' }} />
+        {/* The headline numbers, once (item 17): the four hero stats. The daily streak lives in LATELY; level + XP are the strip above. */}
+        <div className="max-w-xl mx-auto w-full" style={softCard('#7c3aed', { radius: 18 })}>
+          <div className="p-4">
+            <HeroStatsRow
+              accent="#7c3aed"
+              input={{ wins: profile.total_wins, losses: profile.total_losses, streak: profile.current_streak ?? 0, bestStreak: profile.best_streak ?? 0, fastestSeconds: fastest?.seconds ?? 0 }}
+            />
           </div>
         </div>
 
@@ -963,6 +904,27 @@ export default function PublicProfilePage() {
           targetName={profile.username}
           targetArchetype={persona.archetype}
           viewerId={user?.id ?? null}
+        />
+      )}
+
+      {/* Challenge + Pocket game open the quick-play sheet with this friend preselected (the Friends tab's flow). */}
+      {playSheet && viewerIsFriend && (() => {
+        const f = getFriends().find((x) => x.id === profileId);
+        return f ? <QuickPlaySheet friends={getFriends()} friend={f} kind={null} onClose={() => setPlaySheet(false)} onNote={setReactNote} /> : null;
+      })()}
+      {/* React: one tap sends a canned note (the Friends taunts), one per day per friend. */}
+      {reactOpen && viewerIsFriend && (
+        <FamilyActionMenu
+          title="React"
+          subtitle={`Send ${profile.username} a quick note`}
+          label="React"
+          actions={FRIEND_TAUNTS.map((t): FamilyMenuAction => ({
+            id: t.id, title: t.text, icon: 'heart', tint: FAMILY_MENU_INK.pink, label: t.text,
+            run: () => {
+              void sendTaunt(profileId, t.id).then((r) => setReactNote(r.sent ? 'Sent!' : r.alreadySent ? `You already reacted to ${profile.username} today` : 'Could not send. Try again.'));
+            },
+          }))}
+          onClose={() => setReactOpen(false)}
         />
       )}
 

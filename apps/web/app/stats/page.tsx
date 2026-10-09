@@ -63,8 +63,12 @@ import { useYourRecords, NextUpCard, SweepRecordsCard, PuzzleSweepRecordsCard, W
 import { WeeklyFinishesCard } from '@/components/stats/weekly-finishes';
 import { RecentMatchesList, isPlayedToday, isUnlimitedSolo } from '@/components/stats/recent-matches';
 import { SignatureCard, StandingTrendCard } from '@/components/stats/signature-cards';
-import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
+import { ModeDetailPanel, ModeChallengeButton } from '@/components/profile/mode-detail-panel';
 import { StatsPicker } from '@/components/stats/stats-picker';
+import { HeadToHeadSection, PocketGamesSection, VsGamePicker, usePocketRecords } from '@/components/stats/pocket-records';
+import { Mascot } from '@/components/ui/mascot';
+import type { MascotId } from '@/lib/mascots';
+import { BOT_CAST, botsLine } from '@wordle-duel/core';
 import { TintSegment } from '@/components/stats/tint-segment';
 import { TodayCard } from '@/components/stats/today-card';
 import { pickerRows, SWEEP_KEY } from '@/lib/game-picker';
@@ -379,6 +383,10 @@ export default function StatsPage() {
   const [vsTab, setVsTab] = useState<'vs' | 'vs_cpu'>('vs');
   // BJ12: every game with live VS boards — the sweep word games plus ProperNoundle (it was missing here).
   const vsModes = useMemo(() => [...SWEEP_MODES, ...MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey)].filter((m) => hasVs(m.dbKey as string)), []);
+  // Item 16: the bot whose mascot heads the vs-Bots line (the highest rung cleared; Rip before any), and the pocket-game
+  // records behind the POCKET GAMES section + the head-to-head rows.
+  const vsBot = useMemo(() => BOT_CAST[Math.max(0, Math.min(BOT_CAST.length, loadCpuProgression().ladderCleared) - 1)] ?? BOT_CAST[0], []);
+  const pocketRecords = usePocketRecords(!!profile);
 
   if (loading) {
     return (
@@ -696,17 +704,21 @@ export default function StatsPage() {
               <>
                 {/* Solo | VS toggle — only where the game has a live VS board (tinted segments). */}
                 {hasVs(selected) && (
-                  <TintSegment<'solo' | 'vs' | 'vs_cpu'>
-                    options={[
-                      { key: 'solo', label: 'Solo', icon: <User className="w-3.5 h-3.5" aria-hidden="true" /> },
-                      { key: 'vs', label: 'VS', icon: <Swords className="w-3.5 h-3.5" aria-hidden="true" /> },
-                    ]}
-                    value={activeTab}
-                    onChange={setActiveTab}
-                    accent={accentColor}
-                    ink={accentColor}
-                    label="Solo or VS"
-                  />
+                  <div className="flex items-center justify-center gap-2">
+                    <TintSegment<'solo' | 'vs' | 'vs_cpu'>
+                      options={[
+                        { key: 'solo', label: 'Solo', icon: <User className="w-3.5 h-3.5" aria-hidden="true" /> },
+                        { key: 'vs', label: 'VS', icon: <Swords className="w-3.5 h-3.5" aria-hidden="true" /> },
+                      ]}
+                      value={activeTab}
+                      onChange={setActiveTab}
+                      accent={accentColor}
+                      ink={accentColor}
+                      label="Solo or VS"
+                    />
+                    {/* Item 16: the game's Challenge (Pro) moved here from the dropped header row. */}
+                    <ModeChallengeButton gameMode={selected} isPro={isProActive} userId={profile.id} />
+                  </div>
                 )}
                 {/* Your records in this game (the old Records → You "bests by mode" card). */}
                 {activeTab === 'solo' && (
@@ -724,6 +736,7 @@ export default function StatsPage() {
                   stats={getStatsForMode(selected)}
                   statsLoading={loadingStats}
                   playType={activeTab === 'vs_cpu' ? 'solo' : activeTab}
+                  hideHeader
                 />
               </>
             );
@@ -846,8 +859,8 @@ export default function StatsPage() {
                   guesses, mistakes and checks); each game page has its own. */}
               {guessDist.some((d) => d.count > 0) && (
                 <>
-                  <SectionHeader label="Guess Distribution" accent="#2563eb" right={<span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>word games</span>} />
-                  <GuessDistribution data={guessDist} />
+                  <SectionHeader label="Guesses" accent="#16a34a" right={<span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>word games</span>} />
+                  <GuessDistribution data={guessDist} untitled />
                 </>
               )}
 
@@ -1097,51 +1110,30 @@ export default function StatsPage() {
               {/* Rivalries — most-faced opponents with head-to-head bars (Pro). */}
               {vsRecord.total > 0 && <RivalriesCard userId={profile.id} isPro={isProActive} />}
 
-              {/* vs Bots record — unranked practice: no leaderboard, no XP, no streak. */}
-              <div className="p-4 flex items-center gap-4" style={softCard('#0d9488', { radius: 18 })}>
-                <div className="w-10 h-10 flex items-center justify-center flex-shrink-0" style={softPill('#0d9488', { radius: 12 })}>
-                  <Bot className="w-5 h-5" style={{ color: '#0d9488' }} />
-                </div>
-                <div className="flex-1">
+              {/* vs Bots (item 16): ONE line — the bot's mascot, "26–17 · 60%", the best streak as a small flame.
+                  No dashed box and no "43 matches" (it is wins + losses). */}
+              <div className="flex items-center gap-3 px-3 py-2.5" style={softCard('#0d9488', { radius: 18 })}>
+                <Mascot id={(vsBot.castId as MascotId)} size={44} motion="bob" />
+                <div className="flex-1 min-w-0">
                   <div className="text-[10px] font-extrabold uppercase tracking-wider tint-ink" style={{ color: '#0f766e' }}>vs Bots</div>
-                  <SoftNum size={24} as="div" className="soft-num-auto">
-                    {cpuRecord.wins}–{cpuRecord.losses}
-                  </SoftNum>
-                  {cpuRecord.total === 0 ? (
-                    <div className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>Beat a bot to start your record</div>
-                  ) : cpuBestStreak > 0 && (
-                    <div className="text-[10px] font-extrabold flex items-center gap-1" style={{ color: '#f97316' }}><Icon3D name="flame" size={14} /> Best streak: {cpuBestStreak}</div>
-                  )}
+                  <SoftNum size={20} as="div" className="soft-num-auto leading-tight">{botsLine(cpuRecord.wins, cpuRecord.losses)}</SoftNum>
                 </div>
-                <div className="text-right">
-                  <SoftNum size={24} as="div" className="soft-num-auto">{cpuRecord.total === 0 ? '—' : `${cpuRecord.winRate}%`}</SoftNum>
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                    {cpuRecord.total === 0 ? 'No games yet' : `Win rate · ${cpuRecord.total} ${cpuRecord.total === 1 ? 'match' : 'matches'}`}
-                  </div>
-                </div>
+                {cpuBestStreak > 0 && (
+                  <div className="text-[11px] font-extrabold flex items-center gap-1 shrink-0" style={{ color: '#f97316' }}><Icon3D name="flame" size={16} />{cpuBestStreak}</div>
+                )}
               </div>
 
-              {/* Per-game VS board: pick the word game, People or Bots. */}
-              <div className="flex items-center gap-2">
-                {/* Square game tiles (docs/GAME_TILE_STYLE.md) at 56 px. */}
-                <div className="flex-1 flex gap-1.5 overflow-x-auto py-1.5 -my-1.5 px-1 -mx-1" style={{ scrollbarWidth: 'none' }}>
-                  {vsModes.map((m) => {
-                    const active = vsMode === m.dbKey;
-                    return (
-                      <GameSquare
-                        key={m.id}
-                        accent={m.accentHex}
-                        selected={active}
-                        size={56}
-                        glyph={<GameTileGlyph accent={m.accentHex} icon={MODE_CHROME[m.id]?.icon} romanNumeral={m.romanNumeral} />}
-                        label={m.shortTitle}
-                        aria-label={m.title}
-                        aria-pressed={active}
-                        onClick={() => setVsMode(m.dbKey as string)}
-                      />
-                    );
-                  })}
-                </div>
+              {/* Head to head with friends (free): mascot + two-color record bar, VS and pocket games together. */}
+              <HeadToHeadSection records={pocketRecords} />
+
+              {/* Per-game VS board: pick the word game (5 over 4, no swipe), then People | Bots centered under it. */}
+              <VsGamePicker
+                modes={vsModes}
+                value={vsMode}
+                onPick={setVsMode}
+                glyph={(m) => <GameTileGlyph accent={m.accentHex} icon={MODE_CHROME[m.id]?.icon} romanNumeral={m.romanNumeral} />}
+              />
+              <div className="flex items-center justify-center gap-2">
                 <TintSegment<'vs' | 'vs_cpu'>
                   options={[{ key: 'vs', label: 'People' }, { key: 'vs_cpu', label: 'Bots' }]}
                   value={vsTab}
@@ -1150,8 +1142,8 @@ export default function StatsPage() {
                   ink="#6d28d9"
                   label="People or Bots"
                   size="sm"
-                  className="shrink-0"
                 />
+                <ModeChallengeButton gameMode={vsMode} isPro={isProActive} userId={profile.id} />
               </div>
               <ModeDetailPanel
                 userId={profile.id}
@@ -1171,11 +1163,15 @@ export default function StatsPage() {
                 })()}
                 statsLoading={loadingStats}
                 playType={vsTab}
+                hideHeader
               />
               </div>
 
-              {/* ── Recent Matches (every game, newest first) ── */}
-              <SectionHeader label="Recent Matches" accent="#2563eb" />
+              {/* ── Pocket games (item 16): the record in each, vs friends ── */}
+              <PocketGamesSection records={pocketRecords} />
+
+              {/* ── Activity: Recent Matches (every game, newest first) ── */}
+              <SectionHeader label="Activity" accent="#2563eb" />
               <RecentMatchesList matches={matches} opponentNames={opponentNames} profileId={profile.id} loading={loadingStats} limit={5} />
             </>
           )}

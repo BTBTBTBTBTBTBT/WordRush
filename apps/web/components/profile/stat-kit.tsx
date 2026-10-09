@@ -6,6 +6,9 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { CastLink } from '@/components/ui/cast-button';
 import { ART_SIZE, artSrc, type GoProSignId } from '@/lib/art';
 import { BRAND_ACCENT, cardBarStyle, softCard } from '@/lib/soft-surface';
+import { BubbleText } from '@/components/ui/bubble-text';
+import { ProScene } from '@/components/pro/pro-scene';
+import { CAST_COLORS, sectionTitleColor } from '@wordle-duel/core';
 
 /** Counts from 0 to `target` over ~500ms on mount (F4). Snaps under
  *  prefers-reduced-motion. Re-snaps (no re-count) when the target changes. */
@@ -37,23 +40,26 @@ export function CountUp({ target, suffix = '' }: { target: number; suffix?: stri
 // chart sits in a ChartCard; every Pro gate uses ProLockOverlay. One look,
 // defined once — the pages previously had ~6 header styles and 4 card variants.
 
-/** Uppercase tracked section label with an accent tick + optional right control. */
+/**
+ * A section title in the bubble lettering (FRIDAY-QUEUE item 16: "section titles via BubbleText"), tinted in
+ * the section's cast color (core sectionTitleColor; an unlisted title takes `accent`), with an optional right
+ * control. Falls back to the live headline font while the atlas is off, through the same BubbleText API.
+ */
 export function SectionHeader({
   label,
-  accent = '#7c3aed',
+  accent,
   right,
 }: {
   label: string;
   accent?: string;
   right?: ReactNode;
 }) {
+  const named = sectionTitleColor(label);
+  const color = named === CAST_COLORS.W && accent ? accent : named;
   return (
-    <div className="flex items-center justify-between mb-2">
-      <div className="flex items-center gap-2">
-        <span className="w-1 h-3.5 rounded-full" style={{ background: accent }} />
-        <span className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-muted)' }}>
-          {label}
-        </span>
+    <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex-1 min-w-0" style={{ maxWidth: 240 }}>
+        <BubbleText text={label.toUpperCase()} accent={color} align="left" maxSize={22} minSize={13} level={2} />
       </div>
       {right}
     </div>
@@ -218,7 +224,8 @@ export function ProStatsInvite({ line, compact = false, cast = 'w' }: { line: st
   }
   return (
     <div className="flex flex-col items-center gap-2 py-1 text-center">
-      {img}
+      {/* Item 20: the free player's own mascot on the pedestal with the Stats scene (the cast sign stays on the compact rows). */}
+      <ProScene benefit="stats" height={128} caption={false} />
       <div style={{ maxWidth: 280 }}>{text}</div>
       <CastLink href="/pro" color="gold" size="md" aria-label="Go Pro">Go Pro</CastLink>
     </div>

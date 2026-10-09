@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { CORRECT_GRADIENT, PRESENT_GRADIENT } from '@/lib/tile-theme';
 import { softCard } from '@/lib/soft-surface';
+import { CAST_COLORS, showGuessDistribution } from '@wordle-duel/core';
+import { BubbleText } from '@/components/ui/bubble-text';
 
 interface GuessDistributionProps {
   data: Array<{ guesses: number; count: number }>;
@@ -12,30 +14,23 @@ interface GuessDistributionProps {
   noun?: { one: string; many: string };
   /** Hubbub's chart counts every game, not just wins (founder, 2026-10-01). */
   unit?: 'wins' | 'games';
+  /** "Best 4": the player's best result, shown small in the card's header (moved here from the stat grid). */
+  best?: string | null;
+  /** The caller already drew a section title above (the All-time page): skip the card's own. */
+  untitled?: boolean;
 }
 
 const GUESS_NOUN = { one: 'guess', many: 'guesses' };
 
-export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN, unit = 'wins' }: GuessDistributionProps) {
+export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN, unit = 'wins', best = null, untitled = false }: GuessDistributionProps) {
   // Tapped bar's label — shows "N guesses · X wins · Y% of wins".
   const [selected, setSelected] = useState<string | null>(null);
 
   const maxCount = Math.max(1, ...data.map((d) => d.count));
   const totalGames = data.reduce((sum, d) => sum + d.count, 0);
-  const title = `${noun.one} distribution`;
 
-  if (totalGames === 0) {
-    return (
-      <div
-        className="p-4 text-center"
-        style={softCard(accentColor ?? '#2563eb', { radius: 18 })}
-      >
-        <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          {unit === 'games' ? 'Play a game' : 'Win a game'} to see your {title}
-        </p>
-      </div>
-    );
-  }
+  // Item 16 (founder 10-07): hidden until there is a win (core showGuessDistribution) — no placeholder sentence.
+  if (!showGuessDistribution(data)) return null;
 
   function barLabel(d: GuessDistributionProps['data'][number]): string {
     return (d as { label?: string }).label ?? String(d.guesses);
@@ -57,8 +52,13 @@ export function GuessDistribution({ data, accentColor, noun = GUESS_NOUN, unit =
       style={softCard(accentColor ?? '#2563eb', { radius: 18 })}
     >
       {/* Only a non-default unit needs naming — the word modes' card is unchanged. */}
-      {noun !== GUESS_NOUN && (
-        <div className="section-header mb-2">{title.toUpperCase()}</div>
+      {(!untitled || best) && (
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex-1 min-w-0" style={{ maxWidth: 200 }}>
+            {!untitled && <BubbleText text={noun.many.toUpperCase()} accent={CAST_COLORS.I} align="left" maxSize={20} minSize={13} level={3} />}
+          </div>
+          {best && <span className="text-[10px] font-black" style={{ color: accentColor ?? '#7C3AED' }}>Best {best}</span>}
+        </div>
       )}
       <div className="space-y-1.5">
         {data.map((d) => {

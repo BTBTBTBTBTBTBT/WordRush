@@ -15,7 +15,10 @@ IOS = os.path.join(REPO, 'apps', 'ios', 'Wordocious', 'Resources', 'Assets.xcass
 DROID = os.path.join(REPO, 'apps', 'android', 'app', 'src', 'main', 'res', 'drawable-nodpi')
 SKIP = {'contact-sheet', 'info'}   # info.png is a 61 px sliver (the family keeps art-fam-cic-info)
 SETS = [('pocket', 'art-pocket-', ''), ('tutorial', 'art-tut-', ''), ('lobby', 'art-lobby-', 'lobby-'),
-        ('toasts', 'art-toast-', 'toast-'), ('icons', 'art-fam-ic-', '')]
+        ('toasts', 'art-toast-', 'toast-'), ('icons', 'art-fam-ic-', ''),
+        # wave4/stats-profiles (items 16/17/20): stat icons, medals + shelf + friendship badge, Go Pro scenes.
+        # These sets keep their art in the set folder itself (icons/stats/stat-bolt.png), gopro in gopro/out.
+        ('icons/stats', 'art-stat-', 'stat-'), ('icons/medals', 'art-pf-', ''), ('gopro', 'art-', '')]
 
 
 def ship(name, im):
@@ -30,7 +33,7 @@ def ship(name, im):
 
 sizes = {}
 for folder, prefix, strip in SETS:
-    d = os.path.join(HERE, folder, 'out')
+    d = os.path.join(HERE, folder) if folder.startswith('icons/') else os.path.join(HERE, folder, 'out')
     for f in sorted(os.listdir(d)):
         base = f[:-4]
         if not f.endswith('.png') or base in SKIP:
@@ -47,7 +50,8 @@ with open(out, 'w') as fh:
     fh.write("// pixel sizes. Spread into ART_SIZE (art.ts).\n")
     fh.write("export type UiArt28Name = `art-pocket-${string}` | `art-tut-${string}` | `art-lobby-${string}` | `art-toast-${string}`\n")
     fh.write("  | 'art-fam-ic-share' | 'art-fam-ic-copy' | 'art-fam-ic-more' | 'art-fam-ic-plus' | 'art-fam-ic-minus' | 'art-fam-ic-link'\n")
-    fh.write("  | 'art-fam-ic-trash' | 'art-fam-ic-bell' | 'art-fam-ic-search' | 'art-fam-ic-lock' | 'art-fam-ic-heart';\n\n")
+    fh.write("  | 'art-fam-ic-trash' | 'art-fam-ic-bell' | 'art-fam-ic-search' | 'art-fam-ic-lock' | 'art-fam-ic-heart'\n")
+    fh.write("  | `art-stat-${string}` | `art-pf-${string}` | `art-pro-${string}`;\n\n")
     fh.write("export const UI_ART_28_SIZE: Record<string, readonly [number, number]> = {\n")
     for k, (w, h) in sizes.items():
         fh.write(f"  '{k}': [{w}, {h}],\n")

@@ -50,6 +50,7 @@ export * from './feature-switches';
 export * from './age-check';
 export * from './push-rich';
 export * from './game-order';
+export * from './stats-profile';
 export * from './theme-choice';
 export * from './theme-surfaces';
 export * from './leaderboard-stage';

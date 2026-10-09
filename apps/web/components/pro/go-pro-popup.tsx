@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { PRO_PLANS } from '@/lib/payment/types';
 import { GO_PRO_EVENT, checkoutReturnUrl, type GoProRequest } from '@/lib/payment/go-pro-popup';
@@ -14,12 +13,13 @@ import { CastButton } from '@/components/ui/cast-button';
 import { HeaderBack } from '@/components/ui/page-header';
 import { PopupBar, POPUP_ACCENT, popupCard, softRow } from '@/components/ui/soft-popup';
 import { AuthModal } from '@/components/auth/auth-modal';
-import { ART_SIZE, artSrc } from '@/lib/art';
 import { softShadow } from '@/lib/soft-surface';
 import { feedback } from '@/lib/sound-events';
 import { CHECKOUT_HANDOFF_LINE, webRenewalDisclosure } from '@/lib/payment/subscription-copy';
 import { HeadingArt } from '@/components/ui/heading-art';
 import { ArtTitle } from '@/components/ui/art-title';
+import { ProScene } from '@/components/pro/pro-scene';
+import { proBenefitForReason } from '@wordle-duel/core';
 
 // The redesigned Go Pro popup (docs/FINISH_SPEC.md G1, R3): W crowned with
 // the golden star, the plan picker (Yearly preselected, Monthly), and one
@@ -33,7 +33,6 @@ import { ArtTitle } from '@/components/ui/art-title';
 
 const GOLD = POPUP_ACCENT.gold;
 const GOLD_BAR = 'linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)';
-const CROWN = 'art-scene-pro-crown' as const;
 type PlanKey = 'yearly' | 'monthly';
 
 export function GoProPopupHost() {
@@ -99,7 +98,6 @@ export function GoProPopupHost() {
     { key: 'yearly', title: 'Yearly', price: `$${PRO_PLANS.yearly.price}`, per: '/yr', note: '$5/mo billed annually', badge: 'BEST VALUE' },
     { key: 'monthly', title: 'Monthly', price: `$${PRO_PLANS.monthly.price}`, per: '/mo', note: 'Cancel anytime' },
   ];
-  const [cw, ch] = ART_SIZE[CROWN];
 
   return (
     <>
@@ -116,7 +114,8 @@ export function GoProPopupHost() {
           <PopupBar accent={GOLD} gradient={GOLD_BAR} />
           <HeaderBack kind="close" onClick={close} size={32} label="Close" className="absolute top-3 right-2 z-10" />
           <div className="px-4 pt-2 pb-4 text-center">
-            <Image src={artSrc(CROWN)} alt="" aria-hidden width={cw} height={ch} sizes="120px" draggable={false} className="mx-auto select-none pointer-events-none art-pop" style={{ height: 118, width: 'auto', filter: 'drop-shadow(0 6px 10px rgba(180, 83, 9, 0.25))' }} />
+            {/* Item 20: the free player's own mascot (alive) on the pedestal + the scene of the benefit they reached for. */}
+            <ProScene benefit={proBenefitForReason(req.reason)} height={126} caption={false} />
             {/* BJ16: PRO PERK lettering with the reason under it, or the GO PRO lettering. */}
             {req.reason ? (
               <>

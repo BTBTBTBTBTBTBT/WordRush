@@ -18,7 +18,8 @@ import { Lock, X } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { UiIcon, medalIconName, type UiIconName } from '@/components/ui/ui-icon';
 import { HeaderBack } from '@/components/ui/page-header';
-import { evaluateGuess } from '@wordle-duel/core';
+import { evaluateGuess, highlightsLayout, sectionTitleColor } from '@wordle-duel/core';
+import { BubbleText } from '@/components/ui/bubble-text';
 import { modeLabel } from '@/lib/mode-labels';
 import { getTodayLocal } from '@/lib/daily-service';
 import { requiredSweepCount } from '@/lib/daily-modes';
@@ -51,6 +52,7 @@ import {
   type BoardFetchResult,
 } from '@/lib/profile-social';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { TrophyShelf } from './trophy-shelf';
 
 // ── Shared bits ─────────────────────────────────────────────────────────────
 
@@ -83,6 +85,15 @@ function formatClock(seconds: number): string {
 }
 
 function CardTitle({ children }: { children: ReactNode }) {
+  // Item 17: section titles in the bubble lettering (TROPHY CASE, HIGHLIGHTS, LATELY, HEAD TO HEAD), tinted in
+  // their cast color; composite titles ("YOU vs NAME") keep the quiet caps line.
+  if (typeof children === 'string') {
+    return (
+      <div className="min-w-0" style={{ maxWidth: 240 }}>
+        <BubbleText text={children.toUpperCase()} accent={sectionTitleColor(children)} align="left" maxSize={20} minSize={13} level={3} />
+      </div>
+    );
+  }
   return (
     <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
       {children}
@@ -585,23 +596,7 @@ export function TrophyCaseCard({
   return (
     <>
       <TappableCard title="TROPHY CASE" ariaLabel="Medal history" onClick={() => setShowHistory(true)} accent="#f5a524">
-        <div className="flex gap-2.5">
-          {[
-            { medal: 'gold', count: gold, cap: 'GOLD', highlight: true },
-            { medal: 'silver', count: silver, cap: 'SILVER', highlight: false },
-            { medal: 'bronze', count: bronze, cap: 'BRONZE', highlight: false },
-          ].map((t) => (
-            <div
-              key={t.medal}
-              className="flex-1 text-center rounded-xl py-2"
-              style={softPill(MEDAL_TINT[t.medal], { radius: 12 })}
-            >
-              <div className="flex justify-center"><MedalGlyph medal={t.medal} size={28} /></div>
-              <SoftNum size={20} as="div" className="soft-num-auto">{t.count}</SoftNum>
-              <div className="text-[9px] font-black tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{t.cap}</div>
-            </div>
-          ))}
-        </div>
+        <TrophyShelf gold={gold} silver={silver} bronze={bronze} />
         {flawless && flawless.count > 0 && (
           <div
             className="flex items-center gap-2 mt-2.5 rounded-xl px-3 py-2 text-[11.5px] font-bold"
@@ -745,16 +740,27 @@ export function HighlightsReel({
   }
 
   if (items.length === 0) return null;
+  // Item 17: never a lonely tile with an empty half — one highlight folds into a single centered line above Lately,
+  // two or more fill an even 2-column grid (core highlightsLayout drops an odd last one).
+  const layout = highlightsLayout(items.length);
+  const shown = items.slice(0, layout.shown);
 
   return (
     <>
+      {layout.mode === 'fold' ? (
+        <div className="flex items-center justify-center gap-2 py-1 animate-fade-in-up" style={{ color: 'var(--color-text)' }}>
+          <UiIcon name={shown[0].icon} size={20} />
+          <span className="text-[14px] font-black">{shown[0].big}</span>
+          <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{shown[0].cap}</span>
+        </div>
+      ) : (
       <div
         className="rounded-2xl p-3 animate-fade-in-up"
-        style={softCard('#ec4899', { radius: 18 })}
+        style={softCard('#f97316', { radius: 18 })}
       >
         <div className="mb-2"><CardTitle>HIGHLIGHTS</CardTitle></div>
-        <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          {items.map((h) => {
+        <div className="grid grid-cols-2 gap-2.5">
+          {shown.map((h) => {
             const tappable = Boolean(h.onClick);
             return (
               <div
@@ -763,8 +769,8 @@ export function HighlightsReel({
                 tabIndex={tappable ? 0 : undefined}
                 onClick={h.onClick}
                 onKeyDown={tappable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.onClick?.(); } } : undefined}
-                className={`relative min-w-[108px] rounded-xl px-2.5 py-2 shrink-0 ${tappable ? 'cursor-pointer transition-transform active:scale-[0.97] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
-                style={softPill('#ec4899', { radius: 12 })}
+                className={`relative rounded-xl px-2.5 py-2 min-w-0 ${tappable ? 'cursor-pointer transition-transform active:scale-[0.97] hover:shadow-[0_3px_14px_rgba(124,58,237,0.10)]' : ''}`}
+                style={softPill('#f97316', { radius: 12 })}
               >
                 <div className="leading-none"><UiIcon name={h.icon} size={18} /></div>
                 <div className="text-[15px] font-black mt-1 flex items-center gap-1" style={{ color: 'var(--color-text)' }}>
@@ -776,6 +782,7 @@ export function HighlightsReel({
           })}
         </div>
       </div>
+      )}
 
       <Modal open={showCalendar} onClose={() => setShowCalendar(false)} ariaLabel="Streak calendar">
         {/* BJ16: the STREAK CALENDAR lettering; the window rides under it. */}
