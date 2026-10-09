@@ -223,7 +223,7 @@ describe('wrap-line drapes (neck items)', () => {
 
   it('every wrap layer starts above the arms or sits between the hands (a drape, never a hoop)', () => {
     const rects = wrapRects();
-    expect(rects.length).toBeGreaterThanOrEqual(100);
+    expect(rects.length).toBeGreaterThanOrEqual(90); // 10-06 reship withholds a few per-body parts (106 → 94)
     const hoops: string[] = [];
     for (const { key, body, r: [x, y, w] } of rects) {
       const hands = AVATAR_MANIFEST.bodies[body].hands;

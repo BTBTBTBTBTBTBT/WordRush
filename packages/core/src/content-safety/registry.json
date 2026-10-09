@@ -497,6 +497,8 @@
  ],
  "notContent": {
   "avatar-parts.json": "avatar art metadata",
+    "avatar-poses.json": "mascot rig pose metadata (no words)",
+    "avatar-access.json": "mascot item access rules (no words)",
   "achievements-catalog.json": "achievement copy (spelling-copy.test.ts scans it)",
   "guides.generated.json": "how-to-play copy (generated from lib/guide-content.ts)",
   "season-registry.json": "season metadata",
