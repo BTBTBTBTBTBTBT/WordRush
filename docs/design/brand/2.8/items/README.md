@@ -1,6 +1,6 @@
 # Mascot-maker item art, batch 4 (FRIDAY-QUEUE 5b subculture packs + sports + 51 gap-fill)
 
-17 packs, 169 pieces, drawn by the free ChatGPT in the shipped accessory style (glossy 3D toy, lit top-left, flat cyan key), keyed + split
+15 packs, 160 pieces, drawn by the free ChatGPT in the shipped accessory style (glossy 3D toy, lit top-left, flat cyan key), keyed + split
 by `slice_items.py` (data in `packs.py`). Each pack folder has `raw/sheet.png`, `out/<piece>.png` (transparent, trimmed), `contact-sheet.png`
 and a `README.md` table: piece, slot (head / hair / face / neck / wrap / back / held / feet / pet / extra) and colorable parts.
 
