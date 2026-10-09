@@ -216,6 +216,8 @@ class MainActivity : ComponentActivity() {
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                 runCatching {
                     com.wordocious.app.ui.preloadWallpaper(applicationContext, com.wordocious.app.R.drawable.art_wall_home)
+                    // In season the intro sits on the night wall: decode it too.
+                    com.wordocious.app.ui.introSeasonWallpaper(applicationContext, com.wordocious.app.ui.SeasonSkins.current())
                 }
             }
             // The decor view (never null; the content frame can be on some devices — see below).

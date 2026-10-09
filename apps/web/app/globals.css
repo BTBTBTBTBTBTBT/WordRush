@@ -185,6 +185,17 @@
   .season-wall { background-image: var(--season-wall-light-wide); }
   [data-theme="dark"] [data-page-scheme="auto"] > .page-bg > .season-wall { background-image: var(--season-wall-dark-wide); }
 }
+/* Cold-start intro, in season (components/providers/cold-start-intro.tsx): the Home night wall as the backdrop,
+   cover + center like .season-wall, so it hands off seamlessly to the Halloween Home underneath. */
+.intro-season-wall {
+  background-image: var(--intro-wall);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+@media (min-aspect-ratio: 1/1), (min-width: 1024px) {
+  .intro-season-wall { background-image: var(--intro-wall-wide); }
+}
 [data-theme="dark"] [data-page-scheme="auto"] > .page-bg::after {
   opacity: var(--page-wall-dim, 0.58);
 }

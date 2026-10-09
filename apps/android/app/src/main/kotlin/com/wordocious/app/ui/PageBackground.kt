@@ -159,6 +159,17 @@ fun preloadWallpaper(context: android.content.Context, @DrawableRes res: Int) {
 }
 
 /**
+ * The cold-start intro's backdrop in [season]: the night Home wallpaper (the Home page tint's
+ * seasonal swap, dark twin), from the shared cache so it is the very bitmap Home draws under the
+ * intro. Null off season (or when the season doesn't ship one): the intro keeps its lilac.
+ */
+fun introSeasonWallpaper(context: android.content.Context, season: String?): ImageBitmap? {
+    if (season == null) return null
+    val res = SeasonKit.wall(context, R.drawable.art_wall_home, season, true) ?: return null
+    return Wallpapers.get(context, res)
+}
+
+/**
  * Android's contrast settings (the reduce-transparency / increase-contrast fallback,
  * §11: gradient only): "High contrast text" and, on Android 14+, a raised system
  * contrast level. Sampled once per composition of the page.

@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -35,7 +36,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 // FINISH_SPEC F2: the cold-start intro. AQ3: the OS launch screen (Android 12+ SplashScreen,
-// res/values-v31/themes.xml) is the bare lilac (no icon) and this overlay brings in the only W
+// res/values-v31/themes.xml) is the bare launch color (lilac; the night wall's top in the Halloween build; no icon) and this overlay brings in the only W
 // (cold start only, ≤ 1.6 s, tap to
 // skip): W bounces once, the other nine cast heroes pop in beside it one after another
 // until the row spells WORDOCIOUS, and the whole row glides up and shrinks into the
@@ -171,6 +172,8 @@ fun ColdStartIntro(onDone: () -> Unit) {
     val images = frames.map { f ->
         remember(f.res) { ArtBitmaps.get(context, f.res, ColdStart.INTRO_DECODE_PX) } ?: ImageBitmap.imageResource(f.res)
     }
+    // In season the backdrop is the night Home wall (the cached bitmap Home draws beneath), not the lilac.
+    val wall = remember(season) { introSeasonWallpaper(context, season) }
     var origin by remember { mutableStateOf(Offset.Zero) }
     val density = LocalDensity.current
 
@@ -193,7 +196,25 @@ fun ColdStartIntro(onDone: () -> Unit) {
             val overall = skip.value
             // The lilac backdrop fades as the row heads for the header (Home fades in under it).
             val bgAlpha = if (reduced) overall else (1f - easeInOut((t - IntroT.TO_HEADER_START) / (IntroT.TO_HEADER_END - IntroT.TO_HEADER_START))) * overall
-            drawRect(Color(0xFFECE0FB), alpha = bgAlpha.coerceIn(0f, 1f))
+            if (wall != null && wall.width > 0 && wall.height > 0) {
+                // Crop-fill, centered on the window (PageBackground's wallpaperBackground math), so
+                // the moon etc. land on the same pixels as Home's wall underneath.
+                val src = androidx.compose.ui.geometry.Size(wall.width.toFloat(), wall.height.toFloat())
+                val scale = androidx.compose.ui.layout.ContentScale.Crop.computeScaleFactor(src, size)
+                val dw = src.width * scale.scaleX
+                val dh = src.height * scale.scaleY
+                clipRect {
+                    drawImage(
+                        wall,
+                        dstOffset = IntOffset(((size.width - dw) / 2f).roundToInt(), ((size.height - dh) / 2f).roundToInt()),
+                        dstSize = IntSize(dw.roundToInt(), dh.roundToInt()),
+                        alpha = bgAlpha.coerceIn(0f, 1f),
+                        filterQuality = FilterQuality.Medium,
+                    )
+                }
+            } else {
+                drawRect(Color(0xFFECE0FB), alpha = bgAlpha.coerceIn(0f, 1f))
+            }
 
             // The row's geometry at intro size: ten trimmed figures at one height.
             val rowW = minOf(wPx * 0.92f, with(density) { 520.dp.toPx() })
