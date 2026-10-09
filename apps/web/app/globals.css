@@ -1570,6 +1570,14 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
    Motion (OS or the in-app toggle) turns the spring into a plain fade and
    stills the glow. Section labels inside windows read in the muted ink on the
    dark theme. ── */
+/* 2.8 items 7 + 48 · a header counter pops + glows the moment it grows (components/ui/pop-num.tsx) */
+.hdr-pop { animation: hdr-pop 520ms cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes hdr-pop { 0% { transform: scale(1); } 35% { transform: scale(1.5); } 100% { transform: scale(1); } }
+.hdr-pop-glow { width: 44px; height: 44px; left: 50%; top: 50%; margin: -22px 0 0 -22px; border-radius: 50%; background: radial-gradient(circle, rgba(245, 165, 36, 0.75), rgba(245, 165, 36, 0) 68%); animation: hdr-pop-glow 700ms ease-out both; }
+@keyframes hdr-pop-glow { 0% { transform: scale(0.3); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hdr-pop, .hdr-pop-glow { animation: none !important; } }
+[data-reduced-motion="true"] .hdr-pop, [data-reduced-motion="true"] .hdr-pop-glow { animation: none !important; }
+
 /* 2.8 item 7 · the celebration kit (docs/design/brand/2.8/celebrate): one-shot, transform + opacity only. */
 .celebrate-burst { animation: celebrate-burst 900ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 @keyframes celebrate-burst { 0% { transform: scale(0.35) rotate(-6deg); opacity: 0; } 45% { opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 0.92; } }
