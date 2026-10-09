@@ -38,7 +38,7 @@ struct WelcomeView: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         pillar("sparkles", Color(hex: 0x7C3AED), "Daily Puzzles", "Eight daily word games and ten Puzzles, new every day")
-                        pillar("flag.checkered", Color(hex: 0xEC4899), "Play with Friends", "Today's Race, a weekly finish and VS with friends")
+                        pillar("flag.checkered", Color(hex: 0xEC4899), "Play with Friends", "Today's Race, VS and pocket games with friends")
                         pillar("trophy.fill", Color(hex: 0xD97706), "Climb the Leaderboards", "Earn medals, build streaks, and track your stats")
                     }
                     .padding(.bottom, 18)

@@ -73,7 +73,7 @@ const CARDS: Card[] = [
   { art: 'art-scene-onboard-tiles', title: 'DAILY GAMES', heading: 'tour-daily', line: 'New puzzles every day. Guess the word, solve the board.' },
   { art: 'art-scene-onboard-score', title: 'SCORE BIG', heading: 'tour-score', line: 'Fewer guesses and faster times earn more points.' },
   { art: 'art-scene-shield-guard', title: 'KEEP YOUR STREAK', heading: 'tour-streak', line: 'Play daily to grow your streak. Shields save it.' },
-  { art: 'art-scene-friends-match', title: 'PLAY TOGETHER', heading: 'tour-together', line: 'Race friends, react, and battle the cast.' },
+  { art: 'art-scene-friends-match', title: 'PLAY TOGETHER', heading: 'tour-together', line: 'Race friends, play pocket games, and battle the cast.' },
 ];
 
 /** Load-then-show for art that may not be shipped yet (hidden cleanly when missing). */

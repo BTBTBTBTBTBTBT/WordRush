@@ -717,7 +717,7 @@ struct OnboardingCard: View {
         case 0: return "New puzzles every day. Guess the word, solve the board."
         case 1: return "Fewer guesses and faster times earn more points."
         case 2: return "Play daily to grow your streak. Shields save it."
-        default: return "Race friends, react, and battle the cast."
+        default: return "Race friends, play pocket games, and battle the cast."
         }
     }
 
