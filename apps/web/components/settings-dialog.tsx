@@ -17,12 +17,14 @@ import { confirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkedSignIns } from '@/components/settings/linked-sign-ins';
 import { SeasonPreviewPicker } from '@/components/settings/season-preview-picker';
 import { NotificationSettings } from '@/components/settings/notification-settings';
-import { KeyRowPreview, SETTINGS_ACCENT, SettingsOption, SettingsSection, SettingsToggle, ThemeTilesPreview, settingsRowStyle } from '@/components/settings/settings-kit';
+import { KeyRowPreview, SETTINGS_ACCENT, SeasonalPreview, SettingsOption, SettingsSection, SettingsToggle, ThemeWallPreview, settingsRowStyle } from '@/components/settings/settings-kit';
 import { PoseArt } from '@/components/ui/soft-popup';
 import { BRAND_ACCENT, cardBarStyle, softBackground } from '@/lib/soft-surface';
 import { ART_SIZE } from '@/lib/art';
 import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
 import { startTour } from '@/lib/onboarding';
+import { seasonEndLabel } from '@wordle-duel/core';
+import { seasonalEntry, themeEntry } from '@/lib/theme-kit';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -30,7 +32,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
-  const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
+  const { theme, setTheme, seasonRow, seasonalOn, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
   const { user, session, signOut, profile, isProActive } = useAuth();
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   // FINISH_SPEC U: the separate Haptics toggle (default on; lib/haptics.ts 'pref-haptics').
@@ -126,12 +128,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     { value: 'michael', label: 'Michael Keyboard', description: '4 rows, delete + enter on both sides' },
   ];
 
-  const themes: { value: Theme; label: string; description: string }[] = [
-    { value: 'default', label: 'Default', description: 'Purple & amber tiles' },
-    { value: 'dark', label: 'Dark', description: 'Easy on the eyes' },
-    { value: 'ocean', label: 'Ocean', description: 'Blue and teal tones' },
-    { value: 'forest', label: 'Forest', description: 'Green and earth tones' },
-  ];
+  // Item 25: themes are data (theme-registry.json); item 24: the Seasonal row leads the list inside a season window.
+  const themes: { value: Theme; label: string; description: string }[] = (['default', 'ocean', 'forest', 'dark'] as Theme[]).map((id) => {
+    const t = themeEntry(id);
+    return { value: id, label: t.title, description: t.subtitle };
+  });
+  const seasonal = seasonRow ? seasonalEntry(seasonRow) : null;
+  const seasonEnd = seasonRow ? seasonEndLabel(seasonRow) : null;
 
   // FINISH_SPEC C4b / G5: the dialog is a soft lavender sheet with the brand
   // top bar; every section is a tinted card in its own accent with tinted rows
@@ -183,23 +186,33 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             }}
           />
 
-          <SettingsSection title="Theme" accent={SETTINGS_ACCENT.theme}>
+          <SettingsSection title="Theme" accent={SETTINGS_ACCENT.theme} icon="theme">
             <div className="space-y-1.5">
+              {seasonal && (
+                <SettingsOption
+                  selected={seasonalOn}
+                  accent="#f97316"
+                  label={seasonal.title}
+                  description={`${seasonal.subtitle}${seasonEnd ? ` \u00B7 until ${seasonEnd}` : ''}`}
+                  preview={<SeasonalPreview entry={seasonal} />}
+                  onClick={() => setTheme('seasonal')}
+                />
+              )}
               {themes.map((t) => (
                 <SettingsOption
                   key={t.value}
-                  selected={theme === t.value}
+                  selected={!seasonalOn && theme === t.value}
                   accent={SETTINGS_ACCENT.theme}
                   label={t.label}
                   description={t.description}
-                  preview={<ThemeTilesPreview theme={t.value} />}
+                  preview={<ThemeWallPreview theme={t.value} />}
                   onClick={() => setTheme(t.value)}
                 />
               ))}
             </div>
           </SettingsSection>
 
-          <SettingsSection title="Keyboard" accent={SETTINGS_ACCENT.keyboard}>
+          <SettingsSection title="Keyboard" accent={SETTINGS_ACCENT.keyboard} icon="keyboard">
             <div className="space-y-1.5">
               {keyboardLayouts.map((k) => (
                 <SettingsOption
@@ -215,7 +228,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             </div>
           </SettingsSection>
 
-          <SettingsSection title="Sound & Feedback" accent={SETTINGS_ACCENT.sound}>
+          <SettingsSection title="Sound & Feedback" accent={SETTINGS_ACCENT.sound} icon="sound">
             <div className="space-y-1.5">
               <SettingsToggle
                 label="Sound Effects"
@@ -260,23 +273,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           {user && settled && <LinkedSignIns key={user.id} />}
 
           {user && (
-            <SettingsSection title="Account" accent={SETTINGS_ACCENT.account}>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleting}
-                className="block w-full text-left p-3 disabled:opacity-50"
-                style={settingsRowStyle(SETTINGS_ACCENT.account)}
-              >
-                <div className="font-extrabold text-xs" style={{ color: 'var(--color-loss-text)' }}>
-                  {deleting ? 'Deleting…' : 'Delete account'}
-                </div>
-                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                  Permanently erase your profile and all data
-                </div>
-              </button>
-              {deleteError && (
-                <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-loss-text)' }}>{deleteError}</p>
-              )}
+            <SettingsSection title="Account" accent={SETTINGS_ACCENT.account} icon="account">
+              {/* Item 25: Sign out is the family quiet button; Delete account is a small calm link at the very bottom. */}
+              <QuietButton block onClick={async () => { await signOut(); onOpenChange(false); }}>
+                Sign out
+              </QuietButton>
             </SettingsSection>
           )}
 
@@ -300,7 +301,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           </SettingsSection>
 
           {/* Help: the app tour replays only from here (founder 10-07), never from a game's help sheet. */}
-          <SettingsSection title="Help" accent={SETTINGS_ACCENT.help}>
+          <SettingsSection title="Help" accent={SETTINGS_ACCENT.help} icon="help">
             {/* 2.8 item 23: the family QUIET button (was a raw row). */}
             <QuietButton block onClick={() => { onOpenChange(false); window.setTimeout(() => startTour(), 220); }}>
               Replay the app tour
@@ -313,6 +314,20 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <div className="flex justify-center pt-1">
             <PoseArt pose="art-pose-r-cocoa" size={68} />
           </div>
+          {user && (
+            <div className="flex flex-col items-center gap-1 pb-1">
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="text-[11px] font-bold underline underline-offset-2 disabled:opacity-50"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                {deleting ? 'Deleting\u2026' : 'Delete account'}
+              </button>
+              {deleteError && <p className="text-[10px] font-bold" style={{ color: 'var(--color-loss-text)' }}>{deleteError}</p>}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -41,4 +41,17 @@ object ThemePref {
     }
 
     fun current(): String = prefs.getString("theme", "light") ?: "light"
+
+    /** Item 24: Settings > Theme row tap ("seasonal" or a registry id): the core rules, then a re-resolve of the season. */
+    fun pick(picked: String) {
+        val today = java.time.LocalDate.now().toString()
+        val optOut = SettingsPref.get(com.wordocious.app.ui.SeasonSkins.OPT_OUT_KEY, "").ifBlank { null }
+        val next = ThemeChoiceRules.pick(
+            ThemeChoiceRules.Choice(ThemeChoiceRules.fromStored(current()), optOut),
+            picked, com.wordocious.app.ui.SeasonSkins.calendarSeason(), today,
+        )
+        SettingsPref.set(com.wordocious.app.ui.SeasonSkins.OPT_OUT_KEY, next.seasonOptOut ?: "")
+        set(ThemeChoiceRules.toStored(next.theme))
+        com.wordocious.app.ui.SeasonSkins.bumpEpoch()
+    }
 }

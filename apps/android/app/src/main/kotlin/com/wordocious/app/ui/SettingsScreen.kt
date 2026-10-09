@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.SettingsPref
+import com.wordocious.app.R
 import com.wordocious.app.data.ThemePref
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.launch
@@ -67,12 +69,9 @@ import kotlinx.coroutines.launch
  * categories, C4b) · Accessibility · Subscription · About · Linked sign-ins · Sign out
  * · Delete account · version. Full-screen with Done.
  */
-private val THEMES = listOf(
-    Triple("light", "Default", "Purple & amber tiles"),
-    Triple("dark", "Dark", "Easy on the eyes"),
-    Triple("ocean", "Ocean", "Blue and teal tones"),
-    Triple("forest", "Forest", "Green and earth tones"),
-)
+/** Item 25: themes are data (assets/theme-registry.json), in picker order; keys are the stored Android keys. */
+private val THEMES: List<Triple<String, String, String>>
+    get() = ThemeKit.entries.map { Triple(com.wordocious.app.data.ThemeChoiceRules.toStored(it.id), it.title, it.subtitle) }
 
 /** Each theme's swatch color for its tile. */
 private fun themeAccent(key: String): Color = when (key) {
@@ -164,16 +163,30 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             ProSettingsCard()
 
             // THEME
-            Section("THEME", SettingsAccent.theme) {
+            Section("THEME", SettingsAccent.theme, icon = R.drawable.set_theme) {
+                // Reading the epoch makes a pick (or the season_halloween switch flipping) recompose these rows.
+                val epoch = SeasonSkins.epoch
+                val calendar = remember(epoch) { SeasonSkins.calendarSeason() }
+                val seasonalOn = remember(epoch) { calendar != null && SeasonSkins.current() != null }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Item 24: the Seasonal row leads the list inside a season window.
+                    val seasonal = ThemeKit.seasonal(calendar)
+                    if (seasonal != null && calendar != null) {
+                        val end = com.wordocious.app.data.ThemeChoiceRules.endLabel(calendar)?.let { " \u00B7 until $it" }.orEmpty()
+                        ChoiceTile(seasonal.title, seasonal.subtitle + end, Color(0xFFF97316), active = seasonalOn,
+                            preview = { SeasonalPreview(seasonal) }) { ThemePref.pick("seasonal"); theme = ThemePref.current() }
+                    }
                     THEMES.forEach { (key, label, desc) ->
-                        ChoiceTile(label, desc, SettingsAccent.theme, active = theme == key, preview = { ThemeTilesPreview(key) }) { ThemePref.set(key); theme = key }
+                        ChoiceTile(label, desc, SettingsAccent.theme, active = !seasonalOn && theme == key,
+                            preview = { ThemeWallPreview(com.wordocious.app.data.ThemeChoiceRules.fromStored(key)) }) {
+                            ThemePref.pick(com.wordocious.app.data.ThemeChoiceRules.fromStored(key)); theme = key
+                        }
                     }
                 }
             }
 
             // KEYBOARD (§213) — layout radio cards, THEME-card twins.
-            Section("KEYBOARD", SettingsAccent.keyboard) {
+            Section("KEYBOARD", SettingsAccent.keyboard, icon = R.drawable.set_keyboard) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     KEYBOARD_LAYOUTS.forEach { (key, label, desc) ->
                         val active = com.wordocious.app.ui.game.KeyboardLayoutPref.value == key
@@ -183,7 +196,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             }
 
             // SOUND & FEEDBACK
-            Section("SOUND & FEEDBACK", SettingsAccent.sound) {
+            Section("SOUND & FEEDBACK", SettingsAccent.sound, icon = R.drawable.set_sound) {
                 ToggleRow("Sound Effects", "Key taps, win/loss jingles", sound) {
                     sound = it; SettingsPref.set(SettingsPref.SOUND, it)
                 }
@@ -197,7 +210,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // NOTIFICATIONS — the daily reminder, then (signed in) the Friends push
             // categories that used to sit behind the Friends header bell (C4b).
-            Section("NOTIFICATIONS", SettingsAccent.notifications) {
+            Section("NOTIFICATIONS", SettingsAccent.notifications, icon = R.drawable.set_notifications) {
                 ToggleRow("Daily Reminders", "A nudge to play today's puzzles", dailyReminder) {
                     dailyReminder = it; SettingsPref.set(SettingsPref.DAILY_REMINDER, it)
                     if (it) {
@@ -321,17 +334,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 // BI25: composed after the screen lands (its identity load stays off the tap frame); below the fold.
                 if (settled) LinkedSignIns()
 
-                Section("ACCOUNT", SettingsAccent.account, padded = true) {
-                    // A8: Sign Out is the quiet peach candy; Delete Account the pink (destructive) one.
-                    CandyButton(
-                        "Sign Out", onClick = { scope.launch { AuthService.signOut(); onDone() } },
-                        color = CandyColor.PEACH, size = CandySize.LARGE, modifier = Modifier.fillMaxWidth(), fill = true,
-                    )
-                    CandyButton(
-                        "Delete Account", onClick = { if (!deleting) showDeleteConfirm = true },
-                        color = CandyColor.PINK, size = CandySize.MEDIUM, modifier = Modifier.fillMaxWidth(), fill = true,
-                        enabled = !deleting,
-                    )
+                Section("ACCOUNT", SettingsAccent.account, padded = true, icon = R.drawable.set_account) {
+                    // Item 25: Sign out is the family quiet button; Delete account is a small calm link at the very bottom.
+                    QuietButton("Sign Out", onClick = { scope.launch { AuthService.signOut(); onDone() } }, fill = true)
                 }
             }
 
@@ -344,6 +349,12 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+            if (isAuthenticated) {
+                // Delete Account (Play compliance): a small, calm link at the very bottom; the designed confirm sheet below is unchanged.
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TextLink(if (deleting) "Deleting\u2026" else "Delete account", onClick = { if (!deleting) showDeleteConfirm = true }, fontSize = 12.sp)
+                }
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -534,9 +545,14 @@ private fun LinkedSignIns() {
  * (buttons); otherwise rows run to the card's edges.
  */
 @Composable
-private fun Section(title: String, accent: Color, padded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+private fun Section(title: String, accent: Color, padded: Boolean = false, @androidx.annotation.DrawableRes icon: Int? = null, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        FinishLabel(title, Modifier.padding(start = 4.dp), color = darkenInk(accent))
+        // Item 25: the section title is bubble lettering in the section's cast color with its soft 3D row icon.
+        Row(Modifier.padding(start = 4.dp).heightIn(min = 30.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (icon != null) androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(icon), null, Modifier.size(28.dp))
+            BubbleText(title.lowercase().replaceFirstChar { it.uppercase() }, accentPalette(accent), Modifier.weight(1f), maxSize = 18, minSize = 13,
+                align = androidx.compose.ui.text.style.TextAlign.Start)
+        }
         TintedCard(
             accent, Modifier.fillMaxWidth(), corner = 18.dp, barHeight = 6.dp,
             contentPadding = if (padded) PaddingValues(12.dp) else PaddingValues(0.dp),
@@ -723,4 +739,53 @@ private fun SettingsDialog(
         confirmButton = confirm,
         dismissButton = dismiss,
     )
+}
+
+/** Item 25: a section's bubble-lettering palette from its cast accent. */
+private fun accentPalette(accent: Color): HeadlinePalette = HeadlinePalette(
+    top = androidx.compose.ui.graphics.lerp(accent, Color.White, 0.4f), bottom = accent,
+    deep = androidx.compose.ui.graphics.lerp(accent, Color.Black, 0.5f),
+    nameTop = androidx.compose.ui.graphics.lerp(accent, Color.White, 0.4f), nameBottom = accent,
+)
+
+/** Item 25: a theme row's REAL mini preview: its wall (registry stops + glow) with a small card of four tiles. */
+@Composable
+private fun ThemeWallPreview(themeId: String) {
+    val look = ThemeKit.look(themeId, themeId == "dark")
+    val spec = com.wordocious.app.data.SettingsPreviews.theme(com.wordocious.app.data.ThemeChoiceRules.toStored(themeId))
+    Box(
+        Modifier.size(74.dp, 46.dp).clip(RoundedCornerShape(10.dp)).background(
+            Brush.verticalGradient(look?.wallColors() ?: listOf(Color.LightGray, Color.White)),
+        ),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Row(
+            Modifier.padding(bottom = 6.dp).clip(RoundedCornerShape(7.dp)).background(look?.card?.let(ThemeKit::color) ?: Color.White).padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            spec.tiles.forEach { t ->
+                Box(Modifier.size(13.dp).clip(RoundedCornerShape(3.5.dp)).background(Color(t.hex or 0xFF000000.toInt())), contentAlignment = Alignment.Center) {
+                    Text(t.letter, fontSize = 8.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+/** Item 24: the Seasonal row's preview: the season's wall with W-O-R-D tiles in its colors. */
+@Composable
+private fun SeasonalPreview(entry: ThemeKit.Seasonal) {
+    Box(
+        Modifier.size(74.dp, 46.dp).clip(RoundedCornerShape(10.dp)).background(Brush.verticalGradient(entry.previewWall.map(ThemeKit::color))),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            entry.previewTiles.forEach { t ->
+                val dark = t.color.equals("#1F1030", ignoreCase = true)
+                Box(Modifier.size(14.dp).clip(RoundedCornerShape(3.5.dp)).background(ThemeKit.color(t.color)), contentAlignment = Alignment.Center) {
+                    Text(t.letter, fontSize = 8.5.sp, fontWeight = FontWeight.Black, color = if (dark) Color(0xFFF97316) else Color.White)
+                }
+            }
+        }
+    }
 }

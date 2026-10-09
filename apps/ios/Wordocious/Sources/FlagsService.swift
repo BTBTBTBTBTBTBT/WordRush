@@ -38,6 +38,8 @@ final class FlagsService: ObservableObject {
         if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
            let rows = try? JSONDecoder().decode([AppFlag].self, from: data) {
             flags = Dictionary(uniqueKeysWithValues: rows.map { ($0.key, $0) })
+            CastSkin.setSwitch(Self.resolveLive("season_halloween", flags: flags, isTester: false))
+            CastSkin.setIntroSwitch(Self.resolveLive("opening_animation_season", flags: flags, isTester: false))
         }
         syncLivingMascot()
     }
@@ -56,6 +58,9 @@ final class FlagsService: ObservableObject {
             .execute().value
         if let rows {
             flags = Dictionary(uniqueKeysWithValues: rows.map { ($0.key, $0) })
+            // Item 24: the season_halloween off-switch reaches every season resolver (CastSkin) right away.
+            CastSkin.setSwitch(Self.resolveLive("season_halloween", flags: flags, isTester: false))
+            CastSkin.setIntroSwitch(Self.resolveLive("opening_animation_season", flags: flags, isTester: false))
             if let data = try? JSONEncoder().encode(rows) {
                 UserDefaults.standard.set(data, forKey: Self.cacheKey)
             }

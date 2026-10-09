@@ -49,7 +49,7 @@ struct WordociousApp: App {
                 // adapts system chrome, and .id forces a tree rebuild so every
                 // Theme.* token re-reads the new palette.
                 .preferredColorScheme(themeManager.colorScheme)
-                .id(themeManager.theme)
+                .id(themeManager.rebuildKey)
                 // FINISH_SPEC §F2: the cold-start intro picks up from the static
                 // launch screen (cold start only; outside the theme rebuild).
                 // FINISH_SPEC §K1: in-app notices (pushes that arrive while the app is open).

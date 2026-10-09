@@ -2,7 +2,9 @@
 
 import { Switch } from '@/components/ui/switch';
 import { CandySwitch } from '@/components/ui/candy-switch';
-import { SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
+import { softRow } from '@/components/ui/soft-popup';
+import { BubbleText } from '@/components/ui/bubble-text';
+import { themeLook, type SeasonalEntry } from '@/lib/theme-kit';
 import { alphaHex, cardBarStyle, softBackground } from '@/lib/soft-surface';
 import { KEY_DELETE, KEY_ENTER, KEY_SPACE, keyRows, themePreview } from '@/lib/settings-previews';
 
@@ -26,9 +28,11 @@ export const SETTINGS_ACCENT = {
 } as const;
 
 /** A tinted section card: slim accent top bar, the label in the accent's ink, then its rows. */
-export function SettingsSection({ title, accent, children, className = '' }: {
+export function SettingsSection({ title, accent, icon, children, className = '' }: {
   title: string;
   accent: string;
+  /** The soft 3D row icon (public/art/set-<name>.webp), left of the title (item 25). */
+  icon?: 'theme' | 'keyboard' | 'sound' | 'haptics' | 'notifications' | 'account' | 'help';
   children: React.ReactNode;
   className?: string;
 }) {
@@ -40,7 +44,14 @@ export function SettingsSection({ title, accent, children, className = '' }: {
     >
       <div aria-hidden="true" style={cardBarStyle(accent, 6)} />
       <div className="p-3 space-y-1.5">
-        <SoftSectionLabel ink={accent} className="px-1">{title}</SoftSectionLabel>
+        {/* Item 25: the section title is bubble lettering in the section's cast color (no plain caps label). */}
+        <div className="flex items-center gap-2 px-1" style={{ minHeight: 30 }}>
+          {icon && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={`/art/set-${icon}.webp`} alt="" width={28} height={28} draggable={false} style={{ width: 28, height: 28, objectFit: 'contain' }} />
+          )}
+          <BubbleText text={title.toUpperCase()} accent={accent} maxSize={17} minSize={13} align="left" level={2} className="min-w-0" />
+        </div>
         {children}
       </div>
     </section>
@@ -112,6 +123,47 @@ export function ThemeTilesPreview({ theme }: { theme: string }) {
         >
           {t.letter}
         </span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Item 25: a theme row's REAL mini preview: its wall (the registry's 3 stops + glow, the same code-drawn look the
+ * app draws) with a small card on it holding four glossy tiles in the theme's accent.
+ */
+export function ThemeWallPreview({ theme }: { theme: string }) {
+  const dark = theme === 'dark';
+  const look = themeLook(theme, dark);
+  const spec = themePreview(theme);
+  return (
+    <span
+      aria-hidden="true"
+      className="relative block overflow-hidden"
+      style={{
+        width: 74, height: 46, borderRadius: 10,
+        background: `radial-gradient(120% 60% at 50% -10%, color-mix(in srgb, ${look.glow} 45%, transparent), transparent 72%), linear-gradient(180deg, ${look.wall[0]}, ${look.wall[1]} 55%, ${look.wall[2]})`,
+      }}
+    >
+      <span className="absolute flex gap-0.5 items-center justify-center" style={{ left: 7, right: 7, top: 11, bottom: 7, borderRadius: 7, background: look.card, boxShadow: '0 2px 5px rgba(0,0,0,0.18)' }}>
+        {spec.tiles.map((t, i) => (
+          <span key={i} className="grid place-items-center font-black text-white" style={{ width: 13, height: 13, borderRadius: 3.5, fontSize: 8, lineHeight: 1, background: `linear-gradient(180deg, color-mix(in srgb, ${t.hex} 75%, #fff), ${t.hex})` }}>{t.letter}</span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+/** Item 24: the Seasonal row's preview: the season's wall with W-O-R-D tiles in its colors. */
+export function SeasonalPreview({ entry }: { entry: SeasonalEntry }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex gap-0.5 items-center justify-center"
+      style={{ width: 74, height: 46, borderRadius: 10, background: `linear-gradient(180deg, ${entry.previewWall[0]}, ${entry.previewWall[1]} 55%, ${entry.previewWall[2]})` }}
+    >
+      {entry.previewTiles.map((t, i) => (
+        <span key={i} className="grid place-items-center font-black" style={{ width: 14, height: 14, borderRadius: 3.5, fontSize: 8.5, lineHeight: 1, color: t.color === '#1F1030' ? '#F97316' : '#fff', background: `linear-gradient(180deg, color-mix(in srgb, ${t.color} 78%, #fff), ${t.color})`}}>{t.letter}</span>
       ))}
     </span>
   );

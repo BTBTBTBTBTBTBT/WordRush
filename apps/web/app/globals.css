@@ -206,6 +206,52 @@
   }
 }
 
+/* ── Theme walls + living wallpapers (items 25 / 15 / 45; components/ui/theme-wall.tsx) ─────────────────────────
+   The wall is drawn in code from the theme registry (3 stops + a soft glow); the ambient layer is CSS transforms
+   only. Static when data-still="true" (Reduce Motion / save-data), always off in game boards (PageBackground only). */
+.theme-wall {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 55% at 50% -6%, color-mix(in srgb, var(--tw-glow) 42%, transparent), transparent 72%),
+    linear-gradient(180deg, var(--tw-1), var(--tw-2) 55%, var(--tw-3));
+}
+/* A night wall is already dark: no extra dark-mode dim over it. */
+@media not (prefers-contrast: more) {
+  [data-theme="dark"] [data-page-scheme="auto"] > .page-bg:has(> .theme-wall)::after { opacity: 0; }
+}
+.ambient { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.amb-item { position: absolute; top: 0; animation-duration: var(--dur); animation-delay: var(--delay); animation-iteration-count: infinite; animation-timing-function: linear; }
+.amb-item img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.amb-tile { display: grid; place-items: center; width: 100%; height: 100%; color: #fff; font-weight: 900; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18); }
+.amb-rise { animation-name: amb-rise; }
+.amb-fall { animation-name: amb-fall; }
+.amb-drift { animation-name: amb-drift; }
+@keyframes amb-rise { from { transform: translate3d(0, 108vh, 0); } to { transform: translate3d(var(--sway), -22vh, 0); } }
+@keyframes amb-fall { from { transform: translate3d(0, -18vh, 0) rotate(0deg); } to { transform: translate3d(var(--sway), 112vh, 0) rotate(var(--rot)); } }
+@keyframes amb-drift { from { transform: translate3d(0, 108vh, 0) rotate(calc(var(--rot) * -1)); } to { transform: translate3d(var(--sway), -22vh, 0) rotate(var(--rot)); } }
+.amb-star { position: absolute; width: 3px; height: 3px; border-radius: 50%; opacity: 0.8; animation: amb-twinkle var(--dur) ease-in-out var(--delay) infinite; }
+@keyframes amb-twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.95; } }
+.amb-fog { position: absolute; left: -10%; bottom: 0; width: 130%; height: auto; animation: amb-fog var(--dur) ease-in-out infinite alternate; }
+@keyframes amb-fog { from { transform: translate3d(-4%, 0, 0); } to { transform: translate3d(6%, 0, 0); } }
+.amb-bat { position: absolute; left: 0; animation: amb-bat var(--dur) linear var(--delay) infinite; }
+@keyframes amb-bat {
+  0% { transform: translate3d(-14vw, 0, 0); } 25% { transform: translate3d(28vw, -3vh, 0); } 50% { transform: translate3d(55vw, 2vh, 0); }
+  75% { transform: translate3d(84vw, -2vh, 0); } 100% { transform: translate3d(116vw, 0, 0); }
+}
+.amb-witch { position: absolute; left: 0; top: 14%; opacity: 0; animation: amb-witch var(--dur) linear infinite; }
+@keyframes amb-witch {
+  0% { transform: translate3d(-24vw, 8vh, 0); opacity: 0.95; } 10% { transform: translate3d(50vw, -4vh, 0); opacity: 0.95; }
+  20% { transform: translate3d(124vw, 6vh, 0); opacity: 0.95; } 20.1%, 100% { transform: translate3d(124vw, 6vh, 0); opacity: 0; }
+}
+.ambient[data-still="true"] .amb-item { animation: none; top: var(--y); }
+.ambient[data-still="true"] .amb-bat { animation: none; transform: translate3d(70vw, 0, 0); }
+.ambient[data-still="true"] .amb-witch { animation: none; opacity: 0; }
+.ambient[data-still="true"] .amb-fog,
+.ambient[data-still="true"] .amb-star { animation: none; }
+[data-reduced-motion="true"] .ambient .amb-item, [data-reduced-motion="true"] .ambient .amb-bat,
+[data-reduced-motion="true"] .ambient .amb-witch, [data-reduced-motion="true"] .ambient .amb-fog { animation: none; }
+
 /* Tile/keyboard state utilities — the only sanctioned way to color game
    tiles and keys. Backgrounds + borders flow from the vars above. */
 .tile-correct { background-color: var(--tile-correct); border-color: var(--tile-correct-border); }

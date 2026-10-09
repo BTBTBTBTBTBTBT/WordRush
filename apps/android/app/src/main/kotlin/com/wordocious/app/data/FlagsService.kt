@@ -66,6 +66,8 @@ object FlagsService {
             if (rows != null) {
                 _flags.value = rows.associateBy { it.key }
                 runCatching { SettingsPref.set(CACHE_KEY, json.encodeToString(rows)) }
+                // Item 24: the season_halloween off-switch reaches every season reader right away.
+                runCatching { android.os.Handler(android.os.Looper.getMainLooper()).post { com.wordocious.app.ui.SeasonSkins.bumpEpoch() } }
             }
             _loaded.value = true
             syncLivingMascot()

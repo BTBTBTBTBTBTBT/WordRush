@@ -61,7 +61,7 @@ object ColdStart {
 
     /** AU5 the intro's ten figures for this launch's season (decoded before the first frame). */
     fun introRes(): List<Int> {
-        val season = SeasonSkins.current()
+        val season = if (com.wordocious.app.data.FlagsService.isLive("opening_animation_season")) SeasonSkins.current() else null
         return MascotId.entries.map { SeasonSkins.frame(it, season).res }
     }
 
@@ -161,7 +161,9 @@ fun ColdStartIntro(onDone: () -> Unit) {
     }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { ColdStart.hidingHeader = false; ColdStart.landed.value = true } }
     // X: in season (or the admin preview) the intro builds the row from the costumes.
-    val season = rememberSeason()
+    // `opening_animation_season` off-switch: off = the hero cast even in season.
+    val rememberedSeason = rememberSeason()
+    val season = if (com.wordocious.app.data.FlagsService.isLive("opening_animation_season")) rememberedSeason else null
     val frames = MascotId.entries.map { SeasonSkins.frame(it, season) }
     // AU5: the figures were decoded before the first frame (ColdStart.preload); a cache miss
     // decodes here as before.

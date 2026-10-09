@@ -188,7 +188,7 @@ private fun rememberHighContrast(): Boolean {
  */
 fun Modifier.pageBackground(tint: PageTint, alwaysLight: Boolean = false): Modifier =
     wallpaperBackground(tint.wallpaperRes(), tint.light, tint.dark, DIM_DARK_PAGE, alwaysLight, topFade = true,
-        tiles = BackdropTiles.page, accent = tint.accent)
+        tiles = BackdropTiles.page, accent = tint.accent, menu = true)
 
 /** FINISH_SPEC N2: the calm header fade — the page tint at 55% at the window top, gone by this depth. */
 val HEADER_FADE_DEPTH = 170.dp
@@ -210,6 +210,8 @@ private fun Modifier.wallpaperBackground(
     topFade: Boolean = false,
     tiles: BackdropTiles.Look? = null,
     accent: Color = Color(0xFF7C3AED),
+    /** A MENU / tab page (never a game or VS board): Ocean / Forest / Dark skin the wall in code and the living wallpaper draws (items 25 + 15). */
+    menu: Boolean = false,
 ): Modifier = composed {
     // BJ8: the few calm backdrop tiles (one shared config), drawn with the wallpaper.
     val measurer = androidx.compose.ui.text.rememberTextMeasurer()
@@ -220,10 +222,15 @@ private fun Modifier.wallpaperBackground(
     val seasonal = remember(res, season, isDark) { res?.let { SeasonKit.wall(context, it, season, isDark) } }
     val shown = seasonal ?: res
     val wall: ImageBitmap? = remember(shown) { shown?.let { Wallpapers.get(context, it) } }
-    val tiles = if (seasonal != null) null else tiles
+    // Item 25: the theme's wall, drawn in code from the registry (a season's own wall wins). Reading the palette makes a Settings pick recompose.
+    val themeId = remember(WTheme.palette) { com.wordocious.app.data.ThemeChoiceRules.fromStored(com.wordocious.app.data.ThemePref.current()) }
+    val themeWall = if (menu && season == null && !(alwaysLight && themeId == "dark")) ThemeKit.wallLook(themeId, false) else null
+    val ambientOn = menu && com.wordocious.app.data.FlagsService.isLive("living_wallpapers")
+    val clock = ThemeKit.rememberClock(ambientOn)
+    val tiles = if (seasonal != null || themeWall != null) null else tiles
     // Season surfaces: the season wall is the finished backdrop (a dark-tone wall is already night
     // art) — no dark dim, no top wash (iOS ArtKit parity). The contrast veil still applies.
-    val finished = seasonal != null && WTheme.season != null
+    val finished = (seasonal != null && WTheme.season != null) || (themeWall != null && themeId == "dark")
     val highContrast = rememberHighContrast()
     var origin by remember { mutableStateOf(Offset.Zero) }
     var rootSize by remember { mutableStateOf(Size.Zero) }
@@ -235,7 +242,9 @@ private fun Modifier.wallpaperBackground(
         }
         .drawBehind {
             val root = if (rootSize.width > 0f && rootSize.height > 0f) rootSize else size
-            if (wall == null || wall.width <= 0 || wall.height <= 0) {
+            if (themeWall != null) {
+                with(ThemeKit) { drawThemeWall(themeWall, origin, root) }
+            } else if (wall == null || wall.width <= 0 || wall.height <= 0) {
                 // Fallback: the tint's gradient, top-left → bottom-right of the window.
                 drawRect(Brush.linearGradient(stops, start = -origin, end = Offset(root.width, root.height) - origin))
             } else {
@@ -256,6 +265,8 @@ private fun Modifier.wallpaperBackground(
                 }
             }
             if (tiles != null) with(BackdropTiles) { drawBackdropTiles(tiles, accent, root, origin, measurer) }
+            // Items 15 + 45: the living wallpaper (menus only; a frozen frame under Reduce Motion / Battery Saver).
+            if (ambientOn) with(ThemeKit) { drawAmbient(context, themeId, season, clock.value, origin, root, measurer) }
             // N2: a very soft fade under the header so the cast sits on calm color.
             if (topFade && !finished) {
                 val top = -origin.y

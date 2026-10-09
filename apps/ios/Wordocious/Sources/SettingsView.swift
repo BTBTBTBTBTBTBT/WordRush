@@ -39,12 +39,10 @@ struct SettingsView: View {
     // Colorblind + reduced-motion are owned by ThemeManager so changes publish
     // and apply app-wide (tile palette / animation gating).
 
-    private let themes: [(value: String, label: String, desc: String)] = [
-        ("default", "Default", "Purple & amber tiles"),
-        ("dark", "Dark", "Easy on the eyes"),
-        ("ocean", "Ocean", "Blue and teal tones"),
-        ("forest", "Forest", "Green and earth tones"),
-    ]
+    /// Item 25: themes are data (theme-registry.json), in picker order.
+    private var themes: [(value: String, label: String, desc: String)] {
+        ThemeKit.entries.map { ($0.id, $0.title, $0.subtitle) }
+    }
 
     /// ART_SPEC §2: the whole-cast SETTINGS art (it carries the cast, so R's host spot is gone),
     /// centered in a 44 pt bar with the close on the right.
@@ -78,22 +76,26 @@ struct SettingsView: View {
                         SettingsProCard()
                         // FINISH_SPEC §G5: every section is a tinted card with its own
                         // top bar (§A1); rows squish (§A9); toggles take the accent.
-                        section("THEME", accent: G5Accent.lilac) {
+                        section("THEME", accent: G5Accent.lilac, icon: "set-theme") {
                             VStack(spacing: 6) {
+                                // Item 24: the Seasonal row leads the list inside a season window.
+                                if let season = CastSkin.calendarSeason(), let entry = ThemeKit.seasonal(season.rawValue) {
+                                    seasonalRow(entry, season: season.rawValue)
+                                }
                                 ForEach(themes, id: \.value) { t in themeRow(t) }
                             }
                         }
-                        section("KEYBOARD", accent: G5Accent.blue) {
+                        section("KEYBOARD", accent: G5Accent.blue, icon: "set-keyboard") {
                             VStack(spacing: 6) {
                                 ForEach(keyboardLayouts, id: \.value) { k in keyboardRow(k) }
                             }
                         }
-                        section("SOUND & FEEDBACK", accent: G5Accent.teal) {
+                        section("SOUND & FEEDBACK", accent: G5Accent.teal, icon: "set-sound") {
                             toggleRow("Sound Effects", "Key taps, win/loss jingles", $soundOn, accent: G5Accent.teal)
                             G5Divider(accent: G5Accent.teal)
                             toggleRow("Haptics", "Gentle taps and buzzes as you play", $hapticsOn, accent: G5Accent.teal)
                         }
-                        section("NOTIFICATIONS", accent: G5Accent.pink) {
+                        section("NOTIFICATIONS", accent: G5Accent.pink, icon: "set-notifications") {
                             toggleRow("Daily Reminders", "A nudge to play today's puzzles", $dailyReminder, accent: G5Accent.pink)
                             // FINISH_SPEC §C4b: the Friends push categories moved here
                             // from the bell beside the FRIENDS title — the same toggles
@@ -198,20 +200,12 @@ struct SettingsView: View {
                             // §A8 / §G5: the account actions are candy buttons — Sign
                             // Out the quiet peach, Delete the pink (its confirmation
                             // alert is unchanged).
-                            VStack(spacing: 8) {
-                                Button { Task { await auth.signOut(); dismiss() } } label: {
-                                    CandyLabel(title: "Sign Out", symbol: "rectangle.portrait.and.arrow.right")
-                                }
-                                .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium))
-
-                                // Delete Account — ports the web profile flow (calls
-                                // /api/account/delete). Required by App Store 5.1.1(v).
-                                Button(role: .destructive) { showDeleteConfirm = true } label: {
-                                    CandyLabel(title: "Delete Account", symbol: "trash.fill")
-                                }
-                                .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium))
-                                .disabled(deleting)
+                            // Item 25: Sign out is the family quiet button; Delete account moves to a small calm
+                            // link at the very bottom (below).
+                            Button { Task { await auth.signOut(); dismiss() } } label: {
+                                CandyLabel(title: "Sign Out")
                             }
+                            .buttonStyle(QuietButtonStyle(size: .medium, fullWidth: true))
                             .padding(.top, 4)
                         }
                         // §G5 / §A7: a cast pose in the footer — U with her tea (the
@@ -222,6 +216,18 @@ struct SettingsView: View {
                                 .foregroundStyle(FinishInk.secondary)
                         }
                         .frame(maxWidth: .infinity)
+                        if auth.isAuthenticated {
+                            // Delete Account — ports the web profile flow (calls /api/account/delete). Required by
+                            // App Store 5.1.1(v). A small, calm link; the designed confirmation alert is unchanged.
+                            Button(role: .destructive) { showDeleteConfirm = true } label: {
+                                Text(deleting ? "Deleting\u{2026}" : "Delete account")
+                                    .font(Brand.font(12, .bold)).underline()
+                                    .foregroundStyle(FinishInk.secondary)
+                                    .frame(minHeight: 44)
+                            }
+                            .disabled(deleting)
+                            .frame(maxWidth: .infinity)
+                        }
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12)
                 }
@@ -288,8 +294,18 @@ struct SettingsView: View {
         }
     }
 
-    private func section<C: View>(_ title: String, accent: Color, @ViewBuilder _ content: @escaping () -> C) -> some View {
-        G5Card(title, accent: accent) { content() }
+    /// Item 25: the section title is bubble lettering in the section's cast color with its soft 3D row icon (no plain caps label).
+    private func section<C: View>(_ title: String, accent: Color, icon: String? = nil, @ViewBuilder _ content: @escaping () -> C) -> some View {
+        G5Card(nil, accent: accent) {
+            HStack(spacing: 8) {
+                if let icon, UIImage(named: icon) != nil {
+                    Image(icon).resizable().interpolation(.high).scaledToFit().frame(width: 28, height: 28).accessibilityHidden(true)
+                }
+                BubbleTextView(text: title.capitalized, palette: .accent(accent), maxSize: 18, minSize: 13, alignment: .leading)
+            }
+            .frame(minHeight: 30)
+            content()
+        }
     }
 
     private let keyboardLayouts: [(value: String, label: String, desc: String)] = [
@@ -307,10 +323,23 @@ struct SettingsView: View {
     }
 
     private func themeRow(_ t: (value: String, label: String, desc: String)) -> some View {
-        SettingsOptionTile(label: t.label, desc: t.desc, active: theme == t.value, accent: G5Accent.lilac) {
-            ThemeTilesPreview(theme: t.value)
+        // Selected = this base theme and NOT the Seasonal overlay (Seasonal is the preset inside a window).
+        let seasonalOn = CastSkin.calendarSeason() != nil && CastSkin.season != nil
+        return SettingsOptionTile(label: t.label, desc: t.desc, active: !seasonalOn && theme == t.value, accent: G5Accent.lilac) {
+            ThemeWallPreview(theme: t.value)
         } action: {
-            themeManager.theme = t.value
+            themeManager.pick(t.value)
+        }
+    }
+
+    /// Item 24: "Seasonal — Halloween" (Black & orange, until Oct 31) with its W-O-R-D preview tiles.
+    private func seasonalRow(_ entry: ThemeKit.Seasonal, season: String) -> some View {
+        let end = ThemeChoiceRules.endLabel(season: season).map { " \u{00B7} until \($0)" } ?? ""
+        let on = CastSkin.season != nil
+        return SettingsOptionTile(label: entry.title, desc: entry.subtitle + end, active: on, accent: Color(hex: 0xF97316)) {
+            SeasonalPreview(entry: entry)
+        } action: {
+            themeManager.pick("seasonal")
         }
     }
 

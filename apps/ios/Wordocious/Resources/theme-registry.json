@@ -1,0 +1,113 @@
+{
+  "_doc": "The theme registry (FRIDAY-QUEUE item 25): Default / Ocean / Forest / Dark as DATA, the way season-registry.json is. ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/theme-registry.json and apps/android/app/src/main/assets/theme-registry.json (apps/web/lib/theme-registry.test.ts checks the copies). Each theme names the slots the season system also uses: wall (3 gradient stops top -> bottom, drawn in CODE at full resolution, light + dark), glow (a soft radial lift near the top, code-drawn), card (the page-card wash), ink / inkSecondary (on-card text; contrast-tested >= 4.5 against card), accent (title + button-family tint), tabBar (tab dock fill), ambient (the living wallpaper: kind + sprite names + counts, menus only). 'light' null = the theme is dark-only (Dark). Season skins layer on top when Seasonal is on (season-registry.json). Sprites: ambient-<name> (web /ambient/<name>.webp, iOS image set ambient-<name>, Android drawable ambient_<name>).",
+  "themes": [
+    {
+      "id": "default",
+      "title": "Default",
+      "subtitle": "Lavender",
+      "light": {
+        "wall": ["#EEE6FC", "#F8ECF6", "#F5F3FF"],
+        "glow": "#C4B5FD",
+        "card": "#F5EEFF",
+        "ink": "#1A1A2E",
+        "inkSecondary": "#4B4B66",
+        "accent": "#7C3AED",
+        "tabBar": "#F3EEFF"
+      },
+      "dark": {
+        "wall": ["#120A26", "#1F1238", "#2A1745"],
+        "glow": "#7C3AED",
+        "card": "#252542",
+        "ink": "#F0EEF6",
+        "inkSecondary": "#C4C2D6",
+        "accent": "#A78BFA",
+        "tabBar": "#1A1A2E"
+      },
+      "ambient": { "kind": "tiles", "count": 7, "sprites": [], "size": [26, 44], "duration": [34, 58], "opacity": 0.5 }
+    },
+    {
+      "id": "ocean",
+      "title": "Ocean",
+      "subtitle": "Deep water",
+      "light": {
+        "wall": ["#D8F1FA", "#9DD8EA", "#6EC3DB"],
+        "glow": "#FFFFFF",
+        "card": "#EEF8FD",
+        "ink": "#0F2E3D",
+        "inkSecondary": "#3F6272",
+        "accent": "#0891B2",
+        "tabBar": "#E2F3FA"
+      },
+      "dark": {
+        "wall": ["#04182B", "#06324A", "#0A4F63"],
+        "glow": "#22D3EE",
+        "card": "#0E2A3D",
+        "ink": "#E4F6FB",
+        "inkSecondary": "#A9CFDB",
+        "accent": "#22D3EE",
+        "tabBar": "#071F31"
+      },
+      "ambient": { "kind": "bubbles", "count": 9, "sprites": ["bubble-1", "bubble-2", "bubble-3", "bubble-4"], "size": [14, 40], "duration": [14, 26], "opacity": 0.85 }
+    },
+    {
+      "id": "forest",
+      "title": "Forest",
+      "subtitle": "Leaf and moss",
+      "light": {
+        "wall": ["#E3F0D8", "#C5E0B5", "#9CC68A"],
+        "glow": "#FFF7C2",
+        "card": "#EFF9F2",
+        "ink": "#1F3320",
+        "inkSecondary": "#46613F",
+        "accent": "#15803D",
+        "tabBar": "#E6F2DE"
+      },
+      "dark": {
+        "wall": ["#07160D", "#0F2A18", "#1B3D22"],
+        "glow": "#86EFAC",
+        "card": "#12261A",
+        "ink": "#E6F4E4",
+        "inkSecondary": "#B2CFAE",
+        "accent": "#4ADE80",
+        "tabBar": "#0A1D11"
+      },
+      "ambient": { "kind": "leaves", "count": 8, "sprites": ["leaf-1", "leaf-2", "leaf-3", "leaf-4"], "size": [18, 36], "duration": [16, 30], "opacity": 0.85 }
+    },
+    {
+      "id": "dark",
+      "title": "Dark",
+      "subtitle": "True night",
+      "light": null,
+      "dark": {
+        "wall": ["#0B0714", "#160E2A", "#221441"],
+        "glow": "#A78BFA",
+        "card": "#252542",
+        "ink": "#F0EEF6",
+        "inkSecondary": "#C4C2D6",
+        "accent": "#A78BFA",
+        "tabBar": "#14102A"
+      },
+      "ambient": { "kind": "tiles", "count": 6, "sprites": [], "size": [24, 40], "duration": [36, 60], "opacity": 0.4 }
+    }
+  ],
+  "seasonal": {
+    "halloween": {
+      "title": "Seasonal — Halloween",
+      "subtitle": "Black & orange",
+      "previewWall": ["#120A26", "#26103A", "#34142A"],
+      "previewTiles": [
+        { "letter": "W", "color": "#F97316" },
+        { "letter": "O", "color": "#1F1030" },
+        { "letter": "R", "color": "#F97316" },
+        { "letter": "D", "color": "#1F1030" }
+      ],
+      "ambient": {
+        "kind": "halloween",
+        "bats": { "count": 3, "sprite": "bat", "size": [30, 54], "duration": [9, 15] },
+        "witch": { "sprite": "witch", "size": 70, "every": 45, "duration": 9 },
+        "fog": { "sprite": "fog", "opacity": 0.22, "duration": 60 },
+        "stars": { "count": 10, "color": "#FDE68A" }
+      }
+    }
+  }
+}

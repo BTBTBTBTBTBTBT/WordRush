@@ -502,6 +502,7 @@
   "achievements-catalog.json": "achievement copy (spelling-copy.test.ts scans it)",
   "guides.generated.json": "how-to-play copy (generated from lib/guide-content.ts)",
   "season-registry.json": "season metadata",
+  "theme-registry.json": "theme metadata (colors + sprite names, no words)",
   "manifest.json": "PWA manifest",
   "*-fixtures.json": "cross-platform test fixtures",
   "*.sample.json": "review samples",
