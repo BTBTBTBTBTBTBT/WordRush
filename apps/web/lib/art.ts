@@ -313,6 +313,8 @@ export type NightArtName =
   | 'art-podium-floor'
   // 2.8 item 11b: the Leaderboard stage (clouds, floor disc, Yesterday ledge, sunburst light, compact Your board pill)
   | `art-lb-${string}`
+  // 2.8 item 41: the What's new tour's illustration frame + page dots
+  | `art-tut-${string}`
   | `art-titlecast-${string}`
   | `art-btn-${string}`
   | `art-btnlabel-${string}`
@@ -712,6 +714,9 @@ export const ART_SIZE: Record<ArtName, readonly [number, number]> = {
   'art-lb-ledge': [394, 160],
   'art-lb-sunburst': [1200, 600],
   'art-lb-btn-yourboard': [420, 133],
+  'art-tut-frame': [320, 328],
+  'art-tut-dot-on': [48, 48],
+  'art-tut-dot-off': [48, 46],
   // Cast-color titles + button skins (founder 10-03; not wired yet — the menu mapping is pending)
   'art-titlecast-about': [683, 208],
   'art-titlecast-achievement': [947, 262],

@@ -54,3 +54,4 @@ export * from './stats-profile';
 export * from './theme-choice';
 export * from './theme-surfaces';
 export * from './leaderboard-stage';
+export * from './whats-new';
