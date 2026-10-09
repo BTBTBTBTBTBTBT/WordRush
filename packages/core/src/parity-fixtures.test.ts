@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderBubbleTextFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures, renderAvatarPoseFixtures, renderAvatarAccessFixtures, renderMusicalCastFixtures } from '../scripts/gen-parity-fixtures';
+import { renderSeedFixtures, renderPrefillFixtures, renderBankFixtures, renderSudokuFixtures, renderRegionsFixtures, renderLadderFixtures, renderWordsearchFixtures, renderHubFixtures, renderCryptogramFixtures, renderGroupsFixtures, renderCrosswordFixtures, renderScrambleFixtures, renderHomeBannerFixtures, renderVsLobbyFixtures, renderFriendlyFixtures, renderLeaderboardTitleFixtures, renderShareCaptionFixtures, renderLevelSeasonFixtures, renderPushCopyFixtures, renderAvatarConfigFixtures, renderHeadlineTokenFixtures, renderBubbleTextFixtures, renderAchievementRuleFixtures, renderAvatarResolveFixtures, renderPodiumLayoutFixtures, renderAvatarLayoutFixtures, renderAvatarPoseFixtures, renderAvatarAccessFixtures, renderMusicalCastFixtures, renderFriendCardFixtures, renderPocketHelpFixtures, renderWaitingRoomFixtures } from '../scripts/gen-parity-fixtures';
 
 // Freshness guard for the cross-platform engine-parity fixtures. The Swift and
 // Kotlin ports assert against the committed JSON; this test asserts the
@@ -47,6 +47,9 @@ describe('engine parity fixtures are fresh and synced', () => {
     ['avatar-access-fixtures.json', JSON.stringify(renderAvatarAccessFixtures(), null, 2) + '\n'],
     ['bubble-text-fixtures.json', JSON.stringify(renderBubbleTextFixtures(), null, 2) + '\n'],
     ['musical-cast-fixtures.json', JSON.stringify(renderMusicalCastFixtures(), null, 2) + '\n'],
+    ['friend-cards-fixtures.json', JSON.stringify(renderFriendCardFixtures(), null, 2) + '\n'],
+    ['pocket-help-fixtures.json', JSON.stringify(renderPocketHelpFixtures(), null, 2) + '\n'],
+    ['waiting-room-fixtures.json', JSON.stringify(renderWaitingRoomFixtures(), null, 2) + '\n'],
   ];
 
   for (const [name, expected] of rendered) {

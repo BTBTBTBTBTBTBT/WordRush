@@ -16,7 +16,7 @@ import {
   effectiveAvatarFrame, frameLevelLocked, randomAvatar, swatchCss, type BuilderField, type BuilderTab,
 } from '@/lib/avatar-render';
 import { MascotAvatar } from './mascot-avatar';
-import { LIVING_MASCOT_ON } from '@/lib/living-mascot';
+import { useLivingMascotOn } from '@/hooks/use-flags';
 import { DressStage, StageArt, StageClose, backdropCss, warmDressArt } from '@/components/profile/dress-up';
 import { CastButton } from '@/components/ui/cast-button';
 import { artSrc } from '@/lib/art';
@@ -106,8 +106,9 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
     if (check.ok) onSave(value);
     else setLockedCard(check.locked);
   };
+  const livingOn = useLivingMascotOn();
   const [tab, setTab] = React.useState<BuilderTab | 'season' | 'pose'>(
-    initialTab === 'season' ? 'season' : initialTab === 'pose' && LIVING_MASCOT_ON ? 'pose' : (BUILDER_TABS.some((t) => t.id === initialTab) ? initialTab as BuilderTab : 'body'));
+    initialTab === 'season' ? 'season' : initialTab === 'pose' && livingOn ? 'pose' : (BUILDER_TABS.some((t) => t.id === initialTab) ? initialTab as BuilderTab : 'body'));
   React.useEffect(() => { if (tab === 'season' && season && shelf.length === 0) setTab('head'); }, [tab, season, shelf.length]);
   /** "Swapped out the heart shades" — a pick that doesn't fit with something worn replaces it (fit system). */
   const [note, setNote] = React.useState<string | null>(null);
@@ -291,7 +292,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
     ['mouth', 'mouth', 'Mouth'], ['head', 'hats', 'Hats'], ['extras', 'extras', 'Extras'], ['bg', 'backdrop', 'Backdrop'], ['frame', 'frame', 'Frame'],
   ];
   // 10-06: the Pose tab (behind the livingMascot flag; its icon borrows the body tab art until a pose icon is drawn)
-  const roomTabs: Array<[BuilderTab | 'pose', string, string]> = LIVING_MASCOT_ON ? [...ROOM_TABS, ['pose', 'body', 'Pose']] : ROOM_TABS;
+  const roomTabs: Array<[BuilderTab | 'pose', string, string]> = livingOn ? [...ROOM_TABS, ['pose', 'body', 'Pose']] : ROOM_TABS;
   const round = (label: string, glyph: React.ReactNode, colors: [string, string], onClick: () => void, disabled = false) => (
     <button type="button" aria-label={label} onClick={onClick} disabled={disabled || saving}
       className="w-[38px] h-[38px] rounded-full flex items-center justify-center border-0 p-0 cursor-pointer"

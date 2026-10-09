@@ -146,6 +146,6 @@ export const ROW_BADGE_SIZE = 18;
  * A row's Win / Loss result as the 3D W / L badge art (docs/ART_SPEC.md §13),
  * in place of the old text chip, with the same words as its accessible name.
  */
-export function WinLossBadge({ won, size = ROW_BADGE_SIZE, className = '' }: { won: boolean; size?: number; className?: string }) {
-  return <Icon3D name={won ? 'badge-w' : 'badge-l'} size={size} label={won ? 'Win' : 'Loss'} className={className} />;
+export function WinLossBadge({ won, size = ROW_BADGE_SIZE, className = '', style }: { won: boolean; size?: number; className?: string; style?: React.CSSProperties }) {
+  return <Icon3D name={won ? 'badge-w' : 'badge-l'} size={size} label={won ? 'Win' : 'Loss'} className={className} style={style} />;
 }

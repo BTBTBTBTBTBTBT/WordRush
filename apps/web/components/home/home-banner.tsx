@@ -69,7 +69,7 @@ const SWITCH_PAD = candyPad(BANNER_SLOT.switchRow);
 export interface BannerRow {
   cards: HomeCard[];
   progress: GroupProgress;
-  streaks: { sweep: number; flawless: number };
+  streaks: { sweep: number; flawless: number; bestSweep?: number; bestFlawless?: number };
   unlimitedPlayed: number;
 }
 

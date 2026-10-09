@@ -41,6 +41,11 @@ object FlagsService {
     /** null = unknown (first load in flight, nothing cached); empty = table empty. */
     private val _flags = MutableStateFlow<Map<String, AppFlag>?>(readCache())
     val flags: StateFlow<Map<String, AppFlag>?> = _flags.asStateFlow()
+
+    init {
+        // the cached table decides before the first fetch lands (a cold start offline keeps what the player had)
+        com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT = resolveLive("living_mascot", _flags.value, false)
+    }
     private val _loaded = MutableStateFlow(false)
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
@@ -63,7 +68,13 @@ object FlagsService {
                 runCatching { SettingsPref.set(CACHE_KEY, json.encodeToString(rows)) }
             }
             _loaded.value = true
+            syncLivingMascot()
         }
+    }
+
+    /** 2.8 item 13: the living mascot's gate IS the remote `living_mascot` off-switch (fail-open; core defaults it off). */
+    fun syncLivingMascot() {
+        com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT = isLive("living_mascot")
     }
 
     /** The shared resolver, pure form: same rule, explicit inputs. */

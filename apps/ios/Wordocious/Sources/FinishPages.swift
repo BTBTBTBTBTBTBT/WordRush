@@ -481,11 +481,12 @@ struct PodiumView: View {
             let first = tone == 1
             let avatar: CGFloat = compact ? (first ? 48 : 40) : (first ? 54 : 44)
             let content = VStack(spacing: 4) {
-                if place == 1 {
+                if place == 1 && !PodiumFigure.standsFull(e) {
                     Icon3D(.crown, size: compact ? 24 : 26).padding(.bottom, -8).zIndex(1)
                 }
-                AvatarView(url: e.avatarUrl, username: e.username, size: avatar, accentHex: e.accentHex, emoji: e.emoji,
-                           pro: e.pro, userId: e.id)
+                // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
+                // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.
+                PodiumFigure(entry: e, place: place, tone: tone, size: avatar, compact: compact)
                 Text(e.name)
                     .font(Brand.font(compact ? 12 : 13, .black))
                     .foregroundStyle(lightOnly ? FinishInk.title : FinishInk.heading)
@@ -791,4 +792,61 @@ struct CandySwitchKnob: View {
 
 extension ToggleStyle where Self == CandySwitchStyle {
     static var candy: CandySwitchStyle { CandySwitchStyle() }
+}
+
+
+/// 2.8 item 13 (founder 10-07: "full-body mascots STANDING on their steps, no tile frame, ~2-3x today's size, crown on
+/// its head"): one podium place's figure. A mascot player (no photo) is drawn as the free-standing living mascot in the
+/// pose of their place while `AvatarLiveConfig.livingMascot` is on (the remote `living_mascot` switch); everyone else, and
+/// the whole podium while it is off, keeps the framed AvatarView exactly as before. Layout: the figure's feet overlap the
+/// step below by `PodiumFigure.footOverlap`, so it stands ON it.
+struct PodiumFigure: View {
+    let entry: PodiumEntry
+    let place: Int
+    let tone: Int
+    /// The old tile size (pt); a standing figure draws at `scale` times it.
+    let size: CGFloat
+    let compact: Bool
+
+    @ObservedObject private var directory = AvatarDirectory.shared
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+
+    /// How much bigger the standing figure is than the old tile.
+    static let scale: CGFloat = 2.0
+    /// How far the figure's feet sink into the step (pt) so it stands on it.
+    static let footOverlap: CGFloat = 12
+
+    private var resolved: AvatarResolve.Resolved {
+        directory.look(username: entry.username, userId: entry.id, url: entry.avatarUrl, castId: nil, frame: nil,
+                       mascot: nil, accentHex: LetterTileAvatar.defaultAccentHex(username: entry.username, accentHex: entry.accentHex),
+                       lookup: true).resolved
+    }
+
+    /// Whether this entry stands full-body (a mascot player with the living mascot on and its rig art shipped).
+    static func standsFull(_ e: PodiumEntry) -> Bool {
+        guard AvatarLiveConfig.livingMascot else { return false }
+        let r = AvatarDirectory.shared.look(username: e.username, userId: e.id, url: e.avatarUrl, castId: nil, frame: nil,
+                                            mascot: nil, accentHex: nil, lookup: true).resolved
+        return r.photoUrl == nil && LivingMascotView.canAnimate(r.config)
+    }
+
+    var body: some View {
+        let r = resolved
+        if AvatarLiveConfig.livingMascot, r.photoUrl == nil, LivingMascotView.canAnimate(r.config) {
+            let big = size * Self.scale
+            let posed: AvatarConfig = { var c = r.config; c.pose = AvatarPose.placePose(place); return c }()
+            let initial = AvatarCatalog.initial(entry.username)
+            LivingMascotView(config: posed, initial: initial, size: big, cutout: true, interactive: false, own: DressUp.isOwn(entry.id))
+                .frame(width: big, height: big)
+                .overlay(alignment: .top) {
+                    // the crown sits ON the first place's head
+                    if place == 1 { Icon3D(.crown, size: compact ? 30 : 34).offset(y: -big * 0.05) }
+                }
+                .padding(.bottom, -Self.footOverlap)
+                .zIndex(1)
+        } else {
+            AvatarView(url: entry.avatarUrl, username: entry.username, size: size, accentHex: entry.accentHex, emoji: entry.emoji,
+                       pro: entry.pro, userId: entry.id)
+        }
+    }
 }

@@ -1,0 +1,977 @@
+{
+  "tiles": [
+    {
+      "kind": "rps",
+      "state": {
+        "kind": "rps",
+        "picks": {},
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "a",
+      "yourTurn": true,
+      "word": "Your pick"
+    },
+    {
+      "kind": "rps",
+      "state": {
+        "kind": "rps",
+        "picks": {
+          "a": "rock"
+        },
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "a",
+      "yourTurn": false,
+      "word": "Picked"
+    },
+    {
+      "kind": "rps",
+      "state": {
+        "kind": "rps",
+        "picks": {
+          "a": "rock"
+        },
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "b",
+      "yourTurn": true,
+      "word": "Your pick"
+    },
+    {
+      "kind": "ttt",
+      "state": {
+        "kind": "ttt",
+        "board": [
+          "a",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "starter": "a",
+        "turn": "b",
+        "games": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "b",
+      "yourTurn": true,
+      "word": "Your move"
+    },
+    {
+      "kind": "ttt",
+      "state": {
+        "kind": "ttt",
+        "board": [
+          "a",
+          "",
+          "",
+          "",
+          "b",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "starter": "a",
+        "turn": "a",
+        "games": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "b",
+      "yourTurn": false,
+      "word": "Their move"
+    },
+    {
+      "kind": "ttt",
+      "state": {
+        "kind": "ttt",
+        "board": [
+          "a",
+          "",
+          "",
+          "",
+          "b",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "starter": "a",
+        "turn": "a",
+        "games": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "a",
+      "yourTurn": true,
+      "word": "Your move"
+    },
+    {
+      "kind": "coin",
+      "state": {
+        "kind": "coin",
+        "caller": "a",
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        },
+        "stake": "Bragging rights"
+      },
+      "me": "a",
+      "yourTurn": true,
+      "word": "Your call"
+    },
+    {
+      "kind": "coin",
+      "state": {
+        "kind": "coin",
+        "caller": "a",
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        },
+        "stake": "Bragging rights"
+      },
+      "me": "b",
+      "yourTurn": false,
+      "word": "Their call"
+    },
+    {
+      "kind": "pass",
+      "state": {
+        "kind": "pass",
+        "turn": "a",
+        "guesses": [],
+        "solvedBy": null
+      },
+      "me": "a",
+      "yourTurn": true,
+      "word": "1 of 6"
+    },
+    {
+      "kind": "pass",
+      "state": {
+        "kind": "pass",
+        "turn": "a",
+        "guesses": [
+          {
+            "by": "a",
+            "word": "CRANE",
+            "tiles": [
+              "ABSENT",
+              "PRESENT",
+              "ABSENT",
+              "ABSENT",
+              "ABSENT"
+            ]
+          },
+          {
+            "by": "b",
+            "word": "ROUTS",
+            "tiles": [
+              "CORRECT",
+              "ABSENT",
+              "ABSENT",
+              "ABSENT",
+              "CORRECT"
+            ]
+          }
+        ],
+        "solvedBy": null
+      },
+      "me": "a",
+      "yourTurn": true,
+      "word": "3 of 6"
+    },
+    {
+      "kind": "pass",
+      "state": {
+        "kind": "pass",
+        "turn": "a",
+        "guesses": [
+          {
+            "by": "a",
+            "word": "CRANE",
+            "tiles": [
+              "ABSENT",
+              "PRESENT",
+              "ABSENT",
+              "ABSENT",
+              "ABSENT"
+            ]
+          },
+          {
+            "by": "b",
+            "word": "ROUTS",
+            "tiles": [
+              "CORRECT",
+              "ABSENT",
+              "ABSENT",
+              "ABSENT",
+              "CORRECT"
+            ]
+          }
+        ],
+        "solvedBy": null
+      },
+      "me": "b",
+      "yourTurn": false,
+      "word": "Their guess"
+    },
+    {
+      "kind": "ghost",
+      "state": {
+        "kind": "ghost",
+        "fragment": "",
+        "letters": [],
+        "turn": "a",
+        "starter": "a",
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "a",
+      "yourTurn": true,
+      "word": "Start it"
+    },
+    {
+      "kind": "ghost",
+      "state": {
+        "kind": "ghost",
+        "fragment": "GHO",
+        "letters": [
+          "a",
+          "b",
+          "a"
+        ],
+        "turn": "b",
+        "starter": "a",
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "b",
+      "yourTurn": true,
+      "word": "GHO…"
+    },
+    {
+      "kind": "ghost",
+      "state": {
+        "kind": "ghost",
+        "fragment": "GHO",
+        "letters": [
+          "a",
+          "b",
+          "a"
+        ],
+        "turn": "b",
+        "starter": "a",
+        "rounds": [],
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "a",
+      "yourTurn": false,
+      "word": "Their letter"
+    },
+    {
+      "kind": "chain",
+      "state": {
+        "kind": "chain",
+        "words": [],
+        "turn": "a",
+        "score": {
+          "a": 0,
+          "b": 0
+        }
+      },
+      "me": "a",
+      "yourTurn": true,
+      "word": "Any word"
+    },
+    {
+      "kind": "chain",
+      "state": {
+        "kind": "chain",
+        "words": [
+          {
+            "by": "a",
+            "word": "CRANE",
+            "points": 5
+          }
+        ],
+        "turn": "b",
+        "score": {
+          "a": 5,
+          "b": 0
+        }
+      },
+      "me": "b",
+      "yourTurn": true,
+      "word": "E…"
+    },
+    {
+      "kind": "chain",
+      "state": {
+        "kind": "chain",
+        "words": [
+          {
+            "by": "a",
+            "word": "CRANE",
+            "points": 5
+          }
+        ],
+        "turn": "b",
+        "score": {
+          "a": 5,
+          "b": 0
+        }
+      },
+      "me": "a",
+      "yourTurn": false,
+      "word": "Their word"
+    }
+  ],
+  "layouts": [
+    {
+      "name": "empty",
+      "friends": [],
+      "games": [],
+      "layout": {
+        "cards": [],
+        "rest": []
+      }
+    },
+    {
+      "name": "no-games",
+      "friends": [
+        {
+          "id": "d",
+          "username": "Doug",
+          "online": false,
+          "activity": null,
+          "lastSeenMs": null
+        },
+        {
+          "id": "c",
+          "username": "cara",
+          "online": false,
+          "activity": null,
+          "lastSeenMs": null
+        },
+        {
+          "id": "b",
+          "username": "Bea",
+          "online": true,
+          "activity": "Muddle",
+          "lastSeenMs": null
+        }
+      ],
+      "games": [],
+      "layout": {
+        "cards": [
+          {
+            "friendId": "b",
+            "name": "Bea",
+            "online": true,
+            "presence": "playing Muddle",
+            "waiting": 0,
+            "headline": "",
+            "tiles": [],
+            "theirTurn": [],
+            "theirTurnLine": ""
+          }
+        ],
+        "rest": [
+          "cara",
+          "Doug"
+        ]
+      }
+    },
+    {
+      "name": "six-with-johnny",
+      "friends": [
+        {
+          "id": "j",
+          "username": "johnnyauer",
+          "online": true,
+          "activity": "Classic",
+          "lastSeenMs": null
+        },
+        {
+          "id": "d",
+          "username": "Doug",
+          "online": true,
+          "activity": null,
+          "lastSeenMs": null
+        },
+        {
+          "id": "k",
+          "username": "Kate",
+          "online": false,
+          "activity": null,
+          "lastSeenMs": null
+        }
+      ],
+      "games": [
+        {
+          "id": "1",
+          "kind": "rps",
+          "opponentId": "j",
+          "opponentName": "J",
+          "me": "a",
+          "state": {
+            "kind": "rps",
+            "picks": {},
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "yourTurn": true,
+          "updatedAt": "2026-10-09T10:00:00Z"
+        },
+        {
+          "id": "2",
+          "kind": "ttt",
+          "opponentId": "j",
+          "opponentName": "J",
+          "me": "a",
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "",
+              "",
+              "",
+              "b",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "a",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "yourTurn": true,
+          "updatedAt": "2026-10-09T10:05:00Z"
+        },
+        {
+          "id": "3",
+          "kind": "coin",
+          "opponentId": "j",
+          "opponentName": "J",
+          "me": "a",
+          "state": {
+            "kind": "coin",
+            "caller": "a",
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            },
+            "stake": "Bragging rights"
+          },
+          "yourTurn": true,
+          "updatedAt": "2026-10-09T09:00:00Z"
+        },
+        {
+          "id": "4",
+          "kind": "pass",
+          "opponentId": "j",
+          "opponentName": "J",
+          "me": "a",
+          "state": {
+            "kind": "pass",
+            "turn": "a",
+            "guesses": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "tiles": [
+                  "ABSENT",
+                  "PRESENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT"
+                ]
+              },
+              {
+                "by": "b",
+                "word": "ROUTS",
+                "tiles": [
+                  "CORRECT",
+                  "ABSENT",
+                  "ABSENT",
+                  "ABSENT",
+                  "CORRECT"
+                ]
+              }
+            ],
+            "solvedBy": null
+          },
+          "yourTurn": true,
+          "updatedAt": "2026-10-09T11:00:00Z"
+        },
+        {
+          "id": "5",
+          "kind": "ghost",
+          "opponentId": "j",
+          "opponentName": "J",
+          "me": "a",
+          "state": {
+            "kind": "ghost",
+            "fragment": "GHO",
+            "letters": [
+              "a",
+              "b",
+              "a"
+            ],
+            "turn": "b",
+            "starter": "a",
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "yourTurn": true,
+          "updatedAt": "2026-10-09T08:00:00Z"
+        },
+        {
+          "id": "6",
+          "kind": "chain",
+          "opponentId": "j",
+          "opponentName": "J",
+          "me": "b",
+          "state": {
+            "kind": "chain",
+            "words": [
+              {
+                "by": "a",
+                "word": "CRANE",
+                "points": 5
+              }
+            ],
+            "turn": "b",
+            "score": {
+              "a": 5,
+              "b": 0
+            }
+          },
+          "yourTurn": false,
+          "updatedAt": "2026-10-09T07:00:00Z"
+        },
+        {
+          "id": "7",
+          "kind": "ttt",
+          "opponentId": "k",
+          "opponentName": "K",
+          "me": "a",
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "b",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "yourTurn": false,
+          "updatedAt": "2026-10-08T07:00:00Z"
+        }
+      ],
+      "layout": {
+        "cards": [
+          {
+            "friendId": "j",
+            "name": "johnnyauer",
+            "online": true,
+            "presence": "playing Classic",
+            "waiting": 5,
+            "headline": "5 games waiting on you",
+            "tiles": [
+              {
+                "gameId": "4",
+                "kind": "pass",
+                "word": "3 of 6",
+                "yourTurn": true
+              },
+              {
+                "gameId": "2",
+                "kind": "ttt",
+                "word": "Your move",
+                "yourTurn": true
+              },
+              {
+                "gameId": "1",
+                "kind": "rps",
+                "word": "Your pick",
+                "yourTurn": true
+              },
+              {
+                "gameId": "3",
+                "kind": "coin",
+                "word": "Your call",
+                "yourTurn": true
+              },
+              {
+                "gameId": "5",
+                "kind": "ghost",
+                "word": "GHO…",
+                "yourTurn": true
+              }
+            ],
+            "theirTurn": [
+              {
+                "gameId": "6",
+                "kind": "chain",
+                "word": "Their word",
+                "yourTurn": false
+              }
+            ],
+            "theirTurnLine": "1 waiting on johnnyauer"
+          },
+          {
+            "friendId": "d",
+            "name": "Doug",
+            "online": true,
+            "presence": "on now",
+            "waiting": 0,
+            "headline": "",
+            "tiles": [],
+            "theirTurn": [],
+            "theirTurnLine": ""
+          },
+          {
+            "friendId": "k",
+            "name": "Kate",
+            "online": false,
+            "presence": null,
+            "waiting": 0,
+            "headline": "",
+            "tiles": [],
+            "theirTurn": [
+              {
+                "gameId": "7",
+                "kind": "ttt",
+                "word": "Their move",
+                "yourTurn": false
+              }
+            ],
+            "theirTurnLine": "1 waiting on Kate"
+          }
+        ],
+        "rest": []
+      }
+    },
+    {
+      "name": "offline-with-turn-beats-offline-without",
+      "friends": [
+        {
+          "id": "a",
+          "username": "Aaron",
+          "online": false,
+          "activity": null,
+          "lastSeenMs": null
+        },
+        {
+          "id": "z",
+          "username": "Zed",
+          "online": false,
+          "activity": null,
+          "lastSeenMs": null
+        },
+        {
+          "id": "m",
+          "username": "Mo",
+          "online": true,
+          "activity": null,
+          "lastSeenMs": null
+        }
+      ],
+      "games": [
+        {
+          "id": "1",
+          "kind": "rps",
+          "opponentId": "z",
+          "opponentName": "Z",
+          "me": "a",
+          "state": {
+            "kind": "rps",
+            "picks": {},
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "yourTurn": true,
+          "updatedAt": "2026-10-09T10:00:00Z"
+        },
+        {
+          "id": "2",
+          "kind": "ttt",
+          "opponentId": "a",
+          "opponentName": "A",
+          "me": "a",
+          "state": {
+            "kind": "ttt",
+            "board": [
+              "a",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "starter": "a",
+            "turn": "b",
+            "games": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "yourTurn": false,
+          "updatedAt": "2026-10-09T12:00:00Z"
+        }
+      ],
+      "layout": {
+        "cards": [
+          {
+            "friendId": "m",
+            "name": "Mo",
+            "online": true,
+            "presence": "on now",
+            "waiting": 0,
+            "headline": "",
+            "tiles": [],
+            "theirTurn": [],
+            "theirTurnLine": ""
+          },
+          {
+            "friendId": "z",
+            "name": "Zed",
+            "online": false,
+            "presence": null,
+            "waiting": 1,
+            "headline": "1 game waiting on you",
+            "tiles": [
+              {
+                "gameId": "1",
+                "kind": "rps",
+                "word": "Your pick",
+                "yourTurn": true
+              }
+            ],
+            "theirTurn": [],
+            "theirTurnLine": ""
+          },
+          {
+            "friendId": "a",
+            "name": "Aaron",
+            "online": false,
+            "presence": null,
+            "waiting": 0,
+            "headline": "",
+            "tiles": [],
+            "theirTurn": [
+              {
+                "gameId": "2",
+                "kind": "ttt",
+                "word": "Their move",
+                "yourTurn": false
+              }
+            ],
+            "theirTurnLine": "1 waiting on Aaron"
+          }
+        ],
+        "rest": []
+      }
+    },
+    {
+      "name": "stranger-game",
+      "friends": [
+        {
+          "id": "d",
+          "username": "Doug",
+          "online": false,
+          "activity": null,
+          "lastSeenMs": null
+        }
+      ],
+      "games": [
+        {
+          "id": "1",
+          "kind": "rps",
+          "opponentId": "gone",
+          "opponentName": "GONE",
+          "me": "a",
+          "state": {
+            "kind": "rps",
+            "picks": {},
+            "rounds": [],
+            "score": {
+              "a": 0,
+              "b": 0
+            }
+          },
+          "yourTurn": true,
+          "updatedAt": "2026-10-09T10:00:00Z"
+        }
+      ],
+      "layout": {
+        "cards": [
+          {
+            "friendId": "gone",
+            "name": "GONE",
+            "online": false,
+            "presence": null,
+            "waiting": 1,
+            "headline": "1 game waiting on you",
+            "tiles": [
+              {
+                "gameId": "1",
+                "kind": "rps",
+                "word": "Your pick",
+                "yourTurn": true
+              }
+            ],
+            "theirTurn": [],
+            "theirTurnLine": ""
+          }
+        ],
+        "rest": [
+          "Doug"
+        ]
+      }
+    }
+  ],
+  "words": {
+    "waiting": [
+      {
+        "n": 0,
+        "text": ""
+      },
+      {
+        "n": 1,
+        "text": "1 game waiting on you"
+      },
+      {
+        "n": 2,
+        "text": "2 games waiting on you"
+      },
+      {
+        "n": 6,
+        "text": "6 games waiting on you"
+      }
+    ],
+    "theirTurn": [
+      {
+        "n": 0,
+        "name": "Johnny",
+        "text": ""
+      },
+      {
+        "n": 1,
+        "name": "Johnny",
+        "text": "1 waiting on Johnny"
+      },
+      {
+        "n": 3,
+        "name": "Johnny",
+        "text": "3 waiting on Johnny"
+      }
+    ],
+    "presence": [
+      {
+        "online": false,
+        "activity": null,
+        "text": null
+      },
+      {
+        "online": true,
+        "activity": null,
+        "text": "on now"
+      },
+      {
+        "online": true,
+        "activity": "Classic",
+        "text": "playing Classic"
+      },
+      {
+        "online": true,
+        "activity": "",
+        "text": "on now"
+      }
+    ],
+    "all": [
+      {
+        "n": 0,
+        "text": "All friends · 0"
+      },
+      {
+        "n": 1,
+        "text": "All friends · 1"
+      },
+      {
+        "n": 12,
+        "text": "All friends · 12"
+      }
+    ]
+  }
+}

@@ -4,6 +4,7 @@
      ships as art + registry entries with no code; keep every seasonal drawable through resource
      shrinking: cast skins + props (art_<season>_*), titles (art_title_<season>_*), walls
      (art_wall_<season>_*), Home banners (art_scene_banner_*). The normal titles / walls these
-     wildcards also match are referenced from code anyway. -->
+     wildcards also match are referenced from code anyway. 2.8: the bubble-letter glyphs (bubble_*, BubbleGlyphTint) and the
+     celebration kit (celebrate_*, SweepCelebration) are looked up by name too. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/art_halloween_*,@drawable/art_title_*,@drawable/art_wall_*,@drawable/art_scene_banner_*" />
+    tools:keep="@drawable/art_halloween_*,@drawable/art_title_*,@drawable/art_wall_*,@drawable/art_scene_banner_*,@drawable/bubble_*,@drawable/celebrate_*" />

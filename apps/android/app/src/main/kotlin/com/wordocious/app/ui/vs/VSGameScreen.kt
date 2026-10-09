@@ -352,29 +352,31 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             ) {
-                VsTintedCard(Modifier.widthIn(max = 380.dp).fillMaxWidth(), corner = 18.dp, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)) {
-                  Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // A7: a waiting character that isn't the page host (S).
-                    VsCastPose(com.wordocious.app.ui.MascotId.I, "waiting", 84.dp)
-                    VsSectionLabel("YOUR INVITE CODE")
-                    VsNumber(inviteCode, 30.sp, Modifier.semantics { contentDescription = "Invite code " + inviteCode.toCharArray().joinToString(" ") })
-                    Text(
-                        "Share this code — the match starts when your friend joins.",
-                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center,
+                // 2.8 wave 3 (item 22): a little lobby, not an empty card: your mascot on the stage, the "?" seat, ONE status
+                // line, a real counting timer and the keepy-uppy tile; the invite as compact family Share + Copy code buttons.
+                val waitStart = androidx.compose.runtime.remember { System.currentTimeMillis() }
+                var copied by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                androidx.compose.runtime.LaunchedEffect(copied) { if (copied) { kotlinx.coroutines.delay(1_600); copied = false } }
+                WaitingScene(com.wordocious.core.WaitingKind.FRIEND, name = null, startedAtMs = waitStart, modifier = Modifier.widthIn(max = 380.dp))
+                VsNumber(inviteCode, 24.sp, Modifier.semantics { contentDescription = "Invite code " + inviteCode.toCharArray().joinToString(" ") })
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    com.wordocious.app.ui.HelperButton(
+                        "Share", onClick = {
+                            com.wordocious.app.data.ShareEvents.log("link_invite", vm.mode.name.lowercase(), "vs_lobby")
+                            com.wordocious.app.data.ShareHelper.share(context, com.wordocious.app.data.ShareHelper.inviteShareText(false, vsModeName(vm.mode), com.wordocious.app.data.ShareHelper.liveInviteUrl(inviteCode)), "Invite a friend")
+                        },
+                        tint = VS_ACCENT, icon = com.wordocious.app.ui.FamIcon.SHARE, contentDescription = "Share invite",
                     )
-                    VsTealButton("SHARE INVITE", Modifier.fillMaxWidth(), fill = true, size = com.wordocious.app.ui.CandySize.LARGE, icon = com.wordocious.app.ui.CandyIcon.SHARE) {
-                        com.wordocious.app.data.ShareEvents.log("link_invite", vm.mode.name.lowercase(), "vs_lobby")
-                        com.wordocious.app.data.ShareHelper.share(context, com.wordocious.app.data.ShareHelper.inviteShareText(false, vsModeName(vm.mode), com.wordocious.app.data.ShareHelper.liveInviteUrl(inviteCode)), "Invite a friend")
-                    }
-                  }
+                    com.wordocious.app.ui.HelperButton(
+                        if (copied) "Copied" else "Copy code", onClick = {
+                            val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            cm.setPrimaryClip(android.content.ClipData.newPlainText("Invite code", inviteCode))
+                            copied = true
+                        },
+                        tint = VS_ACCENT, icon = com.wordocious.app.ui.FamIcon.COPY, contentDescription = "Copy invite code",
+                    )
                 }
-                // BI24: the cast wave, not a bare spinner.
-                com.wordocious.app.ui.CastLoader(null)
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    VsCapsLabel("WAITING FOR YOUR FRIEND ·", color = VsTeal.label, fontSize = 11.sp)
-                    VsNumber("#${position + 1}", 13.sp)
-                }
-                VsSoftPill("CANCEL", color = com.wordocious.app.ui.CandyColor.PEACH) { onHome() }
+                com.wordocious.app.ui.QuietButton("Cancel", onClick = onHome)
                 message?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center) }
             }
         }

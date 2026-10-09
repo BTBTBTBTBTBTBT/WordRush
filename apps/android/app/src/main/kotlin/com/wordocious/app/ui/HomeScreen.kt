@@ -299,6 +299,10 @@ fun HomeScreen(
                 val s = com.wordocious.app.data.MatchStatsService.dailySweepStats()
                 value = com.wordocious.core.DayStreaks(s.currentSweepStreak, s.currentFlawlessStreak)
             }
+            // 2.8 items 7 + 48: the best flawless run ever, so the headline can say "NEW BEST!".
+            val bestFlawless by produceState(initialValue = 0, recordedTick, authUserId) {
+                value = if (authUserId == null) 0 else com.wordocious.app.data.MatchStatsService.dailySweepStats().bestFlawlessStreak
+            }
             val puzzleStreaks by produceState(
                 initialValue = com.wordocious.core.DayStreaks(cachedRows?.puzzlesSweep ?: 0, cachedRows?.puzzlesFlawless ?: 0),
                 recordedTick, authUserId, puzzleKeys,
@@ -326,7 +330,7 @@ fun HomeScreen(
             // X: the season's Home banner art now sits INSIDE the banner card's scene band
             // (HomeBannerView, iOS / web parity), not full width above it.
             HomeBannerView(
-                word = BannerRow(wordCards, progress(wordKeys), wordStreaks, wordKeys.sumOf { unlimitedCounts[it] ?: 0 }),
+                word = BannerRow(wordCards, progress(wordKeys), wordStreaks, wordKeys.sumOf { unlimitedCounts[it] ?: 0 }, bestFlawless),
                 puzzles = BannerRow(puzzleCards, progress(puzzleKeys), puzzleStreaks, puzzleKeys.sumOf { unlimitedCounts[it] ?: 0 }),
                 completions = completions,
                 unlimited = unlimitedMode,

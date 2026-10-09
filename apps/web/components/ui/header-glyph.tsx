@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
-import { SoftNum } from '@/components/ui/soft-number';
+import { PopNum } from '@/components/ui/pop-num';
 import { RoundIconSlot } from '@/components/ui/family-button';
 
 // Header controls (docs/FINISH_SPEC.md A3): the soft 3D icons drawn bare — no
@@ -45,7 +45,7 @@ export function HeaderGlyph({
         <Icon3D name={icon} size={size} priority style={iconStyle} />
         {overlay}
       </span>
-      {value != null && <SoftNum size={GLYPH_NUM_SIZE}>{value}</SoftNum>}
+      {value != null && <PopNum value={value} size={GLYPH_NUM_SIZE} />}
     </>
   );
   const cls = `hdr-glyph ${className}`;

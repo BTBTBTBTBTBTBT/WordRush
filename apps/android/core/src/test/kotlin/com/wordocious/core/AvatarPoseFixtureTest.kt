@@ -220,7 +220,7 @@ class AvatarPoseFixtureTest {
     @Test
     fun withheld_match() {
         val rows = root["withheld"]!!.jsonArray.map { it.jsonObject }
-        assertEquals((AvatarPoses.IDS.size - 1) * data.rigs.size, rows.size)
+        assertEquals((AvatarPoses.IDS.size - 1 + AvatarPoses.CODE_POSES.size) * data.rigs.size, rows.size)
         for (r in rows) {
             val pose = str(r["pose"]); val body = str(r["body"])
             assertEquals("$pose/$body", r["items"]!!.jsonArray.map { str(it) }, AvatarPoses.withheld(pose, body, data))
@@ -261,5 +261,34 @@ class AvatarPoseFixtureTest {
         assertFalse(avatarToJson(v("""{"pose":"none"}""")).containsKey("pose"))
         assertEquals(JsonPrimitive("hug"), avatarToJson(v("""{"pose":"hug","body":"star"}"""))["pose"])
         assertFalse(avatarToJson(fb).containsKey("pose"))
+    }
+
+    // ── 2.8 item 13: reactions, place poses, the code-composed clap ──
+
+    @Test
+    fun place_poses_reactions_and_clap_match() {
+        for (row in root["placePoses"]!!.jsonArray.map { it.jsonObject }) {
+            assertEquals("place $row", str(row["pose"]), AvatarPoses.placePose(d(row["place"]).toInt()))
+        }
+        val secs = root["reactionSeconds"]!!.jsonObject
+        for (r in AvatarReaction.entries) assertEquals(r.id, d(secs[r.id]), AvatarPoses.REACTION_SECONDS.getValue(r), tol)
+        val hops = root["reactionHops"]!!.jsonObject
+        for (r in AvatarReaction.entries) {
+            val h = AvatarPoses.REACTION_HOPS[r]
+            if (h == null) assertFalse(r.id, hops.containsKey(r.id))
+            else {
+                val w = hops[r.id]!!.jsonObject
+                assertEquals(d(w["n"]), h.n, tol); assertEquals(d(w["per"]), h.per, tol); assertEquals(d(w["amp"]), h.amp, tol)
+            }
+        }
+        val clap = AvatarPoses.poseDef("clap", data)!!
+        assertFalse(AvatarPoses.IDS.contains("clap"))
+        for (r in root["clapMatrices"]!!.jsonArray.map { it.jsonObject }) {
+            val m = AvatarPoses.matrices(data.rigs.getValue(str(r["body"])), clap.spec)
+            val want = r["m"]!!.jsonObject
+            closeMat("clap root", mat(want["root"]), m.root); closeMat("clap armL", mat(want["armL"]), m.armL)
+            closeMat("clap armR", mat(want["armR"]), m.armR); closeMat("clap feet", mat(want["feet"]), m.feet)
+        }
+        assertEquals(AvatarPoses.withheld("hug", "classic", data), AvatarPoses.withheld("clap", "classic", data))
     }
 }

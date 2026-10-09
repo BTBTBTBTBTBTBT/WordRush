@@ -85,6 +85,9 @@ struct GuideSheet: View {
     @State private var showFull: Bool
     @State private var heroIn = false
     @State private var opened = false
+    /// Wave 3 (item 12): this is the player's first look at the game's card, so the button reads
+    /// "Let's play!" and closing it records the game as seen (synced). Decided once, on open.
+    @State private var firstPlay = false
 
     /// `startExpanded`: open with the full guide showing (e.g. from a Guides list).
     init(mode: GameMode, startExpanded: Bool = false) {
@@ -114,9 +117,11 @@ struct GuideSheet: View {
             }
         }
         .task { await service.load() }
+        .onDisappear { if firstPlay { TutorialsSeen.shared.mark(GuideService.slug(for: mode)) } }
         .onAppear {
             guard !opened else { return }
             opened = true
+            firstPlay = TutorialsSeen.shared.shouldAutoShow(GuideService.slug(for: mode))
             // §U: a popup / sheet opening plays the `whoosh`.
             Feedback.whoosh()
             if still { heroIn = true } else {
@@ -180,7 +185,7 @@ struct GuideSheet: View {
             .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(dark ? accent.opacity(0.12) : accent.wash(0.08)))
 
-            Button { dismiss() } label: { CandyLabel(title: "Got it", symbol: "checkmark") }
+            Button { dismiss() } label: { CandyLabel(title: firstPlay ? PocketHelp.buttonFirst : PocketHelp.buttonAgain, symbol: "checkmark") }
                 .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
                 .padding(.top, 2)
         }

@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { HeaderBack } from '@/components/ui/page-header';
+import { GAME_HEADER_GLYPH, HeaderBack } from '@/components/ui/page-header';
+import { PocketHelpCard } from './pocket-help-card';
+import { useTutorialsSeen } from '@/lib/tutorials-seen';
 import { Icon3D } from '@/components/ui/icon3d';
 import {
-  FRIENDLY_TITLES, LIVE_OPTIMISTIC_TIMEOUT_MS, LIVE_PLAY_SWITCH, LIVE_REACTIONS, LIVE_REACT_LIFETIME_MS, PRESENCE_COPY,
-  beginMove, confirmMove, displayed, emptySnapshot, pollIntervalMs, presenceLabel, receiveView, rejectMove, whoseTurn,
+  FIRST_PLAY_FLAG, FRIENDLY_TITLES, LIVE_OPTIMISTIC_TIMEOUT_MS, LIVE_PLAY_SWITCH, LIVE_REACTIONS, LIVE_REACT_LIFETIME_MS, PRESENCE_COPY,
+  beginMove, confirmMove, displayed, emptySnapshot, pocketTutorialKey, pollIntervalMs, presenceLabel, receiveView, rejectMove, shouldAutoShowTutorial, whoseTurn,
   type FriendlyMove, type LiveReaction, type LiveSnapshot,
 } from '@wordle-duel/core';
 import { useFlags } from '@/hooks/use-flags';
@@ -17,7 +19,7 @@ import { ReactionIcon } from './reaction-icon';
 import { RoundIconSlot } from '@/components/ui/family-button';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
-import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
+import { fetchGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
 import { FR, KIND_COLOR, KIND_GRADIENT, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
 import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
 import { FriendAvatar, GameGlyph, Sheet } from './friends-ui';
@@ -42,9 +44,6 @@ import { softMix } from '@/lib/soft-surface';
 // A8, L): the Friends wallpaper (light-only), the score card with the game's
 // top bar and soft numbers, every board on the shared game tray, candy actions.
 
-/** A danger candy (Resign): the candy look recolored red. */
-const DANGER = { ['--candy-1' as string]: '#fb7185', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: '#8f1919' } as React.CSSProperties;
-
 /** Floating live reactions currently on screen. */
 interface Floater { id: number; reaction: LiveReaction; mine: boolean; x: number }
 
@@ -68,6 +67,11 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmClose, setConfirmClose] = useState(false);
+  // 2.8 items 9c + 12: the "?" How to Play card; it also opens once by itself the first time (synced).
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpFirst, setHelpFirst] = useState(false);
+  const helpAuto = useRef(false);
+  const { seen: tutorialsSeen, mark: markTutorial } = useTutorialsSeen();
   const [rematching, setRematching] = useState(false);
   const [revealKey, setRevealKey] = useState(0);
   const [, setFriendsTick] = useState(0);
@@ -232,13 +236,6 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     }
   }, [id, accept, publish]);
 
-  const resign = async () => {
-    setConfirmClose(false);
-    const g = await resignGame(id);
-    if (g) accept(g, true);
-    else setError('Could not resign. Try again.');
-  };
-
   const rematch = async () => {
     if (!game || rematching) return;
     setRematching(true);
@@ -246,6 +243,20 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     setRematching(false);
     if ('error' in r) { setError(r.error); return; }
     router.push(`/friends/games/${r.game.id}`);
+  };
+
+  const gameKind = game?.kind ?? null;
+  useEffect(() => {
+    if (helpAuto.current || !gameKind) return;
+    if (shouldAutoShowTutorial({ live: isLive(FIRST_PLAY_FLAG), seen: tutorialsSeen, key: pocketTutorialKey(gameKind) })) {
+      helpAuto.current = true;
+      setHelpFirst(true);
+      setHelpOpen(true);
+    }
+  }, [gameKind, tutorialsSeen, isLive]);
+  const closeHelp = () => {
+    setHelpOpen(false);
+    if (helpFirst && gameKind) { markTutorial(pocketTutorialKey(gameKind)); setHelpFirst(false); }
   };
 
   const close = () => {
@@ -269,6 +280,18 @@ export function FriendlyGameScreen({ id }: { id: string }) {
           {title}
         </span>
       </span>
+      {/* 9c: the family "?" in the top-right corner, where every other game keeps it. */}
+      {game && (
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          aria-label="How to play"
+          aria-haspopup="dialog"
+          className="absolute right-0 hdr-glyph w-11 h-11 flex items-center justify-center"
+        >
+          <Icon3D name="help" size={GAME_HEADER_GLYPH} />
+        </button>
+      )}
     </div>
   );
 
@@ -454,21 +477,19 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         </div>
       )}
 
+      {helpOpen && game && <PocketHelpCard kind={game.kind} onClose={closeHelp} firstPlay={helpFirst} />}
+
       {confirmClose && (
+        // 2.8 item 9: ONE themed button. No Resign in-game (it lives in the friend's ⋯ menu on the Friends tab);
+        // tapping the scrim or Escape keeps you playing.
         <Sheet onClose={() => setConfirmClose(false)} label="Leave the game">
-          <div className="space-y-2.5">
-            <p className="text-[16px] font-black" style={{ color: FR.ink }}>LEAVE THE GAME?</p>
+          <div className="space-y-3 text-center pb-1">
+            <p className="text-[16px] font-black" style={{ color: FR.ink }}>Your game waits for you</p>
             <p className="text-[12.5px] font-bold" style={{ color: FR.label }}>
-              It keeps going. Come back from YOUR TURN on the Friends tab any time in the next 3 days.
+              {them.name} gets a ping. It keeps going for 3 days.
             </p>
             <CastButton screen="pink" color="pink" size="md" block onClick={() => router.push('/friends')}>
               Back to Friends
-            </CastButton>
-            <CandyButton color="peach" size="md" block onClick={() => setConfirmClose(false)}>
-              Keep playing
-            </CandyButton>
-            <CastButton screen="pink" size="sm" block onClick={resign} style={DANGER}>
-              Resign ({them.name} wins)
             </CastButton>
           </div>
         </Sheet>

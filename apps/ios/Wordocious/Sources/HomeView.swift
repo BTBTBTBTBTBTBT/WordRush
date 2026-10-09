@@ -48,6 +48,8 @@ struct HomeView: View {
         let day: String
         /// Daily Sweep / Flawless, or the Puzzles (More Games) sweep.
         var more = false
+        /// 2.8 item 13: a flawless celebration cheers bigger than a sweep (the living mascot's reaction).
+        var flawless = false
     }
     @State private var sweepCeleb: SweepCeleb?
     /// FINISH_SPEC BI16: celebrations earned but not yet shown. They wait for a
@@ -58,6 +60,8 @@ struct HomeView: View {
     /// the overlap that latches the root shell's layout mid-transition.)
     @State private var celebQueue: [SweepCeleb] = []
     @State private var celebWaiter: Task<Void, Never>?
+    /// How many of today's games had finished when Home last looked (the host mascot reacts when it grows).
+    @State private var progressSeen = -1
     @AppStorage("sweep-celebrated-day") private var sweepCelebratedDay = ""
 
     /// Show the celebration once per local day, ONLY at the moment a daily
@@ -80,7 +84,7 @@ struct HomeView: View {
         // BI16: queued for a calm moment (a Flawless upgrade replaces a still-
         // waiting Sweep for the same day rather than stacking behind it).
         celebQueue.removeAll { !$0.more && $0.day == day }
-        queueCelebration(SweepCeleb(byMode: completions.byMode, day: day))
+        queueCelebration(SweepCeleb(byMode: completions.byMode, day: day, flawless: tier == "flawless"))
     }
 
     /// BI16: queue a celebration and (re)start the single waiter that presents
@@ -657,6 +661,14 @@ struct HomeView: View {
                     checkMoreSweepCelebration()
                 }
             }
+            // 2.8 item 13: when the day's counter moved while Home was away (7 -> 8 OF 18), the host mascot reacts as Home returns.
+            .onAppear {
+                let n = completions.completedCount
+                if progressSeen >= 0, n > progressSeen {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { MascotMoment.post(.progress) }
+                }
+                progressSeen = n
+            }
             .onChange(of: celebQueue.count) { _ in syncCelebrationPending() }
             .onChange(of: sweepCeleb?.id) { _ in syncCelebrationPending() }
             .onChange(of: moreCeleb?.id) { _ in syncCelebrationPending() }
@@ -1038,7 +1050,7 @@ struct HomeView: View {
         moreSweepCelebratedDay = token
         // BI16: after any Daily Sweep already queued, at its own calm moment.
         celebQueue.removeAll { $0.more && $0.day == day }
-        queueCelebration(SweepCeleb(byMode: completions.byMode, day: day, more: true))
+        queueCelebration(SweepCeleb(byMode: completions.byMode, day: day, more: true, flawless: tier == .flawless))
     }
 }
 

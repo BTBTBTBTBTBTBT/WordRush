@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2.8 wave 3: the pocket-game pieces, tutorial frames, lobby scene and toast art. The How to Play card looks the
+     pieces up by name (PocketHelp art names -> getIdentifier), so resource shrinking must keep them. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/art_pocket_*,@drawable/art_tut_*,@drawable/art_lobby_*,@drawable/art_toast_*" />

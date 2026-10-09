@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/lib/auth-context';
 import { isFlagOn, indexFlags, type AppFlag } from '@/lib/flags';
-import { isFeatureLive } from '@wordle-duel/core';
+import { AVATAR_LIVE_CONFIG, isFeatureLive } from '@wordle-duel/core';
 
 const CACHE_KEY = 'wordocious-app-flags';
 
@@ -53,4 +53,16 @@ export function useFlags(): { isOn: (flagKey: string | null | undefined) => bool
   const isLive = useCallback((key: string) => isFeatureLive(key, flags, viewer.isAdmin || viewer.role === 'admin' || viewer.role === 'tester'),
     [flags, viewer.isAdmin, viewer.role]); // eslint-disable-line react-hooks/exhaustive-deps
   return { isOn, isLive, loading: isLoading && !data && !error };
+}
+
+/**
+ * 2.8 item 13: the living mascot's gate is the remote `living_mascot` off-switch (fail-open), mirrored into core's
+ * AVATAR_LIVE_CONFIG so the pure layout / pose code (default pose, the Pose tab) reads the same answer. Components
+ * that draw a living mascot read this hook so they re-render when the flags land.
+ */
+export function useLivingMascotOn(): boolean {
+  const { isLive } = useFlags();
+  const on = isLive('living_mascot');
+  AVATAR_LIVE_CONFIG.livingMascot = on;
+  return on;
 }

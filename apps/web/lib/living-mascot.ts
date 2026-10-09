@@ -8,14 +8,15 @@
 
 import { AVATAR_LAUGH_RATE, AVATAR_LIVE_CONFIG, type AvatarReaction } from '@wordle-duel/core';
 
-export const LIVING_MASCOT_ON: boolean = AVATAR_LIVE_CONFIG.livingMascot;
+/** Whether the living mascot is on right now (the remote `living_mascot` off-switch, mirrored into core's config by useLivingMascot). */
+export const livingMascotOn = (): boolean => AVATAR_LIVE_CONFIG.livingMascot;
 
 /** The window event a moment fires (detail: { kind }). */
 export const MASCOT_MOMENT_EVENT = 'wd-mascot-moment';
 
 /** Tell the player's living mascot a moment happened (a no-op while the flag is off). */
 export function emitMascotMoment(kind: AvatarReaction): void {
-  if (!LIVING_MASCOT_ON || typeof window === 'undefined') return;
+  if (!livingMascotOn() || typeof window === 'undefined') return;
   try { window.dispatchEvent(new CustomEvent(MASCOT_MOMENT_EVENT, { detail: { kind } })); } catch { /* never throw */ }
 }
 

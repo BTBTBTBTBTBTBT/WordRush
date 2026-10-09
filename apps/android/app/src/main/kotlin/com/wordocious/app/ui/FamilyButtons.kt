@@ -80,6 +80,11 @@ enum class FamIcon(@DrawableRes val res: Int) {
     REFRESH(R.drawable.art_fam_ic_refresh), SPARKLES(R.drawable.art_fam_ic_sparkles), PENCIL(R.drawable.art_fam_ic_pencil),
     ERASE(R.drawable.art_fam_ic_erase), XMARK(R.drawable.art_fam_ic_xmark), PLAY(R.drawable.art_fam_ic_play),
     CHART(R.drawable.art_fam_ic_chart),
+    // 2.8 wave 3: the second icon set (share / copy / more / plus / minus / link / trash / bell / search / lock / heart).
+    SHARE(R.drawable.art_fam_ic_share), COPY(R.drawable.art_fam_ic_copy), MORE(R.drawable.art_fam_ic_more),
+    PLUS(R.drawable.art_fam_ic_plus), MINUS(R.drawable.art_fam_ic_minus), LINK(R.drawable.art_fam_ic_link),
+    TRASH(R.drawable.art_fam_ic_trash), BELL(R.drawable.art_fam_ic_bell), SEARCH(R.drawable.art_fam_ic_search),
+    LOCK(R.drawable.art_fam_ic_lock), HEART(R.drawable.art_fam_ic_heart),
     ;
 
     companion object {

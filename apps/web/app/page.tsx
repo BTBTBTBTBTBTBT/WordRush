@@ -102,7 +102,7 @@ export default function HomePage() {
   // The banner rows' streaks (home redesign, 2026-10-01): Wordocious from the
   // Daily Sweep stats, Puzzles counted from daily_results; Unlimited's per-mode
   // "played today" counts.
-  const [sweepStreaks, setSweepStreaks] = useState(() => readPageCache<{ sweep: number; flawless: number }>('home:sweep-streaks', { day: getTodayLocal() }) ?? { sweep: 0, flawless: 0 });
+  const [sweepStreaks, setSweepStreaks] = useState(() => readPageCache<{ sweep: number; flawless: number; bestFlawless?: number }>('home:sweep-streaks', { day: getTodayLocal() }) ?? { sweep: 0, flawless: 0 });
   const [puzzleStreaks, setPuzzleStreaks] = useState(() => readPageCache<{ sweep: number; flawless: number }>('home:puzzle-streaks', { day: getTodayLocal() }) ?? { sweep: 0, flawless: 0 });
   const [unlimitedCounts, setUnlimitedCounts] = useState<Map<string, number>>(new Map());
   const router = useRouter();
@@ -300,8 +300,9 @@ export default function HomePage() {
           if (cancelled) return;
           // Within a day a streak never shrinks — an outage's zeroed read keeps the cached one.
           const day = getTodayLocal();
-          const had = readPageCache<{ sweep: number; flawless: number }>('home:sweep-streaks', { day });
-          const next = { sweep: Math.max(st.currentSweepStreak, had?.sweep ?? 0), flawless: Math.max(st.currentFlawlessStreak, had?.flawless ?? 0) };
+          const had = readPageCache<{ sweep: number; flawless: number; bestFlawless?: number }>('home:sweep-streaks', { day });
+          // 2.8 items 7 + 48: the best flawless run ever rides along so the headline can say "NEW BEST!".
+          const next = { sweep: Math.max(st.currentSweepStreak, had?.sweep ?? 0), flawless: Math.max(st.currentFlawlessStreak, had?.flawless ?? 0), bestFlawless: Math.max(st.bestFlawlessStreak, had?.bestFlawless ?? 0) };
           writePageCache('home:sweep-streaks', next, { day });
           setSweepStreaks((prev) => (sameData(prev, next) ? prev : next));
         })
