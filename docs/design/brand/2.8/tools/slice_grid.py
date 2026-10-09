@@ -18,14 +18,18 @@ LO, HI = 60, 150
 
 
 def autocrop_to_key(im):
-    """The capture may include viewer margins around a non-square image: crop to the bbox of the dominant (key) color."""
-    a = np.asarray(im)
-    q = (a // 32).reshape(-1, 3)
-    keys, counts = np.unique(q, axis=0, return_counts=True)
+    """The capture may include viewer margins around the sheet: crop to the bbox of the dominant SATURATED key color
+    (cyan / magenta / green), ignoring white and grey margins and the ChatGPT card corners."""
+    a = np.asarray(im).astype(np.int32)
+    mx, mn = a.max(axis=2), a.min(axis=2)
+    sat = (mx - mn) > 120
+    q = (a // 32)[sat]
+    keys, counts = np.unique(q.reshape(-1, 3), axis=0, return_counts=True)
     k = keys[np.argmax(counts)] * 32 + 16
     d = np.sqrt(((a.astype(np.float32) - k) ** 2).sum(axis=2))
-    ys, xs = np.nonzero(d < 70)
-    return im.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+    m = d < 70
+    cols = np.where(m.mean(axis=0) > 0.25)[0]; rows = np.where(m.mean(axis=1) > 0.25)[0]
+    return im.crop((cols.min(), rows.min(), cols.max() + 1, rows.max() + 1))
 
 
 def key_sheet(path, edge_px=6, all_pockets=False, decyan=False, crop=False):
