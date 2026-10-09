@@ -21,6 +21,9 @@ import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
 import { ART_SIZE, artSrc } from '@/lib/art';
 import { softPill } from '@/lib/soft-surface';
 import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
+import { MascotAvatar } from '@/components/avatar/mascot-avatar';
+import { useHomeHost } from '@/components/avatar/player-avatar';
+import { emitMascotMoment } from '@/lib/living-mascot';
 
 // One-time full-screen celebration shown when the player completes every daily
 // in the current sweep (docs/FINISH_SPEC.md G3): a full-screen overlay tinted
@@ -79,6 +82,14 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
   // FINISH_SPEC U: Sweep / Flawless = `celebrate` + success-then-heavy haptics.
   useEffect(() => { feedback('celebrate'); }, []);
 
+  // 2.8 items 7 + 13: YOUR mascot celebrates beside the art — living (cheer + hops) when the living mascot is on,
+  // else its static cutout; nothing for a player on the plain cast host. The reaction fires a beat after it mounts.
+  const host = useHomeHost();
+  useEffect(() => {
+    const t = setTimeout(() => emitMascotMoment(flawless ? 'flawless' : 'sweep'), 500);
+    return () => clearTimeout(t);
+  }, [flawless]);
+
   const handleShare = async () => {
     if (sharing) return;
     setSharing(true);
@@ -136,6 +147,11 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
               className="relative select-none pointer-events-none celebrate-spring"
               style={{ height: ART_H, width: 'auto', maxWidth: '86vw', objectFit: 'contain', filter: 'drop-shadow(0 10px 16px rgba(40, 10, 80, 0.35))' }}
             />
+            {host.choice.kind === 'mascot' && (
+              <span aria-hidden="true" className="absolute pointer-events-none" style={{ right: -8, bottom: -6, width: 96, height: 96 }}>
+                <MascotAvatar config={host.choice.config} initial={host.initial} size={96} cutout living />
+              </span>
+            )}
           </div>
 
           <p className="text-sm font-extrabold mt-2 text-white" style={{ textShadow: INK_SHADOW }}>

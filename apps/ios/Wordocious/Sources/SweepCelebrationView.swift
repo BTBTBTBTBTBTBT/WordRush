@@ -31,6 +31,14 @@ struct SweepCelebrationView: View {
         flawless ? (more ? MoreSweepTier.flawless.title : "FLAWLESS VICTORY!") : (more ? MoreSweepTier.sweep.title : "DAILY SWEEP!")
     }
 
+    @ObservedObject private var directory = AvatarDirectory.shared
+    /// 2.8 items 7 + 13: YOUR mascot (the player's own look) celebrates beside the art — living (cheer, hop) when the
+    /// living mascot is on, else its static cutout; nil for a player on the plain cast host (no custom look).
+    private var ownMascot: AvatarConfig? {
+        if case .mascot(let c) = directory.ownHostChoice() { return c }
+        return nil
+    }
+
     @State private var burst = false
     /// §G3: the big art springs in with a bounce (Reduce Motion: a plain fade).
     @State private var artIn = false
@@ -77,6 +85,23 @@ struct SweepCelebrationView: View {
                             .scaleEffect(artIn ? 1 : (still ? 1 : 0.6))
                             .opacity(artIn ? 1 : 0)
                             .accessibilityHidden(true)
+                            .overlay(alignment: .bottomTrailing) {
+                                if let c = ownMascot {
+                                    let initial = AvatarCatalog.initial(AuthService.shared.profile?.username ?? HostLookCache.load()?.username)
+                                    Group {
+                                        if LivingMascotView.canAnimate(c) {
+                                            LivingMascotView(config: c, initial: initial, size: 96, cutout: true, interactive: false)
+                                        } else {
+                                            MascotCutout(config: c, initial: initial, size: 96)
+                                        }
+                                    }
+                                    .shadow(color: .black.opacity(0.18), radius: 3, x: 0, y: 2)
+                                    .scaleEffect(artIn ? 1 : (still ? 1 : 0.4), anchor: .bottom)
+                                    .opacity(artIn ? 1 : 0)
+                                    .offset(x: 18, y: 6)
+                                    .accessibilityHidden(true)
+                                }
+                            }
                     }
                     // 2.8 item 7: current naming — "All 10 Puzzles done today!" / "All 8 Dailies won today!".
                     Text("All \(totalCount) \(more ? "Puzzles" : "Dailies") \(flawless ? "won" : "done") today!")
@@ -137,6 +162,8 @@ struct SweepCelebrationView: View {
             }
         }
         .onAppear {
+            // Your mascot cheers with the celebration (a no-op while the living mascot is off) — a beat after it mounts.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { MascotMoment.post(flawless ? .flawless : .sweep) }
             Feedback.celebrate()   // §U: celebrate · success+heavy
             if still { artIn = true } else {
                 withAnimation(.spring(response: 0.55, dampingFraction: 0.55).delay(0.15)) { artIn = true }

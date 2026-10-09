@@ -11,7 +11,7 @@ import { avatarColorHex, avatarPickConflict, seasonNudgeDue, seasonNudgeKey, sea
 import { pickHomeOffer } from '@/lib/home-offer';
 
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
-import { LIVING_MASCOT_ON } from '@/lib/living-mascot';
+import { useLivingMascotOn } from '@/hooks/use-flags';
 import { artSrc } from '@/lib/art';
 import { avatarBackdrop } from '@/lib/avatar-render';
 import { prefersReducedMotion } from '@/lib/motion';
@@ -171,9 +171,10 @@ export function LiveMascot({ config, initial, size = 176, hopToken = 0, tappable
     hop(false);
   }, [hopToken, hop]);
   const frames = React.useMemo(() => ({ rest: liveFrame(config, 'rest'), blink: liveFrame(config, 'blink'), cheer: liveFrame(config, 'cheer') }), [config]);
+  const livingOn = useLivingMascotOn();
   // 10-06: with the living mascot on, the rigged mascot itself breathes / blinks / poses / laughs (eyes follow
   // the finger); the frame-swap stand-in below is the flag-off path, unchanged
-  if (LIVING_MASCOT_ON) {
+  if (livingOn) {
     return (
       <span ref={hopRef} className="relative block" style={{ width: size, height: size, transformOrigin: '50% 100%' }}>
         <MascotAvatar config={config} initial={initial} size={size} cutout living={tappable ? 'follow' : true} />

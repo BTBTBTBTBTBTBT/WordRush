@@ -200,6 +200,32 @@ final class AvatarPoseTests: XCTestCase {
         XCTAssertNil(AvatarFit.liveLayout(c, small: true, manifest: m, poses: d).pose)
     }
 
+    // MARK: 2.8 item 13 — reactions, place poses, the code-composed clap
+
+    func testPlacePosesAndCodePoseMatchFixture() throws {
+        let f = try fixture()
+        let d = try poses(f)
+        for row in try XCTUnwrap(f["placePoses"] as? [[String: Any]]) {
+            XCTAssertEqual(AvatarPose.placePose(try XCTUnwrap(row["place"] as? Int)), row["pose"] as? String, "\(row)")
+        }
+        let rs = try XCTUnwrap(f["reactionSeconds"] as? [String: Double])
+        for k in AvatarReaction.allCases { XCTAssertEqual(k.seconds, rs[k.rawValue] ?? -1, accuracy: tol, k.rawValue) }
+        let hops = try XCTUnwrap(f["reactionHops"] as? [String: [String: Double]])
+        for k in AvatarReaction.allCases {
+            if let h = k.hops {
+                let want = try XCTUnwrap(hops[k.rawValue], k.rawValue)
+                XCTAssertEqual(h.n, want["n"] ?? -1, accuracy: tol); XCTAssertEqual(h.per, want["per"] ?? -1, accuracy: tol); XCTAssertEqual(h.amp, want["amp"] ?? -1, accuracy: tol)
+            } else { XCTAssertNil(hops[k.rawValue], k.rawValue) }
+        }
+        let clap = try XCTUnwrap(AvatarPose.def("clap", data: d))
+        XCTAssertFalse(AvatarPose.ids.contains("clap"))
+        for row in try XCTUnwrap(f["clapMatrices"] as? [[String: Any]]) {
+            let body = try XCTUnwrap(row["body"] as? String)
+            try close(AvatarPose.matrices(try XCTUnwrap(AvatarPose.rig(body, data: d), body), clap.spec), row["m"], "clap \(body)")
+        }
+        XCTAssertEqual(AvatarPose.withheld("clap", body: "classic", data: d), AvatarPose.withheld("hug", body: "classic", data: d))
+    }
+
     // MARK: Withheld
 
     func testWithheldMatchesFixture() throws {
