@@ -384,11 +384,13 @@ fun ProfileScreen(
     // C3: the swipe order follows THE shared picker (GamePickerCard): Today, All-time, then
     // the WORDOCIOUS tiles (the Sweep tile after Seven) and the PUZZLES tiles — the same
     // catalog ∩ flags filter the picker draws from.
-    val pageOrder = remember(flagTable, flagsLoaded) {
-        val wordCards = MODE_CARDS.filter {
+    val savedGameOrder by com.wordocious.app.data.GameOrderStore.prefs.collectAsState()
+    val pageOrder = remember(flagTable, flagsLoaded, savedGameOrder) {
+        // Item 35: the swipe walks the player's own game order, like the picker tiles.
+        val wordCards = com.wordocious.app.data.GameOrderStore.ordered(MODE_CARDS.filter {
             !it.homeWide && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded)
-        }
-        val puzzleCards = moreDailyModes(MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) })
+        }, com.wordocious.core.GameOrderSection.DAILIES) { it.id }
+        val puzzleCards = com.wordocious.app.data.GameOrderStore.ordered(moreDailyModes(MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }), com.wordocious.core.GameOrderSection.PUZZLES) { it.id }
         val (words, puzzles) = pickerRows(wordCards, puzzleCards, withSweep = true, sweepKey = RAIL_SWEEP)
         statsPageOrder(words.map { it.key }, puzzles.map { it.key }, withSweep = false)
     }

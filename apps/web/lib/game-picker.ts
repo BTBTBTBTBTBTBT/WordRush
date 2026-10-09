@@ -1,3 +1,4 @@
+import { applyGameOrder, PINNED_FIRST_DAILY, sortByOrder, type GameOrderPrefs } from '@wordle-duel/core';
 import { CORE_MODES, MORE_GAME_MODES, type ModeMeta } from './modes.generated';
 
 // The one game picker (docs/FINISH_SPEC.md C2, C2b, C3): the Leaderboard and
@@ -33,12 +34,15 @@ const tile = (m: ModeMeta): PickerTile => ({ key: m.dbKey as string, artId: m.id
 /**
  * The picker's two rows. `flagOn` filters remote-gated games (useFlags().isOn,
  * the same filter Home uses); `sweep` adds the Sweep tile after the last
- * WORDOCIOUS game (C2b).
+ * WORDOCIOUS game (C2b). `order` is the player's saved game order (item 35).
  */
-export function pickerRows(flagOn: (key: string | null) => boolean, { sweep = true }: { sweep?: boolean } = {}): PickerRows {
-  const wordocious = CORE_MODES.filter((m) => !m.homeWide && m.dbKey && m.dailyEligible && flagOn(m.flagKey)).map(tile);
+export function pickerRows(flagOn: (key: string | null) => boolean, { sweep = true, order = null }: { sweep?: boolean; order?: GameOrderPrefs | null } = {}): PickerRows {
+  // The player's own order (item 35) applies to the picker too; Classic stays first, Sweep stays last.
+  const coreModes = CORE_MODES.filter((m) => !m.homeWide && m.dbKey && m.dailyEligible && flagOn(m.flagKey));
+  const wordocious = sortByOrder(coreModes, (m) => m.id, applyGameOrder(coreModes.map((m) => m.id), order?.dailies, PINNED_FIRST_DAILY)).map(tile);
   if (sweep) wordocious.push({ key: SWEEP_KEY, artId: 'sweep', title: 'Daily Sweep', accent: SWEEP_ACCENT });
-  const puzzles = MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey && flagOn(m.flagKey)).map(tile);
+  const puzzleModes = MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey && flagOn(m.flagKey));
+  const puzzles = sortByOrder(puzzleModes, (m) => m.id, applyGameOrder(puzzleModes.map((m) => m.id), order?.puzzles)).map(tile);
   return { wordocious, puzzles };
 }
 

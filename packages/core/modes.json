@@ -67,7 +67,7 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "quadword",
-      "homeSlot": 2,
+      "homeSlot": 1,
       "homeWide": false
     },
     {
@@ -90,7 +90,7 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "octoword",
-      "homeSlot": 3,
+      "homeSlot": 2,
       "homeWide": false
     },
     {
@@ -113,7 +113,7 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "succession",
-      "homeSlot": 4,
+      "homeSlot": 3,
       "homeWide": false
     },
     {
@@ -136,7 +136,7 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "deliverance",
-      "homeSlot": 5,
+      "homeSlot": 6,
       "homeWide": false
     },
     {
@@ -159,7 +159,7 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "six",
-      "homeSlot": 6,
+      "homeSlot": 4,
       "homeWide": false
     },
     {
@@ -182,7 +182,7 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "seven",
-      "homeSlot": 7,
+      "homeSlot": 5,
       "homeWide": false
     },
     {
@@ -205,7 +205,7 @@
       "flagKey": null,
       "category": null,
       "guideSlug": "gauntlet",
-      "homeSlot": 1,
+      "homeSlot": 7,
       "homeWide": false
     },
     {
@@ -274,7 +274,7 @@
       "flagKey": "mode.sudoku",
       "category": "logic",
       "guideSlug": "sudocious",
-      "homeSlot": 111,
+      "homeSlot": 110,
       "homeWide": false
     },
     {
@@ -297,7 +297,7 @@
       "flagKey": "mode.scramble",
       "category": "word",
       "guideSlug": "muddle",
-      "homeSlot": 112,
+      "homeSlot": 118,
       "homeWide": false
     },
     {
@@ -320,7 +320,7 @@
       "flagKey": "mode.hub",
       "category": "word",
       "guideSlug": "hubbub",
-      "homeSlot": 113,
+      "homeSlot": 114,
       "homeWide": false
     },
     {
@@ -343,7 +343,7 @@
       "flagKey": "mode.crossword",
       "category": "trivia",
       "guideSlug": "crosswordocious",
-      "homeSlot": 114,
+      "homeSlot": 116,
       "homeWide": false
     },
     {
@@ -389,7 +389,7 @@
       "flagKey": "mode.ladder",
       "category": "word",
       "guideSlug": "letter-ladder",
-      "homeSlot": 116,
+      "homeSlot": 113,
       "homeWide": false
     },
     {
@@ -435,7 +435,7 @@
       "flagKey": "mode.wordsearch",
       "category": "word",
       "guideSlug": "spyglass",
-      "homeSlot": 118,
+      "homeSlot": 112,
       "homeWide": false
     },
     {
@@ -458,7 +458,7 @@
       "flagKey": "mode.regions",
       "category": "logic",
       "guideSlug": "starsweep",
-      "homeSlot": 119,
+      "homeSlot": 111,
       "homeWide": false
     }
   ],

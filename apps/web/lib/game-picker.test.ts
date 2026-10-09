@@ -5,11 +5,17 @@ import { CORE_MODES } from './modes.generated';
 const all = () => true;
 
 describe('game picker rows (FINISH_SPEC C2b / C3)', () => {
-  it('puts the Sweep broom 9th, right after Seven', () => {
+  it('puts the Sweep broom 9th, right after the last daily', () => {
     const { wordocious } = pickerRows(all);
     expect(wordocious).toHaveLength(9);
-    expect(wordocious.map((t) => t.key)).toEqual(['DUEL', 'GAUNTLET', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', SWEEP_KEY]);
+    expect(wordocious.map((t) => t.key)).toEqual(['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'DUEL_6', 'DUEL_7', 'RESCUE', 'GAUNTLET', SWEEP_KEY]);
     expect(wordocious[8]).toMatchObject({ artId: 'sweep', title: 'Daily Sweep' });
+  });
+  it('a saved player order reorders both rows (Classic stays first, Sweep stays last)', () => {
+    const { wordocious, puzzles } = pickerRows(all, { order: { dailies: ['gauntlet', 'practice', 'seven'], puzzles: ['scramble'] } });
+    expect(wordocious.map((t) => t.key).slice(0, 4)).toEqual(['DUEL', 'GAUNTLET', 'DUEL_7', 'QUORDLE']);
+    expect(wordocious[wordocious.length - 1].key).toBe(SWEEP_KEY);
+    expect(puzzles[0].key).toBe('SCRAMBLE');
   });
   it('leaves Sweep out when asked', () => {
     expect(pickerRows(all, { sweep: false }).wordocious.map((t) => t.key)).not.toContain(SWEEP_KEY);

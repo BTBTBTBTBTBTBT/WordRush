@@ -386,14 +386,21 @@ internal fun rememberNextDaily(currentMode: GameMode): NextDaily {
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
     val fromMoreGames = currentMode.name !in sweepKeys
-    val nextMore = if (!fromMoreGames) null else com.wordocious.app.ui.MORE_CARDS.firstOrNull { c ->
-        c.engineMode != null && c.dailyEligible && c.engineMode != currentMode &&
-            com.wordocious.app.data.FlagsService.isOn(c.flagKey, flagTable, flagsLoaded) &&
-            completions[c.engineMode.name] == null
+    // Item 35: NEXT = the next unplayed game in the PLAYER'S order (default: the catalog's), wrapping.
+    val savedOrder by com.wordocious.app.data.GameOrderStore.prefs.collectAsState()
+    fun pick(list: List<com.wordocious.app.ui.ModeCard>): com.wordocious.app.ui.ModeCard? {
+        val ids = list.map { it.id }
+        val played = list.filter { c -> c.engineMode?.let { completions[it.name] != null } == true }.map { it.id }.toSet()
+        val cur = list.firstOrNull { it.engineMode == currentMode }?.id
+        val nextId = if (cur != null) com.wordocious.core.GameOrder.nextUnplayed(ids, cur, played) else ids.firstOrNull { it !in played }
+        return nextId?.let { id -> list.firstOrNull { it.id == id } }
     }
-    val nextSweep = com.wordocious.app.ui.MODE_CARDS.firstOrNull { c ->
-        c.engineMode != null && c.engineMode.name in sweepKeys && c.engineMode != currentMode && completions[c.engineMode.name] == null
-    }
+    val nextMore = if (!fromMoreGames) null else pick(com.wordocious.app.data.GameOrderStore.ordered(com.wordocious.app.ui.MORE_CARDS.filter { c ->
+        c.engineMode != null && c.dailyEligible && com.wordocious.app.data.FlagsService.isOn(c.flagKey, flagTable, flagsLoaded)
+    }, com.wordocious.core.GameOrderSection.PUZZLES) { it.id })
+    val nextSweep = pick(com.wordocious.app.data.GameOrderStore.ordered(com.wordocious.app.ui.MODE_CARDS.filter { c ->
+        c.engineMode != null && c.engineMode.name in sweepKeys
+    }, com.wordocious.core.GameOrderSection.DAILIES) { it.id })
     val next = nextMore ?: nextSweep
     val sweepTotal = com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
     val allDone = next == null &&

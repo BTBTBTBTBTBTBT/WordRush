@@ -107,7 +107,10 @@ object WidgetBridge {
      *  not read here (the widget renders off the main process' state), so a
      *  flagged-off title still shows; FlagsService gates are the home page's job. */
     private fun puzzleModes(): List<com.wordocious.app.GenMode> =
-        ModeGen.more.filter { it.dailyEligible && it.dbKey != null }
+        com.wordocious.app.data.GameOrderStore.ordered(
+            ModeGen.more.filter { it.dailyEligible && it.dbKey != null },
+            com.wordocious.core.GameOrderSection.PUZZLES,
+        ) { it.id }   // item 35: the player's own order
 
     private fun entry(m: com.wordocious.app.GenMode, c: DailyCompletionsService.Completion?): ModeEntry {
         val (kind, asset, text) = iconSpec(m.id)
@@ -130,7 +133,8 @@ object WidgetBridge {
             // Same source as the header pill (daily streak, NOT the win streak —
             // that mismatch was iOS's 🔥1-vs-🔥19 bug; don't re-import it here).
             val streak = AuthService.headerStreak ?: 0
-            val modes = ModeGen.sweep.map { m -> entry(m, m.dbKey?.let { byMode[it] }) }
+            val modes = com.wordocious.app.data.GameOrderStore.ordered(ModeGen.sweep, com.wordocious.core.GameOrderSection.DAILIES) { it.id }
+                .map { m -> entry(m, m.dbKey?.let { byMode[it] }) }
             val puzzles = puzzleModes().map { m -> entry(m, m.dbKey?.let { byMode[it] }) }
             // Same totals helpers as the banner/celebration/share card, so the
             // widget's points can never disagree with the app. FINISH_SPEC AL: the
