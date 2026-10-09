@@ -114,3 +114,84 @@ export function readCalmInputs(extraPopupUp = false): CalmInputs {
     popupUp: extraPopupUp,
   };
 }
+
+// ── 2.8 item 52: the celebration fires at the right moment ─────────────────
+// Bug (founder 10-09): the Dailies Flawless banner didn't show after the 8th daily; it showed up later, after the
+// player beat a Puzzle. The celebration only ever presented at a CALM moment on Home's root, so when the player left
+// the last daily's finished screen by NEXT (or from another tab) the whole next game ran first. The rule now:
+//   • DUE is computed from LOCAL results the instant the last game of a group finishes (the server only confirms in
+//     the background and never delays it) — `celebrationDue`;
+//   • a LIVE celebration presents the moment nothing is open any more: on Home's root → show; off Home → go Home,
+//     then show; something open → wait (`celebrationAction`);
+//   • leaving a finished screen by NEXT / Leaderboard / any handoff while one is due plays it FIRST (the handoff is
+//     deferred until it closes) — `shouldDeferHandoff`;
+//   • a late source (replay / sync) still waits for calm on Home's root, and a celebration whose day has ended is dropped;
+//   • never twice: the per-day seen tier (`flawless` also covers `sweep`).
+// Same rules: Swift `CelebrationGate`, Kotlin `CelebrationGate`.
+
+export type CelebrationGroup = 'daily' | 'more';
+export type CelebrationTier = 'sweep' | 'flawless';
+
+export interface CelebrationDue {
+  group: CelebrationGroup;
+  tier: CelebrationTier;
+  /** `day:group:tier` — the once-per-day key. */
+  token: string;
+}
+
+export interface CelebrationDueInput {
+  /** Today's local results by game key (won = a win). */
+  results: ReadonlyMap<string, { won: boolean }>;
+  /** The Daily Sweep's game keys (8) and the Puzzles' (10). */
+  dailyKeys: readonly string[];
+  moreKeys: readonly string[];
+  today: string;
+  /** The day the results belong to (a tab alive across midnight may hold yesterday's). */
+  dataDay: string;
+  /** The tier already celebrated today for a group ('flawless' also covers 'sweep'), or null. */
+  seen: (group: CelebrationGroup) => CelebrationTier | null;
+}
+
+/** Which celebrations are due right now, from local results alone (Daily Sweep first, then Puzzles). */
+export function celebrationDue(i: CelebrationDueInput): CelebrationDue[] {
+  if (i.dataDay !== i.today) return [];
+  const out: CelebrationDue[] = [];
+  for (const [group, keys] of [['daily', i.dailyKeys], ['more', i.moreKeys]] as const) {
+    if (keys.length === 0) continue;
+    const rows = keys.map((k) => i.results.get(k));
+    if (rows.some((r) => !r)) continue;
+    const wins = rows.filter((r) => r!.won).length;
+    // A "sweep" with zero recorded wins is stale / degenerate data, never a real day of play.
+    if (wins === 0) continue;
+    const tier: CelebrationTier = wins >= keys.length ? 'flawless' : 'sweep';
+    const seen = i.seen(group);
+    if (seen === 'flawless' || seen === tier) continue;
+    out.push({ group, tier, token: `${i.today}:${group}:${tier}` });
+  }
+  return out;
+}
+
+export type CelebrationAction = 'present' | 'goHomeThenPresent' | 'wait' | 'drop';
+
+/** What to do with a queued celebration right now. */
+export function celebrationAction(i: {
+  source: CelebrationSource;
+  onHomeRoot: boolean;
+  anythingOpen: boolean;
+  popupUp: boolean;
+  celebrationDay: string;
+  today: string;
+}): CelebrationAction {
+  if (shouldDrop(i.celebrationDay, i.today)) return 'drop';
+  if (i.anythingOpen || i.popupUp) return 'wait';
+  if (i.onHomeRoot) return 'present';
+  return i.source === 'live' ? 'goHomeThenPresent' : 'wait';
+}
+
+/**
+ * A game handoff (NEXT daily, Keep playing, Leaderboard) must wait while a celebration is due or on screen, so the
+ * Flawless / Sweep plays the moment the last finished screen is left, never after the next game.
+ */
+export function shouldDeferHandoff(pendingCelebrations: number): boolean {
+  return pendingCelebrations > 0;
+}

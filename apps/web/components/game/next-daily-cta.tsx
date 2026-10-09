@@ -11,6 +11,8 @@ import { ArtScene } from '@/components/ui/art-scene';
 import { PAGE_SCENES } from '@/lib/art';
 import { accentInk, softCard } from '@/lib/soft-surface';
 import { UnlimitedCard } from './finished-kit';
+import { useCelebrationPending } from '@/lib/use-celebration-pending';
+import { shouldDeferHandoff } from '@/lib/celebration-gate';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -34,6 +36,8 @@ const SWEEP_INK = accentInk('#f5a524', '#92400e');
  */
 export function NextDailyCta({ currentMode }: { currentMode: string }) {
   const { todayDailies } = useDailyCompletions();
+  // 2.8 item 52: while a Flawless / Sweep celebration is due, every handoff goes Home first (it plays there).
+  const homeFirst = shouldDeferHandoff(useCelebrationPending());
 
   const next = DAILY_ORDER.find(
     (m) => m.id !== currentMode && !todayDailies.has(m.id),
@@ -41,7 +45,7 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
 
   return (
     <>
-      {next ? <NextDailyLink next={next} /> : (
+      {next ? <NextDailyLink next={next} homeFirst={homeFirst} /> : (
         <div
           className={`${CTA_ROW} px-3 py-2.5 flex items-center justify-center gap-2 text-xs font-black ${SWEEP_INK.className}`}
           style={{ ...softCard('#f5a524', { radius: 16 }), ...SWEEP_INK.style }}
@@ -51,7 +55,7 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
           All {SWEEP_MODES.length} dailies done — Sweep complete! <Icon3D name="trophy" size={18} />
         </div>
       )}
-      <ViewLeaderboardLink currentMode={currentMode} />
+      <ViewLeaderboardLink currentMode={currentMode} homeFirst={homeFirst} />
       <KeepPlayingUnlimited currentMode={currentMode} />
     </>
   );
@@ -61,26 +65,26 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
  * §214 (Lindsay): straight from the finish line to the scoreboard — a
  * clean row linking the just-played mode's daily leaderboard.
  */
-function ViewLeaderboardLink({ currentMode }: { currentMode: string }) {
+function ViewLeaderboardLink({ currentMode, homeFirst }: { currentMode: string; homeFirst: boolean }) {
   const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
   if (!mode) return null;
 
   return (
     <div className={CTA_ROW}>
-      <CastLink href={`/daily?mode=${currentMode}`} color="purple" size="lg" block icon={<Icon3D name="trophy" size={26} />} aria-label={`View ${mode.title} Leaderboard`}>
+      <CastLink href={homeFirst ? '/' : `/daily?mode=${currentMode}`} color="purple" size="lg" block icon={<Icon3D name="trophy" size={26} />} aria-label={`View ${mode.title} Leaderboard`}>
         {mode.title} Leaderboard
       </CastLink>
     </div>
   );
 }
 
-function NextDailyLink({ next }: { next: { id: string; href: string } }) {
+function NextDailyLink({ next, homeFirst }: { next: { id: string; href: string }; homeFirst: boolean }) {
   const mode = PROFILE_MODES.find((m) => m.dbKey === next.id);
   if (!mode) return null;
 
   return (
     <div className={CTA_ROW}>
-      <CastLink href={next.href} color="amber" size="lg" block icon="arrow" aria-label={`Next Daily: ${mode.title}`}>
+      <CastLink href={homeFirst ? '/' : next.href} color="amber" size="lg" block icon="arrow" aria-label={`Next Daily: ${mode.title}`}>
         Next daily: {mode.title}
       </CastLink>
     </div>

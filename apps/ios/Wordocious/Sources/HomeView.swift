@@ -92,21 +92,47 @@ struct HomeView: View {
 
     private func presentNextCelebrationWhenCalm() {
         guard celebWaiter == nil, !celebQueue.isEmpty else { return }
+        // 2.8 item 52: a LIVE celebration (queued by a finish in this session, from LOCAL results) presents the moment
+        // nothing is open any more: on Home's root show; off Home go Home first, then show; anything open waits.
+        // (It used to wait for Home's root to be calm, so leaving the last daily's finished screen by NEXT or from
+        // another tab ran the whole next game first — the celebration landed after the next puzzle.)
         celebWaiter = Task { @MainActor in
             defer { celebWaiter = nil }
+            var settled = 0
+            var routedHome = false
             while !Task.isCancelled {
-                await CalmMoment.wait(extraBusy: { homePopupUp })
-                guard !Task.isCancelled else { return }
-                // Re-read after the wait: drops a sweep whose day has ended.
-                if let next = CelebrationGate.next(&celebQueue, day: { $0.day },
-                                                   today: LeaderboardService.todayLocal(),
-                                                   calm: CalmMoment.isCalm(extraBusy: homePopupUp)) {
-                    present(next)
-                    return
+                guard let first = celebQueue.first else { return }
+                let i = CalmMoment.inputs(extraBusy: homePopupUp)
+                switch CelebrationGate.action(source: .live, onHomeRoot: i.onHomeRoot, anythingPresented: i.presented,
+                                              popupUp: i.popupUp, celebrationDay: first.day,
+                                              today: LeaderboardService.todayLocal()) {
+                case .drop:
+                    celebQueue.removeFirst()
+                    settled = 0
+                case .present:
+                    settled += 1   // a ~0.5 s settle beat so a cover mid-dismissal never collides with it
+                    if settled >= 2 {
+                        celebQueue.removeFirst()
+                        present(first)
+                        return
+                    }
+                case .goHomeThenPresent:
+                    settled = 0
+                    if !routedHome {
+                        routedHome = true
+                        NotificationCenter.default.post(name: HomeNav.goHome, object: nil)
+                    }
+                case .wait:
+                    settled = 0
                 }
-                if celebQueue.isEmpty { return }
+                try? await Task.sleep(nanoseconds: 250_000_000)
             }
         }
+    }
+
+    /// Tells the root how many celebrations are due or on screen (held game handoffs wait on it).
+    private func syncCelebrationPending() {
+        CelebrationPending.shared.set(celebQueue.count + (sweepCeleb != nil ? 1 : 0) + (moreCeleb != nil ? 1 : 0))
     }
 
     /// Home's own popups (in-view modals) — a celebration never lands on them.
@@ -614,6 +640,9 @@ struct HomeView: View {
                     checkMoreSweepCelebration()
                 }
             }
+            .onChange(of: celebQueue.count) { _ in syncCelebrationPending() }
+            .onChange(of: sweepCeleb?.id) { _ in syncCelebrationPending() }
+            .onChange(of: moreCeleb?.id) { _ in syncCelebrationPending() }
             .fullScreenCover(item: $moreCeleb, onDismiss: celebrationClosed) { celeb in
                 if #available(iOS 16.4, *) {
                     SweepCelebrationView(byMode: celeb.byMode, onClose: { moreCeleb = nil }, variant: .more)

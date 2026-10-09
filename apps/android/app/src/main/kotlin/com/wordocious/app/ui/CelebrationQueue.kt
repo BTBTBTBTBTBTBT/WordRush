@@ -30,6 +30,10 @@ object CelebrationCalm {
     var presented by mutableIntStateOf(0)
     var popups by mutableIntStateOf(0)
 
+    /** The popup input of [isCalm] (2.8 item 52: the host decides Home / present / wait from the raw inputs). */
+    val popupUp: Boolean
+        get() = popups > 0 || BadgeMoments.current != null || CelebrationQueue.showingSweep != null
+
     val isCalm: Boolean
         get() = CelebrationGate.isCalm(
             onHomeRoot = homeRoot,
@@ -114,9 +118,18 @@ object CelebrationQueue {
         items.addAll(moments.map { Item.Badge(it) })
     }
 
+    /** The day of the head sweep (null when the head isn't a sweep / empty) — the host drops a stale-day one. */
+    fun peekSweepDay(): String? = (items.firstOrNull() as? Item.Sweep)?.day
+
     /** Present the head (main thread, at a calm moment). True when something went up. */
     fun presentNext(today: String): Boolean {
         if (items.isEmpty()) return false
+        val shown = presentHead(today)
+        releaseHeldIfDone()
+        return shown
+    }
+
+    private fun presentHead(today: String): Boolean {
         return when (val head = items.removeAt(0)) {
             is Item.Sweep -> when {
                 CelebrationGate.shouldDrop(head.day, today) -> false
@@ -136,6 +149,48 @@ object CelebrationQueue {
 
     fun finishSweep() {
         showingSweep = null
+        releaseHeldIfDone()
+    }
+
+    // ── 2.8 item 52: handoffs wait for the celebration; off-Home celebrations route Home ──
+
+    /** Sweep celebrations due or on screen (held game handoffs wait on it). */
+    val pendingSweeps: Int get() = items.count { it is Item.Sweep } + (if (showingSweep != null) 1 else 0)
+
+    /** Bumped when a live celebration needs the app on its Home tab (MainScreen observes it). */
+    var goHomeTick by mutableIntStateOf(0)
+        private set
+
+    fun requestGoHome() {
+        goHomeTick++
+    }
+
+    private val held = ArrayList<() -> Unit>()
+
+    /**
+     * True when [go] (NEXT daily, Keep playing…) was held until the pending celebrations have played; false = run it
+     * now. A held handoff is released after 8 s regardless (see [CelebrationQueueHost]).
+     */
+    fun holdHandoff(go: () -> Unit): Boolean {
+        if (!CelebrationGate.shouldDeferHandoff(pendingSweeps)) return false
+        held.add(go)
+        heldSince = android.os.SystemClock.uptimeMillis()
+        return true
+    }
+
+    var heldSince = 0L
+        private set
+
+    val hasHeld: Boolean get() = held.isNotEmpty()
+
+    fun releaseHeldIfDone() {
+        if (pendingSweeps == 0) releaseHeld()
+    }
+
+    fun releaseHeld() {
+        val run = held.toList()
+        held.clear()
+        run.forEach { it() }
     }
 }
 
@@ -148,16 +203,45 @@ object CelebrationQueue {
 fun CelebrationQueueHost() {
     val waiting = CelebrationQueue.pending > 0
     val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
-    fun calmNow() = CelebrationCalm.isCalm &&
-        lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)
+    fun active() = lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)
+    // 2.8 item 52: a LIVE sweep (queued by a finish in this session, from LOCAL results) presents the moment nothing
+    // is open: on Home's root show; off Home go Home first, then show; anything open waits. (It used to wait for
+    // Home's root, so leaving the last daily's finished screen by NEXT ran the next game before the celebration.)
     LaunchedEffect(waiting) {
         if (!waiting) return@LaunchedEffect
+        var settled = 0
+        var routedHome = false
         while (CelebrationQueue.pending > 0) {
-            delay(500)
-            if (!calmNow()) continue
-            delay(400)
-            if (!calmNow()) continue
-            CelebrationQueue.presentNext(com.wordocious.app.todayLocalDate())
+            delay(250)
+            val today = com.wordocious.app.todayLocalDate()
+            val head = CelebrationQueue.peekSweepDay()
+            val action = if (!active()) CelebrationGate.Action.WAIT else CelebrationGate.action(
+                // Sweeps are LIVE (a finish in this session); a late badge moment keeps waiting for calm on Home.
+                source = if (head != null) CelebrationGate.Source.LIVE else CelebrationGate.Source.REPLAY,
+                onHomeRoot = CelebrationCalm.homeRoot,
+                anythingPresented = CelebrationCalm.presented > 0,
+                popupUp = CelebrationCalm.popupUp,
+                celebrationDay = head ?: today,
+                today = today,
+            )
+            when (action) {
+                CelebrationGate.Action.DROP -> { CelebrationQueue.presentNext(today); settled = 0 }
+                CelebrationGate.Action.PRESENT -> {
+                    settled++   // a ~0.5 s settle beat so a cover mid-dismissal never collides with it
+                    if (settled >= 2) { CelebrationQueue.presentNext(today); settled = 0; routedHome = false }
+                }
+                CelebrationGate.Action.GO_HOME_THEN_PRESENT -> {
+                    settled = 0
+                    if (!routedHome) { routedHome = true; CelebrationQueue.requestGoHome() }
+                }
+                CelebrationGate.Action.WAIT -> settled = 0
+            }
         }
+    }
+    // A held game handoff never waits more than 8 s for a celebration that can't show.
+    LaunchedEffect(CelebrationQueue.hasHeld) {
+        if (!CelebrationQueue.hasHeld) return@LaunchedEffect
+        delay(8000)
+        CelebrationQueue.releaseHeld()
     }
 }
