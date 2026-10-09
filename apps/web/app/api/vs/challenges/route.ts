@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
+import { pushCopy, richPushTitle } from '@wordle-duel/core';
 import { vsClock } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, acceptedFriendIds, isUuid } from '@/lib/friends-server';
@@ -73,13 +73,13 @@ export async function POST(req: NextRequest) {
     const result = run.solved ? `solved in ${run.guesses} · ${vsClock(run.timeMs)}` : 'a run to beat';
     void broadcastPush(
       {
-        // FINISH_SPEC AE: the shared cast-voice push copy.
-        title: pushCopy('challengeReceived', { name: meProf?.username ?? undefined, game: title }),
-        body: `${title}: ${result}. Race their run within 24 hours.`,
+        title: richPushTitle('challenge', meProf?.username, title),
+        body: `${pushCopy('challengeReceived', { name: meProf?.username ?? undefined, game: title })} ${title}: ${result}. Race their run within 24 hours.`,
         url: `/vs/challenge/${code}`,
       },
       new Set(invitees),
       'challenge',
+      { senderId: me, senderName: meProf?.username ?? 'A friend', gameId: MODE_BY_DBKEY[gameMode]?.id ?? 'practice', gameTitle: title, accentHex: MODE_BY_DBKEY[gameMode]?.accentHex, kind: 'challenge', url: `/vs/challenge/${code}` },
     ).catch(() => {});
   }
 

@@ -56,7 +56,8 @@ async function avatarPng(userId: string): Promise<Buffer> {
 
 async function gamePng(gameId: string): Promise<Buffer> {
   const dir = path.join(process.cwd(), 'public', 'art');
-  for (const name of [`art-game-${gameId}.webp`, `art-game-${gameId.toLowerCase()}.webp`]) {
+  // public/art/game-<id>.webp: the glossy 3D game icons (256 px; pocket games are game-pocket-<kind>).
+  for (const name of [`game-${gameId}.webp`, `game-${gameId.toLowerCase()}.webp`]) {
     try {
       const file = await readFile(path.join(dir, name));
       return await sharp(file).resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();

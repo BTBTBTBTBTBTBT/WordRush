@@ -398,14 +398,14 @@ fun FriendlyGameScreen(
             if (g.active && liveOn && socketUp) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
                     FriendlyLive.REACTIONS.forEach { key ->
-                        Box(
-                            Modifier.size(40.dp).squishClickable(label = "Send ${com.wordocious.app.ui.ReactionArt.word(key)}") {
+                        com.wordocious.app.ui.RoundIconButton(
+                            onClick = {
                                 if (live.sendReaction(key)) {
                                     addFloater(key)
                                     com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.KEY, view)
                                 }
                             },
-                            Alignment.Center,
+                            contentDescription = "Send ${com.wordocious.app.ui.ReactionArt.word(key)}",
                         ) { com.wordocious.app.ui.ReactionGlyph(key, 30.dp, FriendsPink.solid) }
                     }
                 }

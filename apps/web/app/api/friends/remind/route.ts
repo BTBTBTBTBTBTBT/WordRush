@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { richPushTitle } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -53,11 +54,13 @@ export async function POST(req: NextRequest) {
   const { data: meProf } = await admin.from('profiles').select('username').eq('id', me).maybeSingle();
   void broadcastPush(
     {
-      title: 'Friend request waiting 🤝',
-      body: `Reminder: ${meProf?.username ?? 'A player'} wants to be friends on Wordocious`,
+      title: richPushTitle('friendRequest', meProf?.username ?? 'A player'),
+      body: `Reminder: ${meProf?.username ?? 'A player'} wants to be friends on Wordocious 🤝`,
       url: `/profile/${me}`,
     },
     new Set([body.addresseeId]),
+    undefined,
+    { senderId: me, senderName: meProf?.username ?? 'A player', gameId: 'practice', gameTitle: 'Wordocious', kind: 'friend', url: `/profile/${me}` },
   ).catch(() => {});
 
   return NextResponse.json({ remindedAt });

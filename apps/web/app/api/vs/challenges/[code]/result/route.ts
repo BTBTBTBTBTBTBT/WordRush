@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { vsOutcome, vsMargin, vsClock } from '@wordle-duel/core';
+import { vsOutcome, vsMargin, vsClock, richPushTitle } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -99,9 +99,15 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     : outcome === 'loss' ? `Your ${title} run held against ${who} (${margin})`
     : `${who} tied your ${title} run`;
   void broadcastPush(
-    { title: line, body: `${run.solved ? `Solved in ${run.guesses} · ${vsClock(run.timeMs)}` : 'Not solved'}. Tap to challenge back.`, url: `/vs/challenge/${row.code}` },
+    {
+      // Item 34: a title that reads complete; the margin line leads the body.
+      title: richPushTitle(outcome === 'win' ? 'beatRun' : outcome === 'loss' ? 'heldRun' : 'tiedRun', who, title),
+      body: `${line}. ${run.solved ? `Solved in ${run.guesses} · ${vsClock(run.timeMs)}` : 'Not solved'}. Tap to challenge back.`,
+      url: `/vs/challenge/${row.code}`,
+    },
     new Set([row.challenger_id]),
     'challenge',
+    { senderId: me, senderName: who, gameId: MODE_BY_DBKEY[row.game_mode]?.id ?? 'practice', gameTitle: title, accentHex: MODE_BY_DBKEY[row.game_mode]?.accentHex, kind: 'result', url: `/vs/challenge/${row.code}` },
   ).catch(() => {});
 
   return NextResponse.json({ outcome, margin: vsMargin(run, theirs), challengerRun, alreadyRecorded: false });

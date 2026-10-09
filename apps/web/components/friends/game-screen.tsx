@@ -14,6 +14,7 @@ import { useFlags } from '@/hooks/use-flags';
 import { useLiveGame, type LiveReactionEvent } from '@/hooks/use-live-game';
 import { feedback } from '@/lib/sound-events';
 import { ReactionIcon } from './reaction-icon';
+import { RoundIconSlot } from '@/components/ui/family-button';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
 import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
@@ -427,9 +428,9 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       {active && liveOn && socketUp && (
         <div className="flex items-center justify-center gap-2" role="group" aria-label="Send a reaction">
           {LIVE_REACTIONS.map((r) => (
-            <button key={r} type="button" onClick={() => react(r)} aria-label={`Send ${r}`} className="active:scale-90 transition-transform" style={{ width: 38, height: 38, display: 'grid', placeItems: 'center' }}>
+            <RoundIconSlot key={r} onClick={() => react(r)} label={`Send ${r}`}>
               <ReactionIcon reaction={r} size={26} />
-            </button>
+            </RoundIconSlot>
           ))}
         </div>
       )}
