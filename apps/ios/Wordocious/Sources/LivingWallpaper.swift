@@ -106,22 +106,49 @@ struct LivingWallpaper: View {
             let f = still ? 0.7 : (t / dur + unit(i, 24)).truncatingRemainder(dividingBy: 1)
             let x = lerp(-0.14, 1.16, f) * size.width
             let y = (0.06 + unit(i, 22) * 0.4) * size.height + sin(f * .pi * 4) * 14
-            ctx.draw(batImg, in: CGRect(x: x, y: y, width: w, height: h))
+            // A soft wingbeat (~1.7/s, each bat out of step): the wings squash toward the body and open again.
+            let flap = still ? 1 : 0.78 + 0.22 * sin((t / 0.6 + unit(i, 25)) * .pi * 2)
+            var bat = ctx
+            bat.translateBy(x: x + w / 2, y: y + h / 2)
+            bat.scaleBy(x: 1, y: flap)
+            bat.draw(batImg, in: CGRect(x: -w / 2, y: -h / 2, width: w, height: h))
         }
         // The witch flies by once per `every` seconds (hidden while frozen).
-        if !still {
-            let f = (t / a.witch.every).truncatingRemainder(dividingBy: 1)
+        #if DEBUG
+        // Visual check only: `debug-witch-moon` parks the witch mid moon pass.
+        let parkOnMoon = UserDefaults.standard.bool(forKey: "debug-witch-moon")
+        #else
+        let parkOnMoon = false
+        #endif
+        if !still || parkOnMoon {
+            let f = parkOnMoon ? 0.1 : (t / a.witch.every).truncatingRemainder(dividingBy: 1)
             if f < 0.2 {
                 let p = f / 0.2
                 let w = a.witch.size
                 let img = ctx.resolve(Image("ambient-\(a.witch.sprite)"))
                 let h = w * img.size.height / max(img.size.width, 1)
-                let x = lerp(-0.24, 1.24, p) * size.width
-                let y = size.height * 0.14 + sin(p * .pi) * -28
+                var x = lerp(-0.24, 1.24, p) * size.width
+                if parkOnMoon { x = WitchMoon.center(in: size).x - w / 2 }
+                var y = size.height * 0.14 + sin(p * .pi) * -28
+                // Every third pass she crosses the wall's own moon (a silhouette against it), on a gentle climb.
+                if Int(t / a.witch.every) % 3 == 2 || parkOnMoon {
+                    let moon = WitchMoon.center(in: size)
+                    y = moon.y + (moon.x - (x + w / 2)) * 0.12 - h / 2
+                }
                 var c = ctx
                 c.opacity = 0.95
                 c.draw(img, in: CGRect(x: x, y: y, width: w, height: h))
             }
         }
+    }
+}
+
+/// Where the Halloween walls paint their moon (measured: every wall's moon sits at the same spot), mapped through
+/// the wall's aspect-fill, so the witch's moon pass lines up with the art. Phones use the 1290x2796 wall.
+enum WitchMoon {
+    static func center(in size: CGSize) -> CGPoint {
+        let iw: CGFloat = 1290, ih: CGFloat = 2796
+        let s = max(size.width / iw, size.height / ih)
+        return CGPoint(x: (size.width - iw * s) / 2 + 0.74 * iw * s, y: (size.height - ih * s) / 2 + 0.071 * ih * s)
     }
 }

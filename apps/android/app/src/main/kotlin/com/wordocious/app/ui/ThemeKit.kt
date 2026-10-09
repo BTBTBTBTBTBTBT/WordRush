@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toArgb
 import com.wordocious.app.ui.theme.Palette
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -245,7 +246,11 @@ object ThemeKit {
                     val f = if (ms == 0L) 0.7 else (t / dur + unit(i, 24.0)) % 1.0
                     val x = lerp(-0.14, 1.16, f) * w
                     val y = (0.06 + unit(i, 22.0) * 0.4) * h + sin(f * PI * 4) * 14.dp.toPx()
-                    drawImage(bat, dstOffset = IntOffset((x - origin.x).roundToInt(), (y - origin.y).roundToInt()), dstSize = IntSize(bw.roundToInt(), bh.roundToInt()))
+                    // A soft wingbeat (~1.7/s, each bat out of step): the wings squash toward the body and open again.
+                    val flap = if (ms == 0L) 1f else (0.78 + 0.22 * sin((t / 0.6 + unit(i, 25.0)) * PI * 2)).toFloat()
+                    scale(1f, flap, pivot = Offset((x - origin.x).toFloat() + bw / 2, (y - origin.y).toFloat() + bh / 2)) {
+                        drawImage(bat, dstOffset = IntOffset((x - origin.x).roundToInt(), (y - origin.y).roundToInt()), dstSize = IntSize(bw.roundToInt(), bh.roundToInt()))
+                    }
                 }
             }
             if (ms != 0L) {
@@ -254,7 +259,16 @@ object ThemeKit {
                     val p = f / 0.2
                     val ww = a.witch.size.dp.toPx(); val wh = ww * witch.height / witch.width
                     val x = lerp(-0.24, 1.24, p) * w
-                    val y = h * 0.14 - sin(p * PI) * 28.dp.toPx()
+                    var y = h * 0.14 - sin(p * PI) * 28.dp.toPx()
+                    // Every third pass she crosses the wall's own moon (a silhouette against it), on a gentle climb.
+                    if ((t / a.witch.every).toInt() % 3 == 2) {
+                        // Every Halloween wall paints its moon at the same spot (1290x2796 art, aspect-fill).
+                        val iw = 1290.0; val ih = 2796.0
+                        val sc = maxOf(w / iw, h / ih)
+                        val mx = (w - iw * sc) / 2 + 0.74 * iw * sc
+                        val my = (h - ih * sc) / 2 + 0.071 * ih * sc
+                        y = my + (mx - (x + ww / 2)) * 0.12 - wh / 2
+                    }
                     drawImage(witch, dstOffset = IntOffset((x - origin.x).roundToInt(), (y - origin.y).roundToInt()), dstSize = IntSize(ww.roundToInt(), wh.roundToInt()), alpha = 0.95f)
                 }
             }

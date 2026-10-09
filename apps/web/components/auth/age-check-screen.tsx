@@ -5,8 +5,8 @@ import { ageCheckYears, AGE_CHECK_SUPPORT_EMAIL } from '@wordle-duel/core';
 import { CastButton } from '@/components/ui/cast-button';
 import { CastHeader } from '@/components/ui/cast-header';
 import { BubbleText } from '@/components/ui/bubble-text';
-import { useSeason } from '@/lib/season';
-import { softBackground } from '@/lib/soft-surface';
+import { castArt, useSeason } from '@/lib/season';
+import { PageBackground } from '@/components/ui/page-background';
 
 // The neutral, on-brand 13+ age check (FRIDAY-QUEUE item 29). D (glasses + pencil) SAYS ONE question,
 // "What year were you born?", in a comic speech bubble set in our bubble lettering, on a year wheel with NO default and
@@ -19,6 +19,8 @@ const VISIBLE = 5;
 
 /** The year wheel: CSS scroll-snap, centered row picks. No row is selected until the player moves it. */
 function YearWheel({ years, onPick }: { years: number[]; onPick: (year: number) => void }) {
+  // In season the wheel is the same black-violet glass as D's bubble, so it belongs to the night scene.
+  const night = useSeason() !== null;
   const ref = useRef<HTMLDivElement>(null);
   const [touched, setTouched] = useState(false);
   const [index, setIndex] = useState(0);
@@ -60,8 +62,12 @@ function YearWheel({ years, onPick }: { years: number[]; onPick: (year: number) 
         width: 168,
         height: ROW * VISIBLE,
         borderRadius: 34,
-        background: 'linear-gradient(180deg, rgba(196,181,253,0.55), rgba(233,213,255,0.85) 50%, rgba(196,181,253,0.55))',
-        boxShadow: '0 10px 28px rgba(124,58,237,0.22), inset 0 2px 0 rgba(255,255,255,0.85), inset 0 -3px 8px rgba(124,58,237,0.18)',
+        background: night
+          ? 'linear-gradient(180deg, rgba(42,16,64,0.80), rgba(63,27,94,0.88) 50%, rgba(42,16,64,0.80))'
+          : 'linear-gradient(180deg, rgba(196,181,253,0.55), rgba(233,213,255,0.85) 50%, rgba(196,181,253,0.55))',
+        boxShadow: night
+          ? '0 10px 28px rgba(249,115,22,0.22), inset 0 0 0 1.5px rgba(249,115,22,0.35)'
+          : '0 10px 28px rgba(124,58,237,0.22), inset 0 2px 0 rgba(255,255,255,0.85), inset 0 -3px 8px rgba(124,58,237,0.18)',
       }}
     >
       {/* The gold selection band — the wheel's "answer" slot. */}
@@ -107,7 +113,7 @@ function YearWheel({ years, onPick }: { years: number[]; onPick: (year: number) 
                 scrollSnapAlign: 'center',
                 fontSize: on ? 32 : 24,
                 fontWeight: 900,
-                color: on ? '#4c1d95' : 'rgba(109,40,217,0.5)',
+                color: night ? (on ? '#ffdb8c' : 'rgba(255,219,140,0.5)') : (on ? '#4c1d95' : 'rgba(109,40,217,0.5)'),
                 fontVariantNumeric: 'tabular-nums',
                 transition: 'font-size 120ms ease, color 120ms ease',
               }}
@@ -131,7 +137,7 @@ function SpeechBubble({ text, halloween, style }: { text: string; halloween: boo
       <img src={halloween ? '/age-check/bubble-halloween.webp' : '/age-check/bubble.webp'} alt="" aria-hidden="true" draggable={false}
         className="absolute inset-0 w-full h-full select-none pointer-events-none" />
       <div className="absolute flex items-center justify-center" style={{ left: '9%', right: '9%', top: '9%', bottom: halloween ? '29%' : '27%' }}>
-        <BubbleText text={text} palette={halloween ? 'celebrate' : 'home'} maxSize={40} minSize={20} level={1} className="w-full" />
+        <BubbleText text={text} palette={halloween ? 'celebrate' : 'home'} maxSize={46} minSize={20} level={1} className="w-full" />
       </div>
     </div>
   );
@@ -149,11 +155,12 @@ function Contact({ left, width, bottom }: { left: string; width: string; bottom:
 
 /** The one scene: D says the question; the cake sits beside him on the same floor, same lighting. */
 function AskScene() {
-  const halloween = useSeason() !== null;
+  const season = useSeason();
+  const halloween = season !== null;
   return (
     <div className="w-full flex flex-col items-center" style={{ maxWidth: 340 }}>
-      <SpeechBubble text="WHAT YEAR WERE YOU BORN?" halloween={halloween} style={{ width: '96%', alignSelf: 'flex-start' }} />
-      <div className="relative w-full" style={{ height: 150, marginTop: -26 }}>
+      <SpeechBubble text="WHAT YEAR WERE YOU BORN?" halloween={halloween} style={{ width: '86%', alignSelf: 'flex-start' }} />
+      <div className="relative w-full" style={{ height: 150, marginTop: 8 /* the tail stops just above D's head */ }}>
         {/* the shared soft floor */}
         <span aria-hidden="true" className="absolute pointer-events-none" style={{
           left: '4%', right: '4%', bottom: 0, height: 34, borderRadius: '50%',
@@ -162,7 +169,7 @@ function AskScene() {
         <Contact left="55%" width="38%" bottom={4} />
         <Contact left="12%" width="30%" bottom={0} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/mascots/d.png" alt="" aria-hidden="true" width={150} height={150} draggable={false}
+        <img src={castArt('d', season).src} alt="" aria-hidden="true" width={150} height={150} draggable={false}
           className="absolute select-none pointer-events-none" style={{ right: '6%', bottom: 4, width: 142, height: 142, objectFit: 'contain' }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/age-check/cake.webp" alt="" aria-hidden="true" width={90} height={108} draggable={false}
@@ -211,10 +218,7 @@ export function AgeCheckQuestion({ onAnswer }: { onAnswer: (year: number) => voi
   const [year, setYear] = useState<number | null>(null);
 
   return (
-    <div
-      className="fixed inset-0 z-[200] overflow-y-auto"
-      style={{ background: `linear-gradient(180deg, #eee4ff, #ffecf6), ${softBackground('#7c3aed', 0.07)}` }}
-    >
+    <PageBackground tint="home" scheme="light" className="fixed inset-0 z-[200] overflow-y-auto">
       <div className="w-full max-w-sm mx-auto flex flex-col items-center gap-3 px-5 pt-3 pb-5">
         {/* the live WORDOCIOUS cast row stays on top; the question lives below it */}
         <div className="w-full"><CastHeader ground /></div>
@@ -226,7 +230,7 @@ export function AgeCheckQuestion({ onAnswer }: { onAnswer: (year: number) => voi
           </CastButton>
         </div>
       </div>
-    </div>
+    </PageBackground>
   );
 }
 
@@ -236,10 +240,7 @@ export function AgeCheckUnder() {
     document.title = 'See you soon! | Wordocious';
   }, []);
   return (
-    <div
-      className="fixed inset-0 z-[200] overflow-y-auto"
-      style={{ background: 'linear-gradient(180deg, #e4ecff, #fdf1e4)' }}
-    >
+    <PageBackground tint="home" scheme="light" className="fixed inset-0 z-[200] overflow-y-auto">
       <div className="w-full max-w-sm mx-auto flex flex-col items-center gap-3 px-5 pt-3 pb-5 text-center">
         <div className="w-full"><CastHeader ground /></div>
         <h1 className="sr-only">Wordocious is for players 13 and up. See you soon!</h1>
@@ -252,6 +253,6 @@ export function AgeCheckUnder() {
           <a href={`mailto:${AGE_CHECK_SUPPORT_EMAIL}`} className="font-bold underline">{AGE_CHECK_SUPPORT_EMAIL}</a>.
         </p>
       </div>
-    </div>
+    </PageBackground>
   );
 }

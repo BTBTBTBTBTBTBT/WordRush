@@ -108,7 +108,34 @@ function ThemeAmbient({ a, trim }: { a: ThemeAmbient; trim: number }) {
   );
 }
 
+/**
+ * The witch's moon pass: every Halloween wall paints its moon at the same spot (portrait 1290x2796 at 74% / 7.1%,
+ * the wide 2400x1500 twin at 85% / 16.5%), drawn cover-fit and centered. Returns the start / end of a gentle climb
+ * whose middle crosses the moon, as CSS vars for the amb-witch keyframes.
+ */
+function useWitchMoonPath(witchW: number): React.CSSProperties {
+  const [vars, setVars] = useState<React.CSSProperties>({});
+  useEffect(() => {
+    const place = () => {
+      const W = window.innerWidth, H = window.innerHeight;
+      const wide = W / H >= 1 || W >= 1024;
+      const [iw, ih, fx, fy] = wide ? [2400, 1500, 0.85, 0.165] : [1290, 2796, 0.74, 0.071];
+      const sc = Math.max(W / iw, H / ih);
+      const mx = (W - iw * sc) / 2 + fx * iw * sc, my = (H - ih * sc) / 2 + fy * ih * sc;
+      const wh = witchW * 205 / 224;
+      const x0 = -0.24 * W, x1 = 1.24 * W;
+      const yAt = (x: number) => my + (mx - (x + witchW / 2)) * 0.12 - wh / 2;
+      setVars({ ['--ms-x' as string]: `${x0}px`, ['--ms-y' as string]: `${yAt(x0)}px`, ['--me-x' as string]: `${x1}px`, ['--me-y' as string]: `${yAt(x1)}px` });
+    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
+  }, [witchW]);
+  return vars;
+}
+
 function SeasonalAmbient({ entry, trim }: { entry: NonNullable<ReturnType<typeof seasonalEntry>>['ambient']; trim: number }) {
+  const moonPath = useWitchMoonPath(entry.witch.size);
   const bats = Math.max(1, Math.round(entry.bats.count * trim));
   const stars = Math.round(entry.stars.count * trim);
   return (
@@ -123,12 +150,12 @@ function SeasonalAmbient({ entry, trim }: { entry: NonNullable<ReturnType<typeof
         return (
           // eslint-disable-next-line @next/next/no-img-element
           <img key={`b${i}`} className="amb-bat" src={ambientSrc(entry.bats.sprite)} alt="" width={size} height={size * 0.69} decoding="async" draggable={false}
-            style={{ top: `${6 + unit(i, 22) * 40}%`, ['--dur' as string]: `${lerp(entry.bats.duration[0], entry.bats.duration[1], unit(i, 23))}s`, ['--delay' as string]: `${-unit(i, 24) * 14}s` }} />
+            style={{ top: `${6 + unit(i, 22) * 40}%`, ['--dur' as string]: `${lerp(entry.bats.duration[0], entry.bats.duration[1], unit(i, 23))}s`, ['--delay' as string]: `${-unit(i, 24) * 14}s`, ['--flap-delay' as string]: `${-unit(i, 25) * 0.6}s` }} />
         );
       })}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="amb-witch" src={ambientSrc(entry.witch.sprite)} alt="" width={entry.witch.size} decoding="async" draggable={false}
-        style={{ ['--every' as string]: `${entry.witch.every}s`, ['--dur' as string]: `${entry.witch.every}s` }} />
+        style={{ ['--every' as string]: `${entry.witch.every}s`, ['--dur' as string]: `${entry.witch.every * 3}s`, ...moonPath }} />
     </>
   );
 }

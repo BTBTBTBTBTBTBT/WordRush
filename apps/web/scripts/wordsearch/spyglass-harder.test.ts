@@ -9,7 +9,7 @@ import {
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const bank = JSON.parse(fs.readFileSync(join(repo, 'apps', 'web', 'data', 'wordsearch-puzzles.json'), 'utf8'));
-const pools = themePools();
+const pools: Record<string, string[]> = themePools() as Record<string, string[]>;
 const DIAG = new Set(['SE', 'NE', 'NW', 'SW']), BACK = new Set(['W', 'N', 'NW', 'SW']), PLAIN = new Set(['E', 'S']);
 
 describe('spyglass harder generator', () => {

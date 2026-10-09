@@ -2,6 +2,7 @@ package com.wordocious.app.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -28,6 +29,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -111,7 +113,7 @@ fun AgeCheckQuestion(onAnswer: (Int) -> Unit) {
 
     Box(
         Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFEEE4FF), Color(0xFFFFECF6))))
+            .pageBackground(PageTint.HOME, alwaysLight = true)   // the app's own wall (the season's in season)
             .systemBarsPadding()
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         contentAlignment = Alignment.Center,
@@ -140,6 +142,8 @@ fun AgeCheckQuestion(onAnswer: (Int) -> Unit) {
 /** The year wheel: a snapping LazyColumn. No row is selected until the player moves or taps it. */
 @Composable
 private fun YearWheel(years: List<Int>, picked: Int?, onPick: (Int) -> Unit, modifier: Modifier = Modifier) {
+    // In season the wheel is the same black-violet glass as D's bubble, so it belongs to the night scene.
+    val night = rememberSeason() != null
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val rowPx = with(LocalDensity.current) { ROW_DP.dp.toPx() }
@@ -158,11 +162,15 @@ private fun YearWheel(years: List<Int>, picked: Int?, onPick: (Int) -> Unit, mod
 
     Box(
         modifier.width(168.dp).height((ROW_DP * VISIBLE).dp)
-            .shadow(12.dp, RoundedCornerShape(34.dp), ambientColor = Color(0x387C3AED), spotColor = Color(0x387C3AED))
+            .shadow(12.dp, RoundedCornerShape(34.dp), ambientColor = if (night) Color(0x38F97316) else Color(0x387C3AED), spotColor = if (night) Color(0x38F97316) else Color(0x387C3AED))
             .background(
-                Brush.verticalGradient(listOf(Color(0x99C4B5FD), Color(0xFFE9D5FF), Color(0x99C4B5FD))),
+                Brush.verticalGradient(
+                    if (night) listOf(Color(0xCC2A1040), Color(0xE03F1B5E), Color(0xCC2A1040))
+                    else listOf(Color(0x99C4B5FD), Color(0xFFE9D5FF), Color(0x99C4B5FD)),
+                ),
                 RoundedCornerShape(34.dp),
             )
+            .border(1.5.dp, if (night) Color(0x59F97316) else Color.Transparent, RoundedCornerShape(34.dp))
             .semantics { contentDescription = "Year you were born" },
     ) {
         // The gold answer band.
@@ -192,7 +200,7 @@ private fun YearWheel(years: List<Int>, picked: Int?, onPick: (Int) -> Unit, mod
                         y.toString(),
                         fontFamily = Nunito, fontWeight = FontWeight.Black,
                         fontSize = if (on) 32.sp else 24.sp,
-                        color = if (on) Color(0xFF4C1D95) else Color(0x806D28D9),
+                        color = if (night) (if (on) Color(0xFFFFDB8C) else Color(0x80FFDB8C)) else (if (on) Color(0xFF4C1D95) else Color(0x806D28D9)),
                     )
                 }
             }
@@ -213,7 +221,7 @@ private fun AgeContact(width: androidx.compose.ui.unit.Dp, modifier: Modifier = 
 @Composable
 private fun AgeSpeechBubble(text: String, halloween: Boolean, modifier: Modifier = Modifier) {
     val aspect = if (halloween) 401f / 327f else 398f / 295f
-    Box(modifier.fillMaxWidth().aspectRatio(aspect)) {
+    Box(modifier.aspectRatio(aspect)) {
         Image(
             painterResource(if (halloween) R.drawable.age_bubble_halloween else R.drawable.age_bubble), null,
             Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds,
@@ -223,7 +231,7 @@ private fun AgeSpeechBubble(text: String, halloween: Boolean, modifier: Modifier
             BubbleText(
                 text, if (halloween) HeadlinePalette.CELEBRATION else HeadlinePalette.HOME,
                 Modifier.align(Alignment.TopStart).offset(x = w * 0.09f, y = h * 0.09f).width(w * 0.82f).height(h * (if (halloween) 0.62f else 0.64f)),
-                maxSize = 40, minSize = 20,
+                maxSize = 46, minSize = 20,
             )
         }
     }
@@ -232,10 +240,12 @@ private fun AgeSpeechBubble(text: String, halloween: Boolean, modifier: Modifier
 /** The one scene: D says the question; the cake sits beside him on the same floor, same lighting. */
 @Composable
 private fun AgeAskScene() {
-    val halloween = rememberSeason() != null
+    val season = rememberSeason()
+    val halloween = season != null
     Column(Modifier.widthIn(max = 318.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        AgeSpeechBubble("WHAT YEAR WERE YOU BORN?", halloween, Modifier.fillMaxWidth())
-        Box(Modifier.fillMaxWidth().height(150.dp).offset(y = (-26).dp)) {
+        AgeSpeechBubble("WHAT YEAR WERE YOU BORN?", halloween, Modifier.fillMaxWidth(0.9f).align(Alignment.Start))
+        // The tail stops just above D's head (never tucked behind him or his hat).
+        Box(Modifier.fillMaxWidth().height(150.dp).padding(top = 8.dp)) {
             // the shared soft floor
             Box(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(0.92f).height(34.dp)
@@ -243,7 +253,7 @@ private fun AgeAskScene() {
             )
             AgeContact(120.dp, Modifier.align(Alignment.BottomEnd).offset(x = (-22).dp, y = (-4).dp))
             AgeContact(92.dp, Modifier.align(Alignment.BottomStart).offset(x = 40.dp))
-            Image(painterResource(R.drawable.mascot_d), null, Modifier.align(Alignment.BottomEnd).padding(end = 18.dp, bottom = 4.dp).size(142.dp))
+            Image(painterResource(SeasonSkins.fullRes(MascotId.D, season)), null, Modifier.align(Alignment.BottomEnd).padding(end = 18.dp, bottom = 4.dp).size(142.dp))
             Image(painterResource(R.drawable.age_cake), null, Modifier.align(Alignment.BottomStart).padding(start = 52.dp).width(84.dp))
         }
     }
@@ -308,7 +318,7 @@ fun AgeCheckUnder() {
     val context = LocalContext.current
     Box(
         Modifier.fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFFE4ECFF), Color(0xFFFDF1E4))))
+            .pageBackground(PageTint.HOME, alwaysLight = true)
             .systemBarsPadding()
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         contentAlignment = Alignment.Center,

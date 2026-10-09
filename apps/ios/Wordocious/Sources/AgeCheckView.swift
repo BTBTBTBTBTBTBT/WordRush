@@ -174,18 +174,26 @@ private struct AgeAskScene: View {
                                              center: .center, startRadius: 0, endRadius: w * 0.48))
                         .frame(width: w * 0.92, height: 34)
                         .position(x: w / 2, y: g.size.height - 17)
-                    AgeContact(width: w * 0.38).position(x: w * 0.74, y: g.size.height - 12)
-                    AgeContact(width: w * 0.30).position(x: w * 0.27, y: g.size.height - 8)
+                    // One group, not two pictures: the cake stands IN FRONT of D (overlapping him), both on one
+                    // contact shadow, and the candles throw a warm glow onto him.
+                    AgeContact(width: w * 0.62).position(x: w * 0.60, y: g.size.height - 8)
                     Image(CastSkin.assetName(for: .d)).resizable().scaledToFit().frame(width: 142, height: 142)
-                        .position(x: w * 0.74, y: g.size.height - 4 - 71)
+                        .position(x: w * 0.70, y: g.size.height - 6 - 71)
+                    Circle()
+                        .fill(RadialGradient(colors: [Color(red: 1.0, green: 0.78, blue: 0.35).opacity(0.55), .clear],
+                                             center: .center, startRadius: 0, endRadius: 46))
+                        .frame(width: 92, height: 92)
+                        .blendMode(.plusLighter)
+                        .position(x: w * 0.47, y: g.size.height - 78)
+                        .allowsHitTesting(false)
                     Image("age-cake").resizable().scaledToFit().frame(width: 84)
-                        .shadow(color: Color(red: 0.298, green: 0.114, blue: 0.584).opacity(0.18), radius: 3, y: 3)
-                        .position(x: w * 0.27, y: g.size.height - 51)
+                        .shadow(color: Color(red: 0.298, green: 0.114, blue: 0.584).opacity(0.25), radius: 4, y: 2)
+                        .position(x: w * 0.47, y: g.size.height - 46)
                 }
                 .accessibilityHidden(true)
             }
             .frame(maxWidth: 318).frame(height: 150)
-            .padding(.top, -26)
+            .padding(.top, 8)   // the tail stops just above D's head (never tucked behind him or his hat)
         }
     }
 }

@@ -234,15 +234,25 @@
 @keyframes amb-twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.95; } }
 .amb-fog { position: absolute; left: -10%; bottom: 0; width: 130%; height: auto; animation: amb-fog var(--dur) ease-in-out infinite alternate; }
 @keyframes amb-fog { from { transform: translate3d(-4%, 0, 0); } to { transform: translate3d(6%, 0, 0); } }
-.amb-bat { position: absolute; left: 0; animation: amb-bat var(--dur) linear var(--delay) infinite; }
+.amb-bat { position: absolute; left: 0; animation: amb-bat var(--dur) linear var(--delay) infinite, amb-flap 0.3s ease-in-out var(--flap-delay, 0s) infinite alternate; }
+/* A soft wingbeat (each bat out of step): the wings squash toward the body and open again (`scale` composes with the flight transform). */
+@keyframes amb-flap { from { scale: 1 1; } to { scale: 1 0.56; } }
 @keyframes amb-bat {
   0% { transform: translate3d(-14vw, 0, 0); } 25% { transform: translate3d(28vw, -3vh, 0); } 50% { transform: translate3d(55vw, 2vh, 0); }
   75% { transform: translate3d(84vw, -2vh, 0); } 100% { transform: translate3d(116vw, 0, 0); }
 }
-.amb-witch { position: absolute; left: 0; top: 14%; opacity: 0; animation: amb-witch var(--dur) linear infinite; }
+.amb-witch { position: absolute; left: 0; top: 0; opacity: 0; animation: amb-witch var(--dur) linear infinite; }
+/* Three passes per cycle (--dur = 3 x every): two across the sky, the third across the wall's own moon
+   (--ms / --me: a straight climb through the moon, set by theme-wall.tsx from the wall's cover-fit). */
 @keyframes amb-witch {
-  0% { transform: translate3d(-24vw, 8vh, 0); opacity: 0.95; } 10% { transform: translate3d(50vw, -4vh, 0); opacity: 0.95; }
-  20% { transform: translate3d(124vw, 6vh, 0); opacity: 0.95; } 20.1%, 100% { transform: translate3d(124vw, 6vh, 0); opacity: 0; }
+  0% { transform: translate3d(-24vw, 22vh, 0); opacity: 0.95; } 3.333% { transform: translate3d(50vw, 10vh, 0); opacity: 0.95; }
+  6.667% { transform: translate3d(124vw, 20vh, 0); opacity: 0.95; } 6.7%, 33.3% { transform: translate3d(124vw, 20vh, 0); opacity: 0; }
+  33.333% { transform: translate3d(-24vw, 22vh, 0); opacity: 0.95; } 36.667% { transform: translate3d(50vw, 10vh, 0); opacity: 0.95; }
+  40% { transform: translate3d(124vw, 20vh, 0); opacity: 0.95; } 40.03%, 66.63% { transform: translate3d(124vw, 20vh, 0); opacity: 0; }
+  66.667% { transform: translate3d(var(--ms-x, -24vw), var(--ms-y, 22vh), 0); opacity: 0.95; }
+  73.333% { transform: translate3d(var(--me-x, 124vw), var(--me-y, 20vh), 0); opacity: 0.95; }
+  73.36%, 100% { transform: translate3d(var(--me-x, 124vw), var(--me-y, 20vh), 0); opacity: 0; }
+}
 }
 .ambient[data-still="true"] .amb-item { animation: none; top: var(--y); }
 .ambient[data-still="true"] .amb-bat { animation: none; transform: translate3d(70vw, 0, 0); }
