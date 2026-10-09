@@ -6,10 +6,10 @@ import {
 } from './achievement-rules';
 
 describe('BE achievement catalog', () => {
-  it('has the 37 new achievements (clean_crack dropped: Clean Crack already exists) + the 7 secret tunes (5 everyday, 2 Halloween), unique keys, art per key', () => {
-    expect(NEW_ACHIEVEMENTS).toHaveLength(44);
-    expect(new Set(NEW_ACHIEVEMENTS.map((a) => a.key)).size).toBe(44);
-    expect(NEW_ACHIEVEMENTS.filter((a) => a.secret)).toHaveLength(7);
+  it('has the 37 new achievements (clean_crack dropped: Clean Crack already exists) + the 12 secret tunes (5 everyday, 7 Halloween), unique keys, art per key', () => {
+    expect(NEW_ACHIEVEMENTS).toHaveLength(49);
+    expect(new Set(NEW_ACHIEVEMENTS.map((a) => a.key)).size).toBe(49);
+    expect(NEW_ACHIEVEMENTS.filter((a) => a.secret)).toHaveLength(12);
     expect(NEW_ACHIEVEMENTS.find((a) => a.key === 'kindred_regular')?.name).toBe('Kindred Fan');
     expect(achievementArt('night_owl')).toBe('art-ach-night_owl');
   });

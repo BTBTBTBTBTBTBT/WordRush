@@ -315,6 +315,46 @@
       "category": "mascot",
       "icon": "sparkles",
       "secret": true
+    },
+    {
+      "key": "tune_funeral_march",
+      "name": "Funeral March",
+      "description": "Played the Funeral March on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_marionette",
+      "name": "Marionette",
+      "description": "Played the Funeral March of a Marionette on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_danse_macabre",
+      "name": "Danse Macabre",
+      "description": "Played Danse Macabre on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_bald_mountain",
+      "name": "Bald Mountain",
+      "description": "Played Night on Bald Mountain on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
+    },
+    {
+      "key": "tune_sorcerers_apprentice",
+      "name": "Sorcerer's Apprentice",
+      "description": "Played The Sorcerer's Apprentice on the cast",
+      "category": "mascot",
+      "icon": "sparkles",
+      "secret": true
     }
   ],
   "hidden": [

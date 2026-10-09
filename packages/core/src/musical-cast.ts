@@ -110,19 +110,30 @@ const A4h = 69, B4h = 71, C5h = 72, D5h = 74, E5h = 76, G4h = 67, F4h = 65, E4h 
  *   - In the Hall of the Mountain King (Grieg, 1875): B C# D E F# D F# . E C# E, here A B C D E C E . D B D.
  *   - Toccata and Fugue in D minor (Bach, BWV 565) opening: A G A . G F E D . C# D. The cast has no C#, so the cast's
  *     version plays the C natural: A G A G F E D C D.
- * More (Danse Macabre, Chopin's Funeral March, Night on Bald Mountain, Funeral March of a Marionette, The Sorcerer's
- * Apprentice) are listed in HALLOWEEN_TUNES_TODO until their notation is checked against a score.
+ *   - Funeral March (Chopin, Piano Sonata No. 2, 1839), B-flat minor: Bb Bb Bb Bb Db C C Bb Bb A Bb, here A A A A C B B
+ *     A A G A (G natural stands in for the leading tone G#). Checked against the Marche funebre score (bars 1-4).
+ *   - Funeral March of a Marionette (Gounod, 1872), D minor: D D C# Bb C# D E, here A A G F G A B (G for G#). Checked
+ *     against a lettered piano score (the Alfred Hitchcock Presents theme).
+ *   - Danse Macabre (Saint-Saens, 1874), the G minor waltz theme: G G Bb G A Bb G Bb G Bb A Bb A G, here A A C A B C A C
+ *     A C B C B A. Two independent lettered scores agree.
+ *   - Night on Bald Mountain (Mussorgsky), D minor: E F E D E F F A E, here B C B A B C C E B. Checked against two piano
+ *     arrangements (one with fingering that pins the pitches).
+ *   - The Sorcerer's Apprentice (Dukas, 1897), the march theme (A minor): A E A C A C B C A C, as written. Checked
+ *     against a lettered beginner score.
+ * No tune's interval shape is a prefix or a copy of another's (musical-cast.test.ts pins that).
  */
 export const HALLOWEEN_MELODIES: readonly MusicalMelody[] = [
   { id: 'mountain_king', name: 'In the Hall of the Mountain King', achievement: 'tune_mountain_king', notes: [A4h, B4h, C5h, D5h, E5h, C5h, E5h, D5h, B4h, D5h] },
   { id: 'toccata', name: 'Toccata and Fugue in D minor', achievement: 'tune_toccata', notes: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h] },
+  { id: 'funeral_march', name: 'Funeral March', achievement: 'tune_funeral_march', notes: [A4h, A4h, A4h, A4h, C5h, B4h, B4h, A4h, A4h, G4h, A4h] },
+  { id: 'marionette', name: 'Funeral March of a Marionette', achievement: 'tune_marionette', notes: [A4h, A4h, G4h, F4h, G4h, A4h, B4h] },
+  { id: 'danse_macabre', name: 'Danse Macabre', achievement: 'tune_danse_macabre', notes: [A4h, A4h, C5h, A4h, B4h, C5h, A4h, C5h, A4h, C5h, B4h, C5h, B4h, A4h] },
+  { id: 'bald_mountain', name: 'Night on Bald Mountain', achievement: 'tune_bald_mountain', notes: [B4h, C5h, B4h, A4h, B4h, C5h, C5h, E5h, B4h] },
+  { id: 'sorcerers_apprentice', name: "The Sorcerer's Apprentice", achievement: 'tune_sorcerers_apprentice', notes: [A4h, E5h, A4h, C5h, A4h, C5h, B4h, C5h, A4h, C5h] },
 ];
 
-/** Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line). */
-export const HALLOWEEN_TUNES_TODO: readonly string[] = [
-  'Danse Macabre (Saint-Saens)', 'Funeral March (Chopin, Piano Sonata No. 2)', 'Night on Bald Mountain (Mussorgsky)',
-  'Funeral March of a Marionette (Gounod)', "The Sorcerer's Apprentice (Dukas)",
-];
+/** Halloween tunes still waiting for checked notation: none (all five from the plan are wired above). */
+export const HALLOWEEN_TUNES_TODO: readonly string[] = [];
 
 /** The tunes that count right now: the everyday five, plus the season's own (halloween). */
 export function activeMelodies(season: string | null = null): readonly MusicalMelody[] {

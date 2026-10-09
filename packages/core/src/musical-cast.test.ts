@@ -124,6 +124,20 @@ describe('the Halloween tunes (item 49)', () => {
   it('the Mountain King is the right shape (2 1 2 2 -4 4 -2 -3 3)', () => {
     expect(melodyIntervals(HALLOWEEN_MELODIES[0].notes)).toEqual([2, 1, 2, 2, -4, 4, -2, -3, 3]);
   });
+  it('the five checked-score tunes have their verified shapes (item 49)', () => {
+    const byId = (id: string) => melodyIntervals(HALLOWEEN_MELODIES.find((m) => m.id === id)!.notes);
+    expect(HALLOWEEN_MELODIES.map((m) => m.id)).toEqual(['mountain_king', 'toccata', 'funeral_march', 'marionette', 'danse_macabre', 'bald_mountain', 'sorcerers_apprentice']);
+    expect(HALLOWEEN_TUNES_TODO).toEqual([]);
+    expect(byId('funeral_march')).toEqual([0, 0, 0, 3, -1, 0, -2, 0, -2, 2]);
+    expect(byId('marionette')).toEqual([0, -2, -2, 2, 2, 2]);
+    expect(byId('danse_macabre')).toEqual([0, 3, -3, 2, 1, -3, 3, -3, 3, -1, 1, -1, -2]);
+    expect(byId('bald_mountain')).toEqual([1, -1, -2, 2, 1, 0, 4, -5]);
+    expect(byId('sorcerers_apprentice')).toEqual([7, -7, 3, -3, 3, -1, 1, -3, 3]);
+  });
+  it('no active tune is a copy of, prefix of, or contained in another (a tap run can only finish one)', () => {
+    const all = [...MUSICAL_MELODIES, ...HALLOWEEN_MELODIES].map((m) => ({ id: m.id, iv: `,${melodyIntervals(m.notes).join(',')},` }));
+    for (const a of all) for (const b of all) if (a.id !== b.id) expect(a.iv.includes(b.iv), `${b.id} inside ${a.id}`).toBe(false);
+  });
   it('unlocks only in season; the everyday tunes still work in season', () => {
     for (const m of HALLOWEEN_MELODIES) {
       expect(playSeason(m.notes, 'halloween').pop()).toBe(m.id);
