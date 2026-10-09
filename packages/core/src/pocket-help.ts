@@ -121,11 +121,19 @@ export const TUTORIAL_BUTTON_AGAIN = 'Got it';
 /**
  * Whether the welcome card opens by itself: the switch is live and this game's
  * key is not in the player's seen list. `seen` is null while it is still loading
- * (never show on a guess: wait).
+ * (never show on a guess: wait). `hasResults` = the player already has results in
+ * this game (an existing player): the card never opens by itself, and the caller
+ * quietly records the key as seen (tutorialShouldRecordSeen) so it stays synced.
  */
-export function shouldAutoShowTutorial(i: { live: boolean; seen: readonly string[] | null; key: string }): boolean {
+export function shouldAutoShowTutorial(i: { live: boolean; seen: readonly string[] | null; key: string; hasResults?: boolean }): boolean {
   if (!i.live || i.seen === null) return false;
+  if (i.hasResults) return false;
   return !i.seen.includes(i.key);
+}
+
+/** An existing player (results in this game) whose key is not yet recorded: record it silently, show nothing. */
+export function tutorialShouldRecordSeen(i: { live: boolean; seen: readonly string[] | null; key: string; hasResults?: boolean }): boolean {
+  return i.live && i.seen !== null && !!i.hasResults && !i.seen.includes(i.key);
 }
 
 /** The seen list after the card closes: the key added once, kept sorted (stable for sync). */

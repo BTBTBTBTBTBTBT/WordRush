@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FRIENDLY_KINDS } from './friendly-games';
-import { POCKET_HELP, mergeTutorialsSeen, pocketTutorialKey, shouldAutoShowTutorial, withTutorialSeen } from './pocket-help';
+import { POCKET_HELP, mergeTutorialsSeen, pocketTutorialKey, shouldAutoShowTutorial, tutorialShouldRecordSeen, withTutorialSeen } from './pocket-help';
 import { idleBit, keepyLine, waitClock, waitedSeconds, waitingStatusLine } from './waiting-room';
 
 describe('pocket help', () => {
@@ -28,6 +28,14 @@ describe('pocket help', () => {
     expect(shouldAutoShowTutorial({ live: true, seen: ['hub'], key: 'hub' })).toBe(false);
     expect(shouldAutoShowTutorial({ live: false, seen: [], key: 'hub' })).toBe(false);
     expect(shouldAutoShowTutorial({ live: true, seen: null, key: 'hub' })).toBe(false);
+  });
+
+  it('never auto-shows to a player with results in the game, and records it quietly', () => {
+    expect(shouldAutoShowTutorial({ live: true, seen: [], key: 'hub', hasResults: true })).toBe(false);
+    expect(tutorialShouldRecordSeen({ live: true, seen: [], key: 'hub', hasResults: true })).toBe(true);
+    expect(tutorialShouldRecordSeen({ live: true, seen: ['hub'], key: 'hub', hasResults: true })).toBe(false);
+    expect(tutorialShouldRecordSeen({ live: true, seen: [], key: 'hub', hasResults: false })).toBe(false);
+    expect(tutorialShouldRecordSeen({ live: true, seen: null, key: 'hub', hasResults: true })).toBe(false);
   });
 
   it('seen lists stay sorted, unique and merge across devices', () => {
