@@ -608,6 +608,7 @@ enum MatchStatsService {
         }
         UserDefaults.standard.set(flawlessStreak, forKey: "wordocious.flawless-streak")
         UserDefaults.standard.set(today, forKey: "wordocious.flawless-streak-day")
+        Task { @MainActor in WidgetBridge.refresh() }   // item 48: the widget shows the new flawless run now
 
         return DailySweepStats(
             sweepCount: sweepDays.count, flawlessCount: flawlessDays.count,

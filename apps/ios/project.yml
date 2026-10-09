@@ -164,6 +164,9 @@ targets:
       # FINISH_SPEC §AL: the widget's day stats (solved / points / countdown) — the same
       # pure math the app writes the snapshot with.
       - path: Sources/Core/WidgetStats.swift
+      # WidgetStats.swift's WidgetCast.asset reads Season.current (the Halloween window) — compile it in too
+      # (2.8 moved the window into core; without this the extension would not build).
+      - path: Sources/Core/LevelSeason.swift
       # FINISH_SPEC §AC: a SLIM widget-only catalog (WordociousWidget/Assets.xcassets,
       # ~5 MB: the cast heroes, game icons, icon3d set, the tile wallpaper, the stat
       # sprites and the menu glyphs it draws) instead of the whole ~45 MB app catalog,
