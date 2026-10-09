@@ -243,7 +243,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES
       configs:
-        Release:  # needs an App Store profile created for com.wordocious.app.pushservice (see docs/PUSH_RICH_SETUP.md)
+        Release:  # needs an App Store profile created for com.wordocious.app.pushservice
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "Wordocious PushService App Store"
