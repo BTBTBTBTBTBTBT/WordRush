@@ -137,3 +137,51 @@ describe('2.7.1 Home host cache: transition', () => {
     expect(homeHostChoiceKey({ kind: 'photo', photoUrl: UPLOADED, config: c.config })).not.toBe(homeHostChoiceKey(c));
   });
 });
+
+// 2.7.1 regression (32488111): the purple W hosted Good Morning during the cold-start intro, then
+// popped to the player's mascot. The pieces above are tested one by one; this runs them the way a
+// real relaunch does — launch 1 writes the settled live look (useHomeHost's effect), launch 2 reads
+// storage on its first render and walks auth's phases — and asserts the host never shows W, never
+// changes look, and never crossfades on the way to live.
+describe('2.7.1 Home host cache: a cold relaunch, frame by frame', () => {
+  for (const [name, profile] of [['mascot', ALICE], ['cast preset', BOB], ['photo', PHOTO]] as const) {
+    it(`a ${name} player's own look is on screen from frame one to live`, () => {
+      const s = memStorage({ 'sb-abc-auth-token': session(profile.id) });
+      // Launch 1: the live look settled and was written.
+      const live = homeHostLookFor(profile, false, s);
+      writeHomeHostCache(profile.id, live, s);
+      const liveKey = homeHostChoiceKey(live.choice);
+      expect(live.choice.kind).not.toBe('w');
+
+      // Launch 2: read once on mount (useState initializers), then auth resolves.
+      const cache = readHomeHostCache(s);
+      const hint = storedSessionHint(s);
+      const frames = [
+        { live: null, userId: null, loading: true }, // intro: supabase-js hasn't read the session yet
+        { live: null, userId: profile.id, loading: false }, // auth knows the user; profile row in flight
+        { live, userId: profile.id, loading: false }, // profile landed
+      ].map((f) => pickHomeHostLook({ ...f, session: hint, cache }));
+
+      expect(frames.map((f) => f.phase)).toEqual(['cached', 'cached', 'live']);
+      let prev: string | null = null;
+      for (const f of frames) {
+        const key = homeHostChoiceKey(f.look.choice);
+        expect(key, f.phase).toBe(liveKey);
+        expect(homeHostTransition(prev, key, true)).toBe('none');
+        prev = key;
+      }
+    });
+  }
+
+  it('signed out between launches: no one else\'s look, and nothing cached means invisible (never W)', () => {
+    const s = memStorage({ 'sb-abc-auth-token': session('bob') });
+    writeHomeHostCache('alice', homeHostLookFor(ALICE, false, s), s);
+    // Another account's entry left behind: ignored.
+    const other = pickHomeHostLook({ live: null, userId: null, loading: true, session: storedSessionHint(s), cache: readHomeHostCache(s) });
+    expect(other.phase).toBe('unknown');
+    clearHomeHostCache(s);
+    const none = pickHomeHostLook({ live: null, userId: null, loading: true, session: storedSessionHint(s), cache: readHomeHostCache(s) });
+    expect(none.phase).toBe('unknown');
+    expect(homeHostInviteAllowed(none.phase)).toBe(false);
+  });
+});

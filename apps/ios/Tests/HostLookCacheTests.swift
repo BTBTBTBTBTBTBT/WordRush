@@ -67,4 +67,25 @@ final class HostLookCacheTests: XCTestCase {
             XCTAssertEqual(back, e)
         }
     }
+
+    /// 2.7.1 regression (32488111: W hosted the intro, then popped to the player's mascot). The
+    /// rules above one by one, chained the way a cold relaunch runs them: the entry written last
+    /// launch is decoded from its stored JSON, then the profile row and the own columns land. The
+    /// host must draw the player's look at every phase and never crossfade on the way to live.
+    func testColdRelaunchDrawsTheOwnLookFromFrameOneWithoutACrossfade() throws {
+        let stored = try JSONDecoder().decode(HostLookEntry.self, from: JSONEncoder().encode(mine))
+        let phases: [(profileUserId: String?, liveSettled: Bool)] = [
+            (nil, false),        // intro: no profile row yet
+            ("AAA-111", false),  // the row landed (server-cased id); own columns in flight
+            ("AAA-111", true),   // own columns read: live
+        ]
+        let sources = phases.map {
+            HostLookRules.source(entry: stored, sessionExpected: true, isGuest: false,
+                                 profileUserId: $0.profileUserId, liveSettled: $0.liveSettled)
+        }
+        XCTAssertEqual(sources, [.cached(mine), .cached(mine), .live])
+        // The live look resolves to the same entry, so nothing changes on screen.
+        XCTAssertFalse(HostLookRules.crossfades(from: stored, to: mine))
+        XCTAssertFalse(HostLookRules.shouldWrite(stored: stored, live: mine))
+    }
 }
