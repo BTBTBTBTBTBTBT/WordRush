@@ -26,7 +26,7 @@ import { RotateOverlay } from '@/components/ui/rotate-overlay';
 import { PwaProvider } from '@/components/providers/pwa-provider';
 import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
 import { ColdStartIntro } from '@/components/providers/cold-start-intro';
-import { SPLASH } from '@/lib/intro';
+import { SPLASH, seasonLoaderScript } from '@/lib/intro';
 import { SquishHost } from '@/components/ui/squish-host';
 import { CastArtWarmup } from '@/components/ui/cast-art-warmup';
 import { HeadingArtWarmup } from '@/components/ui/heading-art';
@@ -133,6 +133,8 @@ export default function RootLayout({
             style={{ width: SPLASH.size, height: SPLASH.size, filter: 'drop-shadow(0 12px 24px rgba(76, 29, 149, 0.25))' }}
           />
         </div>
+        {/* In season the static launch screen is already the Home night wall (lib/intro.ts seasonLoaderScript). */}
+        <script dangerouslySetInnerHTML={{ __html: seasonLoaderScript() }} />
         <style dangerouslySetInnerHTML={{ __html: `
           /* Fade out once React hydrates */
           #app-loader.loaded {

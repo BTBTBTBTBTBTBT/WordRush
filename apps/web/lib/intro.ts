@@ -1,6 +1,9 @@
 // The cold-start intro's rules and timeline (docs/FINISH_SPEC.md F2;
 // components/providers/cold-start-intro.tsx). Pure, so they're testable.
 
+import { SEASON_WINDOWS } from '@wordle-duel/core';
+import { seasonalWall } from './season-kit';
+
 /** BI20 (founder 10-03: "slow down the intro … don't lose the fluidity"): the timeline plays 1.4× slower — same curves, same order. */
 export const INTRO_PACE = 1.4;
 
@@ -115,3 +118,38 @@ export const SPLASH = {
   /** Rendered size, CSS px. */
   size: 132,
 } as const;
+
+/** The Halloween Home wall's top night color (sampled from art-wall-halloween-home): the in-season launch / intro base under the wall image. */
+export const SPLASH_NIGHT = '#0E091B';
+
+/**
+ * First-paint, in season: a tiny inline script (app/layout.tsx, right after #app-loader) that recolors the
+ * static launch screen to the season's Home night wall before hydration, so the lilac never flashes ahead of
+ * the in-season intro. It mirrors lib/season.ts activeSeason (preview ?season= / session key, the calendar
+ * window, the player's "no Seasonal" opt-out, the `season_halloween` + `opening_animation_season` off-switches
+ * from the cached flags table, fail open); any mismatch only costs one frame of color. The windows + wall
+ * names are baked in from the registry at render time, so a new season needs no edit here.
+ */
+export function seasonLoaderScript(): string {
+  const seasons = SEASON_WINDOWS.flatMap((w) => {
+    const wall = seasonalWall('art-wall-home', w.id, 'dark');
+    return wall ? [{ id: w.id, start: w.start[0] * 100 + w.start[1], end: w.end[0] * 100 + w.end[1], wall }] : [];
+  });
+  return `(function(){try{
+var S=${JSON.stringify(seasons)};
+var d=new Date(),k=(d.getMonth()+1)*100+d.getDate(),ov=null,id=null,i,s;
+try{ov=new URLSearchParams(location.search).get('season')||sessionStorage.getItem('wordocious-season-preview')}catch(e){}
+if(ov==='none'||ov==='off')return;
+for(i=0;i<S.length;i++){s=S[i];
+ if(ov===s.id){id=i;break}
+ if(!id&&id!==0&&(s.start<=s.end?(k>=s.start&&k<=s.end):(k>=s.start||k<=s.end)))id=i}
+if(id==null)return;s=S[id];
+var auto=ov!==s.id;
+if(auto){try{if(localStorage.getItem('wordocious-season-optout')===s.id+':'+d.getFullYear())return}catch(e){}}
+try{var f=JSON.parse(localStorage.getItem('wordocious-app-flags')||'null');
+ if(f)for(var n=auto?['season_halloween','opening_animation_season']:['opening_animation_season'],j=0;j<n.length;j++){var r=f[n[j]];if(r&&(!r.enabled||r.audience!=='all'))return}}catch(e){}
+var el=document.getElementById('app-loader');if(!el)return;
+var wide=matchMedia('(min-aspect-ratio: 1/1), (min-width: 1024px)').matches;
+el.style.background='${SPLASH_NIGHT} url("/art/'+s.wall+(wide?'-wide':'')+'.webp") center/cover no-repeat';
+}catch(e){}})();`;
+}
