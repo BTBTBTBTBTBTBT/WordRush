@@ -24,6 +24,8 @@ import { useDecodedEntrance } from '@/hooks/use-decoded-entrance';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
 import { useHomeHost } from '@/components/avatar/player-avatar';
 import { emitMascotMoment } from '@/lib/living-mascot';
+import { seasonEntry } from '@/lib/season-kit';
+import { useSeason } from '@/lib/season';
 
 // One-time full-screen celebration shown when the player completes every daily
 // in the current sweep (docs/FINISH_SPEC.md G3): a full-screen overlay tinted
@@ -53,6 +55,25 @@ const MORE_MODES: ModeMeta[] = MORE_GAME_MODES
 function fmtTime(s: number): string {
   const m = Math.floor(s / 60);
   return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+}
+
+/** 0 -> 1 over `ms` (ease-out) once mounted; 1 immediately under Reduce Motion. */
+function useProgress(ms: number, delay = 650): number {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    const still = typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.reducedMotion === 'true');
+    if (still) { setP(1); return; }
+    let raf = 0;
+    const start = performance.now() + delay;
+    const tick = (now: number) => {
+      const k = Math.min(1, Math.max(0, (now - start) / ms));
+      setP(1 - Math.pow(1 - k, 3));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [ms, delay]);
+  return p;
 }
 
 interface Props {
@@ -85,6 +106,16 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
   // 2.8 items 7 + 13: YOUR mascot celebrates beside the art — living (cheer + hops) when the living mascot is on,
   // else its static cutout; nothing for a player on the plain cast host. The reaction fires a beat after it mounts.
   const host = useHomeHost();
+  // 2.8 item 7 kit (docs/design/brand/2.8/celebrate): a prop's art, the season's swap when the registry has one.
+  const season = useSeason();
+  const prop = (name: string): string => {
+    const swap = seasonEntry(season)?.slots.extras?.[`celebrate-${name}`];
+    return `/art/${swap ?? `celebrate-${name}`}.webp`;
+  };
+  const float1 = seasonEntry(season)?.slots.extras?.['celebrate-float-1'];
+  const float2 = seasonEntry(season)?.slots.extras?.['celebrate-float-2'];
+  // the stats count up (Reduce Motion: final values at once)
+  const prog = useProgress(900);
   useEffect(() => {
     const t = setTimeout(() => emitMascotMoment(flawless ? 'flawless' : 'sweep'), 500);
     return () => clearTimeout(t);
@@ -100,9 +131,9 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
   // AZ: the scene + lettering are decoded before the spring-in starts.
   const { ref: entranceRef, waiting } = useDecodedEntrance<HTMLDivElement>();
   const stats: { value: string; label: string }[] = [
-    { value: `${totals.won}/${totals.total}`, label: 'Won' },
-    { value: fmtTime(totals.totalTimeSeconds), label: 'Total Time' },
-    { value: totals.totalScore.toLocaleString(), label: 'Total Pts' },
+    { value: `${Math.round(totals.won * prog)}/${totals.total}`, label: 'Won' },
+    { value: fmtTime(Math.round(totals.totalTimeSeconds * prog)), label: 'Total Time' },
+    { value: Math.round(totals.totalScore * prog).toLocaleString(), label: 'Total Pts' },
   ];
 
   return (
@@ -126,10 +157,31 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
           <span aria-hidden="true" className="text-[12px] font-black uppercase text-white" style={{ letterSpacing: 1.6, textShadow: INK_SHADOW }}>
             {more ? 'Puzzles' : 'Daily'}
           </span>
-          <MomentArt moment={flawless ? 'flawless' : 'sweep'} label={title} maxHeight={84} widthPct={86} />
+          <div className="relative w-full flex justify-center" style={{ overflow: 'visible' }}>
+            <MomentArt moment={flawless ? 'flawless' : 'sweep'} label={title} maxHeight={84} widthPct={86} />
+            {/* the streamers swing in either side of the lettering; a sparkle trail sweeps across it once */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img aria-hidden="true" alt="" src={prop('streamers-pair')} width={62} className="absolute celebrate-streamer-l pointer-events-none" style={{ left: -6, top: -26 }} draggable={false} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img aria-hidden="true" alt="" src={prop('streamers-pair')} width={62} className="absolute celebrate-streamer-r pointer-events-none" style={{ right: -6, top: -26 }} draggable={false} />
+            <span aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="" src="/art/celebrate-sparkle-sweep.webp" className="absolute celebrate-sweep" style={{ height: '120%', top: '-10%', left: 0, width: 'auto' }} draggable={false} />
+            </span>
+          </div>
 
           {/* The big scene art springs in over a soft glow. */}
           <div className="relative flex justify-center mt-1" style={{ height: ART_H }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img aria-hidden="true" alt="" src={prop(flawless ? 'burst-gold' : 'burst-party')} className="absolute celebrate-burst pointer-events-none" style={{ width: ART_H * 1.7, left: '50%', top: '50%', marginLeft: -ART_H * 0.85, marginTop: -ART_H * 0.85 }} draggable={false} />
+            {float1 && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img aria-hidden="true" alt="" src={`/art/${float1}.webp`} width={78} className="absolute celebrate-float pointer-events-none" style={{ left: -14, top: -8 }} draggable={false} />
+            )}
+            {float2 && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img aria-hidden="true" alt="" src={`/art/${float2}.webp`} width={64} className="absolute celebrate-float pointer-events-none" style={{ right: -10, top: 4 }} draggable={false} />
+            )}
             <div
               aria-hidden="true"
               className="absolute celebrate-glow"
@@ -147,6 +199,11 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
               className="relative select-none pointer-events-none celebrate-spring"
               style={{ height: ART_H, width: 'auto', maxWidth: '86vw', objectFit: 'contain', filter: 'drop-shadow(0 10px 16px rgba(40, 10, 80, 0.35))' }}
             />
+            {flawless && (
+              // the crown drops onto the star (Halloween: the witch hat)
+              // eslint-disable-next-line @next/next/no-img-element
+              <img aria-hidden="true" alt="" src={prop('crown-gold')} width={84} className="absolute celebrate-crown pointer-events-none" style={{ left: '50%', top: -22, marginLeft: -42 }} draggable={false} />
+            )}
             {host.choice.kind === 'mascot' && (
               <span aria-hidden="true" className="absolute pointer-events-none" style={{ right: -8, bottom: -6, width: 96, height: 96 }}>
                 <MascotAvatar config={host.choice.config} initial={host.initial} size={96} cutout living />
@@ -173,7 +230,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
           {/* Per-game list: mini game cards in each game's color with the W / L badge. */}
           {/* 2 columns: every name the same size, W/L badges in one aligned column (3 columns orphaned Starsweep). */}
           <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 w-full">
-            {modes.map((m) => {
+            {modes.map((m, k) => {
               const c = completions.get(m.dbKey);
               if (!c) return null;
               return (
@@ -185,7 +242,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
                     {MODE_SHARE_GLYPH[m.mode]}
                   </span>
                   <span className="text-[12px] font-bold truncate text-left" style={{ color: 'var(--color-text)' }}>{m.label}</span>
-                  <WinLossBadge won={c.won} size={16} className="ml-auto" />
+                  {/* each game's W / L badge stamps in one by one */}
+                  <WinLossBadge won={c.won} size={16} className="ml-auto celebrate-stamp" style={{ ['--k' as string]: k } as React.CSSProperties} />
                 </div>
               );
             })}
