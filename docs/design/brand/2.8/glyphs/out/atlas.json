@@ -1,0 +1,293 @@
+{
+ "capHeight": 218,
+ "glyphs": {
+  "A": {
+   "w": 206,
+   "h": 218,
+   "baseline": 219.4,
+   "align": "baseline"
+  },
+  "B": {
+   "w": 188,
+   "h": 222,
+   "baseline": 221.1,
+   "align": "baseline"
+  },
+  "C": {
+   "w": 193,
+   "h": 222,
+   "baseline": 220.3,
+   "align": "baseline"
+  },
+  "D": {
+   "w": 196,
+   "h": 221,
+   "baseline": 221.1,
+   "align": "baseline"
+  },
+  "E": {
+   "w": 177,
+   "h": 218,
+   "baseline": 217.6,
+   "align": "baseline"
+  },
+  "F": {
+   "w": 173,
+   "h": 219,
+   "baseline": 219.4,
+   "align": "baseline"
+  },
+  "G": {
+   "w": 204,
+   "h": 223,
+   "baseline": 221.1,
+   "align": "baseline"
+  },
+  "H": {
+   "w": 199,
+   "h": 216,
+   "baseline": 217.6,
+   "align": "baseline"
+  },
+  "I": {
+   "w": 110,
+   "h": 222,
+   "baseline": 221.6,
+   "align": "baseline"
+  },
+  "J": {
+   "w": 187,
+   "h": 222,
+   "baseline": 221.6,
+   "align": "baseline"
+  },
+  "K": {
+   "w": 204,
+   "h": 217,
+   "baseline": 218.9,
+   "align": "baseline"
+  },
+  "L": {
+   "w": 180,
+   "h": 222,
+   "baseline": 221.6,
+   "align": "baseline"
+  },
+  "M": {
+   "w": 235,
+   "h": 214,
+   "baseline": 215.3,
+   "align": "baseline"
+  },
+  "N": {
+   "w": 199,
+   "h": 217,
+   "baseline": 218.0,
+   "align": "baseline"
+  },
+  "O": {
+   "w": 224,
+   "h": 220,
+   "baseline": 219.0,
+   "align": "baseline"
+  },
+  "P": {
+   "w": 188,
+   "h": 225,
+   "baseline": 222.6,
+   "align": "baseline"
+  },
+  "Q": {
+   "w": 237,
+   "h": 234,
+   "baseline": 221.7,
+   "align": "baseline"
+  },
+  "R": {
+   "w": 197,
+   "h": 218,
+   "baseline": 219.9,
+   "align": "baseline"
+  },
+  "S": {
+   "w": 186,
+   "h": 220,
+   "baseline": 220.8,
+   "align": "baseline"
+  },
+  "T": {
+   "w": 201,
+   "h": 221,
+   "baseline": 220.8,
+   "align": "baseline"
+  },
+  "U": {
+   "w": 195,
+   "h": 218,
+   "baseline": 219.9,
+   "align": "baseline"
+  },
+  "V": {
+   "w": 200,
+   "h": 218,
+   "baseline": 218.0,
+   "align": "baseline"
+  },
+  "W": {
+   "w": 256,
+   "h": 220,
+   "baseline": 219.9,
+   "align": "baseline"
+  },
+  "X": {
+   "w": 201,
+   "h": 220,
+   "baseline": 219.0,
+   "align": "baseline"
+  },
+  "Y": {
+   "w": 215,
+   "h": 217,
+   "baseline": 220.5,
+   "align": "baseline"
+  },
+  "Z": {
+   "w": 202,
+   "h": 220,
+   "baseline": 221.5,
+   "align": "baseline"
+  },
+  "0": {
+   "w": 227,
+   "h": 223,
+   "baseline": 221.5,
+   "align": "baseline"
+  },
+  "1": {
+   "w": 145,
+   "h": 223,
+   "baseline": 221.5,
+   "align": "baseline"
+  },
+  "2": {
+   "w": 201,
+   "h": 223,
+   "baseline": 225.5,
+   "align": "baseline"
+  },
+  "3": {
+   "w": 196,
+   "h": 227,
+   "baseline": 227.5,
+   "align": "baseline"
+  },
+  "4": {
+   "w": 219,
+   "h": 228,
+   "baseline": 226.5,
+   "align": "baseline"
+  },
+  "5": {
+   "w": 197,
+   "h": 229,
+   "baseline": 228.5,
+   "align": "baseline"
+  },
+  "6": {
+   "w": 208,
+   "h": 222,
+   "baseline": 222.0,
+   "align": "baseline"
+  },
+  "7": {
+   "w": 192,
+   "h": 216,
+   "baseline": 219.0,
+   "align": "baseline"
+  },
+  "8": {
+   "w": 209,
+   "h": 223,
+   "baseline": 223.0,
+   "align": "baseline"
+  },
+  "9": {
+   "w": 207,
+   "h": 223,
+   "baseline": 223.0,
+   "align": "baseline"
+  },
+  "star": {
+   "w": 206,
+   "h": 193,
+   "baseline": 204.4,
+   "align": "mid"
+  },
+  "excl": {
+   "w": 102,
+   "h": 218,
+   "baseline": 214.7,
+   "align": "baseline"
+  },
+  "quest": {
+   "w": 171,
+   "h": 224,
+   "baseline": 220.6,
+   "align": "baseline"
+  },
+  "comma": {
+   "w": 103,
+   "h": 123,
+   "baseline": 76.3,
+   "align": "comma"
+  },
+  "apos": {
+   "w": 99,
+   "h": 109,
+   "baseline": 162.1,
+   "align": "top"
+  },
+  "dot": {
+   "w": 92,
+   "h": 86,
+   "baseline": 129.5,
+   "align": "mid"
+  },
+  "hyphen": {
+   "w": 159,
+   "h": 81,
+   "baseline": 128.6,
+   "align": "mid"
+  },
+  "amp": {
+   "w": 195,
+   "h": 198,
+   "baseline": 195.0,
+   "align": "baseline"
+  },
+  "period": {
+   "w": 98,
+   "h": 87,
+   "baseline": 85.7,
+   "align": "baseline"
+  },
+  "colon": {
+   "w": 93,
+   "h": 160,
+   "baseline": 157.6,
+   "align": "baseline"
+  },
+  "plus": {
+   "w": 192,
+   "h": 180,
+   "baseline": 166.5,
+   "align": "mid"
+  },
+  "percent": {
+   "w": 206,
+   "h": 194,
+   "baseline": 191.1,
+   "align": "baseline"
+  }
+ }
+}
