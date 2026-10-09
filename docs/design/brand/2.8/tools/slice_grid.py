@@ -88,14 +88,16 @@ def split_cells(rgba, names, cols, rows, margin=0.0, join=0):
         best = max((i for i, (cx, cy, sz) in cent.items() if col * w / cols <= cx < (col + 1) * w / cols and row * h / rows <= cy < (row + 1) * h / rows), key=lambda i: cent[i][2], default=0)
         if best:
             mains[name] = best
-    mk = np.zeros(a.shape, np.int32)
-    for k, (name, i) in enumerate(mains.items(), 1):
-        mk[lab == i] = k
-    dist, (iy, ix) = ndimage.distance_transform_edt(mk == 0, return_indices=True)
-    owner = mk[iy, ix] * (lab > 0)
+    # every component goes to the cell its centroid is in (so multi-part pieces such as 3 pager dots stay together);
+    # a cell with no component of its own gets nothing.
+    names_in = {n: k for k, n in enumerate(names)}
     out = {}
-    for k, name in enumerate(mains, 1):
-        m = owner == k
+    for idx, name in enumerate(names):
+        row, col = divmod(idx, cols)
+        ids = [i for i, (cx, cy, sz) in cent.items() if col * w / cols <= cx < (col + 1) * w / cols and row * h / rows <= cy < (row + 1) * h / rows]
+        if not ids:
+            continue
+        m = np.isin(lab, ids)
         ys, xs = np.nonzero(m)
         out[name] = ((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1), m)
     return out
