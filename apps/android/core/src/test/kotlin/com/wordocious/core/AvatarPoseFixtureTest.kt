@@ -220,7 +220,7 @@ class AvatarPoseFixtureTest {
     @Test
     fun withheld_match() {
         val rows = root["withheld"]!!.jsonArray.map { it.jsonObject }
-        assertEquals((AvatarPoses.IDS.size - 1) * data.rigs.size, rows.size)
+        assertEquals((AvatarPoses.IDS.size - 1 + AvatarPoses.CODE_POSES.size) * data.rigs.size, rows.size)
         for (r in rows) {
             val pose = str(r["pose"]); val body = str(r["body"])
             assertEquals("$pose/$body", r["items"]!!.jsonArray.map { str(it) }, AvatarPoses.withheld(pose, body, data))

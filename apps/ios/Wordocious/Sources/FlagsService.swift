@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import WordociousCore
 
 /// Remote feature flags — the More Games kill switch + tester gate (plan §7).
 /// Port of apps/web/lib/flags.ts `isFlagOn`; the rule is identical on the web

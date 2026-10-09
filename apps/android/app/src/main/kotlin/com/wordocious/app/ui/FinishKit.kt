@@ -65,6 +65,7 @@ import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.app.ui.theme.tightTextStyle
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
 
 // The finishing build (docs/FINISH_SPEC.md, founder-approved 2026-10-02): the shared
 // parts every screen is rebuilt from. A1 tinted surfaces (no plain white), A2 soft
