@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   botsLine, formatFastest, friendsSinceLine, friendshipState, headToHeadLine, heroStats, highlightsLayout, pickerSplit,
   pocketLine, pocketRecords, pocketTileLine, profileActions, recordBar, sectionTitleColor, showGuessDistribution, winRatePct,
+  proBenefitForReason, PRO_BENEFIT_ORDER, PRO_SCENES,
   type PocketGameRow,
 } from './stats-profile';
 
@@ -108,5 +109,19 @@ describe('player profile rules', () => {
   it('colors section titles from the cast', () => {
     expect(sectionTitleColor('Head to Head')).toBe('#2563eb');
     expect(sectionTitleColor('unknown')).toBe('#7c3aed');
+  });
+});
+
+describe('go pro scenes', () => {
+  it('maps a request reason to its benefit scene', () => {
+    expect(proBenefitForReason('Pro mascot styles')).toBe('items');
+    expect(proBenefitForReason('Unlimited QuadWord')).toBe('unlimited');
+    expect(proBenefitForReason('Unlimited play')).toBe('unlimited');
+    expect(proBenefitForReason('VS Bots')).toBe('vsBots');
+    expect(proBenefitForReason('Extended stats')).toBe('stats');
+    expect(proBenefitForReason(undefined)).toBe('unlimited');
+  });
+  it('has one distinct scene per benefit', () => {
+    expect(new Set(PRO_BENEFIT_ORDER.map((b) => PRO_SCENES[b])).size).toBe(PRO_BENEFIT_ORDER.length);
   });
 });

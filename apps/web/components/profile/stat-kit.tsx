@@ -7,6 +7,7 @@ import { CastLink } from '@/components/ui/cast-button';
 import { ART_SIZE, artSrc, type GoProSignId } from '@/lib/art';
 import { BRAND_ACCENT, cardBarStyle, softCard } from '@/lib/soft-surface';
 import { BubbleText } from '@/components/ui/bubble-text';
+import { ProScene } from '@/components/pro/pro-scene';
 import { CAST_COLORS, sectionTitleColor } from '@wordle-duel/core';
 
 /** Counts from 0 to `target` over ~500ms on mount (F4). Snaps under
@@ -223,7 +224,8 @@ export function ProStatsInvite({ line, compact = false, cast = 'w' }: { line: st
   }
   return (
     <div className="flex flex-col items-center gap-2 py-1 text-center">
-      {img}
+      {/* Item 20: the free player's own mascot on the pedestal with the Stats scene (the cast sign stays on the compact rows). */}
+      <ProScene benefit="stats" height={128} caption={false} />
       <div style={{ maxWidth: 280 }}>{text}</div>
       <CastLink href="/pro" color="gold" size="md" aria-label="Go Pro">Go Pro</CastLink>
     </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Icon3D, type Icon3DName } from '@/components/ui/icon3d';
 import { GameArt } from '@/components/ui/game-art';
 import { useAuth } from '@/lib/auth-context';
@@ -14,10 +13,11 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { PopupBar, SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
-import { ART_SIZE, artSrc, badgeSrc, onPageShadow } from '@/lib/art';
+import { badgeSrc, onPageShadow } from '@/lib/art';
 import { GiftProCard } from '@/components/friends/invite-screens';
 import { softBackground, softBorder, softIconTile, softShadow, liftedInk } from '@/lib/soft-surface';
 import { PoseArt } from '@/components/ui/soft-popup';
+import { ProSceneCarousel } from '@/components/pro/pro-scene';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { ManageSubscriptionRows, useStripePortal } from '@/components/pro/manage-subscription';
 import { proRenewalLabel } from '@/lib/pro-crown';
@@ -33,7 +33,6 @@ import { CHECKOUT_HANDOFF_LINE, PRO_LAPSED_BODY, proLapsedLine, webRenewalDisclo
 
 const GOLD = '#f5a524';
 const GOLD_BAR = 'linear-gradient(90deg, #ffd166, #f5a524 55%, #f97316)';
-const CROWN = 'art-scene-pro-crown' as const;
 
 /** A feature row's 3D icon: a 3D UI icon or a game's 3D icon. */
 type FeatureIcon = { icon: Icon3DName } | { game: string };
@@ -137,7 +136,6 @@ export default function ProPage() {
     { key: 'monthly', title: 'Monthly', price: `$${PRO_PLANS.monthly.price}`, per: '/mo', note: 'Cancel anytime' },
   ];
   const selected = PRO_PLANS[plan];
-  const [cw, ch] = ART_SIZE[CROWN];
 
   return (
     <PageBackground tint="home" className="min-h-screen pb-20">
@@ -157,23 +155,14 @@ export default function ProPage() {
           )}
         />
 
-        {/* G1: W crowned with the golden star, large, over a soft gold glow. */}
-        <div className="relative flex justify-center mb-4" aria-hidden="true">
+        {/* Item 20: the free player's own mascot (alive) on the pedestal; the five benefit scenes take turns beside it. */}
+        <div className="relative flex justify-center mb-4">
           <div
+            aria-hidden="true"
             className="absolute celebrate-glow"
             style={{ width: 230, height: 230, top: '50%', left: '50%', marginTop: -115, marginLeft: -115, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255, 209, 102, 0.55), rgba(245, 165, 36, 0) 68%)' }}
           />
-          <Image
-            src={artSrc(CROWN)}
-            alt=""
-            width={cw}
-            height={ch}
-            priority
-            draggable={false}
-            sizes="170px"
-            className="relative select-none pointer-events-none art-pop"
-            style={{ height: 210, width: 'auto', filter: 'drop-shadow(0 8px 14px rgba(180, 83, 9, 0.25))' }}
-          />
+          <div className="relative"><ProSceneCarousel height={190} /></div>
         </div>
 
         {isProActive ? (

@@ -255,3 +255,25 @@ export const PRO_SCENES: Record<ProBenefit, string> = {
   noLimits: 'art-pro-no-limits',
 };
 export const PRO_PEDESTAL = 'art-pro-stage-pedestal';
+
+export const PRO_BENEFIT_ORDER: readonly ProBenefit[] = ['unlimited', 'items', 'vsBots', 'stats', 'noLimits'];
+
+/** One line under each benefit's scene (the screen's caption). */
+export const PRO_BENEFIT_CAPTION: Record<ProBenefit, string> = {
+  unlimited: 'Every game, any time',
+  items: 'Wear every Pro mascot item',
+  vsBots: 'VS on every game, bots included',
+  stats: 'Stats that go deeper',
+  noLimits: 'No limits. No ads.',
+};
+
+/** Which benefit scene a Go Pro request shows, from the reason the surface gave ("Pro mascot styles", "Unlimited QuadWord"). */
+export function proBenefitForReason(reason: string | null | undefined): ProBenefit {
+  const r = (reason ?? '').toLowerCase();
+  if (r.includes('mascot') || r.includes('item') || r.includes('style') || r.includes('dress')) return 'items';
+  if (r.includes('unlimited')) return 'unlimited';
+  if (r.includes('bot') || r.includes('vs') || r.includes('versus')) return 'vsBots';
+  if (r.includes('stat') || r.includes('insight') || r.includes('trend')) return 'stats';
+  if (r.includes('no limit') || r.includes('ad-free') || r.includes('ads')) return 'noLimits';
+  return 'unlimited';
+}
