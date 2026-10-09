@@ -245,16 +245,24 @@ private fun AgeAskScene() {
     Column(Modifier.widthIn(max = 318.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         AgeSpeechBubble("WHAT YEAR WERE YOU BORN?", halloween, Modifier.fillMaxWidth(0.9f).align(Alignment.Start))
         // The tail stops just above D's head (never tucked behind him or his hat).
-        Box(Modifier.fillMaxWidth().height(150.dp).padding(top = 8.dp)) {
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth().height(150.dp).padding(top = 8.dp)) {
+            val w = maxWidth
             // the shared soft floor
             Box(
                 Modifier.align(Alignment.BottomCenter).fillMaxWidth(0.92f).height(34.dp)
                     .background(Brush.radialGradient(listOf(Color(0xA6C4B5FD), Color.Transparent)), androidx.compose.foundation.shape.CircleShape),
             )
-            AgeContact(120.dp, Modifier.align(Alignment.BottomEnd).offset(x = (-22).dp, y = (-4).dp))
-            AgeContact(92.dp, Modifier.align(Alignment.BottomStart).offset(x = 40.dp))
-            Image(painterResource(SeasonSkins.fullRes(MascotId.D, season)), null, Modifier.align(Alignment.BottomEnd).padding(end = 18.dp, bottom = 4.dp).size(142.dp))
-            Image(painterResource(R.drawable.age_cake), null, Modifier.align(Alignment.BottomStart).padding(start = 52.dp).width(84.dp))
+            // One group, not two pictures: the cake stands IN FRONT of D (overlapping him), both on one contact
+            // shadow, and the candles throw a warm glow onto him (same as iOS / web).
+            AgeContact(w * 0.62f, Modifier.align(Alignment.BottomStart).offset(x = w * 0.29f))
+            Image(painterResource(SeasonSkins.fullRes(MascotId.D, season)), null,
+                Modifier.align(Alignment.BottomStart).offset(x = w * 0.70f - 71.dp, y = (-6).dp).size(142.dp))
+            Box(
+                Modifier.align(Alignment.BottomStart).offset(x = w * 0.47f - 46.dp, y = (-32).dp).size(92.dp)
+                    .background(Brush.radialGradient(listOf(Color(0x8CFFC759), Color.Transparent)), androidx.compose.foundation.shape.CircleShape),
+            )
+            Image(painterResource(R.drawable.age_cake), null,
+                Modifier.align(Alignment.BottomStart).offset(x = w * 0.47f - 42.dp).width(84.dp))
         }
     }
 }

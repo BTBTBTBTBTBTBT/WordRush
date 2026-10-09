@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useTheme } from '@/lib/theme-context';
+import { useThemeOrDefault } from '@/lib/theme-context';
 import { useSeason } from '@/lib/season';
 import { useFlags } from '@/hooks/use-flags';
 import { ambientSrc, seasonalEntry, themeEntry, themeWallVars, type ThemeAmbient } from '@/lib/theme-kit';
@@ -19,7 +19,7 @@ import { ambientSrc, seasonalEntry, themeEntry, themeWallVars, type ThemeAmbient
 // `living_wallpapers` switch. CSS transforms only (compositor), no JS per frame.
 
 export function ThemeWallLayer() {
-  const { theme } = useTheme();
+  const { theme } = useThemeOrDefault();
   const season = useSeason();
   // Default draws its own art wall; a season's wall covers everything beneath it.
   if (theme === 'default' || season) return null;
@@ -28,7 +28,7 @@ export function ThemeWallLayer() {
 
 /** True when this device should draw fewer / no moving things. */
 function useCalm(): { still: boolean; trim: number } {
-  const { reducedMotion } = useTheme();
+  const { reducedMotion } = useThemeOrDefault();
   const [sys, setSys] = useState({ still: false, trim: 1 });
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -52,7 +52,7 @@ const unit = (i: number, salt: number) => {
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function LivingWallpaper() {
-  const { theme } = useTheme();
+  const { theme } = useThemeOrDefault();
   const season = useSeason();
   const { isLive } = useFlags();
   const { still, trim } = useCalm();

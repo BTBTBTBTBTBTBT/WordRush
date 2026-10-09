@@ -1,6 +1,6 @@
 'use client';
 
-import { useTheme } from '@/lib/theme-context';
+import { useThemeOrDefault } from '@/lib/theme-context';
 import { useSeason } from '@/lib/season';
 import { themeHeadlineAccent } from '@/lib/theme-kit';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
@@ -58,7 +58,7 @@ export const BubbleLine = memo(function BubbleLine(props: BubbleLineProps) {
   const { text, size } = props;
   const { isLive } = useFlags();
   // Item 25: a non-default theme tints page headlines with its accent (a season's spec / an explicit accent still wins).
-  const { theme } = useTheme();
+  const { theme } = useThemeOrDefault();
   const season = useSeason();
   const themeAccent = season || props.spec || props.accent || props.palette === 'celebrate' ? null : themeHeadlineAccent(theme);
   const tinted = themeAccent ? { ...props, accent: themeAccent } : props;

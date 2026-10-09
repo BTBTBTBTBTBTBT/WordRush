@@ -131,3 +131,12 @@ export function useTheme() {
   if (!context) throw new Error('useTheme must be used within ThemeProvider');
   return context;
 }
+
+/**
+ * The theme for surfaces that can render OUTSIDE ThemeProvider (the 13+ age check sits above it in AuthGate):
+ * the provider's values when there is one, else the default theme with motion on.
+ */
+export function useThemeOrDefault(): Pick<ThemeContextType, 'theme' | 'reducedMotion'> {
+  const context = useContext(ThemeContext);
+  return context ?? { theme: 'default', reducedMotion: false };
+}

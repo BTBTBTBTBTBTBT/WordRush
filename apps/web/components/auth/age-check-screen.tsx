@@ -17,20 +17,24 @@ import { PageBackground } from '@/components/ui/page-background';
 const ROW = 54;
 const VISIBLE = 5;
 
-/** The year wheel: CSS scroll-snap, centered row picks. No row is selected until the player moves it. */
-function YearWheel({ years, onPick }: { years: number[]; onPick: (year: number) => void }) {
+/**
+ * The year wheel: CSS scroll-snap, centered row picks. Row 0 is a neutral "• • •" placeholder (as on iOS / Android),
+ * so no year ever sits in the gold band until the player moves the wheel.
+ */
+function YearWheel({ years, onPick }: { years: number[]; onPick: (year: number | null) => void }) {
   // In season the wheel is the same black-violet glass as D's bubble, so it belongs to the night scene.
   const night = useSeason() !== null;
   const ref = useRef<HTMLDivElement>(null);
   const [touched, setTouched] = useState(false);
   const [index, setIndex] = useState(0);
 
+  // Rows: 0 = the placeholder, 1… = years[row - 1].
   const pickIndex = useCallback(
     (i: number) => {
-      const clamped = Math.max(0, Math.min(years.length - 1, i));
+      const clamped = Math.max(0, Math.min(years.length, i));
       setIndex(clamped);
-      setTouched(true);
-      onPick(years[clamped]);
+      setTouched(clamped > 0);
+      onPick(clamped > 0 ? years[clamped - 1] : null);
     },
     [years, onPick],
   );
@@ -51,8 +55,8 @@ function YearWheel({ years, onPick }: { years: number[]; onPick: (year: number) 
   };
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); goTo(touched ? index + 1 : 0); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); goTo(touched ? index - 1 : 0); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); goTo(index + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); goTo(index - 1); }
   };
 
   return (
@@ -99,7 +103,20 @@ function YearWheel({ years, onPick }: { years: number[]; onPick: (year: number) 
         }}
       >
         <div style={{ height: ROW * 2 }} />
-        {years.map((y, i) => {
+        {/* The neutral placeholder row: no year is ever pre-selected. */}
+        <div
+          role="option"
+          aria-selected={!touched}
+          aria-label="No year chosen"
+          onClick={() => goTo(0)}
+          className="flex items-center justify-center cursor-pointer select-none"
+          style={{ height: ROW, scrollSnapAlign: 'center', fontSize: 22, fontWeight: 900, letterSpacing: '0.3em',
+            color: night ? '#ffdb8c' : '#4c1d95' }}
+        >
+          {'\u2022\u2022\u2022'}
+        </div>
+        {years.map((y, yi) => {
+          const i = yi + 1;
           const on = touched && i === index;
           return (
             <div
@@ -166,14 +183,19 @@ function AskScene() {
           left: '4%', right: '4%', bottom: 0, height: 34, borderRadius: '50%',
           background: 'radial-gradient(ellipse at center, rgba(196,181,253,0.65), rgba(196,181,253,0) 72%)',
         }} />
-        <Contact left="55%" width="38%" bottom={4} />
-        <Contact left="12%" width="30%" bottom={0} />
+        {/* One group, not two pictures: the cake stands IN FRONT of D (overlapping him), both on one contact shadow,
+            and the candles throw a warm glow onto him (same as iOS / Android). */}
+        <Contact left="29%" width="62%" bottom={0} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={castArt('d', season).src} alt="" aria-hidden="true" width={150} height={150} draggable={false}
-          className="absolute select-none pointer-events-none" style={{ right: '6%', bottom: 4, width: 142, height: 142, objectFit: 'contain' }} />
+          className="absolute select-none pointer-events-none" style={{ left: 'calc(70% - 71px)', bottom: 6, width: 142, height: 142, objectFit: 'contain' }} />
+        <span aria-hidden="true" className="absolute pointer-events-none" style={{
+          left: 'calc(47% - 46px)', bottom: 32, width: 92, height: 92, borderRadius: '50%', mixBlendMode: 'plus-lighter',
+          background: 'radial-gradient(circle, rgba(255,199,89,0.55), rgba(255,199,89,0) 70%)',
+        }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/age-check/cake.webp" alt="" aria-hidden="true" width={90} height={108} draggable={false}
-          className="absolute select-none pointer-events-none" style={{ left: '20%', bottom: 0, width: 84, height: 'auto', zIndex: 2, filter: 'drop-shadow(0 3px 3px rgba(76,29,149,0.18))' }} />
+          className="absolute select-none pointer-events-none" style={{ left: 'calc(47% - 42px)', bottom: 0, width: 84, height: 'auto', zIndex: 2, filter: 'drop-shadow(0 2px 4px rgba(76,29,149,0.25))' }} />
       </div>
     </div>
   );
