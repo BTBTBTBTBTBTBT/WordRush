@@ -519,7 +519,7 @@ struct PodiumView: View {
                     Button(action: bell) {
                         Icon3D(.bell, size: 16).frame(width: 30, height: 24).contentShape(Rectangle())
                     }
-                    .buttonStyle(.squishIcon)
+                    .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
                     .accessibilityLabel("Taunt \(e.name)")
                 }
                 step(tone: tone, label: "\(e.rank ?? place)")

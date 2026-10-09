@@ -80,7 +80,7 @@ struct CastCrown: View {
                 .padding(10)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.squishIcon)
+        .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23
         .padding(-10)
         .opacity(welcome.crownHeld ? 0 : 1)
         .onChange(of: welcome.crownDropToken) { _ in drop() }

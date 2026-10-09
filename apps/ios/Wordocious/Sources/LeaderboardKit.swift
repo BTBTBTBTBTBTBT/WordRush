@@ -136,7 +136,7 @@ struct LbShareButton: View {
             Icon3D(.share, size: 20)
                 .frame(width: 34, height: 34).contentShape(Rectangle())
         }
-        .buttonStyle(.squishIcon)
+        .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
         .opacity(busy ? 0.4 : 1)
         .accessibilityLabel(label)
     }

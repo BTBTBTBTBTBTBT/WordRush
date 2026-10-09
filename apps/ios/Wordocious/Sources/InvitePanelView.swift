@@ -199,7 +199,7 @@ struct InvitePanelView: View {
                         Button { share(code: inv.code) } label: {
                             Icon3D(.share, size: 18)
                         }
-                        .buttonStyle(.squishIcon)
+                        .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
                         .accessibilityLabel("Share invite \(inv.code)")
                         FamilyCloseButton(size: 17, label: "Cancel invite \(inv.code)") { cancelTarget = inv }
                             .frame(width: 28, height: 28)

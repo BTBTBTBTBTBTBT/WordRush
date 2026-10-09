@@ -789,7 +789,7 @@ struct LeaderboardTab: View {
                     Icon3D(.bell, size: 18) // ART_SPEC §5
                         .frame(width: 30, height: 34).contentShape(Rectangle())
                 }
-                .buttonStyle(.squishIcon)
+                .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
                 .accessibilityLabel("Taunt \(entry.username)")
             }
         }
@@ -830,7 +830,7 @@ struct LeaderboardTab: View {
                 Icon3D(.bell, size: 18) // ART_SPEC §5
                     .frame(width: 30, height: 34).contentShape(Rectangle())
             }
-            .buttonStyle(.squishIcon)
+            .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
             .accessibilityLabel("Nudge \(f.username)")
         }
         .padding(.horizontal, 4)
@@ -1338,7 +1338,7 @@ struct FlawlessBannerFooter: View {
                     } label: {
                         Icon3D(.share, size: 14)
                     }
-                    .buttonStyle(.squishIcon)
+                    .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
                     .opacity(sharing ? 0.4 : 1)
                     .accessibilityLabel("Share flawless streak")
                 }

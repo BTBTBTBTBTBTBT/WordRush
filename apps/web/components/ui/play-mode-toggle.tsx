@@ -3,6 +3,7 @@
 import { Star } from 'lucide-react';
 import { ProPill, UnlimitedLoopArt, UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
+import { CandySegment } from '@/components/ui/candy-segment';
 import { softBackground, softBorder, softShadow } from '@/lib/soft-surface';
 
 export type PlayMode = 'daily' | 'unlimited';
@@ -22,46 +23,19 @@ interface Props {
  * URL difference matters so each tap lands on a fresh-seeded puzzle).
  */
 export function PlayModeToggle({ value, onChange, isPro = true }: Props) {
-  // FINISH_SPEC Y: no infinity glyph. Z: two equal fixed-width segments, one
-  // font weight in both states; only the sliding thumb moves.
+  // FINISH_SPEC Y: no infinity glyph. Z: two equal fixed-width segments, one font weight in both states.
+  // 2.8 item 23: the family candy segment (the same sliding thumb as every other segmented control).
   return (
-    <div
-      className="relative flex items-center p-0.5 rounded-full mb-1"
-      // FINISH_SPEC R3 / A1: a tinted segment (no plain surface).
-      style={{
-        background: softBackground('#7c3aed', 0.1),
-        border: softBorder('#7c3aed', 0.1),
-      }}
-    >
-      <span
-        aria-hidden="true"
-        className="mode-switch-thumb absolute top-0.5 bottom-0.5 left-0.5 rounded-full"
-        style={{
-          width: 'calc(50% - 2px)',
-          transform: value === 'unlimited' ? 'translateX(100%)' : 'translateX(0)',
-          background: softBackground(value === 'unlimited' ? UNLIMITED_PEACH : '#7c3aed', 0.24),
-          boxShadow: '0 1px 3px rgba(124,58,237,0.12)',
-        }}
-      />
-      <button
-        onClick={() => onChange('daily')}
-        aria-pressed={value === 'daily'}
-        className="relative flex-1 basis-0 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap"
-        style={{ color: value === 'daily' ? '#7c3aed' : '#9ca3af' }}
-      >
-        <Star className="w-3.5 h-3.5" fill={value === 'daily' ? 'currentColor' : 'none'} />
-        Daily
-      </button>
-      <button
-        onClick={() => (isPro ? onChange('unlimited') : openGoProPopup({ reason: 'Unlimited play' }))}
-        aria-pressed={value === 'unlimited'}
-        className="relative flex-1 basis-0 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap"
-        style={{ color: value === 'unlimited' ? '#7c3aed' : '#9ca3af' }}
-      >
-        Unlimited
-        {!isPro && <ProPill />}
-      </button>
-    </div>
+    <CandySegment<PlayMode>
+      label="Play mode"
+      value={value}
+      className="mb-1"
+      onChange={(next) => (next === 'unlimited' && !isPro ? openGoProPopup({ reason: 'Unlimited play' }) : onChange(next))}
+      options={[
+        { key: 'daily', label: (<><Star className="w-3.5 h-3.5" fill={value === 'daily' ? 'currentColor' : 'none'} />Daily</>) },
+        { key: 'unlimited', label: (<>Unlimited{!isPro && <ProPill />}</>) },
+      ]}
+    />
   );
 }
 

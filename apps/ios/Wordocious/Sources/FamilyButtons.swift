@@ -356,9 +356,14 @@ struct QuietButtonStyle: ButtonStyle {
 
 /// README §3: a round icon button = the bare soft 3D icon (28 pt) in a 44 pt hit area, squish on press.
 struct RoundIconButtonStyle: ButtonStyle {
+    /// The hit area's minimum side. 44 = the family round icon; the COMPACT variant (`.compact`, 0) leaves the label's own
+    /// frame alone for icons that live inside a row (bells, share icons) and must not push it taller.
+    var minSide: CGFloat = 44
+    static var compact: RoundIconButtonStyle { RoundIconButtonStyle(minSide: 0) }
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .frame(minWidth: 44, minHeight: 44)
+            .frame(minWidth: minSide, minHeight: minSide)
             .contentShape(Rectangle())
             .scaleEffect(configuration.isPressed && !Theme.reduceMotion ? 0.9 : 1)
             .animation(Theme.reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.55), value: configuration.isPressed)
