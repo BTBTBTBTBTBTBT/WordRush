@@ -62,7 +62,8 @@ describe('BJ12: every mode reaches Stats and Moments (web)', () => {
   }
 
   it('the Moments More Games Sweep counts the same set the feed route reads', () => {
-    expect(moreSweepModeKeys(MODES)).toEqual(MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey).map((m) => m.dbKey));
+    // Same SET; order is the player's display order now, never the sweep logic.
+    expect([...moreSweepModeKeys(MODES)].sort()).toEqual(MORE_GAME_MODES.filter((m) => m.dailyEligible && m.dbKey).map((m) => m.dbKey as string).sort());
     const route = read('app/api/friends/feed/route.ts');
     expect(route).toContain('moreSweepModeKeys(MODES)');
     const feed = read('components/friends/activity-feed.tsx');

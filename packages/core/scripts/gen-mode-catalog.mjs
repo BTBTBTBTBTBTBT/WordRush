@@ -77,7 +77,7 @@ ${modes.map((m) => `        GenMode(id: "${m.id}", dbKey: ${swiftOpt(m.dbKey)}, 
     /// Home grid tiles.
     static var core: [GenMode] { enabled.filter { $0.group == "core" }.sorted { $0.homeSlot < $1.homeSlot } }
     /// More Games sheet entries.
-    static var more: [GenMode] { enabled.filter { $0.group == "more" } }
+    static var more: [GenMode] { enabled.filter { $0.group == "more" }.sorted { $0.homeSlot < $1.homeSlot } }
     static let moreCategories: [GenCategory] = [
 ${moreCategories.map((c) => `        GenCategory(key: "${c.key}", title: "${c.title}")`).join(',\n')},
     ]
@@ -154,7 +154,7 @@ ${modes.map((m) => `        GenMode("${m.id}", ${ktOpt(m.dbKey)}, "${m.title}", 
     /** Home grid tiles. */
     val core: List<GenMode> get() = enabled.filter { it.group == "core" }.sortedBy { it.homeSlot }
     /** More Games sheet entries. */
-    val more: List<GenMode> get() = enabled.filter { it.group == "more" }
+    val more: List<GenMode> get() = enabled.filter { it.group == "more" }.sortedBy { it.homeSlot }
     val moreCategories: List<GenCategory> = listOf(
 ${moreCategories.map((c) => `        GenCategory("${c.key}", "${c.title}")`).join(',\n')},
     )
@@ -226,7 +226,7 @@ export const SWEEP_MODES: ModeMeta[] = DAILY_MODES.filter((m) => m.sweep);
 /** Home grid tiles. */
 export const CORE_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'core').sort((a, b) => a.homeSlot - b.homeSlot);
 /** More Games sheet entries. */
-export const MORE_GAME_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'more');
+export const MORE_GAME_MODES: ModeMeta[] = ENABLED_MODES.filter((m) => m.group === 'more').sort((a, b) => a.homeSlot - b.homeSlot);
 export const MORE_CATEGORIES: MoreCategory[] = ${JSON.stringify(moreCategories)};
 
 /** Sweep eras, newest first: which dbKeys formed the required sweep on a given local day. Append-only. */

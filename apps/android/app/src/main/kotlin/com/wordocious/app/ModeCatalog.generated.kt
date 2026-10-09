@@ -47,24 +47,24 @@ object ModeGen {
     val all: List<GenMode> = listOf(
         GenMode("practice", "DUEL", "Classic", "Classic", "Classic", "1 word, 6 tries", "#7c3aed", "C", null, true, "core", true, "word", "guesses", 1, 0, false, true, null, null, "classic"),
         GenMode("vs", null, "VS Battle", "VS", "VS Battle", "Real-time PvP", "#0d9488", null, null, false, "core", false, "word", "guesses", 1, 8, true, true, null, null, null),
-        GenMode("quordle", "QUORDLE", "QuadWord", "Quad", "QuadWord", "4 words at once", "#ec4899", "IV", "IV", true, "core", true, "word", "guesses", 4, 2, false, true, null, null, "quadword"),
-        GenMode("octordle", "OCTORDLE", "OctoWord", "Octo", "OctoWord", "8 words at once", "#7e22ce", "VIII", "VIII", true, "core", true, "word", "guesses", 8, 3, false, true, null, null, "octoword"),
-        GenMode("sequence", "SEQUENCE", "Succession", "Succ.", "Succession", "4 words in a row", "#2563eb", "S", null, true, "core", true, "word", "guesses", 4, 4, false, true, null, null, "succession"),
-        GenMode("rescue", "RESCUE", "Deliverance", "Deliv.", "Deliverance", "Rescue 4 boards", "#059669", "D", null, true, "core", true, "word", "guesses", 4, 5, false, true, null, null, "deliverance"),
-        GenMode("six", "DUEL_6", "Six", "Six", "Classic Six", "6 letters, 7 tries", "#06b6d4", "6", null, true, "core", true, "word", "guesses", 1, 6, false, true, null, null, "six"),
-        GenMode("seven", "DUEL_7", "Seven", "Seven", "Classic Seven", "7 letters, 8 tries", "#84cc16", "7", null, true, "core", true, "word", "guesses", 1, 7, false, true, null, null, "seven"),
-        GenMode("gauntlet", "GAUNTLET", "Gauntlet", "Gauntlet", "Gauntlet", "5 rising stages", "#d97706", "G", null, true, "core", true, "word", "guesses", 21, 1, false, true, null, null, "gauntlet"),
+        GenMode("quordle", "QUORDLE", "QuadWord", "Quad", "QuadWord", "4 words at once", "#ec4899", "IV", "IV", true, "core", true, "word", "guesses", 4, 1, false, true, null, null, "quadword"),
+        GenMode("octordle", "OCTORDLE", "OctoWord", "Octo", "OctoWord", "8 words at once", "#7e22ce", "VIII", "VIII", true, "core", true, "word", "guesses", 8, 2, false, true, null, null, "octoword"),
+        GenMode("sequence", "SEQUENCE", "Succession", "Succ.", "Succession", "4 words in a row", "#2563eb", "S", null, true, "core", true, "word", "guesses", 4, 3, false, true, null, null, "succession"),
+        GenMode("rescue", "RESCUE", "Deliverance", "Deliv.", "Deliverance", "Rescue 4 boards", "#059669", "D", null, true, "core", true, "word", "guesses", 4, 6, false, true, null, null, "deliverance"),
+        GenMode("six", "DUEL_6", "Six", "Six", "Classic Six", "6 letters, 7 tries", "#06b6d4", "6", null, true, "core", true, "word", "guesses", 1, 4, false, true, null, null, "six"),
+        GenMode("seven", "DUEL_7", "Seven", "Seven", "Classic Seven", "7 letters, 8 tries", "#84cc16", "7", null, true, "core", true, "word", "guesses", 1, 5, false, true, null, null, "seven"),
+        GenMode("gauntlet", "GAUNTLET", "Gauntlet", "Gauntlet", "Gauntlet", "5 rising stages", "#d97706", "G", null, true, "core", true, "word", "guesses", 21, 7, false, true, null, null, "gauntlet"),
         GenMode("propernoundle", "PROPERNOUNDLE", "ProperNoundle", "Proper", "ProperNoundle", "Guess the name", "#dc2626", "P", null, true, "more", false, "custom", "guesses", 1, 109, false, true, null, "trivia", "propernoundle"),
         GenMode("more", null, "Puzzles", "Puzzles", "Puzzles", "Sudocious, Muddle and more", "#4f46e5", "+", null, false, "core", false, "custom", "guesses", 1, 9, true, true, "menu.more", null, null),
-        GenMode("sudoku", "SUDOKU", "Sudocious", "Sudocious", "Sudocious", "Number logic", "#1e40af", "9", null, true, "more", false, "custom", "mistakes", 1, 111, false, true, "mode.sudoku", "logic", "sudocious"),
-        GenMode("scramble", "SCRAMBLE", "Muddle", "Muddle", "Muddle", "Scrambled jokes", "#f97316", "M", null, true, "more", false, "custom", "checks", 5, 112, false, true, "mode.scramble", "word", "muddle"),
-        GenMode("hub", "HUB", "Hubbub", "Hubbub", "Hubbub", "7 letters, 1 hub", "#c026d3", "H", null, true, "more", false, "custom", "rank", 1, 113, false, true, "mode.hub", "word", "hubbub"),
-        GenMode("crossword", "CROSSWORD", "Crosswordocious", "Crossword", "Crosswordocious", "Fill-in crossword", "#475569", "X", null, true, "more", false, "custom", "checks", 1, 114, false, true, "mode.crossword", "trivia", "crosswordocious"),
+        GenMode("sudoku", "SUDOKU", "Sudocious", "Sudocious", "Sudocious", "Number logic", "#1e40af", "9", null, true, "more", false, "custom", "mistakes", 1, 110, false, true, "mode.sudoku", "logic", "sudocious"),
+        GenMode("scramble", "SCRAMBLE", "Muddle", "Muddle", "Muddle", "Scrambled jokes", "#f97316", "M", null, true, "more", false, "custom", "checks", 5, 118, false, true, "mode.scramble", "word", "muddle"),
+        GenMode("hub", "HUB", "Hubbub", "Hubbub", "Hubbub", "7 letters, 1 hub", "#c026d3", "H", null, true, "more", false, "custom", "rank", 1, 114, false, true, "mode.hub", "word", "hubbub"),
+        GenMode("crossword", "CROSSWORD", "Crosswordocious", "Crossword", "Crosswordocious", "Fill-in crossword", "#475569", "X", null, true, "more", false, "custom", "checks", 1, 116, false, true, "mode.crossword", "trivia", "crosswordocious"),
         GenMode("groups", "GROUPS", "Kindred", "Kindred", "Kindred", "4 groups of 4", "#9f1239", "K", null, true, "more", false, "custom", "guesses", 4, 115, false, true, "mode.groups", "logic", "kindred"),
-        GenMode("ladder", "LADDER", "Letter Ladder", "Ladder", "Letter Ladder", "1 letter at a time", "#0284c7", "L", null, true, "more", false, "custom", "overPar", 1, 116, false, true, "mode.ladder", "word", "letter-ladder"),
+        GenMode("ladder", "LADDER", "Letter Ladder", "Ladder", "Letter Ladder", "1 letter at a time", "#0284c7", "L", null, true, "more", false, "custom", "overPar", 1, 113, false, true, "mode.ladder", "word", "letter-ladder"),
         GenMode("cryptogram", "CRYPTOGRAM", "Codebreaker", "Code", "Codebreaker", "Crack the code", "#92400e", "?", null, true, "more", false, "custom", "checks", 1, 117, false, true, "mode.cryptogram", "logic", "codebreaker"),
-        GenMode("wordsearch", "WORDSEARCH", "Spyglass", "Spyglass", "Spyglass", "Word search", "#4d7c0f", "W", null, true, "more", false, "custom", "misses", 10, 118, false, true, "mode.wordsearch", "word", "spyglass"),
-        GenMode("regions", "REGIONS", "Starsweep", "Stars", "Starsweep", "1 star per region", "#ca8a04", "*", null, true, "more", false, "custom", "mistakes", 1, 119, false, true, "mode.regions", "logic", "starsweep"),
+        GenMode("wordsearch", "WORDSEARCH", "Spyglass", "Spyglass", "Spyglass", "Word search", "#4d7c0f", "W", null, true, "more", false, "custom", "misses", 10, 112, false, true, "mode.wordsearch", "word", "spyglass"),
+        GenMode("regions", "REGIONS", "Starsweep", "Stars", "Starsweep", "1 star per region", "#ca8a04", "*", null, true, "more", false, "custom", "mistakes", 1, 111, false, true, "mode.regions", "logic", "starsweep"),
     )
     fun byDbKey(k: String): GenMode? = all.firstOrNull { it.dbKey == k }
     fun byId(i: String): GenMode? = all.firstOrNull { it.id == i }
@@ -77,7 +77,7 @@ object ModeGen {
     /** Home grid tiles. */
     val core: List<GenMode> get() = enabled.filter { it.group == "core" }.sortedBy { it.homeSlot }
     /** More Games sheet entries. */
-    val more: List<GenMode> get() = enabled.filter { it.group == "more" }
+    val more: List<GenMode> get() = enabled.filter { it.group == "more" }.sortedBy { it.homeSlot }
     val moreCategories: List<GenCategory> = listOf(
         GenCategory("word", "Word"),
         GenCategory("trivia", "Trivia"),
