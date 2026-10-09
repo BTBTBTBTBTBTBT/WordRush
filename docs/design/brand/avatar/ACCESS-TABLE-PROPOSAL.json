@@ -66,6 +66,78 @@
         "label": "Complete the entire Gauntlet"
       }
     },
+    "body:heart": {
+      "free": true
+    },
+    "body:moon": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:egg": {
+      "free": true
+    },
+    "body:bell": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:triangle": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:diamond": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:shield": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:burst": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:flower": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:gumdrop": {
+      "free": true
+    },
+    "body:can": {
+      "free": true
+    },
+    "body:potato": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:catear": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:bunnyear": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:pumpkin": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:ghost": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:cone": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
+    "body:bat": {
+      "season": "halloween",
+      "pro": true,
+      "buy": "t2"
+    },
     "color:purple": {
       "free": true
     },
@@ -535,6 +607,10 @@
       "pro": true,
       "buy": "t2"
     },
+    "head:emo-pink-headphones": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:bow": {
       "free": true
     },
@@ -629,6 +705,10 @@
     "head:cap": {
       "free": true
     },
+    "head:punk-studded-cap": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:beret": {
       "pro": true,
       "buy": "t2"
@@ -674,6 +754,13 @@
       "pro": true,
       "buy": "t2"
     },
+    "head:goth-skull-bow": {
+      "free": true
+    },
+    "head:goth-bat-wing-clip": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:pombeanie": {
       "pro": true,
       "buy": "t2"
@@ -691,24 +778,31 @@
         "label": "Keep a 100-day play streak"
       }
     },
+    "head:punk-mohawk": {
+      "free": true
+    },
+    "head:punk-liberty-spikes": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:pumpkinhat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "head:candycornhat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "head:witchnight": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "head:batears": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "face:mustache": {
@@ -722,6 +816,12 @@
         "achievement": "cheerleader",
         "label": "Send 25 reactions"
       }
+    },
+    "face:punk-heart-shades": {
+      "free": true
+    },
+    "face:emo-star-shades": {
+      "free": true
     },
     "face:monocle": {
       "pro": true,
@@ -738,6 +838,9 @@
         "achievement": "hive_mind",
         "label": "Reach the top rank in Hubbub"
       }
+    },
+    "face:goth-bat-sunglasses": {
+      "free": true
     },
     "face:roundglasses": {
       "free": true
@@ -797,6 +900,10 @@
         "label": "Earn 10 medals"
       }
     },
+    "neck:goth-moon-pendant": {
+      "pro": true,
+      "buy": "t2"
+    },
     "neck:backpack": {
       "pro": true,
       "buy": "t2"
@@ -832,12 +939,12 @@
     },
     "neck:batwings": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "neck:cattail": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "held:mug": {
@@ -855,6 +962,10 @@
       }
     },
     "held:balloon": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:emo-heart-balloons": {
       "pro": true,
       "buy": "t2"
     },
@@ -886,6 +997,14 @@
       "pro": true,
       "buy": "t2"
     },
+    "held:goth-lace-umbrella": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:goth-purple-lantern": {
+      "pro": true,
+      "buy": "t2"
+    },
     "held:icecream": {
       "pro": true,
       "buy": "t2"
@@ -912,7 +1031,7 @@
     },
     "held:candypail": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "wrap:bandana": {
@@ -940,10 +1059,13 @@
     },
     "wrap:vampirecollar": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "feet:sneakers": {
+      "free": true
+    },
+    "feet:emo-checker-high-tops": {
       "free": true
     },
     "feet:boots": {
@@ -953,6 +1075,14 @@
         "achievement": "ladder_climber",
         "label": "Solve 25 Letter Ladders"
       }
+    },
+    "feet:punk-combat-boots": {
+      "pro": true,
+      "buy": "t1"
+    },
+    "feet:goth-platform-boots": {
+      "pro": true,
+      "buy": "t1"
     },
     "feet:slippers": {
       "pro": true,
@@ -1001,18 +1131,24 @@
     },
     "pet:bat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "pet:ghost": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
     },
     "pet:blackcat": {
       "season": "halloween",
-      "limited": true,
+      "pro": true,
       "buy": "t2"
+    },
+    "pet:goth-black-cat-plush": {
+      "free": true
+    },
+    "pet:punk-skull-plush": {
+      "free": true
     },
     "frame:bronze": {
       "earn": {

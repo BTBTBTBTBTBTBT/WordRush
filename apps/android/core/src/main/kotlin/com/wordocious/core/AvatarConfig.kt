@@ -74,7 +74,11 @@ data class AvatarConfig(
 
 object AvatarOptions {
     // Round 2 (founder 10-03): ~2× every category, CHEEKS, 33 colors + 5 Pro specials, 14 patterns, accColor.
-    val BODIES: List<String> = listOf("classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex")
+    val BODIES: List<String> = listOf("classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex",
+        // item 50 (2.8): the new shapes; pumpkin / ghost / bat / cone are the Halloween bodies (manifest bodies.<id>.season)
+        "heart", "moon", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat")
+    /** The bodies added in 2.8: the maker's Body tab tags them NEW. */
+    val NEW_BODIES: Set<String> = setOf("heart", "moon", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat")
     val PATTERNS: List<String> = listOf(
         "solid", "twotone", "stripes", "dots", "gradient", "sparkle",
         "hearts", "stars", "zigzag", "checkers", "tiedye", "leopard", "galaxy", "colorblock",
@@ -92,18 +96,18 @@ object AvatarOptions {
 
     /** Hats (21 + round 2: 12, + none). Pro-only: crown, halo, tiara. */
     val HEADS: List<String> = listOf(
-        "none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "bow", "wizard", "pirate", "cowboy", "chef",
+        "none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "emo-pink-headphones", "bow", "wizard", "pirate", "cowboy", "chef",
         "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara", "viking", "sweatband",
-        "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "pombeanie", "bearears", "mohawk",
+        "cap", "punk-studded-cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "goth-skull-bow", "goth-bat-wing-clip", "pombeanie", "bearears", "mohawk", "punk-mohawk", "punk-liberty-spikes",
         // seasonal (avatar-parts.json `season`; AvatarSeason decides when they show): Halloween 10-05
         "pumpkinhat", "candycornhat", "witchnight", "batears",
     )
 
     /** Face extras. */
-    val FACES: List<String> = listOf("none", "mustache", "heart-glasses", "monocle", "starglasses", "roundglasses", "eyepatch", "facepaint", "mask", "curlymustache")
+    val FACES: List<String> = listOf("none", "mustache", "heart-glasses", "punk-heart-shades", "emo-star-shades", "monocle", "starglasses", "goth-bat-sunglasses", "roundglasses", "eyepatch", "facepaint", "mask", "curlymustache")
 
     /** Neck / back extras. Pro-only: wings, chain. */
-    val NECKS: List<String> = listOf("none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar", "supercape", "fairywings", "batwings", "cattail")
+    val NECKS: List<String> = listOf("none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "goth-moon-pendant", "backpack", "bubbletea", "guitar", "supercape", "fairywings", "batwings", "cattail")
 
     /** White glossy accessories that take the accessory color. */
     val TINTABLE: List<String> = listOf("supercape", "backpack", "wings", "chef", "astronaut")
@@ -163,11 +167,11 @@ object AvatarOptions {
     val DISPLAYS: List<String> = listOf(DISPLAY_MASCOT, DISPLAY_PHOTO)
 
     /** 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on. */
-    val HELD: List<String> = listOf("none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella", "icecream", "spatula", "mic", "wand-star", "candypail")
+    val HELD: List<String> = listOf("none", "mug", "book", "pencil-big", "balloon", "emo-heart-balloons", "trophy", "magnifier", "flashlight", "umbrella", "goth-lace-umbrella", "goth-purple-lantern", "icecream", "spatula", "mic", "wand-star", "candypail")
     /** Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter). */
     val WRAPS: List<String> = listOf("none", "bandana", "belt", "apron", "lei", "cape-drape", "vampirecollar")
-    val FEET: List<String> = listOf("none", "sneakers", "boots", "slippers", "skates")
-    val PETS: List<String> = listOf("none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat")
+    val FEET: List<String> = listOf("none", "sneakers", "emo-checker-high-tops", "boots", "punk-combat-boots", "goth-platform-boots", "slippers", "skates")
+    val PETS: List<String> = listOf("none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat", "goth-black-cat-plush", "punk-skull-plush")
     val BROWS: List<String> = listOf("none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy")
     val EXTRAS: List<String> = listOf("none", "sweat", "tear", "steam", "heart")
     /** The integrated config fields + their options, in the maker's tab order. */
@@ -191,6 +195,7 @@ object AvatarOptions {
 
     /** Pro-only options per field (free players see the gold PRO pill → the Go Pro popup). */
     val PRO_ONLY: Map<String, Set<String>> = mapOf(
+        "body" to setOf("moon", "bell", "triangle", "diamond", "shield", "burst", "flower", "catear", "bunnyear", "potato"),
         "head" to setOf("crown", "halo", "tiara"),
         "neck" to setOf("wings", "chain"),
         "held" to setOf("wand-star"),
@@ -320,6 +325,7 @@ fun validateAvatar(config: AvatarConfig, fallback: AvatarConfig = defaultAvatar(
 fun enforceAvatarPro(c: AvatarConfig, isPro: Boolean): AvatarConfig {
     if (isPro) return c
     return c.copy(
+        body = if (AvatarOptions.isProOnly("body", c.body)) "classic" else c.body,
         head = if (AvatarOptions.isProOnly("head", c.head)) "none" else c.head,
         neck = if (AvatarOptions.isProOnly("neck", c.neck)) "none" else c.neck,
         held = if (AvatarOptions.isProOnly("held", c.held)) "none" else c.held,

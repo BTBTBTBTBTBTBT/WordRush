@@ -204,7 +204,11 @@ public struct AvatarConfigRaw: Codable, Equatable {
 /// The option catalogs + rules (packages/core avatar-config.ts).
 public enum AvatarCatalog {
     // Round 2 (founder 10-03): ~2× every category, CHEEKS, 33 colors + 5 Pro specials, 14 patterns, accColor.
-    public static let bodies = ["classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex"]
+    public static let bodies = ["classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex",
+        // item 50 (2.8): the new shapes; pumpkin / ghost / bat / cone are the Halloween bodies (manifest bodies.<id>.season)
+        "heart", "moon", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat"]
+    /// The bodies added in 2.8: the maker's Body tab tags them NEW.
+    public static let newBodies: Set<String> = ["heart", "moon", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat"]
     public static let patterns = ["solid", "twotone", "stripes", "dots", "gradient", "sparkle",
                                   "hearts", "stars", "zigzag", "checkers", "tiedye", "leopard", "galaxy", "colorblock"]
     public static let eyes = ["beady", "happy", "sparkly", "sleepy", "wink", "hearts", "stars", "glasses", "cyclops",
@@ -214,26 +218,26 @@ public enum AvatarCatalog {
     public static let noses = ["none", "button", "red", "pointy", "bignose", "cat", "piggy", "clownstar"]
     public static let cheeks = ["none", "blush", "freckles", "hearts", "starfreckles", "sparkle", "bandage"]
     /// Hats (AN addendum: 21 + round 2: 12, + none). Pro-only: crown, halo, tiara.
-    public static let heads = ["none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "bow", "wizard", "pirate",
+    public static let heads = ["none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "emo-pink-headphones", "bow", "wizard", "pirate",
                                "cowboy", "chef", "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara",
                                "viking", "sweatband",
-                               "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow",
-                               "pombeanie", "bearears", "mohawk",
+                               "cap", "punk-studded-cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "goth-skull-bow", "goth-bat-wing-clip",
+                               "pombeanie", "bearears", "mohawk", "punk-mohawk", "punk-liberty-spikes",
                                // seasonal (avatar-parts.json `season`; AvatarSeason decides when they show): Halloween 10-05
                                "pumpkinhat", "candycornhat", "witchnight", "batears"]
     /// Face extras (AN addendum + round 2).
-    public static let faces = ["none", "mustache", "heart-glasses", "monocle", "starglasses", "roundglasses", "eyepatch",
+    public static let faces = ["none", "mustache", "heart-glasses", "punk-heart-shades", "emo-star-shades", "monocle", "starglasses", "goth-bat-sunglasses", "roundglasses", "eyepatch",
                                "facepaint", "mask", "curlymustache"]
     /// Neck / back extras (AN addendum + round 2). Pro-only: wings, chain.
-    public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar",
+    public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "goth-moon-pendant", "backpack", "bubbletea", "guitar",
                                "supercape", "fairywings", "batwings", "cattail"]
     /// 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on.
-    public static let held = ["none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella",
+    public static let held = ["none", "mug", "book", "pencil-big", "balloon", "emo-heart-balloons", "trophy", "magnifier", "flashlight", "umbrella", "goth-lace-umbrella", "goth-purple-lantern",
                               "icecream", "spatula", "mic", "wand-star", "candypail"]
     /// Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter).
     public static let wraps = ["none", "bandana", "belt", "apron", "lei", "cape-drape", "vampirecollar"]
-    public static let feet = ["none", "sneakers", "boots", "slippers", "skates"]
-    public static let pets = ["none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat"]
+    public static let feet = ["none", "sneakers", "emo-checker-high-tops", "boots", "punk-combat-boots", "goth-platform-boots", "slippers", "skates"]
+    public static let pets = ["none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat", "goth-black-cat-plush", "punk-skull-plush"]
     public static let brows = ["none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy"]
     public static let extras = ["none", "sweat", "tear", "steam", "heart"]
     /// The integrated config fields + their options, in the maker's tab order.
@@ -317,6 +321,7 @@ public enum AvatarCatalog {
     public static func color(_ id: String) -> AvatarColor { colors.first { $0.id == id } ?? colors[0] }
 
     /// Pro-only options (free players see the gold PRO pill → the Go Pro page).
+    public static let proOnlyBodies = ["moon", "bell", "triangle", "diamond", "shield", "burst", "flower", "catear", "bunnyear", "potato"]
     public static let proOnlyHeads = ["crown", "halo", "tiara"]
     public static let proOnlyNecks = ["wings", "chain"]
     public static let proOnlyFrames = ["diamond", "pro"]
@@ -438,6 +443,7 @@ public enum AvatarCatalog {
     public static func enforcePro(_ c: AvatarConfig, isPro: Bool) -> AvatarConfig {
         if isPro { return c }
         var out = c
+        if proOnlyBodies.contains(c.body) { out.body = "classic" }
         if proOnlyHeads.contains(c.head) { out.head = "none" }
         if proOnlyNecks.contains(c.neck) { out.neck = "none" }
         if proOnlyHeld.contains(c.held) { out.held = "none" }
@@ -450,6 +456,7 @@ public enum AvatarCatalog {
         return out
     }
 
+    public static func isProOnly(body: String) -> Bool { proOnlyBodies.contains(body) }
     public static func isProOnly(head: String) -> Bool { proOnlyHeads.contains(head) }
     public static func isProOnly(neck: String) -> Bool { proOnlyNecks.contains(neck) }
     public static func isProOnly(frame: String) -> Bool { proOnlyFrames.contains(frame) }

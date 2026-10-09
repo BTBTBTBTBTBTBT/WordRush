@@ -75,6 +75,7 @@ fun DressingRoom(
     achievements: Collection<String>? = null,
 ) {
     val ctx = LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(Unit) { com.wordocious.app.data.OwnedItems.load() }
     remember { MascotBuilderLogic.fit = MascotComposer.fitManifest(ctx); MascotBuilderLogic.saved = config; loadAvatarAccess(ctx); true }
     // 10-05 seasonal items: the active season (admin preview first, else the calendar) drives the shelf + filters
     val season = rememberSeason()
@@ -94,6 +95,8 @@ fun DressingRoom(
     val access = remember(isPro, season, achievements) { ownAccessContext(isPro, achievements) }
     var lockedCheck by remember { mutableStateOf<com.wordocious.core.AvatarSaveCheck?>(null) }
     var cardPaywall by remember { mutableStateOf(false) }
+    // pro_try_on: Done while wearing a Pro part the player doesn't have opens the Unlock with Pro card (gating off only)
+    var proTry by remember { mutableStateOf<List<com.wordocious.core.AvatarPart>?>(null) }
     val seen = remember { DressUp.roomTabs.filter { DressUp.tabSeen(it) }.toSet() }
     LaunchedEffect(tab) { DressUp.markTabSeen(tab) }
     LaunchedEffect(note) { if (note != null) { kotlinx.coroutines.delay(2600); note = null } }
@@ -118,6 +121,7 @@ fun DressingRoom(
                 CastButton("Done", onClick = {
                     val check = access?.let { MascotBuilderLogic.saveCheck(look, it) }
                     if (check != null && !check.ok) lockedCheck = check
+                    else if (access == null && MascotBuilderLogic.proTryOn() && MascotBuilderLogic.proWorn(look, isPro).isNotEmpty()) proTry = MascotBuilderLogic.proWorn(look, isPro)
                     else onDone(MascotBuilderLogic.saveLook(look, isPro, level, access))
                 }, color = CastColor.PURPLE, size = CastSize.S)
             }
@@ -181,7 +185,7 @@ fun DressingRoom(
                                     note = MascotBuilderLogic.conflict(look, o)?.let { (_, id) -> "That doesn't fit with ${id.replaceFirstChar { it.uppercase() }}, so it came off" }
                                     change(MascotBuilderLogic.tap(look, o))
                                 }
-                                else if (MascotBuilderLogic.proLocked(o, isPro)) paywallFor = o
+                                else if (MascotBuilderLogic.proLocked(o, isPro) && !MascotBuilderLogic.proTryOn()) paywallFor = o
                                 else if (!MascotBuilderLogic.tierLocked(o, level)) {
                                     note = MascotBuilderLogic.conflict(look, o)?.let { (_, id) -> "That doesn't fit with ${id.replaceFirstChar { it.uppercase() }}, so it came off" }
                                     change(MascotBuilderLogic.tap(look, o))
@@ -242,9 +246,21 @@ fun DressingRoom(
             onKeepTrying = { lockedCheck = null },
         )
     }
+    // pro_try_on: the Unlock with Pro card for the worn Pro parts (the Stage keeps the try-on look)
+    val tryParts = proTry
+    val tryFirst = tryParts?.firstOrNull()
+    val tryAccess = tryFirst?.let { MascotBuilderLogic.legacyPartAccess(BuilderOption(it.field, it.id), isPro) }
+    if (tryParts != null && tryFirst != null && tryAccess != null && !cardPaywall) {
+        LockedItemCard(
+            part = tryFirst, access = tryAccess, look = look, initial = initial, moreLocked = tryParts.size - 1,
+            onGoPro = { cardPaywall = true },
+            onSaveWithout = { proTry = null; onDone(MascotBuilderLogic.saveLook(look, isPro, level, null)) },
+            onKeepTrying = { proTry = null },
+        )
+    }
     // "Included with Pro": the maker's existing Go Pro flow; back on the Stage, Done checks again with Pro.
     if (cardPaywall) {
-        ProPaywallDialog(onDismiss = { cardPaywall = false }, onPro = { cardPaywall = false; lockedCheck = null })
+        ProPaywallDialog(onDismiss = { cardPaywall = false }, onPro = { cardPaywall = false; lockedCheck = null; proTry = null })
     }
 }
 

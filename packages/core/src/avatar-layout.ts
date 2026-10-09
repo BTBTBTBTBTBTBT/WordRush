@@ -41,6 +41,8 @@ export interface AvatarBodyAnchors {
   shoulderY?: number;
   wrap?: Array<[number, number, number]>;
   floor?: number;
+  /** A seasonal BODY (item 50: pumpkin, ghost, bat, cone): the season-registry id; free in season, then buy / Pro / earn. */
+  season?: string;
   /**
    * Per-body fit overrides for an item (key `acc:<id>`): offset / scale of a one-art item, `layer` = draw it on that
    * layer on this body (10-06 rule fit: the medal + bow tie go 'under' — before the letter and the face — where they
@@ -69,6 +71,10 @@ export interface AvatarItemMeta {
   pieces?: Record<string, Array<[string, number, number, number, number]>>;
   /** Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes). */
   inkTop?: number;
+  /** 2.8 packs (new-items-spec.json): true = Pro, false = free (a starter of the pack); absent = today's lists decide. */
+  pro?: boolean;
+  /** The pack / collection the item belongs to (goth, football, …). */
+  pack?: string;
   /** Seasonal parts (avatar-season.ts): the season-registry id it belongs to; shown in season or when saved. */
   season?: string;
 }

@@ -11,7 +11,11 @@ import { AVATAR_POSES } from './avatar-pose';
 // Round 2 (founder 10-03: "more body styles, parts and accessories … more options of everything"):
 // ~2× every category, a CHEEKS category (blush + freckles moved out of noses), 32 colors + Pro specials,
 // 14 patterns, tintable white accessories (accColor). New ids are appended so stored configs stay valid.
-export const AVATAR_BODIES = ['classic', 'tall', 'wide', 'blob', 'bean', 'star', 'drop', 'pear', 'cloud', 'chunky', 'mini', 'hex'] as const;
+export const AVATAR_BODIES = ['classic', 'tall', 'wide', 'blob', 'bean', 'star', 'drop', 'pear', 'cloud', 'chunky', 'mini', 'hex',
+  // item 50 (2.8): the new shapes; pumpkin / ghost / bat / cone are the Halloween bodies (manifest bodies.<id>.season)
+  'heart', 'moon', 'egg', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'gumdrop', 'can', 'potato', 'catear', 'bunnyear', 'pumpkin', 'ghost', 'cone', 'bat'] as const;
+/** The bodies added in 2.8: the maker's Body tab tags them NEW. */
+export const AVATAR_NEW_BODIES: readonly string[] = ['heart', 'moon', 'egg', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'gumdrop', 'can', 'potato', 'catear', 'bunnyear', 'pumpkin', 'ghost', 'cone', 'bat'];
 export const AVATAR_PATTERNS = [
   'solid', 'twotone', 'stripes', 'dots', 'gradient', 'sparkle',
   'hearts', 'stars', 'zigzag', 'checkers', 'tiedye', 'leopard', 'galaxy', 'colorblock',
@@ -29,27 +33,27 @@ export const AVATAR_NOSES = ['none', 'button', 'red', 'pointy', 'bignose', 'cat'
 export const AVATAR_CHEEKS = ['none', 'blush', 'freckles', 'hearts', 'starfreckles', 'sparkle', 'bandage'] as const;
 /** Hats (AN addendum: 21 + round 2: 12, + none). Pro-only: crown, halo, tiara. */
 export const AVATAR_HEADS = [
-  'none', 'crown', 'party', 'beanie', 'sprout', 'nightcap', 'headphones', 'bow', 'wizard', 'pirate', 'cowboy', 'chef',
+  'none', 'crown', 'party', 'beanie', 'sprout', 'nightcap', 'headphones', 'emo-pink-headphones', 'bow', 'wizard', 'pirate', 'cowboy', 'chef',
   'grad', 'halo', 'flower', 'tophat', 'propeller', 'catears', 'bunnyears', 'tiara', 'viking', 'sweatband',
-  'cap', 'beret', 'minicrown', 'flowercrown', 'bucket', 'santa', 'witch', 'astronaut', 'bigbow', 'pombeanie', 'bearears', 'mohawk',
+  'cap', 'punk-studded-cap', 'beret', 'minicrown', 'flowercrown', 'bucket', 'santa', 'witch', 'astronaut', 'bigbow', 'goth-skull-bow', 'goth-bat-wing-clip', 'pombeanie', 'bearears', 'mohawk', 'punk-mohawk', 'punk-liberty-spikes',
   // seasonal (avatar-parts.json `season`; avatar-season.ts decides when they show): Halloween 10-05
   'pumpkinhat', 'candycornhat', 'witchnight', 'batears',
 ] as const;
 /** Face extras (AN addendum + round 2). */
-export const AVATAR_FACES = ['none', 'mustache', 'heart-glasses', 'monocle', 'starglasses', 'roundglasses', 'eyepatch', 'facepaint', 'mask', 'curlymustache'] as const;
+export const AVATAR_FACES = ['none', 'mustache', 'heart-glasses', 'punk-heart-shades', 'emo-star-shades', 'monocle', 'starglasses', 'goth-bat-sunglasses', 'roundglasses', 'eyepatch', 'facepaint', 'mask', 'curlymustache'] as const;
 /** Neck / back extras (AN addendum + round 2). Pro-only: wings, chain. */
-export const AVATAR_NECKS = ['none', 'cape', 'wings', 'bowtie', 'scarf', 'chain', 'medal', 'backpack', 'bubbletea', 'guitar', 'supercape', 'fairywings', 'batwings', 'cattail'] as const;
+export const AVATAR_NECKS = ['none', 'cape', 'wings', 'bowtie', 'scarf', 'chain', 'medal', 'goth-moon-pendant', 'backpack', 'bubbletea', 'guitar', 'supercape', 'fairywings', 'batwings', 'cattail'] as const;
 /**
  * Integrated parts (founder 10-05: "the new items … so long as they don't look bolted on"; docs/design/brand/avatar/
  * INTEGRATION.md). Each one is drawn PER BODY as layer art (avatar-parts.json `pieces`): held items sit in the fist,
  * wraps follow the body's wrap line, shoes go on the feet, companions sit beside, brows + extras on the face.
  * New fields: missing in older configs (= 'none'). Ids are appended only, so stored configs stay valid.
  */
-export const AVATAR_HELD = ['none', 'mug', 'book', 'pencil-big', 'balloon', 'trophy', 'magnifier', 'flashlight', 'umbrella', 'icecream', 'spatula', 'mic', 'wand-star', 'candypail'] as const;
+export const AVATAR_HELD = ['none', 'mug', 'book', 'pencil-big', 'balloon', 'emo-heart-balloons', 'trophy', 'magnifier', 'flashlight', 'umbrella', 'goth-lace-umbrella', 'goth-purple-lantern', 'icecream', 'spatula', 'mic', 'wand-star', 'candypail'] as const;
 /** Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter). */
 export const AVATAR_WRAPS = ['none', 'bandana', 'belt', 'apron', 'lei', 'cape-drape', 'vampirecollar'] as const;
-export const AVATAR_FEET = ['none', 'sneakers', 'boots', 'slippers', 'skates'] as const;
-export const AVATAR_PETS = ['none', 'bird', 'kitten', 'puppy', 'snail', 'bat', 'ghost', 'blackcat'] as const;
+export const AVATAR_FEET = ['none', 'sneakers', 'emo-checker-high-tops', 'boots', 'punk-combat-boots', 'goth-platform-boots', 'slippers', 'skates'] as const;
+export const AVATAR_PETS = ['none', 'bird', 'kitten', 'puppy', 'snail', 'bat', 'ghost', 'blackcat', 'goth-black-cat-plush', 'punk-skull-plush'] as const;
 /** Brows (code-drawn in the eyes' own ink; six friendly pairs, never angry). */
 export const AVATAR_BROWS = ['none', 'happy', 'worried', 'determined', 'surprised', 'cheeky', 'sleepy'] as const;
 /** Face extras: little expression marks beside the face (never over the eyes, mouth or letter). */
@@ -208,7 +212,9 @@ export interface AvatarConfig {
 export type AvatarDisplay = 'mascot' | 'photo';
 
 /** Pro-only options (free players see the gold PRO pill → the Go Pro popup). */
-export const AVATAR_PRO_ONLY: Readonly<{ head: readonly AvatarHead[]; neck: readonly AvatarNeck[]; held: readonly string[]; wrap: readonly string[]; frame: readonly AvatarFrame[]; bg: readonly string[]; color: readonly string[] }> = {
+export const AVATAR_PRO_ONLY: Readonly<{ body: readonly string[]; head: readonly AvatarHead[]; neck: readonly AvatarNeck[]; held: readonly string[]; wrap: readonly string[]; frame: readonly AvatarFrame[]; bg: readonly string[]; color: readonly string[] }> = {
+  // 2.8 bodies (item 50): four free (heart, egg, gumdrop, can), nine Pro; the Halloween four are free in season
+  body: ['moon', 'bell', 'triangle', 'diamond', 'shield', 'burst', 'flower', 'catear', 'bunnyear', 'potato'],
   head: ['crown', 'halo', 'tiara'],
   neck: ['wings', 'chain'],
   held: ['wand-star'],
@@ -349,6 +355,7 @@ export function enforceAvatarPro(c: AvatarConfig, isPro: boolean): AvatarConfig 
   const out = stripProIntegrated(c);
   return {
     ...out,
+    body: AVATAR_PRO_ONLY.body.includes(c.body) ? 'classic' : c.body,
     head: AVATAR_PRO_ONLY.head.includes(c.head) ? 'none' : c.head,
     neck: AVATAR_PRO_ONLY.neck.includes(c.neck) ? 'none' : c.neck,
     frame: AVATAR_PRO_ONLY.frame.includes(c.frame) ? 'none' : c.frame,

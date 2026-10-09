@@ -14,10 +14,11 @@ public struct AvatarPart: Equatable, Codable {
 
 public enum AvatarSeason {
     /// The maker fields that can hold a seasonal part, in shelf order (hats first, the buddy last).
-    public static let fields = ["head", "neck", "wrap", "held", "face", "feet", "pet", "extra"]
+    public static let fields = ["body", "head", "neck", "wrap", "held", "face", "feet", "pet", "extra"]
 
     static func options(_ field: String) -> [String] {
         switch field {
+        case "body": return AvatarCatalog.bodies
         case "head": return AvatarCatalog.heads
         case "neck": return AvatarCatalog.necks
         case "face": return AvatarCatalog.faces
@@ -25,9 +26,16 @@ public enum AvatarSeason {
         }
     }
 
+    /// A 2.8 pack item's explicit access in the manifest: true = Pro, false = free, nil = today's lists decide.
+    public static func partManifestPro(field: String, id: String, manifest: AvatarManifest) -> Bool? {
+        guard !id.isEmpty, id != "none", field != "body", AvatarFit.fieldKind[field] != nil else { return nil }
+        return manifest.items[AvatarFit.itemKey(field: field, id: id)]?.pro
+    }
+
     /// The season a part belongs to, or nil for an everyday part.
     public static func partSeason(field: String, id: String, manifest: AvatarManifest) -> String? {
         guard !id.isEmpty, id != "none" else { return nil }
+        if field == "body" { return manifest.bodies[id]?.season }
         return manifest.items[AvatarFit.itemKey(field: field, id: id)]?.season
     }
 

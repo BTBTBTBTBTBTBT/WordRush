@@ -50,6 +50,8 @@ def setup(lms=None):
     import new_pieces as _np
     PC, NP = _pc, _np
     SI = _load('ship_integrated', 'ship-integrated.py')
+    import new_items as _ni
+    _ni.register(NP, SI)
     SS = _load('ship_seasonal', 'ship-seasonal.py')
     return LMS
 
@@ -168,6 +170,8 @@ def build_rules():
         rules[f'acc:{pid}'] = BUDDY(where, k=k)
     for pid in ('sweat', 'tear', 'steam', 'heart'):
         rules[f'acc:{pid}'] = R('extra', 'the eye boxes', 'eye width × k', 'extra', 'beside the face', None)
+    import new_items as NI    # the 2.8 packs (new-items-spec.json): held / shoes / buddy / pendant rules from data
+    NI.add_rules(rules, R, HELD, BUDDY)
     missing = [k for k, it in MAN['items'].items() if k.split(':')[0] in ('acc', 'brows') and k not in rules]
     assert not missing, missing
     return rules
@@ -480,6 +484,14 @@ def backpack(body):
     pr = masks(body)
     keep = ndimage.binary_dilation(pr['torso'], iterations=int(0.008 * U))
     keep[:int(P(lm['shoulderTop']['y'] + 0.06))] = True
+    # 10-09: the straps go UNDER the arms: nothing of them sits on the measured arm regions (the hands are drawn
+    # over them anyway); after the landmark refit the straps crossed the arms on 8 bodies (avatar-wrap-hoops.test.ts).
+    arms = ndimage.binary_dilation(pr['arm_any'], iterations=max(1, int(0.004 * U)))
+    # … and the manifest's hand ellipses (bodies.<id>.hands: what the web wrap-line test checks the shipped art against)
+    yy, xx = np.mgrid[0:CW, 0:CW]
+    for cx, cy, rx, ry in (MAN['bodies'][body].get('hands') or {}).values():
+        arms |= ((xx - (M + cx * U)) / (rx * U * 1.04)) ** 2 + ((yy - (M + cy * U)) / (ry * U * 1.04)) ** 2 <= 1
+    keep &= ~arms
     soft_ = ndimage.gaussian_filter(keep.astype(np.float32), 1.0)
     front = []
     for im in L['front']:
@@ -777,7 +789,7 @@ def main(argv):
     bodies = [b for b in json.load(open(LM.JSON))['bodies'] if not [a for a in argv if not a.startswith('-')] or b in argv]
     keys = list(RULES)
     out = {}
-    with ProcessPoolExecutor(max_workers=4) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('AV_WORKERS', '1'))) as ex:
         for body, res in ex.map(_worker, [(b, keys, True) for b in bodies]):
             out[body] = res
             print(body, 'unsupported', [k for k, v in res.items() if v.get('unsupported')], 'fit fails',

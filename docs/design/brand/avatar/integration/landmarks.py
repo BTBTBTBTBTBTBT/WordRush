@@ -43,6 +43,10 @@ FACE_EYES, FACE_MOUTH = 'beady', 'smile'
 HEAD_BAND = 0.3
 # a hat is never narrower than this × the face (eyes + mouth) width (the narrowest hand fit today: drop 0.84)
 HEAD_MIN_FACE = 0.85
+# Expected mitten centers (body units) for bodies whose mittens the notch search can confuse with the feet (the 18 new
+# bodies, item 50): written by new-bodies.py from each silhouette. {body: {'L': [x, y], 'R': [x, y]}}
+_HP = os.path.join(HERE, 'hands-prior.json')
+HANDS_PRIOR = json.load(open(_HP)) if os.path.exists(_HP) else {}
 rig.LETTER_MODE = 'app'     # guard the letter the apps actually draw (Nunito 900, ~20% bigger than the rig's)
 # Body-level landmark overrides: today's hand fit kept where the measurement is clearly worse (and why).
 LANDMARK_OVERRIDES = {
@@ -113,7 +117,15 @@ def _arcs(i, j, n):
     return f, g
 
 
-def find_arms(A, prior=None):
+# Hand-placed mittens where the notch search cannot find one (the moon's right mitten hangs from the inner edge of the crescent:
+# the arc between its notches crosses the body's center line). {body: {side: dict(box=(x0, y0, x1, y1), hand=(cx, cy, rx, ry))}}
+# in body units: the outline inside `box` is the mitten's arc, `hand` its ellipse.
+ARM_OVERRIDES = {
+    'moon': {'R': dict(box=(0.765, 0.545, 0.905, 0.70), hand=(0.826, 0.62, 0.062, 0.078))},
+}
+
+
+def find_arms(A, prior=None, override=None):
     """The mittens. Each sits between two concave notches of the outline (the thumb notch above, the armpit below)
     and bulges outward. The hand ellipse covers the whole mitten: from its outward tip to 40% of its protrusion
     inside the torso edge (the part drawn over the torso), from the upper notch to where the outline returns to the
@@ -167,6 +179,16 @@ def find_arms(A, prior=None):
             rx = 0.62 * ry
             hx = outer - sg * rx
         arms[side] = dict(start=P[0], end=P[q1], tip=P[k], hand=(hx, hy, rx, ry), arc=P[:q1 + 1])
+    for side, o in (override or {}).items():       # hand-placed mitten: the outline inside the box is its arc
+        if side in arms:
+            continue
+        sg = -1 if side == 'L' else 1
+        x0, y0, x1, y1 = (M + v * U for v in o['box'])
+        sel = c[(c[:, 0] >= x0) & (c[:, 0] <= x1) & (c[:, 1] >= y0) & (c[:, 1] <= y1)]
+        sel = sel[np.argsort(sel[:, 1])]
+        hx, hy, rx, ry = o['hand']
+        arms[side] = dict(start=sel[0], end=sel[-1], tip=sel[int(np.argmax(sg * sel[:, 0]))],
+                          hand=(M + hx * U, M + hy * U, rx * U, ry * U), arc=sel)
     return arms
 
 
@@ -272,8 +294,8 @@ def measure(body):
     lys = np.nonzero(letter.any(1))[0]
     lx = np.nonzero(letter.any(0))[0]
 
-    hp = b.get('handsPrior')
-    arms = find_arms(A, {s_: (M + v[0] * U, M + v[1] * U) for s_, v in hp.items()} if hp else None)
+    hp = b.get('handsPrior') or HANDS_PRIOR.get(body)
+    arms = find_arms(A, {s_: (M + v[0] * U, M + v[1] * U) for s_, v in hp.items()} if hp else None, ARM_OVERRIDES.get(body))
     regions = arm_regions(A, arms)
     arm_any = np.zeros_like(A)
     for m in regions.values():

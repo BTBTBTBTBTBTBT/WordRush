@@ -63,6 +63,8 @@ class AvatarFitManifest(val root: JsonObject) {
         val backX = sub("back", "x"); val backY = sub("back", "y"); val backW = sub("back", "w")
         val capeY = sub("cape", "y"); val handX = sub("hand", "x"); val handY = sub("hand", "y")
         val letterBox = arr("letterBox"); val bounds = arr("bounds")
+        /** A seasonal BODY (pumpkin, ghost, bat, cone): the season-registry id; free in season, then buy / Pro / earn. */
+        val season: String? = (o["season"] as? JsonPrimitive)?.content
         fun override(key: String): Triple<Double, Double, Double> {
             val ov = ((o["overrides"] as? JsonObject)?.get(key) as? JsonObject) ?: return Triple(0.0, 0.0, 1.0)
             fun g(k: String) = (ov[k] as? JsonPrimitive)?.doubleOrNull
@@ -81,6 +83,9 @@ class AvatarFitManifest(val root: JsonObject) {
         val slot = (o["slot"] as? JsonPrimitive)?.content ?: "eyes"
         val layer = (o["layer"] as? JsonPrimitive)?.content ?: "eyes"
         val tint = (o["tint"] as? JsonPrimitive)?.booleanOrNull ?: false
+        /** 2.8 packs: true = Pro, false = free (a starter of the pack); null = today's lists decide. */
+        val pro: Boolean? = (o["pro"] as? JsonPrimitive)?.booleanOrNull
+        val pack: String? = (o["pack"] as? JsonPrimitive)?.content
         val overFace = (o["overFace"] as? JsonPrimitive)?.booleanOrNull ?: false
         /** Integrated parts drawn per body (the scarf): art `art-av-<kind>-<id>-<body>` at [x, y, w, h] body units. */
         val perBody: Map<String, List<Double>> = (o["perBody"] as? JsonObject)?.mapValues { e ->

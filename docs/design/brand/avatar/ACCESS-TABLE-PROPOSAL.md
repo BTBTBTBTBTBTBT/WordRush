@@ -18,11 +18,11 @@ players except a small starter set, everything try-on-able). The mechanism reads
 - Not listed (always free): every `none`, the solid pattern, the auto backdrop, the default accessory color.
 - A part the player already **saved** is never stripped (grandfathered) even if it's gated later.
 
-**Totals** (241 options): 56 starter-free · 170 in Pro · 179 buyable · 60 earnable · 11 seasonal.
+**Totals** (277 options): 68 starter-free · 205 in Pro · 203 buyable · 60 earnable · 15 seasonal.
 
 ## Recommended free starter set
 
-- **body**: classic, tall, wide, blob, bean
+- **body**: classic, tall, wide, blob, bean, heart, egg, gumdrop, can
 - **color**: purple, violet, pink, red, orange, amber, yellow, green, emerald, teal, sky, blue, lilac, peach, mint, slate
 - **pattern**: twotone, stripes, dots
 - **eyes**: beady, happy, sparkly, wink, sleepy
@@ -66,6 +66,24 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | chunky | Pro · buy $1.99 |
 | mini | Pro · buy $1.99 |
 | hex | Pro · buy $2.99 · earn: Complete the entire Gauntlet (achievement `gauntlet_master`) |
+| heart | free (starter) |
+| moon | Pro · buy $1.99 |
+| egg | free (starter) |
+| bell | Pro · buy $1.99 |
+| triangle | Pro · buy $1.99 |
+| diamond | Pro · buy $1.99 |
+| shield | Pro · buy $1.99 |
+| burst | Pro · buy $1.99 |
+| flower | Pro · buy $1.99 |
+| gumdrop | free (starter) |
+| can | free (starter) |
+| potato | Pro · buy $1.99 |
+| catear | Pro · buy $1.99 |
+| bunnyear | Pro · buy $1.99 |
+| pumpkin | free in halloween season · Pro · buy $1.99 |
+| ghost | free in halloween season · Pro · buy $1.99 |
+| cone | free in halloween season · Pro · buy $1.99 |
+| bat | free in halloween season · Pro · buy $1.99 |
 
 ### color
 
@@ -225,6 +243,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | sprout | Pro · buy $0.99 · earn: Complete your first daily (achievement `daily_debut`) |
 | nightcap | Pro · buy $0.99 · earn: Finish a daily between midnight and 4 AM (achievement `night_owl`) |
 | headphones | Pro · buy $1.99 |
+| emo-pink-headphones | Pro · buy $1.99 |
 | bow | free (starter) |
 | wizard | Pro · buy $1.99 · earn: Find 10 Hubbub pangrams (achievement `pangram_hunter`) |
 | pirate | Pro · buy $1.99 |
@@ -241,6 +260,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | viking | Pro · buy $1.99 · earn: Win 5 VS matches in a row (achievement `unstoppable`) |
 | sweatband | Pro · buy $0.99 · earn: Win Classic in 2 guesses (achievement `no_sweat`) |
 | cap | free (starter) |
+| punk-studded-cap | Pro · buy $1.99 |
 | beret | Pro · buy $1.99 |
 | minicrown | Pro · buy $1.99 · earn: Clear five rungs of the bot ladder (achievement `halfway_hero`) |
 | flowercrown | Pro · buy $1.99 · earn: Have 10 friends (achievement `squad_goals`) |
@@ -249,13 +269,17 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | witch | Pro · buy $1.99 |
 | astronaut | Pro · buy $2.99 · earn: Reach level 50 (`level` ≥ 50) |
 | bigbow | Pro · buy $1.99 |
+| goth-skull-bow | free (starter) |
+| goth-bat-wing-clip | Pro · buy $1.99 |
 | pombeanie | Pro · buy $1.99 |
 | bearears | Pro · buy $1.99 |
 | mohawk | Pro · buy $2.99 · earn: Keep a 100-day play streak (`bestStreak` ≥ 100) |
-| pumpkinhat | free in halloween season · buy $1.99 (in season only) |
-| candycornhat | free in halloween season · buy $1.99 (in season only) |
-| witchnight | free in halloween season · buy $1.99 (in season only) |
-| batears | free in halloween season · buy $1.99 (in season only) |
+| punk-mohawk | free (starter) |
+| punk-liberty-spikes | Pro · buy $1.99 |
+| pumpkinhat | free in halloween season · Pro · buy $1.99 |
+| candycornhat | free in halloween season · Pro · buy $1.99 |
+| witchnight | free in halloween season · Pro · buy $1.99 |
+| batears | free in halloween season · Pro · buy $1.99 |
 
 ### face
 
@@ -263,8 +287,11 @@ players except a small starter set, everything try-on-able). The mechanism reads
 |---|---|
 | mustache | Pro · buy $0.99 |
 | heart-glasses | Pro · buy $0.99 · earn: Send 25 reactions (achievement `cheerleader`) |
+| punk-heart-shades | free (starter) |
+| emo-star-shades | free (starter) |
 | monocle | Pro · buy $1.99 · earn: Beat Webster, the final boss (achievement `boss_battle`) |
 | starglasses | Pro · buy $1.99 · earn: Reach the top rank in Hubbub (achievement `hive_mind`) |
+| goth-bat-sunglasses | free (starter) |
 | roundglasses | free (starter) |
 | eyepatch | Pro · buy $0.99 |
 | facepaint | Pro · buy $0.99 |
@@ -281,13 +308,14 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | scarf | free (starter) |
 | chain | Pro · buy $2.99 · earn: Earn 50 gold medals (achievement `gold_rush`) |
 | medal | Pro · buy $0.99 · earn: Earn 10 medals (achievement `medal_10`) |
+| goth-moon-pendant | Pro · buy $1.99 |
 | backpack | Pro · buy $1.99 |
 | bubbletea | Pro · buy $1.99 |
 | guitar | Pro · buy $1.99 · earn: Win 3 dailies in under 60 seconds each in one day (achievement `hat_trick`) |
 | supercape | Pro · buy $2.99 · earn: Beat all ten cast bots (achievement `meet_the_cast`) |
 | fairywings | Pro · buy $2.99 · earn: Open Wordocious 50 days in a row (`bestLoginStreak` ≥ 50) |
-| batwings | free in halloween season · buy $1.99 (in season only) |
-| cattail | free in halloween season · buy $1.99 (in season only) |
+| batwings | free in halloween season · Pro · buy $1.99 |
+| cattail | free in halloween season · Pro · buy $1.99 |
 
 ### held
 
@@ -297,15 +325,18 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | book | free (starter) |
 | pencil-big | Pro · buy $0.99 · earn: Solve 25 Kindreds (achievement `kindred_regular`) |
 | balloon | Pro · buy $1.99 |
+| emo-heart-balloons | Pro · buy $1.99 |
 | trophy | Pro · buy $1.99 · earn: Win today's friends race (achievement `race_day`) |
 | magnifier | Pro · buy $0.99 · earn: Solve 25 Spyglass word searches (achievement `sharp_spotter`) |
 | flashlight | Pro · buy $0.99 · earn: Solve 25 Codebreakers (achievement `code_cracker`) |
 | umbrella | Pro · buy $1.99 |
+| goth-lace-umbrella | Pro · buy $1.99 |
+| goth-purple-lantern | Pro · buy $1.99 |
 | icecream | Pro · buy $1.99 |
 | spatula | Pro · buy $1.99 |
 | mic | Pro · buy $1.99 · earn: Win 10 VS matches in a row (achievement `untouchable`) |
 | wand-star | Pro · buy $2.99 · earn: Sweep the Puzzles 7 days in a row (achievement `puzzle_week`) |
-| candypail | free in halloween season · buy $1.99 (in season only) |
+| candypail | free in halloween season · Pro · buy $1.99 |
 
 ### wrap
 
@@ -316,14 +347,17 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | apron | Pro · buy $0.99 |
 | lei | Pro · buy $0.99 |
 | cape-drape | Pro · buy $2.99 · earn: Sweep every daily and every Puzzle in one day (achievement `grand_sweep`) |
-| vampirecollar | free in halloween season · buy $1.99 (in season only) |
+| vampirecollar | free in halloween season · Pro · buy $1.99 |
 
 ### feet
 
 | id | routes |
 |---|---|
 | sneakers | free (starter) |
+| emo-checker-high-tops | free (starter) |
 | boots | Pro · buy $0.99 · earn: Solve 25 Letter Ladders (achievement `ladder_climber`) |
+| punk-combat-boots | Pro · buy $0.99 |
+| goth-platform-boots | Pro · buy $0.99 |
 | slippers | Pro · buy $0.99 |
 | skates | Pro · buy $1.99 · earn: Finish the Daily Sweep in under 15 minutes (achievement `speed_sweep`) |
 
@@ -335,9 +369,11 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | kitten | Pro · buy $2.99 · earn: Keep a 7-day play streak (`bestStreak` ≥ 7) |
 | puppy | Pro · buy $2.99 · earn: Keep a 7-day friend streak (achievement `ride_or_die`) |
 | snail | Pro · buy $2.99 · earn: Play 500 games (achievement `dedicated`) |
-| bat | free in halloween season · buy $1.99 (in season only) |
-| ghost | free in halloween season · buy $1.99 (in season only) |
-| blackcat | free in halloween season · buy $1.99 (in season only) |
+| bat | free in halloween season · Pro · buy $1.99 |
+| ghost | free in halloween season · Pro · buy $1.99 |
+| blackcat | free in halloween season · Pro · buy $1.99 |
+| goth-black-cat-plush | free (starter) |
+| punk-skull-plush | free (starter) |
 
 ### frame
 

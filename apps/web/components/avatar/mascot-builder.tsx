@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Lock } from 'lucide-react';
-import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPartSeason, avatarPickConflict, castPreset, enforceAvatarAccess, enforceAvatarPro, isPartAvailable, seasonalShelf, avatarPartAccess, avatarSaveCheck, type AvatarAccessContext, type AvatarConfig, type AvatarEarnStats, type AvatarFrame, type AvatarPart } from '@wordle-duel/core';
+import { AVATAR_COLORS, AVATAR_TINTABLE, applyAvatarPick, avatarColorHex, avatarPartSeason, avatarPickConflict, avatarWornParts, avatarAccessKey, castPreset, enforceAvatarAccess, enforceAvatarPro, enforceSeasonalAccess, isPartAvailable, seasonalShelf, avatarPartAccess, avatarSaveCheck, type AvatarAccessContext, type AvatarConfig, type AvatarEarnStats, type AvatarFrame, type AvatarPart } from '@wordle-duel/core';
 
 import { ProPill } from '@/components/game/finished-kit';
 import { openGoProPopup } from '@/lib/payment/go-pro-popup';
@@ -21,8 +21,10 @@ import { DressStage, StageArt, StageClose, backdropCss, warmDressArt } from '@/c
 import { CastButton } from '@/components/ui/cast-button';
 import { artSrc } from '@/lib/art';
 import { useSeason } from '@/lib/season';
-import { ITEM_GATING_ON } from '@/lib/avatar-access';
+import { ITEM_GATING_ON, keepOwnedParts } from '@/lib/avatar-access';
 import { LockedItemCard } from './locked-item-card';
+import { ProTryOnPopup } from './pro-try-on-popup';
+import { useFlags } from '@/hooks/use-flags';
 
 /**
  * FINISH_SPEC AN4 (+ addendum): Edit Profile → "Make your mascot". A big live
@@ -100,8 +102,19 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   }), [isPro, owned, earnStats, season]);
   const gatedLocked = React.useCallback((field: string, id: string) => ITEM_GATING_ON && !avatarPartAccess({ field, id }, accessCtx).unlocked, [accessCtx]);
   const [lockedCard, setLockedCard] = React.useState<AvatarPart[] | null>(null);
+  // pro_try_on: a Pro item can be tried on live; saving a look that wears one opens the Unlock with Pro popup.
+  const { isLive: flagLive } = useFlags();
+  const proTryOn = flagLive('pro_try_on') && !ITEM_GATING_ON;
+  const [proPopup, setProPopup] = React.useState<AvatarPart[] | null>(null);
+  /** Worn Pro parts a free player can't keep: not owned, not already on the saved look. */
+  const proWorn = (cfg: AvatarConfig): AvatarPart[] => (isPro ? [] : avatarWornParts(cfg).filter((p) =>
+    avatarProOnly(p.field as BuilderField, p.id) && !(owned ?? []).includes(avatarAccessKey(p.field, p.id)) && (savedRef.current as unknown as Record<string, unknown> | null)?.[p.field] !== p.id));
   const done = () => {
-    if (!ITEM_GATING_ON) { onSave(enforceAvatarPro(value, isPro)); return; }
+    if (!ITEM_GATING_ON && proTryOn) {
+      const worn = proWorn(value);
+      if (worn.length > 0) { setProPopup(worn); return; }
+    }
+    if (!ITEM_GATING_ON) { onSave(enforceSeasonalAccess(keepOwnedParts(value, enforceAvatarPro(value, isPro), owned ?? []), accessCtx)); return; }
     const check = avatarSaveCheck(value, accessCtx);
     if (check.ok) onSave(value);
     else setLockedCard(check.locked);
@@ -143,7 +156,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
 
   const set = (field: BuilderField, id: string) => {
     // Gating on: every part can be tried on (the Locked card comes at Done); off: today's Pro pill → Go Pro.
-    if (!ITEM_GATING_ON && !isPro && avatarProOnly(field, id)) {
+    if (!ITEM_GATING_ON && !proTryOn && !isPro && avatarProOnly(field, id)) {
       openGoProPopup({ reason: 'Pro mascot styles' });
       return;
     }
@@ -382,13 +395,17 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
               <div role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>{swatchGrid(field)}</div>
             ) : (
               <div className="grid grid-cols-5 gap-2.5" role="group" aria-label={h ?? BUILDER_TABS.find((t) => t.id === tab)?.label}>
-                {optionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none') && available(field, id)).map((id) => tile(field, id))}
+                {optionIds(field).filter((id) => !(field === 'frame' && isPro && id === 'none')).map((id) => tile(field, id))}
               </div>
             )}
           </div>
         ))}
         {note && <p role="status" className="text-xs font-bold mt-2 text-center" style={{ color: '#6d28d9' }}>{note}</p>}
       </div>
+      {proPopup && (
+        <ProTryOnPopup config={value} initial={initial} parts={proPopup} onKeepTrying={() => setProPopup(null)}
+          onSaveWithout={() => { setProPopup(null); onSave(enforceSeasonalAccess(keepOwnedParts(value, enforceAvatarPro(value, isPro), owned ?? []), accessCtx)); }} />
+      )}
       {lockedCard && (
         <LockedItemCard config={value} initial={initial} locked={lockedCard} ctx={accessCtx}
           onSaveWithout={() => { setLockedCard(null); onSave(enforceAvatarAccess(value, accessCtx)); }}

@@ -10,7 +10,7 @@
 //   - Out of season, unsaved seasonal parts are hidden (they come back next year). Randomize never picks them.
 //   - One Home nudge per season per year ("Dress up for Halloween?"), only for players not already wearing one.
 
-import { AVATAR_HEADS, AVATAR_INTEGRATED_OPTIONS, AVATAR_NECKS, AVATAR_FACES, type AvatarConfig } from './avatar-config';
+import { AVATAR_BODIES, AVATAR_HEADS, AVATAR_INTEGRATED_OPTIONS, AVATAR_NECKS, AVATAR_FACES, type AvatarConfig } from './avatar-config';
 import { AVATAR_MANIFEST, avatarItemKey, type AvatarManifest, type AvatarPartField } from './avatar-layout';
 import { currentSeason } from './level-season';
 
@@ -18,18 +18,26 @@ import { currentSeason } from './level-season';
 export interface AvatarPart { field: string; id: string }
 
 /** The maker fields that can hold a seasonal part, in shelf order (hats first, the buddy last). */
-export const AVATAR_SEASONAL_FIELDS = ['head', 'neck', 'wrap', 'held', 'face', 'feet', 'pet', 'extra'] as const;
+export const AVATAR_SEASONAL_FIELDS = ['body', 'head', 'neck', 'wrap', 'held', 'face', 'feet', 'pet', 'extra'] as const;
 
 function options(field: string): readonly string[] {
+  if (field === 'body') return AVATAR_BODIES;
   if (field === 'head') return AVATAR_HEADS;
   if (field === 'neck') return AVATAR_NECKS;
   if (field === 'face') return AVATAR_FACES;
   return (AVATAR_INTEGRATED_OPTIONS as Record<string, readonly string[]>)[field] ?? [];
 }
 
+/** A 2.8 pack item's explicit access in the manifest: true = Pro, false = free, undefined = today's lists decide. */
+export function avatarPartManifestPro(field: string, id: string, manifest: AvatarManifest = AVATAR_MANIFEST): boolean | undefined {
+  if (!id || id === 'none' || field === 'body') return undefined;
+  return (manifest.items[avatarItemKey(field as AvatarPartField, id)] as { pro?: boolean } | undefined)?.pro;
+}
+
 /** The season a part belongs to (avatar-parts.json `season`), or null for an everyday part. */
 export function avatarPartSeason(field: string, id: string, manifest: AvatarManifest = AVATAR_MANIFEST): string | null {
   if (!id || id === 'none') return null;
+  if (field === 'body') return manifest.bodies[id]?.season ?? null;
   const item = manifest.items[avatarItemKey(field as AvatarPartField, id)] as { season?: string } | undefined;
   return item?.season ?? null;
 }

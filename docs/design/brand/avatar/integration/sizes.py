@@ -269,7 +269,7 @@ def main(argv):
     ov.save(os.path.join(OUT, 'sizes-overlays.jpg'), quality=86)
     # every item × body × size
     allres = {}
-    with ProcessPoolExecutor(max_workers=4) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('AV_WORKERS', '1'))) as ex:
         for v, res in ex.map(_worker, [v for v in vids if v in lms]):
             allres[v] = res
             print(v, 'guard fails', sum(1 for x in res.values() if x['guards']), 'withheld',

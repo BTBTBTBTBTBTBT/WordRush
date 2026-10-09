@@ -72,6 +72,8 @@ object MascotBuilderLogic {
 
     /** The fit manifest (set by the screen from the bundled avatar-parts.json): conflicting picks swap out. */
     @Volatile var fit: AvatarFitManifest? = null
+    /** The owned-items ledger (data/OwnedItems): owned parts save without Pro. */
+    val owned: List<String> get() = com.wordocious.app.data.OwnedItems.keys.value
 
     /** 10-05 seasonal items: the active season (the admin preview, else the calendar's; set by the screen). */
     @Volatile var season: String? = null
@@ -115,7 +117,7 @@ object MascotBuilderLogic {
     val INTEGRATED_SLOTS: Set<String> get() = AvatarOptions.INTEGRATED.map { it.first }.toSet()
 
     /** The maker's NEW tag: the 10-05 additions + the 7 rebuilt parts (AvatarOptions.NEW_PARTS). */
-    fun isNew(o: BuilderOption): Boolean = o.id != NONE && seasonOf(o) == null && (o.slot in INTEGRATED_SLOTS || o.slot == "neck") &&
+    fun isNew(o: BuilderOption): Boolean = (o.slot == "body" && o.id in AvatarOptions.NEW_BODIES) || o.id != NONE && seasonOf(o) == null && (o.slot in INTEGRATED_SLOTS || o.slot == "neck") &&
         (if (o.slot == "brows") "brows:${o.id}" else o.id) in AvatarOptions.NEW_PARTS
 
     /** The (slot, id) a pick would swap out (it doesn't fit with it), else null. */
@@ -136,13 +138,12 @@ object MascotBuilderLogic {
         BuilderTab.CHEEKS -> AvatarOptions.CHEEKS.map { BuilderOption("cheeks", it) }
         BuilderTab.MOUTH -> (listOf(NONE) + AvatarOptions.MOUTHS).map { BuilderOption("mouth", it) }
         BuilderTab.HATS -> listOf(BuilderOption("head", NONE)) +
-            AvatarOptions.HEADS.filter { it != NONE }.map { BuilderOption("head", it) }.filter { available(it) }
+            AvatarOptions.HEADS.filter { it != NONE }.map { BuilderOption("head", it) }
         BuilderTab.EXTRAS -> listOf(BuilderOption("extras", NONE)) +
             AvatarOptions.FACES.filter { it != NONE }.map { BuilderOption("face", it) } +
-            AvatarOptions.NECKS.filter { it != NONE }.map { BuilderOption("neck", it) }.filter { available(it) } +
+            AvatarOptions.NECKS.filter { it != NONE }.map { BuilderOption("neck", it) } +
             // 10-05 integrated parts ride in Extras until the Dressing Room gives them their own tabs
             AvatarOptions.INTEGRATED.flatMap { (slot, ids) -> ids.filter { it != NONE }.map { BuilderOption(slot, it) } }
-                .filter { available(it) }
         BuilderTab.BACKDROP -> AvatarOptions.BACKDROP_IDS.map { BuilderOption("bg", it) }
         BuilderTab.FRAME -> listOf(BuilderOption("frame", NONE)) +
             AvatarOptions.FRAMES.filter { it != NONE }.map { BuilderOption("frame", it) }
@@ -214,7 +215,8 @@ object MascotBuilderLogic {
 
     /** AA4 + addendum ★: the option is Pro only (crown / halo / tiara, wings / gold chain, aurora / galaxy, diamond / Pro frames). */
     fun isProOnly(o: BuilderOption): Boolean =
-        AvatarOptions.isProOnly(if (o.slot in SWATCH_SLOTS) "color" else o.slot, o.id)
+        AvatarOptions.isProOnly(if (o.slot in SWATCH_SLOTS) "color" else o.slot, o.id) ||
+            (fit?.let { AvatarSeason.partManifestPro(o.slot, o.id, it) } == true)   // 2.8 packs: the manifest's `pro` flag
 
     /** A free player sees the PRO pill and the tap opens the paywall. Pro players are never locked. */
     fun proLocked(o: BuilderOption, isPro: Boolean): Boolean = !isPro && isProOnly(o)
@@ -296,8 +298,40 @@ object MascotBuilderLogic {
      * What Save writes. Gating off (today): [sanitize] (Pro items for Pro players, tier frames by level). Gating on:
      * core enforce — an earned / owned / grandfathered part stays even without Pro.
      */
-    fun saveLook(config: AvatarConfig, isPro: Boolean, level: Int, ctx: AvatarAccessContext?): AvatarConfig =
-        if (ctx != null && ctx.gating && accessTable != null && fit != null) saveWithout(config, ctx) else sanitize(config, isPro, level)
+    fun saveLook(config: AvatarConfig, isPro: Boolean, level: Int, ctx: AvatarAccessContext?): AvatarConfig {
+        if (ctx != null && ctx.gating && accessTable != null && fit != null) return saveWithout(config, ctx)
+        // Gating off: today's Pro strip, then the OWNED parts come back (they save without Pro), then a seasonal part is
+        // free only in its season (Pro / owned / already on the saved look otherwise: seasonal parts never disappear).
+        val kept = AvatarAccess.keepOwned(config, sanitize(config, isPro, level), owned)
+        val m = fit ?: return kept
+        val table = accessTable ?: com.wordocious.core.AvatarAccessTable.of(kotlinx.serialization.json.JsonObject(emptyMap()))
+        val legacy = AvatarAccessContext(isPro, owned, null, AvatarSeason.today(), season ?: "none", saved, false)
+        return AvatarAccess.enforceSeasonal(kept, legacy, table, m)
+    }
+
+    /** pro_try_on: a Pro item can be tried on live; saving a look that wears one opens the Unlock with Pro card. Off while gating is on. */
+    fun proTryOn(): Boolean = !gatingOn() && com.wordocious.app.data.FlagsService.isLive("pro_try_on")
+
+    /** The access context while gating is OFF (today's rules + the manifest's pro flags): owned / saved / season aware. */
+    fun legacyContext(isPro: Boolean): AvatarAccessContext = accessContext(isPro = isPro, stats = null, saved = saved, owned = owned, gating = false)
+
+    /** Worn Pro parts a free player can't keep: not owned, not already on the saved look. */
+    fun proWorn(look: AvatarConfig, isPro: Boolean): List<com.wordocious.core.AvatarPart> {
+        val m = fit ?: return emptyList()
+        if (isPro) return emptyList()
+        return AvatarAccess.wornParts(look).filter { p ->
+            AvatarAccess.legacyRule(p.field, p.id, m).pro &&
+                AvatarAccess.key(p.field, p.id) !in owned &&
+                saved?.let { AvatarAccess.value(it, p.field) } != p.id
+        }
+    }
+
+    /** A part's access under today's rules (the Unlock with Pro card's routes). */
+    fun legacyPartAccess(o: BuilderOption, isPro: Boolean): AvatarPartAccess? {
+        val m = fit ?: return null
+        val table = accessTable ?: com.wordocious.core.AvatarAccessTable.of(kotlinx.serialization.json.JsonObject(emptyMap()))
+        return AvatarAccess.partAccess(AvatarPart(o.slot, o.id), legacyContext(isPro), table, m)
+    }
 
     /** The Locked card's rows in core order (earn · pro · buy · season), with the earn progress bar's fraction. */
     fun lockedRows(access: AvatarPartAccess): List<LockedCardRow> = AvatarAccess.sortedRoutes(access).map { r ->

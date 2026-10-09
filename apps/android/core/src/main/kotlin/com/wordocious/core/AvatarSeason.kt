@@ -12,18 +12,26 @@ data class AvatarPart(val field: String, val id: String)
 
 object AvatarSeason {
     /** The maker fields that can hold a seasonal part, in shelf order (hats first, the buddy last). */
-    val FIELDS: List<String> = listOf("head", "neck", "wrap", "held", "face", "feet", "pet", "extra")
+    val FIELDS: List<String> = listOf("body", "head", "neck", "wrap", "held", "face", "feet", "pet", "extra")
 
     private fun options(field: String): List<String> = when (field) {
+        "body" -> AvatarOptions.BODIES
         "head" -> AvatarOptions.HEADS
         "neck" -> AvatarOptions.NECKS
         "face" -> AvatarOptions.FACES
         else -> AvatarOptions.INTEGRATED.firstOrNull { it.first == field }?.second ?: emptyList()
     }
 
+    /** A 2.8 pack item's explicit access in the manifest: true = Pro, false = free, null = today's lists decide. */
+    fun partManifestPro(field: String, id: String, m: AvatarFitManifest): Boolean? {
+        if (id.isEmpty() || id == "none" || field == "body" || field !in AvatarFit.PART_FIELDS) return null
+        return m.items[AvatarFit.itemKey(field, id)]?.pro
+    }
+
     /** The season a part belongs to, or null for an everyday part. */
     fun partSeason(field: String, id: String, m: AvatarFitManifest): String? {
         if (id.isEmpty() || id == "none") return null
+        if (field == "body") return m.bodies[id]?.season
         return m.items[AvatarFit.itemKey(field, id)]?.season
     }
 

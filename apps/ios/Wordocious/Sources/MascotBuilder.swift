@@ -84,6 +84,7 @@ enum MascotNew {
     static let ids: Set<String> = ["head:santa", "head:witch", "neck:scarf", "neck:bubbletea", "neck:guitar", "neck:fairywings"]
     /// The 10-05 additions + the 7 rebuilt parts (WordociousCore AvatarCatalog.newParts).
     static func integrated(slot: String, value: String) -> Bool {
+        if slot == "body" { return AvatarCatalog.newBodies.contains(value) }   // 2.8: the new shapes carry the NEW tag
         guard value != "none", ["held", "wrap", "feet", "pet", "brows", "extra", "neck"].contains(slot) else { return false }
         return AvatarCatalog.newParts.contains(slot == "brows" ? "brows:\(value)" : value)
     }
@@ -301,6 +302,7 @@ struct MascotBuilderView: View {
         }
         .onChange(of: tab) { MascotNew.markSeen($0) }
         .onAppear { MascotNew.markSeen(tab) }
+        .task { await MascotAccess.loadOwned() }
         #if DEBUG
         .onPerfTour { c in
             switch c {
@@ -313,7 +315,7 @@ struct MascotBuilderView: View {
         .softSheet(isPresented: $showLocked) {
             LockedItemCard(config: config, initial: initial, locked: lockedParts, ctx: accessContext,
                            onSaveWithout: {
-                               let next = MascotAccess.enforce(config, accessContext)
+                               let next = gated ? MascotAccess.enforce(config, accessContext) : MascotAccess.legacySave(config, accessContext)
                                showLocked = false
                                // after the card is down (the room's onSave closes its full-screen cover)
                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { onSave?(next) }
@@ -342,7 +344,11 @@ struct MascotBuilderView: View {
     private func save() {
         guard let onSave else { return }
         guard let check = MascotAccess.saveCheck(config, accessContext) else {
-            onSave(AvatarCatalog.enforcePro(config, isPro: isPro))
+            if proTryOn {
+                let worn = proWornParts()
+                if !worn.isEmpty { Haptics.tap(); lockedParts = worn; showLocked = true; return }
+            }
+            onSave(MascotAccess.legacySave(config, accessContext))
             return
         }
         if check.ok {
@@ -665,8 +671,8 @@ struct MascotBuilderView: View {
     private func grid(_ opts: [Option]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             LazyVGrid(columns: columns, spacing: 8) {
-                // seasonal parts: only while their season is on, or when the saved look wears them
-                ForEach(opts.filter { MascotSeasonal.available($0.slot, $0.value, saved: savedLook) }) { o in tile(o) }
+                // seasonal parts never disappear (founder 10-07): they stay in their tab, free in season, Pro / owned otherwise
+                ForEach(opts) { o in tile(o) }
             }
             if let note {
                 Text(note).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x6D28D9))
@@ -715,7 +721,7 @@ struct MascotBuilderView: View {
                         : AnyShapeStyle(Color(hex: AvatarCatalog.colorValue(id)))
                 let light = ["default", "white", "cream", "butter", "seafoam"].contains(id)
                 Button {
-                    if proLocked { showPro = true; return }
+                    if proLocked && !proTryOn { showPro = true; return }
                     config = applied(o)
                 } label: {
                     ZStack {
@@ -802,7 +808,27 @@ struct MascotBuilderView: View {
         }
     }
 
+    /// pro_try_on: a Pro item can be tried on live; saving a look that wears one opens the Unlock with Pro card (LockedItemCard).
+    private var proTryOn: Bool { !gated && FlagsService.shared.isLive("pro_try_on") }
+
+    /// 2.8 packs: the manifest's `pro` flag (true = Pro).
+    private func manifestPro(_ slot: String, _ value: String) -> Bool {
+        guard let fit = MascotParts.fit else { return false }
+        return AvatarSeason.partManifestPro(field: slot, id: value, manifest: fit) == true
+    }
+
+    /// Worn Pro parts a free player can't keep: not owned, not already on the saved look.
+    private func proWornParts() -> [AvatarPart] {
+        guard !isPro, let fit = MascotParts.fit else { return [] }
+        let saved = savedConfig.map(AvatarAccess.fieldMap) ?? [:]
+        return AvatarAccess.wornParts(config).filter { p in
+            let pro = AvatarAccess.legacyRule(field: p.field, id: p.id, manifest: fit).pro == true
+            return pro && !MascotAccess.ownedKeys.contains(AvatarAccess.key(field: p.field, id: p.id)) && saved[p.field] != p.id
+        }
+    }
+
     private func isProOnly(_ o: Option) -> Bool {
+        if manifestPro(o.slot, o.value) { return true }
         switch o.slot {
         case "head": return AvatarCatalog.isProOnly(head: o.value)
         case "neck": return AvatarCatalog.isProOnly(neck: o.value)
@@ -867,7 +893,7 @@ struct MascotBuilderView: View {
         let dark = Theme.isDark
         return Button {
             if tier != nil { return }
-            if proLocked { showPro = true; return }
+            if proLocked && !proTryOn { showPro = true; return }
             let next = applied(o)
             if let fit = MascotParts.fit, let hit = AvatarFit.pickConflict(config, field: o.slot, id: o.value, manifest: fit) {
                 note = "\(MascotOptionNames.name(o.value)) doesn't fit with \(MascotOptionNames.name(hit.id)), so it came off"

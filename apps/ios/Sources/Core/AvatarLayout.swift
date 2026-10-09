@@ -38,6 +38,8 @@ public struct AvatarManifest: Decodable {
         public var hand: XY
         public var bounds: [Double]
         public var overrides: [String: Override]?
+        /// A seasonal BODY (pumpkin, ghost, bat, cone): the season-registry id; free in season, then buy / Pro / earn.
+        public var season: String?
     }
     public struct Item: Decodable {
         public var w: Double, aspect: Double
@@ -55,6 +57,9 @@ public struct AvatarManifest: Decodable {
         public var inkTop: Double?
         /// Seasonal parts (AvatarSeason): the season-registry id it belongs to; shown in season or when saved.
         public var season: String?
+        /// 2.8 packs: true = Pro, false = free (a starter of the pack); nil = today's lists decide.
+        public var pro: Bool?
+        public var pack: String?
     }
     /// One per-body piece of an integrated part, decoded from `[layer, x, y, w, h]`.
     public struct Piece: Decodable {

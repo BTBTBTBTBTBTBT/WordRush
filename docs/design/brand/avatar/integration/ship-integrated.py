@@ -302,7 +302,7 @@ def main(only):
     print('NOTE: the shipped per-body fits come from ship-rules.py (10-06); this re-ships the 10-05 hand fits '
           'for the ids given', file=sys.stderr)
     keys = [k for k in ITEMS() if not only or k.split(':')[-1] in only or k in only]
-    with ProcessPoolExecutor(max_workers=6) as ex:
+    with ProcessPoolExecutor(max_workers=int(os.environ.get('AV_WORKERS', '1'))) as ex:
         results = list(ex.map(build_one, keys))
     report = {}
     sizes = {}

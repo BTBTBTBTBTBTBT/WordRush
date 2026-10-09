@@ -54,6 +54,8 @@ ALWAYS_FREE = {"none", "solid", "auto", "default"}
 PARTS = json.load(open(os.path.join(CORE, "avatar-parts.json")))
 FIELD_KIND = {"eyes": "eyes", "mouth": "mouth", "nose": "nose", "cheeks": "cheeks", "brows": "brows"}
 def season_of(field, pid):
+    if field == "body":     # 2.8 seasonal bodies (pumpkin, ghost, bat, cone): avatar-parts.json bodies.<id>.season
+        return PARTS["bodies"].get(pid, {}).get("season")
     kind = FIELD_KIND.get(field, "acc")
     return PARTS["items"].get(f"{kind}:{pid}", {}).get("season")
 
@@ -64,7 +66,7 @@ TIERS = {"t1": 0.99, "t2": 1.99, "t3": 2.99, "t4": 4.99}
 # DEFAULT_EYES, DEFAULT_MOUTHS, the first 16 swatches; castPreset: classic + beady + smile), so no player's
 # default look is ever locked. Plus a small taste of every tab.
 STARTER = {
-    "body": ["classic", "tall", "wide", "blob", "bean"],
+    "body": ["classic", "tall", "wide", "blob", "bean", "heart", "egg", "gumdrop", "can"],   # + 4 of the 2.8 shapes free
     "color": colors()[:16],
     "pattern": ["twotone", "stripes", "dots"],
     "eyes": ["beady", "happy", "sparkly", "wink", "sleepy"],
@@ -207,17 +209,21 @@ DEFAULT_TIER = {
     "feet": "t1", "pet": "t3", "frame": "t2", "bg": "t1", "pose": "t1",
 }
 
-# Limited: none of today's everyday items. Seasonal items keep the 10-05 rules (free in season, kept if saved);
-# the proposal adds a buy route that only opens INSIDE the season window (`limited`), so a player who missed the
-# free window can't pick one up out of season (it comes back next year).
+# Seasonal items (founder 10-07, decided): free in their season window, kept if saved, and they NEVER leave the catalog:
+# out of season they stay in their normal tab with Pro / buy routes (`limited` is retired).
 SEASON_BUY = "t2"
 # Fields whose overrides are the WHOLE rule (not merged onto Pro + buy): the frames keep today's routes exactly.
 EXACT_FIELDS = {"frame"}
 
 def rule_for(field, pid):
     season = season_of(field, pid)
-    if season:
-        return {"season": season, "limited": True, "buy": SEASON_BUY}
+    if season:     # seasonal parts NEVER disappear (founder 10-07): free in their season, then Pro or buy (earn per item)
+        return {"season": season, "pro": True, "buy": SEASON_BUY}
+    flag = PARTS["items"].get(f"{FIELD_KIND.get(field, 'acc')}:{pid}", {}).get("pro")    # 2.8 packs: the manifest's explicit flag
+    if flag is False:
+        return {"free": True}
+    if flag is True:
+        return {"pro": True, "buy": DEFAULT_TIER[field]}
     if pid in STARTER[field]:
         return {"free": True}
     over = RULES.get(field, {}).get(pid)

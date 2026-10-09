@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
 import {
+  enforceSeasonalAccess,
   AVATAR_ACCESS_CONFIG, AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule,
   avatarSaveCheck, avatarWornParts, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext,
 } from './avatar-access';
@@ -28,7 +29,7 @@ describe('the flag', () => {
     expect(avatarPartRule('accColor', 'rainbow', { gating: false })).toEqual({ pro: true });
     expect(avatarPartRule('head', 'cowboy', { gating: false })).toEqual({ free: true });
     expect(avatarPartRule('pet', 'kitten', { gating: false })).toEqual({ free: true });
-    expect(avatarPartRule('head', 'pumpkinhat', { gating: false })).toEqual({ season: 'halloween' });
+    expect(avatarPartRule('head', 'pumpkinhat', { gating: false })).toEqual({ season: 'halloween', pro: true });
     expect(avatarPartRule('frame', 'silver', { gating: false }).earn).toMatchObject({ stat: 'level', min: 11 });
   });
   it('gating off: a free player saving a non-Pro look keeps every part (no change vs enforceAvatarPro)', () => {
@@ -106,16 +107,27 @@ describe('access rules (gating on)', () => {
     expect(avatarPartAccess({ field: 'head', id: 'cowboy' }, on({ saved: mk({ head: 'cowboy' }) }))).toMatchObject({ unlocked: true, reason: 'saved' });
     expect(avatarPartAccess({ field: 'accColor', id: 'navy' }, on({ saved: mk({ color: 'navy' }) }))).toMatchObject({ unlocked: true, reason: 'saved' });
   });
-  it('seasonal parts: free in season; out of season locked with no buy route (limited), kept when saved', () => {
+  it('seasonal parts never disappear: free in season; out of season they stay with Pro / buy routes, kept when saved', () => {
     const p = { field: 'head', id: 'pumpkinhat' };
     const inSeason = avatarPartAccess(p, on({ date: '2026-10-20' }));
     expect(inSeason).toMatchObject({ unlocked: true, reason: 'season' });
-    expect(inSeason.routes.map((r) => r.kind)).toEqual(['season', 'buy']);
+    expect(inSeason.routes.map((r) => r.kind)).toEqual(['season', 'buy', 'pro']);
     const out = avatarPartAccess(p, on({ date: '2026-07-01' }));
     expect(out.unlocked).toBe(false);
-    expect(out.routes.map((r) => r.kind)).toEqual(['season']);
+    expect(out.routes.map((r) => r.kind)).toEqual(['season', 'buy', 'pro']);   // buy + Pro stay open (no `limited`)
+    expect(avatarPartAccess(p, on({ date: '2026-07-01', isPro: true })).reason).toBe('pro');
+    expect(avatarPartAccess(p, on({ date: '2026-07-01', owned: ['head:pumpkinhat'] })).reason).toBe('owned');
     expect(avatarPartAccess(p, on({ date: '2026-07-01', saved: mk({ head: 'pumpkinhat' }) })).reason).toBe('saved');
     expect(avatarPartAccess(p, on({ date: '2026-07-01', previewSeason: 'halloween' })).reason).toBe('season');
+  });
+  it('gating off: a free player cannot SAVE a seasonal part off-season (enforceSeasonalAccess), Pro / owned / saved can', () => {
+    const c = mk({ head: 'pumpkinhat', pet: 'kitten' });
+    const free = { isPro: false, date: '2026-07-01', gating: false };
+    expect(enforceSeasonalAccess(c, free)).toEqual({ ...c, head: 'none' });
+    expect(enforceSeasonalAccess(c, { ...free, isPro: true })).toEqual(c);
+    expect(enforceSeasonalAccess(c, { ...free, owned: ['head:pumpkinhat'] })).toEqual(c);
+    expect(enforceSeasonalAccess(c, { ...free, saved: c })).toEqual(c);
+    expect(enforceSeasonalAccess(c, { ...free, date: '2026-10-20' })).toEqual(c);
   });
   it('routes list what applies: earn with progress, Pro, buy', () => {
     const a = avatarPartAccess({ field: 'body', id: 'star' }, on({ stats: { bestStreak: 12 } }));

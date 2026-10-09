@@ -167,12 +167,14 @@ object AvatarAccess {
 
     /** The season of a part (only the part fields hold seasonal items; TS keys other fields "undefined:<id>"). */
     private fun partSeason(field: String, id: String, m: AvatarFitManifest): String? =
-        if (field in AvatarFit.PART_FIELDS) AvatarSeason.partSeason(field, id, m) else null
+        if (field in AvatarFit.PART_FIELDS || field == "body") AvatarSeason.partSeason(field, id, m) else null
 
     /** Today's rules (gating OFF): Pro-only lists, level frames, seasons; everything else free. */
     fun legacyRule(field: String, id: String, m: AvatarFitManifest): AvatarAccessRule {
         if (alwaysFree(field, id)) return AvatarAccessRule(free = true)
-        partSeason(field, id, m)?.let { return AvatarAccessRule(season = it) }
+        // Seasonal parts never disappear (founder 10-07): free in their season, Pro the rest of the year.
+        partSeason(field, id, m)?.let { return AvatarAccessRule(pro = true, season = it) }
+        AvatarSeason.partManifestPro(field, id, m)?.let { return if (it) AvatarAccessRule(pro = true) else AvatarAccessRule(free = true) }   // 2.8 packs
         if (field == "frame") FRAME_LEVEL[id]?.let { n -> return AvatarAccessRule(earn = AvatarEarnCondition("Reach level $n", stat = "level", min = n.toDouble())) }
         val k = if (field == "patternColor" || field == "accColor") "color" else field
         return if (AvatarOptions.PRO_ONLY[k]?.contains(id) == true) AvatarAccessRule(pro = true) else AvatarAccessRule(free = true)
@@ -290,6 +292,40 @@ object AvatarAccess {
             val next = if (priorOk) prior!! else FALLBACK[p.field] ?: "none"
             // TS deletes integrated parts + the pose when they'd be "none"; here a missing field IS "none" (avatarToJson omits it)
             out = setting(out, p.field, next)
+        }
+        return out
+    }
+
+    /**
+     * The gating-OFF save path for seasonal parts: free in season, Pro (or owned, or already on the SAVED look) the rest of
+     * the year. Reverts only seasonal parts a free player can't keep. Mirrors enforceSeasonalAccess in avatar-access.ts.
+     */
+    fun enforceSeasonal(draft: AvatarConfig, ctx: AvatarAccessContext, table: AvatarAccessTable, m: AvatarFitManifest): AvatarConfig {
+        val legacy = ctx.copy(gating = false)
+        val locked = wornParts(draft).filter { (partSeason(it.field, it.id, m) != null || AvatarSeason.partManifestPro(it.field, it.id, m) == true) && !partAccess(it, legacy, table, m).unlocked }
+        if (locked.isEmpty()) return draft
+        var out = draft
+        for (p in locked) {
+            val prior = ctx.saved?.let { value(it, p.field) }
+            val priorOk = !prior.isNullOrEmpty() && prior != p.id &&
+                (alwaysFree(p.field, prior) || partAccess(AvatarPart(p.field, prior), legacy, table, m).unlocked)
+            val next = if (priorOk) prior!! else FALLBACK[p.field] ?: "none"
+            out = setting(out, p.field, next)
+        }
+        return out
+    }
+
+    /**
+     * Owned items save without Pro. enforceAvatarPro (the gating-OFF save path) strips every Pro-only part for a free player;
+     * this puts back the ones the player OWNS (an admin grant, an earn, a purchase). Mirrors keepOwnedParts (web).
+     */
+    fun keepOwned(original: AvatarConfig, enforced: AvatarConfig, owned: List<String>): AvatarConfig {
+        if (owned.isEmpty()) return enforced
+        var out = enforced
+        for (field in FIELDS) {
+            val id = value(original, field)
+            if (id.isEmpty() || value(enforced, field) == id) continue
+            if (key(field, id) in owned) out = setting(out, field, id)
         }
         return out
     }
