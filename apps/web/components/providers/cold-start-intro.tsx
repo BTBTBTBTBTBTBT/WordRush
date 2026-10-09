@@ -3,7 +3,7 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { CAST } from '@/lib/mascots';
-import { activeSeason, castArt, type Season } from '@/lib/season';
+import { activeSeason, cachedSwitchOn, castArt, type Season } from '@/lib/season';
 import { prefersReducedMotion } from '@/lib/motion';
 import { playIntroJingle, warmIntroSound } from '@/lib/sounds';
 import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTRO_RUNNING_ATTR, SPLASH, flourishTotalMs, glideFrame, glideTransform, introShouldPlay } from '@/lib/intro';
@@ -117,7 +117,8 @@ export function ColdStartIntro() {
     if (!introShouldPlay({ pathname: window.location.pathname, seenThisSession: seen, hasStaticSplash: !!loader })) return;
     try { sessionStorage.setItem(INTRO.sessionKey, '1'); } catch {}
     const rm = prefersReducedMotion();
-    const season0 = activeSeason();
+    // `opening_animation_season` off-switch: off = the hero cast even in season.
+    const season0 = cachedSwitchOn('opening_animation_season') ? activeSeason() : null;
     setReduced(rm);
     setSeason(season0);
     setPhase('w');

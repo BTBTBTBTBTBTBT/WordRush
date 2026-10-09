@@ -74,11 +74,11 @@ enum IntroArt {
 
     static func image(_ m: MascotID) -> Image {
         if let ui = images[m] { return Image(uiImage: ui) }
-        return Image(CastSkin.assetName(for: m))
+        return Image(CastSkin.introAssetName(for: m))
     }
 
     static func prepare(timeout: Double) async {
-        let names = Mascots.cast.map { ($0, CastSkin.assetName(for: $0)) }
+        let names = Mascots.cast.map { ($0, CastSkin.introAssetName(for: $0)) }
         let decode = Task.detached(priority: .userInitiated) { () -> [(MascotID, UIImage)] in
             var out: [(MascotID, UIImage)] = []
             for (m, n) in names {

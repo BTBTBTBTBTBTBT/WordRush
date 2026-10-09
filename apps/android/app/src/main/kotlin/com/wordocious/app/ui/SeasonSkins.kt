@@ -87,8 +87,29 @@ object SeasonSkins {
     /** The season to draw for [date] with a [preview] season (pure). */
     fun seasonFor(date: LocalDate, preview: String?): String? = preview ?: currentSeason(date)
 
-    /** The season right now (device-local date + the admin preview). */
-    fun current(): String? = seasonFor(LocalDate.now(), preview)
+    /** Bumped when the season resolves differently (a Settings pick, the off-switch flipping): readers recompose. */
+    var epoch by mutableStateOf(0)
+        private set
+    fun bumpEpoch() { epoch += 1 }
+
+    /** SettingsPref key of "no Seasonal for this season" ("<season>:<year>"; synced to the account). */
+    const val OPT_OUT_KEY = "pref-season-optout"
+
+    /** The calendar's season right now, honoring the `season_halloween` off-switch (null = none / switched off). */
+    fun calendarSeason(): String? =
+        if (com.wordocious.app.data.FlagsService.isLive("season_halloween")) currentSeason(LocalDate.now()) else null
+
+    /**
+     * The season right now: the admin preview first, else the calendar's (items 24 + 25) unless the off-switch is
+     * off or this player picked another theme for this season (Settings > Theme).
+     */
+    fun current(): String? {
+        epoch // read: Compose callers recompose when a pick / the switch changes it
+        preview?.let { return it }
+        val s = calendarSeason() ?: return null
+        val optOut = runCatching { SettingsPref.get(OPT_OUT_KEY, "") }.getOrDefault("")
+        return if (optOut == com.wordocious.app.data.ThemeChoiceRules.optOutKey(s, LocalDate.now().toString())) null else s
+    }
 
     /**
      * X the Halloween costumes trimmed to their opaque bounds (alpha > 8, measured with
@@ -172,7 +193,9 @@ object SeasonSkins {
 @Composable
 fun rememberSeason(): String? {
     val preview = SeasonSkins.preview
-    return remember(preview) { SeasonSkins.current() }
+    // epoch: a Settings > Theme pick / the season_halloween switch flipping re-resolves the season (items 24 + 25)
+    val epoch = SeasonSkins.epoch
+    return remember(preview, epoch) { SeasonSkins.current() }
 }
 
 /**

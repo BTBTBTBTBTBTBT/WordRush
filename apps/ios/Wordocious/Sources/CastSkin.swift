@@ -65,6 +65,14 @@ enum CastSkin {
     private static var switchState = true
     static var switchOn: Bool { lock.lock(); defer { lock.unlock() }; return switchState }
 
+    // The `opening_animation_season` off-switch: off = the launch intro keeps the hero cast even in season.
+    private static var introState = true
+    static var introSeasonOn: Bool { lock.lock(); defer { lock.unlock() }; return introState }
+    static func setIntroSwitch(_ on: Bool) { lock.lock(); introState = on; lock.unlock() }
+
+    /// The cast image the launch intro draws: the costume in season unless the intro switch is off.
+    static func introAssetName(for id: MascotID) -> String { introSeasonOn ? assetName(for: id) : id.assetName }
+
     /// FlagsService calls this after every load: a flip re-resolves the season and rebuilds the UI.
     static func setSwitch(_ on: Bool) {
         lock.lock()

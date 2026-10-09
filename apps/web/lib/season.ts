@@ -159,10 +159,15 @@ export function readSeasonOptOut(): string | null {
  * resolver can honor it without a hook. Unreadable / no cache / no row = on.
  */
 export function seasonSwitchOn(): boolean {
+  return cachedSwitchOn('season_halloween');
+}
+
+/** Any 2.8 off-switch from the cached flags table (fail open), for code that can't use a hook. */
+export function cachedSwitchOn(key: string): boolean {
   try {
     const raw = localStorage.getItem(FLAGS_CACHE_KEY);
     const flags = raw ? (JSON.parse(raw) as Record<string, SwitchRow>) : null;
-    return isFeatureLive('season_halloween', flags, false);
+    return isFeatureLive(key, flags, false);
   } catch {
     return true;
   }
