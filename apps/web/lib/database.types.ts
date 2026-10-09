@@ -36,6 +36,7 @@ export interface Database {
           is_admin: boolean | null
           age_confirmed_13: boolean
           age_under13_at: string | null
+          game_order: unknown | null
           is_banned: boolean
           ban_reason: string | null
           has_onboarded: boolean
@@ -69,6 +70,7 @@ export interface Database {
           is_admin?: boolean | null
           age_confirmed_13?: boolean
           age_under13_at?: string | null
+          game_order?: unknown | null
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean
@@ -102,6 +104,7 @@ export interface Database {
           is_admin?: boolean | null
           age_confirmed_13?: boolean
           age_under13_at?: string | null
+          game_order?: unknown | null
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean

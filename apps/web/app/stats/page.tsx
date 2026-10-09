@@ -68,6 +68,7 @@ import { StatsPicker } from '@/components/stats/stats-picker';
 import { TintSegment } from '@/components/stats/tint-segment';
 import { TodayCard } from '@/components/stats/today-card';
 import { pickerRows, SWEEP_KEY } from '@/lib/game-picker';
+import { useGameOrder } from '@/lib/game-order-store';
 import {
   VIEW_ALL, VIEW_TODAY, VIEW_SWEEP, VIEW_VS, VIEW_PARAM, DEFAULT_STATS, isPageSwipe, todayBadges, gameSwipeOrder, gameSwipeNeighbor,
   openStatsGame, parseStatsParams, pickStatsGame, statsSections, statsUrl, type StatsState,
@@ -304,7 +305,8 @@ export default function StatsPage() {
   );
   // The picker's rows (the same filter as Home), today's W / L per tile, and
   // the swipe order (Today · All-time · WORDOCIOUS incl. Sweep · PUZZLES).
-  const rows = useMemo(() => pickerRows(flagOn), [flagOn]);
+  const { order: gameOrderPrefs } = useGameOrder();
+  const rows = useMemo(() => pickerRows(flagOn, { order: gameOrderPrefs }), [flagOn, gameOrderPrefs]);
   const badges = useMemo(() => todayBadges(rows, todayDailies, DAILY_MODES.map((m) => m.id)), [rows, todayDailies]);
   const order = useMemo(() => gameSwipeOrder(rows), [rows]);
 

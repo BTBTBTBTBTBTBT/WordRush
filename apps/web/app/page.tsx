@@ -39,7 +39,9 @@ import { useCalmMoment } from '@/hooks/use-calm-moment';
 import { readPageCache, sameData, writePageCache } from '@/lib/page-cache';
 import { shareTodayProgress } from '@/lib/daily-share';
 import { SWEEP_MODES, MORE_GAME_MODES } from '@/lib/modes.generated';
-import { bannerHeadline, type GroupProgress } from '@wordle-duel/core';
+import { bannerHeadline, applyGameOrder, sortByOrder, PINNED_FIRST_DAILY, isDefaultOrder, type GameOrderSection, type GroupProgress } from '@wordle-duel/core';
+import { useGameOrder, DEFAULT_IDS, resolvedOrder } from '@/lib/game-order-store';
+import { EditBar, TitlePencil, useReorder } from '@/components/home/reorder';
 
 // The Daily Sweep set, from the catalog (More Games Stage 4). Every count on
 // this page is taken over these keys only, so a Puzzles result on the
@@ -108,8 +110,21 @@ export default function HomePage() {
   // app_flags row says so for this viewer.
   const { isOn: flagOn } = useFlags();
   const visibleCards = MODE_CARDS.filter((c) => flagOn(c.flagKey));
-  const wordCards = visibleCards.filter((c) => !c.homeWide);
-  const puzzleCards = MORE_CARDS.filter((c) => c.dailyEligible && c.dbKey && flagOn(c.flagKey));
+  // Item 35: the player's own order (default = the catalog order; Classic pinned first).
+  const gameOrder = useGameOrder();
+  const [editSection, setEditSection] = useState<GameOrderSection | null>(null);
+  const wordRaw = visibleCards.filter((c) => !c.homeWide);
+  const puzzleRaw = MORE_CARDS.filter((c) => c.dailyEligible && c.dbKey && flagOn(c.flagKey));
+  const wordCards = sortByOrder(wordRaw, (c) => c.id, applyGameOrder(wordRaw.map((c) => c.id), gameOrder.order?.dailies, PINNED_FIRST_DAILY));
+  const puzzleCards = sortByOrder(puzzleRaw, (c) => c.id, applyGameOrder(puzzleRaw.map((c) => c.id), gameOrder.order?.puzzles));
+  const dailiesReorder = useReorder({
+    ids: wordCards.map((c) => c.id), pinned: PINNED_FIRST_DAILY, editing: editSection === 'dailies', canEdit: gameOrder.canEdit,
+    onEnterEdit: () => setEditSection('dailies'), onMove: (from, to) => gameOrder.move('dailies', wordCards.map((c) => c.id), from, to),
+  });
+  const puzzlesReorder = useReorder({
+    ids: puzzleCards.map((c) => c.id), pinned: null, editing: editSection === 'puzzles', canEdit: gameOrder.canEdit,
+    onEnterEdit: () => setEditSection('puzzles'), onMove: (from, to) => gameOrder.move('puzzles', puzzleCards.map((c) => c.id), from, to),
+  });
   const visibleMore = MORE_GAME_MODES.filter((m) => flagOn(m.flagKey));
 
   const isPro = isProActive;
@@ -369,20 +384,24 @@ export default function HomePage() {
 
   // home-cards: 2 columns on phones; 3–4 on the desktop website (globals.css).
   // BJ18: one card-name size per grid (CardNameScope), like iOS / Android.
-  const grid = (cards: HomeCard[]) => (
+  const grid = (cards: HomeCard[], reorder?: ReturnType<typeof useReorder>) => (
     <CardNameScope>
       <div className="home-cards grid grid-cols-2 gap-2.5">
         {cards.map((card) => {
           const state = stateFor(card);
           const href = hrefFor(card);
+          const rb = reorder?.bind(card.id);
           return (
             <Link
               key={card.id}
               href={href}
-              className="block"
+              {...(rb ? { 'data-order-id': rb['data-order-id'], onPointerDown: rb.onPointerDown, onPointerMove: rb.onPointerMove, onPointerUp: rb.onPointerUp, onPointerCancel: rb.onPointerCancel, style: rb.style, onContextMenu: (e: React.MouseEvent) => { if (gameOrder.canEdit) e.preventDefault(); } } : {})}
+              draggable={false}
+              className={`block ${rb?.className ?? ''}`.trim()}
               // BJ9: the game grows from this card (and shrinks back into it).
               data-game-source={`home:${card.id}`}
               onClick={(e) => {
+                if (reorder?.swallowClick()) { e.preventDefault(); return; }
                 if (state.isLocked) {
                   e.preventDefault();
                   router.prefetch(href);
@@ -466,13 +485,19 @@ export default function HomePage() {
             §12, §19.2), one header style, ~78% width, centered. */}
         <div className="home-games page-grid-2 flex flex-col gap-2">
         <div className="flex flex-col gap-2">
-        <HomeSectionTitle name="art-titlecast-dailies" label="Dailies" compact />
-        {grid(wordCards)}
+        <HomeSectionTitle name="art-titlecast-dailies" label="Dailies" compact trailing={gameOrder.canEdit && editSection !== 'dailies' ? <TitlePencil label="Reorder Dailies" onClick={() => setEditSection('dailies')} /> : undefined} />
+        {editSection === 'dailies' && (
+          <EditBar hint="Drag to reorder" onDone={() => setEditSection(null)} onReset={() => gameOrder.reset('dailies')} resetDisabled={isDefaultOrder(DEFAULT_IDS.dailies, resolvedOrder('dailies', gameOrder.order), PINNED_FIRST_DAILY)} />
+        )}
+        {grid(wordCards, dailiesReorder)}
         </div>
 
         <div className="flex flex-col gap-2">
-        <HomeSectionTitle id="puzzles" name="art-titlecast-puzzles" label="Puzzles" compact />
-        {grid(puzzleCards)}
+        <HomeSectionTitle id="puzzles" name="art-titlecast-puzzles" label="Puzzles" compact trailing={gameOrder.canEdit && editSection !== 'puzzles' ? <TitlePencil label="Reorder Puzzles" onClick={() => setEditSection('puzzles')} /> : undefined} />
+        {editSection === 'puzzles' && (
+          <EditBar hint="Drag to reorder" onDone={() => setEditSection(null)} onReset={() => gameOrder.reset('puzzles')} resetDisabled={isDefaultOrder(DEFAULT_IDS.puzzles, resolvedOrder('puzzles', gameOrder.order), null)} />
+        )}
+        {grid(puzzleCards, puzzlesReorder)}
         </div>
         </div>
 

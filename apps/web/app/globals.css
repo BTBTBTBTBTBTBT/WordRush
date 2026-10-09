@@ -2505,3 +2505,15 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 /* Accent text on a dark season's night glass is lifted toward white (lib/soft-surface liftedInk); off-season / light: 0. */
 :root { --ink-lift: 0%; }
 html[data-season-tone="dark"] { --ink-lift: 65%; }
+
+/* Item 35: the designed game-order edit mode (components/home/reorder.tsx). Wiggle, lift, drop glow. */
+.order-wiggle { animation: order-wiggle 260ms ease-in-out infinite alternate; transform-origin: 50% 60%; }
+.order-wiggle:nth-child(even) { animation-delay: -130ms; animation-direction: alternate-reverse; }
+@keyframes order-wiggle { from { transform: rotate(-1.3deg); } to { transform: rotate(1.3deg); } }
+.order-drag { animation: none !important; box-shadow: 0 14px 28px rgba(60, 20, 120, 0.28); border-radius: 18px; will-change: transform; position: relative; }
+.order-target { border-radius: 18px; box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.55), 0 0 22px 4px rgba(167, 139, 250, 0.65); transition: box-shadow 120ms ease-out; }
+.order-bar { padding: 2px 0; }
+.order-hint { font: 800 11.5px/1 var(--font-nunito, system-ui); letter-spacing: 0.04em; text-transform: uppercase; color: #7c3aed; opacity: 0.85; }
+.order-pencil { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); }
+@media (prefers-reduced-motion: reduce) { .order-wiggle { animation: none !important; } }
+[data-reduced-motion="true"] .order-wiggle { animation: none !important; }
