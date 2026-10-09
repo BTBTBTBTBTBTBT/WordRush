@@ -13,11 +13,36 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
+    <!-- 2.8 Halloween: one faint motif that rotates on each hourly flip (hidden outside the season). -->
+    <ImageView
+        android:id="@+id/w_motif"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="end|top"
+        android:scaleType="fitEnd"
+        android:alpha="0.5"
+        android:visibility="gone"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:clipChildren="false">
+
+        <!-- Item 28: the WORDOCIOUS lettering as an image on every size (swapped per season in code). -->
+        <ImageView
+            android:id="@+id/w_wordmark"
+            android:layout_width="wrap_content"
+            android:layout_height="14dp"
+            android:layout_marginBottom="4dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitStart"
+            android:src="@drawable/widget_wordmark_medium_normal"
+            android:contentDescription="Wordocious" />
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -38,14 +63,15 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
-                    <include layout="@layout/widget_flame" android:layout_width="30dp" android:layout_height="30dp" />
+                    <include layout="@layout/widget_flame" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                     <TextView
                         style="@style/WidgetCaps"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
                         android:textColor="@color/widget_ink"
-                        android:text="DAY STREAK" />
+                        android:id="@+id/w_streak_caps"
+                android:text="DAY STREAK" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -213,7 +239,7 @@
                 android:scaleType="fitCenter"
                 android:importantForAccessibility="no"
                 android:contentDescription="@null" />
-            <TextView
+            <Chronometer
                 android:id="@+id/w_left"
                 style="@style/WidgetCaps"
                 android:layout_width="wrap_content"

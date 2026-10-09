@@ -1,28 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- BI13 the streak number set right into the 3D flame (on its body, above the face). -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/w_flame_box"
-    android:layout_width="34dp"
-    android:layout_height="34dp">
-    <ImageView
-        android:id="@+id/w_flame"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        android:src="@drawable/icon3d_flame"
-        android:importantForAccessibility="no"
-        android:contentDescription="@null" />
-    <TextView
-        android:id="@+id/w_streak"
-        style="@style/WidgetFlameNumber"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="6dp"
-        android:paddingBottom="13dp"
-        android:autoSizeTextType="uniform"
-        android:autoSizeMinTextSize="6sp"
-        android:autoSizeMaxTextSize="13sp"
-        android:text="0" />
-</FrameLayout>
+<!-- Items 28 + 48: the streak flame and the flawless-day trophy as a MATCHED PAIR — same 32dp icon size, same
+     baseline (both centered on one row), the same number weight and size, centered as a group. The trophy is
+     GONE (no gap) until there is a flawless run of 2+. The number sits on the flame's body above its face; on
+     the trophy it sits on the lower body, below the face. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_streak_pair"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+    <FrameLayout
+        android:id="@+id/w_flame_box"
+        android:layout_width="32dp"
+        android:layout_height="32dp">
+        <ImageView
+            android:id="@+id/w_flame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/icon3d_flame"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+        <TextView
+            android:id="@+id/w_streak"
+            style="@style/WidgetFlameNumber"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="13dp"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="6sp"
+            android:autoSizeMaxTextSize="13sp"
+            android:text="0" />
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/w_trophy_box"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="2dp"
+        android:visibility="gone">
+        <ImageView
+            android:id="@+id/w_trophy"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/streak_trophy_3"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+        <TextView
+            android:id="@+id/w_trophy_num"
+            style="@style/WidgetFlameNumber"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="19dp"
+            android:paddingBottom="1dp"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="6sp"
+            android:autoSizeMaxTextSize="13sp"
+            android:text="2" />
+    </FrameLayout>
+</LinearLayout>

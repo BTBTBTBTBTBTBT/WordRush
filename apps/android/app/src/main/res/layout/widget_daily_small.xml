@@ -10,10 +10,35 @@
     android:background="@drawable/widget_bg"
     android:padding="14dp">
 
+    <!-- 2.8 Halloween: one faint motif that rotates on each hourly flip (hidden outside the season). -->
+    <ImageView
+        android:id="@+id/w_motif"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="end|top"
+        android:scaleType="fitEnd"
+        android:alpha="0.5"
+        android:visibility="gone"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
+
+        <!-- Item 28: the WORDOCIOUS lettering as an image on every size (swapped per season in code). -->
+        <ImageView
+            android:id="@+id/w_wordmark"
+            android:layout_width="wrap_content"
+            android:layout_height="13dp"
+            android:layout_marginBottom="3dp"
+            android:adjustViewBounds="true"
+            android:scaleType="fitStart"
+            android:src="@drawable/widget_wordmark_medium_normal"
+            android:contentDescription="Wordocious" />
+
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -21,7 +46,7 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <include layout="@layout/widget_ring" android:layout_width="78dp" android:layout_height="78dp" />
+            <include layout="@layout/widget_ring" android:layout_width="62dp" android:layout_height="62dp" />
 
             <ImageView
                 android:id="@+id/w_mascot"
@@ -41,7 +66,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <include layout="@layout/widget_flame" android:layout_width="34dp" android:layout_height="34dp" />
+            <include layout="@layout/widget_flame" android:layout_width="wrap_content" android:layout_height="wrap_content" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -54,7 +79,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/widget_ink"
-                    android:text="DAY STREAK" />
+                    android:id="@+id/w_streak_caps"
+                android:text="DAY STREAK" />
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -75,7 +101,15 @@
                         style="@style/WidgetCaps"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="RESETS IN 4H" />
+                        android:text="RESETS IN" />
+                    <!-- Item 28: the live h:m:s countdown (a Chronometer counting down to midnight). -->
+                    <Chronometer
+                        android:id="@+id/w_reset_t"
+                        style="@style/WidgetCaps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:countDown="true" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>

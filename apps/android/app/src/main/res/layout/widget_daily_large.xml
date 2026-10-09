@@ -12,6 +12,19 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
+    <!-- 2.8 Halloween: one faint motif that rotates on each hourly flip (hidden outside the season). -->
+    <ImageView
+        android:id="@+id/w_motif"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="end|top"
+        android:scaleType="fitEnd"
+        android:alpha="0.5"
+        android:visibility="gone"
+        android:importantForAccessibility="no"
+        android:contentDescription="@null" />
+
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -37,32 +50,39 @@
                 android:importantForAccessibility="no"
                 android:contentDescription="@null" />
             <LinearLayout
+                android:id="@+id/w_header_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="10dp"
                 android:orientation="vertical">
-                <TextView
-                    style="@style/WidgetCaps"
+                <!-- Item 28: WORDOCIOUS as lettering art + the "today's dailies" headline art. -->
+                <ImageView
+                    android:id="@+id/w_wordmark"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:letterSpacing="0.16"
-                    android:textColor="@color/widget_accent"
-                    android:text="WORDOCIOUS" />
-                <TextView
-                    style="@style/WidgetCaps"
+                    android:layout_height="18dp"
+                    android:adjustViewBounds="true"
+                    android:scaleType="fitStart"
+                    android:src="@drawable/widget_wordmark_large_normal"
+                    android:contentDescription="Wordocious" />
+                <ImageView
+                    android:id="@+id/w_headline"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:text="TODAY'S DAILIES" />
+                    android:layout_height="9dp"
+                    android:layout_marginTop="4dp"
+                    android:adjustViewBounds="true"
+                    android:scaleType="fitStart"
+                    android:src="@drawable/widget_headline_normal"
+                    android:contentDescription="Today's dailies" />
             </LinearLayout>
-            <include layout="@layout/widget_flame" android:layout_width="36dp" android:layout_height="36dp" />
+            <include layout="@layout/widget_flame" android:layout_width="wrap_content" android:layout_height="wrap_content" />
             <TextView
                 style="@style/WidgetCaps"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:textColor="@color/widget_ink"
+                android:id="@+id/w_streak_caps"
                 android:text="DAY STREAK" />
         </LinearLayout>
 
@@ -187,6 +207,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textColor="@color/widget_ink"
+                android:id="@+id/w_puzzles_caps"
                 android:text="PUZZLES" />
             <TextView
                 android:id="@+id/w_puzzles_count"
@@ -370,7 +391,7 @@
                 android:scaleType="fitCenter"
                 android:importantForAccessibility="no"
                 android:contentDescription="@null" />
-            <TextView
+            <Chronometer
                 android:id="@+id/w_left"
                 style="@style/WidgetCaps"
                 android:layout_width="wrap_content"
