@@ -92,7 +92,7 @@ fun AppHeader(
         // WORDOCIOUS cast row under it.
         HeaderControlsRow(profile, isGuest, onNav, onSettings, onSignIn, homeShare)
         Spacer(Modifier.height(4.dp))
-        CastTitle(pro = AuthService.isProActive, modifier = Modifier.condensesWith(scroll, com.wordocious.app.ui.theme.WTheme.calmMotion))
+        CastTitle(pro = AuthService.isProActive, modifier = Modifier.condensesWith(scroll, com.wordocious.app.ui.theme.WTheme.calmMotion || !com.wordocious.app.data.FlagsService.isLive("header_condense")))
     }
 }
 

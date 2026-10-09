@@ -30,6 +30,8 @@ export const FEATURE_SWITCHES = {
   whats_new_28: 'One-time "What\'s new in 2.8" tour',
   custom_game_order: 'Player-reorderable game lists',
   pro_try_on: 'Pro item try-on + unlock popup',
+  header_condense: 'Cast header slims as the page scrolls (the soft fade under it always stays)',
+  bubble_atlas: 'Bubble-letter glyph atlas for changing headlines (off = the live headline font)',
 } as const;
 
 export type FeatureSwitch = keyof typeof FEATURE_SWITCHES;

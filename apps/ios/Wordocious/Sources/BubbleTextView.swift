@@ -23,7 +23,8 @@ struct BubbleLineView: View {
     var animated: Bool = true
 
     var body: some View {
-        if BubbleText.atlasCovers(text) {
+        // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
+        if BubbleText.atlasCovers(text) && FlagsService.shared.isLive("bubble_atlas") {
             BubbleAtlasLine(text: text, size: size, top: palette.top, bottom: palette.bottom)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(text)

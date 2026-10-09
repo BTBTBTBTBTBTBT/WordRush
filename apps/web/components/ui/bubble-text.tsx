@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { BUBBLE_ATLAS, BUBBLE_MAX_SIZE, BUBBLE_MIN_SIZE, bubbleAtlasCovers, bubbleFit, bubbleGlyphName, bubbleWidthEm } from '@wordle-duel/core';
+import { useFlags } from '@/hooks/use-flags';
 import { LiveHeadline, type LiveHeadlineProps } from '@/components/ui/live-headline';
 import { HEADLINE_PALETTES, type HeadlinePalette, type HeadlinePaletteSpec } from '@/lib/live-headline';
 
@@ -44,7 +45,9 @@ export interface BubbleLineProps extends Omit<LiveHeadlineProps, 'size'> {
  */
 export const BubbleLine = memo(function BubbleLine(props: BubbleLineProps) {
   const { text, size, palette = 'home', spec, accent } = props;
-  if (!bubbleAtlasCovers(text)) return <LiveHeadline {...props} size={size} />;
+  const { isLive } = useFlags();
+  // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
+  if (!isLive('bubble_atlas') || !bubbleAtlasCovers(text)) return <LiveHeadline {...props} size={size} />;
   const p: HeadlinePaletteSpec = accent ? { ...HEADLINE_PALETTES[palette], top: accent, bottom: accent } : spec ?? HEADLINE_PALETTES[palette];
   const chars = Array.from(text.toUpperCase());
   return (

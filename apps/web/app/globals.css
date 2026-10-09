@@ -2256,7 +2256,7 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     opacity: 0.9;
   }
   @supports (animation-timeline: scroll()) {
-    .app-hdr > .hdr-cast { transform-origin: left center; animation: hdr-condense-cast linear both; animation-timeline: scroll(root); animation-range: 0 64px; }
+    .app-hdr[data-condense="on"] > .hdr-cast { transform-origin: left center; animation: hdr-condense-cast linear both; animation-timeline: scroll(root); animation-range: 0 64px; }
   }
   @keyframes hdr-condense-cast { from { transform: scale(1); } to { transform: scale(0.72); } }
   .app-hdr > .dk-tabs { grid-row: 1; grid-column: 2; display: flex; align-items: center; gap: 8px; }

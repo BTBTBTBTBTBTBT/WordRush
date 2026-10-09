@@ -104,7 +104,7 @@ struct CondensingCast: View {
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
 
     var body: some View {
-        let scale = Motion.calm(envReduceMotion) ? 1 : HeaderScrollSpec.scale(progress: model.progress)
+        let scale = (Motion.calm(envReduceMotion) || !FlagsService.shared.isLive("header_condense")) ? 1 : HeaderScrollSpec.scale(progress: model.progress)
         LivingCastHeader(pro: pro)
             .scaleEffect(scale, anchor: .top)
             .modifier(ScaledHeight(scale: scale))

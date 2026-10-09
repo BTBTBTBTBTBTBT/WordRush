@@ -49,7 +49,8 @@ fun BubbleLine(
     names: List<String> = emptyList(),
     sound: Boolean = true,
 ) {
-    if (bubbleAtlasCovers(text)) {
+    // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
+    if (bubbleAtlasCovers(text) && com.wordocious.app.data.FlagsService.isLive("bubble_atlas")) {
         BubbleAtlasLine(text, palette, sizeDp, modifier)
     } else {
         val sizeSp = with(androidx.compose.ui.platform.LocalDensity.current) { sizeDp.dp.toSp() }
