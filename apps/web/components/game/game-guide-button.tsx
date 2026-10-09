@@ -1,6 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { FIRST_PLAY_FLAG, shouldAutoShowTutorial } from '@wordle-duel/core';
+import { useFlags } from '@/hooks/use-flags';
+import { useTutorialsSeen } from '@/lib/tutorials-seen';
 import { Icon3D } from '@/components/ui/icon3d';
 import { GAME_HEADER_GLYPH } from '@/components/ui/page-header';
 import { GameHelpCard } from '@/components/help/game-help-card';
@@ -30,7 +33,24 @@ export function GameGuideButton({
 }: Props) {
   const [open, setOpen] = useState(false);
   const guide = getGuide(slug);
-  const close = useCallback(() => setOpen(false), []);
+  // 2.8 item 12: the first time a player opens this game, the same card opens by itself once
+  // ("Let's play!"); closing it records the game as seen (synced). The "?" reopens it any time.
+  const { isLive } = useFlags();
+  const { seen, mark } = useTutorialsSeen();
+  const [firstPlay, setFirstPlay] = useState(false);
+  const autoDone = useRef(false);
+  useEffect(() => {
+    if (autoDone.current || !guide) return;
+    if (shouldAutoShowTutorial({ live: isLive(FIRST_PLAY_FLAG), seen, key: slug })) {
+      autoDone.current = true;
+      setFirstPlay(true);
+      setOpen(true);
+    }
+  }, [seen, isLive, slug, guide]);
+  const close = useCallback(() => {
+    setOpen(false);
+    if (firstPlay) { mark(slug); setFirstPlay(false); }
+  }, [firstPlay, mark, slug]);
 
   // Pause the clock while the guide is open.
   useEffect(() => {
@@ -52,7 +72,7 @@ export function GameGuideButton({
         <Icon3D name="help" size={GAME_HEADER_GLYPH} priority />
       </button>
 
-      {open && <GameHelpCard slug={slug} accent={accentColor} onClose={close} />}
+      {open && <GameHelpCard slug={slug} accent={accentColor} onClose={close} firstPlay={firstPlay} />}
     </>
   );
 }

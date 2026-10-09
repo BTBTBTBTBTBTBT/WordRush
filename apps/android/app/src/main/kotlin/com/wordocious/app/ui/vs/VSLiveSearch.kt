@@ -146,10 +146,9 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         ) {
-            RingTimer(elapsedSec * 1000L) { frameMs.longValue }
-            VsCapsLabel("SEARCHING", color = VsTeal.label, fontSize = 11.sp)
-            // BJ16: the FINDING A RIVAL lettering, not plain text.
-            com.wordocious.app.ui.HeadingArt(com.wordocious.app.ui.Heading.FINDINGRIVAL, height = 40.dp, maxWidth = 320.dp, contentDescription = "Looking for a rival")
+            // 2.8 wave 3 (item 22): the lobby scene (your mascot on the stage, the "?" seat, ONE status line, a real
+            // counting timer, the keepy-uppy tile) replaces the ring + SEARCHING + FINDING A RIVAL stack.
+            WaitingScene(com.wordocious.core.WaitingKind.RANDOM, name = null, startedAtMs = startedAt)
             val n = waiting ?: 0
             if (n > 0) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 VsNumber("$n", 16.sp)
@@ -236,7 +235,7 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
                     com.wordocious.app.ui.CandySwitch(lookingOn, Modifier.alpha(if (lookingSaving) 0.5f else 1f))
                 }
             }
-            VsSoftPill("CANCEL", color = CandyColor.PEACH, onClick = onCancel)
+            com.wordocious.app.ui.QuietButton("Cancel", onClick = onCancel)
             message?.let {
                 Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = VsTeal.sub, textAlign = TextAlign.Center)
             }

@@ -22,6 +22,8 @@ struct FriendlyGameScreen: View {
     /// Word Chain: the letters typed after the locked first letter.
     @State private var chainTyped = ""
     @State private var confirmClose = false
+    /// Wave 3 (9c + 12): the "?" How to Play card (opens by itself the first time this game is played).
+    @State private var showHelp = false
     @State private var rematching = false
 
     // 9b live play (FlagsService live_play; off = today's 2 s poll, no optimistic moves, no presence).
@@ -64,6 +66,7 @@ struct FriendlyGameScreen: View {
                                 ResultHost(outcome: outcome, winner: Mascots.pocketWin)
                             }
                             scoreWindow(g)
+                            if g.isActive && g.yourTurn { PocketYourTurnFlag() }
                             board(g)
                                 .modifier(ShakeEffect(animatableData: shakeCount))
                                 .scaleEffect(arrived ? 1.014 : 1)
@@ -105,13 +108,40 @@ struct FriendlyGameScreen: View {
         .toolbar(.hidden, for: .navigationBar)
         .task(id: gameId) { await poll() }
         .onDisappear { live.stop() }
-        .confirmationDialog("Leave this game?", isPresented: $confirmClose, titleVisibility: .visible) {
-            Button("Close — it waits for you") { dismiss() }
-            Button("Resign", role: .destructive) { resign() }
-            Button("Keep playing", role: .cancel) {}
-        } message: {
-            Text("Resigning hands \(themName) the win.")
+        // Wave 3 (item 9): ONE themed button. Resign lives in the Friends tab's more menu now.
+        .overlay { if confirmClose { leaveCard } }
+        .animation(Theme.reduceMotion ? nil : .easeOut(duration: 0.18), value: confirmClose)
+        .softSheet(isPresented: $showHelp) { if let kind { PocketHelpSheet(kind: kind) } }
+        .firstPlayPocket(kind: kind, show: $showHelp)
+    }
+
+    /// The Leave dialog: the game's art, "Your game waits for you", and one button back to Friends.
+    /// A tap on the dimmed screen keeps playing.
+    private var leaveCard: some View {
+        ZStack {
+            Color.black.opacity(0.35).ignoresSafeArea()
+                .onTapGesture { confirmClose = false }
+                .accessibilityHidden(true)
+            VStack(spacing: 12) {
+                if let kind, let art = kind.pocketArt { GameArtImage(asset: art, size: 64) }
+                Text("Your game waits for you").font(Brand.font(19, .black)).foregroundStyle(FriendsInk.heading)
+                    .multilineTextAlignment(.center)
+                Text("Pick it up any time. \(themName) gets a ping.").font(Brand.font(12, .bold))
+                    .foregroundStyle(FriendsInk.muted).multilineTextAlignment(.center)
+                Button { confirmClose = false; dismiss() } label: {
+                    CandyLabel(title: "Back to Friends", symbol: "chevron.left")
+                }
+                .buttonStyle(CandyButtonStyle(variant: .pink, size: .large))
+                .padding(.top, 2)
+            }
+            .padding(20)
+            .frame(maxWidth: 320)
+            .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color(hex: 0xFFF0F7))
+                .shadow(color: FriendsKit.ink.opacity(0.25), radius: 18, y: 8))
+            .padding(.horizontal, 24)
         }
+        .transition(.opacity)
+        .accessibilityAddTraits(.isModal)
     }
 
     // MARK: Data
@@ -296,6 +326,12 @@ struct FriendlyGameScreen: View {
                     if game?.isActive == true { confirmClose = true } else { dismiss() }
                 }
                 Spacer()
+                // Wave 3 (9c): the "?" in the top-right corner, same control as every other game's header.
+                if kind != nil {
+                    HeaderCircleButton(.icon(.help), size: 44, iconSize: HeaderControl.gameIcon, label: "How to play") {
+                        showHelp = true
+                    }
+                }
             }
         }
         .padding(.horizontal, 8).padding(.top, 4).frame(height: 48)
@@ -559,7 +595,7 @@ struct FriendlyGameScreen: View {
 
     // Rock Paper Scissors
 
-    private func art(_ p: RpsPick) -> String { "friends-\(p.rawValue)" }
+    private func art(_ p: RpsPick) -> String { PocketArt.rps(p) }
 
     @ViewBuilder private func rpsBoard(_ g: FriendlyGameView, _ r: RpsState) -> some View {
         let me = g.me
@@ -575,13 +611,21 @@ struct FriendlyGameScreen: View {
             }
             if g.isActive {
                 VStack(spacing: 6) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(LinearGradient(colors: [Color(hex: 0xFBCFE8), Color(hex: 0xDDD6FE)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.7), style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
-                            .padding(8)
-                        Text("?").font(Brand.font(44, .black)).foregroundStyle(.white)
+                    Group {
+                        if let hidden = PocketArt.rpsHidden {
+                            // Wave 3: their face-down hand (the shipped art).
+                            Image(hidden).resizable().interpolation(.high).scaledToFit()
+                                .accessibilityLabel(theirs != nil ? "\(themName)'s hand, face down" : "Waiting for \(themName)'s hand")
+                        } else {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(LinearGradient(colors: [Color(hex: 0xFBCFE8), Color(hex: 0xDDD6FE)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(Color.white.opacity(0.7), style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
+                                    .padding(8)
+                                Text("?").font(Brand.font(44, .black)).foregroundStyle(.white)
+                            }
+                        }
                     }
                     .frame(width: 92, height: 112)
                     .shadow(color: FriendsKit.ink.opacity(0.12), radius: 6, y: 3)
@@ -654,11 +698,13 @@ struct FriendlyGameScreen: View {
                     .accessibilityLabel(mark == nil ? "Empty tile \(i + 1)" : mark == me ? "Your tile" : "\(themName)'s tile")
                 }
             }
+            // Wave 3: the strike draws through the winning three.
+            .overlay { if !line.isEmpty { TttStrikeView(cells: FriendlyGames.tttLine(t.board)?.cells ?? [], cell: 92, gap: 10) } }
             // §L: the board sits on the shared tray (no grid lines).
             .gameTray(accent: accent, state: trayState(g))
             HStack(spacing: 16) {
-                pieceLegend("YOU · X", piece: "art-piece-ttt-x", fallback: FriendsKit.purple)
-                pieceLegend("\(themName.uppercased()) · O", piece: "art-piece-ttt-o", fallback: FriendsInk.pink)
+                pieceLegend("YOU · X", piece: PocketArt.ttt(mine: true) ?? "art-piece-ttt-x", fallback: FriendsKit.purple)
+                pieceLegend("\(themName.uppercased()) · O", piece: PocketArt.ttt(mine: false) ?? "art-piece-ttt-o", fallback: FriendsInk.pink)
             }
         }
     }
@@ -691,8 +737,7 @@ struct FriendlyGameScreen: View {
 
     /// The X / O piece art (falls back to the old drawn glyph when missing).
     @ViewBuilder private func tttPiece(mine: Bool) -> some View {
-        let name = mine ? "art-piece-ttt-x" : "art-piece-ttt-o"
-        if ArtAsset.exists(name) {
+        if let name = PocketArt.ttt(mine: mine) {
             Image(name).resizable().interpolation(.high).scaledToFit().accessibilityHidden(true)
         } else {
             Image(systemName: mine ? "xmark" : "circle")
@@ -1178,7 +1223,18 @@ private struct RpsReveal: View {
             Text("ROUND \(round)").font(Brand.font(10, .black)).tracking(1).foregroundStyle(FriendsInk.muted)
             HStack(spacing: 18) {
                 card(mine, label: "YOU", win: winner == 1, tint: FriendsKit.purple)
-                Text(winner == 0 ? "TIE" : "VS").font(Brand.font(12, .black)).foregroundStyle(FriendsInk.muted)
+                ZStack {
+                    // Wave 3: the clash burst pops between the hands as they flip over.
+                    if let burst = PocketArt.clashBurst {
+                        Image(burst).resizable().interpolation(.high).scaledToFit()
+                            .frame(width: 52, height: 52)
+                            .scaleEffect(flipped ? 1 : 0.4)
+                            .opacity(flipped ? 1 : 0)
+                            .accessibilityHidden(true)
+                    }
+                    Text(winner == 0 ? "TIE" : "VS").font(Brand.font(12, .black)).foregroundStyle(FriendsInk.muted)
+                }
+                .frame(width: 40)
                 card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber)
             }
         }
@@ -1191,7 +1247,7 @@ private struct RpsReveal: View {
 
     private func card(_ p: RpsPick, label: String, win: Bool, tint: Color) -> some View {
         VStack(spacing: 3) {
-            Image("friends-\(p.rawValue)").resizable().interpolation(.high).scaledToFit().frame(width: 58, height: 58)
+            Image(PocketArt.rps(p)).resizable().interpolation(.high).scaledToFit().frame(width: 58, height: 58)
                 .accessibilityLabel(p.rawValue.capitalized)   // §AB: the pick, not the asset name
             Text(label).font(Brand.font(9.5, .black)).tracking(0.5).foregroundStyle(win ? tint : FriendsInk.muted).lineLimit(1)
         }
@@ -1209,22 +1265,52 @@ private struct RpsReveal: View {
 private struct SpinningCoin: View {
     let face: CoinFace
     let spinKey: Int
-    @State private var angle: Double = 0
+    /// The art shown right now: nil = the landed face, else a flip frame (tilt, edge, tilt).
+    @State private var frame: String?
+    @State private var hop: CGFloat = 0
+    @State private var flipTask: Task<Void, Never>?
 
     var body: some View {
-        Image(face == .heads ? "friends-heads" : "friends-tails")
-            .resizable().interpolation(.high).scaledToFit()
-            .accessibilityLabel(face == .heads ? "Coin: heads" : "Coin: tails")   // §AB
-            .frame(width: 150, height: 150)
-            .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0))
-            .shadow(color: Color(hex: 0xCA8A04).opacity(0.35), radius: 12, y: 4)
-            .onChange(of: spinKey) { _ in
-                guard !Theme.reduceMotion else { return }
-                var t = Transaction(); t.disablesAnimations = true
-                withTransaction(t) { angle = 0 }
-                withAnimation(.easeOut(duration: 0.9)) { angle = 720 }
+        let showing = frame ?? PocketArt.coin(face)
+        ZStack {
+            if let shadow = PocketArt.coinShadow {
+                // The contact shadow shrinks as the coin hops.
+                Image(shadow).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 140, height: 140)
+                    .offset(y: 10)
+                    .scaleEffect(1 + hop / 160)
+                    .opacity(0.9)
+                    .accessibilityHidden(true)
             }
-            .accessibilityLabel(face == .heads ? "Coin, heads" : "Coin, tails")
+            Image(showing)
+                .resizable().interpolation(.high).scaledToFit()
+                .frame(width: 150, height: 150)
+                .offset(y: hop)
+                .shadow(color: Color(hex: 0xCA8A04).opacity(0.35), radius: 12, y: 4)
+        }
+        .frame(width: 150, height: 160)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(face == .heads ? "Coin, heads" : "Coin, tails")   // §AB
+        .onChange(of: spinKey) { _ in flip() }
+        .onDisappear { flipTask?.cancel() }
+    }
+
+    /// Wave 3: face -> tilt -> edge -> tilt -> face, a small hop, ~0.45 s. Reduce Motion: no flip.
+    private func flip() {
+        guard !Theme.reduceMotion else { return }
+        flipTask?.cancel()
+        let frames = [PocketArt.coinTilt, PocketArt.coinEdge, PocketArt.coinTilt].compactMap { $0 }
+        flipTask = Task { @MainActor in
+            withAnimation(.easeOut(duration: 0.2)) { hop = -22 }
+            for name in frames {
+                if Task.isCancelled { return }
+                frame = name
+                try? await Task.sleep(nanoseconds: 70_000_000)
+            }
+            if Task.isCancelled { return }
+            frame = nil
+            withAnimation(.easeIn(duration: 0.2)) { hop = 0 }
+        }
     }
 }
 

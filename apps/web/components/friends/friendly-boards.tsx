@@ -15,7 +15,8 @@ import { FriendAvatar, SectionLabel } from './friends-ui';
 import { GameTray } from '@/components/ui/game-tray';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
-import { pieceSrc } from '@/lib/art';
+import { ART_SIZE, artSrc, pieceSrc, type ArtName } from '@/lib/art';
+import { prefersReducedMotion } from '@/lib/motion';
 import type { TrayState } from '@/lib/game-tray';
 import { softMix } from '@/lib/soft-surface';
 
@@ -62,11 +63,49 @@ interface BoardProps<S> {
 }
 
 const PICKS: RpsPick[] = ['rock', 'paper', 'scissors'];
-const art = (name: string) => `/friends/${name}.png`;
+/** 2.8 item 9d: the ChatGPT pocket set (docs/design/brand/2.8/pocket) — mitten hands and the Call It coin faces. */
+const POCKET_ART: Record<string, ArtName> = {
+  rock: 'art-pocket-rps-rock', paper: 'art-pocket-rps-paper', scissors: 'art-pocket-rps-scissors',
+  heads: 'art-pocket-coin-heads-w', tails: 'art-pocket-coin-tails-crest',
+};
 
 function Art({ name, size }: { name: string; size: number }) {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={art(name)} alt={name} loading="lazy" decoding="async" width={size} height={size} draggable={false} style={{ width: size, height: size, objectFit: 'contain' }} />;
+  return <img src={artSrc(POCKET_ART[name] ?? 'art-pocket-rps-rock')} alt={name} loading="lazy" decoding="async" width={size} height={size} draggable={false} style={{ width: size, height: size, objectFit: 'contain' }} />;
+}
+
+/** One shipped pocket piece at a given height (aspect from the real size). */
+function PocketPiece({ name, height, style, className }: { name: ArtName; height: number; style?: React.CSSProperties; className?: string }) {
+  const [w, h] = ART_SIZE[name];
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={artSrc(name)} alt="" aria-hidden="true" width={Math.round((height * w) / h)} height={height} draggable={false} decoding="async" className={className} style={{ width: 'auto', height, ...style }} />;
+}
+
+/**
+ * The Call It coin (2.8 item 9d): heads is the canonical W coin, tails the crest. A fresh flip plays the
+ * set's frames — face, tilt, edge, tilt, the landed face — with a lift and a soft shadow (transform/opacity
+ * only, about 0.9 s). Reduce Motion: the landed face, nothing else.
+ */
+function CoinFlip({ face, flipKey }: { face: CoinFace; flipKey: number }) {
+  const landed: ArtName = face === 'heads' ? 'art-pocket-coin-heads-w' : 'art-pocket-coin-tails-crest';
+  const [frame, setFrame] = useState<ArtName>(landed);
+  const [lift, setLift] = useState(false);
+  useEffect(() => {
+    if (!flipKey || prefersReducedMotion()) { setFrame(landed); return; }
+    const seq: Array<[ArtName, number]> = [['art-pocket-coin-tilt', 0], ['art-pocket-coin-edge', 150], ['art-pocket-coin-tilt', 300], ['art-pocket-coin-edge', 420], ['art-pocket-coin-tilt', 540], [landed, 680]];
+    setLift(true);
+    const ids = seq.map(([f, at]) => window.setTimeout(() => setFrame(f), at));
+    const end = window.setTimeout(() => setLift(false), 700);
+    return () => { ids.forEach(clearTimeout); clearTimeout(end); };
+  }, [flipKey, landed]);
+  return (
+    <div className="relative flex flex-col items-center" style={{ width: 150, height: 170 }}>
+      <div style={{ height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: lift ? 'translateY(-22px)' : 'none', transition: 'transform 340ms cubic-bezier(.2,.7,.3,1)', willChange: 'transform' }}>
+        <PocketPiece name={frame} height={frame === 'art-pocket-coin-edge' ? 40 : 140} />
+      </div>
+      <PocketPiece name="art-pocket-coin-shadow" height={26} style={{ marginTop: -6, opacity: lift ? 0.5 : 0.9, transform: lift ? 'scale(0.8)' : 'none', transition: 'transform 340ms, opacity 340ms' }} />
+    </div>
+  );
 }
 
 // ── Rock Paper Scissors ─────────────────────────────────────────────────────
@@ -209,6 +248,20 @@ function Piece({ side }: { side: 'x' | 'o' }) {
   );
 }
 
+const TTT_CELL = 92;
+const TTT_GAP = 10;
+
+/** Where the win strike sits over the 3 x 3 grid: the middle, length and angle of the line through its three cells. */
+export function tttStrike(line: [number, number, number]): { cx: number; cy: number; len: number; deg: number } {
+  const pos = (i: number) => ({ x: (i % 3) * (TTT_CELL + TTT_GAP) + TTT_CELL / 2, y: Math.floor(i / 3) * (TTT_CELL + TTT_GAP) + TTT_CELL / 2 });
+  const a = pos(line[0]);
+  const b = pos(line[2]);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) + TTT_CELL * 0.7;
+  return { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, len, deg: (Math.atan2(dy, dx) * 180) / Math.PI };
+}
+
 /** The O piece's pink (the legend dot). */
 const TTT_O = '#ec4899';
 
@@ -223,6 +276,8 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
   // The winning three glow (the server clears the board after a game, so this shows only when a line is on it).
   const winLine = tttLine(board)?.cells ?? [];
 
+  const strike = winLine.length === 3 ? tttStrike(winLine as [number, number, number]) : null;
+
   const tap = async (i: number) => {
     if (!myTurn || busy || pendingCell !== null || state.board[i]) return;
     setPendingCell(i);
@@ -232,8 +287,10 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
 
   return (
     <div className="flex flex-col items-center gap-3">
+      {/* 2.8 item 9d: the YOUR TURN flag waves in when it is your move. */}
+      {myTurn && <PocketPiece name="art-pocket-yourturn-flag" height={44} className={prefersReducedMotion() ? undefined : 'gt-pop'} />}
       <GameTray accent={accent} state={tray}>
-      <div className="grid grid-cols-3" style={{ gap: 10 }}>
+      <div className="relative grid grid-cols-3" style={{ gap: TTT_GAP }}>
         {board.map((m, i) => {
           const mine = m === me;
           const theirs = !!m && !mine;
@@ -248,7 +305,7 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
               aria-label={m ? (mine ? 'Your tile' : `${them.name}'s tile`) : `Empty tile ${i + 1}`}
               className="flex items-center justify-center transition-transform active:scale-95"
               style={{
-                width: 92, height: 92, borderRadius: 16,
+                width: TTT_CELL, height: TTT_CELL, borderRadius: 16,
                 background: mine ? softMix(TILE.you, 0.16) : theirs ? softMix(TTT_O, 0.14) : EMPTY.background,
                 border: mine ? `1.5px solid ${softMix(TILE.you, 0.4)}` : theirs ? `1.5px solid ${softMix(TTT_O, 0.4)}` : EMPTY.border,
                 boxShadow: win
@@ -263,6 +320,19 @@ export function TttBoard({ state, me, them, active, busy, onMove, accent, tray }
             </button>
           );
         })}
+        {/* The win strike: the set's gold bar, stretched along the three tiles (scaleX in, transform only). */}
+        {strike && (
+          <span
+            aria-hidden="true"
+            className="absolute pointer-events-none"
+            style={{
+              left: strike.cx - strike.len / 2, top: strike.cy - 17, width: strike.len, height: 34,
+              backgroundImage: `url(${artSrc('art-pocket-ttt-strike')})`, backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat',
+              transform: `rotate(${strike.deg}deg)`, transformOrigin: '50% 50%',
+              animation: prefersReducedMotion() ? undefined : 'ttt-strike-in 380ms cubic-bezier(.2,.7,.3,1) both',
+            }}
+          />
+        )}
       </div>
       </GameTray>
       <div className="flex items-center gap-4 text-[11px] font-black" style={{ letterSpacing: 0.8 }}>
@@ -299,12 +369,7 @@ export function CoinBoard({ state, me, them, active, busy, revealKey, onMove, ac
   return (
     <div className="flex flex-col items-center gap-3">
       <GameTray accent={accent} state={tray} className="w-full flex flex-col items-center gap-2">
-        <div
-          key={revealKey}
-          style={{ width: 150, height: 150, animation: revealKey ? 'friends-coin-spin 1.1s cubic-bezier(.2,.7,.3,1) both' : undefined }}
-        >
-          <Art name={face} size={150} />
-        </div>
+        <CoinFlip face={face} flipKey={revealKey} />
         <p className="text-[12px] font-black uppercase text-center" style={{ color: FR.ink, letterSpacing: 0.6 }}>
           {last
             ? `${last.flip} · ${last.caller === me ? 'you' : them.name} called ${last.call}`

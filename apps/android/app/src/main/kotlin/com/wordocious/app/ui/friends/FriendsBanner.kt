@@ -48,7 +48,6 @@ import com.wordocious.app.ui.softNumberStyle
 import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.FriendsBannerInput
-import com.wordocious.core.friendsBannerClockLine
 import com.wordocious.core.friendsBannerHeadline
 import kotlinx.coroutines.delay
 
@@ -88,19 +87,18 @@ fun FriendsBannerView(
     friends: List<FriendsService.FriendProfile>,
     rows: List<RaceRow>,
     nowMs: Long,
-    onFace: (FriendsService.FriendProfile) -> Unit,
     onRace: () -> Unit,
 ) {
     // On now, the freshest heartbeat first.
     val online = friends.filter { it.isOnline(nowMs) }
         .sortedWith(compareByDescending<FriendsService.FriendProfile> { it.lastSeenMs ?: 0L }.thenBy { it.username })
-    val input = friendsBannerInput(friends.size, online.map { it.username }, rows)
+    // 2.8 wave 3 (9e): ON NOW folded into the friend cards (green dot + "playing Classic"), so the headline is the race only.
+    val input = friendsBannerInput(friends.size, emptyList(), rows)
     val hidden = LocalTabHidden.current
     val clock by produceState(localMidnightClock()) {
         while (true) { delay(1_000); hidden.awaitShown(); value = localMidnightClock() }
     }
     val headline = friendsBannerHeadline(input)
-    val clockLine = friendsBannerClockLine(input, clock)
     val shimmer = online.isNotEmpty() && !WTheme.reducedMotion
     val shape = RoundedCornerShape(20.dp)
     val best = friends.mapNotNull { f -> (f.friendStreak ?: 0).takeIf { it > 0 }?.let { BestFriendStreak(f.username, it) } }
@@ -131,40 +129,6 @@ fun FriendsBannerView(
                             names = friends.map { it.username },
                             maxSize = 20, minSize = 14, align = androidx.compose.ui.text.style.TextAlign.Start,
                         )
-                        Text(
-                            clockLine.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.06.em,
-                            color = BANNER_INK, modifier = Modifier.padding(end = 64.dp),
-                        )
-                    }
-                    // ON NOW
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            FriendsLabel("ON NOW", color = BANNER_INK)
-                            Spacer(Modifier.weight(1f))
-                            if (online.isNotEmpty()) Text("${online.size}", style = softNumberStyle(13.sp, com.wordocious.app.ui.vs.VsInk.softNumber))
-                        }
-                        if (online.isEmpty()) {
-                            Text(
-                                nobodyOnLine(friends, nowMs), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
-                                color = BANNER_FACES, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            )
-                        } else {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                online.take(5).forEach { f ->
-                                    Box(
-                                        Modifier.squishClickable(
-                                            label = "${f.username}, on now${f.activity?.let { ", in $it" } ?: ""}. Play a game",
-                                        ) { onFace(f) },
-                                    ) {
-                                        FriendFace(f.username, f.avatarUrl, f.avatarEmoji, 34.dp, online = true, presenceRing = false, userId = f.id)
-                                    }
-                                }
-                                Text(
-                                    onNowLine(online), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = BANNER_FACES,
-                                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false),
-                                )
-                            }
-                        }
                     }
                     // TODAY'S RACE (the whole row opens the full race)
                     Column(
@@ -173,6 +137,13 @@ fun FriendsBannerView(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             FriendsLabel("TODAY’S RACE", color = BANNER_INK)
+                            // The countdown, small, in the header (the race is told once: the pills below).
+                            if (friends.isNotEmpty()) {
+                                Text(
+                                    "ends in $clock", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = BANNER_FACES,
+                                    maxLines = 1, modifier = Modifier.padding(start = 8.dp),
+                                )
+                            }
                             Spacer(Modifier.weight(1f))
                             best?.let { FlameCount("${it.name.uppercase()} ${it.days} ${if (it.days == 1) "DAY" else "DAYS"}") }
                         }

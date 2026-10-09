@@ -23,7 +23,7 @@ import { CandyBadge } from '@/components/ui/candy-badge';
 import { Icon3D } from '@/components/ui/icon3d';
 import { UiIcon } from '@/components/ui/ui-icon';
 import { FamilyActionMenu, FAMILY_MENU_INK, type FamilyMenuAction } from '@/components/ui/family-action-menu';
-import { FRIENDLY_KINDS, FRIENDLY_TITLES, type FriendlyKind } from '@wordle-duel/core';
+import { FRIENDLY_KINDS, FRIENDLY_TITLES, allFriendsLabel, friendsLayout, type CardFriend, type CardGame, type FriendlyKind } from '@wordle-duel/core';
 import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import { shareWeeklyRaceCard } from '@/lib/leaderboard-share-flow';
@@ -36,14 +36,15 @@ import {
   onFriendsChange, searchUsers, isFriend, hasRequested, getMeDigest, remindFriend, removeFriend, sendTaunt,
   getLastWeekResult, giftShield, challengeFriend, type FriendProfile,
 } from '@/lib/friends-service';
-import { getActiveGames, loadGames, onGamesChange, type GameView } from '@/lib/friendly-games-client';
+import { getActiveGames, loadGames, onGamesChange, resignGame, type GameView } from '@/lib/friendly-games-client';
 import {
-  FR, KIND_COLOR, KIND_SUB, bannerModel, bestFriendStreak, friendAction, friendLine, midnightClock, nobodyOnLine, onNow,
+  FR, KIND_COLOR, KIND_SUB, bannerModel, bestFriendStreak, friendAction, friendLine, friendOnline, lastSeenMs, midnightClock, nobodyOnLine, onNow,
   raceChips, sortActiveGames,
 } from '@/lib/friends-play';
 import { TodaysRace } from './todays-race';
 import { ActivityFeed } from './activity-feed';
 import { FriendsBanner } from './friends-banner';
+import { FriendCards } from './friend-cards';
 import { QuickPlaySheet } from './quick-play-sheet';
 import { FlameCount, FrCard, FriendAvatar, GameIconSquare, Pill, PocketGameCard, SectionLabel, Sheet, cardStyle } from './friends-ui';
 import { GREEN_CANDY, InviteSentCard, NewFriendsModal, PendingPill, ShieldNotice, type InvitePerson } from './invite-screens';
@@ -106,7 +107,7 @@ export function Avatar({ f }: { f: FriendProfile }) {
 }
 
 type SheetState =
-  | { type: 'play'; friend: FriendProfile | null; kind: FriendlyKind }
+  | { type: 'play'; friend: FriendProfile | null; kind: FriendlyKind | null }
   | { type: 'race' }
   | null;
 
@@ -130,6 +131,10 @@ export function FriendsPanel() {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [unfriendTarget, setUnfriendTarget] = useState<FriendProfile | null>(null);
   const [sheet, setSheet] = useState<SheetState>(null);
+  /** 2.8 item 9: the All friends dropdown (open by default only when no card shows). */
+  const [allOpen, setAllOpen] = useState<boolean | null>(null);
+  /** 2.8 item 9: a game to resign (from the friend's ⋯ menu; never inside the game). */
+  const [resignTarget, setResignTarget] = useState<GameView | null>(null);
   const [challenging, setChallenging] = useState<string | null>(null);
   /** T1: the request just sent ("@name"), shown on the invite-sent card until Done. */
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -208,8 +213,17 @@ export function FriendsPanel() {
 
   const friends = user ? getFriends() : [];
   const sortedGames = useMemo(() => sortActiveGames(games), [games]);
+  // 2.8 item 9/9e: one card per friend (core friend-cards.ts), online friends first.
+  const layout = friendsLayout(
+    friends.map((f): CardFriend => ({ id: f.id, username: f.username, online: friendOnline(f, now), activity: f.activity ?? null, lastSeenMs: lastSeenMs(f) })),
+    sortedGames.filter((g) => g.status === 'active').map((g): CardGame => ({
+      id: g.id, kind: g.kind, opponentId: g.opponent.id, opponentName: g.opponent.username, me: g.me, state: g.state, yourTurn: g.yourTurn, updatedAt: g.updatedAt,
+    })),
+  );
+  const allListOpen = allOpen ?? layout.cards.length === 0;
+  const friendById = new Map(friends.map((f) => [f.id, f]));
 
-  const openPlay = useCallback((friend: FriendProfile | null, kind: FriendlyKind = 'rps') => {
+  const openPlay = useCallback((friend: FriendProfile | null, kind: FriendlyKind | null = null) => {
     setSheet({ type: 'play', friend, kind });
   }, []);
 
@@ -463,52 +477,26 @@ export function FriendsPanel() {
           friends, invites, moments and add a friend on the right. */}
       <div className="page-grid-2 space-y-3">
       <div className="space-y-3">
-      {/* 4. YOUR TURN (only with active games) */}
-      {sortedGames.length > 0 && (
+      {/* 3b. INVITES row + "Have a code?" (wave2/invites-2 supplies both components; they go here, at the top of
+          Friends, once that branch lands. Do not build second versions.) */}
+
+      {/* 4. FRIEND CARDS (2.8 items 9 + 9e): one card per friend, online first, "N games waiting on you",
+          a strip of game tiles (tap = straight in), their-turn games collapsed. */}
+      {layout.cards.length > 0 && (
         <>
           <SectionLabel color={FR_LOOK.playLabel}>
-            Your turn
+            Friends
             {/* M: the same candy badge as the Friends tab, so the waiting games are easy to find. */}
             <CandyBadge count={myTurnCount} size={16} label={`${myTurnCount} waiting`} />
           </SectionLabel>
-          <div className="space-y-1.5">
-            {sortedGames.map((g) => {
-              const accent = KIND_COLOR[g.kind];
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => router.push(`/friends/games/${g.id}`)}
-                  // BJ7: one top line — icon, title and the action top-aligned; detail 4 under.
-                  className="relative overflow-hidden w-full flex items-start gap-2.5 text-left"
-                  style={{ ...frSurface(accent, { radius: 16 }), padding: '13px 12px 10px' }}
-                >
-                  <span aria-hidden="true" className="absolute top-0 left-0 right-0" style={frBar(accent, 5)} />
-                  <span className="relative shrink-0">
-                    <GameIconSquare kind={g.kind} size={40} />
-                    {g.yourTurn && <CandyBadge count={1} size={16} style={{ position: 'absolute', top: -6, right: -6 }} />}
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[13px] font-black truncate" style={{ color: FR_LOOK.ink }}>{g.title} vs @{g.opponent.username}</span>
-                    <span className="block text-[11.5px] font-extrabold truncate mt-1" style={{ color: FR_LOOK.bannerClock }}>{g.line}</span>
-                  </span>
-                  {g.yourTurn ? (
-                    <span className={candyClass({ color: 'pink', size: 'sm', extra: 'shrink-0' })}>
-                      <CandyIcon name="play" size={14} />
-                      <span className="candy-label">Play</span>
-                    </span>
-                  ) : (
-                    <span
-                      className="shrink-0 px-3 flex items-center text-[11px] font-black rounded-full"
-                      style={{ height: 28, background: softMix(FR_LOOK.lavender, 0.18), color: '#5b3c96' }}
-                    >
-                      WAITING
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <FriendCards
+            cards={layout.cards}
+            profiles={friendById}
+            onOpenGame={(id) => router.push(`/friends/games/${id}`)}
+            onStart={(friendId, kind) => { const f = friendById.get(friendId); if (f) openPlay(f, kind); }}
+            onMenu={(friendId) => setMenuFor(friendId)}
+            onProfile={(friendId) => router.push(`/profile/${friendId}`)}
+          />
         </>
       )}
 
@@ -658,9 +646,22 @@ export function FriendsPanel() {
           Play / Challenge / Nudge buttons (C4); "Add a friend" lives in its header (C4b). */}
       <FrCard accent={FR_LOOK.lavender} bar={FR_LOOK.lavenderBar}>
         <div className="flex items-center justify-between gap-2" style={{ padding: '8px 10px 6px 12px' }}>
-          <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: 'var(--fr-label, #5b3c96)' }}>
-            Your friends{friends.length > 0 ? ` · ${friends.length}` : ''}
-          </h2>
+          {friends.length > 0 ? (
+            <h2 className="m-0 min-w-0">
+              <button
+                type="button"
+                onClick={() => setAllOpen(!allListOpen)}
+                aria-expanded={allListOpen}
+                className="flex items-center gap-1 text-[11px] font-black uppercase truncate"
+                style={{ letterSpacing: 1.3, color: 'var(--fr-label, #5b3c96)' }}
+              >
+                {allFriendsLabel(friends.length)}
+                <ChevronDown className="w-3.5 h-3.5 transition-transform shrink-0" style={{ transform: allListOpen ? 'rotate(180deg)' : 'none' }} aria-hidden="true" />
+              </button>
+            </h2>
+          ) : (
+            <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: 'var(--fr-label, #5b3c96)' }}>Your friends</h2>
+          )}
           <CastButton screen="pink" size="sm" color="pink" icon="plus" onClick={jumpToAdd} className="shrink-0">Add a friend</CastButton>
         </div>
         {pending ? (
@@ -671,7 +672,7 @@ export function FriendsPanel() {
               </div>
             ))}
           </div>
-        ) : friends.length > 0 ? (
+        ) : friends.length > 0 ? (!allListOpen ? null : (
           <div>
             {friends.map((f, i) => {
               const line = friendLine(f, now, SWEEP_MODES.length);
@@ -747,7 +748,7 @@ export function FriendsPanel() {
               </div>
             )}
           </div>
-        ) : (
+        )) : (
           <div className="px-4 pb-4 pt-1 space-y-1.5 text-xs font-bold" style={{ color: FR_LOOK.rowSub }}>
             <p>1. Add friends by username with <span style={{ color: FR.solid }}>Add a friend</span>, or from the <span style={{ color: FR.solid }}>Add Friend</span> button on any player&apos;s profile.</p>
             <p>2. Requests you send and receive land right here.</p>
@@ -965,6 +966,11 @@ export function FriendsPanel() {
             if ('error' in r) setNote(r.error);
             else setShieldNote(`Shield sent to ${f.username} · ${r.shieldsLeft} left`);
           } } as FamilyMenuAction] : []),
+          // 2.8 item 9: Resign lives here, never inside a game (one row per running game with this friend).
+          ...sortedGames.filter((g) => g.opponent.id === f.id && g.status === 'active').map((g): FamilyMenuAction => ({
+            id: `resign-${g.id}`, title: `Resign ${FRIENDLY_TITLES[g.kind]}`, icon: 'xmark', danger: true,
+            label: `Resign ${FRIENDLY_TITLES[g.kind]} against ${f.username}`, run: () => setResignTarget(g),
+          })),
           { id: 'unfriend', title: 'Unfriend', icon: 'xmark', danger: true, label: `Unfriend ${f.username}`, run: () => setUnfriendTarget(f) },
         ];
         return (
@@ -1035,6 +1041,45 @@ export function FriendsPanel() {
           onSeeFriends={() => setNewFriend(null)}
           onClose={() => setNewFriend(null)}
         />
+      )}
+
+      {resignTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(42,22,80,0.45)' }}
+          onClick={() => setResignTarget(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Resign ${FRIENDLY_TITLES[resignTarget.kind]}`}
+            className="w-full max-w-sm overflow-hidden"
+            style={frSurface(FR_LOOK.lavender, { share: 0.08 })}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div aria-hidden="true" style={frBar(FR_LOOK.lavenderBar)} />
+            <p className="px-4 pt-4 pb-3 text-sm font-extrabold" style={{ color: FR_LOOK.ink }}>
+              Resign {FRIENDLY_TITLES[resignTarget.kind]}? {resignTarget.opponent.username} wins this one.
+            </p>
+            <div className="flex gap-2.5 px-4 pb-4">
+              <CandyButton size="md" color="peach" block onClick={() => setResignTarget(null)}>Keep playing</CandyButton>
+              <CastButton screen="pink"
+                size="md"
+                block
+                style={DANGER}
+                onClick={async () => {
+                  const g = resignTarget;
+                  setResignTarget(null);
+                  const done = await resignGame(g.id);
+                  if (!done) setNote('Could not resign. Try again.');
+                  void loadGames(true);
+                }}
+              >
+                Resign
+              </CastButton>
+            </div>
+          </div>
+        </div>
       )}
 
       {unfriendTarget && (

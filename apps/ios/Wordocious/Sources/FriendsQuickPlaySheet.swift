@@ -10,7 +10,8 @@ import WordociousCore
 struct FriendsQuickPlaySheet: View {
     /// nil = pick a friend first (opened from a game tile).
     @State var friend: FriendsService.FriendProfile?
-    @State var kind: FriendlyKind
+    /// nil = pick a game next (opened from a friend); set = the game is chosen.
+    @State var kind: FriendlyKind?
     /// The game started (or the open one returned) — present its screen.
     let onStarted: (FriendlyGameView) -> Void
     /// VS Battle, live — the existing free /api/friends/challenge.
@@ -25,7 +26,7 @@ struct FriendsQuickPlaySheet: View {
     /// BJ13: the picker's measured width (the grid fills it).
     @State private var gridWidth: CGFloat = 343
 
-    init(friend: FriendsService.FriendProfile?, kind: FriendlyKind,
+    init(friend: FriendsService.FriendProfile?, kind: FriendlyKind?,
          onStarted: @escaping (FriendlyGameView) -> Void,
          onVSBattle: @escaping (FriendsService.FriendProfile) -> Void,
          onRaceMyRun: @escaping (FriendsService.FriendProfile) -> Void) {
@@ -45,9 +46,18 @@ struct FriendsQuickPlaySheet: View {
                     // BJ13: a friend picked in this sheet soft-rises in (MotionSpec).
                     VStack(alignment: .leading, spacing: 14) {
                         header(f)
-                        gamesSection(f)
-                        wordociousSection(f)
-                        cta(f)
+                        if let k = kind {
+                            if k == .coin {
+                                // Call It is the one game with a choice to make: its stake, then Start.
+                                stakeStep(f)
+                            } else {
+                                // Wave 3: a game and a friend are chosen, so straight in (no second pick).
+                                startingStep(f, k)
+                            }
+                        } else {
+                            gamesSection(f)
+                            wordociousSection(f)
+                        }
                     }
                     .transition(Self.riseIn)
                 } else {
@@ -144,16 +154,17 @@ struct FriendsQuickPlaySheet: View {
     /// letter-spaced caps (its art once it ships).
     private var pickerTitle: some View {
         VStack(spacing: 6) {
-            let art = FriendsKit.pocketTitleAsset(kind)
+            let k = kind ?? .rps
+            let art = FriendsKit.pocketTitleAsset(k)
             if ArtAsset.exists(art) {
                 Image(art).resizable().interpolation(.high).scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: 84)
-                    .accessibilityLabel(kind.title).accessibilityAddTraits(.isHeader)
+                    .accessibilityLabel(k.title).accessibilityAddTraits(.isHeader)
             } else {
-                LiveHeadline(text: kind.title, palette: .friends, size: 32, maxLines: 1, minimumScale: 0.5)
+                LiveHeadline(text: k.title, palette: .friends, size: 32, maxLines: 1, minimumScale: 0.5)
                     .frame(maxWidth: .infinity)
             }
-            Text(FriendsKit.rules(kind)).font(Brand.font(15, .heavy)).foregroundStyle(FriendsInk.heading)
+            Text(FriendsKit.rules(k)).font(Brand.font(15, .heavy)).foregroundStyle(FriendsInk.heading)
             Group {
                 if ArtAsset.exists(FriendsKit.pickFriendTitleAsset) {
                     Image(FriendsKit.pickFriendTitleAsset).resizable().interpolation(.high).scaledToFit()
@@ -223,51 +234,93 @@ struct FriendsQuickPlaySheet: View {
 
     // MARK: Quick games
 
+    /// Friend first: one tap on a game tile goes straight in (Call It stops at its stake step).
     private func gamesSection(_ f: FriendsService.FriendProfile) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            FriendsSectionHeader(title: f.isOnline() ? "QUICK GAMES · LIVE WHILE THEY'RE ON" : "QUICK GAMES")
-            // §9: six tiles, 3 across × 2 rows.
+            FriendsSectionHeader(title: f.isOnline() ? "PICK A GAME · LIVE WHILE THEY'RE ON" : "PICK A GAME")
+            // §9: six tiles, 3 across x 2 rows.
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(FriendlyKind.allCases) { k in
                     Button {
-                        if Theme.reduceMotion { kind = k; error = nil }
-                        else { withAnimation(.easeOut(duration: 0.12)) { kind = k; error = nil } }
+                        error = nil
+                        if Theme.reduceMotion { kind = k }
+                        else { withAnimation(.easeOut(duration: 0.12)) { kind = k } }
                     } label: {
-                        // The square game tile (docs/GAME_TILE_STYLE.md) in the game's §C4
-                        // card color; the picked game is selected (stronger tint + ring).
-                        GameTileSquare(accent: FriendsKit.tileAccent(k), label: k.title, selected: kind == k,
+                        // The square game tile (docs/GAME_TILE_STYLE.md) in the game's §C4 card color.
+                        GameTileSquare(accent: FriendsKit.tileAccent(k), label: k.title, selected: false,
                                        light: true) { chip in
                             gameIcon(k, size: chip)
                         }
                     }
                     .buttonStyle(.squish)
                     .accessibilityLabel("\(k.title), \(FriendsKit.sub(k))")
-                    .accessibilityAddTraits(kind == k ? .isSelected : [])
-                }
-            }
-            Text(FriendsKit.sub(kind)).font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
-                .frame(maxWidth: .infinity, alignment: .center)
-            if kind == .coin {
-                VStack(alignment: .leading, spacing: 6) {
-                    FriendsLabel("What's on the line")
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(FriendlyGames.coinStakes, id: \.self) { s in
-                                Button { stake = s } label: {
-                                    // §A1 chips: tinted, the picked stake stronger + ringed.
-                                    Text(s).font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.chip)
-                                        .padding(.horizontal, 12).frame(minHeight: 30)
-                                        .friendsChip(FriendsKit.tileAccent(.coin), strong: stake == s)
-                                }
-                                .buttonStyle(.squish)
-                                .accessibilityAddTraits(stake == s ? .isSelected : [])
-                            }
-                        }
-                        .padding(2)
-                    }
                 }
             }
         }
+    }
+
+    /// Call It's one extra step: what is on the line, then Start. Same sheet, no second game pick.
+    private func stakeStep(_ f: FriendsService.FriendProfile) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(spacing: 4) {
+                Text(FriendlyKind.coin.title.uppercased()).font(Brand.font(17, .black)).tracking(0.6)
+                    .foregroundStyle(FriendsInk.bannerHead)
+                Text(FriendsKit.rules(.coin)).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.muted)
+            }
+            .frame(maxWidth: .infinity)
+            VStack(alignment: .leading, spacing: 6) {
+                FriendsLabel("What's on the line")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(FriendlyGames.coinStakes, id: \.self) { s in
+                            Button { stake = s } label: {
+                                // §A1 chips: tinted, the picked stake stronger + ringed.
+                                Text(s).font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.chip)
+                                    .padding(.horizontal, 12).frame(minHeight: 30)
+                                    .friendsChip(FriendsKit.tileAccent(.coin), strong: stake == s)
+                            }
+                            .buttonStyle(.squish)
+                            .accessibilityAddTraits(stake == s ? .isSelected : [])
+                        }
+                    }
+                    .padding(2)
+                }
+            }
+            if let error {
+                Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
+                    .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            }
+            // §A8: the large purple candy Start.
+            Button { start(f) } label: {
+                if starting { ProgressView().tint(.white) }
+                else { CandyLabel(title: "Start Call It", symbol: "play.fill") }
+            }
+            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
+            .disabled(starting)
+            Text("\(f.username) gets a ping. If they're busy, it waits as your turn.")
+                .font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
+                .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+        }
+    }
+
+    /// Game and friend chosen: start at once. A refusal shows its message with a way back to the games.
+    private func startingStep(_ f: FriendsService.FriendProfile, _ k: FriendlyKind) -> some View {
+        VStack(spacing: 12) {
+            gameIcon(k, size: 64)
+            if let error {
+                Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
+                    .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                Button { start(f) } label: { CandyLabel(title: "Try again", symbol: "arrow.clockwise") }
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .medium, fullWidth: false))
+                Button { self.error = nil; kind = nil } label: { CandyLabel(title: "Pick another game") }
+                    .buttonStyle(CandyButtonStyle(variant: .peach, size: .medium, fullWidth: false))
+            } else {
+                ProgressView().tint(FriendsInk.purple)
+                Text("Starting \(k.title)…").font(Brand.font(13, .heavy)).foregroundStyle(FriendsInk.muted)
+            }
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 24)
+        .task(id: k) { if error == nil, !starting { start(f) } }
     }
 
     // MARK: Wordocious
@@ -318,28 +371,6 @@ struct FriendsQuickPlaySheet: View {
         .buttonStyle(.squish)
     }
 
-    // MARK: CTA
-
-    private func cta(_ f: FriendsService.FriendProfile) -> some View {
-        VStack(spacing: 8) {
-            if let error {
-                Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
-                    .multilineTextAlignment(.center).frame(maxWidth: .infinity)
-            }
-            // §A8: the large purple candy CTA.
-            Button { start(f) } label: {
-                if starting { ProgressView().tint(.white) }
-                else { CandyLabel(title: "Invite to \(kind.title)", symbol: "paperplane.fill") }
-            }
-            .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
-            .disabled(starting)
-            Text("\(f.username) gets a ping. If they're busy, it waits as your turn.")
-                .font(Brand.font(11, .bold)).foregroundStyle(FriendsInk.muted)
-                .multilineTextAlignment(.center).frame(maxWidth: .infinity)
-        }
-        .padding(.top, 4)
-    }
-
     /// The pocket game's icon: the glossy 3D art when it ships, else the outline chip.
     @ViewBuilder private func gameIcon(_ k: FriendlyKind, size: CGFloat) -> some View {
         if let art = k.pocketArt {
@@ -350,7 +381,7 @@ struct FriendsQuickPlaySheet: View {
     }
 
     private func start(_ f: FriendsService.FriendProfile) {
-        guard !starting else { return }
+        guard !starting, let kind else { return }
         starting = true
         error = nil
         Task {

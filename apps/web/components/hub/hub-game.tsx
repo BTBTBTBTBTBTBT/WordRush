@@ -282,7 +282,32 @@ export function HubGame({ isDaily = false }: HubGameProps) {
   const type = useCallback((ch: string) => { if (state && !state.ended && typing.length < 19) setTyping((t) => t + ch); }, [state, typing.length]);
   const del = useCallback(() => setTyping((t) => t.slice(0, -1)), []);
   const submit = useCallback(() => { if (!state || state.ended) return; if (typing.length < 4) { flash('Four letters or more'); return; } dispatch({ type: 'SUBMIT', word: typing }); }, [state, typing, dispatch, flash]);
-  const shuffle = useCallback(() => { setOuter((o) => { const a = [...o]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }); playKeyTap(); }, []);
+  // 2.8 item 32: the shuffle is a tile flip — the six outer hexes turn over in a quick ripple and land on
+  // their new letters (rotateY on the GPU, 220 ms each, 36 ms apart: about 400 ms in all, center stays).
+  // `shown` holds the OLD letters until each hex is edge-on, then swaps it. Reduce Motion: an instant swap.
+  const [shown, setShown] = useState<string[] | null>(null);
+  const hiveRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<string[]>([]);
+  outerRef.current = outer;
+  const shuffle = useCallback(() => {
+    const before = outerRef.current;
+    const next = [...before];
+    for (let i = next.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [next[i], next[j]] = [next[j], next[i]]; }
+    setOuter(next);
+    playKeyTap();
+    const hexes = hiveRef.current?.querySelectorAll<HTMLElement>('[data-outer]');
+    if (prefersReducedMotion() || !hexes || hexes.length === 0 || typeof hexes[0].animate !== 'function') return;
+    setShown(before);
+    hexes.forEach((hex, i) => {
+      const inner = hex.querySelector<HTMLElement>('.hive-hex-in');
+      inner?.animate(
+        [{ transform: 'perspective(500px) rotateY(0deg)' }, { transform: 'perspective(500px) rotateY(90deg)', offset: 0.5 }, { transform: 'perspective(500px) rotateY(0deg)' }],
+        { duration: 220, delay: i * 36, easing: 'ease-in-out' },
+      );
+      window.setTimeout(() => setShown((cur) => (cur ? cur.map((c, j) => (j === i ? next[j] : c)) : cur)), 110 + i * 36);
+    });
+    window.setTimeout(() => setShown(null), 220 + hexes.length * 36 + 40);
+  }, []);
   const hintStart = useCallback(() => dispatch({ type: 'HINT_START' }), [dispatch]);
   const hintReveal = useCallback(() => dispatch({ type: 'HINT_REVEAL' }), [dispatch]);
   const endPuzzle = useCallback(() => { dispatch({ type: 'END' }); setView('results'); }, [dispatch]);
@@ -371,7 +396,7 @@ export function HubGame({ isDaily = false }: HubGameProps) {
     inner.classList.add('gt-pop');
   };
   const letterTile = (ch: string, isCentre: boolean, at?: [number, number]) => (
-    <button key={`${ch}-${isCentre ? 'c' : 'o'}`} type="button" onClick={(e) => { haptic('light'); playKeyTap(); type(ch); popHex(e.currentTarget); }} disabled={state.ended}
+    <button key={isCentre ? `${ch}-c` : `o${at ? at.join('_') : ''}`} data-outer={isCentre ? undefined : ''} type="button" onClick={(e) => { haptic('light'); playKeyTap(); type(ch); popHex(e.currentTarget); }} disabled={state.ended}
       className="hive-hex absolute shrink-0 p-0 border-0 bg-transparent"
       style={{
         width: 'var(--tile)', height: 'var(--tile)',
@@ -447,10 +472,10 @@ export function HubGame({ isDaily = false }: HubGameProps) {
       <div className="flex-1 flex items-center justify-center">
         {/* FINISH_SPEC J1 + L: the honeycomb (center + six around) on the shared game tray. */}
         <GameTray accent={HUB_ACCENT} state={state.ended ? (won ? 'won' : 'lost') : 'playing'} padding={10}>
-          <div className="relative" role="group" aria-label="Hive letters"
+          <div ref={hiveRef} className="relative" role="group" aria-label="Hive letters"
             style={{ '--tile': tileCss, width: `calc(var(--tile) * ${HIVE_BOX[0].toFixed(3)})`, height: `calc(var(--tile) * ${HIVE_BOX[1].toFixed(3)})` } as CSSProperties}>
             {letterTile(centre, true)}
-            {outer.slice(0, 6).map((ch, i) => letterTile(ch, false, HIVE_OFFSETS[i]))}
+            {(shown ?? outer).slice(0, 6).map((ch, i) => letterTile(ch, false, HIVE_OFFSETS[i]))}
           </div>
         </GameTray>
       </div>

@@ -32,6 +32,8 @@ struct VSGameView: View {
     @State private var showRematchUpsell = false
     /// Live search: people waiting in this mode's queue (from /vs/counts, minus you).
     @State private var waitingInMode: Int?
+    /// The waiting room's Copy code chip says "Copied" once tapped.
+    @State private var codeCopied = false
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     @State private var confirmForfeit = false
     /// FINISH_SPEC §D3 banter (CPU matches only — never people or the ghost): the
@@ -313,33 +315,24 @@ struct VSGameView: View {
         }()
         return ScrollView {
             VStack(spacing: 18) {
+                // Wave 3 (item 22): the waiting room is a little lobby: your mascot on the stage, a "?" seat
+                // opposite, ONE status line, a real counting timer and a tile to keep in the air.
+                WaitingRoomStage(kind: vm.inviteCode == nil ? .random : .friend,
+                                 startedAt: vm.searchStartedAt ?? Date(),
+                                 paused: vm.showIntro || vm.countdown != nil)
+                    .padding(.top, vm.inviteCode == nil ? 20 : 4)
+                if vm.inviteCode == nil {
+                    Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
+                        .multilineTextAlignment(.center)
+                }
                 // Private match: surface the shareable code/link so the host can
                 // actually invite a friend (the matchmaker buckets both by code).
-                if let code = vm.inviteCode { invitePanel(code).padding(.top, 12) }
-                // The ring and the step-in bar each run on their own 60 fps
-                // animation timeline (founder, 2026-10-01: the 4 fps periodic
-                // timeline made the 15 s countdown choppy). Only the digits tick.
-                LiveSearchRing(startedAt: vm.searchStartedAt, paused: vm.showIntro || vm.countdown != nil)
-                    .padding(.top, vm.inviteCode == nil ? 36 : 4)
-                VStack(spacing: 6) {
-                    Text("SEARCHING").font(Brand.font(11, .black)).tracking(1.2).foregroundStyle(VsLobbyKit.ink)
-                    if vm.inviteCode == nil {
-                        HeadingArtView(.findingrival, height: 40, maxWidth: 320, label: "Looking for a rival")   // BJ16
-                    } else {
-                        Text("WAITING FOR YOUR FRIEND")
-                            .font(Brand.font(22, .black)).foregroundStyle(VsLobbyKit.titleInk)
-                            .multilineTextAlignment(.center)
-                    }
-                    if vm.inviteCode == nil {
-                        Text(waitingLine).font(Brand.font(12, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
-                            .multilineTextAlignment(.center)
-                    }
-                }
+                if let code = vm.inviteCode { invitePanel(code) }
                 if vm.canStepIn && vm.countdown == nil && !vm.showIntro {
                     stepInCard
                     if vm.canPingLooking { VSLookingPingRow(mode: mode) }
                 }
-                VSGreyPill(title: "CANCEL", icon: "xmark", action: goHome)
+                VSGreyPill(title: "Cancel", icon: "xmark", action: goHome)
                 if let m = vm.message { errorPill(m) }
             }
             .padding(.horizontal, 20).padding(.bottom, 24)
@@ -405,30 +398,38 @@ struct VSGameView: View {
     /// share button so the host can send the join link. The match starts when
     /// the friend joins with the same code (server buckets by inviteCode).
     private func invitePanel(_ code: String) -> some View {
-        VStack(spacing: 10) {
-            Text("PRIVATE MATCH").font(Brand.font(10, .black)).tracking(2).foregroundStyle(VsLobbyKit.mutedInk)
-            Text(code).tracking(6).vsNumber(32)
-            Text("Share this code — the match starts when your friend joins.")
-                .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            // 9f: with branded_invites live the link is wordocious.com/vs/<CODE> (its preview image carries
-            // the game + code) and the text is one short line; off = today's link + "Code X" line.
-            let branded = FlagsService.shared.isLive(BrandedInvite.switchKey)
-            ShareLink(item: URL(string: branded ? BrandedInvite.url(.vs, code) : "https://wordocious.com/vs/join/\(code)")!,
-                      // FINISH_SPEC §S4: the shared invite copy (the link is its own item).
-                      message: Text(branded
-                        ? BrandedInvite.shareLine(.live, sender: AuthService.shared.profile?.username ?? "A friend", game: vsModeLabel)
-                        : "\(ShareCopy.vsInvite(game: vsModeLabel, url: "").trimmingCharacters(in: .whitespaces)) Code \(code)")) {
-                CandyLabel(title: "Share invite") { Icon3D(.share, size: 20) }
-            }.buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
-            // Logs alongside the ShareLink's own tap (share-sheet open = the
-            // user's choice to share the invite link).
-            .simultaneousGesture(TapGesture().onEnded {
-                ShareEvents.log(kind: "link_invite", gameMode: mode.rawValue, surface: "vs_invite")
-            })
+        let ink = FamilyInk.helperInk(FamilyMenuInk.purple, dark: false)
+        return VStack(spacing: 8) {
+            Text("CODE").font(Brand.font(10, .black)).tracking(1.6).foregroundStyle(VsLobbyKit.mutedInk)
+            Text(code).tracking(5).vsNumber(26)
+            HStack(spacing: 10) {
+                // 9f: with branded_invites live the link is wordocious.com/vs/<CODE> (its preview image carries
+                // the game + code) and the text is one short line; off = today's link + "Code X" line.
+                let branded = FlagsService.shared.isLive(BrandedInvite.switchKey)
+                ShareLink(item: URL(string: branded ? BrandedInvite.url(.vs, code) : "https://wordocious.com/vs/join/\(code)")!,
+                          // FINISH_SPEC §S4: the shared invite copy (the link is its own item).
+                          message: Text(branded
+                            ? BrandedInvite.shareLine(.live, sender: AuthService.shared.profile?.username ?? "A friend", game: vsModeLabel)
+                            : "\(ShareCopy.vsInvite(game: vsModeLabel, url: "").trimmingCharacters(in: .whitespaces)) Code \(code)")) {
+                    CandyLabel(title: "Share") { FamClayIcon(name: "share", size: 16, ink: ink) }
+                }
+                .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                // Logs alongside the ShareLink's own tap (share-sheet open = the
+                // user's choice to share the invite link).
+                .simultaneousGesture(TapGesture().onEnded {
+                    ShareEvents.log(kind: "link_invite", gameMode: mode.rawValue, surface: "vs_invite")
+                })
+                Button {
+                    UIPasteboard.general.string = code
+                    Haptics.tap()
+                    codeCopied = true
+                } label: {
+                    CandyLabel(title: codeCopied ? "Copied" : "Copy code") { FamClayIcon(name: "copy", size: 16, ink: ink) }
+                }
+                .buttonStyle(CandyButtonStyle(variant: .peach, size: .small, fullWidth: false))
+                .accessibilityLabel("Copy the invite code")
+            }
         }
-        .padding(16).frame(maxWidth: .infinity)
-        .vsTinted(VsLobbyKit.ink, bar: VsLobbyKit.tealBar)
         .padding(.horizontal, 4)
     }
 

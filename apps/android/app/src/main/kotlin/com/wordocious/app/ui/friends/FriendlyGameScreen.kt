@@ -83,6 +83,15 @@ import com.wordocious.app.ui.CandyColor
 import com.wordocious.app.ui.CandySize
 import com.wordocious.app.ui.squishClickable
 import com.wordocious.app.ui.pageBackground
+import com.wordocious.app.ui.game.CornerHelpButton
+import com.wordocious.app.ui.game.GAME_CONTROLS_INSET
+import com.wordocious.app.ui.game.rememberFirstPlayAutoShow
+import com.wordocious.core.PocketHelp
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.sin
 import com.wordocious.app.ui.game.GameTray
 import com.wordocious.app.ui.game.TrayState
 import com.wordocious.app.ui.game.TileMotion
@@ -184,6 +193,8 @@ fun FriendlyGameScreen(
     var error by remember(gameId) { mutableStateOf<String?>(null) }
     var notFound by remember(gameId) { mutableStateOf(false) }
     var confirmClose by remember { mutableStateOf(false) }
+    // 9c / 12: the "?" How to Play card, and its first-play auto-show (once per pocket game, synced).
+    var showHelp by remember { mutableStateOf(false) }
     var arriveTick by remember(gameId) { mutableIntStateOf(0) }
     var pulseTick by remember(gameId) { mutableIntStateOf(0) }
     var shakeTick by remember(gameId) { mutableIntStateOf(0) }
@@ -313,6 +324,8 @@ fun FriendlyGameScreen(
     androidx.activity.compose.BackHandler { requestClose() }
 
     val kind = game?.kind ?: FriendlyKind.RPS
+    val firstPlay = rememberFirstPlayAutoShow(PocketHelp.pocketTutorialKey(kind)) && game != null
+    LaunchedEffect(firstPlay) { if (firstPlay) showHelp = true }
     // A1: the Friends wallpaper (fixed light), never a flat white page.
     Column(Modifier.fillMaxSize().pageBackground(com.wordocious.app.ui.PageTint.FRIENDS, alwaysLight = true)) {
         // Top bar: close (pink) + centered title in the game's gradient.
@@ -322,8 +335,10 @@ fun FriendlyGameScreen(
             Text(
                 (game?.title ?: kind.title).uppercase(), fontSize = 19.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, maxLines = 1,
                 style = TextStyle(brush = Brush.horizontalGradient(kind.gradient), fontFamily = Nunito),
-                modifier = Modifier.align(Alignment.Center).padding(horizontal = 44.dp),
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 92.dp),
             )
+            // 9c: the same "?" the other games wear in the top-right corner.
+            CornerHelpButton(kind.color, onClick = { showHelp = true }, modifier = Modifier.align(Alignment.CenterEnd))
         }
         val g = game
         if (g == null) {
@@ -356,6 +371,13 @@ fun FriendlyGameScreen(
                 FriendlyLive.presenceLabel(peerPresent, peerEverSeen, theirTurn = whoseTurn(g.state)?.includes(g.me.other) == true && !myTurn)
             else null
             ScoreWindow(g, if (presence != null) peerPresent else theyOn, presence)
+            // 9d: the YOUR TURN flag (shipped art) when the move is yours.
+            if (g.active && myTurn) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                    Image(painterResource(R.drawable.art_pocket_yourturn_flag), null, contentScale = ContentScale.Fit, modifier = Modifier.size(26.dp).clearAndSetSemantics { })
+                    Text("YOUR TURN", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = FriendsPink.solid)
+                }
+            }
             // L: every pocket board sits in the shared game tray in the game's color (won = purple, lost = slate).
             val tray = when (g.result) { "win" -> TrayState.WON; "loss" -> TrayState.LOST; else -> TrayState.PLAYING }
             val reduce = WTheme.reducedMotion
@@ -421,33 +443,26 @@ fun FriendlyGameScreen(
         }
     }
 
+    if (showHelp) PocketHelpDialog(kind, onDismiss = { showHelp = false })
+
     if (confirmClose) {
-        // A1 / A8: a pink-tinted dialog with the three choices as candy buttons.
+        // 9: ONE themed button. The game waits; Resign now lives in the Friends tab's ⋯ menu.
         AlertDialog(
             modifier = com.wordocious.app.ui.PopupWidth, // FINISH_SPEC AG: popups cap at ~440 dp
             onDismissRequest = { confirmClose = false },
             containerColor = DIALOG_TINT,
-            title = { Text("Leave the game?", fontWeight = FontWeight.Black, color = FriendsPink.heading) },
+            title = null,
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("It waits right here — come back any time. Or resign to end it now.", fontWeight = FontWeight.Bold, color = FriendsPink.muted)
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FriendlyGameIcon(kind, 56.dp)
+                    Text(
+                        "Your game waits for you", fontSize = 18.sp, fontWeight = FontWeight.Black, color = FriendsPink.heading,
+                        textAlign = TextAlign.Center, fontFamily = Nunito,
+                    )
                     Spacer(Modifier.height(2.dp))
                     com.wordocious.app.ui.CandyButton(
-                        "KEEP PLAYING", onClick = { confirmClose = false },
-                        color = com.wordocious.app.ui.CandyColor.PURPLE, size = com.wordocious.app.ui.CandySize.MEDIUM,
-                        modifier = Modifier.fillMaxWidth(), fill = true,
-                    )
-                    com.wordocious.app.ui.CandyButton(
-                        "LEAVE", onClick = { confirmClose = false; onClose() },
-                        color = com.wordocious.app.ui.CandyColor.PEACH, size = com.wordocious.app.ui.CandySize.MEDIUM,
-                        modifier = Modifier.fillMaxWidth(), fill = true,
-                    )
-                    com.wordocious.app.ui.CandyButton(
-                        "RESIGN", onClick = {
-                            confirmClose = false
-                            scope.launch { FriendlyGamesService.resign(gameId)?.let { accept(it, own = true) } }
-                        },
-                        color = com.wordocious.app.ui.CandyColor.PINK, size = com.wordocious.app.ui.CandySize.MEDIUM,
+                        "Back to Friends", onClick = { confirmClose = false; onClose() },
+                        color = com.wordocious.app.ui.CandyColor.PURPLE, size = com.wordocious.app.ui.CandySize.LARGE,
                         modifier = Modifier.fillMaxWidth(), fill = true,
                     )
                 }
@@ -588,13 +603,11 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
     val theirs = s.picks[me.other]
     val mine = s.picks[me]
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        // Their card, face down.
-        Box(
-            Modifier.size(104.dp, 118.dp).shadow(4.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x224C1D95), spotColor = Color(0x224C1D95))
-                .clip(RoundedCornerShape(16.dp))
-                .background(Brush.linearGradient(listOf(FriendsPink.soft, FriendsPink.lavender))),
-            Alignment.Center,
-        ) { Text("?", fontSize = 48.sp, fontWeight = FontWeight.Black, color = FriendsPink.solid.copy(alpha = 0.7f)) }
+        // Their pick, face down: the shipped fist with the "?" (dimmed until they have picked).
+        Image(
+            painterResource(R.drawable.art_pocket_rps_hidden), null, contentScale = ContentScale.Fit,
+            modifier = Modifier.size(104.dp, 118.dp).alpha(if (theirs == RpsPick.HIDDEN) 1f else 0.45f).clearAndSetSemantics { },
+        )
         if (theirs == RpsPick.HIDDEN) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 com.wordocious.app.ui.Icon3D(com.wordocious.app.ui.Icon3DName.BADGE_CHECK, 14.dp)
@@ -615,7 +628,11 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
                 FriendsLabel("ROUND ${s.rounds.size}")
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     RevealArt("YOU", if (me == Side.A) r.a else r.b, glow = r.winner == me)
-                    Text("vs", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FriendsPink.label)
+                    // 9d: the clash burst between the two hands.
+                    Image(
+                        painterResource(R.drawable.art_pocket_clash_burst), null, contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(40.dp).clearAndSetSemantics { },
+                    )
                     RevealArt(them.uppercase(), if (me == Side.A) r.b else r.a, glow = r.winner == me.other)
                 }
             }
@@ -637,13 +654,21 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
                         .padding(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
                 ) {
-                    Image(painterResource(rpsArt(p)), p.raw, contentScale = ContentScale.Fit, modifier = Modifier.size(70.dp))
+                    Image(painterResource(rpsPiece(p)), p.raw, contentScale = ContentScale.Fit, modifier = Modifier.size(70.dp))
                     Text(p.raw.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = if (selected) Color.White else DEEP)
                 }
             }
         }
         Text("Both picks flip at once.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label)
     }
+}
+
+/** The shipped hand art (art_pocket_rps_*). */
+private fun rpsPiece(pick: RpsPick): Int = when (pick) {
+    RpsPick.ROCK -> R.drawable.art_pocket_rps_rock
+    RpsPick.PAPER -> R.drawable.art_pocket_rps_paper
+    RpsPick.SCISSORS -> R.drawable.art_pocket_rps_scissors
+    RpsPick.HIDDEN -> R.drawable.art_pocket_rps_hidden
 }
 
 @Composable
@@ -657,7 +682,7 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean) {
                     else Modifier.clip(shape).background(friendsWash(FriendsTiles.purple, 0.10f)),
                 ),
             Alignment.Center,
-        ) { Image(painterResource(rpsArt(pick)), pick.raw, contentScale = ContentScale.Fit, modifier = Modifier.size(56.dp)) }
+        ) { Image(painterResource(rpsPiece(pick)), pick.raw, contentScale = ContentScale.Fit, modifier = Modifier.size(56.dp)) }
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (glow) FriendsTiles.purple else FriendsPink.label, maxLines = 1)
     }
 }
@@ -677,6 +702,8 @@ private fun TttBoard(s: TttState, me: Side, them: String, myTurn: Boolean, onCel
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             // L: no grid lines — the cells sit apart on the tray.
             val tile: Dp = min(98.dp, (maxWidth - 20.dp) / 3)
+            val winLine = remember(s.board) { tttLine(s.board)?.cells }
+            Box {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 (0 until 3).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -692,6 +719,9 @@ private fun TttBoard(s: TttState, me: Side, them: String, myTurn: Boolean, onCel
                         }
                     }
                 }
+            }
+            // 9d: the won line gets the shipped strike (a soft fade-in; static under Reduce Motion).
+            winLine?.let { TttStrike(it, tile) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -751,16 +781,47 @@ private fun TttTile(mark: Side?, me: Side, size: Dp, hint: Boolean, win: Boolean
     ) {
         if (mark != null) {
             Image(
-                painterResource(if (mark == me) R.drawable.art_piece_ttt_x else R.drawable.art_piece_ttt_o),
+                painterResource(if (mark == me) R.drawable.art_pocket_ttt_x else R.drawable.art_pocket_ttt_o),
                 contentDescription = null, contentScale = ContentScale.Fit,
-                modifier = Modifier.size(size * 0.74f).graphicsLayer { scaleX = pop.value; scaleY = pop.value }.clearAndSetSemantics { },
+                modifier = Modifier.size(size * 0.88f).graphicsLayer { scaleX = pop.value; scaleY = pop.value }.clearAndSetSemantics { },
             )
         }
     }
 }
 
+/**
+ * The strike across the winning three (art_pocket_ttt_strike, a gold bar with sparkles, ~1.46 : 1): centered on the
+ * line's midpoint, long enough to cover the three cells, rotated to the line's angle (rows 0, columns 90, diagonals
+ * +-45). A transform-only fade-in over 320 ms.
+ */
+@Composable
+private fun TttStrike(cells: List<Int>, tile: Dp) {
+    val step = tile + 10.dp
+    fun cx(i: Int) = step * (i % 3) + tile / 2
+    fun cy(i: Int) = step * (i / 3) + tile / 2
+    val first = cells.first()
+    val last = cells.last()
+    val dx = (cx(last) - cx(first)).value
+    val dy = (cy(last) - cy(first)).value
+    val len = (hypot(dx, dy) + tile.value * 0.9f).dp
+    val h = len * (244f / 356f)
+    val mx = (cx(first) + cx(last)) / 2
+    val my = (cy(first) + cy(last)) / 2
+    val angle = Math.toDegrees(atan2(dy, dx).toDouble()).toFloat()
+    val fade = remember(cells) { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
+    LaunchedEffect(cells) { if (!WTheme.reducedMotion) fade.animateTo(1f, tween(320, easing = FastOutSlowInEasing)) }
+    Image(
+        painterResource(R.drawable.art_pocket_ttt_strike), contentDescription = null, contentScale = ContentScale.Fit,
+        modifier = Modifier.offset(x = mx - len / 2, y = my - h / 2).size(len, h)
+            .graphicsLayer { rotationZ = angle; alpha = fade.value }.clearAndSetSemantics { },
+    )
+}
+
+private fun coinArt2(face: CoinFace): Int =
+    if (face == CoinFace.HEADS) R.drawable.art_pocket_coin_heads_w else R.drawable.art_pocket_coin_tails_crest
+
 /** J2 the opponent's O pink. */
-private val TTT_PINK = Color(0xFFEC4899)
+private val TTT_PINK = Color(0xFFF59E0B)
 
 @Composable
 private fun LegendDot(color: Color, text: String) {
@@ -788,13 +849,34 @@ private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTu
             }
         } else seen = s.rounds.size
     }
-    val angle = spin.value * 1800f
-    val shown = if (((angle / 180f).toInt()) % 2 == 0) face else if (face == CoinFace.HEADS) CoinFace.TAILS else CoinFace.HEADS
+    // 9d: three flips as frames: face -> tilt -> edge -> tilt -> face, hopping over a shrinking shadow, landing
+    // on the server's face. Transforms + frame swaps only; Reduce Motion = no spin (t stays 1).
+    val t = spin.value
+    val turn = cos(Math.toRadians((t * 1080.0)))
+    val squash = abs(turn).toFloat()
+    val other = if (face == CoinFace.HEADS) CoinFace.TAILS else CoinFace.HEADS
+    val frame = when {
+        squash > 0.55f -> coinArt2(if (turn >= 0) face else other)
+        squash > 0.2f -> R.drawable.art_pocket_coin_tilt
+        else -> R.drawable.art_pocket_coin_edge
+    }
+    val hop = sin(Math.PI * t).toFloat()
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        Image(
-            painterResource(coinArt(shown)), shown.raw, contentScale = ContentScale.Fit,
-            modifier = Modifier.size(150.dp).graphicsLayer { rotationY = angle; cameraDistance = 14f * density },
-        )
+        Box(Modifier.size(width = 170.dp, height = 170.dp), contentAlignment = Alignment.Center) {
+            Image(
+                painterResource(R.drawable.art_pocket_coin_shadow), null, contentScale = ContentScale.Fit,
+                modifier = Modifier.align(Alignment.BottomCenter).size(130.dp, 40.dp)
+                    .graphicsLayer { val k = 1f - 0.3f * hop; scaleX = k; scaleY = k; alpha = 0.85f - 0.4f * hop }.clearAndSetSemantics { },
+            )
+            Image(
+                painterResource(frame), face.raw, contentScale = ContentScale.Fit,
+                modifier = Modifier.size(140.dp)
+                    .graphicsLayer {
+                        translationY = -hop * 34f * density
+                        if (squash > 0.55f) scaleX = squash
+                    },
+            )
+        }
         last?.let { r ->
             Text(
                 "${r.flip.raw.uppercase()} · ${if (r.winner == me) "YOU TAKE ROUND ${s.rounds.size}" else "${them.uppercase()} TAKES ROUND ${s.rounds.size}"}",
@@ -865,8 +947,20 @@ private fun PassBoard(
                     val shape = RoundedCornerShape(8.dp)
                     if (g != null) {
                         val t = g.tiles.getOrNull(i) ?: TileState.ABSENT
-                        Box(Modifier.size(44.dp).clip(shape).background(tileColor(t)), Alignment.Center) {
-                            Text(g.word.getOrNull(i)?.toString() ?: "", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        // 9d: the shipped tiles (purple = right spot, gold = wrong spot, white = not in the word).
+                        Box(Modifier.size(44.dp), Alignment.Center) {
+                            Image(
+                                painterResource(when (t) {
+                                    TileState.CORRECT -> R.drawable.art_pocket_tile_purple
+                                    TileState.PRESENT -> R.drawable.art_pocket_tile_gold
+                                    else -> R.drawable.art_pocket_tile_white
+                                }),
+                                null, contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+                            )
+                            Text(
+                                g.word.getOrNull(i)?.toString() ?: "", fontSize = 20.sp, fontWeight = FontWeight.Black,
+                                color = when (t) { TileState.CORRECT -> Color(0xFF3B0764); TileState.PRESENT -> Color(0xFF5B3A00); else -> DEEP },
+                            )
                         }
                     } else {
                         val ch = if (typingRow) typed.getOrNull(i) else null
@@ -948,18 +1042,22 @@ private fun keyLip(face: Color): Color = Color(com.wordocious.app.ui.TintMath.ov
 
 // ── Ghost (§9) ──────────────────────────────────────────────────────────────
 
-/** A letter tile colored by who played it (yours purple, theirs amber), white letter. */
+/** A letter tile by who played it: the shipped tile art (yours purple, theirs gold) with the letter on it; the newest glows. */
 @Composable
 private fun PlayerTile(letter: Char, mine: Boolean, size: Dp, radius: Dp, glow: Boolean = false) {
-    val shape = RoundedCornerShape(radius)
     val c = if (mine) FriendsTiles.purple else FriendsTiles.amber
+    val ink = if (mine) Color(0xFF3B0764) else Color(0xFF5B3A00)
     Box(
         Modifier.size(size)
-            .shadow(if (glow) 10.dp else 2.dp, shape, ambientColor = c.copy(alpha = if (glow) 0.9f else 0.35f), spotColor = c.copy(alpha = if (glow) 0.9f else 0.35f))
-            .clip(shape).background(c)
-            .then(if (glow) Modifier.border(2.dp, Color.White, shape) else Modifier),
+            .then(if (glow) Modifier.shadow(10.dp, RoundedCornerShape(radius), ambientColor = c.copy(alpha = 0.9f), spotColor = c.copy(alpha = 0.9f)) else Modifier),
         Alignment.Center,
-    ) { Text(letter.toString(), fontSize = (size.value * 0.46f).sp, fontWeight = FontWeight.Black, color = Color.White) }
+    ) {
+        Image(
+            painterResource(if (mine) R.drawable.art_pocket_tile_purple else R.drawable.art_pocket_tile_gold), null,
+            contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().clearAndSetSemantics { },
+        )
+        Text(letter.toString(), fontSize = (size.value * 0.46f).sp, fontWeight = FontWeight.Black, color = ink)
+    }
 }
 
 @Composable
@@ -999,6 +1097,7 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (youLost) THEM_TINT else YOU_TINT).padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
+                Image(painterResource(R.drawable.art_pocket_ghost_marker), null, contentScale = ContentScale.Fit, modifier = Modifier.size(34.dp).clearAndSetSemantics { })
                 FriendsLabel("ROUND ${s.rounds.size} · ${if (youLost) "${them.uppercase()} TAKES IT" else "YOU TAKE IT"}")
                 Text(
                     "${r.fragment} — $text", fontSize = 15.sp, fontWeight = FontWeight.Black, color = DEEP,
@@ -1060,6 +1159,7 @@ private fun ChainBoard(
         }
         // The chain: one pill per word (tiles by player), points chip at the right; the newest word's last letter glows.
         s.words.forEachIndexed { wi, w ->
+            if (wi > 0) Image(painterResource(R.drawable.art_pocket_chain_links), null, contentScale = ContentScale.Fit, modifier = Modifier.size(18.dp).clearAndSetSemantics { })
             val mine = w.by == me
             val newest = wi == s.words.lastIndex
             Row(

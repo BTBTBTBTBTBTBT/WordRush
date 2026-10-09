@@ -11,6 +11,9 @@ struct FriendsBannerView: View {
     let friends: [FriendsService.FriendProfile]
     let me: Profile
     let meDigest: FriendsService.MeDigest?
+    /// Wave 3 (9e): false folds "On now" into the friend cards (the green dot + "playing Classic"),
+    /// and the banner tells the race once: the pills, with the countdown small in the header.
+    var showOnNow = true
     /// Tap a face → the quick-play sheet with that friend.
     let onFace: (FriendsService.FriendProfile) -> Void
     /// Tap the race row → the full Today's Race sheet.
@@ -38,20 +41,28 @@ struct FriendsBannerView: View {
         // with a pink → gold top bar and O1 cheering at the top right.
         // BJ7: the banner hugs its rows (8 between, 10 / 12 padding, a smaller host).
         return VStack(alignment: .leading, spacing: 8) {
-            strip(input)
-            onNowRow(online, now: now)
-            raceRow(rows)
+            if showOnNow {
+                strip(input)
+                onNowRow(online, now: now)
+                raceRow(rows)
+            } else {
+                // The race, told once: the header (title, countdown small, O1 beside it) over the pills.
+                raceHeader
+                raceRow(rows, titled: false)
+            }
         }
         .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             // Shimmers while anyone is on (behind the content, inside the card).
-            if !online.isEmpty && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
+            if showOnNow && !online.isEmpty && !Theme.reduceMotion { BannerSweep().allowsHitTesting(false) }
         }
         .overlay(alignment: .topTrailing) {
             // The cast (docs/MASCOT_SPEC.md §1): O1, the four-armed cheerleader, hosts Friends.
-            PoseImage(Mascots.friends, "cheer", height: 68)
-                .padding(.trailing, 8).padding(.top, 2)
+            if showOnNow {
+                PoseImage(Mascots.friends, "cheer", height: 68)
+                    .padding(.trailing, 8).padding(.top, 2)
+            }
         }
         .friendsCard(accent: FriendsInk.pink, bar: [FriendsInk.pink, FriendsInk.amber])
     }
@@ -89,6 +100,25 @@ struct FriendsBannerView: View {
                     .lineLimit(1).minimumScaleFactor(0.7)
                     .padding(.trailing, 64)
             }
+        }
+    }
+
+    /// Wave 3 header: TODAY'S RACE with the countdown small beneath it, O1 cheering at the right.
+    private var raceHeader: some View {
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                FriendsLabel("Today's race", color: FriendsInk.bannerLabel)
+                TimelineView(.periodic(from: .now, by: 1)) { _ in
+                    let s = secondsUntilLocalMidnight()
+                    let clock = String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
+                    Text("Ends in \(clock)")
+                        .font(Brand.font(10, .black)).tracking(0.5).monospacedDigit()
+                        .foregroundStyle(FriendsInk.bannerLabel)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
+            }
+            Spacer(minLength: 4)
+            PoseImage(Mascots.friends, "cheer", height: 44)
         }
     }
 
@@ -158,7 +188,7 @@ struct FriendsBannerView: View {
 
     // MARK: TODAY'S RACE
 
-    private func raceRow(_ rows: [TodaysRace.Row]) -> some View {
+    private func raceRow(_ rows: [TodaysRace.Row], titled: Bool = true) -> some View {
         let best = friends.max { ($0.friendStreak ?? 0) < ($1.friendStreak ?? 0) }
         var chips = Array(rows.prefix(3))
         // Always see yourself: swap you in for third when you're further down.
@@ -168,7 +198,7 @@ struct FriendsBannerView: View {
         return Button(action: onRace) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    FriendsLabel("Today's race", color: FriendsInk.bannerLabel)
+                    if titled { FriendsLabel("Today's race", color: FriendsInk.bannerLabel) }
                     Spacer(minLength: 4)
                     if let b = best, let n = b.friendStreak, n > 0 {
                         HStack(spacing: 3) {
