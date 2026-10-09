@@ -22,7 +22,7 @@ vi.mock('@/hooks/use-flags', () => ({
   useLivingMascotOn: () => false,
 }));
 
-vi.mock('@/lib/theme-context', () => ({ useTheme: () => ({ theme: 'default', setTheme: () => {} }) }));
+vi.mock('@/lib/theme-context', () => ({ useTheme: () => ({ theme: 'default', setTheme: () => {} }), useThemeOrDefault: () => ({ theme: 'default', reducedMotion: false }) }));
 
 const render = (el: ReactElement) => renderToStaticMarkup(el);
 

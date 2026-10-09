@@ -120,7 +120,7 @@ class MascotEngineTest {
         assertTrue(AvatarParts.isProOnly(AvatarCategory.BACKDROP, "galaxy"))
         assertTrue(AvatarParts.isProOnly(AvatarCategory.FRAME, "diamond"))
         assertFalse(AvatarParts.isProOnly(AvatarCategory.HATS, "beanie"))
-        assertEquals(43, AvatarParts.options(AvatarCategory.HATS).size - 1)   // 33 + 4 Halloween (10-05) + 6 pack hats (10-09)
+        assertEquals(46, AvatarParts.options(AvatarCategory.HATS).size - 1)   // 33 + 4 Halloween (10-05) + 9 pack hats (10-09)
         assertEquals(19, AvatarParts.options(AvatarCategory.BACKDROP).size)
         // Every option has a label; art names use underscores.
         for (cat in AvatarParts.categories) for (o in AvatarParts.options(cat)) assertTrue("${cat}:${o.id}", o.label.isNotBlank())

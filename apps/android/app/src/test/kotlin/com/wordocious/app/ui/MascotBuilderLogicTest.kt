@@ -29,9 +29,9 @@ class MascotBuilderLogicTest {
         assertEquals(10, MascotBuilderLogic.options(BuilderTab.PRESETS).size)
         // The full catalogs (round 2): 33 hats + None, 9 face + 11 neck/back extras + None, auto + 18 backdrops.
         // no fit manifest here: seasons are unknown, so the 4 Halloween hats list too (seasonalPartsFollowTheSeason covers the filter)
-        assertEquals(44, MascotBuilderLogic.options(BuilderTab.HATS).size)   // + goth/emo/punk hats (10-09)
+        assertEquals(47, MascotBuilderLogic.options(BuilderTab.HATS).size)   // + goth/emo/punk hats + 3 sports hats (10-09)
         // None + 9 faces + 11 neck items + the 10-05 integrated parts (12 held, 5 wraps, 4 shoes, 4 buddies, 6 brows, 4 extras)
-        assertEquals(21 + 35 + 7 + 12, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)   // + 7 Halloween (bat wings, cat tail, collar, pail, 3 buddies) + 12 goth/emo/punk extras (10-09)
+        assertEquals(21 + 35 + 7 + 12 + 10, MascotBuilderLogic.options(BuilderTab.EXTRAS).size)   // + 7 Halloween (bat wings, cat tail, collar, pail, 3 buddies) + 12 goth/emo/punk + 10 sports extras (10-09)
         assertEquals(19, MascotBuilderLogic.options(BuilderTab.BACKDROP).size)
         assertEquals("none", MascotBuilderLogic.options(BuilderTab.HATS).first().id)
         assertEquals("auto", MascotBuilderLogic.options(BuilderTab.BACKDROP).first().id)

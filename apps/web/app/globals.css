@@ -2276,6 +2276,10 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
    alpha clips the result — one element per glyph, no canvas, no per-frame work. ── */
 .bt-box { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; }
 .bt-line { position: relative; display: block; flex: none; max-width: 100%; }
+/* Inside a shrink-to-fit row (the Home greeting: sparkle + line), max-width:100% resolves against a width that is
+   itself waiting on the line and collapses it to 0 — the fit wrapper then measured only the sparkle and never scaled
+   the greeting ("GOOD EVENI…" off the card). Keep the line's own width there; the wrapper's fit scales it down. */
+.inline-flex > .bt-line { max-width: none; }
 .bt-glyph {
   position: absolute; display: block;
   filter: drop-shadow(0 2px 2px rgba(30, 10, 70, 0.22));
