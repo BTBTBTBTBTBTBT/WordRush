@@ -79,6 +79,8 @@ enum InviteService {
         let inviter_id: String
         let invite_code: String
         let game_mode: String
+        /// 9f: the Invites row sorts by it (nil on old rows).
+        let created_at: String?
     }
 
     /// Invites sent TO this user that are still pending + unexpired — ports
@@ -86,7 +88,7 @@ enum InviteService {
     static func fetchPending(userId: String) async -> [PendingInvite] {
         let now = ISO8601DateFormatter().string(from: Date())
         return (try? await AuthService.shared.client.from("match_invites")
-            .select("id,inviter_id,invite_code,game_mode")
+            .select("id,inviter_id,invite_code,game_mode,created_at")
             .eq("invitee_id", value: userId)
             .eq("status", value: "pending")
             .gt("expires_at", value: now)
