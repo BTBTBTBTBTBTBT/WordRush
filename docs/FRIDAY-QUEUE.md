@@ -884,3 +884,8 @@ second game on the puzzles list")
   That's why it runs in wave 5, right after the page redesigns land.
 - Assign: [Sonnet] in wave 5 B (with the old item 3), ChatGPT frames from the art driver; Opus reviews a sheet of every
   share type × win/loss × season before release.
+
+## 47. Opening animation: smoother final hop onto the top bar (founder 10-09)
+- The cast's last little hop before they settle on the header bar is slightly abrupt. Make it one continuous,
+  eased arc + soft squash/settle (no snap on landing, no frame jump between the intro and the resting header), ×3;
+  verify frame-by-frame (sim recording) and in the smoothness gate; same for the Halloween costumed opening (24).
