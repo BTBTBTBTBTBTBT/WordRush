@@ -24,7 +24,14 @@ class HomeBannerFixtureTest {
     private data class D(val played: Int, val won: Int)
     private data class Streak(val days: Map<String, D>, val total: Int, val today: String, val sweep: Int, val flawless: Int)
     private data class Totals(val days: Map<String, D>, val total: Int, val sweepDays: Int, val flawlessDays: Int, val bestSweep: Int, val bestFlawless: Int)
-    private data class Fixtures(val headlines: List<Headline>, val clocks: List<Clock>, val groups: List<Group>, val streaks: List<Streak>, val totals: List<Totals>)
+    private data class StreakLine(val kind: String, val days: Int, val best: Int, val dateKey: String, val line: String?)
+    private data class RS(val sweep: Int, val flawless: Int, val bestSweep: Int?, val bestFlawless: Int?) {
+        fun r() = RowStreaks(sweep, flawless, bestSweep ?: 0, bestFlawless ?: 0)
+    }
+    private data class StreaksIn(val word: RS, val puzzles: RS)
+    private data class WithStreaks(val word: G, val puzzles: G, val hour: Int, val name: String, val streaks: StreaksIn, val dateKey: String, val headline: String)
+    private data class Fixtures(val headlines: List<Headline>, val clocks: List<Clock>, val groups: List<Group>, val streaks: List<Streak>, val totals: List<Totals>,
+                                val streakLines: List<StreakLine>, val withStreaks: List<WithStreaks>)
 
     private val f: Fixtures by lazy { Gson().fromJson(loadFixture("home-banner-fixtures.json"), Fixtures::class.java) }
 
@@ -33,6 +40,19 @@ class HomeBannerFixtureTest {
         assertTrue(f.headlines.isNotEmpty())
         for (c in f.headlines) {
             assertEquals("headline $c", c.headline, bannerHeadline(c.word.p(), c.puzzles.p(), c.hour, c.name, c.unlimited))
+        }
+    }
+
+    @Test
+    fun streak_lines_match_shared_fixtures() {
+        assertTrue(f.streakLines.isNotEmpty())
+        for (c in f.streakLines) {
+            val k = if (c.kind == "flawless") StreakHeadline.Kind.FLAWLESS else StreakHeadline.Kind.SWEEP
+            assertEquals("streak $c", c.line, StreakHeadline.line(k, c.days, c.best, c.dateKey))
+        }
+        for (c in f.withStreaks) {
+            assertEquals("banner $c", c.headline,
+                bannerHeadline(c.word.p(), c.puzzles.p(), c.hour, c.name, false, c.streaks.word.r(), c.streaks.puzzles.r(), c.dateKey))
         }
     }
 

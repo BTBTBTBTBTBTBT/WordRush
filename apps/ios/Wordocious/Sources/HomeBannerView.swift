@@ -235,7 +235,9 @@ struct HomeBannerView: View {
             let hour = Self.greetingHour(ctx.date)
             // §Z: both modes' headlines are laid out in one slot (the taller sets its
             // height) and crossfade, so the switch never changes the strip's height.
-            let dailyHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false)
+            let dailyHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: false,
+                                                          wordStreaks: word.streaks, puzzleStreaks: puzzles.streaks,
+                                                          dateKey: LeaderboardService.todayLocal())
             let unlimitedHeadline = HomeBanner.bannerHeadline(word.progress, puzzles.progress, hour: hour, name: name, unlimited: true)
             // FINISH_SPEC BI21 (founder 10-03: "fill that space better … it doesn't look
             // even"): headline centered on the card's center line, then a centered wide

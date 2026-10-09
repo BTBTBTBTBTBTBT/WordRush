@@ -13,7 +13,8 @@ import { MODE_SHARE_GLYPH } from '@/lib/share-grid';
 import { MODE_BY_DBKEY, MORE_GAME_MODES, sweepModesFor } from '@/lib/modes.generated';
 import { getTodayLocal } from '@/lib/daily-service';
 import { MomentArt } from '@/components/ui/art-title';
-import { CandyButton, type CandyColor } from '@/components/ui/candy-button';
+import { type CandyColor } from '@/components/ui/candy-button';
+import { QuietButton } from '@/components/ui/family-button';
 import { CastButton } from '@/components/ui/cast-button';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
@@ -71,7 +72,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
   const title = flawless
     ? (more ? MORE_SWEEP_COPY.flawless.title : 'FLAWLESS VICTORY!')
     : (more ? MORE_SWEEP_COPY.sweep.title : 'DAILY SWEEP!');
-  const noun = more ? 'puzzles' : 'daily puzzles';
+  // 2.8 item 7: current naming ("All 10 Puzzles done today!").
+  const noun = more ? 'Puzzles' : 'Dailies';
   const [sharing, setSharing] = useState(false);
 
   // FINISH_SPEC U: Sweep / Flawless = `celebrate` + success-then-heavy haptics.
@@ -138,8 +140,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
 
           <p className="text-sm font-extrabold mt-2 text-white" style={{ textShadow: INK_SHADOW }}>
             {flawless
-              ? `All ${totals.total} ${noun} won today`
-              : `All ${totals.total} ${noun} completed today`}
+              ? `All ${totals.total} ${noun} won today!`
+              : `All ${totals.total} ${noun} done today!`}
           </p>
 
           {/* Summary totals: soft-number tiles in the moment's color. */}
@@ -153,7 +155,8 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
           </div>
 
           {/* Per-game list: mini game cards in each game's color with the W / L badge. */}
-          <div className="mt-3 grid grid-cols-3 gap-1.5 w-full">
+          {/* 2 columns: every name the same size, W/L badges in one aligned column (3 columns orphaned Starsweep). */}
+          <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 w-full">
             {modes.map((m) => {
               const c = completions.get(m.dbKey);
               if (!c) return null;
@@ -165,7 +168,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
                   >
                     {MODE_SHARE_GLYPH[m.mode]}
                   </span>
-                  <span className="text-[11px] font-bold truncate text-left" style={{ color: 'var(--color-text)' }}>{m.label}</span>
+                  <span className="text-[12px] font-bold truncate text-left" style={{ color: 'var(--color-text)' }}>{m.label}</span>
                   <WinLossBadge won={c.won} size={16} className="ml-auto" />
                 </div>
               );
@@ -176,7 +179,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
           <div className="flex gap-2 mt-5 w-full">
             <CastButton
               color={look.candy}
-              size="lg"
+              size="md"
               className="flex-1"
               icon={<Icon3D name="share" size={22} />}
               onClick={handleShare}
@@ -184,9 +187,10 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
             >
               {sharing ? 'Sharing…' : 'Share'}
             </CastButton>
-            <CandyButton color="peach" size="lg" onClick={onClose}>
+            {/* 2.8 item 23: the family QUIET button, sized to its label. */}
+            <QuietButton size="md" onClick={onClose}>
               Close
-            </CandyButton>
+            </QuietButton>
           </div>
         </div>
       </div>

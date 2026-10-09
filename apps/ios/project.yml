@@ -161,6 +161,8 @@ targets:
       # widget's words match the app's banner (home redesign, 2026-10-01). Pure
       # Foundation; the extension links no WordociousCore package.
       - path: Sources/Core/HomeBanner.swift
+      # 2.8 item 48: HomeBanner's streak headlines.
+      - path: Sources/Core/StreakHeadline.swift
       # FINISH_SPEC §AL: the widget's day stats (solved / points / countdown) — the same
       # pure math the app writes the snapshot with.
       - path: Sources/Core/WidgetStats.swift

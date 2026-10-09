@@ -2058,5 +2058,2175 @@
       "bestSweep": 0,
       "bestFlawless": 0
     }
+  ],
+  "streakLines": [
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 0,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "BACK ON TRACK! FLAWLESS TODAY"
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS AGAIN! A FRESH START"
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS AGAIN! A FRESH START"
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "BACK ON TRACK! FLAWLESS TODAY"
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS AGAIN! A FRESH START"
+    },
+    {
+      "kind": "flawless",
+      "days": 1,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS AGAIN! A FRESH START"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS TWICE IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 2 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "BACK-TO-BACK FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS TWICE IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 2 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "BACK-TO-BACK FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS TWICE IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 2 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 2,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "BACK-TO-BACK FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS 3-PEAT!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "THREE FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 3 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS 3-PEAT!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "THREE FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 3 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS 3-PEAT!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "THREE FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 3,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 3 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS · 4 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FOUR-MIDABLE! 4 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "A PERFECT FOUR-SOME!"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS · 4 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "FOUR-MIDABLE! 4 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "A PERFECT FOUR-SOME!"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS · 4 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FOUR-MIDABLE! 4 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 4,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "A PERFECT FOUR-SOME!"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "HIGH FIVE! 5 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FIVE PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 5 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "HIGH FIVE! 5 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "FIVE PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 5 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "HIGH FIVE! 5 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FIVE PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 5,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 5 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "SIX FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "SIX FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "SO CLOSE TO A WEEK! 6 FLAWLESS"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "SIX FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "SIX FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "SO CLOSE TO A WEEK! 6 FLAWLESS"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "SIX FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "SIX FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 6,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "SO CLOSE TO A WEEK! 6 FLAWLESS"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "7 DAYS, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "7 DAYS, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS WEEK!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "7 DAYS, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "7 DAYS, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS WEEK!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "7 DAYS, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "7 DAYS, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 7,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS WEEK!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "8 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 8 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "8 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST · 8 FLAWLESS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST! 8 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "NEW BEST · 8 FLAWLESS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "8 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 8 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 8,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "8 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "9 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "9 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "9 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "A NEW RECORD! 9 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST · 9 FLAWLESS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "A NEW RECORD! 9 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "9 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "9 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 9,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "9 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "10 IN A ROW, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "DOUBLE DIGITS FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "10 IN A ROW, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "10 IN A ROW, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "DOUBLE DIGITS FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "10 IN A ROW, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "10 IN A ROW, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "DOUBLE DIGITS FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 10,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "10 IN A ROW, ZERO MISSES!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "12 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "12 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "12 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST · 12 FLAWLESS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "A NEW RECORD! 12 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "NEW BEST · 12 FLAWLESS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "12 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "12 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 12,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "12 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "TWO FLAWLESS WEEKS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "A FORTNIGHT OF FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "TWO FLAWLESS WEEKS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "TWO FLAWLESS WEEKS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "A FORTNIGHT OF FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "TWO FLAWLESS WEEKS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "TWO FLAWLESS WEEKS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "A FORTNIGHT OF FLAWLESS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 14,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "TWO FLAWLESS WEEKS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS · 20 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 20 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 20 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST! 20 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST! 20 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "NEW BEST! 20 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS · 20 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 20 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 20,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "FLAWLESS · 20 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "LEGENDARY · 30 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "30 PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "30 PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "LEGENDARY · 30 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "30 PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "30 PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "LEGENDARY · 30 FLAWLESS DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "30 PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 30,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "30 PERFECT DAYS!"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS · 45 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 45 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "45 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST! 45 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST! 45 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "A NEW RECORD! 45 FLAWLESS DAYS"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "FLAWLESS · 45 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FLAWLESS · 45 IN A ROW!"
+    },
+    {
+      "kind": "flawless",
+      "days": 45,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "45 PERFECT DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 0,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": null
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "BACK ON TRACK! SWEPT TODAY"
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT AGAIN! A FRESH START"
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT AGAIN! A FRESH START"
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "BACK ON TRACK! SWEPT TODAY"
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT AGAIN! A FRESH START"
+    },
+    {
+      "kind": "sweep",
+      "days": 1,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT AGAIN! A FRESH START"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "CLEAN SWEEP, TWICE IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 2 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "BACK-TO-BACK SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "CLEAN SWEEP, TWICE IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 2 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "BACK-TO-BACK SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "CLEAN SWEEP, TWICE IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 2 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 2,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "BACK-TO-BACK SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "SWEEP 3-PEAT!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "THREE SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 3 DAYS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "SWEEP 3-PEAT!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "THREE SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 3 DAYS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "SWEEP 3-PEAT!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "THREE SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 3,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 3 DAYS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "SWEPT · 4 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FOUR SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "A SWEEPING FOUR-SOME!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "SWEPT · 4 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "FOUR SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "A SWEEPING FOUR-SOME!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "SWEPT · 4 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FOUR SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 4,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "A SWEEPING FOUR-SOME!"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "HIGH FIVE! 5 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "FIVE CLEAN SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 5 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "HIGH FIVE! 5 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "FIVE CLEAN SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 5 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "HIGH FIVE! 5 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "FIVE CLEAN SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 5,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 5 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "SIX SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "SIX SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "SO CLOSE TO A WEEK! 6 SWEEPS"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "SIX SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "SIX SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "SO CLOSE TO A WEEK! 6 SWEEPS"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "SIX SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "SIX SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 6,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "SO CLOSE TO A WEEK! 6 SWEEPS"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "7 DAYS, 7 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "7 DAYS, 7 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "SWEEP WEEK!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "7 DAYS, 7 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "7 DAYS, 7 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "SWEEP WEEK!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "7 DAYS, 7 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "7 DAYS, 7 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 7,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "SWEEP WEEK!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "8 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 8 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "8 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST · 8 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST! 8 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "NEW BEST · 8 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "8 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 8 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 8,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "8 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "9 CLEAN SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "9 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "9 CLEAN SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "A NEW RECORD! 9 SWEEPS"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST · 9 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "A NEW RECORD! 9 SWEEPS"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "9 CLEAN SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "9 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 9,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "9 CLEAN SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "10 DAYS, 10 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "DOUBLE DIGITS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "10 DAYS, 10 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "10 DAYS, 10 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "DOUBLE DIGITS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "10 DAYS, 10 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "10 DAYS, 10 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "DOUBLE DIGITS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 10,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "10 DAYS, 10 SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "12 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "12 CLEAN SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "12 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST · 12 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "A NEW RECORD! 12 SWEEPS"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "NEW BEST · 12 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "12 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "12 CLEAN SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 12,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "12 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "TWO WEEKS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "A FORTNIGHT OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "TWO WEEKS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "TWO WEEKS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "A FORTNIGHT OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "TWO WEEKS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "TWO WEEKS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "A FORTNIGHT OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 14,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "TWO WEEKS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "SWEPT · 20 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 20 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 20 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST! 20 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST! 20 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "NEW BEST! 20 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "SWEPT · 20 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 20 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 20,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "SWEPT · 20 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "LEGENDARY · 30 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "30 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "30 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "LEGENDARY · 30 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "30 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "30 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "LEGENDARY · 30 DAYS OF SWEEPS!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "30 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 30,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "30 SWEEPS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 0,
+      "dateKey": "2026-10-09",
+      "line": "SWEPT · 45 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 0,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 45 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 0,
+      "dateKey": "2026-11-02",
+      "line": "45 CLEAN SWEEPS RUNNING!"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 3,
+      "dateKey": "2026-10-09",
+      "line": "NEW BEST! 45 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 3,
+      "dateKey": "2026-10-10",
+      "line": "NEW BEST! 45 SWEEPS IN A ROW"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 3,
+      "dateKey": "2026-11-02",
+      "line": "A NEW RECORD! 45 SWEEPS"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 50,
+      "dateKey": "2026-10-09",
+      "line": "SWEPT · 45 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 50,
+      "dateKey": "2026-10-10",
+      "line": "SWEPT · 45 DAYS IN A ROW!"
+    },
+    {
+      "kind": "sweep",
+      "days": 45,
+      "best": 50,
+      "dateKey": "2026-11-02",
+      "line": "45 CLEAN SWEEPS RUNNING!"
+    }
+  ],
+  "withStreaks": [
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 2,
+        "won": 2,
+        "total": 10
+      },
+      "hour": 14,
+      "name": "BMT",
+      "streaks": {
+        "word": {
+          "sweep": 5,
+          "flawless": 3,
+          "bestFlawless": 9,
+          "bestSweep": 9
+        },
+        "puzzles": {
+          "sweep": 3,
+          "flawless": 3,
+          "bestFlawless": 3,
+          "bestSweep": 3
+        }
+      },
+      "dateKey": "2026-10-09",
+      "headline": "FLAWLESS 3-PEAT!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 7,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 2,
+        "won": 2,
+        "total": 10
+      },
+      "hour": 14,
+      "name": "BMT",
+      "streaks": {
+        "word": {
+          "sweep": 7,
+          "flawless": 0,
+          "bestFlawless": 9,
+          "bestSweep": 9
+        },
+        "puzzles": {
+          "sweep": 3,
+          "flawless": 3,
+          "bestFlawless": 3,
+          "bestSweep": 3
+        }
+      },
+      "dateKey": "2026-10-09",
+      "headline": "7 DAYS, 7 SWEEPS!"
+    },
+    {
+      "word": {
+        "played": 3,
+        "won": 3,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 14,
+      "name": "BMT",
+      "streaks": {
+        "word": {
+          "sweep": 2,
+          "flawless": 2,
+          "bestFlawless": 9,
+          "bestSweep": 9
+        },
+        "puzzles": {
+          "sweep": 3,
+          "flawless": 3,
+          "bestFlawless": 3,
+          "bestSweep": 3
+        }
+      },
+      "dateKey": "2026-10-09",
+      "headline": "FLAWLESS 3-PEAT!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 10,
+        "won": 10,
+        "total": 10
+      },
+      "hour": 14,
+      "name": "BMT",
+      "streaks": {
+        "word": {
+          "sweep": 14,
+          "flawless": 14,
+          "bestFlawless": 9,
+          "bestSweep": 9
+        },
+        "puzzles": {
+          "sweep": 3,
+          "flawless": 3,
+          "bestFlawless": 3,
+          "bestSweep": 3
+        }
+      },
+      "dateKey": "2026-10-09",
+      "headline": "TWO FLAWLESS WEEKS!"
+    },
+    {
+      "word": {
+        "played": 8,
+        "won": 8,
+        "total": 8
+      },
+      "puzzles": {
+        "played": 0,
+        "won": 0,
+        "total": 10
+      },
+      "hour": 14,
+      "name": "BMT",
+      "streaks": {
+        "word": {
+          "sweep": 1,
+          "flawless": 1,
+          "bestFlawless": 9,
+          "bestSweep": 9
+        },
+        "puzzles": {
+          "sweep": 3,
+          "flawless": 3,
+          "bestFlawless": 3,
+          "bestSweep": 3
+        }
+      },
+      "dateKey": "2026-10-09",
+      "headline": "BACK ON TRACK! FLAWLESS TODAY"
+    }
   ]
 }

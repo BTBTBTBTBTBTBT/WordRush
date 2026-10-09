@@ -660,6 +660,21 @@ enum CalmMoment {
         return CelebrationGate.isCalm(onHomeRoot: onHomeRoot, anythingPresented: presented, popupUp: popupUp)
     }
 
+    /// The raw calm inputs (2.8 item 52): where the player is, whether anything is presented, whether a popup is up.
+    /// Not active / launch gate closed reads as "busy" (never present then).
+    static func inputs(extraBusy: Bool = false) -> (onHomeRoot: Bool, presented: Bool, popupUp: Bool) {
+        guard LaunchGate.isOpen, UIApplication.shared.applicationState == .active else { return (false, true, true) }
+        let router = TabRouterModel.shared
+        let onHomeRoot = router.current == .home && !router.pushed.contains(.home)
+        let presented = ChromeVisibility.shared.bottomNavHidden || ChromeVisibility.inModalPresentation()
+        let popupUp = extraBusy
+            || HeaderPopups.shared.shown != nil
+            || AchievementUnlockCenter.shared.isShowing
+            || ProWelcomeCenter.shared.current != nil
+            || CelebrationBusy.shared.up
+        return (onHomeRoot, presented, popupUp)
+    }
+
     /// Suspends until calm has held for two checks in a row (a ~0.5 s settle
     /// beat, so a cover mid-dismissal never collides with the celebration).
     /// Polls only while someone is waiting. `extraBusy` adds the caller's own
@@ -681,6 +696,36 @@ final class CelebrationBusy: ObservableObject {
     static let shared = CelebrationBusy()
     @Published var up = false
     private init() {}
+}
+
+/// 2.8 item 52: Flawless / Sweep celebrations that are due or on screen. A game handoff (NEXT daily, Keep playing,
+/// Leaderboard) that arrives while one is pending is HELD until it has played, so the celebration plays the moment the
+/// last finished screen is left — never after the next game. A held handoff is released after 8 s regardless.
+/// (Touched only from the main thread: SwiftUI callbacks + DispatchQueue.main.)
+final class CelebrationPending {
+    static let shared = CelebrationPending()
+    private(set) var count = 0
+    private var held: [() -> Void] = []
+    private init() {}
+
+    func set(_ n: Int) {
+        count = n
+        if n == 0 { release() }
+    }
+
+    /// True when `go` was held (it runs when the celebrations are done); false = run it now.
+    func hold(_ go: @escaping () -> Void) -> Bool {
+        guard CelebrationGate.shouldDeferHandoff(pending: count) else { return false }
+        held.append(go)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in self?.release() }
+        return true
+    }
+
+    private func release() {
+        let run = held
+        held = []
+        run.forEach { $0() }
+    }
 }
 
 /// BI16: when each daily's live record call began (keyed by seed), so an

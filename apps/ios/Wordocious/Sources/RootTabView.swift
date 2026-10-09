@@ -261,7 +261,10 @@ struct RootTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playNextDaily)) { note in
             // BI10: a Home press after the tap cancels the handoff.
             guard let key = note.object as? String, HomeNav.handoffAllowed(note) else { return }
-            presentAfterCoverClears { nextDaily = (homeModes + moreModes).first { $0.dbKey == key } }
+            // 2.8 item 52: a due Flawless / Sweep celebration plays BEFORE the next game starts.
+            let go = { presentAfterCoverClears { nextDaily = (homeModes + moreModes).first { $0.dbKey == key } } }
+            if CelebrationPending.shared.hold(go) { return }
+            go()
         }
         .gameCover(item: $nextDaily, hint: { $0.dbKey }) { m in
             NavigationStack {
@@ -293,7 +296,10 @@ struct RootTabView: View {
             guard HomeNav.handoffAllowed(note) else { return }   // BI10
             // §214: LeaderboardTab preselects the mode itself (same note);
             // the root just lands the player on the Leaderboard tab.
-            tab = .leaderboard
+            // 2.8 item 52: a due celebration plays on Home first, then the Leaderboard opens.
+            let go = { tab = .leaderboard }
+            if CelebrationPending.shared.hold(go) { return }
+            go()
             // §263 failsafe: landing on a tab root with the nav still hidden
             // means a dismissed game never reported out — clear the gate.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -307,7 +313,9 @@ struct RootTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
             guard let key = note.object as? String, HomeNav.handoffAllowed(note),   // BI10
                   let m = (homeModes + moreModes).first(where: { $0.dbKey == key }) else { return }
-            presentAfterCoverClears { unlimitedGame = UnlimitedLaunch(mode: m, seed: mintUnlimitedSeed(m)) }
+            let go = { presentAfterCoverClears { unlimitedGame = UnlimitedLaunch(mode: m, seed: mintUnlimitedSeed(m)) } }
+            if CelebrationPending.shared.hold(go) { return }   // 2.8 item 52: the celebration first
+            go()
         }
         // Flush a deferred root present the moment the exiting game cover has
         // fully left (its .hidesBottomNav onDisappear fires at dismissal end),

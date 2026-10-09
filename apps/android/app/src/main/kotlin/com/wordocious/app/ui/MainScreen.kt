@@ -561,6 +561,17 @@ fun MainScreen() {
         selectedTab = tab
         if (scrollToTop && tab in tabReselect.indices) tabReselect[tab] = tabReselect[tab] + 1
     }
+    // 2.8 item 52: the Flawless / Sweep celebration plays the moment the last finished screen is left. A NEXT daily
+    // tapped while one is pending closes this game first and starts the next one only after the celebration closed.
+    fun openDailyAfterCelebration(m: com.wordocious.core.GameMode) {
+        val go = { modeCardFor(m)?.let { activeSeed = null; activeGame = it }; Unit }
+        if (CelebrationQueue.holdHandoff(go)) activeGame = null else go()
+    }
+    // A live celebration due while the player is on another tab / a pushed page: bring them Home first.
+    val goHomeTick = CelebrationQueue.goHomeTick
+    androidx.compose.runtime.LaunchedEffect(goHomeTick) {
+        if (goHomeTick > 0) goToRoot(0, false)
+    }
     fun onTabTap(tab: Int) {
         val state = TabNavState(
             selectedTab = selectedTab,
@@ -924,7 +935,7 @@ fun MainScreen() {
                         onBack = exitGame,
                         // Pro Unlimited: a fresh seed carrying the chosen difficulty.
                         onPlayAgain = { d -> activeSeed = "unlimited-SUDOKU-${System.currentTimeMillis()}-${d.key}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -942,7 +953,7 @@ fun MainScreen() {
                         onBack = exitGame,
                         // Pro Unlimited: a fresh seed whose trailing segment is the board size (regionsSizeForSeed).
                         onPlayAgain = { n -> activeSeed = "unlimited-REGIONS-${System.currentTimeMillis()}-$n" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -959,7 +970,7 @@ fun MainScreen() {
                         seed = seed, isDaily = isDaily,
                         onBack = exitGame,
                         onPlayAgain = { activeSeed = "unlimited-LADDER-${System.currentTimeMillis()}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -976,7 +987,7 @@ fun MainScreen() {
                         seed = seed, isDaily = isDaily,
                         onBack = exitGame,
                         onPlayAgain = { activeSeed = "unlimited-WORDSEARCH-${System.currentTimeMillis()}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -993,7 +1004,7 @@ fun MainScreen() {
                         seed = seed, isDaily = isDaily,
                         onBack = exitGame,
                         onPlayAgain = { activeSeed = "unlimited-HUB-${System.currentTimeMillis()}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -1010,7 +1021,7 @@ fun MainScreen() {
                         seed = seed, isDaily = isDaily,
                         onBack = exitGame,
                         onPlayAgain = { activeSeed = "unlimited-CRYPTOGRAM-${System.currentTimeMillis()}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -1027,7 +1038,7 @@ fun MainScreen() {
                         seed = seed, isDaily = isDaily,
                         onBack = exitGame,
                         onPlayAgain = { activeSeed = "unlimited-GROUPS-${System.currentTimeMillis()}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -1044,7 +1055,7 @@ fun MainScreen() {
                         seed = seed, isDaily = isDaily,
                         onBack = exitGame,
                         onPlayAgain = { activeSeed = "unlimited-CROSSWORD-${System.currentTimeMillis()}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -1061,7 +1072,7 @@ fun MainScreen() {
                         seed = seed, isDaily = isDaily,
                         onBack = exitGame,
                         onPlayAgain = { activeSeed = "unlimited-SCRAMBLE-${System.currentTimeMillis()}" },
-                        onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                        onOpenDaily = { m -> openDailyAfterCelebration(m) },
                         onOpenUnlimited = { m -> modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it } },
                         onOpenLeaderboard = { m ->
                             activeGame = null; activeSeed = null
@@ -1104,7 +1115,7 @@ fun MainScreen() {
                 // U3: "Next Daily" handoff from the results screen — same route as
                 // the leaderboard Play CTA (swap activeGame; null seed = today's
                 // daily). remember(card) re-mints the seed for the new mode.
-                onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+                onOpenDaily = { m -> openDailyAfterCelebration(m) },
                 // "Keep playing: Unlimited <Mode>" (Pro) from a daily result — the
                 // SAME mode with a fresh unlimited seed (same launch state the home
                 // grid's Unlimited cards set).

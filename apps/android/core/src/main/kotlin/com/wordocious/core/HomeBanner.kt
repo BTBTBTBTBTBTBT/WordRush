@@ -55,22 +55,33 @@ private fun puzzlesLeft(n: Int): String = "$n ${if (n == 1) "PUZZLE" else "PUZZL
  * order (Wordocious first, then Puzzles). `name` is the player's username
  * (no nickname setting, founder 2026-10-01); empty for a guest.
  */
-fun bannerHeadline(word: GroupProgress, puzzles: GroupProgress, hour: Int, name: String, unlimited: Boolean = false): String {
+fun bannerHeadline(
+    word: GroupProgress, puzzles: GroupProgress, hour: Int, name: String, unlimited: Boolean = false,
+    /** 2.8 items 7 + 48: the rows' streaks + the local day so a finished row speaks to its streak. */
+    wordStreaks: RowStreaks? = null, puzzleStreaks: RowStreaks? = null, dateKey: String? = null,
+): String {
     if (unlimited) return "UNLIMITED PLAY"
     val a = groupTier(word)
     val b = groupTier(puzzles)
     val total = word.total + puzzles.total
     val played = minOf(word.played, word.total) + minOf(puzzles.played, puzzles.total)
     val left = maxOf(0, total - played)
+    fun streakLine(s: RowStreaks?, t: BannerTier): String? {
+        if (s == null || dateKey == null || t == BannerTier.NONE) return null
+        return if (t == BannerTier.FLAWLESS) StreakHeadline.line(StreakHeadline.Kind.FLAWLESS, s.flawless, s.bestFlawless, dateKey)
+        else StreakHeadline.line(StreakHeadline.Kind.SWEEP, s.sweep, s.bestSweep, dateKey)
+    }
     if (a != BannerTier.NONE && b != BannerTier.NONE) {
+        // Both rows done: the Wordocious row's streak (the header trophy counts it) leads.
+        streakLine(wordStreaks, a)?.let { return it }
         if (a == BannerTier.FLAWLESS && b == BannerTier.FLAWLESS) return "DOUBLE FLAWLESS!"
         if (a == BannerTier.SWEEP && b == BannerTier.SWEEP) return "DOUBLE SWEEP!"
         return if (a == BannerTier.FLAWLESS) "FLAWLESS + SWEEP!" else "SWEEP + FLAWLESS!"
     }
     fun news(label: String, t: BannerTier) =
         "$label ${if (t == BannerTier.FLAWLESS) "FLAWLESS!" else "SWEPT!"} ${puzzlesLeft(left)}"
-    if (a != BannerTier.NONE) return news("WORDOCIOUS", a)
-    if (b != BannerTier.NONE) return news("PUZZLES", b)
+    if (a != BannerTier.NONE) return streakLine(wordStreaks, a) ?: news("WORDOCIOUS", a)
+    if (b != BannerTier.NONE) return streakLine(puzzleStreaks, b) ?: news("PUZZLES", b)
     if (played == 0) {
         val n = name.trim().uppercase()
         // BJ6 (founder 10-03): the greeting is personal for signed-in players; 0–4 h is "UP LATE?".

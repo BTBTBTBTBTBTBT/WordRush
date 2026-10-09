@@ -60,6 +60,8 @@ struct SweepCelebrationView: View {
             SweepParticleBurst(flawless: flawless, more: more).allowsHitTesting(false)
             if !still { ConfettiView() }
 
+            // 2.8 item 7: centered on BOTH axes on every screen size (the content is at least the screen tall).
+            GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 10) {
                     // ART_SPEC §6: SWEEP! / FLAWLESS! lettering above the art; the text title is the fallback.
@@ -76,8 +78,8 @@ struct SweepCelebrationView: View {
                             .opacity(artIn ? 1 : 0)
                             .accessibilityHidden(true)
                     }
-                    Text(flawless ? "All \(totalCount) \(more ? "puzzles" : "daily puzzles") won today"
-                                  : "All \(totalCount) \(more ? "puzzles" : "daily puzzles") completed today")
+                    // 2.8 item 7: current naming — "All 10 Puzzles done today!" / "All 8 Dailies won today!".
+                    Text("All \(totalCount) \(more ? "Puzzles" : "Dailies") \(flawless ? "won" : "done") today!")
                         .font(Brand.font(13, .heavy)).foregroundStyle(dark ? Theme.textSecondary : accentText)
                         .multilineTextAlignment(.center)
 
@@ -89,9 +91,10 @@ struct SweepCelebrationView: View {
                     }
                     .padding(.top, 2)
 
-                    // Per-game list (3-column grid of badge + name + result)
-                    let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-                    LazyVGrid(columns: cols, spacing: 6) {
+                    // Per-game list: 2 columns, every name the same size, W/L badges in one aligned column
+                    // (3 columns left Starsweep alone on a 4th row and squeezed "Crosswordocious").
+                    let cols = [GridItem(.flexible(), spacing: 14), GridItem(.flexible())]
+                    LazyVGrid(columns: cols, spacing: 8) {
                         ForEach(rows) { r in
                             HStack(spacing: 5) {
                                 // Real game icon (same as the home cards), mapped by dbKey;
@@ -103,8 +106,7 @@ struct SweepCelebrationView: View {
                                         .frame(width: 22, height: 22)
                                         .background(RoundedRectangle(cornerRadius: 7).fill(r.accent))
                                 }
-                                Text(r.modeLabel).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.heading).lineLimit(1)
-                                .minimumScaleFactor(0.7)
+                                Text(r.modeLabel).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.heading).lineLimit(1)
                                 Spacer(minLength: 0)
                                 // ART_SPEC §4: the 3D W / L badge per daily.
                                 ResultBadge(won: r.won, size: 18)
@@ -121,15 +123,17 @@ struct SweepCelebrationView: View {
                         } label: {
                             CandyLabel(title: "Share") { Icon3D(.share, size: 20) }
                         }
-                        .buttonStyle(CastButtonStyle(color: flawless ? .pink : (more ? nil : .gold), size: .large))
+                        .buttonStyle(CastButtonStyle(color: flawless ? .pink : (more ? nil : .gold), size: .medium, fullWidth: false))
+                        // 2.8 item 23: the family QUIET button, sized to its label.
                         Button { onClose() } label: { CandyLabel(title: "Close") }
-                            .buttonStyle(CandyButtonStyle(variant: .peach, size: .large, fullWidth: false))
+                            .buttonStyle(QuietButtonStyle(size: .medium, fullWidth: false))
                     }
                     .padding(.top, 4)
                 }
                 .padding(.horizontal, 22).padding(.vertical, 40)
                 .frame(maxWidth: 440)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height, alignment: .center)
+            }
             }
         }
         .onAppear {
