@@ -30,10 +30,10 @@ sil = Image.fromarray((body * 255).astype(np.uint8)).filter(ImageFilter.MaxFilte
 def white(mask, size):
     m = mask.resize((size, size), Image.LANCZOS)
     out = Image.new('RGBA', (size, size), (255, 255, 255, 0)); out.putalpha(m); return out
-os.makedirs(f'{H}/out', exist_ok=True)
-white(sil, 192).save(f'{H}/out/status-w-master.png')
+os.makedirs(f'{H}/status', exist_ok=True)
+white(sil, 192).save(f'{H}/status/status-w-master.png')
 for name, s in [('mdpi', 24), ('hdpi', 36), ('xhdpi', 48), ('xxhdpi', 72), ('xxxhdpi', 96)]:
-    white(sil, s).save(f'{H}/out/status-w-{name}.png')
+    white(sil, s).save(f'{H}/status/status-w-{name}.png')
 # Halloween: witch hat drawn on top of the tile (same alpha-only rule)
 S = 768
 hat = Image.new('L', (S, S), 0)
@@ -52,14 +52,14 @@ d.polygon([(cx - S * 0.17, top + S * 0.03), (cx + S * 0.17, top + S * 0.03), (cx
            (cx + S * 0.20, top - S * 0.13), (cx + S * 0.05, top - S * 0.10), (cx - S * 0.06, top - S * 0.02)], fill=255)  # bent cone
 d.ellipse([cx - S * 0.27, top - S * 0.005, cx + S * 0.27, top + S * 0.075], fill=255)                                      # brim
 hat = hat.filter(ImageFilter.GaussianBlur(0.8))
-white(hat, 192).save(f'{H}/out/status-w-halloween-master.png')
+white(hat, 192).save(f'{H}/status/status-w-halloween-master.png')
 for name, s in [('mdpi', 24), ('hdpi', 36), ('xhdpi', 48), ('xxhdpi', 72), ('xxxhdpi', 96)]:
-    white(hat, s).save(f'{H}/out/status-w-halloween-{name}.png')
+    white(hat, s).save(f'{H}/status/status-w-halloween-{name}.png')
 # preview on a dark status bar
 prev = Image.new('RGB', (4 * 200 + 20, 220), (40, 40, 46))
 for k, f in enumerate(['status-w-master', 'status-w-halloween-master']):
-    g = Image.open(f'{H}/out/{f}.png'); prev.paste(g, (10 + k * 200, 10), g)
+    g = Image.open(f'{H}/status/{f}.png'); prev.paste(g, (10 + k * 200, 10), g)
 for k, s in enumerate(['mdpi', 'xxxhdpi']):
-    g = Image.open(f'{H}/out/status-w-{s}.png'); prev.paste(g, (420 + k * 100, 40), g)
-    g = Image.open(f'{H}/out/status-w-halloween-{s}.png'); prev.paste(g, (420 + k * 100, 130), g)
+    g = Image.open(f'{H}/status/status-w-{s}.png'); prev.paste(g, (420 + k * 100, 40), g)
+    g = Image.open(f'{H}/status/status-w-halloween-{s}.png'); prev.paste(g, (420 + k * 100, 130), g)
 prev.save(f'{H}/status-icons-preview.png')

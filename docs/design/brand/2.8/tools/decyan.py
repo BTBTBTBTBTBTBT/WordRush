@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """decyan.py <png...>: remove cyan-key glow spill (aura pixels that are cyan/teal) and stray slivers from neighboring cells.
 Cyan-ish pixels become soft transparent; tiny detached components (< 4% of the largest) are dropped."""
-import sys
+import sys, os
+NEAR = int(os.environ.get('NEAR', '0'))
 import numpy as np
 from PIL import Image
 from scipy import ndimage
@@ -25,6 +26,10 @@ for f in sys.argv[1:]:
             if s >= 0.04 * big and not (edge and s < 0.25 * big):
                 good.append(i + 1)
         keep = np.isin(lab, good)
+        if NEAR:   # keep only pieces within NEAR px of the biggest one (drops neighbor-cell fragments)
+            big_i = int(np.argmax(sizes)) + 1
+            halo = ndimage.binary_dilation(lab == big_i, iterations=NEAR)
+            keep = keep & np.isin(lab, [i for i in np.unique(lab[halo]) if i])
         a[..., 3] = np.where(keep, a[..., 3], 0)
     out = Image.fromarray(a.clip(0, 255).astype(np.uint8))
     out = out.crop(out.getchannel('A').point(lambda v: 255 if v > 24 else 0).getbbox())

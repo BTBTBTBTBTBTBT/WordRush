@@ -17,7 +17,7 @@ from scipy import ndimage
 LO, HI = 60, 150
 
 
-def key_sheet(path, edge_px=6, all_pockets=False):
+def key_sheet(path, edge_px=6, all_pockets=False, decyan=False):
     im = Image.open(path).convert('RGB')
     w, h = im.size
     corners = [im.getpixel((4, 4)), im.getpixel((w - 5, 4)), im.getpixel((4, h - 5)), im.getpixel((w - 5, h - 5))]
@@ -47,26 +47,44 @@ def key_sheet(path, edge_px=6, all_pockets=False):
         cap = r + 40; g[edge] = np.minimum(g[edge], cap[edge]); b[edge] = np.minimum(b[edge], cap[edge])
     else:                                              # green
         g[edge] = np.minimum(g[edge], np.maximum(r, b)[edge] + 30)
+    if decyan:   # glow/aura spill that is itself cyan-ish: make it transparent before any piece selection
+        cy = np.clip((np.minimum(g, b) - r - 6) / 45, 0, 1)
+        alpha = alpha * (1 - cy)
     rgba = Image.fromarray(np.dstack([r, g, b, alpha]).clip(0, 255).astype(np.uint8), 'RGBA')
     a2 = rgba.getchannel('A').filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.6))
     rgba.putalpha(a2)
     return rgba
 
 
-def split_cells(rgba, names, cols, rows, margin=0.0):
-    """Plain grid windows (no Voronoi): for sheets whose pieces have wide gaps but thin parts (rings, glows)."""
+def split_cells(rgba, names, cols, rows, margin=0.0, join=0):
+    """Whole-component assignment: label the sheet's connected pieces, pick each cell's MAIN piece (the biggest one whose
+    centroid is in the cell), then give every other piece (sparkles, crowns) to the nearest main. A piece that spans two
+    cells (a big aura) stays whole. Falls back to nothing for a cell with no piece."""
     a = np.asarray(rgba.getchannel('A')) > 24
     h, w = a.shape
-    out = {}
+    lab, n = ndimage.label(ndimage.binary_dilation(a, iterations=2))
+    lab = lab * a
+    cent = {}
+    for i in range(1, n + 1):
+        ys, xs = np.nonzero(lab == i)
+        if len(xs) >= 60:
+            cent[i] = (xs.mean(), ys.mean(), len(xs))
+    mains = {}
     for idx, name in enumerate(names):
         row, col = divmod(idx, cols)
-        x0, x1 = int(col * w / cols), int((col + 1) * w / cols)
-        y0, y1 = int(row * h / rows), int((row + 1) * h / rows)
-        mk = np.zeros_like(a)
-        mk[y0:y1, x0:x1] = a[y0:y1, x0:x1]
-        ys, xs = np.nonzero(mk)
-        if len(xs):
-            out[name] = ((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1), mk)
+        best = max((i for i, (cx, cy, sz) in cent.items() if col * w / cols <= cx < (col + 1) * w / cols and row * h / rows <= cy < (row + 1) * h / rows), key=lambda i: cent[i][2], default=0)
+        if best:
+            mains[name] = best
+    mk = np.zeros(a.shape, np.int32)
+    for k, (name, i) in enumerate(mains.items(), 1):
+        mk[lab == i] = k
+    dist, (iy, ix) = ndimage.distance_transform_edt(mk == 0, return_indices=True)
+    owner = mk[iy, ix] * (lab > 0)
+    out = {}
+    for k, name in enumerate(mains, 1):
+        m = owner == k
+        ys, xs = np.nonzero(m)
+        out[name] = ((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1), m)
     return out
 
 
@@ -109,9 +127,9 @@ def main():
     opts = dict(a[2:].split('=') for a in sys.argv[1:] if a.startswith('--') and '=' in a)
     sheet, cols, rows, outdir, names = args[0], int(args[1]), int(args[2]), args[3], args[4:]
     os.makedirs(outdir, exist_ok=True)
-    rgba = key_sheet(sheet, all_pockets=opts.get('pockets') == 'all')
+    rgba = key_sheet(sheet, all_pockets=opts.get('pockets') == 'all', decyan=opts.get('decyan') == '1')
     alpha = np.asarray(rgba.getchannel('A'))
-    parts = (split_cells if opts.get('mode') == 'cells' else split)(rgba, names, cols, rows)
+    parts = split_cells(rgba, names, cols, rows, float(opts.get('margin', 0))) if opts.get('mode') == 'cells' else split(rgba, names, cols, rows)
     for name, (bb, mk) in parts.items():
         part = rgba.copy()
         part.putalpha(Image.fromarray((alpha * mk).astype(np.uint8)))
