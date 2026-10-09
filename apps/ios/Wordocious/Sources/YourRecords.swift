@@ -495,7 +495,7 @@ struct TrophyShelf: View {
                     } label: {
                         Icon3D(.share, size: 20).frame(width: 36, height: 36).contentShape(Rectangle())
                     }
-                    .buttonStyle(.squishIcon)
+                    .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
                     .opacity(sharingShelf ? 0.4 : 1)
                     .accessibilityLabel("Share trophy shelf")
                 }

@@ -370,7 +370,7 @@ struct FriendsPanelView: View {
                             .frame(width: 32, height: 32)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(.squishIcon)
+                    .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23: the family round icon, compact (row-sized)
                     .opacity(sharingRace ? 0.4 : 1)
                     .accessibilityLabel("Share weekly race")
                 }

@@ -42,7 +42,7 @@ enum HeaderScrollSpec {
     static func scale(progress: CGFloat) -> CGFloat { 1 - (1 - minScale) * progress }
 }
 
-@MainActor
+/// Updated only from SwiftUI's main-thread preference callback (no actor annotation, so the callback compiles under any concurrency mode).
 final class HeaderScrollModel: ObservableObject {
     @Published private(set) var progress: CGFloat = 0
     @Published private(set) var fade: CGFloat = 0

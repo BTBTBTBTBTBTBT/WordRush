@@ -34,6 +34,7 @@ export * from './leaderboard-title';
 export * from './podium-layout';
 export * from './headline-tokens';
 export * from './bubble-text';
+export * from './bubble-atlas-metrics';
 export * from './achievement-rules';
 export * from './mode-coverage';
 export * from './change-photo';

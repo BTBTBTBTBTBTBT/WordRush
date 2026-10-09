@@ -1,5 +1,6 @@
 'use client';
 
+import { QuietButton } from '@/components/ui/family-button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HeaderBack } from '@/components/ui/page-header';
 import { ArtTitle } from '@/components/ui/art-title';
@@ -300,15 +301,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
           {/* Help: the app tour replays only from here (founder 10-07), never from a game's help sheet. */}
           <SettingsSection title="Help" accent={SETTINGS_ACCENT.help}>
-            <button
-              type="button"
-              onClick={() => { onOpenChange(false); window.setTimeout(() => startTour(), 220); }}
-              className="block w-full text-left p-3"
-              style={settingsRowStyle(SETTINGS_ACCENT.help)}
-            >
-              <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>Replay the app tour</div>
-              <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>The welcome and quick tour, again</div>
-            </button>
+            {/* 2.8 item 23: the family QUIET button (was a raw row). */}
+            <QuietButton block onClick={() => { onOpenChange(false); window.setTimeout(() => startTour(), 220); }}>
+              Replay the app tour
+            </QuietButton>
           </SettingsSection>
 
           {/* Season preview (admins only): Off (by date) or any registry season (lib/season-kit.ts). */}

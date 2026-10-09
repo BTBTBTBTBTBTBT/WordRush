@@ -353,10 +353,8 @@ private fun AuthField(
             else androidx.compose.ui.text.input.VisualTransformation.None,
         trailingIcon = if (isPassword && onToggleReveal != null) {
             {
-                androidx.compose.foundation.layout.Box(
-                    Modifier.size(40.dp).squishClickable(if (revealed) "Hide password" else "Show password", icon = true, onClick = onToggleReveal),
-                    contentAlignment = Alignment.Center,
-                ) {
+                // 2.8 item 23: the family round icon, compact (40 dp inside the field).
+                RoundIconButton(onToggleReveal, if (revealed) "Hide password" else "Show password", tap = 40.dp, compact = true) {
                     Icon(
                         if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
                         contentDescription = null,

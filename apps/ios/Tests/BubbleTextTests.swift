@@ -19,6 +19,10 @@ final class BubbleTextTests: XCTestCase {
         let fits: [Fit]
         let home: [Home]
         let glyphs: [Glyph]
+        struct PlaceJSON: Decodable { let stem: String; let ci: Int; let x: Double; let y: Double }
+        struct LayoutJSON: Decodable { let places: [PlaceJSON]; let width: Double }
+        struct LayoutCase: Decodable { let text: String; let layout: LayoutJSON }
+        let layouts: [LayoutCase]
     }
 
     private func load() throws -> Fixture {
@@ -41,6 +45,16 @@ final class BubbleTextTests: XCTestCase {
             XCTAssertEqual(got.lines, h.fit.lines, "\(h.text) @\(h.slot) lines")
             XCTAssertEqual(got.size, h.fit.size, "\(h.text) @\(h.slot) size")
             XCTAssertEqual(got.nameLines, h.fit.nameLines ?? [], "\(h.text) @\(h.slot) nameLines")
+        }
+        for c in fx.layouts {
+            let got = BubbleText.atlasLayout(c.text)
+            XCTAssertEqual(got.width, c.layout.width, accuracy: 1e-9, c.text)
+            XCTAssertEqual(got.places.map(\.stem), c.layout.places.map(\.stem), c.text)
+            XCTAssertEqual(got.places.map(\.ci), c.layout.places.map(\.ci), c.text)
+            for (a, b) in zip(got.places, c.layout.places) {
+                XCTAssertEqual(a.x, b.x, accuracy: 1e-9, c.text)
+                XCTAssertEqual(a.y, b.y, accuracy: 1e-9, c.text)
+            }
         }
         for g in fx.glyphs { XCTAssertEqual(BubbleText.glyphName(Character(g.ch)), g.name, g.ch) }
     }

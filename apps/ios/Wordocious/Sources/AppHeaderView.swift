@@ -141,7 +141,7 @@ struct AppHeaderView: View {
             .frame(minHeight: HeaderControl.tap)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.squishIcon)
+        .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23
         .accessibilityLabel(label)
     }
 

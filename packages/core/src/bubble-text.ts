@@ -13,36 +13,43 @@
 //   4. NEVER an ellipsis, never a clip: whatever the lines, `size` is chosen so the widest
 //      line fits the slot (it may drop under minSize only when nothing else can fit).
 
+import {
+  BUBBLE_ATLAS_ASC, BUBBLE_ATLAS_DESC, BUBBLE_ATLAS_GAP, BUBBLE_ATLAS_METRICS, BUBBLE_ATLAS_SPACE,
+} from './bubble-atlas-metrics';
 import { HEADLINE_ADVANCE_EM, HEADLINE_EDGE_EM, HEADLINE_TRACKING_EM, headlineFontSize, headlineLayout, headlineWidthEm } from './headline-tokens';
 
 /** The glyphs the atlas draws (uppercase; anything else falls back to the live font). */
-export const BUBBLE_GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789★!?,'·-&";
+export const BUBBLE_GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789★!?,'·-&.:+%";
 
 /** Advance widths for the atlas-only characters (em); every other character uses the live font's table. */
-const BUBBLE_EXTRA_ADVANCE_EM: Readonly<Record<string, number>> = { '★': 0.9, '&': 0.78, '’': 0.269 };
+const BUBBLE_EXTRA_ADVANCE_EM: Readonly<Record<string, number>> = { '★': 0.9, '&': 0.78, '’': 0.269, '+': 0.6, '%': 0.964 };
 const FALLBACK_EM = 1.128;
 
 /**
- * The atlas manifest. `ready` flips to true in the commit that drops the glyph PNGs in
- * (web public/art/bubble/<name>.png, iOS asset catalog bubble-<name>, Android drawable
- * bubble_<name>); until then every platform draws the live font. `name` maps a character
- * to its asset stem; kerning pairs adjust the gap (em, usually negative) between two glyphs.
+ * The atlas manifest (the ChatGPT glyph atlas, docs/design/brand/2.8/glyphs; built into the apps by
+ * scripts/build-bubble-atlas.py: web public/art/bubble/<stem>.png, iOS asset bubble-<stem>, Android
+ * drawable bubble_<stem>). `ready` = the glyph art is in the apps. The per-glyph metrics live in
+ * bubble-atlas-metrics.ts (generated). `version` busts the web cache when the art is rebuilt.
  */
 export const BUBBLE_ATLAS = {
-  ready: false,
-  version: 1,
-  kerningEm: {} as Readonly<Record<string, number>>,
+  ready: true,
+  version: 2,
 } as const;
 
-const GLYPH_NAMES: Readonly<Record<string, string>> = {
-  '★': 'star', '!': 'bang', '?': 'ask', ',': 'comma', "'": 'apos', '’': 'apos', '·': 'dot', '-': 'dash', '&': 'amp',
+/** The lettering's cap height in em of the font size (a headline's `size` is the live font size; the atlas cap is this fraction of it). */
+export const BUBBLE_CAP_EM = 0.82;
+
+const GLYPH_STEMS: Readonly<Record<string, string>> = {
+  '★': 'star', '!': 'excl', '?': 'quest', ',': 'comma', "'": 'apos', '’': 'apos', '·': 'dot', '-': 'hyphen', '&': 'amp',
+  '.': 'period', ':': 'colon', '+': 'plus', '%': 'percent',
 };
 
-/** The asset stem for a character ("a".."z", "0".."9", "star", "bang"…), or null when the atlas has no glyph. */
+/** The asset stem for a character ("a".."z", "0".."9", "star", "excl", "quest", "hyphen"…), or null when the atlas has no glyph. */
 export function bubbleGlyphName(ch: string): string | null {
   const up = ch.toUpperCase();
-  if (Array.from(up).length !== 1 || !(BUBBLE_GLYPHS.includes(up) || up === '’')) return null;
-  return GLYPH_NAMES[up] ?? up.toLowerCase();
+  if (Array.from(up).length !== 1) return null;
+  const stem = GLYPH_STEMS[up] ?? (/^[A-Z0-9]$/.test(up) ? up.toLowerCase() : null);
+  return stem && BUBBLE_ATLAS_METRICS[stem] ? stem : null;
 }
 
 /** True when every non-space character of `text` has an atlas glyph (and the atlas is ready). */
@@ -52,13 +59,69 @@ export function bubbleAtlasCovers(text: string): boolean {
   return true;
 }
 
-/** The lettering width of `text` in em: advances + tracking + the 0.24 em outline / edge. */
-export function bubbleWidthEm(text: string): number {
+export interface BubbleGlyphPlace {
+  stem: string;
+  /** The character's index in `text` (code points), so callers can tint numbers / names per word. */
+  ci: number;
+  /** Left edge, in cap-height units from the line's left. */
+  x: number;
+  /** Top edge in cap-height units from the line box top (the box is `asc` above the baseline, `desc` below). */
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface BubbleAtlasLayout {
+  places: BubbleGlyphPlace[];
+  /** The whole line's width in cap-height units. */
+  width: number;
+  /** The shared line box: ascent over the baseline, descent under it (cap units). */
+  asc: number;
+  desc: number;
+}
+
+/**
+ * Compose `text` from the atlas, exactly like the reference renderer (bubble_text.py): each glyph advances by its
+ * width plus a -4.5% cap gap, a space is 38% of the cap, and a glyph sits by its align — baseline / comma: the
+ * baseline value from its top; top: hanging from the cap line; mid: centered on the cap's middle.
+ * A character the atlas lacks is skipped (callers check `bubbleAtlasCovers` first).
+ */
+export function bubbleAtlasLayout(text: string): BubbleAtlasLayout {
+  const places: BubbleGlyphPlace[] = [];
+  let x = 0;
+  let ci = -1;
+  for (const ch of text) {
+    ci += 1;
+    if (ch === ' ') { x += BUBBLE_ATLAS_SPACE; continue; }
+    const stem = bubbleGlyphName(ch);
+    if (!stem) continue;
+    const [w, h, b, a] = BUBBLE_ATLAS_METRICS[stem];
+    const top = a === 0 || a === 1 ? -b : a === 2 ? -1 : -0.5 - h / 2;
+    places.push({ stem, ci, x: Math.round(x * 10000) / 10000, y: Math.round((top + BUBBLE_ATLAS_ASC) * 10000) / 10000, w, h });
+    x += w + BUBBLE_ATLAS_GAP;
+  }
+  const width = places.length ? x - BUBBLE_ATLAS_GAP : x;
+  return { places, width: Math.round(width * 10000) / 10000, asc: BUBBLE_ATLAS_ASC, desc: BUBBLE_ATLAS_DESC };
+}
+
+/** The live headline font's width of `text` in em: advances + tracking + the 0.24 em outline / edge. */
+function liveWidthEm(text: string): number {
   let w = 0;
   for (const ch of text.toUpperCase()) {
     w += (BUBBLE_EXTRA_ADVANCE_EM[ch] ?? HEADLINE_ADVANCE_EM[ch] ?? FALLBACK_EM) + HEADLINE_TRACKING_EM;
   }
   return Math.round((w + HEADLINE_EDGE_EM) * 1000) / 1000;
+}
+
+/**
+ * The lettering width of `text` in em. When the atlas covers the text it is the WIDER of the live font's and the
+ * atlas's (so the fit never clips whichever one the `bubble_atlas` switch draws); otherwise the live font's.
+ */
+export function bubbleWidthEm(text: string): number {
+  const live = liveWidthEm(text);
+  if (!bubbleAtlasCovers(text)) return live;
+  const atlas = Math.round((bubbleAtlasLayout(text).width * BUBBLE_CAP_EM + 0.06) * 1000) / 1000;
+  return Math.max(live, atlas);
 }
 
 /** Width in thousandths of an em (exact integers, so every port compares identically). */
@@ -200,7 +263,10 @@ export function homeHeadlineFit(text: string, name: string, slotWidth: number): 
   const maxEm = slotWidth / size;
   const layout = headlineLayout(text, name, maxEm);
   if (layout.lines.length > 1 || headlineWidthEm(text) <= maxEm) {
-    return { lines: layout.lines, size, wrapped: layout.lines.length > 1, nameLines: layout.nameLines };
+    // The atlas can be wider than the live font on some strings (many I's): shrink only then, never clip.
+    const widest = Math.max(...layout.lines.map((l) => bubbleWidthEm(l)));
+    const fitted = widest * size > slotWidth ? Math.max(12, Math.floor(slotWidth / widest)) : size;
+    return { lines: layout.lines, size: fitted, wrapped: layout.lines.length > 1, nameLines: layout.nameLines };
   }
   const fit = bubbleFit(text, slotWidth, { maxSize: size, minSize: Math.round(size * 0.72) });
   return { ...fit, nameLines: [] };

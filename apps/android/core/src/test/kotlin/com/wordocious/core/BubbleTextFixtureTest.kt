@@ -63,6 +63,24 @@ class BubbleTextFixtureTest {
         }
     }
 
+    @Test
+    fun atlas_layouts_match() {
+        for (r in root["layouts"]!!.jsonArray.map { it.jsonObject }) {
+            val text = r["text"]!!.jsonPrimitive.content
+            val l = r["layout"]!!.jsonObject
+            val got = bubbleAtlasLayout(text)
+            assertEquals("$text width", l["width"]!!.jsonPrimitive.double, got.width, 1e-9)
+            val places = l["places"]!!.jsonArray.map { it.jsonObject }
+            assertEquals("$text places", places.size, got.places.size)
+            places.forEachIndexed { i, p ->
+                assertEquals(p["stem"]!!.jsonPrimitive.content, got.places[i].stem)
+                assertEquals(p["ci"]!!.jsonPrimitive.int, got.places[i].ci)
+                assertEquals(p["x"]!!.jsonPrimitive.double, got.places[i].x, 1e-9)
+                assertEquals(p["y"]!!.jsonPrimitive.double, got.places[i].y, 1e-9)
+            }
+        }
+    }
+
     /** The no-clip guard: the longest headlines, narrowest to widest slots. */
     @Test
     fun never_clips_or_truncates() {

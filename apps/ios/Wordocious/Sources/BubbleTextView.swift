@@ -2,12 +2,11 @@ import SwiftUI
 import UIKit
 import WordociousCore
 
-// 2.8 item 6: the bubble-lettering renderer. ANY string is drawn from the glyph atlas
-// (asset catalog `bubble-<name>`: A-Z 0-9 star ! ? , ' dot dash & — a neutral white base with
-// shading) tinted per word; until the atlas ships (`BubbleText.atlasReady`) every line is drawn
-// by `LiveHeadline` (the live headline font) through THIS SAME API, so switching is a drop-in
-// of assets plus one flag. The fit — scale UP to fill the slot, down to a min, then a balanced
-// 2-3 line wrap, never "..." — is core's `BubbleText.fit` (parity-pinned with web + Android).
+// 2.8 item 6: the bubble-lettering renderer. ANY string is drawn from the glyph atlas (asset catalog
+// `bubble-<stem>`: A-Z 0-9 star excl quest comma apos dot hyphen amp period colon plus percent — tint MAPS, see
+// BubbleGlyphTint) tinted per word through THIS API; a line the atlas can't cover (or with the `bubble_atlas`
+// switch off) is drawn by `LiveHeadline` (the live headline font). The fit — scale UP to fill the slot, down to
+// a min, then a balanced 2-3 line wrap, never "..." — is core's `BubbleText.fit` (parity-pinned with web + Android).
 
 private struct BubbleWidthKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
@@ -21,11 +20,14 @@ struct BubbleLineView: View {
     var size: CGFloat
     var names: [String] = []
     var animated: Bool = true
+    var alignment: TextAlignment = .center
 
     var body: some View {
         // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
         if BubbleText.atlasCovers(text) && FlagsService.shared.isLive("bubble_atlas") {
-            BubbleAtlasLine(text: text, size: size, top: palette.top, bottom: palette.bottom)
+            // The fit measured the line at `size * Dynamic Type`; draw the atlas at that same size.
+            let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
+            BubbleAtlasLine(text: text, size: size * dyn, palette: palette, names: names, alignment: alignment)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(text)
                 .accessibilityAddTraits(.isHeader)
@@ -39,37 +41,64 @@ struct BubbleLineView: View {
     }
 }
 
-/// The atlas path: each glyph's PNG tinted by multiplying the word's gradient over the neutral
-/// base and clipping to the glyph's own alpha (one composited layer per glyph, cached by SwiftUI).
+/// The atlas path: one tinted glyph image per placed glyph (core layout, cap-height units), numbers gold, names in the accent.
 private struct BubbleAtlasLine: View {
     let text: String
     let size: CGFloat
-    let top: Color
-    let bottom: Color
+    let palette: HeadlinePalette
+    let names: [String]
+    let alignment: TextAlignment
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(text.uppercased().enumerated()), id: \.offset) { i, ch in
-                let w = CGFloat(BubbleText.widthEm(String(ch))) * size
-                if ch == " " {
-                    Color.clear.frame(width: w, height: size)
-                } else if let name = BubbleText.glyphName(ch) {
-                    let glyph = Image("bubble-\(name)").resizable().scaledToFit()
-                    glyph
-                        .overlay(LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom).blendMode(.multiply))
-                        .compositingGroup()
-                        .mask(glyph)
-                        .frame(width: w, height: size * 1.1)
-                        .modifier(BubbleGlyphPop(index: i, still: Motion.calm(envReduceMotion)))
-                        // Keyed by position + character: only a glyph that CHANGED remounts and pops.
-                        .id("\(i)-\(ch)")
-                } else {
-                    Color.clear.frame(width: w, height: size)
-                }
+        let layout = BubbleText.atlasLayout(text)
+        let cap = size * CGFloat(BubbleText.capEm)
+        let kinds = Self.kinds(text, names)
+        let still = Motion.calm(envReduceMotion)
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(layout.places.enumerated()), id: \.offset) { i, g in
+                let kind = g.ci < kinds.count ? kinds[g.ci] : .text
+                let tint: (Color, Color) = kind == .number ? (palette.numberTop, palette.numberBottom)
+                    : (kind == .name ? (palette.nameTop, palette.nameBottom) : (palette.top, palette.bottom))
+                BubbleGlyphView(stem: g.stem, w: CGFloat(g.w) * cap, h: CGFloat(g.h) * cap,
+                                f0: g.y - (layout.asc - 1), f1: g.y + g.h - (layout.asc - 1), top: tint.0, bottom: tint.1)
+                    .modifier(BubbleGlyphPop(index: i, still: still))
+                    // Keyed by position + glyph: only a glyph that CHANGED remounts and pops.
+                    .id("\(i)-\(g.stem)-\(g.ci)")
+                    .offset(x: CGFloat(g.x) * cap, y: CGFloat(g.y) * cap)
             }
         }
-        .fixedSize()
+        .frame(width: CGFloat(layout.width) * cap, height: CGFloat(layout.asc + layout.desc) * cap, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: alignment == .leading ? .leading : (alignment == .trailing ? .trailing : .center))
+    }
+
+    /// The token kind of every character (code point), so numbers and names can wear their own tint.
+    private static func kinds(_ text: String, _ names: [String]) -> [HeadlineTokenKind] {
+        var out: [HeadlineTokenKind] = []
+        for t in HeadlineTokens.split(text.uppercased(), names: names) {
+            out.append(contentsOf: Array(repeating: t.kind, count: t.text.unicodeScalars.count))
+        }
+        return out
+    }
+}
+
+/// One tinted glyph (cached bitmap, see BubbleGlyphTint).
+private struct BubbleGlyphView: View {
+    let stem: String
+    let w: CGFloat
+    let h: CGFloat
+    let f0: Double
+    let f1: Double
+    let top: Color
+    let bottom: Color
+
+    var body: some View {
+        if let ui = BubbleGlyphTint.glyph(stem: stem, width: w, height: h, f0: f0, f1: f1, top: top, bottom: bottom) {
+            Image(uiImage: ui).resizable().interpolation(.high).frame(width: w, height: h)
+                .shadow(color: Color(hex: 0x1E0A46).opacity(0.2), radius: 1.5, x: 0, y: 1.5)
+        } else {
+            Color.clear.frame(width: w, height: h)
+        }
     }
 }
 

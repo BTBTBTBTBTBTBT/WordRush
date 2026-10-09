@@ -7,17 +7,19 @@ import Foundation
 
 public enum BubbleText {
     /// The glyphs the atlas draws (uppercase; anything else falls back to the live font).
-    public static let glyphs = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\u{2605}!?,'\u{00B7}-&")
-    /// Flips to true in the commit that drops the glyph PNGs in (asset catalog `bubble-<name>`).
-    public static let atlasReady = false
+    public static let glyphs = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\u{2605}!?,'\u{00B7}-&.:+%")
+    /// The glyph art is in the asset catalog (`bubble-<stem>`, scripts/build-bubble-atlas.py).
+    public static let atlasReady = true
+    /// The lettering's cap height in em of the font size.
+    public static let capEm = 0.82
     public static let maxSize: Double = 38
     public static let minSize: Double = 26
     private static let floorSize: Double = 8
     private static let fallbackEm = 1.128
-    private static let extraAdvanceEm: [Character: Double] = ["\u{2605}": 0.9, "&": 0.78, "\u{2019}": 0.269]
-    private static let glyphNames: [Character: String] = [
-        "\u{2605}": "star", "!": "bang", "?": "ask", ",": "comma", "'": "apos", "\u{2019}": "apos",
-        "\u{00B7}": "dot", "-": "dash", "&": "amp",
+    private static let extraAdvanceEm: [Character: Double] = ["\u{2605}": 0.9, "&": 0.78, "\u{2019}": 0.269, "+": 0.6, "%": 0.964]
+    private static let glyphStems: [Character: String] = [
+        "\u{2605}": "star", "!": "excl", "?": "quest", ",": "comma", "'": "apos", "\u{2019}": "apos",
+        "\u{00B7}": "dot", "-": "hyphen", "&": "amp", ".": "period", ":": "colon", "+": "plus", "%": "percent",
     ]
 
     public struct Fit: Equatable {
@@ -31,12 +33,16 @@ public enum BubbleText {
         }
     }
 
-    /// The asset stem for a character ("a".."z", "0".."9", "star", "bang"…), or nil when the atlas has no glyph.
+    /// The asset stem for a character ("a".."z", "0".."9", "star", "excl", "quest", "hyphen"…), or nil when the atlas has no glyph.
     public static func glyphName(_ ch: Character) -> String? {
         let s = String(ch).uppercased()
         guard s.count == 1, let up = s.first else { return nil }
-        if let n = glyphNames[up] { return n }
-        return glyphs.contains(up) ? s.lowercased() : nil
+        let stem: String?
+        if let n = glyphStems[up] { stem = n }
+        else if up.isASCII && (up.isLetter || up.isNumber) { stem = s.lowercased() }
+        else { stem = nil }
+        guard let stem, BubbleAtlasMetrics.glyphs[stem] != nil else { return nil }
+        return stem
     }
 
     /// True when the atlas is ready and every non-space character of `text` has a glyph.
@@ -45,14 +51,56 @@ public enum BubbleText {
         return text.allSatisfy { $0 == " " || glyphName($0) != nil }
     }
 
-    /// The lettering width of `text` in em: advances + tracking + the 0.24 em outline / edge.
-    public static func widthEm(_ text: String) -> Double {
+    public struct Place: Equatable {
+        public let stem: String
+        /// The character's index in the text (code points).
+        public let ci: Int
+        public let x: Double, y: Double, w: Double, h: Double
+    }
+
+    public struct AtlasLayout: Equatable {
+        public let places: [Place]
+        /// Line width, ascent and descent in cap-height units.
+        public let width: Double, asc: Double, desc: Double
+    }
+
+    private static func r4(_ v: Double) -> Double { (v * 10000).rounded() / 10000 }
+
+    /// Compose `text` from the atlas like the reference renderer (see core bubbleAtlasLayout).
+    public static func atlasLayout(_ text: String) -> AtlasLayout {
+        var places: [Place] = []
+        var x = 0.0
+        var ci = -1
+        for scalar in text.unicodeScalars {
+            ci += 1
+            let ch = Character(scalar)
+            if ch == " " { x += BubbleAtlasMetrics.space; continue }
+            guard let stem = glyphName(ch), let m = BubbleAtlasMetrics.glyphs[stem] else { continue }
+            let top = (m.a == 0 || m.a == 1) ? -m.b : (m.a == 2 ? -1.0 : -0.5 - m.h / 2)
+            places.append(Place(stem: stem, ci: ci, x: r4(x), y: r4(top + BubbleAtlasMetrics.asc), w: m.w, h: m.h))
+            x += m.w + BubbleAtlasMetrics.gap
+        }
+        let width = places.isEmpty ? x : x - BubbleAtlasMetrics.gap
+        return AtlasLayout(places: places, width: r4(width), asc: BubbleAtlasMetrics.asc, desc: BubbleAtlasMetrics.desc)
+    }
+
+    /// The live headline font's width of `text` in em: advances + tracking + the 0.24 em outline / edge.
+    private static func liveWidthEm(_ text: String) -> Double {
         var w = 0.0
         for scalar in text.uppercased().unicodeScalars {
             let c = Character(scalar)
             w += (extraAdvanceEm[c] ?? HeadlineLayout.advanceEm[c] ?? fallbackEm) + HeadlineLayout.trackingEm
         }
         return ((w + HeadlineLayout.edgeEm) * 1000).rounded() / 1000
+    }
+
+    /// The lettering width of `text` in em: the WIDER of the live font's and the atlas's when the atlas covers
+    /// the text (so a fit never clips whichever the `bubble_atlas` switch draws), else the live font's.
+    public static func widthEm(_ text: String) -> Double {
+        let live = liveWidthEm(text)
+        guard atlasCovers(text) else { return live }
+        let atlas = ((atlasLayout(text).width * capEm + 0.06) * 1000).rounded() / 1000
+        return Swift.max(live, atlas)
     }
 
     private static func milli(_ text: String) -> Int { Int((widthEm(text) * 1000).rounded()) }
@@ -151,7 +199,10 @@ public enum BubbleText {
         let maxEm = slotWidth / size
         let layout = HeadlineLayout.layout(text, name: name, maxEm: maxEm)
         if layout.lines.count > 1 || HeadlineLayout.widthEm(text) <= maxEm {
-            return Fit(lines: layout.lines, size: size, wrapped: layout.lines.count > 1, nameLines: layout.nameLines)
+            // The atlas can be wider than the live font on some strings (many I's): shrink only then, never clip.
+            let widest = layout.lines.map { widthEm($0) }.max() ?? 0
+            let fitted = widest * size > slotWidth ? Swift.max(12, (slotWidth / widest).rounded(.down)) : size
+            return Fit(lines: layout.lines, size: fitted, wrapped: layout.lines.count > 1, nameLines: layout.nameLines)
         }
         return fit(text, slotWidth: slotWidth, maxSize: size, minSize: (size * 0.72).rounded())
     }

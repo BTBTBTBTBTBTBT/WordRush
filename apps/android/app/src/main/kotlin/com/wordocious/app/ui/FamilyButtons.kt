@@ -421,6 +421,8 @@ fun RoundIconButton(
     modifier: Modifier = Modifier,
     tap: Dp = 44.dp,
     enabled: Boolean = true,
+    /** The COMPACT variant: [tap] is used as given (no 44 dp floor) for icons inside a field / row that must not grow it. */
+    compact: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -433,7 +435,7 @@ fun RoundIconButton(
         label = "famRoundPress",
     )
     Box(
-        modifier.size(maxOf(tap, 44.dp))
+        modifier.size(if (compact) tap else maxOf(tap, 44.dp))
             .graphicsLayer { val s = 1f - 0.1f * press; scaleX = s; scaleY = s }
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
             .semantics { role = Role.Button; if (contentDescription != null) this.contentDescription = contentDescription },

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import { join } from 'node:path';
-import { bubbleFit, bubbleGlyphName, bubbleWidthEm, homeHeadlineFit, BUBBLE_GLYPHS } from './bubble-text';
+import { bubbleAtlasLayout, bubbleFit, bubbleGlyphName, bubbleWidthEm, homeHeadlineFit, BUBBLE_ATLAS, BUBBLE_GLYPHS } from './bubble-text';
+import { BUBBLE_ATLAS_METRICS } from './bubble-atlas-metrics';
+import { createHash } from 'node:crypto';
 import { bannerHeadline } from './home-banner';
 import { headlineFontSize } from './headline-tokens';
 
@@ -46,9 +48,12 @@ describe('bubble text fit (2.8 item 6): never clips, never truncates, fills the 
   it('has the atlas glyph set', () => {
     expect(BUBBLE_GLYPHS).toContain('★');
     expect(bubbleGlyphName('a')).toBe('a');
-    expect(bubbleGlyphName('!')).toBe('bang');
+    expect(bubbleGlyphName('!')).toBe('excl');
+    expect(bubbleGlyphName('?')).toBe('quest');
+    expect(bubbleGlyphName('-')).toBe('hyphen');
+    expect(bubbleGlyphName('%')).toBe('percent');
     expect(bubbleGlyphName('·')).toBe('dot');
-    expect(bubbleGlyphName('%')).toBeNull();
+    expect(bubbleGlyphName('#')).toBeNull();
   });
 
   const texts = headlineCorpus();
@@ -105,5 +110,42 @@ describe('bubble text fit (2.8 item 6): never clips, never truncates, fills the 
     const f = bubbleFit('SUPERCALIFRAGILISTICEXPIALIDOCIOUS', 200);
     expect(f.lines.length).toBeGreaterThan(1);
     expect(f.lines.join('')).toBe('SUPERCALIFRAGILISTICEXPIALIDOCIOUS');
+  });
+});
+
+describe('the shipped glyph atlas (2.8 item 6 acceptance)', () => {
+  const repo = join(__dirname, '..', '..', '..');
+  const stems = Object.keys(BUBBLE_ATLAS_METRICS);
+  const sha = (p: string) => createHash('sha1').update(fs.readFileSync(p)).digest('hex');
+
+  it('is ready and ships all 48 glyphs byte-identical on web, iOS and Android', () => {
+    expect(BUBBLE_ATLAS.ready).toBe(true);
+    expect(stems.length).toBe(48);
+    for (const s of stems) {
+      const web = join(repo, 'apps/web/public/art/bubble', `${s}.png`);
+      const ios = join(repo, 'apps/ios/Wordocious/Resources/Assets.xcassets', `bubble-${s}.imageset`, `bubble-${s}.png`);
+      const and = join(repo, 'apps/android/app/src/main/res/drawable-nodpi', `bubble_${s}.png`);
+      for (const p of [web, ios, and]) expect(fs.existsSync(p), p).toBe(true);
+      expect(sha(ios), s).toBe(sha(web));
+      expect(sha(and), s).toBe(sha(web));
+    }
+  });
+
+  it('every drawable character maps to a shipped stem; every stem is reachable', () => {
+    const reached = new Set(Array.from(BUBBLE_GLYPHS).map((c) => bubbleGlyphName(c)));
+    expect(reached.has(null)).toBe(false);
+    for (const s of stems) expect(reached.has(s), s).toBe(true);
+  });
+
+  it('lays out DAILIES on one baseline and drops the comma below it', () => {
+    const l = bubbleAtlasLayout('DAILIES');
+    expect(l.places.length).toBe(7);
+    for (const p of l.places) expect(Math.abs(p.y + p.h - (l.asc + 0.0)) , p.stem).toBeLessThan(0.08);
+    const c = bubbleAtlasLayout('A,');
+    expect(c.places[1].y + c.places[1].h).toBeGreaterThan(c.asc);
+  });
+
+  it('keeps the side-by-side acceptance sheet (scripts/build-bubble-atlas.py)', () => {
+    expect(fs.existsSync(join(repo, 'docs/design/brand/2.8/glyphs/acceptance-wired.png'))).toBe(true);
   });
 });

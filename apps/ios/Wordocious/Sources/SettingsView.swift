@@ -170,7 +170,10 @@ struct SettingsView: View {
                                 // with Help & Support.
                                 Button { infoKind = .support } label: { linkRow("Help & Support") }.buttonStyle(.squish)
                                 G5Divider()
-                                Button { showTour = true } label: { linkRow("Replay the app tour") }.buttonStyle(.squish)
+                                // 2.8 item 23: the family QUIET button (was a raw squish row).
+                                Button { showTour = true } label: { CandyLabel(title: "Replay the app tour") }
+                                    .buttonStyle(QuietButtonStyle(size: .medium, fullWidth: true))
+                                    .padding(.vertical, 6)
                                 G5Divider()
                                 Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.squish)
                                 G5Divider()

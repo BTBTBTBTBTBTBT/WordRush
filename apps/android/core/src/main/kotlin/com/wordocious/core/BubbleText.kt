@@ -8,28 +8,30 @@ import kotlin.math.floor
 // a hard character split; never an ellipsis, never a clip.
 
 /** The glyphs the atlas draws (uppercase; anything else falls back to the live font). */
-const val BUBBLE_GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789★!?,'·-&"
+const val BUBBLE_GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789★!?,'·-&.:+%"
 
-/** Flips to true in the commit that drops the glyph PNGs in (drawable `bubble_<name>`). */
-const val BUBBLE_ATLAS_READY = false
+/** The glyph art is in the app (drawable `bubble_<stem>`, scripts/build-bubble-atlas.py). */
+const val BUBBLE_ATLAS_READY = true
+/** The lettering's cap height in em of the font size. */
+const val BUBBLE_CAP_EM = 0.82
 const val BUBBLE_MAX_SIZE = 38
 const val BUBBLE_MIN_SIZE = 26
 private const val BUBBLE_FLOOR_SIZE = 8
 private const val BUBBLE_FALLBACK_EM = 1.128
 
-private val BUBBLE_EXTRA_ADVANCE_EM: Map<String, Double> = mapOf("★" to 0.9, "&" to 0.78, "’" to 0.269)
+private val BUBBLE_EXTRA_ADVANCE_EM: Map<String, Double> = mapOf("★" to 0.9, "&" to 0.78, "’" to 0.269, "+" to 0.6, "%" to 0.964)
 
-private val BUBBLE_GLYPH_NAMES: Map<String, String> = mapOf(
-    "★" to "star", "!" to "bang", "?" to "ask", "," to "comma", "'" to "apos", "’" to "apos",
-    "·" to "dot", "-" to "dash", "&" to "amp",
+private val BUBBLE_GLYPH_STEMS: Map<String, String> = mapOf(
+    "★" to "star", "!" to "excl", "?" to "quest", "," to "comma", "'" to "apos", "’" to "apos",
+    "·" to "dot", "-" to "hyphen", "&" to "amp", "." to "period", ":" to "colon", "+" to "plus", "%" to "percent",
 )
 
-/** The asset stem for a character ("a".."z", "0".."9", "star", "bang"…), or null when the atlas has no glyph. */
+/** The asset stem for a character ("a".."z", "0".."9", "star", "excl", "quest", "hyphen"…), or null when the atlas has no glyph. */
 fun bubbleGlyphName(ch: String): String? {
     val up = ch.uppercase()
     if (up.codePointCount(0, up.length) != 1) return null
-    BUBBLE_GLYPH_NAMES[up]?.let { return it }
-    return if (BUBBLE_GLYPHS.contains(up)) up.lowercase() else null
+    val stem = BUBBLE_GLYPH_STEMS[up] ?: if (up.length == 1 && (up[0] in 'A'..'Z' || up[0] in '0'..'9')) up.lowercase() else null
+    return if (stem != null && BubbleAtlasMetrics.glyphs.containsKey(stem)) stem else null
 }
 
 /** True when the atlas is ready and every non-space character of [text] has a glyph. */
@@ -51,13 +53,50 @@ private fun String.codePointStrings(): List<String> {
     return out
 }
 
-/** The lettering width of [text] in em: advances + tracking + the 0.24 em outline / edge. */
-fun bubbleWidthEm(text: String): Double {
+/** One placed glyph, in cap-height units from the line box's top-left (ci = the character's index in the text). */
+class BubblePlace(val stem: String, val ci: Int, val x: Double, val y: Double, val w: Double, val h: Double)
+
+/** The composed line: placed glyphs, the line width and the shared ascent / descent, all in cap-height units. */
+class BubbleAtlasLayout(val places: List<BubblePlace>, val width: Double, val asc: Double, val desc: Double)
+
+private fun r4(v: Double): Double = floor(v * 10000 + 0.5) / 10000
+
+/** Compose [text] from the atlas like the reference renderer (see core bubbleAtlasLayout). */
+fun bubbleAtlasLayout(text: String): BubbleAtlasLayout {
+    val places = ArrayList<BubblePlace>()
+    var x = 0.0
+    var ci = -1
+    for (ch in text.codePointStrings()) {
+        ci += 1
+        if (ch == " ") { x += BubbleAtlasMetrics.SPACE; continue }
+        val stem = bubbleGlyphName(ch) ?: continue
+        val m = BubbleAtlasMetrics.glyphs[stem] ?: continue
+        val top = if (m.a == 0 || m.a == 1) -m.b else if (m.a == 2) -1.0 else -0.5 - m.h / 2
+        places.add(BubblePlace(stem, ci, r4(x), r4(top + BubbleAtlasMetrics.ASC), m.w, m.h))
+        x += m.w + BubbleAtlasMetrics.GAP
+    }
+    val width = if (places.isEmpty()) x else x - BubbleAtlasMetrics.GAP
+    return BubbleAtlasLayout(places, r4(width), BubbleAtlasMetrics.ASC, BubbleAtlasMetrics.DESC)
+}
+
+/** The live headline font's width of [text] in em: advances + tracking + the 0.24 em outline / edge. */
+private fun liveWidthEm(text: String): Double {
     var w = 0.0
     for (ch in text.uppercase().codePointStrings()) {
         w += (BUBBLE_EXTRA_ADVANCE_EM[ch] ?: HEADLINE_ADVANCE_EM[ch] ?: BUBBLE_FALLBACK_EM) + HEADLINE_TRACKING_EM
     }
     return floor((w + HEADLINE_EDGE_EM) * 1000 + 0.5) / 1000
+}
+
+/**
+ * The lettering width of [text] in em: the WIDER of the live font's and the atlas's when the atlas covers the text
+ * (so a fit never clips whichever the `bubble_atlas` switch draws), else the live font's.
+ */
+fun bubbleWidthEm(text: String): Double {
+    val live = liveWidthEm(text)
+    if (!bubbleAtlasCovers(text)) return live
+    val atlas = floor((bubbleAtlasLayout(text).width * BUBBLE_CAP_EM + 0.06) * 1000 + 0.5) / 1000
+    return maxOf(live, atlas)
 }
 
 private fun milli(text: String): Int = floor(bubbleWidthEm(text) * 1000 + 0.5).toInt()
@@ -164,7 +203,10 @@ fun homeHeadlineFit(text: String, name: String, slotWidth: Double): BubbleFit {
     val maxEm = slotWidth / size
     val layout = headlineLayout(text, name, maxEm)
     if (layout.lines.size > 1 || headlineWidthEm(text) <= maxEm) {
-        return BubbleFit(layout.lines, size, layout.lines.size > 1, layout.nameLines)
+        // The atlas can be wider than the live font on some strings (many I's): shrink only then, never clip.
+        val widest = layout.lines.maxOf { bubbleWidthEm(it) }
+        val fitted = if (widest * size > slotWidth) maxOf(12, floor(slotWidth / widest).toInt()) else size
+        return BubbleFit(layout.lines, fitted, layout.lines.size > 1, layout.nameLines)
     }
     return bubbleFit(text, slotWidth, maxSize = size, minSize = floor(size * 0.72 + 0.5).toInt())
 }
