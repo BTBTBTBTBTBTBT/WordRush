@@ -187,13 +187,14 @@ struct HeadToHeadSection: View {
     }
 
     private var rows: [Row] {
-        FriendsService.friends.map { f in
-            Row(friend: f, vs: StatsProfile.PocketRecord(wins: f.h2hW ?? 0, losses: f.h2hL ?? 0),
-                pocket: records?.byFriend[f.id]?.total ?? StatsProfile.PocketRecord())
+        let all: [Row] = FriendsService.friends.map { (f: FriendsService.FriendProfile) -> Row in
+            let vs = StatsProfile.PocketRecord(wins: f.h2hW ?? 0, losses: f.h2hL ?? 0)
+            let pocket: StatsProfile.PocketRecord = records?.byFriend[f.id]?.total ?? StatsProfile.PocketRecord()
+            return Row(friend: f, vs: vs, pocket: pocket)
         }
-        .filter { $0.vs.played || $0.pocket.played }
-        .sorted { ($0.wins + $0.losses + $0.pocket.draws) > ($1.wins + $1.losses + $1.pocket.draws) }
-        .prefix(8).map { $0 }
+        let played: [Row] = all.filter { (r: Row) -> Bool in r.vs.played || r.pocket.played }
+        let games = { (r: Row) -> Int in r.wins + r.losses + r.pocket.draws }
+        return Array(played.sorted { games($0) > games($1) }.prefix(8))
     }
 
     var body: some View {

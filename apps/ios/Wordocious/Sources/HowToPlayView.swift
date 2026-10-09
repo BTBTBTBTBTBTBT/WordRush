@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 /// Native "How to Play" — renders the exact same document as the web
 /// /how-to-play page, fetched from /api/howtoplay so the copy stays single-
