@@ -158,6 +158,10 @@ fun BubbleText(
     sound: Boolean = true,
     align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
 ) {
+    // Item 25: a non-default theme tints page headlines with its accent (a season / the gold celebration keep theirs).
+    val seasonOn = rememberSeason() != null
+    val tint = if (seasonOn || palette == HeadlinePalette.CELEBRATION) null else ThemeKit.headlineAccent()
+    val palette = tint?.let { ThemeKit.accentPalette(it) } ?: palette
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val width = maxWidth.value.toDouble()
         val fit = remember(text, width, maxSize, minSize) { bubbleFit(text, width, maxSize, minSize) }

@@ -1,10 +1,11 @@
 {
-  "_doc": "The theme registry (FRIDAY-QUEUE item 25): Default / Ocean / Forest / Dark as DATA, the way season-registry.json is. ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/theme-registry.json and apps/android/app/src/main/assets/theme-registry.json (apps/web/lib/theme-registry.test.ts checks the copies). Each theme names the slots the season system also uses: wall (3 gradient stops top -> bottom, drawn in CODE at full resolution, light + dark), glow (a soft radial lift near the top, code-drawn), card (the page-card wash), ink / inkSecondary (on-card text; contrast-tested >= 4.5 against card), accent (title + button-family tint), tabBar (tab dock fill), ambient (the living wallpaper: kind + sprite names + counts, menus only). 'light' null = the theme is dark-only (Dark). Season skins layer on top when Seasonal is on (season-registry.json). Sprites: ambient-<name> (web /ambient/<name>.webp, iOS image set ambient-<name>, Android drawable ambient_<name>).",
+  "_doc": "The theme registry (FRIDAY-QUEUE item 25): Default / Ocean / Forest / Dark as DATA, the way season-registry.json is. ONE source, copied byte-for-byte to apps/ios/Wordocious/Resources/theme-registry.json and apps/android/app/src/main/assets/theme-registry.json (apps/web/lib/theme-registry.test.ts checks the copies). Each theme names the slots the season system also uses: wall (3 gradient stops top -> bottom, drawn in CODE at full resolution, light + dark), glow (a soft radial lift near the top, code-drawn), card (the page-card wash), ink / inkSecondary (on-card text; contrast-tested >= 4.5 against card), accent (title + button-family tint), tiles (correct / present board colors; colorblind mode still wins), tabBar (tab dock fill), ambient (the living wallpaper: kind + sprite names + counts, menus only). 'light' null = the theme is dark-only (Dark). Season skins layer on top when Seasonal is on (season-registry.json). Sprites: ambient-<name> (web /ambient/<name>.webp, iOS image set ambient-<name>, Android drawable ambient_<name>).",
   "themes": [
     {
       "id": "default",
       "title": "Default",
       "subtitle": "Lavender",
+      "tiles": { "correct": "#7C3AED", "present": "#F59E0B" },
       "light": {
         "wall": ["#EEE6FC", "#F8ECF6", "#F5F3FF"],
         "glow": "#C4B5FD",
@@ -29,6 +30,7 @@
       "id": "ocean",
       "title": "Ocean",
       "subtitle": "Deep water",
+      "tiles": { "correct": "#0E7490", "present": "#F59E0B" },
       "light": {
         "wall": ["#D8F1FA", "#9DD8EA", "#6EC3DB"],
         "glow": "#FFFFFF",
@@ -53,6 +55,7 @@
       "id": "forest",
       "title": "Forest",
       "subtitle": "Leaf and moss",
+      "tiles": { "correct": "#15803D", "present": "#D97706" },
       "light": {
         "wall": ["#E3F0D8", "#C5E0B5", "#9CC68A"],
         "glow": "#FFF7C2",
@@ -77,6 +80,7 @@
       "id": "dark",
       "title": "Dark",
       "subtitle": "True night",
+      "tiles": { "correct": "#7C3AED", "present": "#F59E0B" },
       "light": null,
       "dark": {
         "wall": ["#0B0714", "#160E2A", "#221441"],

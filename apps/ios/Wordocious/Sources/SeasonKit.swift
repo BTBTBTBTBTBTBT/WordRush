@@ -184,9 +184,9 @@ enum SeasonKit {
     }
 
     /// The season's helper-pill tint (nil out of season).
-    static var buttonTint: Color? { current.flatMap { Color(hexString: $0.palette.buttonTint) } }
+    static var buttonTint: Color? { current.flatMap { Color(hexString: $0.palette.buttonTint) } ?? ThemeKit.buttonTint }
     /// The season's quiet-pill tint (nil out of season).
-    static var quietTint: Color? { current.flatMap { Color(hexString: $0.palette.quietTint) } }
+    static var quietTint: Color? { current.flatMap { Color(hexString: $0.palette.quietTint) } ?? ThemeKit.quietTint }
 
     /// The season's cast skin image set for a cast id (nil when none / not shipped).
     static func cast(_ id: String) -> String? {

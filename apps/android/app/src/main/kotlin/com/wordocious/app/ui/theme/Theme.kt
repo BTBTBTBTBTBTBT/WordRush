@@ -31,6 +31,8 @@ data class Palette(
     val highlightGold: Color = Color(0xFFFFFBEB),
     val goldBorder: Color = Color(0xFFFDE68A),
     val goldBorderLight: Color = Color(0xFFFEF3C7),
+    /** The night palette (Dark): registry-derived palettes (item 25) are not == the static one, so isDark reads this. */
+    val night: Boolean = false,
 )
 
 // FINISH_SPEC A1 (no plain white anywhere): the light themes' `surface` — the token
@@ -54,7 +56,7 @@ object Palettes {
         winBg = Color(0xFF2E1065), lossBg = Color(0xFF450A0A),
         winText = Color(0xFFA78BFA), lossText = Color(0xFFF87171),
         highlightGold = Color(0xFF422006), goldBorder = Color(0xFF92400E),
-        goldBorderLight = Color(0xFF78350F),
+        goldBorderLight = Color(0xFF78350F), night = true,
     )
     val Ocean = Palette(
         bg = Color(0xFFF0F7FB), surface = Color(0xFFEAF4FA), border = Color(0xFFCFE4EF),
@@ -68,8 +70,12 @@ object Palettes {
         surfaceHover = Color(0xFFE8F2E4), surfaceAlt = Color(0xFFEDF4EA),
         text = Color(0xFF1F3320), textMuted = Color(0xFF7A8C72), textSecondary = Color(0xFF56684F),
     )
-    fun byKey(key: String) = when (key) {
-        "dark" -> Dark; "ocean" -> Ocean; "forest" -> Forest; else -> Light
+    /** Item 25: Ocean / Forest / Dark read the theme registry (surfaces derived from card / ink / accent); the static palettes are the fallback. */
+    fun byKey(key: String): Palette = when (key) {
+        "dark" -> com.wordocious.app.ui.ThemeKit.palette("dark", Dark)
+        "ocean" -> com.wordocious.app.ui.ThemeKit.palette("ocean", Ocean)
+        "forest" -> com.wordocious.app.ui.ThemeKit.palette("forest", Forest)
+        else -> Light
     }
 }
 
@@ -86,7 +92,7 @@ object WTheme {
     var season by mutableStateOf<SeasonSurfaces?>(null)
 
     /** The dark theme is on, or a season whose windows are dark (ART_SPEC §11 page tints pick their dark stops by this). */
-    val isDark: Boolean get() = season?.dark ?: (palette == Palettes.Dark)
+    val isDark: Boolean get() = season?.dark ?: palette.night
 
     val bg get() = palette.bg
     val surface get() = palette.surface
@@ -117,6 +123,9 @@ object WTheme {
     // Board tiles — "Royal" palette: violet-600 / amber-500 / slate-500
     val correct = Color(0xFF7C3AED)
     val present = Color(0xFFF59E0B)
+
+    /** Item 25: the active Ocean / Forest / Dark skin's id (null = Default); drives the tiles, button tints and tab dock. */
+    var themeSkin by mutableStateOf<String?>(null)
     val absent = Color(0xFF64748B)
     val emptyBorder = Color(0xFFD1D5DB)      // gray-300
     val hintUsed = Color(0xFFF3F4F6)         // web HINT_USED tile = bg-gray-100 (faint ghost, gray-300 letter)
@@ -177,8 +186,8 @@ object WTheme {
 
     /** Board-tile fill per letter state. EMPTY = transparent (border only). */
     fun tileColor(state: TileState): Color = when (state) {
-        TileState.CORRECT -> if (colorblind) Color(0xFFF5793A) else correct
-        TileState.PRESENT -> if (colorblind) Color(0xFF85C0F9) else present
+        TileState.CORRECT -> if (colorblind) Color(0xFFF5793A) else (com.wordocious.app.ui.ThemeKit.tileCorrect() ?: correct)
+        TileState.PRESENT -> if (colorblind) Color(0xFF85C0F9) else (com.wordocious.app.ui.ThemeKit.tilePresent() ?: present)
         TileState.ABSENT -> absent
         TileState.HINT_USED -> hintUsed
         TileState.EMPTY -> Color.Transparent
@@ -186,7 +195,7 @@ object WTheme {
 
     /** Keyboard-key fill per letter state (darker than board tiles). */
     fun keyColor(state: TileState): Color = when (state) {
-        TileState.CORRECT -> if (colorblind) Color(0xFFE8612A) else keyCorrect
+        TileState.CORRECT -> if (colorblind) Color(0xFFE8612A) else (com.wordocious.app.ui.ThemeKit.keyCorrect() ?: keyCorrect)
         TileState.PRESENT, TileState.HINT_USED -> if (colorblind) Color(0xFF6AAEF0) else keyPresent
         TileState.ABSENT -> keyAbsent
         TileState.EMPTY -> keyDefault

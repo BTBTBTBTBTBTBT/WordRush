@@ -1,5 +1,8 @@
 'use client';
 
+import { useTheme } from '@/lib/theme-context';
+import { useSeason } from '@/lib/season';
+import { themeHeadlineAccent } from '@/lib/theme-kit';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   BUBBLE_ATLAS_CAP_PX, BUBBLE_ATLAS_METRICS, BUBBLE_ATLAS_RIM_HEX, BUBBLE_CAP_EM, BUBBLE_MAX_SIZE, BUBBLE_MIN_SIZE,
@@ -51,9 +54,14 @@ export interface BubbleLineProps extends Omit<LiveHeadlineProps, 'size'> {
 export const BubbleLine = memo(function BubbleLine(props: BubbleLineProps) {
   const { text, size } = props;
   const { isLive } = useFlags();
+  // Item 25: a non-default theme tints page headlines with its accent (a season's spec / an explicit accent still wins).
+  const { theme } = useTheme();
+  const season = useSeason();
+  const themeAccent = season || props.spec || props.accent || props.palette === 'celebrate' ? null : themeHeadlineAccent(theme);
+  const tinted = themeAccent ? { ...props, accent: themeAccent } : props;
   // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
-  if (!isLive('bubble_atlas') || !bubbleAtlasCovers(text)) return <LiveHeadline {...props} size={size} />;
-  return <BubbleAtlasLine {...props} />;
+  if (!isLive('bubble_atlas') || !bubbleAtlasCovers(text)) return <LiveHeadline {...tinted} size={size} />;
+  return <BubbleAtlasLine {...tinted} />;
 });
 
 type Tint = { top: string; bottom: string };

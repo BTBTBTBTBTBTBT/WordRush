@@ -51,3 +51,4 @@ export * from './age-check';
 export * from './push-rich';
 export * from './game-order';
 export * from './theme-choice';
+export * from './theme-surfaces';

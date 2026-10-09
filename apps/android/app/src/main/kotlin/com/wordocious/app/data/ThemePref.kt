@@ -16,6 +16,7 @@ object ThemePref {
     }
 
     fun load() {
+        WTheme.themeSkin = skinOf(current())
         WTheme.palette = Palettes.byKey(current())
         com.wordocious.app.ui.SeasonKit.applySurfaces(App.instance)
         WTheme.colorblind = SettingsPref.get(SettingsPref.COLORBLIND, false)
@@ -34,8 +35,12 @@ object ThemePref {
         com.wordocious.app.ui.theme.PowerSaveWatcher.start(App.instance)
     }
 
+    /** Item 25: the registry id of a non-default theme (null = Default). */
+    private fun skinOf(key: String): String? = ThemeChoiceRules.fromStored(key).takeIf { it != "default" }
+
     fun set(key: String) {
         prefs.edit().putString("theme", key).apply()
+        WTheme.themeSkin = skinOf(key)
         WTheme.palette = Palettes.byKey(key)
         com.wordocious.app.ui.SeasonKit.applySurfaces(App.instance)
     }
@@ -53,5 +58,8 @@ object ThemePref {
         SettingsPref.set(com.wordocious.app.ui.SeasonSkins.OPT_OUT_KEY, next.seasonOptOut ?: "")
         set(ThemeChoiceRules.toStored(next.theme))
         com.wordocious.app.ui.SeasonSkins.bumpEpoch()
+        // The widget wears the theme too (item 25); the opt-out follows the account (item 24).
+        runCatching { com.wordocious.app.widget.WidgetBridge.refresh() }
+        ThemeSync.push(next.seasonOptOut)
     }
 }

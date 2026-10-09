@@ -118,6 +118,8 @@ struct BubbleTextView: View {
 
     var body: some View {
         let width = slotWidth ?? measured
+        // Item 25: a non-default theme tints page headlines with its accent (a season / the gold celebration keep theirs).
+        let palette = (SeasonKit.current == nil && self.palette != .celebration) ? (ThemeKit.headlineAccent.map { HeadlinePalette.accent($0) } ?? self.palette) : self.palette
         let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
         VStack(alignment: alignment == .leading ? .leading : (alignment == .trailing ? .trailing : .center), spacing: 0) {
             if width > 0 {

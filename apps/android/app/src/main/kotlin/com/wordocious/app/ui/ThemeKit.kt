@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.toArgb
+import com.wordocious.app.ui.theme.Palette
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextMeasurer
@@ -59,8 +61,10 @@ object ThemeKit {
         val size: List<Double>, val duration: List<Double>, val opacity: Double,
     )
 
+    @Serializable data class Tiles(val correct: String, val present: String)
+
     @Serializable data class Entry(
-        val id: String, val title: String, val subtitle: String,
+        val id: String, val title: String, val subtitle: String, val tiles: Tiles,
         val light: Look? = null, val dark: Look, val ambient: Ambient,
     )
 
@@ -99,6 +103,52 @@ object ThemeKit {
     /** The wall look under a MENU page for [theme] (null = the page draws its own art: Default / a season's wall). */
     fun wallLook(theme: String, seasonActive: Boolean): Look? =
         if (theme == "default" || seasonActive) null else look(theme, theme == "dark")
+
+    // ── The skin: every slot a theme paints reads the registry (season skins still win on top) ──
+
+    private fun skinLook(): Look? = WTheme.themeSkin?.let { id -> entry(id)?.let { it.light ?: it.dark } }
+    private fun tokens(l: Look) = com.wordocious.app.data.ThemeSurfaces.tokens(
+        com.wordocious.app.data.ThemeSurfaces.Input(l.card, l.ink, l.inkSecondary, l.accent, l.tabBar),
+    )
+
+    private val paletteCache = HashMap<String, Palette>()
+
+    /** The card / border / ink tokens for a theme, derived from its registry look ([fallback] when the registry can't load). */
+    fun palette(id: String, fallback: Palette): Palette = paletteCache.getOrPut(id) {
+        val e = entry(id) ?: return fallback
+        if (e.id != id) return fallback
+        val l = e.light ?: e.dark
+        val t = tokens(l)
+        fallback.copy(
+            bg = color(l.wall[1]), surface = color(t.surface), border = color(t.border), borderLight = color(t.borderLight),
+            borderAlt = color(t.borderAlt), divider = color(t.divider), surfaceHover = color(t.surfaceHover),
+            surfaceAlt = color(t.surfaceAlt), text = color(t.text), textMuted = color(t.textMuted), textSecondary = color(t.textSecondary),
+        )
+    }
+
+    /** The helper-pill tint: the theme's accent (null = Default / a season's palette wins in the caller). */
+    fun buttonTint(): Color? = skinLook()?.let { color(it.accent) }
+    /** The quiet-pill tint: the accent softened toward the card. */
+    fun quietTint(): Color? = skinLook()?.let { color(com.wordocious.app.data.ThemeSurfaces.mix(it.accent, it.card, 0.35)) }
+    fun tileCorrect(): Color? = WTheme.themeSkin?.let { id -> entry(id)?.let { color(it.tiles.correct) } }
+    fun tilePresent(): Color? = WTheme.themeSkin?.let { id -> entry(id)?.let { color(it.tiles.present) } }
+    fun keyCorrect(): Color? = tileCorrect()?.let { color(com.wordocious.app.data.ThemeSurfaces.mix(
+        String.format("#%06X", it.toArgb() and 0xFFFFFF), "#000000", 0.12)) }
+    /** A headline palette from one accent: lighter top, the accent, a deep shade. */
+    fun accentPalette(c: Color): HeadlinePalette = HeadlinePalette(
+        top = androidx.compose.ui.graphics.lerp(c, Color.White, 0.4f), bottom = c,
+        deep = androidx.compose.ui.graphics.lerp(c, Color.Black, 0.5f),
+        nameTop = androidx.compose.ui.graphics.lerp(c, Color.White, 0.4f), nameBottom = c,
+    )
+
+    /** The accent page headlines (bubble lettering) wear. */
+    fun headlineAccent(): Color? = buttonTint()
+    /** The bottom nav's fill (top, bottom), top edge and selected ink. */
+    fun tabLook(): Triple<Color, Color, Color>? = skinLook()?.let { l ->
+        val t = tokens(l)
+        val top = com.wordocious.app.data.ThemeSurfaces.mix(t.tabBar, "#FFFFFF", if (WTheme.themeSkin == "dark") 0.06 else 0.35)
+        Triple(color(top), color(t.tabBar), color(t.tabEdge))
+    }
 
     fun color(hex: String): Color = runCatching { Color(android.graphics.Color.parseColor(hex)) }.getOrDefault(Color.White)
 

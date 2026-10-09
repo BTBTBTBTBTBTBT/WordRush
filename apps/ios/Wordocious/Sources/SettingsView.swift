@@ -138,27 +138,24 @@ struct SettingsView: View {
                             LinkedSignInsSection()
                         }
                         section("SUBSCRIPTION", accent: G5Accent.gold) {
-                            VStack(spacing: 0) {
-                                // Apple's native manage-subscriptions sheet (cancel,
-                                // change plan, resubscribe). Works signed-out too —
-                                // it's the App Store account's subs, not ours. BJ11: the
-                                // row says what opens, and the hand-off sheet comes first.
-                                Button { showManage = true } label: {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            Text("Manage Subscription").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
-                                            Text(SubscriptionCopy.handoff(.apple).line)
-                                                .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .heavy))
-                                            .foregroundStyle(G5Accent.gold.opacity(0.8)).accessibilityHidden(true)
-                                    }
-                                    .padding(.vertical, 8)
-                                    .frame(minHeight: 44)
-                                    .contentShape(Rectangle())
-                                }.buttonStyle(.squish)
+                            // Item 25: the Pro card: the 3D crown, what opens, and a COMPACT family button (the giant row is gone).
+                            // Apple's native manage-subscriptions sheet (cancel, change plan, resubscribe) works signed-out
+                            // too (it's the App Store account's subs). BJ11: the hand-off sheet comes first.
+                            HStack(spacing: 10) {
+                                Icon3D(.crown, size: 40)
+                                    .accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Wordocious Pro").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                                    Text(SubscriptionCopy.handoff(.apple).line)
+                                        .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 6)
+                                Button { showManage = true } label: { CandyLabel(title: "Manage") }
+                                    .buttonStyle(QuietButtonStyle(size: .small, fullWidth: false))
+                                    .accessibilityLabel("Manage Subscription")
                             }
+                            .frame(minHeight: 48)
                         }
                         section("ABOUT", accent: G5Accent.purple) {
                             VStack(spacing: 0) {

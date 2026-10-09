@@ -37,6 +37,9 @@ object WidgetBridge {
     )
 
     @Serializable
+    data class ThemeSkin(val id: String, val ink: String, val inkSecondary: String, val accent: String, val dark: Boolean)
+
+    @Serializable
     data class Snapshot(
         val day: String,
         val streak: Int,
@@ -62,6 +65,8 @@ object WidgetBridge {
         val flawlessStreak: Int? = null,
         /** The `season_halloween` off-switch as the app last saw it (false = normal widgets). */
         val seasonHalloween: Boolean? = null,
+        /** Item 25: the Ocean / Forest / Dark skin id and its inks (null for Default or while a season skin shows). */
+        val theme: ThemeSkin? = null,
     ) {
         /** Every word daily won today (derived from the chips for an older snapshot). */
         val isFlawless: Boolean get() = flawless ?: (modes.isNotEmpty() && modes.all { it.won })
@@ -150,6 +155,7 @@ object WidgetBridge {
                 flawless = modes.isNotEmpty() && modes.all { it.won },
                 flawlessStreak = com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak(),
                 seasonHalloween = com.wordocious.app.data.FlagsService.isLive("season_halloween"),
+                theme = themeSkin(),
             )
             val encoded = json.encodeToString(Snapshot.serializer(), snap)
             // FINISH_SPEC BJ3 (iOS parity): Home refetches on every return, and an
@@ -173,6 +179,15 @@ object WidgetBridge {
      *  the snapshot and re-render the widget the moment it lands. No-op until a first update. */
     fun refresh() {
         lastCompletions?.let { update(it) }
+    }
+
+    /** Item 25: the active theme's skin for the widget (the widget has no registry access of its own). */
+    private fun themeSkin(): ThemeSkin? {
+        if (com.wordocious.app.ui.SeasonSkins.current() != null) return null
+        val id = com.wordocious.app.ui.theme.WTheme.themeSkin ?: return null
+        val e = com.wordocious.app.ui.ThemeKit.entry(id) ?: return null
+        val l = e.light ?: e.dark
+        return ThemeSkin(e.id, l.ink, l.inkSecondary, l.accent, dark = e.light == null)
     }
 
     /** BJ3: the last snapshot JSON handed to the widget this process. */

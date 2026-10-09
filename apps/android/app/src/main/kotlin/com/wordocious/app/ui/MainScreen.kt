@@ -225,6 +225,8 @@ internal data class TabBarLook(val top: Color, val bottom: Color, val line: Colo
 internal fun tabBarLook(tab: Int): TabBarLook {
     // Season surfaces: the season's night plum (raised -> card) with a faint orange line (iOS / web parity).
     WTheme.season?.card?.let { card -> return TabBarLook(WTheme.season?.raised ?: card, card, Color(0x38F97316)) }
+    // Item 25: Ocean / Forest / Dark paint the dock from the theme registry.
+    ThemeKit.tabLook()?.let { (top, bottom, line) -> return TabBarLook(top, bottom, line) }
     if (WTheme.isDark) return TabBarLook(WTheme.surface, WTheme.bg, WTheme.border)
     return when (tab) {
         1 -> TabBarLook(Color(0xFFFFF8EA), Color(0xFFFFEBC9), Color(0x33F59E0B))   // Leaderboard: warm

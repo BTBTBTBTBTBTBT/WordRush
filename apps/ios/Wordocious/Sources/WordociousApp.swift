@@ -153,6 +153,7 @@ struct WordociousApp: App {
                 // the 9th daily flips tonight's reminder to tomorrow 18:00.
                 .onDailyCompletion { Task { await NotificationService.reschedule() } }
                 .onChange(of: auth.profile?.id) { id in
+                    if id != nil { Task { await ThemeSync.pull() } }
                     if id != nil { PresenceService.shared.start() } else { PresenceService.shared.stop() }
                 }
                 // Universal links (wordocious.com/vs/join/*) route in-app;

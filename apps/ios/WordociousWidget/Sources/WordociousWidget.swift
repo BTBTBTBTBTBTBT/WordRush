@@ -62,6 +62,17 @@ struct WSnapshot: Codable {
     var flawlessStreak: Int? = nil
     /// 2.8: the `season_halloween` off-switch as the app last saw it (false = normal widgets everywhere).
     var seasonHalloween: Bool? = nil
+    /// 2.8 item 25: the player's Ocean / Forest / Dark skin (the app writes nil for Default and while a season skin shows).
+    var theme: ThemeSkin? = nil
+
+    struct ThemeSkin: Codable {
+        let wall: [String]
+        let glow: String
+        let ink: String
+        let inkSecondary: String
+        let accent: String
+        let dark: Bool
+    }
 }
 
 extension WSnapshot {
@@ -94,7 +105,7 @@ extension WSnapshot {
         return WSnapshot(day: day, streak: streak, modes: modes.map(reset), points: 0, seconds: 0, shields: shields,
                          puzzles: puzzles?.map(reset), username: username,
                          wordStreaks: wordStreaks, puzzleStreaks: puzzleStreaks,
-                         flawless: false, flawlessStreak: flawlessStreak, seasonHalloween: seasonHalloween)
+                         flawless: false, flawlessStreak: flawlessStreak, seasonHalloween: seasonHalloween, theme: theme)
     }
 }
 
@@ -149,7 +160,8 @@ private func localDay(_ date: Date = Date()) -> String {
 /// new puzzles dropped at midnight.
 private func loadSnapshot(for date: Date = Date()) -> WSnapshot {
     guard let data = UserDefaults(suiteName: appGroup)?.data(forKey: snapshotKey),
-          let snap = try? JSONDecoder().decode(WSnapshot.self, from: data) else { return emptySnapshot() }
+          let snap = try? JSONDecoder().decode(WSnapshot.self, from: data) else { WInk.skin = nil; return emptySnapshot() }
+    WInk.skin = snap.theme   // the ink helpers below read the theme's colors (item 25)
     if snap.day == localDay(date) { return snap }
     return snap.freshDay(localDay(date))
 }
@@ -245,9 +257,11 @@ private func shade(_ hex: String, _ k: Double) -> Color {
 private enum WInk {
     /// Halloween (black + orange) accent / gold.
     static let hallowOrange = Color(widgetHex: "#fb923c")
-    static func number(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#e9ddff") : Color(widgetHex: "#3b1a78") }
-    static func label(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#cdb8ff") : Color(widgetHex: "#5b3c96") }
-    static func accent(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#a78bfa") : Color(widgetHex: "#7c3aed") }
+    /// Item 25: the player's theme skin (set from the snapshot); nil = the brand lavender inks.
+    static var skin: WSnapshot.ThemeSkin?
+    static func number(_ dark: Bool) -> Color { skin.map { Color(widgetHex: $0.ink) } ?? (dark ? Color(widgetHex: "#e9ddff") : Color(widgetHex: "#3b1a78")) }
+    static func label(_ dark: Bool) -> Color { skin.map { Color(widgetHex: $0.inkSecondary) } ?? (dark ? Color(widgetHex: "#cdb8ff") : Color(widgetHex: "#5b3c96")) }
+    static func accent(_ dark: Bool) -> Color { skin.map { Color(widgetHex: $0.accent) } ?? (dark ? Color(widgetHex: "#a78bfa") : Color(widgetHex: "#7c3aed")) }
     static func gold(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#fcd34d") : Color(widgetHex: "#d97706") }
     static let slateHex = "#64748b"
 }
@@ -785,7 +799,7 @@ struct SmallView: View {
 
     var body: some View {
         let hall = halloweenOn(snap, date)
-        let dark = scheme == .dark || hall
+        let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
         GeometryReader { g in
             let ring = min(g.size.width * 0.64, g.size.height - 44 - 16)
             VStack(alignment: .leading, spacing: 0) {
@@ -834,7 +848,7 @@ struct MediumView: View {
 
     var body: some View {
         let hall = halloweenOn(snap, date)
-        let dark = scheme == .dark || hall
+        let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
         VStack(spacing: 6) {
             // Item 28: the lettering image, left-aligned over the whole widget (taps open Home).
             Link(destination: homeURL) {
@@ -882,7 +896,7 @@ struct LargeView: View {
 
     var body: some View {
         let hall = halloweenOn(snap, date)
-        let dark = scheme == .dark || hall
+        let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
         let muted = WInk.label(dark).opacity(0.75)
         VStack(spacing: 0) {
             // Every element is its own Link (founder 10-08: the large widget did nothing on tap) with Home
@@ -990,6 +1004,7 @@ struct WidgetBackdrop: View {
     @Environment(\.colorScheme) private var scheme
     var halloween = false
     var date = Date()
+    var skin: WSnapshot.ThemeSkin? = nil
 
     private static let motifs: [(name: String, alignment: Alignment, w: CGFloat, opacity: Double)] = [
         ("widget-halloween-moon-bats", .topTrailing, 70, 0.55),
@@ -1010,6 +1025,14 @@ struct WidgetBackdrop: View {
                     .frame(width: m.w).opacity(m.opacity)
             }
             .accessibilityHidden(true)
+        } else if let skin {
+            // Item 25: the theme's wall, code-drawn (3 stops + the soft top glow), like the app's pages.
+            ZStack {
+                LinearGradient(colors: skin.wall.map { Color(widgetHex: $0) }, startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [Color(widgetHex: skin.glow).opacity(0.4), Color(widgetHex: skin.glow).opacity(0)],
+                               center: UnitPoint(x: 0.5, y: -0.05), startRadius: 0, endRadius: 260)
+            }
+            .accessibilityHidden(true)
         } else {
             LinearGradient(colors: scheme == .dark
                            ? [Color(widgetHex: "#2a1650"), Color(widgetHex: "#1c1231")]
@@ -1024,7 +1047,7 @@ struct WordociousDailyWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "WordociousDaily", provider: DailyProvider()) { entry in
             WidgetRootView(entry: entry)
-                .widgetBackdrop(halloween: halloweenOn(entry.snap, entry.date), date: entry.date)
+                .widgetBackdrop(halloween: halloweenOn(entry.snap, entry.date), date: entry.date, skin: entry.snap.theme)
         }
         .configurationDisplayName("Daily Puzzles")
         .description("Today's Wordocious dailies and Puzzles, and your streak.")
@@ -1050,6 +1073,7 @@ private struct BackdropModifier: ViewModifier {
     @Environment(\.widgetFamily) private var family
     let halloween: Bool
     let date: Date
+    var skin: WSnapshot.ThemeSkin? = nil
 
     func body(content: Content) -> some View {
         let accessory = family == .accessoryRectangular
@@ -1057,20 +1081,20 @@ private struct BackdropModifier: ViewModifier {
             // The system content margins pad the views; lock-screen accessories tint
             // themselves, so they get no background.
             content.containerBackground(for: .widget) {
-                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date) }
+                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date, skin: skin) }
             }
         } else if accessory {
             content
         } else {
             // iOS 16 has no content margins: the same 16 pt by hand.
-            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date))
+            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date, skin: skin))
         }
     }
 }
 
 extension View {
-    func widgetBackdrop(halloween: Bool = false, date: Date = Date()) -> some View {
-        modifier(BackdropModifier(halloween: halloween, date: date))
+    func widgetBackdrop(halloween: Bool = false, date: Date = Date(), skin: WSnapshot.ThemeSkin? = nil) -> some View {
+        modifier(BackdropModifier(halloween: halloween, date: date, skin: skin))
     }
 }
 

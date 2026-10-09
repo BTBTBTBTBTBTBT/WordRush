@@ -544,6 +544,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             }
             if (!hall) {
                 views.setViewVisibility(R.id.w_motif, View.GONE)
+                applyThemeSkin(views, snap)
                 return
             }
             views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_bg_halloween)
@@ -556,6 +557,26 @@ class DailyWidgetProvider : AppWidgetProvider() {
             for (id in intArrayOf(R.id.w_reset, R.id.w_f1_label, R.id.w_f3_label, R.id.w_puzzles_count, R.id.w_ring_label)) views.setTextColor(id, label)
             views.setTextColor(R.id.w_f1_value, orange)
             if (snap.isFlawless || (snap.modes.isNotEmpty() && snap.modes.all { it.played })) views.setTextColor(R.id.w_ring_count, 0xFFFCD34D.toInt())
+        }
+
+        private fun themeBg(id: String): Int? = when (id) {
+            "ocean" -> R.drawable.widget_bg_theme_ocean
+            "forest" -> R.drawable.widget_bg_theme_forest
+            "dark" -> R.drawable.widget_bg_theme_dark
+            else -> null
+        }
+
+        /** Item 25: the Ocean / Forest / Dark wall and inks on the widget (a season's look wins; Default keeps the brand lavender). */
+        private fun applyThemeSkin(views: RemoteViews, snap: WidgetBridge.Snapshot) {
+            val skin = snap.theme ?: return
+            val bg = themeBg(skin.id) ?: return
+            views.setInt(R.id.widget_root, "setBackgroundResource", bg)
+            val ink = hex(skin.ink); val label = hex(skin.inkSecondary); val accent = hex(skin.accent)
+            for (id in intArrayOf(R.id.w_streak_caps, R.id.w_left, R.id.w_f3_value, R.id.w_puzzles_caps,
+                R.id.w_reset_t, R.id.w_ring_count)) views.setTextColor(id, ink)
+            for (id in intArrayOf(R.id.w_reset, R.id.w_f1_label, R.id.w_f3_label, R.id.w_puzzles_count, R.id.w_ring_label)) views.setTextColor(id, label)
+            views.setTextColor(R.id.w_f1_value, accent)
+            if (snap.isFlawless || (snap.modes.isNotEmpty() && snap.modes.all { it.played })) views.setTextColor(R.id.w_ring_count, 0xFFF59E0B.toInt())
         }
 
         /** Every listed view opens Home when tapped (ids absent from a layout are ignored by the layout in use). */

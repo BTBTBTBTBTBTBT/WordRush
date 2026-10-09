@@ -316,6 +316,7 @@ class MainActivity : ComponentActivity() {
                     androidx.compose.runtime.LaunchedEffect(isAuthenticated) {
                         if (isAuthenticated) {
                             com.wordocious.app.data.PresenceService.start()
+                            com.wordocious.app.data.ThemeSync.pull()   // item 24: the account's Seasonal opt-out
                             // FINISH_SPEC BF1: the launch diff (seeds "seen" on the first run).
                             launch(kotlinx.coroutines.Dispatchers.IO) { com.wordocious.app.data.AchievementSeen.check() }
                             // FCM's first token can arrive before sign-in, when
