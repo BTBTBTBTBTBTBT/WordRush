@@ -24,7 +24,20 @@ final class MusicalCastTests: XCTestCase {
     private struct MelodyRow: Decodable { let id: String; let name: String; let achievement: String; let notes: [Int]; let intervals: [Int] }
     private struct Timing: Decodable { let longPressMs: Int; let moveSlop: Double; let staggerMs: Int; let popMs: Int }
     private struct PopKey: Decodable { let t: Double; let sx: Double; let sy: Double; let lift: Double }
+    private struct HStep: Decodable { let id: String; let at: Double; let midi: Int?; let sound: String?; let matched: String? }
+    private struct HTap: Decodable { let name: String; let season: String?; let steps: [HStep] }
+    private struct HSound: Decodable { let season: String?; let id: String; let sound: String? }
+    private struct HActive: Decodable { let season: String?; let ids: [String] }
+    private struct Halloween: Decodable {
+        let melodies: [MelodyRow]
+        let todo: [String]
+        let notePrefix: [String: String]
+        let sounds: [HSound]
+        let active: [HActive]
+        let taps: [HTap]
+    }
     private struct F: Decodable {
+        let halloween: Halloween
         let scale: [Int]
         let timing: Timing
         let popKeys: [PopKey]
@@ -138,6 +151,72 @@ final class MusicalCastTests: XCTestCase {
                 XCTAssertEqual(r.note?.midi, step.midi, at)
                 XCTAssertEqual(r.matched?.id, step.matched, at)
                 XCTAssertEqual(r.state.notes.count, step.buffered, at)
+            }
+        }
+    }
+
+    /// Item 49: the Halloween tunes, the season note prefix, the per-season voices, the active tune sets, and the
+    /// season-aware tap sequences (a Halloween tune only matches in season; the normal five match everywhere).
+    func testHalloweenSection() throws {
+        let h = try fixture().halloween
+        XCTAssertEqual(MusicalCast.halloweenMelodies.count, h.melodies.count)
+        for (m, w) in zip(MusicalCast.halloweenMelodies, h.melodies) {
+            XCTAssertEqual(m.id, w.id)
+            XCTAssertEqual(m.name, w.name)
+            XCTAssertEqual(m.achievement, w.achievement)
+            XCTAssertEqual(m.notes, w.notes, m.id)
+            XCTAssertEqual(MusicalCast.intervals(m.notes), w.intervals, m.id)
+            for n in m.notes { XCTAssertTrue(MusicalCast.scale.contains(n), "\(m.id) \(n)") }
+        }
+        XCTAssertEqual(MusicalCast.halloweenTunesTodo, h.todo)
+        XCTAssertEqual(MusicalCast.seasonNotePrefix, h.notePrefix)
+        XCTAssertFalse(h.sounds.isEmpty)
+        for row in h.sounds {
+            XCTAssertEqual(MusicalCast.note(row.id, season: row.season)?.sound, row.sound, "\(row.season ?? "none") \(row.id)")
+        }
+        for row in h.active {
+            XCTAssertEqual(MusicalCast.activeMelodies(season: row.season).map(\.id), row.ids, row.season ?? "none")
+        }
+        XCTAssertFalse(h.taps.isEmpty)
+        for seq in h.taps {
+            var s = MelodyState.start
+            for (i, step) in seq.steps.enumerated() {
+                let r = MusicalCast.tap(s, castId: step.id, atMs: step.at, season: seq.season)
+                s = r.state
+                let at = "\(seq.name) step \(i) (\(step.id) @\(step.at))"
+                XCTAssertEqual(r.note?.midi, step.midi, at)
+                XCTAssertEqual(r.note?.sound, step.sound, at)
+                XCTAssertEqual(r.matched?.id, step.matched, at)
+            }
+        }
+    }
+
+    /// Item 49: the registry's `slots.sounds` (what SeasonKit.introSound / noteSound read) names the same note prefix
+    /// as the core, and every sample it points at ships in Resources/Sounds (SoundManager.Effect loads them by name).
+    func testRegistrySoundSlotsMatchTheCoreAndShip() throws {
+        struct Sounds: Decodable { let intro: String?; let note: String? }
+        struct Slots: Decodable { let sounds: Sounds? }
+        struct Entry: Decodable { let id: String; let slots: Slots }
+        struct File: Decodable { let seasons: [Entry] }
+        let app = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Wordocious/Resources")
+        let reg = try JSONDecoder().decode(File.self, from: Data(contentsOf: app.appendingPathComponent("season-registry.json")))
+        let halloween = try XCTUnwrap(reg.seasons.first { $0.id == "halloween" }?.slots.sounds)
+        XCTAssertEqual(halloween.intro, "intro-halloween")
+        XCTAssertEqual(halloween.note, "note-h-{id}")
+        XCTAssertEqual(MusicalCast.seasonNotePrefix["halloween"].map { $0 + "{id}" }, halloween.note)
+        // Every season with a note slot has a core prefix (the three apps agree), and its samples ship.
+        for e in reg.seasons {
+            guard let slot = e.slots.sounds else { continue }
+            if let note = slot.note {
+                XCTAssertEqual(MusicalCast.seasonNotePrefix[e.id].map { $0 + "{id}" }, note, e.id)
+                for id in MusicalCast.ids {
+                    let name = note.replacingOccurrences(of: "{id}", with: id)
+                    XCTAssertTrue(FileManager.default.fileExists(atPath: app.appendingPathComponent("Sounds/sfx-\(name).m4a").path), name)
+                }
+            }
+            if let intro = slot.intro {
+                XCTAssertTrue(FileManager.default.fileExists(atPath: app.appendingPathComponent("Sounds/sfx-\(intro).m4a").path), intro)
             }
         }
     }

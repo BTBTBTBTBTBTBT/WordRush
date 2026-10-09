@@ -15,6 +15,10 @@ enum FriendsInk {
     static var dark: Bool { SeasonKit.surfaces?.dark == true }
     private static func ink(_ light: UInt, _ night: UInt) -> Color { Color(hex: dark ? night : light) }
 
+    /// Wave 5 (Halloween): the season's opaque night card (registry `surfaces.card`) under a dark season, else nil. The
+    /// pocket / waiting-room sheets and dialogs that draw their own cream card swap it in so the season inks read.
+    static var nightCard: Color? { dark ? (SeasonKit.surfaces?.card ?? Color(hex: 0x1C0F30)) : nil }
+
     /// Card headings / names (#2a1650).
     static var heading: Color { dark ? (SeasonKit.surfaces?.text ?? Color(hex: 0xF7EEFF)) : Color(hex: 0x2A1650) }
     /// Small lines under names (#6f5f8f / rows #7a6a95).

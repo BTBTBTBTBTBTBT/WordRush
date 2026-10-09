@@ -272,7 +272,10 @@ struct LivingCastHeader: View {
         return MusicalCast.enabled(isDebugBuild: false)
         #endif
     }()
-    @State private var musical = false
+    /// Item 4b: the app-wide musical state + melody buffer (MusicalCastStore), so every header — and a header that
+    /// remounts on a tab switch or push — shows the same mode until a long-press flips it. Never persisted.
+    @ObservedObject private var musicalStore = MusicalCastStore.shared
+    private var musical: Bool { musicalStore.musical }
     /// The last transform's start (nil once every pop has played) and the figure it rippled out from.
     @State private var musicalAt: Date?
     @State private var musicalFrom: MascotID = .w
@@ -281,8 +284,6 @@ struct LivingCastHeader: View {
     /// The floating notes in flight (at most `maxFloats`).
     @State private var floats: [MusicalFloat] = []
     @State private var floatSeq = 0
-    /// The melody matcher's phrase (core MusicalCast.tap; ms from the monotonic uptime clock).
-    @State private var melody = MelodyState.start
     /// This touch's start and the last long-press: a touch that toggled the mode never also taps.
     @State private var pressBegan: Date?
     @State private var lastLongPress: Date?
@@ -398,6 +399,7 @@ struct LivingCastHeader: View {
         .modifier(ProCrownAccessibility(pro: pro) { showProSheet = true })
         .softSheet(isPresented: $showProSheet) { ProMemberSheet() }
         .onChange(of: debugSeason) { _ in CastSkin.invalidate() }
+        .onChange(of: musicalStore.flipped) { rippleToggle($0) }
         .onAppear { onScreen = true }
         .onDisappear { onScreen = false }
         .task { await runMoves() }
@@ -600,17 +602,22 @@ struct LivingCastHeader: View {
         return MusicalPopKey(t: 0, sx: sx, sy: sy, lift: lift)
     }
 
-    /// Long-press: all ten change over, rippling out from the pressed figure (an instant swap under Reduce Motion).
+    /// Long-press: flip the shared mode (every mounted header changes over together, see `rippleToggle`).
     private func toggleMusical(from m: MascotID) {
-        let now = Date()
-        lastLongPress = now
-        musicalFrom = m
-        melody = .start
-        musical.toggle()
+        lastLongPress = Date()
         Haptics.medium()
+        musicalStore.toggle(from: m)
+    }
+
+    /// The shared mode flipped (here or on another mounted header): all ten change over, rippling out from the
+    /// pressed figure (an instant swap under Reduce Motion).
+    private func rippleToggle(_ flip: MusicalCastStore.Flip?) {
+        guard let flip else { return }
+        musicalFrom = flip.from
         guard !still else { musicalAt = nil; return }
+        let now = flip.at
         musicalAt = now
-        let secs = Double(MusicalCast.transformDuration(pressed: m.rawValue, reduceMotion: false)) / 1000
+        let secs = Double(MusicalCast.transformDuration(pressed: flip.from.rawValue, reduceMotion: false)) / 1000
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64((secs + 0.05) * 1_000_000_000))
             if musicalAt == now { musicalAt = nil }
@@ -648,8 +655,10 @@ struct LivingCastHeader: View {
                 floats.removeAll { $0.id == f.id }
             }
         }
-        let r = MusicalCast.tap(melody, castId: m.rawValue, atMs: ProcessInfo.processInfo.systemUptime * 1000)
-        melody = r.state
+        // Item 49: season-aware, so the Halloween tunes only count in season (and sound with the spooky voicing).
+        let r = MusicalCast.tap(musicalStore.melody, castId: m.rawValue, atMs: ProcessInfo.processInfo.systemUptime * 1000,
+                                season: SeasonKit.current?.id)
+        musicalStore.melody = r.state
         if let tune = r.matched {
             let key = tune.achievement
             Task { await AchievementService.unlockTune(key) }

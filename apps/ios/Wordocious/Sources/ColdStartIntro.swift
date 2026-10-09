@@ -257,7 +257,7 @@ private struct ColdStartIntro: View {
             ready = true
             // The intro jingle (Sound Lab pick "Marimba Parade"): its first note is the W's pop,
             // its notes are cut to the choreography's beats. Animated intro only.
-            if !still { SoundManager.shared.play(.intro) }
+            if !still { SoundManager.shared.playIntro() }
             if still {
                 // Reduce Motion: a 200 ms crossfade over the real row, no flourish.
                 handoff.introRunning = false

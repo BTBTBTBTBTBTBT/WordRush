@@ -612,7 +612,7 @@ struct HubView: View {
                         let all = (s.words + s.bonusFound).sorted()
                         let rows = stride(from: 0, to: all.count, by: 4).map { Array(all[$0..<min($0 + 4, all.count)]) }
                         VStack(spacing: 5) { ForEach(0..<rows.count, id: \.self) { r in HStack(spacing: 5) { ForEach(rows[r], id: \.self) { w in
-                            if s.found.contains(w) || s.bonusFound.contains(w) { chip(w) } else { Text(w).font(Brand.font(11.5, .bold)).foregroundStyle(Color(hex: 0x8D99B0)).padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6).background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color(hex: 0x6B7891).wash(0.1))) }
+                            if s.found.contains(w) || s.bonusFound.contains(w) { chip(w) } else { Text(w).font(Brand.font(11.5, .bold)).foregroundStyle(Color(hex: 0x8D99B0)).padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6).background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(PuzKit.face(Color(hex: 0x6B7891), 0.1))) }
                         } } } }
                     } else { chipRows((s.found + s.bonusFound).sorted()) }
                 }

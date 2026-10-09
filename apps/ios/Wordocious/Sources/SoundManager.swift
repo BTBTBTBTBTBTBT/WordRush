@@ -24,6 +24,8 @@ final class SoundManager {
         case celebrate, streak, tick, notify, unlock, vs, whoosh
         /// The cold-start intro jingle (pick: "Marimba Parade"), ≈ 3 s.
         case intro
+        /// Item 49: the Halloween re-orchestration of the intro jingle (registry slots.sounds.intro), file `sfx-intro-halloween.m4a`.
+        case introHalloween = "intro-halloween"
         /// Classic's own picks (Sound Lab "Classic" rows): played instead of the pack sound while
         /// the Classic game screen is up (`classicSounds()`); every other game keeps the pack's.
         case classicInvalid = "classic-invalid"
@@ -70,6 +72,18 @@ final class SoundManager {
         }
         var isNote: Bool { rawValue.hasPrefix("note-") }
 
+        /// Item 49: the Halloween spooky voicing of each note (the same voice with an organ / bones / celesta / low strings
+        /// under it; registry slots.sounds.note = "note-h-{id}"), file `sfx-note-h-<id>.m4a`.
+        case noteHW = "note-h-w", noteHO1 = "note-h-o1", noteHR = "note-h-r", noteHD = "note-h-d", noteHO2 = "note-h-o2"
+        case noteHC = "note-h-c", noteHI = "note-h-i", noteHO3 = "note-h-o3", noteHU = "note-h-u", noteHS = "note-h-s"
+
+        /// The everyday sound a seasonal one stands in for: used when the season's sample isn't bundled (never silent).
+        var normal: Effect? {
+            if self == .introHalloween { return .intro }
+            if rawValue.hasPrefix("note-h-") { return Effect(rawValue: "note-" + String(rawValue.dropFirst("note-h-".count))) }
+            return nil
+        }
+
         /// Per-sound gain under the master volume (the tiny UI sounds sit lower).
         var gain: Float {
             switch self {
@@ -97,7 +111,7 @@ final class SoundManager {
             case .whoosh: return 0.2
             case .invalid, .classicInvalid: return 0.2
             case .notify: return 0.25
-            case .intro: return 5
+            case .intro, .introHalloween: return 5
             // One hero's giggle: longer than the longest giggle, so taps never machine-gun it.
             case _ where isLaugh: return 0.7
             // A note: no laugh throttle — a melody repeats a note fast (Twinkle's C C); just a double-fire guard.
@@ -183,10 +197,13 @@ final class SoundManager {
     /// The intro jingle's own length: the cast hops it covers stay quiet meanwhile.
     private static let introQuiet: TimeInterval = 3.0
 
-    private func fire(_ e: Effect, at now: TimeInterval, volume: Float, rate fixedRate: Float? = nil) {
+    private func fire(_ requested: Effect, at now: TimeInterval, volume: Float, rate fixedRate: Float? = nil) {
+        // A seasonal sample that isn't bundled falls back to the everyday one (never silent).
+        let e = buffers[requested] == nil ? (requested.normal ?? requested) : requested
         if let last = lastPlayed[e], now - last < e.minGap { return }
         // The intro jingle owns the cold start: its landing "ta-da" replaces the landing hops.
-        if e == .hop || e == .open, let intro = lastPlayed[.intro], now - intro < Self.introQuiet { return }
+        if e == .hop || e == .open, let intro = [lastPlayed[.intro], lastPlayed[.introHalloween]].compactMap({ $0 }).max(),
+           now - intro < Self.introQuiet { return }
         guard let buf = buffers[e], startIfNeeded() else { return }
         lastPlayed[e] = now
         let v = voices.first(where: { $0.busyUntil <= now }) ?? voices.min(by: { $0.busyUntil < $1.busyUntil })!
@@ -479,9 +496,15 @@ extension SoundManager {
     /// Sound.castNote — the musical cast (docs/cloud-prompts/10): a musical header hero was tapped and sings its
     /// scale note in its own voice (no laugh throttle). Silent with Sound off (the floating note still shows).
     /// Web: castNote() in lib/sounds.ts; Android: SoundManager.castNote().
+    /// Item 49: in season the note is the season's spooky voicing (registry slots.sounds.note), else the normal voice.
     func castNote(_ id: String) {
-        guard let e = Effect.note(id) else { return }
-        play(e)
+        guard let normal = Effect.note(id) else { return }
+        play(SeasonKit.noteSound(id).flatMap { Effect(rawValue: $0) } ?? normal)
+    }
+
+    /// Item 49: the cold-start jingle: the season's re-orchestration (registry slots.sounds.intro) in season, else the everyday one.
+    func playIntro() {
+        play(SeasonKit.introSound.flatMap { Effect(rawValue: $0) } ?? .intro)
     }
 
     /// The living mascot's laugh (AvatarLiveConfig.livingMascot): the cast giggle its body borrows (web BODY_LAUGH),
