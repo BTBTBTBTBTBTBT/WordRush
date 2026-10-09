@@ -44,7 +44,7 @@ describe('Home button', () => {
     // iOS's cause was a 0.6 s deferred "Next daily" present + Home rebuilding its covers; the
     // web hands off synchronously, so there is nothing for a Home tap to race.
     const cta = read('components/game/next-daily-cta.tsx');
-    expect(cta).toContain('<CastLink href={next.href}');   // BJ15: the cast-color link (still a plain <Link>)
+    expect(cta).toContain("<CastLink href={homeFirst ? '/' : next.href}");   // BJ15: the cast-color link (still a plain <Link>); 2.8 item 52: Home first while a celebration is due
     expect(cta).not.toMatch(/setTimeout/);
   });
 
