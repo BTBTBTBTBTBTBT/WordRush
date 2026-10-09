@@ -31,7 +31,7 @@ struct BubbleLineView: View {
             let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
             BubbleAtlasLine(text: text, size: size * dyn, palette: palette, names: names, alignment: alignment, interactive: interactive)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(text)
+                .accessibilityLabel(A11yLabels.headline([text]))
                 .accessibilityAddTraits(.isHeader)
         } else {
             // A safety scale (0.6) only ever bites when a font metric disagrees with the fit's
@@ -133,6 +133,8 @@ struct BubbleTextView: View {
     var slotWidth: CGFloat?
     var animated: Bool = true
     var alignment: TextAlignment = .center
+    /// 2.8 item 40: a headline whose words change while it is on screen: VoiceOver announces each new sentence.
+    var live: Bool = false
 
     @State private var measured: CGFloat = 0
 
@@ -155,8 +157,13 @@ struct BubbleTextView: View {
         .background(GeometryReader { g in Color.clear.preference(key: BubbleWidthKey.self, value: g.size.width) })
         .onPreferenceChange(BubbleWidthKey.self) { measured = $0 }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(text)
+        .accessibilityLabel(A11yLabels.headline([text]))
         .accessibilityAddTraits(.isHeader)
+        .onChange(of: text) { new in
+            // polite: only while VoiceOver is on, and never for a blank headline
+            guard live, UIAccessibility.isVoiceOverRunning, !new.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            UIAccessibility.post(notification: .announcement, argument: A11yLabels.headline([new]))
+        }
     }
 }
 

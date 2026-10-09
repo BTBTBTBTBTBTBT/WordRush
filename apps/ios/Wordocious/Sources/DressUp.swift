@@ -302,6 +302,8 @@ struct DressStage<Overlay: View>: View {
     var onPhotoTap: (() -> Void)? = nil
     /// The living mascot's eyes follow the finger (the Edit Profile Stage; AvatarLiveConfig.livingMascot only).
     var follow = false
+    /// 2.8 item 40: VoiceOver's name for the standing mascot (nil = "Your mascot").
+    var mascotLabel: String? = nil
     @ViewBuilder var overlay: () -> Overlay
 
     var body: some View {
@@ -346,7 +348,7 @@ struct DressStage<Overlay: View>: View {
                         }
                     } else if LivingMascotView.canAnimate(config) {
                         // 10-06 (behind AvatarLiveConfig.livingMascot, off): the rigged living mascot in its saved pose
-                        LivingMascotView(config: config, initial: initial, size: mascotSize, cutout: true, follow: follow, hopToken: hopToken)
+                        LivingMascotView(config: config, initial: initial, size: mascotSize, cutout: true, follow: follow, hopToken: hopToken, label: mascotLabel)
                     } else {
                         LiveMascot(config: config, initial: initial, size: mascotSize, hopToken: hopToken)
                     }

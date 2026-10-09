@@ -13,6 +13,7 @@ import { CAST_FLOURISH_ATTR, INTRO_RUNNING_ATTR } from '@/lib/intro';
 import { ProCrownSheet } from '@/components/pro/pro-crown-sheet';
 import { puppetBox, tapKeyframes, useCastPuppets } from '@/components/ui/cast-puppets';
 import { MASCOT_MOMENT_EVENT } from '@/lib/living-mascot';
+import { useFlags } from '@/hooks/use-flags';
 import { haptic } from '@/lib/haptics';
 import { castLaugh, castNote } from '@/lib/sounds';
 import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyTap, musicalTransformDelays, type MelodyState } from '@wordle-duel/core';
@@ -70,6 +71,9 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
   const [crownBox, setCrownBox] = useState<Box | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const puppets = useCastPuppets(rowRef, season === null);
+  const castCheerOn = useFlags().isLive('cast_cheer');
+  const castCheerRef = useRef(castCheerOn);
+  castCheerRef.current = castCheerOn;
   const puppetsOn = puppets.ready && season === null;
   const puppetsOnRef = useRef(puppetsOn);
   puppetsOnRef.current = puppetsOn;
@@ -79,6 +83,7 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
     const onMoment = (e: Event) => {
       const kind = (e as CustomEvent<{ kind?: string }>).detail?.kind;
       if (kind !== 'sweep' && kind !== 'flawless') return;
+      if (!castCheerRef.current) return;
       const row = rowRef.current;
       if (!row || prefersReducedMotion() || document.visibilityState !== 'visible') return;
       if (puppetsOnRef.current) { puppets.cheer(CAST); return; }

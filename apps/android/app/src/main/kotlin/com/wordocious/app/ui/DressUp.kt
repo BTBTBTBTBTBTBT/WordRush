@@ -368,6 +368,8 @@ fun DressStage(
     onPhotoTap: (() -> Unit)? = null,
     /** 10-06 living mascot (flag on only): the mascot's eyes follow the finger over the stage (Edit Profile). */
     followFinger: Boolean = false,
+    /** 2.8 item 40: TalkBack's name for the standing mascot (the mini Stage card passes the player's). */
+    mascotDescription: String = "Your mascot",
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val podiumW = minOf(StageMetrics.podiumWidth, mascotSize * 1.34f)
@@ -403,7 +405,7 @@ fun DressStage(
                     // 10-06 the living mascot (AvatarLiveConfig.LIVING_MASCOT): its saved pose, tap = hop + laugh,
                     // press = squish, moments = reactions, the eyes follow the finger (Edit Profile)
                     androidx.compose.runtime.CompositionLocalProvider(LocalMascotFinger provides if (followFinger) finger else null) {
-                        LivingMascot(config.copy(frame = "none"), initial, mascotSize, cutout = true, follow = followFinger, hopToken = hopToken)
+                        LivingMascot(config.copy(frame = "none"), initial, mascotSize, cutout = true, follow = followFinger, hopToken = hopToken, description = mascotDescription)
                     }
                 } else LiveMascot(config, initial, mascotSize, hopToken = hopToken)
             }

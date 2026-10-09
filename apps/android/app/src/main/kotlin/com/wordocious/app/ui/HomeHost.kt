@@ -125,7 +125,7 @@ internal fun OwnMascotCutout(size: Dp, modifier: Modifier = Modifier) {
     val pick = decision.pick as? HomeHostPick.Mascot ?: return
     val initial = remember(decision.username) { MascotConfigRules.initialOf(decision.username) }
     val drawn = remember(pick.config) { pick.config.copy(frame = "none") }
-    if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) LivingMascot(drawn, initial, size, modifier, cutout = true, tappable = false, label = null)
+    if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) LivingMascot(drawn, initial, size, modifier, cutout = true, tappable = false, label = null, description = "Your mascot")
     else MascotAvatar(drawn, initial, size, modifier, cutout = true)
 }
 

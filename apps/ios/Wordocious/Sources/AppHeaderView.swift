@@ -410,7 +410,7 @@ struct LivingCastHeader: View {
 
     /// A quick ripple of hops across the cast (every third also plays its signature move on the rig).
     private func cheerCast(_ kind: String) {
-        guard kind == "sweep" || kind == "flawless", onScreen, !still, !Motion.lowPower else { return }
+        guard kind == "sweep" || kind == "flawless", onScreen, !still, !Motion.lowPower, FlagsService.shared.isLive("cast_cheer") else { return }
         let dur = CastPuppets.shared.bundle?.tap.dur ?? 1
         for (i, m) in Mascots.cast.enumerated() {
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.07) {

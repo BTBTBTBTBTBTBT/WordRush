@@ -41,6 +41,8 @@ export interface LiveHeadlineProps {
   accent?: string;
   /** A season's lettering (registry surfaces `headline`) in place of [palette]'s colors. */
   spec?: HeadlinePaletteSpec | null;
+  /** 2.8 item 40: one line of a multi-line headline: hidden from assistive tech (the wrapper speaks the whole sentence once). */
+  decorative?: boolean;
 }
 
 function Glyphs({ word, start, kind }: { word: string; start: number; kind: HeadlineToken['kind'] }) {
@@ -58,7 +60,7 @@ function Glyphs({ word, start, kind }: { word: string; start: number; kind: Head
 }
 
 export const LiveHeadline = memo(function LiveHeadline({
-  text, palette = 'home', names, size = '1.5rem', level = 2, align = 'center', calm = false, className = '', style, accent, spec,
+  text, palette = 'home', names, size = '1.5rem', level = 2, align = 'center', calm = false, className = '', style, accent, spec, decorative = false,
 }: LiveHeadlineProps) {
   const shown = text.toUpperCase();
   const nameKey = (names ?? []).join('\u0001');
@@ -109,9 +111,10 @@ export const LiveHeadline = memo(function LiveHeadline({
   return (
     <span
       ref={rootRef}
-      role="heading"
-      aria-level={level}
-      aria-label={text}
+      role={decorative ? undefined : 'heading'}
+      aria-level={decorative ? undefined : level}
+      aria-label={decorative ? undefined : text}
+      aria-hidden={decorative ? true : undefined}
       className={`lh ${calm ? 'lh-calm' : 'lh-sweep'} ${className}`}
       data-palette={palette}
       style={vars}

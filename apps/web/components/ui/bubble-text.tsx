@@ -6,7 +6,7 @@ import { themeHeadlineAccent } from '@/lib/theme-kit';
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   BUBBLE_ATLAS_CAP_PX, BUBBLE_ATLAS_METRICS, BUBBLE_ATLAS_RIM_HEX, BUBBLE_CAP_EM, BUBBLE_MAX_SIZE, BUBBLE_MIN_SIZE,
-  bubbleAtlasCovers, bubbleAtlasLayout, bubbleFit, headlineTokens,
+  bubbleAtlasCovers, bubbleAtlasLayout, bubbleFit, headlineLabel, headlineTokens,
 } from '@wordle-duel/core';
 import { tintedGlyph } from '@/lib/bubble-render';
 import { emitMascotMoment } from '@/lib/living-mascot';
@@ -70,7 +70,7 @@ export const BubbleLine = memo(function BubbleLine(props: BubbleLineProps) {
 type Tint = { top: string; bottom: string };
 
 /** The atlas line: one small tinted canvas per glyph, absolutely placed from core's layout (cap units). */
-function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, level = 2, className = '', style, align = 'center', interactive = false }: BubbleLineProps) {
+function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, level = 2, className = '', style, align = 'center', interactive = false, decorative = false }: BubbleLineProps) {
   const base = spec ?? HEADLINE_PALETTES[palette];
   const p = accent ? { ...base, top: softMix(accent, 0.55), bottom: accent, deep: darken(accent, 0.45) } : base;
   const layout = useMemo(() => bubbleAtlasLayout(text), [text]);
@@ -89,9 +89,10 @@ function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, le
       : { top: p.top, bottom: p.bottom };
   return (
     <span
-      role="heading"
-      aria-level={level}
-      aria-label={text}
+      role={decorative ? undefined : 'heading'}
+      aria-level={decorative ? undefined : level}
+      aria-label={decorative ? undefined : headlineLabel(text)}
+      aria-hidden={decorative ? true : undefined}
       className={`bt-line ${className}`}
       style={{ width: layout.width * cap, height: (layout.asc + layout.desc) * cap, marginLeft: align === 'left' ? 0 : 'auto', marginRight: 'auto', ...style } as CSSProperties}
     >
@@ -162,22 +163,38 @@ export interface BubbleTextProps extends Omit<LiveHeadlineProps, 'size' | 'text'
   minSize?: number;
   /** Fixed slot width in px; omitted = the component measures its own container. */
   slotWidth?: number;
+  /** 2.8 item 40: a headline whose words change while it is on screen: screen readers announce each new sentence politely. */
+  live?: boolean;
 }
 
 /** Any changing headline: measures its slot, fits it (core bubbleFit), draws each line. */
-export const BubbleText = memo(function BubbleText({ text, maxSize = BUBBLE_MAX_SIZE, minSize = BUBBLE_MIN_SIZE, slotWidth, className = '', ...rest }: BubbleTextProps) {
+export const BubbleText = memo(function BubbleText({ text, maxSize = BUBBLE_MAX_SIZE, minSize = BUBBLE_MIN_SIZE, slotWidth, className = '', live = false, ...rest }: BubbleTextProps) {
   const box = useRef<HTMLDivElement>(null);
   const measured = useElementWidth(box);
   const width = slotWidth ?? measured;
   const fit = useMemo(() => (width > 0 ? bubbleFit(text, width, { maxSize, minSize }) : null), [text, width, maxSize, minSize]);
+  // 2.8 item 40: ONE heading speaks the whole sentence (a wrapped headline is not read as two fragments); the lettering
+  // is decorative. `live` = a changing headline: a polite status announces each new sentence.
+  const spoken = text.trim() ? headlineLabel(text) : '';
   return (
-    <div ref={box} className={`bt-box ${className}`} data-bubble-lines={fit?.lines.length ?? 0} style={{ alignItems: rest.align === 'left' ? 'flex-start' : 'center' }}>
+    <div
+      ref={box}
+      role={spoken ? 'heading' : undefined}
+      aria-level={spoken ? rest.level ?? 2 : undefined}
+      aria-label={spoken || undefined}
+      aria-hidden={spoken ? undefined : true}
+      aria-live={live && spoken ? 'polite' : undefined}
+      aria-atomic={live ? true : undefined}
+      className={`bt-box ${className}`}
+      data-bubble-lines={fit?.lines.length ?? 0}
+      style={{ alignItems: rest.align === 'left' ? 'flex-start' : 'center' }}
+    >
       {fit ? (
         fit.lines.map((line, i) => (
-          <BubbleLine key={`${i}-${line}`} {...rest} text={line} size={fit.size} calm={rest.calm} style={{ whiteSpace: 'nowrap', ...rest.style }} />
+          <BubbleLine key={`${i}-${line}`} {...rest} decorative text={line} size={fit.size} calm={rest.calm} style={{ whiteSpace: 'nowrap', ...rest.style }} />
         ))
       ) : (
-        <span className="sr-only">{text}</span>
+        <span className="sr-only">{spoken}</span>
       )}
     </div>
   );

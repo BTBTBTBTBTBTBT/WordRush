@@ -253,7 +253,7 @@ fun SweepCelebration(
                         .graphicsLayer { val k = kit.value.coerceIn(0f, 1f); alpha = k; scaleX = 0.4f + 0.6f * k; scaleY = 0.4f + 0.6f * k; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f) },
                 )
                 // the gold seal (Halloween: the glowing pumpkin) stamps on with the Flawless run's day count
-                val seal = if (flawless && !more && flawlessStreak >= 2) kitRes("celebrate-seal-gold") else 0
+                val seal = if (flawless && !more && flawlessStreak >= 2 && com.wordocious.app.data.FlagsService.isLive("flawless_seal")) kitRes("celebrate-seal-gold") else 0
                 if (seal != 0) {
                     Box(
                         Modifier.align(Alignment.BottomStart).offset(x = (-10).dp, y = 6.dp)
@@ -261,7 +261,7 @@ fun SweepCelebration(
                                 val k = kit.value.coerceIn(0f, 1f)
                                 alpha = k; scaleX = 2.2f - 1.2f * k; scaleY = 2.2f - 1.2f * k; rotationZ = (1f - k) * -14f
                             }
-                            .semantics(mergeDescendants = true) { contentDescription = "$flawlessStreak Flawless days in a row" },
+                            .semantics(mergeDescendants = true) { contentDescription = com.wordocious.core.A11yLabels.flawlessSeal(flawlessStreak) },
                     ) {
                         Image(painterResource(seal), null, contentScale = ContentScale.Fit, modifier = Modifier.size(62.dp))
                         Text(

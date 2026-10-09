@@ -132,7 +132,7 @@ struct SweepCelebrationView: View {
                             }
                             // the gold seal (Halloween: the glowing pumpkin) stamps on with the Flawless run's day count
                             .overlay(alignment: .bottomLeading) {
-                                if flawless, !more, flawlessStreak >= 2 {
+                                if flawless, !more, flawlessStreak >= 2, FlagsService.shared.isLive("flawless_seal") {
                                     ZStack(alignment: .bottomTrailing) {
                                         kitImage("celebrate-seal-gold", width: 62)
                                         Text("\(flawlessStreak)")
@@ -146,7 +146,7 @@ struct SweepCelebrationView: View {
                                     .opacity(kitIn || still ? 1 : 0)
                                     .offset(x: -10, y: 6)
                                     .accessibilityElement(children: .ignore)
-                                    .accessibilityLabel("\(flawlessStreak) Flawless days in a row")
+                                    .accessibilityLabel(A11yLabels.flawlessSeal(days: flawlessStreak))
                                 }
                             }
                             .overlay(alignment: .bottomTrailing) {

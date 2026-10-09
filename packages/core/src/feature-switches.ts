@@ -32,6 +32,10 @@ export const FEATURE_SWITCHES = {
   pro_try_on: 'Pro item try-on + unlock popup',
   header_condense: 'Cast header slims as the page scrolls (the soft fade under it always stays)',
   bubble_atlas: 'Bubble-letter glyph atlas for changing headlines (off = the live headline font)',
+  podium_stage_card: 'Tap a podium mascot to open its mini Stage card (off = it opens the profile)',
+  podium_burst: 'The winner\'s confetti burst when a podium opens',
+  cast_cheer: 'The whole cast hops when your mascot celebrates a Sweep / Flawless',
+  flawless_seal: 'The gold seal with your Flawless run count on the Flawless popup',
 } as const;
 
 export type FeatureSwitch = keyof typeof FEATURE_SWITCHES;

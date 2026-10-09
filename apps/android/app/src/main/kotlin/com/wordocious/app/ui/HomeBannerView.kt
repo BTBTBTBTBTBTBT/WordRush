@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -731,7 +732,12 @@ private fun BannerHeadlineLayer(
         Modifier.fillMaxWidth()
             .graphicsLayer { this.alpha = alpha }
             .then(
-                if (active) Modifier.clearAndSetSemantics { contentDescription = headline; heading() }
+                if (active) Modifier.clearAndSetSemantics {
+                    contentDescription = com.wordocious.core.A11yLabels.headline(layout.lines)
+                    heading()
+                    // 2.8 item 40: a changed headline is announced politely
+                    liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+                }
                 else Modifier.clearAndSetSemantics { },
             ),
         horizontalAlignment = Alignment.CenterHorizontally,

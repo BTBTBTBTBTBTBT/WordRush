@@ -186,6 +186,7 @@ fun LivingCastHeader(
     LaunchedEffect(live, calm, hidden) {
         if (!live || calm || hidden) return@LaunchedEffect
         com.wordocious.app.data.MascotMoments.flow.collect { kind ->
+            if (!com.wordocious.app.data.FlagsService.isLive("cast_cheer")) return@collect
             if (kind != com.wordocious.core.AvatarReaction.SWEEP && kind != com.wordocious.core.AvatarReaction.FLAWLESS) return@collect
             MascotId.entries.forEachIndexed { i, id ->
                 scope.launch {
