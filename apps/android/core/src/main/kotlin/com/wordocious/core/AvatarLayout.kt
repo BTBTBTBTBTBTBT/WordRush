@@ -63,6 +63,8 @@ class AvatarFitManifest(val root: JsonObject) {
         val backX = sub("back", "x"); val backY = sub("back", "y"); val backW = sub("back", "w")
         val capeY = sub("cape", "y"); val handX = sub("hand", "x"); val handY = sub("hand", "y")
         val letterBox = arr("letterBox"); val bounds = arr("bounds")
+        /** A seasonal BODY (pumpkin, ghost, bat, cone): the season-registry id; free in season, then buy / Pro / earn. */
+        val season: String? = (o["season"] as? JsonPrimitive)?.content
         fun override(key: String): Triple<Double, Double, Double> {
             val ov = ((o["overrides"] as? JsonObject)?.get(key) as? JsonObject) ?: return Triple(0.0, 0.0, 1.0)
             fun g(k: String) = (ov[k] as? JsonPrimitive)?.doubleOrNull

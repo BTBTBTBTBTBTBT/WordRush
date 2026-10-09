@@ -148,11 +148,22 @@ def main():
             # per-body pieces
             old = set()
             for b, rows in (it.get('pieces') or {}).items():
-                old |= {SI.art_name(kind, pid, b, r[0]) for r in rows}
+                if not ONLY_BODIES or b in ONLY_BODIES:
+                    old |= {SI.art_name(kind, pid, b, r[0]) for r in rows}
             for b in (it.get('perBody') or {}):
-                old.add(f'art-av-{kind}-{pid}-{b}')
-            it.pop('perBody', None)
-            it['pieces'] = {b: e['pieces'] for b, e in per.items() if e.get('pieces')}
+                if not ONLY_BODIES or b in ONLY_BODIES:
+                    old.add(f'art-av-{kind}-{pid}-{b}')
+            if not ONLY_BODIES:
+                it.pop('perBody', None)
+                it['pieces'] = {b: e['pieces'] for b, e in per.items() if e.get('pieces')}
+            else:       # --bodies: merge into the existing pieces, leave every other body exactly as shipped
+                merged = dict(it.get('pieces') or {})
+                for b, e in per.items():
+                    if e.get('pieces'):
+                        merged[b] = e['pieces']
+                    else:
+                        merged.pop(b, None)
+                it['pieces'] = merged
             now = {n for e in per.values() for n in (e.get('art') or {})}
             stale |= old - now
             for e in per.values():

@@ -28,6 +28,7 @@ public enum AvatarSeason {
     /// The season a part belongs to, or nil for an everyday part.
     public static func partSeason(field: String, id: String, manifest: AvatarManifest) -> String? {
         guard !id.isEmpty, id != "none" else { return nil }
+        if field == "body" { return manifest.bodies[id]?.season }
         return manifest.items[AvatarFit.itemKey(field: field, id: id)]?.season
     }
 

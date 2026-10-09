@@ -38,6 +38,8 @@ public struct AvatarManifest: Decodable {
         public var hand: XY
         public var bounds: [Double]
         public var overrides: [String: Override]?
+        /// A seasonal BODY (pumpkin, ghost, bat, cone): the season-registry id; free in season, then buy / Pro / earn.
+        public var season: String?
     }
     public struct Item: Decodable {
         public var w: Double, aspect: Double

@@ -30,6 +30,7 @@ function options(field: string): readonly string[] {
 /** The season a part belongs to (avatar-parts.json `season`), or null for an everyday part. */
 export function avatarPartSeason(field: string, id: string, manifest: AvatarManifest = AVATAR_MANIFEST): string | null {
   if (!id || id === 'none') return null;
+  if (field === 'body') return manifest.bodies[id]?.season ?? null;
   const item = manifest.items[avatarItemKey(field as AvatarPartField, id)] as { season?: string } | undefined;
   return item?.season ?? null;
 }

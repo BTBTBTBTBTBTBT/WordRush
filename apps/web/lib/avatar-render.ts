@@ -18,7 +18,7 @@
 // token the component swaps for its own unique id.
 
 import {
-  AVATAR_BACKDROPS, AVATAR_BACKDROP_IDS, AVATAR_BODIES, AVATAR_COLORS, AVATAR_EYES, AVATAR_FACES, AVATAR_FRAMES,
+  AVATAR_BACKDROPS, AVATAR_BACKDROP_IDS, AVATAR_BODIES, AVATAR_NEW_BODIES, AVATAR_COLORS, AVATAR_EYES, AVATAR_FACES, AVATAR_FRAMES,
   AVATAR_HEADS, AVATAR_MOUTHS, AVATAR_NECKS, AVATAR_NOSES, AVATAR_PATTERNS, AVATAR_PRO_ONLY, avatarColorHex, levelTier,
   AVATAR_CHEEKS, AVATAR_INTEGRATED_OPTIONS, AVATAR_NEW_PARTS, avatarColor, avatarLayout, avatarPatternShapes, avatarPickConflict,
   type AvatarBody, type AvatarColor, type AvatarConfig, type AvatarFrame, type AvatarHead, type AvatarPatternShape, type AvatarRect,
@@ -113,6 +113,24 @@ export const BODY_BOX: Record<AvatarBody, Box> = {
   blob: { x: 17, y: 24, w: 66, h: 63 },
   bean: { x: 21, y: 20, w: 58, h: 67 },
   star: { x: 14, y: 19, w: 72, h: 68 },
+  // 2.8 bodies (item 50): placeholder boxes from the art's bounds (shown only until the art loads)
+  heart: { x: 20, y: 33, w: 60, h: 54 },
+  egg: { x: 22, y: 21, w: 55, h: 66 },
+  bell: { x: 25, y: 21, w: 50, h: 66 },
+  triangle: { x: 20, y: 21, w: 60, h: 66 },
+  diamond: { x: 20, y: 21, w: 59, h: 66 },
+  shield: { x: 20, y: 29, w: 60, h: 58 },
+  burst: { x: 20, y: 25, w: 60, h: 62 },
+  flower: { x: 20, y: 25, w: 60, h: 62 },
+  gumdrop: { x: 20, y: 25, w: 60, h: 62 },
+  can: { x: 26, y: 21, w: 49, h: 66 },
+  potato: { x: 25, y: 21, w: 50, h: 66 },
+  catear: { x: 21, y: 21, w: 58, h: 66 },
+  bunnyear: { x: 25, y: 21, w: 50, h: 66 },
+  pumpkin: { x: 20, y: 22, w: 60, h: 65 },
+  ghost: { x: 24, y: 21, w: 52, h: 66 },
+  cone: { x: 27, y: 21, w: 46, h: 66 },
+  bat: { x: 20, y: 26, w: 60, h: 61 },
 };
 
 /** A point given in 0–1 body coordinates → the 100-unit tile. */
@@ -384,6 +402,8 @@ export function bodyPath(body: AvatarBody): string {
     return `M${r2(x0 + r)},${r2(y0)} H${r2(x1 - r)} Q${r2(x1)},${r2(y0)} ${r2(x1)},${r2(y0 + r)} V${r2(y1 - r)} Q${r2(x1)},${r2(y1)} ${r2(x1 - r)},${r2(y1)} H${r2(x0 + r)} Q${r2(x0)},${r2(y1)} ${r2(x0)},${r2(y1 - r)} V${r2(y0 + r)} Q${r2(x0)},${r2(y0)} ${r2(x0 + r)},${r2(y0)} Z`;
   };
   switch (body) {
+    // 2.8 bodies: the placeholder (until the art loads) is a rounded block
+    case 'heart': case 'egg': case 'bell': case 'triangle': case 'diamond': case 'shield': case 'burst': case 'flower': case 'gumdrop': case 'can': case 'potato': case 'catear': case 'bunnyear': case 'pumpkin': case 'ghost': case 'cone': case 'bat':
     case 'classic': case 'chunky': case 'hex': return rect(Math.min(b.w, b.h) * 0.3);
     case 'cloud': return rect(b.h * 0.4);
     case 'drop': case 'pear': case 'mini':
@@ -1163,6 +1183,7 @@ export function avatarOptionArt(field: BuilderField, id: string): string {
 }
 /** True for an option that carries the maker's NEW tag (the 10-05 additions + the 7 rebuilt parts). */
 export function avatarOptionIsNew(field: BuilderField, id: string): boolean {
+  if (field === 'body') return AVATAR_NEW_BODIES.includes(id);   // 2.8: the new shapes carry the NEW tag
   return id !== 'none' && AVATAR_NEW_PARTS.includes(field === 'brows' ? `brows:${id}` : id)
     && ['held', 'wrap', 'feet', 'pet', 'brows', 'extra', 'neck'].includes(field);
 }

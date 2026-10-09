@@ -43,6 +43,10 @@ FACE_EYES, FACE_MOUTH = 'beady', 'smile'
 HEAD_BAND = 0.3
 # a hat is never narrower than this × the face (eyes + mouth) width (the narrowest hand fit today: drop 0.84)
 HEAD_MIN_FACE = 0.85
+# Expected mitten centers (body units) for bodies whose mittens the notch search can confuse with the feet (the 18 new
+# bodies, item 50): written by new-bodies.py from each silhouette. {body: {'L': [x, y], 'R': [x, y]}}
+_HP = os.path.join(HERE, 'hands-prior.json')
+HANDS_PRIOR = json.load(open(_HP)) if os.path.exists(_HP) else {}
 rig.LETTER_MODE = 'app'     # guard the letter the apps actually draw (Nunito 900, ~20% bigger than the rig's)
 # Body-level landmark overrides: today's hand fit kept where the measurement is clearly worse (and why).
 LANDMARK_OVERRIDES = {
@@ -272,7 +276,7 @@ def measure(body):
     lys = np.nonzero(letter.any(1))[0]
     lx = np.nonzero(letter.any(0))[0]
 
-    hp = b.get('handsPrior')
+    hp = b.get('handsPrior') or HANDS_PRIOR.get(body)
     arms = find_arms(A, {s_: (M + v[0] * U, M + v[1] * U) for s_, v in hp.items()} if hp else None)
     regions = arm_regions(A, arms)
     arm_any = np.zeros_like(A)

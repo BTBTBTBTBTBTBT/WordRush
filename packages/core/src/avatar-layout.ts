@@ -41,6 +41,8 @@ export interface AvatarBodyAnchors {
   shoulderY?: number;
   wrap?: Array<[number, number, number]>;
   floor?: number;
+  /** A seasonal BODY (item 50: pumpkin, ghost, bat, cone): the season-registry id; free in season, then buy / Pro / earn. */
+  season?: string;
   /**
    * Per-body fit overrides for an item (key `acc:<id>`): offset / scale of a one-art item, `layer` = draw it on that
    * layer on this body (10-06 rule fit: the medal + bow tie go 'under' — before the letter and the face — where they

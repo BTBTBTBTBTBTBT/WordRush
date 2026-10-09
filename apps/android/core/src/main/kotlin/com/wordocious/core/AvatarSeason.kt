@@ -24,6 +24,7 @@ object AvatarSeason {
     /** The season a part belongs to, or null for an everyday part. */
     fun partSeason(field: String, id: String, m: AvatarFitManifest): String? {
         if (id.isEmpty() || id == "none") return null
+        if (field == "body") return m.bodies[id]?.season
         return m.items[AvatarFit.itemKey(field, id)]?.season
     }
 

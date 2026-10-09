@@ -74,7 +74,11 @@ data class AvatarConfig(
 
 object AvatarOptions {
     // Round 2 (founder 10-03): ~2× every category, CHEEKS, 33 colors + 5 Pro specials, 14 patterns, accColor.
-    val BODIES: List<String> = listOf("classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex")
+    val BODIES: List<String> = listOf("classic", "tall", "wide", "blob", "bean", "star", "drop", "pear", "cloud", "chunky", "mini", "hex",
+        // item 50 (2.8): the new shapes; pumpkin / ghost / bat / cone are the Halloween bodies (manifest bodies.<id>.season)
+        "heart", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat")
+    /** The bodies added in 2.8: the maker's Body tab tags them NEW. */
+    val NEW_BODIES: Set<String> = setOf("heart", "egg", "bell", "triangle", "diamond", "shield", "burst", "flower", "gumdrop", "can", "potato", "catear", "bunnyear", "pumpkin", "ghost", "cone", "bat")
     val PATTERNS: List<String> = listOf(
         "solid", "twotone", "stripes", "dots", "gradient", "sparkle",
         "hearts", "stars", "zigzag", "checkers", "tiedye", "leopard", "galaxy", "colorblock",
@@ -191,6 +195,7 @@ object AvatarOptions {
 
     /** Pro-only options per field (free players see the gold PRO pill → the Go Pro popup). */
     val PRO_ONLY: Map<String, Set<String>> = mapOf(
+        "body" to setOf("bell", "triangle", "diamond", "shield", "burst", "flower", "catear", "bunnyear", "potato"),
         "head" to setOf("crown", "halo", "tiara"),
         "neck" to setOf("wings", "chain"),
         "held" to setOf("wand-star"),
@@ -320,6 +325,7 @@ fun validateAvatar(config: AvatarConfig, fallback: AvatarConfig = defaultAvatar(
 fun enforceAvatarPro(c: AvatarConfig, isPro: Boolean): AvatarConfig {
     if (isPro) return c
     return c.copy(
+        body = if (AvatarOptions.isProOnly("body", c.body)) "classic" else c.body,
         head = if (AvatarOptions.isProOnly("head", c.head)) "none" else c.head,
         neck = if (AvatarOptions.isProOnly("neck", c.neck)) "none" else c.neck,
         held = if (AvatarOptions.isProOnly("held", c.held)) "none" else c.held,
