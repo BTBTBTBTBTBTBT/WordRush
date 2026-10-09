@@ -226,10 +226,12 @@ fun GamePickerCard(
 ) {
     val flagTable by com.wordocious.app.data.FlagsService.flags.collectAsState()
     val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
-    val wordCards = MODE_CARDS.filter {
+    // Item 35: both rows follow the player's own game order.
+    val savedOrder by com.wordocious.app.data.GameOrderStore.prefs.collectAsState()
+    val wordCards = com.wordocious.app.data.GameOrderStore.ordered(MODE_CARDS.filter {
         !it.homeWide && it.dbKey != null && com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded)
-    }
-    val puzzleCards = moreDailyModes(MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) })
+    }, com.wordocious.core.GameOrderSection.DAILIES) { it.id }
+    val puzzleCards = com.wordocious.app.data.GameOrderStore.ordered(moreDailyModes(MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }), com.wordocious.core.GameOrderSection.PUZZLES) { it.id }
     val (words, puzzles) = pickerRows(wordCards, puzzleCards, withSweep, sweepKey)
     val dark = WTheme.isDark
     val shape = RoundedCornerShape(20.dp)

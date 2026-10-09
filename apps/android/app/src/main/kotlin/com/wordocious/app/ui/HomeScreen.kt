@@ -267,8 +267,17 @@ fun HomeScreen(
             val flagsLoaded by com.wordocious.app.data.FlagsService.loaded.collectAsState()
             val visibleCards = MODE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
             val visibleMore = MORE_CARDS.filter { com.wordocious.app.data.FlagsService.isOn(it.flagKey, flagTable, flagsLoaded) }
-            val wordCards = visibleCards.filter { !it.homeWide }
-            val puzzleCards = moreDailyModes(visibleMore)
+            // Item 35: the player's own order (default = the catalog's; Classic pinned first).
+            val savedOrder by com.wordocious.app.data.GameOrderStore.prefs.collectAsState()
+            val orderUserId = authProfile?.id
+            androidx.compose.runtime.LaunchedEffect(orderUserId) { com.wordocious.app.data.GameOrderStore.bind(orderUserId) }
+            val orderEdit = remember { GameOrderEditState() }
+            val wordCards = remember(visibleCards, savedOrder) {
+                com.wordocious.app.data.GameOrderStore.ordered(visibleCards.filter { !it.homeWide }, com.wordocious.core.GameOrderSection.DAILIES) { it.id }
+            }
+            val puzzleCards = remember(visibleMore, savedOrder) {
+                com.wordocious.app.data.GameOrderStore.ordered(moreDailyModes(visibleMore), com.wordocious.core.GameOrderSection.PUZZLES) { it.id }
+            }
             val wordKeys = wordCards.mapNotNull { it.dbKey }
             val puzzleKeys = puzzleCards.mapNotNull { it.dbKey }
             fun progress(keys: List<String>) = com.wordocious.core.GroupProgress(
@@ -363,10 +372,20 @@ fun HomeScreen(
             // lock/badge rules). The More Games band and sheet are gone.
             // ART_SPEC §12 / §19.2: each section's header is its whole-cast title art (≈78%
             // width, max 340, centered) — DAILIES, PUZZLES, then WORD OF THE DAY above its card.
-            SectionTitleArt(TitleArt.DAILIES, scale = HomeCardSpec.SECTION_TITLE_SCALE)
-            ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = openCard)
-            SectionTitleArt(TitleArt.PUZZLES, scale = HomeCardSpec.SECTION_TITLE_SCALE)
-            ModeCardGrid(puzzleCards, completions, unlimitedMode, isPro, onOpen = openCard)
+            Box(Modifier.fillMaxWidth()) {
+                SectionTitleArt(TitleArt.DAILIES, scale = HomeCardSpec.SECTION_TITLE_SCALE)
+                GameOrderPencil(orderEdit, com.wordocious.core.GameOrderSection.DAILIES, Modifier.align(Alignment.CenterEnd))
+            }
+            GameOrderEditBar(orderEdit, com.wordocious.core.GameOrderSection.DAILIES)
+            ModeCardGrid(wordCards, completions, unlimitedMode, isPro, onOpen = { if (orderEdit.editing == null) openCard(it) },
+                reorder = orderEdit, section = com.wordocious.core.GameOrderSection.DAILIES)
+            Box(Modifier.fillMaxWidth()) {
+                SectionTitleArt(TitleArt.PUZZLES, scale = HomeCardSpec.SECTION_TITLE_SCALE)
+                GameOrderPencil(orderEdit, com.wordocious.core.GameOrderSection.PUZZLES, Modifier.align(Alignment.CenterEnd))
+            }
+            GameOrderEditBar(orderEdit, com.wordocious.core.GameOrderSection.PUZZLES)
+            ModeCardGrid(puzzleCards, completions, unlimitedMode, isPro, onOpen = { if (orderEdit.editing == null) openCard(it) },
+                reorder = orderEdit, section = com.wordocious.core.GameOrderSection.PUZZLES)
 
             WordOfTheDayCard(onPastWords = { onNavigate("pastwords") })
 
@@ -846,7 +865,10 @@ private fun ModeCardGrid(
     unlimitedMode: Boolean,
     isPro: Boolean,
     onOpen: (ModeCard) -> Unit,
+    reorder: GameOrderEditState? = null,
+    section: com.wordocious.core.GameOrderSection = com.wordocious.core.GameOrderSection.DAILIES,
 ) {
+    val ids = cards.map { it.id }
     // FINISH_SPEC BH2: 10 dp gaps both ways between the compact cards. BJ18: one name size per grid.
     CardNameSizeScope(cards.map { it.title }) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(HomeCardSpec.GAP.dp)) {
@@ -857,7 +879,8 @@ private fun ModeCardGrid(
                 val shownCompletion = if (unlimitedMode) null else completion
                 val isLocked = !isPro && !unlimitedMode && completion != null
                 ModeCardView(
-                    card, shownCompletion, isLocked, showVs = false, Modifier.weight(1f),
+                    card, shownCompletion, isLocked, showVs = false,
+                    Modifier.weight(1f).let { m -> if (reorder != null) m.reorderTile(reorder, card.id, section, ids, ids.indexOf(card.id)) else m },
                     unlimited = unlimitedMode, onVs = {},
                 ) { onOpen(card) }
             }
