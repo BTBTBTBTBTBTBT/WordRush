@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  MELODY_GAP_MS, MELODY_START, MUSICAL_ACHIEVEMENT_KEYS, MUSICAL_CAST_FLAG, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_SCALE, matchMelody, melodyTap,
+  HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, activeMelodies, melodyIntervals, MELODY_GAP_MS, MELODY_START, MUSICAL_ACHIEVEMENT_KEYS, MUSICAL_CAST_FLAG, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_SCALE, matchMelody, melodyTap,
   midiNoteName, musicalCastEnabled, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState,
 } from './musical-cast';
 import { NEW_ACHIEVEMENTS, SECRET_ACHIEVEMENT_KEYS, achievementListed } from './achievement-rules';
@@ -105,5 +105,42 @@ describe('the secret achievements', () => {
     expect(achievementListed(lamb, new Set(['tune_little_lamb']))).toBe(true);
     expect(achievementListed({ key: 'under_par', hidden: true }, new Set(['under_par']))).toBe(false);
     expect(achievementListed({ key: 'first_win' }, new Set())).toBe(true);
+  });
+});
+
+describe('the Halloween tunes (item 49)', () => {
+  const idForNote = (midi: number) => MUSICAL_CAST_IDS[MUSICAL_SCALE.indexOf(midi as (typeof MUSICAL_SCALE)[number])];
+  const playSeason = (notes: readonly number[], season: string | null) => {
+    let st: MelodyState = MELODY_START;
+    return notes.map((n, i) => { const r = melodyTap(st, idForNote(n), 1000 + i * 300, season); st = r.state; return r.matched?.id ?? null; });
+  };
+  it('every Halloween tune sits on the cast keys, and has its own secret achievement', () => {
+    for (const m of HALLOWEEN_MELODIES) {
+      for (const n of m.notes) expect(MUSICAL_SCALE).toContain(n);
+      expect(MUSICAL_ACHIEVEMENT_KEYS).toContain(m.achievement);
+      expect(SECRET_ACHIEVEMENT_KEYS).toContain(m.achievement);
+    }
+  });
+  it('the Mountain King is the right shape (2 1 2 2 -4 4 -2 -3 3)', () => {
+    expect(melodyIntervals(HALLOWEEN_MELODIES[0].notes)).toEqual([2, 1, 2, 2, -4, 4, -2, -3, 3]);
+  });
+  it('unlocks only in season; the everyday tunes still work in season', () => {
+    for (const m of HALLOWEEN_MELODIES) {
+      expect(playSeason(m.notes, 'halloween').pop()).toBe(m.id);
+      expect(playSeason(m.notes, null).pop()).not.toBe(m.id);
+      expect(playSeason(m.notes, 'valentines').pop()).not.toBe(m.id);
+    }
+    expect(playSeason(MUSICAL_MELODIES[0].notes, 'halloween').pop()).toBe('mary');
+  });
+  it('in season each note has its spooky voicing (note-h-<id>); out of season the normal voice', () => {
+    expect(musicalNote('w', 'halloween')!.sound).toBe('note-h-w');
+    expect(musicalNote('w', 'valentines')!.sound).toBe('note-w');
+    expect(musicalNote('w')!.sound).toBe('note-w');
+    expect(activeMelodies(null)).toHaveLength(MUSICAL_MELODIES.length);
+    expect(activeMelodies('halloween')).toHaveLength(MUSICAL_MELODIES.length + HALLOWEEN_MELODIES.length);
+  });
+  it('no copyrighted Halloween songs are named anywhere', () => {
+    const text = JSON.stringify([HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO]).toLowerCase();
+    for (const bad of ['monster mash', 'ghostbusters', 'thriller', 'this is halloween', 'addams']) expect(text).not.toContain(bad);
   });
 });

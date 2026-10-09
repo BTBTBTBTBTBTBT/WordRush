@@ -48,7 +48,7 @@ import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, av
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
 import { AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule, avatarSaveCheck, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext, type AvatarEarnCondition, type AvatarEarnStats } from '../src/avatar-access';
-import { MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
+import { HALLOWEEN_MELODIES, HALLOWEEN_TUNES_TODO, SEASON_NOTE_PREFIX, activeMelodies, MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
 import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-rules';
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
@@ -1231,10 +1231,32 @@ export function renderMusicalCastFixtures() {
     { a: { key: 'tune_ode_to_joy', secret: true }, unlocked: [] as string[] }, { a: { key: 'tune_ode_to_joy', secret: true }, unlocked: ['tune_ode_to_joy'] },
     { a: { key: 'under_par', hidden: true }, unlocked: ['under_par'] }, { a: { key: 'first_win' }, unlocked: [] as string[] },
   ].map(({ a, unlocked }) => ({ a, unlocked, listed: achievementListed(a, new Set(unlocked)) }));
+  // Item 49: the Halloween tunes + spooky voicings, only in season.
+  const hIdFor = (m: number) => MUSICAL_CAST_IDS[(MUSICAL_SCALE as readonly number[]).indexOf(m)];
+  const hSeqs: Array<{ name: string; season: string | null; taps: Array<{ id: string; at: number }> }> = [];
+  for (const m of HALLOWEEN_MELODIES) {
+    for (const season of ['halloween', null, 'valentines'] as Array<string | null>) {
+      hSeqs.push({ name: `${m.id}-in-${season ?? 'no-season'}`, season, taps: m.notes.map((n, i) => ({ id: hIdFor(n), at: 1000 + i * 300 })) });
+    }
+  }
+  hSeqs.push({ name: 'mary-still-works-in-halloween', season: 'halloween', taps: tune('mary').map((n, i) => ({ id: hIdFor(n), at: i * 300 })) });
+  const hTaps = hSeqs.map(({ name, season, taps: list }) => {
+    let st: MelodyState = MELODY_START;
+    const steps = list.map(({ id, at }) => { const r = melodyTap(st, id, at, season); st = r.state; return { id, at, midi: r.note?.midi ?? null, sound: r.note?.sound ?? null, matched: r.matched?.id ?? null }; });
+    return { name, season, steps };
+  });
+  const halloween = {
+    melodies: HALLOWEEN_MELODIES.map((m) => ({ ...m, intervals: melodyIntervals(m.notes) })),
+    todo: HALLOWEEN_TUNES_TODO,
+    notePrefix: SEASON_NOTE_PREFIX,
+    sounds: ([null, 'halloween', 'valentines'] as Array<string | null>).flatMap((season) => [...MUSICAL_CAST_IDS, 'zz'].map((id) => ({ season, id, sound: musicalNote(id, season)?.sound ?? null }))),
+    active: ([null, 'halloween', 'valentines'] as Array<string | null>).map((season) => ({ season, ids: activeMelodies(season).map((m) => m.id) })),
+    taps: hTaps,
+  };
   return {
     scale: MUSICAL_SCALE, timing: MUSICAL_TIMING, popKeys: MUSICAL_POP_KEYS, gapMs: MELODY_GAP_MS,
     melodies: MUSICAL_MELODIES.map((m) => ({ ...m, intervals: melodyIntervals(m.notes) })), secrets: SECRET_ACHIEVEMENT_KEYS,
-    notes, names, transform, taps, matches, listed,
+    notes, names, transform, taps, matches, listed, halloween,
   };
 }
 

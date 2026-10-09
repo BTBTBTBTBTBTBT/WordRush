@@ -239,7 +239,9 @@
     "tune_little_star",
     "tune_ode_to_joy",
     "tune_happy_birthday",
-    "tune_hot_cross_buns"
+    "tune_hot_cross_buns",
+    "tune_mountain_king",
+    "tune_toccata"
   ],
   "notes": [
     {
@@ -2077,5 +2079,808 @@
       "unlocked": [],
       "listed": true
     }
-  ]
+  ],
+  "halloween": {
+    "melodies": [
+      {
+        "id": "mountain_king",
+        "name": "In the Hall of the Mountain King",
+        "achievement": "tune_mountain_king",
+        "notes": [
+          69,
+          71,
+          72,
+          74,
+          76,
+          72,
+          76,
+          74,
+          71,
+          74
+        ],
+        "intervals": [
+          2,
+          1,
+          2,
+          2,
+          -4,
+          4,
+          -2,
+          -3,
+          3
+        ]
+      },
+      {
+        "id": "toccata",
+        "name": "Toccata and Fugue in D minor",
+        "achievement": "tune_toccata",
+        "notes": [
+          69,
+          67,
+          69,
+          67,
+          65,
+          64,
+          62,
+          60,
+          62
+        ],
+        "intervals": [
+          -2,
+          2,
+          -2,
+          -2,
+          -1,
+          -2,
+          -2,
+          2
+        ]
+      }
+    ],
+    "todo": [
+      "Danse Macabre (Saint-Saens)",
+      "Funeral March (Chopin, Piano Sonata No. 2)",
+      "Night on Bald Mountain (Mussorgsky)",
+      "Funeral March of a Marionette (Gounod)",
+      "The Sorcerer's Apprentice (Dukas)"
+    ],
+    "notePrefix": {
+      "halloween": "note-h-"
+    },
+    "sounds": [
+      {
+        "season": null,
+        "id": "w",
+        "sound": "note-w"
+      },
+      {
+        "season": null,
+        "id": "o1",
+        "sound": "note-o1"
+      },
+      {
+        "season": null,
+        "id": "r",
+        "sound": "note-r"
+      },
+      {
+        "season": null,
+        "id": "d",
+        "sound": "note-d"
+      },
+      {
+        "season": null,
+        "id": "o2",
+        "sound": "note-o2"
+      },
+      {
+        "season": null,
+        "id": "c",
+        "sound": "note-c"
+      },
+      {
+        "season": null,
+        "id": "i",
+        "sound": "note-i"
+      },
+      {
+        "season": null,
+        "id": "o3",
+        "sound": "note-o3"
+      },
+      {
+        "season": null,
+        "id": "u",
+        "sound": "note-u"
+      },
+      {
+        "season": null,
+        "id": "s",
+        "sound": "note-s"
+      },
+      {
+        "season": null,
+        "id": "zz",
+        "sound": null
+      },
+      {
+        "season": "halloween",
+        "id": "w",
+        "sound": "note-h-w"
+      },
+      {
+        "season": "halloween",
+        "id": "o1",
+        "sound": "note-h-o1"
+      },
+      {
+        "season": "halloween",
+        "id": "r",
+        "sound": "note-h-r"
+      },
+      {
+        "season": "halloween",
+        "id": "d",
+        "sound": "note-h-d"
+      },
+      {
+        "season": "halloween",
+        "id": "o2",
+        "sound": "note-h-o2"
+      },
+      {
+        "season": "halloween",
+        "id": "c",
+        "sound": "note-h-c"
+      },
+      {
+        "season": "halloween",
+        "id": "i",
+        "sound": "note-h-i"
+      },
+      {
+        "season": "halloween",
+        "id": "o3",
+        "sound": "note-h-o3"
+      },
+      {
+        "season": "halloween",
+        "id": "u",
+        "sound": "note-h-u"
+      },
+      {
+        "season": "halloween",
+        "id": "s",
+        "sound": "note-h-s"
+      },
+      {
+        "season": "halloween",
+        "id": "zz",
+        "sound": null
+      },
+      {
+        "season": "valentines",
+        "id": "w",
+        "sound": "note-w"
+      },
+      {
+        "season": "valentines",
+        "id": "o1",
+        "sound": "note-o1"
+      },
+      {
+        "season": "valentines",
+        "id": "r",
+        "sound": "note-r"
+      },
+      {
+        "season": "valentines",
+        "id": "d",
+        "sound": "note-d"
+      },
+      {
+        "season": "valentines",
+        "id": "o2",
+        "sound": "note-o2"
+      },
+      {
+        "season": "valentines",
+        "id": "c",
+        "sound": "note-c"
+      },
+      {
+        "season": "valentines",
+        "id": "i",
+        "sound": "note-i"
+      },
+      {
+        "season": "valentines",
+        "id": "o3",
+        "sound": "note-o3"
+      },
+      {
+        "season": "valentines",
+        "id": "u",
+        "sound": "note-u"
+      },
+      {
+        "season": "valentines",
+        "id": "s",
+        "sound": "note-s"
+      },
+      {
+        "season": "valentines",
+        "id": "zz",
+        "sound": null
+      }
+    ],
+    "active": [
+      {
+        "season": null,
+        "ids": [
+          "mary",
+          "twinkle",
+          "ode",
+          "birthday",
+          "buns"
+        ]
+      },
+      {
+        "season": "halloween",
+        "ids": [
+          "mary",
+          "twinkle",
+          "ode",
+          "birthday",
+          "buns",
+          "mountain_king",
+          "toccata"
+        ]
+      },
+      {
+        "season": "valentines",
+        "ids": [
+          "mary",
+          "twinkle",
+          "ode",
+          "birthday",
+          "buns"
+        ]
+      }
+    ],
+    "taps": [
+      {
+        "name": "mountain_king-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 1300,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1600,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 1900,
+            "midi": 74,
+            "sound": "note-h-u",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 2200,
+            "midi": 76,
+            "sound": "note-h-s",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 2800,
+            "midi": 76,
+            "sound": "note-h-s",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3100,
+            "midi": 74,
+            "sound": "note-h-u",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3400,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3700,
+            "midi": 74,
+            "sound": "note-h-u",
+            "matched": "mountain_king"
+          }
+        ]
+      },
+      {
+        "name": "mountain_king-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 1300,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1600,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 1900,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 2200,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 2800,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3100,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3400,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3700,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "mountain_king-in-valentines",
+        "season": "valentines",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 1300,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1600,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 1900,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 2200,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 2800,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3100,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3400,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "u",
+            "at": 3700,
+            "midi": 74,
+            "sound": "note-u",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "toccata-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 2200,
+            "midi": 65,
+            "sound": "note-h-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2500,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2800,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 3100,
+            "midi": 60,
+            "sound": "note-h-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3400,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": "toccata"
+          }
+        ]
+      },
+      {
+        "name": "toccata-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 2200,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2500,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2800,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 3100,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3400,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "toccata-in-valentines",
+        "season": "valentines",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1300,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1900,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 2200,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 2500,
+            "midi": 64,
+            "sound": "note-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2800,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 3100,
+            "midi": 60,
+            "sound": "note-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 3400,
+            "midi": 62,
+            "sound": "note-o1",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "mary-still-works-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "r",
+            "at": 0,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 300,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "w",
+            "at": 600,
+            "midi": 60,
+            "sound": "note-h-w",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 900,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1200,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1500,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 1800,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2100,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2400,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "o1",
+            "at": 2700,
+            "midi": 62,
+            "sound": "note-h-o1",
+            "matched": null
+          },
+          {
+            "id": "r",
+            "at": 3000,
+            "midi": 64,
+            "sound": "note-h-r",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3300,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3600,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": "mary"
+          }
+        ]
+      }
+    ]
+  }
 }
