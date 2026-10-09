@@ -166,130 +166,137 @@ struct LeaderboardTab: View {
         }
     }
 
-    /// FINISH_SPEC §C2 play card: a tinted card in the game's accent (its own top bar,
-    /// §A1), the game's title art, "N players today", and the medium glossy candy
-    /// VIEW BOARD (pink) / PLAY (purple) — never the old tall blob.
-    private var playCtaCard: some View {
-        // The whole catalog — the More Games titles are not in the home grid, and the
-        // fallback showed their raw keys ("SCRAMBLE", "HUB") with no icon (founder, 2026-09-27).
+    // MARK: - The living stage (items 11 + 11b)
+
+    /// The stage's tint: the selected game's accent (the Sweep's gold on the Sweep board).
+    private var stageAccent: Color { isSweep ? GamePicker.sweepAccent : ModeStyle.accent(mode) }
+
+    /// Opens today's solved board (the old VIEW BOARD) or the daily to play, exactly as before.
+    private func openMyBoard(played: Bool) {
+        let m = (homeModes + moreModes).first { $0.dbKey == mode.rawValue }
+        let title = m?.title ?? mode.rawValue
+        GameTransition.shared.arm("lb:play")   // BJ9: the game grows from this strip
+        if played { lbSolved = LbGame(mode: mode, title: title) }
+        else if mode == .propernoundle { showPNDaily = true }
+        else { lbGame = LbGame(mode: mode, title: title) }
+    }
+
+    /// "#2 of 5 · 2,005 PTS · Solved in 4 · 48s" — your rank + stats on ONE line; "Not played yet" before.
+    private var modeRankLine: String {
+        let mine = myModeRow
+        let done = myCompletion
+        guard userRank != nil || mine != nil || done != nil else { return "Not played yet" }
+        let won = mine?.completed ?? done?.completed ?? false
+        let ofLine = userRank.map { r in friendsOnly ? "of \(r.total) friends" : "of \(r.total)" }
+            ?? (won ? "Completed today" : "Attempted today")
+        let line: String? = mine.map {
+            lbSolveLine(mode: mode, completed: $0.completed, guessCount: $0.guessCount, timeSeconds: $0.timeSeconds,
+                        boardsSolved: $0.boardsSolved, totalBoards: $0.totalBoards)
+        } ?? done.map {
+            lbSolveLine(mode: mode, completed: $0.completed, guessCount: $0.guessCount, timeSeconds: $0.timeSeconds,
+                        boardsSolved: $0.boardsSolved, totalBoards: $0.totalBoards)
+        }
+        var parts = [userRank.map { "#\($0.rank) \(ofLine)" } ?? ofLine]
+        if let p = myModeScore { parts.append("\(lbScoreLabels[p] ?? formatScore(p)) PTS") }
+        if let line { parts.append(line) }
+        return parts.joined(separator: " · ")
+    }
+
+    /// The selected-game strip: the game's title art, "N today", YOUR rank + stats, and one compact button —
+    /// PLAY before today's daily, the Your board pill (= the old VIEW BOARD) after.
+    private var modeStrip: some View {
         let m = (homeModes + moreModes).first { $0.dbKey == mode.rawValue }
         let accent = ModeStyle.accent(mode)
-        // ART_SPEC §10 / §14: the game's title art (lettering + host, filling the room
-        // left of Play, ≤ 56 pt tall) stands in for the name text and the host beside Play.
         let titleArt = GameTitleArt.forMode(mode)
-        // FINISH_SPEC §AS4: one compact row — small art, one line of text, a small candy button.
+        let played = completions.byMode[mode.rawValue] != nil || userRank != nil
         return HStack(spacing: 8) {
-            if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 26) }
-            if let titleArt {
-                // Drawn from the display-size cache (LeaderboardArt.prewarm decodes every
-                // game's title off main at launch) with no pop-in, so a picker tap swaps
-                // the art in the same frame.
-                // Season preview: the season's lettering when it ships (SeasonKit titles).
-                let shown = SeasonKit.title(titleArt.asset)
-                let size = LeaderboardArt.cardTitleSize(shown)
-                ArtThumbs.image(shown, points: LeaderboardArt.cardTitlePoints)
-                    .resizable().interpolation(.high).scaledToFit()
-                    // A cap, not a fixed size: on a 375 pt phone the art shrinks a little so the
-                    // player count beside it stays whole.
-                    .frame(maxWidth: size.width, maxHeight: size.height)
-                    .accessibilityLabel(titleArt.label)
-                    .accessibilityAddTraits(.isHeader)
-            } else {
-                Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-            }
-            HStack(spacing: 4) {
-                Image(systemName: "person.2.fill").font(.system(size: 10, weight: .bold))
-                // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
-                if loading && playerCount == 0 {
-                    Text("000 today").font(Brand.font(11, .heavy)).redacted(reason: .placeholder)
-                } else {
-                    Text("\(playerCount) today").font(Brand.font(11, .heavy))
+            if titleArt == nil, let m { ModeIconView(icon: m.icon, accent: m.accent, box: 28) }
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    if let titleArt {
+                        let shown = SeasonKit.title(titleArt.asset)
+                        let size = LeaderboardArt.cardTitleSize(shown)
+                        ArtThumbs.image(shown, points: LeaderboardArt.cardTitlePoints)
+                            .resizable().interpolation(.high).scaledToFit()
+                            .frame(maxWidth: size.width, maxHeight: size.height)
+                            .accessibilityLabel(titleArt.label)
+                            .accessibilityAddTraits(.isHeader)
+                    } else {
+                        Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.2.fill").font(.system(size: 10, weight: .bold))
+                        // No count yet (nothing cached for this mode) → a redacted bar, not "0 players".
+                        if loading && playerCount == 0 {
+                            Text("000 today").font(Brand.font(11, .heavy)).redacted(reason: .placeholder)
+                        } else {
+                            Text("\(playerCount) today").font(Brand.font(11, .heavy))
+                        }
+                    }
+                    .foregroundStyle(FinishInk.secondary)
+                    .lineLimit(1).fixedSize().layoutPriority(1)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
+                }
+                HStack(spacing: 6) {
+                    Text(modeRankLine)
+                        .font(Brand.font(11.5, .black))
+                        .foregroundStyle(Theme.isDark ? Theme.textSecondary : LbStyle.goldInk)
+                        .lineLimit(1).minimumScaleFactor(0.65)
+                    if let r = userRank { rankDelta(r, friends: friendsOnly) }
                 }
             }
-            .foregroundStyle(FinishInk.secondary)
-            // Never cut (2026-10-05, Android 201 parity): at 375 pt the 130 pt title art +
-            // VIEW BOARD truncated the count to "0…". The count keeps its one line and the
-            // title art gives up the width instead (it scales down; wider phones unchanged).
-            .lineLimit(1)
-            .fixedSize()
-            .layoutPriority(1)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
             Spacer(minLength: 4)
-            // Already finished today's daily for this mode → open the read-only
-            // solved board, matching the home cards. The cached completions
-            // answer instantly; userRank confirms once the leaderboard loads.
-            let played = completions.byMode[mode.rawValue] != nil || userRank != nil
-            Button {
-                let title = m?.title ?? mode.rawValue
-                GameTransition.shared.arm("lb:play")   // BJ9: the game grows from this card
-                if played { lbSolved = LbGame(mode: mode, title: title) }
-                else if mode == .propernoundle { showPNDaily = true }
-                else { lbGame = LbGame(mode: mode, title: title) }
-            } label: {
-                // FINISH_SPEC §A8 / §C2: a medium glossy candy pill — purple PLAY,
-                // pink→purple VIEW BOARD.
-                CandyLabel(title: played ? "View board" : "Play", symbol: played ? "eye.fill" : "play.fill")
+            if played {
+                YourBoardPill { openMyBoard(played: true) }
+            } else {
+                Button { openMyBoard(played: false) } label: { CandyLabel(title: "Play", symbol: "play.fill") }
+                    .buttonStyle(CandyButtonStyle(variant: .purple, size: .small, fullWidth: false))
+                    .layoutPriority(2)
             }
-            .buttonStyle(CandyButtonStyle(variant: played ? .pink : .purple, size: .small, fullWidth: false))
-            .layoutPriority(2)
         }
-        .padding(.horizontal, 10).padding(.vertical, 7)
-        // One fixed height for every game (the art slot is ≤ 30 pt, the pill sets the row),
-        // so switching games never nudges the board below.
-        .frame(minHeight: LeaderboardArt.cardHeight)
-        .tintedCard(accent: accent, bar: [accent, accent.wash(0.55)], radius: 16, barHeight: 4)
+        .padding(.horizontal, 14).padding(.vertical, 4)
+        // One fixed height for every game, so switching games never nudges the podium below.
+        .frame(minHeight: max(LeaderboardArt.cardHeight, 46))
         .gameLaunchSource("lb:play", color: accent.wash(0.10), radius: 16)
     }
 
-    /// The Sweep board's play card in the same family (gold): the glossy broom, the
-    /// name and its existing explanation instead of Play.
-    private var sweepCtaCard: some View {
-        let accent = GamePicker.sweepAccent
-        // BJ7: top-aligned, the explanation ONE line 4 under the name.
-        return HStack(alignment: .top, spacing: 10) {
+    /// The Sweep board's strip in the same family: the glossy broom, the name + its explainer, your sweep rank.
+    private var sweepStrip: some View {
+        HStack(spacing: 10) {
             if ArtAsset.exists("game-sweep") {
-                GameArtImage(asset: "game-sweep", size: 40)
+                GameArtImage(asset: "game-sweep", size: 38)
             } else {
-                ModeIconView(icon: .asset("broom"), accent: accent, box: 32)
+                ModeIconView(icon: .asset("broom"), accent: GamePicker.sweepAccent, box: 30)
             }
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Daily Sweep").font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily Sweep · \(sweepEntries.count) swept").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                    .lineLimit(1).minimumScaleFactor(0.7)
                     .accessibilityAddTraits(.isHeader)
-                // §223 microcopy: the sweep board pre-answers "why is 9/9 below
-                // 8/9" — it ranks by points, not wins.
-                Text("Ranked by total points across all modes").font(Brand.font(12, .heavy))
-                    .foregroundStyle(FinishInk.secondary).lineLimit(1).minimumScaleFactor(0.75)
+                // §223: the sweep board ranks by points, not wins.
+                Text(sweepRankLine).font(Brand.font(11.5, .black))
+                    .foregroundStyle(Theme.isDark ? Theme.textSecondary : LbStyle.goldInk)
+                    .lineLimit(1).minimumScaleFactor(0.65)
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .tintedCard(accent: accent, bar: [Color(hex: 0xF5A524), Color(hex: 0xFFD166)], barHeight: 6)
+        .padding(.horizontal, 14).padding(.vertical, 4)
+        .frame(minHeight: 46)
+    }
+
+    private var sweepRankLine: String {
+        guard let r = sweepRank else { return "Ranked by total points across all modes" }
+        let mine = sweepEntries.first { $0.userId.lowercased() == auth.profile?.id.lowercased() }
+        var parts = ["#\(r.rank) of \(r.total)"]
+        if let p = mySweepScore { parts.append("\(sweepScoreLabels[p] ?? formatScore(p)) PTS") }
+        if let mine { parts.append(sweepResultLine(mine, day: LeaderboardService.todayLocal())) }
+        return parts.joined(separator: " · ")
     }
 
     /// The bare share icon used by every board header.
     private func shareIcon(busy: Bool, label: String, action: @escaping () -> Void) -> some View {
         LbShareButton(busy: busy, label: label, action: action)
-    }
-
-    /// "YESTERDAY’S WINNERS" + chevron (the collapsible toggle) as a tinted chip.
-    private var yesterdayToggle: some View {
-        Button { showYesterday.toggle() } label: {
-            // Founder: full width (collapsed and expanded), the other cards' width.
-            HStack(spacing: 6) {
-                LbSectionLabel("YESTERDAY\u{2019}S WINNERS")
-                Spacer(minLength: 4)
-                Image(systemName: showYesterday ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundStyle(Theme.isDark ? Theme.textMuted : Color(hex: 0x8A6A55))
-            }
-            .padding(.horizontal, 12).frame(height: 34)
-            .frame(maxWidth: .infinity)
-            .tintedPill(LbStyle.gold, radius: 14)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.squish)
     }
 
     /// The loading rows inside the cream board card (no bare skeleton on the wallpaper).
@@ -315,15 +322,17 @@ struct LeaderboardTab: View {
                 // §A6 / §C2: the day title as the headline, then the shared game picker
                 // window (date + reset clock + ALL-TIME on its header strip; the Sweep
                 // is the 9th WORDOCIOUS tile).
-                LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
-                                      bleed: 16,
-                                      results: completions.dataDay == LeaderboardService.todayLocal() ? completions.byMode.mapValues { $0.completed } : [:],
-                                      sweepResult: completions.dataDay == LeaderboardService.todayLocal() && completions.allDone ? true : nil)
-                if isSweep {
-                    sweepBoard
-                } else {
-                    perModeBoard
+                // 11 + 11b: ONE living stage — the day's bubble title with your mascot + the day's host, the picker
+                // (no card), the selected-game strip, the podium and Yesterday's ledge on one continuous backdrop in
+                // the game's tint; ranks 4+ and your finished board list below it.
+                LeaderboardStageCard(accent: stageAccent) {
+                    LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
+                                          bleed: 16,
+                                          results: completions.dataDay == LeaderboardService.todayLocal() ? completions.byMode.mapValues { $0.completed } : [:],
+                                          sweepResult: completions.dataDay == LeaderboardService.todayLocal() && completions.allDone ? true : nil)
+                    if isSweep { sweepStageBody } else { modeStageBody }
                 }
+                if isSweep { sweepRanksBlock } else { modeRanksBlock }
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
             .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
@@ -371,24 +380,14 @@ struct LeaderboardTab: View {
         }
     }
 
-    /// The cross-mode Sweep board — players who completed every sweep daily today,
-    /// ranked by total composite score. Same card stack as the per-mode board.
-    @ViewBuilder private var sweepBoard: some View {
-        // §AS4: your rank first, the standings next, the explainer row after them.
-        if let r = sweepRank {
-            let mine = sweepEntries.first { $0.userId.lowercased() == auth.profile?.id.lowercased() }
-            LbResultCard(rank: r.rank, ofLine: "of \(r.total)",
-                         line: mine.map { sweepResultLine($0, day: LeaderboardService.todayLocal()) },
-                         points: mySweepScore.map { sweepScoreLabels[$0] ?? formatScore($0) },
-                         compact: true,
-                         delta: { rankDelta(r, friends: false) })
-        }
+    /// The cross-mode Sweep board — players who completed every sweep daily today, ranked by total composite
+    /// score. The stage holds the strip, the podium and Yesterday's ledge; ranks 4+ list below it.
+    @ViewBuilder private var sweepStageBody: some View {
+        sweepStrip
 
-        HStack(alignment: .center, spacing: 8) {
-            LbSectionLabel("TODAY\u{2019}S BOARD")
-            Spacer(minLength: 4)
-            // §231: the same share icon as the per-mode board — today's sweep
-            // board card with the sharer's sweep rank.
+        // The podium's header line: share (the Sweep has no Everyone/Friends split).
+        HStack {
+            Spacer(minLength: 0)
             if !sweepLoading && !sweepEntries.isEmpty {
                 shareIcon(busy: sharingLb, label: "Share sweep leaderboard") {
                     guard !sharingLb else { return }
@@ -400,50 +399,61 @@ struct LeaderboardTab: View {
                 }
             }
         }
-        .padding(.top, 4).padding(.leading, 4)
+        .padding(.horizontal, 12).frame(minHeight: 30)
 
         if sweepLoading {
-            boardSkeleton
+            LeaderboardSkeleton().padding(.horizontal, 12).padding(.bottom, 8)
         } else if sweepEntries.isEmpty {
             // BI24: brand headline over R asleep's voice line.
             BrandEmptyState(title: "No sweeps yet", line: "Nobody has swept today. Be the first!", scene: .asleep, artHeight: 100)
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
-            .lbCard()
         } else {
-            sweepPodiumBoard(sweepEntries, labels: sweepScoreLabels, details: sweepDetails, day: LeaderboardService.todayLocal()) { sweepRow(rank: $0.rank, entry: $0) }
+            let layout = PodiumLayout.layout(sweepEntries.map(\.rank))
+            if layout.filled > 0 {
+                PodiumView(entries: sweepEntries.prefix(layout.filled).map { sweepPodiumEntry($0, labels: sweepScoreLabels, details: sweepDetails, day: LeaderboardService.todayLocal()) },
+                           open: layout.open, stage: nil, onTap: { path.append($0.id) })
+            }
         }
 
-        sweepCtaCard
-
-        // Yesterday's Winners — same toggle as the per-mode board, but the
-        // podium is yesterday's top sweepers (rank/pill from the sweep RPC).
-        yesterdayToggle.overlay(alignment: .trailing) {
-            // §231: settled sweep-podium share — only once the dropdown is
-            // open with rows (per-mode parity).
-            if showYesterday && !yesterdaySweep.isEmpty {
-                shareIcon(busy: sharingPodium, label: "Share yesterday's sweep podium") {
-                    guard !sharingPodium else { return }
-                    sharingPodium = true
-                    LeaderboardShareFlow.shareSweep(
-                        podium: true, entries: yesterdaySweep,
-                        userId: auth.profile?.id)
-                    sharingPodium = false
+        // The stage's base: Yesterday's top sweepers on the ledge; tap to expand the full list in place.
+        let yLayout = PodiumLayout.layout(yesterdaySweep.map(\.rank))
+        StageYesterdayLedge(
+            minis: yesterdaySweep.prefix(yLayout.filled).map { sweepPodiumEntry($0, labels: ySweepScoreLabels, details: ySweepDetails, day: LeaderboardService.yesterdayLocal()) },
+            open: $showYesterday, loading: showYesterday && ySweepKnown == nil,
+            share: {
+                // §231: settled sweep-podium share — only with rows.
+                if !yesterdaySweep.isEmpty {
+                    shareIcon(busy: sharingPodium, label: "Share yesterday's sweep podium") {
+                        guard !sharingPodium else { return }
+                        sharingPodium = true
+                        LeaderboardShareFlow.shareSweep(podium: true, entries: yesterdaySweep, userId: auth.profile?.id)
+                        sharingPodium = false
+                    }
                 }
-                .padding(.trailing, 28)   // left of the chevron, inside the full-width bar
+            },
+            expanded: {
+                if ySweepKnown == nil {
+                    boardSkeleton
+                } else if yesterdaySweep.isEmpty {
+                    BrandEmptyState(title: "No sweeps yesterday", line: "Nobody cleared every daily. Today's board is wide open.",
+                                    scene: .asleep, artHeight: 90)
+                        .lbCard()
+                } else {
+                    sweepPodiumBoard(yesterdaySweep, labels: ySweepScoreLabels, details: ySweepDetails, day: LeaderboardService.yesterdayLocal()) { yesterdaySweepRow($0) }
+                }
+            })
+    }
+
+    /// Sweep ranks 4+ below the stage (the podium places live on the stage).
+    @ViewBuilder private var sweepRanksBlock: some View {
+        let layout = PodiumLayout.layout(sweepEntries.map(\.rank))
+        if !sweepLoading, sweepEntries.count > layout.filled {
+            VStack(spacing: 0) {
+                ForEach(Array(sweepEntries.enumerated().dropFirst(layout.filled)), id: \.element.id) { idx, entry in
+                    sweepRow(rank: entry.rank, entry: entry).stripedRow(idx - layout.filled, accent: LbStyle.gold)
+                }
             }
-        }
-        .padding(.top, 4)
-        if showYesterday {
-            if ySweepKnown == nil {
-                boardSkeleton
-            } else if yesterdaySweep.isEmpty {
-                // BI24: R asleep + brand headline, not a plain grey line.
-                BrandEmptyState(title: "No sweeps yesterday", line: "Nobody cleared every daily. Today's board is wide open.",
-                                scene: .asleep, artHeight: 90)
-                    .lbCard()
-            } else {
-                sweepPodiumBoard(yesterdaySweep, labels: ySweepScoreLabels, details: ySweepDetails, day: LeaderboardService.yesterdayLocal()) { yesterdaySweepRow($0) }
-            }
+            .lbCard()
         }
     }
 
@@ -481,22 +491,19 @@ struct LeaderboardTab: View {
         if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
     }
 
-    @ViewBuilder private var perModeBoard: some View {
-        // Founder 10-05: the game card (title art · N today · Play / View board) sits
-        // RIGHT under the picker, so a tile tap reads at once which game's board this is
-        // (it swaps in place: pre-decoded art, fixed height, no layout jump). The result
-        // card (your rank + the completed-daily dropdown) moved below the standings.
-        playCtaCard
+    /// Per-mode stage: the strip, the Everyone/Friends + share line, the podium (or its empty state), and
+    /// Yesterday's ledge as the base. Ranks 4+, the completed-daily card and the daily-only note sit below it.
+    @ViewBuilder private var modeStageBody: some View {
+        modeStrip
 
+        // The podium's header line: Everyone | Friends (§207) on the left, share on the right.
         HStack(alignment: .center, spacing: 8) {
-            LbSectionLabel("TODAY\u{2019}S BOARD")
-            Spacer(minLength: 4)
-            // FRIENDS toggle (§207) — Everyone | Friends, the shared soft segmented toggle.
             if auth.isAuthenticated {
                 SoftSegmented(options: [(key: false, label: "Everyone"), (key: true, label: "Friends")],
                               selection: friendsBinding, accent: LbStyle.gold,
                               accessibilityLabel: "Everyone or Friends")
             }
+            Spacer(minLength: 4)
             if !loading && !entries.isEmpty {
                 shareIcon(busy: sharingLb, label: "Share leaderboard") {
                     guard !sharingLb else { return }
@@ -512,30 +519,20 @@ struct LeaderboardTab: View {
                 }
             }
         }
-        .padding(.top, 4).padding(.leading, 4)
+        .padding(.horizontal, 12).frame(minHeight: 34)
 
         if loading {
-            boardSkeleton   // web parity: animate-pulse rows, not a spinner
+            LeaderboardSkeleton().padding(.horizontal, 12).padding(.bottom, 8)   // animate-pulse rows, not a spinner
         } else if entries.isEmpty {
             if friendsOnly && !ghostFriends.isEmpty {
-                // Nobody's played yet — the friends list still renders
-                // as ghost rows so the board feels alive (and tauntable).
-                VStack(spacing: 0) {
-                    ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
-                        ghostRow(f).stripedRow(idx, accent: LbStyle.gold)
-                    }
-                }
-                .lbCard()
+                EmptyView()   // the ghost rows list below the stage
             } else {
                 VStack(spacing: 8) {
-                    // The cast (MASCOT_SPEC §6, ART_SPEC §7): I's invite scene grows the
-                    // circle; R asleep says it's quiet in here.
-                    // BI24: brand headline over the host's voice line.
+                    // The cast (MASCOT_SPEC §6, ART_SPEC §7): I's invite scene grows the circle; R asleep says it's quiet in here.
                     BrandEmptyState(title: friendsOnly ? "Your board is empty" : "No results yet",
                                     line: friendsOnly ? Mascots.addFriendLine : "Nobody has finished today. Be the first!",
                                     scene: friendsOnly ? .invite : .asleep)
-                    // Tier 2 (Aug 11): the empty Friends board is the
-                    // best recruiting surface in the app — use it.
+                    // Tier 2 (Aug 11): the empty Friends board is the best recruiting surface in the app — use it.
                     if friendsOnly {
                         Button { showFriendsSheet = true } label: {
                             CandyLabel(title: "Add friends", symbol: "person.badge.plus")
@@ -544,115 +541,118 @@ struct LeaderboardTab: View {
                         .padding(.top, 4)
                     }
                 }
-                .frame(maxWidth: .infinity).padding(.vertical, 40)
-                .lbCard()
+                .frame(maxWidth: .infinity).padding(.vertical, 24)
             }
         } else {
-            todayBoard
+            // §217: exact (score, time) ties share the rank. BJ4: the podium from ONE result up, open spots for the rest.
+            let ranks = entries.indices.map { LeaderboardService.competitionRank(entries, $0) }
+            let layout = PodiumLayout.layout(ranks)
+            if layout.filled > 0 {
+                PodiumView(entries: entries.prefix(layout.filled).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: lbScoreLabels) },
+                           open: layout.open, stage: nil, onTap: { path.append($0.id) })
+            }
         }
-        // Founder-approved clarity: this board ranks DAILY games
-        // only — Unlimited runs never appear here (the founder's
-        // sister played Unlimited and looked for her name).
+
+        // The stage's base: Yesterday's top three on the ledge; tap to expand the full list in place.
+        let yRanks = yesterday.indices.map { LeaderboardService.competitionRank(yesterday, $0) }
+        let yLayout = PodiumLayout.layout(yRanks)
+        StageYesterdayLedge(
+            minis: yesterday.prefix(yLayout.filled).enumerated().map { podiumEntry($1, rank: yRanks[$0], labels: yLbScoreLabels) },
+            open: $showYesterday, loading: showYesterday && yesterdayKnown == nil,
+            share: {
+                // Settled-podium share — only with rows.
+                if !yesterday.isEmpty {
+                    shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
+                        guard !sharingPodium else { return }
+                        sharingPodium = true
+                        Task {
+                            await LeaderboardShareFlow.sharePodium(
+                                mode: mode, playType: "solo",
+                                top3: yesterday, userId: auth.profile?.id,
+                                friends: friendsOnly)
+                            sharingPodium = false
+                        }
+                    }
+                }
+            },
+            expanded: {
+                if yesterdayKnown == nil {
+                    boardSkeleton
+                } else if yesterday.isEmpty {
+                    BrandEmptyState(title: "Quiet yesterday", line: "No results from yesterday. Today's board is wide open.",
+                                    scene: .asleep, artHeight: 90)
+                        .lbCard()
+                } else {
+                    // Full daily rows (founder ask, Aug 11): profile links, guesses + time detail, W/L badge.
+                    VStack(spacing: 0) {
+                        if yLayout.filled > 0 {
+                            PodiumView(entries: yesterday.prefix(yLayout.filled).enumerated().map { podiumEntry($1, rank: yRanks[$0], labels: yLbScoreLabels) },
+                                       open: yLayout.open, stage: ModeStyle.accent(mode),
+                                       onTap: { path.append($0.id) })
+                        }
+                        ForEach(Array(yesterday.enumerated().dropFirst(yLayout.filled)), id: \.element.id) { idx, entry in
+                            row(rank: yRanks[idx], entry: entry, scoreLabels: yLbScoreLabels)
+                                .stripedRow(idx - yLayout.filled, accent: LbStyle.gold)
+                        }
+                    }
+                    .lbCard()
+                }
+            })
+    }
+
+    /// Ranks 4+ (plus your neighborhood and the friends' ghost rows), then the daily-only note and your finished board.
+    @ViewBuilder private var modeRanksBlock: some View {
+        if !loading {
+            if entries.isEmpty {
+                if friendsOnly && !ghostFriends.isEmpty {
+                    // Nobody's played yet — the friends list still renders as ghost rows so the board feels alive (and tauntable).
+                    VStack(spacing: 0) {
+                        ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
+                            ghostRow(f).stripedRow(idx, accent: LbStyle.gold)
+                        }
+                    }
+                    .lbCard()
+                }
+            } else {
+                let ranks = entries.indices.map { LeaderboardService.competitionRank(entries, $0) }
+                let start = PodiumLayout.layout(ranks).filled
+                let shown = entries.count - start
+                let windowCount = rankWindow?.entries.count ?? 0
+                if shown > 0 || rankWindow != nil || (friendsOnly && !ghostFriends.isEmpty) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(entries.enumerated().dropFirst(start)), id: \.element.id) { idx, entry in
+                            row(rank: ranks[idx], entry: entry)
+                                .stripedRow(idx - start, accent: LbStyle.gold)
+                        }
+                        // "Your neighborhood" — rows around the user's rank when they placed past the top 50 (web daily page parity).
+                        if let win = rankWindow {
+                            Text("···").font(Brand.font(15, .black)).foregroundStyle(FinishInk.secondary)
+                                .frame(maxWidth: .infinity).padding(.vertical, 4)
+                                .accessibilityLabel("More players")
+                            ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
+                                row(rank: win.startRank + idx, entry: entry)
+                                    .stripedRow(shown + idx, accent: LbStyle.gold)
+                            }
+                        }
+                        // FRIENDS ghost rows — friends who haven't played this mode today, muted, with the taunt bell (§207).
+                        if friendsOnly {
+                            ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
+                                ghostRow(f).stripedRow(shown + windowCount + idx, accent: LbStyle.gold)
+                            }
+                        }
+                    }
+                    .lbCard()
+                }
+            }
+        }
+        // Founder-approved clarity: this board ranks DAILY games only — Unlimited runs never appear here.
         Text("Daily games only").font(Brand.font(10, .heavy))
             .foregroundStyle(FinishInk.secondary)
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.top, -6).padding(.trailing, 4)
 
-        // §C2: ONE result card — your rank, how you solved it and your points, with the
-        // completed-daily dropdown as its footer. Nothing known yet → the dropdown alone.
-        modeResult
-
-        yesterdayToggle.overlay(alignment: .trailing) {
-            // Settled-podium share — only once the dropdown is open with rows.
-            if showYesterday && !yesterday.isEmpty {
-                shareIcon(busy: sharingPodium, label: "Share yesterday's podium") {
-                    guard !sharingPodium else { return }
-                    sharingPodium = true
-                    Task {
-                        await LeaderboardShareFlow.sharePodium(
-                            mode: mode, playType: "solo",
-                            top3: yesterday, userId: auth.profile?.id,
-                            friends: friendsOnly)
-                        sharingPodium = false
-                    }
-                }
-                .padding(.trailing, 28)   // left of the chevron, inside the full-width bar
-            }
-        }
-        if showYesterday {
-            if yesterdayKnown == nil {
-                boardSkeleton
-            } else if yesterday.isEmpty {
-                // BI24: R asleep + brand headline, not a plain grey line.
-                BrandEmptyState(title: "Quiet yesterday", line: "No results from yesterday. Today's board is wide open.",
-                                scene: .asleep, artHeight: 90)
-                    .lbCard()
-            } else {
-                // Full daily rows (founder ask, Aug 11): profile links, guesses + time
-                // detail, W/L badge — the top three on the podium when they're 1-2-3.
-                // §217: exact (score, time) ties share the rank.
-                // BJ4: the podium from one result up (Friends too), open spots for the rest.
-                let ranks = yesterday.indices.map { LeaderboardService.competitionRank(yesterday, $0) }
-                let layout = PodiumLayout.layout(ranks)
-                let start = layout.filled
-                VStack(spacing: 0) {
-                    if start > 0 {
-                        PodiumView(entries: yesterday.prefix(start).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: yLbScoreLabels) },
-                                   open: layout.open, stage: ModeStyle.accent(mode),
-                                   onTap: { path.append($0.id) })
-                    }
-                    ForEach(Array(yesterday.enumerated().dropFirst(start)), id: \.element.id) { idx, entry in
-                        row(rank: ranks[idx], entry: entry, scoreLabels: yLbScoreLabels)
-                            .stripedRow(idx - start, accent: LbStyle.gold)
-                    }
-                }
-                .lbCard()
-            }
-        }
-    }
-
-    /// Today's board in ONE cream card: FINISH_SPEC BJ4 — the leaders on the podium from
-    /// ONE result up (every game, Everyone AND Friends; ties share a step), the free places
-    /// as open spots, on the stage in the game's color (tapping a place opens that player,
-    /// as their row did; friends keep the taunt bell under their name), then the rest as
-    /// soft striped rows.
-    private var todayBoard: some View {
-        // §217: exact (score, time) ties share the rank.
-        let ranks = entries.indices.map { LeaderboardService.competitionRank(entries, $0) }
-        let layout = PodiumLayout.layout(ranks)
-        let start = layout.filled
-        let shown = entries.count - start
-        let windowCount = rankWindow?.entries.count ?? 0
-        return VStack(spacing: 0) {
-            if start > 0 {
-                PodiumView(entries: entries.prefix(start).enumerated().map { podiumEntry($1, rank: ranks[$0], labels: lbScoreLabels) },
-                           open: layout.open, stage: ModeStyle.accent(mode),
-                           onTap: { path.append($0.id) })
-            }
-            ForEach(Array(entries.enumerated().dropFirst(start)), id: \.element.id) { idx, entry in
-                row(rank: ranks[idx], entry: entry)
-                    .stripedRow(idx - start, accent: LbStyle.gold)
-            }
-            // "Your neighborhood" — rows around the user's rank when
-            // they placed past the top 50 (web daily page parity).
-            if let win = rankWindow {
-                Text("···").font(Brand.font(15, .black)).foregroundStyle(FinishInk.secondary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 4)
-                    .accessibilityLabel("More players")
-                ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
-                    row(rank: win.startRank + idx, entry: entry)
-                        .stripedRow(shown + idx, accent: LbStyle.gold)
-                }
-            }
-            // FRIENDS ghost rows — friends who haven't played this
-            // mode today, muted, with the taunt bell (§207).
-            if friendsOnly {
-                ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
-                    ghostRow(f).stripedRow(shown + windowCount + idx, accent: LbStyle.gold)
-                }
-            }
-        }
-        .lbCard()
+        // Your finished board (the completed-daily dropdown): your rank + points now live on the strip.
+        completedCard
     }
 
     /// One podium place from a board row (tie-aware points). BJ5: the row's photo + look —
@@ -721,35 +721,6 @@ struct LeaderboardTab: View {
     private var myCompletion: DailyCompletion? {
         guard completions.dataDay == LeaderboardService.todayLocal() else { return nil }
         return completions.byMode[mode.rawValue]
-    }
-
-    /// FINISH_SPEC §C2: ONE result card (the old "completed today" card + "your rank"
-    /// merged): crown + rank, "OF N TODAY" (or friends) + the movement badge, how you
-    /// solved it, your points, and the completed-daily dropdown as its footer.
-    @ViewBuilder private var modeResult: some View {
-        let mine = myModeRow
-        let done = myCompletion
-        if userRank != nil || mine != nil || done != nil {
-            let friends = friendsOnly
-            let won = mine?.completed ?? done?.completed ?? false
-            // §AU2: the compact one-row card — "of 5" (friends: "of 5 friends").
-            let ofLine = userRank.map { r in friends ? "of \(r.total) friends" : "of \(r.total)" }
-                ?? (won ? "Completed today" : "Attempted today")
-            let line: String? = mine.map {
-                lbSolveLine(mode: mode, completed: $0.completed, guessCount: $0.guessCount, timeSeconds: $0.timeSeconds,
-                            boardsSolved: $0.boardsSolved, totalBoards: $0.totalBoards)
-            } ?? done.map {
-                lbSolveLine(mode: mode, completed: $0.completed, guessCount: $0.guessCount, timeSeconds: $0.timeSeconds,
-                            boardsSolved: $0.boardsSolved, totalBoards: $0.totalBoards)
-            }
-            LbResultCard(rank: userRank?.rank, ofLine: ofLine, line: line,
-                         points: myModeScore.map { lbScoreLabels[$0] ?? formatScore($0) },
-                         compact: true,
-                         delta: { if let r = userRank { rankDelta(r, friends: friends) } },
-                         footer: { LbResultFooter { completedCard } })
-        } else {
-            completedCard
-        }
     }
 
     /// Transient "+N/−N" movement pill since you last looked (web parity). Friends mode

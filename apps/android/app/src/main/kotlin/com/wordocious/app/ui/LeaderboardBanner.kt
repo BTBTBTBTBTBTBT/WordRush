@@ -113,6 +113,8 @@ internal fun LeaderboardPicker(
     @Suppress("UNUSED_PARAMETER") onOpenRecords: () -> Unit = {},
     /** 2.8 item 8: today's W / L per game (key → won), the same badges as Home and Stats. */
     badge: ((String) -> Boolean?)? = null,
+    /** 11b: the stage's own picker — no card, no header strip. */
+    bare: Boolean = false,
 ) {
     GamePickerCard(
         selected = selected,
@@ -125,9 +127,12 @@ internal fun LeaderboardPicker(
         labelColor = LB_LABEL,
         withSweep = true,
         sweepKey = SWEEP_ID,
-        header = {
-            // BB4: no ALL-TIME door here (all-time lives in Stats).
-            ResetClockLabel(Modifier.weight(1f))
+        bare = bare,
+        header = if (bare) null else {
+            {
+                // BB4: no ALL-TIME door here (all-time lives in Stats).
+                ResetClockLabel(Modifier.weight(1f))
+            }
         },
     )
 }

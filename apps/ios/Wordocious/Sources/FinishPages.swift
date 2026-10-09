@@ -223,6 +223,8 @@ struct GamePickerCard<Header: View>: View {
     /// FINISH_SPEC §AU2: ONE horizontally scrolling row of smaller tiles
     /// (Wordocious + Sweep, a divider, then Puzzles) instead of two labeled rows.
     var compact: Bool = false
+    /// 11b: no card and no header strip — the picker sits directly on the Leaderboard stage's backdrop.
+    var bare: Bool = false
     let onSelect: (String) -> Void
     @ViewBuilder var header: () -> Header
 
@@ -240,15 +242,17 @@ struct GamePickerCard<Header: View>: View {
         return GameOrderStore.shared.ordered(moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) }), section: .puzzles)
     }
 
-    var body: some View {
+    @ViewBuilder var body: some View {
         let puzzles = puzzleModes
         let words = wordModes
         let dark = Theme.isDark
-        VStack(spacing: 0) {
-            header()
-                .padding(.horizontal, 14).padding(.vertical, 9)
-                .frame(maxWidth: .infinity)
-                .background(dark ? Color.white.opacity(0.04) : accent.wash(0.10))
+        let stack = VStack(spacing: 0) {
+            if !bare {
+                header()
+                    .padding(.horizontal, 14).padding(.vertical, 9)
+                    .frame(maxWidth: .infinity)
+                    .background(dark ? Color.white.opacity(0.04) : accent.wash(0.10))
+            }
             // FINISH_SPEC BB3: the same two-row grid everywhere (every game visible, no
             // sideways scroll); `compact` (the Leaderboard) shrinks the tiles + gaps.
             VStack(alignment: .leading, spacing: compact ? 5 : 8) {
@@ -266,9 +270,9 @@ struct GamePickerCard<Header: View>: View {
                     }
                 }
             }
-            .padding(.horizontal, 12).padding(.top, compact ? 8 : 12).padding(.bottom, compact ? 9 : 14)
+            .padding(.horizontal, 12).padding(.top, bare ? 4 : (compact ? 8 : 12)).padding(.bottom, bare ? 6 : (compact ? 9 : 14))
         }
-        .tintedCard(accent: accent, tint: 0.07, line: 0.22)
+        if bare { stack } else { stack.tintedCard(accent: accent, tint: 0.07, line: 0.22) }
     }
 
     private func tile(_ m: HomeMode) -> some View {
