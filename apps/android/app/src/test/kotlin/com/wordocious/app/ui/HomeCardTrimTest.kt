@@ -39,7 +39,8 @@ class HomeCardTrimTest {
         assertEquals(6f, HOME_HOST_PEEK.value)
         assertEquals(34f, BannerSlotSpec.SHARE)
         val src = java.io.File("src/main/kotlin/com/wordocious/app/ui/HomeBannerView.kt").readText()
-        assertTrue(src.contains("maxLines = 1, sound = active"))
+        // 2.8 item 6: the headline now wraps to a balanced 2nd line via BubbleText (never "…"), so no maxLines = 1.
+        assertTrue(src.contains("BubbleText"))
         assertTrue(src.contains("(maxWidth * 0.64f).coerceAtMost(230.dp)"))
     }
 }
