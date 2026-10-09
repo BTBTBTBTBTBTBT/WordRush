@@ -4117,8 +4117,8 @@
   },
   {
     "id": "cur113",
-    "answer": "letitiawright",
-    "display": "Letitia Wright",
+    "answer": "violadavis",
+    "display": "Viola Davis",
     "category": "celebrity",
     "themeCategory": "currentevents",
     "wikiTitle": ""
@@ -4126,7 +4126,7 @@
   {
     "id": "cur114",
     "answer": "lupitanyongo",
-    "display": "Lupita Nyongo",
+    "display": "Lupita Nyong'o",
     "category": "celebrity",
     "themeCategory": "currentevents",
     "wikiTitle": ""
@@ -4165,35 +4165,35 @@
   },
   {
     "id": "geo081",
-    "answer": "perplexity",
-    "display": "Perplexity",
+    "answer": "alexa",
+    "display": "Alexa",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": "Perplexity AI"
+    "wikiTitle": "Amazon Alexa"
   },
   {
     "id": "geo082",
-    "answer": "midjourney",
-    "display": "Midjourney",
+    "answer": "zoom",
+    "display": "Zoom",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": ""
+    "wikiTitle": "Zoom (software)"
   },
   {
     "id": "geo083",
-    "answer": "notion",
-    "display": "Notion",
+    "answer": "etsy",
+    "display": "Etsy",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": "Notion (productivity software)"
+    "wikiTitle": "Etsy"
   },
   {
     "id": "geo084",
-    "answer": "figma",
-    "display": "Figma",
+    "answer": "labubu",
+    "display": "Labubu",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": ""
+    "wikiTitle": "Labubu"
   },
   {
     "id": "geo085",
@@ -5024,11 +5024,11 @@
   },
   {
     "id": "geo098",
-    "answer": "stripe",
-    "display": "Stripe",
+    "answer": "paypal",
+    "display": "PayPal",
     "category": "other",
     "themeCategory": "currentevents",
-    "wikiTitle": "Stripe, Inc."
+    "wikiTitle": "PayPal"
   },
   {
     "id": "geo099",

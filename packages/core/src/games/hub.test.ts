@@ -133,6 +133,18 @@ describe('Hubbub word count (one source)', () => {
     expect(HUB_FOUND_LABEL).not.toMatch(/\d/);
   });
 
+  // Prompt 05b (tester video): re-entering a word already found must say "Already found", never
+  // "Not a word we know" — scored, rarer (bonus) and revealed words alike, in any case. Mirrors
+  // HubWordCountTest.kt / HubWordCountTests.swift.
+  it('re-entering a found word is "found" (scored, bonus, revealed), not "notword"', () => {
+    let s = play('FOAL', 'MORA');
+    for (const w of ['FOAL', 'foal', 'MORA', 'mora']) expect(hubReduce(s, { type: 'SUBMIT', word: w }, 0).reject, w).toBe('found');
+    s = hubReduce(s, { type: 'HINT_REVEAL' }, 0);
+    const revealed = s.revealed[0];
+    expect(hubReduce(s, { type: 'SUBMIT', word: revealed }, 0).reject).toBe('found');
+    expect(hubReduce(s, { type: 'SUBMIT', word: 'FOAL' }, 0).points).toBe(s.points);
+  });
+
   it('bonus words score but never move the count', () => {
     const before = play('FOAL');
     const after = hubReduce(before, { type: 'SUBMIT', word: 'MORA' }, 0);

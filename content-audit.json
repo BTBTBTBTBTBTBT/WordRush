@@ -246,10 +246,10 @@
    "date": "2026-11-03",
    "status": "pool",
    "field": "answer",
-   "word": "PRICK",
+   "word": "P****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Common vulgar insult/genital slang; testers will snicker or object.",
+   "reason": "Common vulgar insult/G****** slang; testers will snicker or object.",
    "replacement": "PHASE",
    "replacement_note": "Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch.",
    "changeable": true,
@@ -262,7 +262,8 @@
    "next_daily_mode": "GAUNTLET",
    "wotd_served": [],
    "wotd_next": null,
-   "flag_id": "F0001"
+   "flag_id": "F0001",
+   "word_b64": "UFJJQ0s="
   },
   {
    "game": "pool5",
@@ -272,7 +273,7 @@
    "date": "2026-11-04",
    "status": "pool",
    "field": "answer",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Often used as a derogatory label for lesbians or masculine women.",
@@ -286,7 +287,8 @@
    "next_daily_mode": "OCTORDLE",
    "wotd_served": [],
    "wotd_next": "2028-02-04",
-   "flag_id": "F0002"
+   "flag_id": "F0002",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "pool5",
@@ -321,7 +323,7 @@
    "date": "2026-10-30",
    "status": "pool",
    "field": "answer",
-   "word": "OPIUM",
+   "word": "O****",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Narcotic drug name.",
@@ -338,7 +340,8 @@
    "next_daily_mode": "RESCUE",
    "wotd_served": [],
    "wotd_next": null,
-   "flag_id": "F0004"
+   "flag_id": "F0004",
+   "word_b64": "T1BJVU0="
   },
   {
    "game": "pool5",
@@ -474,7 +477,7 @@
    "date": "2026-11-09",
    "status": "pool",
    "field": "answer",
-   "word": "SPANK",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Corporal punishment / sexual connotation; poor fit for an all-ages answer.",
@@ -489,7 +492,8 @@
    "next_daily_mode": "RESCUE",
    "wotd_served": [],
    "wotd_next": "2028-12-25",
-   "flag_id": "F0010"
+   "flag_id": "F0010",
+   "word_b64": "U1BBTks="
   },
   {
    "game": "pool5",
@@ -705,7 +709,7 @@
    "word": "NAKED",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). Nudity word; parents/app reviewers may object as an answer or Word of the Day.",
+   "reason": "Awaits founder call (PENDING_FOUNDER_CALL in answer-pool-hygiene.test.ts). N***** word; parents/app reviewers may object as an answer or Word of the Day.",
    "replacement": "CLIFF",
    "replacement_note": "Common noun. Passesthe audit validator; swap in place via a new dated solution-swaps.ts batch.",
    "changeable": true,
@@ -1180,7 +1184,7 @@
    "date": "2027-08-22",
    "status": "pool",
    "field": "answer",
-   "word": "HOOKUP",
+   "word": "H*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Casual-sex slang.",
@@ -1190,7 +1194,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0039"
+   "flag_id": "F0039",
+   "word_b64": "SE9PS1VQ"
   },
   {
    "game": "pool6",
@@ -1300,7 +1305,7 @@
    "date": "2028-03-26",
    "status": "pool",
    "field": "answer",
-   "word": "FONDLE",
+   "word": "F*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Strong sexual-touching connotation; not family-friendly.",
@@ -1310,7 +1315,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0045"
+   "flag_id": "F0045",
+   "word_b64": "Rk9ORExF"
   },
   {
    "game": "pool6",
@@ -1340,7 +1346,7 @@
    "date": "2028-04-22",
    "status": "pool",
    "field": "answer",
-   "word": "JUNKIE",
+   "word": "J*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Drug-addiction slang; not family-friendly.",
@@ -1350,7 +1356,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0047"
+   "flag_id": "F0047",
+   "word_b64": "SlVOS0lF"
   },
   {
    "game": "pool6",
@@ -1540,7 +1547,7 @@
    "date": "2029-12-06",
    "status": "pool",
    "field": "answer",
-   "word": "RAPING",
+   "word": "R*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual violence; must not be an answer.",
@@ -1550,7 +1557,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0057"
+   "flag_id": "F0057",
+   "word_b64": "UkFQSU5H"
   },
   {
    "game": "pool6",
@@ -1660,7 +1668,7 @@
    "date": "2031-02-18",
    "status": "pool",
    "field": "answer",
-   "word": "STONER",
+   "word": "S*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Drug slang (marijuana user).",
@@ -1670,7 +1678,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0063"
+   "flag_id": "F0063",
+   "word_b64": "U1RPTkVS"
   },
   {
    "game": "pool6",
@@ -1840,17 +1849,18 @@
    "date": "2031-12-31",
    "status": "pool",
    "field": "answer",
-   "word": "NUDITY",
+   "word": "N*****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Sexual/nudity content; not family-friendly as an answer.",
+   "reason": "Sexual/N***** content; not family-friendly as an answer.",
    "replacement": "WHIMSY",
    "replacement_note": "Same length (6), common American word; passesthe audit validator.",
    "changeable": true,
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0072"
+   "flag_id": "F0072",
+   "word_b64": "TlVESVRZ"
   },
   {
    "game": "pool6",
@@ -2000,7 +2010,7 @@
    "date": "2033-02-18",
    "status": "pool",
    "field": "answer",
-   "word": "VIAGRA",
+   "word": "V*****",
    "category": "proper-noun",
    "severity": "high",
    "reason": "Drug brand name with sexual connotation.",
@@ -2010,7 +2020,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0080"
+   "flag_id": "F0080",
+   "word_b64": "VklBR1JB"
   },
   {
    "game": "pool6",
@@ -2120,7 +2131,7 @@
    "date": "2033-11-01",
    "status": "pool",
    "field": "answer",
-   "word": "HICKEY",
+   "word": "H*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual 'love bite'; not family-friendly.",
@@ -2130,7 +2141,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_6",
-   "flag_id": "F0086"
+   "flag_id": "F0086",
+   "word_b64": "SElDS0VZ"
   },
   {
    "game": "pool6",
@@ -3586,7 +3598,7 @@
    "date": null,
    "status": "pool",
    "field": "answer",
-   "word": "CROTCH",
+   "word": "C*****",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Body-part word that draws snickers; not great for kids.",
@@ -3598,7 +3610,8 @@
     "2026-09-23"
    ],
    "next_daily_mode": null,
-   "flag_id": "F0159"
+   "flag_id": "F0159",
+   "word_b64": "Q1JPVENI"
   },
   {
    "game": "pool6",
@@ -4548,7 +4561,7 @@
    "date": "2029-05-01",
    "status": "pool",
    "field": "answer",
-   "word": "REDNECK",
+   "word": "R******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Derogatory term for rural white Americans.",
@@ -4558,7 +4571,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_7",
-   "flag_id": "F0207"
+   "flag_id": "F0207",
+   "word_b64": "UkVETkVDSw=="
   },
   {
    "game": "pool7",
@@ -4588,7 +4602,7 @@
    "date": "2029-06-20",
    "status": "pool",
    "field": "answer",
-   "word": "PANTIES",
+   "word": "P******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Women's underwear; sexualized/embarrassing for kids.",
@@ -4598,7 +4612,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_7",
-   "flag_id": "F0209"
+   "flag_id": "F0209",
+   "word_b64": "UEFOVElFUw=="
   },
   {
    "game": "pool7",
@@ -4648,17 +4663,18 @@
    "date": "2031-08-09",
    "status": "pool",
    "field": "answer",
-   "word": "GROPING",
+   "word": "G******",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Usually refers to sexual groping.",
+   "reason": "Usually refers to sexual G******.",
    "replacement": "PEEKING",
    "replacement_note": "Common American 7-letter word; passesthe audit validator. Swap in place at index 1314 via a new dated swap batch (future deals only).",
    "changeable": true,
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_7",
-   "flag_id": "F0212"
+   "flag_id": "F0212",
+   "word_b64": "R1JPUElORw=="
   },
   {
    "game": "pool7",
@@ -4688,7 +4704,7 @@
    "date": "2032-01-07",
    "status": "pool",
    "field": "answer",
-   "word": "PERVERT",
+   "word": "P******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual-deviance term; not family-friendly.",
@@ -4698,7 +4714,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_7",
-   "flag_id": "F0214"
+   "flag_id": "F0214",
+   "word_b64": "UEVSVkVSVA=="
   },
   {
    "game": "pool7",
@@ -4728,7 +4745,7 @@
    "date": "2032-09-19",
    "status": "pool",
    "field": "answer",
-   "word": "FLASHER",
+   "word": "F******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Most commonly means someone who indecently exposes themselves.",
@@ -4738,7 +4755,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_7",
-   "flag_id": "F0216"
+   "flag_id": "F0216",
+   "word_b64": "RkxBU0hFUg=="
   },
   {
    "game": "pool7",
@@ -4828,7 +4846,7 @@
    "date": "2033-05-11",
    "status": "pool",
    "field": "answer",
-   "word": "PLAYBOY",
+   "word": "P******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Adult-magazine brand / womanizer.",
@@ -4838,7 +4856,8 @@
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_7",
-   "flag_id": "F0221"
+   "flag_id": "F0221",
+   "word_b64": "UExBWUJPWQ=="
   },
   {
    "game": "pool7",
@@ -4928,17 +4947,18 @@
    "date": "2033-12-08",
    "status": "pool",
    "field": "answer",
-   "word": "TOPLESS",
+   "word": "T******",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Nudity connotation.",
+   "reason": "N***** connotation.",
    "replacement": "SATCHEL",
    "replacement_note": "Common American 7-letter word; passesthe audit validator. Swap in place at index 1759 via a new dated swap batch (future deals only).",
    "changeable": true,
    "first_served": null,
    "served_daily": [],
    "next_daily_mode": "DUEL_7",
-   "flag_id": "F0226"
+   "flag_id": "F0226",
+   "word_b64": "VE9QTEVTUw=="
   },
   {
    "game": "pool7",
@@ -5091,7 +5111,7 @@
    "word": "DICKENS",
    "category": "proper-noun",
    "severity": "medium",
-   "reason": "Surname (Charles Dickens); 'what the dickens' is dated, and it starts with DICK.",
+   "reason": "Surname (Charles Dickens); 'what the dickens' is dated, and it starts with D***.",
    "replacement": "STENCIL",
    "replacement_note": "Common American 7-letter word; passesthe audit validator. Swap in place at index 1329 via a new dated swap batch (future deals only).",
    "changeable": true,
@@ -6312,15 +6332,16 @@
    "date": "2026-10-09",
    "status": "future",
    "field": "clue",
-   "word": "2D STORY :: A cock and bull ____",
+   "word": "2D STORY :: A C*** and bull ____",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Clue 'A cock and bull ____' puts the word COCK (on the profanity list) in front of kids.",
+   "reason": "Clue 'A C*** and bull ____' puts the word C*** (on the profanity list) in front of kids.",
    "replacement": "That's my ____ and I'm sticking to it",
    "replacement_note": "Answer STORY unchanged; clean idiom.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0295"
+   "flag_id": "F0295",
+   "word_b64": "MkQgU1RPUlkgOjogQSBjb2NrIGFuZCBidWxsIF9fX18="
   },
   {
    "game": "crossword",
@@ -6330,15 +6351,16 @@
    "date": "2027-01-03",
    "status": "future",
    "field": "clue",
-   "word": "1D STORY :: A cock and bull ____",
+   "word": "1D STORY :: A C*** and bull ____",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Clue 'A cock and bull ____' puts the word COCK (on the profanity list) in front of kids.",
+   "reason": "Clue 'A C*** and bull ____' puts the word C*** (on the profanity list) in front of kids.",
    "replacement": "That's my ____ and I'm sticking to it",
    "replacement_note": "Answer STORY unchanged; clean idiom.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0296"
+   "flag_id": "F0296",
+   "word_b64": "MUQgU1RPUlkgOjogQSBjb2NrIGFuZCBidWxsIF9fX18="
   },
   {
    "game": "crossword",
@@ -6348,15 +6370,16 @@
    "date": "2027-02-20",
    "status": "future",
    "field": "clue",
-   "word": "5A ARMOR :: A chink in the ____",
+   "word": "5A ARMOR :: A C**** in the ____",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Clue 'A chink in the ____' uses CHINK, which is also an ethnic slur and trips the offensive list.",
+   "reason": "Clue 'A C**** in the ____' uses C****, which is also an ethnic slur and trips the offensive list.",
    "replacement": "A knight in shining ____",
    "replacement_note": "Answer ARMOR unchanged.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0297"
+   "flag_id": "F0297",
+   "word_b64": "NUEgQVJNT1IgOjogQSBjaGluayBpbiB0aGUgX19fXw=="
   },
   {
    "game": "crossword",
@@ -6366,15 +6389,16 @@
    "date": "2027-06-20",
    "status": "never-dated",
    "field": "clue",
-   "word": "3D ARMOR :: A chink in the ____",
+   "word": "3D ARMOR :: A C**** in the ____",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Clue 'A chink in the ____' uses CHINK, which is also an ethnic slur and trips the offensive list.",
+   "reason": "Clue 'A C**** in the ____' uses C****, which is also an ethnic slur and trips the offensive list.",
    "replacement": "A knight in shining ____",
    "replacement_note": "Answer ARMOR unchanged.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0298"
+   "flag_id": "F0298",
+   "word_b64": "M0QgQVJNT1IgOjogQSBjaGluayBpbiB0aGUgX19fXw=="
   },
   {
    "game": "crossword",
@@ -6384,15 +6408,16 @@
    "date": "2027-09-29",
    "status": "future",
    "field": "clue",
-   "word": "7D STORY :: A cock and bull ____",
+   "word": "7D STORY :: A C*** and bull ____",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "\"A cock and bull story\" puts \"cock\" in front of kids; trips the profanity list.",
+   "reason": "\"A C*** and bull story\" puts \"C***\" in front of kids; trips the profanity list.",
    "replacement": "A likely ____!",
    "replacement_note": null,
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0299"
+   "flag_id": "F0299",
+   "word_b64": "N0QgU1RPUlkgOjogQSBjb2NrIGFuZCBidWxsIF9fX18="
   },
   {
    "game": "crossword",
@@ -14177,15 +14202,16 @@
    "date": "2026-10-31",
    "status": "holiday",
    "field": "answer",
-   "word": "HOOKUP",
+   "word": "H*****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "HOOKUP has a common sexual meaning (Halloween holiday puzzle).",
+   "reason": "H***** has a common sexual meaning (Halloween holiday puzzle).",
    "replacement": "HOCKEY",
-   "replacement_note": "Replaces HOOKUP (circled [0, 3, 5] -> letters HKP); new circled indexes [0, 3]. HOCKEY only supplies H,K, so also change ALIAS -> PAINT circled [0,1,2] (P,A,I); CLAMP [0,3,4] and PUNDIT [0,1,2,5] unchanged; letters still spell PUMPKINPATCH.",
+   "replacement_note": "Replaces H***** (circled [0, 3, 5] -> letters HKP); new circled indexes [0, 3]. HOCKEY only supplies H,K, so also change ALIAS -> PAINT circled [0,1,2] (P,A,I); CLAMP [0,3,4] and PUNDIT [0,1,2,5] unchanged; letters still spell PUMPKINPATCH.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0731"
+   "flag_id": "F0731",
+   "word_b64": "SE9PS1VQ"
   },
   {
    "game": "muddle",
@@ -14213,15 +14239,16 @@
    "date": "2026-12-27",
    "status": "holiday",
    "field": "answer",
-   "word": "SHITTY",
+   "word": "S*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Profanity as a scramble answer word (Kwanzaa holiday puzzle).",
    "replacement": "GRITTY",
-   "replacement_note": "Replaces SHITTY (circled [2, 3, 4, 5] -> letters ITTY); new circled indexes [2, 3, 4, 5].",
+   "replacement_note": "Replaces S***** (circled [2, 3, 4, 5] -> letters ITTY); new circled indexes [2, 3, 4, 5].",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0733"
+   "flag_id": "F0733",
+   "word_b64": "U0hJVFRZ"
   },
   {
    "game": "muddle",
@@ -14231,15 +14258,16 @@
    "date": "2027-01-29",
    "status": "future",
    "field": "answer",
-   "word": "FUCKED",
+   "word": "F*****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Profanity as a scramble answer word.",
    "replacement": "FORKED",
-   "replacement_note": "Replaces FUCKED (circled [0, 3] -> letters FK); new circled indexes [0, 3].",
+   "replacement_note": "Replaces F***** (circled [0, 3] -> letters FK); new circled indexes [0, 3].",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0734"
+   "flag_id": "F0734",
+   "word_b64": "RlVDS0VE"
   },
   {
    "game": "muddle",
@@ -14303,15 +14331,16 @@
    "date": "2027-06-30",
    "status": "future",
    "field": "answer",
-   "word": "HOOKUP",
+   "word": "H*****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "HOOKUP has a common sexual meaning.",
+   "reason": "H***** has a common sexual meaning.",
    "replacement": "COOKIE",
-   "replacement_note": "Replaces HOOKUP (circled [1, 2, 3] -> letters OOK); new circled indexes [1, 2, 3].",
+   "replacement_note": "Replaces H***** (circled [1, 2, 3] -> letters OOK); new circled indexes [1, 2, 3].",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0738"
+   "flag_id": "F0738",
+   "word_b64": "SE9PS1VQ"
   },
   {
    "game": "muddle",
@@ -15023,15 +15052,16 @@
    "date": "2027-12-25",
    "status": "holiday",
    "field": "answer",
-   "word": "CROTCH",
+   "word": "C*****",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Crude body-part word as a scramble answer in a Hanukkah puzzle.",
    "replacement": "SKETCH",
-   "replacement_note": "Replaces CROTCH (circled [0, 5] -> letters CH); new circled indexes [4, 5].",
+   "replacement_note": "Replaces C***** (circled [0, 5] -> letters CH); new circled indexes [4, 5].",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0778"
+   "flag_id": "F0778",
+   "word_b64": "Q1JPVENI"
   },
   {
    "game": "muddle",
@@ -16877,15 +16907,16 @@
    "date": "2026-09-27",
    "status": "frozen",
    "field": "required",
-   "word": "DONG",
+   "word": "D***",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Common slang for penis.",
+   "reason": "Common slang for P****.",
    "replacement": null,
    "replacement_note": null,
    "changeable": false,
    "first_served": null,
-   "flag_id": "F0881"
+   "flag_id": "F0881",
+   "word_b64": "RE9ORw=="
   },
   {
    "game": "hubbub",
@@ -16895,15 +16926,16 @@
    "date": "2026-10-15",
    "status": "future",
    "field": "required",
-   "word": "DONG",
+   "word": "D***",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Common slang for penis.",
+   "reason": "Common slang for P****.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0882"
+   "flag_id": "F0882",
+   "word_b64": "RE9ORw=="
   },
   {
    "game": "hubbub",
@@ -16913,7 +16945,7 @@
    "date": "2026-10-26",
    "status": "future",
    "field": "required",
-   "word": "QUEER",
+   "word": "Q****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Historically a slur; sensitive for all ages.",
@@ -16921,7 +16953,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0883"
+   "flag_id": "F0883",
+   "word_b64": "UVVFRVI="
   },
   {
    "game": "hubbub",
@@ -16931,7 +16964,7 @@
    "date": "2026-11-09",
    "status": "future",
    "field": "required",
-   "word": "PERVERT",
+   "word": "P******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual-deviance term.",
@@ -16939,7 +16972,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0884"
+   "flag_id": "F0884",
+   "word_b64": "UEVSVkVSVA=="
   },
   {
    "game": "hubbub",
@@ -16949,7 +16983,7 @@
    "date": "2026-11-09",
    "status": "future",
    "field": "required",
-   "word": "PIMP",
+   "word": "P***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Prostitution term.",
@@ -16957,7 +16991,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0885"
+   "flag_id": "F0885",
+   "word_b64": "UElNUA=="
   },
   {
    "game": "hubbub",
@@ -16967,7 +17002,7 @@
    "date": "2026-11-24",
    "status": "future",
    "field": "required",
-   "word": "PERVERT",
+   "word": "P******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual-deviance term.",
@@ -16975,7 +17010,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0886"
+   "flag_id": "F0886",
+   "word_b64": "UEVSVkVSVA=="
   },
   {
    "game": "hubbub",
@@ -16985,7 +17021,7 @@
    "date": "2026-11-25",
    "status": "future",
    "field": "required",
-   "word": "PIMP",
+   "word": "P***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Prostitution term.",
@@ -16993,7 +17029,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0887"
+   "flag_id": "F0887",
+   "word_b64": "UElNUA=="
   },
   {
    "game": "hubbub",
@@ -17003,7 +17040,7 @@
    "date": "2026-12-14",
    "status": "future",
    "field": "required",
-   "word": "PIMP",
+   "word": "P***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Prostitution term.",
@@ -17011,7 +17048,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0888"
+   "flag_id": "F0888",
+   "word_b64": "UElNUA=="
   },
   {
    "game": "hubbub",
@@ -17039,7 +17077,7 @@
    "date": "2027-01-18",
    "status": "future",
    "field": "required",
-   "word": "HORNY",
+   "word": "H****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual slang.",
@@ -17047,7 +17085,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0890"
+   "flag_id": "F0890",
+   "word_b64": "SE9STlk="
   },
   {
    "game": "hubbub",
@@ -17057,7 +17096,7 @@
    "date": "2027-02-03",
    "status": "future",
    "field": "required",
-   "word": "RETARDED",
+   "word": "R*******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Ableist slur.",
@@ -17065,7 +17104,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0891"
+   "flag_id": "F0891",
+   "word_b64": "UkVUQVJERUQ="
   },
   {
    "game": "hubbub",
@@ -17075,15 +17115,16 @@
    "date": "2027-02-11",
    "status": "future",
    "field": "required",
-   "word": "DONG",
+   "word": "D***",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Common slang for penis.",
+   "reason": "Common slang for P****.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0892"
+   "flag_id": "F0892",
+   "word_b64": "RE9ORw=="
   },
   {
    "game": "hubbub",
@@ -17093,7 +17134,7 @@
    "date": "2027-02-17",
    "status": "future",
    "field": "required",
-   "word": "BONER",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual slang.",
@@ -17101,7 +17142,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0893"
+   "flag_id": "F0893",
+   "word_b64": "Qk9ORVI="
   },
   {
    "game": "hubbub",
@@ -17129,7 +17171,7 @@
    "date": "2027-04-01",
    "status": "future",
    "field": "required",
-   "word": "PERVERT",
+   "word": "P******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual-deviance term.",
@@ -17137,7 +17179,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0895"
+   "flag_id": "F0895",
+   "word_b64": "UEVSVkVSVA=="
   },
   {
    "game": "hubbub",
@@ -17147,15 +17190,16 @@
    "date": "2027-04-05",
    "status": "future",
    "field": "required",
-   "word": "DONG",
+   "word": "D***",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Common slang for penis.",
+   "reason": "Common slang for P****.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0896"
+   "flag_id": "F0896",
+   "word_b64": "RE9ORw=="
   },
   {
    "game": "hubbub",
@@ -17165,7 +17209,7 @@
    "date": "2027-04-19",
    "status": "future",
    "field": "required",
-   "word": "VIBRATOR",
+   "word": "V*******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sex-toy connotation.",
@@ -17173,7 +17217,8 @@
    "replacement_note": "Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0897"
+   "flag_id": "F0897",
+   "word_b64": "VklCUkFUT1I="
   },
   {
    "game": "hubbub",
@@ -17201,7 +17246,7 @@
    "date": "2027-05-12",
    "status": "future",
    "field": "required",
-   "word": "LUBE",
+   "word": "L***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual connotation.",
@@ -17209,7 +17254,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0899"
+   "flag_id": "F0899",
+   "word_b64": "TFVCRQ=="
   },
   {
    "game": "hubbub",
@@ -17219,7 +17265,7 @@
    "date": "2027-05-19",
    "status": "future",
    "field": "required",
-   "word": "HOMO",
+   "word": "H***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Anti-gay slur (or a prefix).",
@@ -17227,7 +17273,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0900"
+   "flag_id": "F0900",
+   "word_b64": "SE9NTw=="
   },
   {
    "game": "hubbub",
@@ -17237,7 +17284,7 @@
    "date": "2027-05-20",
    "status": "future",
    "field": "required",
-   "word": "PIMP",
+   "word": "P***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Prostitution term.",
@@ -17245,7 +17292,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0901"
+   "flag_id": "F0901",
+   "word_b64": "UElNUA=="
   },
   {
    "game": "hubbub",
@@ -17255,7 +17303,7 @@
    "date": "2027-05-26",
    "status": "future",
    "field": "required",
-   "word": "HOMO",
+   "word": "H***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Anti-gay slur (or a prefix).",
@@ -17263,7 +17311,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0902"
+   "flag_id": "F0902",
+   "word_b64": "SE9NTw=="
   },
   {
    "game": "hubbub",
@@ -17273,7 +17322,7 @@
    "date": "2027-06-12",
    "status": "future",
    "field": "required",
-   "word": "QUEER",
+   "word": "Q****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Historically a slur; sensitive for all ages.",
@@ -17281,7 +17330,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0903"
+   "flag_id": "F0903",
+   "word_b64": "UVVFRVI="
   },
   {
    "game": "hubbub",
@@ -17291,7 +17341,7 @@
    "date": "2027-06-13",
    "status": "future",
    "field": "required",
-   "word": "RETARDED",
+   "word": "R*******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Ableist slur.",
@@ -17299,7 +17349,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0904"
+   "flag_id": "F0904",
+   "word_b64": "UkVUQVJERUQ="
   },
   {
    "game": "hubbub",
@@ -17327,7 +17378,7 @@
    "date": "2027-06-20",
    "status": "future",
    "field": "required",
-   "word": "QUEER",
+   "word": "Q****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Historically a slur; sensitive for all ages.",
@@ -17335,7 +17386,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0906"
+   "flag_id": "F0906",
+   "word_b64": "UVVFRVI="
   },
   {
    "game": "hubbub",
@@ -17363,15 +17415,16 @@
    "date": "2027-08-12",
    "status": "future",
    "field": "required",
-   "word": "DONG",
+   "word": "D***",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Common slang for penis.",
+   "reason": "Common slang for P****.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0908"
+   "flag_id": "F0908",
+   "word_b64": "RE9ORw=="
   },
   {
    "game": "hubbub",
@@ -17399,7 +17452,7 @@
    "date": "2027-08-20",
    "status": "future",
    "field": "required",
-   "word": "PIMP",
+   "word": "P***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Prostitution term.",
@@ -17407,7 +17460,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0910"
+   "flag_id": "F0910",
+   "word_b64": "UElNUA=="
   },
   {
    "game": "hubbub",
@@ -17417,7 +17471,7 @@
    "date": "2027-08-28",
    "status": "future",
    "field": "required",
-   "word": "HOMO",
+   "word": "H***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Anti-gay slur (or a prefix).",
@@ -17425,7 +17479,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0911"
+   "flag_id": "F0911",
+   "word_b64": "SE9NTw=="
   },
   {
    "game": "hubbub",
@@ -17435,7 +17490,7 @@
    "date": "2027-09-06",
    "status": "future",
    "field": "required",
-   "word": "BONDAGE",
+   "word": "B******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual connotation.",
@@ -17443,7 +17498,8 @@
    "replacement_note": "Move to bonus list (0 pts). It is the puzzle's only pangram: needs letter-set rebuild via hub/repair-future.mjs (apps/web/scripts/hub/repair-future.mjs).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0912"
+   "flag_id": "F0912",
+   "word_b64": "Qk9OREFHRQ=="
   },
   {
    "game": "hubbub",
@@ -17453,7 +17509,7 @@
    "date": "2027-09-26",
    "status": "future",
    "field": "required",
-   "word": "HOMO",
+   "word": "H***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Anti-gay slur (or a prefix).",
@@ -17461,7 +17517,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0913"
+   "flag_id": "F0913",
+   "word_b64": "SE9NTw=="
   },
   {
    "game": "hubbub",
@@ -17489,15 +17546,16 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "DONG",
+   "word": "D***",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "Common slang for penis.",
+   "reason": "Common slang for P****.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0915"
+   "flag_id": "F0915",
+   "word_b64": "RE9ORw=="
   },
   {
    "game": "hubbub",
@@ -17507,7 +17565,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "PERVERT",
+   "word": "P******",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual-deviance term.",
@@ -17515,7 +17573,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0916"
+   "flag_id": "F0916",
+   "word_b64": "UEVSVkVSVA=="
   },
   {
    "game": "hubbub",
@@ -17525,7 +17584,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "PERVERTED",
+   "word": "P********",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual-deviance term.",
@@ -17533,7 +17592,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0917"
+   "flag_id": "F0917",
+   "word_b64": "UEVSVkVSVEVE"
   },
   {
    "game": "hubbub",
@@ -17543,7 +17603,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "LUBE",
+   "word": "L***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual connotation.",
@@ -17551,7 +17611,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0918"
+   "flag_id": "F0918",
+   "word_b64": "TFVCRQ=="
   },
   {
    "game": "hubbub",
@@ -17579,7 +17640,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "PIMP",
+   "word": "P***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Prostitution term.",
@@ -17587,7 +17648,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0920"
+   "flag_id": "F0920",
+   "word_b64": "UElNUA=="
   },
   {
    "game": "hubbub",
@@ -17597,7 +17659,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "LUBE",
+   "word": "L***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual connotation.",
@@ -17605,7 +17667,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0921"
+   "flag_id": "F0921",
+   "word_b64": "TFVCRQ=="
   },
   {
    "game": "hubbub",
@@ -17615,7 +17678,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "LUBE",
+   "word": "L***",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual connotation.",
@@ -17623,7 +17686,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0922"
+   "flag_id": "F0922",
+   "word_b64": "TFVCRQ=="
   },
   {
    "game": "hubbub",
@@ -17636,7 +17700,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": null,
    "replacement_note": null,
    "changeable": false,
@@ -17705,7 +17769,7 @@
    "date": "2026-10-01",
    "status": "frozen",
    "field": "required",
-   "word": "CRAP",
+   "word": "C***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Mild profanity.",
@@ -17713,7 +17777,8 @@
    "replacement_note": null,
    "changeable": false,
    "first_served": null,
-   "flag_id": "F0927"
+   "flag_id": "F0927",
+   "word_b64": "Q1JBUA=="
   },
   {
    "game": "hubbub",
@@ -17741,7 +17806,7 @@
    "date": "2026-10-03",
    "status": "frozen",
    "field": "required",
-   "word": "BONG",
+   "word": "B***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Drug paraphernalia.",
@@ -17749,7 +17814,8 @@
    "replacement_note": null,
    "changeable": false,
    "first_served": null,
-   "flag_id": "F0929"
+   "flag_id": "F0929",
+   "word_b64": "Qk9ORw=="
   },
   {
    "game": "hubbub",
@@ -17867,7 +17933,7 @@
    "date": "2026-10-15",
    "status": "future",
    "field": "required",
-   "word": "BONG",
+   "word": "B***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Drug paraphernalia.",
@@ -17875,7 +17941,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F0936"
+   "flag_id": "F0936",
+   "word_b64": "Qk9ORw=="
   },
   {
    "game": "hubbub",
@@ -19091,7 +19158,7 @@
    "date": "2027-02-03",
    "status": "future",
    "field": "required",
-   "word": "TURD",
+   "word": "T***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Crude.",
@@ -19099,7 +19166,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1004"
+   "flag_id": "F1004",
+   "word_b64": "VFVSRA=="
   },
   {
    "game": "hubbub",
@@ -19220,7 +19288,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -19274,7 +19342,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -19598,7 +19666,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -20516,7 +20584,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -20858,7 +20926,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -20873,7 +20941,7 @@
    "date": "2027-08-16",
    "status": "future",
    "field": "required",
-   "word": "TURD",
+   "word": "T***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Crude.",
@@ -20881,7 +20949,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1103"
+   "flag_id": "F1103",
+   "word_b64": "VFVSRA=="
   },
   {
    "game": "hubbub",
@@ -21020,7 +21089,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -21272,7 +21341,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -21452,7 +21521,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -21539,7 +21608,7 @@
    "date": "2027-10-14",
    "status": "future",
    "field": "required",
-   "word": "CRAP",
+   "word": "C***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Mild profanity.",
@@ -21547,7 +21616,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1140"
+   "flag_id": "F1140",
+   "word_b64": "Q1JBUA=="
   },
   {
    "game": "hubbub",
@@ -21740,7 +21810,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -21791,7 +21861,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "TURD",
+   "word": "T***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Crude.",
@@ -21799,7 +21869,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1154"
+   "flag_id": "F1154",
+   "word_b64": "VFVSRA=="
   },
   {
    "game": "hubbub",
@@ -21812,7 +21883,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -22190,7 +22261,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -22349,7 +22420,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "TURD",
+   "word": "T***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Crude.",
@@ -22357,7 +22428,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1185"
+   "flag_id": "F1185",
+   "word_b64": "VFVSRA=="
   },
   {
    "game": "hubbub",
@@ -22385,7 +22457,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "TURD",
+   "word": "T***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Crude.",
@@ -22393,7 +22465,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1187"
+   "flag_id": "F1187",
+   "word_b64": "VFVSRA=="
   },
   {
    "game": "hubbub",
@@ -22547,7 +22620,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "TURD",
+   "word": "T***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Crude.",
@@ -22555,7 +22628,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1196"
+   "flag_id": "F1196",
+   "word_b64": "VFVSRA=="
   },
   {
    "game": "hubbub",
@@ -22712,7 +22786,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -23159,7 +23233,7 @@
    "date": null,
    "status": "unlimited",
    "field": "required",
-   "word": "CRAP",
+   "word": "C***",
    "category": "inappropriate",
    "severity": "medium",
    "reason": "Mild profanity.",
@@ -23167,7 +23241,8 @@
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1230"
+   "flag_id": "F1230",
+   "word_b64": "Q1JBUA=="
   },
   {
    "game": "hubbub",
@@ -23846,7 +23921,7 @@
    "word": "NUDE",
    "category": "inappropriate",
    "severity": "medium",
-   "reason": "Nudity; not a kid-friendly required word.",
+   "reason": "N*****; not a kid-friendly required word.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -23990,7 +24065,7 @@
    "word": "COKE",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Cocaine slang (or a brand name).",
+   "reason": "C****** slang (or a brand name).",
    "replacement": null,
    "replacement_note": null,
    "changeable": false,
@@ -24296,7 +24371,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -24350,7 +24425,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -24404,7 +24479,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -24620,7 +24695,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -24656,7 +24731,7 @@
    "word": "COKE",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Cocaine slang (or a brand name).",
+   "reason": "C****** slang (or a brand name).",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -24710,7 +24785,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -25070,7 +25145,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -25142,7 +25217,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -25700,7 +25775,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -25898,7 +25973,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -25952,7 +26027,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -26168,7 +26243,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -26384,7 +26459,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -26510,7 +26585,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -26888,7 +26963,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -27662,7 +27737,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -27734,7 +27809,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -27860,7 +27935,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -28202,7 +28277,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -28562,7 +28637,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -29030,7 +29105,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -29138,7 +29213,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -29426,7 +29501,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -29606,7 +29681,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -29678,7 +29753,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -29912,7 +29987,7 @@
    "word": "COCA",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Coca leaf = cocaine source; otherwise only in a brand name.",
+   "reason": "Coca leaf = C****** source; otherwise only in a brand name.",
    "replacement": "(move to bonus)",
    "replacement_note": "Move to bonus list (0 pts).",
    "changeable": true,
@@ -30035,15 +30110,16 @@
    "date": "2027-03-09",
    "status": "future",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (PUNCH BUNCH BUTCH BATCH LATCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (PUNCH BUNCH B**** BATCH LATCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "PUNCH PINCH PITCH PATCH LATCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1612"
+   "flag_id": "F1612",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30053,15 +30129,16 @@
    "date": "2027-05-08",
    "status": "future",
    "field": "path",
-   "word": "PRICK",
+   "word": "P****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "PRICK is the rung (GRIME PRIME PRICE PRICK BRICK BRINK DRINK). PRICK doubles as a vulgar insult.",
+   "reason": "P**** is the rung (GRIME PRIME PRICE P**** BRICK BRINK DRINK). P**** doubles as a vulgar insult.",
    "replacement": "GRIME PRIME PRIDE BRIDE BRINE BRINK DRINK",
-   "replacement_note": "Alternate par-6 path avoiding PRICK (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-6 path avoiding P**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1613"
+   "flag_id": "F1613",
+   "word_b64": "UFJJQ0s="
   },
   {
    "game": "ladder",
@@ -30071,15 +30148,16 @@
    "date": "2027-06-08",
    "status": "future",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (HITCH HUTCH BUTCH BUNCH BENCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (HITCH HUTCH B**** BUNCH BENCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "HITCH HUTCH HUNCH BUNCH BENCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1614"
+   "flag_id": "F1614",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30089,15 +30167,16 @@
    "date": "2027-06-14",
    "status": "future",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (HATCH BATCH BUTCH BUNCH BENCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (HATCH BATCH B**** BUNCH BENCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "HATCH HUTCH HUNCH BUNCH BENCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1615"
+   "flag_id": "F1615",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30107,15 +30186,16 @@
    "date": "2027-06-15",
    "status": "future",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (LUNCH BUNCH BUTCH BATCH CATCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (LUNCH BUNCH B**** BATCH CATCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "LUNCH HUNCH HUTCH HATCH CATCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1616"
+   "flag_id": "F1616",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30125,15 +30205,16 @@
    "date": "2027-06-22",
    "status": "future",
    "field": "path",
-   "word": "PRICK",
+   "word": "P****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "PRICK is the start word (PRICK BRICK BRINK BRINE BRIBE). PRICK doubles as a vulgar insult.",
+   "reason": "P**** is the start word (P**** BRICK BRINK BRINE BRIBE). P**** doubles as a vulgar insult.",
    "replacement": "TRICK BRICK BRINK BRINE BRIBE",
-   "replacement_note": "PRICK is an endpoint, so no in-place reroute; change start PRICK->TRICK; par stays 4; verified shortest=4 and no duplicate start/end pair.",
+   "replacement_note": "P**** is an endpoint, so no in-place reroute; change start P****->TRICK; par stays 4; verified shortest=4 and no duplicate start/end pair.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1617"
+   "flag_id": "F1617",
+   "word_b64": "UFJJQ0s="
   },
   {
    "game": "ladder",
@@ -30143,15 +30224,16 @@
    "date": "2027-06-30",
    "status": "future",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (HUTCH BUTCH BUNCH BENCH BEACH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (HUTCH B**** BUNCH BENCH BEACH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "HUTCH HUNCH BUNCH BENCH BEACH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1618"
+   "flag_id": "F1618",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30161,15 +30243,16 @@
    "date": "2027-07-01",
    "status": "future",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (WATCH BATCH BUTCH BUNCH LUNCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (WATCH BATCH B**** BUNCH LUNCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "WATCH HATCH HUTCH HUNCH LUNCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1619"
+   "flag_id": "F1619",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30179,15 +30262,16 @@
    "date": "2027-07-06",
    "status": "future",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (WATCH BATCH BUTCH BUNCH PUNCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (WATCH BATCH B**** BUNCH PUNCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "WATCH PATCH PITCH PINCH PUNCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1620"
+   "flag_id": "F1620",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30197,7 +30281,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "BONER",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual slang.",
@@ -30205,7 +30289,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1621"
+   "flag_id": "F1621",
+   "word_b64": "Qk9ORVI="
   },
   {
    "game": "ladder",
@@ -30215,7 +30300,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Often used as a derogatory label for lesbians; used in 9 ladder paths.",
@@ -30223,7 +30308,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags)",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1622"
+   "flag_id": "F1622",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30233,7 +30319,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "GAYER",
+   "word": "G****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Comparative of \"gay\" used mainly as an insult.",
@@ -30241,7 +30327,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1623"
+   "flag_id": "F1623",
+   "word_b64": "R0FZRVI="
   },
   {
    "game": "ladder",
@@ -30251,7 +30338,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "HORNY",
+   "word": "H****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual slang.",
@@ -30259,7 +30346,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1624"
+   "flag_id": "F1624",
+   "word_b64": "SE9STlk="
   },
   {
    "game": "ladder",
@@ -30287,7 +30375,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "LYNCH",
+   "word": "L****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Racial-violence connotation.",
@@ -30295,7 +30383,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1626"
+   "flag_id": "F1626",
+   "word_b64": "TFlOQ0g="
   },
   {
    "game": "ladder",
@@ -30305,7 +30394,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "NUDES",
+   "word": "N****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual connotation (explicit photos).",
@@ -30313,7 +30402,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1627"
+   "flag_id": "F1627",
+   "word_b64": "TlVERVM="
   },
   {
    "game": "ladder",
@@ -30323,7 +30413,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "PRICK",
+   "word": "P****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Common vulgar insult/anatomical slang; used in 2 ladders.",
@@ -30331,7 +30421,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags)",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1628"
+   "flag_id": "F1628",
+   "word_b64": "UFJJQ0s="
   },
   {
    "game": "ladder",
@@ -30341,7 +30432,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "QUEER",
+   "word": "Q****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Historically a slur; sensitive for an all-ages word game.",
@@ -30349,7 +30440,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1629"
+   "flag_id": "F1629",
+   "word_b64": "UVVFRVI="
   },
   {
    "game": "ladder",
@@ -30359,7 +30451,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "SEMEN",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual/anatomical; not family-friendly as a typed rung.",
@@ -30367,7 +30459,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1630"
+   "flag_id": "F1630",
+   "word_b64": "U0VNRU4="
   },
   {
    "game": "ladder",
@@ -30377,7 +30470,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "SPERM",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "high",
    "reason": "Sexual/anatomical; not family-friendly.",
@@ -30385,7 +30478,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1631"
+   "flag_id": "F1631",
+   "word_b64": "U1BFUk0="
   },
   {
    "game": "ladder",
@@ -30395,15 +30489,16 @@
    "date": null,
    "status": "unlimited",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (LUNCH BUNCH BUTCH BATCH PATCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (LUNCH BUNCH B**** BATCH PATCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "LUNCH PUNCH PINCH PITCH PATCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1632"
+   "flag_id": "F1632",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30413,15 +30508,16 @@
    "date": null,
    "status": "unlimited",
    "field": "path",
-   "word": "BUTCH",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "high",
-   "reason": "BUTCH is the rung (PUNCH BUNCH BUTCH BATCH CATCH). BUTCH is often a derogatory label; avoid as a featured rung.",
+   "reason": "B**** is the rung (PUNCH BUNCH B**** BATCH CATCH). B**** is often a derogatory label; avoid as a featured rung.",
    "replacement": "PUNCH PINCH PITCH PATCH CATCH",
-   "replacement_note": "Alternate par-4 path avoiding BUTCH (same start/end, par unchanged); the audit validator.",
+   "replacement_note": "Alternate par-4 path avoiding B**** (same start/end, par unchanged); the audit validator.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1633"
+   "flag_id": "F1633",
+   "word_b64": "QlVUQ0g="
   },
   {
    "game": "ladder",
@@ -30899,15 +30995,16 @@
    "date": "2026-11-23",
    "status": "future",
    "field": "path",
-   "word": "SPANK",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "SPANK is the end word (SHAME SHARE SHARK SHANK SPANK). SPANK (corporal punishment/sexual connotation) as a featured endpoint.",
+   "reason": "S**** is the end word (SHAME SHARE SHARK SHANK S****). S**** (corporal punishment/sexual connotation) as a featured endpoint.",
    "replacement": "SHAME SHARE SHORE SHORT SPORT",
-   "replacement_note": "SPANK is an endpoint, so no in-place reroute; change end SPANK->SPORT; par stays 4; verified shortest=4 and no duplicate start/end pair.",
+   "replacement_note": "S**** is an endpoint, so no in-place reroute; change end S****->SPORT; par stays 4; verified shortest=4 and no duplicate start/end pair.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1660"
+   "flag_id": "F1660",
+   "word_b64": "U1BBTks="
   },
   {
    "game": "ladder",
@@ -30953,15 +31050,16 @@
    "date": "2027-04-28",
    "status": "future",
    "field": "path",
-   "word": "SPANK",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "SPANK is the start word (SPANK SPARK SPARE SCARE SCORE SCOPE). SPANK (corporal punishment/sexual connotation) as a featured endpoint.",
+   "reason": "S**** is the start word (S**** SPARK SPARE SCARE SCORE SCOPE). S**** (corporal punishment/sexual connotation) as a featured endpoint.",
    "replacement": "SHIFT SHIRT SHORT SHORE SCORE SCOPE",
-   "replacement_note": "SPANK is an endpoint, so no in-place reroute; change start SPANK->SHIFT; par stays 5; verified shortest=5 and no duplicate start/end pair.",
+   "replacement_note": "S**** is an endpoint, so no in-place reroute; change start S****->SHIFT; par stays 5; verified shortest=5 and no duplicate start/end pair.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1663"
+   "flag_id": "F1663",
+   "word_b64": "U1BBTks="
   },
   {
    "game": "ladder",
@@ -31061,15 +31159,16 @@
    "date": "2027-10-11",
    "status": "future",
    "field": "path",
-   "word": "SPANK",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "SPANK is the start word (SPANK SHANK SHARK SHARE SHIRE). SPANK (corporal punishment/sexual connotation) as a featured endpoint.",
+   "reason": "S**** is the start word (S**** SHANK SHARK SHARE SHIRE). S**** (corporal punishment/sexual connotation) as a featured endpoint.",
    "replacement": "SMALL SHALL SHALE SHARE SHIRE",
-   "replacement_note": "SPANK is an endpoint, so no in-place reroute; change start SPANK->SMALL; par stays 4; verified shortest=4 and no duplicate start/end pair.",
+   "replacement_note": "S**** is an endpoint, so no in-place reroute; change start S****->SMALL; par stays 4; verified shortest=4 and no duplicate start/end pair.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1669"
+   "flag_id": "F1669",
+   "word_b64": "U1BBTks="
   },
   {
    "game": "ladder",
@@ -31097,7 +31196,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "BUTTS",
+   "word": "B****",
    "category": "inappropriate",
    "severity": "low",
    "reason": "Crude.",
@@ -31105,7 +31204,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1671"
+   "flag_id": "F1671",
+   "word_b64": "QlVUVFM="
   },
   {
    "game": "ladder",
@@ -31133,7 +31233,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "FATTY",
+   "word": "F****",
    "category": "inappropriate",
    "severity": "low",
    "reason": "Body-shaming insult.",
@@ -31141,7 +31241,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1673"
+   "flag_id": "F1673",
+   "word_b64": "RkFUVFk="
   },
   {
    "game": "ladder",
@@ -31187,7 +31288,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "KINKY",
+   "word": "K****",
    "category": "inappropriate",
    "severity": "low",
    "reason": "Sexual connotation.",
@@ -31195,7 +31296,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1676"
+   "flag_id": "F1676",
+   "word_b64": "S0lOS1k="
   },
   {
    "game": "ladder",
@@ -31277,7 +31379,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "OPIUM",
+   "word": "O****",
    "category": "inappropriate",
    "severity": "low",
    "reason": "Narcotic.",
@@ -31285,7 +31387,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1681"
+   "flag_id": "F1681",
+   "word_b64": "T1BJVU0="
   },
   {
    "game": "ladder",
@@ -31331,7 +31434,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "SPANK",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "low",
    "reason": "Corporal punishment / sexual connotation; start or end word of 4 ladders.",
@@ -31339,7 +31442,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator(in-use ladders listed as separate path flags)",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1684"
+   "flag_id": "F1684",
+   "word_b64": "U1BBTks="
   },
   {
    "game": "ladder",
@@ -31403,7 +31507,7 @@
    "date": null,
    "status": "list",
    "field": "list",
-   "word": "TWERK",
+   "word": "T****",
    "category": "inappropriate",
    "severity": "low",
    "reason": "Sexualized dance slang.",
@@ -31411,7 +31515,8 @@
    "replacement_note": "drop from list; check no unseen ladder needs itthe audit validator",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1688"
+   "flag_id": "F1688",
+   "word_b64": "VFdFUks="
   },
   {
    "game": "ladder",
@@ -31565,15 +31670,16 @@
    "date": null,
    "status": "unlimited",
    "field": "path",
-   "word": "SPANK",
+   "word": "S****",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "SPANK is the start word (SPANK SPARK SPARE SPORE STORE). SPANK (corporal punishment/sexual connotation) as a featured endpoint.",
+   "reason": "S**** is the start word (S**** SPARK SPARE SPORE STORE). S**** (corporal punishment/sexual connotation) as a featured endpoint.",
    "replacement": "SHIFT SHIRT SHORT SHORE STORE",
-   "replacement_note": "SPANK is an endpoint, so no in-place reroute; change start SPANK->SHIFT; par stays 4; verified shortest=4 and no duplicate start/end pair.",
+   "replacement_note": "S**** is an endpoint, so no in-place reroute; change start S****->SHIFT; par stays 4; verified shortest=4 and no duplicate start/end pair.",
    "changeable": true,
    "first_served": null,
-   "flag_id": "F1697"
+   "flag_id": "F1697",
+   "word_b64": "U1BBTks="
   },
   {
    "game": "ladder",
@@ -32810,7 +32916,7 @@
    "word": "Mike Tyson",
    "category": "inappropriate",
    "severity": "low",
-   "reason": "Mike Tyson has a rape conviction; questionable as a celebrated all-ages answer.",
+   "reason": "Mike Tyson has a R*** conviction; questionable as a celebrated all-ages answer.",
    "replacement": null,
    "replacement_note": "frozen: founder decision (in-place change would also rewrite past archive dates)",
    "changeable": false,

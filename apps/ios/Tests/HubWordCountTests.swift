@@ -22,6 +22,15 @@ final class HubWordCountTests: XCTestCase {
         XCTAssertFalse(HUB_FOUND_LABEL.contains { $0.isNumber })
     }
 
+    // Prompt 05b (tester video): re-entering a found word says "Already found", never "Not a word we know".
+    func testReenteringAFoundWordIsFoundNotNotword() {
+        var s = play("FOAL", "MORA")
+        for w in ["FOAL", "foal", "MORA", "mora"] { XCTAssertEqual(hubReduce(s, .submit(w)).reject, .found, w) }
+        s = hubReduce(s, .hintReveal)
+        XCTAssertEqual(hubReduce(s, .submit(s.revealed[0])).reject, .found)
+        XCTAssertEqual(hubReduce(s, .submit("FOAL")).points, s.points)
+    }
+
     func testBonusWordsScoreButNeverMoveTheCount() {
         let before = play("FOAL")
         let after = hubReduce(before, .submit("MORA"))

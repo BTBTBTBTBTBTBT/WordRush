@@ -1,0 +1,509 @@
+{
+ "version": 1,
+ "note": "Every bank, answer pool, accept list and clue file the games read, on web, iOS and Android (docs/CONTENT-SAFETY.md). apps/web/scripts/content-check.test.ts (npm run content:check) fails when a bank-like JSON file in a scanned folder is not listed here or under notContent, so a new game cannot ship an unchecked list: registering it applies every guard. lengths: [min, max] letters (A–Z only) of every list word / answer / required word / rung (Muddle: the scramble words) — G12.",
+ "scan": [
+  "apps/web/data/*.json",
+  "apps/web/scripts/*/*.json",
+  "apps/web/scripts/*/bank/*.json",
+  "apps/ios/Wordocious/Resources/*.json",
+  "apps/ios/Tests/Fixtures/*.json",
+  "apps/android/core/src/main/resources/data/*.json",
+  "apps/android/core/src/test/resources/fixtures/*.json",
+  "apps/android/app/src/main/assets/*.json"
+ ],
+ "banks": [
+  {
+   "id": "answers-5",
+   "games": [
+    "Classic",
+    "QuadWord",
+    "OctoWord",
+    "Succession",
+    "Deliverance",
+    "Gauntlet",
+    "VS",
+    "bots",
+    "Word of the Day"
+   ],
+   "kind": "answers",
+   "schema": "pool",
+   "web": "apps/web/data/solutions.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/solutions.json",
+    "apps/android/core/src/main/resources/data/solutions.json",
+    "apps/ios/Tests/Fixtures/solutions.json",
+    "apps/android/core/src/test/resources/fixtures/solutions.json"
+   ],
+   "lengths": [
+    5,
+    5
+   ]
+  },
+  {
+   "id": "answers-6",
+   "games": [
+    "Six",
+    "VS"
+   ],
+   "kind": "answers",
+   "schema": "pool",
+   "web": "apps/web/data/solutions-6.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/solutions-6.json",
+    "apps/android/core/src/main/resources/data/solutions-6.json",
+    "apps/ios/Tests/Fixtures/solutions-6.json",
+    "apps/android/core/src/test/resources/fixtures/solutions-6.json"
+   ],
+   "lengths": [
+    6,
+    6
+   ]
+  },
+  {
+   "id": "answers-7",
+   "games": [
+    "Seven",
+    "VS"
+   ],
+   "kind": "answers",
+   "schema": "pool",
+   "web": "apps/web/data/solutions-7.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/solutions-7.json",
+    "apps/android/core/src/main/resources/data/solutions-7.json",
+    "apps/ios/Tests/Fixtures/solutions-7.json",
+    "apps/android/core/src/test/resources/fixtures/solutions-7.json"
+   ],
+   "lengths": [
+    7,
+    7
+   ]
+  },
+  {
+   "id": "answers-5-legacy",
+   "games": [
+    "Classic (dailies before 2026-07-08)"
+   ],
+   "kind": "answers-frozen",
+   "schema": "pool-frozen",
+   "web": "apps/web/data/solutions-legacy.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/solutions-legacy.json",
+    "apps/android/core/src/main/resources/data/solutions-legacy.json",
+    "apps/ios/Tests/Fixtures/solutions-legacy.json",
+    "apps/android/core/src/test/resources/fixtures/solutions-legacy.json"
+   ],
+   "lengths": [
+    5,
+    5
+   ]
+  },
+  {
+   "id": "answers-6-legacy",
+   "games": [
+    "Six (before 2026-07-08)"
+   ],
+   "kind": "answers-frozen",
+   "schema": "pool-frozen",
+   "web": "apps/web/data/solutions-6-legacy.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/solutions-6-legacy.json",
+    "apps/android/core/src/main/resources/data/solutions-6-legacy.json",
+    "apps/ios/Tests/Fixtures/solutions-6-legacy.json",
+    "apps/android/core/src/test/resources/fixtures/solutions-6-legacy.json"
+   ],
+   "lengths": [
+    6,
+    6
+   ]
+  },
+  {
+   "id": "answers-7-legacy",
+   "games": [
+    "Seven (before 2026-07-08)"
+   ],
+   "kind": "answers-frozen",
+   "schema": "pool-frozen",
+   "web": "apps/web/data/solutions-7-legacy.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/solutions-7-legacy.json",
+    "apps/android/core/src/main/resources/data/solutions-7-legacy.json",
+    "apps/ios/Tests/Fixtures/solutions-7-legacy.json",
+    "apps/android/core/src/test/resources/fixtures/solutions-7-legacy.json"
+   ],
+   "lengths": [
+    7,
+    7
+   ]
+  },
+  {
+   "id": "accept-5",
+   "games": [
+    "Classic family",
+    "VS",
+    "Letter Ladder hints"
+   ],
+   "kind": "accept",
+   "schema": "accept-list",
+   "web": "apps/web/data/allowed.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/allowed.json",
+    "apps/android/core/src/main/resources/data/allowed.json",
+    "apps/ios/Tests/Fixtures/allowed.json",
+    "apps/android/core/src/test/resources/fixtures/allowed.json"
+   ],
+   "lengths": [
+    5,
+    5
+   ]
+  },
+  {
+   "id": "accept-6",
+   "games": [
+    "Six",
+    "VS"
+   ],
+   "kind": "accept",
+   "schema": "accept-list",
+   "web": "apps/web/data/allowed-6.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/allowed-6.json",
+    "apps/android/core/src/main/resources/data/allowed-6.json",
+    "apps/ios/Tests/Fixtures/allowed-6.json",
+    "apps/android/core/src/test/resources/fixtures/allowed-6.json"
+   ],
+   "lengths": [
+    6,
+    6
+   ]
+  },
+  {
+   "id": "accept-7",
+   "games": [
+    "Seven",
+    "VS"
+   ],
+   "kind": "accept",
+   "schema": "accept-list",
+   "web": "apps/web/data/allowed-7.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/allowed-7.json",
+    "apps/android/core/src/main/resources/data/allowed-7.json",
+    "apps/ios/Tests/Fixtures/allowed-7.json",
+    "apps/android/core/src/test/resources/fixtures/allowed-7.json"
+   ],
+   "lengths": [
+    7,
+    7
+   ]
+  },
+  {
+   "id": "crossword",
+   "games": [
+    "Crosswordocious"
+   ],
+   "kind": "clues",
+   "schema": "epoch-bank",
+   "web": "apps/web/data/crossword-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/crossword-puzzles.json",
+    "apps/android/core/src/main/resources/data/crossword-puzzles.json",
+    "apps/ios/Tests/Fixtures/crossword-puzzles.json"
+   ],
+   "fields": {
+    "answers": "entries[].answer",
+    "text": [
+     "title",
+     "entries[].clue"
+    ]
+   },
+   "lengths": [
+    3,
+    9
+   ]
+  },
+  {
+   "id": "codebreaker",
+   "games": [
+    "Codebreaker"
+   ],
+   "kind": "clues",
+   "schema": "epoch-bank",
+   "web": "apps/web/data/cryptogram-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/cryptogram-puzzles.json",
+    "apps/android/core/src/main/resources/data/cryptogram-puzzles.json",
+    "apps/ios/Tests/Fixtures/cryptogram-puzzles.json"
+   ],
+   "fields": {
+    "text": [
+     "text"
+    ]
+   }
+  },
+  {
+   "id": "kindred",
+   "games": [
+    "Kindred"
+   ],
+   "kind": "answers",
+   "schema": "epoch-bank",
+   "web": "apps/web/data/groups-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/groups-puzzles.json",
+    "apps/android/core/src/main/resources/data/groups-puzzles.json",
+    "apps/ios/Tests/Fixtures/groups-puzzles.json"
+   ],
+   "fields": {
+    "answers": "groups[].words[]",
+    "text": [
+     "groups[].label"
+    ]
+   },
+   "lengths": [
+    3,
+    12
+   ]
+  },
+  {
+   "id": "hubbub",
+   "games": [
+    "Hubbub"
+   ],
+   "kind": "required-words",
+   "schema": "epoch-bank",
+   "web": "apps/web/data/hub-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/hub-puzzles.json",
+    "apps/android/core/src/main/resources/data/hub-puzzles.json",
+    "apps/ios/Tests/Fixtures/hub-puzzles.json"
+   ],
+   "fields": {
+    "answers": "words[]",
+    "accept": "words[] + bonus[]"
+   },
+   "lengths": [
+    4,
+    15
+   ]
+  },
+  {
+   "id": "ladder",
+   "games": [
+    "Letter Ladder"
+   ],
+   "kind": "answers",
+   "schema": "epoch-bank",
+   "web": "apps/web/data/ladder-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/ladder-puzzles.json",
+    "apps/android/core/src/main/resources/data/ladder-puzzles.json",
+    "apps/ios/Tests/Fixtures/ladder-puzzles.json"
+   ],
+   "fields": {
+    "answers": "start, end, path[]"
+   },
+   "lengths": [
+    5,
+    5
+   ]
+  },
+  {
+   "id": "ladder-accept",
+   "games": [
+    "Letter Ladder"
+   ],
+   "kind": "accept",
+   "schema": "accept-list",
+   "web": "apps/web/data/ladder-words.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/ladder-words.json",
+    "apps/android/core/src/main/resources/data/ladder-words.json",
+    "apps/ios/Tests/Fixtures/ladder-words.json"
+   ],
+   "lengths": [
+    5,
+    5
+   ],
+   "commonOnly": true
+  },
+  {
+   "id": "muddle",
+   "games": [
+    "Muddle"
+   ],
+   "kind": "scramble",
+   "schema": "epoch-bank",
+   "web": "apps/web/data/scramble-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/scramble-puzzles.json",
+    "apps/android/core/src/main/resources/data/scramble-puzzles.json",
+    "apps/ios/Tests/Fixtures/scramble-puzzles.json"
+   ],
+   "fields": {
+    "answers": "words[].answer, final.answer",
+    "text": [
+     "caption",
+     "altText"
+    ]
+   },
+   "lengths": [
+    5,
+    6
+   ]
+  },
+  {
+   "id": "spyglass",
+   "games": [
+    "Spyglass"
+   ],
+   "kind": "answers",
+   "schema": "epoch-bank",
+   "web": "apps/web/data/wordsearch-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/wordsearch-puzzles.json",
+    "apps/android/core/src/main/resources/data/wordsearch-puzzles.json",
+    "apps/ios/Tests/Fixtures/wordsearch-puzzles.json"
+   ],
+   "fields": {
+    "answers": "words[].w",
+    "text": [
+     "title"
+    ]
+   },
+   "lengths": [
+    4,
+    10
+   ]
+  },
+  {
+   "id": "propernoundle",
+   "games": [
+    "ProperNoundle"
+   ],
+   "kind": "answers",
+   "schema": "propernoundle",
+   "web": "apps/web/data/propernoundle-puzzles.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/propernoundle-puzzles.json",
+    "apps/android/core/src/main/resources/data/propernoundle-puzzles.json"
+   ]
+  },
+  {
+   "id": "propernoundle-holidays",
+   "games": [
+    "ProperNoundle"
+   ],
+   "kind": "answers",
+   "schema": "propernoundle-holidays",
+   "web": "apps/web/data/propernoundle-holidays.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/propernoundle-holidays.json",
+    "apps/android/core/src/main/resources/data/propernoundle-holidays.json"
+   ]
+  },
+  {
+   "id": "holiday-calendar",
+   "games": [
+    "every bank"
+   ],
+   "kind": "calendar",
+   "schema": "holiday-days",
+   "web": "apps/web/data/holiday-days.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/holiday-days.json",
+    "apps/android/core/src/main/resources/data/holiday-days.json",
+    "apps/ios/Tests/Fixtures/holiday-days.json"
+   ]
+  },
+  {
+   "id": "definitions",
+   "games": [
+    "Word of the Day",
+    "word archive"
+   ],
+   "kind": "definitions",
+   "schema": "definitions",
+   "web": "apps/web/data/word-definitions.json",
+   "copies": [
+    "apps/ios/Wordocious/Resources/word-definitions.json",
+    "apps/android/app/src/main/assets/word-definitions.json"
+   ]
+  },
+  {
+   "id": "spyglass-themes",
+   "games": [
+    "Spyglass (build source)"
+   ],
+   "kind": "answers",
+   "schema": "themes",
+   "web": "apps/web/data/wordsearch-themes.json",
+   "copies": []
+  },
+  {
+   "id": "holiday-answers",
+   "games": [
+    "Classic family holidays (not wired yet)"
+   ],
+   "kind": "answers",
+   "schema": "holiday-table",
+   "web": "apps/web/scripts/holidays/holiday-answers.json",
+   "copies": []
+  },
+  {
+   "id": "holiday-wotd",
+   "games": [
+    "Word of the Day holidays (not wired yet)"
+   ],
+   "kind": "definitions",
+   "schema": "holiday-wotd",
+   "web": "apps/web/scripts/holidays/holiday-wotd.json",
+   "copies": []
+  }
+ ],
+ "sources": [
+  {
+   "id": "crossword-source",
+   "game": "Crosswordocious",
+   "paths": [
+    "apps/web/scripts/crossword/phrases.json",
+    "apps/web/scripts/crossword/bank/*.json"
+   ]
+  },
+  {
+   "id": "codebreaker-source",
+   "game": "Codebreaker",
+   "paths": [
+    "apps/web/scripts/cryptogram/sayings.json",
+    "apps/web/scripts/cryptogram/bank/*.json"
+   ]
+  },
+  {
+   "id": "kindred-source",
+   "game": "Kindred",
+   "paths": [
+    "apps/web/scripts/groups/puzzles.json",
+    "apps/web/scripts/groups/bank/*.json"
+   ]
+  },
+  {
+   "id": "muddle-source",
+   "game": "Muddle",
+   "paths": [
+    "apps/web/scripts/muddle/jokes.json",
+    "apps/web/scripts/muddle/bank/*.json"
+   ]
+  }
+ ],
+ "notContent": {
+  "avatar-parts.json": "avatar art metadata",
+  "achievements-catalog.json": "achievement copy (spelling-copy.test.ts scans it)",
+  "guides.generated.json": "how-to-play copy (generated from lib/guide-content.ts)",
+  "season-registry.json": "season metadata",
+  "manifest.json": "PWA manifest",
+  "*-fixtures.json": "cross-platform test fixtures",
+  "*.sample.json": "review samples",
+  "Contents.json": "Xcode asset catalog",
+  "banks-manifest.json": "bank loader manifest (lib/banks-manifest.json)"
+ }
+}

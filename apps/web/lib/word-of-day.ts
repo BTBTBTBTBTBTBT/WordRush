@@ -87,12 +87,17 @@ export function parseDateKey(key: string): Date | null {
 // §265: from the swap cutover on, the natives' Word of the Day reads the
 // swapped pool (they go through the core pool function); this list must match
 // or web and apps would feature different words on a swapped index.
-// Index = how many swap batches the date has reached (lists are stored uppercase, like the swap tables).
-const swappedByBatches: string[][] = [0, 1, 2, 3].map((n) => applySolutionSwapBatches(solutions, n));
+// Keyed by the bitmask of swap batches live on the date (lists are stored uppercase, like the swap tables).
+const swappedByBatches = new Map<number, string[]>();
+function swappedFor(mask: number): string[] {
+  let list = swappedByBatches.get(mask);
+  if (!list) { list = applySolutionSwapBatches(solutions, mask); swappedByBatches.set(mask, list); }
+  return list;
+}
 export function solutionsForDate(date: Date): string[] {
   const key = dateKey(date);
   if (key < SOLUTIONS_CUTOVER_DATE) return legacySolutions;
-  return swappedByBatches[solutionSwapBatchesFor(key)];
+  return swappedFor(solutionSwapBatchesFor(key));
 }
 
 /** Deterministic candidate words for a date: today's index + the next 19 offsets. */

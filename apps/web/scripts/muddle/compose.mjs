@@ -3,7 +3,7 @@
 // exactly the letters of the final answer — and validates every rule.
 //   node scripts/muddle/compose.mjs
 import path from 'node:path';
-import { WEB, readJSON, upperList, neverAnswer, rngFor, below, shuffle, writeSample, wordset } from '../more-games/lib.mjs';
+import { WEB, readJSON, upperList, neverAnswer, rngFor, below, shuffle, writeSample, wordset, readsOffensive } from '../more-games/lib.mjs';
 const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
 const IN = argOf('--in', path.join(WEB, 'scripts', 'muddle', 'jokes.sample.json')), OUT = argOf('--out', 'muddle.json');
 const jokes = readJSON(IN);
@@ -26,7 +26,7 @@ function scramble(word, rng) {
   for (let t = 0; t < 200; t++) {
     const s = shuffle(word.split(''), rng).join('');
     const moved = s.split('').filter((c, i) => c !== word[i]).length;
-    if (s !== word && moved >= word.length - 1 && !allowedAll.has(s) && ![...hard].some((h) => s.includes(h))) return s;
+    if (s !== word && moved >= word.length - 1 && !allowedAll.has(s) && ![...hard].some((h) => s.includes(h)) && !readsOffensive(s)) return s;
   }
   return null;
 }

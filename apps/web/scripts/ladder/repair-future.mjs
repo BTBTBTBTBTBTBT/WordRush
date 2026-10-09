@@ -10,7 +10,7 @@
 // then rebuild ladder-words.json and copy both files to the iOS/Android bundles.
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJSON, rngFor, shuffle } from '../more-games/lib.mjs';
+import { DATA, readJSON, rngFor, shuffle, gateBank } from '../more-games/lib.mjs';
 import { CONTENT_RELEASE_DATE } from '../content-release-date.mjs';
 
 const argv = process.argv.slice(2);
@@ -71,4 +71,6 @@ for (const { p, where } of broken) {
 }
 console.log(`from ${FROM} (daily index ${fromIdx}): ${broken.length} ladders replaced`);
 console.log(report.join('\n'));
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('ladder', bank);
 if (!DRY) { fs.writeFileSync(bankPath, JSON.stringify(bank) + '\n'); console.log('wrote', bankPath); }

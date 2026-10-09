@@ -4,7 +4,7 @@
 // Every quote carries `verified: false` until a human checks it against a
 // primary text — misattribution is the main content risk for this game.
 import path from 'node:path';
-import { WEB, readJSON, rngFor, shuffle, writeSample, wordset } from '../more-games/lib.mjs';
+import { WEB, readJSON, rngFor, shuffle, writeSample, wordset, textProblems } from '../more-games/lib.mjs';
 // Founder verdict on round 1 (2026-09-21): literary quotations were "way too
 // hard". Same rules, friendlier material: everyday sayings everyone can finish
 // from a few letters, shorter (30–90 characters), and THREE letters are given
@@ -34,6 +34,7 @@ quotes.forEach((q, i) => {
   if (CLASSIC && !(q.deathYear <= 1950)) problems.push(`author died ${q.deathYear} (must be ≤ 1950)`);
   if (CLASSIC && !q.source) problems.push('no source');
   const words = t.toUpperCase().split(/[^A-Z']+/); if (hard.some((h) => words.includes(h))) problems.push('blocked term');
+  for (const why of textProblems(t)) problems.push(`content-safety: ${why}`); // offensive (roots, leet, phrases) / British idiom
   const norm = t.toUpperCase().replace(/[^A-Z]/g, ''); if (seenText.has(norm)) problems.push('duplicate saying'); seenText.add(norm);
   if (problems.length) { rejects.push({ id, author: q.author, text: t, problems }); return; }
   const key = makeKey(id);

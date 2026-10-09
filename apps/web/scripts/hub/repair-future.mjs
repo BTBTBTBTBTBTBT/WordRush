@@ -12,7 +12,7 @@
 // then copy apps/web/data/hub-puzzles.json to the iOS/Android bundles (word-list-sync pins them).
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, REPO, readJSON, rngFor, shuffle } from '../more-games/lib.mjs';
+import { DATA, REPO, readJSON, rngFor, shuffle, gateBank } from '../more-games/lib.mjs';
 import { CONTENT_RELEASE_DATE } from '../content-release-date.mjs';
 
 const argv = process.argv.slice(2);
@@ -100,4 +100,6 @@ if (needNew.length) {
 }
 console.log(`from ${FROM}: ${report.length} Hubbub puzzles repaired`);
 console.log(report.join('\n'));
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('hubbub', bank);
 if (!DRY) { fs.writeFileSync(bankPath, JSON.stringify(bank) + '\n'); console.log('wrote', bankPath); }

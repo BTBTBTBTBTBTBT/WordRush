@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { wordProblems, offensiveWord, offensiveText } from '../../../../packages/core/src/content-safety/safety.mjs';
 
 export const WEB = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const REPO = path.join(WEB, '..', '..');
@@ -35,13 +36,25 @@ export function wordset(file) {
   if (!fs.existsSync(p)) return new Set();
   return new Set(fs.readFileSync(p, 'utf8').split('\n').map((l) => l.trim().toUpperCase()).filter((l) => l && !l.startsWith('#')));
 }
-/** Words that must never be an answer/endpoint/list word in any More Games bank. */
+/**
+ * Words that must never be an answer/endpoint/list word in any More Games bank: the blocklists here, PLUS
+ * anything the shared content-safety module rejects (offensive incl. roots/leet, British-only, curated obscure)
+ * — `has()` asks the module, so every generator that filters through this set is gated at creation time.
+ */
+class NeverSet extends Set {
+  has(w) { return super.has(w) || wordProblems(String(w)).length > 0; }
+}
 export function neverAnswer() {
-  return new Set([...wordset('offensive-blocklist.txt'), ...wordset('manual-blocklist.txt'),
+  return new NeverSet([...wordset('offensive-blocklist.txt'), ...wordset('manual-blocklist.txt'),
     ...wordset('names-blocklist.txt'), ...wordset('proper-noun-blocklist.txt'), ...wordset('answer-proper-nouns.txt')]);
 }
 /** Substrings that must not appear anywhere a player can read letters in a row. */
 export const BLOCKED_SUBSTRINGS = () => [...wordset('offensive-blocklist.txt')].filter((w) => w.length >= 3);
+/** A run of letters a player can read (a scramble, a grid row) that spells something offensive, roots included. */
+export const readsOffensive = (letters) => offensiveText(String(letters)) !== null || offensiveWord(String(letters)) !== null;
+// The content gate, re-exported for the generators: gateBank(bankId, bank) right before a bank is written.
+export { gateBank, wordRejects, textRejects } from '../../../../packages/core/src/content-safety/gate.mjs';
+export { wordProblems, textProblems } from '../../../../packages/core/src/content-safety/safety.mjs';
 export function writeSample(name, obj) {
   fs.mkdirSync(SAMPLES, { recursive: true });
   const p = path.join(SAMPLES, name);

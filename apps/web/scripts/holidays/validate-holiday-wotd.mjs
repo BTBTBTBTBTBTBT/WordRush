@@ -12,7 +12,7 @@
 // the dictionary is allowed — the Word of the Day is a reading feature.
 //   node scripts/holidays/validate-holiday-wotd.mjs [--in file] [--show WORD]
 import path from 'node:path';
-import { WEB, DATA, readJSON, neverAnswer, wordset } from '../more-games/lib.mjs';
+import { WEB, DATA, readJSON, neverAnswer, wordset, wordProblems } from '../more-games/lib.mjs';
 import { HOLIDAY_KEYS } from '../crossword/holidays.mjs';
 
 const argv = process.argv.slice(2), argOf = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
@@ -37,6 +37,7 @@ for (const [key, entries] of Object.entries(table)) {
     if (e.definition !== undefined && !e.partOfSpeech) why.push('an explicit definition needs partOfSpeech');
     if (never.has(w)) why.push('proper noun / blocklisted');
     if (hard.has(w)) why.push('blocked term');
+    for (const p of wordProblems(w)) why.push(`content-safety: ${p}`); // offensive / British-only / curated obscure
     if (seen.has(w) && seen.get(w) !== key) why.push(`also under ${seen.get(w)}`);
     seen.set(w, key);
     if (why.length) { console.log(`FAIL ${key} ${w}: ${why.join('; ')}`); problems++; }

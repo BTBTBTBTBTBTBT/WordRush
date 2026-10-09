@@ -32,6 +32,8 @@ jobs:
         run: pnpm -C apps/server run typecheck
       - name: Unit tests (packages/core)
         run: pnpm -C packages/core exec vitest run
+      - name: Content gate (every registered bank, all three platforms)
+        run: pnpm -C apps/web run content:check
       - name: Unit tests (apps/web)
         run: pnpm -C apps/web exec vitest run
       - name: Composite scoring check

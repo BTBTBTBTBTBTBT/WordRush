@@ -8,7 +8,9 @@
     "start": "pnpm --filter @wordle-duel/web start",
     "lint": "pnpm --filter @wordle-duel/web lint",
     "typecheck": "pnpm --filter @wordle-duel/web typecheck",
-    "gen:modes": "node packages/core/scripts/gen-mode-catalog.mjs"
+    "gen:modes": "node packages/core/scripts/gen-mode-catalog.mjs",
+    "content:check": "pnpm -C apps/web run content:check",
+    "content:sync": "pnpm -C apps/web run content:sync"
   },
   "devDependencies": {},
   "packageManager": "pnpm@8.15.0"
