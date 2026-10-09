@@ -195,6 +195,13 @@ enum SeasonKit {
         return ArtAsset.exists(name) ? name : nil
     }
 
+    /// 2.8 item 7: a celebration-kit prop's image set — the season's swap (registry `extras`) when it ships, else the normal one.
+    /// `float-1` / `float-2` have no normal counterpart: nil out of season.
+    static func extra(_ name: String) -> String? {
+        if let swap = current?.slots.extras?[name], ArtAsset.exists(swap) { return swap }
+        return name.hasPrefix("celebrate-float") ? nil : name
+    }
+
     /// The season's props (shipped ones only).
     static var props: [String] { (current?.slots.props ?? []).filter(ArtAsset.exists) }
 

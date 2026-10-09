@@ -446,6 +446,7 @@ struct ProperNoundleView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
             .softSheet(isPresented: $showGuide) { GuideSheet(mode: .propernoundle) }
+            .firstPlayGuide(mode: .propernoundle, show: $showGuide)
         }
         // The whole clue's soft-pop card, hung under the title art (Johnny 10-05).
         .noundleFullClue(vm.isFinished ? nil : vm.clue, isPresented: $showFullClue)

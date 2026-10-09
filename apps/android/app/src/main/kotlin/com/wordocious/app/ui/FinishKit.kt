@@ -65,6 +65,7 @@ import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.app.ui.theme.tightTextStyle
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
 
 // The finishing build (docs/FINISH_SPEC.md, founder-approved 2026-10-02): the shared
 // parts every screen is rebuilt from. A1 tinted surfaces (no plain white), A2 soft
@@ -368,10 +369,23 @@ fun SoftControl(
     alpha: Float = 1f,
     colorFilter: ColorFilter? = null,
 ) {
+    // 2.8 items 7 + 48: the counter pops for a beat the moment its number GROWS (the streak just extended).
+    val n = number?.toIntOrNull()
+    var lastN by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(n) }
+    val pop = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(1f) }
+    androidx.compose.runtime.LaunchedEffect(n) {
+        val old = lastN
+        lastN = n
+        if (old != null && n != null && n > old && !WTheme.calmMotion) {
+            pop.animateTo(1.32f, androidx.compose.animation.core.spring(dampingRatio = 0.45f, stiffness = 700f))
+            pop.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 300f))
+        }
+    }
     Row(
         modifier
             .heightIn(min = SOFT_CONTROL_TAP)
             .widthIn(min = SOFT_CONTROL_TAP)
+            .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
             .then(
                 if (onClick != null) Modifier.squishClickable(contentDescription, icon = true, onClick = onClick)
                 else Modifier.clearAndSetSemantics { this.contentDescription = contentDescription },

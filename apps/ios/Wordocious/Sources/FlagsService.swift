@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import WordociousCore
 
 /// Remote feature flags — the More Games kill switch + tester gate (plan §7).
 /// Port of apps/web/lib/flags.ts `isFlagOn`; the rule is identical on the web
@@ -40,6 +41,12 @@ final class FlagsService: ObservableObject {
             CastSkin.setSwitch(Self.resolveLive("season_halloween", flags: flags, isTester: false))
             CastSkin.setIntroSwitch(Self.resolveLive("opening_animation_season", flags: flags, isTester: false))
         }
+        syncLivingMascot()
+    }
+
+    /// 2.8 item 13: the living mascot's gate IS the remote `living_mascot` off-switch (fail-open; AvatarLiveConfig defaults off in Core).
+    private func syncLivingMascot() {
+        AvatarLiveConfig.livingMascot = Self.resolveLive("living_mascot", flags: flags, isTester: viewerIsTester)
     }
 
     /// Fetch the table. Any failure keeps the cached (or nil) set; a nil set
@@ -59,6 +66,7 @@ final class FlagsService: ObservableObject {
             }
         }
         loaded = true
+        syncLivingMascot()
     }
 
     /// Admin or tester — the same set §228 exempts from ads.

@@ -140,6 +140,7 @@ struct AppHeaderView: View {
             .padding(.horizontal, 6)
             .frame(minHeight: HeaderControl.tap)
             .contentShape(Rectangle())
+            .modifier(CounterPop(value: value))   // 2.8 item 7: the counter pops + glows the moment it grows
         }
         .buttonStyle(RoundIconButtonStyle.compact)   // 2.8 item 23
         .accessibilityLabel(label)
@@ -959,5 +960,31 @@ struct CastPuppetCanvas: View {
         .offset(y: (Self.padBottom - Self.padTop) / 2 * u)
         .frame(width: size, height: size)
         .allowsHitTesting(false)
+    }
+}
+
+
+/// 2.8 items 7 + 48: a header counter (streak flame, flawless trophy, shields) pops and glows for a beat the moment its
+/// number grows — the streak just extended. Reduce Motion: no motion (the number simply changes). Transform + a soft
+/// glow only, one spring, no timers running while idle.
+private struct CounterPop: ViewModifier {
+    let value: Int
+    @State private var last: Int?
+    @State private var pop = false
+    @Environment(\.accessibilityReduceMotion) private var envReduce
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(pop ? 1.32 : 1)
+            .shadow(color: Color(hex: 0xF5A524).opacity(pop ? 0.85 : 0), radius: pop ? 10 : 0)
+            .onAppear { last = value }
+            .onChange(of: value) { new in
+                defer { last = new }
+                guard let old = last, new > old, !Motion.calm(envReduce) else { return }
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.45)) { pop = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) { pop = false }
+                }
+            }
     }
 }

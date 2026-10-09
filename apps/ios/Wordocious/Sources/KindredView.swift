@@ -354,6 +354,7 @@ struct KindredView: View {
             cornerButton("questionmark") { showGuide = true }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .softSheet(isPresented: $showGuide) { GuideSheet(mode: .groups) }
+                .firstPlayGuide(mode: .groups, show: $showGuide)
         }
         .navigationBarTitleDisplayMode(.inline)
         // Hardware keys (founder, 2026-09-30): web groups-game keydown —

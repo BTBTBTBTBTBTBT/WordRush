@@ -12,7 +12,7 @@ import {
 import { darkenHex } from '@/lib/avatar-tile';
 import { frameArtName, isAvatarFrame } from '@/lib/avatar-cast';
 import { PRO_AVATAR, proAvatarDecor } from '@/lib/pro-identity';
-import { LIVING_MASCOT_ON } from '@/lib/living-mascot';
+import { useLivingMascotOn } from '@/hooks/use-flags';
 import { useLivingMascot } from './use-living-mascot';
 
 /**
@@ -268,7 +268,8 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
     ? portraitFrame(frame ?? config.frame, { pro, level })
     : effectiveAvatarFrame(frame ?? config.frame, { pro, level });
   const crowned = !cutout && avatarCrowned(worn, pro);
-  const live = LIVING_MASCOT_ON && !!living && !showPhoto;
+  const livingOn = useLivingMascotOn();
+  const live = livingOn && !!living && !showPhoto;
   const { art, ready } = useAvatarArt(config, live);
   const frameArt = useFrameArt(worn);
   const rawId = React.useId();

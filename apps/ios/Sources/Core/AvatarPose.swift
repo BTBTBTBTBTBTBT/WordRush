@@ -15,7 +15,8 @@ import Foundation
 /// The feature flag + performance rules (founder: smooth over pretty).
 public enum AvatarLiveConfig {
     /// OFF until verified on devices: poses, the Pose tab and the living mascot all stand down.
-    public static let livingMascot: Bool = false
+    /// 2.8 item 13: defaults OFF; the app turns it on from the remote `living_mascot` off-switch (FlagsService) once flags load.
+    public static var livingMascot: Bool = false
     /// At most this many mascots animate on one screen (the player's own first); the rest hold their pose frame.
     public static let maxAnimated: Int = 3
     /// Android holds still between moves (like the cast): breathing only while a move / reaction plays.
@@ -65,7 +66,14 @@ public struct AvatarPoseSpec: Codable, Equatable {
 public struct AvatarPoseDef: Decodable, Equatable {
     public struct Wave: Decodable, Equatable { public var limb: String; public var amp: Double; public var period: Double }
     public struct Bounce: Decodable, Equatable { public var amp: Double; public var period: Double }
-    public struct Live: Decodable, Equatable { public var wave: Wave?; public var bounce: Bounce? }
+    public struct Clap: Decodable, Equatable { public var amp: Double; public var period: Double }
+    /// `clap`: both arms swing together (the podium's 2nd-place applause).
+    public struct Live: Decodable, Equatable {
+        public var wave: Wave?
+        public var bounce: Bounce?
+        public var clap: Clap?
+        public init(wave: Wave? = nil, bounce: Bounce? = nil, clap: Clap? = nil) { self.wave = wave; self.bounce = bounce; self.clap = clap }
+    }
 
     public var label: String
     public var spec: AvatarPoseSpec
@@ -73,6 +81,8 @@ public struct AvatarPoseDef: Decodable, Equatable {
     public var live: Live?
 
     private enum CodingKeys: String, CodingKey { case label, live }
+
+    public init(label: String, spec: AvatarPoseSpec, live: Live? = nil) { self.label = label; self.spec = spec; self.live = live }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -164,9 +174,10 @@ public struct AvatarPoseParts: Equatable {
     }
 }
 
-/// A moment the mascot reacts to (win = cheer, loss = shrug, streak +1 = hop, level up = cheer).
+/// A moment the mascot reacts to (win = cheer, loss = shrug, streak +1 = hop, level up = cheer; 2.8 item 13: a sweep /
+/// flawless is a bigger, longer cheer, "progress" — a counter ticked up, 7 -> 8 OF 18 — a short wave).
 public enum AvatarReaction: String, CaseIterable, Equatable {
-    case win, loss, streak, levelup
+    case win, loss, streak, levelup, sweep, flawless, progress
 
     public var pose: String {
         switch self {
@@ -174,6 +185,9 @@ public enum AvatarReaction: String, CaseIterable, Equatable {
         case .loss: return "shrug"
         case .streak: return "none"
         case .levelup: return "cheer"
+        case .sweep: return "cheer"
+        case .flawless: return "cheer"
+        case .progress: return "wave"
         }
     }
 
@@ -184,6 +198,21 @@ public enum AvatarReaction: String, CaseIterable, Equatable {
         case .loss: return 2.2
         case .streak: return 0.9
         case .levelup: return 2.6
+        case .sweep: return 3.2
+        case .flawless: return 4
+        case .progress: return 1.6
+        }
+    }
+
+    /// The hops it makes: how many, one every `per` s, `amp` tall (body units); nil = no hop.
+    public var hops: (n: Double, per: Double, amp: Double)? {
+        switch self {
+        case .loss: return nil
+        case .streak: return (1, 0.6, 0.06)
+        case .win, .levelup: return (2, 0.55, 0.06)
+        case .sweep: return (3, 0.55, 0.07)
+        case .flawless: return (4, 0.55, 0.09)
+        case .progress: return (1, 0.5, 0.04)
         }
     }
 }
@@ -290,7 +319,24 @@ public enum AvatarPose {
     /// A pose's definition ("none" / unknown / nil → nil).
     public static func def(_ pose: String?, data: AvatarPosesData) -> AvatarPoseDef? {
         guard let pose, pose != "none" else { return nil }
-        return data.poses[pose]
+        return data.poses[pose] ?? codePoses[pose]
+    }
+
+    /// Poses composed in code, never saved by a player and never in the Pose tab: the podium's 2nd-place applause. Its
+    /// arms start from the shipped hug-self pose's rig fit (same withheld list), brought up to chest height, and swing together.
+    public static let codePoses: [String: AvatarPoseDef] = [
+        "clap": AvatarPoseDef(
+            label: "Clap",
+            spec: AvatarPoseSpec(arms: AvatarPoseSpec.Arms(L: AvatarPoseLimb(rot: -66, dx: -0.1, dy: 0.01), R: AvatarPoseLimb(rot: -66, dx: -0.1, dy: 0.01)),
+                                 body: AvatarPoseSpec.Body(sx: 0.985)),
+            live: AvatarPoseDef.Live(clap: AvatarPoseDef.Clap(amp: 12, period: 0.36))),
+    ]
+    /// A code pose's shipped stand-in for the per-pose guards (withheld items).
+    private static let codePoseGuard: [String: String] = ["clap": "hug"]
+
+    /// The pose a podium place stands in: 1st cheers, 2nd claps, 3rd waves, everyone else the body as drawn.
+    public static func placePose(_ place: Int) -> String {
+        place == 1 ? "cheer" : place == 2 ? "clap" : place == 3 ? "wave" : "none"
     }
 
     /// The per-part matrices (body units) of a pose spec on a rigged body. Arm rot is OUTWARD-positive degrees about the
@@ -325,7 +371,7 @@ public enum AvatarPose {
     /// Items withheld in a pose on a body (they fail the per-pose guards).
     public static func withheld(_ pose: String?, body: String, data: AvatarPosesData) -> [String] {
         guard let pose, pose != "none" else { return [] }
-        return data.withheld[pose]?[body] ?? []
+        return data.withheld[codePoseGuard[pose] ?? pose]?[body] ?? []
     }
 
     // MARK: The living mascot
@@ -386,12 +432,10 @@ public enum AvatarPose {
                 let target = def(rx.kind.pose, data: data)?.spec ?? saved?.spec ?? AvatarPoseSpec()
                 let k = smooth(min(rx.t, dur - rx.t) / poseBlend)
                 spec = lerpSpec(spec, target, k)
-                if rx.kind == .streak || rx.kind == .win || rx.kind == .levelup {
-                    // a hop (the cheers hop twice)
-                    let per = rx.kind == .streak ? 0.6 : 0.55
-                    let n: Double = rx.kind == .streak ? 1 : 2
+                if let h = rx.kind.hops {
+                    // a hop (the cheers hop twice; a sweep three times, a flawless four)
                     let tt = rx.t - 0.1
-                    if tt > 0 && tt < per * n { hop = max(hop, 0.06 * sin((tt.truncatingRemainder(dividingBy: per) / per) * Double.pi)) }
+                    if tt > 0 && tt < h.per * h.n { hop = max(hop, h.amp * sin((tt.truncatingRemainder(dividingBy: h.per) / h.per) * Double.pi)) }
                 }
             }
         }
@@ -412,6 +456,12 @@ public enum AvatarPose {
                 if w.limb == "L" { armsL.rot = (armsL.rot ?? 0) + add } else { armsR.rot = (armsR.rot ?? 0) + add }
             }
             if let bo = live?.bounce { bdy -= bo.amp * abs(sin((t / bo.period) * Double.pi)) }
+            if let cl = live?.clap {
+                // both arms swing together
+                let swing = cl.amp * sin((t / cl.period) * Double.pi * 2)
+                armsL.rot = (armsL.rot ?? 0) + swing
+                armsR.rot = (armsR.rot ?? 0) + swing
+            }
         }
         // the tap: hop + squash + laugh (Reduce Motion: only the laugh)
         var laugh: Double = 0

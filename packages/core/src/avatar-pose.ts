@@ -14,13 +14,16 @@ import posesJson from './avatar-poses.json';
 
 /** The feature flag + performance rules (founder: smooth over pretty). */
 export const AVATAR_LIVE_CONFIG = {
-  /** OFF until verified on devices: poses, the Pose tab and the living mascot all stand down. */
-  livingMascot: false,
+  /**
+   * Defaults OFF; the app turns it on from the remote `living_mascot` off-switch (fail-open, useLivingMascot) — poses,
+   * the Pose tab and the living mascot all stand down while it is off.
+   */
+  livingMascot: false as boolean,
   /** At most this many mascots animate on one screen (the player's own first); the rest hold their pose frame. */
   maxAnimated: 3,
   /** Android holds still between moves (like the cast): breathing only while a move / reaction plays. */
   androidIdleStill: true,
-} as const;
+};
 
 /** The pose ids (stored in the avatar config's `pose`; 'none' = the body as drawn). */
 export const AVATAR_POSES = ['none', 'wave', 'cheer', 'hips', 'shrug', 'flex', 'hug', 'sit', 'jump'] as const;
@@ -39,7 +42,7 @@ export interface AvatarPoseSpec {
 export interface AvatarPoseDef extends AvatarPoseSpec {
   label: string;
   /** Living extras: a waving arm, a cheer bounce. */
-  live?: { wave?: { limb: 'L' | 'R'; amp: number; period: number }; bounce?: { amp: number; period: number } };
+  live?: { wave?: { limb: 'L' | 'R'; amp: number; period: number }; bounce?: { amp: number; period: number }; /** Both arms swing together (the podium's 2nd-place applause). */ clap?: { amp: number; period: number } };
 }
 /** A rigged body (body units): shoulder pivots, hand centers, the hip-line center (feet pivot), the floor. */
 export interface AvatarBodyRig {
@@ -98,8 +101,28 @@ export function avatarBodyRig(body: string, data: AvatarPosesData = AVATAR_POSES
   return data.rigs[body] ?? null;
 }
 
+/**
+ * Poses composed in code, never saved by a player and never in the Pose tab: the podium's 2nd-place applause. Its arms
+ * start from the shipped hug-self pose's rig fit (same withheld list), brought up to chest height, and swing together.
+ */
+export const AVATAR_CODE_POSES: Readonly<Record<string, AvatarPoseDef>> = {
+  clap: {
+    label: 'Clap',
+    arms: { L: { rot: -66, dx: -0.1, dy: 0.01 }, R: { rot: -66, dx: -0.1, dy: 0.01 } },
+    body: { sx: 0.985 },
+    live: { clap: { amp: 12, period: 0.36 } },
+  },
+};
+/** A code pose's shipped stand-in for the per-pose guards (withheld items). */
+const CODE_POSE_GUARD: Readonly<Record<string, string>> = { clap: 'hug' };
+
 export function avatarPoseDef(pose: string | null | undefined, data: AvatarPosesData = AVATAR_POSES_DATA): AvatarPoseDef | null {
-  return pose && pose !== 'none' ? data.poses[pose] ?? null : null;
+  return pose && pose !== 'none' ? data.poses[pose] ?? AVATAR_CODE_POSES[pose] ?? null : null;
+}
+
+/** The pose a podium place stands in: 1st cheers, 2nd claps, 3rd waves, everyone else the body as drawn. */
+export function avatarPlacePose(place: number): AvatarPose | 'clap' {
+  return place === 1 ? 'cheer' : place === 2 ? 'clap' : place === 3 ? 'wave' : 'none';
 }
 
 /**
@@ -136,16 +159,31 @@ export function avatarPoseMatrices(rig: AvatarBodyRig, spec: AvatarPoseSpec): Re
 /** Items withheld in a pose on a body (they fail the per-pose guards; rig-body.py --guards logs why). */
 export function avatarPoseWithheld(pose: string | null | undefined, body: string, data: AvatarPosesData = AVATAR_POSES_DATA): readonly string[] {
   if (!pose || pose === 'none') return [];
-  return data.withheld[pose]?.[body] ?? [];
+  return data.withheld[CODE_POSE_GUARD[pose] ?? pose]?.[body] ?? [];
 }
 
 // ── The living mascot ───────────────────────────────────────────────────────────────────────────────────────────
 
 /** A moment the mascot reacts to (win = cheer, loss = shrug, streak +1 = hop, level up = cheer). */
-export type AvatarReaction = 'win' | 'loss' | 'streak' | 'levelup';
-export const AVATAR_REACTION_POSE: Readonly<Record<AvatarReaction, AvatarPose>> = { win: 'cheer', loss: 'shrug', streak: 'none', levelup: 'cheer' };
+export type AvatarReaction = 'win' | 'loss' | 'streak' | 'levelup' | 'sweep' | 'flawless' | 'progress';
+export const AVATAR_REACTION_POSE: Readonly<Record<AvatarReaction, AvatarPose>> = {
+  win: 'cheer', loss: 'shrug', streak: 'none', levelup: 'cheer',
+  // 2.8 item 13: a sweep / flawless is a bigger, longer cheer; "progress" (a counter ticked up: 7 -> 8 OF 18) a short wave.
+  sweep: 'cheer', flawless: 'cheer', progress: 'wave',
+};
 /** How long a reaction plays (s); streak is a hop. */
-export const AVATAR_REACTION_SECONDS: Readonly<Record<AvatarReaction, number>> = { win: 2.4, loss: 2.2, streak: 0.9, levelup: 2.6 };
+export const AVATAR_REACTION_SECONDS: Readonly<Record<AvatarReaction, number>> = {
+  win: 2.4, loss: 2.2, streak: 0.9, levelup: 2.6, sweep: 3.2, flawless: 4, progress: 1.6,
+};
+/** The hops a reaction makes: how many, one every `per` s, `amp` tall (body units). Reactions not listed do not hop. */
+export const AVATAR_REACTION_HOPS: Readonly<Partial<Record<AvatarReaction, { n: number; per: number; amp: number }>>> = {
+  streak: { n: 1, per: 0.6, amp: 0.06 },
+  win: { n: 2, per: 0.55, amp: 0.06 },
+  levelup: { n: 2, per: 0.55, amp: 0.06 },
+  sweep: { n: 3, per: 0.55, amp: 0.07 },
+  flawless: { n: 4, per: 0.55, amp: 0.09 },
+  progress: { n: 1, per: 0.5, amp: 0.04 },
+};
 /** The tap: hop + laugh (same feel as the cast's tap). */
 export const AVATAR_TAP = { dur: 1.1, hop: 0.07, hopT: [0.06, 0.5] as [number, number], laughIn: 0.08, laughOut: 0.85 } as const;
 /** Ease between the saved pose and a reaction / back (s). */
@@ -234,12 +272,11 @@ export function avatarLiveFrame(input: AvatarLiveInput, data: AvatarPosesData = 
       const target = avatarPoseDef(AVATAR_REACTION_POSE[rx.kind], data) ?? saved ?? {};
       const k = smooth(Math.min(rx.t, dur - rx.t) / AVATAR_POSE_BLEND);
       spec = avatarPoseLerp(spec, target, k);
-      if (rx.kind === 'streak' || rx.kind === 'win' || rx.kind === 'levelup') {
-        // a hop (the cheers hop twice)
-        const per = rx.kind === 'streak' ? 0.6 : 0.55;
-        const n = rx.kind === 'streak' ? 1 : 2;
+      const hops = AVATAR_REACTION_HOPS[rx.kind];
+      if (hops) {
+        // a hop (the cheers hop twice; a sweep three times, a flawless four)
         const tt = rx.t - 0.1;
-        if (tt > 0 && tt < per * n) hop = Math.max(hop, 0.06 * Math.sin(((tt % per) / per) * Math.PI));
+        if (tt > 0 && tt < hops.per * hops.n) hop = Math.max(hop, hops.amp * Math.sin(((tt % hops.per) / hops.per) * Math.PI));
       }
     }
   }
@@ -257,6 +294,12 @@ export function avatarLiveFrame(input: AvatarLiveInput, data: AvatarPosesData = 
       a.rot = (a.rot ?? 0) + live.wave.amp * Math.sin((t / live.wave.period) * Math.PI * 2);
     }
     if (live?.bounce) body.dy -= live.bounce.amp * Math.abs(Math.sin((t / live.bounce.period) * Math.PI));
+    if (live?.clap) {
+      // both arms swing together (inward-positive is negative rot, so the same sign brings the hands together)
+      const swing = live.clap.amp * Math.sin((t / live.clap.period) * Math.PI * 2);
+      arms.L.rot = (arms.L.rot ?? 0) + swing;
+      arms.R.rot = (arms.R.rot ?? 0) + swing;
+    }
   }
   // the tap: hop + squash + laugh (Reduce Motion: only the laugh)
   let laugh = 0;

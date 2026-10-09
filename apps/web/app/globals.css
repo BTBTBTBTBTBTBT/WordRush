@@ -626,6 +626,10 @@
   0%   { transform: perspective(600px) rotateY(90deg); opacity: 0.4; }
   100% { transform: perspective(600px) rotateY(0deg); opacity: 1; }
 }
+@keyframes ttt-strike-in {
+  0% { clip-path: inset(0 100% 0 0); opacity: 0.6; }
+  100% { clip-path: inset(0 0 0 0); opacity: 1; }
+}
 @keyframes friends-coin-spin {
   0%   { transform: perspective(700px) rotateY(0deg) translateY(0); }
   45%  { transform: perspective(700px) rotateY(900deg) translateY(-26px); }
@@ -1624,6 +1628,37 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
    Motion (OS or the in-app toggle) turns the spring into a plain fade and
    stills the glow. Section labels inside windows read in the muted ink on the
    dark theme. ── */
+/* 2.8 items 7 + 48 · a header counter pops + glows the moment it grows (components/ui/pop-num.tsx) */
+.hdr-pop { animation: hdr-pop 520ms cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes hdr-pop { 0% { transform: scale(1); } 35% { transform: scale(1.5); } 100% { transform: scale(1); } }
+.hdr-pop-glow { width: 44px; height: 44px; left: 50%; top: 50%; margin: -22px 0 0 -22px; border-radius: 50%; background: radial-gradient(circle, rgba(245, 165, 36, 0.75), rgba(245, 165, 36, 0) 68%); animation: hdr-pop-glow 700ms ease-out both; }
+@keyframes hdr-pop-glow { 0% { transform: scale(0.3); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hdr-pop, .hdr-pop-glow { animation: none !important; } }
+[data-reduced-motion="true"] .hdr-pop, [data-reduced-motion="true"] .hdr-pop-glow { animation: none !important; }
+
+/* 2.8 item 7 · the celebration kit (docs/design/brand/2.8/celebrate): one-shot, transform + opacity only. */
+.celebrate-burst { animation: celebrate-burst 900ms cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes celebrate-burst { 0% { transform: scale(0.35) rotate(-6deg); opacity: 0; } 45% { opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 0.92; } }
+.celebrate-streamer-l { animation: celebrate-streamer-l 800ms cubic-bezier(0.3, 1.4, 0.5, 1) 150ms both; transform-origin: 90% 0; }
+.celebrate-streamer-r { animation: celebrate-streamer-r 800ms cubic-bezier(0.3, 1.4, 0.5, 1) 150ms both; transform-origin: 10% 0; transform: scaleX(-1); }
+@keyframes celebrate-streamer-l { from { transform: translate(-30px, -24px) rotate(-24deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes celebrate-streamer-r { from { transform: scaleX(-1) translate(-30px, -24px) rotate(-24deg); opacity: 0; } to { transform: scaleX(-1); opacity: 1; } }
+.celebrate-sweep { animation: celebrate-sweep 1100ms ease-in-out 450ms both; }
+@keyframes celebrate-sweep { 0% { transform: translateX(-140%); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(260%); opacity: 0; } }
+.celebrate-crown { animation: celebrate-crown 760ms cubic-bezier(0.3, 1.6, 0.5, 1) 350ms both; }
+@keyframes celebrate-crown { from { transform: translateY(-46px) scale(0.7) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.celebrate-stamp { animation: celebrate-stamp 420ms cubic-bezier(0.3, 1.6, 0.5, 1) both; animation-delay: calc(var(--k, 0) * 110ms + 700ms); }
+@keyframes celebrate-stamp { from { transform: scale(2.4) rotate(-14deg); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
+.celebrate-float { animation: celebrate-float-in 900ms ease-out 300ms both; }
+@keyframes celebrate-float-in { from { transform: translateY(14px) scale(0.8); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .celebrate-burst, .celebrate-streamer-l, .celebrate-crown, .celebrate-stamp, .celebrate-float { animation: none !important; }
+  .celebrate-streamer-r { animation: none !important; }
+  .celebrate-sweep { display: none; }
+}
+[data-reduced-motion="true"] .celebrate-burst, [data-reduced-motion="true"] .celebrate-streamer-l, [data-reduced-motion="true"] .celebrate-streamer-r,
+[data-reduced-motion="true"] .celebrate-crown, [data-reduced-motion="true"] .celebrate-stamp, [data-reduced-motion="true"] .celebrate-float { animation: none !important; }
+[data-reduced-motion="true"] .celebrate-sweep { display: none; }
 .celebrate-spring { animation: celebrate-spring 760ms cubic-bezier(0.3, 1.5, 0.5, 1) both; }
 @keyframes celebrate-spring {
   0% { opacity: 0; transform: scale(0.3) translateY(18%) rotate(-6deg); }

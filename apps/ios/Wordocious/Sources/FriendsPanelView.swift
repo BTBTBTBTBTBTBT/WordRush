@@ -57,7 +57,14 @@ struct FriendsPanelView: View {
 
     // Friends overhaul: the quick-play sheet, the game screen, the full
     // Today's Race sheet and Race my run (the VS Friend page, Pro).
-    struct QuickPlay: Identifiable { let id = UUID(); let friend: FriendsService.FriendProfile?; let kind: FriendlyKind }
+    /// `friend` nil = game first (pick a friend next); `kind` nil = friend first (pick a game next).
+    /// Both set = straight in (Call It stops at its stake step).
+    struct QuickPlay: Identifiable { let id = UUID(); let friend: FriendsService.FriendProfile?; let kind: FriendlyKind? }
+    // Wave 3 (9e): their-turn lines expanded on tap, the collapsible All friends list, and the
+    // resign confirmation (Resign lives in the friend's more menu now, not inside the game).
+    @State private var theirTurnOpen: Set<String> = []
+    @State private var allFriendsOpen: Bool?
+    @State private var resignTarget: FriendlyGameView?
     struct OpenGame: Identifiable { let id: String; let initial: FriendlyGameView? }
     @State private var quickPlay: QuickPlay?
     @State private var openGame: OpenGame?
@@ -81,13 +88,18 @@ struct FriendsPanelView: View {
         // BJ7: crisp page rhythm — 14 between sections (was 18).
         VStack(alignment: .leading, spacing: 14) {
             if let p = AuthService.shared.profile {
+                // Wave 3 (9e): "On now" folds into the friend cards below (green dot + "playing
+                // Classic"), and the race is told once (the pills, countdown small in the header).
                 FriendsBannerView(friends: friends, me: p, meDigest: FriendsService.meDigest,
-                                  onFace: { quickPlay = QuickPlay(friend: $0, kind: .rps) },
+                                  showOnNow: false,
+                                  onFace: { quickPlay = QuickPlay(friend: $0, kind: nil) },
                                   onRace: { showRace = true })
             }
-            if !FriendlyGamesService.active.isEmpty {
-                yourTurnSection
-            }
+            // WAVE2-INVITES-SLOT (wave2/invites-2): the branded Invites row and "Have a code?"
+            // entry go HERE, directly under the race banner and above the friend cards.
+            // Wave 3 (items 9 + 9e): the friends list at the top, one card per friend (online
+            // first), their games as tiles inside the card, the rest under "All friends".
+            yourFriendsSection(friends, incoming: incoming, outgoing: outgoing)
             if AuthService.shared.profile != nil {
                 playWithFriendsSection
             }
@@ -106,8 +118,7 @@ struct FriendsPanelView: View {
                     onSeeFriends: { newFriend = nil })
                     .transition(.opacity)
             }
-            yourFriendsSection(friends, incoming: incoming, outgoing: outgoing)
-            // §10 (founder, iOS 220): INVITES sits directly under YOUR FRIENDS.
+            // §10 (founder, iOS 220): INVITES sits near YOUR FRIENDS.
             if !incoming.isEmpty || !outgoing.isEmpty {
                 invitesCard
             }
@@ -247,59 +258,6 @@ struct FriendsPanelView: View {
             }
         }
         .presentationDetents([.medium, .large])
-    }
-
-    // MARK: YOUR TURN (§2.4)
-
-    private var yourTurnSection: some View {
-        let games = FriendlyGamesService.active
-        let mine = games.filter(\.yourTurn).count
-        return VStack(alignment: .leading, spacing: 6) {
-            FriendsSectionHeader(title: "YOUR TURN") {
-                // §M: the same candy badge as the Friends tab — games waiting on you.
-                if mine > 0 {
-                    CandyCountBadge(count: mine, size: 18)
-                        .accessibilityElement().accessibilityLabel("\(mine) waiting on you")
-                }
-            }
-            VStack(spacing: 6) {
-                ForEach(games) { g in
-                    let accent = FriendsKit.tileAccent(g.kind)
-                    // §C4: each game in play on a small card in ITS color with its top bar.
-                    Button { openGame = OpenGame(id: g.id, initial: g) } label: {
-                        // BJ7: one top line — icon, title and the action top-aligned; the
-                        // detail sits 4 under the title.
-                        HStack(alignment: .top, spacing: 10) {
-                            pocketIcon(g.kind, size: 40)
-                                // §M: a waiting game wears the small candy badge.
-                                .overlay(alignment: .topTrailing) {
-                                    if g.yourTurn { CandyCountBadge(count: 1, size: 16).offset(x: 6, y: -6) }
-                                }
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("\(g.title) vs @\(g.opponent.username)").font(Brand.font(13, .black))
-                                    .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.8)
-                                Text(g.line).font(Brand.font(11, .heavy))
-                                    .foregroundStyle(Color.black.mixed(over: accent, 0.3)).lineLimit(1)
-                            }
-                            Spacer(minLength: 6)
-                            if g.yourTurn {
-                                // §A8: the action is a candy button (same tap as the row).
-                                Button { openGame = OpenGame(id: g.id, initial: g) } label: {
-                                    CandyLabel(title: "Play", symbol: "play.fill")
-                                }
-                                .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
-                                .accessibilityLabel("Play \(g.title) with \(g.opponent.username)")
-                            } else {
-                                FriendsStatusChip(title: "Waiting", accent: accent)
-                            }
-                        }
-                        .padding(.horizontal, 12).padding(.vertical, 10)
-                        .friendsCard(accent: accent, bar: [accent], radius: 16, barHeight: 5, tint: 0.10, line: 0.28)
-                    }
-                    .buttonStyle(.squish)
-                }
-            }
-        }
     }
 
     // MARK: PLAY WITH FRIENDS (§2.5)
@@ -509,8 +467,8 @@ struct FriendsPanelView: View {
                 .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                 .accessibilityLabel("Add a friend")
             }
+            if friends.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                if friends.isEmpty {
                     Group {
                         if !FriendsService.loaded {
                             // Roster not fetched yet (cold launch): hold the rows' place instead of
@@ -538,49 +496,143 @@ struct FriendsPanelView: View {
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    if !slackers.isEmpty {
-                        HStack(spacing: 8) {
-                            Text(slackers.count == 1 ? "1 friend hasn't played today" : "\(slackers.count) haven't played today")
-                                .font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.rowSub)
-                                .lineLimit(1).minimumScaleFactor(0.8)
-                            Spacer(minLength: 6)
-                            Button {
-                                Task {
-                                    var n = 0
-                                    for f in slackers {
-                                        let outcome = await FriendsService.taunt(
-                                            friendId: f.id, tauntId: "slowpoke",
-                                            day: LeaderboardService.todayLocal())
-                                        if outcome == .sent { n += 1 }
-                                    }
-                                    note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s")!" : "Everyone already nudged today"
-                                }
-                            } label: {
-                                CandyLabel(title: "Nudge all", symbol: "bell.fill")
-                            }
-                            .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
-                            .accessibilityLabel("Nudge all who haven't played")
-                        }
-                        .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
-                    }
-                    // On now first, then by the most recent presence.
-                    let sorted = friends.sorted { a, b in
-                        let ao = a.isOnline(), bo = b.isOnline()
-                        if ao != bo { return ao }
-                        return (FriendsService.ms(a.lastSeenAt) ?? 0) > (FriendsService.ms(b.lastSeenAt) ?? 0)
-                    }
-                    ForEach(Array(sorted.enumerated()), id: \.element.id) { i, f in
-                        friendRow(f)
-                            .friendsStripe(i, accent: Self.lavender, divider: i > 0 || !slackers.isEmpty)
-                    }
-                }
             }
             .friendsCard(accent: Self.lavender, tint: 0.075, line: 0.21)
+            } else {
+                // Wave 3 (items 9 + 9e): one card per friend, then the All friends list.
+                friendCardsBlock(friends, slackers: slackers)
+            }
             if let note {
                 Text(note).font(Brand.font(12, .heavy)).foregroundStyle(FriendsInk.section)
                     .padding(.horizontal, 2)
             }
+        }
+    }
+
+    // MARK: Wave 3 — one card per friend, then All friends (items 9 + 9e)
+
+    /// The cards (online friends first, then friends with games waiting on you) and the
+    /// collapsible "All friends · N" list. Layout and words: FriendCards (WordociousCore).
+    @ViewBuilder
+    private func friendCardsBlock(_ friends: [FriendsService.FriendProfile],
+                                  slackers: [FriendsService.FriendProfile]) -> some View {
+        let now = Date()
+        let cardFriends = friends.map { f in
+            CardFriend(id: f.id.lowercased(), username: f.username, online: f.isOnline(now: now),
+                       activity: f.activity, lastSeenMs: FriendsService.ms(f.lastSeenAt).map { Double($0) })
+        }
+        let active = FriendlyGamesService.active
+        let cardGames = active.map { g in
+            CardGame(id: g.id, kind: g.kind, opponentId: g.opponent.id.lowercased(), opponentName: g.opponent.username,
+                     me: g.me, state: g.state, yourTurn: g.yourTurn, updatedAt: g.updatedAt)
+        }
+        let layout = FriendCards.friendsLayout(friends: cardFriends, games: cardGames)
+        let byId = Dictionary(active.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        VStack(spacing: 8) {
+            ForEach(layout.cards) { c in
+                let f = FriendsKit.friend(c.friendId)
+                let opp = active.first { $0.opponent.id.lowercased() == c.friendId }?.opponent
+                let menu: (() -> Void)? = f.map { fr in { menuFriend = fr } }
+                FriendCardView(
+                    card: c, friend: f, fallbackOpponent: opp, games: byId,
+                    expanded: theirTurnOpen.contains(c.friendId),
+                    onOpenGame: { g in openGame = OpenGame(id: g.id, initial: g) },
+                    onStartGame: { k in if let f { quickPlay = QuickPlay(friend: f, kind: k) } },
+                    onToggleTheirs: { toggleTheirTurn(c.friendId) },
+                    onProfile: { profileTarget = f?.id ?? opp?.id ?? c.friendId },
+                    onMenu: menu)
+            }
+            allFriendsBlock(layout.rest, friends: friends, slackers: slackers, openByDefault: layout.cards.isEmpty)
+        }
+        .confirmationDialog(
+            "Resign \(resignTarget?.title ?? "this game")?",
+            isPresented: Binding(get: { resignTarget != nil }, set: { if !$0 { resignTarget = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Resign", role: .destructive) {
+                if let g = resignTarget {
+                    Task {
+                        _ = await FriendlyGamesService.resign(g.id)
+                        await FriendlyGamesService.load()
+                    }
+                }
+                resignTarget = nil
+            }
+            Button("Keep playing", role: .cancel) { resignTarget = nil }
+        } message: {
+            Text("Resigning hands \(resignTarget?.opponent.username ?? "them") the win.")
+        }
+    }
+
+    private func toggleTheirTurn(_ id: String) {
+        let change = {
+            if theirTurnOpen.contains(id) { theirTurnOpen.remove(id) } else { theirTurnOpen.insert(id) }
+        }
+        if Theme.reduceMotion { change() } else { withAnimation(.easeInOut(duration: 0.18), change) }
+    }
+
+    /// "All friends · N": everyone with no game going who is not on now, A to Z, collapsed
+    /// unless nobody else has a card. The "hasn't played today" nudge lives at its top.
+    @ViewBuilder
+    private func allFriendsBlock(_ rest: [String], friends: [FriendsService.FriendProfile],
+                                 slackers: [FriendsService.FriendProfile], openByDefault: Bool) -> some View {
+        let restFriends = rest.compactMap { name in friends.first { $0.username == name } }
+        let open = allFriendsOpen ?? openByDefault
+        if !restFriends.isEmpty || !slackers.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                if !slackers.isEmpty {
+                    HStack(spacing: 8) {
+                        Text(slackers.count == 1 ? "1 friend hasn't played today" : "\(slackers.count) haven't played today")
+                            .font(Brand.font(11, .heavy)).foregroundStyle(FriendsInk.rowSub)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                        Spacer(minLength: 6)
+                        Button {
+                            Task {
+                                var n = 0
+                                for f in slackers {
+                                    let outcome = await FriendsService.taunt(
+                                        friendId: f.id, tauntId: "slowpoke",
+                                        day: LeaderboardService.todayLocal())
+                                    if outcome == .sent { n += 1 }
+                                }
+                                note = n > 0 ? "Nudged \(n) friend\(n == 1 ? "" : "s")!" : "Everyone already nudged today"
+                            }
+                        } label: {
+                            CandyLabel(title: "Nudge all", symbol: "bell.fill")
+                        }
+                        .buttonStyle(CastButtonStyle(color: .gold, size: .small, fullWidth: false))
+                        .accessibilityLabel("Nudge all who haven't played")
+                    }
+                    .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
+                }
+                if !restFriends.isEmpty {
+                    Button {
+                        let change = { allFriendsOpen = !open }
+                        if Theme.reduceMotion { change() } else { withAnimation(.easeInOut(duration: 0.18), change) }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(FriendCards.allFriendsLabel(restFriends.count))
+                                .font(Brand.font(12, .black)).foregroundStyle(FriendsInk.lavender)
+                            Spacer(minLength: 4)
+                            Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(FriendsInk.lavender)
+                                .rotationEffect(.degrees(open ? 180 : 0))
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 11)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.squish)
+                    .accessibilityLabel(FriendCards.allFriendsLabel(restFriends.count))
+                    .accessibilityHint(open ? "Hides the list" : "Shows the list")
+                    if open {
+                        ForEach(Array(restFriends.enumerated()), id: \.element.id) { i, f in
+                            friendRow(f)
+                                .friendsStripe(i + 1, accent: Self.lavender)
+                        }
+                    }
+                }
+            }
+            .friendsCard(accent: Self.lavender, tint: 0.075, line: 0.21)
         }
     }
 
@@ -597,7 +649,16 @@ struct FriendsPanelView: View {
             // BJ7: one top line — avatar, name + badges and the streak / action all
             // top-aligned; the presence line 4 under the name.
             HStack(alignment: .top, spacing: 10) {
-                FriendsPresenceAvatar(url: f.avatar_url, username: f.username, emoji: f.avatar_emoji, size: 36, online: online, ring: false)
+                // Wave 3: their mascot (the shared resolver), the green dot when they are on.
+                AvatarView(url: f.avatar_url, username: f.username, size: 38, emoji: f.avatar_emoji,
+                           castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id, stroke: false)
+                    .overlay(alignment: .bottomTrailing) {
+                        if online {
+                            Circle().fill(FriendsInk.online).frame(width: 11, height: 11)
+                                .overlay(Circle().stroke(Color.white, lineWidth: 2)).offset(x: 2, y: 2)
+                        }
+                    }
+                    .frame(width: 38, height: 38)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
                         Text("@\(f.username)").font(Brand.font(14, .black))
@@ -661,7 +722,8 @@ struct FriendsPanelView: View {
         var rows: [FamilyMenuAction] = [
             FamilyMenuAction(id: "profile", title: "View profile", icon: .clay("eye")) { profileTarget = f.id },
             FamilyMenuAction(id: "play", title: "Play a game", icon: .clay("play"), tint: FamilyMenuInk.pink) {
-                quickPlay = QuickPlay(friend: f, kind: .rps)
+                // Friend first: pick a game tile next, then straight into it.
+                quickPlay = QuickPlay(friend: f, kind: nil)
             },
             FamilyMenuAction(id: "taunt", title: "Taunt", icon: .art("icon3d-bell"), tint: FamilyMenuInk.amber,
                              accessibility: "Taunt \(f.username)") { tauntTarget = f },
@@ -674,6 +736,11 @@ struct FriendsPanelView: View {
         if (AuthService.shared.profile?.streakShields ?? 0) > 0 {
             rows.append(FamilyMenuAction(id: "gift", title: "Gift a shield", icon: .art("icon3d-shield"),
                                          tint: FamilyMenuInk.teal, disabled: gifting != nil) { giftShield(f) })
+        }
+        // Wave 3: Resign / Decline lives here (not inside the game): one row per game going with them.
+        for g in FriendlyGamesService.active where g.opponent.id.caseInsensitiveCompare(f.id) == .orderedSame {
+            rows.append(FamilyMenuAction(id: "resign-\(g.id)", title: "Resign \(g.title)", icon: .clay("flag"), danger: true,
+                                         accessibility: "Resign \(g.title) against \(f.username)") { resignTarget = g })
         }
         rows.append(FamilyMenuAction(id: "unfriend", title: "Unfriend", icon: .clay("xmark"), danger: true,
                                      accessibility: "Unfriend \(f.username)") { unfriendTarget = f })
@@ -689,7 +756,7 @@ struct FriendsPanelView: View {
     /// §C4 / §A8: chunky small candy buttons — Play / Challenge purple, Nudge amber.
     @ViewBuilder private func actionPill(_ f: FriendsService.FriendProfile, online: Bool) -> some View {
         if online {
-            Button { quickPlay = QuickPlay(friend: f, kind: .rps) } label: { CandyLabel(title: "Play") }
+            Button { quickPlay = QuickPlay(friend: f, kind: nil) } label: { CandyLabel(title: "Play") }
                 .buttonStyle(CastButtonStyle(color: .pink, size: .small, fullWidth: false))
                 .accessibilityLabel("Play with \(f.username)")
         } else if (f.playedToday ?? 0) > 0 {

@@ -776,6 +776,9 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 
     val accent = com.wordocious.app.ui.modeAccent(mode)
     var showGuide by remember { mutableStateOf(false) }
+    // First play (item 12): the help card opens by itself once, then only on tap.
+    val firstPlay = rememberFirstPlayAutoShow(com.wordocious.app.data.GuideService.slugFor(mode))
+    LaunchedEffect(firstPlay) { if (firstPlay) { showGuide = true; vm.pauseTimer() } }
     // The full ProperNoundle clue card: opens when the Clue hint lands, "Read clue" reopens it.
     var showClueCard by remember { mutableStateOf(false) }
     var clueTopPx by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }

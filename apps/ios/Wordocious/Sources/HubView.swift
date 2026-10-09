@@ -259,6 +259,7 @@ struct HubView: View {
             cornerButton("house.fill") { dismiss() }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(.top, GameCornerButton.topInset).padding(.leading, GameCornerButton.sideInset)
             cornerButton("questionmark") { showGuide = true }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .softSheet(isPresented: $showGuide) { GuideSheet(mode: .hub) }
+                .firstPlayGuide(mode: .hub, show: $showGuide)
         }
         .navigationBarTitleDisplayMode(.inline)
         // Hardware keys (founder, 2026-09-30): web hub-game keydown — Return

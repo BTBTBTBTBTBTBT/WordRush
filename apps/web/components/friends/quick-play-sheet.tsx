@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Radio, Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -32,12 +32,16 @@ import { softMix } from '@/lib/soft-surface';
 // from an ON NOW face, a Play pill, a game tile (with a friend picker) or a
 // Rematch reaction. Finishing build (C4 / A1 / A8): tinted rows, chips and
 // cards, candy Pick / Invite.
+// 2.8 item 9 (the flow fix): NO step repeats. Game first -> friend picker -> straight into the game; friend
+// first -> game tiles -> straight into the game; a Rematch goes straight in. Call It is the one exception: it
+// asks for its stake (three chips) and then Start.
 
 interface Props {
   friends: FriendProfile[];
   /** Preselected friend; null shows the picker first. */
   friend: FriendProfile | null;
-  kind: FriendlyKind;
+  /** The game, when one is already chosen (a game tile, a Rematch); null = the friend came first. */
+  kind: FriendlyKind | null;
   onClose: () => void;
   onNote: (text: string) => void;
 }
@@ -46,7 +50,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
   const router = useRouter();
   const { isProActive } = useAuth();
   const [friend, setFriend] = useState<FriendProfile | null>(initialFriend);
-  const [kind, setKind] = useState<FriendlyKind>(initialKind);
+  const [kind, setKind] = useState<FriendlyKind | null>(initialKind);
   const [stake, setStake] = useState<string>(COIN_STAKES[0]);
   const [busy, setBusy] = useState<'invite' | 'vs' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,12 +58,39 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
   const [picked, setPicked] = useState(false);
   const now = Date.now();
 
-  // BJ13: no friend yet → the character-select picker. Picking one moves to the
-  // play state inside the same sheet with the shared soft rise (MotionSpec).
+  /** Straight in: create the game and open it (Call It sends its chosen stake). */
+  const startNow = async (k: FriendlyKind, f: FriendProfile) => {
+    if (busy) return;
+    setBusy('invite');
+    setError(null);
+    const r = await startGame(k, f.id, k === 'coin' ? stake : undefined);
+    if ('error' in r) { setError(r.error); setBusy(null); return; }
+    router.push(`/friends/games/${r.game.id}`);
+  };
+
+  // A game and a friend are both known (Rematch, a friend's game tile): go straight in, once.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStarted.current || !initialFriend || !initialKind || initialKind === 'coin') return;
+    autoStarted.current = true;
+    void startNow(initialKind, initialFriend);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // BJ13: no friend yet → the character-select picker. Picking one goes straight into the
+  // game (Call It first asks for its stake, in this same sheet).
   if (!friend) {
+    const pickKind: FriendlyKind = kind ?? 'rps';
     return (
       <Sheet onClose={onClose} label="Who are you playing?" tint={PICKER_SHEET}>
-        <FriendPicker friends={friends} kind={kind} now={now} onPick={(f) => { setPicked(true); setFriend(f); }} />
+        <FriendPicker
+          friends={friends}
+          kind={pickKind}
+          now={now}
+          onPick={(f) => {
+            if (pickKind === 'coin') { setPicked(true); setFriend(f); setKind('coin'); return; }
+            setPicked(true); setFriend(f); void startNow(pickKind, f);
+          }}
+        />
       </Sheet>
     );
   }
@@ -68,14 +99,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
   const presence = presenceLine(lastSeenMs(friend), friend.activity ?? null, now);
   const rivalry = rivalryLine(friend);
 
-  const invite = async () => {
-    if (busy) return;
-    setBusy('invite');
-    setError(null);
-    const r = await startGame(kind, friend.id, kind === 'coin' ? stake : undefined);
-    if ('error' in r) { setError(r.error); setBusy(null); return; }
-    router.push(`/friends/games/${r.game.id}`);
-  };
+  const invite = () => { if (kind) void startNow(kind, friend); };
 
   const vsLive = async () => {
     if (busy) return;
@@ -105,7 +129,7 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
       <SectionLabel>Quick games{on ? ' · live while they’re on' : ''}</SectionLabel>
       <div className="grid grid-cols-3 gap-2 mt-2">
         {FRIENDLY_KINDS.map((k) => {
-          const sel = k === kind;
+          const sel = k === kind && k === 'coin';
           return (
             // Square game tile (docs/GAME_TILE_STYLE.md), selected = the picked game.
             <GameSquare
@@ -115,9 +139,9 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
               selected={sel}
               glyph={<GameGlyph kind={k} size={16} color={KIND_COLOR[k]} stroke={2.2} />}
               label={KIND_SHORT[k]}
-              onClick={() => setKind(k)}
+              onClick={() => { if (k === 'coin') setKind('coin'); else void startNow(k, friend); }}
               aria-pressed={sel}
-              aria-label={KIND_SHORT[k]}
+              aria-label={`Play ${KIND_SHORT[k]} with ${friend.username}`}
             />
           );
         })}
@@ -181,19 +205,31 @@ export function QuickPlaySheet({ friends, friend: initialFriend, kind: initialKi
 
       {error && <p className="mt-3 text-[12px] font-bold text-center" style={{ color: '#dc2626' }}>{error}</p>}
 
-      <CastButton screen="pink"
-        color="pink"
-        block
-        onClick={invite}
-        disabled={busy !== null}
-        icon={busy === 'invite' ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : 'play'}
-        className="mt-4"
-      >
-        Invite to {FRIENDLY_TITLES[kind]}
-      </CastButton>
-      <p className="mt-1 text-center text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>
-        {friend.username} gets a ping. If they&apos;re busy, it waits as your turn.
-      </p>
+      {kind === 'coin' ? (
+        <>
+          <CastButton screen="pink"
+            color="pink"
+            block
+            onClick={invite}
+            disabled={busy !== null}
+            icon={busy === 'invite' ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : 'play'}
+            className="mt-4"
+          >
+            Start {FRIENDLY_TITLES.coin}
+          </CastButton>
+          <p className="mt-1 text-center text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>
+            {friend.username} gets a ping. If they&apos;re busy, it waits as your turn.
+          </p>
+        </>
+      ) : busy === 'invite' ? (
+        <div className="mt-4 flex items-center justify-center gap-2 text-[12px] font-extrabold" role="status" style={{ color: FR_LOOK.rowSub }}>
+          <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> Starting the game…
+        </div>
+      ) : (
+        <p className="mt-3 text-center text-[11px] font-bold" style={{ color: FR_LOOK.rowSub }}>
+          Tap a game to start. {friend.username} gets a ping; if they&apos;re busy, it waits as your turn.
+        </p>
+      )}
       </SoftRise>
     </Sheet>
   );

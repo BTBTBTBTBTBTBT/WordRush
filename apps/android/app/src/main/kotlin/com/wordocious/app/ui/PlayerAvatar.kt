@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.wordocious.app.data.AvatarFields
 import com.wordocious.app.data.MascotConfigRules
 import com.wordocious.app.data.PlayerAvatars
@@ -37,6 +38,11 @@ fun PlayerAvatar(
      * AvatarLiveConfig.LIVING_MASCOT is on). Lists never pass it: they stay still.
      */
     live: Boolean = false,
+    /**
+     * 2.8 item 13: a podium place (1-3) — with the living mascot on, a MASCOT player stands full-body (no tile) in the pose of
+     * their place (1st cheers, 2nd claps, 3rd waves); the caller sizes it with [podiumStands]. Photos keep the framed tile.
+     */
+    podiumPlace: Int? = null,
 ) {
     val row = remember(userId, username, avatarUrl, config, castId, frame, accentHex) {
         AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)
@@ -60,8 +66,30 @@ fun PlayerAvatar(
         )
     } else {
         val initial = remember(username) { MascotConfigRules.initialOf(username) }
-        if (live && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT && PlayerAvatars.isOwn(userId, username)) {
+        if (podiumPlace != null && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
+            val posed = remember(resolved.config, podiumPlace) { resolved.config.copy(pose = com.wordocious.core.AvatarPoses.placePose(podiumPlace)) }
+            LivingMascot(posed, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)
+        } else if (live && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT && PlayerAvatars.isOwn(userId, username)) {
             LivingMascot(resolved.config, initial, size, modifier, pro = pro, label = null)
         } else MascotAvatar(resolved.config, initial, size, modifier, pro = pro)
     }
 }
+
+
+/**
+ * 2.8 item 13: whether this podium entry stands full-body (a mascot player, the living mascot on) — the podium draws it at
+ * [PODIUM_FIGURE_SCALE] times the tile size and sinks its feet [PODIUM_FOOT_OVERLAP] into the step.
+ */
+@Composable
+fun podiumStands(
+    username: String?, userId: String?, avatarUrl: String?, config: JsonElement?, castId: String?, frame: String?, accentHex: String?,
+): Boolean {
+    if (!com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) return false
+    val row = remember(userId, username, avatarUrl, config, castId, frame, accentHex) {
+        AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)
+    }
+    return PlayerAvatars.resolve(row).photoUrl == null
+}
+
+const val PODIUM_FIGURE_SCALE = 2.0f
+val PODIUM_FOOT_OVERLAP = 12.dp

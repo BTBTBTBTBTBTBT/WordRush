@@ -1,0 +1,428 @@
+{
+  "flag": "first_play_tutorials",
+  "help": {
+    "rps": {
+      "kind": "rps",
+      "key": "pocket-rps",
+      "title": "Rock Paper Scissors",
+      "steps": [
+        {
+          "text": "Pick rock, paper or scissors. Your pick stays hidden.",
+          "picture": {
+            "art": [
+              "art-pocket-rps-rock",
+              "art-pocket-rps-paper",
+              "art-pocket-rps-scissors"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "When you both have picked, the hands flip over together.",
+          "picture": {
+            "art": [
+              "art-pocket-rps-rock",
+              "art-pocket-clash-burst",
+              "art-pocket-rps-scissors"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Rock beats scissors, scissors beat paper, paper beats rock.",
+          "picture": {
+            "art": [
+              "art-pocket-rps-rock",
+              "art-pocket-rps-scissors"
+            ],
+            "joiners": [
+              "beats"
+            ]
+          }
+        }
+      ],
+      "win": "First to win 2 rounds takes the match.",
+      "turns": "Take your turn any time. Your friend gets a ping, and the game waits for you both for 3 days."
+    },
+    "ttt": {
+      "kind": "ttt",
+      "key": "pocket-ttt",
+      "title": "Tic-Tac-Tile",
+      "steps": [
+        {
+          "text": "Take turns placing your tile on the 3 by 3 board. You are the purple X.",
+          "picture": {
+            "art": [
+              "art-pocket-ttt-x",
+              "art-pocket-ttt-o"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Three of your tiles in a row, across, down or corner to corner, wins the game.",
+          "picture": {
+            "art": [
+              "art-pocket-ttt-x",
+              "art-pocket-ttt-x",
+              "art-pocket-ttt-x"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Fill the board with no line and the game is a draw.",
+          "picture": {
+            "art": [
+              "art-pocket-ttt-board"
+            ],
+            "joiners": []
+          }
+        }
+      ],
+      "win": "Win 2 games, out of at most 5, to take the match.",
+      "turns": "Take your turn any time. Your friend gets a ping, and the game waits for you both for 3 days."
+    },
+    "coin": {
+      "kind": "coin",
+      "key": "pocket-coin",
+      "title": "Call It",
+      "steps": [
+        {
+          "text": "Call heads or tails before the flip.",
+          "picture": {
+            "art": [
+              "art-pocket-coin-heads-w",
+              "art-pocket-coin-tails-crest"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "The coin flips. Call it right and the round is yours.",
+          "picture": {
+            "art": [
+              "art-pocket-coin-heads-w",
+              "art-pocket-coin-tilt",
+              "art-pocket-coin-tails-crest"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "You swap who calls each round. Heads is the W, tails is the crest.",
+          "picture": {
+            "art": [
+              "art-pocket-coin-sparkle-ring"
+            ],
+            "joiners": []
+          }
+        }
+      ],
+      "win": "First to win 3 flips takes the match, and the stake you picked.",
+      "turns": "Take your turn any time. Your friend gets a ping, and the game waits for you both for 3 days."
+    },
+    "pass": {
+      "kind": "pass",
+      "key": "pocket-pass",
+      "title": "Pass the Puzzle",
+      "steps": [
+        {
+          "text": "You and your friend share one hidden word and one board.",
+          "picture": {
+            "art": [
+              "art-pocket-tile-white",
+              "art-pocket-tile-white",
+              "art-pocket-tile-white",
+              "art-pocket-tile-white",
+              "art-pocket-tile-white"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Take turns guessing. Purple is the right spot, gold is the wrong spot.",
+          "picture": {
+            "art": [
+              "art-pocket-tile-purple",
+              "art-pocket-tile-gold",
+              "art-pocket-tile-white"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Use what the last guess showed. There are 6 guesses in all.",
+          "picture": {
+            "art": [
+              "art-pocket-puzzle-piece"
+            ],
+            "joiners": []
+          }
+        }
+      ],
+      "win": "Whoever finds the word wins. Nobody finds it in 6, it is a draw.",
+      "turns": "Take your turn any time. Your friend gets a ping, and the game waits for you both for 3 days."
+    },
+    "ghost": {
+      "kind": "ghost",
+      "key": "pocket-ghost",
+      "title": "Ghost",
+      "steps": [
+        {
+          "text": "Take turns adding one letter to a growing word fragment.",
+          "picture": {
+            "art": [
+              "art-pocket-tile-purple",
+              "art-pocket-tile-gold",
+              "art-pocket-tile-purple"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Every fragment must still be able to become a real word.",
+          "picture": {
+            "art": [
+              "art-pocket-tile-white",
+              "art-pocket-tile-white",
+              "art-pocket-tile-white"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Finish a real word, or play a dead end, and you lose the round.",
+          "picture": {
+            "art": [
+              "art-pocket-ghost-marker"
+            ],
+            "joiners": []
+          }
+        }
+      ],
+      "win": "Win 2 rounds, out of at most 5, to take the match.",
+      "turns": "Take your turn any time. Your friend gets a ping, and the game waits for you both for 3 days."
+    },
+    "chain": {
+      "kind": "chain",
+      "key": "pocket-chain",
+      "title": "Word Chain",
+      "steps": [
+        {
+          "text": "Play a word that starts with the last letter of the word before it.",
+          "picture": {
+            "art": [
+              "art-pocket-tile-purple",
+              "art-pocket-chain-connector",
+              "art-pocket-tile-gold"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Longer words score more points. No word can be played twice.",
+          "picture": {
+            "art": [
+              "art-pocket-chain-links"
+            ],
+            "joiners": []
+          }
+        },
+        {
+          "text": "Build the chain back and forth with your friend.",
+          "picture": {
+            "art": [
+              "art-pocket-tile-purple",
+              "art-pocket-tile-gold",
+              "art-pocket-tile-purple"
+            ],
+            "joiners": []
+          }
+        }
+      ],
+      "win": "First to 30 points wins.",
+      "turns": "Take your turn any time. Your friend gets a ping, and the game waits for you both for 3 days."
+    }
+  },
+  "keys": [
+    "pocket-rps",
+    "pocket-ttt",
+    "pocket-coin",
+    "pocket-pass",
+    "pocket-ghost",
+    "pocket-chain"
+  ],
+  "decisions": [
+    {
+      "live": true,
+      "seen": [],
+      "key": "practice",
+      "show": true
+    },
+    {
+      "live": true,
+      "seen": [],
+      "key": "hub",
+      "show": true
+    },
+    {
+      "live": true,
+      "seen": [],
+      "key": "pocket-rps",
+      "show": true
+    },
+    {
+      "live": true,
+      "seen": [
+        "hub"
+      ],
+      "key": "practice",
+      "show": true
+    },
+    {
+      "live": true,
+      "seen": [
+        "hub"
+      ],
+      "key": "hub",
+      "show": false
+    },
+    {
+      "live": true,
+      "seen": [
+        "hub"
+      ],
+      "key": "pocket-rps",
+      "show": true
+    },
+    {
+      "live": true,
+      "seen": [
+        "pocket-rps",
+        "hub"
+      ],
+      "key": "practice",
+      "show": true
+    },
+    {
+      "live": true,
+      "seen": [
+        "pocket-rps",
+        "hub"
+      ],
+      "key": "hub",
+      "show": false
+    },
+    {
+      "live": true,
+      "seen": [
+        "pocket-rps",
+        "hub"
+      ],
+      "key": "pocket-rps",
+      "show": false
+    },
+    {
+      "live": false,
+      "seen": [],
+      "key": "practice",
+      "show": false
+    },
+    {
+      "live": false,
+      "seen": [],
+      "key": "hub",
+      "show": false
+    },
+    {
+      "live": false,
+      "seen": [],
+      "key": "pocket-rps",
+      "show": false
+    },
+    {
+      "live": true,
+      "seen": null,
+      "key": "practice",
+      "show": false
+    },
+    {
+      "live": true,
+      "seen": null,
+      "key": "hub",
+      "show": false
+    },
+    {
+      "live": true,
+      "seen": null,
+      "key": "pocket-rps",
+      "show": false
+    }
+  ],
+  "seen": [
+    {
+      "seen": [],
+      "key": "hub",
+      "result": [
+        "hub"
+      ]
+    },
+    {
+      "seen": [
+        "hub"
+      ],
+      "key": "hub",
+      "result": [
+        "hub"
+      ]
+    },
+    {
+      "seen": [
+        "pocket-ttt",
+        "hub"
+      ],
+      "key": "practice",
+      "result": [
+        "hub",
+        "pocket-ttt",
+        "practice"
+      ]
+    }
+  ],
+  "merged": [
+    {
+      "a": [
+        "a",
+        "c"
+      ],
+      "b": [
+        "b",
+        "c"
+      ],
+      "result": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "a": [],
+      "b": [
+        "z"
+      ],
+      "result": [
+        "z"
+      ]
+    },
+    {
+      "a": [
+        "q"
+      ],
+      "b": [],
+      "result": [
+        "q"
+      ]
+    }
+  ]
+}
