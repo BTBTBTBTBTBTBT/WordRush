@@ -236,6 +236,7 @@ struct SudokuView: View {
             cornerButton("questionmark") { showGuide = true }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .softSheet(isPresented: $showGuide) { GuideSheet(mode: .sudoku) }
+                .firstPlayGuide(mode: .sudoku, show: $showGuide)
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }

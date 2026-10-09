@@ -414,6 +414,7 @@ struct CrosswordView: View {
             cornerButton("questionmark") { showGuide = true }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, GameCornerButton.topInset).padding(.trailing, GameCornerButton.sideInset)
                 .softSheet(isPresented: $showGuide) { GuideSheet(mode: .crossword) }
+                .firstPlayGuide(mode: .crossword, show: $showGuide)
         }
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
