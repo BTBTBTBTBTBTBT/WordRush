@@ -20,6 +20,24 @@ public enum LeaderboardStage {
         Host(castId: "s", pose: "flex"),     // SATURDAY STARS
     ]
 
+    public struct DayProp: Equatable { public let art: String; public let motion: String }
+    /// Sunday ... Saturday; motions: spin, bob, hover, swish, flash, drift.
+    public static let dayProps: [DayProp] = [
+        DayProp(art: "art-lb-day-sun", motion: "spin"),
+        DayProp(art: "art-lb-day-coffee", motion: "bob"),
+        DayProp(art: "art-lb-day-rocket", motion: "hover"),
+        DayProp(art: "art-lb-day-wand-swish", motion: "swish"),
+        DayProp(art: "art-lb-day-lightning", motion: "flash"),
+        DayProp(art: "art-lb-day-rainbow-cloud", motion: "drift"),
+        DayProp(art: "art-lb-day-sun", motion: "spin"),
+    ]
+    public static func dayProp(day: String) -> DayProp { dayProps[weekday(day)] }
+    /// Wizard Wednesday: your mascot wears the wizard hat on this page, for the day only (display-only).
+    public static let wizardHatPart = "wizard"
+    public static func wearsWizardHat(day: String) -> Bool { weekday(day) == 3 }
+    /// Your mascot leans toward the title by this many degrees.
+    public static let mascotLeanDegrees = 7.0
+
     /// 0 = Sunday ... 6 = Saturday for the player's local YYYY-MM-DD.
     public static func weekday(_ day: String) -> Int {
         let p = day.split(separator: "-").compactMap { Int($0) }

@@ -25,7 +25,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -100,12 +104,13 @@ internal fun LeaderboardStageCard(accent: Color, content: @Composable ColumnScop
 
 /** The player's own mascot beside the title: the full-body standing figure (alive when the living mascot is on). */
 @Composable
-internal fun StageOwnMascot(size: androidx.compose.ui.unit.Dp) {
+internal fun StageOwnMascot(size: androidx.compose.ui.unit.Dp, wizardHat: Boolean = false) {
     val profile by AuthService.profile.collectAsState()
     val p = profile
     if (p != null) {
         PlayerAvatar(
             p.username, size, Modifier, userId = p.id, avatarUrl = p.avatarUrl, live = true, podiumPlace = 3,
+            headOverride = if (wizardHat) LeaderboardStage.WIZARD_HAT_PART else null,
         )
     } else {
         Image(painterResource(R.drawable.art_pose_w_wave), null, Modifier.size(size), contentScale = ContentScale.Fit)
@@ -124,16 +129,42 @@ internal fun StageTitleRow() {
     val holiday = remember(day) { ProperNoundle.holidayNameForDay(day) }
     val title = remember(day) { leaderboardTitle(day, holiday) }
     val host = remember(day) { LeaderboardStage.host(day) }
+    val prop = remember(day) { LeaderboardStage.dayProp(day) }
+    val hat = remember(day) { LeaderboardStage.wearsWizardHat(day) }
+    // Tapping your mascot: it hops and the title letters bounce again (the title re-mounts, replaying its pop).
+    var taps by remember { mutableIntStateOf(0) }
+    val hop = remember { androidx.compose.animation.core.Animatable(0f) }
+    val still = WTheme.reducedMotion
+    LaunchedEffect(taps) {
+        if (taps > 0 && !still) {
+            hop.animateTo(-14f, androidx.compose.animation.core.tween(140))
+            hop.animateTo(0f, androidx.compose.animation.core.spring(dampingRatio = 0.35f, stiffness = 500f))
+        }
+    }
     val ctx = LocalContext.current
+    val propRes = remember(prop) { ctx.resources.getIdentifier(prop.art.replace('-', '_'), "drawable", ctx.packageName) }
     val hostRes = remember(host) { ctx.resources.getIdentifier("art_pose_${host.castId}_${host.pose}", "drawable", ctx.packageName) }
     Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().height(76.dp).semantics(mergeDescendants = true) { contentDescription = titleCaseLabel(title); heading() },
             verticalAlignment = Alignment.Bottom,
         ) {
-            Box(Modifier.size(62.dp), contentAlignment = Alignment.BottomCenter) { StageOwnMascot(62.dp) }
-            Box(Modifier.weight(1f).padding(bottom = 10.dp), contentAlignment = Alignment.Center) {
-                BubbleText(title, HeadlinePalette.LEADERBOARD, maxSize = 30, minSize = 20)
+            // Your mascot leans toward the title (base fixed); a tap hops it and bounces the letters.
+            Box(
+                Modifier.size(62.dp)
+                    .graphicsLayer {
+                        translationY = hop.value.dp.toPx()
+                        rotationZ = if (still) 0f else LeaderboardStage.MASCOT_LEAN_DEGREES
+                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+                    }
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClickLabel = "Your mascot") { taps += 1 },
+                contentAlignment = Alignment.BottomCenter,
+            ) { StageOwnMascot(62.dp, wizardHat = hat) }
+            androidx.compose.runtime.key(taps) {
+                Box(Modifier.weight(1f).padding(bottom = 10.dp), contentAlignment = Alignment.Center) {
+                    BubbleText(title, HeadlinePalette.LEADERBOARD, maxSize = 30, minSize = 20)
+                }
             }
             if (hostRes != 0) {
                 Image(
@@ -143,7 +174,11 @@ internal fun StageTitleRow() {
                 )
             } else Box(Modifier.size(66.dp))
         }
+        // The weekday's prop floats beside the title with its own little motion (parity with web `.lb-prop-*`).
+        if (propRes != 0) DayPropImage(propRes, prop.motion, Modifier.align(Alignment.TopEnd).padding(end = 70.dp).offset(y = (-4).dp))
+        }
         ResetLine()
+        // (the weekday's prop floats over the title row, below)
     }
 }
 
@@ -309,4 +344,47 @@ internal fun SweepStageStrip(sweepers: Int, rankLine: String) {
             Text(rankLine, fontSize = 11.5.sp, fontWeight = FontWeight.Black, color = lbSubInk(), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
+}
+
+/** The weekday's prop: spin (sun), bob (coffee), hover (rocket), swish (wand), flash (lightning), drift (rainbow cloud). Reduce Motion: still. */
+@Composable
+private fun DayPropImage(res: Int, motion: String, modifier: Modifier) {
+    val still = WTheme.reducedMotion
+    var t by remember { androidx.compose.runtime.mutableDoubleStateOf(0.0) }
+    if (!still) {
+        LaunchedEffect(Unit) {
+            val start = System.nanoTime()
+            while (true) {
+                androidx.compose.runtime.withFrameNanos { t = (it - start) / 1e9 }
+                kotlinx.coroutines.delay(24)   // ~30 fps: a small image does not need more
+            }
+        }
+    }
+    fun ease(period: Double) = (1 - kotlin.math.cos(2 * Math.PI * t / period)) / 2
+    fun keys(phase: Double, stops: List<Pair<Double, Double>>): Double {
+        if (phase <= stops.first().first) return stops.first().second
+        for (i in 1 until stops.size) if (phase <= stops[i].first) {
+            val a = stops[i - 1]; val b = stops[i]
+            return a.second + (b.second - a.second) * (phase - a.first) / maxOf(b.first - a.first, 0.0001)
+        }
+        return stops.last().second
+    }
+    var dx = 0f; var dy = 0f; var rot = 0f; var scale = 1f; var alpha = 1f
+    if (!still) when (motion) {
+        "spin" -> rot = ((t / 18) % 1.0 * 360).toFloat()
+        "bob" -> { val p = ease(2.8); dy = (-4 * p).toFloat(); rot = (-3 + 6 * p).toFloat() }
+        "hover" -> { val p = ease(3.2); dy = (-6 * p).toFloat(); rot = (-4 + 6 * p).toFloat() }
+        "swish" -> rot = keys((t / 3.6) % 1.0, listOf(0.0 to 0.0, 0.55 to 0.0, 0.62 to -24.0, 0.72 to 20.0, 0.82 to -8.0, 0.90 to 0.0, 1.0 to 0.0)).toFloat()
+        "flash" -> {
+            val ph = (t / 3.4) % 1.0
+            scale = keys(ph, listOf(0.0 to 1.0, 0.70 to 1.0, 0.74 to 1.22, 0.78 to 0.96, 0.84 to 1.12, 0.92 to 1.0, 1.0 to 1.0)).toFloat()
+            alpha = keys(ph, listOf(0.0 to 1.0, 0.74 to 1.0, 0.78 to 0.75, 0.84 to 1.0, 1.0 to 1.0)).toFloat()
+        }
+        else -> dx = (6 * kotlin.math.sin(2 * Math.PI * t / 12)).toFloat()
+    }
+    Image(
+        painterResource(res), null,
+        modifier.size(40.dp).graphicsLayer { translationX = dx.dp.toPx(); translationY = dy.dp.toPx(); rotationZ = rot; scaleX = scale; scaleY = scale; this.alpha = alpha },
+        contentScale = ContentScale.Fit,
+    )
 }

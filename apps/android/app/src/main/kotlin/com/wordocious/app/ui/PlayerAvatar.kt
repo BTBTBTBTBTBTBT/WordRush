@@ -71,14 +71,15 @@ fun PlayerAvatar(
         )
     } else {
         val initial = remember(username) { MascotConfigRules.initialOf(username) }
+        val shown = remember(resolved.config, headOverride) { if (headOverride != null) resolved.config.copy(head = headOverride) else resolved.config }
         if (podiumPlace != null && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
-            val posed = remember(resolved.config, podiumPlace) { resolved.config.copy(pose = com.wordocious.core.AvatarPoses.placePose(podiumPlace)) }
+            val posed = remember(shown, podiumPlace) { shown.copy(pose = com.wordocious.core.AvatarPoses.placePose(podiumPlace)) }
             LivingMascot(posed, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)
         } else if (standing && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
-            LivingMascot(resolved.config, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)
+            LivingMascot(shown, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)
         } else if (live && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT && PlayerAvatars.isOwn(userId, username)) {
-            LivingMascot(resolved.config, initial, size, modifier, pro = pro, label = null)
-        } else MascotAvatar(resolved.config, initial, size, modifier, pro = pro)
+            LivingMascot(shown, initial, size, modifier, pro = pro, label = null)
+        } else MascotAvatar(shown, initial, size, modifier, pro = pro)
     }
 }
 

@@ -20,6 +20,20 @@ object LeaderboardStage {
         Host("s", "flex"),     // SATURDAY STARS
     )
 
+    data class DayProp(val art: String, val motion: String)
+    /** Sunday … Saturday; motions: spin, bob, hover, swish, flash, drift. */
+    val DAY_PROPS = listOf(
+        DayProp("art-lb-day-sun", "spin"), DayProp("art-lb-day-coffee", "bob"), DayProp("art-lb-day-rocket", "hover"),
+        DayProp("art-lb-day-wand-swish", "swish"), DayProp("art-lb-day-lightning", "flash"),
+        DayProp("art-lb-day-rainbow-cloud", "drift"), DayProp("art-lb-day-sun", "spin"),
+    )
+    fun dayProp(day: String): DayProp = DAY_PROPS[weekday(day)]
+    /** Wizard Wednesday: your mascot wears the wizard hat on this page, for the day only (display-only). */
+    const val WIZARD_HAT_PART = "wizard"
+    fun wearsWizardHat(day: String): Boolean = weekday(day) == 3
+    /** Your mascot leans toward the title by this many degrees. */
+    const val MASCOT_LEAN_DEGREES = 7f
+
     /** 0 = Sunday … 6 = Saturday for the player's local YYYY-MM-DD. */
     fun weekday(day: String): Int = LocalDate.parse(day).dayOfWeek.value % 7
 

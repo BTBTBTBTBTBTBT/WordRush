@@ -2,8 +2,8 @@
 
 import { BubbleText } from '@/components/ui/bubble-text';
 import Link from 'next/link';
-import { useMemo } from 'react';
-import { dayHost, holidayKeyForDay, leaderboardTitle } from '@wordle-duel/core';
+import { useMemo, useState } from 'react';
+import { dayHost, dayProp, holidayKeyForDay, leaderboardTitle, MASCOT_LEAN_DEGREES, wearsWizardHat } from '@wordle-duel/core';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightLocal } from '@/lib/daily-service';
 import { HOLIDAY_TABLE, holidayTitle } from '@/lib/holidays';
@@ -16,7 +16,7 @@ import { pickerRows } from '@/lib/game-picker';
 import { useFlags } from '@/hooks/use-flags';
 import { sweepModesFor } from '@/lib/daily-modes';
 import { getTodayLocal } from '@/lib/daily-service';
-import { ART_SIZE, dayArtName, type ArtName } from '@/lib/art';
+import { ART_SIZE, artSrc, dayArtName, type ArtName } from '@/lib/art';
 import { softPill } from '@/lib/soft-surface';
 import { LB_GOLD } from './board-rows';
 import { useSeason, halloweenPropSrc, HALLOWEEN_PROPS } from '@/lib/season';
@@ -113,15 +113,32 @@ function dayArtH(art: ArtName): number {
  */
 export function StageTitle({ today }: { today: string | null }) {
   const host = today ? dayHost(today) : null;
+  const prop = today ? dayProp(today) : null;
+  const hat = today ? wearsWizardHat(today) : false;
   const title = today ? dayTitle(today) : '';
   const date = today
     ? new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
     : null;
+  // Tapping your mascot: it hops and the title letters bounce again (the title re-mounts, replaying its pop).
+  const [taps, setTaps] = useState(0);
   return (
     <div style={{ padding: '10px 10px 0' }}>
-      <h1 className="m-0 flex items-end justify-between gap-1" style={{ minHeight: 76 }} aria-label={title || 'Leaderboard'}>
-        <OwnMascot size={62} />
-        <span className="flex-1 min-w-0 self-center">
+      <h1 className="relative m-0 flex items-end justify-between gap-1" style={{ minHeight: 76 }} aria-label={title || 'Leaderboard'}>
+        {/* the weekday's prop floats beside the title with its own little motion */}
+        {prop && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={artSrc(prop.art as ArtName)}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className={`lb-prop lb-prop-${prop.motion} absolute pointer-events-none select-none`}
+            style={{ right: 70, top: -4, width: 40, height: 40, objectFit: 'contain' }}
+          />
+        )}
+        {/* your mascot leans toward the title; tap it and the letters bounce */}
+        <OwnMascot size={62} wizardHat={hat} lean={MASCOT_LEAN_DEGREES} onTap={() => setTaps((n) => n + 1)} hopKey={taps} />
+        <span className="flex-1 min-w-0 self-center" key={`t${taps}`}>
           <BubbleText text={title || ' '} palette="leaderboard" maxSize={30} minSize={20} level={2} />
         </span>
         {host ? <Host castId={host.castId} pose={host.pose} size={66} flip /> : <span style={{ width: 66 }} />}

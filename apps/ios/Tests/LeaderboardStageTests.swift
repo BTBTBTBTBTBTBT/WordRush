@@ -23,4 +23,13 @@ final class LeaderboardStageTests: XCTestCase {
         XCTAssertTrue(LeaderboardStage.podiumFits(stageTopHeight: LeaderboardStage.topMaxHeight))
         XCTAssertFalse(LeaderboardStage.podiumFits(stageTopHeight: LeaderboardStage.topMaxHeight + 200))
     }
+
+    func testDayPropsAndWizardHat() {
+        XCTAssertEqual(LeaderboardStage.dayProps.count, 7)
+        XCTAssertEqual(LeaderboardStage.dayProp(day: "2026-10-07"), LeaderboardStage.DayProp(art: "art-lb-day-wand-swish", motion: "swish"))
+        XCTAssertEqual(LeaderboardStage.dayProp(day: "2026-10-08"), LeaderboardStage.DayProp(art: "art-lb-day-lightning", motion: "flash"))
+        XCTAssertGreaterThanOrEqual(Set(LeaderboardStage.dayProps.map(\.motion)).count, 5)
+        XCTAssertTrue(LeaderboardStage.wearsWizardHat(day: "2026-10-07"))
+        for d in ["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-08", "2026-10-09", "2026-10-10"] { XCTAssertFalse(LeaderboardStage.wearsWizardHat(day: d)) }
+    }
 }

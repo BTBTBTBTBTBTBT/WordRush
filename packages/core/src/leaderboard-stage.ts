@@ -23,6 +23,39 @@ export const DAY_HOSTS: readonly StageHost[] = [
   { castId: 's', pose: 'flex' },     // SATURDAY STARS
 ];
 
+/** How a weekday's prop moves beside the title (each weekday its own little motion; Reduce Motion = still). */
+export type DayMotion = 'spin' | 'bob' | 'hover' | 'swish' | 'flash' | 'drift';
+
+export interface DayProp {
+  /** Art name (`art-lb-day-<key>`, art/driver docs/design/brand/2.8/leaderboard/out). */
+  art: string;
+  motion: DayMotion;
+}
+
+/** Sunday … Saturday. Wednesday's wand swishes (WEDNESDAY WIZARDS); Thursday's lightning flashes. */
+export const DAY_PROPS: readonly DayProp[] = [
+  { art: 'art-lb-day-sun', motion: 'spin' },              // SUNDAY SUPERSTARS
+  { art: 'art-lb-day-coffee', motion: 'bob' },             // MONDAY MASTERS
+  { art: 'art-lb-day-rocket', motion: 'hover' },           // TUESDAY TITANS
+  { art: 'art-lb-day-wand-swish', motion: 'swish' },       // WEDNESDAY WIZARDS
+  { art: 'art-lb-day-lightning', motion: 'flash' },        // THURSDAY THUNDER
+  { art: 'art-lb-day-rainbow-cloud', motion: 'drift' },    // FRIDAY'S FINEST
+  { art: 'art-lb-day-sun', motion: 'spin' },               // SATURDAY STARS
+];
+
+export function dayProp(day: string): DayProp {
+  return DAY_PROPS[stageWeekday(day)];
+}
+
+/** Wizard Wednesday: your mascot wears the wizard hat on this page, for the day only (display-only, never saved). */
+export const WIZARD_HAT_PART = 'wizard';
+export function wearsWizardHat(day: string): boolean {
+  return stageWeekday(day) === 3;
+}
+
+/** The title lean: your mascot leans toward the title by this many degrees (base fixed). */
+export const MASCOT_LEAN_DEGREES = 7;
+
 /** 0 = Sunday … 6 = Saturday, for the player's local YYYY-MM-DD. */
 export function stageWeekday(day: string): number {
   const [y, m, d] = day.split('-').map(Number);
