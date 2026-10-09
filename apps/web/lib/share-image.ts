@@ -1,5 +1,10 @@
 'use client';
 
+import { MOMENT_BODY_H } from './share-fit';
+import { SHARE_HERO_GAP, shareHeroBand, shareHeroResultFor, shareHeroResultForRank, type ShareFrame, type ShareHeroResult } from '@wordle-duel/core';
+import { getShareSender } from './share-sender';
+import { drawShareHero, loadShareHero } from './share-hero-canvas';
+import { activeSeason } from './season';
 import { GameStatus, type BoardState } from '@wordle-duel/core';
 import { getTodayLocal } from './daily-service';
 import { WIN_FG } from './tile-theme';
@@ -403,7 +408,34 @@ export interface ShareLeaderboardInput {
   sharePlayers?: number;
 }
 
+/**
+ * Item 46: a MOMENT share (the cards that had no share before): a level-up, a pocket-game result, a streak calendar.
+ * Title lettering in the accent, then one big soft number, its label, up to three complete lines and (a streak) the last
+ * days as dots. The sender's hero band above it celebrates (win cheer + crown / good-sport shrug).
+ */
+export interface ShareMomentInput {
+  layout: 'moment';
+  /** Present only to satisfy callers that read `.mode`. */
+  mode: ShareMode;
+  kind: 'levelUp' | 'pocket' | 'streak';
+  /** The lettered headline ("LEVEL UP!", "ROCK PAPER SCISSORS", "ON A STREAK"): always the full name. */
+  title: string;
+  accentHex: string;
+  /** The hero number ("12", "2\u20131", "7"). */
+  big: string;
+  /** Under it ("LEVEL", "FINAL SCORE", "DAY STREAK"). */
+  bigLabel: string;
+  /** Up to three complete lines ("Gold tier", "You beat Ava", "Best: 21 days"). */
+  lines: string[];
+  /** A streak calendar: the last days, oldest first, true = played. */
+  dots?: boolean[];
+  /** A pocket game's result (drives the hero's pose). */
+  won?: boolean;
+  date?: Date;
+}
+
 export type ShareImageInput =
+  | ShareMomentInput
   | ShareSingleInput
   | ShareSudokuInput
   | ShareRegionsInput
@@ -1258,6 +1290,42 @@ function drawSweepBadgeIcon(
   return drew;
 }
 
+/** The moment card body (item 46): big soft number, its label, up to three complete lines, the streak dots. */
+function drawMomentCard(ctx: CanvasRenderingContext2D, input: ShareMomentInput, width: number, box: Box): void {
+  const cx = width / 2;
+  const top = box.top + Math.max(0, (box.h - MOMENT_BODY_H) / 2);
+  const bigPx = fitFontPx(ctx, input.big, 300, width - CARD_PAD * 2, 90);
+  drawSoftNumber(ctx, input.big, cx, top + bigPx * 0.55, bigPx);
+  drawDateLine(ctx, input.bigLabel.toUpperCase(), cx, top + bigPx * 1.1 + 28, 34, input.accentHex);
+  let y = top + bigPx * 1.1 + 92;
+  for (const line of input.lines.slice(0, 3)) {
+    ctx.save();
+    const px = fitFontPx(ctx, line, 44, width - CARD_PAD * 2, 26);
+    ctx.font = `900 ${px}px ${SHARE_FONT_STACK}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#4c1d95';
+    ctx.fillText(line, cx, y);
+    ctx.restore();
+    y += px + 18;
+  }
+  if (input.dots && input.dots.length > 0) {
+    const n = Math.min(input.dots.length, 14);
+    const dots = input.dots.slice(-n);
+    const d = 40, gap = 16;
+    const rowW = n * d + (n - 1) * gap;
+    let x = cx - rowW / 2 + d / 2;
+    y += 24;
+    for (const on of dots) {
+      ctx.beginPath();
+      ctx.arc(x, y, d / 2, 0, Math.PI * 2);
+      ctx.fillStyle = on ? input.accentHex : 'rgba(124, 58, 237, 0.16)';
+      ctx.fill();
+      x += d + gap;
+    }
+  }
+}
+
 /** The profile card body: username, level line, 2 × 3 tinted stat tiles in the player's accent. */
 function drawProfileCard(ctx: CanvasRenderingContext2D, input: ShareProfileInput, width: number, box: Box): void {
   const cx = width / 2;
@@ -1889,6 +1957,9 @@ export function shareCardArt(input: ShareImageInput): ShareCardArt {
   if (input.layout === 'profile') {
     return { wall: pageWall('stats'), title: 'art-titlecast-stats', tint: PAGE_TINTS.stats.light, fallbackTitle: 'STATS', fallbackColor: input.accentHex };
   }
+  if (input.layout === 'moment') {
+    return { wall: pageWall('home'), title: null, tint: PAGE_TINTS.home.light, fallbackTitle: input.title, fallbackColor: input.accentHex };
+  }
   const g = gameShareArt(input.mode);
   const accent = MODE_ACCENT[input.mode];
   const t: TintStops = accent ? gameTint(accent) : PAGE_TINTS.home;
@@ -1909,6 +1980,8 @@ export function shareCardArt(input: ShareImageInput): ShareCardArt {
 export function shareCardPlan(
   input: ShareImageInput,
   titleNat: readonly [number, number] | null,
+  /** Item 46: the hero band's height (shareHeroBand) and the frame ('message' default, 'story' = exactly 9:16). */
+  extra: { heroH?: number; frame?: ShareFrame } = {},
 ): { plan: SharePlan; titleH: number; hook: string } {
   const titleH = titleBoxHeight(titleNat);
   const hook = input.layout === 'leaderboard' ? shareHookLine(input.footer) : '';
@@ -1917,15 +1990,54 @@ export function shareCardPlan(
   if (input.layout === 'leaderboard') {
     headH = LB_HEAD_H;
     footH = hook ? LB_HOOK_H : 0;
-  } else if (input.layout === 'profile') {
+  } else if (input.layout === 'profile' || input.layout === 'moment') {
     headH = 0;
     footH = 0;
   }
-  const plan = planShareCard({ titleH, headH, footH }, (maxH) => boardBlockHeight(input, BOARD_W, maxH));
+  const plan = planShareCard({ titleH, headH, footH, heroH: extra.heroH, frame: extra.frame }, (maxH) => boardBlockHeight(input, BOARD_W, maxH));
   return { plan, titleH, hook };
 }
 
-export async function generateShareImage(input: ShareImageInput): Promise<Blob | null> {
+/** What a share card celebrates: the hero's result for this input (item 46). */
+export function shareHeroResultOf(input: ShareImageInput): ShareHeroResult {
+  if (input.layout === 'daily-sweep') return input.flawless ? 'flawless' : 'sweep';
+  if (input.layout === 'profile') return 'neutral';
+  if (input.layout === 'moment') return input.kind === 'pocket' ? shareHeroResultFor(input.won) : input.kind === 'streak' ? 'flawless' : 'win';
+  if (input.layout === 'leaderboard') {
+    if (input.variant === 'flawlessStreak') return 'flawless';
+    if (input.variant === 'trophyCase') return 'win';
+    return shareHeroResultForRank(input.shareRank ?? input.you?.rank ?? input.rows[0]?.rank);
+  }
+  return shareHeroResultFor((input as { won?: boolean }).won);
+}
+
+/** Options for one render: the frame (iMessage / story / square) and a result override for the hero. */
+export interface ShareRenderOpts {
+  frame?: ShareFrame;
+  hero?: ShareHeroResult | null;
+}
+
+/** A 1080 square around a message card: the card scaled to fit, centered on its own wallpaper tint. */
+function reframeSquare(card: HTMLCanvasElement, tint: readonly string[]): HTMLCanvasElement {
+  const size = 1080;
+  const dpr = card.width / SHARE_W;
+  const out = document.createElement('canvas');
+  out.width = size * dpr;
+  out.height = size * dpr;
+  const c = out.getContext('2d');
+  if (!c) return card;
+  const g = c.createLinearGradient(0, 0, 0, out.height);
+  g.addColorStop(0, tint[0] ?? BG);
+  g.addColorStop(1, tint[2] ?? tint[1] ?? BG);
+  c.fillStyle = g;
+  c.fillRect(0, 0, out.width, out.height);
+  const k = Math.min(out.width / card.width, out.height / card.height);
+  const w = card.width * k, h = card.height * k;
+  c.drawImage(card, (out.width - w) / 2, (out.height - h) / 2, w, h);
+  return out;
+}
+
+export async function generateShareImage(input: ShareImageInput, opts: ShareRenderOpts = {}): Promise<Blob | null> {
   resolveShareFontStack();
   try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* draw anyway */ }
   if (typeof document === 'undefined') return null;
@@ -1943,7 +2055,15 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     loadCastImages(),
   ]);
 
-  const { plan, titleH, hook } = shareCardPlan(input, titleNatural(art));
+  // Item 46: the sender's mascot, big and posed by the result (no band for a guest, or on a share with no result).
+  const frame: ShareFrame = opts.frame === 'story' ? 'story' : 'message';
+  const sender = getShareSender();
+  const heroResult = opts.hero === null ? null : opts.hero ?? shareHeroResultOf(input);
+  const halloween = activeSeason() !== null;
+  const heroArt = sender && heroResult ? await loadShareHero(sender, heroResult, halloween, 360) : null;
+  const heroH = heroArt?.img ? shareHeroBand(frame, true) : 0;
+
+  const { plan, titleH, hook } = shareCardPlan(input, titleNatural(art), { heroH, frame });
   const height = plan.height;
 
   const canvas = document.createElement('canvas');
@@ -1959,11 +2079,14 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   ctx.fillRect(0, 0, width, height);
   drawWallpaper(ctx, width, height, art.wall, tint);
   drawCardTitle(ctx, art, width, plan.titleTop, titleH, fallbackTitle, fallbackColor);
+  if (heroArt && heroH > 0) drawShareHero(ctx, heroArt, width / 2, plan.heroTop + SHARE_HERO_GAP / 2, heroH - SHARE_HERO_GAP);
   const box: Box = { top: plan.boardTop, h: plan.boardH };
   const infoY = plan.headTop + SHARE_SPACE.info / 2;
 
   if (input.layout === 'leaderboard') {
     drawLeaderboardCard(ctx, input, width, plan, hook);
+  } else if (input.layout === 'moment') {
+    drawMomentCard(ctx, input, width, box);
   } else if (input.layout === 'profile') {
     drawProfileCard(ctx, input, width, box);
   } else if (input.layout === 'daily-sweep') {
@@ -1995,5 +2118,5 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   // S3: the cast IS the wordmark — the ten heroes standing together over "wordocious.com".
   drawCastWordmark(ctx, plan.cast, castImgs, width / 2, plan.castBase, plan.urlY);
 
-  return canvasToPng(canvas);
+  return canvasToPng(opts.frame === 'square' ? reframeSquare(canvas, tint) : canvas);
 }

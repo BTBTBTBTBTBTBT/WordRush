@@ -17,7 +17,9 @@ import { useFlags } from '@/hooks/use-flags';
 import { useLiveGame, type LiveReactionEvent } from '@/hooks/use-live-game';
 import { feedback } from '@/lib/sound-events';
 import { ReactionIcon } from './reaction-icon';
-import { RoundIconSlot } from '@/components/ui/family-button';
+import { QuietButton, RoundIconSlot } from '@/components/ui/family-button';
+import { buildPocketResultShareInput } from '@/lib/moment-share';
+import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
 import { fetchGame, getRecentGames, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
@@ -485,6 +487,13 @@ export function FriendlyGameScreen({ id }: { id: string }) {
           >
             Rematch
           </CastButton>
+          {/* Item 46: the pocket-game result card: the sender's mascot cheering (or the good-sport shrug), the final score. */}
+          <QuietButton block onClick={() => void shareResult(buildPocketResultShareInput({
+            gameTitle: FRIENDLY_TITLES[game.kind], won: youWon ? true : theyWon ? false : null,
+            mine: score ? score.mine : null, theirs: score ? score.theirs : null, opponent: them.name,
+          }), 'pocket')}>
+            Share result
+          </QuietButton>
           <CandyButton color="peach" block onClick={() => router.push('/friends')}>
             Friends
           </CandyButton>

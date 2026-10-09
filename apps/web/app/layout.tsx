@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
 import { themeSkinCss } from '@/lib/theme-kit';
+import { ShareSenderSync } from '@/components/providers/share-sender-sync';
 import { AuthProvider } from '@/lib/auth-context';
 import { StreakShieldProvider } from '@/components/providers/streak-shield-provider';
 import { DailyCompletionsProvider } from '@/lib/daily-completions-context';
@@ -175,6 +176,7 @@ export default function RootLayout({
         <MotionPause />
         <SeasonDocument />
         <AuthProvider>
+          <ShareSenderSync />
           <DailyCompletionsProvider>
             <SitePresenceProvider>
               {/* BI19: persisted SWR cache + launch / post-finish prefetch. */}

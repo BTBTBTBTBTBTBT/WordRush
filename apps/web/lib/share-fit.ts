@@ -7,6 +7,7 @@
 // standing together, the Home header's .castrow) is the only wordmark.
 // No DOM, no canvas: unit-tested in share-fit.test.ts.
 
+import { SHARE_FRAMES, type ShareFrame } from '@wordle-duel/core';
 import { castAspect } from './cast-moves';
 import { CAST, type MascotId } from './mascots';
 import type {
@@ -57,8 +58,9 @@ export const SHARE_SPACE = {
   bottom: 30,
 } as const;
 
-export function clampShareHeight(h: number): number {
-  return Math.max(SHARE_H_MIN, Math.min(SHARE_H_MAX, Math.ceil(h)));
+export function clampShareHeight(h: number, frame: ShareFrame = 'message'): number {
+  const { minH, maxH } = SHARE_FRAMES[frame];
+  return Math.max(minH, Math.min(maxH, Math.ceil(h)));
 }
 
 /** The title art's drawn height, fit inside TITLE_MAX_W × TITLE_MAX_H (fallback lettering when null). */
@@ -155,12 +157,18 @@ export interface ShareStackSpec {
   headH: number;
   /** What sits between the board and the cast (stat windows, a hook line); 0 = nothing. */
   footH: number;
+  /** Item 46: the sender's hero band under the title (shareHeroBand: height + gap); 0 / absent = none. */
+  heroH?: number;
+  /** The card's frame: 'message' (4:5 .. 9:16, the default) or 'story' (exactly 9:16). Square is a re-framing of a message card. */
+  frame?: ShareFrame;
 }
 
 export interface SharePlan {
   width: number;
   height: number;
   titleTop: number;
+  /** Top of the hero band (0 height when the card has none). */
+  heroTop: number;
   /** Top of the head block (info line etc.). */
   headTop: number;
   /** The board's box: content plus any slack (center the board in it). */
@@ -182,6 +190,7 @@ export interface SharePlan {
 export function shareFixedHeight(spec: ShareStackSpec): number {
   const s = SHARE_SPACE;
   return s.top + spec.titleH
+    + (spec.heroH ?? 0)
     + (spec.headH > 0 ? s.titleGap + spec.headH : 0)
     + s.headGap
     + (spec.footH > 0 ? s.boardGap + spec.footH : 0)
@@ -200,14 +209,16 @@ export function shareFixedHeight(spec: ShareStackSpec): number {
 export function planShareCard(spec: ShareStackSpec, measure: (maxH: number) => number): SharePlan {
   const s = SHARE_SPACE;
   const fixed = shareFixedHeight(spec);
-  const room = Math.max(40, SHARE_H_MAX - fixed);
+  const frame = spec.frame ?? 'message';
+  const room = Math.max(40, SHARE_FRAMES[frame].maxH - fixed);
   const natural = Math.max(0, measure(100000));
   const contentH = natural > room ? Math.min(room, Math.max(0, measure(room))) : natural;
-  const height = clampShareHeight(fixed + contentH);
+  const height = clampShareHeight(fixed + contentH, frame);
   const slack = Math.max(0, height - fixed - contentH);
 
   const titleTop = s.top;
-  const headTop = titleTop + spec.titleH + (spec.headH > 0 ? s.titleGap : 0);
+  const heroTop = titleTop + spec.titleH;
+  const headTop = heroTop + (spec.heroH ?? 0) + (spec.headH > 0 ? s.titleGap : 0);
   const boardTop = headTop + spec.headH + s.headGap;
   const boardH = contentH + slack;
   const footTop = boardTop + boardH + (spec.footH > 0 ? s.boardGap : 0);
@@ -220,6 +231,7 @@ export function planShareCard(spec: ShareStackSpec, measure: (maxH: number) => n
     width: SHARE_W,
     height,
     titleTop,
+    heroTop,
     headTop,
     boardTop,
     boardH,
@@ -433,6 +445,9 @@ export function scrambleGeometry(
   return { tile, gap, rowGap, small, smallGap, wordGap, cols, h: rows * (tile + rowGap) + SCRAMBLE_DIVIDER_H + small };
 }
 
+/** Item 46: the moment card's body (level-up / pocket-game result / streak calendar): a big number, its label, up to three lines, a dot row. */
+export const MOMENT_BODY_H = 520;
+
 /** Profile card body: name, level line, 2 × 3 stat tiles. */
 export const PROFILE_HEAD_H = 166;
 export function profileGeometry(maxH: number): { tileH: number; gap: number; h: number } {
@@ -558,6 +573,8 @@ export function boardBlockHeight(input: ShareImageInput, maxW: number, maxH: num
       return stackGeometry(input.games.length, maxH, 112, input.games.length > 8 ? 12 : 16, 48).h;
     case 'profile':
       return profileGeometry(maxH).h;
+    case 'moment':
+      return Math.min(maxH, MOMENT_BODY_H);
     case 'leaderboard':
       return leaderboardPanelGeometry(input, maxH).h;
     default:
