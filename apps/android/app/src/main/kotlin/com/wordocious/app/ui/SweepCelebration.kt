@@ -151,6 +151,12 @@ fun SweepCelebration(
         }
     }
 
+    // Your mascot cheers with it (a no-op while the living mascot is off) — a beat after the popup mounts.
+    LaunchedEffect(Unit) {
+        delay(500)
+        com.wordocious.app.data.MascotMoments.emit(if (flawless) com.wordocious.core.AvatarReaction.FLAWLESS else com.wordocious.core.AvatarReaction.SWEEP)
+    }
+
     androidx.activity.compose.BackHandler(onBack = closeAndMaybeReview)
     Box(
         Modifier.fillMaxSize()
@@ -236,6 +242,12 @@ fun SweepCelebration(
                         )
                     }
                 }
+                // 2.8 items 7 + 13: YOUR mascot stands beside the art, celebrating with it
+                OwnMascotCutout(
+                    96.dp,
+                    Modifier.align(Alignment.BottomEnd).offset(x = 18.dp, y = 6.dp)
+                        .graphicsLayer { val k = kit.value.coerceIn(0f, 1f); alpha = k; scaleX = 0.4f + 0.6f * k; scaleY = 0.4f + 0.6f * k; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f) },
+                )
                 // Flawless: the crown drops onto the star (Halloween: the witch hat)
                 val crown = if (flawless) kitRes("celebrate-crown-gold") else 0
                 if (crown != 0) {

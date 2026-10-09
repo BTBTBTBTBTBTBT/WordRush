@@ -33,6 +33,7 @@ import type { PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { getTodayLocal, fetchDailyVsResult, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
+import { emitMascotMoment } from '@/lib/living-mascot';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { enqueueCelebration, takeNextCelebration, type QueuedCelebration } from '@/lib/celebration-gate';
 import { useCalmMoment } from '@/hooks/use-calm-moment';
@@ -116,6 +117,22 @@ export default function HomePage() {
 
   // Podium art 10-03: warm the pedestals + floor once Home mounts (the Leaderboard opens without a pop-in).
   useEffect(() => { preloadPodiumArt(artSrc); preloadMascotArt(); }, []);
+
+  // 2.8 item 13: when the day's counter grew while Home was away (7 -> 8 OF 18; the page remounts on return, so the last
+  // seen count lives in sessionStorage), the host mascot reacts a beat after Home shows. A no-op while the living mascot is off.
+  useEffect(() => {
+    if (!user) return;
+    const today = getTodayLocal();
+    const key = `wordocious-home-played-${today}`;
+    const n = todayDailies.size;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const prev = sessionStorage.getItem(key);
+      if (prev !== null && n > Number(prev)) timer = setTimeout(() => emitMascotMoment('progress'), 450);
+      sessionStorage.setItem(key, String(n));
+    } catch {}
+    return () => { if (timer) clearTimeout(timer); };
+  }, [user, todayDailies]);
 
   // One-time-per-day celebration modal when every sweep daily is complete. Keyed
   // on the local day; re-fires if the player upgrades a Sweep → Flawless.
