@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { HeaderBack } from '@/components/ui/page-header';
 import { Icon3D } from '@/components/ui/icon3d';
-import { FRIENDLY_TITLES, whoseTurn, type FriendlyMove } from '@wordle-duel/core';
+import {
+  FRIENDLY_TITLES, LIVE_OPTIMISTIC_TIMEOUT_MS, LIVE_PLAY_SWITCH, LIVE_REACTIONS, LIVE_REACT_LIFETIME_MS, PRESENCE_COPY,
+  beginMove, confirmMove, displayed, emptySnapshot, pollIntervalMs, presenceLabel, receiveView, rejectMove, whoseTurn,
+  type FriendlyMove, type LiveReaction, type LiveSnapshot,
+} from '@wordle-duel/core';
+import { useFlags } from '@/hooks/use-flags';
+import { useLiveGame, type LiveReactionEvent } from '@/hooks/use-live-game';
+import { feedback } from '@/lib/sound-events';
+import { ReactionIcon } from './reaction-icon';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
 import { fetchGame, resignGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
@@ -36,7 +44,14 @@ import { softMix } from '@/lib/soft-surface';
 /** A danger candy (Resign): the candy look recolored red. */
 const DANGER = { ['--candy-1' as string]: '#fb7185', ['--candy-2' as string]: '#dc2626', ['--candy-lip' as string]: '#8f1919' } as React.CSSProperties;
 
-const POLL_MS = 2000;
+/** Floating live reactions currently on screen. */
+interface Floater { id: number; reaction: LiveReaction; mine: boolean; x: number }
+
+const reduceMotion = (): boolean => {
+  try {
+    return document.documentElement.dataset.reducedMotion === 'true' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch { return false; }
+};
 
 /** How many rounds / flips the state holds (a new one triggers the reveal). */
 function roundCount(g: GameView): number {
@@ -58,19 +73,104 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const gameRef = useRef<GameView | null>(null);
   const busyRef = useRef(false);
 
-  /** Take a fresh game unless it is older than the one on screen (a slow poll after a move). */
-  const accept = useCallback((g: GameView) => {
-    const cur = gameRef.current;
-    if (cur && cur.id === g.id && g.updatedAt < cur.updatedAt) return;
-    if (cur && cur.id === g.id && roundCount(g) > roundCount(cur)) setRevealKey((k) => k + 1);
-    gameRef.current = g;
-    setGame(g);
+  // 9b live play (isLive('live_play'); off = today's 2 s poll, no optimistic moves, no presence).
+  const { isLive } = useFlags();
+  const liveOn = isLive(LIVE_PLAY_SWITCH);
+  const liveRef = useRef(liveOn);
+  liveRef.current = liveOn;
+  const snapRef = useRef<LiveSnapshot<GameView>>(emptySnapshot<GameView>());
+  const [floaters, setFloaters] = useState<Floater[]>([]);
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const pulseRef = useRef<HTMLDivElement | null>(null);
+  const [fx, setFx] = useState({ arrive: 0, pulse: 0, shake: 0 });
+
+  /** Draw the confirmed game with my in-flight prediction over it. */
+  const publish = useCallback(() => {
+    gameRef.current = snapRef.current.confirmed;
+    setGame(displayed(snapRef.current));
   }, []);
+
+  /**
+   * Take a fresh game (poll, broadcast, backup refetch) unless it is not newer than the one on
+   * screen. `own` = the reply to MY move (it replaces my prediction).
+   */
+  const accept = useCallback((g: GameView, own = false) => {
+    const cur = snapRef.current.confirmed;
+    const rounds = cur && cur.id === g.id && roundCount(g) > roundCount(cur);
+    if (own) {
+      snapRef.current = confirmMove(snapRef.current, g);
+      if (rounds) setRevealKey((k) => k + 1);
+      publish();
+      return;
+    }
+    const r = receiveView(snapRef.current, g);
+    if (!r.applied) return;
+    snapRef.current = r.snap;
+    if (rounds) setRevealKey((k) => k + 1);
+    // A change that lands while my own move is in flight is my move, not the friend's.
+    if (liveRef.current && !busyRef.current) {
+      if (r.change.moved && g.status === 'active') { feedback('key'); setFx((f) => ({ ...f, arrive: f.arrive + 1 })); }
+      if (r.change.yourTurnStarted) { setTimeout(() => feedback('notify'), 140); setFx((f) => ({ ...f, pulse: f.pulse + 1 })); }
+    }
+    publish();
+  }, [publish]);
+
+  const refetch = useCallback(() => {
+    void fetchGame(id).then((g) => { if (g && g !== 'error') accept(g); });
+  }, [id, accept]);
+
+  const onReaction = useCallback((e: LiveReactionEvent) => {
+    const f: Floater = { id: e.id + Math.random(), reaction: e.reaction, mine: false, x: 10 + Math.random() * 70 };
+    setFloaters((l) => [...l.slice(-5), f]);
+    setTimeout(() => setFloaters((l) => l.filter((x) => x.id !== f.id)), LIVE_REACT_LIFETIME_MS);
+    feedback('notify');
+  }, []);
+
+  const live = useLiveGame({
+    gameId: id,
+    userId: user?.id ?? null,
+    opponentId: game?.opponent.id ?? null,
+    enabled: liveOn && !!user && !!game && game.status === 'active',
+    onView: (g) => accept(g),
+    onRefetch: refetch,
+    onReaction,
+  });
+
+  const react = (reaction: LiveReaction) => {
+    if (!live.sendReaction(reaction)) return;
+    const f: Floater = { id: Math.random(), reaction, mine: true, x: 10 + Math.random() * 70 };
+    setFloaters((l) => [...l.slice(-5), f]);
+    setTimeout(() => setFloaters((l) => l.filter((x) => x.id !== f.id)), LIVE_REACT_LIFETIME_MS);
+    feedback('press');
+  };
+
+  // Friend's move lands: the board gives a quick bounce. Your turn: a soft ring. A rejected move: a gentle shake.
+  useEffect(() => {
+    if (!fx.arrive || reduceMotion()) return;
+    boardRef.current?.animate?.([{ transform: 'scale(1)' }, { transform: 'scale(1.014)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
+  }, [fx.arrive]);
+  useEffect(() => {
+    if (!fx.pulse || reduceMotion()) return;
+    pulseRef.current?.animate?.(
+      [{ opacity: 0, transform: 'scale(0.985)' }, { opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.015)' }],
+      { duration: 900, easing: 'ease-in-out' },
+    );
+  }, [fx.pulse]);
+  useEffect(() => {
+    if (!fx.shake || reduceMotion()) return;
+    boardRef.current?.animate?.(
+      [{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }],
+      { duration: 320, easing: 'ease-out' },
+    );
+  }, [fx.shake]);
+
+  const socketUp = liveOn && live.socketUp;
 
   useEffect(() => {
     if (!user) return;
     let alive = true;
     gameRef.current = null;
+    snapRef.current = emptySnapshot<GameView>();
     const tick = async (first = false) => {
       if (!first) {
         if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
@@ -83,9 +183,11 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       else if (g !== 'error') accept(g);
     };
     void tick(true);
-    const t = setInterval(() => void tick(), POLL_MS);
+    // Live play on + socket up: a slow keep-alive (it also stamps "watching" and repairs a missed
+    // broadcast); socket down: a 4 s fallback poll; switch off: today's 2 s poll.
+    const t = setInterval(() => void tick(), pollIntervalMs(liveOn, socketUp));
     return () => { alive = false; clearInterval(t); };
-  }, [id, user, accept]);
+  }, [id, user, accept, liveOn, socketUp]);
 
   // Their presence (the friends digest) for the "live while they're on" line and ring.
   useEffect(() => {
@@ -99,10 +201,24 @@ export function FriendlyGameScreen({ id }: { id: string }) {
     busyRef.current = true;
     setBusy(true);
     setError(null);
+    // Optimistic: my piece / pick / word lands at once, with its sound; the server can still say no.
+    let optimistic = false;
+    if (liveRef.current) {
+      const b = beginMove(snapRef.current, move);
+      if (b.optimistic) { snapRef.current = b.snap; optimistic = true; publish(); feedback('key'); }
+    }
+    const rollBack = () => {
+      const rb = rejectMove(snapRef.current);
+      snapRef.current = rb.snap;
+      publish();
+      if (rb.rolledBack) { setFx((f) => ({ ...f, shake: f.shake + 1 })); feedback('invalid'); }
+    };
     try {
-      const r = await sendMove(id, move);
-      if (r.ok) { accept(r.game); return true; }
-      if (r.retry) {
+      const timeout = new Promise<{ ok: false; error: string }>((res) => setTimeout(() => res({ ok: false, error: 'Network error. Try again.' }), LIVE_OPTIMISTIC_TIMEOUT_MS));
+      const r = optimistic ? await Promise.race([sendMove(id, move), timeout]) : await sendMove(id, move);
+      if (r.ok) { accept(r.game, true); return true; }
+      if (optimistic) rollBack();
+      if ('retry' in r && r.retry) {
         // Someone moved first: show the fresh state and let the player try again.
         const g = await fetchGame(id);
         if (g && g !== 'error') accept(g);
@@ -113,12 +229,12 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       busyRef.current = false;
       setBusy(false);
     }
-  }, [id, accept]);
+  }, [id, accept, publish]);
 
   const resign = async () => {
     setConfirmClose(false);
     const g = await resignGame(id);
-    if (g) accept(g);
+    if (g) accept(g, true);
     else setError('Could not resign. Try again.');
   };
 
@@ -216,9 +332,21 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const left = youWon ? '#ddd6fe' : '#ede9fe';
   const right = theyWon ? '#fde68a' : '#fef3c7';
 
-  const half = (label: string, p: Player, isMe: boolean, value: number | null, toPlay: boolean, won: boolean) => (
+  // 9b presence: the friend's mascot is "here now" (alive ring) while they are in the channel,
+  // "thinking…" on their turn, "left the game" when they go. Off / socket down = the old online dot.
+  const presence = liveOn && socketUp && active
+    ? presenceLabel({ peerPresent: live.peer.present, everSeen: live.peer.everSeen, theirTurn: !!turn && turn !== me, peerThinking: live.peer.thinking })
+    : null;
+  const theirOnline = presence ? live.peer.present : online;
+
+  const half = (label: string, p: Player, isMe: boolean, value: number | null, toPlay: boolean, won: boolean) => {
+    // The chip under each name: TO PLAY, or (friend side, live) THINKING… / HERE NOW / LEFT THE GAME.
+    const chip = !isMe && presence ? (toPlay && presence === 'thinking' ? PRESENCE_COPY.thinking : toPlay ? 'TO PLAY' : PRESENCE_COPY[presence]) : toPlay ? 'TO PLAY' : '';
+    const presenceChip = !isMe && !!presence && presence !== 'away' && !(toPlay && presence !== 'thinking');
+    const tone = presence === 'left' ? '#94a3b8' : presence === 'here' ? '#16a34a' : FR.solid;
+    return (
     <div className="flex-1 flex flex-col items-center gap-1.5" style={{ padding: '12px 8px 14px' }}>
-      <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={40} online={!isMe && online} />
+      <FriendAvatar name={p.name} userId={p.userId} url={p.url} accent={p.accent} config={p.config} castId={p.castId} frame={p.frame} pro={p.pro} size={40} online={!isMe && theirOnline} pulse={!isMe && presence === 'thinking'} />
       <span className="flex items-center gap-1 text-[10px] font-black uppercase truncate max-w-full" style={{ color: isMe ? '#4c1d95' : '#92400e', letterSpacing: 0.8 }}>
         {won && <Icon3D name="trophy" size={14} className="shrink-0" />}
         {label}
@@ -228,15 +356,17 @@ export function FriendlyGameScreen({ id }: { id: string }) {
         className="text-[9.5px] font-black px-2 rounded-full"
         style={{
           height: 18, display: 'flex', alignItems: 'center', letterSpacing: 0.6,
-          background: toPlay ? softMix('#ec4899', 0.14) : 'transparent',
-          border: `1.5px solid ${toPlay ? softMix('#ec4899', 0.36) : 'transparent'}`,
-          color: toPlay ? FR.solid : 'transparent',
+          background: presenceChip ? softMix(tone, 0.12) : toPlay ? softMix('#ec4899', 0.14) : 'transparent',
+          border: `1.5px solid ${presenceChip ? softMix(tone, 0.3) : toPlay ? softMix('#ec4899', 0.36) : 'transparent'}`,
+          color: presenceChip ? tone : toPlay ? FR.solid : 'transparent',
         }}
+        aria-live="polite"
       >
-        TO PLAY
+        {chip || 'TO PLAY'}
       </span>
     </div>
-  );
+    );
+  };
 
   const boardProps = {
     me, you, them, active, busy, revealKey, onMove,
@@ -275,12 +405,34 @@ export function FriendlyGameScreen({ id }: { id: string }) {
 
       {error && <p className="text-center text-[12.5px] font-bold" style={{ color: '#dc2626' }}>{error}</p>}
 
-      {game.state.kind === 'rps' && <RpsBoard state={game.state} {...boardProps} />}
-      {game.state.kind === 'ttt' && <TttBoard state={game.state} {...boardProps} />}
-      {game.state.kind === 'coin' && <CoinBoard state={game.state} {...boardProps} />}
-      {game.state.kind === 'pass' && <PassBoard state={game.state} {...boardProps} answer={game.answer} />}
-      {game.state.kind === 'ghost' && <GhostBoard state={game.state} {...boardProps} />}
-      {game.state.kind === 'chain' && <ChainBoard state={game.state} {...boardProps} />}
+      <div ref={boardRef} className="relative">
+        {game.state.kind === 'rps' && <RpsBoard state={game.state} {...boardProps} />}
+        {game.state.kind === 'ttt' && <TttBoard state={game.state} {...boardProps} />}
+        {game.state.kind === 'coin' && <CoinBoard state={game.state} {...boardProps} />}
+        {game.state.kind === 'pass' && <PassBoard state={game.state} {...boardProps} answer={game.answer} />}
+        {game.state.kind === 'ghost' && <GhostBoard state={game.state} {...boardProps} />}
+        {game.state.kind === 'chain' && <ChainBoard state={game.state} {...boardProps} />}
+        {/* Your-turn pulse: a soft ring that breathes once when the move comes back to you. */}
+        <div ref={pulseRef} aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{ borderRadius: 20, opacity: 0, boxShadow: `0 0 0 2px ${softMix(KIND_COLOR[game.kind], 0.55)}, 0 0 22px ${softMix(KIND_COLOR[game.kind], 0.4)}` }} />
+        {/* Live reactions float up from the bottom of the board. */}
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-2 h-0 pointer-events-none">
+          {floaters.map((f) => (
+            <span key={f.id} className="live-float absolute" style={{ left: `${f.x}%`, bottom: 0, opacity: f.mine ? 0.85 : 1 }}>
+              <ReactionIcon reaction={f.reaction} size={34} />
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {active && liveOn && socketUp && (
+        <div className="flex items-center justify-center gap-2" role="group" aria-label="Send a reaction">
+          {LIVE_REACTIONS.map((r) => (
+            <button key={r} type="button" onClick={() => react(r)} aria-label={`Send ${r}`} className="active:scale-90 transition-transform" style={{ width: 38, height: 38, display: 'grid', placeItems: 'center' }}>
+              <ReactionIcon reaction={r} size={26} />
+            </button>
+          ))}
+        </div>
+      )}
 
       {!active && (
         <div className="space-y-2.5 pt-1">

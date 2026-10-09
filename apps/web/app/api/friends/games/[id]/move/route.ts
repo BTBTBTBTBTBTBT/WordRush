@@ -5,6 +5,7 @@ import { FRIENDLY_TITLES, applyFriendlyMove, containsBlockedTerm, friendlyCardLi
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
+import { publishGameChange } from '@/lib/friendly-live-server';
 import { gameView, grantPocketAchievements, hasWordPrefix, isListWord, passWordOk, profilesById, sideOf, winnerId, type GameRow } from '@/lib/friendly-games-server';
 
 export const dynamic = 'force-dynamic';
@@ -73,6 +74,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const oppSeen = side === 'a' ? row.b_seen_at : row.a_seen_at;
   const watching = !!oppSeen && Date.now() - new Date(oppSeen).getTime() < WATCHING_MS;
   const theirView = gameView(next, oppId, profs.get(me));
+  // 9b live play: the receiver's view goes out on the game channel the instant it is saved (best effort, 1.5 s cap).
+  const published = publishGameChange(admin, next, me, theirView);
   if (!watching && (theirView.yourTurn || result.done)) {
     const who = profs.get(me)?.username ?? 'Your friend';
     const title = FRIENDLY_TITLES[row.kind];
@@ -93,5 +96,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     [newAchievements] = await Promise.all([grantPocketAchievements(admin, me), result.done ? grantPocketAchievements(admin, oppId) : Promise.resolve([])]);
   }
 
+  await published;
   return NextResponse.json({ game: gameView(next, me, profs.get(oppId)), newAchievements });
 }
