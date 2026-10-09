@@ -122,7 +122,7 @@ import kotlinx.coroutines.delay
  * it in [onDismiss]. Reduce Motion: no spring, no tile motion (rows show their result).
  */
 @Composable
-fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
+fun GuideSheet(mode: GameMode, onDismiss: () -> Unit, startExpanded: Boolean = false) {
     var guide by remember(mode) { mutableStateOf<GuideService.ModeGuide?>(null) }
     LaunchedEffect(mode) { guide = GuideService.guide(mode) }
     val g = guide
@@ -149,7 +149,7 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    GuideCard(mode, title, accent, steps, g, close)
+                    GuideCard(mode, title, accent, steps, g, close, startExpanded)
                 }
             }
         }
@@ -169,6 +169,7 @@ private fun GuideCard(
     steps: List<GuideStep>,
     guide: GuideService.ModeGuide?,
     onDismiss: () -> Unit,
+    startExpanded: Boolean = false,
 ) {
     val still = WTheme.reducedMotion
     var shown by remember { mutableStateOf(false) }
@@ -178,7 +179,7 @@ private fun GuideCard(
     // BJ10: the soft pop — 0.94 → 1 from the bottom center on the soft spring.
     val scale by animateFloatAsState(if (shown) 1f else com.wordocious.core.MotionSpec.POP_SCALE, if (dur == 0) tween(0) else com.wordocious.app.ui.softPopSpring(), label = "guideScale")
     val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(dur, easing = EaseOut), label = "guideAlpha")
-    var full by remember(mode) { mutableStateOf(false) }
+    var full by remember(mode) { mutableStateOf(startExpanded) }
     val host = remember(mode) { Mascots.hostFor(mode.name) }
 
     Box(
