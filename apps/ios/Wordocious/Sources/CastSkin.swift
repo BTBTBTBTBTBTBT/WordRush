@@ -61,25 +61,29 @@ enum CastSkin {
         return f.string(from: date)
     }
 
+    // The off-switch states get their OWN lock: `season` holds `lock` while resolve() reads
+    // `switchOn`, and NSLock is not reentrant (sharing it froze the app on launch).
+    private static let switchLock = NSLock()
+
     // The `season_halloween` off-switch, as FlagsService last read it (fail-open: on until a row says off).
     private static var switchState = true
-    static var switchOn: Bool { lock.lock(); defer { lock.unlock() }; return switchState }
+    static var switchOn: Bool { switchLock.lock(); defer { switchLock.unlock() }; return switchState }
 
     // The `opening_animation_season` off-switch: off = the launch intro keeps the hero cast even in season.
     private static var introState = true
-    static var introSeasonOn: Bool { lock.lock(); defer { lock.unlock() }; return introState }
-    static func setIntroSwitch(_ on: Bool) { lock.lock(); introState = on; lock.unlock() }
+    static var introSeasonOn: Bool { switchLock.lock(); defer { switchLock.unlock() }; return introState }
+    static func setIntroSwitch(_ on: Bool) { switchLock.lock(); introState = on; switchLock.unlock() }
 
     /// The cast image the launch intro draws: the costume in season unless the intro switch is off.
     static func introAssetName(for id: MascotID) -> String { introSeasonOn ? assetName(for: id) : id.assetName }
 
     /// FlagsService calls this after every load: a flip re-resolves the season and rebuilds the UI.
     static func setSwitch(_ on: Bool) {
-        lock.lock()
+        switchLock.lock()
         let changed = switchState != on
         switchState = on
-        if changed { cached = nil }
-        lock.unlock()
+        switchLock.unlock()
+        if changed { invalidate() }
         if changed { DispatchQueue.main.async { ThemeManager.shared.seasonEpoch += 1 } }
     }
 
