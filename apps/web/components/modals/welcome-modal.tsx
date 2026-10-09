@@ -199,7 +199,7 @@ export function WelcomeModal() {
 
 /** The three intro rows: a 3D icon on a mini game card in each row's color. */
 const INTRO: { title: string; body: string; accent: string; art: React.ReactNode }[] = [
-  { title: 'Daily Puzzles', body: 'Eight daily word games and ten More Games, new every day', accent: '#7c3aed', art: <GameArt id="practice" size={24} /> },
+  { title: 'Daily Puzzles', body: 'Eight daily word games and ten Puzzles, new every day', accent: '#7c3aed', art: <GameArt id="practice" size={24} /> },
   { title: 'Play with Friends', body: "Today's Race, a weekly finish and VS with friends", accent: '#ec4899', art: <Icon3D name="tab-friends" size={24} /> },
   { title: 'Climb the Leaderboards', body: 'Earn medals, build streaks, and track your stats', accent: '#f5a524', art: <Icon3D name="trophy" size={24} /> },
 ];

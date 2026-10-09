@@ -6,7 +6,7 @@ import { InfoPageLayout, IntroCard, IntroText, SectionCard, infoAccent } from '@
 export const metadata: Metadata = {
   title: 'About Wordocious — Daily Word Games',
   description:
-    'Wordocious is a free online puzzle game with nineteen ways to play: Classic, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, real-time VS Battles, and ten More Games dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Play daily puzzles, climb leaderboards, and compete with friends.',
+    'Wordocious is a free online puzzle game with nineteen ways to play: Classic, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, real-time VS Battles, and ten Puzzles dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Play daily puzzles, climb leaderboards, and compete with friends.',
 };
 
 export default function AboutPage() {

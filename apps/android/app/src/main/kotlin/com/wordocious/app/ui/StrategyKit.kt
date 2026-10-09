@@ -165,7 +165,7 @@ object StrategyCatalog {
         val key = name.substringBefore(" — ").trim()
         return when {
             key.equals("VS Battle", ignoreCase = true) -> "vs"
-            key.equals("More Games", ignoreCase = true) -> "more"
+            key.equals("Puzzles", ignoreCase = true) -> "more"
             else -> ModeGen.all.firstOrNull { it.title.equals(key, ignoreCase = true) }?.id
         }
     }

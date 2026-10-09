@@ -97,7 +97,7 @@ fun WelcomeScreen() {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     // A1: each pillar a tinted row in its color with a 3D icon tile.
                     Pillar(painterRes = com.wordocious.app.R.drawable.game_practice, tint = Color(0xFF7C3AED),
-                        title = "Daily Puzzles", sub = "Eight daily word games and ten More Games, new every day")
+                        title = "Daily Puzzles", sub = "Eight daily word games and ten Puzzles, new every day")
                     Pillar(icon3d = Icon3DName.TAB_FRIENDS, tint = Color(0xFFEC4899),
                         title = "Play with Friends", sub = "Today's Race, a weekly finish and VS with friends")
                     Pillar(icon3d = Icon3DName.TROPHY, tint = Color(0xFFF59E0B),

@@ -87,7 +87,7 @@ describe('how to play mode icons', () => {
   it('matches the text before " — " to the catalog', () => {
     expect(howToPlayModeId('Classic — 1 Word, 6 Guesses')).toBe('practice');
     expect(howToPlayModeId('VS Battle — Live Matches')).toBe('vs');
-    expect(howToPlayModeId('More Games — Ten Extra Dailies')).toBe('more');
+    expect(howToPlayModeId('Puzzles — Ten Extra Dailies')).toBe('more');
     expect(howToPlayModeId('Letter Ladder — One Letter at a Time')).toBe('ladder');
     expect(howToPlayModeId('Nothing — at all')).toBeNull();
     const modes = HOW_TO_PLAY.flatMap((s) => s.modes ?? []);

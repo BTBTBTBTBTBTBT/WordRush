@@ -17,7 +17,7 @@ public enum ArtTitleLabels {
         "settings": "Settings",
         "howto": "How to Play",
         "gopro": "Go Pro",
-        "moregames": "More Games",
+        "moregames": "Puzzles",
         "welcome": "Welcome",
         "leaderboard": "Leaderboard",
         "dailies": "Dailies",

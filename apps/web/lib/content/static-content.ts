@@ -23,7 +23,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       { q: 'Is Wordocious free?', a: 'Yes — a new daily puzzle in every mode is free, every day. An optional Pro subscription removes ads and unlocks unlimited replays beyond the daily, but the daily puzzles and leaderboards are always free.' },
       { q: 'Do I need an account to play?', a: 'You can browse every mode and read these guides without an account. To play, save streaks, earn medals, and appear on the daily leaderboards, sign in with Google, Apple, or an email address.' },
       { q: 'How often do new puzzles appear?', a: 'Every mode gets one fresh puzzle per day, resetting at your local midnight. Everyone worldwide gets the same daily words, so scores are directly comparable.' },
-      { q: 'What is More Games?', a: 'The More Games tile on the home screen opens ten extra daily puzzles: Sudocious (sudoku), Starsweep (star placement), Letter Ladder, Spyglass (word search), Hubbub (seven-letter hub), Codebreaker (cryptogram), Kindred (groups of four), Crosswordocious (sayings crossword), Muddle (scramble) and ProperNoundle (famous names). Each has one shared daily, its own leaderboard and medals, and a full guide behind the ? button in play.' },
+      { q: 'What are the Puzzles?', a: 'The Puzzles tile on the home screen opens ten extra daily puzzles: Sudocious (sudoku), Starsweep (star placement), Letter Ladder, Spyglass (word search), Hubbub (seven-letter hub), Codebreaker (cryptogram), Kindred (groups of four), Crosswordocious (sayings crossword), Muddle (scramble) and ProperNoundle (famous names). Each has one shared daily, its own leaderboard and medals, and a full guide behind the ? button in play.' },
     ],
   },
   {
@@ -47,7 +47,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
     heading: 'Progress, Medals & Pro',
     items: [
       { q: 'What is a Daily Sweep and a Flawless Victory?', a: 'Completing all eight of the day’s word puzzles — Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet — earns a Daily Sweep and bonus XP. Winning every one of them (not just completing) earns a Flawless Victory and a larger bonus. Streaks of sweeps and flawless days unlock achievements.' },
-      { q: 'Does More Games count toward the Daily Sweep?', a: 'No. The ten More Games titles (including ProperNoundle, which moved under the tile) are extra: they earn XP, medals, achievements and leaderboard places like every other mode, but they never change your sweep count or Flawless Victory, and skipping them never spoils a sweep. The sweep is the eight word games on the home grid.' },
+      { q: 'Does Puzzles count toward the Daily Sweep?', a: 'No. The ten Puzzles titles (including ProperNoundle, which moved under the tile) are extra: they earn XP, medals, achievements and leaderboard places like every other mode, and they have their own Puzzles Sweep. They never change your Daily Sweep count or Flawless Victory, and skipping them never spoils a sweep. The Daily Sweep is the eight word games on the home grid.' },
       { q: 'How do medals work?', a: 'Each daily puzzle has a leaderboard; the top finishers earn gold, silver, and bronze medals that accumulate on your profile. Medal counts feed several collection achievements.' },
       { q: 'Are there achievements to earn?', a: 'Yes — 75 achievements span five categories: beginner milestones, consistency (streaks and daily sweeps), skill (speed solves, perfect games, beating the Gauntlet), social (VS wins), and collection (medals). They unlock automatically as you hit each milestone, and your full set — locked and unlocked, with progress toward each — is displayed on your profile, so there is always a next goal to chase.' },
       { q: 'What does Pro unlock?', a: 'Pro removes ads, unlocks unlimited replays of every mode beyond the free daily (free players get one play per mode per day), adds Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches. The daily puzzles stay free for everyone.' },
@@ -69,7 +69,7 @@ export const HELP_MODES: HelpMode[] = [
   { title: 'Seven', desc: 'Guess a 7-letter word in 8 tries. The ultimate single-word challenge.', accent: '#84cc16', glyph: '7' },
   { title: 'Gauntlet', desc: '5 stages of increasing difficulty — Classic through OctoWord. Survive them all.', accent: '#d97706' },
   // More Games (behind the home tile; outside the Daily Sweep). Catalog order and accents.
-  { title: 'More Games', desc: '10 extra dailies behind one tile. XP, medals and leaderboards — never the Daily Sweep.', accent: '#4f46e5', glyph: '+' },
+  { title: 'Puzzles', desc: '10 extra dailies behind one tile. XP, medals and leaderboards — never the Daily Sweep.', accent: '#4f46e5', glyph: '+' },
   { title: 'ProperNoundle', desc: 'Guess famous names instead of dictionary words. Themed daily puzzles.', accent: '#dc2626', glyph: 'P' },
   { title: 'Sudocious', desc: 'A Medium 9 × 9 sudoku a day. 3 mistakes, pencil notes, one solution.', accent: '#1e40af', glyph: '9' },
   { title: 'Muddle', desc: 'Unscramble 4 words, then spell the pun from their circled letters.', accent: '#f97316', glyph: 'M' },
@@ -93,8 +93,8 @@ export const HELP_FAQ: FaqItem[] = [
   { q: 'What are Streak Shields?', a: 'A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header.' },
   { q: 'What does Pro unlock?', a: 'Pro removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches.' },
   { q: 'Do daily puzzles use the same words for everyone?', a: 'Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard.' },
-  { q: 'What is More Games?', a: 'The More Games tile on the home screen opens ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and ProperNoundle. Each has one shared daily, its own leaderboard, medals and achievements, and a full guide behind the ? button in play.' },
-  { q: 'Does More Games count toward the Daily Sweep?', a: 'No. The sweep and Flawless Victory are the eight word games on the home grid. The More Games titles are extra: they earn XP and medals, but they never change your sweep count, and skipping them never spoils a sweep.' },
+  { q: 'What are the Puzzles?', a: 'The Puzzles tile on the home screen opens ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and ProperNoundle. Each has one shared daily, its own leaderboard, medals and achievements, and a full guide behind the ? button in play.' },
+  { q: 'Does Puzzles count toward the Daily Sweep?', a: 'No. The sweep and Flawless Victory are the eight word games on the home grid. The Puzzles titles are extra: they earn XP and medals and have their own Puzzles Sweep, but they never change your Daily Sweep count, and skipping them never spoils a sweep.' },
 ];
 
 // ── About page ──────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ export const ABOUT_SECTIONS: ContentSection[] = [
   {
     heading: 'What is Wordocious?',
     paragraphs: [
-      'Wordocious is a free puzzle game that goes far beyond the classic five-letter guess. With eight daily word games, ten More Games dailies from sudoku to cryptograms, live VS matches with friends, and global leaderboards, Wordocious gives puzzle fans something new to play every single day.',
+      'Wordocious is a free puzzle game that goes far beyond the classic five-letter guess. With eight daily word games, ten Puzzles dailies from sudoku to cryptograms, live VS matches with friends, and global leaderboards, Wordocious gives puzzle fans something new to play every single day.',
       'Whether you enjoy a quick solo puzzle on your morning commute or a race against friends, Wordocious has a mode for you. Every daily puzzle is the same for all players worldwide, so you can compare scores and strategies with anyone.',
     ],
   },
@@ -120,9 +120,9 @@ export const ABOUT_SECTIONS: ContentSection[] = [
     ],
   },
   {
-    heading: 'More Games — Ten Extra Dailies',
+    heading: 'Puzzles — Ten Extra Dailies',
     paragraphs: [
-      'The More Games tile on the home screen opens a second shelf of daily puzzles. Each one earns XP, medals, achievements and its own leaderboard like every other mode, but none of them counts toward the Daily Sweep or Flawless Victory — those stay the eight word games above.',
+      'The Puzzles tile on the home screen opens a second shelf of daily puzzles. Each one earns XP, medals, achievements and its own leaderboard like every other mode, but none of them counts toward the Daily Sweep or Flawless Victory — those stay the eight word games above.',
     ],
     items: [
       { heading: 'ProperNoundle', accent: '#dc2626', body: 'Instead of dictionary words, guess famous names, places, and cultural references. Each daily puzzle is themed — categories include current events, music, movies, sports, video games, history, and science. With more than 650 unique puzzles, there is always something new to discover.' },

@@ -115,12 +115,12 @@ export const HOW_TO_PLAY: HTPSection[] = [
         body: 'A head-to-head race on the same puzzle. The match happens in real time — you can see when your opponent submits guesses. Speed matters, but accuracy matters more: a wrong guess wastes precious time. Invite a friend with a link, queue up for a live opponent, or battle one of the built-in bot opponents — each has its own personality and difficulty, so there is always a match waiting.',
       },
       {
-        name: 'More Games — Ten Extra Dailies', accent: '#4f46e5',
-        body: 'The More Games tile on the home screen opens a menu of ten extra daily puzzles — number logic, star placement, word ladders, a word search, a hub game, a cryptogram, groups of four, a crossword, a scramble and the famous-names game ProperNoundle. They live outside the Daily Sweep: each one earns XP, medals, leaderboard places and achievements like every other mode, but none of them changes your sweep count or Flawless Victory — those stay the eight word games on the home grid. Every title below has its own full guide behind the ? button in play.',
+        name: 'Puzzles — Ten Extra Dailies', accent: '#4f46e5',
+        body: 'The Puzzles tile on the home screen opens a menu of ten extra daily puzzles — number logic, star placement, word ladders, a word search, a hub game, a cryptogram, groups of four, a crossword, a scramble and the famous-names game ProperNoundle. They live outside the Daily Sweep: each one earns XP, medals, leaderboard places and achievements like every other mode. Each has a Puzzles Sweep of its own, and none of them changes your Daily Sweep count or Flawless Victory — those stay the eight word games on the home grid. Every title below has its own full guide behind the ? button in play.',
       },
       {
         name: 'ProperNoundle — Famous Names & Cultural References', accent: '#dc2626',
-        body: 'A twist on the classic formula: instead of dictionary words, you guess proper nouns — famous people, places, landmarks, and cultural references. Each daily puzzle belongs to a themed category such as current events, music, movies, sports, video games, history, or science. The answer can be multiple words long, and the board displays word breaks to help you visualize the full name. ProperNoundle now lives under More Games, so it no longer counts toward the Daily Sweep or Flawless Victory — it still earns XP, medals and its own leaderboard every day. With more than 650 puzzles in the pool, every day brings a fresh challenge.',
+        body: 'A twist on the classic formula: instead of dictionary words, you guess proper nouns — famous people, places, landmarks, and cultural references. Each daily puzzle belongs to a themed category such as current events, music, movies, sports, video games, history, or science. The answer can be multiple words long, and the board displays word breaks to help you visualize the full name. ProperNoundle now lives under Puzzles, so it no longer counts toward the Daily Sweep or Flawless Victory — it still earns XP, medals and its own leaderboard every day. With more than 650 puzzles in the pool, every day brings a fresh challenge.',
       },
       {
         name: 'Sudocious — Number Logic, 3 Mistakes', accent: '#1e40af',
@@ -233,7 +233,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       { strong: 'Loss:', text: ' 25 XP (you still earn XP for trying)' },
       { strong: 'Win streak bonus:', text: ' +50 XP' },
       { strong: 'Daily challenge bonus:', text: ' +50 XP' },
-      { strong: 'Daily Sweep:', text: ' +200 XP for playing every one of the day’s eight word puzzles (the More Games titles are extra and never count)' },
+      { strong: 'Daily Sweep:', text: ' +200 XP for playing every one of the day’s eight word puzzles (the Puzzles titles are extra and have their own Puzzles Sweep)' },
       { strong: 'Flawless Victory:', text: ' +400 XP more for winning every one (600 XP total with the Sweep)' },
       { strong: 'Medal XP:', text: ' Gold +100, Silver +50, Bronze +25' },
     ],

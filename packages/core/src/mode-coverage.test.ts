@@ -66,8 +66,8 @@ describe('BJ12 mode coverage: every mode, every surface', () => {
     const keys = moreSweepModeKeys(modes);
     expect(keys).toEqual(daily.filter((m) => m.group === 'more').map((m) => m.dbKey));
     expect(keys.length).toBeGreaterThan(0);
-    expect(moreSweepMomentText('Doug', false, keys.length)).toBe(`Doug — More Games Sweep, all ${countWord(keys.length)} played`);
-    expect(moreSweepMomentText('You', true, 10)).toBe('You — Flawless More Games, all ten won');
+    expect(moreSweepMomentText('Doug', false, keys.length)).toBe(`Doug — Puzzles Sweep, all ${countWord(keys.length)} played`);
+    expect(moreSweepMomentText('You', true, 10)).toBe('You — Puzzles Flawless, all ten won');
   });
 
   it('a "fewest" record reads through the mode (Sudocious "Fewest Mistakes · 0 mistakes", Letter Ladder "Best vs Par · Par")', () => {

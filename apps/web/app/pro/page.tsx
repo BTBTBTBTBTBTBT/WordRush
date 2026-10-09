@@ -376,7 +376,7 @@ export default function ProPage() {
             <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               Wordocious is free to play, and it stays that way: every one of the eight daily word puzzles —
               Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, and Gauntlet — and all ten
-              More Games dailies, from ProperNoundle and Sudocious to Codebreaker and Muddle, are playable
+              Puzzles dailies, from ProperNoundle and Sudocious to Codebreaker and Muddle, are playable
               once a day at no cost, with the full daily leaderboard and your complete stats
               history included. Pro is for players who finish the daily slate and want to keep going.
               It removes the interstitial ads, unlocks unlimited replays of every mode, opens VS head-to-head

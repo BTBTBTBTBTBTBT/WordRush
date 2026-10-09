@@ -188,7 +188,7 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const label = more ? (flawless ? 'Puzzles Flawless' : 'Puzzles Sweep') : (flawless ? 'Flawless Victory' : 'Daily Sweep');
     const stats = `${w}/${tot} won · ${fmtTime(t)} · ${pts.toLocaleString()} pts`;
     const title = `Wordocious ${label} — ${stats}`;
-    const what = more ? 'More Games puzzles' : 'daily puzzles';
+    const what = more ? 'puzzles' : 'daily puzzles';
     const description = flawless
       ? `I won all ${tot} ${what} on Wordocious (${stats}). Can you go flawless? ${PLAY_HOOK}`
       : `I completed all ${tot} ${what} on Wordocious (${stats}). Think you can sweep them? ${PLAY_HOOK}`;

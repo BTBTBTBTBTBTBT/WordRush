@@ -76,8 +76,8 @@ struct SweepCelebrationView: View {
                             .opacity(artIn ? 1 : 0)
                             .accessibilityHidden(true)
                     }
-                    Text(flawless ? "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") won today"
-                                  : "All \(totalCount) \(more ? "More Games puzzles" : "daily puzzles") completed today")
+                    Text(flawless ? "All \(totalCount) \(more ? "puzzles" : "daily puzzles") won today"
+                                  : "All \(totalCount) \(more ? "puzzles" : "daily puzzles") completed today")
                         .font(Brand.font(13, .heavy)).foregroundStyle(dark ? Theme.textSecondary : accentText)
                         .multilineTextAlignment(.center)
 

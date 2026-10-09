@@ -73,8 +73,8 @@ export function countWord(n: number): string {
  */
 export function moreSweepMomentText(who: string, flawless: boolean, total: number): string {
   return flawless
-    ? `${who} — Flawless More Games, all ${countWord(total)} won`
-    : `${who} — More Games Sweep, all ${countWord(total)} played`;
+    ? `${who} — Puzzles Flawless, all ${countWord(total)} won`
+    : `${who} — Puzzles Sweep, all ${countWord(total)} played`;
 }
 
 /** The More Games daily set the Sweep moment counts: enabled, daily, with a dbKey. */

@@ -55,7 +55,7 @@ object ModeGen {
         GenMode("seven", "DUEL_7", "Seven", "Seven", "Classic Seven", "7 letters, 8 tries", "#84cc16", "7", null, true, "core", true, "word", "guesses", 1, 7, false, true, null, null, "seven"),
         GenMode("gauntlet", "GAUNTLET", "Gauntlet", "Gauntlet", "Gauntlet", "5 rising stages", "#d97706", "G", null, true, "core", true, "word", "guesses", 21, 1, false, true, null, null, "gauntlet"),
         GenMode("propernoundle", "PROPERNOUNDLE", "ProperNoundle", "Proper", "ProperNoundle", "Guess the name", "#dc2626", "P", null, true, "more", false, "custom", "guesses", 1, 109, false, true, null, "trivia", "propernoundle"),
-        GenMode("more", null, "More Games", "More", "More Games", "Sudocious, Muddle and more", "#4f46e5", "+", null, false, "core", false, "custom", "guesses", 1, 9, true, true, "menu.more", null, null),
+        GenMode("more", null, "Puzzles", "Puzzles", "Puzzles", "Sudocious, Muddle and more", "#4f46e5", "+", null, false, "core", false, "custom", "guesses", 1, 9, true, true, "menu.more", null, null),
         GenMode("sudoku", "SUDOKU", "Sudocious", "Sudocious", "Sudocious", "Number logic", "#1e40af", "9", null, true, "more", false, "custom", "mistakes", 1, 111, false, true, "mode.sudoku", "logic", "sudocious"),
         GenMode("scramble", "SCRAMBLE", "Muddle", "Muddle", "Muddle", "Scrambled jokes", "#f97316", "M", null, true, "more", false, "custom", "checks", 5, 112, false, true, "mode.scramble", "word", "muddle"),
         GenMode("hub", "HUB", "Hubbub", "Hubbub", "Hubbub", "7 letters, 1 hub", "#c026d3", "H", null, true, "more", false, "custom", "rank", 1, 113, false, true, "mode.hub", "word", "hubbub"),

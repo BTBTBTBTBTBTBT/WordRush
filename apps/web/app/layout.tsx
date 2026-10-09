@@ -49,7 +49,7 @@ const nunito = Nunito({
 // wins over the dynamic renderer and a stale static PNG gets served.
 export const metadata: Metadata = {
   title: 'Wordocious — Daily Word Games',
-  description: 'Eight daily word games and ten More Games: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
+  description: 'Eight daily word games and ten Puzzles: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
   metadataBase: new URL('https://wordocious.com'),
   manifest: '/manifest.json',
   themeColor: '#a78bfa',
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   // nothing but misrepresent the site.
   openGraph: {
     title: 'Wordocious — Daily Word Games',
-    description: 'Eight daily word games and ten More Games: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
+    description: 'Eight daily word games and ten Puzzles: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
     url: 'https://wordocious.com',
     siteName: 'Wordocious',
     type: 'website',
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Wordocious — Daily Word Games',
-    description: 'Eight daily word games and ten More Games: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
+    description: 'Eight daily word games and ten Puzzles: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance and Gauntlet, plus Muddle, Kindred, Sudocious, Crosswordocious and more. Same puzzles for everyone.',
   },
 };
 

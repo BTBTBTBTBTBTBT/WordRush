@@ -101,7 +101,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
     slug: 'modes-explained',
     title: 'Every Wordocious Mode Explained',
     description:
-      'A plain-English tour of every Wordocious mode — the eight daily word games (Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet), real-time VS Battle, and the ten extra dailies under More Games.',
+      'A plain-English tour of every Wordocious mode — the eight daily word games (Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet), real-time VS Battle, and the ten extra dailies under Puzzles.',
     dek: 'One daily word is just the start — here is what each mode actually asks of you, and which to play first.',
     minutes: 8,
     sections: [
@@ -133,10 +133,10 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         ],
       },
       {
-        heading: 'More Games: ten extra dailies outside the Sweep',
+        heading: 'Puzzles: ten extra dailies outside the Sweep',
         body: [
-          'The More Games tile opens a second shelf of daily puzzles that are not word-guessing at all. Sudocious is a Medium sudoku with three mistakes; Starsweep asks for one star per row, column and color region with none touching; Letter Ladder climbs one letter at a time against a par; Spyglass hides ten themed words forwards in a 10 × 10 grid; Hubbub builds words from seven letters around a required hub; Codebreaker is a letter-for-letter coded saying; Kindred hides four groups of four among sixteen words; Crosswordocious is a crossword of sayings with one word missing; Muddle is the newspaper scramble with a pun to finish; and ProperNoundle, the famous-names game, now lives here too.',
-          'They earn XP, medals, leaderboard places and achievements like everything else, but they sit outside the Daily Sweep: the sweep and Flawless Victory stay the eight word games on the home grid, so a More Games result never pads or spoils them. Each title has its own playbook in this section and a full guide behind the ? button in play.',
+          'The Puzzles tile opens a second shelf of daily puzzles that are not word-guessing at all. Sudocious is a Medium sudoku with three mistakes; Starsweep asks for one star per row, column and color region with none touching; Letter Ladder climbs one letter at a time against a par; Spyglass hides ten themed words forwards in a 10 × 10 grid; Hubbub builds words from seven letters around a required hub; Codebreaker is a letter-for-letter coded saying; Kindred hides four groups of four among sixteen words; Crosswordocious is a crossword of sayings with one word missing; Muddle is the newspaper scramble with a pun to finish; and ProperNoundle, the famous-names game, now lives here too.',
+          'They earn XP, medals, leaderboard places and achievements like everything else, but they sit outside the Daily Sweep, with a Puzzles Sweep of their own: the sweep and Flawless Victory stay the eight word games on the home grid, so a Puzzles result never pads or spoils them. Each title has its own playbook in this section and a full guide behind the ? button in play.',
         ],
       },
     ],
@@ -308,7 +308,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Pace for the leaderboard',
         body: [
           'Because everyone plays the same grid, the Sudocious leaderboard is a pure comparison of cleanliness first and time second. Almost every strong finish is a zero-mistake grid, so the podium is decided by the clock — and the clock is won in the opening two minutes, when the digit scan places the easy dozen. Do the first full pass through 1–9 without pausing to think about anything else, then slow down for the pairs.',
-          'Pro Unlimited lets you drill Easy grids (solvable by singles alone) and Hard grids (which demand pencil marks) without touching your daily. The Easy drills make the scan automatic; the Hard drills teach the pair logic the daily only occasionally needs. Like every More Games title, none of it touches your Daily Sweep.',
+          'Pro Unlimited lets you drill Easy grids (solvable by singles alone) and Hard grids (which demand pencil marks) without touching your daily. The Easy drills make the scan automatic; the Hard drills teach the pair logic the daily only occasionally needs. Like every Puzzles title, none of it touches your Daily Sweep.',
         ],
       },
     ],
@@ -362,7 +362,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Thursday is a different game',
         body: [
           'Monday to Wednesday the board is 7 × 7; Thursday to Sunday it is 8 × 8, and the extra row is more than a 15% increase in difficulty. Eight regions give the counting argument more to bite on and the small-region opening less to work with, so the middle game — regions against rows — is where the weekend boards are decided. If you only have time to practice one thing, practice the count.',
-          'Pro Unlimited adds a 9 × 9 board, which is the best training there is: it forces the counting logic on every board and makes the daily 8 × 8 feel roomy. As with every More Games title, none of this touches your Daily Sweep — Starsweep is extra XP, medals and a leaderboard, not a sweep cell.',
+          'Pro Unlimited adds a 9 × 9 board, which is the best training there is: it forces the counting logic on every board and makes the daily 8 × 8 feel roomy. As with every Puzzles title, none of this touches your Daily Sweep — Starsweep is extra XP, medals and a leaderboard, not a sweep cell.',
         ],
       },
     ],
@@ -416,7 +416,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Hints count as moves',
         body: [
           'A Hint places the next word on a shortest route from where you stand, for 100 points of score — and it counts as one of your moves, though never as a mistake, and it rules out a Perfect run. Because the hint is always on a shortest route, it is most valuable when you are on the right path and simply cannot see the next word: it costs 100 points instead of the 300 an extra rung would. It is least valuable when you have already wandered, since it does not undo your detour.',
-          'On a loss the board shows one shortest route. Read it. Ladders reuse the same pivots — the same vowel swaps, the same dense word families — and the route you missed today is the one you will see coming next week. Like every More Games title, Letter Ladder is extra: it earns XP and medals, but your Daily Sweep is the eight word games and this climb never changes it.',
+          'On a loss the board shows one shortest route. Read it. Ladders reuse the same pivots — the same vowel swaps, the same dense word families — and the route you missed today is the one you will see coming next week. Like every Puzzles title, Letter Ladder is extra: it earns XP and medals, but your Daily Sweep is the eight word games and this climb never changes it.',
         ],
       },
     ],
@@ -477,7 +477,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Pace the clean clear',
         body: [
           'Because every strong finish is a blind zero-miss clear, the Spyglass podium is decided by time, and time is decided by method. Name the family\'s words from the theme and the chip lengths, rank them by their rarest letter, take the long words and the rare-letter words first, and let the crossings give you the rest. The last two words are usually short, common-letter words — sweep the grid row by row for their first pair, not their first letter — and only then decide whether Show words is worth its price.',
-          'Themes rotate through fifteen families, a theme never returns within four months and no word repeats within six weeks, so you cannot memorize the grid — but you can memorize the method. Like every More Games title, Spyglass earns XP, medals and a leaderboard place while leaving your Daily Sweep exactly where the eight word games put it.',
+          'Themes rotate through fifteen families, a theme never returns within four months and no word repeats within six weeks, so you cannot memorize the grid — but you can memorize the method. Like every Puzzles title, Spyglass earns XP, medals and a leaderboard place while leaving your Daily Sweep exactly where the eight word games put it.',
         ],
       },
     ],
@@ -531,7 +531,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Hints, and why every word is worth typing',
         body: [
           'Two hints exist and neither counts against your rank. "Starts with…" shows the first two letters and the length of the next word you have not found, for 50 points; "Reveal a word" costs two hints (100 points) and places that word, points included. Both rule out a Perfect run and the Pure Hubbub achievements. The 50-point hint is the better buy almost every time — two letters and a length is usually enough to see the word yourself, and you keep half the price.',
-          'A word you are unsure of is free to try. If it is on the friendly list it scores like any other word — the everyday list sets the puzzle\'s maximum, but a rarer word you know counts in full and can lift your rank just the same — and if it is not on the list, nothing is lost. There is no penalty for a rejected word in Hubbub, so type everything that looks plausible. Only your rank and your time are recorded, and, like every More Games title, none of it touches your Daily Sweep.',
+          'A word you are unsure of is free to try. If it is on the friendly list it scores like any other word — the everyday list sets the puzzle\'s maximum, but a rarer word you know counts in full and can lift your rank just the same — and if it is not on the list, nothing is lost. There is no penalty for a rejected word in Hubbub, so type everything that looks plausible. Only your rank and your time are recorded, and, like every Puzzles title, none of it touches your Daily Sweep.',
         ],
       },
     ],
@@ -585,7 +585,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Hint before Check, Reveal only when beaten',
         body: [
           'Hint fills in the most frequent letter you have not yet solved and locks it, for 100 points. It never counts as a Check, though it rules out a Perfect run and the Pure Codebreaker achievements. Because a Check costs 250 and a Hint costs 100, the Hint is the better buy whenever you are stuck rather than merely unsure — it hands you a common letter that usually appears in several words and opens all of them at once.',
-          'Reveal appears after five minutes and shows the whole saying, recording the puzzle as a loss with credit for the time you put in. It is for a puzzle that has beaten you, and those are rare: these are sayings everyone knows, so once four or five words are readable, saying the sentence aloud almost always finishes it. On a holiday the saying belongs to the day, which is one more clue. Like every More Games title, Codebreaker earns XP and medals without touching your Daily Sweep.',
+          'Reveal appears after five minutes and shows the whole saying, recording the puzzle as a loss with credit for the time you put in. It is for a puzzle that has beaten you, and those are rare: these are sayings everyone knows, so once four or five words are readable, saying the sentence aloud almost always finishes it. On a holiday the saying belongs to the day, which is one more clue. Like every Puzzles title, Codebreaker earns XP and medals without touching your Daily Sweep.',
         ],
       },
     ],
@@ -639,7 +639,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Shuffle, and read the holiday',
         body: [
           'Shuffle rearranges the unsolved words and it is free. Position creates false patterns — three words in a row look like a group because they are in a row — and a shuffle breaks the pattern your eye has fixed on. Use it whenever you have stared at the same twelve words for more than thirty seconds.',
-          'On a holiday the puzzle belongs to the day, which narrows the categories before you read a word. Kindred hints and mistakes never touch your Daily Sweep — like every More Games title it is extra XP, medals and a leaderboard — so a rough day here is a rough day here and nothing more.',
+          'On a holiday the puzzle belongs to the day, which narrows the categories before you read a word. Kindred hints and mistakes never touch your Daily Sweep — like every Puzzles title it is extra XP, medals and a leaderboard — so a rough day here is a rough day here and nothing more.',
         ],
       },
     ],
@@ -693,7 +693,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Reveals, and when to stop',
         body: [
           'Reveal letter fills and locks the selected cell for 60 points; Reveal word fills the active entry for 120. Neither counts as a Check, both rule out a Perfect run and the Pure Crosswordocious achievements. A single revealed letter is the right call when one crossing is blocking a whole corner and no saying will come — 60 points to unlock three entries is a bargain — but a revealed word is rarely worth it when its crossings could have spelled it for you.',
-          'Reveal all shows the whole grid and records the puzzle as a loss; you tap it twice, so a slip never costs you the day. Use it only when you would honestly rather see the answers than keep going — a finished grid with two Checks still outscores a reveal by more than a thousand points. And like every More Games title, Crosswordocious earns XP, medals and its own leaderboard without ever touching the eight-game Daily Sweep.',
+          'Reveal all shows the whole grid and records the puzzle as a loss; you tap it twice, so a slip never costs you the day. Use it only when you would honestly rather see the answers than keep going — a finished grid with two Checks still outscores a reveal by more than a thousand points. And like every Puzzles title, Crosswordocious earns XP, medals and its own leaderboard without ever touching the eight-game Daily Sweep.',
         ],
       },
     ],
@@ -747,7 +747,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Pace the perfect five',
         body: [
           'Because every strong Muddle finish is a five- or six-check solve, the podium is decided by time inside the eight-minute cap, and time is won by method rather than speed-typing. Endings first, consonant pairs second, caption third, punchline as soon as you can guess it. The whole puzzle fits on one screen so that your eye can move between the cartoon, the words and the ringed letters without scrolling — use all three.',
-          'On a holiday the joke belongs to the day, which narrows the pun before you read a word. Like every More Games title, Muddle earns XP, medals and its own leaderboard while leaving your Daily Sweep exactly where the eight word games put it — so a thirteen-check day here is a bad joke, not a broken sweep.',
+          'On a holiday the joke belongs to the day, which narrows the pun before you read a word. Like every Puzzles title, Muddle earns XP, medals and its own leaderboard while leaving your Daily Sweep exactly where the eight word games put it — so a thirteen-check day here is a bad joke, not a broken sweep.',
         ],
       },
     ],
@@ -773,7 +773,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'Sweep the board, then keep it clean',
         body: [
           'Completing all eight daily word games in one day is a Daily Sweep, worth bonus XP on top of each puzzle\'s score. Winning them all — not just finishing — upgrades it to a Flawless Victory and a bigger bonus. If you are optimizing XP per minute, the sweep bonus means the last unplayed mode of the day is always worth more than replaying a favorite.',
-          'Order matters less than momentum, but a sensible route exists: warm up on Classic, ride the rhythm into Six and Seven while your letter instincts are hot, take the multi-board modes in the middle, and give the Gauntlet, as the longest commitment, an unhurried slot. The sweep is the eight word games on the home grid; ProperNoundle and the other More Games titles are extra dailies that earn XP and medals but never change whether you swept.',
+          'Order matters less than momentum, but a sensible route exists: warm up on Classic, ride the rhythm into Six and Seven while your letter instincts are hot, take the multi-board modes in the middle, and give the Gauntlet, as the longest commitment, an unhurried slot. The sweep is the eight word games on the home grid; ProperNoundle and the other Puzzles titles are extra dailies that earn XP and medals but never change whether you swept.',
         ],
       },
       {
@@ -907,7 +907,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
       {
         heading: 'Days 22–30: twists, the Gauntlet, and the Sweep',
         body: [
-          'Fold in the twist modes now. Succession rewards chain-thinking and Deliverance rewards budget discipline. For a stretch, open the More Games tile and play ProperNoundle, which deliberately breaks your letter statistics — proper nouns obey different frequency rules, so it trains flexibility more than any word mode. Expect your first ProperNoundle games to feel wrong; that disorientation is the lesson, and it earns XP without touching your sweep.',
+          'Fold in the twist modes now. Succession rewards chain-thinking and Deliverance rewards budget discipline. For a stretch, open the Puzzles tile and play ProperNoundle, which deliberately breaks your letter statistics — proper nouns obey different frequency rules, so it trains flexibility more than any word mode. Expect your first ProperNoundle games to feel wrong; that disorientation is the lesson, and it earns XP without touching your sweep.',
           'Gauntlet is the nerve test: five chained stages where one bust ends the run. Enter it only after your Classic average sits comfortably under four guesses, and play it like a mountaineer — conservative information-first guessing on every stage, because the expected cost of a risky guess is the entire run, not one row.',
           'Finally, assemble the Daily Sweep: all eight word modes, one day. Your first sweeps are about stamina and scheduling as much as skill — the composite score that ranks you on the sweep leaderboard rewards both accuracy and pace across the full slate. Once the first sweep lands, the game changes character: the question stops being "can I solve today’s puzzle" and becomes "how clean can the whole day be." That is the sweeper’s mindset, and it is a month away for almost anyone willing to train deliberately.',
         ],
@@ -948,7 +948,7 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
         heading: 'The rematch meta and daily VS',
         body: [
           'Matches cluster into sessions — rematches against the same opponent are common, and they carry information. An opponent who opened SLATE twice will open it a third time; if you are trailing in a series, varying your own opener denies them the same read. Across a rematch series, the player who adapts openings, risk timing, and even typing cadence holds a real edge over the player who runs one script.',
-          'Daily VS adds a scheduling wrinkle: it sits alongside your eight-mode Daily Sweep rather than inside it, but it is the one daily you cannot fully control — an opponent has a vote. Sweepers should play their VS match early in the day while focus is fresh, rather than leaving the least controllable mode for a tired midnight attempt. Warm up in Practice, run your tempo opening, and treat the first minute as the whole match — because statistically, it is.',
+          'Daily VS adds a scheduling wrinkle: it sits alongside your eight-game Daily Sweep rather than inside it, but it is the one daily you cannot fully control — an opponent has a vote. Sweepers should play their VS match early in the day while focus is fresh, rather than leaving the least controllable mode for a tired midnight attempt. Warm up in Practice, run your tempo opening, and treat the first minute as the whole match — because statistically, it is.',
         ],
       },
     ],

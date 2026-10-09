@@ -57,7 +57,7 @@ class StrategyCatalogTest {
     @Test fun htpModesAndPlayTargets() {
         assertEquals("practice", StrategyCatalog.htpModeId("Classic — 1 Word, 6 Guesses"))
         assertEquals("vs", StrategyCatalog.htpModeId("VS Battle — Live Matches"))
-        assertEquals("more", StrategyCatalog.htpModeId("More Games — Ten Extra Dailies"))
+        assertEquals("more", StrategyCatalog.htpModeId("Puzzles — Ten Extra Dailies"))
         assertEquals("ladder", StrategyCatalog.htpModeId("Letter Ladder — One Letter at a Time"))
         assertNull(StrategyCatalog.htpModeId("Mystery — Nothing"))
         assertEquals(GameMode.DUEL, StrategyCatalog.dailyModeFor("practice"))

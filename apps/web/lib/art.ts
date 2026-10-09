@@ -1019,7 +1019,7 @@ export const TITLE_ART_LABEL: Record<TitleArtName, string> = {
   'art-titlecast-privacy': 'Privacy',
   'art-titlecast-terms': 'Terms',
   'art-titlecast-gopro': 'Go Pro',
-  'art-titlecast-moregames': 'More Games',
+  'art-titlecast-moregames': 'Puzzles',
   'art-titlecast-welcome': 'Welcome!',
   'art-titlecast-leaderboard': 'Leaderboard',
   'art-titlecast-dailies': 'Dailies',

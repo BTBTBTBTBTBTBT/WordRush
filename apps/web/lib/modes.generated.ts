@@ -275,9 +275,9 @@ export const MODES: ModeMeta[] = [
   {
     "id": "more",
     "dbKey": null,
-    "title": "More Games",
-    "shortTitle": "More",
-    "shareLabel": "More Games",
+    "title": "Puzzles",
+    "shortTitle": "Puzzles",
+    "shareLabel": "Puzzles",
     "desc": "Sudocious, Muddle and more",
     "accentHex": "#4f46e5",
     "glyph": "+",

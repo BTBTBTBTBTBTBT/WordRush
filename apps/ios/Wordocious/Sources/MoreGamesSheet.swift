@@ -11,7 +11,7 @@ struct MoreModePickerSheet: View {
     @ObservedObject private var flags = FlagsService.shared
 
     var body: some View {
-        MenuScaffold("More Games", art: .moregames) {
+        MenuScaffold("Puzzles", art: .moregames) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(moreSections(moreModes.filter { $0.dailyEligible && flags.isOn($0.flagKey) })) { section in

@@ -84,7 +84,7 @@ export function DailyLanding() {
           identical for everyone that day, so the leaderboard is a fair race: every player faced exactly
           the same boards. The day rolls over at midnight in your local time zone, and each mode can be
           played once per day — after that it is Unlimited practice, which never touches the boards.
-          The ten More Games titles behind the home tile — ProperNoundle, Sudocious, Starsweep and the
+          The ten Puzzles titles behind the home tile — ProperNoundle, Sudocious, Starsweep and the
           rest — have dailies and leaderboards of their own, but they sit outside this board.
         </p>
 
@@ -113,7 +113,7 @@ export function DailyLanding() {
           points across every mode, with total time as the tiebreaker. Win all eight and your row earns the
           gold FLAWLESS badge; a dot per mode under every player shows how each one went — bright for a
           near-perfect solve, faded for a slow one, red for a loss. Because the ranking is total points,
-          eight slow wins can finish below seven sharp ones. More Games results never count here.
+          eight slow wins can finish below seven sharp ones. Puzzles results count toward the Puzzles Sweep, not here.
         </p>
 
         <h3 className="font-black mt-5 mb-1" style={h}>Medals, streaks, and friends</h3>
