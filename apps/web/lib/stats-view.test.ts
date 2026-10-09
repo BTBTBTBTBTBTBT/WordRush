@@ -41,7 +41,7 @@ describe('Stats view ↔ picker (FINISH_SPEC C3)', () => {
     expect(order).toHaveLength(2 + rows.wordocious.length + rows.puzzles.length);
     expect(swipeNeighbor(order, VIEW_TODAY, -1)).toBeNull();
     expect(swipeNeighbor(order, VIEW_TODAY, 1)).toBe(VIEW_ALL);
-    expect(swipeNeighbor(order, 'DUEL_7', 1)).toBe(VIEW_SWEEP);
+    expect(swipeNeighbor(order, rows.wordocious[rows.wordocious.length - 2].key, 1)).toBe(VIEW_SWEEP);
     expect(swipeNeighbor(order, VIEW_SWEEP, 1)).toBe(rows.puzzles[0]?.key ?? null);
     expect(swipeNeighbor(order, order[order.length - 1], 1)).toBeNull();
     expect(swipeNeighbor(order, 'NOPE', 1)).toBeNull();

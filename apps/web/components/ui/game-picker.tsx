@@ -48,6 +48,8 @@ interface GamePickerProps {
   density?: 'regular' | 'compact';
   /** BB1: a title above the header row (the selected game's title art). */
   title?: ReactNode;
+  /** 11b: no card / header — the picker sits directly on the Leaderboard stage's backdrop. */
+  bare?: boolean;
 }
 
 const BADGE_BG: Record<GamePickerBadge['kind'], string> = { won: '#7c3aed', lost: '#6b7891', done: '#7c3aed' };
@@ -87,7 +89,7 @@ function Tile({ t, on, badge, onSelect, size, maxSize = 44, slots, gap = 5 }: { 
 }
 
 export function GamePicker({
-  selected, onSelect, accent = '#f59e0b', header, wordociousExtra, sweep = true, badges, ink, bar = false, className = '', label = 'Pick a game', layout = 'rows', density = 'regular', title,
+  selected, onSelect, accent = '#f59e0b', header, wordociousExtra, sweep = true, badges, ink, bar = false, className = '', label = 'Pick a game', layout = 'rows', density = 'regular', title, bare = false,
 }: GamePickerProps) {
   const compact = density === 'compact';
   const { isOn } = useFlags();
@@ -124,6 +126,17 @@ export function GamePicker({
             <span aria-hidden="true" className="shrink-0 self-stretch" style={{ width: 2, margin: '2px 4px', borderRadius: 2, background: alphaHex(accent, 0.3) }} />
           )}
           {rows.puzzles.map((t) => <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} size={36} />)}
+        </div>
+      </div>
+    );
+  }
+  if (bare) {
+    // Item 11b: the stage's own picker — no card, no header; it sits on the stage's backdrop.
+    return (
+      <div className={`relative ${className}`} role="group" aria-label={label}>
+        <div className="grid" style={{ gap: 4, padding: '4px 12px 6px' }}>
+          {row(rows.wordocious)}
+          {rows.puzzles.length > 0 && row(rows.puzzles)}
         </div>
       </div>
     );

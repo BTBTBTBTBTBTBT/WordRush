@@ -227,13 +227,14 @@ function Stage({ accent }: { accent: string }) {
  * order), with an open spot for every free place (BJ4, core podiumLayout) on
  * the static stage in the board's `accent`.
  */
-export function Podium({ places, label = 'Top three', accent = STAGE_GOLD }: { places: PodiumPlace[]; label?: string; accent?: string }) {
+export function Podium({ places, label = 'Top three', accent = STAGE_GOLD, bare = false }: { places: PodiumPlace[]; label?: string; accent?: string; bare?: boolean }) {
   const shown = places.slice(0, 3);
   const slots = podiumSlots(shown.map((p) => p.rank));
   if (slots.length === 0) return null;
   return (
     <div role="group" aria-label={label} className="relative overflow-hidden" style={{ padding: '8px 12px 0' }}>
-      <Stage accent={accent} />
+      {/* 11b: on the Leaderboard stage the shared backdrop already draws the light + glow */}
+      {!bare && <Stage accent={accent} />}
       <PodiumFloor />
       <div className="relative grid items-end" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, zIndex: 1, paddingBottom: PODIUM_FLOOR_RISE }}>
         {slots.map((s) => (s.kind === 'place'
