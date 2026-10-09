@@ -872,7 +872,14 @@ html[data-season-tone="dark"] [data-page-tint="vs"] {
   --vs-deep: #99f6e4;
   --vs-soft: #134e4a;
   --vs-page: var(--color-surface);
+  /* The VS lobby banner (components/vs/vs-banner.tsx): its pale teal fill + white strip would put the lifted teal
+     inks (--vs-ink) on a light ground (1.6:1); under a dark season the banner is night teal and the strip a shade. */
+  --vs-banner-fill: linear-gradient(180deg, #0f3a3d, #17254a);
+  --vs-banner-strip: rgba(0, 0, 0, 0.22);
 }
+/* The soft numbers (lettering in the deep purple) take their light twin on a dark season's night glass, on every
+   page (the VS / Friends pages pin the light scheme, so the [data-page-scheme="auto"] rule doesn't reach them). */
+html[data-season-tone="dark"] .soft-num { color: #e9ddff; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
 /* The same on the light-only Friends pages (LIGHT_CARD_BASE pins the white card base): the night
    glass + the Friends inks' light twins (--fr-*, light fallbacks in lib/friends-look + friends-play). */
 html[data-season-tone="dark"] [data-page-tint="friends"] {
@@ -2448,3 +2455,16 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 @keyframes soft-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94); } }
 .soft-pop { animation: soft-pop-in 420ms cubic-bezier(0.2, 1.12, 0.36, 1) both; transform-origin: 50% 100%; }
 .soft-pop-out { animation: soft-pop-out 200ms cubic-bezier(0.4, 0, 1, 1) both; transform-origin: 50% 100%; }
+
+/* Dressing room tab labels (components/avatar/mascot-builder.tsx) sit directly on the panel, so their ink follows it:
+   the light twins on the light panel, the lifted twins on the dark one (the dark theme / a dark season). 1b readability gate. */
+.dr-tab-label { color: #6b5c8f; }
+.dr-tab-label[data-on="true"] { color: #6d28d9; }
+.dr-tab-label[data-on="true"][data-season="true"] { color: #c2410c; }
+[data-theme="dark"] .dr-tab-label { color: #c8b6e2; }
+[data-theme="dark"] .dr-tab-label[data-on="true"] { color: #e9ddff; }
+[data-theme="dark"] .dr-tab-label[data-on="true"][data-season="true"] { color: #fdba74; }
+
+/* Accent text on a dark season's night glass is lifted toward white (lib/soft-surface liftedInk); off-season / light: 0. */
+:root { --ink-lift: 0%; }
+html[data-season-tone="dark"] { --ink-lift: 65%; }

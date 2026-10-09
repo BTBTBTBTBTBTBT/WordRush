@@ -9,7 +9,7 @@ import { CandyButton } from '@/components/ui/candy-button';
 import { POPUP_DIM, PopupBar, popupCard } from '@/components/ui/soft-popup';
 import { ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import { achievementBadge, achievementTarget, CATEGORY_ACCENT, formatUnlockDate } from '@/lib/badges';
-import { alphaHex, softBackground, softPill } from '@/lib/soft-surface';
+import { alphaHex, liftedInk, softBackground, softPill } from '@/lib/soft-surface';
 
 // The achievements grid (docs/FINISH_SPEC.md V1): the 3D badge per
 // achievement, grouped by category. Unlocked = full color with a soft glow,
@@ -56,7 +56,7 @@ export function AchievementGrid({ unlocked, progress }: {
           return (
             <div key={catKey}>
               <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wide" style={{ color }}>{catLabel}</span>
+                <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: liftedInk(color) }}>{catLabel}</span>
                 <SoftNum size={11} className="soft-num-auto">{unlockedN}/{items.length}</SoftNum>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">

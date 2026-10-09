@@ -4,7 +4,7 @@ import { useMemo, type ReactNode } from 'react';
 import { GameArt } from '@/components/ui/game-art';
 import { useFlags } from '@/hooks/use-flags';
 import { pickerRows, type PickerTile } from '@/lib/game-picker';
-import { SOFT, alphaHex, cardBarStyle, softCard, softIconTile } from '@/lib/soft-surface';
+import { SOFT, alphaHex, cardBarStyle, liftedInk, softCard, softIconTile } from '@/lib/soft-surface';
 
 // The one game picker (docs/FINISH_SPEC.md C2, C2b, C3; mockup
 // docs/design/brand/mockups/leaderboard-polish.html `.picker`): a tinted card
@@ -82,7 +82,7 @@ export function GamePicker({
   const compact = density === 'compact';
   const { isOn } = useFlags();
   const rows = useMemo(() => pickerRows(isOn, { sweep }), [isOn, sweep]);
-  const labelInk = ink ?? alphaHex(accent, 1);
+  const labelInk = ink ?? liftedInk(alphaHex(accent, 1));
   const rowLabel = (text: string) => (
     <span className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-black picker-label`} style={{ letterSpacing: '0.12em', color: labelInk }}>{text}</span>
   );
