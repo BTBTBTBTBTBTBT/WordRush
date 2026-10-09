@@ -17,7 +17,7 @@ from scipy import ndimage
 LO, HI = 60, 150
 
 
-def key_sheet(path, edge_px=6):
+def key_sheet(path, edge_px=6, all_pockets=False):
     im = Image.open(path).convert('RGB')
     w, h = im.size
     corners = [im.getpixel((4, 4)), im.getpixel((w - 5, 4)), im.getpixel((4, h - 5)), im.getpixel((w - 5, h - 5))]
@@ -31,7 +31,7 @@ def key_sheet(path, edge_px=6):
     sizes = ndimage.sum(np.ones_like(lab), lab, index=np.arange(1, n + 1))
     keep = np.zeros(n + 1, bool)
     for i in range(1, n + 1):
-        keep[i] = (i in border) or sizes[i - 1] > bg.size * 0.004
+        keep[i] = all_pockets or (i in border) or sizes[i - 1] > bg.size * 0.004
     bg = keep[lab]
     band = ndimage.binary_dilation(bg, iterations=3) & ~bg
     alpha = np.full(d.shape, 255.0)
@@ -51,6 +51,23 @@ def key_sheet(path, edge_px=6):
     a2 = rgba.getchannel('A').filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.6))
     rgba.putalpha(a2)
     return rgba
+
+
+def split_cells(rgba, names, cols, rows, margin=0.0):
+    """Plain grid windows (no Voronoi): for sheets whose pieces have wide gaps but thin parts (rings, glows)."""
+    a = np.asarray(rgba.getchannel('A')) > 24
+    h, w = a.shape
+    out = {}
+    for idx, name in enumerate(names):
+        row, col = divmod(idx, cols)
+        x0, x1 = int(col * w / cols), int((col + 1) * w / cols)
+        y0, y1 = int(row * h / rows), int((row + 1) * h / rows)
+        mk = np.zeros_like(a)
+        mk[y0:y1, x0:x1] = a[y0:y1, x0:x1]
+        ys, xs = np.nonzero(mk)
+        if len(xs):
+            out[name] = ((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1), mk)
+    return out
 
 
 def split(rgba, names, cols, rows):
@@ -92,9 +109,10 @@ def main():
     opts = dict(a[2:].split('=') for a in sys.argv[1:] if a.startswith('--') and '=' in a)
     sheet, cols, rows, outdir, names = args[0], int(args[1]), int(args[2]), args[3], args[4:]
     os.makedirs(outdir, exist_ok=True)
-    rgba = key_sheet(sheet)
+    rgba = key_sheet(sheet, all_pockets=opts.get('pockets') == 'all')
     alpha = np.asarray(rgba.getchannel('A'))
-    for name, (bb, mk) in split(rgba, names, cols, rows).items():
+    parts = (split_cells if opts.get('mode') == 'cells' else split)(rgba, names, cols, rows)
+    for name, (bb, mk) in parts.items():
         part = rgba.copy()
         part.putalpha(Image.fromarray((alpha * mk).astype(np.uint8)))
         crop = part.crop(bb)
