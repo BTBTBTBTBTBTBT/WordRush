@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { GAME_HEADER_GLYPH, HeaderBack } from '@/components/ui/page-header';
 import { PocketHelpCard } from './pocket-help-card';
+import { PocketWaitStrip } from '@/components/vs/lobby-stage';
 import { useTutorialsSeen } from '@/lib/tutorials-seen';
 import { Icon3D } from '@/components/ui/icon3d';
 import {
   FIRST_PLAY_FLAG, FRIENDLY_TITLES, LIVE_OPTIMISTIC_TIMEOUT_MS, LIVE_PLAY_SWITCH, LIVE_REACTIONS, LIVE_REACT_LIFETIME_MS, PRESENCE_COPY,
-  beginMove, confirmMove, displayed, emptySnapshot, pocketTutorialKey, pollIntervalMs, presenceLabel, receiveView, rejectMove, shouldAutoShowTutorial, whoseTurn,
+  beginMove, confirmMove, displayed, emptySnapshot, pocketTutorialKey, pollIntervalMs, presenceLabel, receiveView, rejectMove, shouldAutoShowTutorial, tutorialShouldRecordSeen, whoseTurn,
   type FriendlyMove, type LiveReaction, type LiveSnapshot,
 } from '@wordle-duel/core';
 import { useFlags } from '@/hooks/use-flags';
@@ -19,7 +20,7 @@ import { ReactionIcon } from './reaction-icon';
 import { RoundIconSlot } from '@/components/ui/family-button';
 import { useAuth } from '@/lib/auth-context';
 import { getFriends, loadFriends, onFriendsChange } from '@/lib/friends-service';
-import { fetchGame, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
+import { fetchGame, getRecentGames, sendMove, startGame, type GameView } from '@/lib/friendly-games-client';
 import { FR, KIND_COLOR, KIND_GRADIENT, friendOnline, gameSubLine, scoreOf, screenHeadline } from '@/lib/friends-play';
 import { ChainBoard, CoinBoard, GhostBoard, PassBoard, RpsBoard, TttBoard, type Player } from './friendly-boards';
 import { FriendAvatar, GameGlyph, Sheet } from './friends-ui';
@@ -248,12 +249,16 @@ export function FriendlyGameScreen({ id }: { id: string }) {
   const gameKind = game?.kind ?? null;
   useEffect(() => {
     if (helpAuto.current || !gameKind) return;
-    if (shouldAutoShowTutorial({ live: isLive(FIRST_PLAY_FLAG), seen: tutorialsSeen, key: pocketTutorialKey(gameKind) })) {
+    // Finished games of this kind = an existing player: no card, the key is recorded quietly.
+    const hasResults = getRecentGames().some((g) => g.kind === gameKind);
+    const t = { live: isLive(FIRST_PLAY_FLAG), seen: tutorialsSeen, key: pocketTutorialKey(gameKind), hasResults };
+    if (tutorialShouldRecordSeen(t)) { helpAuto.current = true; markTutorial(t.key); return; }
+    if (shouldAutoShowTutorial(t)) {
       helpAuto.current = true;
       setHelpFirst(true);
       setHelpOpen(true);
     }
-  }, [gameKind, tutorialsSeen, isLive]);
+  }, [gameKind, tutorialsSeen, isLive, markTutorial]);
   const closeHelp = () => {
     setHelpOpen(false);
     if (helpFirst && gameKind) { markTutorial(pocketTutorialKey(gameKind)); setHelpFirst(false); }
@@ -428,6 +433,15 @@ export function FriendlyGameScreen({ id }: { id: string }) {
       </div>
 
       {error && <p className="text-center text-[12.5px] font-bold" style={{ color: '#dc2626' }}>{error}</p>}
+
+      {/* 2.8 item 22: their turn = the quiet lobby strip (status line, a live clock under an hour, a keepy tile). */}
+      {active && turn !== null && turn !== 'both' && turn !== me && (
+        <PocketWaitStrip
+          name={them.name}
+          since={game.updatedAt}
+          avatar={<FriendAvatar name={them.name} userId={them.userId} url={them.url} config={them.config} castId={them.castId} frame={them.frame} pro={them.pro} size={34} online={online} />}
+        />
+      )}
 
       <div ref={boardRef} className="relative">
         {game.state.kind === 'rps' && <RpsBoard state={game.state} {...boardProps} />}

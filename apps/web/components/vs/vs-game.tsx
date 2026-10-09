@@ -51,7 +51,7 @@ import { fetchHeadToHead, fetchVsProfile, type HeadToHeadRecord, type VsProfile 
 import { XpToast } from '@/components/effects/xp-toast';
 import { useDictionary, dictLengthsForMode } from '@/lib/init-dictionary';
 import { useProperNoundleBank } from '@/components/propernoundle/puzzle-service';
-import { markInviteAcceptedByCode } from '@/lib/invite-service';
+import { lookupInviteByCode, lookupUsernames, markInviteAcceptedByCode } from '@/lib/invite-service';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { playOpponentThunk } from '@/lib/sounds';
 import { feedback } from '@/lib/sound-events';
@@ -1298,6 +1298,18 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
     }
   }, [lookingSaving, profile, notificationPrefs, lookingOn, refreshProfile]);
   const lookingApplies = isPro && !dailyVsActive && !inviteCode;
+  // 2.8 item 22: the invited friend's name for the lobby line ("Waiting for Johnny…"), when the invite names one.
+  const [inviteeName, setInviteeName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!inviteCode) return;
+    let live = true;
+    lookupInviteByCode(inviteCode).then(async (inv) => {
+      if (!inv?.invitee_id || inv.invitee_id === profile?.id) return;
+      const names = await lookupUsernames([inv.invitee_id]);
+      if (live) setInviteeName(names[inv.invitee_id] ?? null);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [inviteCode, profile?.id]);
 
   const handleCancel = useCallback(() => {
     matchService.leaveQueue();
@@ -1693,7 +1705,7 @@ function VsGameInner({ mode, isDaily = false, inviteCode, race }: VsGameProps) {
             // 2.8 item 22: a private match shows the code with compact Share + Copy chips under the lobby scene.
             invite={inviteCode && !isCpu ? {
               code: inviteCode,
-              friendName: null,
+              friendName: inviteeName,
               onShare: async () => {
                 const url = shareUrlFor(brandedInvites, 'live', inviteCode, window.location.origin);
                 // Branded: the preview image carries the game + code, so the text is one short line.

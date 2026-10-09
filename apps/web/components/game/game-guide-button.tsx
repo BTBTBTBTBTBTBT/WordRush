@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FIRST_PLAY_FLAG, shouldAutoShowTutorial } from '@wordle-duel/core';
+import { FIRST_PLAY_FLAG, shouldAutoShowTutorial, tutorialShouldRecordSeen } from '@wordle-duel/core';
+import { hasLocalResults } from '@/lib/first-play-results';
 import { useFlags } from '@/hooks/use-flags';
 import { useTutorialsSeen } from '@/lib/tutorials-seen';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -41,12 +42,15 @@ export function GameGuideButton({
   const autoDone = useRef(false);
   useEffect(() => {
     if (autoDone.current || !guide) return;
-    if (shouldAutoShowTutorial({ live: isLive(FIRST_PLAY_FLAG), seen, key: slug })) {
+    // An existing player (results in this game) never gets the card; the key is recorded quietly so it syncs.
+    const hasResults = hasLocalResults(slug);
+    if (tutorialShouldRecordSeen({ live: isLive(FIRST_PLAY_FLAG), seen, key: slug, hasResults })) { autoDone.current = true; mark(slug); return; }
+    if (shouldAutoShowTutorial({ live: isLive(FIRST_PLAY_FLAG), seen, key: slug, hasResults })) {
       autoDone.current = true;
       setFirstPlay(true);
       setOpen(true);
     }
-  }, [seen, isLive, slug, guide]);
+  }, [seen, isLive, slug, guide, mark]);
   const close = useCallback(() => {
     setOpen(false);
     if (firstPlay) { mark(slug); setFirstPlay(false); }
