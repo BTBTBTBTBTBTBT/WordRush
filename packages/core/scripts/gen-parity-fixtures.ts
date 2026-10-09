@@ -39,7 +39,7 @@ import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, da
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
 import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEADLINE_SIZING_LINE } from '../src/headline-tokens';
-import { bubbleFit, bubbleWidthEm, bubbleGlyphName, homeHeadlineFit, BUBBLE_GLYPHS } from '../src/bubble-text';
+import { bubbleFit, bubbleWidthEm, bubbleGlyphName, bubbleAtlasLayout, homeHeadlineFit, BUBBLE_GLYPHS } from '../src/bubble-text';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
 import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
@@ -1132,7 +1132,8 @@ export function renderBubbleTextFixtures() {
     ['WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT', 'BMT'], ['ON A ROLL \u00b7 11 OF 18', ''], ['UP LATE, BMT?', 'BMT'],
   ] as const) for (const slot of [220, 285, 334, 520]) home.push({ text, name, slot, fit: homeHeadlineFit(text, name, slot) });
   const glyphs = Array.from(BUBBLE_GLYPHS).map((ch) => ({ ch, name: bubbleGlyphName(ch) }));
-  return { widths, fits, home, glyphs };
+  const layouts = ['DAILIES', 'ON A ROLL \u2605 7 OF 18', 'GOOD MORNING, BMT!', "FRIDAY\u2019S FINEST", '1,234 - 5 & 6.7: +8%'].map((text) => ({ text, layout: bubbleAtlasLayout(text) }));
+  return { widths, fits, home, glyphs, layouts };
 }
 
 const FILES: Array<[string, unknown]> = [
