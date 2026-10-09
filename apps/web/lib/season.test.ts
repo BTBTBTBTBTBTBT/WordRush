@@ -9,16 +9,16 @@ import {
   parseSeasonParam, parseStoredSeason, reflowCastRow, resolveSeason, seasonOfSrc,
 } from './season';
 
-// FINISH_SPEC X: the Halloween skins replace the hero cast Oct 17 – Nov 1
+// FINISH_SPEC X: the Halloween skins replace the hero cast Oct 9 – Oct 31
 // (local date); `?season=halloween|none` previews on web.
 
 describe('season resolution', () => {
   it('follows the calendar without a preview', () => {
-    expect(resolveSeason('2026-10-16', null)).toBeNull();
-    expect(resolveSeason('2026-10-17', null)).toBe('halloween');
+    expect(resolveSeason('2026-10-08', null)).toBeNull();
+    expect(resolveSeason('2026-10-09', null)).toBe('halloween');
     expect(resolveSeason('2026-10-24', null)).toBe('halloween');
-    expect(resolveSeason('2026-11-01', null)).toBe('halloween');
-    expect(resolveSeason('2026-11-02', null)).toBeNull();
+    expect(resolveSeason('2026-10-31', null)).toBe('halloween');
+    expect(resolveSeason('2026-11-01', null)).toBeNull();
   });
 
   it('lets the preview force the skins on or off', () => {

@@ -849,6 +849,11 @@ second game on the puzzles list")
 - **38. Off-switches (Opus builds, server + ×3 clients):** remote feature flags read at launch/foreground (Supabase
   table, cached, safe defaults) for live play/realtime, voices, living wallpapers/ambient, speech bubbles, new push
   formats, age check, pocket games, Halloween season itself — flip in the admin portal, takes effect in minutes.
+  BUILT 10-09 (Opus): core feature-switches.ts (FEATURE_SWITCHES keys + fail-open isFeatureLive), iOS
+  FlagsService.isLive, Android FlagsService.isLive, web useFlags().isLive; 15 rows seeded in app_flags (all on),
+  flippable in admin > Ops > Feature flags. EVERY thread gates its feature with isLive("<key>") (keys in
+  feature-switches.ts; add a key + seed row for anything new). season_halloween must be honored by the season
+  resolvers ×3 (web resolveSeason, iOS season/CastSkin, Android SeasonSkins.seasonFor) — Builder B / wave 4 B.
 - **39. Old-version compatibility (Sonnet builds tests, Opus reviews):** 2.7.1 ↔ 2.8 players together — invites,
   VS, pocket games, realtime, new avatar items / voices / owned items, age flag; unknown ids are skipped (never
   crash), server routes accept both versions. Test matrix run on sim + emulator.

@@ -6,16 +6,15 @@ import org.junit.Test
 import com.google.gson.Gson
 import java.time.LocalDate
 
-/** FINISH_SPEC X: the Halloween window is Oct 17 – Nov 1 inclusive, every year (local date). */
+/** FINISH_SPEC X: the Halloween window is Oct 9 – Oct 31 inclusive, every year (local date). */
 class SeasonTest {
     @Test fun halloweenWindowEdges() {
         for (year in listOf(2025, 2026, 2027, 2028)) {
-            assertNull(currentSeason(LocalDate.of(year, 10, 16)))
-            assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 17)))
+            assertNull(currentSeason(LocalDate.of(year, 10, 8)))
+            assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 9)))
             assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 24)))
             assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 31)))
-            assertEquals("halloween", currentSeason(LocalDate.of(year, 11, 1)))
-            assertNull(currentSeason(LocalDate.of(year, 11, 2)))
+            assertNull(currentSeason(LocalDate.of(year, 11, 1)))
         }
     }
 
@@ -26,12 +25,13 @@ class SeasonTest {
             if (currentSeason(d) != null) inSeason++
             d = d.plusDays(1)
         }
-        assertEquals(16, inSeason) // Oct 17..31 (15) + Nov 1
+        assertEquals(23, inSeason) // Oct 9..31
     }
 
     @Test fun stringOverload() {
         assertEquals("halloween", currentSeason("2026-10-24"))
-        assertEquals("halloween", currentSeason("2026-11-01T00:00:00"))
+        assertEquals("halloween", currentSeason("2026-10-31T00:00:00"))
+        assertNull(currentSeason("2026-11-01T00:00:00"))
         assertNull(currentSeason("2026-10-02"))
         assertNull(currentSeason("not a date"))
     }

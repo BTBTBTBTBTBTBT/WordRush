@@ -73,7 +73,7 @@
     },
     {
       "date": "2026-10-16",
-      "season": null
+      "season": "halloween"
     },
     {
       "date": "2026-10-17",
@@ -93,7 +93,7 @@
     },
     {
       "date": "2026-11-01",
-      "season": "halloween"
+      "season": null
     },
     {
       "date": "2026-11-02",
@@ -113,11 +113,11 @@
       "id": "halloween",
       "start": [
         10,
-        17
+        9
       ],
       "end": [
-        11,
-        1
+        10,
+        31
       ]
     }
   ]

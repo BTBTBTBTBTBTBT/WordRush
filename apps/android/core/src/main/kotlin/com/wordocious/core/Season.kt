@@ -5,7 +5,7 @@ import java.time.LocalDate
 /**
  * FINISH_SPEC X: the season registry's date windows (docs/design/brand/seasons/README.md
  * "How to add a season"). Port of packages/core `SEASON_WINDOWS` / `currentSeason(date)`:
- * the season a LOCAL calendar date falls in, or null. Halloween runs Oct 17 – Nov 1
+ * the season a LOCAL calendar date falls in, or null. Halloween runs Oct 9 – Oct 31
  * inclusive (every year). Pure, so web, iOS and Android switch on the same day; the art
  * slots + palette live in season-registry.json (app, SeasonKit).
  */
@@ -16,14 +16,14 @@ object Season {
     data class Window(val id: String, val startMonth: Int, val startDay: Int, val endMonth: Int, val endDay: Int)
 
     val windows: List<Window> = listOf(
-        Window(HALLOWEEN, 10, 17, 11, 1),
+        Window(HALLOWEEN, 10, 9, 10, 31),
     )
 
     /** Every registry season id, in calendar order. */
     val ids: List<String> get() = windows.map { it.id }
 }
 
-/** The season [date] (a local date) falls in ("halloween": Oct 17 – Nov 1 inclusive) or null. */
+/** The season [date] (a local date) falls in ("halloween": Oct 9 – Oct 31 inclusive) or null. */
 fun currentSeason(date: LocalDate): String? {
     val k = date.monthValue * 100 + date.dayOfMonth
     for (w in Season.windows) {

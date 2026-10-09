@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/lib/auth-context';
 import { isFlagOn, indexFlags, type AppFlag } from '@/lib/flags';
+import { isFeatureLive } from '@wordle-duel/core';
 
 const CACHE_KEY = 'wordocious-app-flags';
 
@@ -32,7 +33,7 @@ async function fetchFlags(): Promise<Record<string, AppFlag>> {
  *   loaded / cached             → the shared resolver
  * Revalidates on focus, i.e. when the tab comes back to the foreground.
  */
-export function useFlags(): { isOn: (flagKey: string | null | undefined) => boolean; loading: boolean } {
+export function useFlags(): { isOn: (flagKey: string | null | undefined) => boolean; isLive: (key: string) => boolean; loading: boolean } {
   const { profile } = useAuth();
   const { data, error, isLoading } = useSWR('app-flags', fetchFlags, {
     fallbackData: typeof window !== 'undefined' ? readCache() : undefined,
@@ -48,5 +49,8 @@ export function useFlags(): { isOn: (flagKey: string | null | undefined) => bool
     if (!flagKey) return true;
     return isFlagOn(flagKey, flags, viewer);
   }, [flags, viewer.isAdmin, viewer.role]); // eslint-disable-line react-hooks/exhaustive-deps
-  return { isOn, loading: isLoading && !data && !error };
+  // 2.8 off-switches (core feature-switches.ts): fail OPEN — on unless the row is disabled.
+  const isLive = useCallback((key: string) => isFeatureLive(key, flags, viewer.isAdmin || viewer.role === 'admin' || viewer.role === 'tester'),
+    [flags, viewer.isAdmin, viewer.role]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { isOn, isLive, loading: isLoading && !data && !error };
 }

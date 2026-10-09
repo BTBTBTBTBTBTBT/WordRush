@@ -125,7 +125,7 @@ describe('calendar', () => {
   });
   it('marks Halloween exactly where the season registry (core currentSeason) has it', () => {
     const band = seasonBands([2026]).find((b) => b.label === 'Halloween')!;
-    expect(band.end).toBe('2026-11-01');
+    expect(band.end).toBe('2026-10-31');
     expect(currentSeason(band.start)).toBe('halloween');
     expect(currentSeason(addDays(band.start, -1))).toBeNull();
     expect(currentSeason(addDays(band.end, 1))).toBeNull();
