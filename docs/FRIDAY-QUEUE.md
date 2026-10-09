@@ -26,7 +26,7 @@ Already done this morning (prep branches, review + apply at kickoff, nothing mer
    A: 29 13+ age check, 34 push notifications, 28 widgets + 48 streak on widgets + Halloween widgets, 26 icon.
    B: 9f branded invites + 9b live play. Opus: 43 capacity decision.
 3. Wave 3 — alive
-   A: 13 living mascots, 7 banners + 48 flawless streaks / "3-PEAT" headline + celebratory centered Sweep/Flawless
+   A: 52 celebration timing fix, 13 living mascots, 7 banners + 48 flawless streaks / "3-PEAT" headline + celebratory centered Sweep/Flawless
       (seasonal kits), 19 speech bubbles, 19b voices + moods.
    B: 9, 9e, 9c, 9d (boards + every piece), 12 first-play tutorials, 22 waiting rooms, 32 game control bars.
 4. Wave 4 — pages
@@ -957,3 +957,13 @@ second game on the puzzles list")
   together.
 - Runs with 5b in wave 5 A (art in free ChatGPT from kickoff). Anything not done Friday rides in the ~Nov 1 2.8.x as
   data (no code needed).
+
+## 52. Flawless / Sweep celebration fires at the right moment (founder 10-09)
+- Bug: the Dailies Flawless Victory banner didn't appear after the 8th daily; it showed up later, after he beat
+  ProperNoundle (a Puzzle). Reproduce first (sim + emulator + web): likely the celebration check only runs on certain
+  returns to Home / a later stats refresh, or waits on a server sync.
+- Rule ×3: the moment the LAST of the 8 dailies' finished screen is closed, the Flawless (or Sweep) celebration plays
+  — computed from local results immediately (server sync confirms in the background, never delays it); same for the
+  Puzzles sweep after the 10th; never fires late on an unrelated game; never twice. Works from Home, from NEXT on a
+  finished screen, from deep links/widgets, and after an app restart mid-day. Tests for each path. Goes in wave 3
+  with item 7.
