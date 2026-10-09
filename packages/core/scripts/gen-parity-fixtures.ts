@@ -35,6 +35,7 @@ import { generateRegions, createRegionsState, regionsReduce, regionsMatchRow, re
 import { generateSudoku, createSudokuState, sudokuReduce, sudokuMatchRow, reconstructSudoku, countSudokuSolutions, sudokuSolvableBySingles, type SudokuAction, type SudokuDifficulty } from '../src/games/sudoku';
 import { ladderPuzzleForDay, ladderPuzzleForSeed, ladderDailyNumber, createLadderState, ladderReduce, ladderMatchRow, reconstructLadder, ladderNextStep, ladderNeighbours, ladderGuessCount, type LadderBank, type LadderAction } from '../src/games/ladder';
 import { wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchCells, wordsearchLine, wordsearchNearWord, type WordsearchBank, type WordsearchAction } from '../src/games/wordsearch';
+import { streakHeadline } from '../src/streak-headline';
 import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, dayRunTotals, type GroupProgress } from '../src/home-banner';
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
@@ -325,7 +326,29 @@ export function renderHomeBannerFixtures() {
     { days: quiz, total: 1, ...dayRunTotals(quiz, 1) },
     { days: {}, total: 10, ...dayRunTotals({}, 10) },
   ];
-  return { headlines, clocks, groups, streaks, totals };
+  // 2.8 items 7 + 48: the streak lines (every milestone, record runs, restarts, two days) and the banner with streaks.
+  const streakLines: Array<{ kind: string; days: number; best: number; dateKey: string; line: string | null }> = [];
+  for (const kind of ['flawless', 'sweep'] as const) {
+    for (const days of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 20, 30, 45]) {
+      for (const best of [0, 3, 50]) {
+        for (const dateKey of ['2026-10-09', '2026-10-10', '2026-11-02']) {
+          streakLines.push({ kind, days, best, dateKey, line: streakHeadline({ kind, days, best, dateKey }) });
+        }
+      }
+    }
+  }
+  const withStreaks = [
+    { word: g(8, 8, 8), puzzles: g(2, 2, 10), s: { sweep: 5, flawless: 3 } },
+    { word: g(8, 7, 8), puzzles: g(2, 2, 10), s: { sweep: 7, flawless: 0 } },
+    { word: g(3, 3, 8), puzzles: g(10, 10, 10), s: { sweep: 2, flawless: 2 } },
+    { word: g(8, 8, 8), puzzles: g(10, 10, 10), s: { sweep: 14, flawless: 14 } },
+    { word: g(8, 8, 8), puzzles: g(0, 0, 10), s: { sweep: 1, flawless: 1 } },
+  ].map(({ word, puzzles, s }) => {
+    const streaksIn = { word: { ...s, bestFlawless: 9, bestSweep: 9 }, puzzles: { sweep: 3, flawless: 3, bestFlawless: 3, bestSweep: 3 } };
+    const dateKey = '2026-10-09';
+    return { word, puzzles, hour: 14, name: 'BMT', streaks: streaksIn, dateKey, headline: bannerHeadline(word, puzzles, { hour: 14, name: 'BMT', streaks: streaksIn, dateKey }) };
+  });
+  return { headlines, clocks, groups, streaks, totals, streakLines, withStreaks };
 }
 
 // VS overhaul (founder, 2026-10-01): the VS banner words, the challenge

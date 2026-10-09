@@ -41,7 +41,26 @@ final class HomeBannerFixtureTests: XCTestCase {
         let bestSweep: Int
         let bestFlawless: Int
     }
+    private struct StreakLine: Decodable {
+        let kind: String
+        let days: Int
+        let best: Int
+        let dateKey: String
+        let line: String?
+    }
+    private struct StreaksIn: Decodable { let word: GroupStreaks; let puzzles: GroupStreaks }
+    private struct WithStreaks: Decodable {
+        let word: GroupProgress
+        let puzzles: GroupProgress
+        let hour: Int
+        let name: String
+        let streaks: StreaksIn
+        let dateKey: String
+        let headline: String
+    }
     private struct Fixtures: Decodable {
+        let streakLines: [StreakLine]
+        let withStreaks: [WithStreaks]
         let headlines: [Headline]
         let clocks: [Clock]
         let groups: [Group]
@@ -60,6 +79,21 @@ final class HomeBannerFixtureTests: XCTestCase {
         for (i, c) in f.headlines.enumerated() {
             XCTAssertEqual(HomeBanner.bannerHeadline(c.word, c.puzzles, hour: c.hour, name: c.name, unlimited: c.unlimited),
                            c.headline, "headline #\(i)")
+        }
+    }
+
+    /// 2.8 items 7 + 48: the streak lines (milestones, NEW BEST!, restarts) and the banner with streaks.
+    func testStreakHeadlinesMatchSharedFixtures() throws {
+        let f = try load()
+        XCTAssertFalse(f.streakLines.isEmpty)
+        for c in f.streakLines {
+            let kind: StreakHeadline.Kind = c.kind == "flawless" ? .flawless : .sweep
+            XCTAssertEqual(StreakHeadline.line(kind: kind, days: c.days, best: c.best, dateKey: c.dateKey), c.line, "\(c)")
+        }
+        for c in f.withStreaks {
+            XCTAssertEqual(HomeBanner.bannerHeadline(c.word, c.puzzles, hour: c.hour, name: c.name,
+                                                     wordStreaks: c.streaks.word, puzzleStreaks: c.streaks.puzzles, dateKey: c.dateKey),
+                           c.headline)
         }
     }
 

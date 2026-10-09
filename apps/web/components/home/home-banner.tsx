@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { alphaHex, softBorder, softIconTile } from '@/lib/soft-surface';
 import { PickerResultBadge } from '@/components/ui/game-picker';
 import { SoftNum } from '@/components/ui/soft-number';
+import { getTodayLocal } from '@/lib/daily-service';
 import { Check } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { ART_SIZE, artSrc, badgeSrc, isGameArtIcon, onPageShadow } from '@/lib/art';
@@ -195,7 +196,9 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
   // name on its own gold line(s) when it doesn't fit on one (never shrunk, scrolled or clipped).
   // Laid out once per width / text change; the row is as tall as the taller mode's headline.
   const hour = new Date().getHours();
-  const dailyHeadline = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: false });
+  // 2.8 items 7 + 48: a finished row speaks to its streak ("FLAWLESS 3-PEAT!"); the day's variant is picked by date.
+  const streakNews = { streaks: { word: word.streaks, puzzles: puzzles.streaks }, dateKey: getTodayLocal() };
+  const dailyHeadline = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: false, ...streakNews });
   const unlimitedHeadline = bannerHeadline(word.progress, puzzles.progress, { hour, name, unlimited: true });
   const headSlot = useRef<HTMLDivElement>(null);
   const slotWidth = useSlotWidth(headSlot);

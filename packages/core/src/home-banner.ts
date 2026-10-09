@@ -8,6 +8,8 @@
 // Swift and Kotlin ports assert against home-banner-fixtures.json
 // (scripts/gen-parity-fixtures.ts).
 
+import { streakHeadline } from './streak-headline';
+
 export type BannerTier = 'none' | 'sweep' | 'flawless';
 
 /** One row's progress today: how many of its `total` dailies are finished, and how many won. */
@@ -49,6 +51,20 @@ export interface HeadlineOptions {
   name: string;
   /** Pro's Unlimited mode: the banner reads UNLIMITED PLAY. */
   unlimited?: boolean;
+  /**
+   * 2.8 items 7 + 48: the rows' current streaks (and, when known, their best ever) so a finished row speaks to its
+   * streak ("FLAWLESS 3-PEAT!") instead of the plain news line. Absent = the plain lines.
+   */
+  streaks?: { word: RowStreaks; puzzles: RowStreaks };
+  /** The local day `YYYY-MM-DD` (picks the day's variant of a streak line). */
+  dateKey?: string;
+}
+
+export interface RowStreaks {
+  sweep: number;
+  flawless: number;
+  bestSweep?: number;
+  bestFlawless?: number;
 }
 
 function puzzlesLeft(n: number): string {
@@ -68,14 +84,25 @@ export function bannerHeadline(word: GroupProgress, puzzles: GroupProgress, opts
   const total = word.total + puzzles.total;
   const played = Math.min(word.played, word.total) + Math.min(puzzles.played, puzzles.total);
   const left = Math.max(0, total - played);
+  // 2.8 items 7 + 48: a row that just earned its tier speaks to the streak when there is streak news.
+  const streakLine = (row: 'word' | 'puzzles', t: BannerTier): string | null => {
+    const s = opts.streaks?.[row];
+    if (!s || !opts.dateKey || t === 'none') return null;
+    return streakHeadline(t === 'flawless'
+      ? { kind: 'flawless', days: s.flawless, best: s.bestFlawless, dateKey: opts.dateKey }
+      : { kind: 'sweep', days: s.sweep, best: s.bestSweep, dateKey: opts.dateKey });
+  };
   if (a !== 'none' && b !== 'none') {
+    // Both rows done: the Wordocious row's streak (the header trophy counts it) leads.
+    const lead = streakLine('word', a);
+    if (lead) return lead;
     if (a === 'flawless' && b === 'flawless') return 'DOUBLE FLAWLESS!';
     if (a === 'sweep' && b === 'sweep') return 'DOUBLE SWEEP!';
     return a === 'flawless' ? 'FLAWLESS + SWEEP!' : 'SWEEP + FLAWLESS!';
   }
   const news = (label: string, t: BannerTier) => `${label} ${t === 'flawless' ? 'FLAWLESS!' : 'SWEPT!'} ${puzzlesLeft(left)}`;
-  if (a !== 'none') return news('WORDOCIOUS', a);
-  if (b !== 'none') return news('PUZZLES', b);
+  if (a !== 'none') return streakLine('word', a) ?? news('WORDOCIOUS', a);
+  if (b !== 'none') return streakLine('puzzles', b) ?? news('PUZZLES', b);
   if (played === 0) {
     const name = opts.name.trim().toUpperCase();
     // BJ6 (founder 10-03): the greeting is personal for signed-in players; 0–4 h is "UP LATE?".

@@ -126,7 +126,13 @@ fun HomeBannerView(
     val dailyDouble = dailyWTier == BannerTier.FLAWLESS && dailyPTier == BannerTier.FLAWLESS
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
     // Both modes' words are laid out (one invisible) so their slots never resize on the toggle.
-    val dailyHeadline = bannerHeadline(word.progress, puzzles.progress, hour, name, false)
+    // 2.8 items 7 + 48: a finished row speaks to its streak ("FLAWLESS 3-PEAT!"); the day's variant is picked by date.
+    val dailyHeadline = bannerHeadline(
+        word.progress, puzzles.progress, hour, name, false,
+        com.wordocious.core.RowStreaks(word.streaks.sweep, word.streaks.flawless),
+        com.wordocious.core.RowStreaks(puzzles.streaks.sweep, puzzles.streaks.flawless),
+        com.wordocious.app.todayLocalDate(),
+    )
     val unlimitedHeadline = bannerHeadline(word.progress, puzzles.progress, hour, name, true)
     val headline = if (unlimited) unlimitedHeadline else dailyHeadline
     val dailyClock = bannerClockLine(word.progress, puzzles.progress, clock, false)

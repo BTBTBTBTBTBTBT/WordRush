@@ -36,7 +36,20 @@ public struct DayCount: Codable, Equatable {
 public struct GroupStreaks: Codable, Equatable {
     public var sweep: Int
     public var flawless: Int
-    public init(sweep: Int, flawless: Int) { self.sweep = sweep; self.flawless = flawless }
+    /// 2.8 items 7 + 48: the best runs ever (0 = unknown → no "NEW BEST!").
+    public var bestSweep: Int
+    public var bestFlawless: Int
+    public init(sweep: Int, flawless: Int, bestSweep: Int = 0, bestFlawless: Int = 0) {
+        self.sweep = sweep; self.flawless = flawless; self.bestSweep = bestSweep; self.bestFlawless = bestFlawless
+    }
+    private enum CodingKeys: String, CodingKey { case sweep, flawless, bestSweep, bestFlawless }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sweep = try c.decode(Int.self, forKey: .sweep)
+        flawless = try c.decode(Int.self, forKey: .flawless)
+        bestSweep = try c.decodeIfPresent(Int.self, forKey: .bestSweep) ?? 0
+        bestFlawless = try c.decodeIfPresent(Int.self, forKey: .bestFlawless) ?? 0
+    }
 }
 
 /// Lifetime totals for a set of days: how many were sweeps / flawless and the longest run of each.
@@ -90,14 +103,25 @@ public enum HomeBanner {
     /// results in banner order (Wordocious first, then Puzzles).
     /// `name` = the player's username (no nickname setting, founder 2026-10-01); empty for a guest.
     public static func bannerHeadline(_ word: GroupProgress, _ puzzles: GroupProgress,
-                                      hour: Int, name: String, unlimited: Bool = false) -> String {
+                                      hour: Int, name: String, unlimited: Bool = false,
+                                      wordStreaks: GroupStreaks? = nil, puzzleStreaks: GroupStreaks? = nil,
+                                      dateKey: String? = nil) -> String {
         if unlimited { return "UNLIMITED PLAY" }
         let a = groupTier(word)
         let b = groupTier(puzzles)
         let total = word.total + puzzles.total
         let played = playedCount(word, puzzles)
         let left = max(0, total - played)
+        // 2.8 items 7 + 48: a row that just earned its tier speaks to the streak when there is streak news.
+        func streakLine(_ s: GroupStreaks?, _ t: BannerTier) -> String? {
+            guard let s, let dateKey, t != .none else { return nil }
+            return t == .flawless
+                ? StreakHeadline.line(kind: .flawless, days: s.flawless, best: s.bestFlawless, dateKey: dateKey)
+                : StreakHeadline.line(kind: .sweep, days: s.sweep, best: s.bestSweep, dateKey: dateKey)
+        }
         if a != .none && b != .none {
+            // Both rows done: the Wordocious row's streak (the header trophy counts it) leads.
+            if let lead = streakLine(wordStreaks, a) { return lead }
             if a == .flawless && b == .flawless { return "DOUBLE FLAWLESS!" }
             if a == .sweep && b == .sweep { return "DOUBLE SWEEP!" }
             return a == .flawless ? "FLAWLESS + SWEEP!" : "SWEEP + FLAWLESS!"
@@ -105,8 +129,8 @@ public enum HomeBanner {
         func news(_ label: String, _ t: BannerTier) -> String {
             "\(label) \(t == .flawless ? "FLAWLESS!" : "SWEPT!") \(puzzlesLeft(left))"
         }
-        if a != .none { return news("WORDOCIOUS", a) }
-        if b != .none { return news("PUZZLES", b) }
+        if a != .none { return streakLine(wordStreaks, a) ?? news("WORDOCIOUS", a) }
+        if b != .none { return streakLine(puzzleStreaks, b) ?? news("PUZZLES", b) }
         if played == 0 {
             let n = name.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             // BJ6 (founder 10-03): personal for signed-in players; 0–4 h is "UP LATE?".

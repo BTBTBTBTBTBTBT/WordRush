@@ -265,7 +265,8 @@ struct HomeView: View {
         }
         if word {
             let sweep = await MatchStatsService.dailySweepStats()
-            wordStreaks = GroupStreaks(sweep: sweep.currentSweepStreak, flawless: sweep.currentFlawlessStreak)
+            wordStreaks = GroupStreaks(sweep: sweep.currentSweepStreak, flawless: sweep.currentFlawlessStreak,
+                                       bestSweep: 0, bestFlawless: sweep.bestFlawlessStreak)
             HomeStreaksService.storeStreaks(wordStreaks, .word)
         }
         if puzzles {
