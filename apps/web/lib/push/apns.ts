@@ -1,5 +1,6 @@
 import http2 from 'node:http2';
 import crypto from 'node:crypto';
+import type { RichPushFields } from '@wordle-duel/core';
 
 // APNs provider-token sender. Token-based auth (a .p8 signing key) rather than
 // certificates: one key covers every app on the team and never expires, so
@@ -33,7 +34,14 @@ export interface ApnsMessage {
   body: string;
   /** Deep-link path handed to the app in the payload (e.g. "/daily"). */
   url?: string;
+  /** 2.8 rich push (item 34): the card fields. Present = mutable-content + thread + category. */
+  rich?: RichPushFields;
+  /** apns-collapse-id (<= 64 bytes): rapid-fire moves in one game replace each other. */
+  collapseId?: string;
 }
+
+/** The notification category the Notification Content Extension (long-press card) registers for. */
+export const APNS_RICH_CATEGORY = 'WORDOCIOUS_GAME';
 
 export interface ApnsResult {
   sent: number;
@@ -130,15 +138,21 @@ export function classifyApnsFailure(status: number, reason?: string): 'stale' | 
   return 'permanent';                                        // config/payload bug
 }
 
-function buildPayload(msg: ApnsMessage): string {
+export function buildPayload(msg: ApnsMessage): string {
+  const rich = msg.rich;
   return JSON.stringify({
     aps: {
       alert: { title: msg.title, body: msg.body },
       sound: 'default',
       badge: 1,
+      // Rich push: the Notification Service Extension (sender avatar as a Communication Notification +
+      // the game-art thumbnail) needs mutable-content; thread-id groups by friend / game; the category
+      // selects the long-press content extension. Older apps ignore all of it (the alert still shows).
+      ...(rich ? { 'mutable-content': 1, 'thread-id': rich.thread, category: APNS_RICH_CATEGORY, 'interruption-level': 'active' } : {}),
     },
     // Consumed by the app's notification handler to route the tap.
     url: msg.url ?? '/daily',
+    ...(rich ? { rich } : {}),
   });
 }
 
@@ -157,6 +171,7 @@ function sendOne(
       'apns-topic': bundleId,
       'apns-push-type': 'alert',
       'apns-priority': '10',
+      ...(msg.collapseId ? { 'apns-collapse-id': msg.collapseId.slice(0, 64) } : {}),
       'content-type': 'application/json',
       'content-length': Buffer.byteLength(payload),
     });
