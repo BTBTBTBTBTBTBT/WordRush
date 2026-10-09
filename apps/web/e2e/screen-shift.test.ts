@@ -36,6 +36,8 @@ interface Scenario {
   path: string;
   /** Region name → CSS selector (first visible match). */
   regions: Record<string, string>;
+  /** Regions that may be absent before play (a game without a keyboard / grid role); if one appears later it is a shift. */
+  optional?: string[];
   steps: Step[];
 }
 
@@ -89,6 +91,30 @@ const SCENARIOS: Scenario[] = [
     ],
   },
 ];
+
+/** The generic typing script every keyboard word game shares: letters, a bad submit (toast), delete, more letters. */
+const TYPING: Step[] = [
+  { label: 'focus the page', run: async (p) => { await p.locator('body').click({ position: { x: 5, y: 400 } }).catch(() => {}); } },
+  { label: 'type Q, Z, X', run: press('Q', 'Z', 'X') },
+  { label: 'Enter (a message / toast)', run: press('Enter') },
+  { label: 'wait out the toast', run: async (p) => { await p.waitForTimeout(1600); } },
+  { label: 'delete', run: press('Backspace', 'Backspace') },
+  { label: 'type more letters', run: press('A', 'E', 'R', 'S', 'T', 'O') },
+  { label: 'Enter again', run: press('Enter') },
+];
+const GENERIC_REGIONS = {
+  header: '.game-art-header',
+  board: '[role="grid"], [role="group"][aria-label="Coded saying"]',
+  keyboard: '[role="group"][aria-label="Game keyboard"]',
+};
+// More games: add an id here as its selectors are known; the Haiku sweep after each wave (item 37) extends it.
+for (const [id, route] of [
+  ['six', '/six?daily=true'], ['seven', '/seven?daily=true'], ['quadword', '/quadword?daily=true'], ['octoword', '/octoword?daily=true'],
+  ['hubbub', '/hubbub?daily=true'], ['muddle', '/muddle?daily=true'], ['kindred', '/kindred?daily=true'], ['letter-ladder', '/letter-ladder?daily=true'],
+  ['crosswordocious', '/crosswordocious?daily=true'], ['propernoundle', '/propernoundle?daily=true'],
+]) {
+  SCENARIOS.push({ id, path: route, regions: GENERIC_REGIONS, optional: ['board', 'keyboard'], steps: TYPING });
+}
 
 let server: ChildProcess | null = null;
 let browser: Browser;
@@ -178,6 +204,7 @@ describe('screen shift (scripted play, bounding boxes before vs after every acti
         try {
           const first = await measure(page, scenario.regions);
           for (const [name, box] of Object.entries(first)) {
+            if (scenario.optional?.includes(name)) continue;
             expect(box, `${scenario.id}: region "${name}" (${scenario.regions[name]}) not found before play`).not.toBeNull();
           }
           for (const step of scenario.steps) {
