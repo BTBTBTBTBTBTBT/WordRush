@@ -215,22 +215,22 @@ struct RivalriesCard: View {
     private static var memoKey: String { "rivalries:\(StatsMemo.uid)" }
 
     var body: some View {
-        let display = rows
+        let display = rows.filter { !FriendsService.isFriend($0.opponentId) }
         Group {
             if !isPro {
                 VStack(alignment: .leading, spacing: 8) {
-                    SectionHeader("Rivalries", accent: Color(hex: 0xEC4899))
+                    SectionHeader("Rivals", accent: Color(hex: 0xEC4899))
                     ProStatsInvite(line: "See your head-to-head record against every rival with Pro",
                                    compact: compact, cast: "o2")
                 }
             } else if display.isEmpty, !loaded {
-                StatsCardPlaceholder(title: "Rivalries", accent: Color(hex: 0xEC4899), height: 110)
-            } else if display.isEmpty, loaded {
-                StatsEmptyCard(title: "Rivalries", accent: Color(hex: 0xEC4899),
+                StatsCardPlaceholder(title: "Rivals", accent: Color(hex: 0xEC4899), height: 110)
+            } else if display.isEmpty, loaded, rows.isEmpty {
+                StatsEmptyCard(title: "Rivals", accent: Color(hex: 0xEC4899),
                                hint: "Face the same opponent a few times to start a rivalry.")
             } else if !display.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    SectionHeader("Rivalries", accent: Color(hex: 0xEC4899))
+                    SectionHeader("Rivals", accent: Color(hex: 0xEC4899))
                     let card = KitCard(accent: Color(hex: 0xEC4899)) {
                         VStack(spacing: 6) {
                             ForEach(display) { r in rivalryRow(r) }
@@ -255,26 +255,19 @@ struct RivalriesCard: View {
     }
 
     private func rivalryRow(_ r: StatsDeepService.Rivalry) -> some View {
-        let pct = r.total > 0 ? Double(r.wins) / Double(r.total) : 0
-        return VStack(spacing: 6) {
-            HStack(spacing: 8) {
-                Image("swords").renderingMode(.template).resizable().scaledToFit()
-                    .frame(width: 14, height: 14).foregroundStyle(Theme.primary)
-                Text(r.username).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Spacer()
-                Text("\(r.wins)–\(r.losses)\(r.draws > 0 ? "–\(r.draws)" : "")")
-                    .font(Brand.font(12, .black))
-                    .foregroundStyle(r.wins >= r.losses ? Theme.primary : Color(hex: 0xDC2626))
-            }
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: 0xDC2626).opacity(0.2))
-                    Capsule().fill(Theme.primary).frame(width: g.size.width * pct)
+        // 2.8 item 16: the rival's mascot + a two-color record bar (friends read in HEAD TO HEAD above).
+        HStack(spacing: 10) {
+            AvatarView(url: nil, username: r.username, size: 34, userId: r.opponentId)
+            VStack(spacing: 4) {
+                HStack {
+                    Text(r.username).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    Spacer()
+                    Text("\(r.wins)–\(r.losses)\(r.draws > 0 ? "–\(r.draws)" : "")")
+                        .font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
                 }
+                RecordBarView(wins: r.wins, losses: r.losses, height: 7)
             }
-            .frame(height: 6)
         }
         .padding(8)
         .background(RoundedRectangle(cornerRadius: 10).fill(StatsInk.rowFill(Color(hex: 0xEC4899))))

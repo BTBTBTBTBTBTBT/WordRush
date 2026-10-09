@@ -38,6 +38,9 @@ struct ProfileTab: View {
     @State private var pageSwipeBlocked = false
     /// The All-time VS section's per-game board — one word game at a time (Classic by default).
     @State private var vsMode: GameMode = .duel
+    /// 2.8 item 16: "More stats" folded open under the four hero stats; the pocket-game records for HEAD TO HEAD + POCKET GAMES.
+    @State private var moreStatsOpen = false
+    @State private var pocketRecords: StatsProfile.PocketRecords? = PocketRecordsService.cached
     /// Today's daily VS outcome (nil = not played) — the Today card's VS pill
     /// and the VS RECORD card's "Today:" line.
     @State private var vsDailyWon: Bool? = nil
@@ -677,7 +680,7 @@ struct ProfileTab: View {
                             my: statRows.first { $0.gameMode == gm.rawValue && $0.playType == "solo" },
                             recordsHeld: yours.recordsHeld, chases: yours.chases)
         }
-        modeDetailHeader(gm, tab: tab)
+        // 2.8 item 16: no header row here — the picker's selected tile / title art already names the game.
         modeStats(p, mode: gm, tab: tab)
         hintsLine(mode: gm, tab: tab, accent: m.accent)
         ProfileDashboard(mode: gm, playType: tab)
@@ -786,38 +789,22 @@ struct ProfileTab: View {
             RivalriesCard(isPro: auth.isProActive)
         }
         cpuRecordCard
-        HStack(spacing: 8) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(vsModes) { m in
-                        let active = m.dbKey == vsMode.rawValue
-                        Button { if let gm = m.mode { Haptics.tap(); vsMode = gm } } label: {
-                            // Square game tile (docs/GAME_TILE_STYLE.md).
-                            GameTileSquare(accent: m.accent, label: ModeGen.byId(m.id)?.shortTitle ?? m.title,
-                                           selected: active, side: 56) { chip in
-                                ModeIconView(icon: m.icon, accent: m.accent, box: chip)
-                            }
-                        }.buttonStyle(.squish)
-                        .accessibilityAddTraits(active ? .isSelected : [])
-                    }
-                }
-                .padding(.horizontal, 4).padding(.vertical, 6)
-            }
-            // A drag that starts in this sideways row never pages the game.
-            .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in
-                if !pageSwipeBlocked { pageSwipeBlocked = true }
-            })
-            // People | Bots — the soft segmented toggle (§A9 squish per option).
+        // Head to head with friends (free): mascot + two-color record bar, VS and pocket games together.
+        HeadToHeadSection(records: pocketRecords)
+        // Per-game VS board: pick the word game (5 over 4, no swipe), then People | Bots centered under it.
+        VsGamePicker(modes: vsModes, selected: vsMode) { gm in vsMode = gm }
+        HStack {
+            Spacer(minLength: 0)
             SoftSegmented(options: [(key: "vs", label: "People"), (key: "vs_cpu", label: "Bots")],
                           selection: Binding(get: { vsSectionTab }, set: { setVsSectionTab($0) }),
                           accent: Color(hex: 0xEC4899), accessibilityLabel: "People or bots")
+            Spacer(minLength: 0)
         }
         // Keyed on the game so a board-chip tap builds fresh cards that paint the new game's memo
         // in their first frame (founder, 2026-09-29: the page id doesn't carry vsMode, so the charts
         // kept the PREVIOUS game's data under the new header until their .task swapped it). Same
         // 16 pt spacing as the page stack, so the layout is unchanged.
         VStack(spacing: 16) {
-            modeDetailHeader(vsMode, tab: tab)
             modeStats(p, mode: vsMode, tab: tab)
             ProfileDashboard(mode: vsMode, playType: tab)
             ProDeepModeCard(gameMode: vsMode.rawValue, isPro: auth.isProActive, accent: ModeStyle.accent(vsMode), playType: tab)
@@ -871,6 +858,9 @@ struct ProfileTab: View {
         medalsSection(p)
         achievementsSection
         vsSection(p)
+        // 2.8 item 16: the record in each pocket game (vs friends), then the activity list.
+        PocketGamesSection(records: pocketRecords)
+            .task { if let r = await PocketRecordsService.fetch() { pocketRecords = r } }
         recentMatchesSection(p)
     }
 
@@ -1243,7 +1233,7 @@ struct ProfileTab: View {
     /// rows capped at five). Shares RecentMatchRow with the public profile.
     @ViewBuilder private func recentMatchesSection(_ p: Profile) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader("Recent Matches", accent: Color(hex: 0x2563EB))
+            SectionHeader("Activity", accent: Color(hex: 0x2563EB))
             RecentMatchesList(matches: recentMatches, profileId: p.id, opponentNames: opponentNames,
                               loading: recentLoading, limit: 5,
                               emptyText: Mascots.statsEmptyLine, emptyHost: Mascots.stats, emptyScene: .noStats)
@@ -1476,37 +1466,28 @@ struct ProfileTab: View {
     /// one the VS banner's flame reads).
     @ViewBuilder private var cpuRecordCard: some View {
         let rec = UserStatsService.cpuRecord(statRows)
-        let bestStreak = CpuProgressionStore.load().bestStreak
-        // Always shown in the VS section (even at 0–0) so the practice record is
-        // discoverable before your first bot match; it fills in once you play one.
-        HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0x64748B).opacity(0.10)).frame(width: 40, height: 40)
-                BotArtCircle(art: BotPersonas.art("lexi"), size: 32, background: .clear)
-            }
+        let prog = CpuProgressionStore.load()
+        // The bot whose mascot heads the line: the highest rung cleared (Rip before any).
+        let bot = BotCast.members[max(0, min(BotCast.members.count, prog.ladderCleared) - 1)]
+        // 2.8 item 16: ONE line — the bot's mascot, "26–17 · 60%", the best streak as a small flame. No dashed box
+        // (the no-bordered-boxes rule) and no "43 matches" (it is wins + losses).
+        HStack(spacing: 12) {
+            BotArtCircle(art: BotPersonas.art(bot.id), size: 44)
             VStack(alignment: .leading, spacing: 1) {
-                FinishLabel("VS Bots", color: Color(hex: 0x475569))
-                Text("\(rec.wins)–\(rec.losses)").softNumber(22)
-                if rec.total == 0 {
-                    Text("Beat a bot to start your record").font(Brand.font(10, .heavy)).foregroundStyle(FinishInk.secondary)
-                } else if bestStreak > 0 {
-                    HStack(spacing: 3) {
-                        Icon3D(.flame, size: 13)
-                        Text("Best streak: \(bestStreak)").font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0xF97316))
-                    }
-                }
+                FinishLabel("VS Bots", color: Color(hex: 0x0F766E))
+                Text(StatsProfile.botsLine(wins: rec.wins, losses: rec.losses)).softNumber(20).lineLimit(1).minimumScaleFactor(0.6)
             }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(rec.total == 0 ? "—" : "\(rec.winRate)%").softNumber(22)
-                Text(rec.total == 0 ? "NO GAMES YET" : "WIN RATE · \(rec.total) \(rec.total == 1 ? "MATCH" : "MATCHES")")
-                    .font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(FinishInk.secondary)
+            Spacer(minLength: 4)
+            if prog.bestStreak > 0 {
+                HStack(spacing: 3) {
+                    Icon3D(.flame, size: 16)
+                    Text("\(prog.bestStreak)").font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0xF97316))
+                }
+                .accessibilityLabel("Best streak \(prog.bestStreak)")
             }
         }
-        .padding(16).frame(maxWidth: .infinity)
-        // §A1: a slate wash (clearly unranked: the dashed border stays).
-        .background(RoundedRectangle(cornerRadius: 18).fill(Theme.isDark ? Theme.surface : Color(hex: 0x64748B).wash(0.09)).pageCardShadow())
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.isDark ? Theme.border : Color(hex: 0x64748B).wash(0.40), style: StrokeStyle(lineWidth: 1.5, dash: [5])))
+        .padding(.horizontal, 12).padding(.vertical, 10).frame(maxWidth: .infinity)
+        .statsCard(accent: Color(hex: 0x0D9488))
     }
 
     private var vsRecordCard: some View {
@@ -1537,38 +1518,6 @@ struct ProfileTab: View {
         .tintedCard(accent: Color(hex: 0x7C3AED), bar: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], radius: 18, barHeight: 8)
     }
 
-    /// Mode-detail header — ports the mode-detail-panel.tsx header row: mode
-    /// icon tile + title in the mode accent, and a read-only play-type chip that
-    /// reflects the page's scope (a game page's Solo | VS toggle, or the VS
-    /// page's People | Bots pair — the panel has no toggle of its own).
-    private func modeDetailHeader(_ mode: GameMode, tab: String) -> some View {
-        let m = dailyModes.first { $0.dbKey == mode.rawValue }
-        let accent = ModeStyle.accent(mode)
-        return HStack {
-            HStack(spacing: 8) {
-                if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-                Text(m?.title ?? ModeStyle.title(mode)).font(Brand.font(15, .black))
-                    .foregroundStyle(Theme.isDark ? Theme.textPrimary : accent.mixed(over: .black, 0.8))
-            }
-            Spacer()
-            HStack(spacing: 4) {
-                if tab == "solo" {
-                    Image(systemName: "person.fill").font(.system(size: 10, weight: .bold))
-                } else if tab == "vs" {
-                    Image("swords").renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 12, height: 12)
-                } else {
-                    BotArtCircle(art: BotPersonas.art("lexi"), size: 14, background: .clear)
-                }
-                Text(tab == "solo" ? "Solo" : tab == "vs" ? "VS" : "VS Bots")
-                    .font(Brand.font(10, .heavy))
-            }
-            .foregroundStyle(Theme.isDark ? Theme.textSecondary : accent.mixed(over: .black, 0.8))
-            .padding(.horizontal, 10).padding(.top, 8).padding(.bottom, 5)
-            .tintedPill(accent, radius: 10)
-        }
-    }
-
     private func modeStats(_ p: Profile, mode: GameMode, tab: String) -> some View {
         let s = UserStatsService.aggregate(stats(for: tab), mode: mode.rawValue)
         // The eight cells come from the shared per-mode stats registry (ModeStats,
@@ -1585,16 +1534,29 @@ struct ProfileTab: View {
             semantics: meta?.guessSemantics ?? "guesses", guessBase: meta?.guessBase ?? 1,
             aggregates: known?.aggregates ?? .empty
         ).map { ($0.label, $0.value) }
-        return EagerGrid(items: cells, columns: 4, rowSpacing: 12) { c in
-            VStack(spacing: 2) {
-                // §A2: every big number is a soft number.
-                Text(c.1).softNumber(18).lineLimit(1).minimumScaleFactor(0.6)
-                Text(c.0.uppercased()).font(Brand.font(9, .black)).tracking(0.4).foregroundStyle(FinishInk.secondary)
-                    .multilineTextAlignment(.center)
+        let accent = ModeStyle.accent(mode)
+        // 2.8 item 16 (founder 10-07): 8 stat boxes -> 4 hero stats (Record, win-rate ring, Streak with the best small,
+        // Fastest) with soft 3D icons, then "More stats" folding the registry's eight cells so nothing is lost.
+        return VStack(spacing: 12) {
+            HeroStatsRow(wins: s.wins, losses: s.losses, streak: streak.current, bestStreak: streak.best,
+                         fastestSeconds: Double(s.fastestTime), accent: accent)
+            Button { Haptics.tap(); moreStatsOpen.toggle() } label: {
+                CandyLabel(title: moreStatsOpen ? "Fewer stats" : "More stats") { EmptyView() }
+            }
+            .buttonStyle(HelperButtonStyle(tint: accent, selected: moreStatsOpen))
+            if moreStatsOpen {
+                EagerGrid(items: cells, columns: 4, rowSpacing: 12) { c in
+                    VStack(spacing: 2) {
+                        // §A2: every big number is a soft number.
+                        Text(c.1).softNumber(16).lineLimit(1).minimumScaleFactor(0.6)
+                        Text(c.0.uppercased()).font(Brand.font(9, .black)).tracking(0.4).foregroundStyle(FinishInk.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
             }
         }
         .padding(16)
-        .statsCard(accent: ModeStyle.accent(mode))
+        .statsCard(accent: accent)
         // Fetch the per-mode win streak AND the mode's matches aggregate from
         // match history whenever the selected mode OR the play-type toggle
         // changes (web mode-detail-panel parity — restat B1 scopes both to the
