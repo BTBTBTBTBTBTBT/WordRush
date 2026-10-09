@@ -25,12 +25,15 @@ interface HomeSectionTitleProps {
   below?: React.ReactNode;
   /** The compact game-section size (BH2). */
   compact?: boolean;
+  /** Item 35: a small control built into the title's trailing edge (the reorder pencil). */
+  trailing?: React.ReactNode;
 }
 
-export function HomeSectionTitle({ name, label, id, below, compact = false }: HomeSectionTitleProps) {
+export function HomeSectionTitle({ name, label, id, below, compact = false, trailing }: HomeSectionTitleProps) {
   const rule = compact ? HOME_SECTION_TITLE_COMPACT : HOME_SECTION_TITLE;
   return (
-    <div id={id} className={`${compact ? 'mt-0 -mb-0.5' : 'mt-1 mb-0.5'} flex flex-col items-center`} style={{ scrollMarginTop: 12 }}>
+    <div id={id} className={`${compact ? 'mt-0 -mb-0.5' : 'mt-1 mb-0.5'} relative flex flex-col items-center`} style={{ scrollMarginTop: 12 }}>
+      {trailing}
       <div className="min-w-0" style={{ width: `${rule.widthPct}%`, maxWidth: headlineMaxWidth(ART_SIZE[name][0], ART_SIZE[name][1], rule) }}>
         <ArtTitle name={name} label={label} as="h2" maxWidth={rule.maxWidth} maxHeight={rule.maxHeight} align="center" priority={name === 'art-titlecast-dailies'} />
       </div>

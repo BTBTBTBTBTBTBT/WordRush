@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from 'react';
 import { GameArt } from '@/components/ui/game-art';
 import { useFlags } from '@/hooks/use-flags';
 import { pickerRows, type PickerTile } from '@/lib/game-picker';
+import { useGameOrder } from '@/lib/game-order-store';
 import { SOFT, alphaHex, cardBarStyle, liftedInk, softCard, softIconTile } from '@/lib/soft-surface';
 
 // The one game picker (docs/FINISH_SPEC.md C2, C2b, C3; mockup
@@ -90,7 +91,8 @@ export function GamePicker({
 }: GamePickerProps) {
   const compact = density === 'compact';
   const { isOn } = useFlags();
-  const rows = useMemo(() => pickerRows(isOn, { sweep }), [isOn, sweep]);
+  const { order: gameOrderPrefs } = useGameOrder();
+  const rows = useMemo(() => pickerRows(isOn, { sweep, order: gameOrderPrefs }), [isOn, sweep, gameOrderPrefs]);
   const labelInk = ink ?? liftedInk(alphaHex(accent, 1));
   const rowLabel = (text: string) => (
     <span className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-black picker-label`} style={{ letterSpacing: '0.12em', color: labelInk }}>{text}</span>

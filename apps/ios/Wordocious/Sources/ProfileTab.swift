@@ -132,9 +132,11 @@ struct ProfileTab: View {
     /// row. The horizontal swipe walks it one step at a time.
     private var pickerOrder: [String] {
         let flags = FlagsService.shared
-        let words = homeModes.filter { flags.isOn($0.flagKey) && !$0.homeWide && $0.dbKey != nil }.compactMap(\.dbKey)
+        // Item 35: the swipe walks the player's own game order, like the picker tiles.
+        let store = GameOrderStore.shared
+        let words = store.ordered(homeModes.filter { flags.isOn($0.flagKey) && !$0.homeWide && $0.dbKey != nil }, section: .dailies).compactMap(\.dbKey)
         let puzzles: [String] = homeModes.contains(where: { $0.id == "more" && flags.isOn($0.flagKey) })
-            ? moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) }).compactMap(\.dbKey) : []
+            ? store.ordered(moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) }), section: .puzzles).compactMap(\.dbKey) : []
         return [StatsRailKey.today, StatsRailKey.all] + words + [GamePicker.sweep] + puzzles
     }
     /// Today's W / L per game for the picker tiles (completed → won, as the old rail dot).

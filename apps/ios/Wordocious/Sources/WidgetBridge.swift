@@ -81,12 +81,17 @@ enum WidgetBridge {
         // while his header read 🔥19 the day after a lost game. Next to
         // "puzzles played today", the flame means the daily streak.
         let streak = AuthService.shared.headerStreak ?? 0
-        let modes = ModeGen.sweep.map { entry($0, byMode) }
+        // Item 35: the widget lists games in the player's own order (Classic first), same as Home.
+        let sweepGen = ModeGen.sweep
+        let sweepOrder = GameOrderStore.shared.orderedIds(sweepGen.map(\.id), section: .dailies)
+        let modes = sweepOrder.compactMap { id in sweepGen.first { $0.id == id } }.map { entry($0, byMode) }
         // The Puzzles row: the More Games dailies this player can see (catalog order,
         // each behind its remote flag; menu.more switches the whole group off).
         let flags = FlagsService.shared
         let moreOn = flags.isOn(ModeGen.byId("more")?.flagKey)
-        let puzzleGen = moreOn ? ModeGen.more.filter { $0.dailyEligible && $0.dbKey != nil && flags.isOn($0.flagKey) } : []
+        let puzzleAll = moreOn ? ModeGen.more.filter { $0.dailyEligible && $0.dbKey != nil && flags.isOn($0.flagKey) } : []
+        let puzzleOrder = GameOrderStore.shared.orderedIds(puzzleAll.map(\.id), section: .puzzles)
+        let puzzleGen = puzzleOrder.compactMap { id in puzzleAll.first { $0.id == id } }
         let puzzles = puzzleGen.map { entry($0, byMode) }
         // Same totals helpers as the banner/celebration/share cards. The footer's
         // points cover all eighteen dailies now (word + puzzles).

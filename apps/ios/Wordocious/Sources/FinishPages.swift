@@ -227,15 +227,17 @@ struct GamePickerCard<Header: View>: View {
     @ViewBuilder var header: () -> Header
 
     @ObservedObject private var flags = FlagsService.shared
+    /// Item 35: re-sort when the player's saved game order changes.
+    @ObservedObject private var orderStore = GameOrderStore.shared
 
     /// WORDOCIOUS — the home order (core tiles, flag-gated, the wide VS / More tiles excluded).
     private var wordModes: [HomeMode] {
-        homeModes.filter { flags.isOn($0.flagKey) && !$0.homeWide && $0.dbKey != nil }
+        GameOrderStore.shared.ordered(homeModes.filter { flags.isOn($0.flagKey) && !$0.homeWide && $0.dbKey != nil }, section: .dailies)
     }
     /// PUZZLES — the More Games dailies behind their flags (menu.more switches the row off).
     private var puzzleModes: [HomeMode] {
         guard homeModes.contains(where: { $0.id == "more" && flags.isOn($0.flagKey) }) else { return [] }
-        return moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) })
+        return GameOrderStore.shared.ordered(moreDailyModes(moreModes.filter { flags.isOn($0.flagKey) }), section: .puzzles)
     }
 
     var body: some View {

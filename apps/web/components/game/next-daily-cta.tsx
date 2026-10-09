@@ -13,6 +13,8 @@ import { accentInk, softCard } from '@/lib/soft-surface';
 import { UnlimitedCard } from './finished-kit';
 import { useCelebrationPending } from '@/lib/use-celebration-pending';
 import { shouldDeferHandoff } from '@/lib/celebration-gate';
+import { nextUnplayed, sortByOrder } from '@wordle-duel/core';
+import { useGameOrder, resolvedOrder } from '@/lib/game-order-store';
 
 // Canonical daily order + routes = the catalog's sweep set (More Games Stage
 // 4: no second hand-typed list). First unplayed sweep mode in this order is
@@ -39,9 +41,14 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
   // 2.8 item 52: while a Flawless / Sweep celebration is due, every handoff goes Home first (it plays there).
   const homeFirst = shouldDeferHandoff(useCelebrationPending());
 
-  const next = DAILY_ORDER.find(
-    (m) => m.id !== currentMode && !todayDailies.has(m.id),
-  );
+  // Item 35: NEXT = the next unplayed daily in the PLAYER'S order (default: the catalog's), wrapping.
+  const { order } = useGameOrder();
+  const ordered = sortByOrder(SWEEP_MODES, (m) => m.id, resolvedOrder('dailies', order));
+  const current = SWEEP_MODES.find((m) => m.dbKey === currentMode);
+  const played = new Set(SWEEP_MODES.filter((m) => todayDailies.has(m.dbKey as string)).map((m) => m.id));
+  const nextId = current ? nextUnplayed(ordered.map((m) => m.id), current.id, played) : null;
+  const nextMode = nextId ? SWEEP_MODES.find((m) => m.id === nextId) : ordered.find((m) => !played.has(m.id));
+  const next = nextMode ? DAILY_ORDER.find((m) => m.id === nextMode.dbKey) : undefined;
 
   return (
     <>

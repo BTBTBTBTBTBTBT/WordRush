@@ -24,8 +24,8 @@ describe('More Games sheet helpers', () => {
   });
 
   it('the enabled set drives the sheet and the tile count (five titles compiled in)', () => {
-    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['propernoundle', 'sudoku', 'scramble', 'hub', 'crossword', 'groups', 'ladder', 'cryptogram', 'wordsearch', 'regions']);
-    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['word', ['scramble', 'hub', 'ladder', 'wordsearch']], ['trivia', ['propernoundle', 'crossword']], ['logic', ['sudoku', 'groups', 'cryptogram', 'regions']]]);
+    expect(MORE_GAME_MODES.map((m) => m.id)).toEqual(['propernoundle', 'sudoku', 'regions', 'wordsearch', 'ladder', 'hub', 'groups', 'crossword', 'cryptogram', 'scramble']);
+    expect(moreSections().map((s) => [s.key, s.modes.map((m) => m.id)])).toEqual([['word', ['wordsearch', 'ladder', 'hub', 'scramble']], ['trivia', ['propernoundle', 'crossword']], ['logic', ['sudoku', 'regions', 'groups', 'cryptogram']]]);
     expect(morePlayedCount(['DUEL', 'SUDOKU'])).toEqual({ played: 1, total: 10 });
     expect(morePlayedCount(['REGIONS', 'SUDOKU', 'LADDER', 'WORDSEARCH', 'HUB', 'CRYPTOGRAM', 'GROUPS', 'CROSSWORD', 'SCRAMBLE'])).toEqual({ played: 9, total: 10 });
     expect(morePlayedCount([])).toEqual({ played: 0, total: 10 });
