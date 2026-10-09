@@ -94,10 +94,10 @@ function ModeCard({ m }: { m: LandingMode }) {
 
 const FAQ: { q: string; a: string }[] = [
   { q: 'Is Wordocious free to play?', a: 'Yes. A new daily puzzle in every mode is free every day. An optional Pro subscription removes ads and unlocks unlimited replays.' },
-  { q: 'How is it different from other word games?', a: 'Wordocious bundles nineteen ways to play — single-board Classic, multi-board QuadWord and OctoWord, the sequential Succession, prefilled Deliverance, longer Six and Seven, a five-stage Gauntlet, ten More Games dailies from sudoku and star logic to word searches, cryptograms, crosswords and famous names, and live VS matches with friends — all sharing one daily seed so everyone plays the same puzzles.' },
+  { q: 'How is it different from other word games?', a: 'Wordocious bundles nineteen ways to play — single-board Classic, multi-board QuadWord and OctoWord, the sequential Succession, prefilled Deliverance, longer Six and Seven, a five-stage Gauntlet, ten Puzzles dailies from sudoku and star logic to word searches, cryptograms, crosswords and famous names, and live VS matches with friends — all sharing one daily seed so everyone plays the same puzzles.' },
   { q: 'Do I need an account?', a: 'You can read about every mode here without signing in. To play, save your streaks, and climb the daily leaderboards, sign in with Google, Apple or email.' },
   { q: 'How do daily challenges work?', a: 'Each mode has one shared daily puzzle that resets at local midnight. Finish all eight word games for a Daily Sweep, or win them all for a Flawless Victory and bonus XP.' },
-  { q: 'What is More Games?', a: 'The More Games tile on the home screen opens ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and ProperNoundle. Each earns XP, medals, achievements and its own leaderboard, but none of them counts toward the Daily Sweep, which stays the eight word games.' },
+  { q: 'What are the Puzzles?', a: 'The Puzzles tile on the home screen opens ten extra dailies — Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious, Muddle and ProperNoundle. Each earns XP, medals, achievements and its own leaderboard. They have a Puzzles Sweep of their own, and the Daily Sweep stays the eight word games.' },
   { q: 'What are leaderboards and medals?', a: 'Every daily puzzle has a leaderboard ranked by a composite of guesses and solve time. Top finishers earn gold, silver, and bronze medals shown on their profile.' },
 ];
 
@@ -138,7 +138,7 @@ export function Landing() {
         </p>
         <p className="text-sm font-medium mb-6 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           A fresh set of puzzles every day — from the classic five-letter chase to eight-board
-          marathons, a five-stage Gauntlet, and ten More Games dailies from sudoku to
+          marathons, a five-stage Gauntlet, and ten Puzzles dailies from sudoku to
           cryptograms, plus live VS matches with friends. Everyone plays the same daily puzzles, climbs the same
           leaderboards, and chases the same streaks.
         </p>
@@ -165,11 +165,11 @@ export function Landing() {
         </div>
 
         <h2 className="text-xs font-black uppercase tracking-widest mt-8 mb-1" style={{ color: liftedInk('#4f46e5') }}>
-          More Games
+          Puzzles
         </h2>
         <p className="text-xs font-medium mb-3 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           Ten extra dailies behind one tile on the home screen. Each earns XP, medals and its own leaderboard;
-          none of them counts toward the Daily Sweep, which stays the eight word games above.
+          they have their own Puzzles Sweep, and the Daily Sweep stays the eight word games above.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {MORE_GAMES.map((m) => <ModeCard key={m.title} m={m} />)}

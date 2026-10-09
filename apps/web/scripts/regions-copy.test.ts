@@ -12,7 +12,7 @@ import { MODES } from '../lib/modes.generated';
  * "Stars"; the guide says More Games do not count toward the Daily Sweep; and
  * no Starsweep string uses a bare "sweep" except in that exact phrase.
  */
-const bareSweep = (s: string) => /(^|[^a-z])sweep/i.test(s.replace(/Daily Sweep/g, '').replace(/sweep celebration/g, ''));
+const bareSweep = (s: string) => /(^|[^a-z])sweep/i.test(s.replace(/Daily Sweep/g, '').replace(/sweep celebration/g, '').replace(/Puzzles Sweep/g, ''));
 
 describe('Starsweep wording', () => {
   const guide = getGuide('starsweep')!;
@@ -44,7 +44,7 @@ describe('Starsweep wording', () => {
   });
 
   it('the guide says More Games do not count toward the Daily Sweep and otherwise never says "sweep"', () => {
-    expect(guide.facts.some((f) => /Daily Sweep/.test(f.label) && /not counted/i.test(f.value))).toBe(true);
+    expect(guide.facts.some((f) => /Daily Sweep/.test(f.label) && /not in daily sweep/i.test(f.value))).toBe(true);
     const strings: string[] = [guide.title, guide.tagline, guide.metaDescription, ...guide.rules, ...guide.scoring,
       ...guide.tips.flatMap((t) => [t.heading, t.body]), ...(guide.controls ?? []).flatMap((c) => [c.label, c.body]),
       ...guide.facts.flatMap((f) => [f.label, f.value])];

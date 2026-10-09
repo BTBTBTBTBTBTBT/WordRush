@@ -178,6 +178,6 @@ export function howToPlayAccent(i: number): string {
 export function howToPlayModeId(name: string): string | null {
   const head = name.split(' — ')[0].trim().toLowerCase();
   if (head === 'vs battle') return 'vs';
-  if (head === 'more games') return 'more';
+  if (head === 'puzzles') return 'more';
   return MODES.find((m) => m.title.toLowerCase() === head)?.id ?? null;
 }

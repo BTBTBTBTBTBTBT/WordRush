@@ -77,7 +77,7 @@ enum class TitleArt(@DrawableRes val res: Int, val label: String) {
     PRIVACY(R.drawable.art_titlecast_privacy, "Privacy"),
     TERMS(R.drawable.art_titlecast_terms, "Terms"),
     GOPRO(R.drawable.art_titlecast_gopro, "Go Pro"),
-    MOREGAMES(R.drawable.art_titlecast_moregames, "More Games"),
+    MOREGAMES(R.drawable.art_titlecast_moregames, "Puzzles"),
     /** §8 the whole cast around WELCOME! at the top of sign-in / onboarding. */
     WELCOME(R.drawable.art_titlecast_welcome, "Welcome"),
     /** §8 the whole cast around LEADERBOARD (holiday banner title slot). */

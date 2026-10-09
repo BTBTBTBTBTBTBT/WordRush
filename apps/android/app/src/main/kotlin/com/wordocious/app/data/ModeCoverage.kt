@@ -51,8 +51,8 @@ object ModeCoverage {
 
     /** The More Games Sweep moment; the count comes from the catalog (it was a literal "ten"). */
     fun moreSweepMomentText(who: String, flawless: Boolean, total: Int): String =
-        if (flawless) "$who — Flawless More Games, all ${countWord(total)} won"
-        else "$who — More Games Sweep, all ${countWord(total)} played"
+        if (flawless) "$who — Puzzles Flawless, all ${countWord(total)} won"
+        else "$who — Puzzles Sweep, all ${countWord(total)} played"
 
     /** A record moment's label: the fewest record reads through the mode ("Fewest Mistakes" for Sudocious). */
     fun recordMomentLabel(recordType: String, semantics: String?): String = when (recordType) {

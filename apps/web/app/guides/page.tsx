@@ -7,7 +7,7 @@ import { InfoCard, InfoPageLayout, IntroCard, IntroText, LinkCard, SectionCard }
 export const metadata: Metadata = {
   title: 'Wordocious Mode Guides — Rules, Scoring & Strategy for Every Mode',
   description:
-    'In-depth guides for every Wordocious mode: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet, and the ten More Games dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Exact scoring formulas, hint economics, and winning strategy.',
+    'In-depth guides for every Wordocious mode: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet, and the ten Puzzles dailies — ProperNoundle, Sudocious, Starsweep, Letter Ladder, Spyglass, Hubbub, Codebreaker, Kindred, Crosswordocious and Muddle. Exact scoring formulas, hint economics, and winning strategy.',
 };
 
 export default function GuidesIndexPage() {
@@ -33,7 +33,7 @@ export default function GuidesIndexPage() {
 
       <SectionCard heading="Which mode should you play first?" className="p-5 space-y-3">
         <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-          The eight daily word games are really four families, and More Games adds a fifth. <strong>Single-board classics</strong> — Classic (5 letters), Six,
+          The eight daily word games are really four families, and Puzzles adds a fifth. <strong>Single-board classics</strong> — Classic (5 letters), Six,
           and Seven — are pure deduction: one hidden word, six to eight guesses, and the only variable is word length. Longer words
           sound harder but often play easier, because every guess reveals more letters; the real difficulty jump is the
           thinner vocabulary most players have at six and seven letters. If you&apos;re new, start with Classic and work up.
@@ -56,7 +56,7 @@ export default function GuidesIndexPage() {
           the long-game goal that turns dabbling into a routine.
         </p>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
-          Finally, <strong style={{ color: '#4f46e5' }}>More Games</strong> is the tile on the home screen that opens ten extra
+          Finally, <strong style={{ color: '#4f46e5' }}>Puzzles</strong> is the tile on the home screen that opens ten extra
           dailies outside the sweep: ProperNoundle (famous names instead of dictionary words), Sudocious (sudoku),
           Starsweep (star placement), Letter Ladder, Spyglass (word search), Hubbub (seven-letter hub), Codebreaker
           (cryptogram), Kindred (groups of four), Crosswordocious (sayings crossword) and Muddle (scramble). They earn

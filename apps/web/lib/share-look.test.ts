@@ -45,8 +45,8 @@ describe('compact info line (S2)', () => {
       total: 9, won: 8, totalGuesses: 30, totalTimeSeconds: 900, totalScore: 15000,
     };
     expect(shareSweepInfo(sweep, d)).toEqual({ text: 'FRI, OCT 2 · 8/9 WON · 15:00', badge: null });
-    expect(shareSweepInfo({ ...sweep, won: 9, title: 'More Games Sweep' }, d))
-      .toEqual({ text: 'FRI, OCT 2 · MORE GAMES SWEEP · 9/9 WON · 15:00', badge: 'W' });
+    expect(shareSweepInfo({ ...sweep, won: 9, title: 'Puzzles Sweep' }, d))
+      .toEqual({ text: 'FRI, OCT 2 · PUZZLES SWEEP · 9/9 WON · 15:00', badge: 'W' });
     expect(shareInfoLine(sweep, d)).toEqual(shareSweepInfo(sweep, d));
   });
 

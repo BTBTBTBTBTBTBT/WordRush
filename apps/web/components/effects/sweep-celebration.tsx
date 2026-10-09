@@ -71,7 +71,7 @@ export function SweepCelebration({ completions, onClose, variant = 'daily' }: Pr
   const title = flawless
     ? (more ? MORE_SWEEP_COPY.flawless.title : 'FLAWLESS VICTORY!')
     : (more ? MORE_SWEEP_COPY.sweep.title : 'DAILY SWEEP!');
-  const noun = more ? 'More Games puzzles' : 'daily puzzles';
+  const noun = more ? 'puzzles' : 'daily puzzles';
   const [sharing, setSharing] = useState(false);
 
   // FINISH_SPEC U: Sweep / Flawless = `celebrate` + success-then-heavy haptics.
