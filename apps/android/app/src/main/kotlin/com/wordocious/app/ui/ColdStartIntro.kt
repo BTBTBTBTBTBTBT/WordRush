@@ -150,7 +150,8 @@ fun ColdStartIntro(onDone: () -> Unit) {
             // The intro jingle (Sound Lab pick "Marimba Parade"): its first note is the W's pop
             // (its notes are cut to the choreography's beats). Waits ≤ 250 ms for it to load.
             val t0 = android.os.SystemClock.uptimeMillis()
-            while (!com.wordocious.app.data.SoundManager.isLoaded(com.wordocious.app.data.Sfx.INTRO) &&
+            // 2.8 item 49: in season it waits for the season's jingle (registry slots.sounds.intro) instead.
+            while (!com.wordocious.app.data.SoundManager.isIntroLoaded() &&
                 android.os.SystemClock.uptimeMillis() - t0 < 250) androidx.compose.runtime.withFrameNanos { }
             com.wordocious.app.data.SoundManager.fire(com.wordocious.app.data.FeedbackEvent.INTRO)
             // Glide to exactly the measured header frame (no overshoot), then land.

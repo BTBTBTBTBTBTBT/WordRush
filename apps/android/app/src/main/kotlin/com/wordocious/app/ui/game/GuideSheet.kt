@@ -209,7 +209,7 @@ private fun GuideCard(
                     modifier = Modifier.semantics { heading() },
                     style = androidx.compose.ui.text.TextStyle(
                         fontFamily = Nunito,
-                        brush = Brush.horizontalGradient(com.wordocious.app.ui.modeTitleGradient(mode)),
+                        brush = Brush.horizontalGradient(com.wordocious.app.ui.friends.PocketNight.title(com.wordocious.app.ui.modeTitleGradient(mode))),
                     ),
                 )
             }
@@ -491,7 +491,7 @@ private fun FullGuide(g: GuideService.ModeGuide, accent: Color) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     g.tips.forEach { t ->
                         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(t.heading, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) accent else darkenInk(accent))
+                            Text(t.heading, fontSize = 12.5.sp, fontWeight = FontWeight.Black, color = if (WTheme.isDark) (WTheme.season?.onCard(accent) ?: accent) else darkenInk(accent))
                             Text(t.body, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = guideBody(), lineHeight = 18.sp)
                         }
                     }

@@ -37,6 +37,62 @@ object SoundManager {
     /** Whether [s] has finished loading (the cold-start intro waits briefly for its jingle). */
     fun isLoaded(s: Sfx): Boolean = sampleIds[s.ordinal].let { it != 0 && it in loaded }
 
+    // ── Seasonal voices (2.8 item 49): the registry's slots.sounds name them, so a season is data-only ──────────
+    // Loaded by name from res/raw (sfx_intro_<season>, sfx_note_h_<id> ...), not through [Sfx], so a future season ships
+    // as m4a files + a registry entry. A missing / still-loading sample falls back to the normal sound.
+
+    /** raw file name -> SoundPool sample id (0 = no such file). */
+    private val seasonIds = ConcurrentHashMap<String, Int>()
+
+    /** The active season id (the admin preview, else the calendar), null out of season. */
+    private fun currentSeason(): String? = runCatching { com.wordocious.app.ui.SeasonSkins.current() }.getOrNull()
+
+    private fun seasonalIntroFile(): String? = runCatching {
+        com.wordocious.app.ui.SeasonKit.introSound(App.instance, currentSeason())?.let(com.wordocious.app.ui.SeasonKit::rawName)
+    }.getOrNull()
+
+    /** Load (once) the res/raw sample [file]; 0 when the file isn't shipped or the pool isn't up. */
+    private fun seasonSample(file: String): Int {
+        seasonIds[file]?.let { return it }
+        val p = pool ?: return 0
+        val ctx = App.instance
+        val res = ctx.resources.getIdentifier(file, "raw", ctx.packageName)
+        val id = if (res != 0) runCatching { p.load(ctx, res, 1) }.getOrDefault(0) else 0
+        seasonIds[file] = id
+        return id
+    }
+
+    /** Load the active season's intro jingle (and, where the musical cast is on, its ten note voices) ahead of use. */
+    fun preloadSeason() {
+        val season = currentSeason() ?: return
+        runCatching {
+            val ctx = App.instance
+            com.wordocious.app.ui.SeasonKit.introSound(ctx, season)?.let { seasonSample(com.wordocious.app.ui.SeasonKit.rawName(it)) }
+            if (com.wordocious.core.MusicalCast.enabled(com.wordocious.app.BuildConfig.DEBUG)) {
+                com.wordocious.core.MusicalCast.CAST_IDS.forEach { id ->
+                    com.wordocious.app.ui.SeasonKit.noteSound(ctx, season, id)?.let { seasonSample(com.wordocious.app.ui.SeasonKit.rawName(it)) }
+                }
+            }
+        }
+    }
+
+    /** The cold-start intro is ready: the season's jingle when it has one, else the normal jingle. */
+    fun isIntroLoaded(): Boolean {
+        val file = seasonalIntroFile()
+        val sid = if (file != null) seasonSample(file) else 0
+        return if (sid != 0) sid in loaded else isLoaded(Sfx.INTRO)
+    }
+
+    /** The sample to play for [s]: the season's jingle in place of the intro when it's loaded, else the pack's. */
+    private fun sampleFor(s: Sfx): Int {
+        if (s == Sfx.INTRO) {
+            val file = seasonalIntroFile()
+            val sid = if (file != null) seasonSample(file) else 0
+            if (sid != 0 && sid in loaded) return sid
+        }
+        return sampleIds[s.ordinal]
+    }
+
     private fun rawRes(s: Sfx): Int = when (s) {
         Sfx.TAP -> R.raw.sfx_tap
         Sfx.DELETE -> R.raw.sfx_delete
@@ -107,6 +163,7 @@ object SoundManager {
                 .forEach { s -> sampleIds[s.ordinal] = p.load(ctx, rawRes(s), 1) }
             pool = p
         }
+        preloadSeason()
     }
 
     @Volatile private var classicDepth = 0
@@ -122,7 +179,7 @@ object SoundManager {
         if (!enabled) return
         if (pool == null) preload()
         val p = pool ?: return
-        val id = sampleIds[s.ordinal]
+        val id = sampleFor(s)
         if (id == 0 || id !in loaded) return
         val now = SystemClock.uptimeMillis()
         // The intro jingle owns the cold start: its landing "ta-da" replaces the landing hop.
@@ -232,9 +289,30 @@ object SoundManager {
      * Sound.castNote — the musical cast easter egg (docs/cloud-prompts/10): a tapped hero sings its note
      * (core MusicalCast.note). Muted with Sound Effects off like every sound; no laugh throttle, so quick
      * repeated notes (Hot Cross Buns' C C C C) all play. Web: castNote() in lib/sounds.ts; iOS: SoundManager.castNote(_:).
+     *
+     * 2.8 item 49: in a season with its own voicing (the registry's slots.sounds.note, e.g. Halloween's note-h-<id>) the
+     * spooky voice plays instead; if that sample isn't loaded yet (first tap after a season flip) the normal voice does.
      */
     fun castNote(id: String) {
         val s = FeedbackRules.noteSfx(id) ?: return
+        val seasonal = runCatching {
+            com.wordocious.app.ui.SeasonKit.noteSound(App.instance, currentSeason(), id)?.let(com.wordocious.app.ui.SeasonKit::rawName)
+        }.getOrNull()
+        if (seasonal != null && playSeasonal(seasonal)) return
         play(s)
+    }
+
+    /**
+     * Play the res/raw sample [file] (loading it on first use). Returns true when the tap is handled — played, or muted with
+     * Sound Effects off — and false when the sample isn't shipped / isn't loaded yet (the caller plays the normal sound).
+     */
+    private fun playSeasonal(file: String, volume: Float = 1f): Boolean {
+        if (!enabled) return true
+        if (pool == null) preload()
+        val p = pool ?: return false
+        val id = seasonSample(file)
+        if (id == 0 || id !in loaded) return false
+        val v = (FeedbackRules.MASTER_VOLUME * volume).coerceIn(0f, 1f)
+        return runCatching { p.play(id, v, v, 1, 0, 1f) }.getOrDefault(0) != 0
     }
 }

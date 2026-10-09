@@ -62,9 +62,13 @@ object MusicalCastState {
         melody = MusicalCast.MELODY_START
     }
 
-    /** One note into the melody matcher (uptime clock) → the tune it just completed, if any. */
-    fun tap(castId: String): MusicalMelody? {
-        val r = MusicalCast.melodyTap(melody, castId, SystemClock.uptimeMillis())
+    /**
+     * One note into the melody matcher (uptime clock) → the tune it just completed, if any. [season] = the active season
+     * id: in Halloween the season's tunes count too (core MusicalCast.activeMelodies). The buffer is app-wide (item 4b:
+     * every header shares this object; a tune can span pages; never persisted, so a process restart starts fresh).
+     */
+    fun tap(castId: String, season: String? = null): MusicalMelody? {
+        val r = MusicalCast.melodyTap(melody, castId, SystemClock.uptimeMillis(), season)
         melody = r.state
         return r.matched
     }

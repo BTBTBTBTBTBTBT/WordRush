@@ -129,13 +129,17 @@ import com.wordocious.core.whoseTurn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val YOU_TINT = Color(0xFFEDE9FE)
-private val THEM_TINT = Color(0xFFFEF3C7)
-private val YOU_WON = Color(0xFFDDD6FE)
-private val THEM_WON = Color(0xFFFDE68A)
-private val DEEP = Color(0xFF4C1D95)
-/** A1 the leave dialog's soft pink wash. */
-private val DIALOG_TINT = Color(0xFFFFF3F9)
+// 2.8 item 24: under a dark season (Halloween) the fixed-light chips become the season's night glass and the deep ink its
+// light text (PocketNight, pure + contrast-tested); out of season each value is the original light one.
+private val YOU_TINT: Color get() = PocketNight.youTint()
+private val THEM_TINT: Color get() = PocketNight.themTint()
+private val YOU_WON: Color get() = PocketNight.youWon()
+private val THEM_WON: Color get() = PocketNight.themWon()
+private val DEEP: Color get() = PocketNight.ink()
+/** The deep ink on the shipped light tile art (it stays white in every season). */
+private val TILE_INK = Color(0xFF4C1D95)
+/** A1 the leave dialog's soft pink wash (the season card under a dark season). */
+private val DIALOG_TINT: Color get() = PocketNight.dialog()
 
 /** One live reaction floating up from the board (9b). [x] is -0.35..0.35 of the board width off center. */
 private data class LiveFloater(val id: Long, val key: String, val x: Float)
@@ -336,7 +340,7 @@ fun FriendlyGameScreen(
             com.wordocious.app.ui.HeaderBackButton({ requestClose() }, Modifier.align(Alignment.CenterStart), close = true)
             Text(
                 (game?.title ?: kind.title).uppercase(), fontSize = 19.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, maxLines = 1,
-                style = TextStyle(brush = Brush.horizontalGradient(kind.gradient), fontFamily = Nunito),
+                style = TextStyle(brush = Brush.horizontalGradient(PocketNight.title(kind.gradient)), fontFamily = Nunito),
                 modifier = Modifier.align(Alignment.Center).padding(horizontal = 92.dp),
             )
             // 9c: the same "?" the other games wear in the top-right corner.
@@ -534,6 +538,7 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean, prese
     val lost = g.result == "loss"
     val leftBg = if (won) YOU_WON else YOU_TINT
     val rightBg = if (lost) THEM_WON else THEM_TINT
+    val frost = PocketNight.frost()
     val line = friendsLine(g.kind.color)
     val score = scoreOf(g.state)
     val me = AuthService.profile.value
@@ -548,7 +553,7 @@ private fun ScoreWindow(g: FriendlyGamesService.GameView, theyOn: Boolean, prese
                     drawRect(leftBg, size = Size(size.width / 2f, size.height))
                     drawRect(rightBg, topLeft = Offset(size.width / 2f, 0f), size = Size(size.width / 2f, size.height))
                     drawRect(Brush.linearGradient(
-                        0f to Color.White.copy(alpha = 0.35f), 0.55f to Color.White.copy(alpha = 0f),
+                        0f to Color.White.copy(alpha = frost), 0.55f to Color.White.copy(alpha = 0f),
                         start = Offset.Zero, end = Offset(size.width, size.height),
                     ))
                 }
@@ -787,7 +792,7 @@ private fun TttTile(mark: Side?, me: Side, size: Dp, hint: Boolean, win: Boolean
                 when {
                     win -> friendsWash(tone, 0.3f)
                     mark != null -> friendsWash(tone, 0.14f)
-                    else -> Color.White.copy(alpha = 0.55f)
+                    else -> PocketNight.cellEmpty()
                 },
             )
             .then(
@@ -989,15 +994,15 @@ private fun PassBoard(
                             )
                             Text(
                                 g.word.getOrNull(i)?.toString() ?: "", fontSize = 20.sp, fontWeight = FontWeight.Black,
-                                color = when (t) { TileState.CORRECT -> Color(0xFF3B0764); TileState.PRESENT -> Color(0xFF5B3A00); else -> DEEP },
+                                color = when (t) { TileState.CORRECT -> Color(0xFF3B0764); TileState.PRESENT -> Color(0xFF5B3A00); else -> TILE_INK },
                             )
                         }
                     } else {
                         val ch = if (typingRow) typed.getOrNull(i) else null
                         // B1: an empty tile is frosted glass (not solid white) with a faint lilac line.
                         Box(
-                            Modifier.size(44.dp).clip(shape).background(if (typingRow && ch != null) Color.White else Color.White.copy(alpha = 0.55f))
-                                .border(if (typingRow) 2.dp else 1.5.dp, if (typingRow && ch != null) FriendsTiles.purple else Color(0xFFDCCFF5), shape),
+                            Modifier.size(44.dp).clip(shape).background(if (typingRow && ch != null) PocketNight.cell() else PocketNight.cellEmpty())
+                                .border(if (typingRow) 2.dp else 1.5.dp, if (typingRow && ch != null) PocketNight.purpleInk() else PocketNight.cellLine(), shape),
                             Alignment.Center,
                         ) { Text(ch?.toString() ?: "", fontSize = 20.sp, fontWeight = FontWeight.Black, color = DEEP) }
                     }
@@ -1061,11 +1066,11 @@ private fun DeleteKey(modifier: Modifier, onClick: () -> Unit) {
             .padding(bottom = 3.dp)
             .clip(shape).background(KEY_FACE),
         Alignment.Center,
-    ) { Icon(Icons.AutoMirrored.Filled.Backspace, null, tint = FriendsTiles.purple, modifier = Modifier.size(22.dp)) }
+    ) { Icon(Icons.AutoMirrored.Filled.Backspace, null, tint = PocketNight.purpleInk(), modifier = Modifier.size(22.dp)) }
 }
 
 /** B2 the keys' light lilac face. */
-private val KEY_FACE = Color(0xFFF1EAFF)
+private val KEY_FACE: Color get() = PocketNight.keyFace()
 
 /** A key's lip: its face darkened. */
 private fun keyLip(face: Color): Color = Color(com.wordocious.app.ui.TintMath.over(0xFF000000.toInt(), 0.18f, face.toArgb()))
@@ -1109,10 +1114,10 @@ private fun GhostBoard(s: GhostState, me: Side, them: String, myTurn: Boolean, b
                     s.fragment.forEachIndexed { i, ch -> PlayerTile(ch, s.letters.getOrNull(i) == me, tile, 10.dp) }
                     if (myTurn) {
                         Box(
-                            Modifier.size(tile).clip(RoundedCornerShape(10.dp)).background(if (picked != null) YOU_TINT else Color.White.copy(alpha = 0.55f))
-                                .dashedBorder(2.dp, FriendsTiles.purple, 10.dp),
+                            Modifier.size(tile).clip(RoundedCornerShape(10.dp)).background(if (picked != null) YOU_TINT else PocketNight.cellEmpty())
+                                .dashedBorder(2.dp, PocketNight.purpleInk(), 10.dp),
                             Alignment.Center,
-                        ) { Text(picked?.toString() ?: "", fontSize = (tile.value * 0.46f).sp, fontWeight = FontWeight.Black, color = FriendsTiles.purple) }
+                        ) { Text(picked?.toString() ?: "", fontSize = (tile.value * 0.46f).sp, fontWeight = FontWeight.Black, color = PocketNight.purpleInk()) }
                     }
                 }
             }
@@ -1199,7 +1204,7 @@ private fun ChainBoard(
                 w.word.forEachIndexed { i, ch -> PlayerTile(ch, mine, 30.dp, 7.dp, glow = newest && i == w.word.lastIndex && whoseTurn(s) != null) }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    "+${w.points}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (mine) FriendsTiles.purple else Color(0xFFB45309),
+                    "+${w.points}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (mine) PocketNight.purpleInk() else PocketNight.amberInk(),
                     modifier = Modifier.clip(RoundedCornerShape(50)).background(if (mine) YOU_TINT else THEM_TINT).padding(horizontal = 8.dp, vertical = 3.dp),
                 )
             }
@@ -1219,13 +1224,13 @@ private fun ChainBoard(
                     val isLocked = i < locked
                     val optional = i >= WORD_MIN && ch == null
                     Box(
-                        Modifier.size(40.dp).clip(shape).background(if (isLocked) YOU_TINT else if (ch != null) Color.White else Color.White.copy(alpha = 0.55f))
+                        Modifier.size(40.dp).clip(shape).background(if (isLocked) YOU_TINT else if (ch != null) PocketNight.cell() else PocketNight.cellEmpty())
                             .then(
-                                if (optional) Modifier.dashedBorder(2.dp, Color(0xFFCBD5E1), 8.dp)
-                                else Modifier.border(2.dp, if (ch != null) FriendsTiles.purple else Color(0xFFE5E7EB), shape),
+                                if (optional) Modifier.dashedBorder(2.dp, PocketNight.cellLine(), 8.dp)
+                                else Modifier.border(2.dp, if (ch != null) PocketNight.purpleInk() else PocketNight.cellLine(), shape),
                             ),
                         Alignment.Center,
-                    ) { Text(ch?.toString() ?: "", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (isLocked) FriendsTiles.purple else DEEP) }
+                    ) { Text(ch?.toString() ?: "", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (isLocked) PocketNight.purpleInk() else DEEP) }
                 }
             }
             Spacer(Modifier.height(2.dp))

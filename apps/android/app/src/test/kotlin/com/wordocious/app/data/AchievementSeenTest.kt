@@ -52,7 +52,7 @@ class AchievementSeenTest {
         )
         assertEquals(listOf("muddle_master"), AchievementCatalog.listed(defs) { false }.map { it.key })
         assertEquals(listOf("muddle_master", "tune_ode_to_joy"), AchievementCatalog.listed(defs) { true }.map { it.key })
-        // The bundled snapshot carries `secret` on the five musical-cast tunes (core MusicalCast.ACHIEVEMENT_KEYS).
+        // The bundled snapshot carries `secret` on the seven musical-cast tunes (five everyday + two Halloween; core MusicalCast.ACHIEVEMENT_KEYS).
         val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
         val body = java.io.File("src/main/assets/achievements-catalog.json").readText()
         val all = json.decodeFromString(

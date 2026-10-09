@@ -127,9 +127,10 @@ private fun PocketHelpBody(kind: FriendlyKind, buttonLabel: String, onClose: () 
             Modifier.fillMaxWidth()
                 .shadow(22.dp, shape, clip = false, ambientColor = accent.copy(alpha = 0.45f), spotColor = accent.copy(alpha = 0.6f))
                 .clip(shape)
-                .background(Brush.verticalGradient(listOf(if (dark) Color(0xFF2A1D4A) else Color(0xFFFFF8EC), if (dark) Color(0xFF21163C) else Color(0xFFF6F0FF)))),
+                // 2.8 item 24: under a dark season the card wears the season's own card + raised tokens (PocketNight).
+                .background(PocketNight.helpCard(dark).let { Brush.verticalGradient(listOf(it.first, it.second)) }),
         ) {
-            Box(Modifier.fillMaxWidth().height(10.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+            Box(Modifier.fillMaxWidth().height(10.dp).background(Brush.horizontalGradient(PocketNight.helpBar())))
             Column(
                 Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 16.dp, bottom = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -140,7 +141,7 @@ private fun PocketHelpBody(kind: FriendlyKind, buttonLabel: String, onClose: () 
                         help.title.uppercase(), fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
                         textAlign = TextAlign.Center, maxLines = 1,
                         modifier = Modifier.semantics { heading() },
-                        style = TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(kind.gradient)),
+                        style = TextStyle(fontFamily = Nunito, brush = Brush.horizontalGradient(PocketNight.title(kind.gradient))),
                     )
                 }
                 Text(
