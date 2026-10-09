@@ -60,21 +60,22 @@ import com.wordocious.app.ui.theme.WTheme
  * ChartCard; every Pro gate uses ProStatsInvite. One look, defined once.
  */
 
-/** Uppercase tracked section label with an accent tick + optional right control. */
+/**
+ * A section title in the bubble lettering (2.8 item 16: "section titles via BubbleText"), tinted in the section's cast
+ * color (core StatsProfile.sectionTitleColor; an unlisted title takes [accent]), with an optional right control.
+ */
 @Composable
 fun SectionHeader(
     label: String,
     accent: Color = WTheme.primary,
     right: (@Composable () -> Unit)? = null,
 ) {
+    val named = com.wordocious.core.StatsProfile.sectionTitleColor(label)
+    val tint = if (named == com.wordocious.core.StatsProfile.CAST_W) accent else coreHexColor(named)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.width(4.dp).height(14.dp).clip(RoundedCornerShape(50)).background(accent))
-        Spacer(Modifier.width(8.dp))
-        // Finishing build: the mockups' `.lbl` — 11 sp Black, .12em, in the section's ink.
-        Text(
-            label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black,
-            color = if (WTheme.isDark) WTheme.textSecondary else darkenInk(accent), letterSpacing = 1.3.sp,
-            modifier = Modifier.semantics { heading() },
+        BubbleText(
+            label.uppercase(), ThemeKit.accentPalette(tint), Modifier.widthIn(max = 240.dp), maxSize = 22, minSize = 13,
+            align = TextAlign.Start,
         )
         Spacer(Modifier.weight(1f))
         right?.invoke()

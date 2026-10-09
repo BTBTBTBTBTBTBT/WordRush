@@ -213,14 +213,15 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit, compact: Boolean = true) 
     // FINISH_SPEC BJ17: free players get the GO PRO sign invitation (no blur, no sample rivals).
     if (!isPro) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionHeader("Rivalries", accent = Color(0xFFEC4899))
+            SectionHeader("Rivals", accent = Color(0xFFEC4899))
             ProStatsInvite("See your head-to-head record against every rival with Pro", onGoPro, compact, cast = "o2")
         }
         return
     }
-    val display = rows
+    // Friends already read in HEAD TO HEAD; rivals are the most-faced opponents who are not.
+    val display = rows.filter { !com.wordocious.app.data.FriendsService.isFriend(it.opponentId) }
     if (display.isEmpty()) {
-        if (loaded) StatsEmptyCard("Rivalries", accent = Color(0xFFEC4899),
+        if (loaded && rows.isEmpty()) StatsEmptyCard("Rivals", accent = Color(0xFFEC4899),
             hint = "Face the same opponent a few times to start a rivalry.")
         return
     }
@@ -228,7 +229,7 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit, compact: Boolean = true) 
     // once rows exist, so the entrance runs on first appear).
     AsyncEntrance(visible = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionHeader("Rivalries", accent = Color(0xFFEC4899))
+        SectionHeader("Rivals", accent = Color(0xFFEC4899))
         val card: @Composable () -> Unit = {
             KitCard(accent = Color(0xFFEC4899)) {
                 Column(Modifier.clip(RoundedCornerShape(10.dp))) {
@@ -243,24 +244,18 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit, compact: Boolean = true) 
 
 @Composable
 private fun RivalryRow(r: StatsDeepService.Rivalry, index: Int) {
-    val pct = if (r.total > 0) r.wins.toFloat() / r.total else 0f
-    Column(
+    // 2.8 item 16: the rival's mascot + a two-color record bar (friends read in HEAD TO HEAD above).
+    Row(
         Modifier.fillMaxWidth().stripedRow(index, Color(0xFFEC4899)).padding(horizontal = 8.dp, vertical = 9.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(
-                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
-                tint = WTheme.primary, modifier = Modifier.size(14.dp),
-            )
-            Text(r.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.text else FinishInk.heading, maxLines = 1, modifier = Modifier.weight(1f))
-            SoftNumber(
-                "${r.wins}–${r.losses}" + if (r.draws > 0) "–${r.draws}" else "", 14.sp,
-                color = if (r.wins >= r.losses) null else LOSS_RED,
-            )
-        }
-        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(LOSS_RED.copy(alpha = 0.2f))) {
-            Box(Modifier.fillMaxWidth(pct.coerceIn(0f, 1f)).height(6.dp).clip(RoundedCornerShape(50)).background(WIN_PURPLE))
+        PlayerAvatar(r.username, 34.dp, userId = r.opponentId)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(r.username, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.text else FinishInk.heading, maxLines = 1, modifier = Modifier.weight(1f))
+                SoftNumber("${r.wins}–${r.losses}" + if (r.draws > 0) "–${r.draws}" else "", 14.sp)
+            }
+            RecordBar(r.wins, r.losses, height = 7.dp)
         }
     }
 }

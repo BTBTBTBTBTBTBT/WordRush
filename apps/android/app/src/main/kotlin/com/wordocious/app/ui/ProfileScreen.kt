@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -201,6 +202,9 @@ fun ProfileScreen(
     LaunchedEffect(view.game) { gameTab = "solo" }
     // All-time's VS section: which word game's board, People ("vs") or Bots ("vs_cpu").
     var vsMode by remember { mutableStateOf("DUEL") }
+    // 2.8 item 16: the pocket-game records behind HEAD TO HEAD + POCKET GAMES (core pocketRecords, server-counted).
+    var pocketRecords by remember { mutableStateOf(PocketRecordsService.cached) }
+    LaunchedEffect(Unit) { PocketRecordsService.fetch()?.let { pocketRecords = it } }
     var vsTab by remember { mutableStateOf("vs") }
     // The per-mode chart fetch is scoped to the page: a game page → that mode
     // and its toggle; Today and All-time → the global Solo view (the charts the
@@ -704,6 +708,8 @@ fun ProfileScreen(
                 val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
                 if (vsTotal > 0) page("rivalries") { RivalriesCard(isPro = isProActive, onGoPro = onGoPro) }
                 page("cpu-record") { CpuRecordCard(stats) }
+                // Head to head with friends (free): mascot + two-color record bar, VS and pocket games together.
+                page("head-to-head") { HeadToHeadSection(pocketRecords, onOpenProfile = onOpenProfile) }
                 page("vs-picker") {
                     VsBoardPicker(
                         // BJ12: every game with live VS boards — ProperNoundle too (it was missing).
@@ -728,10 +734,12 @@ fun ProfileScreen(
                         )
                     }
                 }
-                // ── Recent matches (web parity: skeleton rows while loading, then the rows or the empty state). ──
+                // ── Pocket games (item 16): the record in each, vs friends. ──
+                page("pocket-games") { PocketGamesSection(pocketRecords) }
+                // ── Activity: recent matches (web parity: skeleton rows while loading, then the rows or the empty state). ──
                 page("recent") {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        SectionHeader("Recent Matches", accent = Color(0xFF2563EB))
+                        SectionHeader("Activity", accent = Color(0xFF2563EB))
                         RecentMatchesList(
                             // The newest 50 — the list also carries all of today for Today's Games.
                             matches = recentMatches.take(50), opponentNames = opponentNames, userId = userId,
@@ -889,50 +897,19 @@ private fun TodayLineCard(dbKey: String, completion: DailyCompletionsService.Com
     }
 }
 
-/** All-time's VS board picker: the VS-capable word games as mini game cards (A1, selected =
- *  stronger tint + ring), and People | Bots as a tinted segmented toggle (VS overhaul §10). */
+/** All-time's VS board picker (2.8 item 16): the VS games as 5 over 4, no swipe, then People | Bots centered under it (VS overhaul §10). */
 @Composable
 private fun VsBoardPicker(modes: List<String>, selectedMode: String, tab: String, onMode: (String) -> Unit, onTab: (String) -> Unit) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 1.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            modes.forEach { m ->
-                val active = m == selectedMode
-                val card = modeCardForKey(m)
-                val gm = runCatching { GameMode.valueOf(m) }.getOrNull()
-                val accent = card?.accent ?: gm?.let { modeAccent(it) } ?: WTheme.primary
-                val label = com.wordocious.app.ModeGen.byDbKey(m)?.shortTitle ?: m
-                Box(
-                    Modifier.weight(1f).aspectRatio(1f)
-                        .squishClickable(onClick = { onMode(m) })
-                        .semantics(mergeDescendants = true) {
-                            role = androidx.compose.ui.semantics.Role.Tab
-                            selected = active
-                            contentDescription = "$label VS board"
-                        },
-                ) {
-                    Box(Modifier.fillMaxSize().miniGameCard(accent, 11.dp, selected = active), contentAlignment = Alignment.Center) {
-                        val art = gameArtRes(card?.id)
-                        if (art != null) {
-                            androidx.compose.foundation.Image(
-                                androidx.compose.ui.res.painterResource(art), null,
-                                modifier = Modifier.fillMaxSize(0.72f).padding(top = 2.dp),
-                            )
-                        } else if (gm != null) {
-                            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                ModeGlyph(gm, accent, box = maxWidth * 0.7f)
-                            }
-                        }
-                    }
-                }
-            }
+        VsGamePicker(modes, selectedMode, onMode)
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            StatsSegmented(
+                options = listOf("vs" to "People", "vs_cpu" to "Bots"),
+                selected = tab, onSelect = onTab,
+                track = Color(0xFF0D9488), fill = Color(0xFF0D9488),
+                modifier = Modifier.width(180.dp),
+            )
         }
-        // VS overhaul §10: People | Bots (was Live | CPU) on all three platforms.
-        StatsSegmented(
-            options = listOf("vs" to "People", "vs_cpu" to "Bots"),
-            selected = tab, onSelect = onTab,
-            track = Color(0xFF0D9488), fill = Color(0xFF0D9488),
-            modifier = Modifier.align(Alignment.End).width(180.dp),
-        )
     }
 }
 
@@ -956,7 +933,7 @@ private fun ModeStatsBody(
     isProActive: Boolean,
     onGoPro: () -> Unit,
 ) {
-    ModeDetailHeader(mode, tab)
+    // 2.8 item 16: no header row — the picker's selected tile / title art already names the game.
     val tabStats = stats.filter { it.playType == tab && it.gameMode == mode }
     // Always the grid — the aggregations zero out on an empty list, so an
     // unplayed mode reads 0/0/0 instead of swapping in a placeholder box (iOS
@@ -979,6 +956,7 @@ private fun ModeStatsBody(
     if (panels.guessDistribution) {
         GuessDistributionCard(
             guessDist, com.wordocious.app.data.ModeStats.guessNoun(modeSemantics),
+            hint = guessDist.firstOrNull { it.count > 0 }?.let { "Best ${it.label}" },
             countsGames = com.wordocious.app.data.ModeStats.distributionSpec(mode)?.countsAll == true,
         )
     }
@@ -1259,43 +1237,6 @@ private fun FlawlessBannerFooter(total: Int, seed: MatchStatsService.DailySweepS
 // RecentMatches.kt now, shared by the Today page's Recent Games and All-time.)
 
 // ── Mode-detail header + stats grid (web mode-detail-panel.tsx) ───────────────
-/** Mode icon tile (a mini game card) + title in the mode's ink, and a read-only
- *  play-type pill that reflects the page-level Solo/VS/VS-CPU toggle. */
-@Composable
-private fun ModeDetailHeader(modeId: String, activeTab: String) {
-    val mode = runCatching { GameMode.valueOf(modeId) }.getOrNull()
-    val card = modeCardForKey(modeId)
-    val accent = card?.accent ?: mode?.let { modeAccent(it) } ?: WTheme.primary
-    val ink = if (WTheme.isDark) WTheme.text else darkenInk(accent)
-    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { heading() }, verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(36.dp).miniGameCard(accent, 10.dp), Alignment.Center) {
-            val art = gameArtRes(card?.id)
-            if (art != null) androidx.compose.foundation.Image(androidx.compose.ui.res.painterResource(art), null, Modifier.size(26.dp).padding(top = 2.dp))
-            else mode?.let { ModeGlyph(it, accent, box = 32.dp) }
-        }
-        Spacer(Modifier.width(10.dp))
-        Text(modeLabel(modeId), fontSize = 16.sp, fontWeight = FontWeight.Black, color = ink)
-        Spacer(Modifier.weight(1f))
-        Row(
-            Modifier.tintedPill(accent, corner = 10.dp).padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 5.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            when (activeTab) {
-                "solo" -> Icon(Icons.Filled.Person, null, tint = ink, modifier = Modifier.size(12.dp))
-                "vs" -> Icon(
-                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
-                    tint = ink, modifier = Modifier.size(12.dp),
-                )
-                else -> Icon(Icons.Filled.Memory, null, tint = ink, modifier = Modifier.size(12.dp))
-            }
-            Text(
-                if (activeTab == "solo") "Solo" else if (activeTab == "vs") "VS" else "VS Bots",
-                fontSize = 10.sp, fontWeight = FontWeight.Black, color = ink,
-            )
-        }
-    }
-}
-
 /** 4×2 stats grid for the selected mode (web ModeStatsCard): a tinted card in the game's
  *  accent with its top bar, every value a soft number (A2). */
 @Composable
@@ -1321,21 +1262,35 @@ private fun ModeStatsGrid(
     ).map { it.label to it.value }
     val accent = modeCardForKey(dbKey)?.accent ?: runCatching { modeAccent(GameMode.valueOf(dbKey)) }.getOrDefault(WTheme.primary)
     val labelInk = if (WTheme.isDark) WTheme.textMuted else darkenInk(accent)
+    var more by remember { mutableStateOf(false) }
+    // 2.8 item 16 (founder 10-07): 8 stat boxes -> 4 hero stats (Record, win-rate ring, Streak with the best small, Fastest)
+    // with soft 3D icons, then "More stats" folding the registry's eight cells so nothing is lost.
     KitCard(accent = accent) {
-        cells.chunked(4).forEachIndexed { i, row ->
-            if (i > 0) Spacer(Modifier.height(12.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { (label, value) ->
-                    Column(
-                        Modifier.weight(1f).semantics(mergeDescendants = true) { },
-                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        FitSoftNumber(value, 20.sp)
-                        Text(
-                            label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Black,
-                            color = labelInk, letterSpacing = 0.4.sp,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        )
+        HeroStatsRow(wins, losses, streak?.first ?: 0, streak?.second ?: 0, fastest.toDouble(), accent)
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            HelperButton(
+                text = if (more) "Fewer stats" else "More stats", onClick = { more = !more }, tint = accent, selected = more,
+                contentDescription = if (more) "Hide more stats" else "Show more stats",
+            )
+        }
+        if (more) {
+            Spacer(Modifier.height(12.dp))
+            cells.chunked(4).forEachIndexed { i, row ->
+                if (i > 0) Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { (label, value) ->
+                        Column(
+                            Modifier.weight(1f).semantics(mergeDescendants = true) { },
+                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            FitSoftNumber(value, 17.sp)
+                            Text(
+                                label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Black,
+                                color = labelInk, letterSpacing = 0.4.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                        }
                     }
                 }
             }
@@ -1532,6 +1487,8 @@ private fun GuessDistributionCard(
     hint: String? = null,
     countsGames: Boolean = false,
 ) {
+    // 2.8 item 16: hidden until there is a win (core showGuessDistribution) — no placeholder sentence.
+    if (!com.wordocious.core.StatsProfile.showGuessDistribution(buckets.map { it.count })) return
     val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
     val totalWins = buckets.sumOf { it.count }
     val unitOne = if (countsGames) "game" else "win"
@@ -1546,23 +1503,16 @@ private fun GuessDistributionCard(
     var selected by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            SectionLabel("${noun.one.uppercase()} DISTRIBUTION")
+            BubbleText(
+                noun.many.uppercase(), ThemeKit.accentPalette(coreHexColor(com.wordocious.core.StatsProfile.CAST_I)),
+                Modifier.widthIn(max = 220.dp), maxSize = 20, minSize = 13, align = androidx.compose.ui.text.style.TextAlign.Start,
+            )
             if (hint != null) Text(hint, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
         Column(
             Modifier.fillMaxWidth().statsSurface().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            if (buckets.none { it.count > 0 }) {
-                // Web parity: chart-specific empty copy (guess-distribution.tsx).
-                Text(
-                    "${if (countsGames) "Play" else "Win"} a game to see your ${noun.one} distribution", fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-                return@Column
-            }
             buckets.forEach { b ->
                 val dimmed = selected != null && selected != b.label
                 Row(
@@ -1863,28 +1813,29 @@ private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.a
 }
 
 // ── VS RECORD / CPU RECORD (the VS page) ──────────────────────────────────────
-/** vs Bots record — unranked: no leaderboard, no XP, no streak. */
+/** vs Bots — ONE line (2.8 item 16): the bot's mascot, "26–17 · 60%", the best streak as a small flame. No dashed box, no "43 matches". */
 @Composable
 private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
     val cpuStats = stats.filter { it.playType == "vs_cpu" }
     val wins = cpuStats.sumOf { it.wins }
     val losses = cpuStats.sumOf { it.losses }
-    val total = wins + losses
-    // Always shown on the VS tab (even at 0–0) so the practice record is
-    // discoverable before the first bot match; it fills in once you play one.
-    val winRate = if (total > 0) Math.round(wins.toFloat() / total * 100) else 0
-    val bestStreak = com.wordocious.app.data.CpuProgressionStore.load().bestStreak
-    val slate = Color(0xFF64748B)
-    RecordCard(
-        swatch = StatsInk.of(slate), label = "VS BOTS", record = "$wins–$losses",
-        rate = if (total == 0) "—" else "$winRate%",
-        rateCaption = if (total == 0) "NO GAMES YET" else "WIN RATE · $total ${if (total == 1) "MATCH" else "MATCHES"}",
-        icon = { Icon(Icons.Filled.Memory, null, tint = slate, modifier = Modifier.size(20.dp)) },
-    ) {
-        if (total == 0) Text("Beat a bot to start your record", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (WTheme.isDark) WTheme.textMuted else FinishInk.muted)
-        else if (bestStreak > 0) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            Icon3D(Icon3DName.FLAME, 13.dp)
-            Text("Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))
+    val prog = com.wordocious.app.data.CpuProgressionStore.load()
+    // The bot whose mascot heads the line: the highest rung cleared (Rip before any).
+    val bot = com.wordocious.core.BotCast.MEMBERS.let { it[(prog.ladderCleared.coerceIn(1, it.size)) - 1] }
+    val teal = Color(0xFF0D9488)
+    KitCard(accent = teal) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            com.wordocious.app.ui.vs.BotAvatar(bot.id, 44.dp)
+            Column(Modifier.weight(1f)) {
+                Text("VS BOTS", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, color = if (WTheme.isDark) WTheme.textSecondary else Color(0xFF0F766E))
+                SoftNumber(com.wordocious.core.StatsProfile.botsLine(wins, losses), 20.sp)
+            }
+            if (prog.bestStreak > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Icon3D(Icon3DName.FLAME, 16.dp)
+                    Text("${prog.bestStreak}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFF97316))
+                }
+            }
         }
     }
 }
