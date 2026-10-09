@@ -16,3 +16,11 @@ Regenerate each body the founder keeps ONE PER IMAGE (~870 px) before shipping. 
 (`face`, `eyeY`, `mouthY`, `cheekY`, `mustacheY`, `letterBox`) are not set yet: that is the design step per body.
 Known nits: the ghost hem has a faint cyan fringe between the feet; the moon leaves less face room than the others (letter
 box should sit in the fat lobe).
+
+## Update (batch 3): one-per-image regenerations DONE for all 18
+`hires/<id>.png` = the ChatGPT one-body-per-image result (868 px capture of a 1254 px image, flat cyan), reference = the shipped bodies
+sheet. `make-1024-hires.py` keys them and writes `draft1024-hires/art-av-body-<id>.png` (1024 x 1024, feet bottom y 988, <= 890 tall):
+use THESE (not `draft1024`) for `integration/landmarks.py` / `compare.py` / `rig-body.py`. `contact-sheet-hires.png` shows all 18 (the
+mittens, feet and gloss match the shipped bodies; pumpkin and ghost are pure white = Halloween tint comes from the body color in code;
+the pumpkin keeps its stem). Extra duplicate potato render was discarded. Still to do per body: manifest face/letter anchors, landmarks
+overlay check, rig, parity fixtures.
