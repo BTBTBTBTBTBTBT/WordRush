@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
-import { friendAchievements } from '@wordle-duel/core';
+import { friendAchievements, richPushTitle } from '@wordle-duel/core';
 import { grantAchievements } from '@/lib/achievements-server';
 import { requireUser, areFriends, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -41,9 +41,10 @@ export async function POST(req: NextRequest) {
     const { data: meProf } = await admin.from('profiles').select('username').eq('id', me).maybeSingle();
     const who = meProf?.username ?? 'A friend';
     void broadcastPush(
-      { title: emoji === 'rematch' ? `${who} wants a rematch` : `${who} reacted ${REACTIONS[emoji]}`, body: 'Tap to see it in Friends.', url: '/friends' },
+      { title: richPushTitle(emoji === 'rematch' ? 'rematch' : 'reaction', who), body: emoji === 'rematch' ? 'Tap to play again.' : `${REACTIONS[emoji]} Tap to see it in Friends.`, url: '/friends' },
       new Set([body.ownerId]),
       'feed',
+      { senderId: me, senderName: who, gameId: 'practice', gameTitle: 'Wordocious', kind: 'react', url: '/friends' },
     ).catch(() => {});
   }
   // FINISH_SPEC BE + BF1: Cheerleader (25 reactions sent), returned as newAchievements.

@@ -36,7 +36,9 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || "Your daily puzzles are ready!",
     // FINISH_SPEC K2: the app icon B; a large image (the event's cast pose) when the payload carries one.
-    icon: '/icon-192.png',
+    // Item 34: the sender's mascot as the icon when the payload carries one; a thread tag stacks / replaces.
+    icon: data.icon || '/icon-192.png',
+    ...(data.tag ? { tag: data.tag, renotify: true } : {}),
     // BJ11: the status-bar badge is a white W-mascot silhouette (Android masks it to alpha —
     // a full-color icon there reads as a blank white square). Same shape as ic_stat_wordocious.
     badge: '/badge-96.png',

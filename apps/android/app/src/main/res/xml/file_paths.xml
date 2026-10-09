@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <cache-path name="share" path="share/" />
+    <!-- Item 34: the rich push game art (inline image in the expanded notification). -->
+    <cache-path name="push" path="push/" />
 </paths>

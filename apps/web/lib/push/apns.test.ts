@@ -6,6 +6,7 @@ import {
   isApnsConfigured,
   resetProviderTokenCache,
   sendApns,
+  buildPayload,
 } from './apns';
 
 // A throwaway P-256 key — same curve/format as a real Apple .p8, so the
@@ -109,5 +110,26 @@ describe('sendApns', () => {
     const result = await sendApns([{ token: 'abc', title: 'T', body: 'B' }]);
     expect(result.failed).toBe(1);
     expect(result.staleTokens).toEqual([]);
+  });
+});
+
+describe('buildPayload (rich push)', () => {
+  const RICH = {
+    senderId: 'u1', senderName: 'Ava', senderAvatar: 'https://wordocious.com/api/push/art/avatar/u1',
+    gameId: 'hub', gameTitle: 'Hubbub', gameImage: 'https://wordocious.com/api/push/art/game/hub',
+    thread: 'game:g1', accent: '#c026d3', halloween: '0' as const, url: '/friends/games/g1',
+  };
+  it('a plain push has no extension hooks', () => {
+    const p = JSON.parse(buildPayload({ token: 't', title: 'a', body: 'b' }));
+    expect(p.aps['mutable-content']).toBeUndefined();
+    expect(p.rich).toBeUndefined();
+  });
+  it('a rich push asks for the service extension, threads and categorizes', () => {
+    const p = JSON.parse(buildPayload({ token: 't', title: 'Ava played Hubbub', body: 'Your turn', url: '/friends/games/g1', rich: RICH }));
+    expect(p.aps['mutable-content']).toBe(1);
+    expect(p.aps['thread-id']).toBe('game:g1');
+    expect(p.aps.category).toBe('WORDOCIOUS_GAME');
+    expect(p.rich.senderAvatar).toBe(RICH.senderAvatar);
+    expect(p.url).toBe('/friends/games/g1');
   });
 });

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { richPushTitle } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, areFriends, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -55,12 +56,13 @@ export async function POST(req: NextRequest) {
   const { data: meProf } = await admin.from('profiles').select('username').eq('id', me).maybeSingle();
   void broadcastPush(
     {
-      title: `Taunt from ${meProf?.username ?? 'a friend'}`,
+      title: richPushTitle('taunt', meProf?.username),
       body: taunt.text,
       url: '/daily',
     },
     new Set([body.friendId]),
     'nudge',
+    { senderId: me, senderName: meProf?.username ?? 'A friend', gameId: 'practice', gameTitle: 'Wordocious', kind: 'taunt', url: '/daily' },
   ).catch(() => {});
 
   return NextResponse.json({ sent: true });

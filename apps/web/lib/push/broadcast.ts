@@ -2,6 +2,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { sendApns, type ApnsMessage } from '@/lib/push/apns';
 import { sendFcm, type FcmMessage } from '@/lib/push/fcm';
 import webpush from 'web-push';
+import { buildRichFields, richPushSwitches, type RichInput } from '@/lib/push/rich';
 
 // One notification, every channel: web push + APNs + FCM, deduped per user —
 // extracted from the daily-reminder cron so admin campaigns and crons share a
@@ -30,8 +31,13 @@ export async function broadcastPush(
   /** Friends pushes name a category; a recipient whose
    *  profiles.notification_prefs[category] === false is skipped (D3.5). */
   category?: PushCategory,
+  /** Item 34: the friend + game behind this push. With the `rich_push` switch on, every channel carries the
+   *  card fields (sender mascot, game art, thread, collapse); off = the plain legacy payload. */
+  richInput?: RichInput,
 ): Promise<BroadcastResult> {
   const sb = getAdminSupabase();
+  const sw = richInput ? await richPushSwitches(sb) : null;
+  const built = richInput && sw?.rich ? buildRichFields(richInput, sw.halloween) : null;
 
   if (category && userIds && userIds.size > 0) {
     const { data: prefRows } = await sb.from('profiles').select('id, notification_prefs').in('id', [...userIds]);
@@ -53,13 +59,24 @@ export async function broadcastPush(
     );
   }
 
-  const [{ data: subs }, { data: devices }] = await Promise.all([
+  // rich_push (device_tokens.rich_push) = a build that draws its own Android notification; the column may not
+  // exist yet (manual migration), so fall back to the plain select.
+  const [{ data: subs }, devicesRes] = await Promise.all([
     sb.from('push_subscriptions').select('user_id, endpoint, keys'),
-    sb.from('device_tokens').select('user_id, token, platform').in('platform', ['ios', 'android']),
+    sb.from('device_tokens').select('user_id, token, platform, rich_push').in('platform', ['ios', 'android']),
   ]);
+  let devices: any[] | null = devicesRes.data as any[] | null;
+  if (devicesRes.error) {
+    const plain = await sb.from('device_tokens').select('user_id, token, platform').in('platform', ['ios', 'android']);
+    devices = plain.data as any[] | null;
+  }
 
   const inSegment = (uid: string) => userIds === null || userIds.has(uid);
-  const payload = JSON.stringify({ title, body, url });
+  // Web push: the service worker draws icon (sender mascot) + image (game art) + tag (thread) when present.
+  const payload = JSON.stringify({
+    title, body, url,
+    ...(built ? { icon: built.fields.senderAvatar, image: built.fields.gameImage, tag: built.fields.thread, accent: built.fields.accent } : {}),
+  });
 
   let sent = 0;
   let failed = 0;
@@ -89,10 +106,13 @@ export async function broadcastPush(
   );
   const apnsTargets: ApnsMessage[] = nativeTargets
     .filter((d: any) => d.platform === 'ios')
-    .map((d: any) => ({ token: d.token, title, body, url }));
+    .map((d: any) => ({ token: d.token, title, body, url, ...(built ? { rich: built.fields, collapseId: built.collapseId } : {}) }));
   const fcmTargets: FcmMessage[] = nativeTargets
     .filter((d: any) => d.platform === 'android')
-    .map((d: any) => ({ token: d.token, title, body, url }));
+    .map((d: any) => ({
+      token: d.token, title, body, url,
+      ...(built ? { rich: built.fields, richCapable: d.rich_push === true, collapseKey: built.collapseId } : {}),
+    }));
 
   const [apns, fcm] = await Promise.all([sendApns(apnsTargets), sendFcm(fcmTargets)]);
   sent += apns.sent + fcm.sent;

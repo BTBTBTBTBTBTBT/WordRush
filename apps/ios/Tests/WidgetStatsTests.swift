@@ -98,6 +98,9 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertFalse(WidgetCast.ownPeekDay(played: 0, total: 8, streak: 14))
         XCTAssertEqual(WidgetCast.peekAsset("d-cheer", day: "2026-10-02"), "art-pose-d-cheer")
         XCTAssertEqual(WidgetCast.peekAsset("o1-cheer", day: "2026-10-30"), "art-halloween-o1")
+        // The season_halloween off-switch: normal cast even inside the window.
+        XCTAssertEqual(WidgetCast.peekAsset("o1-cheer", day: "2026-10-30", seasonOn: false), "art-pose-o1-cheer")
+        XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-30", seasonOn: false), "mascot-w")
     }
 
     /// FINISH_SPEC BC: the short points form is a last resort only.

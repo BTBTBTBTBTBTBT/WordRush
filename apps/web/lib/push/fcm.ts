@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type { RichPushFields } from '@wordle-duel/core';
 
 // FCM HTTP v1 sender — the Android counterpart to apns.ts, same shape so the
 // callers can treat the two symmetrically.
@@ -33,6 +34,13 @@ export interface FcmMessage {
   url?: string;
   /** Optional large image (absolute https URL, PNG/JPEG), e.g. the event's cast pose (FINISH_SPEC K2). */
   image?: string;
+  /** 2.8 rich push (item 34): the card fields. */
+  rich?: RichPushFields;
+  /** True for a build that draws the rich notification itself (device_tokens.rich_push): it gets a
+   *  data-only message (MessagingStyle + Person + BigPicture); older builds keep the system-drawn one. */
+  richCapable?: boolean;
+  /** FCM collapse_key: rapid-fire moves in one game replace each other. */
+  collapseKey?: string;
 }
 
 /**
@@ -44,14 +52,42 @@ export interface FcmMessage {
 export const ANDROID_NOTIFICATION = { icon: 'ic_stat_wordocious', color: '#7c3aed' } as const;
 
 /** The FCM v1 `message` for one push (pure, unit-tested). */
-export function fcmMessageBody(m: FcmMessage) {
+export interface FcmV1Body {
+  token: string;
+  notification?: { title: string; body: string; image?: string };
+  data?: Record<string, string>;
+  android: { priority: 'high'; collapse_key?: string; notification?: Record<string, string> };
+}
+
+export function fcmMessageBody(m: FcmMessage): FcmV1Body {
+  if (m.rich && m.richCapable) {
+    // Data-only: onMessageReceived builds the notification (the app is the one drawing it).
+    return {
+      token: m.token,
+      data: {
+        rich: '1', title: m.title, body: m.body, url: m.url ?? m.rich.url,
+        senderId: m.rich.senderId, senderName: m.rich.senderName, senderAvatar: m.rich.senderAvatar,
+        gameId: m.rich.gameId, gameTitle: m.rich.gameTitle, gameImage: m.rich.gameImage,
+        thread: m.rich.thread, accent: m.rich.accent, halloween: m.rich.halloween,
+        ...(m.rich.score ? { score: m.rich.score } : {}),
+      },
+      android: {
+        priority: 'high' as const,
+        ...(m.collapseKey ? { collapse_key: m.collapseKey.slice(0, 64) } : {}),
+      },
+    };
+  }
   return {
     token: m.token,
-    notification: { title: m.title, body: m.body, ...(m.image ? { image: m.image } : {}) },
+    notification: { title: m.title, body: m.body, ...((m.image ?? m.rich?.gameImage) ? { image: (m.image ?? m.rich?.gameImage) as string } : {}) },
     // Delivered alongside the notification so a tap can deep-link,
     // matching the `url` the APNs payload carries.
     ...(m.url ? { data: { url: m.url } } : {}),
-    android: { priority: 'high' as const, notification: { ...ANDROID_NOTIFICATION } },
+    android: {
+      priority: 'high' as const,
+      ...(m.collapseKey ? { collapse_key: m.collapseKey.slice(0, 64) } : {}),
+      notification: { ...ANDROID_NOTIFICATION, ...(m.rich ? { color: m.rich.accent, tag: m.rich.thread } : {}) },
+    },
   };
 }
 

@@ -130,7 +130,27 @@ describe('fcmMessageBody (FINISH_SPEC K2)', () => {
     expect(b.notification).toEqual({ title: 'Oliver beat you', body: '2,005 vs 1,860' });
   });
   it('attaches a large image only when given', () => {
-    expect(fcmMessageBody({ token: 't', title: 'a', body: 'b', image: 'https://wordocious.com/email/pose.png' }).notification.image).toBe('https://wordocious.com/email/pose.png');
+    expect(fcmMessageBody({ token: 't', title: 'a', body: 'b', image: 'https://wordocious.com/email/pose.png' }).notification?.image).toBe('https://wordocious.com/email/pose.png');
     expect('data' in fcmMessageBody({ token: 't', title: 'a', body: 'b' })).toBe(false);
+  });
+
+  const RICH = {
+    senderId: 'u1', senderName: 'Ava', senderAvatar: 'https://wordocious.com/api/push/art/avatar/u1',
+    gameId: 'hub', gameTitle: 'Hubbub', gameImage: 'https://wordocious.com/api/push/art/game/hub',
+    thread: 'friend:u1', accent: '#c026d3', halloween: '0' as const, url: '/friends/games/g1',
+  };
+  it('rich push: a build that draws its own notification gets a data-only message', () => {
+    const b = fcmMessageBody({ token: 't', title: 'Ava played Hubbub', body: 'Your turn', rich: RICH, richCapable: true, collapseKey: 'move:g1' });
+    expect(b.notification).toBeUndefined();
+    expect(b.data?.rich).toBe('1');
+    expect(b.data?.senderAvatar).toBe(RICH.senderAvatar);
+    expect(b.data?.gameImage).toBe(RICH.gameImage);
+    expect(b.android.collapse_key).toBe('move:g1');
+  });
+  it('rich push: an older build keeps the system-drawn notification (with the game image)', () => {
+    const b = fcmMessageBody({ token: 't', title: 'Ava played Hubbub', body: 'Your turn', rich: RICH, richCapable: false });
+    expect(b.notification?.image).toBe(RICH.gameImage);
+    expect(b.android.notification?.color).toBe('#c026d3');
+    expect(b.android.notification?.tag).toBe('friend:u1');
   });
 });

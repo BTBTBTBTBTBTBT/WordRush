@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PUSH_TITLE, pushCopy } from '@wordle-duel/core';
+import { pushCopy, richPushTitle } from '@wordle-duel/core';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { requireUser, areFriends, isUuid } from '@/lib/friends-server';
 import { broadcastPush } from '@/lib/push/broadcast';
@@ -69,12 +69,16 @@ export async function POST(req: NextRequest) {
   void broadcastPush(
     {
       // FINISH_SPEC AE: the shared cast-voice push copy.
-      title: PUSH_TITLE,
+      title: richPushTitle('challenge', meProf?.username, title),
       body: pushCopy('challengeReceived', { name: meProf?.username ?? undefined, game: title }),
       url: `/vs/join/${inviteCode}`,
     },
     new Set([body.friendId]),
     'challenge',
+    {
+      senderId: me, senderName: meProf?.username ?? 'A friend', gameId: MODE_BY_DBKEY[gameMode]?.id ?? 'practice', gameTitle: title,
+      accentHex: MODE_BY_DBKEY[gameMode]?.accentHex, kind: 'challenge', url: `/vs/join/${inviteCode}`,
+    },
   ).catch(() => {});
 
   return NextResponse.json({ code: inviteCode, gameMode });

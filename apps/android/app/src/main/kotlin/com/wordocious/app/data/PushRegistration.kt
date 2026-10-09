@@ -31,6 +31,8 @@ object PushRegistration {
         @SerialName("user_id") val userId: String,
         val platform: String,
         val token: String,
+        /** Item 34: this build draws its own rich notification (server sends it a data-only message). */
+        @SerialName("rich_push") val richPush: Boolean? = null,
     )
 
     /**
@@ -66,13 +68,26 @@ object PushRegistration {
                 .select { filter { eq("token", token) } }
                 .decodeList<TokenRow>()
             if (existing.isEmpty()) {
-                client.postgrest["device_tokens"]
-                    .insert(TokenRow(userId = uid, platform = "android", token = token))
+                // rich_push needs the 20261009000004 migration; before it lands, fall back to the plain row.
+                runCatching {
+                    client.postgrest["device_tokens"]
+                        .insert(TokenRow(userId = uid, platform = "android", token = token, richPush = true))
+                }.onFailure {
+                    client.postgrest["device_tokens"]
+                        .insert(TokenRow(userId = uid, platform = "android", token = token))
+                }
             } else if (existing.first().userId != uid) {
                 // Device changed hands (sign out -> different account): repoint
                 // the row so pushes follow the account actually on the device.
                 client.postgrest["device_tokens"]
                     .update({ set("user_id", uid) }) { filter { eq("token", token) } }
+            }
+            // Item 34: an older row for this token learns that this build draws its own rich notification.
+            if (existing.isNotEmpty() && existing.first().richPush != true) {
+                runCatching {
+                    client.postgrest["device_tokens"]
+                        .update({ set("rich_push", true) }) { filter { eq("token", token) } }
+                }
             }
         }
     }
@@ -102,6 +117,11 @@ class WordociousMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
+        // Item 34: a rich push is data-only; this build draws it (MessagingStyle + sender Person + game art).
+        if (message.data["rich"] == "1") {
+            // onMessageReceived runs on a worker thread with ~20 s: the two image downloads fit comfortably.
+            runCatching { RichPushNotifier.show(applicationContext, message.data) }
+        }
         // Notification-payload messages are drawn by the system; nothing to do.
         // Friends overhaul §5: a pocket-game push that lands while the app is open
         // refreshes the games list, so the Friends tab badge counts the new turn.

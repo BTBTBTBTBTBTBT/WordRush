@@ -11,6 +11,8 @@ interface UserRow {
   level: number;
   is_pro: boolean;
   is_banned: boolean;
+  age_confirmed_13?: boolean;   // 13+ age check (item 29)
+  age_under13_at?: string | null;
   last_played_at: string | null;
   created_at: string;
   role: string;
@@ -138,6 +140,8 @@ export default function AdminUsersPage() {
                     <div className="flex gap-1">
                       {user.is_pro && <span className="text-[10px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">PRO</span>}
                       {user.is_banned && <span className="text-[10px] font-extrabold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">BANNED</span>}
+                      {user.age_under13_at && !user.age_confirmed_13 && <span className="text-[10px] font-extrabold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded" title="Answered under 13; purged after 7 days">UNDER 13</span>}
+                      {user.age_confirmed_13 === false && !user.age_under13_at && <span className="text-[10px] font-bold text-gray-400" title="Not asked yet (existing account, no 2.8 launch)">13+ ?</span>}
                       {!user.is_pro && !user.is_banned && <span className="text-gray-400 text-xs">Free</span>}
                     </div>
                   </td>
