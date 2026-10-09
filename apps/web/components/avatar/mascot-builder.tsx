@@ -332,7 +332,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={artSrc(avatarOptionArt(shelf[0].field as BuilderField, shelf[0].id))} alt="" aria-hidden="true" draggable={false} style={{ width: 24, height: 24, objectFit: 'contain' }} />
                 </span>
-                <span className="text-[8.5px] font-black whitespace-nowrap tracking-[-0.25px]" style={{ color: on ? '#c2410c' : '#6b5c8f' }}>{label}</span>
+                <span className="dr-tab-label text-[8.5px] font-black whitespace-nowrap tracking-[-0.25px]" data-on={on} data-season="true">{label}</span>
               </button>
             );
           })()}
@@ -344,7 +344,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
                 <span className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: on ? '#ffffff' : 'rgba(255,255,255,0.55)', boxShadow: on ? '0 4px 14px rgba(124,58,237,0.35)' : undefined }}>
                   <StageArt name={`art-dress-tab-${art}`} height={24} />
                 </span>
-                <span className="text-[8.5px] font-black whitespace-nowrap tracking-[-0.25px]" style={{ color: on ? '#6d28d9' : '#6b5c8f' }}>{label}</span>
+                <span className="dr-tab-label text-[8.5px] font-black whitespace-nowrap tracking-[-0.25px]" data-on={on}>{label}</span>
               </button>
             );
           })}

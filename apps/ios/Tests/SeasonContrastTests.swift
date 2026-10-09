@@ -172,7 +172,7 @@ final class SeasonContrastTests: XCTestCase {
         for l in try Self.looks() where l.card != nil {
             for (accent, daily) in games {
                 let title = l.dark ? InkContrast.mix(accent, over: 0xFFFFFF, 0.55) : accent
-                let washes = l.dark ? (daily ? [0.05, 0.38] : [0.05]) : (daily ? [0.08, 0.16] : [0.08])
+                let washes = l.dark ? (daily ? [0.05, 0.355] : [0.05]) : (daily ? [0.08, 0.16] : [0.08])
                 for c in l.cardOverWalls {
                     for w in washes {
                         let bg = InkContrast.mix(accent, over: c, w)
@@ -223,8 +223,10 @@ final class SeasonContrastTests: XCTestCase {
     /// (black 12% over it pressed) with a white 12.5-pt label.
     func testSelectedHelperOnButtonTint() throws {
         for l in try Self.looks() {
-            expect(0xFFFFFF, on: l.buttonTint, 4.5, "\(l.id) selected helper label")
-            expect(0xFFFFFF, on: InkContrast.mix(0x000000, over: l.buttonTint, 0.12), 4.5, "\(l.id) selected helper label (pressed)")
+            // FamilyInk.selectedInk: white, or near-black on a bright tint (InkContrast.onSolid).
+            let ink = InkContrast.onSolid(l.buttonTint)
+            expect(ink, on: l.buttonTint, 4.5, "\(l.id) selected helper label")
+            expect(ink, on: InkContrast.mix(0x000000, over: l.buttonTint, 0.12), 4.5, "\(l.id) selected helper label (pressed)")
         }
     }
 }

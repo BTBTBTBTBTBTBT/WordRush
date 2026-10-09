@@ -164,7 +164,7 @@ struct GameCardChrome: ViewModifier {
 /// A finished daily under a DARK season's glass (founder 10-05): the share of the game color over
 /// the night card (finished / unplayed) and its glow. Android SeasonDone, web SEASON_DONE.
 enum SeasonDone {
-    static let wash = 0.38
+    static let wash = 0.355
     static let idle = 0.05
     static let glow = 0.55
     /// An unplayed hero progress tile: the game color's share over the night card (its icon dims).

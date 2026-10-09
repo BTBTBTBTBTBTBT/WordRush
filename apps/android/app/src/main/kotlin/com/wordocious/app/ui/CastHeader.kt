@@ -303,13 +303,13 @@ fun LivingCastHeader(
                             }
                         }
                         val who = acting
-                        // The flourish: every character plays the W hop in a left-to-right wave.
+                        // The flourish: every character settles with one soft arc in a left-to-right wave (item 47).
                         val hop = if (wave.value >= 0f) IntroFlourish.local(i, wave.value) else null
                         if (who != id && hop == null) {
                             drawContent()
                             return@drawWithContent
                         }
-                        val move = if (hop != null) CastMoves.moves.getValue(MascotId.W) else CastMoves.moves.getValue(id)
+                        val move = if (hop != null) CastMoves.flourish else CastMoves.moves.getValue(id)
                         val xf = CastMoves.sample(move, hop ?: progress.value)
                         val w = size.width
                         val h = size.height

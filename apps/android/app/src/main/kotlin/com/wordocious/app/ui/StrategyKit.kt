@@ -575,13 +575,12 @@ private fun hexColor(hex: String, fallback: Color): Color =
     runCatching { Color(("FF" + hex.removePrefix("#")).toLong(16)) }.getOrDefault(fallback)
 
 /**
- * How to Play in the guide family: the hero card (W ready, the pink "Take the tour"),
+ * How to Play in the guide family: the hero card (W ready),
  * then sections numbered 1..N. [tile] draws one example letter tile (unchanged).
  */
 @Composable
 fun HowToPlayBody(
     sections: List<HowToPlayService.Section>,
-    onTour: () -> Unit,
     tile: @Composable (HowToPlayService.Letter) -> Unit,
     /** BI24: the fetch came back empty — the caller draws its offline state, so no loader. */
     loadFailed: Boolean = false,
@@ -597,7 +596,6 @@ fun HowToPlayBody(
                 "Everything you need to know to get started", fontSize = 13.sp, fontWeight = FontWeight.Bold,
                 color = InfoInk.muted, textAlign = TextAlign.Center,
             )
-            CandyButton("Take the tour", onClick = onTour, color = CandyColor.PINK, size = CandySize.MEDIUM, modifier = Modifier.padding(top = 4.dp))
         }
         if (sections.isEmpty()) {
             if (!loadFailed) CastLoader(null, Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally))

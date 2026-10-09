@@ -197,7 +197,12 @@ export const FrequencyStrip = memo(function FrequencyStrip({ state, selected, on
             aria-label={`Code letter ${c}, ${freq[c]} times${plain ? `, penciled ${plain}` : ''}`}>
             <span style={{ fontFamily: MONO }}>{c}</span>
             <span className="opacity-70">{freq[c]}</span>
-            {plain && <span className={`font-black ${locked ? CODE_INK.className : ''}`} style={locked ? CODE_INK.style : { color: 'var(--color-text)' }}>→{plain}</span>}
+            {/* Founder 10-08: the "→X" slot is reserved from the start (a hidden "→W", the widest), so a letter
+                landing never widens the chip, never re-wraps the strip and never shrinks the board above it. */}
+            <span className="relative inline-grid font-black">
+              <span aria-hidden="true" className="invisible col-start-1 row-start-1">→W</span>
+              {plain && <span className={`col-start-1 row-start-1 ${locked ? CODE_INK.className : ''}`} style={locked ? CODE_INK.style : { color: 'var(--color-text)' }}>→{plain}</span>}
+            </span>
           </button>
         );
       })}

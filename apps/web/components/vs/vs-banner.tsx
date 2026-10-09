@@ -97,7 +97,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
       className="relative shrink-0 overflow-hidden"
       style={{
         borderRadius: 16,
-        background: gold ? `${sheen}, linear-gradient(180deg, #fde68a, #fcd979)` : `${sheen}, linear-gradient(180deg, #d5f5ee, #e0f2fe)`,
+        background: gold ? `${sheen}, linear-gradient(180deg, #fde68a, #fcd979)` : `${sheen}, var(--vs-banner-fill, linear-gradient(180deg, #d5f5ee, #e0f2fe))`,
         boxShadow: gold ? '0 0 26px rgba(245,158,11,0.8)' : '0 4px 14px rgba(15,118,110,0.10)',
       }}
     >
@@ -129,7 +129,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         className="relative block mx-auto h-auto select-none"
         style={{ aspectRatio: `${heroW} / ${heroH}`, width: '100%', maxWidth: Math.round((120 * heroW) / heroH), marginTop: 8 }}
       />
-      <div className="relative flex flex-col gap-1" style={{ padding: '10px 12px 10px 12px', background: 'rgba(255,255,255,0.5)' }}>
+      <div className="relative flex flex-col gap-1" style={{ padding: '10px 12px 10px 12px', background: 'var(--vs-banner-strip, rgba(255,255,255,0.5))' }}>
         <div className="flex items-center gap-1.5" style={{ minHeight: 24 }}>
           {gold && <Icon3D name="trophy" size={18} className="shrink-0" />}
           {/* FINISH_SPEC AR: live lettering (teal → blue; gold on a sweep day). */}

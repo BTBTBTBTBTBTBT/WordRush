@@ -24,8 +24,8 @@ export const INTRO = {
    * plain ease-out curve whose control points never pass 1).
    */
   glideEase: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
-  /** After landing: every character hops once (the W hop), this long… */
-  flourishMs: 420,
+  /** After landing: every character settles with ONE soft arc (item 47: eased squash, hop, soft landing, rebound — no overshoot snap), this long… */
+  flourishMs: 560,
   /** …this far apart, left to right (ms). */
   flourishStagger: 50,
   /** Reduce Motion: hold, then a 200 ms crossfade (ms). */

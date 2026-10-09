@@ -28,6 +28,7 @@ export function scoreLabel(points: number, pangram: boolean): string {
 /** The tone of a plain message, from its words. */
 export function feedbackTone(text: string): FeedbackTone {
   const t = text.trim().toLowerCase();
+  if (/used for two/.test(t)) return 'warn';
   if (/solved|nice|great|rank up/.test(t)) return 'win';
   if (/copied|saved|sent/.test(t)) return 'success';
   if (t.startsWith('not ') || /already|enough|invalid|must|only|too short|or more|missing/.test(t)) return 'error';

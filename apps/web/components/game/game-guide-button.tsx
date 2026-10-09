@@ -18,7 +18,7 @@ interface Props {
 /**
  * In-game "?" button (top-right, mirroring GameHomeButton at top-left). Opens
  * the game's help card (components/help/game-help-card.tsx, FINISH_SPEC AF):
- * 3–4 short steps with tiny tile examples, "Got it", "Take the tour", and the
+ * 3–4 short steps with tiny tile examples, "Got it", and the
  * full rules / scoring / strategy under a disclosure. Reading it pauses the
  * game clock (setGuidePaused); it closes via Got it, the X, Escape or a
  * backdrop tap.

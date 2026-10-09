@@ -7,6 +7,7 @@
 //   pnpm test:contrast                 (boots `next dev` on :3123 unless CONTRAST_BASE_URL is set)
 //   CONTRAST_ONLY=home,stats CONTRAST_SEASONS=halloween pnpm test:contrast
 //   CONTRAST_SHOTS=/some/dir …           (also saves each screen as rendered, text visible)
+//   CONTRAST_UPDATE_BASELINE=1 …          (rewrite e2e/contrast-baseline.json from this run; see BASELINE below)
 //
 // Supabase is faked (see `open`): guests get nothing back, a signed-in screen gets a fresh, empty
 // account — so data screens show their empty states. The report lands in e2e/.contrast-report.json.
@@ -20,6 +21,22 @@ import { SEASON_REGISTRY } from '../lib/season-kit';
 import { aaMinimum, contrastRatio, type RGBA } from '../lib/contrast';
 import { HIDE_TEXT_CSS, STILL_CSS, collectText, type TextRun } from './contrast-probe';
 import { SCREENS, type Screen } from './contrast-screens';
+
+// Baseline (founder 10-09: "add a baseline so only NEW misses fail"): the misses that already existed when the
+// gate went in are listed in e2e/contrast-baseline.json (per season id; a season run is also excused the 'none'
+// list, since a season skin sits on the same screens). Anything NOT listed fails. Fixing a baselined miss is
+// always welcome: rerun with CONTRAST_UPDATE_BASELINE=1 (all screens, the seasons you want rewritten) to shrink it.
+//   keys are `screen|theme|text|css path` with digits folded (times / counts change run to run).
+const BASELINE_FILE = path.join(__dirname, 'contrast-baseline.json');
+const missKey = (screen: string, theme: string, m: { text: string; path: string }) =>
+  `${screen}|${theme}|${m.text.replace(/\d+/g, '#')}|${m.path.replace(/\d+/g, '#')}`;
+function loadBaseline(): Record<string, string[]> {
+  try { return JSON.parse(fs.readFileSync(BASELINE_FILE, 'utf8')); } catch { return {}; }
+}
+const baseline = loadBaseline();
+const UPDATE_BASELINE = process.env.CONTRAST_UPDATE_BASELINE === '1';
+/** Misses seen this run, per season id, for CONTRAST_UPDATE_BASELINE. */
+const seen: Record<string, Set<string>> = {};
 
 const PORT = 3123;
 const BASE = process.env.CONTRAST_BASE_URL ?? `http://127.0.0.1:${PORT}`;
@@ -83,6 +100,11 @@ afterAll(async () => {
     process.env.CONTRAST_REPORT ?? path.join(__dirname, '.contrast-report.json'),
     JSON.stringify({ checked, failures }, null, 2),
   );
+  if (UPDATE_BASELINE) {
+    const next = { ...baseline };
+    for (const [id, keys] of Object.entries(seen)) next[id] = [...keys].sort();
+    fs.writeFileSync(BASELINE_FILE, JSON.stringify(next, null, 1) + '\n');
+  }
 });
 
 function hex([r, g, b]: number[]): string {
@@ -212,8 +234,14 @@ describe('season contrast (WCAG AA on rendered pixels)', () => {
             const { runs, misses } = await sweep(page, shot);
             checked.push({ screen: screen.id, season: season ?? 'none', theme, runs: runs.length });
             for (const m of misses) failures.push({ screen: screen.id, season: season ?? 'none', theme, ...m });
+            const id = season ?? 'none';
+            const keys = misses.map((m) => missKey(screen.id, theme, m));
+            const bucket = (seen[id] ??= new Set());
+            for (const k of keys) bucket.add(k);
+            const excused = new Set([...(baseline[id] ?? []), ...(baseline.none ?? [])]);
+            const fresh = UPDATE_BASELINE ? [] : misses.filter((m) => !excused.has(missKey(screen.id, theme, m)));
             expect(runs.length, `${label}: no text found (page failed to render?)`).toBeGreaterThan(0);
-            expect(misses, `${label}: text below AA`).toEqual([]);
+            expect(fresh, `${label}: NEW text below AA (not in e2e/contrast-baseline.json)`).toEqual([]);
           } finally {
             await page.context().close();
           }

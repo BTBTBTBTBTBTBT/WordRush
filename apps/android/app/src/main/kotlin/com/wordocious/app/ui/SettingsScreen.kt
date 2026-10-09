@@ -294,6 +294,8 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 // the same reason it left the "?" menu (restated How to Play in
                 // older copy). Section opens with Help & Support, like iOS.
                 LinkRow("Help & Support") { onOpenInfo("support") }; Divider(SettingsAccent.about)
+                // Founder 10-07: the app tour is replayed only from here (not from per-game help / How to Play).
+                LinkRow("Replay the app tour") { Onboarding.replay(); onDone() }; Divider(SettingsAccent.about)
                 LinkRow("Privacy Policy") { onOpenInfo("privacy") }; Divider(SettingsAccent.about)
                 // Ad-consent withdrawal. GDPR requires a PERSISTENT entry
                 // point — a form shown once at first launch is not a

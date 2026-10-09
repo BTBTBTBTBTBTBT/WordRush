@@ -28,9 +28,9 @@ describe('cold-start intro', () => {
     const [, y1, , y2] = INTRO.glideEase.match(/[\d.]+/g)!.map(Number);
     expect(y1).toBeLessThanOrEqual(1);
     expect(y2).toBeLessThanOrEqual(1);
-    expect(INTRO.flourishMs).toBe(420);
+    expect(INTRO.flourishMs).toBe(560);
     expect(INTRO.flourishStagger).toBe(50);
-    expect(flourishTotalMs(10)).toBe(9 * 50 + 420);
+    expect(flourishTotalMs(10)).toBe(9 * 50 + 560);
   });
 
   it('starts from the static launch screen: the Home wallpaper colors and a shipped icon', () => {
@@ -55,5 +55,23 @@ describe('AU5 smooth cold start', () => {
   it('waits at most 300 ms for the intro images', async () => {
     const { INTRO_PRELOAD_MAX_MS } = await import('./intro');
     expect(INTRO_PRELOAD_MAX_MS).toBeLessThanOrEqual(300);
+  });
+});
+
+describe('item 47: the landing hop is one soft arc (no snap)', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../app/globals.css'), 'utf8');
+  it('the CSS flourish lasts INTRO.flourishMs on a no-overshoot ease-in-out curve', () => {
+    const m = css.match(/\.castrow \.cm\.cast-flourish \{ animation: m-flourish (\d+)ms (cubic-bezier\([^)]*\))/);
+    expect(m, 'the m-flourish rule').not.toBeNull();
+    expect(Number(m![1])).toBe(INTRO.flourishMs);
+    const [, , y1, , y2] = m![2].match(/cubic-bezier\(([\d.]+), ([\d.]+), ([\d.]+), ([\d.]+)\)/)!;
+    expect(Number(y1)).toBeGreaterThanOrEqual(0);
+    expect(Number(y2)).toBeLessThanOrEqual(1);
+  });
+  it('starts and ends at rest, with a soft rebound before it settles', () => {
+    const k = css.match(/@keyframes m-flourish \{([^}]*(?:\}[^}]*)*?)\n\}/)![1];
+    expect(k).toMatch(/0% \{ transform: none; \}/);
+    expect(k).toMatch(/100% \{ transform: none; \}/);
+    expect(k).toMatch(/90% \{ transform: scale\(0\.99, 1\.01\); \}/);
   });
 });

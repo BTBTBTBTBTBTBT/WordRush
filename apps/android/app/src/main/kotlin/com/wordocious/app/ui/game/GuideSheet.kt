@@ -115,7 +115,7 @@ import kotlinx.coroutines.delay
  * game's host in a helpful pose springing in on top of a soft game-accent card over the
  * warm cream with the rainbow bar, the game's title art, 3–4 short steps (GuideSteps,
  * shortened from the how-to-play copy) each with a tiny animated row of real glossy
- * tiles, a candy "Got it" and a "Take the tour" chip (the W onboarding replay). The
+ * tiles, a candy "Got it" and the "Full guide" chip. The
  * whole guide (facts, How it works, The buttons, scoring, strategy — GuideService, the
  * web's lib/guide-content.ts) stays one tap away under "Full guide". Opening it plays the
  * popup whoosh (PopupScrim). The callers keep pausing the game clock on open and resuming
@@ -234,12 +234,7 @@ private fun GuideCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // FINISH_SPEC AF / W: replay the onboarding tour (it shows over the app once
-                // this popup closes; the caller's onDismiss resumes the game clock).
-                GuideLinkChip("Take the tour", Color(0xFF7C3AED)) {
-                    onDismiss()
-                    com.wordocious.app.ui.Onboarding.replay()
-                }
+                // The app tour lives only in Settings -> Help (founder 10-07), not in per-game help.
                 if (guide != null) {
                     GuideLinkChip(
                         if (full) "Hide full guide" else "Full guide", accent,

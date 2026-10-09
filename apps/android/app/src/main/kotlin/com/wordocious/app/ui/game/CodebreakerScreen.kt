@@ -5,6 +5,7 @@ import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -344,6 +345,11 @@ fun CodebreakerScreen(
     }
     PauseClockInBackground(session, session::enterBackground, session::leaveBackground)
     LaunchedEffect(session.toast) { if (session.toast != null) { kotlinx.coroutines.delay(1400); session.toast = null } }
+    // The conflict message ("S used for two code letters") appears as the shared overlay toast when a new conflict forms.
+    val conflictKey = session.state.conflicts.joinToString(",")
+    LaunchedEffect(conflictKey) {
+        if (conflictKey.isNotEmpty()) session.toast = "${session.state.conflicts.joinToString(", ")} used for two code letters"
+    }
     LaunchedEffect(session.state.lastWrong) { if (session.state.lastWrong.isNotEmpty()) { kotlinx.coroutines.delay(700); session.clearLastWrong() } }
 
     val onFinished: () -> Unit = {
@@ -470,7 +476,7 @@ private const val CIPHER_WORD_GAP_RATIO = 0.45f  // gap between word chunks as a
 private const val CIPHER_LINE_GAP_MIN = 6f
 private const val CIPHER_LINE_GAP_RATIO = 0.15f
 private const val CIPHER_BLOCK_GAP = 10f         // board → conflict slot → strip
-private const val CIPHER_CONFLICT_SLOT = 16f     // fixed-height slot so a conflict appearing never resizes the board
+private const val CIPHER_CONFLICT_SLOT = 0f      // the conflict message is an overlay toast (founder 10-08): no slot in the layout
 private const val CIPHER_CHIP_GAP = 4f
 /** L the board's game tray: inner padding across / down (dp); the tray adds its 4 dp lip below. */
 private const val CIPHER_TRAY_H = 8f
@@ -587,13 +593,7 @@ private fun CipherBand(session: CodebreakerSession, modifier: Modifier) {
             verticalArrangement = Arrangement.spacedBy(CIPHER_BLOCK_GAP.dp, if (fit.fits) Alignment.CenterVertically else Alignment.Top),
         ) {
             CipherBoard(session, finished = false, cell = fit.cell.dp)
-            // Fixed-height slot: the conflict line comes and goes without moving the board.
-            Box(Modifier.height(CIPHER_CONFLICT_SLOT.dp), contentAlignment = Alignment.Center) {
-                val conflicts = s.conflicts
-                if (conflicts.isNotEmpty()) {
-                    Text("${conflicts.joinToString(", ")} used for two code letters", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CRYPTOGRAM_WRONG)
-                }
-            }
+            // "S used for two code letters" is an overlay toast now (founder 10-08), not a line in the layout.
         }
     }
 }
@@ -728,7 +728,12 @@ private fun FrequencyStrip(session: CodebreakerSession, chipSp: TextUnit = 11.sp
             ) {
                 Text(c, fontSize = chipSp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted)
                 Text("${freq[c]}", fontSize = chipSp, fontWeight = FontWeight.Bold, color = (if (locked) CRYPTOGRAM_ACCENT else WTheme.textMuted).copy(alpha = 0.7f))
-                if (!plain.isNullOrEmpty()) Text("→$plain", fontSize = chipSp, fontWeight = FontWeight.Black, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.text)
+                // Founder 10-08: the "→X" slot is reserved from the start (a hidden "→W", the widest), so a letter
+                // landing never widens the chip, never re-wraps the strip and never shrinks the board above it.
+                Box(contentAlignment = Alignment.Center) {
+                    Text("→W", fontSize = chipSp, fontWeight = FontWeight.Black, color = Color.Transparent, modifier = Modifier.clearAndSetSemantics {})
+                    if (!plain.isNullOrEmpty()) Text("→$plain", fontSize = chipSp, fontWeight = FontWeight.Black, color = if (locked) CRYPTOGRAM_ACCENT else WTheme.text)
+                }
             }
         }
     }

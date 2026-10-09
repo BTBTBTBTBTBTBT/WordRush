@@ -77,9 +77,9 @@ object ColdStart {
     const val INTRO_DECODE_PX = 512
 }
 
-/** F2 fix step 4 the flourish timing: each character hops (the W hop) this long, this far apart. */
+/** F2 fix step 4 the flourish timing: each character settles with one soft arc (CastMoves.flourish) this long, this far apart. */
 object IntroFlourish {
-    const val HOP_MS = 420
+    const val HOP_MS = 560
     const val STAGGER_MS = 50
     /** The whole wave across the ten characters. */
     const val TOTAL_MS = HOP_MS + STAGGER_MS * 9

@@ -230,6 +230,12 @@ final class CodebreakerVM: ObservableObject {
         }
     }
 
+    /// A new conflict forms: the overlay toast names it (founder 10-08: no message ever moves the screen).
+    func flashConflicts(_ conflicts: [String]) {
+        guard !conflicts.isEmpty else { return }
+        flash("\(conflicts.joined(separator: ", ")) used for two code letters")
+    }
+
     private func flash(_ m: String) {
         toast = m
         Task { try? await Task.sleep(nanoseconds: 1_400_000_000); if toast == m { toast = nil } }
@@ -309,14 +315,8 @@ struct CodebreakerView: View {
                         ScrollView {
                             VStack(spacing: 8) {
                                 CipherBoardView(vm: vm, finished: false, cell: cell, tray: true).padding(.horizontal, 6)
-                                // §BI22: the conflicts line keeps its slot (one line, empty when
-                                // clear) so a conflict appearing never re-centers the board.
-                                let conflicts = vm.conflicts
-                                Text(conflicts.isEmpty ? " " : "\(conflicts.joined(separator: ", ")) used for two code letters")
-                                    .font(Brand.font(11, .bold)).foregroundStyle(codebreakerWrong)
-                                    .lineLimit(1).minimumScaleFactor(0.75)
-                                    .opacity(conflicts.isEmpty ? 0 : 1)
-                                    .accessibilityHidden(conflicts.isEmpty)
+                                // "S used for two code letters" is the shared overlay toast now (founder 10-08, onChange
+                                // below), never a line in the layout, so nothing here ever moves.
                             }
                             .padding(.vertical, 4)
                             .frame(maxWidth: .infinity, minHeight: geo.size.height)
@@ -387,6 +387,7 @@ struct CodebreakerView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .onChange(of: scenePhase) { vm.setBackground($0 != .active) }
+        .onChange(of: vm.conflicts) { now in vm.flashConflicts(now) }
         .hidesBottomNav()
         // Cards on the game screen lift with the game's accent (ART_SPEC §15).
         .environment(\.pageTint, .forGame(.cryptogram))
@@ -760,7 +761,12 @@ struct FrequencyStripView: View {
                     HStack(spacing: 4) {
                         Text(c).font(.system(size: fontSize, weight: .bold, design: .monospaced))
                         Text("\(freq[c] ?? 0)").font(Brand.font(fontSize, .bold)).opacity(0.7)
-                        if let plain { Text("→\(plain)").font(Brand.font(fontSize, .black)).foregroundStyle(locked ? codebreakerAccent : PuzKit.ink) }
+                        // Founder 10-08: the "→X" slot is reserved from the start (a hidden "→W", the widest), so a letter
+                        // landing never widens the chip, never re-wraps the strip and never shrinks the board above it.
+                        ZStack {
+                            Text("→W").font(Brand.font(fontSize, .black)).opacity(0).accessibilityHidden(true)
+                            if let plain { Text("→\(plain)").font(Brand.font(fontSize, .black)).foregroundStyle(locked ? codebreakerAccent : PuzKit.ink) }
+                        }
                     }
                     .foregroundStyle(locked ? codebreakerAccent : FinishInk.secondary)
                     .padding(.horizontal, 8).padding(.vertical, 3)

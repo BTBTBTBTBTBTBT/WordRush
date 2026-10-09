@@ -288,10 +288,18 @@ public enum CastMoves {
     // MARK: F2 fix — the landing flourish
 
     /// FINISH_SPEC §F2 fix step 4: once the cold-start intro lands, every character
-    /// hops once — the W hop keyframes compressed to 420 ms, 50 ms apart, left to
-    /// right — before the one-at-a-time moves resume.
-    public static let flourishHop: Double = 0.42
+    /// settles with one soft hop (560 ms, 50 ms apart, left to right) before the
+    /// one-at-a-time moves resume.
+    public static let flourishHop: Double = 0.56
     public static let flourishStagger: Double = 0.05
+
+    /// Item 47 (founder 10-09): the landing hop is ONE continuous eased arc — a soft anticipation squash, a low
+    /// hop, a soft landing squash and a small rebound — with an ease-in-out curve (no overshoot), so the cast
+    /// settles into the header without a snap. Mirrored by web `m-flourish` and Android `CastMoves.flourish`.
+    public static let flourishFrames: [(Double, CastPose)] = [
+        (0, CastPose.identity), (0.14, CastPose(sx: 1.03, sy: 0.96)), (0.46, CastPose(ty: -0.14, sx: 0.98, sy: 1.03)),
+        (0.78, CastPose(sx: 1.04, sy: 0.96)), (0.90, CastPose(sx: 0.99, sy: 1.01)), (1, CastPose.identity),
+    ]
 
     /// The whole flourish's length for `count` characters.
     public static func flourishDuration(count: Int = ids.count) -> Double {
@@ -300,10 +308,9 @@ public enum CastMoves {
 
     /// Character `index`'s pose `elapsed` seconds after the flourish started.
     public static func flourishPose(index: Int, elapsed: Double) -> CastPose {
-        guard let hop = moves["w"] else { return .identity }
         let local = elapsed - Double(index) * flourishStagger
         guard local > 0, local < flourishHop else { return .identity }
-        return Keyframes.sample(hop.frames, at: local / flourishHop, easing: hop.easing)
+        return Keyframes.sample(flourishFrames, at: local / flourishHop, easing: .easeInOut)
     }
 
     /// The pose of `id` at `elapsed` seconds into its move (identity outside it).

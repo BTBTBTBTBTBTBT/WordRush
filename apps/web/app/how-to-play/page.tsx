@@ -9,7 +9,6 @@ import { gameArtSrc } from '@/lib/art';
 import { accentInk } from '@/lib/soft-surface';
 import { MODE_BY_ID } from '@/lib/modes.generated';
 import { howToPlayAccent, howToPlayModeId } from '@/lib/strategy-games';
-import { TOUR_HREF } from '@/lib/onboarding';
 
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
@@ -38,10 +37,6 @@ export default function HowToPlayPage() {
           <p className="m-0 font-bold leading-snug" style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
             Everything you need to know to get started
           </p>
-          {/* FINISH_SPEC AO: replay the welcome + quick tour (steps 1–2). */}
-          <div className="mt-2">
-            <CandyLink href={TOUR_HREF} color="pink" size="md" icon="play">Take the tour</CandyLink>
-          </div>
         </GuideHeroCard>
 
         {HOW_TO_PLAY.map((s, i) => {

@@ -872,7 +872,14 @@ html[data-season-tone="dark"] [data-page-tint="vs"] {
   --vs-deep: #99f6e4;
   --vs-soft: #134e4a;
   --vs-page: var(--color-surface);
+  /* The VS lobby banner (components/vs/vs-banner.tsx): its pale teal fill + white strip would put the lifted teal
+     inks (--vs-ink) on a light ground (1.6:1); under a dark season the banner is night teal and the strip a shade. */
+  --vs-banner-fill: linear-gradient(180deg, #0f3a3d, #17254a);
+  --vs-banner-strip: rgba(0, 0, 0, 0.22);
 }
+/* The soft numbers (lettering in the deep purple) take their light twin on a dark season's night glass, on every
+   page (the VS / Friends pages pin the light scheme, so the [data-page-scheme="auto"] rule doesn't reach them). */
+html[data-season-tone="dark"] .soft-num { color: #e9ddff; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
 /* The same on the light-only Friends pages (LIGHT_CARD_BASE pins the white card base): the night
    glass + the Friends inks' light twins (--fr-*, light fallbacks in lib/friends-look + friends-play). */
 html[data-season-tone="dark"] [data-page-tint="friends"] {
@@ -1731,13 +1738,14 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
 .gtile.sdk-cell[data-sdk="wash"][data-s="given"] { --gt-face: #eadfff; --gt-edge: #c9b0f3; }
 [data-theme="dark"] .gtile.sdk-cell[data-sdk="wash"][data-s="empty"] { --gt-face: rgba(167, 139, 250, 0.3); --gt-edge: rgba(167, 139, 250, 0.5); --gt-ring: inset 0 0 0 2px rgba(167, 139, 250, 0.4); }
 .pz-num {
-  /* Doug / founder 10-05: a small muted superscript fully INSIDE the top-left corner (no chip, never on the
-     border; the selection ring is an outer box-shadow, so it never covers it). Android/iOS CrosswordCellSpec. */
+  /* Founder 10-06: the clue number is a SMALL badge fully INSIDE the top-left corner (~20% of the cell, never on
+     the border; the selection ring is an outer box-shadow, so it never covers it). It never shrinks or moves the
+     letter: every cell's letter is the same size and exactly centered. iOS/Android CrosswordCellSpec. */
   position: absolute;
   z-index: 4;
   /* clear of the tile's inner ring (2.5px) on small web cells too */
-  top: max(4px, 10%);
-  left: max(4.5px, 11%);
+  top: max(3px, 7%);
+  left: max(3.5px, 8%);
   font-size: var(--pz-num, 8px);
   font-weight: 900;
   line-height: 0.8;
@@ -1746,15 +1754,23 @@ html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animati
 }
 .gtile.pz-cell[data-s="correct"] .pz-num { color: rgba(255, 255, 255, 0.85); }
 [data-theme="dark"] .pz-num { color: rgba(233, 221, 255, 0.8); }
-/* A numbered cell's letter steps clear of its number: a touch smaller and lower; on small cells also right. */
-.gtile.pz-cell[data-num] > b { translate: 0 6%; scale: 0.92; }
-.gtile.pz-cell[data-num="small"] > b { translate: 14% 15%; scale: 0.7; }
 
 /* ── F2 fix · one cast row at a time (components/providers/cold-start-intro.tsx):
    the real header row stays laid out but hidden while the intro runs; after
    landing every character hops once (the W hop, 420 ms, 50 ms apart). ── */
 [data-intro-running] [data-cast-row] { opacity: 0 !important; }
-.castrow .cm.cast-flourish { animation: m-hop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--fl-d, 0ms) both; }
+/* Item 47 (founder 10-09): the landing hop is ONE continuous eased arc with a soft squash / settle and a small
+   rebound (no overshoot curve, so no snap into the resting header). 560 ms = INTRO.flourishMs; the same keyframes
+   on iOS (CastMoves.flourishFrames) and Android (CastMoves.flourish). */
+.castrow .cm.cast-flourish { animation: m-flourish 560ms cubic-bezier(0.42, 0, 0.58, 1) var(--fl-d, 0ms) both; }
+@keyframes m-flourish {
+  0% { transform: none; }
+  14% { transform: scale(1.03, 0.96); }
+  46% { transform: translateY(-14%) scale(0.98, 1.03); }
+  78% { transform: translateY(0) scale(1.04, 0.96); }
+  90% { transform: scale(0.99, 1.01); }
+  100% { transform: none; }
+}
 @media (prefers-reduced-motion: reduce) { .castrow .cm.cast-flourish { animation: none !important; } }
 [data-reduced-motion="true"] .castrow .cm.cast-flourish { animation: none !important; }
 
@@ -2476,3 +2492,16 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 @keyframes soft-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94); } }
 .soft-pop { animation: soft-pop-in 420ms cubic-bezier(0.2, 1.12, 0.36, 1) both; transform-origin: 50% 100%; }
 .soft-pop-out { animation: soft-pop-out 200ms cubic-bezier(0.4, 0, 1, 1) both; transform-origin: 50% 100%; }
+
+/* Dressing room tab labels (components/avatar/mascot-builder.tsx) sit directly on the panel, so their ink follows it:
+   the light twins on the light panel, the lifted twins on the dark one (the dark theme / a dark season). 1b readability gate. */
+.dr-tab-label { color: #6b5c8f; }
+.dr-tab-label[data-on="true"] { color: #6d28d9; }
+.dr-tab-label[data-on="true"][data-season="true"] { color: #c2410c; }
+[data-theme="dark"] .dr-tab-label { color: #c8b6e2; }
+[data-theme="dark"] .dr-tab-label[data-on="true"] { color: #e9ddff; }
+[data-theme="dark"] .dr-tab-label[data-on="true"][data-season="true"] { color: #fdba74; }
+
+/* Accent text on a dark season's night glass is lifted toward white (lib/soft-surface liftedInk); off-season / light: 0. */
+:root { --ink-lift: 0%; }
+html[data-season-tone="dark"] { --ink-lift: 65%; }

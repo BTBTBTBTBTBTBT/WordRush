@@ -38,6 +38,15 @@ export function alphaHex(hex: string, alpha: number): string {
   return `#${[r, g, b, a].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
 }
 
+/**
+ * An accent used as TEXT on the page surface (1b readability gate): the accent itself on a light surface; on a dark
+ * season's night glass (`html[data-season-tone="dark"]` sets --ink-lift: 65%, globals.css) it is lifted toward white
+ * so a deep accent (violet-600, blue-700 …) keeps 4.5:1. Fixed accents on light pinned chips don't use this.
+ */
+export function liftedInk(hex: string): string {
+  return `color-mix(in srgb, ${hex}, #fff var(--ink-lift, 0%))`;
+}
+
 /** `hex` darkened by `amount` (0–1) toward black: darken('#6d28d9', 0.35) → '#471a8d' (A8's button lip). */
 export function darken(hex: string, amount: number): string {
   const k = 1 - Math.max(0, Math.min(1, amount));

@@ -727,15 +727,11 @@ private fun CrosswordCell(
         contentAlignment = Alignment.Center,
     ) {
         if (number != null) {
-            // The letter in a numbered cell: a touch smaller and nudged down, so it never meets the number.
-            val nudge = CrosswordCellSpec.numberedGlyph(cellSize.value)
-            TileGlyph(
-                ch, look.glyph, look.glyphShadow, glyphDp * nudge.scale, cellSize.value,
-                Modifier.offset(x = (cellSize.value * nudge.dx).dp, y = (cellSize.value * nudge.dy).dp),
-            )
+            // The letter is the same size and centered as in every other cell; only the small number sits in the corner.
+            TileGlyph(ch, look.glyph, look.glyphShadow, glyphDp, cellSize.value)
             // The clue number: a small muted superscript fully inside the top-left corner (inset, no chip), clear
             // of the letter and of the cursor ring (drawn outside the tile).
-            val inset = (cellSize.value * CrosswordCellSpec.NUMBER_INSET).dp
+            val inset = CrosswordCellSpec.insetDp(cellSize.value).dp
             Text(
                 "$number", maxLines = 1, softWrap = false,
                 style = androidx.compose.ui.text.TextStyle(
@@ -934,20 +930,16 @@ private fun CrosswordOverlay(session: CrosswordSession, onPlayAgain: (() -> Unit
 private fun StatBlock(value: String, label: String) = PieceStat(value, label)
 
 /**
- * A crossword cell's clue number vs its letter (Doug 10-05: "5" jammed against a T, "2" over an E). Fractions of
- * the cell side: the number is ~27% of the cell, inset 7% from the top-left; in a numbered cell the letter is a
- * touch smaller and dropped so the two never touch — on small cells (big grids, short screens) it also steps
- * right and shrinks more, since the readable-number floor is then a bigger share of the cell. Mirrors iOS
- * CrosswordCellSpec / web crossword-board.
+ * A crossword cell's clue number vs its letter (founder 10-06 redo of the 10-05 fix: every cell's letter is the SAME
+ * size and exactly centered, numbered or not; the number is the small thing). Fractions of the cell side: the
+ * number is ~20% of the cell, fully inside the top-left corner (7% inset), above the centered letter's cap line.
+ * Mirrors iOS CrosswordCellSpec / web crossword-board.
  */
 internal object CrosswordCellSpec {
-    const val NUMBER = 0.27f
-    const val NUMBER_MIN_DP = 5f
+    const val NUMBER = 0.2f
+    const val NUMBER_MIN_DP = 4.5f
     const val NUMBER_INSET = 0.07f
-    /** Below this cell side (dp) the small-cell nudge applies. */
-    const val SMALL_CELL_DP = 26f
-    data class Nudge(val scale: Float, val dx: Float, val dy: Float)
+    const val NUMBER_INSET_MIN_DP = 2f
     fun numberDp(cellDp: Float): Float = maxOf(NUMBER_MIN_DP, cellDp * NUMBER)
-    fun numberedGlyph(cellDp: Float): Nudge =
-        if (cellDp < SMALL_CELL_DP) Nudge(scale = 0.7f, dx = 0.14f, dy = 0.15f) else Nudge(scale = 0.92f, dx = 0f, dy = 0.06f)
+    fun insetDp(cellDp: Float): Float = maxOf(NUMBER_INSET_MIN_DP, cellDp * NUMBER_INSET)
 }
