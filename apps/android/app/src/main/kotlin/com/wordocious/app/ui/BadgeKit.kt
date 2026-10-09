@@ -882,7 +882,19 @@ object BadgeShare {
 private fun LevelUpPopup(level: Int, waiting: Int, onNice: () -> Unit) {
     val tier = levelTier(level)
     val accent = TierInk.accent(tier)
-    BadgePopupFrame(accent, paneTitle = "Level up: level $level, ${tier.label}", waiting = waiting, onNice = onNice, levelUp = true) {
+    val context = LocalContext.current
+    BadgePopupFrame(
+        accent, paneTitle = "Level up: level $level, ${tier.label}", waiting = waiting, onNice = onNice, levelUp = true,
+        // Item 46: the level-up share (the sender's mascot celebrating, the new level in soft numbers).
+        actions = {
+            SoftControl(Icon3DName.SHARE, "Share level up", onClick = {
+                com.wordocious.app.data.MomentCard.share(
+                    context,
+                    com.wordocious.core.MomentShare.levelUp(level, tier.label, String.format("#%06X", accent.toArgb() and 0xFFFFFF)),
+                )
+            }, iconSize = 26.dp)
+        },
+    ) {
         BadgeStage(null, 132.dp, accent, res = BadgeArt.level(tier))
         HeadingArt(Heading.LEVELUP, height = 34.dp)   // BJ16: lettering, not plain text
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

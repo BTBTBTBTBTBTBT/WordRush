@@ -23,6 +23,7 @@ import com.wordocious.core.AvatarConfig
 import com.wordocious.core.AvatarFit
 import com.wordocious.core.AvatarFitManifest
 import com.wordocious.core.AvatarLayout
+import com.wordocious.core.AvatarLayoutPose
 import com.wordocious.core.AvatarLayoutLayer
 import com.wordocious.core.AvatarMatrix
 import com.wordocious.core.AvatarPoses
@@ -216,7 +217,7 @@ object MascotComposer {
     private fun drawFromLayout(context: Context, c: Canvas, left: Float, top: Float, size: Float, key: MascotKey, fm: AvatarFitManifest, base: Int, small: Boolean) {
         val cfg = key.config
         // the core default pose: the saved pose while AvatarLiveConfig.LIVING_MASCOT is on, else none (un-posed)
-        val layout: AvatarLayout = AvatarFit.layout(cfg, small, fm)
+        val layout: AvatarLayout = if (key.forcePose) AvatarFit.layout(cfg, small, fm, AvatarLayoutPose.Saved) else AvatarFit.layout(cfg, small, fm)
         c.save()
         c.translate(left, top)
         val fw = if (cfg.frame != "none" && !key.cutout) frameWidth(size) else 0f

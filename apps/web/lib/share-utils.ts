@@ -170,6 +170,7 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
     let keyMode: string;
     if (input.layout === 'daily-sweep') keyMode = 'DailySweep';
     else if (input.layout === 'profile') keyMode = 'Profile';
+    else if (input.layout === 'moment') keyMode = `Moment-${input.kind}`;
     else if (input.layout === 'leaderboard') keyMode = `${leaderboardKind(input)}-${input.mode}`;
     else keyMode = input.mode;
     // "Full results" variant gets its own object + URL so sharing both
@@ -220,6 +221,15 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
       // Unlike a puzzle result, a board changes all day — a minute-granular
       // buster makes a later re-share re-scrape the fresh standings.
       params.set('v', `lb${input.shareRank ?? 0}-${Math.floor(Date.now() / 60000)}`);
+      return `https://wordocious.com/s/${key}?${params.toString()}`;
+    }
+
+    if (input.layout === 'moment') {
+      // Moment cards (level-up / pocket result / streak) are image-only; the old hosted-page builder has nothing to unfurl.
+      params.set('m', 'Moment');
+      params.set('w', '1080');
+      params.set('h', '1350');
+      params.set('v', `${input.kind}-${input.big}`);
       return `https://wordocious.com/s/${key}?${params.toString()}`;
     }
 
@@ -277,14 +287,14 @@ export async function shareResult(
   /** share_events surface tag — post-game buttons keep the default; the daily
    *  leaderboard buttons pass 'leaderboard'. */
   surface: string = 'post_game',
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _opts: { linkOnly?: boolean } = {},
+  /** `frame`: 'message' (default 4:5..9:16), 'story' (9:16) or 'square'; `hero`: override the celebrated result (null = no hero band). `linkOnly` is ignored. */
+  opts: { linkOnly?: boolean; frame?: import('@wordle-duel/core').ShareFrame; hero?: import('@wordle-duel/core').ShareHeroResult | null } = {},
 ): Promise<ShareResultOutcome> {
   let blob: Blob | null = null;
   try {
     // The canvas renderer loads on the Share tap, not with the page (founder, 2026-09-29).
     const { generateShareImage } = await import('./share-image');
-    blob = await generateShareImage(input);
+    blob = await generateShareImage(input, { frame: opts.frame, hero: opts.hero });
   } catch {
     blob = null;
   }

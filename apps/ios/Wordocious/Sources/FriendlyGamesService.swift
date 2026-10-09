@@ -72,11 +72,12 @@ enum FriendlyGamesService {
 
     /// GET /api/friends/games → {active, recent}. No-throw.
     static func load() async {
-        struct Payload: Decodable { let active: [FriendlyGameView]; let recent: [FriendlyGameView] }
+        // Item 39: a row this build cannot read (a game kind from a newer server) is skipped, never the whole list.
+        struct Payload: Decodable { let active: LossyList<FriendlyGameView>; let recent: LossyList<FriendlyGameView> }
         guard let (status, data) = await request(""), status == 200,
               let p = try? JSONDecoder().decode(Payload.self, from: data) else { return }
-        active = p.active
-        recent = p.recent
+        active = p.active.items
+        recent = p.recent.items
         loaded = true
         notify()
     }

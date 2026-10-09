@@ -15,6 +15,7 @@ import com.wordocious.app.ui.gameTitleArtResForKey
 import com.wordocious.app.ui.wallpaperRes
 import com.wordocious.core.BoardState
 import com.wordocious.core.GameMode
+import com.wordocious.core.ShareHero
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
 import com.wordocious.core.TileState
@@ -267,6 +268,7 @@ object ShareImage {
             badge = won,
             body = body,
             stats = stats,
+            hero = ShareHero.result(won),
         )).named(modeLabel)
     }
 
@@ -327,6 +329,7 @@ object ShareImage {
             badge = won,
             body = body,
             stats = stats,
+            hero = ShareHero.result(won),
         )).named(gameTitle(dbKey, fallbackTitle))
     }
 

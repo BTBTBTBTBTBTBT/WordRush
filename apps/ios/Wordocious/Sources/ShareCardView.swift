@@ -74,6 +74,14 @@ struct ShareCardView: View {
     /// FINISH_SPEC §E1: the result's points for the gold POINTS window (nil → the
     /// third window shows the mode's own count instead).
     var points: Int? = nil
+    /// Item 46: the sender's hero band under the title (nil = none: a guest's card, or an override of the result).
+    /// Defaults from the win flag; the band only shows for a signed-in player (ShareHeroBand.available).
+    var hero: ShareHero.Result? = nil
+
+    private var heroResult: ShareHero.Result { hero ?? ShareHero.result(won: won) }
+    /// Set by the caller (ShareHeroBand.available: a signed-in player); the band's height is then part of the plan.
+    var heroEnabled = false
+    private var heroBand: CGFloat { CGFloat(ShareHero.band(hasHero: heroEnabled)) }
 
     private let bg = Color(hex: 0xF5EEFF)
     private let lossFG = Color(hex: 0xDC2626)
@@ -111,7 +119,7 @@ struct ShareCardView: View {
     private var fixedH: CGFloat {
         CGFloat(ShareCardPlan.fixedHeight(titleAspect: titleAspect, rest: Double(
             18 + Self.infoH + 30 + 34 + Self.windowH + 40
-                + ShareCastWordmark.height(Self.castW) + Self.bottomPad)))
+                + ShareCastWordmark.height(Self.castW) + Self.bottomPad + Double(heroBand))))
     }
 
     /// The board body's natural size (measured, else estimated).
@@ -159,6 +167,7 @@ struct ShareCardView: View {
                 ShareTitleBand(asset: titleAspect != nil ? titleArt : nil, size: titleBox,
                                text: modeLabel, color: accent)
                     .padding(.top, CGFloat(ShareCardPlan.topPad))
+                if heroBand > 0 { ShareHeroBand(result: heroResult) }
                 infoRow.frame(height: Self.infoH).padding(.top, 18)
 
                 // The board block in its planned box (the 4:5 floor's slack centers it).

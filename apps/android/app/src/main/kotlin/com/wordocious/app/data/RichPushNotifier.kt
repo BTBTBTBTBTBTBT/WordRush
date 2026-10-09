@@ -41,6 +41,42 @@ import java.net.URL
 object RichPushNotifier {
     private const val CHANNEL_ID = "friends-play"
 
+    /**
+     * What a rich data message carries, read defensively (item 39): a key an older server never sent is its default, a key
+     * a newer server added is ignored, a color that doesn't parse is the brand purple, a non-https image is no image.
+     * Pure, so the JVM tests can pin it (OldVersionCompatAppTest).
+     */
+    data class Fields(
+        val title: String, val body: String, val url: String, val thread: String, val senderId: String,
+        val gameId: String, val halloween: Boolean, val accent: Int, val senderAvatar: String?, val gameImage: String?,
+    ) {
+        companion object {
+            const val BRAND_PURPLE = 0xFF7C3AED.toInt()
+
+            /** "#rrggbb" to an opaque ARGB int; null when it isn't one. */
+            fun parseHex(raw: String?): Int? {
+                val s = raw?.trim()?.removePrefix("#") ?: return null
+                if (s.length != 6) return null
+                return s.toIntOrNull(16)?.let { 0xFF000000.toInt() or it }
+            }
+
+            private fun https(raw: String?): String? = raw?.trim()?.takeIf { it.startsWith("https://") && it.length > "https://".length }
+
+            fun from(data: Map<String, String>): Fields = Fields(
+                title = data["title"].orEmpty().ifBlank { "Wordocious" },
+                body = data["body"].orEmpty(),
+                url = data["url"].orEmpty(),
+                thread = data["thread"].orEmpty().ifBlank { "wordocious" },
+                senderId = data["senderId"].orEmpty(),
+                gameId = data["gameId"].orEmpty(),
+                halloween = data["halloween"] == "1",
+                accent = parseHex(data["accent"]) ?: BRAND_PURPLE,
+                senderAvatar = https(data["senderAvatar"]),
+                gameImage = https(data["gameImage"]),
+            )
+        }
+    }
+
     private fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -56,16 +92,17 @@ object RichPushNotifier {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
         ensureChannel(context)
 
-        val title = data["title"].orEmpty().ifBlank { "Wordocious" }
-        val body = data["body"].orEmpty()
-        val url = data["url"].orEmpty()
-        val thread = data["thread"].orEmpty().ifBlank { "wordocious" }
-        val senderId = data["senderId"].orEmpty()
-        val halloween = data["halloween"] == "1"
-        val accent = runCatching { android.graphics.Color.parseColor(data["accent"]) }.getOrDefault(0xFF7C3AED.toInt())
+        val f = Fields.from(data)
+        val title = f.title
+        val body = f.body
+        val url = f.url
+        val thread = f.thread
+        val senderId = f.senderId
+        val halloween = f.halloween
+        val accent = f.accent
 
-        val avatar = download(data["senderAvatar"])?.let { circle(it) }
-        val gameArt = download(data["gameImage"])
+        val avatar = download(f.senderAvatar)?.let { circle(it) }
+        val gameArt = download(f.gameImage)
 
         val sender = Person.Builder()
             .setName(title)   // the person's name IS the complete title line
@@ -77,7 +114,7 @@ object RichPushNotifier {
         val style = NotificationCompat.MessagingStyle(me)
             .addMessage(NotificationCompat.MessagingStyle.Message(body, System.currentTimeMillis(), sender))
         // The game's art as the inline image of the message (rendered in the expanded notification).
-        inlineImageUri(context, gameArt, data["gameId"].orEmpty())?.let { uri ->
+        inlineImageUri(context, gameArt, f.gameId)?.let { uri ->
             style.addMessage(NotificationCompat.MessagingStyle.Message("", System.currentTimeMillis(), sender).setData("image/png", uri))
         }
 

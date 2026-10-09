@@ -90,11 +90,16 @@ data class MascotKey(
      * no frame (the Good Morning host only; every avatar elsewhere keeps its tile + frame).
      */
     val cutout: Boolean = false,
+    /**
+     * Item 46: draw the config's own pose even while AvatarLiveConfig.LIVING_MASCOT is off (the share cards' hero
+     * band, like the web's posed render). Everything else keeps the flag-gated default.
+     */
+    val forcePose: Boolean = false,
 ) {
     companion object {
         /** The cache key for drawing [config] at [sizeDp] (= [px] pixels): small sizes share a simplified key. */
-        fun of(config: AvatarConfig, initial: String, sizeDp: Float, px: Int, dark: Boolean, crown: Boolean = false, cutout: Boolean = false): MascotKey =
-            MascotKey(MascotLayers.simplify(config, sizeDp), initial.take(2).ifEmpty { "?" }, px.coerceAtLeast(1), dark, crown, cutout)
+        fun of(config: AvatarConfig, initial: String, sizeDp: Float, px: Int, dark: Boolean, crown: Boolean = false, cutout: Boolean = false, forcePose: Boolean = false): MascotKey =
+            MascotKey(MascotLayers.simplify(config, sizeDp), initial.take(2).ifEmpty { "?" }, px.coerceAtLeast(1), dark, crown, cutout, forcePose)
     }
 
     /** The bitmap's size in bytes (ARGB_8888). */

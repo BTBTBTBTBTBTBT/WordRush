@@ -71,6 +71,11 @@ struct DailySweepCardView: View {
     /// "MORE GAMES SWEEP" / "FLAWLESS MORE GAMES" over the same layout.
     var title: String? = nil
 
+    /// Item 46: flawless gets the gold jump, a plain sweep the cheer + crown.
+    var heroEnabled = false
+    private var heroBand: CGFloat { CGFloat(ShareHero.band(hasHero: heroEnabled)) }
+    private var heroResult: ShareHero.Result { flawless ? .flawless : .sweep }
+
     private var titleColors: [Color] {
         flawless ? [Color(hex: 0xF59E0B), Color(hex: 0xB45309)] : [Color(hex: 0x8B5CF6), Color(hex: 0xEC4899)]
     }
@@ -101,7 +106,7 @@ struct DailySweepCardView: View {
     }
     private let castW: CGFloat = 972
     private var fixedH: CGFloat {
-        40 + titleH + 8 + 112 + 40 + 26 + 30 + 120 + 40 + ShareCastWordmark.height(castW) + 40
+        40 + titleH + 8 + 112 + 40 + 26 + 30 + 120 + 40 + ShareCastWordmark.height(castW) + 40 + heroBand
     }
     var size: CGSize { CGSize(width: 1080, height: min(1920, max(1350, fixedH + rowsH)).rounded()) }
 
@@ -113,6 +118,7 @@ struct DailySweepCardView: View {
                     ShareTitleBand(asset: titleArt, size: titleBox, text: title ?? "DAILY SWEEP")
                         .padding(.top, CGFloat(ShareCardPlan.topPad))
                 }
+                if heroBand > 0 { ShareHeroBand(result: heroResult) }
                 Text(title ?? (flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP"))
                     .font(Brand.fixedFont(48, .black))
                     .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
@@ -220,7 +226,7 @@ extension ShareService {
             rows: rows, won: t.won, total: t.total,
             totalTimeSeconds: Int(t.totalTimeSeconds.rounded()),
             totalScore: Int(t.totalScore.rounded()), flawless: moreSweepTier(byMode: byMode) == .flawless,
-            dateStr: cardDate(), title: title ?? puzzlesCardTitle(byMode: byMode))
+            dateStr: cardDate(), title: title ?? puzzlesCardTitle(byMode: byMode), heroEnabled: ShareHeroBand.available)
     }
 
     /// The all-dailies (Wordocious) card over whatever was played today.
@@ -233,7 +239,7 @@ extension ShareService {
             rows: rows, won: totals.won, total: totals.total,
             totalTimeSeconds: Int(totals.totalTimeSeconds.rounded()),
             totalScore: Int(totals.totalScore.rounded()), flawless: totals.flawless,
-            dateStr: cardDate(), title: title)
+            dateStr: cardDate(), title: title, heroEnabled: ShareHeroBand.available)
     }
     #endif
 
@@ -287,7 +293,8 @@ extension ShareService {
         #if canImport(UIKit)
         var input = input
         if input.castId == nil { input.castId = CastAvatars.shared.lookFor(input.username)?.castId }
-        let card = ProfileShareCardView(input: input)
+        var card = ProfileShareCardView(input: input)
+        card.heroEnabled = ShareHeroBand.available
         guard let image = renderCard(card, size: card.size) else { return }
         presentImages([image], game: "Stats")
         #endif
@@ -320,7 +327,9 @@ struct ProfileShareInput {
 struct ProfileShareCardView: View {
     let input: ProfileShareInput
     /// §S2: 4:5 (the content fits it; the clamp's floor).
-    var size: CGSize { CGSize(width: 1080, height: 1350) }
+    var heroEnabled = false
+    private var heroBand: CGFloat { CGFloat(ShareHero.band(hasHero: heroEnabled)) }
+    var size: CGSize { CGSize(width: 1080, height: 1350 + heroBand) }
 
     private var accent: Color { Color(hex: input.accentHex) }
 
@@ -346,6 +355,7 @@ struct ProfileShareCardView: View {
                     ShareTitleBand(asset: titleArt, size: CGSize(width: t.width, height: t.height), text: "STATS")
                         .padding(.top, CGFloat(ShareCardPlan.topPad))
                 }
+                if heroBand > 0 { ShareHeroBand(result: .neutral) }
                 // BJ5: the player's own avatar (the one resolver: photo / mascot / cast / frame)
                 // beside the name — it used to draw only a worn cast hero.
                 HStack(spacing: 18) {

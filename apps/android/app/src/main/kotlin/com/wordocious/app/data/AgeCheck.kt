@@ -40,13 +40,16 @@ object AgeCheck {
     @Serializable
     private data class Dto(val state: String, val year: Int)
 
+    /** A newer build may write more keys beside state + year (item 39): ignore them rather than re-ask the player. */
+    private val lenient = Json { ignoreUnknownKeys = true }
+
     fun encode(s: Stored): String = Json.encodeToString(Dto(s.state.name.lowercase(), s.year))
 
     /** Re-validates a stored value: a hand-edited "ok" beside a young year reads as "under". */
     fun parse(raw: String?, now: Int = currentYear()): Stored? {
         if (raw.isNullOrBlank()) return null
         return runCatching {
-            val d = Json.decodeFromString<Dto>(raw)
+            val d = lenient.decodeFromString<Dto>(raw)
             when (verdict(d.year, now)) {
                 Verdict.INVALID -> null
                 Verdict.UNDER -> Stored(State.UNDER, d.year)

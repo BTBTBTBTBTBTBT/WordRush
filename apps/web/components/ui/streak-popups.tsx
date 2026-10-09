@@ -12,7 +12,9 @@ import { softPill, softBackground } from '@/lib/soft-surface';
 import { WEEK_LETTERS, streakWeek } from '@/lib/streak-week';
 import { feedback } from '@/lib/sound-events';
 import { EMPTY_STREAK_SUMMARY, flawlessRows, sweepRows, type StreakSummary } from '@/lib/streak-summary';
-import { FamCloseGlyph } from '@/components/ui/family-button';
+import { FamCloseGlyph, QuietButton } from '@/components/ui/family-button';
+import { buildStreakShareInput } from '@/lib/moment-share';
+import { shareResult } from '@/lib/share-utils';
 
 // The streak + shield popups (docs/FINISH_SPEC.md C5; mockup
 // finishing-touches.html): little celebrations, not plain bubbles. A colored
@@ -176,6 +178,14 @@ export function StreakPopup({ open, onClose, streak, best, today, playedToday, s
           </span>
         ))}
       </div>
+      {streak > 0 && (
+        // Item 46: the streak calendar share (the sender's mascot celebrating, the week as dots).
+        <div style={{ padding: '2px 14px 8px' }}>
+          <QuietButton block onClick={() => void shareResult(buildStreakShareInput({ streak, best: Math.max(best, streak), lastDays: week }), 'streak')}>
+            Share my streak
+          </QuietButton>
+        </div>
+      )}
       <p style={{ ...BLURB_STYLE, paddingBottom: 6 }}>
         Play any daily puzzle each day to keep your streak going. Miss a day and it resets, unless a streak shield saves it.
       </p>

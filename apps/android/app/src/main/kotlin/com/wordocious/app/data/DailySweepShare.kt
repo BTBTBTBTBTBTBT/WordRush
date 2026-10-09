@@ -8,6 +8,7 @@ import com.wordocious.app.ModeGen
 import com.wordocious.app.R
 import com.wordocious.app.data.ShareFinish.U
 import com.wordocious.core.ShareCaptions
+import com.wordocious.core.ShareHero
 import java.util.Locale
 
 /**
@@ -114,6 +115,8 @@ object DailySweepShare {
                 ShareFinish.Stat(fmt(totals.totalTimeSeconds), "TIME", ShareFinish.Window.BLUE),
                 ShareFinish.Stat(String.format(Locale.US, "%,d", totals.totalScore), "POINTS", ShareFinish.Window.GOLD),
             ),
+            // Item 46: flawless = the gold jump; a plain sweep = the cheer + crown.
+            hero = if (flawless) ShareHero.Result.FLAWLESS else ShareHero.Result.SWEEP,
         ))
     }
 
@@ -270,6 +273,8 @@ object ProfileShare {
             // V3: the level now rides on the tier badge row in the body; the info line dates the card.
             info = ShareFinish.dayCaps(null),
             body = body,
+            hero = ShareHero.Result.NEUTRAL,
+            heroUsername = input.username,
         ))
     }
 

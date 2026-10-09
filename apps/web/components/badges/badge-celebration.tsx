@@ -9,6 +9,9 @@ import { ART_SIZE, artSrc, badgeSrc, poseArt } from '@/lib/art';
 import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { seenCount } from '@/lib/achievement-seen';
 import { shareAchievementCard } from '@/lib/achievement-share';
+import { buildLevelUpShareInput } from '@/lib/moment-share';
+import { shareResult } from '@/lib/share-utils';
+import { useAuth } from '@/lib/auth-context';
 import { viewUrl, VIEW_ALL } from '@/lib/stats-view';
 import { Confetti } from '@/components/effects/confetti';
 import { CandyButton } from '@/components/ui/candy-button';
@@ -50,6 +53,7 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
   const ref = useRef<HTMLDivElement>(null);
   const accent = item.accent;
   const deep = darken(accent, 0.35);
+  const { profile } = useAuth();
   const isTier = item.kind === 'tier';
   const headline = isTier ? 'New tier!' : 'Achievement unlocked';
   const title = isTier ? `${levelTierLabel(item.tier)} tier` : item.name;
@@ -162,6 +166,18 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
 
           <div className="mt-4 flex items-center justify-center gap-2">
             <CastButton size="md" color="purple" onClick={onClose}>{isTier ? 'Nice!' : 'Awesome!'}</CastButton>
+            {isTier && (
+              // Item 46: the level-up share (the sender's mascot celebrating, the new level and tier).
+              <HeaderGlyph
+                icon="share"
+                label="Share this level"
+                onClick={async () => {
+                  const level = Number((profile as { level?: number | null } | null)?.level) || 1;
+                  await shareResult(buildLevelUpShareInput({ level, tierLabel: levelTierLabel(item.tier), accentHex: accent }), 'level_up');
+                  onClose();
+                }}
+              />
+            )}
             {!isTier && (
               <>
                 <CandyButton size="md" color="peach" onClick={() => { onClose(); router.push(viewUrl(VIEW_ALL)); }}>See all</CandyButton>
