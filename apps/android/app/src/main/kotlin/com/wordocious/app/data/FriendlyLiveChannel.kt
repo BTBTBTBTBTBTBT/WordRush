@@ -10,7 +10,6 @@ import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.decodeJoinsAs
 import io.github.jan.supabase.realtime.decodeLeavesAs
 import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.presenceChangeFlow
 import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.CoroutineScope
