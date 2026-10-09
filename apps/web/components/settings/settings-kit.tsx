@@ -22,6 +22,7 @@ export const SETTINGS_ACCENT = {
   linked: '#6366f1',
   account: '#e11d48',
   accessibility: '#10b981',
+  help: '#7c3aed',
 } as const;
 
 /** A tinted section card: slim accent top bar, the label in the accent's ink, then its rows. */

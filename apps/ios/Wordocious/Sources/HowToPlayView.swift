@@ -62,8 +62,6 @@ func htpColor(_ hex: String) -> Color {
 
 struct HowToPlayView: View {
     @ObservedObject private var service = HowToPlayService.shared
-    /// FINISH_SPEC §W: "Take the tour" replays the first-run onboarding.
-    @State private var showTour = false
 
     /// §C6: each section card takes the next color of the brand set.
     private static let accents: [Color] = [Color(hex: 0x7C3AED), Color(hex: 0xEC4899), Color(hex: 0xF59E0B),
@@ -71,7 +69,7 @@ struct HowToPlayView: View {
 
     var body: some View {
         // FINISH_SPEC BI14: the per-game guide page's language — a hero card (W's ready
-        // pose on a soft glow, the heading, the tour) then numbered sections with soft
+        // pose on a soft glow, the heading) then numbered sections with soft
         // numerals and takeaways on soft color fields; no bordered cards. Help opens the FAQ.
         MenuScaffold("How to Play", host: Mascots.help, art: .howto, help: .faq) {
             ScrollView {
@@ -91,14 +89,6 @@ struct HowToPlayView: View {
             }
         }
         .task { await service.load() }
-        .fullScreenCover(isPresented: $showTour) {
-            OnboardingView(replay: true) { play in
-                showTour = false
-                // "Play today's Classic": once the tour is down, close How to Play
-                // and open the Classic daily from the tab root.
-                if play { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { Onboarding.playClassic() } }
-            }
-        }
     }
 
     private var hero: some View {
@@ -109,10 +99,6 @@ struct HowToPlayView: View {
                 .accessibilityAddTraits(.isHeader)
             Text("Everything you need to know to get started").font(Brand.font(14, .bold))
                 .foregroundStyle(FinishInk.secondary).multilineTextAlignment(.center)
-            // §W: replay the three-card first-run tour.
-            Button { showTour = true } label: { CandyLabel(title: "Take the tour", symbol: "sparkles") }
-                .buttonStyle(CandyButtonStyle(variant: .pink, size: .medium, fullWidth: false))
-                .padding(.top, 4)
         }
         .padding(.horizontal, 18).padding(.top, 20).padding(.bottom, 20)
         .frame(maxWidth: .infinity)

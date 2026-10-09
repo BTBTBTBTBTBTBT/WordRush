@@ -21,6 +21,7 @@ import { PoseArt } from '@/components/ui/soft-popup';
 import { BRAND_ACCENT, cardBarStyle, softBackground } from '@/lib/soft-surface';
 import { ART_SIZE } from '@/lib/art';
 import { HEADLINE, headlineMaxWidth } from '@/lib/headline';
+import { startTour } from '@/lib/onboarding';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -295,6 +296,19 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 accent={SETTINGS_ACCENT.accessibility}
               />
             </div>
+          </SettingsSection>
+
+          {/* Help: the app tour replays only from here (founder 10-07), never from a game's help sheet. */}
+          <SettingsSection title="Help" accent={SETTINGS_ACCENT.help}>
+            <button
+              type="button"
+              onClick={() => { onOpenChange(false); window.setTimeout(() => startTour(), 220); }}
+              className="block w-full text-left p-3"
+              style={settingsRowStyle(SETTINGS_ACCENT.help)}
+            >
+              <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>Replay the app tour</div>
+              <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>The welcome and quick tour, again</div>
+            </button>
           </SettingsSection>
 
           {/* Season preview (admins only): Off (by date) or any registry season (lib/season-kit.ts). */}

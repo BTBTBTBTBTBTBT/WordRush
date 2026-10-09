@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { ArtTitle } from '@/components/ui/art-title';
 import { CandyButton } from '@/components/ui/candy-button';
@@ -22,8 +21,8 @@ import { SOFT_INK, alphaHex, darken, softMix } from '@/lib/soft-surface';
 // stage (glow, slow rays, ground shadow, spring-in, bob) above a soft
 // accent-gradient card with the rainbow top bar; the game's title art; 3–4
 // short steps, each with a tiny example row of the real glossy tiles turning
-// over; a candy "Got it" in the game accent; "Take the tour" (the first-run
-// tour replay, /?tour=1); and the full rules, scoring and strategy one tap away
+// over; a candy "Got it" in the game accent (the app tour replays only from
+// Settings -> Help, founder 10-07); and the full rules, scoring and strategy one tap away
 // under "Scoring & strategy". Opens with a `whoosh`. Escape, the X, a backdrop
 // tap or Got it close it; focus is trapped inside while it is open. Reduce
 // Motion: static tiles, no rays / bob / spring / pops (globals.css `.rp-*`).
@@ -169,14 +168,6 @@ export function GameHelpCard({ slug, accent, onClose }: Props) {
               <CandyButton size="md" style={candyAccent} icon="check" onClick={onClose}>
                 Got it
               </CandyButton>
-              <Link
-                href="/?tour=1"
-                onClick={onClose}
-                className="text-xs font-black underline underline-offset-2"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Take the tour
-              </Link>
             </div>
 
             {/* The full guide (rules, scoring, strategy) the sheet used to show, one tap away. */}

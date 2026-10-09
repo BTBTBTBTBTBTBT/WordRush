@@ -73,7 +73,7 @@ final class GuideService: ObservableObject {
 
 /// In-game help sheet (FINISH_SPEC §AF): the R1 card — the game's host pose on a
 /// soft glow, the game title art, 3–4 short steps each with a tiny glossy-tile
-/// example, a candy "Got it" and "Take the tour" (§W) — over the full guide (facts /
+/// example, a candy "Got it" (the app tour lives only in Settings → Help, founder 10-07) — over the full guide (facts /
 /// How it works / The buttons / How scoring works / Strategy) behind a "Full guide"
 /// disclosure. Presented via `.sheet`, so it keeps the native drag-to-dismiss
 /// grabber + swipe-down close.
@@ -83,7 +83,6 @@ struct GuideSheet: View {
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
     @ObservedObject private var service = GuideService.shared
     @State private var showFull: Bool
-    @State private var showTour = false
     @State private var heroIn = false
     @State private var opened = false
 
@@ -122,15 +121,6 @@ struct GuideSheet: View {
             Feedback.whoosh()
             if still { heroIn = true } else {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.55).delay(0.08)) { heroIn = true }
-            }
-        }
-        .fullScreenCover(isPresented: $showTour) {
-            // §W: "Take the tour" replays the first-run onboarding.
-            OnboardingView(replay: true) { play in
-                showTour = false
-                // "Play today's Classic": once the tour is down, close everything and
-                // open the Classic daily from the tab root.
-                if play { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { Onboarding.playClassic() } }
             }
         }
     }
@@ -193,9 +183,6 @@ struct GuideSheet: View {
             Button { dismiss() } label: { CandyLabel(title: "Got it", symbol: "checkmark") }
                 .buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
                 .padding(.top, 2)
-
-            Button { showTour = true } label: { CandyLabel(title: "Take the tour", symbol: "sparkles") }
-                .buttonStyle(CandyButtonStyle(variant: .pink, size: .small, fullWidth: false))
         }
         .padding(.horizontal, 18).padding(.top, 20).padding(.bottom, 18)
         .background {

@@ -587,14 +587,10 @@ fun HowToPlayScreen(onDone: () -> Unit) {
     var sectionsDone by remember { mutableStateOf(false) }
     val sections by produceState(initialValue = HowToPlayService.cached() ?: emptyList(), sectionsTry) { value = HowToPlayService.sections(); sectionsDone = true }
     OverlayScaffold("How to Play", onDone, art = TitleArt.HOWTO) {
-        // The guide page family (StrategyKit): the hero card carries the tour replay
-        // (FINISH_SPEC W: closes this page under it), then the numbered sections.
+        // The guide page family (StrategyKit): the hero card, then the numbered sections.
+        // (The app tour replay lives only in Settings -> Help.)
         HowToPlayBody(
             sections,
-            onTour = {
-                Onboarding.replay()
-                onDone()
-            },
             tile = { HtpTile(it) },
             loadFailed = sections.isEmpty() && sectionsDone,
         )
