@@ -91,8 +91,8 @@ struct VSBannerView: View {
                         }
                         // FINISH_SPEC §AR: the VS status headline in live lettering (teal → blue;
                         // a sweep day takes the gold celebration palette).
-                        LiveHeadline(text: VsLobby.vsBannerHeadline(input), palette: sweep ? .celebration : .vs,
-                                     size: 17, names: [name], alignment: .leading, maxLines: 2, minimumScale: 0.75)
+                        BubbleTextView(text: VsLobby.vsBannerHeadline(input), palette: sweep ? .celebration : .vs,
+                                       names: [name], maxSize: 17, minSize: 13, alignment: .leading)
                     }
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
                     .padding(.trailing, hasHero ? 0 : Mascots.bannerClearance)

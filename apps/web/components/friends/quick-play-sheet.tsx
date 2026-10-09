@@ -19,7 +19,7 @@ import { GameSquare } from '@/components/ui/game-tile';
 import { CandyButton } from '@/components/ui/candy-button';
 import { CastButton } from '@/components/ui/cast-button';
 import { FR_LOOK, frBar, frSurface } from '@/lib/friends-look';
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import { BrandEmptyState } from '@/components/ui/brand-empty-state';
 import { artSrc } from '@/lib/art';
 import { avatarRadiusPx } from '@/lib/avatar-render';
@@ -266,7 +266,7 @@ function FriendPicker({ friends, kind, now, onPick }: {
             />
           </h2>
         ) : (
-          <LiveHeadline text={FRIENDLY_TITLES[kind]} palette="friends" size={32} level={2} className="w-full" />
+          <BubbleText text={FRIENDLY_TITLES[kind]} palette="friends" maxSize={32} minSize={23} level={2} className="w-full" />
         )}
         <p className="mt-1.5 text-[15px] font-extrabold" style={{ color: FR_LOOK.ink }}>{kindRules(kind)}</p>
         <div className="mt-3 w-full flex justify-center">

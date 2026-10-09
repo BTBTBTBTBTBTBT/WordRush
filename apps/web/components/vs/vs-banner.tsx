@@ -1,6 +1,6 @@
 'use client';
 
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import { Swords } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
@@ -133,7 +133,7 @@ export function VsBanner({ name, battle, botOfDay, incoming, streak, people, bot
         <div className="flex items-center gap-1.5" style={{ minHeight: 24 }}>
           {gold && <Icon3D name="trophy" size={18} className="shrink-0" />}
           {/* FINISH_SPEC AR: live lettering (teal → blue; gold on a sweep day). */}
-          <LiveHeadline text={headline} palette={gold ? 'celebrate' : 'vs'} names={[name, incoming?.from ?? ''].filter(Boolean)} size={17} align="left" className="flex-1 min-w-0" />
+          <BubbleText text={headline} palette={gold ? 'celebrate' : 'vs'} names={[name, incoming?.from ?? ''].filter(Boolean)} maxSize={17} minSize={12} align="left" className="flex-1 min-w-0" />
         </div>
         <div className="font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.4, color: subInk }}>{clockLine}</div>
       </div>

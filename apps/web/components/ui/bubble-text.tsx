@@ -63,7 +63,9 @@ export const BubbleLine = memo(function BubbleLine(props: BubbleLineProps) {
         const w = bubbleWidthEm(ch) * size;
         if (!name) return <span key={i} className="bt-space" style={{ width: w }} aria-hidden="true" />;
         const url = `/art/bubble/${name}.png?v=${BUBBLE_ATLAS.version}`;
-        return <span key={i} className="bt-glyph" aria-hidden="true" style={{ width: w, ['--bt-img' as string]: `url(${url})` } as CSSProperties} />;
+        // Keyed by position + character: when the text updates (7 -> 8 OF 18) only the glyphs that
+        // changed remount, so only they pop; the staggered bounce-in plays on first show.
+        return <span key={`${i}-${ch}`} className="bt-glyph" aria-hidden="true" style={{ width: w, ['--i' as string]: i, ['--bt-img' as string]: `url(${url})` } as CSSProperties} />;
       })}
     </span>
   );
@@ -80,13 +82,13 @@ export interface BubbleTextProps extends Omit<LiveHeadlineProps, 'size' | 'text'
 }
 
 /** Any changing headline: measures its slot, fits it (core bubbleFit), draws each line. */
-export const BubbleText = memo(function BubbleText({ text, maxSize = BUBBLE_MAX_SIZE, minSize = BUBBLE_MIN_SIZE, slotWidth, ...rest }: BubbleTextProps) {
+export const BubbleText = memo(function BubbleText({ text, maxSize = BUBBLE_MAX_SIZE, minSize = BUBBLE_MIN_SIZE, slotWidth, className = '', ...rest }: BubbleTextProps) {
   const box = useRef<HTMLDivElement>(null);
   const measured = useElementWidth(box);
   const width = slotWidth ?? measured;
   const fit = useMemo(() => (width > 0 ? bubbleFit(text, width, { maxSize, minSize }) : null), [text, width, maxSize, minSize]);
   return (
-    <div ref={box} className="bt-box" data-bubble-lines={fit?.lines.length ?? 0}>
+    <div ref={box} className={`bt-box ${className}`} data-bubble-lines={fit?.lines.length ?? 0} style={{ alignItems: rest.align === 'left' ? 'flex-start' : 'center' }}>
       {fit ? (
         fit.lines.map((line, i) => (
           <BubbleLine key={`${i}-${line}`} {...rest} text={line} size={fit.size} calm={rest.calm} style={{ whiteSpace: 'nowrap', ...rest.style }} />

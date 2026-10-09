@@ -1,6 +1,6 @@
 'use client';
 
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -120,7 +120,7 @@ export function TodayCard({ sweepModes, moreModes, todayDailies, vsDailyWon, sta
               />
             ) : (
               // FINISH_SPEC AR: the day's summary in live lettering (blue → violet, gold numbers).
-              <LiveHeadline text={`Today · ${completed} of ${total} done`} palette="stats" size={16} align="left" level={3} />
+              <BubbleText text={`Today · ${completed} of ${total} done`} palette="stats" maxSize={16} minSize={12} align="left" level={3} />
             )}
           </div>
 

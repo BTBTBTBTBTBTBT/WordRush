@@ -67,7 +67,7 @@ describe('BB Stats picker polish', () => {
   it('BB1 shows the selected game title art (~48 px) with a live-lettering fallback in the game accent', () => {
     const src = read('components/stats/stats-picker.tsx');
     expect(src).toContain('maxHeight={48}');
-    expect(src).toMatch(/<LiveHeadline[^>]*accent=/);
+    expect(src).toMatch(/<(LiveHeadline|BubbleText)[^>]*accent=/);
     expect(src).toContain('className="intro-pop');
   });
   it('BB2 is a candy segmented control with a sliding (transform-only) accent thumb, 36–40 px', () => {

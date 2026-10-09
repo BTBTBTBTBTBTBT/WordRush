@@ -1,6 +1,6 @@
 'use client';
 
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { holidayKeyForDay, leaderboardTitle } from '@wordle-duel/core';
@@ -148,7 +148,7 @@ export function LeaderboardBanner({ today, selectedMode, onSelect }: Props) {
         <h1 className="relative m-0 mb-3 flex flex-col items-center gap-1">
           <PageHeadline name="art-titlecast-leaderboard" label="Leaderboard" as="div" />
           {/* FINISH_SPEC AR: the holiday title in live lettering (gold → amber). */}
-          <LiveHeadline text={title} palette="leaderboard" size={18} level={2} />
+          <BubbleText text={title} palette="leaderboard" maxSize={18} minSize={13} level={2} />
           {season === 'halloween' && today && <HalloweenDayProps today={today} artW={headlineMaxWidth(...ART_SIZE['art-titlecast-leaderboard'], PAGE_HEADLINE)} />}
         </h1>
       ) : (

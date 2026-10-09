@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import com.wordocious.app.ui.theme.WTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -48,6 +50,7 @@ fun BubbleLine(
     modifier: Modifier = Modifier,
     names: List<String> = emptyList(),
     sound: Boolean = true,
+    align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
 ) {
     // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
     if (bubbleAtlasCovers(text) && com.wordocious.app.data.FlagsService.isLive("bubble_atlas")) {
@@ -55,7 +58,7 @@ fun BubbleLine(
     } else {
         val sizeSp = with(androidx.compose.ui.platform.LocalDensity.current) { sizeDp.dp.toSp() }
         // The fit is exact, so nothing shrinks; 0.6 is only a safety net, never an ellipsis.
-        LiveHeadline(text, palette, modifier, names = names, maxSize = sizeSp, minSize = sizeSp * 0.6f, maxLines = 1, sound = sound)
+        LiveHeadline(text, palette, modifier, names = names, maxSize = sizeSp, minSize = sizeSp * 0.6f, align = align, maxLines = 1, sound = sound)
     }
 }
 
@@ -68,7 +71,17 @@ private fun BubbleAtlasLine(text: String, palette: HeadlinePalette, sizeDp: Int,
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.Bottom,
     ) {
-        for (ch in text.uppercase()) {
+        text.uppercase().forEachIndexed { i, ch ->
+          // Keyed by position + character: only a glyph that CHANGED remounts and pops.
+          key(i, ch) {
+            val still = WTheme.calmMotion
+            val pop = remember { androidx.compose.animation.core.Animatable(if (still) 1f else 0.6f) }
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                if (!still) {
+                    kotlinx.coroutines.delay(i * 25L)
+                    pop.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 380f))
+                }
+            }
             val w = (bubbleWidthEm(ch.toString()) * sizeDp).dp
             val name = if (ch == ' ') null else bubbleGlyphName(ch.toString())
             val res = name?.let { context.resources.getIdentifier("bubble_$it", "drawable", context.packageName) } ?: 0
@@ -78,7 +91,10 @@ private fun BubbleAtlasLine(text: String, palette: HeadlinePalette, sizeDp: Int,
                 Image(
                     painterResource(res), contentDescription = null, contentScale = ContentScale.Fit,
                     modifier = Modifier.width(w).height((sizeDp * 1.1f).dp)
-                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                        .graphicsLayer {
+                            compositingStrategy = CompositingStrategy.Offscreen
+                            scaleX = pop.value; scaleY = pop.value; alpha = ((pop.value - 0.6f) / 0.4f).coerceIn(0f, 1f)
+                        }
                         .drawWithContent {
                             drawContent()
                             // Modulate multiplies the tint into the glyph's colors AND alpha, so the
@@ -87,6 +103,7 @@ private fun BubbleAtlasLine(text: String, palette: HeadlinePalette, sizeDp: Int,
                         },
                 )
             }
+          }
         }
     }
 }
@@ -101,13 +118,21 @@ fun BubbleText(
     maxSize: Int = BUBBLE_MAX_SIZE,
     minSize: Int = BUBBLE_MIN_SIZE,
     sound: Boolean = true,
+    align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val width = maxWidth.value.toDouble()
         val fit = remember(text, width, maxSize, minSize) { bubbleFit(text, width, maxSize, minSize) }
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = when (align) {
+                androidx.compose.ui.text.style.TextAlign.Start, androidx.compose.ui.text.style.TextAlign.Left -> Alignment.Start
+                androidx.compose.ui.text.style.TextAlign.End, androidx.compose.ui.text.style.TextAlign.Right -> Alignment.End
+                else -> Alignment.CenterHorizontally
+            },
+        ) {
             fit.lines.forEachIndexed { i, line ->
-                BubbleLine(line, palette, fit.size, Modifier.fillMaxWidth(), names = names, sound = sound && i == 0)
+                BubbleLine(line, palette, fit.size, Modifier.fillMaxWidth(), names = names, sound = sound && i == 0, align = align)
             }
         }
     }

@@ -32,7 +32,7 @@ struct BubbleLineView: View {
         } else {
             // A safety scale (0.6) only ever bites when a font metric disagrees with the fit's
             // table by a hair; an exact fit never shrinks and NEVER truncates.
-            LiveHeadline(text: text, palette: palette, size: size, names: names, alignment: .center,
+            LiveHeadline(text: text, palette: palette, size: size, names: names, alignment: alignment,
                          maxLines: 1, minimumScale: 0.6, animated: animated)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -46,10 +46,11 @@ private struct BubbleAtlasLine: View {
     let size: CGFloat
     let top: Color
     let bottom: Color
+    @Environment(\.accessibilityReduceMotion) private var envReduceMotion
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(Array(text.uppercased().enumerated()), id: \.offset) { _, ch in
+            ForEach(Array(text.uppercased().enumerated()), id: \.offset) { i, ch in
                 let w = CGFloat(BubbleText.widthEm(String(ch))) * size
                 if ch == " " {
                     Color.clear.frame(width: w, height: size)
@@ -60,6 +61,9 @@ private struct BubbleAtlasLine: View {
                         .compositingGroup()
                         .mask(glyph)
                         .frame(width: w, height: size * 1.1)
+                        .modifier(BubbleGlyphPop(index: i, still: Motion.calm(envReduceMotion)))
+                        // Keyed by position + character: only a glyph that CHANGED remounts and pops.
+                        .id("\(i)-\(ch)")
                 } else {
                     Color.clear.frame(width: w, height: size)
                 }
@@ -79,27 +83,46 @@ struct BubbleTextView: View {
     /// Fixed slot width; nil = measure the container.
     var slotWidth: CGFloat?
     var animated: Bool = true
+    var alignment: TextAlignment = .center
 
     @State private var measured: CGFloat = 0
 
     var body: some View {
         let width = slotWidth ?? measured
         let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
-        VStack(spacing: 0) {
+        VStack(alignment: alignment == .leading ? .leading : (alignment == .trailing ? .trailing : .center), spacing: 0) {
             if width > 0 {
                 let fit = BubbleText.fit(text, slotWidth: Double(width), maxSize: Double(maxSize), minSize: Double(minSize))
                 ForEach(Array(fit.lines.enumerated()), id: \.offset) { _, line in
-                    BubbleLineView(text: line, palette: palette, size: CGFloat(fit.size) / dyn, names: names, animated: animated)
+                    BubbleLineView(text: line, palette: palette, size: CGFloat(fit.size) / dyn, names: names, animated: animated, alignment: alignment)
                 }
             } else {
                 Color.clear.frame(height: maxSize)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: alignment == .leading ? .leading : (alignment == .trailing ? .trailing : .center))
         .background(GeometryReader { g in Color.clear.preference(key: BubbleWidthKey.self, value: g.size.width) })
         .onPreferenceChange(BubbleWidthKey.self) { measured = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(text)
         .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// The staggered bounce-in (25 ms a glyph) on first show, and the pop of a glyph whose character
+/// changed. Reduce Motion / Low Power = static.
+private struct BubbleGlyphPop: ViewModifier {
+    let index: Int
+    let still: Bool
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(shown || still ? 1 : 0.6)
+            .opacity(shown || still ? 1 : 0)
+            .onAppear {
+                guard !still else { return }
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.55).delay(Double(index) * 0.025)) { shown = true }
+            }
     }
 }

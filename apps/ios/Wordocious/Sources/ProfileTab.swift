@@ -1037,9 +1037,9 @@ struct ProfileTab: View {
             // BJ16: OVERVIEW / DAILY SWEEP lettering, not live text.
             HeadingArtView(sel.game == nil ? .overview : .sweep, height: 40, maxWidth: 280, motion: false)
         } else {
-            LiveHeadline(text: pickerTitle.uppercased(),
-                         palette: sel.game == nil ? .stats : .accent(pickerHeadAccent),
-                         size: 24, maxLines: 1, minimumScale: 0.6)
+            BubbleTextView(text: pickerTitle.uppercased(),
+                           palette: sel.game == nil ? .stats : .accent(pickerHeadAccent),
+                           maxSize: 24, minSize: 15)
         }
     }
 

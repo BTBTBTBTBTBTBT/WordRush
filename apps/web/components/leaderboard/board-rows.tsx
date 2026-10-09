@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { openDressUp } from '@/components/profile/dress-up';
 import { CandySegment } from '@/components/ui/candy-segment';
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import type { CSSProperties, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { PlayerAvatar } from '@/components/avatar/player-avatar';
@@ -282,7 +282,7 @@ export function ResultCard({ rank, ofLine, solved, points, delta }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
             {/* FINISH_SPEC AR: the dynamic rank line in live lettering (gold → amber). */}
-            <LiveHeadline text={rank != null ? ofLine ?? '' : 'YOUR RESULT'} palette="leaderboard" size={15} align="left" level={3} className="flex-1 min-w-0" />
+            <BubbleText text={rank != null ? ofLine ?? '' : 'YOUR RESULT'} palette="leaderboard" maxSize={15} minSize={11} align="left" level={3} className="flex-1 min-w-0" />
             {delta}
           </div>
           {solved && (
@@ -310,7 +310,7 @@ export function CompactResultRow({ line, won, delta }: { line: string; won: bool
     <div className="relative overflow-hidden mb-3" style={softCard(LB_GOLD, { radius: 14 })}>
       <div className="flex items-center gap-2" style={{ padding: '6px 10px' }}>
         <Icon3D name="crown" size={22} className="shrink-0" />
-        <LiveHeadline text={line} palette="leaderboard" size={14} align="left" level={3} calm className="flex-1 min-w-0" />
+        <BubbleText text={line} palette="leaderboard" maxSize={14} minSize={10} align="left" level={3} calm className="flex-1 min-w-0" />
         {delta}
         {won != null && <Icon3D name={won ? 'badge-check' : 'badge-l'} size={20} label={won ? 'Completed' : 'Not solved'} className="shrink-0" />}
       </div>
