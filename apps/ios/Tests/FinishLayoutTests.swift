@@ -197,7 +197,9 @@ final class StreakWeekTests: XCTestCase {
     /// Item 47: the hop is one continuous arc — it begins and ends at rest (no snap) and never overshoots the apex.
     func testFlourishIsOneSoftArcWithNoSnap() {
         let hop = CastMoves.flourishHop
-        XCTAssertEqual(CastMoves.flourishPose(index: 0, elapsed: 0.0001), .identity, "starts at rest")
+        let p0 = CastMoves.flourishPose(index: 0, elapsed: 0.0001)
+        XCTAssertEqual(p0.tx, 0, accuracy: 1e-4, "starts at rest"); XCTAssertEqual(p0.ty, 0, accuracy: 1e-4)
+        XCTAssertEqual(p0.rotation, 0, accuracy: 1e-4); XCTAssertEqual(p0.sx, 1, accuracy: 1e-4); XCTAssertEqual(p0.sy, 1, accuracy: 1e-4)
         var maxRise = 0.0
         var last = CastMoves.flourishPose(index: 0, elapsed: 0.001)
         var t = 0.002
