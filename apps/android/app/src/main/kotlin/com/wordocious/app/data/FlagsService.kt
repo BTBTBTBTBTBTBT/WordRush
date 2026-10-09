@@ -76,6 +76,19 @@ object FlagsService {
         return isTester
     }
 
+    /** 2.8 off-switches (core feature-switches.ts, FRIDAY-QUEUE item 38): FAIL OPEN — on unless the
+     *  key's row exists and is disabled (or audience "testers" for a non-tester). */
+    fun resolveLive(key: String, flags: Map<String, AppFlag>?, isTester: Boolean): Boolean {
+        val row = flags?.get(key) ?: return true
+        if (!row.enabled) return false
+        if (row.audience == "all") return true
+        return isTester
+    }
+
+    /** Live off-switch check against the current table and the signed-in profile. */
+    fun isLive(key: String, flags: Map<String, AppFlag>? = _flags.value): Boolean =
+        resolveLive(key, flags, AuthService.isAdsExempt)
+
     /** Live resolver against the current table and the signed-in profile. */
     fun isOn(flagKey: String?, flags: Map<String, AppFlag>? = _flags.value, loaded: Boolean = _loaded.value): Boolean {
         if (flagKey == null) return true

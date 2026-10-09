@@ -10,12 +10,11 @@ import java.time.LocalDate
 class SeasonTest {
     @Test fun halloweenWindowEdges() {
         for (year in listOf(2025, 2026, 2027, 2028)) {
-            assertNull(currentSeason(LocalDate.of(year, 10, 16)))
-            assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 17)))
+            assertNull(currentSeason(LocalDate.of(year, 10, 8)))
+            assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 9)))
             assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 24)))
             assertEquals("halloween", currentSeason(LocalDate.of(year, 10, 31)))
-            assertEquals("halloween", currentSeason(LocalDate.of(year, 11, 1)))
-            assertNull(currentSeason(LocalDate.of(year, 11, 2)))
+            assertNull(currentSeason(LocalDate.of(year, 11, 1)))
         }
     }
 

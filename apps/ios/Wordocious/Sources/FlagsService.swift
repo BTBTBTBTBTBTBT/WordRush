@@ -72,6 +72,17 @@ final class FlagsService: ObservableObject {
         return viewerIsTester
     }
 
+    /// 2.8 off-switches (core feature-switches.ts, FRIDAY-QUEUE item 38): FAIL OPEN — on unless the
+    /// key's row exists and is disabled (or audience 'testers' for a non-tester). Re-read on foreground.
+    func isLive(_ key: String) -> Bool { Self.resolveLive(key, flags: flags, isTester: viewerIsTester) }
+
+    nonisolated static func resolveLive(_ key: String, flags: [String: AppFlag]?, isTester: Bool) -> Bool {
+        guard let flags, let row = flags[key] else { return true }
+        if !row.enabled { return false }
+        if row.audience == "all" { return true }
+        return isTester
+    }
+
     /// Pure form for tests and previews: same rule, explicit inputs.
     nonisolated static func resolve(_ flagKey: String?, flags: [String: AppFlag]?, isTester: Bool) -> Bool {
         guard let flagKey else { return true }
