@@ -4,7 +4,7 @@ import UserNotifications
 import UserNotificationsUI
 
 /// Notification Content Extension (FRIDAY-QUEUE item 34): the long-press card. Game art + BOTH mascots (the
-/// sender and you) + the score, in the glossy frame art (Halloween frame in season), with the system's
+/// sender and you, both from the push itself, no app group) + the score, in the glossy frame art (Halloween frame in season), with the system's
 /// Play / Later actions under it (registered by the app: PushActions.register). Everything fails soft:
 /// no network = the attachment already on the notification, no mascot = W.
 final class NotificationViewController: UIViewController, UNNotificationContentExtension {
@@ -40,30 +40,25 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
         model.gameTitle = rich.gameTitle
         model.accent = Color(pushHex: rich.accent)
         model.halloween = rich.halloween
-        model.you = Self.ownMascot()
-        // The game art: the attachment the service extension already downloaded, else fetch it.
-        if let att = content.attachments.first, att.url.startAccessingSecurityScopedResource() {
-            model.gameArt = UIImage(contentsOfFile: att.url.path)
+        // The pictures the service extension already downloaded (no app group needed), else fetch them.
+        for att in content.attachments {
+            guard att.url.startAccessingSecurityScopedResource() else { continue }
+            let img = UIImage(contentsOfFile: att.url.path)
             att.url.stopAccessingSecurityScopedResource()
+            if att.identifier == PushRich.attachmentSender { model.sender = img }
+            else if att.identifier == PushRich.attachmentGame { model.gameArt = img }
         }
         Task {
-            async let sender = Self.fetch(rich.senderAvatar)
+            async let sender: UIImage? = model.sender == nil ? Self.fetch(rich.senderAvatar) : nil
             async let art: UIImage? = model.gameArt == nil ? Self.fetch(rich.gameImage) : nil
-            let (s, a) = await (sender, art)
+            async let you = Self.fetch(rich.youAvatar)   // the recipient's own mascot, from the payload
+            let (s, a, y) = await (sender, art, you)
             await MainActor.run {
                 if let s { model.sender = s }
                 if let a { model.gameArt = a }
+                if let y { model.you = y }
             }
         }
-    }
-
-    /// The player's own look, pre-rendered by the app into the shared container (WidgetAvatarSnapshot).
-    private static func ownMascot() -> UIImage? {
-        guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.wordocious.app") else { return nil }
-        for name in ["widget-avatar-mascot.png", "widget-avatar-photo.png"] {
-            if let img = UIImage(contentsOfFile: dir.appendingPathComponent(name).path) { return img }
-        }
-        return nil
     }
 
     private static func fetch(_ url: URL?) async -> UIImage? {

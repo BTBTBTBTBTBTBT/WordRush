@@ -8,6 +8,8 @@ public struct PushRich: Equatable, Sendable {
     public let senderName: String
     /// Absolute https PNG: the sender's mascot (or photo).
     public let senderAvatar: URL?
+    /// The recipient's own avatar PNG (the card's "you"); nil on older servers.
+    public let youAvatar: URL?
     public let gameId: String
     public let gameTitle: String
     /// Absolute https PNG: the game's art (the attachment thumbnail).
@@ -21,6 +23,9 @@ public struct PushRich: Equatable, Sendable {
 
     /// The notification category the content extension registers for (server: APNS_RICH_CATEGORY).
     public static let category = "WORDOCIOUS_GAME"
+    /// Attachment identifiers the service extension sets and the content extension reads.
+    public static let attachmentSender = "sender"
+    public static let attachmentGame = "game"
     public static let actionPlay = "WORDOCIOUS_PLAY"
     public static let actionLater = "WORDOCIOUS_LATER"
 
@@ -35,7 +40,7 @@ public struct PushRich: Equatable, Sendable {
             return url
         }
         return PushRich(
-            senderId: s("senderId"), senderName: name, senderAvatar: u("senderAvatar"),
+            senderId: s("senderId"), senderName: name, senderAvatar: u("senderAvatar"), youAvatar: u("youAvatar"),
             gameId: s("gameId"), gameTitle: s("gameTitle"), gameImage: u("gameImage"),
             thread: s("thread"), accent: s("accent").isEmpty ? "#7c3aed" : s("accent"),
             halloween: s("halloween") == "1", score: s("score").isEmpty ? nil : s("score"),

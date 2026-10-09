@@ -2,7 +2,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { sendApns, type ApnsMessage } from '@/lib/push/apns';
 import { sendFcm, type FcmMessage } from '@/lib/push/fcm';
 import webpush from 'web-push';
-import { buildRichFields, richPushSwitches, type RichInput } from '@/lib/push/rich';
+import { avatarUrl, buildRichFields, richPushSwitches, type RichInput } from '@/lib/push/rich';
 
 // One notification, every channel: web push + APNs + FCM, deduped per user —
 // extracted from the daily-reminder cron so admin campaigns and crons share a
@@ -106,7 +106,8 @@ export async function broadcastPush(
   );
   const apnsTargets: ApnsMessage[] = nativeTargets
     .filter((d: any) => d.platform === 'ios')
-    .map((d: any) => ({ token: d.token, title, body, url, ...(built ? { rich: built.fields, collapseId: built.collapseId } : {}) }));
+    // The card's "you" is the RECIPIENT's own mascot, so the fields are per device on iOS.
+    .map((d: any) => ({ token: d.token, title, body, url, ...(built ? { rich: { ...built.fields, youAvatar: avatarUrl(d.user_id) }, collapseId: built.collapseId } : {}) }));
   const fcmTargets: FcmMessage[] = nativeTargets
     .filter((d: any) => d.platform === 'android')
     .map((d: any) => ({

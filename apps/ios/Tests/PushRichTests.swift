@@ -7,6 +7,7 @@ final class PushRichTests: XCTestCase {
         "url": "/friends/games/g1",
         "rich": [
             "senderId": "u1", "senderName": "Ava", "senderAvatar": "https://wordocious.com/api/push/art/avatar/u1",
+            "youAvatar": "https://wordocious.com/api/push/art/avatar/u2",
             "gameId": "hub", "gameTitle": "Hubbub", "gameImage": "https://wordocious.com/api/push/art/game/hub",
             "thread": "game:g1", "accent": "#c026d3", "halloween": "0", "score": "2-1", "url": "/friends/games/g1",
         ] as [String: Any],
@@ -17,6 +18,7 @@ final class PushRichTests: XCTestCase {
         XCTAssertEqual(r.senderName, "Ava")
         XCTAssertEqual(r.senderAvatar?.absoluteString, "https://wordocious.com/api/push/art/avatar/u1")
         XCTAssertEqual(r.gameImage?.lastPathComponent, "hub")
+        XCTAssertEqual(r.youAvatar?.lastPathComponent, "u2")
         XCTAssertEqual(r.thread, "game:g1")
         XCTAssertEqual(r.accent, "#c026d3")
         XCTAssertFalse(r.halloween)

@@ -80,6 +80,8 @@ export interface RichPushFields {
   thread: string;
   accent: string;
   halloween: '1' | '0';
+  /** The RECIPIENT's own avatar PNG (the long-press card's "you"): set per device by broadcastPush. */
+  youAvatar?: string;
   /** "2-1" style score for the long-press card (optional). */
   score?: string;
   /** The route a tap opens: always the exact game. */
