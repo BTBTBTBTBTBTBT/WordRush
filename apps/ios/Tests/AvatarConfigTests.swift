@@ -28,9 +28,9 @@ final class AvatarConfigTests: XCTestCase {
         XCTAssertEqual(backdrops.map { $0["kind"] as? String }, AvatarCatalog.backdrops.map(\.kind.rawValue))
         XCTAssertEqual(backdrops.map { $0["colors"] as? [String] ?? [] }, AvatarCatalog.backdrops.map(\.colors))
         XCTAssertEqual(AvatarCatalog.backdropIds.first, "auto")
-        XCTAssertEqual(AvatarCatalog.bodies.count, 30)   // 12 + 18 new bodies (10-09)
-        XCTAssertEqual(AvatarCatalog.heads.count, 44)   // 34 + 4 Halloween (10-05) + goth/emo/punk hats (10-09)
-        XCTAssertEqual(AvatarCatalog.faces.count + AvatarCatalog.necks.count - 2, 26)   // + bat wings, cat tail, pack shades/pendants (10-09)
+        XCTAssertEqual(AvatarCatalog.bodies.count, 12)
+        XCTAssertEqual(AvatarCatalog.heads.count, 38)   // 34 + 4 Halloween (10-05)
+        XCTAssertEqual(AvatarCatalog.faces.count + AvatarCatalog.necks.count - 2, 22)   // + bat wings, cat tail
         XCTAssertEqual(AvatarCatalog.colors.count, 38)
         XCTAssertEqual(AvatarCatalog.patterns.count, 14)
         XCTAssertEqual(AvatarCatalog.cheeks.count, 7)
@@ -141,11 +141,7 @@ final class AvatarConfigTests: XCTestCase {
         XCTAssertEqual(parts.body("unknown").eyeY, 0.36)
         XCTAssertEqual(parts.part("eyes").scale, 0.46)
         XCTAssertEqual(parts.part("mouth").slot, "mouthY") // falls back to the built-in
-        // Every body is rigged in the SHIPPED manifest (the built-in placeholder only covers the first 12).
-        let shipped = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../packages/core/src/avatar-parts.json").standardized
-        let manifest = try AvatarParts.decode(Data(contentsOf: shipped))
-        for b in AvatarCatalog.bodies { XCTAssertNotNil(manifest.bodies[b], b) }
+        for b in AvatarCatalog.bodies { XCTAssertNotNil(AvatarParts.builtIn.bodies[b], b) }
         XCTAssertEqual(parts.body("classic").y(slot: "headTop"), 0.06)
     }
 

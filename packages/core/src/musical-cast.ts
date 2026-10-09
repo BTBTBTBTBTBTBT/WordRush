@@ -118,7 +118,21 @@ export const HALLOWEEN_MELODIES: readonly MusicalMelody[] = [
   { id: 'toccata', name: 'Toccata and Fugue in D minor', achievement: 'tune_toccata', notes: [A4h, G4h, A4h, G4h, F4h, E4h, D4h, C4h, D4h] },
 ];
 
-/** Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line). */
+/**
+ * Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line).
+ * Research pass 2026-10-09 (text-only tools: web search/fetch cannot read score images or PDFs): NONE reached the
+ * two-independent-sources bar, so none is wired. What the readable sources did confirm, and what is still missing:
+ *   - Chopin Funeral March: B-flat minor, 4/4, melody opens on a repeated B-flat in dotted rhythm, trio in D-flat major
+ *     (en.wikipedia.org/wiki/Piano_Sonata_No._2_(Chopin); lafolia.com/a-look-at-chopins-piano-sonata-in-b-flat-minor-op-35).
+ *     The note-by-note line (B-flat x4, D-flat C C B-flat B-flat A B-flat) and whether that A is natural are UNCONFIRMED.
+ *   - Danse Macabre: G minor; harp D x12, solo violin tritone A / E-flat (scordatura). The flute/xylophone theme's pitches
+ *     were not found in any text source.
+ *   - Funeral March of a Marionette: D minor, 6/8 (en.wikipedia.org/wiki/Funeral_March_of_a_Marionette). Pitches not found.
+ *   - Night on Bald Mountain: D minor (en.wikipedia.org/wiki/Night_on_Bald_Mountain). Pitches not found.
+ *   - Sorcerer's Apprentice: Wikipedia's LilyPond example gives F minor, 9/8, F C' C D E F (octaves inferred); the Skoove
+ *     beginner arrangement (skoove.com/blog/the-sorcerers-apprentice-piano-song) is A minor and does NOT agree. Conflict.
+ * To finish: read bars 1-8 from the IMSLP scores by eye (or an ear/MIDI pass), then add each to HALLOWEEN_MELODIES.
+ */
 export const HALLOWEEN_TUNES_TODO: readonly string[] = [
   'Danse Macabre (Saint-Saens)', 'Funeral March (Chopin, Piano Sonata No. 2)', 'Night on Bald Mountain (Mussorgsky)',
   'Funeral March of a Marionette (Gounod)', "The Sorcerer's Apprentice (Dukas)",

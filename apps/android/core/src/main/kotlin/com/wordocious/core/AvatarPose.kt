@@ -461,6 +461,5 @@ object AvatarPoses {
     val LAUGH_RATE: Map<String, Double> = mapOf(
         "mini" to 1.32, "bean" to 1.16, "star" to 1.12, "drop" to 1.1, "tall" to 1.04, "classic" to 1.0, "hex" to 0.98,
         "cloud" to 0.96, "pear" to 0.94, "blob" to 0.92, "wide" to 0.88, "chunky" to 0.84,
-        "heart" to 1.06, "moon" to 0.96, "egg" to 1.0, "bell" to 0.98, "triangle" to 1.04, "diamond" to 1.08, "shield" to 0.92, "burst" to 1.12, "flower" to 1.06, "gumdrop" to 1.1, "can" to 0.94, "potato" to 0.9, "catear" to 1.08, "bunnyear" to 1.12, "pumpkin" to 0.9, "ghost" to 1.04, "cone" to 1.02, "bat" to 1.14,
     )
 }

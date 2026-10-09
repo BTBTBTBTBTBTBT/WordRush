@@ -216,24 +216,6 @@ private struct ColdStartIntro: View {
     private static let landing: Double = 1.55 * pace
     private static let background = Color(hex: 0xF1D7F6)
 
-    /// The intro's backdrop: in season (and unless the `opening_animation_season` switch is off) the
-    /// Halloween night wall Home draws underneath, aspect-filled and centered over the full screen so
-    /// its details land on the same pixels; otherwise the lilac launch color.
-    @ViewBuilder
-    private func backdropView(_ size: CGSize) -> some View {
-        if CastSkin.season != nil, CastSkin.introSeasonOn,
-           let wall = SeasonKit.wall(PageTint.home.wallpaper, dark: true) {
-            Image(wall)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFill()
-                .frame(width: size.width, height: size.height)
-                .clipped()
-        } else {
-            Self.background
-        }
-    }
-
     private var still: Bool { Mascots.reduceMotion(envReduceMotion) }
 
     var body: some View {
@@ -243,10 +225,10 @@ private struct ColdStartIntro: View {
             let origin = geo.frame(in: .global).origin
             ZStack {
                 if !ready {
-                    // §AU5: the plain launch color (in season: the night wall) until every intro image is decoded.
-                    backdropView(size)
+                    // §AU5: the plain launch color until every intro image is decoded.
+                    Self.background
                 } else if still {
-                    backdropView(size)
+                    Self.background
                     IntroArt.image(.w).resizable().interpolation(.high).scaledToFit()
                         .frame(width: Self.launchSize, height: Self.launchSize)
                         .position(x: size.width / 2, y: size.height / 2)
@@ -346,7 +328,7 @@ private struct ColdStartIntro: View {
         let glide = easeOut((t - 1.2) / 0.35)
         let backdrop = 1 - ease((t - 1.15) / 0.4)
         return ZStack {
-            backdropView(size).opacity(backdrop)
+            Self.background.opacity(backdrop)
             ForEach(0..<Mascots.cast.count, id: \.self) { i in
                 figure(i, t: t, s: s, mid: mid[i], header: header[i], glide: glide, size: size)
             }

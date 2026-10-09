@@ -40,7 +40,7 @@ enum MascotAccess {
     static var ownedKeys: [String] = []
 
     /// Reload the ledger (no-throw; keeps the last good list on failure).
-    @MainActor static func loadOwned() async {
+    static func loadOwned() async {
         struct Row: Decodable { let item_key: String }
         guard AuthService.shared.profile != nil else { ownedKeys = []; return }
         if let rows: [Row] = try? await AuthService.shared.client.from("my_owned_items").select("item_key").execute().value {

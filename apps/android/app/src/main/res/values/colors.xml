@@ -2,8 +2,8 @@
 <resources>
     <!-- color-bg from globals.css :root -->
     <color name="brand_bg">#F8F7FF</color>
-    <!-- FINISH_SPEC F2: the launch color behind the W. 2.8 Halloween build: the night wall top #0E091B; the ~Nov 1 2.8.x restores lilac #ECE0FB (docs/design/brand/seasons/README.md). -->
-    <color name="splash_lilac">#0E091B</color>
+    <!-- FINISH_SPEC F2: the Home wallpaper's lilac behind the launch W mascot. -->
+    <color name="splash_lilac">#ECE0FB</color>
     <!-- FINISH_SPEC K2: the notification accent (small icon tint / header). -->
     <color name="notification_accent">#7C3AED</color>
 </resources>

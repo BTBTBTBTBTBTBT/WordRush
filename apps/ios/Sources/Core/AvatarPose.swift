@@ -279,7 +279,6 @@ public enum AvatarPose {
     public static let laughRate: [String: Double] = [
         "mini": 1.32, "bean": 1.16, "star": 1.12, "drop": 1.1, "tall": 1.04, "classic": 1.0, "hex": 0.98, "cloud": 0.96, "pear": 0.94,
         "blob": 0.92, "wide": 0.88, "chunky": 0.84,
-        "heart": 1.06, "moon": 0.96, "egg": 1.0, "bell": 0.98, "triangle": 1.04, "diamond": 1.08, "shield": 0.92, "burst": 1.12, "flower": 1.06, "gumdrop": 1.1, "can": 0.94, "potato": 0.9, "catear": 1.08, "bunnyear": 1.12, "pumpkin": 0.9, "ghost": 1.04, "cone": 1.02, "bat": 1.14,
     ]
 
     /// JS Math.round (halves toward +∞), to 5 decimals.

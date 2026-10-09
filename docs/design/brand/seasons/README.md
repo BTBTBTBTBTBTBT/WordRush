@@ -95,11 +95,6 @@ order, so each season is ready ≥ 3 weeks before its window opens.
 - [ ] Seasonal app icon (same icon, season palette) in the season's build; normal icon restored in the next build
 - [ ] Seasonal store listing: screenshots + captions of the current pages/widgets, store text; reverted to normal
       right after the season (iOS needs a version for both → small 2.x.y; Play listing anytime)
-- [ ] Static launch/splash color (it cannot check the date, so a season build sets it to the season wall's top color;
-      the next build restores it). Halloween 2.8: iOS `LaunchBackground.colorset` and Android `splash_lilac`
-      (`values/colors.xml`, `values-night` if present) = **#0E091B**. **REVERT in the ~Nov 1 2.8.x** (with the app
-      icon / screenshots / store text): `LaunchBackground` → **#F1D7F6**, `splash_lilac` → **#ECE0FB**. Web's inline
-      first-paint color follows the date client-side and needs no revert.
 One registry drives all three apps; a new season is ART + DATA, no code. Halloween is the worked example.
 1. **Art.** Make it here: `<season>/titles/` (one per game / screen key), `<season>/walls/` (code-drawn with the
    Halloween engine: `wall-<page>.webp` night + `wall-<page>-light.webp` light twin, `-wide` for desktop; pages are

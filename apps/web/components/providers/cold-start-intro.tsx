@@ -4,10 +4,9 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { CAST } from '@/lib/mascots';
 import { activeSeason, cachedSwitchOn, castArt, type Season } from '@/lib/season';
-import { seasonalWall } from '@/lib/season-kit';
 import { prefersReducedMotion } from '@/lib/motion';
 import { playIntroJingle, warmIntroSound } from '@/lib/sounds';
-import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTRO_RUNNING_ATTR, SPLASH, SPLASH_NIGHT, flourishTotalMs, glideFrame, glideTransform, introShouldPlay } from '@/lib/intro';
+import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTRO_RUNNING_ATTR, SPLASH, flourishTotalMs, glideFrame, glideTransform, introShouldPlay } from '@/lib/intro';
 
 // The cold-start launch (docs/FINISH_SPEC.md F2). The static launch screen is
 // the inline #app-loader in app/layout.tsx (the Home wallpaper color with the
@@ -29,8 +28,6 @@ import { CAST_FLOURISH_ATTR, INTRO, INTRO_DONE_EVENT, INTRO_PRELOAD_MAX_MS, INTR
 // landing, in the same frame, the real row turns visible and the intro row is
 // removed (flushSync), then every character hops once (W hop, 420 ms, 50 ms
 // apart) before the one-at-a-time moves resume. Tap to skip lands at once.
-// Halloween: in season the backdrop is the Home night wall (.intro-season-wall, globals.css), not the lilac, so the
-// intro hands off seamlessly to the Halloween Home (off-season: unchanged).
 // FINISH_SPEC X: during the season the row assembles from the Halloween
 // skins (the same art + framing the header draws, lib/season.ts castArt), so
 // it lands on an identical row.
@@ -56,15 +53,6 @@ function decodeImage(src: string): Promise<void> {
     if (typeof img.decode === 'function') img.decode().then(() => resolve(), () => resolve());
     else { img.onload = () => resolve(); img.onerror = () => resolve(); }
   });
-}
-
-/**
- * In season the backdrop is the Home night wall (the same image + cover/center the page draws, so the moon etc.
- * land on the same pixels as the Home underneath); null off season / when the season ships no Home wall.
- */
-function introWall(season: Season | null): { src: string; wide: string } | null {
-  const name = season ? seasonalWall('art-wall-home', season, 'dark') : null;
-  return name ? { src: `/art/${name}.webp`, wide: `/art/${name}-wide.webp` } : null;
 }
 
 /** The intro is over: the real row shows and deferred startup work may run. */
@@ -209,9 +197,7 @@ export function ColdStartIntro() {
     };
     // AU5: fetch + decode the W and every cast image before the first intro
     // frame; the launch look (backdrop + still W) holds until then, ≤ 300 ms.
-    const wall0 = introWall(season0);
-    const wallSrc = wall0 ? [window.matchMedia('(min-aspect-ratio: 1/1), (min-width: 1024px)').matches ? wall0.wide : wall0.src] : [];
-    const srcs = [SPLASH.icon, ...wallSrc, ...CAST.map((id) => castArt(id, season0).src)];
+    const srcs = [SPLASH.icon, ...CAST.map((id) => castArt(id, season0).src)];
     Promise.race([
       Promise.all(srcs.map(decodeImage)),
       new Promise<void>((r) => setTimeout(r, INTRO_PRELOAD_MAX_MS)),
@@ -224,7 +210,6 @@ export function ColdStartIntro() {
   const showRow = !reduced && (phase === 'row' || phase === 'glide' || phase === 'out');
   const fading = phase === 'out' || phase === 'glide';
   const hideIcon = showRow || phase === 'out';
-  const wall = introWall(season);
 
   return (
     <div
@@ -236,11 +221,9 @@ export function ColdStartIntro() {
     >
       {/* The launch backdrop: Home fades in underneath as the row glides. */}
       <div
-        className={wall ? 'absolute inset-0 intro-season-wall' : 'absolute inset-0'}
+        className="absolute inset-0"
         style={{
-          ...(wall
-            ? ({ backgroundColor: SPLASH_NIGHT, '--intro-wall': `url('${wall.src}')`, '--intro-wall-wide': `url('${wall.wide}')` } as React.CSSProperties)
-            : { background: SPLASH.background }),
+          background: SPLASH.background,
           opacity: fading ? 0 : 1,
           transition: `opacity ${reduced ? INTRO.reducedFadeMs : phase === 'glide' ? INTRO.glideMs : INTRO.outMs}ms ease-out`,
         }}

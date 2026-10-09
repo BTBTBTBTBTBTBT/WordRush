@@ -343,6 +343,4 @@ export const AVATAR_LIVE_ROOM: readonly AvatarPoseSpec[] = [
 /** The laugh's pitch per body (the cast laugh sounds, pitched: small bodies higher, big ones lower). */
 export const AVATAR_LAUGH_RATE: Readonly<Record<string, number>> = {
   mini: 1.32, bean: 1.16, star: 1.12, drop: 1.1, tall: 1.04, classic: 1.0, hex: 0.98, cloud: 0.96, pear: 0.94, blob: 0.92, wide: 0.88, chunky: 0.84,
-  // the 18 new bodies (10-09): small / spiky shapes laugh quicker, round heavy ones slower
-  heart: 1.06, moon: 0.96, egg: 1.0, bell: 0.98, triangle: 1.04, diamond: 1.08, shield: 0.92, burst: 1.12, flower: 1.06, gumdrop: 1.1, can: 0.94, potato: 0.9, catear: 1.08, bunnyear: 1.12, pumpkin: 0.9, ghost: 1.04, cone: 1.02, bat: 1.14,
 };
