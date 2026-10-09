@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SEASON_IDS, currentSeason, type Season } from '@wordle-duel/core';
+import { SEASON_IDS, currentSeason, isFeatureLive, seasonOptOutKey, type Season, type SwitchRow } from '@wordle-duel/core';
 import { artSrc, halloweenSrc } from './art';
 import { MASCOT_ART_SIZE, MASCOT_TRIM, boxAspect, boxTrimLayout, type TrimBox } from './cast-moves';
 import { CAST, mascotSrc, type MascotId } from './mascots';
@@ -137,10 +137,49 @@ export function readSurfacesChoice(): string | null {
   }
 }
 
-/** The season right now on this device (client only; null on the server). */
+// ── Seasonal row (items 24 + 25) ────────────────────────────────────────────
+
+/** Where the player's "no Seasonal for this season" choice lives ("<season>:<year>"); synced to the account by theme-context. */
+export const SEASON_OPT_OUT_KEY = 'wordocious-season-optout';
+/** use-flags.ts caches the app_flags table here (indexed by key). */
+const FLAGS_CACHE_KEY = 'wordocious-app-flags';
+
+/** The local calendar date as YYYY-MM-DD. */
+export function localDateString(now: Date = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+}
+
+export function readSeasonOptOut(): string | null {
+  try { return localStorage.getItem(SEASON_OPT_OUT_KEY) || null; } catch { return null; }
+}
+
+/**
+ * The `season_halloween` off-switch (core feature-switches, fail OPEN) from the cached flags table, so every season
+ * resolver can honor it without a hook. Unreadable / no cache / no row = on.
+ */
+export function seasonSwitchOn(): boolean {
+  try {
+    const raw = localStorage.getItem(FLAGS_CACHE_KEY);
+    const flags = raw ? (JSON.parse(raw) as Record<string, SwitchRow>) : null;
+    return isFeatureLive('season_halloween', flags, false);
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * The season right now on this device (client only; null on the server). An admin / QA preview wins over
+ * everything; otherwise the calendar's season, unless the `season_halloween` off-switch is off or this player
+ * picked another theme for this season (Settings > Theme, "Seasonal" row).
+ */
 export function activeSeason(now: Date = new Date()): Season | null {
   if (typeof window === 'undefined') return null;
-  return resolveSeason(now, readSeasonOverride());
+  const override = readSeasonOverride();
+  const season = resolveSeason(now, override);
+  if (override || !season) return season;
+  if (!seasonSwitchOn()) return null;
+  return readSeasonOptOut() === seasonOptOutKey(season, localDateString(now)) ? null : season;
 }
 
 /**

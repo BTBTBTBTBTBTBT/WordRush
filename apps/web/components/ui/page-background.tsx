@@ -1,5 +1,6 @@
 import { BACKDROP_GAME, BACKDROP_PAGE, backdropColors, type BackdropLook } from '@/lib/backdrop-tiles';
 import { SeasonWallLayer } from '@/components/ui/season-preview';
+import { LivingWallpaper, ThemeWallLayer } from '@/components/ui/theme-wall';
 import { PAGE_TINTS, WALL_OVERLAY, accentCardShadow, artSrc, wideWallSrc, gameTintForDbKey, gameWallForDbKey, pageWall, type PageTint, type TintStops, type WallArtName } from '@/lib/art';
 
 // The one shared page background (docs/ART_SPEC.md §11, §19.1). It is the
@@ -64,9 +65,13 @@ export function PageBackground({
   return (
     <div className={className} style={{ ...vars, ...style }} data-page-tint={colors ? 'game' : tint} data-page-scheme={scheme}>
       <div className="page-bg" aria-hidden="true">
+        {/* Item 25: Ocean / Forest / Dark skin the wall in code (menus + tab pages only; game screens pass `colors`). */}
+        {!colors && <ThemeWallLayer />}
         <BackdropTiles look={colors ? BACKDROP_GAME : BACKDROP_PAGE} accent={accent} />
         {/* Season preview: the season's calm wallpaper over the page's own (lib/season-kit.ts walls). */}
         <SeasonWallLayer wall={wallName} />
+        {/* Items 15 + 45: living wallpaper on menus only (never behind a game board / VS board). */}
+        {!colors && <LivingWallpaper />}
       </div>
       {children}
     </div>

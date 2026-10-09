@@ -21,6 +21,8 @@ async function fetchFlags(): Promise<Record<string, AppFlag>> {
   const j = (await r.json()) as { flags: AppFlag[] };
   const idx = indexFlags(j.flags ?? []);
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(idx)); } catch {}
+  // The season_halloween off-switch is read from this cache by every season resolver (lib/season.ts): re-read them.
+  try { window.dispatchEvent(new Event('wordocious:season')); } catch {}
   return idx;
 }
 
