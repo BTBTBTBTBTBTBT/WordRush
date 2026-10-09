@@ -190,6 +190,13 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             com.wordocious.app.ui.ColdStart.landed.first { it }
             com.wordocious.app.data.StoreManager.start(this@MainActivity)
+            // 13+ age check (FRIDAY-QUEUE item 29): Sentry, ads and FCM start only once this device has
+            // passed the check (or the age_check off-switch is off) — a new install waits right here.
+            kotlinx.coroutines.flow.combine(
+                com.wordocious.app.data.AgeCheckStore.stored,
+                com.wordocious.app.data.FlagsService.flags,
+            ) { _, _ -> com.wordocious.app.data.AgeCheckStore.isCleared }.first { it }
+            com.wordocious.app.data.AgeCheckStore.startServices(this@MainActivity)
             // LevelPlay: region gate -> privacy flags -> init -> preload the
             // game-start interstitial. Dormant until the dashboard keys exist.
             com.wordocious.app.data.AdsManager.start(this@MainActivity)
@@ -354,6 +361,8 @@ class MainActivity : ComponentActivity() {
                         signedIn = isAuthenticated && !isGuest,
                         blocked = intro,
                     )
+                    // 13+ age check (item 29): over the whole app until this device has answered; under 13 stays here.
+                    com.wordocious.app.ui.AgeGateOverlay()
                   }
                   // F2 the cold-start intro, over the whole window (outside the nav-bar
                   // inset) so its W sits exactly where the launch screen's W was.

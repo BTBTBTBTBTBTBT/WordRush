@@ -123,8 +123,8 @@ struct InfoPage: View {
     private var subtitle: String? {
         switch kind {
         case .about: return "Daily Word Games — the same puzzles for everyone"
-        case .privacy: return "Effective July 30, 2026"
-        case .terms: return "Effective April 10, 2026"
+        case .privacy: return "Effective October 9, 2026"
+        case .terms: return "Effective October 9, 2026"
         case .support: return "Got a question? We've got answers."
         }
     }
@@ -144,13 +144,13 @@ struct InfoPage: View {
             InfoSection("Advertising & Data Sharing", "Free-tier players may be shown an interstitial advertisement before a game session, served by a third-party advertising partner. Where the law requires it we ask first — through Apple's App Tracking Transparency prompt, and a consent notice in the European Economic Area, the United Kingdom and Switzerland — and no ad is shown there without it. You can reset or limit your advertising identifier in your device settings. Pro subscribers enjoy a completely ad-free experience. We do not sell your personal information, and we do not share it with third parties for their own marketing."),
             InfoSection("Data Security", "We use industry-standard measures to protect your data. No method of transmission or storage is 100% secure, but we work to safeguard your information."),
             InfoSection("Your Rights", "You may request access to, correction of, or deletion of your personal data at any time. You can delete your account from Settings or by contacting us; upon deletion your personal data is removed from our systems."),
-            InfoSection("Children's Privacy", "Wordocious is not intended for children under 13. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us data, contact us so we can remove it."),
+            InfoSection("Children's Privacy", "Wordocious is for players 13 and up. The first time you open it we ask for your birthday year (only the year) to confirm that. If the answer is under 13, we do not create an account or a profile, and nothing else about you is collected: no crash reports, notifications or ads start. We keep only a “13 and up confirmed” flag and the year you picked, never a full birthdate, and the answer is remembered on your device so the question is not asked twice. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has given us personal data, email privacy@wordocious.com and we will delete it promptly."),
             InfoSection("Changes to This Policy", "We may update this policy from time to time. Continued use of the app after changes constitutes acceptance of the updated policy."),
             InfoSection("Contact Us", "Questions about this policy or your personal data? Contact us at privacy@wordocious.com."),
         ]
         case .terms: return [
             InfoSection("Agreement to Terms", "By using Wordocious you agree to these terms."),
-            InfoSection("Eligibility", "You must be at least 13 years of age to use the Service."),
+            InfoSection("Eligibility", "Wordocious is for players 13 and up. You must be at least 13 years of age to create an account or use the Service, and we ask for your birthday year to confirm it. By using the Service you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have the consent of a parent or legal guardian."),
             InfoSection("Your Account", "You're responsible for your account and for activity under it."),
             InfoSection("Acceptable Use", bullets: ["No automated tools, bots, scripts, or cheating", "Don't exploit bugs — report them", "No harassment, threats, or abuse", "No offensive/hateful/inappropriate usernames", "Don't access others' accounts or private data", "Don't interfere with or disrupt the Service"]),
             InfoSection("Free Tier & Pro Subscription", bullets: ["Pro is purchased through the App Store (or Google Play on Android) via in-app purchase, subject to that store's terms", "Cancel anytime in your App Store account settings — Pro access continues through the billing period", "Prices may change with advance notice", "Refunds are handled by Apple (or Google) under their policies"]),

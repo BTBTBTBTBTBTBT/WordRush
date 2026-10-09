@@ -149,8 +149,8 @@ class DailyWidgetProvider : AppWidgetProvider() {
          * The hero ring: one round-capped arc per daily in its game color (a missed one slate),
          * pale until done; all done → every segment gold.
          */
-        private fun ringBitmap(context: Context, modes: List<WidgetBridge.ModeEntry>, sizeDp: Float): Bitmap {
-            val key = "%.0f|".format(sizeDp) + modes.joinToString(",") { "${it.key}:${it.played}:${it.won}" }
+        private fun ringBitmap(context: Context, modes: List<WidgetBridge.ModeEntry>, sizeDp: Float, flawless: Boolean = false): Bitmap {
+            val key = "%.0f|$flawless|".format(sizeDp) + modes.joinToString(",") { "${it.key}:${it.played}:${it.won}" }
             ringCache[key]?.let { return it }
             if (ringCache.size > 8) ringCache.clear()
             val px = dp(context, sizeDp).toInt().coerceIn(96, 280)
@@ -167,6 +167,18 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val oval = RectF(lw / 2f, lw / 2f, d - lw / 2f, d - lw / 2f)
             val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE; strokeWidth = lw; strokeCap = Paint.Cap.ROUND
+            }
+            if (flawless) {
+                // Items 28 / 48: the art team's gold ring with its eight sparkle stars (art/streaks/flawless-ring).
+                val art = com.wordocious.app.data.ShareFinish.decode(context, R.drawable.streak_flawless_ring)
+                if (art != null) {
+                    val side = minOf(d / art.width, d / art.height)
+                    val w = art.width * side; val h = art.height * side
+                    c.drawBitmap(art, null, RectF((d - w) / 2f, (d - h) / 2f, (d + w) / 2f, (d + h) / 2f),
+                        Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+                    ringCache[key] = bmp
+                    return bmp
+                }
             }
             modes.forEachIndexed { i, m ->
                 p.shader = null
@@ -271,14 +283,24 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val modes = snap.modes
             val played = modes.count { it.played }
             val swept = modes.isNotEmpty() && played == modes.size
-            views.setImageViewBitmap(R.id.w_ring, ringBitmap(context, modes, sizeDp))
-            views.setTextViewText(R.id.w_ring_count, if (swept) "SWEPT" else "$played/${modes.size}")
-            views.setTextViewText(R.id.w_ring_label, if (swept) "ALL ${modes.size}" else "DAILIES")
+            val flawless = snap.isFlawless
+            val run = snap.flawlessRun
+            views.setImageViewBitmap(R.id.w_ring, ringBitmap(context, modes, sizeDp, flawless))
+            // Flawless: the run is the hero ("×3") with FLAWLESS under it, or FLAWLESS alone on a first day.
+            val heroText = when {
+                flawless && run >= 2 -> "\u00D7$run"
+                flawless -> "FLAWLESS"
+                swept -> "SWEPT"
+                else -> "$played/${modes.size}"
+            }
+            views.setTextViewText(R.id.w_ring_count, heroText)
+            views.setTextViewText(R.id.w_ring_label, if (flawless) "FLAWLESS" else if (swept) "ALL ${modes.size}" else "DAILIES")
             // The caps label only where the ring has room for both lines (iOS DailyRing twin).
-            views.setViewVisibility(R.id.w_ring_label, if (sizeDp >= 78f) View.VISIBLE else View.GONE)
-            if (swept) setTextColorRes(context, views, R.id.w_ring_count, 0xFFD97706.toInt(), 0xFFFCD34D.toInt(), R.color.widget_gold)
+            views.setViewVisibility(R.id.w_ring_label, if (sizeDp >= 78f && !(flawless && run < 2)) View.VISIBLE else View.GONE)
+            if (swept || flawless) setTextColorRes(context, views, R.id.w_ring_count, 0xFFD97706.toInt(), 0xFFFCD34D.toInt(), R.color.widget_gold)
             else setTextColorRes(context, views, R.id.w_ring_count, 0xFF3B1A78.toInt(), 0xFFE9DDFF.toInt(), R.color.widget_ink)
-            views.setContentDescription(R.id.w_ring_box, "$played of ${modes.size} dailies done")
+            views.setContentDescription(R.id.w_ring_box,
+                if (flawless) (if (run >= 2) "Flawless, $run days in a row" else "Flawless today") else "$played of ${modes.size} dailies done")
         }
 
         /** The streak set into the flame (a zero streak dims the flame). */
@@ -286,6 +308,19 @@ class DailyWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.w_streak, "${snap.streak}")
             views.setInt(R.id.w_flame, "setImageAlpha", if (snap.streak == 0) 150 else 255)
             views.setContentDescription(R.id.w_flame_box, WidgetStats.streakPhrase(snap.streak))
+            // Item 28: the flawless trophy beside the flame (same size / baseline / number style); gone (no gap)
+            // until a flawless run of 2+. Tier art by run: 3 / 5 / 7 / 10 / 30 (art/streaks).
+            val run = snap.flawlessRun
+            if (run >= 2) {
+                val tier = when { run >= 30 -> R.drawable.streak_trophy_30; run >= 10 -> R.drawable.streak_trophy_10
+                    run >= 7 -> R.drawable.streak_trophy_7; run >= 5 -> R.drawable.streak_trophy_5; else -> R.drawable.streak_trophy_3 }
+                views.setImageViewResource(R.id.w_trophy, tier)
+                views.setTextViewText(R.id.w_trophy_num, "$run")
+                views.setContentDescription(R.id.w_trophy_box, "$run flawless days in a row")
+                views.setViewVisibility(R.id.w_trophy_box, View.VISIBLE)
+            } else {
+                views.setViewVisibility(R.id.w_trophy_box, View.GONE)
+            }
         }
 
         /** NEXT CLASSIC · 4H LEFT · 1,240 PTS TODAY. */
@@ -301,8 +336,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
                 views.setTextViewText(R.id.w_f1_value, "ALL DONE")
                 setTextColorRes(context, views, R.id.w_f1_value, 0xFFD97706.toInt(), 0xFFFCD34D.toInt(), R.color.widget_gold)
             }
-            val reset = resetLabel(now)
-            views.setTextViewText(R.id.w_left, reset)
+            setCountdown(views, R.id.w_left, now)
             views.setTextViewText(R.id.w_f3_value, WidgetStats.pointsLabel(day.points))
             views.setContentDescription(R.id.w_footer,
                 "${next?.let { "Next: ${WidgetStats.nextName(it.key, it.title)}. " } ?: "All done. "}" +
@@ -413,19 +447,20 @@ class DailyWidgetProvider : AppWidgetProvider() {
 
         /** The tap outside a chip: the next unplayed daily, or the app when all are done. */
         private fun rootIntent(context: Context, snap: WidgetBridge.Snapshot): PendingIntent =
-            nextUp(snap)?.let { dailyIntent(context, 99, it.key) } ?: openAppIntent(context, 0)
+            nextUp(snap)?.let { dailyIntent(context, 99, it.key) } ?: homeIntent(context, 98)
 
         private fun buildSmall(context: Context, snap: WidgetBridge.Snapshot, now: Calendar): RemoteViews {
             val views = RemoteViews(context.packageName, R.layout.widget_daily_small)
-            applyRing(context, views, snap, 78f)
+            applyRing(context, views, snap, 62f)
             applyStreak(views, snap)
+            applyChrome(context, views, snap, WordmarkSize.SMALL)
             // BI13b: the day's cast member in the mascot corner (sleepy R before the first
             // daily, a cheer on a sweep, S with a trophy on a milestone). BI13c: on a big day the
             // player's own look (cutout, or the framed photo whole) stands there instead.
             val own = WidgetAvatarSnapshot.load(context)
             if (own != null && ownPeek(snap)) views.setImageViewBitmap(R.id.w_mascot, own.first)
             else views.setImageViewResource(R.id.w_mascot, peekRes(snap))
-            views.setTextViewText(R.id.w_reset, "RESETS IN ${resetLabel(now)}")
+            setCountdown(views, R.id.w_reset_t, now)
             views.setContentDescription(R.id.w_reset, WidgetStats.countdownPhraseFor(now))
             // Founder 10-05: the small widget opens Home, not the next unplayed daily.
             views.setOnClickPendingIntent(R.id.widget_root, homeIntent(context, 98))
@@ -436,10 +471,12 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_daily)
             applyRing(context, views, snap, 72f)
             applyStreak(views, snap)
+            applyChrome(context, views, snap, WordmarkSize.MEDIUM)
             renderChips(context, views, DAILY_CHIPS, snap.modes, requestBase = 1)
             applyPeek(context, views, snap, WidgetAvatarSnapshot.load(context))
             applyFooter(context, views, snap, now)
             views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))
+            applyHomeTaps(context, views, R.id.w_wordmark, R.id.w_ring_box, R.id.w_footer)
             return views
         }
 
@@ -447,6 +484,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_daily_large)
             applyRing(context, views, snap, 84f)
             applyStreak(views, snap)
+            applyChrome(context, views, snap, WordmarkSize.LARGE)
             // BI13c: the player's own look (mascot cutout / framed photo) heads the large widget; W otherwise.
             val own = WidgetAvatarSnapshot.load(context)
             if (own != null) views.setImageViewBitmap(R.id.w_mascot, own.first) else applyMascot(views)
@@ -461,8 +499,68 @@ class DailyWidgetProvider : AppWidgetProvider() {
                 applyPeek(context, views, snap)
             }
             applyFooter(context, views, snap, now)
+            // Item 28 (founder 10-08: the large widget did nothing): EVERY element has its own tap, and the root
+            // falls back to Home when nothing is next up. Chips already deep-link above.
             views.setOnClickPendingIntent(R.id.widget_root, rootIntent(context, snap))
+            applyHomeTaps(context, views, R.id.w_mascot, R.id.w_header_text, R.id.w_wordmark, R.id.w_headline,
+                R.id.w_ring_box, R.id.w_puzzles_head, R.id.w_footer, R.id.w_flame_box, R.id.w_trophy_box)
             return views
+        }
+
+        // ── Item 28 / 48 / 24: lettering, live countdown, season chrome, taps ─────────
+
+        private enum class WordmarkSize { SMALL, MEDIUM, LARGE }
+
+        /** The live h:m:s countdown to local midnight (a Chronometer counting down; no re-render per tick). */
+        private fun setCountdown(views: RemoteViews, id: Int, now: Calendar) {
+            val base = android.os.SystemClock.elapsedRealtime() + WidgetStats.msToMidnight(now).coerceAtLeast(0)
+            views.setChronometerCountDown(id, true)
+            views.setChronometer(id, base, null, true)
+        }
+
+        /** Halloween widgets: the core season window AND the `season_halloween` off-switch. */
+        private fun halloweenOn(snap: WidgetBridge.Snapshot): Boolean =
+            snap.seasonHalloween != false && com.wordocious.app.ui.SeasonSkins.current() != null
+
+        private val MOTIFS = intArrayOf(
+            R.drawable.widget_halloween_moon_bats, R.drawable.widget_halloween_pumpkin_row, R.drawable.widget_halloween_bat_flock,
+            R.drawable.widget_halloween_haunted_hill, R.drawable.widget_halloween_stars_clouds, R.drawable.widget_halloween_cobweb,
+        )
+
+        /** Lettering image + (in season) the black and orange background, the rotating faint motif, and light inks. */
+        private fun applyChrome(context: Context, views: RemoteViews, snap: WidgetBridge.Snapshot, size: WordmarkSize) {
+            val hall = halloweenOn(snap)
+            val v = if (hall) "halloween_orange" else "normal"
+            val wordmark = when (size) {
+                WordmarkSize.SMALL -> if (hall) R.drawable.widget_wordmark_small_halloween_orange else R.drawable.widget_wordmark_small_normal
+                WordmarkSize.MEDIUM -> if (hall) R.drawable.widget_wordmark_medium_halloween_orange else R.drawable.widget_wordmark_medium_normal
+                WordmarkSize.LARGE -> if (hall) R.drawable.widget_wordmark_large_halloween_orange else R.drawable.widget_wordmark_large_normal
+            }
+            views.setImageViewResource(R.id.w_wordmark, wordmark)
+            if (size == WordmarkSize.LARGE) {
+                views.setImageViewResource(R.id.w_headline,
+                    if (hall) R.drawable.widget_headline_halloween_orange else R.drawable.widget_headline_normal)
+            }
+            if (!hall) {
+                views.setViewVisibility(R.id.w_motif, View.GONE)
+                return
+            }
+            views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_bg_halloween)
+            views.setImageViewResource(R.id.w_motif, MOTIFS[((System.currentTimeMillis() / 3_600_000L) % MOTIFS.size).toInt()])
+            views.setViewVisibility(R.id.w_motif, View.VISIBLE)
+            // Light inks on the black back (the night palette values, orange for the accent).
+            val ink = 0xFFE9DDFF.toInt(); val label = 0xBFCDB8FF.toInt(); val orange = 0xFFFB923C.toInt()
+            for (id in intArrayOf(R.id.w_streak_caps, R.id.w_left, R.id.w_left_suffix, R.id.w_f3_value, R.id.w_puzzles_caps,
+                R.id.w_reset_t, R.id.w_ring_count)) views.setTextColor(id, ink)
+            for (id in intArrayOf(R.id.w_reset, R.id.w_f1_label, R.id.w_f3_label, R.id.w_puzzles_count, R.id.w_ring_label)) views.setTextColor(id, label)
+            views.setTextColor(R.id.w_f1_value, orange)
+            if (snap.isFlawless || (snap.modes.isNotEmpty() && snap.modes.all { it.played })) views.setTextColor(R.id.w_ring_count, 0xFFFCD34D.toInt())
+        }
+
+        /** Every listed view opens Home when tapped (ids absent from a layout are ignored by the layout in use). */
+        private fun applyHomeTaps(context: Context, views: RemoteViews, vararg ids: Int) {
+            val home = homeIntent(context, 98)
+            for (id in ids) views.setOnClickPendingIntent(id, home)
         }
 
         // ── Click targets ───────────────────────────────────────────────────

@@ -39,6 +39,8 @@ object PushRegistration {
      * dropped by the row-level security policy.
      */
     fun register() {
+        // 13+ age check (item 29): no push registration before the check passes.
+        if (!AgeCheckStore.isCleared) return
         if (AuthService.userId == null) return
         scope.launch {
             val token = runCatching { FirebaseMessaging.getInstance().token.await() }.getOrNull()
@@ -56,6 +58,7 @@ object PushRegistration {
      * accumulates duplicate rows.
      */
     suspend fun upload(token: String) {
+        if (!AgeCheckStore.isCleared) return
         val uid = AuthService.userId ?: return
         runCatching {
             val client = SupabaseConfig.client

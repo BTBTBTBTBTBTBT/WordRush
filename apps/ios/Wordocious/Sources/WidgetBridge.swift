@@ -41,6 +41,12 @@ enum WidgetBridge {
         var username: String? = nil
         var wordStreaks: GroupStreaks? = nil
         var puzzleStreaks: GroupStreaks? = nil
+        // 2.8 (items 28 + 48): every word daily WON today (the header trophy's flawless day) + the flawless-day
+        // run the header trophy shows, so the widget ring reads FLAWLESS "x3" instead of SWEPT. And the
+        // `season_halloween` off-switch (false = normal widgets) since the extension can't read flags.
+        var flawless: Bool? = nil
+        var flawlessStreak: Int? = nil
+        var seasonHalloween: Bool? = nil
     }
 
     /// One widget chip per mode, with the home-menu icon spec flattened for JSON.
@@ -68,6 +74,7 @@ enum WidgetBridge {
     /// Called whenever today's completions change (record, refetch, sign-out).
     @MainActor
     static func update(completions byMode: [String: DailyCompletion]) {
+        lastCompletions = byMode
         // The DAILY streak (play each day), same source as the header pill —
         // including its launch cache. This was `currentStreak`, the consecutive
         // -WIN streak, which resets on any loss: the founder's widget read 🔥1
@@ -94,7 +101,10 @@ enum WidgetBridge {
                             puzzles: puzzles,
                             username: auth.isAuthenticated ? auth.profile?.username : nil,
                             wordStreaks: HomeStreaksService.cachedStreaks(.word),
-                            puzzleStreaks: HomeStreaksService.cachedStreaks(.puzzles))
+                            puzzleStreaks: HomeStreaksService.cachedStreaks(.puzzles),
+                            flawless: !modes.isEmpty && modes.allSatisfy { $0.won },
+                            flawlessStreak: MatchStatsService.cachedFlawlessStreak(),
+                            seasonHalloween: flags.isLive("season_halloween"))
         guard let data = try? JSONEncoder().encode(snap) else { return }
         // FINISH_SPEC BJ3: Home calls this on every appear (each tab return, each game
         // closed); an unchanged snapshot is neither rewritten nor sent to WidgetKit
@@ -104,6 +114,17 @@ enum WidgetBridge {
         lastWritten = data
         defaults.set(data, forKey: snapshotKey)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// The completions of the last update (so a flawless-run change can re-write the snapshot on its own).
+    @MainActor private static var lastCompletions: [String: DailyCompletion]?
+
+    /// Item 48: the flawless run (a cache written after the daily-sweep stats compute) just changed —
+    /// rewrite the snapshot and reload the widget the moment it lands. No-op until a first update.
+    @MainActor
+    static func refresh() {
+        guard let c = lastCompletions else { return }
+        update(completions: c)
     }
 
     /// BJ3: the last snapshot handed to the widget this launch.

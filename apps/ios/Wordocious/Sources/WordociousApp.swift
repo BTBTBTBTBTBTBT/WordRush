@@ -1,6 +1,5 @@
 import SwiftUI
 import GoogleSignIn
-import Sentry
 
 /// Posted when the app returns to the foreground on a NEW local day: the
 /// landing surface resets to Home/Daily exactly like a cold start (founder-
@@ -35,15 +34,10 @@ struct WordociousApp: App {
         // (its save + "unlimited-current-*" marker remain), so toggling back
         // to Unlimited still resumes it.
         UserDefaults.standard.set(PlayMode.daily.rawValue, forKey: "pref-play-mode")
-        // Crash reporting for TestFlight/App Store builds only — DEBUG builds
-        // (simulator/dev) stay out of Sentry so local crashes don't pollute it.
-        #if !DEBUG
-        SentrySDK.start { options in
-            options.dsn = "https://372e8127de431c710a27250cd00d07df@o4511355315748865.ingest.us.sentry.io/4511779224354816"
-            options.tracesSampleRate = 0
-            options.enableAutoSessionTracking = true
-        }
-        #endif
+        // Crash reporting for TestFlight/App Store builds only (DEBUG builds stay out of Sentry).
+        // 13+ age check (FRIDAY-QUEUE item 29): Sentry starts only after the check passes — here for a
+        // device that already passed, otherwise from AgeCheckStore.startServices() the moment it does.
+        if AgeCheckStore.shared.stored?.state == .ok { AgeCheckStore.startSentry() }
     }
 
     var body: some Scene {
@@ -72,6 +66,8 @@ struct WordociousApp: App {
                         await AchievementUnlockCenter.shared.sync()
                     }
                 }
+                // 13+ age check (item 29): above the app until this device has answered; under 13 stays here.
+                .overlay { AgeGateOverlay() }
                 .overlay { ColdStartIntroHost() }
                 #if DEBUG
                 .overlay { CastShowcaseHost() }   // BJ15 visual check: -bj15Screen pro|invite|finish
@@ -90,7 +86,8 @@ struct WordociousApp: App {
                     // gate for the More Games titles, refreshed on foreground.
                     await FlagsService.shared.load()
                     StoreManager.shared.start()
-                    AdsManager.shared.start()
+                    // Ads / ATT / APNs only after the 13+ check passes (AgeCheckStore.startServices).
+                    AgeCheckStore.shared.startServices()
                     PresenceService.shared.start()
                     // Re-fire any solo results whose record calls were cut off
                     // (killed mid-flight / offline finish) — idempotent, solo-only.
@@ -107,8 +104,7 @@ struct WordociousApp: App {
                     await GameResultsService.backfillFinishedDailySaves()
                     // Block-list cache so leaderboards can filter immediately.
                     await ModerationService.loadBlockedIds()
-                    // APNs token capture (send path comes later with the key).
-                    PushRegistration.register()
+                    // APNs token capture: started by AgeCheckStore.startServices() once the check passes.
                     // BI19: warm today's Leaderboard + Stats so their first open paints real data.
                     DataPrefetch.today()
                     // FINISH_SPEC BF1: celebrate any achievement earned but never seen here.

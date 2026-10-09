@@ -9,11 +9,11 @@ export default function TermsPage() {
         <p className="m-0 text-[13px] font-semibold leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           By accessing or using Wordocious (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service. We reserve the right to update these terms at any time, and continued use of Wordocious constitutes acceptance of any changes.
         </p>
-        <p className="m-0 text-[11px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Effective September 24, 2026</p>
+        <p className="m-0 text-[11px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Effective October 9, 2026</p>
       </IntroCard>
       <SectionCard heading="Eligibility">
         <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-          You must be at least <strong>13 years of age</strong> to create an account and use Wordocious. By using the Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have the consent of a parent or legal guardian.
+          Wordocious is for players <strong>13 and up</strong>. You must be at least 13 years of age to create an account or use the Service, and we ask for your birthday year to confirm it. By using the Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have the consent of a parent or legal guardian.
         </p>
       </SectionCard>
       <SectionCard heading="Your Account">

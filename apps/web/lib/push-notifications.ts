@@ -1,3 +1,5 @@
+import { readAgeCheck } from './age-check';
+
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -10,6 +12,8 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export async function subscribeToPush(): Promise<PushSubscription | null> {
+  // 13+ age check (item 29): an under-13 answer never registers for push.
+  if (readAgeCheck()?.state === 'under') return null;
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return null;
 
   const reg = await navigator.serviceWorker.ready;

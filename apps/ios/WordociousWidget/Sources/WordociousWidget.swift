@@ -56,10 +56,20 @@ struct WSnapshot: Codable {
     var puzzleStreaks: GroupStreaks? = nil
     /// §E2: today's leaderboard rank, when the app writes one (optional; absent → shields).
     var rank: Int? = nil
+    /// 2.8 (items 28 + 48): today's word dailies are all WON (the header trophy's "flawless" day), and the
+    /// flawless-day run the header trophy shows. Optional so an older app's snapshot still decodes.
+    var flawless: Bool? = nil
+    var flawlessStreak: Int? = nil
+    /// 2.8: the `season_halloween` off-switch as the app last saw it (false = normal widgets everywhere).
+    var seasonHalloween: Bool? = nil
 }
 
 extension WSnapshot {
     var puzzleModes: [Mode] { puzzles ?? [] }
+    /// Every word daily won today (the app writes the flag; derived from the chips for an older snapshot).
+    var isFlawless: Bool { flawless ?? (!modes.isEmpty && modes.allSatisfy(\.won)) }
+    /// The flawless-day run (the header trophy shows it from 2).
+    var flawlessRun: Int { max(flawlessStreak ?? 0, isFlawless ? 1 : 0) }
     var word: GroupProgress {
         GroupProgress(played: modes.filter(\.played).count, won: modes.filter(\.won).count, total: modes.count)
     }
@@ -83,7 +93,8 @@ extension WSnapshot {
         }
         return WSnapshot(day: day, streak: streak, modes: modes.map(reset), points: 0, seconds: 0, shields: shields,
                          puzzles: puzzles?.map(reset), username: username,
-                         wordStreaks: wordStreaks, puzzleStreaks: puzzleStreaks)
+                         wordStreaks: wordStreaks, puzzleStreaks: puzzleStreaks,
+                         flawless: false, flawlessStreak: flawlessStreak, seasonHalloween: seasonHalloween)
     }
 }
 
@@ -147,6 +158,23 @@ private func nextLocalMidnight(after date: Date = Date()) -> Date {
     Calendar.current.nextDate(after: date, matching: DateComponents(hour: 0, minute: 0, second: 0),
                               matchingPolicy: .nextTime) ?? date.addingTimeInterval(3600)
 }
+
+/// The Halloween widgets (item 24): the core season window AND the `season_halloween` off-switch.
+private func halloweenOn(_ snap: WSnapshot, _ date: Date) -> Bool {
+    snap.seasonHalloween != false && Season.current(day: localDay(date)) == .halloween
+}
+
+/// The live countdown to local midnight (item 28): the system ticks h:m:s with no timeline cost.
+private func midnightWindow(_ date: Date) -> ClosedRange<Date> {
+    let end = nextLocalMidnight(after: date)
+    return min(date, end)...end
+}
+
+private func countdownText(_ date: Date) -> Text {
+    Text(timerInterval: midnightWindow(date), pauseTime: nil, countsDown: true, showsHours: true)
+}
+
+private let homeURL = URL(string: "wordocious://home")!
 
 struct DailyEntry: TimelineEntry {
     let date: Date
@@ -215,6 +243,8 @@ private func shade(_ hex: String, _ k: Double) -> Color {
 /// The app theme's inks (Theme.swift): soft-number plum, label lilac, brand purple,
 /// gold (streak / sweep only), slate (a missed daily).
 private enum WInk {
+    /// Halloween (black + orange) accent / gold.
+    static let hallowOrange = Color(widgetHex: "#fb923c")
     static func number(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#e9ddff") : Color(widgetHex: "#3b1a78") }
     static func label(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#cdb8ff") : Color(widgetHex: "#5b3c96") }
     static func accent(_ dark: Bool) -> Color { dark ? Color(widgetHex: "#a78bfa") : Color(widgetHex: "#7c3aed") }
@@ -425,6 +455,9 @@ private struct ChipGrid: View {
 private struct DailyRing: View {
     let modes: [WSnapshot.Mode]
     let dark: Bool
+    /// Item 28 / 48: all word dailies won → the gold FLAWLESS ring with the run as the hero ("×3").
+    var flawless = false
+    var flawlessRun = 0
 
     var body: some View {
         GeometryReader { g in
@@ -440,7 +473,14 @@ private struct DailyRing: View {
             let gold = LinearGradient(colors: [Color(widgetHex: "#fcd34d"), Color(widgetHex: "#f59e0b")],
                                       startPoint: .top, endPoint: .bottom)
             ZStack {
+                if flawless {
+                    // The art team's gold ring with its eight sparkle stars (art/streaks/out/flawless-ring).
+                    Image("streak-flawless-ring").resizable().interpolation(.high).scaledToFit()
+                        .frame(width: d, height: d)
+                        .shadow(color: Color(widgetHex: "#f59e0b").opacity(dark ? 0.55 : 0.3), radius: d * 0.06)
+                }
                 ForEach(Array(modes.enumerated()), id: \.offset) { i, m in
+                  if !flawless {
                     let a = Double(i) / Double(n), b = Double(i + 1) / Double(n)
                     let arc = Circle().trim(from: a + half, to: b - half)
                     let style = StrokeStyle(lineWidth: lw, lineCap: .round)
@@ -455,8 +495,23 @@ private struct DailyRing: View {
                     }
                     .rotationEffect(.degrees(-90))
                     .padding(lw / 2)
+                  }
                 }
                 VStack(spacing: -2) {
+                    if flawless {
+                        // The run is the hero; FLAWLESS under it (or alone on a first flawless day).
+                        if flawlessRun >= 2 {
+                            Text("\u{00D7}\(flawlessRun)")
+                                .font(WType.black(min(WType.hero * 1.15, d * 0.34)))
+                                .monospacedDigit().foregroundStyle(WInk.gold(dark))
+                                .lineLimit(1).minimumScaleFactor(0.4)
+                            if d >= 60 { Caps(text: "FLAWLESS", color: WInk.gold(dark), tracking: 0.6) }
+                        } else {
+                            Text("FLAWLESS")
+                                .font(WType.black(min(WType.hero * 0.6, d * 0.16)))
+                                .foregroundStyle(WInk.gold(dark)).lineLimit(1).minimumScaleFactor(0.4)
+                        }
+                    } else {
                     Text(swept ? "SWEPT" : "\(played)/\(modes.count)")
                         // The hero size, eased down only on rings too small to hold it.
                         .font(WType.black(min(WType.hero, d * 0.32)))
@@ -468,6 +523,7 @@ private struct DailyRing: View {
                     if d >= 84 {
                         Caps(text: swept ? "ALL \(modes.count)" : "DAILIES", color: WInk.label(dark).opacity(0.8))
                     }
+                    }
                 }
                 .frame(width: (d - 2 * lw) * 0.82)
             }
@@ -475,7 +531,9 @@ private struct DailyRing: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(modes.filter(\.played).count) of \(modes.count) dailies done")
+        .accessibilityLabel(flawless
+            ? (flawlessRun >= 2 ? "Flawless, \(flawlessRun) days in a row" : "Flawless today")
+            : "\(modes.filter(\.played).count) of \(modes.count) dailies done")
     }
 }
 
@@ -502,6 +560,68 @@ private struct FlameStreak: View {
         .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(streak) day streak")
+    }
+}
+
+/// The flawless-day run set into the SAME trophy the app header shows, growing by tier
+/// (3 / 5 / 7 / 10 / 30, art/streaks). Same size, baseline, number weight and size as the flame.
+private struct TrophyStreak: View {
+    let streak: Int
+    let size: CGFloat
+
+    private var tier: Int {
+        switch streak { case 30...: return 30; case 10...: return 10; case 7...: return 7; case 5...: return 5; default: return 3 }
+    }
+
+    var body: some View {
+        ZStack {
+            Image("streak-trophy-\(tier)").resizable().interpolation(.high).scaledToFit()
+            Text("\(streak)")
+                .font(WType.black(size * (streak >= 100 ? 0.27 : 0.34)))
+                .monospacedDigit()
+                .foregroundStyle(Color.white)
+                .shadow(color: Color(widgetHex: "#b45309").opacity(0.75), radius: 0, x: 0, y: max(0.5, size * 0.025))
+                .lineLimit(1).minimumScaleFactor(0.5)
+                .frame(width: size * 0.56)
+                .offset(y: size * 0.27)
+        }
+        .frame(width: size, height: size)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(streak) flawless days in a row")
+    }
+}
+
+/// Item 28: the day-streak flame and the flawless trophy as a matched pair — same icon size, same baseline,
+/// numbers in the same weight and size, even spacing, centered as a group (the header's flame · trophy row).
+/// Flame alone (no gap) when there is no flawless run of 2+.
+private struct StreakPair: View {
+    let snap: WSnapshot
+    let size: CGFloat
+
+    var body: some View {
+        let run = snap.flawlessRun
+        HStack(alignment: .center, spacing: size * 0.06) {
+            FlameStreak(streak: snap.streak, size: size)
+            if run >= 2 { TrophyStreak(streak: run, size: size) }
+        }
+    }
+}
+
+/// WORDOCIOUS as the bubble lettering image (never plain text), per widget size; tinted per theme / season.
+private struct WordmarkImage: View {
+    enum Size: String { case small, medium, large }
+    let size: Size
+    let halloween: Bool
+    let dark: Bool
+    var height: CGFloat
+
+    var body: some View {
+        // Halloween: black backs take the orange-bodied lettering; normal: the purple bubble face.
+        let variant = halloween ? "halloween-orange" : "normal"
+        Image("widget-wordmark-\(size.rawValue)-\(variant)")
+            .resizable().interpolation(.high).scaledToFit()
+            .frame(height: height)
+            .accessibilityLabel("Wordocious")
     }
 }
 
@@ -624,7 +744,7 @@ private func statTexts(_ snap: WSnapshot, _ date: Date, _ dark: Bool, nextFirst:
     } ?? (Text("ALL DONE").foregroundColor(WInk.gold(dark)))
     // The gold clock sprite (night art 10-03), inline at the caps size, leads the countdown.
     let left = Text(Image("art-badge-icon-clock-inline")).baselineOffset(-1.5) + Text(" ")
-        + Text(resetLabel(date)).foregroundColor(WInk.number(dark)) + Text(" LEFT").foregroundColor(muted)
+        + countdownText(date).foregroundColor(WInk.number(dark)) + Text(" LEFT").foregroundColor(muted)
     let pts = Text(WidgetStats.pointsText(stats.points)).foregroundColor(WInk.number(dark))
         + Text(" PTS TODAY").foregroundColor(muted)
     return nextFirst ? [next, left, pts] : [pts, left, next]
@@ -637,7 +757,23 @@ private func widgetPhrase(_ snap: WSnapshot, _ date: Date) -> String {
         + WidgetStats.countdownPhrase(seconds: Int(nextLocalMidnight(after: date).timeIntervalSince(date)))
 }
 
-// MARK: - Small: the ring (hero) + the W, then the flame streak and the reset time
+// MARK: - Small: wordmark, the ring (hero) + the cast, then the streak pair and the live reset countdown
+
+/// The caps-size live countdown (h:m:s, ticking with no timeline cost). Width-capped so the system timer
+/// never grabs the whole row.
+private struct CapsTimer: View {
+    let date: Date
+    let color: Color
+    var width: CGFloat = 64
+
+    var body: some View {
+        countdownText(date)
+            .font(WType.black(WType.caps)).monospacedDigit()
+            .foregroundStyle(color)
+            .lineLimit(1).minimumScaleFactor(0.7)
+            .frame(width: width, alignment: .leading)
+    }
+}
 
 struct SmallView: View {
     let snap: WSnapshot
@@ -645,12 +781,16 @@ struct SmallView: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        let dark = scheme == .dark
+        let hall = halloweenOn(snap, date)
+        let dark = scheme == .dark || hall
         GeometryReader { g in
-            let ring = min(g.size.width * 0.64, g.size.height - 44)
+            let ring = min(g.size.width * 0.64, g.size.height - 44 - 16)
             VStack(alignment: .leading, spacing: 0) {
+                // Item 28: the WORDOCIOUS lettering (an image) on every size.
+                WordmarkImage(size: .small, halloween: hall, dark: dark, height: 13)
+                Spacer(minLength: 3)
                 HStack(alignment: .top, spacing: 0) {
-                    DailyRing(modes: snap.modes, dark: dark)
+                    DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
                         .frame(width: ring, height: ring)
                     Spacer(minLength: 2)
                     // BI13b: the day's cast member in the mascot corner (sleepy R before the
@@ -660,14 +800,14 @@ struct SmallView: View {
                 }
                 Spacer(minLength: 4)
                 HStack(spacing: 6) {
-                    FlameStreak(streak: snap.streak, size: 34)
+                    StreakPair(snap: snap, size: 32)
                     VStack(alignment: .leading, spacing: 3) {
                         Caps(text: "DAY STREAK", color: WInk.number(dark))
-                        // The gold clock sprite (night art 10-03) leads the countdown.
+                        // The gold clock sprite (night art 10-03) leads the live countdown.
                         HStack(spacing: 3) {
                             Image("art-badge-icon-clock-sprite").resizable().interpolation(.high)
                                 .frame(width: 11, height: 11).accessibilityHidden(true)
-                            Caps(text: "RESETS IN \(resetLabel(date))", color: WInk.label(dark).opacity(0.75))
+                            CapsTimer(date: date, color: WInk.label(dark).opacity(0.75), width: 52)
                         }
                     }
                 }
@@ -678,11 +818,11 @@ struct SmallView: View {
         .accessibilityLabel(widgetPhrase(snap, date))
         // The one tap a small widget gets: Home (founder 10-05: "I find myself just clicking home
         // every time anyways"), not the next unplayed daily. Medium/large chips still deep-link.
-        .widgetURL(URL(string: "wordocious://home"))
+        .widgetURL(homeURL)
     }
 }
 
-// MARK: - Medium: ring + streak | the 4×2 daily chips; one stat line across the bottom
+// MARK: - Medium: ring + streak pair | the 4×2 daily chips; one stat line across the bottom
 
 struct MediumView: View {
     let snap: WSnapshot
@@ -690,18 +830,28 @@ struct MediumView: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        let dark = scheme == .dark
-        VStack(spacing: 8) {
+        let hall = halloweenOn(snap, date)
+        let dark = scheme == .dark || hall
+        VStack(spacing: 6) {
+            // Item 28: the lettering image, left-aligned over the whole widget (taps open Home).
+            Link(destination: homeURL) {
+                HStack {
+                    WordmarkImage(size: .medium, halloween: hall, dark: dark, height: 14)
+                    Spacer(minLength: 0)
+                }
+            }
             GeometryReader { g in
                 let left = min(g.size.width * 0.33, 108)
                 let ring = min(left, g.size.height - 36)
                 HStack(spacing: 14) {
                     VStack(spacing: 4) {
-                        DailyRing(modes: snap.modes, dark: dark)
-                            .frame(width: ring, height: ring)
+                        Link(destination: homeURL) {
+                            DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
+                                .frame(width: ring, height: ring)
+                        }
                         Spacer(minLength: 0)
                         HStack(spacing: 4) {
-                            FlameStreak(streak: snap.streak, size: 34)
+                            StreakPair(snap: snap, size: 30)
                             Caps(text: "DAY STREAK", color: WInk.number(dark))
                         }
                     }
@@ -709,15 +859,18 @@ struct MediumView: View {
                     ChipGrid(modes: snap.modes, columns: 4, dark: dark, peek: (snap.peekArt(at: date, own: OwnLook.load(), photoOK: false), 3))
                 }
             }
-            StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
+            Link(destination: homeURL) {
+                StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(widgetPhrase(snap, date))
-        .widgetURL(snap.nextUp.flatMap(dailyURL))
+        // Anywhere not on a chip: the next daily, else (all done) Home — never a dead tap.
+        .widgetURL(snap.nextUp.flatMap(dailyURL) ?? homeURL)
     }
 }
 
-// MARK: - Large: header (W + title, flame streak), ring + daily chips, the Puzzles, points
+// MARK: - Large: header (W + lettering, streak pair), ring + daily chips, the Puzzles, points
 
 struct LargeView: View {
     let snap: WSnapshot
@@ -725,57 +878,75 @@ struct LargeView: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        let dark = scheme == .dark
+        let hall = halloweenOn(snap, date)
+        let dark = scheme == .dark || hall
         let muted = WInk.label(dark).opacity(0.75)
         VStack(spacing: 0) {
+            // Every element is its own Link (founder 10-08: the large widget did nothing on tap) with Home
+            // as the fallback; the root .widgetURL below covers every gap.
             HStack(spacing: 10) {
-                // BI13c: the player's own look heads the large widget (W for guests / no look).
-                // ~1.5× the old 42 pt, standing just over the header baseline like the Home host:
-                // the figure overflows upward into the top margin, so the layout keeps its 42 pt row.
-                HeaderHost(date: date, own: OwnLook.load())
-                    .frame(width: 60, height: 60, alignment: .bottom)
-                    .offset(y: 5)
-                    .frame(width: 60, height: 42, alignment: .bottom)
-                VStack(alignment: .leading, spacing: 3) {
-                    Caps(text: "WORDOCIOUS", color: WInk.accent(dark), tracking: 1.6)
-                    Caps(text: "TODAY'S DAILIES", color: muted)
+                Link(destination: homeURL) {
+                    HStack(spacing: 10) {
+                        // BI13c: the player's own look heads the large widget (W for guests / no look).
+                        // ~1.5× the old 42 pt, standing just over the header baseline like the Home host:
+                        // the figure overflows upward into the top margin, so the layout keeps its 42 pt row.
+                        HeaderHost(date: date, own: OwnLook.load())
+                            .frame(width: 60, height: 60, alignment: .bottom)
+                            .offset(y: 5)
+                            .frame(width: 60, height: 42, alignment: .bottom)
+                        VStack(alignment: .leading, spacing: 4) {
+                            // Item 28: lettering image + the "today's dailies" headline image.
+                            WordmarkImage(size: .large, halloween: hall, dark: dark, height: 16)
+                            Image("widget-headline-\(hall ? "halloween-orange" : "normal")")
+                                .resizable().interpolation(.high).scaledToFit().frame(height: 9)
+                                .accessibilityLabel("Today's dailies")
+                        }
+                    }
                 }
                 Spacer(minLength: 6)
                 HStack(spacing: 4) {
-                    FlameStreak(streak: snap.streak, size: 38)
+                    StreakPair(snap: snap, size: 34)
                     Caps(text: "DAY STREAK", color: WInk.number(dark))
                 }
             }
             Spacer(minLength: 8)
             GeometryReader { g in
                 HStack(spacing: 16) {
-                    DailyRing(modes: snap.modes, dark: dark)
-                        .frame(width: min(g.size.height, g.size.width * 0.32), height: min(g.size.height, g.size.width * 0.32))
+                    Link(destination: homeURL) {
+                        DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
+                            .frame(width: min(g.size.height, g.size.width * 0.32), height: min(g.size.height, g.size.width * 0.32))
+                    }
                     ChipGrid(modes: snap.modes, columns: 4, dark: dark)
                 }
             }
             .frame(minHeight: 84, maxHeight: 108)
             if !snap.puzzleModes.isEmpty {
                 Spacer(minLength: 10)
-                HStack {
-                    Caps(text: "PUZZLES", color: WInk.number(dark))
-                    Spacer()
-                    Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: muted)
+                Link(destination: homeURL) {
+                    HStack {
+                        Caps(text: "PUZZLES", color: WInk.number(dark))
+                        Spacer()
+                        Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: muted)
+                    }
                 }
                 Spacer(minLength: 6).frame(maxHeight: 8)
+                // Every Puzzles chip links to its own daily (ChipGrid is linked by default).
                 ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, peek: (.asset(snap.peekAsset(at: date)), 2))
                     .frame(minHeight: 90, maxHeight: 116)
             }
             Spacer(minLength: 8)
-            StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
+            Link(destination: homeURL) {
+                StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(widgetPhrase(snap, date))
-        .widgetURL(snap.nextUp.flatMap(dailyURL))
+        // nextUp is nil once everything is played: the old nil URL left every gap a dead tap.
+        .widgetURL(snap.nextUp.flatMap(dailyURL) ?? homeURL)
     }
 }
 
-// MARK: - Lock screen (accessoryRectangular): the headline + both rows at a glance
+// MARK: - Lock screen (accessoryRectangular): lettering + headline + both rows, h:m countdown
 
 struct AccessoryRectangularView: View {
     let snap: WSnapshot
@@ -783,9 +954,17 @@ struct AccessoryRectangularView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text("WORDOCIOUS").font(.system(size: 11, weight: .black, design: .rounded))
-                .widgetAccentable()
-            Text(snap.headline(at: date))
+            HStack(spacing: 4) {
+                // Item 28: the lettering image even here (the system tints it).
+                Image("widget-wordmark-small-normal").resizable().scaledToFit().frame(height: 11)
+                    .widgetAccentable().accessibilityLabel("Wordocious")
+                Spacer(minLength: 0)
+                // Lock-screen accessories can't tick seconds: h:m, refreshed on the timeline.
+                Text(resetLabel(date)).font(.system(size: 10, weight: .heavy, design: .rounded)).monospacedDigit()
+            }
+            Text(snap.isFlawless
+                    ? (snap.flawlessRun >= 2 ? "FLAWLESS \u{00D7}\(snap.flawlessRun)" : "FLAWLESS")
+                    : snap.headline(at: date))
                 .font(.system(size: 12, weight: .heavy, design: .rounded))
                 .lineLimit(1).minimumScaleFactor(0.7)
             Text(snap.puzzleModes.isEmpty
@@ -795,21 +974,46 @@ struct AccessoryRectangularView: View {
                 .lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .widgetURL(homeURL)
     }
 }
 
 // MARK: - Widget
 
 /// BI13: the one calm background — the brand's soft lavender → white; deep purple in dark.
+/// 2.8 Halloween (item 24): black → deep orange-brown with one faint motif that rotates on each timeline
+/// step (art/widgets/halloween); never behind text (corner / bottom edge, low opacity).
 struct WidgetBackdrop: View {
     @Environment(\.colorScheme) private var scheme
+    var halloween = false
+    var date = Date()
+
+    private static let motifs: [(name: String, alignment: Alignment, w: CGFloat, opacity: Double)] = [
+        ("widget-halloween-moon-bats", .topTrailing, 70, 0.55),
+        ("widget-halloween-pumpkin-row", .bottom, 150, 0.4),
+        ("widget-halloween-bat-flock", .topTrailing, 80, 0.5),
+        ("widget-halloween-haunted-hill", .bottomTrailing, 90, 0.4),
+        ("widget-halloween-stars-clouds", .top, 130, 0.35),
+        ("widget-halloween-cobweb", .topLeading, 60, 0.45),
+    ]
 
     var body: some View {
-        LinearGradient(colors: scheme == .dark
-                       ? [Color(widgetHex: "#2a1650"), Color(widgetHex: "#1c1231")]
-                       : [Color(widgetHex: "#e6dcff"), Color(widgetHex: "#f5f3ff"), Color.white],
-                       startPoint: .top, endPoint: .bottom)
+        if halloween {
+            let m = Self.motifs[Int(date.timeIntervalSince1970 / 3600) % Self.motifs.count]
+            ZStack(alignment: m.alignment) {
+                LinearGradient(colors: [Color(widgetHex: "#000000"), Color(widgetHex: "#1f1004"), Color(widgetHex: "#3a1a05")],
+                               startPoint: .top, endPoint: .bottom)
+                Image(m.name).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: m.w).opacity(m.opacity)
+            }
             .accessibilityHidden(true)
+        } else {
+            LinearGradient(colors: scheme == .dark
+                           ? [Color(widgetHex: "#2a1650"), Color(widgetHex: "#1c1231")]
+                           : [Color(widgetHex: "#e6dcff"), Color(widgetHex: "#f5f3ff"), Color.white],
+                           startPoint: .top, endPoint: .bottom)
+                .accessibilityHidden(true)
+        }
     }
 }
 
@@ -817,7 +1021,7 @@ struct WordociousDailyWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "WordociousDaily", provider: DailyProvider()) { entry in
             WidgetRootView(entry: entry)
-                .widgetBackdrop()
+                .widgetBackdrop(halloween: halloweenOn(entry.snap, entry.date), date: entry.date)
         }
         .configurationDisplayName("Daily Puzzles")
         .description("Today's Wordocious dailies and Puzzles, and your streak.")
@@ -841,6 +1045,8 @@ struct WidgetRootView: View {
 
 private struct BackdropModifier: ViewModifier {
     @Environment(\.widgetFamily) private var family
+    let halloween: Bool
+    let date: Date
 
     func body(content: Content) -> some View {
         let accessory = family == .accessoryRectangular
@@ -848,19 +1054,21 @@ private struct BackdropModifier: ViewModifier {
             // The system content margins pad the views; lock-screen accessories tint
             // themselves, so they get no background.
             content.containerBackground(for: .widget) {
-                if accessory { Color.clear } else { WidgetBackdrop() }
+                if accessory { Color.clear } else { WidgetBackdrop(halloween: halloween, date: date) }
             }
         } else if accessory {
             content
         } else {
             // iOS 16 has no content margins: the same 16 pt by hand.
-            content.padding(16).background(WidgetBackdrop())
+            content.padding(16).background(WidgetBackdrop(halloween: halloween, date: date))
         }
     }
 }
 
 extension View {
-    func widgetBackdrop() -> some View { modifier(BackdropModifier()) }
+    func widgetBackdrop(halloween: Bool = false, date: Date = Date()) -> some View {
+        modifier(BackdropModifier(halloween: halloween, date: date))
+    }
 }
 
 @main

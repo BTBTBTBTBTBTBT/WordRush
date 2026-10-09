@@ -51,3 +51,5 @@ cat > "$CLK/Contents.json" <<'JSON'
 JSON
 copied=$((copied + 1))
 echo "widget catalog: $copied image sets, $(du -sh $DST | cut -f1)"
+# 2.8 (items 28/48/24): wordmarks, trophies, flawless ring + Halloween motifs come from docs/design/brand/2.8.
+python3 "$(dirname "$0")/sync-widget-art-28.py"

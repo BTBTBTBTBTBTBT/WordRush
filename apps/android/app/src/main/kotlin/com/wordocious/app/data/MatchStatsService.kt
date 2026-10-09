@@ -713,6 +713,7 @@ object MatchStatsService {
         }
         SettingsPref.set(CACHED_FLAWLESS_STREAK, flawlessStreak)
         SettingsPref.set(CACHED_FLAWLESS_STREAK_DAY, today)
+        runCatching { com.wordocious.app.widget.WidgetBridge.refresh() }   // item 48: the widget shows the new run now
 
         DailySweepStats(
             sweepCount = sweepDays.size, flawlessCount = flawlessDays.size,

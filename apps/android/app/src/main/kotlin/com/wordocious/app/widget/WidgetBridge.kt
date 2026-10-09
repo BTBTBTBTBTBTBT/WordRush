@@ -56,7 +56,18 @@ object WidgetBridge {
         val puzzlesFlawlessStreak: Int? = null,
         /** FINISH_SPEC E2: today's Daily Sweep rank (the leaderboard's cached board), null when unknown. */
         val rank: Int? = null,
-    )
+        /** 2.8 (items 28 + 48): every word daily WON today (the header trophy's flawless day). */
+        val flawless: Boolean? = null,
+        /** The flawless-day run the header trophy shows (MatchStatsService.cachedFlawlessStreak). */
+        val flawlessStreak: Int? = null,
+        /** The `season_halloween` off-switch as the app last saw it (false = normal widgets). */
+        val seasonHalloween: Boolean? = null,
+    ) {
+        /** Every word daily won today (derived from the chips for an older snapshot). */
+        val isFlawless: Boolean get() = flawless ?: (modes.isNotEmpty() && modes.all { it.won })
+        /** The run, counting today's flawless as at least 1. */
+        val flawlessRun: Int get() = maxOf(flawlessStreak ?: 0, if (isFlawless) 1 else 0)
+    }
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -108,6 +119,7 @@ object WidgetBridge {
      *  the Android analog of iOS WidgetBridge.update(completions:). Safe from
      *  any thread; a no-op render when no widget is placed. */
     fun update(byMode: Map<String, DailyCompletionsService.Completion>) {
+        lastCompletions = byMode
         runCatching {
             val ctx = App.instance
             // Same source as the header pill (daily streak, NOT the win streak —
@@ -131,6 +143,9 @@ object WidgetBridge {
                 wordSweepStreak = rows?.wordSweep, wordFlawlessStreak = rows?.wordFlawless,
                 puzzlesSweepStreak = rows?.puzzlesSweep, puzzlesFlawlessStreak = rows?.puzzlesFlawless,
                 rank = cachedRank(),
+                flawless = modes.isNotEmpty() && modes.all { it.won },
+                flawlessStreak = com.wordocious.app.data.MatchStatsService.cachedFlawlessStreak(),
+                seasonHalloween = com.wordocious.app.data.FlagsService.isLive("season_halloween"),
             )
             val encoded = json.encodeToString(Snapshot.serializer(), snap)
             // FINISH_SPEC BJ3 (iOS parity): Home refetches on every return, and an
@@ -145,6 +160,15 @@ object WidgetBridge {
                 .apply()
             push(ctx)
         }
+    }
+
+    /** The completions of the last update (so a flawless-run change can re-write the snapshot on its own). */
+    @Volatile private var lastCompletions: Map<String, DailyCompletionsService.Completion>? = null
+
+    /** Item 48: the flawless run (a cache written after the daily-sweep stats compute) just changed: rewrite
+     *  the snapshot and re-render the widget the moment it lands. No-op until a first update. */
+    fun refresh() {
+        lastCompletions?.let { update(it) }
     }
 
     /** BJ3: the last snapshot JSON handed to the widget this process. */

@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         <p className="m-0 text-[13px] font-semibold leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
           Wordocious (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is a word puzzle game. We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains what information we collect, how we use it, and your rights regarding that information.
         </p>
-        <p className="m-0 text-[11px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Effective September 24, 2026</p>
+        <p className="m-0 text-[11px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Effective October 9, 2026</p>
       </IntroCard>
       <SectionCard heading="Information We Collect">
         <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
       </SectionCard>
       <SectionCard heading={<>Children&apos;s Privacy</>}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-          Wordocious is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with personal data, please contact us so we can remove it.
+          Wordocious is for players 13 and up. The first time you open it we ask for your birthday year (only the year) to confirm that. If the answer is under 13, we do not create an account or a profile, and nothing else about you is collected: no crash reports, notifications or ads start. We keep only a &ldquo;13 and up confirmed&rdquo; flag and the year you picked, never a full birthdate, and the answer is remembered on your device so the question is not asked twice. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has given us personal data, email privacy@wordocious.com and we will delete it promptly.
         </p>
       </SectionCard>
       <SectionCard heading="Changes to This Policy">

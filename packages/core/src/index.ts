@@ -42,3 +42,4 @@ export * from './contrast';
 export * from './avatar-access';
 export * from './musical-cast';
 export * from './feature-switches';
+export * from './age-check';
