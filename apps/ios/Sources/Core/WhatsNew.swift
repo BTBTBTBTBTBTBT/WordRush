@@ -7,7 +7,7 @@ public enum WhatsNew {
     public static let key = "whats-new-28"
     public static let flag = "whats_new_28"
     /// Accounts created on or after this local date are 2.8-era players: no tour. Set to the 2.8 go-live date.
-    public static let cutoff = "2026-10-15"
+    public static let cutoff = "2026-10-11"
 
     public enum Art: Equatable {
         case art(String)

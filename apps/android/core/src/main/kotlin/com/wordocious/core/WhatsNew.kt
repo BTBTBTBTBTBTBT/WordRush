@@ -8,7 +8,7 @@ object WhatsNew {
     const val KEY = "whats-new-28"
     const val FLAG = "whats_new_28"
     /** Accounts created on or after this local date are 2.8-era players: no tour. Set to the 2.8 go-live date. */
-    const val CUTOFF = "2026-10-15"
+    const val CUTOFF = "2026-10-11"
 
     sealed interface Art {
         data class Image(val name: String) : Art
