@@ -34,6 +34,9 @@ export interface Database {
           pro_prompt_shown: boolean
           role: string
           is_admin: boolean | null
+          age_confirmed_13: boolean
+          age_birth_year: number | null
+          age_under13_at: string | null
           is_banned: boolean
           ban_reason: string | null
           has_onboarded: boolean
@@ -65,6 +68,9 @@ export interface Database {
           pro_prompt_shown?: boolean
           role?: string
           is_admin?: boolean | null
+          age_confirmed_13?: boolean
+          age_birth_year?: number | null
+          age_under13_at?: string | null
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean
@@ -96,6 +102,9 @@ export interface Database {
           pro_prompt_shown?: boolean
           role?: string
           is_admin?: boolean | null
+          age_confirmed_13?: boolean
+          age_birth_year?: number | null
+          age_under13_at?: string | null
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean

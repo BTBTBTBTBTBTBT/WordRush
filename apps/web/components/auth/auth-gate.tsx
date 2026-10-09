@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { softBackground } from '@/lib/soft-surface';
+import { AgeGate } from './age-gate';
 
 // Signed-out-only screens load as their own chunks (founder, 2026-09-29): a
 // signed-in player never downloads them. Still server-rendered, so crawlers
@@ -77,7 +78,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // layout-matched skeleton until we know who they are.
   if (loading) {
     if (mounted && hasPersistedSession()) {
-      return <>{children}</>;
+      return <AgeGate>{children}</AgeGate>;
     }
     // On the homepage and game routes, the pre-auth render is the public
     // (mode) landing, not the skeleton — it's what a signed-out visitor lands
@@ -156,5 +157,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Authenticated, or a guest playing the daily without an account — render app.
   // (Account surfaces — leaderboard, VS, profile, records, unlimited, Pro — gate
   // themselves on `user` and prompt a guest to sign in.)
-  return <>{children}</>;
+  // 13+ age check (item 29): asked once per device before guest play, and once to existing accounts.
+  return <AgeGate>{children}</AgeGate>;
 }

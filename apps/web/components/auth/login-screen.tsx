@@ -11,6 +11,7 @@ import { CastButton, TextLink, TextLinkA } from '@/components/ui/cast-button';
 import { barCard, softInput, softNotice } from '@/components/ui/soft-popup';
 import { softBackground } from '@/lib/soft-surface';
 import { HeadingArt } from '@/components/ui/heading-art';
+import { AgeGateForSignUp } from './age-gate';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -23,7 +24,16 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+/** 13+ age check first (FRIDAY-QUEUE item 29): nobody reaches the sign-in / sign-up form without answering once per device. */
 export function LoginScreen() {
+  return (
+    <AgeGateForSignUp>
+      <LoginScreenForm />
+    </AgeGateForSignUp>
+  );
+}
+
+function LoginScreenForm() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
