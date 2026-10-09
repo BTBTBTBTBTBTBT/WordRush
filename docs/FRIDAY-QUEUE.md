@@ -889,3 +889,12 @@ second game on the puzzles list")
 - The cast's last little hop before they settle on the header bar is slightly abrupt. Make it one continuous,
   eased arc + soft squash/settle (no snap on landing, no frame jump between the intro and the resting header), ×3;
   verify frame-by-frame (sim recording) and in the smoothness gate; same for the Halloween costumed opening (24).
+
+## 48. Flawless STREAKS shine everywhere, not just "flawless" (founder 10-09)
+- The living headline (6/7) and the widgets (28) call out the streak itself, not only today's flawless:
+  "FLAWLESS ×3 IN A ROW!" with the number as the hero — a flame/trophy counter that grows with the streak (bigger
+  glow, extra sparkle tiers at 3 / 5 / 7 / 10 / 30), the digit ticking up with a pop the moment the streak extends,
+  your mascot reacting (bigger cheer as it grows), milestone lines + "NEW BEST!". Same idea for sweep streaks.
+- Widgets: FLAWLESS ring shows "×3 streak" with the trophy badge sized up by tier and a subtle shimmer frame swapped
+  on the timeline; small widget too (not just the word FLAWLESS). Halloween versions.
+- Designed in free ChatGPT (streak badges/tiers, counter art), creative and alive, never cluttered; readable, ×3.
