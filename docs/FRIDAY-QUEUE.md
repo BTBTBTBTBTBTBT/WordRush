@@ -902,3 +902,14 @@ second game on the puzzles list")
   celebrates the streak in fun names by length — "FLAWLESS 3-PEAT!" (3), "FOUR-MIDABLE!"-style playful lines at 4+,
   "FLAWLESS WEEK!" (7), etc. — a curated, varied list (American spelling, never repeats flatly), sized to fit in
   full (6's guard), with the streak number popping in and the mascot cheering.
+
+## 49. Halloween music: public-domain spooky tunes for the musical cast + a Halloween intro jingle (founder 10-09)
+- Musical cast (4/4b) in season gets Halloween tunes, played by the cast with OUR synth / note sequences (no
+  recordings → royalty-free; compositions are public domain): In the Hall of the Mountain King (Grieg), Danse
+  Macabre (Saint-Saëns), Toccata and Fugue in D minor opening (Bach), Funeral March (Chopin), Night on Bald Mountain
+  (Mussorgsky), Funeral March of a Marionette (Gounod), The Sorcerer's Apprentice (Dukas); each a hidden achievement.
+  Spooky voicings in season (organ, xylophone "bones", celesta, low strings), each cast member keeps its own voice.
+  NOT allowed (copyrighted): Monster Mash, Ghostbusters, Thriller, This Is Halloween, Addams Family, etc.
+- Intro jingle: a Halloween re-orchestration of the existing jingle (same melody, minor-key/spooky instruments, a
+  bell + organ swell), via a seasonal sound slot in the registry (future seasons get their own). Founder gives a quick
+  listen/OK in the Sound Library (2) before it ships; normal jingle returns Nov 1 with the season.
