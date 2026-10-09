@@ -78,6 +78,8 @@ import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.FriendlyGamesService
 import com.wordocious.app.data.FriendsService
 import com.wordocious.app.ui.friends.FlameCount
+import com.wordocious.app.ui.friends.FriendCardsSection
+import com.wordocious.app.ui.friends.buildFriendsLayout
 import com.wordocious.app.ui.friends.FriendFace
 import com.wordocious.app.ui.friends.FriendlyGameGlyph
 import com.wordocious.app.ui.friends.FriendlyGameIcon
@@ -96,6 +98,7 @@ import com.wordocious.app.ui.friends.sub
 import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.FRIENDLY_KINDS
+import com.wordocious.core.FriendCards
 import com.wordocious.core.presenceLine
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -162,6 +165,9 @@ fun FriendsScreen(
     var challenging by remember { mutableStateOf<String?>(null) }
     var quickPlay by remember { mutableStateOf<QuickPlayRequest?>(null) }
     var showRace by remember { mutableStateOf(false) }
+    // 2.8 wave 3 (item 9): the friend ⋯ / long-press family menu, and the resign confirm it opens.
+    var menuFriend by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
+    var resignTarget by remember { mutableStateOf<FriendlyGamesService.GameView?>(null) }
     val scope = rememberCoroutineScope()
     val addRequester = remember { BringIntoViewRequester() }
     val addFocus = remember { FocusRequester() }
@@ -214,6 +220,9 @@ fun FriendsScreen(
         )
     }
 
+    // One card per friend (core FriendCards): online friends and friends with games; everyone else in All friends.
+    val cardsLayout = remember(friends, games, now / 20_000L) { buildFriendsLayout(friends, games, now) }
+
     if (!signedIn) {
         // FINISH_SPEC BI23: guests get a finished signed-out state (no empty skeleton list, no
         // add-by-username card): the FRIENDS title art, then O1 + I as a duo, the headline,
@@ -249,49 +258,23 @@ fun FriendsScreen(
         // K1: the note as a notice card — springs in, squishes, taps or swipes away.
         FriendsNotice(note, onDismiss = { note = null })
 
-        // 2. The Friends banner
+        // WAVE2-INVITES-SLOT: the branded Invites row and the "Have a code?" entry (wave2/invites-2) mount HERE,
+        // at the top of the tab, above the banner. Nothing else lives in this spot.
+
+        // 2. The Friends banner (the race, told once: the pills; the countdown small in its header)
         FriendsBannerView(
             friends = friends, rows = raceRows, nowMs = now,
-            onFace = { quickPlay = QuickPlayRequest(it.id) },
             onRace = { if (friends.isNotEmpty()) showRace = true },
         )
 
-        // 4. YOUR TURN
-        if (games.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FriendsLabel("YOUR TURN", Modifier.padding(start = 4.dp))
-                    val mine = games.count { it.yourTurn }
-                    // M: the Friends tab's candy count badge, on the section waiting on you.
-                    if (mine > 0) FriendsCountBadge(mine, arrivals = 0, pulsing = false, height = 16.dp)
-                }
-                // Your turn first, then the most recently moved.
-                games.sortedWith(compareByDescending<FriendlyGamesService.GameView> { it.yourTurn }.thenByDescending { it.updatedAt }).forEach { g ->
-                    // A1: each game's own tint + top bar.
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .squishClickable(label = null) { onOpenGame(g.id) }
-                            .friendsCard(16.dp, accent = g.kind.color, bar = g.kind.color, barHeight = 5.dp)
-                            .padding(start = 12.dp, end = 10.dp, top = 13.dp, bottom = 10.dp),
-                        // BJ7: one top line — icon, title and the action top-aligned; detail 4 under.
-                        verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        FriendlyGameIcon(g.kind, 40.dp)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "${g.title} vs @${g.opponent.username}", fontSize = 13.sp, fontWeight = FontWeight.Black,
-                                color = FriendsPink.heading, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(g.line, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                        CastButton(
-                            if (g.yourTurn) "PLAY" else "WAITING", onClick = { onOpenGame(g.id) },
-                            color = (if (g.yourTurn) CandyColor.PURPLE else CandyColor.PEACH).cast(CastColor.PINK), size = CastSize.S,
-                        )
-                    }
-                }
-            }
-        }
+        // 4. One card per friend (item 9 / 9e): online friends first, each with their living mascot, the games
+        // waiting on you as a strip of tiles (tap = straight into that game); their-turn games collapse.
+        FriendCardsSection(
+            layout = cardsLayout, friends = friends,
+            onOpenGame = onOpenGame,
+            onPlayWith = { quickPlay = QuickPlayRequest(it.id) },
+            onMenu = { menuFriend = it },
+        )
 
         // 5. PLAY WITH FRIENDS
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -309,7 +292,7 @@ fun FriendsScreen(
                             if (friends.isEmpty()) {
                                 note = "Add a friend first — then pick a game"
                                 scope.launch { addRequester.bringIntoView() }
-                            } else quickPlay = QuickPlayRequest(null, k)
+                            } else quickPlay = QuickPlayRequest(null, k, kindChosen = true)
                         }
                     }
                 }
@@ -336,12 +319,12 @@ fun FriendsScreen(
         // 7. YOUR FRIENDS
         YourFriendsSection(
             friends = friends, nowMs = now, version = version, challengingId = challenging,
-            canGift = (myProfile?.streakShields ?: 0) > 0,
+            restNames = if (cardsLayout.cards.isEmpty()) null else cardsLayout.rest,
             onOpenProfile = onOpenProfile,
             onPlay = { quickPlay = QuickPlayRequest(it.id) },
             onChallenge = { challenge(it) },
             onTaunt = { tauntTarget = it },
-            onUnfriend = { unfriendTarget = it },
+            onMenu = { menuFriend = it },
             onNote = { note = it },
             // C4b: the old header add-friend circle's flow — jump to Add by username and focus it.
             onAdd = {
@@ -363,7 +346,7 @@ fun FriendsScreen(
         }
 
         // 8. MOMENTS
-        ActivityFeed(onOpenProfile = onOpenProfile, onRematch = { kind, friendId -> quickPlay = QuickPlayRequest(friendId, kind) })
+        ActivityFeed(onOpenProfile = onOpenProfile, onRematch = { kind, friendId -> quickPlay = QuickPlayRequest(friendId, kind, kindChosen = true) })
 
         // 9. Add by username + share link, then the gift-Pro panel.
         AddFriendSection(
@@ -415,6 +398,43 @@ fun FriendsScreen(
                 Spacer(Modifier.height(16.dp))
             }
         }
+    }
+
+    // The friend ⋯ / long-press family menu (profile, play a game, taunt, challenge, gift, resign a game, unfriend).
+    menuFriend?.let { f ->
+        FriendMenuHost(
+            f = f, nowMs = now, canGift = (myProfile?.streakShields ?: 0) > 0, challengingId = challenging,
+            games = games.filter { it.opponent.id == f.id },
+            onDismiss = { menuFriend = null },
+            onOpenProfile = onOpenProfile,
+            onPlay = { quickPlay = QuickPlayRequest(it.id) },
+            onTaunt = { tauntTarget = it },
+            onChallenge = { challenge(it) },
+            onUnfriend = { unfriendTarget = it },
+            onResign = { resignTarget = it },
+            onNote = { note = it },
+        )
+    }
+
+    // Resign confirm: Resign lives here now, not inside the game (item 9).
+    resignTarget?.let { g ->
+        AlertDialog(
+            modifier = com.wordocious.app.ui.PopupWidth,
+            onDismissRequest = { resignTarget = null },
+            containerColor = FRIENDS_SHEET,
+            title = { Text("Resign ${g.title}?", fontWeight = FontWeight.Black, fontFamily = Nunito, color = FriendsPink.heading) },
+            text = { Text("${g.opponent.username} wins this game. You can start another any time.", fontFamily = Nunito, fontWeight = FontWeight.Bold, color = FriendsPink.muted) },
+            confirmButton = {
+                CastButton("Resign", onClick = {
+                    val id = g.id
+                    resignTarget = null
+                    scope.launch { FriendlyGamesService.resign(id); FriendlyGamesService.load() }
+                }, color = CastColor.PINK, size = CastSize.M)
+            },
+            dismissButton = {
+                CastButton("Keep playing", onClick = { resignTarget = null }, color = CastColor.SLATE, size = CastSize.M)
+            },
+        )
     }
 
     // Unfriend confirm (§225).
@@ -743,17 +763,20 @@ private fun YourFriendsSection(
     nowMs: Long,
     version: Int,
     challengingId: String?,
-    canGift: Boolean,
+    /** Non-null = the friend cards above own the online / in-play friends; this is the collapsible "All friends · N" of everyone else. */
+    restNames: List<String>?,
     onOpenProfile: (String) -> Unit,
     onPlay: (FriendsService.FriendProfile) -> Unit,
     onChallenge: (FriendsService.FriendProfile) -> Unit,
     onTaunt: (FriendsService.FriendProfile) -> Unit,
-    onUnfriend: (FriendsService.FriendProfile) -> Unit,
+    onMenu: (FriendsService.FriendProfile) -> Unit,
     onNote: (String) -> Unit,
     onAdd: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var menuTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
+    val shown = if (restNames == null) friends else friends.filter { f -> restNames.any { it.equals(f.username, ignoreCase = true) } }
+    val collapsible = restNames != null && shown.isNotEmpty()
+    var open by remember(collapsible) { mutableStateOf(!collapsible) }
     // §216: the week's leader wears the crown — only once someone scored.
     val crownId = remember(version) {
         val me = FriendsService.meDigest?.weekPoints ?: 0
@@ -774,10 +797,27 @@ private fun YourFriendsSection(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            FriendsLabel(
-                if (friends.isEmpty()) "YOUR FRIENDS" else "YOUR FRIENDS · ${friends.size}",
-                Modifier.weight(1f), color = com.wordocious.app.ui.vs.VsInk.label,
-            )
+            Row(
+                Modifier.weight(1f).then(
+                    if (collapsible) Modifier.squishClickable(label = FriendCards.allFriendsLabel(shown.size) + if (open) ", expanded" else ", collapsed") { open = !open } else Modifier,
+                ),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                FriendsLabel(
+                    when {
+                        friends.isEmpty() -> "YOUR FRIENDS"
+                        collapsible -> FriendCards.allFriendsLabel(shown.size)
+                        else -> "YOUR FRIENDS · ${friends.size}"
+                    },
+                    Modifier.weight(1f, fill = false), color = com.wordocious.app.ui.vs.VsInk.label,
+                )
+                if (collapsible) {
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown, null, tint = com.wordocious.app.ui.vs.VsInk.label,
+                        modifier = Modifier.size(16.dp).rotate(if (open) 180f else 0f),
+                    )
+                }
+            }
             if (slackers.isNotEmpty()) {
                 CastButton(
                     "Nudge all",
@@ -816,7 +856,7 @@ private fun YourFriendsSection(
             }
             return@Column
         }
-        friends.sortedWith(compareByDescending<FriendsService.FriendProfile> { it.isOnline(nowMs) }.thenBy { it.username.lowercase() })
+        if (open) shown.sortedWith(compareByDescending<FriendsService.FriendProfile> { it.isOnline(nowMs) }.thenBy { it.username.lowercase() })
             .forEachIndexed { idx, f ->
                 val on = f.isOnline(nowMs)
                 val played = f.playedToday ?: 0
@@ -827,7 +867,7 @@ private fun YourFriendsSection(
                         verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxWidth()
-                            .combinedClickableNoRipple(onLongClick = { menuTarget = f }, onClick = { onOpenProfile(f.id) })
+                            .combinedClickableNoRipple(onLongClick = { onMenu(f) }, onClick = { onOpenProfile(f.id) })
                             .stripedRow(idx, Color(0xFF7C3AED), first = false)
                             .padding(horizontal = 12.dp, vertical = 7.dp),
                     ) {
@@ -867,44 +907,70 @@ private fun YourFriendsSection(
                             else -> CastButton("Nudge", onClick = { onTaunt(f) }, color = CastColor.GOLD, size = CastSize.S, contentDescription = "Nudge ${f.username}")
                         }
                     }
-                    // §225: long-press menu — profile / play / taunt / challenge / gift / unfriend — now the
-                    // family action menu (founder 10-05: no plain-text menus; iOS order).
-                    if (menuTarget?.id == f.id) {
-                        FamilyActionMenu(
-                            title = f.username,
-                            subtitle = presenceLine(f.lastSeenMs, f.activity, nowMs)
-                                ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today",
-                            avatar = { FriendAvatar44(f) },
-                            onDismiss = { menuTarget = null },
-                            actions = buildList {
-                                add(FamilyMenuAction("profile", "View profile", FamilyMenuIcon.Clay(FamIcon.EYE)) { onOpenProfile(f.id) })
-                                add(FamilyMenuAction("play", "Play a game", FamilyMenuIcon.Clay(FamIcon.PLAY), FamilyMenuInk.PINK) { onPlay(f) })
-                                add(FamilyMenuAction("taunt", "Taunt", FamilyMenuIcon.Art(Icon3DName.BELL.res), FamilyMenuInk.AMBER,
-                                    contentDescription = "Taunt ${f.username}") { onTaunt(f) })
-                                add(FamilyMenuAction("challenge", "Challenge", FamilyMenuIcon.Art(GlyphArt.SWORDS.res),
-                                    enabled = challengingId == null, contentDescription = "Challenge ${f.username}") { onChallenge(f) })
-                                if (canGift) {
-                                    add(FamilyMenuAction("gift", "Gift a shield", FamilyMenuIcon.Art(Icon3DName.SHIELD.res), FamilyMenuInk.TEAL) {
-                                        scope.launch {
-                                            when (val r = FriendsService.giftShield(f.id)) {
-                                                is FriendsService.GiftOutcome.Sent -> {
-                                                    onNote("${SHIELD_NOTE}Shield sent to ${f.username} · ${r.shieldsLeft} left")
-                                                    AuthService.refreshProfile()
-                                                }
-                                                is FriendsService.GiftOutcome.Failed -> onNote(r.message)
-                                            }
-                                        }
-                                    })
-                                }
-                                add(FamilyMenuAction("unfriend", "Unfriend", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true,
-                                    contentDescription = "Unfriend ${f.username}") { onUnfriend(f) })
-                            },
-                        )
-                    }
                 }
             }
         Spacer(Modifier.height(2.dp))
     }
+}
+
+/**
+ * The friend family action menu (founder 10-05: no plain-text menus; iOS order), hosted by the Friends screen so
+ * a friend card's ⋯ and a list row's long-press open the same sheet. 2.8 wave 3: "Resign <game>" (danger) for each
+ * game in play with this friend lives HERE; the in-game Leave dialog no longer resigns.
+ */
+@Composable
+private fun FriendMenuHost(
+    f: FriendsService.FriendProfile,
+    nowMs: Long,
+    canGift: Boolean,
+    challengingId: String?,
+    games: List<FriendlyGamesService.GameView>,
+    onDismiss: () -> Unit,
+    onOpenProfile: (String) -> Unit,
+    onPlay: (FriendsService.FriendProfile) -> Unit,
+    onTaunt: (FriendsService.FriendProfile) -> Unit,
+    onChallenge: (FriendsService.FriendProfile) -> Unit,
+    onUnfriend: (FriendsService.FriendProfile) -> Unit,
+    onResign: (FriendlyGamesService.GameView) -> Unit,
+    onNote: (String) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val sweepSize = com.wordocious.app.ModeGen.sweep.size
+    val played = f.playedToday ?: 0
+    FamilyActionMenu(
+        title = f.username,
+        subtitle = presenceLine(f.lastSeenMs, f.activity, nowMs)
+            ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today",
+        avatar = { FriendAvatar44(f) },
+        onDismiss = onDismiss,
+        actions = buildList {
+            add(FamilyMenuAction("profile", "View profile", FamilyMenuIcon.Clay(FamIcon.EYE)) { onOpenProfile(f.id) })
+            add(FamilyMenuAction("play", "Play a game", FamilyMenuIcon.Clay(FamIcon.PLAY), FamilyMenuInk.PINK) { onPlay(f) })
+            add(FamilyMenuAction("taunt", "Taunt", FamilyMenuIcon.Art(Icon3DName.BELL.res), FamilyMenuInk.AMBER,
+                contentDescription = "Taunt ${f.username}") { onTaunt(f) })
+            add(FamilyMenuAction("challenge", "Challenge", FamilyMenuIcon.Art(GlyphArt.SWORDS.res),
+                enabled = challengingId == null, contentDescription = "Challenge ${f.username}") { onChallenge(f) })
+            if (canGift) {
+                add(FamilyMenuAction("gift", "Gift a shield", FamilyMenuIcon.Art(Icon3DName.SHIELD.res), FamilyMenuInk.TEAL) {
+                    scope.launch {
+                        when (val r = FriendsService.giftShield(f.id)) {
+                            is FriendsService.GiftOutcome.Sent -> {
+                                onNote("${SHIELD_NOTE}Shield sent to ${f.username} · ${r.shieldsLeft} left")
+                                AuthService.refreshProfile()
+                            }
+                            is FriendsService.GiftOutcome.Failed -> onNote(r.message)
+                        }
+                    }
+                })
+            }
+            games.forEach { g ->
+                add(FamilyMenuAction("resign-${g.id}", "Resign ${g.title}", FamilyMenuIcon.Clay(FamIcon.FLAG), danger = true,
+                    contentDescription = "Resign ${g.title} against ${f.username}") { onResign(g) })
+            }
+            add(FamilyMenuAction("unfriend", "Unfriend", FamilyMenuIcon.Clay(FamIcon.XMARK), danger = true,
+                contentDescription = "Unfriend ${f.username}") { onUnfriend(f) })
+        },
+    )
 }
 
 /** The gift note's marker: the note row swaps it for the 3D shield. */

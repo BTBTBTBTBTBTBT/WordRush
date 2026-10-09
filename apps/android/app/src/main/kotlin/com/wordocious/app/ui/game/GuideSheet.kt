@@ -131,14 +131,16 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
     val slug = remember(mode) { GuideService.slugFor(mode) }
     val steps = remember(slug, g) { GuideSteps.stepsFor(slug, g?.rules ?: emptyList()) }
     val title = g?.title ?: com.wordocious.app.ui.gameTitleLabelForKey(mode.name)
+    // First-play (item 12): any close marks this game's card seen (synced); the button reads "Let's play!" the first time.
+    val close = { com.wordocious.app.data.TutorialsSeen.mark(slug); onDismiss() }
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = close,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         // The popup paints its own scrim (PopupScrim): no second window dim behind it.
         com.wordocious.app.ui.EdgeToEdgeDialogWindow(dimAmount = 0f)
-        PopupScrim(onTap = onDismiss) {
+        PopupScrim(onTap = close) {
             BoxWithConstraints(Modifier.fillMaxSize().systemBarsPadding()) {
                 val viewport = maxHeight
                 Column(
@@ -147,7 +149,7 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    GuideCard(mode, title, accent, steps, g, onDismiss)
+                    GuideCard(mode, title, accent, steps, g, close)
                 }
             }
         }
@@ -224,7 +226,7 @@ private fun GuideCard(
                 }
             }
             CandyButton(
-                "Got it", onClick = onDismiss,
+                firstPlayButtonLabel(GuideService.slugFor(mode)), onClick = onDismiss,
                 color = WinPopupMath.candyFor(accent.copy(alpha = 1f).toArgb()),
                 size = CandySize.LARGE, fill = true,
                 modifier = Modifier.padding(top = 4.dp),

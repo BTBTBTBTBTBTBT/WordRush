@@ -52,6 +52,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,7 +87,7 @@ import com.wordocious.core.presenceLine
 import kotlinx.coroutines.launch
 
 /** What the quick-play sheet opens with: a friend (or a picker) and a game. */
-data class QuickPlayRequest(val friendId: String?, val kind: FriendlyKind = FriendlyKind.RPS)
+data class QuickPlayRequest(val friendId: String?, val kind: FriendlyKind = FriendlyKind.RPS, val kindChosen: Boolean = false)
 
 /**
  * The quick-play sheet (Friends overhaul §3): a friend header, the four QUICK
@@ -110,11 +111,35 @@ fun QuickPlaySheet(
     val now = System.currentTimeMillis()
     var friendId by remember { mutableStateOf(request.friendId) }
     var kind by remember { mutableStateOf(request.kind) }
+    // 2.8 wave 3 (item 9): a game already chosen (a Play-with-friends tile, a rematch) goes straight in once the
+    // friend is known; Call It stops at its stake step. No second game pick, no separate INVITE button.
+    var kindChosen by remember { mutableStateOf(request.kindChosen) }
+    var autoStarted by remember { mutableStateOf(false) }
     var stake by remember { mutableStateOf(COIN_STAKES[0]) }
     var sending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     // BJ13: no friend chosen (or the one asked for isn't in your circle) → the picker.
     val friend = friends.firstOrNull { it.id == friendId }
+
+    fun begin(f: FriendsService.FriendProfile, k: FriendlyKind) {
+        if (sending) return
+        sending = true
+        error = null
+        scope.launch {
+            when (val r = FriendlyGamesService.start(k, f.id, if (k == FriendlyKind.COIN) stake else null)) {
+                is FriendlyGamesService.StartOutcome.Started -> onOpenGame(r.game.id)
+                is FriendlyGamesService.StartOutcome.Failed -> { error = r.message; kindChosen = false }
+            }
+            sending = false
+        }
+    }
+    LaunchedEffect(friend?.id, kindChosen, kind) {
+        val f = friend
+        if (f != null && kindChosen && kind != FriendlyKind.COIN && !autoStarted) {
+            autoStarted = true
+            begin(f, kind)
+        }
+    }
 
     // A1: a pink-tinted sheet (no white).
     SoftModalSheet(
@@ -180,68 +205,72 @@ fun QuickPlaySheet(
                         }
                     }
 
-                    // QUICK GAMES
-                    FriendsLabel(if (friend?.isOnline(now) == true) "QUICK GAMES · LIVE WHILE THEY'RE ON" else "QUICK GAMES")
-                    // Six tiles, 3 across × 2 rows (§9, web parity).
-                    FRIENDLY_KINDS.chunked(3).forEach { row ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            row.forEach { k -> GameTile(k, selected = k == kind, modifier = Modifier.weight(1f)) { kind = k; error = null } }
-                        }
-                    }
-                    if (kind == FriendlyKind.COIN) {
-                        FriendsLabel("WHAT'S ON THE LINE")
-                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            COIN_STAKES.forEach { s ->
-                                // A1 / A9: a tinted chip in Call It's gold; selected = stronger tint + ring.
-                                val shape = RoundedCornerShape(50)
-                                val coin = FriendlyKind.COIN.color
-                                Text(
-                                    s, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                                    color = if (s == stake) FriendsPink.heading else FriendsPink.mid,
-                                    modifier = Modifier
-                                        .squishClickable(label = s + if (s == stake) ", selected" else "", role = Role.RadioButton) { stake = s }
-                                        .clip(shape).background(friendsWash(coin, if (s == stake) 0.3f else 0.12f))
-                                        .border(if (s == stake) 2.dp else 1.5.dp, if (s == stake) coin else friendsLine(coin), shape)
-                                        .padding(horizontal = 12.dp, vertical = 7.dp),
-                                )
+                    if (kindChosen) {
+                        // The game is picked: Call It asks its stake here (the three chips), everything else is
+                        // already starting. One step, then straight into the game.
+                        if (kind == FriendlyKind.COIN) {
+                            FriendsLabel("WHAT'S ON THE LINE")
+                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                COIN_STAKES.forEach { s ->
+                                    // A1 / A9: a tinted chip in Call It's gold; selected = stronger tint + ring.
+                                    val shape = RoundedCornerShape(50)
+                                    val coin = FriendlyKind.COIN.color
+                                    Text(
+                                        s, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                                        color = if (s == stake) FriendsPink.heading else FriendsPink.mid,
+                                        modifier = Modifier
+                                            .squishClickable(label = s + if (s == stake) ", selected" else "", role = Role.RadioButton) { stake = s }
+                                            .clip(shape).background(friendsWash(coin, if (s == stake) 0.3f else 0.12f))
+                                            .border(if (s == stake) 2.dp else 1.5.dp, if (s == stake) coin else friendsLine(coin), shape)
+                                            .padding(horizontal = 12.dp, vertical = 7.dp),
+                                    )
+                                }
+                            }
+                            error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.solid) }
+                            PinkButton(
+                                if (sending) "STARTING…" else "START", modifier = Modifier.fillMaxWidth(),
+                                enabled = friend != null && !sending,
+                            ) { friend?.let { begin(it, FriendlyKind.COIN) } }
+                        } else {
+                            Box(Modifier.fillMaxWidth().padding(vertical = 18.dp), contentAlignment = Alignment.Center) {
+                                Text("Starting ${kind.title}…", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = FriendsPink.muted)
                             }
                         }
-                    }
-
-                    // WORDOCIOUS
-                    FriendsLabel("WORDOCIOUS")
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        WordociousCard(
-                            title = "VS Battle, live", sub = "Free for friends · Classic", solid = true,
-                            enabled = friend != null, modifier = Modifier.weight(1f),
-                        ) { friend?.let { onVsBattle(it) } }
-                        WordociousCard(
-                            title = "Race my run", sub = "They race your time", solid = false, locked = !AuthService.isProActive,
-                            enabled = friend != null, modifier = Modifier.weight(1f),
-                        ) { friend?.let { onRaceRun(it.id) } }
-                    }
-
-                    error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.solid) }
-                    PinkButton(
-                        if (sending) "SENDING…" else "INVITE TO ${kind.title.uppercase()}",
-                        modifier = Modifier.fillMaxWidth(), enabled = friend != null && !sending,
-                    ) {
-                        val f = friend ?: return@PinkButton
-                        sending = true
-                        error = null
-                        scope.launch {
-                            when (val r = FriendlyGamesService.start(kind, f.id, if (kind == FriendlyKind.COIN) stake else null)) {
-                                is FriendlyGamesService.StartOutcome.Started -> onOpenGame(r.game.id)
-                                is FriendlyGamesService.StartOutcome.Failed -> error = r.message
+                    } else {
+                        // Pick a friend, then ONE game tile: it starts at once (Call It asks its stake first).
+                        FriendsLabel(if (friend?.isOnline(now) == true) "PICK A GAME · LIVE WHILE THEY'RE ON" else "PICK A GAME")
+                        // Six tiles, 3 across x 2 rows (web parity).
+                        FRIENDLY_KINDS.chunked(3).forEach { row ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { k ->
+                                    GameTile(k, selected = false, modifier = Modifier.weight(1f)) {
+                                        kind = k
+                                        error = null
+                                        kindChosen = true
+                                    }
+                                }
                             }
-                            sending = false
                         }
+
+                        // WORDOCIOUS
+                        FriendsLabel("WORDOCIOUS")
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            WordociousCard(
+                                title = "VS Battle, live", sub = "Free for friends · Classic", solid = true,
+                                enabled = friend != null, modifier = Modifier.weight(1f),
+                            ) { friend?.let { onVsBattle(it) } }
+                            WordociousCard(
+                                title = "Race my run", sub = "They race your time", solid = false, locked = !AuthService.isProActive,
+                                enabled = friend != null, modifier = Modifier.weight(1f),
+                            ) { friend?.let { onRaceRun(it.id) } }
+                        }
+                        error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.solid) }
+                        Text(
+                            "${friend?.username?.replaceFirstChar { it.uppercaseChar() } ?: "Your friend"} gets a ping. If they're busy, it waits as your turn.",
+                            fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
-                    Text(
-                        "${friend?.username?.replaceFirstChar { it.uppercaseChar() } ?: "Your friend"} gets a ping. If they're busy, it waits as your turn.",
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = FriendsPink.label, textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                     Spacer(Modifier.height(12.dp))
                 }
             }

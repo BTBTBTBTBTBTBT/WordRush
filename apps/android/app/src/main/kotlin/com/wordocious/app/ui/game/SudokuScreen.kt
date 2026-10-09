@@ -282,6 +282,9 @@ fun SudokuScreen(
     val isPro = AuthService.isProActive
     var showOverlay by remember(seed) { mutableStateOf(false) }
     var showGuide by remember { mutableStateOf(false) }
+    // First play (item 12): the help card opens by itself once, then only on tap.
+    val firstPlay = rememberFirstPlayAutoShow(com.wordocious.app.data.GuideService.slugFor(GameMode.SUDOKU))
+    LaunchedEffect(firstPlay) { if (firstPlay) { showGuide = true; session.pauseForGuide() } }
     var adGateDone by remember(seed) { mutableStateOf(false) }
 
     // Game-start ad for free users; the clock starts after it (GameScreen parity).
