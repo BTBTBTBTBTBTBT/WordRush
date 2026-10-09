@@ -98,6 +98,11 @@ export const NEW_ACHIEVEMENTS: readonly AchievementCatalogEntry[] = [
   // Halloween tunes (item 49): playable only in season; the achievements stay forever
   secret('tune_mountain_king', 'Mountain King', 'Played In the Hall of the Mountain King on the cast'),
   secret('tune_toccata', 'Toccata', 'Played the Toccata and Fugue in D minor on the cast'),
+  secret('tune_funeral_march', 'Funeral March', 'Played the Funeral March on the cast'),
+  secret('tune_marionette', 'Marionette', 'Played the Funeral March of a Marionette on the cast'),
+  secret('tune_danse_macabre', 'Danse Macabre', 'Played Danse Macabre on the cast'),
+  secret('tune_bald_mountain', 'Bald Mountain', 'Played Night on Bald Mountain on the cast'),
+  secret('tune_sorcerers_apprentice', "Sorcerer's Apprentice", "Played The Sorcerer's Apprentice on the cast"),
 ];
 
 /** The secret keys: awarded, but a locked one is never listed (it appears once unlocked). */

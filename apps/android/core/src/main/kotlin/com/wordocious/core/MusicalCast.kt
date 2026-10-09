@@ -150,18 +150,23 @@ object MusicalCast {
     /**
      * The Halloween tunes (item 49): public-domain compositions on the cast's own keys (matched by interval shape).
      * In the Hall of the Mountain King (Grieg, 1875) and the Toccata and Fugue in D minor (Bach, BWV 565) opening; the
-     * cast has no C#, so the Toccata plays the C natural. Only active in season; each is a hidden achievement.
+     * cast has no C#, so the Toccata plays the C natural. Also the Funeral March (Chopin, 1839), the Funeral March of a
+     * Marionette (Gounod, 1872; G stands in for G#), Danse Macabre (Saint-Saens, 1874), Night on Bald Mountain
+     * (Mussorgsky) and The Sorcerer's Apprentice (Dukas, 1897), each checked against a score and realized on the white
+     * keys by interval shape (see musical-cast.ts). Only active in season; each is a hidden achievement.
      */
     val HALLOWEEN_MELODIES: List<MusicalMelody> = listOf(
         MusicalMelody("mountain_king", "In the Hall of the Mountain King", "tune_mountain_king", listOf(A4, B4, C5, D5, E5, C5, E5, D5, B4, D5)),
         MusicalMelody("toccata", "Toccata and Fugue in D minor", "tune_toccata", listOf(A4, G4, A4, G4, F4, E4, D4, C4, D4)),
+        MusicalMelody("funeral_march", "Funeral March", "tune_funeral_march", listOf(A4, A4, A4, A4, C5, B4, B4, A4, A4, G4, A4)),
+        MusicalMelody("marionette", "Funeral March of a Marionette", "tune_marionette", listOf(A4, A4, G4, F4, G4, A4, B4)),
+        MusicalMelody("danse_macabre", "Danse Macabre", "tune_danse_macabre", listOf(A4, A4, C5, A4, B4, C5, A4, C5, A4, C5, B4, C5, B4, A4)),
+        MusicalMelody("bald_mountain", "Night on Bald Mountain", "tune_bald_mountain", listOf(B4, C5, B4, A4, B4, C5, C5, E5, B4)),
+        MusicalMelody("sorcerers_apprentice", "The Sorcerer's Apprentice", "tune_sorcerers_apprentice", listOf(A4, E5, A4, C5, A4, C5, B4, C5, A4, C5)),
     )
 
-    /** Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line). */
-    val HALLOWEEN_TUNES_TODO: List<String> = listOf(
-        "Danse Macabre (Saint-Saens)", "Funeral March (Chopin, Piano Sonata No. 2)", "Night on Bald Mountain (Mussorgsky)",
-        "Funeral March of a Marionette (Gounod)", "The Sorcerer's Apprentice (Dukas)",
-    )
+    /** Halloween tunes still waiting for checked notation: none (all five from the plan are wired above). */
+    val HALLOWEEN_TUNES_TODO: List<String> = emptyList()
 
     /** The tunes that count right now: the everyday five, plus the season's own (halloween). */
     fun activeMelodies(season: String? = null): List<MusicalMelody> =

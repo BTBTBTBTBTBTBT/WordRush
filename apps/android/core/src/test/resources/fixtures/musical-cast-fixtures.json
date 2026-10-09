@@ -241,7 +241,12 @@
     "tune_happy_birthday",
     "tune_hot_cross_buns",
     "tune_mountain_king",
-    "tune_toccata"
+    "tune_toccata",
+    "tune_funeral_march",
+    "tune_marionette",
+    "tune_danse_macabre",
+    "tune_bald_mountain",
+    "tune_sorcerers_apprentice"
   ],
   "notes": [
     {
@@ -2135,15 +2140,151 @@
           -2,
           2
         ]
+      },
+      {
+        "id": "funeral_march",
+        "name": "Funeral March",
+        "achievement": "tune_funeral_march",
+        "notes": [
+          69,
+          69,
+          69,
+          69,
+          72,
+          71,
+          71,
+          69,
+          69,
+          67,
+          69
+        ],
+        "intervals": [
+          0,
+          0,
+          0,
+          3,
+          -1,
+          0,
+          -2,
+          0,
+          -2,
+          2
+        ]
+      },
+      {
+        "id": "marionette",
+        "name": "Funeral March of a Marionette",
+        "achievement": "tune_marionette",
+        "notes": [
+          69,
+          69,
+          67,
+          65,
+          67,
+          69,
+          71
+        ],
+        "intervals": [
+          0,
+          -2,
+          -2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "id": "danse_macabre",
+        "name": "Danse Macabre",
+        "achievement": "tune_danse_macabre",
+        "notes": [
+          69,
+          69,
+          72,
+          69,
+          71,
+          72,
+          69,
+          72,
+          69,
+          72,
+          71,
+          72,
+          71,
+          69
+        ],
+        "intervals": [
+          0,
+          3,
+          -3,
+          2,
+          1,
+          -3,
+          3,
+          -3,
+          3,
+          -1,
+          1,
+          -1,
+          -2
+        ]
+      },
+      {
+        "id": "bald_mountain",
+        "name": "Night on Bald Mountain",
+        "achievement": "tune_bald_mountain",
+        "notes": [
+          71,
+          72,
+          71,
+          69,
+          71,
+          72,
+          72,
+          76,
+          71
+        ],
+        "intervals": [
+          1,
+          -1,
+          -2,
+          2,
+          1,
+          0,
+          4,
+          -5
+        ]
+      },
+      {
+        "id": "sorcerers_apprentice",
+        "name": "The Sorcerer's Apprentice",
+        "achievement": "tune_sorcerers_apprentice",
+        "notes": [
+          69,
+          76,
+          69,
+          72,
+          69,
+          72,
+          71,
+          72,
+          69,
+          72
+        ],
+        "intervals": [
+          7,
+          -7,
+          3,
+          -3,
+          3,
+          -1,
+          1,
+          -3,
+          3
+        ]
       }
     ],
-    "todo": [
-      "Danse Macabre (Saint-Saens)",
-      "Funeral March (Chopin, Piano Sonata No. 2)",
-      "Night on Bald Mountain (Mussorgsky)",
-      "Funeral March of a Marionette (Gounod)",
-      "The Sorcerer's Apprentice (Dukas)"
-    ],
+    "todo": [],
     "notePrefix": {
       "halloween": "note-h-"
     },
@@ -2334,7 +2475,12 @@
           "birthday",
           "buns",
           "mountain_king",
-          "toccata"
+          "toccata",
+          "funeral_march",
+          "marionette",
+          "danse_macabre",
+          "bald_mountain",
+          "sorcerers_apprentice"
         ]
       },
       {
@@ -2780,6 +2926,1167 @@
             "at": 3400,
             "midi": 62,
             "sound": "note-o1",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "funeral_march-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2200,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2500,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3100,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3700,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4000,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": "funeral_march"
+          }
+        ]
+      },
+      {
+        "name": "funeral_march-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2200,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2500,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3100,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3700,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "funeral_march-in-valentines",
+        "season": "valentines",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2200,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2500,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3100,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 3700,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "marionette-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 1900,
+            "midi": 65,
+            "sound": "note-h-d",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2200,
+            "midi": 67,
+            "sound": "note-h-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2500,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": "marionette"
+          }
+        ]
+      },
+      {
+        "name": "marionette-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 1900,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2200,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2500,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "marionette-in-valentines",
+        "season": "valentines",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 1600,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "d",
+            "at": 1900,
+            "midi": 65,
+            "sound": "note-d",
+            "matched": null
+          },
+          {
+            "id": "o2",
+            "at": 2200,
+            "midi": 67,
+            "sound": "note-o2",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2500,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "danse_macabre-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1600,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2200,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2800,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3100,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3700,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4000,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 4300,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4600,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4900,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": "danse_macabre"
+          }
+        ]
+      },
+      {
+        "name": "danse_macabre-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1600,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2200,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2800,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3100,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3700,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4000,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 4300,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4600,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "danse_macabre-in-valentines",
+        "season": "valentines",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1300,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1600,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2200,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2800,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3100,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3700,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4000,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 4300,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 4600,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 4900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "bald_mountain-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "i",
+            "at": 1000,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1300,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 1600,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2200,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2800,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 3100,
+            "midi": 76,
+            "sound": "note-h-s",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3400,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": "bald_mountain"
+          }
+        ]
+      },
+      {
+        "name": "bald_mountain-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "i",
+            "at": 1000,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1300,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 1600,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2200,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2800,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 3100,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3400,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "bald_mountain-in-valentines",
+        "season": "valentines",
+        "steps": [
+          {
+            "id": "i",
+            "at": 1000,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1300,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 1600,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1900,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2200,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2800,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 3100,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 3400,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "sorcerers_apprentice-in-halloween",
+        "season": "halloween",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 1300,
+            "midi": 76,
+            "sound": "note-h-s",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1900,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-h-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3100,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-h-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3700,
+            "midi": 72,
+            "sound": "note-h-o3",
+            "matched": "sorcerers_apprentice"
+          }
+        ]
+      },
+      {
+        "name": "sorcerers_apprentice-in-no-season",
+        "season": null,
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 1300,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1900,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3100,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3700,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          }
+        ]
+      },
+      {
+        "name": "sorcerers_apprentice-in-valentines",
+        "season": "valentines",
+        "steps": [
+          {
+            "id": "c",
+            "at": 1000,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "s",
+            "at": 1300,
+            "midi": 76,
+            "sound": "note-s",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 1600,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 1900,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 2200,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 2500,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "i",
+            "at": 2800,
+            "midi": 71,
+            "sound": "note-i",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3100,
+            "midi": 72,
+            "sound": "note-o3",
+            "matched": null
+          },
+          {
+            "id": "c",
+            "at": 3400,
+            "midi": 69,
+            "sound": "note-c",
+            "matched": null
+          },
+          {
+            "id": "o3",
+            "at": 3700,
+            "midi": 72,
+            "sound": "note-o3",
             "matched": null
           }
         ]

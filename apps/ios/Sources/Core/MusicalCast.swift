@@ -100,18 +100,28 @@ public enum MusicalCast {
     /// interval shape). Only active in season. Each is a hidden achievement.
     ///   - In the Hall of the Mountain King (Grieg, 1875): A B C D E C E . D B D.
     ///   - Toccata and Fugue in D minor (Bach, BWV 565) opening; the cast has no C#, so it plays the C natural.
+    ///   - Funeral March (Chopin, 1839), Funeral March of a Marionette (Gounod, 1872; G stands in for G#), Danse Macabre
+    ///     (Saint-Saens, 1874), Night on Bald Mountain (Mussorgsky), The Sorcerer's Apprentice (Dukas, 1897): each
+    ///     checked against a score and realized on the white keys by interval shape (see musical-cast.ts).
     public static let halloweenMelodies: [MusicalMelody] = [
         MusicalMelody(id: "mountain_king", name: "In the Hall of the Mountain King", achievement: "tune_mountain_king",
                       notes: [A4, B4, C5, D5, E5, C5, E5, D5, B4, D5]),
         MusicalMelody(id: "toccata", name: "Toccata and Fugue in D minor", achievement: "tune_toccata",
                       notes: [A4, G4, A4, G4, F4, E4, D4, C4, D4]),
+        MusicalMelody(id: "funeral_march", name: "Funeral March", achievement: "tune_funeral_march",
+                      notes: [A4, A4, A4, A4, C5, B4, B4, A4, A4, G4, A4]),
+        MusicalMelody(id: "marionette", name: "Funeral March of a Marionette", achievement: "tune_marionette",
+                      notes: [A4, A4, G4, F4, G4, A4, B4]),
+        MusicalMelody(id: "danse_macabre", name: "Danse Macabre", achievement: "tune_danse_macabre",
+                      notes: [A4, A4, C5, A4, B4, C5, A4, C5, A4, C5, B4, C5, B4, A4]),
+        MusicalMelody(id: "bald_mountain", name: "Night on Bald Mountain", achievement: "tune_bald_mountain",
+                      notes: [B4, C5, B4, A4, B4, C5, C5, E5, B4]),
+        MusicalMelody(id: "sorcerers_apprentice", name: "The Sorcerer's Apprentice", achievement: "tune_sorcerers_apprentice",
+                      notes: [A4, E5, A4, C5, A4, C5, B4, C5, A4, C5]),
     ]
 
-    /// Public-domain Halloween tunes still waiting for checked notation (no achievement is wired until each has a verified line).
-    public static let halloweenTunesTodo: [String] = [
-        "Danse Macabre (Saint-Saens)", "Funeral March (Chopin, Piano Sonata No. 2)", "Night on Bald Mountain (Mussorgsky)",
-        "Funeral March of a Marionette (Gounod)", "The Sorcerer's Apprentice (Dukas)",
-    ]
+    /// Halloween tunes still waiting for checked notation: none (all five from the plan are wired above).
+    public static let halloweenTunesTodo: [String] = []
 
     /// The tunes that count right now: the everyday five, plus the season's own (halloween).
     public static func activeMelodies(season: String? = nil) -> [MusicalMelody] {
