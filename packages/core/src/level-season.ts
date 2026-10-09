@@ -29,7 +29,7 @@ export function levelTierLabel(tier: LevelTier): string {
  * Kotlin (Season.kt) ports carry the same rows; level-season-fixtures.json pins them.
  */
 export const SEASON_WINDOWS = [
-  { id: 'halloween', start: [10, 17], end: [11, 1] },
+  { id: 'halloween', start: [10, 9], end: [10, 31] },
 ] as const satisfies readonly { id: string; start: readonly [number, number]; end: readonly [number, number] }[];
 
 export type Season = (typeof SEASON_WINDOWS)[number]['id'];
@@ -47,7 +47,7 @@ function inWindow(m: number, d: number, start: readonly [number, number], end: r
 
 /**
  * The season for a LOCAL calendar date (YYYY-MM-DD or a Date read in local
- * time): Halloween runs Oct 17 – Nov 1 inclusive, any year. Null otherwise.
+ * time): Halloween runs Oct 9 – Oct 31 inclusive (2.8: on as soon as the build is live; founder 10-08), any year. Null otherwise.
  */
 export function currentSeason(date: string | Date): Season | null {
   let m: number;

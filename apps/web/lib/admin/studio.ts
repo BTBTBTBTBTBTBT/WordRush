@@ -383,7 +383,7 @@ export interface Band { id: string; label: string; start: string; end: string; t
 
 /**
  * Season bands for the given years, read from core currentSeason (the season registry) day by day, so the
- * calendar always matches what the apps switch on (Halloween: Oct 17 - Nov 1 once the registry says so).
+ * calendar always matches what the apps switch on (Halloween: Oct 9 - Oct 31 once the registry says so).
  */
 export function seasonBands(years: readonly number[]): Band[] {
   const out: Band[] = [];

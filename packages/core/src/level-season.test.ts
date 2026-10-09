@@ -11,13 +11,13 @@ describe('levelTier (FINISH_SPEC V)', () => {
 });
 
 describe('currentSeason (FINISH_SPEC X)', () => {
-  it('is Halloween from Oct 17 through Nov 1, local date', () => {
-    expect(currentSeason('2026-10-16')).toBeNull();
-    expect(currentSeason('2026-10-17')).toBe('halloween');
+  it('is Halloween from Oct 9 through Oct 31, local date', () => {
+    expect(currentSeason('2026-10-08')).toBeNull();
+    expect(currentSeason('2026-10-09')).toBe('halloween');
     expect(currentSeason('2026-10-24')).toBe('halloween');
     expect(currentSeason('2026-10-31')).toBe('halloween');
-    expect(currentSeason('2026-11-01')).toBe('halloween');
-    expect(currentSeason('2026-11-02')).toBeNull();
+    expect(currentSeason('2026-10-31')).toBe('halloween');
+    expect(currentSeason('2026-11-01')).toBeNull();
     expect(currentSeason(new Date(2027, 9, 30, 23, 59))).toBe('halloween');
     expect(currentSeason(new Date(2027, 0, 1))).toBeNull();
   });

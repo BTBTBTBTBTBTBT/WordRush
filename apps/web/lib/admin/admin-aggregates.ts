@@ -216,13 +216,14 @@ const dayNum = (s: string) => {
   return Math.round(Date.UTC(y, m - 1, d) / 86400000);
 };
 
-/** The Halloween window (Oct 17 – Nov 1, core SEASON_WINDOWS / currentSeason) relative to a YYYY-MM-DD day. */
+/** The Halloween window (core SEASON_WINDOWS / currentSeason, Oct 9 – Oct 31 since 2.8) relative to a YYYY-MM-DD day. */
 export function halloweenStatus(day: string): SeasonStatus {
   const y = Number(day.slice(0, 4));
   const active = currentSeason(day);
-  // Both ends fall in the same calendar year; once Nov 1 has passed, the next window is next year's.
-  const startYear = day.slice(5) > '11-01' ? y + 1 : y;
+  // Both ends fall in the same calendar year; once the window's last day has passed, the next window is next year's.
   const w = SEASON_WINDOWS.find((x) => x.id === 'halloween')!;
+  const endMd = `${String(w.end[0]).padStart(2, '0')}-${String(w.end[1]).padStart(2, '0')}`;
+  const startYear = day.slice(5) > endMd ? y + 1 : y;
   const start = ymd(startYear, w.start[0], w.start[1]);
   const end = ymd(startYear, w.end[0], w.end[1]);
   const today = dayNum(day);

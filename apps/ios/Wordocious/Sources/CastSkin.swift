@@ -1,7 +1,7 @@
 import SwiftUI
 import WordociousCore
 
-/// FINISH_SPEC §X: seasonal cast skins. During a season (Halloween: Oct 17 – Nov 1,
+/// FINISH_SPEC §X: seasonal cast skins. During a season (Halloween: Oct 9 – Oct 31,
 /// local date — core `Season.current`) the hero cast (`mascot-<id>`) is swapped for
 /// that season's skins (`art-halloween-<id>`) in the living cast header row, the
 /// cold-start intro + landing flourish, the share-image cast wordmark and the cast

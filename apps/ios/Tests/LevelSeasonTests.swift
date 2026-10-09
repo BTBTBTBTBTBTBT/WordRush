@@ -12,12 +12,12 @@ final class LevelSeasonTests: XCTestCase {
     }
 
     func testHalloweenWindowIsOct17ThroughNov1() {
-        XCTAssertNil(Season.current(day: "2026-10-16"))
-        XCTAssertEqual(Season.current(day: "2026-10-17"), .halloween)
+        XCTAssertNil(Season.current(day: "2026-10-08"))
+        XCTAssertEqual(Season.current(day: "2026-10-09"), .halloween)
         XCTAssertEqual(Season.current(day: "2026-10-24"), .halloween)
         XCTAssertEqual(Season.current(day: "2026-10-31"), .halloween)
-        XCTAssertEqual(Season.current(day: "2026-11-01"), .halloween)
-        XCTAssertNil(Season.current(day: "2026-11-02"))
+        XCTAssertEqual(Season.current(day: "2026-10-31"), .halloween)
+        XCTAssertNil(Season.current(day: "2026-11-01"))
         XCTAssertNil(Season.current(day: "2026-12-25"))
         XCTAssertNil(Season.current(day: "garbage"))
     }

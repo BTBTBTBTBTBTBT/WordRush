@@ -40,7 +40,7 @@ import java.time.LocalDate
 import kotlin.math.PI
 import kotlin.math.sin
 
-// FINISH_SPEC X: seasonal cast skins. During a season (Halloween: Oct 17 – Nov 1, local
+// FINISH_SPEC X: seasonal cast skins. During a season (Halloween: Oct 9 – Oct 31, local
 // date — core currentSeason) the season's costumes (registry `cast` slot, e.g.
 // `art_halloween_<id>`, 320², the cast pose framing) replace the hero cast in the living
 // cast header, the cold-start intro + its landing flourish, the share-image cast wordmark

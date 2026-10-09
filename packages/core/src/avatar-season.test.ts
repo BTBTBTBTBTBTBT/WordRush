@@ -23,10 +23,10 @@ describe('seasonal mascot items (10-05)', () => {
   });
 
   it('shows in its window (local dates, inclusive), hides outside it', () => {
-    expect(isPartAvailable(pumpkin, '2026-10-16', null, null)).toBe(false);
-    expect(isPartAvailable(pumpkin, '2026-10-17', null, null)).toBe(true);
-    expect(isPartAvailable(pumpkin, '2026-11-01', null, null)).toBe(true);
-    expect(isPartAvailable(pumpkin, '2026-11-02', null, null)).toBe(false);
+    expect(isPartAvailable(pumpkin, '2026-10-08', null, null)).toBe(false);
+    expect(isPartAvailable(pumpkin, '2026-10-09', null, null)).toBe(true);
+    expect(isPartAvailable(pumpkin, '2026-10-31', null, null)).toBe(true);
+    expect(isPartAvailable(pumpkin, '2026-11-01', null, null)).toBe(false);
   });
 
   it('the admin preview turns it on (or off) whatever the date', () => {
