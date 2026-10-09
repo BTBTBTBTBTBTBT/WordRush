@@ -480,6 +480,14 @@ def backpack(body):
     pr = masks(body)
     keep = ndimage.binary_dilation(pr['torso'], iterations=int(0.008 * U))
     keep[:int(P(lm['shoulderTop']['y'] + 0.06))] = True
+    # 10-09: the straps go UNDER the arms: nothing of them sits on the measured arm regions (the hands are drawn
+    # over them anyway); after the landmark refit the straps crossed the arms on 8 bodies (avatar-wrap-hoops.test.ts).
+    arms = ndimage.binary_dilation(pr['arm_any'], iterations=max(1, int(0.004 * U)))
+    # … and the manifest's hand ellipses (bodies.<id>.hands: what the web wrap-line test checks the shipped art against)
+    yy, xx = np.mgrid[0:CW, 0:CW]
+    for cx, cy, rx, ry in (MAN['bodies'][body].get('hands') or {}).values():
+        arms |= ((xx - (M + cx * U)) / (rx * U * 1.04)) ** 2 + ((yy - (M + cy * U)) / (ry * U * 1.04)) ** 2 <= 1
+    keep &= ~arms
     soft_ = ndimage.gaussian_filter(keep.astype(np.float32), 1.0)
     front = []
     for im in L['front']:

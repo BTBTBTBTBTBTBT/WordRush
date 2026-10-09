@@ -12481,10 +12481,10 @@
             "id": "backpack",
             "art": "art-av-acc-backpack-tall-wrap",
             "rect": {
-              "x": 0.3377,
+              "x": 0.3537,
               "y": 0.1035,
-              "w": 0.3817,
-              "h": 0.524
+              "w": 0.3485,
+              "h": 0.4349
             },
             "tint": true,
             "m": [
@@ -12827,10 +12827,10 @@
             "id": "backpack",
             "art": "art-av-acc-backpack-tall-wrap",
             "rect": {
-              "x": 0.336,
+              "x": 0.3515,
               "y": 0.189,
-              "w": 0.3689,
-              "h": 0.5064
+              "w": 0.3368,
+              "h": 0.4203
             },
             "tint": true,
             "m": [
@@ -13052,10 +13052,10 @@
             "id": "backpack",
             "art": "art-av-acc-backpack-tall-wrap",
             "rect": {
-              "x": 0.3489,
+              "x": 0.3642,
               "y": 0.1697,
-              "w": 0.3656,
-              "h": 0.502
+              "w": 0.3338,
+              "h": 0.4166
             },
             "tint": true
           },

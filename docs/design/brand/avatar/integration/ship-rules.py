@@ -27,6 +27,15 @@ import rules  # noqa: E402
 from rig import U, M, MAN, REPO  # noqa: E402
 
 PARTS = os.path.join(os.path.dirname(HERE), 'parts')
+# `--only acc:backpack,acc:bow` (env SHIP_ONLY for the pool workers) re-ships just those items; `--bodies a,b` just those
+# bodies. Everything else in the manifests / art stays exactly as shipped.
+for _i, _a in enumerate(sys.argv):
+    if _a == '--only':
+        os.environ['SHIP_ONLY'] = sys.argv[_i + 1]
+    if _a == '--bodies':
+        os.environ['SHIP_BODIES'] = sys.argv[_i + 1]
+ONLY = [k for k in os.environ.get('SHIP_ONLY', '').split(',') if k]
+ONLY_BODIES = [b for b in os.environ.get('SHIP_BODIES', '').split(',') if b]
 OVERLAP = 0.01        # a pendant goes 'under' when it covers more than this of the letter or the face
 
 
@@ -38,6 +47,8 @@ def _worker(body):
     face, letter = lm['_']['face'], lm['_']['letter']
     out = {}
     for key, r in rules.RULES.items():
+        if ONLY and key not in ONLY:
+            continue
         o = rules.render(key, body)
         ent = dict(kind=r['kind'])
         if r['kind'] in rules.ANCHORED and not r['params'].get('pieces'):
@@ -101,7 +112,7 @@ def main():
     rules.setup()
     SI = rules.SI
     SI_WEB, SI_DROID, SI_IOS = SI.WEB, SI.DROID, SI.IOS
-    bodies = [b for b in MAN['bodies'] if '@' not in b]
+    bodies = [b for b in MAN['bodies'] if '@' not in b and (not ONLY_BODIES or b in ONLY_BODIES)]
     res = {}
     with ProcessPoolExecutor(max_workers=4) as ex:
         for body, out in ex.map(_worker, bodies):
@@ -113,6 +124,8 @@ def main():
     for p in SI.MANIFESTS:
         d = json.load(open(p))
         for key in rules.RULES:
+            if ONLY and key not in ONLY:
+                continue
             it = d['items'][key]
             kind, pid = key.split(':')
             per = {b: res[b][key] for b in bodies}

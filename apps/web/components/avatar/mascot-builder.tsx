@@ -21,7 +21,7 @@ import { DressStage, StageArt, StageClose, backdropCss, warmDressArt } from '@/c
 import { CastButton } from '@/components/ui/cast-button';
 import { artSrc } from '@/lib/art';
 import { useSeason } from '@/lib/season';
-import { ITEM_GATING_ON } from '@/lib/avatar-access';
+import { ITEM_GATING_ON, keepOwnedParts } from '@/lib/avatar-access';
 import { LockedItemCard } from './locked-item-card';
 
 /**
@@ -101,7 +101,7 @@ export function MascotBuilder({ value, onChange, initial, isPro, level, photoUrl
   const gatedLocked = React.useCallback((field: string, id: string) => ITEM_GATING_ON && !avatarPartAccess({ field, id }, accessCtx).unlocked, [accessCtx]);
   const [lockedCard, setLockedCard] = React.useState<AvatarPart[] | null>(null);
   const done = () => {
-    if (!ITEM_GATING_ON) { onSave(enforceAvatarPro(value, isPro)); return; }
+    if (!ITEM_GATING_ON) { onSave(keepOwnedParts(value, enforceAvatarPro(value, isPro), owned ?? [])); return; }
     const check = avatarSaveCheck(value, accessCtx);
     if (check.ok) onSave(value);
     else setLockedCard(check.locked);

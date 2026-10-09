@@ -5338,10 +5338,10 @@
      ],
      [
       "wrap",
-      0.1,
+      0.1328,
       0.0984,
-      0.8109,
-      0.5281
+      0.7469,
+      0.4641
      ]
     ],
     "tall": [
@@ -5354,10 +5354,10 @@
      ],
      [
       "wrap",
-      0.2812,
+      0.3,
       0.0109,
-      0.4484,
-      0.6156
+      0.4094,
+      0.5109
      ]
     ],
     "wide": [
@@ -5370,10 +5370,10 @@
      ],
      [
       "wrap",
-      0.0859,
+      0.1297,
       0.3,
-      0.8406,
-      0.3969
+      0.7547,
+      0.3453
      ]
     ],
     "blob": [
@@ -5386,10 +5386,10 @@
      ],
      [
       "wrap",
-      0.1,
+      0.1422,
       0.1812,
-      0.8109,
-      0.4578
+      0.7281,
+      0.4031
      ]
     ],
     "bean": [
@@ -5402,10 +5402,10 @@
      ],
      [
       "wrap",
-      0.2359,
+      0.2781,
       0.0703,
-      0.5625,
-      0.5234
+      0.5203,
+      0.4031
      ]
     ],
     "star": [
@@ -5418,10 +5418,10 @@
      ],
      [
       "wrap",
-      0.0875,
+      0.1234,
       0.2016,
-      0.8391,
-      0.4391
+      0.7734,
+      0.3453
      ]
     ],
     "drop": [
@@ -5434,10 +5434,10 @@
      ],
      [
       "wrap",
-      0.1641,
+      0.2078,
       0.2578,
-      0.6828,
-      0.3891
+      0.5953,
+      0.3219
      ]
     ],
     "pear": [
@@ -5450,10 +5450,10 @@
      ],
      [
       "wrap",
-      0.1766,
+      0.2266,
       0.1953,
-      0.6609,
-      0.4531
+      0.5594,
+      0.3844
      ]
     ],
     "cloud": [
@@ -5466,10 +5466,10 @@
      ],
      [
       "wrap",
-      0.0938,
+      0.1375,
       0.3031,
-      0.8234,
-      0.3906
+      0.7391,
+      0.3375
      ]
     ],
     "chunky": [
@@ -5482,10 +5482,10 @@
      ],
      [
       "wrap",
-      0.1047,
+      0.1375,
       0.0766,
-      0.8016,
-      0.5359
+      0.7375,
+      0.4672
      ]
     ],
     "mini": [
@@ -5498,10 +5498,10 @@
      ],
      [
       "wrap",
-      0.2219,
+      0.2672,
       0.425,
-      0.5672,
-      0.3063
+      0.475,
+      0.2406
      ]
     ],
     "hex": [
@@ -5514,10 +5514,10 @@
      ],
      [
       "wrap",
-      0.0875,
+      0.1359,
       0.2125,
-      0.8344,
-      0.45
+      0.7406,
+      0.3969
      ]
     ]
    }
@@ -11775,17 +11775,65 @@
   "art-av-acc-witchnight",
   "art-av-acc-wizard",
   "art-av-body-bean",
+  "art-av-body-bean-armL",
+  "art-av-body-bean-armR",
+  "art-av-body-bean-base",
+  "art-av-body-bean-feet",
   "art-av-body-blob",
+  "art-av-body-blob-armL",
+  "art-av-body-blob-armR",
+  "art-av-body-blob-base",
+  "art-av-body-blob-feet",
   "art-av-body-chunky",
+  "art-av-body-chunky-armL",
+  "art-av-body-chunky-armR",
+  "art-av-body-chunky-base",
+  "art-av-body-chunky-feet",
   "art-av-body-classic",
+  "art-av-body-classic-armL",
+  "art-av-body-classic-armR",
+  "art-av-body-classic-base",
+  "art-av-body-classic-feet",
   "art-av-body-cloud",
+  "art-av-body-cloud-armL",
+  "art-av-body-cloud-armR",
+  "art-av-body-cloud-base",
+  "art-av-body-cloud-feet",
   "art-av-body-drop",
+  "art-av-body-drop-armL",
+  "art-av-body-drop-armR",
+  "art-av-body-drop-base",
+  "art-av-body-drop-feet",
   "art-av-body-hex",
+  "art-av-body-hex-armL",
+  "art-av-body-hex-armR",
+  "art-av-body-hex-base",
+  "art-av-body-hex-feet",
   "art-av-body-mini",
+  "art-av-body-mini-armL",
+  "art-av-body-mini-armR",
+  "art-av-body-mini-base",
+  "art-av-body-mini-feet",
   "art-av-body-pear",
+  "art-av-body-pear-armL",
+  "art-av-body-pear-armR",
+  "art-av-body-pear-base",
+  "art-av-body-pear-feet",
   "art-av-body-star",
+  "art-av-body-star-armL",
+  "art-av-body-star-armR",
+  "art-av-body-star-base",
+  "art-av-body-star-feet",
   "art-av-body-tall",
+  "art-av-body-tall-armL",
+  "art-av-body-tall-armR",
+  "art-av-body-tall-base",
+  "art-av-body-tall-feet",
   "art-av-body-wide",
+  "art-av-body-wide-armL",
+  "art-av-body-wide-armR",
+  "art-av-body-wide-base",
+  "art-av-body-wide-feet",
   "art-av-brows-cheeky",
   "art-av-brows-cheeky-bean-brows",
   "art-av-brows-cheeky-blob-brows",
@@ -11910,54 +11958,6 @@
   "art-av-nose-clownstar",
   "art-av-nose-piggy",
   "art-av-nose-pointy",
-  "art-av-nose-red",
-  "art-av-body-classic-base",
-  "art-av-body-classic-feet",
-  "art-av-body-classic-armL",
-  "art-av-body-classic-armR",
-  "art-av-body-tall-base",
-  "art-av-body-tall-feet",
-  "art-av-body-tall-armL",
-  "art-av-body-tall-armR",
-  "art-av-body-wide-base",
-  "art-av-body-wide-feet",
-  "art-av-body-wide-armL",
-  "art-av-body-wide-armR",
-  "art-av-body-blob-base",
-  "art-av-body-blob-feet",
-  "art-av-body-blob-armL",
-  "art-av-body-blob-armR",
-  "art-av-body-bean-base",
-  "art-av-body-bean-feet",
-  "art-av-body-bean-armL",
-  "art-av-body-bean-armR",
-  "art-av-body-star-base",
-  "art-av-body-star-feet",
-  "art-av-body-star-armL",
-  "art-av-body-star-armR",
-  "art-av-body-drop-base",
-  "art-av-body-drop-feet",
-  "art-av-body-drop-armL",
-  "art-av-body-drop-armR",
-  "art-av-body-pear-base",
-  "art-av-body-pear-feet",
-  "art-av-body-pear-armL",
-  "art-av-body-pear-armR",
-  "art-av-body-cloud-base",
-  "art-av-body-cloud-feet",
-  "art-av-body-cloud-armL",
-  "art-av-body-cloud-armR",
-  "art-av-body-chunky-base",
-  "art-av-body-chunky-feet",
-  "art-av-body-chunky-armL",
-  "art-av-body-chunky-armR",
-  "art-av-body-mini-base",
-  "art-av-body-mini-feet",
-  "art-av-body-mini-armL",
-  "art-av-body-mini-armR",
-  "art-av-body-hex-base",
-  "art-av-body-hex-feet",
-  "art-av-body-hex-armL",
-  "art-av-body-hex-armR"
+  "art-av-nose-red"
  ]
 }

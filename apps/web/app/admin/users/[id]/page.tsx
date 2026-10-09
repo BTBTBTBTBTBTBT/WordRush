@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Crown, ShieldBan, ShieldCheck, Gamepad2, History } from 'lucide-react';
 import { modeLabel } from '@/lib/mode-labels';
 import { UserProgressionCard } from '../../components/user-progression-card';
+import { GrantItemsCard } from '../../components/grant-items-card';
 
 interface UserDetail {
   profile: any;
@@ -295,6 +296,8 @@ export default function AdminUserDetailPage() {
           )}
         </div>
       </div>
+
+      <GrantItemsCard userId={userId} />
 
       {/* Stats by Mode */}
       {stats.length > 0 && (
