@@ -41,6 +41,11 @@ Already done this morning (prep branches, review + apply at kickoff, nothing mer
 6. Wave 6 — finish
    A: 36 content rewrite, 41 "What's new in 2.8", 18 polish picks.  B: 39 old-version compat (Opus reviews), 40 screen
    readers. [Haiku] after EVERY wave: 37 shift sweep, 44 compression run, screenshot sweep → owning thread.
+   COMPOSITION GATE (founder 10-09, after the age-check screen looked pasted together): before release, a
+   screenshot sweep of EVERY new/changed screen ×3 (light, dark, Halloween) looking specifically for "bolted-on"
+   art — images placed side by side with no shared floor/lighting/shadow, props floating beside characters,
+   mismatched scales, art clipped in boxes. Each must read as one composed scene (shared ground + contact shadow,
+   overlap, same light), or it is redone before submit. Opus reviews every shot; nothing ships that looks pasted.
 7. Release (Opus): 42 Doug + Johnny builds → gates ×3 → store screenshots + captions + store text (27) → founder
    feedback (phone / live sim) → fixes → iOS 2.8 submit (auto release) + expedite + Play production → web on approval.
 8. After submit: LevelPlay setup in Chrome (ads live in the ~Nov 1 2.8.x).
