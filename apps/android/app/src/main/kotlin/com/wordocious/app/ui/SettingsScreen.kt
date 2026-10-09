@@ -292,7 +292,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon3D(Icon3DName.CROWN, 40.dp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Wordocious Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.textPrimary)
+                        Text("Wordocious Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         Text(
                             com.wordocious.app.data.SubscriptionCopy.handoff(com.wordocious.app.data.SubscriptionCopy.Store.GOOGLE).line,
                             fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,

@@ -177,7 +177,7 @@ fun PocketWaitStrip(name: String, sinceMs: Long?, avatar: @Composable () -> Unit
     }
     var play by remember { mutableStateOf(false) }
     val line = WaitingRoom.waitingStatusLine(WaitingKind.POCKET, name)
-    val waited = if (sinceMs != null) WaitingRoom.waitedSeconds(sinceMs, now) else 0.0
+    val waited: Double = if (sinceMs != null) WaitingRoom.waitedSeconds(sinceMs, now).toDouble() else 0.0
     Column(
         modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),

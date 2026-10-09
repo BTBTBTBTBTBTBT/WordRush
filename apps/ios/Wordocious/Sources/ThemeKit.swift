@@ -181,7 +181,7 @@ struct ThemeWallPreview: View {
                         .font(.system(size: 8, weight: .black, design: .rounded))
                         .foregroundColor(.white)
                         .frame(width: 13, height: 13)
-                        .background(RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Color(hex: t.hex)))
+                        .background(RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Color(hex: UInt(t.hex))))
                 }
             }
             .padding(.horizontal, 6).padding(.vertical, 6)

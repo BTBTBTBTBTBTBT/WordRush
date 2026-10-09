@@ -1082,7 +1082,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
             // Founder 10-05 (door 1): your avatar IS the way in — a tap opens the Stage; the small
             // "Dress up" tag replaces the old pencil.
             // 2.8 item 13: a custom mascot stands free on the card edge (no box); a photo keeps its frame.
-            val standing = avatarUrl == null && rememberHomeHost().pick is HomeHostPick.Mascot
+            val standing = avatarUrl == null && rememberHomeHost().pick is com.wordocious.app.data.HomeHostPick.Mascot
             Box(
                 (if (standing) Modifier.size(width = 62.dp, height = 52.dp) else Modifier)
                     .padding(bottom = 6.dp)
