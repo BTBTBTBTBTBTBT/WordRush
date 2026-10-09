@@ -3,6 +3,7 @@ import './cast-button.css';
 import type { Metadata } from 'next';
 import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
+import { themeSkinCss } from '@/lib/theme-kit';
 import { AuthProvider } from '@/lib/auth-context';
 import { StreakShieldProvider } from '@/components/providers/streak-shield-provider';
 import { DailyCompletionsProvider } from '@/lib/daily-completions-context';
@@ -106,6 +107,9 @@ export default function RootLayout({
             (inline styles only, so it renders before the stylesheet). React
             removes it on hydration; on a cold start at Home the in-app intro
             (ColdStartIntro) takes over from the same spot. */}
+        {/* Item 25: Ocean / Forest / Dark as skins, generated from theme-registry.json (surfaces, tiles, button tint, tab dock).
+            A stylesheet, so a season's inline surfaces and colorblind mode still win; server-rendered, so no flash. */}
+        <style id="theme-skin" dangerouslySetInnerHTML={{ __html: themeSkinCss() }} />
         <div
           id="app-loader"
           style={{

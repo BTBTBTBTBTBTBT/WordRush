@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BASE_THEMES, contrastRatio } from '@wordle-duel/core';
+import { BASE_THEMES, contrastRatio, themeSurfaces } from '@wordle-duel/core';
 import { THEME_REGISTRY, ambientSrc, seasonalEntry, themeLook, themeWallVars } from './theme-kit';
 
 const ROOT = join(__dirname, '..', '..', '..');
@@ -53,5 +53,38 @@ describe('theme registry (item 25)', () => {
     expect(h.title).toBe('Seasonal — Halloween');
     expect(h.previewTiles.map((t) => t.letter).join('')).toBe('WORD');
     expect(seasonalEntry(null)).toBeNull();
+  });
+
+  it('tile colors stay readable: white on the correct tile is AA', () => {
+    for (const t of THEME_REGISTRY) {
+      expect(contrastRatio('#FFFFFF', (t as unknown as { tiles: { correct: string } }).tiles.correct), `${t.id} correct tile`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('derived surfaces keep every ink readable (hover / raised / border washes included)', () => {
+    for (const t of THEME_REGISTRY) {
+      for (const [scheme, look] of [['light', t.light], ['dark', t.dark]] as const) {
+        if (!look) continue;
+        const s = themeSurfaces(look);
+        for (const bg of [s.surface, s.surfaceHover, s.surfaceAlt]) {
+          expect(contrastRatio(s.text, bg), `${t.id} ${scheme} text on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          expect(contrastRatio(s.textSecondary, bg), `${t.id} ${scheme} secondary on ${bg}`).toBeGreaterThanOrEqual(4.5);
+          expect(contrastRatio(s.textMuted, bg), `${t.id} ${scheme} muted on ${bg}`).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+  });
+
+  it('theme-surfaces-fixtures.json pins the derived tokens (Swift + Kotlin read the same file)', () => {
+    const out: Record<string, unknown> = { _doc: 'Derived surface tokens per theme + scheme (core theme-surfaces.ts). Regenerate: UPDATE_THEME_FIXTURES=1 vitest run lib/theme-registry.test.ts. Swift (ThemeSurfaces.swift) + Kotlin (ThemeSurfaces.kt) tests read this file.' };
+    for (const t of THEME_REGISTRY) {
+      for (const [scheme, look] of [['light', t.light], ['dark', t.dark]] as const) if (look) out[`${t.id}:${scheme}`] = themeSurfaces(look);
+    }
+    const path = join(ROOT, 'packages/core/src/theme-surfaces-fixtures.json');
+    const text = JSON.stringify(out, null, 2) + '\n';
+    if (process.env.UPDATE_THEME_FIXTURES === '1') writeFileSync(path, text);
+    expect(read('packages/core/src/theme-surfaces-fixtures.json')).toBe(text);
+    expect(read('apps/ios/Tests/Fixtures/theme-surfaces-fixtures.json')).toBe(text);
+    expect(read('apps/android/app/src/test/resources/fixtures/theme-surfaces-fixtures.json')).toBe(text);
   });
 });

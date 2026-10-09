@@ -59,6 +59,9 @@ final class ThemeManager: ObservableObject {
         seasonOptOut = next.seasonOptOut
         CastSkin.invalidate()
         seasonEpoch += 1
+        // The widget wears the theme too (item 25); the opt-out follows the account (item 24).
+        Task { @MainActor in WidgetBridge.refresh() }
+        Task { await ThemeSync.push(next.seasonOptOut) }
     }
 
     /// High-contrast tile palette (orange=correct, blue=present) for red-green
@@ -87,6 +90,8 @@ final class ThemeManager: ObservableObject {
         if let look = SeasonKit.surfaces {
             return look.palette(over: Self.palettes[look.dark ? "dark" : "default"]!)
         }
+        // Item 25: Ocean / Forest / Dark read the theme registry (surfaces derived from its card / ink / accent).
+        if theme != "default", let p = ThemeKit.palette(theme) { return p }
         return Self.palettes[theme] ?? Self.palettes["default"]!
     }
 
@@ -145,4 +150,39 @@ final class ThemeManager: ObservableObject {
             surfaceHover: Color(hex: 0xE8F2E4), textPrimary: Color(hex: 0x1F3320),
             textMuted: Color(hex: 0x7A8C72), textSecondary: Color(hex: 0x56684F)),
     ]
+}
+
+/// Item 24: the Seasonal opt-out follows the account (profiles.season_opt_out), same rules as web: a pick writes it,
+/// and another device's choice is adopted once when this device has none. A missing column (migration not applied)
+/// or being signed out is silently ignored; the local choice always holds.
+enum ThemeSync {
+    private struct Row: Encodable {
+        let season_opt_out: String?
+        // Encode the null too, so "Seasonal again" clears the column (synthesized Encodable would omit it).
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(season_opt_out, forKey: .season_opt_out)
+        }
+        enum CodingKeys: String, CodingKey { case season_opt_out }
+    }
+    private struct Remote: Decodable { let season_opt_out: String? }
+
+    static func push(_ value: String?) async {
+        guard let id = await MainActor.run(body: { AuthService.shared.profile?.id }) else { return }
+        _ = try? await AuthService.shared.client.from("profiles").update(Row(season_opt_out: value)).eq("id", value: id).execute()
+    }
+
+    /// Adopt the account's opt-out when this device has none (call after the profile loads).
+    static func pull() async {
+        guard let id = await MainActor.run(body: { AuthService.shared.profile?.id }) else { return }
+        let remote: Remote? = try? await AuthService.shared.client.from("profiles").select("season_opt_out").eq("id", value: id).single().execute().value
+        guard let value = remote?.season_opt_out, !value.isEmpty else { return }
+        await MainActor.run {
+            let tm = ThemeManager.shared
+            guard tm.seasonOptOut == nil else { return }
+            tm.seasonOptOut = value
+            CastSkin.invalidate()
+            tm.seasonEpoch += 1
+        }
+    }
 }

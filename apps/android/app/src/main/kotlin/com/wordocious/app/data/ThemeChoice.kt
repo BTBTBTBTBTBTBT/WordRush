@@ -1,6 +1,8 @@
 package com.wordocious.app.data
 
 import com.wordocious.core.Season
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.launch
 
 /**
  * Theme choice + the "Seasonal" row (FRIDAY-QUEUE items 24 + 25). Port of core theme-choice.ts, pinned by
@@ -50,4 +52,41 @@ object ThemeChoiceRules {
 
     /** A registry id as the stored Android key. */
     fun toStored(id: String): String = if (id == "default") "light" else id
+}
+
+/**
+ * Item 24: the Seasonal opt-out follows the account (profiles.season_opt_out), same rules as web / iOS: a pick writes
+ * it, and another device's choice is adopted once when this device has none. A missing column (migration not
+ * applied) or being signed out is silently ignored; the local choice always holds.
+ */
+object ThemeSync {
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+
+    @kotlinx.serialization.Serializable
+    private data class Remote(@kotlinx.serialization.SerialName("season_opt_out") val seasonOptOut: String? = null)
+
+    fun push(value: String?) {
+        val uid = AuthService.userId ?: return
+        scope.launch {
+            runCatching {
+                SupabaseConfig.client.postgrest["profiles"].update({ set<String?>("season_opt_out", value) }) { filter { eq("id", uid) } }
+            }
+        }
+    }
+
+    /** Adopt the account's opt-out when this device has none (call after the profile loads). */
+    fun pull() {
+        val uid = AuthService.userId ?: return
+        scope.launch {
+            val remote = runCatching {
+                SupabaseConfig.client.postgrest["profiles"]
+                    .select(io.github.jan.supabase.postgrest.query.Columns.raw("season_opt_out")) { filter { eq("id", uid) } }
+                    .decodeSingleOrNull<Remote>()?.seasonOptOut
+            }.getOrNull()
+            if (remote.isNullOrBlank()) return@launch
+            if (SettingsPref.get(com.wordocious.app.ui.SeasonSkins.OPT_OUT_KEY, "").isNotBlank()) return@launch
+            SettingsPref.set(com.wordocious.app.ui.SeasonSkins.OPT_OUT_KEY, remote)
+            android.os.Handler(android.os.Looper.getMainLooper()).post { com.wordocious.app.ui.SeasonSkins.bumpEpoch() }
+        }
+    }
 }

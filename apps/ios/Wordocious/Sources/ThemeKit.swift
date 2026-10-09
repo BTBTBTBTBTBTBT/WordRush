@@ -25,10 +25,13 @@ enum ThemeKit {
         let opacity: Double
     }
 
+    struct Tiles: Decodable { let correct: String; let present: String }
+
     struct Entry: Decodable {
         let id: String
         let title: String
         let subtitle: String
+        let tiles: Tiles
         let light: Look?
         let dark: Look
         let ambient: Ambient
@@ -81,6 +84,67 @@ enum ThemeKit {
         guard theme != "default", !seasonActive else { return nil }
         return look(theme, dark: theme == "dark")
     }
+}
+
+// MARK: - The skin: every slot a theme paints reads the registry (season skins still win on top)
+
+extension ThemeKit {
+    /// The active non-default theme's entry (nil for Default). Season surfaces take precedence in each caller.
+    static var skin: Entry? {
+        let id = ThemeManager.shared.theme
+        return id == "default" ? nil : entry(id)
+    }
+
+    private static var skinLook: Look? { skin.map { $0.light ?? $0.dark } }
+
+    private static func tokens(_ l: Look) -> ThemeSurfaces.Tokens {
+        ThemeSurfaces.tokens(.init(card: l.card, ink: l.ink, inkSecondary: l.inkSecondary, accent: l.accent, tabBar: l.tabBar))
+    }
+
+    private static var paletteCache: [String: ThemePalette] = [:]
+
+    /// The card / border / ink tokens for a theme, derived from its registry look (Ocean / Forest / Dark).
+    static func palette(_ id: String) -> ThemePalette? {
+        if let hit = paletteCache[id] { return hit }
+        guard id != "default", let e = entry(id) else { return nil }
+        let l = e.light ?? e.dark
+        let t = tokens(l)
+        func c(_ h: String) -> Color { Color(hexString: h) ?? .gray }
+        let wall = l.wall
+        var p = ThemePalette(
+            background: c(wall[1]), backgroundGradientEnd: c(wall[2]),
+            surface: c(t.surface), border: c(t.border), borderAlt: c(t.borderAlt), borderLight: c(t.borderLight),
+            divider: c(t.divider), surfaceAlt: c(t.surfaceAlt), surfaceHover: c(t.surfaceHover),
+            textPrimary: c(t.text), textMuted: c(t.textMuted), textSecondary: c(t.textSecondary))
+        if e.light == nil, let night = ThemeManager.palettes["dark"] {   // Dark keeps its win / loss / gold pills
+            p.winBG = night.winBG; p.lossBG = night.lossBG; p.winText = night.winText; p.lossText = night.lossText
+            p.highlightGold = night.highlightGold; p.goldBorder = night.goldBorder; p.goldBorderLight = night.goldBorderLight
+        }
+        paletteCache[id] = p
+        return p
+    }
+
+    /// The helper-pill tint: the theme's accent.
+    static var buttonTint: Color? { skinLook.flatMap { Color(hexString: $0.accent) } }
+    /// The quiet-pill tint: the accent softened toward the card.
+    static var quietTint: Color? {
+        guard let l = skinLook else { return nil }
+        return Color(hexString: ThemeSurfaces.mix(l.accent, l.card, 0.35))
+    }
+    /// The board's correct / present tile colors (colorblind mode still wins in Theme).
+    static var tileCorrect: Color? { skin.flatMap { Color(hexString: $0.tiles.correct) } }
+    static var tilePresent: Color? { skin.flatMap { Color(hexString: $0.tiles.present) } }
+    /// The bottom nav's fill (top -> bottom), its top edge and the selected ink.
+    static var tabGradient: [Color]? {
+        guard let l = skinLook else { return nil }
+        let t = tokens(l)
+        let top = ThemeSurfaces.mix(t.tabBar, "#FFFFFF", skin?.id == "dark" ? 0.06 : 0.35)
+        return [Color(hexString: top), Color(hexString: t.tabBar)].compactMap { $0 }
+    }
+    static var tabEdge: Color? { skinLook.flatMap { Color(hexString: tokens($0).tabEdge) } }
+    static var tabInk: Color? { skinLook.flatMap { Color(hexString: $0.accent) } }
+    /// The accent page headlines (bubble lettering) wear.
+    static var headlineAccent: Color? { buttonTint }
 }
 
 extension ThemeKit.Look {

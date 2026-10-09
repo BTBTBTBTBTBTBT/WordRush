@@ -47,6 +47,17 @@ enum WidgetBridge {
         var flawless: Bool? = nil
         var flawlessStreak: Int? = nil
         var seasonHalloween: Bool? = nil
+        /// Item 25: the Ocean / Forest / Dark skin (nil for Default or while a season skin shows).
+        var theme: ThemeSkin? = nil
+
+        struct ThemeSkin: Codable {
+            let wall: [String]
+            let glow: String
+            let ink: String
+            let inkSecondary: String
+            let accent: String
+            let dark: Bool
+        }
     }
 
     /// One widget chip per mode, with the home-menu icon spec flattened for JSON.
@@ -104,7 +115,8 @@ enum WidgetBridge {
                             puzzleStreaks: HomeStreaksService.cachedStreaks(.puzzles),
                             flawless: !modes.isEmpty && modes.allSatisfy { $0.won },
                             flawlessStreak: MatchStatsService.cachedFlawlessStreak(),
-                            seasonHalloween: flags.isLive("season_halloween"))
+                            seasonHalloween: flags.isLive("season_halloween"),
+                            theme: Self.themeSkin())
         guard let data = try? JSONEncoder().encode(snap) else { return }
         // FINISH_SPEC BJ3: Home calls this on every appear (each tab return, each game
         // closed); an unchanged snapshot is neither rewritten nor sent to WidgetKit
@@ -125,6 +137,14 @@ enum WidgetBridge {
     static func refresh() {
         guard let c = lastCompletions else { return }
         update(completions: c)
+    }
+
+    /// Item 25: the active theme's skin for the widget (the extension has no registry): wall stops, glow and inks.
+    @MainActor
+    private static func themeSkin() -> Snapshot.ThemeSkin? {
+        guard SeasonKit.current == nil, let e = ThemeKit.skin else { return nil }
+        let l = e.light ?? e.dark
+        return Snapshot.ThemeSkin(wall: l.wall, glow: l.glow, ink: l.ink, inkSecondary: l.inkSecondary, accent: l.accent, dark: e.light == nil)
     }
 
     /// BJ3: the last snapshot handed to the widget this launch.

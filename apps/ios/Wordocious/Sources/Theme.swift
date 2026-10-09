@@ -44,8 +44,8 @@ enum Theme {
     // high-contrast palette (orange=correct, blue=present) for red-green
     // color blindness, matching the web [data-colorblind] overrides.
     private static var cb: Bool { ThemeManager.shared.colorblind }
-    static var correct: Color { cb ? Color(hex: 0xF5793A) : Color(hex: 0x7C3AED) } // orange / violet-600
-    static var present: Color { cb ? Color(hex: 0x85C0F9) : Color(hex: 0xF59E0B) } // blue / amber-500
+    static var correct: Color { cb ? Color(hex: 0xF5793A) : (ThemeKit.tileCorrect ?? Color(hex: 0x7C3AED)) } // orange / theme / violet-600
+    static var present: Color { cb ? Color(hex: 0x85C0F9) : (ThemeKit.tilePresent ?? Color(hex: 0xF59E0B)) } // blue / theme / amber-500
     static let absent = Color(hex: 0x64748B)             // slate-500
     static let emptyBorder = Color(hex: 0xD1D5DB)        // Tailwind gray-300 (web board empty tile)
     static let keyDefault = Color(hex: 0xE8E5F0)

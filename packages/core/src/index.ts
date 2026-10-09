@@ -51,3 +51,4 @@ export * from './feature-switches';
 export * from './age-check';
 export * from './push-rich';
 export * from './theme-choice';
+export * from './theme-surfaces';
