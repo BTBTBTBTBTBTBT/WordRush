@@ -16,7 +16,7 @@ Already done this morning (prep branches, review + apply at kickoff, nothing mer
    puzzle-difficulty to future dates (cutover/sha/parity/near + guard test incl. FUTON), tests ×3, thread specs.
    [Haiku] finish inventories (headlines, plain surfaces, copy, share paths) + 43 capacity numbers.
    [Sonnet art driver] alphabet, buttons, toasts/chips, age-check screen, Halloween icon + widgets, push visuals,
-   invite images, streak badges/tiers (48).
+   invite images, streak badges/tiers (48); new body shapes (50) start early so wave 5 can rig them.
 1. Wave 1 — foundations + must-fix
    A: 6 lettering + no-clip guard, 14 scroll header, 8 shared tile, 23 every button + guard, 44 compression (finish
       the dry run, then apply with the quality guard).
@@ -34,7 +34,8 @@ Already done this morning (prep branches, review + apply at kickoff, nothing mer
       11/11b Leaderboard stage, 16 Stats, 17 profiles, 20 Go Pro.
    B: 25 full themes + Settings, 24 Seasonal theme row + costumed opening, 15 living wallpapers + 45 trims.
 5. Wave 5 — content + maker + sound
-   A: 5/5b subculture + sports packs, Pro try-on popup, admin item grants.
+   A: 5/5b subculture + sports packs, 50 new body shapes (~30+, autofit via #41/#47), Pro try-on popup, admin
+      item grants.
    B: 46 every share image (+ 3), 4/4b musical cast + 49 Halloween public-domain tunes + Halloween intro jingle,
       2 Sound Library (founder listens to 49 there before ship).
 6. Wave 6 — finish
@@ -919,3 +920,16 @@ second game on the puzzles list")
 - Intro jingle: a Halloween re-orchestration of the existing jingle (same melody, minor-key/spooky instruments, a
   bell + organ swell), via a seasonal sound slot in the registry (future seasons get their own). Founder gives a quick
   listen/OK in the Sound Library (2) before it ships; normal jingle returns Nov 1 with the season.
+
+## 50. Many more body shapes (founder 10-09) — 12 today → ~30+
+- Built on the cloud landmark fitting (#41) + body rigs (#47, one-command rig-body): drop new body art in → landmarks
+  extracted → every existing item refits by rule → audit guards (arms, face, letter, outline, floating) → contact
+  sheet of every item on every new body, looked at before shipping. Sizes (XS–XL, chunky, lanky) from the same art.
+- New shapes, family style (chubby, clear letter area, stubby arms/feet, on the cast's look), e.g. heart, moon, egg,
+  pear, bell, triangle, diamond, capsule, squircle, shield, star-burst, flower, gumdrop, can/cylinder, crescent,
+  cat-ear block, bunny-ear block, teardrop (drop exists), puffy hexagon variants, blob; seasonal shapes as data
+  (pumpkin, ghost for Halloween — free in season, then buy/Pro/earn like other seasonal items).
+- Art in free ChatGPT on the body template (same lighting/gloss as the 12), keyed + rigged; some free, many Pro
+  (try-on popup); mascot maker Body tab shows them in a tidy grid with the new shapes tagged NEW.
+- Any item that can't fit a new body by rule gets a per-body override or is hidden on that body (never ships
+  broken). Runs in wave 5 A right after the 5/5b packs (shared pipeline).
