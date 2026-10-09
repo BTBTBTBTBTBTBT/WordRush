@@ -221,23 +221,23 @@ public enum AvatarCatalog {
     public static let heads = ["none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "bow", "wizard", "pirate",
                                "cowboy", "chef", "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara",
                                "viking", "sweatband",
-                               "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow",
+                               "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "goth-skull-bow", "goth-bat-wing-clip",
                                "pombeanie", "bearears", "mohawk",
                                // seasonal (avatar-parts.json `season`; AvatarSeason decides when they show): Halloween 10-05
                                "pumpkinhat", "candycornhat", "witchnight", "batears"]
     /// Face extras (AN addendum + round 2).
-    public static let faces = ["none", "mustache", "heart-glasses", "monocle", "starglasses", "roundglasses", "eyepatch",
+    public static let faces = ["none", "mustache", "heart-glasses", "monocle", "starglasses", "goth-bat-sunglasses", "roundglasses", "eyepatch",
                                "facepaint", "mask", "curlymustache"]
     /// Neck / back extras (AN addendum + round 2). Pro-only: wings, chain.
-    public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar",
+    public static let necks = ["none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "goth-moon-pendant", "backpack", "bubbletea", "guitar",
                                "supercape", "fairywings", "batwings", "cattail"]
     /// 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on.
-    public static let held = ["none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella",
+    public static let held = ["none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella", "goth-lace-umbrella", "goth-purple-lantern",
                               "icecream", "spatula", "mic", "wand-star", "candypail"]
     /// Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter).
     public static let wraps = ["none", "bandana", "belt", "apron", "lei", "cape-drape", "vampirecollar"]
-    public static let feet = ["none", "sneakers", "boots", "slippers", "skates"]
-    public static let pets = ["none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat"]
+    public static let feet = ["none", "sneakers", "boots", "goth-platform-boots", "slippers", "skates"]
+    public static let pets = ["none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat", "goth-black-cat-plush"]
     public static let brows = ["none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy"]
     public static let extras = ["none", "sweat", "tear", "steam", "heart"]
     /// The integrated config fields + their options, in the maker's tab order.

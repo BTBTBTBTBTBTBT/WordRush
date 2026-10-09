@@ -22,6 +22,12 @@ object AvatarSeason {
         else -> AvatarOptions.INTEGRATED.firstOrNull { it.first == field }?.second ?: emptyList()
     }
 
+    /** A 2.8 pack item's explicit access in the manifest: true = Pro, false = free, null = today's lists decide. */
+    fun partManifestPro(field: String, id: String, m: AvatarFitManifest): Boolean? {
+        if (id.isEmpty() || id == "none" || field == "body" || field !in AvatarFit.PART_FIELDS) return null
+        return m.items[AvatarFit.itemKey(field, id)]?.pro
+    }
+
     /** The season a part belongs to, or null for an everyday part. */
     fun partSeason(field: String, id: String, m: AvatarFitManifest): String? {
         if (id.isEmpty() || id == "none") return null

@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { AVATAR_BACKDROPS, AVATAR_FACES, AVATAR_HEADS, AVATAR_NECKS, AVATAR_BODIES, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, nearestAvatarColor, validateAvatar } from './avatar-config';
 import parts from './avatar-parts.json';
+import { AVATAR_MANIFEST } from './avatar-layout';
 
 describe('avatar config (FINISH_SPEC AN3)', () => {
   it('has the spec catalog sizes', () => {
     expect(AVATAR_BODIES).toHaveLength(30);   // 12 + the 18 new 2.8 shapes (item 50)
     expect(AVATAR_COLORS).toHaveLength(38);
     expect(AVATAR_COLORS.filter((c) => !c.pro)).toHaveLength(33);
-    expect(AVATAR_HEADS.filter((h) => h !== 'none')).toHaveLength(37);   // 33 + 4 Halloween (10-05)
-    expect([...AVATAR_FACES, ...AVATAR_NECKS].filter((x) => x !== 'none')).toHaveLength(22);   // + bat wings, cat tail
+    // the 2.8 pack items (manifest `pack`, new-items-spec.json) are counted by their own tests: this pins the base catalog
+    const base = (ids: readonly string[]) => ids.filter((x) => x !== 'none' && !AVATAR_MANIFEST.items[`acc:${x}`]?.pack);
+    expect(base(AVATAR_HEADS)).toHaveLength(37);   // 33 + 4 Halloween (10-05)
+    expect(base([...AVATAR_FACES, ...AVATAR_NECKS])).toHaveLength(22);   // + bat wings, cat tail
     expect(AVATAR_BACKDROPS).toHaveLength(18);
   });
   it('gives every player a deterministic friendly default in their accent', () => {

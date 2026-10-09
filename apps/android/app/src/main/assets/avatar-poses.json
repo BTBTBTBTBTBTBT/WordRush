@@ -1871,27 +1871,36 @@
   "hips": {
    "bean": [
     "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:pencil-big"
    ],
    "bell": [
     "acc:book",
     "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:trophy"
    ],
    "blob": [
     "acc:candypail"
    ],
    "bunnyear": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella"
    ],
    "can": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "catear": [
     "acc:candypail"
    ],
    "chunky": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "classic": [
     "acc:candypail"
@@ -1900,16 +1909,22 @@
     "acc:candypail"
    ],
    "cone": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "egg": [
     "acc:candypail"
    ],
    "ghost": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "gumdrop": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "hex": [
     "acc:candypail"
@@ -1917,21 +1932,29 @@
    "mini": [
     "acc:book",
     "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:trophy"
    ],
    "moon": [
     "acc:candypail"
    ],
    "potato": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "tall": [
     "acc:book",
     "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:trophy"
    ],
    "triangle": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "wide": [
     "acc:candypail"
@@ -1942,12 +1965,16 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:trophy"
    ],
    "bean": [
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -1962,6 +1989,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -1976,6 +2005,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -1990,6 +2021,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2004,6 +2037,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:pencil-big",
     "acc:trophy",
@@ -2013,6 +2048,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2027,6 +2064,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2041,6 +2080,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2055,6 +2096,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2069,6 +2112,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2082,6 +2127,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2093,11 +2140,15 @@
     "acc:wand-star"
    ],
    "diamond": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern"
    ],
    "drop": [
     "acc:book",
     "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:medal",
     "acc:trophy"
    ],
@@ -2105,6 +2156,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2119,6 +2172,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:pencil-big",
     "acc:trophy",
     "acc:umbrella"
@@ -2127,6 +2182,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2141,6 +2198,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2154,12 +2213,16 @@
    "heart": [
     "acc:book",
     "acc:candypail",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:trophy"
    ],
    "hex": [
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2174,6 +2237,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2187,6 +2252,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:pencil-big",
     "acc:spatula",
     "acc:trophy",
@@ -2196,6 +2263,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:mic",
     "acc:pencil-big",
@@ -2208,6 +2277,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2222,6 +2293,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:mug",
     "acc:pencil-big",
     "acc:trophy",
@@ -2231,18 +2304,23 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:pencil-big",
     "acc:trophy",
     "acc:umbrella"
    ],
    "star": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella"
    ],
    "tall": [
     "acc:balloon",
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2257,6 +2335,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:magnifier",
     "acc:mic",
@@ -2271,6 +2351,8 @@
     "acc:book",
     "acc:candypail",
     "acc:flashlight",
+    "acc:goth-lace-umbrella",
+    "acc:goth-purple-lantern",
     "acc:icecream",
     "acc:mic",
     "acc:mug",
@@ -2319,7 +2401,8 @@
     "acc:candypail"
    ],
    "bell": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella"
    ],
    "cone": [
     "acc:candypail"
@@ -2328,11 +2411,13 @@
     "acc:candypail"
    ],
    "mini": [
-    "acc:candypail"
+    "acc:candypail",
+    "acc:goth-lace-umbrella"
    ],
    "tall": [
     "acc:candypail",
-    "acc:flashlight"
+    "acc:flashlight",
+    "acc:goth-lace-umbrella"
    ]
   }
  }

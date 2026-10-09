@@ -18,7 +18,7 @@
 // token the component swaps for its own unique id.
 
 import {
-  AVATAR_BACKDROPS, AVATAR_BACKDROP_IDS, AVATAR_BODIES, AVATAR_NEW_BODIES, AVATAR_COLORS, AVATAR_EYES, AVATAR_FACES, AVATAR_FRAMES,
+  AVATAR_BACKDROPS, AVATAR_BACKDROP_IDS, AVATAR_BODIES, AVATAR_NEW_BODIES, avatarPartManifestPro, AVATAR_COLORS, AVATAR_EYES, AVATAR_FACES, AVATAR_FRAMES,
   AVATAR_HEADS, AVATAR_MOUTHS, AVATAR_NECKS, AVATAR_NOSES, AVATAR_PATTERNS, AVATAR_PRO_ONLY, avatarColorHex, levelTier,
   AVATAR_CHEEKS, AVATAR_INTEGRATED_OPTIONS, AVATAR_NEW_PARTS, avatarColor, avatarLayout, avatarPatternShapes, avatarPickConflict,
   type AvatarBody, type AvatarColor, type AvatarConfig, type AvatarFrame, type AvatarHead, type AvatarPatternShape, type AvatarRect,
@@ -1292,6 +1292,7 @@ export function avatarOptionIds(field: BuilderField): readonly string[] {
 
 /** Pro-only options (core AVATAR_PRO_ONLY): free players see the gold PRO pill → the Go Pro popup. */
 export function avatarProOnly(field: BuilderField, id: string): boolean {
+  if (avatarPartManifestPro(field, id) === true) return true;   // 2.8 packs: the manifest's `pro` flag
   const key = field === 'patternColor' || field === 'accColor' ? 'color' : field;
   const list = (AVATAR_PRO_ONLY as Record<string, readonly string[] | undefined>)[key];
   return !!list && list.includes(id);

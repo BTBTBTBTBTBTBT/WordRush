@@ -219,6 +219,11 @@ def rule_for(field, pid):
     season = season_of(field, pid)
     if season:     # seasonal parts NEVER disappear (founder 10-07): free in their season, then Pro or buy (earn per item)
         return {"season": season, "pro": True, "buy": SEASON_BUY}
+    flag = PARTS["items"].get(f"{FIELD_KIND.get(field, 'acc')}:{pid}", {}).get("pro")    # 2.8 packs: the manifest's explicit flag
+    if flag is False:
+        return {"free": True}
+    if flag is True:
+        return {"pro": True, "buy": DEFAULT_TIER[field]}
     if pid in STARTER[field]:
         return {"free": True}
     over = RULES.get(field, {}).get(pid)

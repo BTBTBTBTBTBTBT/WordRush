@@ -746,6 +746,13 @@
       "pro": true,
       "buy": "t2"
     },
+    "head:goth-skull-bow": {
+      "free": true
+    },
+    "head:goth-bat-wing-clip": {
+      "pro": true,
+      "buy": "t2"
+    },
     "head:pombeanie": {
       "pro": true,
       "buy": "t2"
@@ -811,6 +818,9 @@
         "label": "Reach the top rank in Hubbub"
       }
     },
+    "face:goth-bat-sunglasses": {
+      "free": true
+    },
     "face:roundglasses": {
       "free": true
     },
@@ -868,6 +878,10 @@
         "achievement": "medal_10",
         "label": "Earn 10 medals"
       }
+    },
+    "neck:goth-moon-pendant": {
+      "pro": true,
+      "buy": "t2"
     },
     "neck:backpack": {
       "pro": true,
@@ -958,6 +972,14 @@
       "pro": true,
       "buy": "t2"
     },
+    "held:goth-lace-umbrella": {
+      "pro": true,
+      "buy": "t2"
+    },
+    "held:goth-purple-lantern": {
+      "pro": true,
+      "buy": "t2"
+    },
     "held:icecream": {
       "pro": true,
       "buy": "t2"
@@ -1026,6 +1048,10 @@
         "label": "Solve 25 Letter Ladders"
       }
     },
+    "feet:goth-platform-boots": {
+      "pro": true,
+      "buy": "t1"
+    },
     "feet:slippers": {
       "pro": true,
       "buy": "t1"
@@ -1085,6 +1111,9 @@
       "season": "halloween",
       "pro": true,
       "buy": "t2"
+    },
+    "pet:goth-black-cat-plush": {
+      "free": true
     },
     "frame:bronze": {
       "earn": {

@@ -28,6 +28,12 @@ function options(field: string): readonly string[] {
   return (AVATAR_INTEGRATED_OPTIONS as Record<string, readonly string[]>)[field] ?? [];
 }
 
+/** A 2.8 pack item's explicit access in the manifest: true = Pro, false = free, undefined = today's lists decide. */
+export function avatarPartManifestPro(field: string, id: string, manifest: AvatarManifest = AVATAR_MANIFEST): boolean | undefined {
+  if (!id || id === 'none' || field === 'body') return undefined;
+  return (manifest.items[avatarItemKey(field as AvatarPartField, id)] as { pro?: boolean } | undefined)?.pro;
+}
+
 /** The season a part belongs to (avatar-parts.json `season`), or null for an everyday part. */
 export function avatarPartSeason(field: string, id: string, manifest: AvatarManifest = AVATAR_MANIFEST): string | null {
   if (!id || id === 'none') return null;

@@ -18,7 +18,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 - Not listed (always free): every `none`, the solid pattern, the auto backdrop, the default accessory color.
 - A part the player already **saved** is never stripped (grandfathered) even if it's gated later.
 
-**Totals** (259 options): 60 starter-free · 195 in Pro · 193 buyable · 60 earnable · 15 seasonal.
+**Totals** (267 options): 63 starter-free · 200 in Pro · 198 buyable · 60 earnable · 15 seasonal.
 
 ## Recommended free starter set
 
@@ -267,6 +267,8 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | witch | Pro · buy $1.99 |
 | astronaut | Pro · buy $2.99 · earn: Reach level 50 (`level` ≥ 50) |
 | bigbow | Pro · buy $1.99 |
+| goth-skull-bow | free (starter) |
+| goth-bat-wing-clip | Pro · buy $1.99 |
 | pombeanie | Pro · buy $1.99 |
 | bearears | Pro · buy $1.99 |
 | mohawk | Pro · buy $2.99 · earn: Keep a 100-day play streak (`bestStreak` ≥ 100) |
@@ -283,6 +285,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | heart-glasses | Pro · buy $0.99 · earn: Send 25 reactions (achievement `cheerleader`) |
 | monocle | Pro · buy $1.99 · earn: Beat Webster, the final boss (achievement `boss_battle`) |
 | starglasses | Pro · buy $1.99 · earn: Reach the top rank in Hubbub (achievement `hive_mind`) |
+| goth-bat-sunglasses | free (starter) |
 | roundglasses | free (starter) |
 | eyepatch | Pro · buy $0.99 |
 | facepaint | Pro · buy $0.99 |
@@ -299,6 +302,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | scarf | free (starter) |
 | chain | Pro · buy $2.99 · earn: Earn 50 gold medals (achievement `gold_rush`) |
 | medal | Pro · buy $0.99 · earn: Earn 10 medals (achievement `medal_10`) |
+| goth-moon-pendant | Pro · buy $1.99 |
 | backpack | Pro · buy $1.99 |
 | bubbletea | Pro · buy $1.99 |
 | guitar | Pro · buy $1.99 · earn: Win 3 dailies in under 60 seconds each in one day (achievement `hat_trick`) |
@@ -319,6 +323,8 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | magnifier | Pro · buy $0.99 · earn: Solve 25 Spyglass word searches (achievement `sharp_spotter`) |
 | flashlight | Pro · buy $0.99 · earn: Solve 25 Codebreakers (achievement `code_cracker`) |
 | umbrella | Pro · buy $1.99 |
+| goth-lace-umbrella | Pro · buy $1.99 |
+| goth-purple-lantern | Pro · buy $1.99 |
 | icecream | Pro · buy $1.99 |
 | spatula | Pro · buy $1.99 |
 | mic | Pro · buy $1.99 · earn: Win 10 VS matches in a row (achievement `untouchable`) |
@@ -342,6 +348,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 |---|---|
 | sneakers | free (starter) |
 | boots | Pro · buy $0.99 · earn: Solve 25 Letter Ladders (achievement `ladder_climber`) |
+| goth-platform-boots | Pro · buy $0.99 |
 | slippers | Pro · buy $0.99 |
 | skates | Pro · buy $1.99 · earn: Finish the Daily Sweep in under 15 minutes (achievement `speed_sweep`) |
 
@@ -356,6 +363,7 @@ players except a small starter set, everything try-on-able). The mechanism reads
 | bat | free in halloween season · Pro · buy $1.99 |
 | ghost | free in halloween season · Pro · buy $1.99 |
 | blackcat | free in halloween season · Pro · buy $1.99 |
+| goth-black-cat-plush | free (starter) |
 
 ### frame
 

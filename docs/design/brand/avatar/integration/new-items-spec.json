@@ -1,0 +1,201 @@
+{
+  "note": "FRIDAY-QUEUE 5b/51: one entry per shipped 2.8 item piece. Written by hand per piece (looked at against the pack contact sheet). `kind` picks the rule (INTEGRATION.md): hat / face / pendant (one art, per-body override), held / shoes / buddy (per-body pieces). `manifest` = the avatar-parts.json item entry (w, anchor, slot, layer, overlap; aspect is measured). `pro: true` = Pro, `pro: false` = free (a few per pack). `near` = the existing id it sorts after in its tab (like items together). `held` = grip point (fraction of the piece), width in hand diameters, tilt, side. Pieces NOT listed here are withheld (see `withheld`) until a builder / split exists.",
+  "collections": {
+    "goth": {
+      "label": "Goth",
+      "bonus": "goth-black-cat-plush"
+    }
+  },
+  "withheld": {
+    "goth-velvet-cape": "cape builder is hard-wired to the shipped capes; needs a generic cape rule",
+    "goth-long-side-hair": "hair frames the face: needs the hair layer (back + front split), not a hat rule",
+    "goth-winged-liner-lips": "one art over the eyes AND the mouth: split into liner (brows layer) + lips (mouth layer)",
+    "goth-lace-choker": "reads as a beard under the mouth as a one-art pendant; needs the necklace-drape builder (a chain-style wrap)"
+  },
+  "items": [
+    {
+      "id": "goth-bat-sunglasses",
+      "pack": "goth",
+      "piece": "bat-sunglasses",
+      "field": "face",
+      "kind": "face",
+      "pro": false,
+      "near": "starglasses",
+      "label": "Bat sunglasses",
+      "manifest": {
+        "w": 0.94,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "glasses",
+        "layer": "face"
+      }
+    },
+    {
+      "id": "goth-skull-bow",
+      "pack": "goth",
+      "piece": "skull-bow",
+      "field": "head",
+      "kind": "hat",
+      "pro": false,
+      "near": "bigbow",
+      "label": "Skull bow",
+      "manifest": {
+        "w": 0.62,
+        "anchor": [
+          0.5,
+          0.55
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3
+      }
+    },
+    {
+      "id": "goth-bat-wing-clip",
+      "pack": "goth",
+      "piece": "bat-wing-clip",
+      "field": "head",
+      "kind": "hat",
+      "pro": true,
+      "near": "goth-skull-bow",
+      "label": "Bat wing clip",
+      "manifest": {
+        "w": 0.9,
+        "anchor": [
+          0.5,
+          0.55
+        ],
+        "slot": "head",
+        "layer": "head",
+        "overlap": 0.3
+      }
+    },
+    {
+      "id": "goth-moon-pendant",
+      "pack": "goth",
+      "piece": "moon-pendant",
+      "field": "neck",
+      "kind": "pendant",
+      "pro": true,
+      "near": "medal",
+      "label": "Moon pendant",
+      "pendant": {
+        "k": 0.4,
+        "anchor_y": 0.02,
+        "slide": true
+      },
+      "manifest": {
+        "w": 0.4,
+        "anchor": [
+          0.5,
+          0.02
+        ],
+        "slot": "neck",
+        "layer": "neckFront"
+      }
+    },
+    {
+      "id": "goth-black-cat-plush",
+      "pack": "goth",
+      "piece": "black-cat-plush",
+      "field": "pet",
+      "kind": "buddy",
+      "pro": false,
+      "near": "blackcat",
+      "label": "Black cat plush",
+      "buddy": {
+        "where": "floor",
+        "k": 0.3
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "pet"
+      }
+    },
+    {
+      "id": "goth-platform-boots",
+      "pack": "goth",
+      "piece": "platform-boots",
+      "field": "feet",
+      "kind": "shoes",
+      "pro": true,
+      "near": "boots",
+      "label": "Platform boots",
+      "shoe_keep": 0.62,
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "feet"
+      }
+    },
+    {
+      "id": "goth-lace-umbrella",
+      "pack": "goth",
+      "piece": "lace-umbrella",
+      "field": "held",
+      "kind": "held",
+      "pro": true,
+      "near": "umbrella",
+      "label": "Lace umbrella",
+      "held": {
+        "grip": [
+          0.5,
+          0.33
+        ],
+        "w": 1.5,
+        "rot": 6,
+        "side": "R",
+        "tall": true
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "held"
+      }
+    },
+    {
+      "id": "goth-purple-lantern",
+      "pack": "goth",
+      "piece": "purple-lantern",
+      "field": "held",
+      "kind": "held",
+      "pro": true,
+      "near": "goth-lace-umbrella",
+      "label": "Purple lantern",
+      "held": {
+        "grip": [
+          0.5,
+          0.1
+        ],
+        "w": 1.4,
+        "rot": 0,
+        "side": "L",
+        "tall": false
+      },
+      "manifest": {
+        "w": 1,
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "slot": "back",
+        "layer": "held"
+      }
+    }
+  ]
+}

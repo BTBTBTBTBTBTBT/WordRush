@@ -50,6 +50,8 @@ def setup(lms=None):
     import new_pieces as _np
     PC, NP = _pc, _np
     SI = _load('ship_integrated', 'ship-integrated.py')
+    import new_items as _ni
+    _ni.register(NP, SI)
     SS = _load('ship_seasonal', 'ship-seasonal.py')
     return LMS
 
@@ -168,6 +170,8 @@ def build_rules():
         rules[f'acc:{pid}'] = BUDDY(where, k=k)
     for pid in ('sweat', 'tear', 'steam', 'heart'):
         rules[f'acc:{pid}'] = R('extra', 'the eye boxes', 'eye width × k', 'extra', 'beside the face', None)
+    import new_items as NI    # the 2.8 packs (new-items-spec.json): held / shoes / buddy / pendant rules from data
+    NI.add_rules(rules, R, HELD, BUDDY)
     missing = [k for k, it in MAN['items'].items() if k.split(':')[0] in ('acc', 'brows') and k not in rules]
     assert not missing, missing
     return rules

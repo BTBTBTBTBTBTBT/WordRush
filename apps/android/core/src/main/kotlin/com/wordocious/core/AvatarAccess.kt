@@ -174,6 +174,7 @@ object AvatarAccess {
         if (alwaysFree(field, id)) return AvatarAccessRule(free = true)
         // Seasonal parts never disappear (founder 10-07): free in their season, Pro the rest of the year.
         partSeason(field, id, m)?.let { return AvatarAccessRule(pro = true, season = it) }
+        AvatarSeason.partManifestPro(field, id, m)?.let { return if (it) AvatarAccessRule(pro = true) else AvatarAccessRule(free = true) }   // 2.8 packs
         if (field == "frame") FRAME_LEVEL[id]?.let { n -> return AvatarAccessRule(earn = AvatarEarnCondition("Reach level $n", stat = "level", min = n.toDouble())) }
         val k = if (field == "patternColor" || field == "accColor") "color" else field
         return if (AvatarOptions.PRO_ONLY[k]?.contains(id) == true) AvatarAccessRule(pro = true) else AvatarAccessRule(free = true)
@@ -301,7 +302,7 @@ object AvatarAccess {
      */
     fun enforceSeasonal(draft: AvatarConfig, ctx: AvatarAccessContext, table: AvatarAccessTable, m: AvatarFitManifest): AvatarConfig {
         val legacy = ctx.copy(gating = false)
-        val locked = wornParts(draft).filter { partSeason(it.field, it.id, m) != null && !partAccess(it, legacy, table, m).unlocked }
+        val locked = wornParts(draft).filter { (partSeason(it.field, it.id, m) != null || AvatarSeason.partManifestPro(it.field, it.id, m) == true) && !partAccess(it, legacy, table, m).unlocked }
         if (locked.isEmpty()) return draft
         var out = draft
         for (p in locked) {

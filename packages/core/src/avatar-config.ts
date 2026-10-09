@@ -35,25 +35,25 @@ export const AVATAR_CHEEKS = ['none', 'blush', 'freckles', 'hearts', 'starfreckl
 export const AVATAR_HEADS = [
   'none', 'crown', 'party', 'beanie', 'sprout', 'nightcap', 'headphones', 'bow', 'wizard', 'pirate', 'cowboy', 'chef',
   'grad', 'halo', 'flower', 'tophat', 'propeller', 'catears', 'bunnyears', 'tiara', 'viking', 'sweatband',
-  'cap', 'beret', 'minicrown', 'flowercrown', 'bucket', 'santa', 'witch', 'astronaut', 'bigbow', 'pombeanie', 'bearears', 'mohawk',
+  'cap', 'beret', 'minicrown', 'flowercrown', 'bucket', 'santa', 'witch', 'astronaut', 'bigbow', 'goth-skull-bow', 'goth-bat-wing-clip', 'pombeanie', 'bearears', 'mohawk',
   // seasonal (avatar-parts.json `season`; avatar-season.ts decides when they show): Halloween 10-05
   'pumpkinhat', 'candycornhat', 'witchnight', 'batears',
 ] as const;
 /** Face extras (AN addendum + round 2). */
-export const AVATAR_FACES = ['none', 'mustache', 'heart-glasses', 'monocle', 'starglasses', 'roundglasses', 'eyepatch', 'facepaint', 'mask', 'curlymustache'] as const;
+export const AVATAR_FACES = ['none', 'mustache', 'heart-glasses', 'monocle', 'starglasses', 'goth-bat-sunglasses', 'roundglasses', 'eyepatch', 'facepaint', 'mask', 'curlymustache'] as const;
 /** Neck / back extras (AN addendum + round 2). Pro-only: wings, chain. */
-export const AVATAR_NECKS = ['none', 'cape', 'wings', 'bowtie', 'scarf', 'chain', 'medal', 'backpack', 'bubbletea', 'guitar', 'supercape', 'fairywings', 'batwings', 'cattail'] as const;
+export const AVATAR_NECKS = ['none', 'cape', 'wings', 'bowtie', 'scarf', 'chain', 'medal', 'goth-moon-pendant', 'backpack', 'bubbletea', 'guitar', 'supercape', 'fairywings', 'batwings', 'cattail'] as const;
 /**
  * Integrated parts (founder 10-05: "the new items … so long as they don't look bolted on"; docs/design/brand/avatar/
  * INTEGRATION.md). Each one is drawn PER BODY as layer art (avatar-parts.json `pieces`): held items sit in the fist,
  * wraps follow the body's wrap line, shoes go on the feet, companions sit beside, brows + extras on the face.
  * New fields: missing in older configs (= 'none'). Ids are appended only, so stored configs stay valid.
  */
-export const AVATAR_HELD = ['none', 'mug', 'book', 'pencil-big', 'balloon', 'trophy', 'magnifier', 'flashlight', 'umbrella', 'icecream', 'spatula', 'mic', 'wand-star', 'candypail'] as const;
+export const AVATAR_HELD = ['none', 'mug', 'book', 'pencil-big', 'balloon', 'trophy', 'magnifier', 'flashlight', 'umbrella', 'goth-lace-umbrella', 'goth-purple-lantern', 'icecream', 'spatula', 'mic', 'wand-star', 'candypail'] as const;
 /** Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter). */
 export const AVATAR_WRAPS = ['none', 'bandana', 'belt', 'apron', 'lei', 'cape-drape', 'vampirecollar'] as const;
-export const AVATAR_FEET = ['none', 'sneakers', 'boots', 'slippers', 'skates'] as const;
-export const AVATAR_PETS = ['none', 'bird', 'kitten', 'puppy', 'snail', 'bat', 'ghost', 'blackcat'] as const;
+export const AVATAR_FEET = ['none', 'sneakers', 'boots', 'goth-platform-boots', 'slippers', 'skates'] as const;
+export const AVATAR_PETS = ['none', 'bird', 'kitten', 'puppy', 'snail', 'bat', 'ghost', 'blackcat', 'goth-black-cat-plush'] as const;
 /** Brows (code-drawn in the eyes' own ink; six friendly pairs, never angry). */
 export const AVATAR_BROWS = ['none', 'happy', 'worried', 'determined', 'surprised', 'cheeky', 'sleepy'] as const;
 /** Face extras: little expression marks beside the face (never over the eyes, mouth or letter). */

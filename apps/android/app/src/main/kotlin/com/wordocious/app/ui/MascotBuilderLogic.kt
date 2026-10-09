@@ -215,7 +215,8 @@ object MascotBuilderLogic {
 
     /** AA4 + addendum ★: the option is Pro only (crown / halo / tiara, wings / gold chain, aurora / galaxy, diamond / Pro frames). */
     fun isProOnly(o: BuilderOption): Boolean =
-        AvatarOptions.isProOnly(if (o.slot in SWATCH_SLOTS) "color" else o.slot, o.id)
+        AvatarOptions.isProOnly(if (o.slot in SWATCH_SLOTS) "color" else o.slot, o.id) ||
+            (fit?.let { AvatarSeason.partManifestPro(o.slot, o.id, it) } == true)   // 2.8 packs: the manifest's `pro` flag
 
     /** A free player sees the PRO pill and the tap opens the paywall. Pro players are never locked. */
     fun proLocked(o: BuilderOption, isPro: Boolean): Boolean = !isPro && isProOnly(o)
@@ -306,6 +307,30 @@ object MascotBuilderLogic {
         val table = accessTable ?: com.wordocious.core.AvatarAccessTable.of(kotlinx.serialization.json.JsonObject(emptyMap()))
         val legacy = AvatarAccessContext(isPro, owned, null, AvatarSeason.today(), season ?: "none", saved, false)
         return AvatarAccess.enforceSeasonal(kept, legacy, table, m)
+    }
+
+    /** pro_try_on: a Pro item can be tried on live; saving a look that wears one opens the Unlock with Pro card. Off while gating is on. */
+    fun proTryOn(): Boolean = !gatingOn() && com.wordocious.app.data.FlagsService.isLive("pro_try_on")
+
+    /** The access context while gating is OFF (today's rules + the manifest's pro flags): owned / saved / season aware. */
+    fun legacyContext(isPro: Boolean): AvatarAccessContext = accessContext(isPro = isPro, stats = null, saved = saved, owned = owned, gating = false)
+
+    /** Worn Pro parts a free player can't keep: not owned, not already on the saved look. */
+    fun proWorn(look: AvatarConfig, isPro: Boolean): List<com.wordocious.core.AvatarPart> {
+        val m = fit ?: return emptyList()
+        if (isPro) return emptyList()
+        return AvatarAccess.wornParts(look).filter { p ->
+            AvatarAccess.legacyRule(p.field, p.id, m).pro &&
+                AvatarAccess.key(p.field, p.id) !in owned &&
+                saved?.let { AvatarAccess.value(it, p.field) } != p.id
+        }
+    }
+
+    /** A part's access under today's rules (the Unlock with Pro card's routes). */
+    fun legacyPartAccess(o: BuilderOption, isPro: Boolean): AvatarPartAccess? {
+        val m = fit ?: return null
+        val table = accessTable ?: com.wordocious.core.AvatarAccessTable.of(kotlinx.serialization.json.JsonObject(emptyMap()))
+        return AvatarAccess.partAccess(AvatarPart(o.slot, o.id), legacyContext(isPro), table, m)
     }
 
     /** The Locked card's rows in core order (earn · pro · buy · season), with the earn progress bar's fraction. */

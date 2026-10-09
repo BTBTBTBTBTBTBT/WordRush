@@ -274,6 +274,9 @@ public enum AvatarAccess {
         if alwaysFree(field: field, id: id) { return AvatarAccessRule(free: true) }
         // Seasonal parts never disappear (founder 10-07): free in their season, Pro the rest of the year.
         if let season = partSeason(field: field, id: id, manifest: manifest) { return AvatarAccessRule(pro: true, season: season) }
+        if let mp = AvatarSeason.partManifestPro(field: field, id: id, manifest: manifest) {   // 2.8 packs
+            return mp ? AvatarAccessRule(pro: true) : AvatarAccessRule(free: true)
+        }
         if field == "frame", let n = frameLevel[id] {
             return AvatarAccessRule(earn: AvatarEarnCondition(label: "Reach level \(n)", stat: "level", min: Double(n)))
         }
@@ -443,7 +446,8 @@ public enum AvatarAccess {
         var legacy = ctx
         legacy.gating = false
         let locked = wornParts(draft).filter {
-            partSeason(field: $0.field, id: $0.id, manifest: manifest) != nil
+            (partSeason(field: $0.field, id: $0.id, manifest: manifest) != nil
+                || AvatarSeason.partManifestPro(field: $0.field, id: $0.id, manifest: manifest) == true)
                 && !partAccess($0, legacy, table: table, manifest: manifest).unlocked
         }
         if locked.isEmpty { return draft }

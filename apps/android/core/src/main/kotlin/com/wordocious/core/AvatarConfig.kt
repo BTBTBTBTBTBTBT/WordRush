@@ -98,16 +98,16 @@ object AvatarOptions {
     val HEADS: List<String> = listOf(
         "none", "crown", "party", "beanie", "sprout", "nightcap", "headphones", "bow", "wizard", "pirate", "cowboy", "chef",
         "grad", "halo", "flower", "tophat", "propeller", "catears", "bunnyears", "tiara", "viking", "sweatband",
-        "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "pombeanie", "bearears", "mohawk",
+        "cap", "beret", "minicrown", "flowercrown", "bucket", "santa", "witch", "astronaut", "bigbow", "goth-skull-bow", "goth-bat-wing-clip", "pombeanie", "bearears", "mohawk",
         // seasonal (avatar-parts.json `season`; AvatarSeason decides when they show): Halloween 10-05
         "pumpkinhat", "candycornhat", "witchnight", "batears",
     )
 
     /** Face extras. */
-    val FACES: List<String> = listOf("none", "mustache", "heart-glasses", "monocle", "starglasses", "roundglasses", "eyepatch", "facepaint", "mask", "curlymustache")
+    val FACES: List<String> = listOf("none", "mustache", "heart-glasses", "monocle", "starglasses", "goth-bat-sunglasses", "roundglasses", "eyepatch", "facepaint", "mask", "curlymustache")
 
     /** Neck / back extras. Pro-only: wings, chain. */
-    val NECKS: List<String> = listOf("none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "backpack", "bubbletea", "guitar", "supercape", "fairywings", "batwings", "cattail")
+    val NECKS: List<String> = listOf("none", "cape", "wings", "bowtie", "scarf", "chain", "medal", "goth-moon-pendant", "backpack", "bubbletea", "guitar", "supercape", "fairywings", "batwings", "cattail")
 
     /** White glossy accessories that take the accessory color. */
     val TINTABLE: List<String> = listOf("supercape", "backpack", "wings", "chef", "astronaut")
@@ -167,11 +167,11 @@ object AvatarOptions {
     val DISPLAYS: List<String> = listOf(DISPLAY_MASCOT, DISPLAY_PHOTO)
 
     /** 10-05 integrated parts (packages/core AVATAR_HELD …): drawn per body, never bolted on. */
-    val HELD: List<String> = listOf("none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella", "icecream", "spatula", "mic", "wand-star", "candypail")
+    val HELD: List<String> = listOf("none", "mug", "book", "pencil-big", "balloon", "trophy", "magnifier", "flashlight", "umbrella", "goth-lace-umbrella", "goth-purple-lantern", "icecream", "spatula", "mic", "wand-star", "candypail")
     /** Body wraps (the necktie and sash were dropped 10-05: no room for a tie blade; the sash read as a stripe across the letter). */
     val WRAPS: List<String> = listOf("none", "bandana", "belt", "apron", "lei", "cape-drape", "vampirecollar")
-    val FEET: List<String> = listOf("none", "sneakers", "boots", "slippers", "skates")
-    val PETS: List<String> = listOf("none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat")
+    val FEET: List<String> = listOf("none", "sneakers", "boots", "goth-platform-boots", "slippers", "skates")
+    val PETS: List<String> = listOf("none", "bird", "kitten", "puppy", "snail", "bat", "ghost", "blackcat", "goth-black-cat-plush")
     val BROWS: List<String> = listOf("none", "happy", "worried", "determined", "surprised", "cheeky", "sleepy")
     val EXTRAS: List<String> = listOf("none", "sweat", "tear", "steam", "heart")
     /** The integrated config fields + their options, in the maker's tab order. */

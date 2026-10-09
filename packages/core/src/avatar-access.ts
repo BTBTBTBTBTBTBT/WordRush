@@ -13,7 +13,7 @@
 
 import accessJson from './avatar-access.json';
 import { AVATAR_PRO_ONLY, type AvatarConfig } from './avatar-config';
-import { avatarPartSeason, mascotSeason, type AvatarPart } from './avatar-season';
+import { avatarPartManifestPro, avatarPartSeason, mascotSeason, type AvatarPart } from './avatar-season';
 import { AVATAR_MANIFEST, type AvatarManifest } from './avatar-layout';
 
 /** The feature flag (OFF until the founder approves the table and the purchase flow ships). */
@@ -91,6 +91,9 @@ export function avatarLegacyRule(field: string, id: string, manifest: AvatarMani
   // Seasonal parts never disappear (founder 10-07): free in their season, Pro the rest of the year (buy / earn come with gating).
   const season = avatarPartSeason(field, id, manifest);
   if (season) return { season, pro: true };
+  const mp = avatarPartManifestPro(field, id, manifest);   // 2.8 packs: the manifest says Pro / free
+  if (mp === true) return { pro: true };
+  if (mp === false) return { free: true };
   if (field === 'frame' && AVATAR_FRAME_LEVEL[id] != null) {
     const n = AVATAR_FRAME_LEVEL[id];
     return { earn: { label: `Reach level ${n}`, stat: 'level', min: n } };
@@ -277,13 +280,13 @@ export function enforceAvatarAccess(draft: AvatarConfig, ctx: AvatarAccessContex
 }
 
 /**
- * The gating-OFF save path for seasonal parts: a seasonal part is free in its season and Pro (or owned, or already on the
- * SAVED look) the rest of the year. Reverts each part a free player can't keep, like enforceAvatarAccess but ONLY for
+ * The gating-OFF save path for seasonal parts and 2.8 pack items marked Pro: a seasonal part is free in its season and Pro (or
+ * owned, or already on the SAVED look) the rest of the year; a Pro pack item needs Pro (or owned / saved). Reverts each part a free player can't keep, like enforceAvatarAccess but ONLY for
  * seasonal parts (the Pro lists and level frames keep their own enforcement).
  */
 export function enforceSeasonalAccess(draft: AvatarConfig, ctx: AvatarAccessContext, opts: { table?: AvatarAccessTable; manifest?: AvatarManifest } = {}): AvatarConfig {
   const manifest = opts.manifest ?? AVATAR_MANIFEST;
-  const locked = avatarWornParts(draft).filter((p) => avatarPartSeason(p.field, p.id, manifest) && !avatarPartAccess(p, { ...ctx, gating: false }, opts).unlocked);
+  const locked = avatarWornParts(draft).filter((p) => (avatarPartSeason(p.field, p.id, manifest) || avatarPartManifestPro(p.field, p.id, manifest) === true) && !avatarPartAccess(p, { ...ctx, gating: false }, opts).unlocked);
   if (locked.length === 0) return draft;
   const out = { ...draft } as Record<string, unknown>;
   for (const p of locked) {

@@ -71,6 +71,10 @@ export interface AvatarItemMeta {
   pieces?: Record<string, Array<[string, number, number, number, number]>>;
   /** Eyes only: the visible top of the eye ink as a fraction of the art canvas (brows clear tall eyes). */
   inkTop?: number;
+  /** 2.8 packs (new-items-spec.json): true = Pro, false = free (a starter of the pack); absent = today's lists decide. */
+  pro?: boolean;
+  /** The pack / collection the item belongs to (goth, football, …). */
+  pack?: string;
   /** Seasonal parts (avatar-season.ts): the season-registry id it belongs to; shown in season or when saved. */
   season?: string;
 }

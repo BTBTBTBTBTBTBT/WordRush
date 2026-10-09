@@ -12,7 +12,10 @@ FONT = '/System/Library/Fonts/Supplemental/Arial Black.ttf'
 
 def art(name):
     if name not in _cache:
-        _cache[name] = Image.open(os.path.join(PARTS, name + '.png')).convert('RGBA')
+        png = os.path.join(PARTS, name + '.png')
+        # per-body pieces / the 2.8 items ship as webp only (apps/web/public/art): fall back to the shipped art
+        path = png if os.path.exists(png) else os.path.join(HERE, '..', '..', '..', '..', 'apps', 'web', 'public', 'art', name + '.webp')
+        _cache[name] = Image.open(path).convert('RGBA')
     return _cache[name]
 
 

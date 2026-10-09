@@ -83,6 +83,9 @@ class AvatarFitManifest(val root: JsonObject) {
         val slot = (o["slot"] as? JsonPrimitive)?.content ?: "eyes"
         val layer = (o["layer"] as? JsonPrimitive)?.content ?: "eyes"
         val tint = (o["tint"] as? JsonPrimitive)?.booleanOrNull ?: false
+        /** 2.8 packs: true = Pro, false = free (a starter of the pack); null = today's lists decide. */
+        val pro: Boolean? = (o["pro"] as? JsonPrimitive)?.booleanOrNull
+        val pack: String? = (o["pack"] as? JsonPrimitive)?.content
         val overFace = (o["overFace"] as? JsonPrimitive)?.booleanOrNull ?: false
         /** Integrated parts drawn per body (the scarf): art `art-av-<kind>-<id>-<body>` at [x, y, w, h] body units. */
         val perBody: Map<String, List<Double>> = (o["perBody"] as? JsonObject)?.mapValues { e ->

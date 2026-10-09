@@ -26,6 +26,12 @@ public enum AvatarSeason {
         }
     }
 
+    /// A 2.8 pack item's explicit access in the manifest: true = Pro, false = free, nil = today's lists decide.
+    public static func partManifestPro(field: String, id: String, manifest: AvatarManifest) -> Bool? {
+        guard !id.isEmpty, id != "none", field != "body", AvatarFit.fieldKind[field] != nil else { return nil }
+        return manifest.items[AvatarFit.itemKey(field: field, id: id)]?.pro
+    }
+
     /// The season a part belongs to, or nil for an everyday part.
     public static func partSeason(field: String, id: String, manifest: AvatarManifest) -> String? {
         guard !id.isEmpty, id != "none" else { return nil }

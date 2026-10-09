@@ -315,7 +315,7 @@ struct MascotBuilderView: View {
         .softSheet(isPresented: $showLocked) {
             LockedItemCard(config: config, initial: initial, locked: lockedParts, ctx: accessContext,
                            onSaveWithout: {
-                               let next = MascotAccess.enforce(config, accessContext)
+                               let next = gated ? MascotAccess.enforce(config, accessContext) : MascotAccess.legacySave(config, accessContext)
                                showLocked = false
                                // after the card is down (the room's onSave closes its full-screen cover)
                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { onSave?(next) }
@@ -344,6 +344,10 @@ struct MascotBuilderView: View {
     private func save() {
         guard let onSave else { return }
         guard let check = MascotAccess.saveCheck(config, accessContext) else {
+            if proTryOn {
+                let worn = proWornParts()
+                if !worn.isEmpty { Haptics.tap(); lockedParts = worn; showLocked = true; return }
+            }
             onSave(MascotAccess.legacySave(config, accessContext))
             return
         }
@@ -717,7 +721,7 @@ struct MascotBuilderView: View {
                         : AnyShapeStyle(Color(hex: AvatarCatalog.colorValue(id)))
                 let light = ["default", "white", "cream", "butter", "seafoam"].contains(id)
                 Button {
-                    if proLocked { showPro = true; return }
+                    if proLocked && !proTryOn { showPro = true; return }
                     config = applied(o)
                 } label: {
                     ZStack {
@@ -804,7 +808,27 @@ struct MascotBuilderView: View {
         }
     }
 
+    /// pro_try_on: a Pro item can be tried on live; saving a look that wears one opens the Unlock with Pro card (LockedItemCard).
+    private var proTryOn: Bool { !gated && FlagsService.shared.isLive("pro_try_on") }
+
+    /// 2.8 packs: the manifest's `pro` flag (true = Pro).
+    private func manifestPro(_ slot: String, _ value: String) -> Bool {
+        guard let fit = MascotParts.fit else { return false }
+        return AvatarSeason.partManifestPro(field: slot, id: value, manifest: fit) == true
+    }
+
+    /// Worn Pro parts a free player can't keep: not owned, not already on the saved look.
+    private func proWornParts() -> [AvatarPart] {
+        guard !isPro, let fit = MascotParts.fit else { return [] }
+        let saved = savedConfig.map(AvatarAccess.fieldMap) ?? [:]
+        return AvatarAccess.wornParts(config).filter { p in
+            let pro = AvatarAccess.legacyRule(field: p.field, id: p.id, manifest: fit).pro == true
+            return pro && !MascotAccess.ownedKeys.contains(AvatarAccess.key(field: p.field, id: p.id)) && saved[p.field] != p.id
+        }
+    }
+
     private func isProOnly(_ o: Option) -> Bool {
+        if manifestPro(o.slot, o.value) { return true }
         switch o.slot {
         case "head": return AvatarCatalog.isProOnly(head: o.value)
         case "neck": return AvatarCatalog.isProOnly(neck: o.value)
@@ -869,7 +893,7 @@ struct MascotBuilderView: View {
         let dark = Theme.isDark
         return Button {
             if tier != nil { return }
-            if proLocked { showPro = true; return }
+            if proLocked && !proTryOn { showPro = true; return }
             let next = applied(o)
             if let fit = MascotParts.fit, let hit = AvatarFit.pickConflict(config, field: o.slot, id: o.value, manifest: fit) {
                 note = "\(MascotOptionNames.name(o.value)) doesn't fit with \(MascotOptionNames.name(hit.id)), so it came off"
