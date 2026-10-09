@@ -245,7 +245,8 @@ fun ProStatsInvite(line: String, onGoPro: () -> Unit, compact: Boolean = false, 
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Image(artPainter(art, 116.dp), contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.size(116.dp))
+            // Item 20: the free player's own mascot on the pedestal with the Stats scene (the cast sign stays on the compact rows).
+            ProScene(com.wordocious.core.StatsProfile.ProBenefit.STATS, height = 128.dp, caption = false)
             Box(Modifier.widthIn(max = 280.dp)) { text(TextAlign.Center) }
             CastButton("Go Pro", onClick = onGoPro, color = CastColor.GOLD, size = CastSize.M)
         }

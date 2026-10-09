@@ -95,7 +95,11 @@ private val proMuted: Color @Composable get() = if (WTheme.isDark) WTheme.textSe
 private val proLabel: Color get() = Color(0xFF8A4A12)
 
 @Composable
-fun ProScreen(onDone: () -> Unit) {
+fun ProScreen(
+    onDone: () -> Unit,
+    /** 2.8 item 20: what the player reached for ("Pro mascot styles"); picks the benefit scene next to their mascot. null = the five scenes take turns. */
+    reason: String? = null,
+) {
     val profile by AuthService.profile.collectAsState()
     // isProActive, not raw isPro — a lapsed subscriber (is_pro still true, no
     // server sweep yet) otherwise saw "You're enjoying all Pro benefits!" with
@@ -138,7 +142,7 @@ fun ProScreen(onDone: () -> Unit) {
         ) {
             // A6 / N1: the GO PRO lettering as the page headline (the shared headline sizing).
             PageHeadline(TitleArt.GOPRO)
-            ProHero()
+            ProHero(isPro = isPro, reason = reason)
 
             if (profile == null) {
                 // Guest — Pro is account-based (the purchase must attach to an account).
@@ -228,16 +232,21 @@ fun ProScreen(onDone: () -> Unit) {
     }
 }
 
-/** G1 the gold hero: W crowned with the golden star, large, springing in on a warm glow. */
+/**
+ * G1 the gold hero. Members keep W crowned with the golden star; FREE players (item 20) see their own mascot, alive, on the
+ * spotlight pedestal with the scene of what they reached for ([reason]) or the five benefit scenes taking turns.
+ */
 @Composable
-private fun ProHero() {
+private fun ProHero(isPro: Boolean, reason: String?) {
     TintedCard(
         PRO_GOLD, Modifier.fillMaxWidth(), bar = MomentInk.proBar,
         tint = accentWash(PRO_GOLD, 0.15f),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        SceneArtPop(R.drawable.art_scene_pro_crown, height = 190.dp, glow = Color(0xFFFFE08A))
+        if (isPro) SceneArtPop(R.drawable.art_scene_pro_crown, height = 190.dp, glow = Color(0xFFFFE08A))
+        else if (reason != null) ProScene(com.wordocious.core.StatsProfile.proBenefitForReason(reason), height = 180.dp)
+        else ProSceneCarousel(height = 190.dp)
         Text(
             "Play unlimited & ad-free — every mode, any time",
             fontSize = 15.sp, fontWeight = FontWeight.Black, color = proInk, textAlign = TextAlign.Center,
