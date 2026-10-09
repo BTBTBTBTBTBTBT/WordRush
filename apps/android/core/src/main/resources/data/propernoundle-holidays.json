@@ -22,11 +22,11 @@
     "mlkday": [
       {
         "id": "hol-mlkday-1",
-        "answer": "rosaparks",
-        "display": "Rosa Parks",
-        "category": "celebrity",
+        "answer": "lincolnmemorial",
+        "display": "Lincoln Memorial",
+        "category": "geography",
         "themeCategory": "history",
-        "wikiTitle": "Rosa_Parks"
+        "wikiTitle": "Lincoln_Memorial"
       },
       {
         "id": "hol-mlkday-2",
@@ -76,11 +76,11 @@
     "presidents": [
       {
         "id": "hol-presidents-1",
-        "answer": "abrahamlincoln",
-        "display": "Abraham Lincoln",
-        "category": "celebrity",
+        "answer": "whitehouse",
+        "display": "White House",
+        "category": "geography",
         "themeCategory": "history",
-        "wikiTitle": "Abraham_Lincoln"
+        "wikiTitle": "White_House"
       },
       {
         "id": "hol-presidents-2",
@@ -94,19 +94,19 @@
     "leapday": [
       {
         "id": "hol-leapday-1",
-        "answer": "juliuscaesar",
-        "display": "Julius Caesar",
-        "category": "celebrity",
+        "answer": "juliancalendar",
+        "display": "Julian Calendar",
+        "category": "other",
         "themeCategory": "history",
-        "wikiTitle": "Julius_Caesar"
+        "wikiTitle": "Julian_calendar"
       },
       {
         "id": "hol-leapday-2",
-        "answer": "leapyear",
-        "display": "Leap Year",
+        "answer": "kermitthefrog",
+        "display": "Kermit the Frog",
         "category": "other",
         "themeCategory": "movies",
-        "wikiTitle": "Leap_Year_(2010_film)"
+        "wikiTitle": "Kermit_the_Frog"
       }
     ],
     "mardigras": [
@@ -120,11 +120,11 @@
       },
       {
         "id": "hol-mardigras-2",
-        "answer": "bourbonstreet",
-        "display": "Bourbon Street",
-        "category": "geography",
+        "answer": "louisarmstrong",
+        "display": "Louis Armstrong",
+        "category": "celebrity",
         "themeCategory": "music",
-        "wikiTitle": "Bourbon_Street"
+        "wikiTitle": "Louis_Armstrong"
       }
     ],
     "stpatricks": [
@@ -148,19 +148,19 @@
     "aprilfools": [
       {
         "id": "hol-aprilfools-1",
-        "answer": "siddfinch",
-        "display": "Sidd Finch",
+        "answer": "globetrotters",
+        "display": "Globetrotters",
         "category": "other",
         "themeCategory": "sports",
-        "wikiTitle": "Sidd_Finch"
+        "wikiTitle": "Harlem_Globetrotters"
       },
       {
         "id": "hol-aprilfools-2",
-        "answer": "tacolibertybell",
-        "display": "Taco Liberty Bell",
-        "category": "other",
+        "answer": "jimmykimmel",
+        "display": "Jimmy Kimmel",
+        "category": "celebrity",
         "themeCategory": "currentevents",
-        "wikiTitle": "Taco_Liberty_Bell"
+        "wikiTitle": "Jimmy_Kimmel"
       }
     ],
     "easter": [
@@ -184,11 +184,11 @@
     "earthday": [
       {
         "id": "hol-earthday-1",
-        "answer": "rachelcarson",
-        "display": "Rachel Carson",
+        "answer": "billnye",
+        "display": "Bill Nye",
         "category": "celebrity",
         "themeCategory": "science",
-        "wikiTitle": "Rachel_Carson"
+        "wikiTitle": "Bill_Nye"
       },
       {
         "id": "hol-earthday-2",
@@ -210,21 +210,21 @@
       },
       {
         "id": "hol-cincodemayo-2",
-        "answer": "benitojuarez",
-        "display": "Benito Juárez",
+        "answer": "fridakahlo",
+        "display": "Frida Kahlo",
         "category": "celebrity",
         "themeCategory": "history",
-        "wikiTitle": "Benito_Juárez"
+        "wikiTitle": "Frida_Kahlo"
       }
     ],
     "mothersday": [
       {
         "id": "hol-mothersday-1",
-        "answer": "annajarvis",
-        "display": "Anna Jarvis",
-        "category": "celebrity",
+        "answer": "mothergoose",
+        "display": "Mother Goose",
+        "category": "other",
         "themeCategory": "history",
-        "wikiTitle": "Anna_Jarvis"
+        "wikiTitle": "Mother_Goose"
       },
       {
         "id": "hol-mothersday-2",
@@ -282,11 +282,11 @@
       },
       {
         "id": "hol-juneteenth-2",
-        "answer": "harriettubman",
-        "display": "Harriet Tubman",
+        "answer": "sojournertruth",
+        "display": "Sojourner Truth",
         "category": "celebrity",
         "themeCategory": "history",
-        "wikiTitle": "Harriet_Tubman"
+        "wikiTitle": "Sojourner_Truth"
       }
     ],
     "july4": [
@@ -300,11 +300,11 @@
       },
       {
         "id": "hol-july4-2",
-        "answer": "thomasjefferson",
-        "display": "Thomas Jefferson",
-        "category": "celebrity",
+        "answer": "unclesam",
+        "display": "Uncle Sam",
+        "category": "other",
         "themeCategory": "history",
-        "wikiTitle": "Thomas_Jefferson"
+        "wikiTitle": "Uncle_Sam"
       }
     ],
     "labor": [
@@ -318,11 +318,11 @@
       },
       {
         "id": "hol-labor-2",
-        "answer": "motherjones",
-        "display": "Mother Jones",
+        "answer": "cesarchavez",
+        "display": "Cesar Chavez",
         "category": "celebrity",
         "themeCategory": "history",
-        "wikiTitle": "Mother_Jones"
+        "wikiTitle": "Cesar_Chavez"
       }
     ],
     "indigenous": [
@@ -336,11 +336,11 @@
       },
       {
         "id": "hol-indigenous-2",
-        "answer": "sittingbull",
-        "display": "Sitting Bull",
+        "answer": "geronimo",
+        "display": "Geronimo",
         "category": "celebrity",
         "themeCategory": "history",
-        "wikiTitle": "Sitting_Bull"
+        "wikiTitle": "Geronimo"
       }
     ],
     "halloween": [
@@ -364,11 +364,11 @@
     "veterans": [
       {
         "id": "hol-veterans-1",
-        "answer": "flandersfields",
-        "display": "Flanders Fields",
-        "category": "geography",
+        "answer": "purpleheart",
+        "display": "Purple Heart",
+        "category": "other",
         "themeCategory": "history",
-        "wikiTitle": "Flanders_Fields"
+        "wikiTitle": "Purple_Heart"
       },
       {
         "id": "hol-veterans-2",
@@ -418,11 +418,11 @@
     "kwanzaa": [
       {
         "id": "hol-kwanzaa-1",
-        "answer": "kinara",
-        "display": "Kinara",
-        "category": "other",
+        "answer": "africa",
+        "display": "Africa",
+        "category": "geography",
         "themeCategory": "history",
-        "wikiTitle": "Kinara"
+        "wikiTitle": "Africa"
       },
       {
         "id": "hol-kwanzaa-2",
@@ -444,11 +444,11 @@
       },
       {
         "id": "hol-lunarnewyear-2",
-        "answer": "dragondance",
-        "display": "Dragon dance",
-        "category": "other",
+        "answer": "chinatown",
+        "display": "Chinatown",
+        "category": "geography",
         "themeCategory": "history",
-        "wikiTitle": "Dragon_dance"
+        "wikiTitle": "Chinatown"
       }
     ],
     "passover": [
@@ -480,11 +480,11 @@
       },
       {
         "id": "hol-diwali-2",
-        "answer": "rangoli",
-        "display": "Rangoli",
-        "category": "other",
+        "answer": "india",
+        "display": "India",
+        "category": "geography",
         "themeCategory": "history",
-        "wikiTitle": "Rangoli"
+        "wikiTitle": "India"
       }
     ],
     "hanukkah": [

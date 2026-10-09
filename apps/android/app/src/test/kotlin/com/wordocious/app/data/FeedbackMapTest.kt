@@ -42,11 +42,12 @@ class FeedbackMapTest {
     }
 
     @Test fun everySoundIsUsedAndNamedLikeItsFile() {
-        assertEquals(34, Sfx.entries.size)
+        assertEquals(44, Sfx.entries.size)
         Sfx.entries.forEach { assertEquals("sfx_" + it.name.lowercase(), it.file) }
-        // Every sound is an event's, or a hero's giggle (SoundManager.castLaugh).
+        // Every sound is an event's, a hero's giggle (SoundManager.castLaugh) or its musical note (castNote).
         val used = FeedbackEvent.entries.mapNotNull { it.sound }.toSet() +
             listOf("w", "o1", "r", "d", "o2", "c", "i", "o3", "u", "s").map { FeedbackRules.laughSfx(it)!! } +
+            com.wordocious.core.MusicalCast.CAST_IDS.map { FeedbackRules.noteSfx(it)!! } +
             Sfx.entries.mapNotNull { FeedbackRules.classicVariant(it) }
         assertEquals(Sfx.entries.toSet(), used)
     }
@@ -68,6 +69,14 @@ class FeedbackMapTest {
         assertTrue(FeedbackRules.LAUGH_MIN_GAP_MS >= 400L)
         val gate = FeedbackThrottle(FeedbackRules.LAUGH_MIN_GAP_MS)
         assertEquals(2, (0L until 1000L step 50L).count { gate.allow(it) })
+    }
+
+    @Test fun everyHeroHasItsOwnNote() {
+        val ids = com.wordocious.core.MusicalCast.CAST_IDS
+        assertEquals(10, ids.mapNotNull { FeedbackRules.noteSfx(it) }.toSet().size)
+        assertEquals(Sfx.NOTE_O2, FeedbackRules.noteSfx("o2"))
+        assertNull(FeedbackRules.noteSfx("x"))
+        ids.forEach { assertTrue(it, java.io.File("src/main/res/raw/sfx_note_$it.m4a").exists()) }
     }
 
     @Test fun introJingleMutesTheLandingHopOnly() {

@@ -200,11 +200,8 @@ fun PopupClose(
     contentDescription: String = "Close",
     enabled: Boolean = true,
 ) {
-    Box(
-        modifier.size(SOFT_CONTROL_TAP).squishClickable(contentDescription, enabled = enabled, icon = true, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        // Button family §3: the soft 3D X ([tint] kept for callers; the art carries its own colors).
+    // 2.8 item 23: the family round icon tap. Button family §3: the soft 3D X ([tint] kept for callers).
+    RoundIconButton(onClick, contentDescription, modifier, tap = SOFT_CONTROL_TAP, enabled = enabled) {
         FamCloseGlyph(24.dp)
     }
 }

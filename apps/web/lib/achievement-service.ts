@@ -4,7 +4,7 @@ import { sweepModesFor, DAILY_MODES } from './daily-modes';
 import { MODE_BY_DBKEY } from './modes.generated';
 import { achievementBadge, CATEGORY_ACCENT, queueCelebrations } from './badges';
 import {
-  NEW_ACHIEVEMENTS, type AchievementCategory, avatarAchievements, botAchievements, currentSeason, momentAchievements, pangramAchievements, pangramCount,
+  NEW_ACHIEVEMENTS, achievementListed, type AchievementCategory, avatarAchievements, botAchievements, currentSeason, momentAchievements, pangramAchievements, pangramCount,
   puzzleCountAchievements, puzzleResultAchievements,
 } from '@wordle-duel/core';
 import { markAchievementsSeen } from './achievement-seen';
@@ -25,6 +25,8 @@ export interface AchievementDef {
   xp?: number;
   /** FINISH_SPEC BE: defined but not shown or awarded until its tracking ships. */
   hidden?: boolean;
+  /** A secret (the musical cast's tunes): awarded normally, listed only once unlocked (core achievementListed). */
+  secret?: boolean;
 }
 
 const BASE_ACHIEVEMENTS: AchievementDef[] = [
@@ -268,6 +270,11 @@ export const ACHIEVEMENT_CATALOG: AchievementDef[] = [
 
 /** The achievements players see (and can earn): the catalog minus the hidden ones. */
 export const ACHIEVEMENTS: AchievementDef[] = ACHIEVEMENT_CATALOG.filter((a) => !a.hidden);
+
+/** What a player's lists show: every visible achievement, a secret one only once they have it. */
+export function listedAchievements(unlocked: { has(key: string): boolean }): AchievementDef[] {
+  return ACHIEVEMENTS.filter((a) => achievementListed(a, unlocked));
+}
 
 /** BF1: the payload an endpoint returns for each NEW unlock. */
 export interface NewAchievement { key: string; name: string; description: string; category: AchievementDef['category']; xp?: number }

@@ -21,6 +21,8 @@ struct ProfileTab: View {
     @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
     @State private var showPro = false
+    /// 2.8 item 14: scroll-driven header fade + condense.
+    @StateObject private var headerScroll = HeaderScrollModel()
     @State private var statRows: [UserStatRow] = []
     /// FINISH_SPEC BJ1: the picked GAME (nil = Overview). Core `StatsSelection.sections`
     /// resolves the two sections shown — Today first, All-time beneath.
@@ -233,7 +235,7 @@ struct ProfileTab: View {
             ZStack {
                 PageBackground(tint: .stats)
                 VStack(spacing: 0) {
-                    AppHeaderView()   // shared header (settings now lives here)
+                    AppHeaderView(scroll: headerScroll)   // shared header (settings now lives here)
                     // §241: during the launch-restore window a returning
                     // player must never see the signed-out pitch — the cached
                     // profile usually fills this gap; a brief spinner covers a
@@ -403,7 +405,7 @@ struct ProfileTab: View {
     /// thread, so scrolling into the grid never decodes art mid-scroll.
     private func prewarmBadges() {
         let unlocked = unlockedAchievements
-        BadgeArt.prewarm(achievementCatalog.all.map {
+        BadgeArt.prewarm(achievementCatalog.listed(unlocked: unlocked).map {
             (name: BadgeArt.achievementAsset(key: $0.key, icon: $0.icon, category: $0.category), gray: !unlocked.contains($0.key))
         }, points: 54)
     }
@@ -514,6 +516,7 @@ struct ProfileTab: View {
                 .opacity(pageFade)
             }
             .padding(.horizontal, 12).padding(.top, 8)
+            .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
             // §AS3: the last section always ends clear of the docked footer (its
             // measured height + 16 pt) and stays tappable.
             .tabScrollTail()
@@ -532,6 +535,7 @@ struct ProfileTab: View {
             )
         }
         .reportsScrollMotion()   // §AQ2: idle loops pause while scrolling
+        .headerScrollFade(headerScroll)   // 2.8 item 14
         // select(.vs) swapped to Overview un-animated; once it is laid out, glide down to
         // its VS section (web: scrollIntoView smooth, block start).
         .onChange(of: vsScrollToken) { _ in
@@ -1033,9 +1037,9 @@ struct ProfileTab: View {
             // BJ16: OVERVIEW / DAILY SWEEP lettering, not live text.
             HeadingArtView(sel.game == nil ? .overview : .sweep, height: 40, maxWidth: 280, motion: false)
         } else {
-            LiveHeadline(text: pickerTitle.uppercased(),
-                         palette: sel.game == nil ? .stats : .accent(pickerHeadAccent),
-                         size: 24, maxLines: 1, minimumScale: 0.6)
+            BubbleTextView(text: pickerTitle.uppercased(),
+                           palette: sel.game == nil ? .stats : .accent(pickerHeadAccent),
+                           maxSize: 24, minSize: 15)
         }
     }
 
@@ -1063,7 +1067,8 @@ struct ProfileTab: View {
                 // Founder 10-05 (door 1): your avatar IS the way in — a tap opens the Stage; the small
                 // "Dress up" tag replaces the old pencil.
                 Button { DressUp.shared.open() } label: {
-                    AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive)
+                    AvatarView(url: p.avatarUrl, username: p.username, size: 56, accentHex: p.accentColor, emoji: p.avatarEmoji, pro: auth.isProActive,
+                               living: true)
                         .overlay(alignment: .bottom) {
                             StageArt("art-dress-tag-dressup", height: 17).offset(y: 9)
                         }
@@ -1091,7 +1096,7 @@ struct ProfileTab: View {
                     Button { Haptics.tap(); shareProfile(p) } label: {
                         Icon3D(.share, size: 23).frame(width: 40, height: 44).contentShape(Rectangle())
                     }
-                    .buttonStyle(.squishIcon)
+                    .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
                     .accessibilityLabel("Share profile card")
                 }
                 .softSheet(isPresented: $showEditProfile) { EditProfileView() }
@@ -1184,7 +1189,8 @@ struct ProfileTab: View {
             winRate: total > 0 ? Int((Double(p.totalWins) / Double(total) * 100).rounded()) : 0,
             currentStreak: p.currentStreak, dailyStreak: p.dailyLoginStreak,
             gold: p.goldMedals, silver: p.silverMedals, bronze: p.bronzeMedals,
-            achievementsUnlocked: unlockedAchievements.count, achievementsTotal: achievementCatalog.all.count))
+            achievementsUnlocked: unlockedAchievements.count,
+            achievementsTotal: achievementCatalog.listed(unlocked: unlockedAchievements).count))
     }
 
     private let socialOrder = ["twitter", "instagram", "tiktok", "threads", "discord", "website"]
@@ -1355,7 +1361,7 @@ struct ProfileTab: View {
     private var extraAchCategories: [(key: String, label: String, color: UInt)] {
         let known = Set(achCategories.map(\.key))
         var seen = Set<String>()
-        return achievementCatalog.all.map(\.category).filter { !known.contains($0) && seen.insert($0).inserted }
+        return achievementCatalog.listed(unlocked: unlockedAchievements).map(\.category).filter { !known.contains($0) && seen.insert($0).inserted }
             .map { (key: $0, label: $0.replacingOccurrences(of: "_", with: " ").capitalized, color: 0x7C3AED) }
     }
 
@@ -1365,17 +1371,19 @@ struct ProfileTab: View {
     /// progress is computed ONCE per pass (it used to rebuild the whole table per badge).
     @ViewBuilder private var achievementsSection: some View {
         let progress = achievementProgressMap()
+        // A secret (the musical cast's tunes) shows — and counts — only once unlocked.
+        let listed = achievementCatalog.listed(unlocked: unlockedAchievements)
         HStack {
             // Under the shared "PROGRESSION" banner (web parity): a plain
             // card-style title rather than an all-caps section header.
             FinishLabel("Achievements")
             Spacer()
-            Text("\(unlockedAchievements.count) / \(achievementCatalog.all.count)").softNumber(14)
+            Text("\(unlockedAchievements.count) / \(listed.count)").softNumber(14)
         }
         // FINISH_SPEC BE: any category the catalog adds beyond the five known ones
         // still shows (its own group, purple) — new achievements never vanish.
         ForEach(achCategories + extraAchCategories, id: \.key) { cat in
-            let items = achievementCatalog.all.filter { $0.category == cat.key }
+            let items = listed.filter { $0.category == cat.key }
             if !items.isEmpty {
                 let n = items.filter { unlockedAchievements.contains($0.key) }.count
                 let color = Color(hex: cat.color)

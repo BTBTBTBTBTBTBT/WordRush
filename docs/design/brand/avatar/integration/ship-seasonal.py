@@ -12,6 +12,10 @@ when the player already wears it. A body the part can't fit gets no pieces (it d
 
 Adding a season: art in seasons/<season>/extras|pieces|props, a row in SEASONAL below (field, source, builder),
 the id appended to its catalog in avatar-config.ts (+ Swift / Kotlin twins), run this script. See seasons/README.md.
+
+10-06: the per-body layer art + overrides of every item now come from ship-rules.py (the rule-based fit on the measured
+landmarks, the app-size letter guard). Re-running this script's item builders would put the 10-05 hand fits back;
+see REPORT-RESHIP.md. It still owns what ship-rules.py does not touch (tile icons, tags, eyes inkTop, body anchors).
 """
 import json, os, sys
 from functools import lru_cache
@@ -258,6 +262,8 @@ def season_tag(season):
 
 
 def main(only):
+    print('NOTE: the shipped per-body fits come from ship-rules.py (10-06); this re-ships the 10-05 hand fits '
+          'for the ids given', file=sys.stderr)
     ids = [k for k in SEASONAL if (not only or k in only) and k not in DROPPED]
     report, sizes, metas = {}, {}, {}
     for pid in ids:

@@ -13,6 +13,7 @@ import { CastButton, TextLink as FamilyTextLink } from '@/components/ui/cast-but
 import { CastHeader } from '@/components/ui/cast-header';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
+import { ITEM_GATING_ON, earnStatsFromProfile } from '@/lib/avatar-access';
 import { MascotBuilder } from '@/components/avatar/mascot-builder';
 import { usePlayerAvatar } from '@/components/avatar/player-avatar';
 import { Confetti, CANDY_CONFETTI } from '@/components/effects/confetti';
@@ -48,7 +49,7 @@ import { ArtTitle } from '@/components/ui/art-title';
 //   5. ALL SET — the new mascot hops in next to W, confetti, "Play today's Classic" / "Explore first".
 // Wallpaper, lettering-style headlines in soft-number ink, candy buttons,
 // `whoosh` between steps, page dots, Skip top-right on 2–4; Reduce Motion =
-// crossfades. How to Play's "Take the tour" (/?tour=1 or the `wordocious:tour`
+// crossfades. Settings -> Help "Replay the app tour" (/?tour=1 or the `wordocious:tour`
 // event) replays steps 1–2 only. Mounted once in app/layout.tsx.
 
 const CLASSIC = 'DUEL';
@@ -557,6 +558,7 @@ export function FirstRunTour() {
                         initial={look.initial}
                         isPro={isProActive}
                         level={Number(p.level) || 1}
+                        earnStats={ITEM_GATING_ON ? earnStatsFromProfile(p as unknown as Record<string, unknown>) : null}
                         saving={avatarSaving}
                         onBack={() => goStep('profile')}
                         onSave={(c) => void saveMascot(c)}

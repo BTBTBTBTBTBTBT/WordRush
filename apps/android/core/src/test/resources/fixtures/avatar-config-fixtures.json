@@ -1909,6 +1909,124 @@
         "bg": "auto",
         "display": "mascot"
       }
+    },
+    {
+      "raw": {
+        "pose": "wave"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "pose": "wave",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "pose": "hug",
+        "body": "star"
+      },
+      "result": {
+        "v": 1,
+        "body": "star",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "pose": "hug",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "pose": "moonwalk"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "pose": "none"
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
+    },
+    {
+      "raw": {
+        "pose": 7
+      },
+      "result": {
+        "v": 1,
+        "body": "classic",
+        "color": "blue",
+        "pattern": "solid",
+        "patternColor": "blue",
+        "eyes": "happy",
+        "nose": "none",
+        "cheeks": "none",
+        "mouth": "grin",
+        "head": "none",
+        "face": "none",
+        "neck": "none",
+        "accColor": "default",
+        "frame": "none",
+        "bg": "auto",
+        "display": "mascot"
+      }
     }
   ],
   "pro": [

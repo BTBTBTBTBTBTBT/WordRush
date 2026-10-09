@@ -497,7 +497,7 @@ fun ProfileScreen(
             ProfileHeader(profile, isProActive, onGoPro, onEditProfile, onShare = {
                 profile?.let { pr ->
                     val total = pr.totalWins + pr.totalLosses
-                    val achTotal = com.wordocious.app.data.AchievementCatalog.cached().size
+                    val achTotal = com.wordocious.app.data.AchievementCatalog.listed(com.wordocious.app.data.AchievementCatalog.cached()) { it in unlockedAchievements }.size
                     com.wordocious.app.data.ProfileShare.share(context, com.wordocious.app.data.ProfileShare.ProfileInput(
                         username = pr.username ?: "Player",
                         level = pr.level, tier = levelTier(pr.level).label,
@@ -515,9 +515,9 @@ fun ProfileScreen(
             profile?.let { pr ->
                 val total = pr.totalWins + pr.totalLosses
                 if (total > 0) {
-                    LiveHeadline(
+                    BubbleText(
                         statsSummaryHeadline(pr.totalWins, total, pr.currentStreak),
-                        HeadlinePalette.STATS, Modifier.fillMaxWidth().padding(top = 10.dp), maxSize = 22.sp, minSize = 14.sp,
+                        HeadlinePalette.STATS, Modifier.fillMaxWidth().padding(top = 10.dp), maxSize = 22, minSize = 14,
                     )
                 }
             }
@@ -1085,6 +1085,9 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
                         avatarUrl, 52.dp, frame = com.wordocious.app.data.MascotAvatars.photoFrame(profile.username),
                         pro = isProActive, contentDescription = "Avatar",
                     )
+                } else if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
+                    // 10-06: your own mascot, alive (LetterTileAvatar resolves the same way, through PlayerAvatar)
+                    PlayerAvatar(initial, 52.dp, accentHex = profile?.accentColor, pro = isProActive, live = true)
                 } else {
                     LetterTileAvatar(initial, 52.dp, accentHex = profile?.accentColor, emoji = profile?.avatarEmoji, pro = isProActive)
                 }
@@ -1772,9 +1775,11 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
 @Composable
 private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.app.data.Profile?) {
     // Single-sourced via /api/achievements (cached); detection stays per-platform.
-    val all by androidx.compose.runtime.produceState(
+    val catalog by androidx.compose.runtime.produceState(
         initialValue = com.wordocious.app.data.AchievementCatalog.cached()
     ) { value = com.wordocious.app.data.AchievementCatalog.load() }
+    // A secret (the musical cast's tunes) appears only once unlocked.
+    val all = remember(catalog, unlocked) { com.wordocious.app.data.AchievementCatalog.listed(catalog) { it in unlocked } }
     // The unlock dates (achievements.unlocked_at), refetched when the unlocked set grows.
     val userId = com.wordocious.app.data.AuthService.userId
     val dates by androidx.compose.runtime.produceState(emptyMap<String, String>(), userId, unlocked.size) {

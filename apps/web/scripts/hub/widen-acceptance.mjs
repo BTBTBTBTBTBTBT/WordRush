@@ -12,14 +12,17 @@
 // Source: the system dictionary (/usr/share/dict/words — Webster's 2nd,
 // 235k entries), lowercase entries only (capitalized = proper nouns), 4–12
 // letters, minus every blocklist under scripts/data (offensive, profanity,
-// taste, manual, proper nouns, names). Idempotent and append-only: a re-run
-// adds only words not yet accepted, so no played day's `words`/`max` move and
-// the parity fixtures (bonus[0]) keep their meaning.
+// taste, manual, proper nouns, names) and whatever the content-safety module
+// rejects. Idempotent and append-only: a re-run adds only words not yet
+// accepted, only to puzzles not yet served, so no played day changes and the
+// parity fixtures (bonus[0]) keep their meaning.
 //
 //   node apps/web/scripts/hub/widen-acceptance.mjs [--dict /path/to/words]
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { offensiveWord, zipf, isListedObscure } from '../../../../packages/core/src/content-safety/safety.mjs';
+import { gateBank, gateDefaults, unseenEntries } from '../../../../packages/core/src/content-safety/gate.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..', '..', '..');
@@ -34,9 +37,9 @@ for (const f of ['offensive-blocklist.txt', 'profanity-exact.generated.txt', 'ta
     }
   } catch { /* optional list */ }
 }
-// Words that carry an offensive root even when the exact form is not listed.
-const ROOTS = ['FUCK', 'SHIT', 'CUNT', 'NIGG', 'FAGG', 'KIKE', 'SPIC', 'WETBACK', 'RETARD', 'RAPE', 'RAPIST', 'PISS', 'COCK', 'DICK', 'TWAT', 'WANK', 'JIZZ', 'CUM', 'BONER', 'PUSSY', 'WHORE', 'SLUT', 'PORN', 'NAZI', 'HITLER'];
-const blocked = (w) => block.has(w) || ROOTS.some((r) => w.includes(r));
+// Offensive words (roots and leet included), words so rare wordfreq has no Zipf >= 2.0 for them, and rare
+// curated-obscure ones never become accepted: the shared content-safety module decides (docs/CONTENT-SAFETY.md).
+const blocked = (w) => block.has(w) || offensiveWord(w) !== null || zipf(w) < 2.0 || (isListedObscure(w) && zipf(w) < 3.0);
 
 const dictionary = new Set(
   fs.readFileSync(dictPath, 'utf8').split('\n')
@@ -53,7 +56,8 @@ const bankPath = join(root, 'apps/web/data/hub-puzzles.json');
 const raw = fs.readFileSync(bankPath, 'utf8');
 const bank = JSON.parse(raw);
 let added = 0, puzzles = 0, maxAdd = 0, sample = '';
-const puzzlesAll = [...bank.daily, ...bank.extra, ...Object.values(bank.holiday ?? {}).flat()];
+// Only puzzles nobody has played yet: served days are frozen (content-safety served-snapshot.json).
+const puzzlesAll = unseenEntries(bank, await gateDefaults()).map((e) => e.p);
 for (const p of puzzlesAll) {
   const have = new Set([...p.words, ...p.bonus]);
   const extra = [];
@@ -65,6 +69,7 @@ for (const p of puzzlesAll) {
     if (extra.length > maxAdd) { maxAdd = extra.length; sample = `${p.letters}: +${extra.length} e.g. ${extra.slice(0, 8).join(',')}`; }
   }
 }
+await gateBank('hubbub', bank);
 const out = (/\n\s+"/.test(raw.slice(0, 200)) ? JSON.stringify(bank, null, raw.match(/\n( +)"/)[1].length) : JSON.stringify(bank)) + (raw.endsWith('\n') ? '\n' : '');
 for (const dst of [bankPath, join(root, 'apps/ios/Wordocious/Resources/hub-puzzles.json'), join(root, 'apps/ios/Tests/Fixtures/hub-puzzles.json'), join(root, 'apps/android/core/src/main/resources/data/hub-puzzles.json')]) {
   if (fs.existsSync(dst)) fs.writeFileSync(dst, out);

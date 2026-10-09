@@ -658,7 +658,7 @@ export function FriendsPanel() {
           Play / Challenge / Nudge buttons (C4); "Add a friend" lives in its header (C4b). */}
       <FrCard accent={FR_LOOK.lavender} bar={FR_LOOK.lavenderBar}>
         <div className="flex items-center justify-between gap-2" style={{ padding: '8px 10px 6px 12px' }}>
-          <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: '#5b3c96' }}>
+          <h2 className="m-0 min-w-0 text-[11px] font-black uppercase truncate" style={{ letterSpacing: 1.3, color: 'var(--fr-label, #5b3c96)' }}>
             Your friends{friends.length > 0 ? ` · ${friends.length}` : ''}
           </h2>
           <CastButton screen="pink" size="sm" color="pink" icon="plus" onClick={jumpToAdd} className="shrink-0">Add a friend</CastButton>

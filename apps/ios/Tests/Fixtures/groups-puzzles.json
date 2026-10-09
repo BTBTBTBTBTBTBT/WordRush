@@ -965,7 +965,7 @@
      "label": "Twist around",
      "words": [
       "COIL",
-      "TWIST",
+      "LOOP",
       "CURL",
       "SPIRAL"
      ]
@@ -1722,7 +1722,7 @@
       "GRANNY",
       "NANA",
       "GRANDMA",
-      "GRANDMOTHER"
+      "GRAMMY"
      ]
     },
     {
@@ -2937,7 +2937,7 @@
       "PENGUIN",
       "ALBATROSS",
       "PELICAN",
-      "GANNET"
+      "GULL"
      ]
     },
     {
@@ -3439,7 +3439,7 @@
      "tier": 2,
      "label": "School tests",
      "words": [
-      "TEST",
+      "QUIZ",
       "EXAM",
       "FINAL",
       "ORAL"
@@ -3497,7 +3497,7 @@
       "CLIP",
       "TRAIL",
       "WEIGHT",
-      "TIGER"
+      "PLATE"
      ]
     },
     {
@@ -3801,7 +3801,7 @@
      "words": [
       "CINCH",
       "PICNIC",
-      "WALKOVER",
+      "CAKEWALK",
       "PUSHOVER"
      ]
     },
@@ -3907,12 +3907,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like numbers",
+     "label": "Sound like letters",
      "words": [
-      "WON",
-      "TOO",
-      "ATE",
-      "FORE"
+      "BEE",
+      "SEA",
+      "TEA",
+      "PEA"
      ]
     }
    ]
@@ -4251,7 +4251,7 @@
      "words": [
       "GLOBE",
       "BALL",
-      "SPHERE",
+      "BUBBLE",
       "MARBLE"
      ]
     },
@@ -4351,7 +4351,7 @@
      "words": [
       "ENDING",
       "HOUR",
-      "MEAL",
+      "FACE",
       "CAMPER"
      ]
     },
@@ -4387,7 +4387,7 @@
       "WHIZ",
       "PRO",
       "MAESTRO",
-      "EXPERT"
+      "GURU"
      ]
     },
     {
@@ -4467,7 +4467,7 @@
       "ROD",
       "REEL",
       "LURE",
-      "TACKLE"
+      "NET"
      ]
     },
     {
@@ -4475,7 +4475,7 @@
      "label": "Tempt",
      "words": [
       "ENTICE",
-      "TEMPT",
+      "INVITE",
       "COAX",
       "BECKON"
      ]
@@ -4587,7 +4587,7 @@
       "STEAM",
       "INSTEAD",
       "PLATEAU",
-      "STEALTH"
+      "STEADY"
      ]
     }
    ]
@@ -4631,7 +4631,7 @@
      "words": [
       "PANEL",
       "LAW",
-      "DAZE",
+      "SNARED",
       "SPAR"
      ]
     }
@@ -5095,7 +5095,7 @@
      "label": "Curves",
      "words": [
       "ARC",
-      "CURVE",
+      "SPIRAL",
       "CRESCENT",
       "LOOP"
      ]
@@ -5397,7 +5397,7 @@
       "HYENA",
       "NEURON",
       "COMPOUND",
-      "CEREAL"
+      "WONDER"
      ]
     }
    ]
@@ -5422,7 +5422,7 @@
       "RICOCHET",
       "DEFLECT",
       "SKIM",
-      "BOUNCE"
+      "REBOUND"
      ]
     },
     {
@@ -6131,7 +6131,7 @@
      "words": [
       "TACK",
       "JIBE",
-      "HEEL",
+      "STEER",
       "ANCHOR"
      ]
     },
@@ -6185,7 +6185,7 @@
      "label": "Question",
      "words": [
       "QUIZ",
-      "QUESTION",
+      "QUERY",
       "INTERROGATE",
       "PROBE"
      ]
@@ -6402,7 +6402,7 @@
       "OYSTER",
       "CLAM",
       "SCALLOP",
-      "COCKLE"
+      "MUSSEL"
      ]
     },
     {
@@ -6411,7 +6411,7 @@
      "words": [
       "HUSH",
       "MUTE",
-      "QUIET",
+      "SHUSH",
       "SILENCE"
      ]
     },
@@ -6590,7 +6590,7 @@
      "label": "Words for mother",
      "words": [
       "MOM",
-      "MOTHER",
+      "MOMMY",
       "MAMA",
       "MATRIARCH"
      ]
@@ -7582,7 +7582,7 @@
       "MEET",
       "BRAVE",
       "TACKLE",
-      "CONFRONT"
+      "DEFY"
      ]
     },
     {
@@ -7769,7 +7769,7 @@
      "tier": 3,
      "label": "Hand___",
      "words": [
-      "BAG",
+      "WRITING",
       "SHAKE",
       "CUFF",
       "RAIL"
@@ -7797,7 +7797,7 @@
       "HAMMER",
       "WRENCH",
       "CHISEL",
-      "PLIERS"
+      "SAW"
      ]
     },
     {
@@ -8167,7 +8167,7 @@
       "BUILD",
       "PHYSIQUE",
       "FIGURE",
-      "SHAPE"
+      "FORM"
      ]
     },
     {
@@ -8680,9 +8680,9 @@
      "label": "Hidden currencies",
      "words": [
       "SCENT",
-      "BRAND",
+      "FRANCHISE",
       "COMPOUND",
-      "REMARK"
+      "NEURON"
      ]
     }
    ]
@@ -8785,7 +8785,7 @@
      "label": "Crow family",
      "words": [
       "RAVEN",
-      "CROW",
+      "JAY",
       "ROOK",
       "MAGPIE"
      ]
@@ -8816,7 +8816,7 @@
      "words": [
       "GULLIBLE",
       "HAWKER",
-      "TERNARY",
+      "WRENCH",
       "DOVETAIL"
      ]
     }
@@ -8974,7 +8974,7 @@
      "tier": 2,
      "label": "Hinder",
      "words": [
-      "HINDER",
+      "BLOCK",
       "IMPEDE",
       "THWART",
       "OBSTRUCT"
@@ -9112,7 +9112,7 @@
       "MOAT",
       "GULLY",
       "FURROW",
-      "CHANNEL"
+      "DITCH"
      ]
     },
     {
@@ -9157,7 +9157,7 @@
       "PAL",
       "BUDDY",
       "CHUM",
-      "COMRADE"
+      "PARTNER"
      ]
     },
     {
@@ -9245,7 +9245,7 @@
      "label": "Tidy up",
      "words": [
       "SPRUCE",
-      "TIDY",
+      "CLEAN",
       "GROOM",
       "STRAIGHTEN"
      ]
@@ -9552,7 +9552,7 @@
       "WHEAT",
       "BARLEY",
       "MILLET",
-      "SPELT"
+      "RYE"
      ]
     },
     {
@@ -9667,12 +9667,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like numbers",
+     "label": "Hidden ANT",
      "words": [
-      "WON",
-      "TOO",
-      "FORE",
-      "ATE"
+      "PANT",
+      "GIANT",
+      "PLANT",
+      "CHANT"
      ]
     }
    ]
@@ -9807,7 +9807,7 @@
       "SCOWL",
       "PIGMENT",
       "GOATEE",
-      "KITCHEN"
+      "RAMBLE"
      ]
     }
    ]
@@ -10145,7 +10145,7 @@
      "label": "Wager",
      "words": [
       "BET",
-      "WAGER",
+      "VENTURE",
       "GAMBLE",
       "RISK"
      ]
@@ -10281,7 +10281,7 @@
      "words": [
       "DRUM",
       "CYMBAL",
-      "GONG",
+      "BONGO",
       "TAMBOURINE"
      ]
     },
@@ -10369,7 +10369,7 @@
      "tier": 2,
      "label": "Hint",
      "words": [
-      "HINT",
+      "CLUE",
       "PROMPT",
       "SIGNAL",
       "NUDGE"
@@ -10597,7 +10597,7 @@
       "SOLE",
       "LONE",
       "SOLO",
-      "SINGLE"
+      "ONLY"
      ]
     },
     {
@@ -10657,12 +10657,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like seafood",
+     "label": "Hidden TART",
      "words": [
-      "SOUL",
-      "LOCKS",
-      "MUSCLE",
-      "ROW"
+      "TARTAN",
+      "START",
+      "STARTLE",
+      "TARTAR"
      ]
     }
    ]
@@ -10732,7 +10732,7 @@
       "BALONEY",
       "HOGWASH",
       "DRIVEL",
-      "TWADDLE"
+      "BUNK"
      ]
     },
     {
@@ -10866,7 +10866,7 @@
      "words": [
       "JEER",
       "TAUNT",
-      "MOCK",
+      "DERIDE",
       "RIDICULE"
      ]
     },
@@ -11142,12 +11142,12 @@
     },
     {
      "tier": 3,
-     "label": "___neck",
+     "label": "___line",
      "words": [
-      "TURTLE",
-      "BOTTLE",
-      "CREW",
-      "BREAK"
+      "PUNCH",
+      "HEAD",
+      "FINISH",
+      "CLOTHES"
      ]
     },
     {
@@ -11245,7 +11245,7 @@
      "label": "Hidden numbers",
      "words": [
       "HONEST",
-      "OFTEN",
+      "LISTEN",
       "WEIGHT",
       "CANINE"
      ]
@@ -11272,7 +11272,7 @@
       "METHOD",
       "MEANS",
       "APPROACH",
-      "CHANNEL"
+      "MANNER"
      ]
     },
     {
@@ -11312,12 +11312,12 @@
     },
     {
      "tier": 2,
-     "label": "Walk heavily",
+     "label": "Exhausted",
      "words": [
-      "TRUDGE",
-      "PLOD",
-      "STOMP",
-      "TRAMP"
+      "WEARY",
+      "SPENT",
+      "DRAINED",
+      "BUSHED"
      ]
     },
     {
@@ -11531,7 +11531,7 @@
      "words": [
       "BUTLER",
       "MAID",
-      "FOOTMAN",
+      "NANNY",
       "VALET"
      ]
     },
@@ -11576,7 +11576,7 @@
      "words": [
       "CIRRUS",
       "CUMULUS",
-      "NIMBUS",
+      "THUNDERHEAD",
       "STRATUS"
      ]
     },
@@ -11602,12 +11602,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like weather words",
+     "label": "Hidden ICE",
      "words": [
-      "REIGN",
-      "HALE",
-      "MISSED",
-      "DUE"
+      "SLICE",
+      "PRICE",
+      "NOTICE",
+      "POLICE"
      ]
     }
    ]
@@ -11799,7 +11799,7 @@
      "tier": 1,
      "label": "Magic spells",
      "words": [
-      "SPELL",
+      "WHAMMY",
       "CHARM",
       "HEX",
       "JINX"
@@ -11990,7 +11990,7 @@
      "label": "The boss",
      "words": [
       "CHIEF",
-      "BOSS",
+      "HONCHO",
       "DIRECTOR",
       "SUPERVISOR"
      ]
@@ -12025,7 +12025,7 @@
      "label": "Rooms and spaces",
      "words": [
       "HALL",
-      "LOUNGE",
+      "FOYER",
       "LANDING",
       "PORCH"
      ]
@@ -12042,12 +12042,12 @@
     },
     {
      "tier": 3,
-     "label": "Town ___",
+     "label": "Sun___",
      "words": [
-      "CRIER",
-      "SQUARE",
-      "HOUSE",
-      "MEETING"
+      "FLOWER",
+      "BURN",
+      "GLASSES",
+      "DIAL"
      ]
     },
     {
@@ -12260,7 +12260,7 @@
      "label": "Tear",
      "words": [
       "RIP",
-      "TEAR",
+      "SNAG",
       "SPLIT",
       "GASH"
      ]
@@ -12305,7 +12305,7 @@
      "label": "Jewelry",
      "words": [
       "BROOCH",
-      "BANGLE",
+      "ANKLET",
       "PENDANT",
       "LOCKET"
      ]
@@ -12432,7 +12432,7 @@
       "MACAW",
       "COCKATOO",
       "PARAKEET",
-      "PARROT"
+      "COCKATIEL"
      ]
     },
     {
@@ -12575,7 +12575,7 @@
      "label": "Stash",
      "words": [
       "CACHE",
-      "STASH",
+      "HOARD",
       "STORE",
       "BURY"
      ]
@@ -13025,7 +13025,7 @@
      "label": "Pet",
      "words": [
       "PAT",
-      "PET",
+      "CUDDLE",
       "CARESS",
       "RUB"
      ]
@@ -13117,7 +13117,7 @@
       "JELLY",
       "MARMALADE",
       "PRESERVE",
-      "CURD"
+      "BUTTER"
      ]
     },
     {
@@ -13582,12 +13582,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like numbers",
+     "label": "Hidden RAIN",
      "words": [
-      "WON",
-      "TOO",
-      "FORE",
-      "ATE"
+      "TRAIN",
+      "BRAIN",
+      "GRAIN",
+      "STRAIN"
      ]
     }
    ]
@@ -13737,7 +13737,7 @@
       "OVEN",
       "FREEZER",
       "DISHWASHER",
-      "KETTLE"
+      "MICROWAVE"
      ]
     },
     {
@@ -13961,7 +13961,7 @@
      "words": [
       "GRANDPA",
       "GRAMPS",
-      "GRANDFATHER",
+      "GRANDDAD",
       "POPS"
      ]
     },
@@ -14197,7 +14197,7 @@
       "SIN",
       "FLAW",
       "WEAKNESS",
-      "FAILING"
+      "FAULT"
      ]
     },
     {
@@ -14420,7 +14420,7 @@
      "label": "Clever",
      "words": [
       "SHARP",
-      "CLEVER",
+      "SMART",
       "ASTUTE",
       "CANNY"
      ]
@@ -14487,7 +14487,7 @@
       "GARDEN",
       "HIDDEN",
       "SUDDEN",
-      "WOODEN"
+      "BURDEN"
      ]
     }
    ]
@@ -14634,7 +14634,7 @@
      "tier": 1,
      "label": "Chess pieces",
      "words": [
-      "PAWN",
+      "QUEEN",
       "ROOK",
       "BISHOP",
       "KNIGHT"
@@ -14967,12 +14967,12 @@
     },
     {
      "tier": 3,
-     "label": "___ pie",
+     "label": "Sand___",
      "words": [
-      "HUMBLE",
-      "MUD",
-      "POT",
-      "APPLE"
+      "CASTLE",
+      "PAPER",
+      "BOX",
+      "BAR"
      ]
     },
     {
@@ -15095,7 +15095,7 @@
      "label": "Sets of two",
      "words": [
       "PAIR",
-      "BRACE",
+      "TWOSOME",
       "COUPLE",
       "DUO"
      ]
@@ -15231,7 +15231,7 @@
      "words": [
       "GOBBLE",
       "WOLF",
-      "SCARF",
+      "GULP",
       "DEVOUR"
      ]
     },
@@ -15431,7 +15431,7 @@
      "words": [
       "WASTE",
       "HEAL",
-      "TOW",
+      "AYE",
       "HARE"
      ]
     }
@@ -15499,7 +15499,7 @@
      "tier": 2,
      "label": "Drool",
      "words": [
-      "DROOL",
+      "SALIVATE",
       "SLOBBER",
       "DRIP",
       "TRICKLE"
@@ -15654,7 +15654,7 @@
      "tier": 4,
      "label": "Anagram of an instrument",
      "words": [
-      "RELY",
+      "ALERTING",
       "GROAN",
       "STAIR",
       "ABUT"
@@ -15692,7 +15692,7 @@
       "FAVOR",
       "ANIMAL",
       "TRICK",
-      "HAT"
+      "LINE"
      ]
     },
     {
@@ -15834,7 +15834,7 @@
      "tier": 4,
      "label": "Reverse for an animal",
      "words": [
-      "FLOW",
+      "MAR",
       "TAB",
       "REED",
       "TAR"
@@ -15927,7 +15927,7 @@
       "WAIT",
       "FEAT",
       "WEAK",
-      "TUN"
+      "HURTS"
      ]
     }
    ]
@@ -16175,7 +16175,7 @@
      "label": "Slow on the uptake",
      "words": [
       "DENSE",
-      "SLOW",
+      "DOPEY",
       "THICK",
       "DIM"
      ]
@@ -16347,7 +16347,7 @@
       "MOSQUITO",
       "GNAT",
       "HORNET",
-      "MIDGE"
+      "WASP"
      ]
     },
     {
@@ -16527,7 +16527,7 @@
       "WHISK",
       "LADLE",
       "SPATULA",
-      "TONGS"
+      "PEELER"
      ]
     },
     {
@@ -16552,12 +16552,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like numbers",
+     "label": "Hidden BUN",
      "words": [
-      "WON",
-      "TOO",
-      "ATE",
-      "FORE"
+      "BUNNY",
+      "BUNDLE",
+      "BUNCH",
+      "BUNKER"
      ]
     }
    ]
@@ -16767,12 +16767,12 @@
     },
     {
      "tier": 3,
-     "label": "Party ___",
+     "label": "Gift ___",
      "words": [
-      "HAT",
-      "FAVOR",
-      "ANIMAL",
-      "TRICK"
+      "WRAP",
+      "CARD",
+      "BAG",
+      "SHOP"
      ]
     },
     {
@@ -16942,7 +16942,7 @@
       "NIECE",
       "UNCLE",
       "COUSIN",
-      "NEPHEW"
+      "STEPSON"
      ]
     },
     {
@@ -17114,7 +17114,7 @@
       "TOTS",
       "HASH",
       "FRIES",
-      "CHIPS"
+      "WEDGES"
      ]
     },
     {
@@ -17201,7 +17201,7 @@
      "tier": 1,
      "label": "Fairy folk",
      "words": [
-      "FAIRY",
+      "SPRITE",
       "ELF",
       "PIXIE",
       "GNOME"
@@ -17289,19 +17289,19 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Places to stay",
+     "label": "Luggage",
      "words": [
-      "HOTEL",
-      "MOTEL",
-      "HOSTEL",
-      "INN"
+      "SUITCASE",
+      "DUFFEL",
+      "BACKPACK",
+      "TRUNK"
      ]
     },
     {
      "tier": 2,
      "label": "Watering holes",
      "words": [
-      "PUB",
+      "DIVE",
       "BAR",
       "TAVERN",
       "SALOON"
@@ -17346,7 +17346,7 @@
      "tier": 2,
      "label": "Neat",
      "words": [
-      "NEAT",
+      "CLEAN",
       "TRIM",
       "TIDY",
       "SPRUCE"
@@ -17354,12 +17354,12 @@
     },
     {
      "tier": 3,
-     "label": "Tree ___",
+     "label": "Head___",
      "words": [
-      "HOUSE",
-      "TRUNK",
-      "FROG",
-      "LINE"
+      "BAND",
+      "LIGHT",
+      "PHONES",
+      "START"
      ]
     },
     {
@@ -17439,17 +17439,17 @@
       "GRADE",
       "TIER",
       "ECHELON",
-      "LEVEL"
+      "RUNG"
      ]
     },
     {
      "tier": 3,
-     "label": "___ play",
+     "label": "Bad ___",
      "words": [
-      "FAIR",
-      "HORSE",
-      "CHILD",
-      "POWER"
+      "LUCK",
+      "NEWS",
+      "HABIT",
+      "APPLE"
      ]
     },
     {
@@ -17654,7 +17654,7 @@
       "COD",
       "HADDOCK",
       "SOLE",
-      "HALIBUT"
+      "SALMON"
      ]
     },
     {
@@ -17662,7 +17662,7 @@
      "label": "Only",
      "words": [
       "LONE",
-      "ONLY",
+      "SOLO",
       "SINGLE",
       "SOLITARY"
      ]
@@ -17679,12 +17679,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like seafood",
+     "label": "Hidden EEL",
      "words": [
-      "ROW",
-      "LOCKS",
-      "MUSCLE",
-      "SOUL"
+      "PEEL",
+      "FEEL",
+      "KNEEL",
+      "STEEL"
      ]
     }
    ]
@@ -17699,17 +17699,17 @@
       "TAG",
       "HOPSCOTCH",
       "LEAPFROG",
-      "MARBLES"
+      "JACKS"
      ]
     },
     {
      "tier": 2,
-     "label": "Identifiers",
+     "label": "Things you can sign",
      "words": [
-      "LABEL",
-      "TICKET",
-      "BADGE",
-      "STICKER"
+      "CAST",
+      "CHECK",
+      "LEASE",
+      "PETITION"
      ]
     },
     {
@@ -17754,7 +17754,7 @@
       "BUTTON",
       "ZIP",
       "SNAP",
-      "TOGGLE"
+      "BUCKLE"
      ]
     },
     {
@@ -17774,7 +17774,7 @@
       "REIGN",
       "MISSED",
       "HALE",
-      "SON"
+      "WHETHER"
      ]
     }
    ]
@@ -17834,7 +17834,7 @@
       "MONARCH",
       "ADMIRAL",
       "SKIPPER",
-      "PEACOCK"
+      "SWALLOWTAIL"
      ]
     },
     {
@@ -17886,7 +17886,7 @@
      "tier": 2,
      "label": "Settle a debt",
      "words": [
-      "SETTLE",
+      "REIMBURSE",
       "CLEAR",
       "REPAY",
       "EVEN"
@@ -17899,7 +17899,7 @@
       "LINE",
       "TAP",
       "RAIN",
-      "POLE"
+      "FOLK"
      ]
     },
     {
@@ -18054,12 +18054,12 @@
    "groups": [
     {
      "tier": 1,
-     "label": "Fireworks",
+     "label": "At a parade",
      "words": [
-      "ROCKET",
-      "SPARKLER",
-      "FOUNTAIN",
-      "FIRECRACKER"
+      "FLOAT",
+      "BAND",
+      "BATON",
+      "BANNER"
      ]
     },
     {
@@ -18084,12 +18084,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like numbers",
+     "label": "Hidden STAR",
      "words": [
-      "WON",
-      "TOO",
-      "ATE",
-      "FORE"
+      "START",
+      "STARCH",
+      "MUSTARD",
+      "STARFISH"
      ]
     }
    ]
@@ -18159,7 +18159,7 @@
       "LAD",
       "DUDE",
       "GUY",
-      "GENT"
+      "FELLA"
      ]
     },
     {
@@ -18174,12 +18174,12 @@
     },
     {
      "tier": 4,
-     "label": "Sound like weather",
+     "label": "Hidden ROW",
      "words": [
-      "REIGN",
-      "HALE",
-      "DUE",
-      "MISSED"
+      "GROWL",
+      "ARROW",
+      "THROW",
+      "BROWSE"
      ]
     }
    ]
@@ -18204,7 +18204,7 @@
       "SATED",
       "REPLETE",
       "GORGED",
-      "STUFFED"
+      "BLOATED"
      ]
     },
     {
@@ -18314,7 +18314,7 @@
       "OFTEN",
       "STONE",
       "WEIGHT",
-      "CANINE"
+      "NETWORK"
      ]
     }
    ]
@@ -18434,12 +18434,12 @@
     },
     {
      "tier": 3,
-     "label": "___ story",
+     "label": "Pen ___",
      "words": [
-      "COVER",
-      "SHORT",
-      "TALL",
-      "GHOST"
+      "PAL",
+      "NAME",
+      "KNIFE",
+      "LIGHT"
      ]
     },
     {
@@ -18614,12 +18614,12 @@
     },
     {
      "tier": 3,
-     "label": "Honey___",
+     "label": "Love ___",
      "words": [
-      "MOON",
-      "COMB",
-      "BEE",
-      "DEW"
+      "SEAT",
+      "BIRD",
+      "LETTER",
+      "SONG"
      ]
     },
     {
@@ -18821,7 +18821,7 @@
      "tier": 1,
      "label": "Shade",
      "words": [
-      "SHADE",
+      "DARKNESS",
       "SHADOW",
       "UMBRA",
       "GLOOM"
@@ -18831,7 +18831,7 @@
      "tier": 2,
      "label": "A hint of",
      "words": [
-      "HINT",
+      "DASH",
       "TINGE",
       "TOUCH",
       "TRACE"
@@ -19438,7 +19438,7 @@
      "words": [
       "DEAR",
       "MOUSSE",
-      "KNEW",
+      "HEIR",
       "LINKS"
      ]
     }
@@ -19598,7 +19598,7 @@
      "words": [
       "DOZE",
       "NAP",
-      "SNOOZE",
+      "SIESTA",
       "SLUMBER"
      ]
     },
@@ -19643,7 +19643,7 @@
      "words": [
       "REBOUND",
       "RICOCHET",
-      "BOUNCE",
+      "BOUND",
       "SPRING"
      ]
     },
@@ -19779,7 +19779,7 @@
       "TREMBLE",
       "SHIVER",
       "SHUDDER",
-      "SHAKE"
+      "QUAKE"
      ]
     },
     {
@@ -19887,7 +19887,7 @@
      "label": "Sound like clothing",
      "words": [
       "GENES",
-      "HOES",
+      "CLOSE",
       "SOOT",
       "SHOO"
      ]
@@ -19978,7 +19978,7 @@
      "words": [
       "SWAYED",
       "TOOL",
-      "SURGE",
+      "CHORD",
       "GENE"
      ]
     }
@@ -20234,12 +20234,12 @@
     },
     {
      "tier": 3,
-     "label": "___stick",
+     "label": "Tooth___",
      "words": [
-      "YARD",
-      "DRUM",
-      "JOY",
-      "LIP"
+      "BRUSH",
+      "PASTE",
+      "PICK",
+      "ACHE"
      ]
     },
     {
@@ -20489,7 +20489,7 @@
       "MALLARD",
       "TEAL",
       "EIDER",
-      "GOLDENEYE"
+      "WOOD"
      ]
     },
     {
@@ -20606,7 +20606,7 @@
      "tier": 4,
      "label": "Anagrams of STAR",
      "words": [
-      "STAR",
+      "TARS",
       "RATS",
       "ARTS",
       "TSAR"
@@ -20884,7 +20884,7 @@
       "tier": 4,
       "label": "Words meaning 'present'",
       "words": [
-       "GIFT",
+       "EXISTING",
        "NOW",
        "HERE",
        "CURRENT"
@@ -20948,7 +20948,7 @@
       "tier": 1,
       "label": "Cinco de Mayo fiesta",
       "words": [
-       "FIESTA",
+       "PINATA",
        "SOMBRERO",
        "MARACAS",
        "GUITAR"
@@ -21055,7 +21055,7 @@
        "FIREWORKS",
        "MARIGOLD",
        "LOTUS",
-       "SWEETS"
+       "SPARKLERS"
       ]
      },
      {
@@ -21405,7 +21405,7 @@
        "GLANCE",
        "PEEP",
        "GANDER",
-       "SQUINT"
+       "PEEK"
       ]
      }
     ],
@@ -21532,7 +21532,7 @@
       "tier": 3,
       "label": "Carving a pumpkin",
       "words": [
-       "CARVE",
+       "HOLLOW",
        "SCOOP",
        "GRIN",
        "GLOW"
@@ -21766,12 +21766,12 @@
      },
      {
       "tier": 3,
-      "label": "Rocket ___",
+      "label": "Fire___",
       "words": [
-       "SHIP",
-       "FUEL",
-       "SCIENCE",
-       "BOOSTER"
+       "WORKS",
+       "FLY",
+       "PLACE",
+       "HOUSE"
       ]
      },
      {
@@ -22124,7 +22124,7 @@
       "tier": 1,
       "label": "Rare as February 29",
       "words": [
-       "RARE",
+       "UNUSUAL",
        "SELDOM",
        "SCARCE",
        "UNCOMMON"
@@ -22188,12 +22188,12 @@
      },
      {
       "tier": 3,
-      "label": "One more",
+      "label": "___ cake",
       "words": [
-       "BONUS",
-       "SPARE",
-       "EXTRA",
-       "SURPLUS"
+       "CARROT",
+       "POUND",
+       "SPONGE",
+       "LAYER"
       ]
      },
      {
@@ -22381,7 +22381,7 @@
        "CAT",
        "CHANCE",
        "LIP",
-       "FARM"
+       "FREE"
       ]
      },
      {
@@ -23252,7 +23252,7 @@
       "tier": 1,
       "label": "Armistice Day",
       "words": [
-       "ARMISTICE",
+       "CEASEFIRE",
        "TRUCE",
        "PEACE",
        "POPPY"

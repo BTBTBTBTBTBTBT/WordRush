@@ -38,6 +38,10 @@ describe('feedbackTone', () => {
     expect(feedbackTone('Challenge sent')).toBe('success');
     expect(feedbackTone('Saved')).toBe('success');
   });
+  it('warns (Codebreaker conflict toast, founder 10-08)', () => {
+    expect(feedbackTone('S used for two code letters')).toBe('warn');
+    expect(feedbackTone('S, T used for two code letters')).toBe('warn');
+  });
   it('errors', () => {
     expect(feedbackTone('Not in word list')).toBe('error');
     expect(feedbackTone('Already guessed')).toBe('error');

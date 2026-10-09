@@ -343,10 +343,8 @@ struct HomeBannerView: View {
             VStack(spacing: -fit.size * 0.42) {
                 ForEach(Array(fit.layout.lines.enumerated()), id: \.offset) { i, line in
                     let hero = fit.layout.nameLines.contains(i)
-                    LiveHeadline(text: line, palette: trophy ? .celebration : (look?.headlinePalette ?? (hero ? .leaderboard : .home)),
-                                 size: fit.size, names: hero ? [] : [name], alignment: .center,
-                                 maxLines: 1, minimumScale: fit.layout.lines.count > 1 ? 1 : 0.75)
-                        .fixedSize(horizontal: false, vertical: true)
+                    BubbleLineView(text: line, palette: trophy ? .celebration : (look?.headlinePalette ?? (hero ? .leaderboard : .home)),
+                                   size: fit.size, names: hero ? [] : [name])
                 }
             }
             // The lettering's line box carries ~0.3 em above the caps and ~0.35 em under the
@@ -359,15 +357,16 @@ struct HomeBannerView: View {
     /// BJ6: the lettering size + line layout for a headline at the slot's width — computed when
     /// the inputs change (cached), never per frame. Brand fonts follow Dynamic Type, so the size
     /// handed to LiveHeadline is the measured size divided by that scale.
-    private static var fitCache: [String: (size: CGFloat, layout: HeadlineLayout.Layout)] = [:]
-    static func headlineFit(_ text: String, name: String, width: CGFloat) -> (size: CGFloat, layout: HeadlineLayout.Layout) {
+    private static var fitCache: [String: (size: CGFloat, layout: BubbleText.Fit)] = [:]
+    static func headlineFit(_ text: String, name: String, width: CGFloat) -> (size: CGFloat, layout: BubbleText.Fit) {
         let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
         let key = "\(text)|\(name)|\(Int(width))|\(dyn)"
         if let hit = fitCache[key] { return hit }
         let w = max(1, Double(width))
-        let rendered = HeadlineLayout.fontSize(availableWidth: w)
-        let layout = HeadlineLayout.layout(text, name: name, maxEm: w / rendered)
-        let out = (size: CGFloat(rendered) / dyn, layout: layout)
+        // 2.8 item 6: core's bubble-text fit — the name keeps its stacked gold lines, every other
+        // headline that is too long wraps in balanced lines (never "…", never a clip).
+        let layout = BubbleText.homeFit(text, name: name, slotWidth: w)
+        let out = (size: CGFloat(layout.size) / dyn, layout: layout)
         if fitCache.count > 64 { fitCache.removeAll() }
         fitCache[key] = out
         return out
@@ -491,48 +490,38 @@ private struct BannerTile: View {
     var body: some View {
         let accent = mode.accent
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        let solid = !unlimited && result != nil
-        let won = !unlimited && result?.completed == true
         Button(action: onTap) {
             ZStack {
-                if unlimited {
+                if !unlimited, let result {
+                    // 2.8 item 8: the ONE game-tile style (the Sudocious finish screen's picker tile):
+                    // the game's color wash + top band, and today's W / L badge in the corner.
+                    PickerTile(accent: accent, result: result.completed, radius: radius, bar: 3, badge: 13) { side in
+                        BannerGlyph(icon: mode.icon, ink: accent, accent: accent, solid: false,
+                                    size: iconSize > 0 ? iconSize : floor(side * 0.56))
+                    }
+                } else if unlimited {
                     shape.fill(accent.seasonWash(0.16))
                         .shadow(color: accent.opacity(0.18), radius: 3, x: 0, y: 2)
-                } else if let result {
-                    // Glossy: the fill plus a soft white sheen over its top half.
-                    shape.fill(result.completed ? accent : Color(hex: 0x9CA3AF))
-                        .overlay(shape.fill(LinearGradient(stops: [.init(color: .white.opacity(0.38), location: 0),
-                                                                   .init(color: .white.opacity(0), location: 0.55)],
-                                                           startPoint: .top, endPoint: .bottom)))
-                        .shadow(color: result.completed ? accent.opacity(0.55) : .clear, radius: 3.5, x: 0, y: 1.5)
                 } else {
                     // Not played: pale out of season; on a dark season's glass a dim night tile
                     // (only a hint of the game color), so the played tiles' solid color stands out.
                     shape.fill(accent.seasonIdleTile)
                 }
                 // BJ6: the icon scales with its tile (iconSize 0 = 56% of the tile's side).
-                GeometryReader { g in
-                    BannerGlyph(icon: mode.icon, ink: solid ? .white : accent, accent: accent, solid: solid,
-                                size: iconSize > 0 ? iconSize : floor(min(g.size.width, g.size.height) * 0.56))
-                        .frame(width: g.size.width, height: g.size.height)
+                if unlimited || result == nil {
+                    GeometryReader { g in
+                        BannerGlyph(icon: mode.icon, ink: accent, accent: accent, solid: false,
+                                    size: iconSize > 0 ? iconSize : floor(min(g.size.width, g.size.height) * 0.56))
+                            .frame(width: g.size.width, height: g.size.height)
+                    }
+                    .opacity(!unlimited && result == nil ? 0.45 : 1)
                 }
-                .opacity(!unlimited && result == nil ? 0.45 : 1)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(alignment: .bottomTrailing) {
-                if won {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 7, weight: .black))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 0.8, x: 0, y: 0.5)
-                        .padding(2.5)
-                        .accessibilityHidden(true)
-                }
-            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.squish)
-        .accessibilityLabel(mode.title + (unlimited ? "" : result.map { $0.completed ? ", won" : ", played" } ?? ", not played yet"))
+        .accessibilityLabel(mode.title + (unlimited ? "" : result.map { $0.completed ? ", won" : ", lost" } ?? ", not played yet"))
     }
 }
 

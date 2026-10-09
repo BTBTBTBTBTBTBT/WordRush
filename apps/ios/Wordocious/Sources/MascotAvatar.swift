@@ -275,6 +275,10 @@ struct MascotArtComposition: View {
     let dark: Bool
     let fit: AvatarManifest
     var stroke: Bool = true
+    /// The living mascot (LivingMascotView): its fixed live layout + this frame's transforms (content fractions).
+    /// nil = the layout the core gives this config (exactly as before while the flag is off).
+    var layoutOverride: AvatarLayout? = nil
+    var live: [String: AvatarMatrix]? = nil
 
     var body: some View {
         let framed = config.frame != "none"
@@ -282,12 +286,12 @@ struct MascotArtComposition: View {
         let base = Color(hex: AvatarCatalog.colorValue(config.color))
         let shape = AvatarOutline(tile: true)
         let small = size <= MascotParts.smallSize
-        let layout = AvatarFit.layout(config, small: small, manifest: fit)
+        let layout = layoutOverride ?? AvatarFit.layout(config, small: small, manifest: fit)
         ZStack {
             ZStack {
                 MascotBackdrop(bg: config.bg, base: base, dark: dark)
                 Canvas { ctx, _ in
-                    MascotArtPainter.paint(ctx, side: inner, layout: layout, config: config, initial: initial, small: small)
+                    MascotArtPainter.paint(ctx, side: inner, layout: layout, config: config, initial: initial, small: small, live: live)
                 }
                 .frame(width: inner, height: inner)
             }
@@ -327,7 +331,29 @@ enum MascotArtPainter {
         }
     }
 
-    static func paint(_ ctx: GraphicsContext, side: CGFloat, layout: AvatarLayout, config c: AvatarConfig, initial: String, small: Bool) {
+    /// A content-fraction matrix (core posed layouts) → the canvas's content px: S(side) · M · S(1/side).
+    static func transform(_ m: AvatarMatrix, side: CGFloat) -> CGAffineTransform {
+        CGAffineTransform(a: CGFloat(m[0]), b: CGFloat(m[1]), c: CGFloat(m[2]), d: CGFloat(m[3]),
+                          tx: CGFloat(m[4]) * side, ty: CGFloat(m[5]) * side)
+    }
+
+    /// `live`: the living mascot's per-frame transforms (AvatarFit.liveTransforms: per ride + "eyes" / "mouth"), which
+    /// replace the layers' own matrices. Un-posed layouts (no `m`) without `live` draw exactly as before.
+    static func paint(_ ctx: GraphicsContext, side: CGFloat, layout: AvatarLayout, config c: AvatarConfig, initial: String, small: Bool,
+                      live: [String: AvatarMatrix]? = nil) {
+        // posed: each layer draws under its part's matrix (web avatar-render `group`)
+        func under(_ ride: String?, _ m: AvatarMatrix?, face: String? = nil) -> GraphicsContext {
+            var mm: AvatarMatrix? = m
+            if let live, !live.isEmpty {
+                var key = ride ?? "root"
+                if let face, live[face] != nil { key = face }
+                mm = live[key] ?? live["root"]
+            }
+            guard let mm, mm.count == 6 else { return ctx }
+            var g = ctx
+            g.concatenate(transform(mm, side: side))
+            return g
+        }
         let bodyColor = AvatarCatalog.color(c.color)
         let ink = color(AvatarCatalog.color(c.patternColor == c.color ? c.color : c.patternColor).hex)
         let baseC = color(bodyColor.hex)
@@ -340,19 +366,22 @@ enum MascotArtPainter {
         for (i, l) in layout.layers.enumerated() {
             // the white initial goes just before layers[letterIndex]: ON the 'under' garments (apron, belt),
             // under every part in front (v3 integrated parts, docs/design/brand/avatar/INTEGRATION.md)
-            if i == layout.letterIndex { letter(ctx, initial, rect(layout.letter, side), base: baseC) }
+            if i == layout.letterIndex { letter(under("root", layout.letterM), initial, rect(layout.letter, side), base: baseC) }
             let r = rect(l.rect, side)
-            if l.layer == "body" {
-                tinted(ctx, l.art, r, fill: shading(bodyColor, in: r)) { layer in
-                    guard !small, c.pattern != "solid" else { return }
+            if l.layer == "body" || l.field == "body" {
+                // the body (posed: its feet / base / arm layers, each tinted the same; the pattern rides the base)
+                let patterned = l.layer == "body" && !l.art.hasSuffix("-feet")
+                tinted(under(l.ride, l.m), l.art, r, fill: shading(bodyColor, in: r)) { layer in
+                    guard !small, c.pattern != "solid", patterned else { return }
                     pattern(&layer, AvatarFit.patternShapes(c.pattern), in: r, ink: patInk, base: baseC)
                 }
                 continue
             }
             guard ArtAsset.exists(l.art) else { continue }
-            if l.tint, let acc { tinted(ctx, l.art, r, fill: shading(acc, in: r)) } else { ctx.draw(MascotArtCache.image(l.art), in: r) }
+            let g = under(l.ride, l.m, face: l.layer == "eyes" || l.layer == "mouth" ? l.layer : nil)
+            if l.tint, let acc { tinted(g, l.art, r, fill: shading(acc, in: r)) } else { g.draw(MascotArtCache.image(l.art), in: r) }
         }
-        if layout.letterIndex >= layout.layers.count { letter(ctx, initial, rect(layout.letter, side), base: baseC) }
+        if layout.letterIndex >= layout.layers.count { letter(under("root", layout.letterM), initial, rect(layout.letter, side), base: baseC) }
     }
 
     static func letter(_ ctx: GraphicsContext, _ initial: String, _ box: CGRect, base: Color) {

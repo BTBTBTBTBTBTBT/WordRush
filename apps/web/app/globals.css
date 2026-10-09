@@ -872,7 +872,14 @@ html[data-season-tone="dark"] [data-page-tint="vs"] {
   --vs-deep: #99f6e4;
   --vs-soft: #134e4a;
   --vs-page: var(--color-surface);
+  /* The VS lobby banner (components/vs/vs-banner.tsx): its pale teal fill + white strip would put the lifted teal
+     inks (--vs-ink) on a light ground (1.6:1); under a dark season the banner is night teal and the strip a shade. */
+  --vs-banner-fill: linear-gradient(180deg, #0f3a3d, #17254a);
+  --vs-banner-strip: rgba(0, 0, 0, 0.22);
 }
+/* The soft numbers (lettering in the deep purple) take their light twin on a dark season's night glass, on every
+   page (the VS / Friends pages pin the light scheme, so the [data-page-scheme="auto"] rule doesn't reach them). */
+html[data-season-tone="dark"] .soft-num { color: #e9ddff; text-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
 /* The same on the light-only Friends pages (LIGHT_CARD_BASE pins the white card base): the night
    glass + the Friends inks' light twins (--fr-*, light fallbacks in lib/friends-look + friends-play). */
 html[data-season-tone="dark"] [data-page-tint="friends"] {
@@ -1480,6 +1487,26 @@ html[data-season] .candy.candy-peach:not(.candy-on) {
 .castrow[data-puppet-ready] .cm > canvas[data-puppet] { opacity: 1; }
 .castrow .cm, a:has(> * > .castrow), a:has(.castrow) { -webkit-tap-highlight-color: transparent; }
 .castrow .cm { touch-action: manipulation; }
+/* The musical cast easter egg (core musical-cast.ts; behind musicalCast): a soft gold glow behind each hero and a
+   little note badge on its shoulder, each switching on after its own ripple delay (--md). Opacity / transform only.
+   TODO(art): ChatGPT musical costume art slots in per hero (data-art-slot="art-cast-musical-<id>"). */
+.castrow .cm { -webkit-touch-callout: none; }
+.castrow .cm > .cm-glow { position: absolute; left: -38%; right: -38%; top: -30%; bottom: -26%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(250, 204, 21, 0.8), rgba(253, 224, 71, 0.35) 55%, rgba(253, 224, 71, 0) 78%); opacity: 0;
+  transition: opacity 260ms ease-out; transition-delay: var(--md, 0ms); }
+.castrow .cm > .cm-note { position: absolute; right: 2%; top: 4%; width: 30%; aspect-ratio: 5 / 6; pointer-events: none; z-index: 2;
+  color: #7c3aed; opacity: 0; transform: scale(0.3); filter: drop-shadow(0 1px 1px rgba(60, 30, 110, 0.3));
+  transition: opacity 200ms ease-out, transform 320ms cubic-bezier(0.3, 1.5, 0.5, 1); transition-delay: var(--md, 0ms); }
+.castrow[data-musical] .cm > .cm-glow { opacity: 1; }
+.castrow[data-musical] .cm > .cm-note { opacity: 1; transform: scale(1); animation: cm-note-bob 1.6s ease-in-out var(--md, 0ms) infinite; }
+.castrow .cm > .cm-float { position: absolute; left: 30%; top: 10%; width: 32%; aspect-ratio: 5 / 6; pointer-events: none; z-index: 3; }
+@keyframes cm-note-bob { 0%, 100% { translate: 0 0; rotate: -6deg; } 50% { translate: 0 -12%; rotate: 6deg; } }
+@media (prefers-reduced-motion: reduce) {
+  .castrow .cm > .cm-glow, .castrow .cm > .cm-note { transition: none; }
+  .castrow[data-musical] .cm > .cm-note { animation: none; }
+}
+html[data-reduced-motion="true"] .castrow .cm > .cm-glow, html[data-reduced-motion="true"] .castrow .cm > .cm-note { transition: none; }
+html[data-reduced-motion="true"] .castrow[data-musical] .cm > .cm-note { animation: none; }
 .cm.act-o1 { animation: m-spin 900ms cubic-bezier(0.45, 0, 0.25, 1); transform-origin: 50% 55%; }
 @keyframes m-spin { 0% { transform: rotate(0); } 85% { transform: rotate(372deg); } 100% { transform: rotate(360deg); } }
 .cm.act-w { animation: m-hop 700ms cubic-bezier(0.3, 1.5, 0.5, 1); }
@@ -1711,13 +1738,14 @@ html[data-season] .candy.candy-peach:not(.candy-on) {
 .gtile.sdk-cell[data-sdk="wash"][data-s="given"] { --gt-face: #eadfff; --gt-edge: #c9b0f3; }
 [data-theme="dark"] .gtile.sdk-cell[data-sdk="wash"][data-s="empty"] { --gt-face: rgba(167, 139, 250, 0.3); --gt-edge: rgba(167, 139, 250, 0.5); --gt-ring: inset 0 0 0 2px rgba(167, 139, 250, 0.4); }
 .pz-num {
-  /* Doug / founder 10-05: a small muted superscript fully INSIDE the top-left corner (no chip, never on the
-     border; the selection ring is an outer box-shadow, so it never covers it). Android/iOS CrosswordCellSpec. */
+  /* Founder 10-06: the clue number is a SMALL badge fully INSIDE the top-left corner (~20% of the cell, never on
+     the border; the selection ring is an outer box-shadow, so it never covers it). It never shrinks or moves the
+     letter: every cell's letter is the same size and exactly centered. iOS/Android CrosswordCellSpec. */
   position: absolute;
   z-index: 4;
   /* clear of the tile's inner ring (2.5px) on small web cells too */
-  top: max(4px, 10%);
-  left: max(4.5px, 11%);
+  top: max(3px, 7%);
+  left: max(3.5px, 8%);
   font-size: var(--pz-num, 8px);
   font-weight: 900;
   line-height: 0.8;
@@ -1726,15 +1754,23 @@ html[data-season] .candy.candy-peach:not(.candy-on) {
 }
 .gtile.pz-cell[data-s="correct"] .pz-num { color: rgba(255, 255, 255, 0.85); }
 [data-theme="dark"] .pz-num { color: rgba(233, 221, 255, 0.8); }
-/* A numbered cell's letter steps clear of its number: a touch smaller and lower; on small cells also right. */
-.gtile.pz-cell[data-num] > b { translate: 0 6%; scale: 0.92; }
-.gtile.pz-cell[data-num="small"] > b { translate: 14% 15%; scale: 0.7; }
 
 /* ── F2 fix · one cast row at a time (components/providers/cold-start-intro.tsx):
    the real header row stays laid out but hidden while the intro runs; after
    landing every character hops once (the W hop, 420 ms, 50 ms apart). ── */
 [data-intro-running] [data-cast-row] { opacity: 0 !important; }
-.castrow .cm.cast-flourish { animation: m-hop 420ms cubic-bezier(0.3, 1.5, 0.5, 1) var(--fl-d, 0ms) both; }
+/* Item 47 (founder 10-09): the landing hop is ONE continuous eased arc with a soft squash / settle and a small
+   rebound (no overshoot curve, so no snap into the resting header). 560 ms = INTRO.flourishMs; the same keyframes
+   on iOS (CastMoves.flourishFrames) and Android (CastMoves.flourish). */
+.castrow .cm.cast-flourish { animation: m-flourish 560ms cubic-bezier(0.42, 0, 0.58, 1) var(--fl-d, 0ms) both; }
+@keyframes m-flourish {
+  0% { transform: none; }
+  14% { transform: scale(1.03, 0.96); }
+  46% { transform: translateY(-14%) scale(0.98, 1.03); }
+  78% { transform: translateY(0) scale(1.04, 0.96); }
+  90% { transform: scale(0.99, 1.01); }
+  100% { transform: none; }
+}
 @media (prefers-reduced-motion: reduce) { .castrow .cm.cast-flourish { animation: none !important; } }
 [data-reduced-motion="true"] .castrow .cm.cast-flourish { animation: none !important; }
 
@@ -2114,6 +2150,30 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 .lh-calm .lh-ch { animation: none; }
 @media (prefers-reduced-motion: reduce) { .lh-ch, .lh-sweeping .lh-gloss { animation: none !important; } }
 [data-reduced-motion="true"] .lh-ch, [data-reduced-motion="true"] .lh-sweeping .lh-gloss { animation: none !important; }
+/* 2.8 item 14: Reduce Motion = the desktop bar's soft fade only; it never slims (rules live in the desktop block). */
+@media (prefers-reduced-motion: reduce) { .app-hdr > .hdr-cast { animation: none !important; } }
+[data-reduced-motion="true"] .app-hdr > .hdr-cast { animation: none !important; }
+
+/* ── 2.8 item 6 · bubble lettering from the glyph atlas (components/ui/bubble-text.tsx). The glyph
+   art is a neutral white base with shading; the word's tint multiplies over it and the glyph's own
+   alpha clips the result — one element per glyph, no canvas, no per-frame work. ── */
+.bt-box { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; }
+.bt-line { display: inline-flex; align-items: flex-end; justify-content: center; white-space: nowrap; }
+.bt-space { display: inline-block; height: 1px; }
+.bt-glyph {
+  display: inline-block; height: 100%;
+  background-image: var(--bt-img), linear-gradient(180deg, var(--bt-top), var(--bt-bottom));
+  background-blend-mode: multiply, normal;
+  background-size: contain, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center, center;
+  -webkit-mask-image: var(--bt-img); mask-image: var(--bt-img);
+  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+  filter: drop-shadow(0 2px 2px rgba(30, 10, 70, 0.25));
+  animation: lh-pop 340ms cubic-bezier(0.3, 1.5, 0.5, 1) both; animation-delay: calc(var(--i, 0) * 25ms);
+}
+@media (prefers-reduced-motion: reduce) { .bt-glyph { animation: none !important; } }
+[data-reduced-motion="true"] .bt-glyph { animation: none !important; }
 
 /* ── FINISH_SPEC AU3 · the Gauntlet stage card (components/gauntlet/stage-transition.tsx):
    one fade + slide/spring in, one fade + lift out — transforms and opacity only
@@ -2205,6 +2265,19 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
   }
   .app-hdr > .hdr-cast { grid-row: 1; grid-column: 1; justify-self: start; width: 220px !important; margin: 0 !important; }
+  /* 2.8 item 14 (founder 10-07): a clean scroll edge under the sticky top bar. Content dissolves into
+     the bar's own color instead of being cut by a hard line, and the bar slims as the page scrolls
+     (CSS scroll-driven transform only, so it runs off the main thread). Reduce Motion = the fade only. Phones keep
+     the header in the page flow (it scrolls away), so nothing slides under a pinned edge there. */
+  .app-hdr.page-col::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 16px; pointer-events: none;
+    background: linear-gradient(var(--tab-dock-2), transparent);
+    opacity: 0.9;
+  }
+  @supports (animation-timeline: scroll()) {
+    .app-hdr[data-condense="on"] > .hdr-cast { transform-origin: left center; animation: hdr-condense-cast linear both; animation-timeline: scroll(root); animation-range: 0 64px; }
+  }
+  @keyframes hdr-condense-cast { from { transform: scale(1); } to { transform: scale(0.72); } }
   .app-hdr > .dk-tabs { grid-row: 1; grid-column: 2; display: flex; align-items: center; gap: 8px; }
   .app-hdr > .hdr-row { grid-row: 1; grid-column: 3; justify-self: end; justify-content: flex-end; gap: 10px; padding: 0; min-width: 0; }
   .dk-tab.candy img { width: 18px !important; height: 18px !important; }
@@ -2419,3 +2492,16 @@ html[data-scrolling="true"] .animate-gradient-x::after, html[data-scrolling="tru
 @keyframes soft-pop-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94); } }
 .soft-pop { animation: soft-pop-in 420ms cubic-bezier(0.2, 1.12, 0.36, 1) both; transform-origin: 50% 100%; }
 .soft-pop-out { animation: soft-pop-out 200ms cubic-bezier(0.4, 0, 1, 1) both; transform-origin: 50% 100%; }
+
+/* Dressing room tab labels (components/avatar/mascot-builder.tsx) sit directly on the panel, so their ink follows it:
+   the light twins on the light panel, the lifted twins on the dark one (the dark theme / a dark season). 1b readability gate. */
+.dr-tab-label { color: #6b5c8f; }
+.dr-tab-label[data-on="true"] { color: #6d28d9; }
+.dr-tab-label[data-on="true"][data-season="true"] { color: #c2410c; }
+[data-theme="dark"] .dr-tab-label { color: #c8b6e2; }
+[data-theme="dark"] .dr-tab-label[data-on="true"] { color: #e9ddff; }
+[data-theme="dark"] .dr-tab-label[data-on="true"][data-season="true"] { color: #fdba74; }
+
+/* Accent text on a dark season's night glass is lifted toward white (lib/soft-surface liftedInk); off-season / light: 0. */
+:root { --ink-lift: 0%; }
+html[data-season-tone="dark"] { --ink-lift: 65%; }

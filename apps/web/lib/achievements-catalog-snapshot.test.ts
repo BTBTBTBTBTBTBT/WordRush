@@ -19,7 +19,7 @@ const COPIES = [
 function snapshot(): string {
   const achievements = ACHIEVEMENT_CATALOG.map((a) => ({
     key: a.key, name: a.name, description: a.description, category: a.category, icon: a.icon,
-    ...(a.xp ? { xp: a.xp } : {}), ...(a.hidden ? { hidden: true } : {}),
+    ...(a.xp ? { xp: a.xp } : {}), ...(a.hidden ? { hidden: true } : {}), ...(a.secret ? { secret: true } : {}),
   }));
   return `${JSON.stringify({ achievements })}\n`;
 }

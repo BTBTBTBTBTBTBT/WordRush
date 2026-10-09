@@ -18,7 +18,7 @@
 import { addNear } from './add-near.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA, readJSON, rngFor, below, shuffle, neverAnswer, wordset } from '../more-games/lib.mjs';
+import { DATA, readJSON, rngFor, below, shuffle, neverAnswer, wordset, gateBank } from '../more-games/lib.mjs';
 
 const arg = (k, d) => Number((process.argv.find((a) => a.startsWith(`--${k}=`)) || '').split('=')[1] || d);
 const DAILY_COUNT = arg('daily', 400);
@@ -147,6 +147,8 @@ for (let i = 0; i < EXTRA_COUNT; i++) {
 
 const bank = addNear({ version: 1, epoch: EPOCH, daily, extra }, themes); // close calls (add-near.mjs)
 const out = path.join(DATA, 'wordsearch-puzzles.json');
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('spyglass', bank);
 fs.writeFileSync(out, JSON.stringify(bank) + '\n');
 const famRuns = daily.reduce((m, p) => ((m[p.family] = (m[p.family] || 0) + 1), m), {});
 console.log(`daily ${daily.length}, extra ${extra.length}, themes used ${new Set(daily.map((p) => p.theme)).size}/${themes.length}`);

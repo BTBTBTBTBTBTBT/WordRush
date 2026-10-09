@@ -32,6 +32,13 @@ object AchievementCatalog {
     fun visible(all: List<AchievementService.AchievementDef>): List<AchievementService.AchievementDef> = all.filter { !it.hidden }
 
     /**
+     * What a player's lists show (the badge grid, the Title Shelves, the counts): every visible achievement, a
+     * `secret` one (the musical cast's tunes) only once [unlocked] has it — core achievementListed.
+     */
+    fun listed(all: List<AchievementService.AchievementDef>, unlocked: (String) -> Boolean): List<AchievementService.AchievementDef> =
+        all.filter { com.wordocious.core.achievementListed(it.hidden, it.secret, it.key, unlocked) }
+
+    /**
      * The last fetch, else the bundled snapshot (assets/achievements-catalog.json, pinned to web
      * ACHIEVEMENT_CATALOG by lib/achievements-catalog-snapshot.test.ts), so the Title Shelves and the badge
      * grid are never bare on a first offline open; the live fetch replaces it.

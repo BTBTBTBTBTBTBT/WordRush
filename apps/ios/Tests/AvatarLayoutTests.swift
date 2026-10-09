@@ -52,6 +52,30 @@ final class AvatarLayoutTests: XCTestCase {
         }
     }
 
+    /// 10-06 rule-based re-ship: a per-body `withheld` override drops the part silently (a saved config that wears it
+    /// still lays out); a `layer` override moves a one-art item under the letter (the medal + bow tie).
+    func testOverridesWithheldAndLayer() throws {
+        let f = try fixture()
+        var raw = try XCTUnwrap(f["manifest"] as? [String: Any])
+        var bodies = try XCTUnwrap(raw["bodies"] as? [String: Any])
+        var classic = try XCTUnwrap(bodies["classic"] as? [String: Any])
+        var ov = classic["overrides"] as? [String: Any] ?? [:]
+        ov["acc:crown"] = ["withheld": true]
+        ov["acc:bowtie"] = ["layer": "under"]
+        classic["overrides"] = ov
+        bodies["classic"] = classic
+        raw["bodies"] = bodies
+        let m = try AvatarManifest.decode(JSONSerialization.data(withJSONObject: raw))
+        var c = AvatarCatalog.defaultAvatar(userId: "overrides")
+        c.body = "classic"; c.head = "crown"; c.neck = "bowtie"
+        let l = AvatarFit.layout(c, manifest: m)
+        XCTAssertTrue(l.layers.contains { $0.layer == "body" })
+        XCTAssertFalse(l.layers.contains { $0.id == "crown" })
+        let i = try XCTUnwrap(l.layers.firstIndex { $0.id == "bowtie" })
+        XCTAssertEqual(l.layers[i].layer, "under")
+        XCTAssertLessThan(i, l.letterIndex)
+    }
+
     func testPicksMatchFixture() throws {
         let f = try fixture()
         let m = try manifest(f)

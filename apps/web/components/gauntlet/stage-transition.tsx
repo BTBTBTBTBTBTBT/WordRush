@@ -1,6 +1,6 @@
 'use client';
 
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import { GauntletStageConfig } from '@wordle-duel/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/motion';
@@ -120,10 +120,10 @@ export function StageTransition(props: StageTransitionProps) {
             Stage complete · {completedStage.name}
           </div>
           {/* FINISH_SPEC AR: the stage line in live lettering (gold numbers; all cleared celebrates). */}
-          <LiveHeadline
+          <BubbleText
             text={nextStage ? `STAGE ${done + 1} OF ${totalStages}` : `ALL ${totalStages} CLEARED`}
             palette={nextStage ? 'leaderboard' : 'celebrate'}
-            size={26}
+            maxSize={26} minSize={19}
             level={2}
           />
           {/* The 5-dot progress row: cleared stages amber with a W, the next one pulsing. */}

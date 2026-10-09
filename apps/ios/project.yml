@@ -164,6 +164,8 @@ targets:
       # FINISH_SPEC §AL: the widget's day stats (solved / points / countdown) — the same
       # pure math the app writes the snapshot with.
       - path: Sources/Core/WidgetStats.swift
+      # The season window (WidgetCast.asset reads Season.current) — pure Foundation, 2.8.
+      - path: Sources/Core/LevelSeason.swift
       # FINISH_SPEC §AC: a SLIM widget-only catalog (WordociousWidget/Assets.xcassets,
       # ~5 MB: the cast heroes, game icons, icon3d set, the tile wallpaper, the stat
       # sprites and the menu glyphs it draws) instead of the whole ~45 MB app catalog,

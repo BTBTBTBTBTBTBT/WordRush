@@ -21,7 +21,7 @@ public enum LevelTier: String, CaseIterable, Codable {
 }
 
 /// FINISH_SPEC §X: the season registry's date windows (docs/design/brand/seasons/README.md
-/// "How to add a season"). Halloween runs Oct 17 – Nov 1 (local date, inclusive). Mirrors core
+/// "How to add a season"). Halloween runs Oct 9 – Oct 31 (local date, inclusive). Mirrors core
 /// `SEASON_WINDOWS` / `currentSeason(date)`; level-season-fixtures.json pins the rows. The art
 /// slots + palette per season live in season-registry.json (app target, SeasonKit).
 public enum Season: String, Codable, CaseIterable {
@@ -29,7 +29,7 @@ public enum Season: String, Codable, CaseIterable {
 
     /// (start month, start day, end month, end day), inclusive; a window may wrap the new year.
     public static let windows: [(season: Season, start: (Int, Int), end: (Int, Int))] = [
-        (.halloween, (10, 17), (11, 1)),
+        (.halloween, (10, 9), (10, 31)),
     ]
 
     /// The season for a local calendar day (month 1–12, day 1–31), or nil.

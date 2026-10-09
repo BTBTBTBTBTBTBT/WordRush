@@ -4,6 +4,8 @@ import WordociousCore
 struct HomeView: View {
     @EnvironmentObject private var auth: AuthService
     @StateObject private var completions = DailyCompletionsStore()
+    /// 2.8 item 14: scroll-driven header fade + condense.
+    @StateObject private var headerScroll = HeaderScrollModel()
     @State private var comingSoon: String?
     @State private var limitModal: HomeMode?     // free user tapped a completed daily
     @State private var solvedMode: HomeMode?      // "View Solved Puzzle"
@@ -307,7 +309,7 @@ struct HomeView: View {
                 PageBackground(tint: .home)
 
                 VStack(spacing: 0) {
-                    AppHeaderView(share: headerShare)
+                    AppHeaderView(share: headerShare, scroll: headerScroll)
                     ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 8) {
@@ -356,11 +358,13 @@ struct HomeView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 4)
+                        .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
                         // FINISH_SPEC §A4 / §AS3: the content ends clear of the docked
                         // footer (its measured height + 16 pt) — never covered.
                         .tabScrollTail()
                     }
                     .reportsScrollMotion()   // §AQ2: idle loops pause while scrolling
+                    .headerScrollFade(headerScroll)   // 2.8 item 14
                     // Anything that used to open the More Games sheet scrolls here instead.
                     .onReceive(NotificationCenter.default.publisher(for: TabRouterModel.scrollToTop)) { note in
                         guard note.object as? String == AppTab.home.rawValue else { return }

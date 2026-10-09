@@ -5,12 +5,13 @@ import { openGoProPopup } from '@/lib/payment/go-pro-popup';
 import { UNLIMITED_PEACH } from '@/components/game/finished-kit';
 import { CANDY_INK, candyPad, threeSlice } from '@/lib/candy-toggle';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleLine } from '@/components/ui/bubble-text';
 import { readSurfacesChoice, useSeason } from '@/lib/season';
 import { seasonBanner, seasonHeadlineSpec, seasonSurfaces } from '@/lib/season-kit';
 import { SeasonArt } from '@/components/ui/season-art';
 import Image from 'next/image';
-import { alphaHex, softBorder } from '@/lib/soft-surface';
+import { alphaHex, softBorder, softIconTile } from '@/lib/soft-surface';
+import { PickerResultBadge } from '@/components/ui/game-picker';
 import { SoftNum } from '@/components/ui/soft-number';
 import { Check } from 'lucide-react';
 import { Icon3D } from '@/components/ui/icon3d';
@@ -92,7 +93,6 @@ const TILE_SIZE = `min(${BANNER_SLOT.tileLg}px, calc((100% - ${BANNER_SLOT.tileG
 /** BJ6 round 3: the game art inside a tile — drawn from a 26 px slot (crisp), clamped to TILE_ICON_SHARE of the tile. */
 const TILE_ICON = 26;
 const TILE_ICON_SHARE = '70%';
-const GLOSS = 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0) 55%)';
 
 function Tile({ card, result, unlimited, onOpen }: {
   card: HomeCard; result?: DailyCompletion; unlimited: boolean; onOpen: () => void;
@@ -105,15 +105,14 @@ function Tile({ card, result, unlimited, onOpen }: {
   // FINISH_SPEC BI21 (no bordered boxes): not played = a soft pale tile with the icon
   // dimmed; won = a glossy tile in the game's color, full icon, a small white check;
   // lost = a glossy gray tile; Unlimited = a soft tinted tile, full icon.
-  const won = !unlimited && !!result?.won;
   if (unlimited) {
     style = { background: `color-mix(in srgb, ${accent} 16%, #ffffff)`, boxShadow: `0 2px 5px ${accent}2e` };
     ink = accent;
   } else if (result) {
-    style = result.won
-      ? { background: `${GLOSS}, ${accent}`, boxShadow: `0 1.5px 7px ${accent}8c` }
-      : { background: `${GLOSS}, #9ca3af` };
-    ink = '#ffffff';
+    // 2.8 item 8: played (won OR lost) = THE one game-tile style (the Sudocious finish screen's picker
+    // tile): the game's wash + top band + corner W / L badge. Same surface as the picker tiles.
+    style = { ...softIconTile(accent, { radius: 8 }), overflow: 'visible' };
+    ink = accent;
   } else {
     // Not played: pale out of season; on a dark season's glass a dim night tile with a hint of
     // the game color (--season-tile-*), so the played tiles' solid color stands out (iOS parity).
@@ -126,7 +125,7 @@ function Tile({ card, result, unlimited, onOpen }: {
       type="button"
       data-squish="card"
       onClick={onOpen}
-      aria-label={`${card.title}${unlimited ? '' : result ? (result.won ? ', won' : ', played') : ', not played yet'}`}
+      aria-label={`${card.title}${unlimited ? '' : result ? (result.won ? ', won' : ', lost') : ', not played yet'}`}
       className="relative flex items-center justify-center shrink-0"
       style={{ width: TILE_SIZE, aspectRatio: '1 / 1', borderRadius: 8, ...style }}
     >
@@ -141,14 +140,7 @@ function Tile({ card, result, unlimited, onOpen }: {
         ? <Icon style={{ width: iconPx, height: iconPx, maxWidth: '100%', maxHeight: '100%', color: ink }} />
         : <Check style={{ width: iconPx, height: iconPx, maxWidth: '100%', maxHeight: '100%', color: ink }} />}
       </span>
-      {won && (
-        <Check
-          aria-hidden="true"
-          strokeWidth={4}
-          className="absolute"
-          style={{ right: 2, bottom: 2, width: 8, height: 8, color: '#ffffff', filter: 'drop-shadow(0 0.5px 0.8px rgba(0,0,0,0.3))' }}
-        />
-      )}
+      {!unlimited && result && <PickerResultBadge kind={result.won ? 'won' : 'lost'} size={13} />}
     </button>
   );
 }
@@ -381,7 +373,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
                       <span className="inline-flex items-center" style={{ gap: 6 }}>
                         {i === 0 && content.showTrophy && <Icon3D name="trophy" size={18} className="shrink-0" />}
                         {i === 0 && <GoldSparkle />}
-                        <LiveHeadline
+                        <BubbleLine
                           text={line}
                           names={headLayout.lines.length === 1 && name ? [name] : undefined}
                           palette={gold ? 'leaderboard' : double ? 'celebrate' : 'home'}

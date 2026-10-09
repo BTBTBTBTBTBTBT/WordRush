@@ -192,4 +192,64 @@ class MascotBuilderLogicTest {
             MascotBuilderLogic.fit = before.first; MascotBuilderLogic.season = before.second; MascotBuilderLogic.saved = before.third
         }
     }
+    /** Item gating (docs/cloud-prompts/11): flag OFF = no change; with gating on, try-on + the save check + the Locked card rows. */
+    @Test fun itemGatingHelpers() {
+        val fit = com.wordocious.core.AvatarFitManifest.parse(java.io.File("src/main/assets/avatar-parts.json").readText())!!
+        val table = com.wordocious.core.AvatarAccessTable.parse(java.io.File("src/main/assets/avatar-access.json").readText())!!
+        val before = Triple(MascotBuilderLogic.fit, MascotBuilderLogic.season, MascotBuilderLogic.accessTable)
+        try {
+            MascotBuilderLogic.fit = fit
+            MascotBuilderLogic.season = null
+            MascotBuilderLogic.accessTable = table
+            // the flag ships OFF: the maker never gates, Save writes exactly what sanitize wrote
+            assertFalse(com.wordocious.core.AvatarAccessConfig.ITEM_GATING)
+            assertFalse(MascotBuilderLogic.gatingOn())
+            val draft = AvatarConfig().copy(head = "cowboy", pet = "kitten", color = "navy", patternColor = "navy", neck = "wings")
+            val off = MascotBuilderLogic.accessContext(isPro = false, stats = null, saved = null)
+            assertFalse(MascotBuilderLogic.itemLocked(BuilderOption("head", "cowboy"), off))
+            assertFalse(MascotBuilderLogic.itemLocked(BuilderOption("head", "cowboy"), null))
+            assertNull(MascotBuilderLogic.saveCheck(draft, off))
+            assertEquals(MascotBuilderLogic.sanitize(draft, false, 1), MascotBuilderLogic.saveLook(draft, false, 1, off))
+            assertEquals(MascotBuilderLogic.sanitize(draft, false, 1), MascotBuilderLogic.saveLook(draft, false, 1, null))
+
+            // gating on (the context's flag): locked tiles, the save check in maker order, save without them
+            val stats = MascotBuilderLogic.earnStats(level = 3, currentStreak = 2, bestStreak = 12, bestLoginStreak = 5, achievements = null)
+            val on = MascotBuilderLogic.accessContext(isPro = false, stats = stats, saved = null, date = "2026-07-01", gating = true)
+            assertTrue(MascotBuilderLogic.itemLocked(BuilderOption("head", "cowboy"), on))
+            assertFalse(MascotBuilderLogic.itemLocked(BuilderOption("head", "party"), on))
+            assertFalse(MascotBuilderLogic.itemLocked(BuilderOption("preset", "w"), on))
+            assertFalse(MascotBuilderLogic.itemLocked(BuilderOption("extras", "none"), on))
+            // a best streak of 12 has earned the kitten (7-day streak): it saves without Pro
+            val check = MascotBuilderLogic.saveCheck(draft, on)!!
+            assertFalse(check.ok)
+            assertEquals(listOf("color:navy", "head:cowboy", "neck:wings"), check.locked.map { "${it.field}:${it.id}" })
+            val stripped = MascotBuilderLogic.saveLook(draft, false, 1, on)
+            assertEquals(listOf("purple", "none", "none", "kitten"), listOf(stripped.color, stripped.head, stripped.neck, stripped.pet))
+            assertTrue(MascotBuilderLogic.saveCheck(stripped, on)!!.ok)
+            // no stats: the kitten is locked too and falls back to none
+            val bare = on.copy(stats = null)
+            assertEquals(listOf("color:navy", "head:cowboy", "neck:wings", "pet:kitten"), MascotBuilderLogic.saveCheck(draft, bare)!!.locked.map { "${it.field}:${it.id}" })
+            assertEquals("none", MascotBuilderLogic.saveWithout(draft, bare).pet)
+            // Pro: everything Pro-only saves (no stripping)
+            val pro = on.copy(isPro = true)
+            assertTrue(MascotBuilderLogic.saveCheck(draft, pro)!!.ok)
+            // a saved (grandfathered) part stays
+            val kept = on.copy(saved = AvatarConfig().copy(head = "cowboy"))
+            assertEquals("cowboy", MascotBuilderLogic.saveWithout(draft, kept).head)
+
+            // the Locked card rows: earn (with its bar) · Pro · buy
+            val star = MascotBuilderLogic.partAccess(BuilderOption("body", "star"), on)!!
+            val rows = MascotBuilderLogic.lockedRows(star)
+            assertEquals(listOf("earn", "pro", "buy"), rows.map { it.kind })
+            assertEquals(listOf("Earn: Keep a 30-day play streak (12 / 30)", "Included with Pro", "Buy $2.99"), rows.map { it.text })
+            assertEquals(0.4f, rows[0].progress!!, 0.0001f)
+            assertNull(rows[1].progress)
+            // an achievement (target 1) has no bar
+            val crown = MascotBuilderLogic.lockedRows(MascotBuilderLogic.partAccess(BuilderOption("head", "crown"), on)!!)
+            assertEquals("Earn: Beat Webster, the final boss", crown[0].text)
+            assertNull(crown[0].progress)
+        } finally {
+            MascotBuilderLogic.fit = before.first; MascotBuilderLogic.season = before.second; MascotBuilderLogic.accessTable = before.third
+        }
+    }
 }

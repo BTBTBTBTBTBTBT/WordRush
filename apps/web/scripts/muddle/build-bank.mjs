@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { WEB, DATA, SAMPLES, readJSON, simpleHash, rngFor, shuffle } from '../more-games/lib.mjs';
+import { WEB, DATA, SAMPLES, readJSON, simpleHash, rngFor, shuffle, gateBank } from '../more-games/lib.mjs';
 
 const arg = (k, d) => Number((process.argv.find((a) => a.startsWith(`--${k}=`)) || '').split('=')[1] || d);
 const DAILY_COUNT = arg('daily', 365);
@@ -50,6 +50,8 @@ const daily = order.slice(0, DAILY_COUNT), extra = order.slice(DAILY_COUNT);
 for (const k of Object.keys(holiday)) holiday[k].sort((a, b) => a.id.localeCompare(b.id));
 const bank = { version: 1, epoch: EPOCH, daily, extra, holiday: Object.fromEntries(Object.keys(holiday).sort().map((k) => [k, holiday[k]])) };
 const out = path.join(DATA, 'scramble-puzzles.json');
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('muddle', bank);
 fs.writeFileSync(out, JSON.stringify(bank) + '\n');
 console.log(`wrote ${out}: ${daily.length} daily (epoch ${EPOCH}), ${extra.length} extra, ${Object.keys(holiday).length} holidays / ${Object.values(holiday).flat().length} entries; cartoons: none yet`);
 console.log(`first daily: ${daily[0].id} "${daily[0].caption}" → ${daily[0].final.answer}`);

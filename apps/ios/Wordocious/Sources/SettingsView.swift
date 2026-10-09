@@ -31,6 +31,8 @@ struct SettingsView: View {
     @State private var deleting = false
     @State private var deleteError = false
     @State private var infoKind: InfoKind?
+    /// "Replay the app tour": the first-run onboarding again (founder 10-07: only here, not in per-game help).
+    @State private var showTour = false
     @State private var consentError: String?
     /// BI25: the sheet has finished presenting — heavier, below-the-fold pieces load now.
     @State private var settled = false
@@ -168,6 +170,8 @@ struct SettingsView: View {
                                 // with Help & Support.
                                 Button { infoKind = .support } label: { linkRow("Help & Support") }.buttonStyle(.squish)
                                 G5Divider()
+                                Button { showTour = true } label: { linkRow("Replay the app tour") }.buttonStyle(.squish)
+                                G5Divider()
                                 Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.squish)
                                 G5Divider()
                                 // Ad-consent withdrawal. UMP requires a
@@ -266,6 +270,13 @@ struct SettingsView: View {
                 Text("Please try again or contact support@wordocious.com.")
             }
             .softSheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]) }
+            .fullScreenCover(isPresented: $showTour) {
+                OnboardingView(replay: true) { play in
+                    showTour = false
+                    // "Play today's Classic": once the tour is down, open the Classic daily from the tab root.
+                    if play { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { Onboarding.playClassic() } }
+                }
+            }
         }
         .task {
             // BI25: after the slide-up (~0.35 s), never on the tap frame.

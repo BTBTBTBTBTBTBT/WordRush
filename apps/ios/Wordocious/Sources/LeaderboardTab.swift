@@ -10,6 +10,8 @@ struct LeaderboardTab: View {
     /// Owned by RootTabView so tab gestures can pop it to root.
     @Binding var path: [String]
     @State private var mode: GameMode = .duel
+    /// 2.8 item 14: scroll-driven header fade + condense.
+    @StateObject private var headerScroll = HeaderScrollModel()
     // Sweep chip (the banner's SWEEP pill, LeaderboardBannerView) — the cross-mode
     // "completed every sweep daily" board.
     @State private var isSweep = false
@@ -108,7 +110,7 @@ struct LeaderboardTab: View {
             ZStack {
                 PageBackground(tint: .leaderboard)
                 VStack(spacing: 0) {
-                    AppHeaderView()
+                    AppHeaderView(scroll: headerScroll)
                     if !auth.isAuthenticated { signedOut } else { content }
                 }
                 .frame(maxHeight: .infinity, alignment: .top)   // BI23: header pinned
@@ -314,7 +316,9 @@ struct LeaderboardTab: View {
                 // window (date + reset clock + ALL-TIME on its header strip; the Sweep
                 // is the 9th WORDOCIOUS tile).
                 LeaderboardBannerView(selected: modeSelection, isSweep: sweepSelection,
-                                      bleed: 16)
+                                      bleed: 16,
+                                      results: completions.dataDay == LeaderboardService.todayLocal() ? completions.byMode.mapValues { $0.completed } : [:],
+                                      sweepResult: completions.dataDay == LeaderboardService.todayLocal() && completions.allDone ? true : nil)
                 if isSweep {
                     sweepBoard
                 } else {
@@ -322,6 +326,7 @@ struct LeaderboardTab: View {
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
             // Clear the banner+nav: every sibling tab hardcodes 72–80pt here,
             // but this tab never got ANY — invisible until Yesterday's Winners
             // made the page tall enough to cut off (founder screenshot). The
@@ -330,6 +335,7 @@ struct LeaderboardTab: View {
             .padding(.bottom, 16 + max(56, chrome.bottomInset))   // §AS3: + 16 pt breathing room
         }
         .reportsScrollMotion()   // §AQ2
+        .headerScrollFade(headerScroll)   // 2.8 item 14
         .softSheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
         // Before the first frame: the selected board from the cache with the player's own row
         // (load() repeats this, but only after the render).
@@ -1277,14 +1283,6 @@ struct SweepModeDots: View {
         .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.14)))
 }
 
-/// Selector buttons (banner game tiles, pill switches): no pressed-state fade: `.plain` dims a tile while pressed and eases it back after release, so the
-/// newly selected tile read as unselected for ~0.15 s after every tap (founder, 2026-09-29).
-struct InstantButtonStyle: ButtonStyle {
-    /// FINISH_SPEC §A9: still no fade, but the shared squish.
-    func makeBody(configuration: Configuration) -> some View {
-        SquishButtonStyle().makeBody(configuration: configuration).contentShape(Rectangle())
-    }
-}
 
 /// One un-animated transaction: a selection and the cached content it paints land in the SAME
 /// frame, with nothing easing in (founder, 2026-09-29).

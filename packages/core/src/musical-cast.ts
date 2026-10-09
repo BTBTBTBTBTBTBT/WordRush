@@ -1,0 +1,145 @@
+// The musical cast easter egg (docs/cloud-prompts/10): long-press any cast puppet in the header → all ten turn
+// "musical" (a staggered squash-and-pop, floating notes, a little glow); then each tap plays a note in that
+// character's own voice. Left → right W O R D O C I O U S is a C major scale, C4 … E5. Play a public-domain tune
+// correctly and a secret achievement unlocks (shown only once earned). Long-press again → back to normal laughs.
+// Pure; pinned across TS / Swift / Kotlin by musical-cast-fixtures.json.
+//
+// Behind the musicalCast flag: ON in debug builds, OFF in release until the founder approves.
+
+/** The flag: on in debug (web dev, iOS DEBUG, Android BuildConfig.DEBUG), off in release. */
+export const MUSICAL_CAST_FLAG = { debug: true, release: false } as const;
+
+export function musicalCastEnabled(isDebugBuild: boolean): boolean {
+  return isDebugBuild ? MUSICAL_CAST_FLAG.debug : MUSICAL_CAST_FLAG.release;
+}
+
+/** The header's cast, left → right (WORDOCIOUS). */
+export const MUSICAL_CAST_IDS = ['w', 'o1', 'r', 'd', 'o2', 'c', 'i', 'o3', 'u', 's'] as const;
+/** C4 D4 E4 F4 G4 A4 B4 C5 D5 E5 as MIDI note numbers (the notes are cut by docs/design/brand/sounds/make-notes.py). */
+export const MUSICAL_SCALE = [60, 62, 64, 65, 67, 69, 71, 72, 74, 76] as const;
+
+const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+/** "C4", "E5" … */
+export function midiNoteName(midi: number): string {
+  return `${NAMES[((midi % 12) + 12) % 12]}${Math.floor(midi / 12) - 1}`;
+}
+
+export interface MusicalNote { castId: string; index: number; midi: number; name: string; /** The sound name: note-<id>. */ sound: string }
+
+/** A cast member's note (unknown id → null). */
+export function musicalNote(castId: string): MusicalNote | null {
+  const index = (MUSICAL_CAST_IDS as readonly string[]).indexOf(castId);
+  if (index < 0) return null;
+  const midi = MUSICAL_SCALE[index];
+  return { castId, index, midi, name: midiNoteName(midi), sound: `note-${castId}` };
+}
+
+// ── The transform ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** How long a press must hold to toggle musical mode, and the transform's timing (same perf rules as the puppets). */
+export const MUSICAL_TIMING = {
+  longPressMs: 550,
+  /** A finger that drifts further than this (CSS px / pt / dp) cancels the long-press. */
+  moveSlop: 10,
+  /** Each character starts this much after its neighbor, rippling out from the one pressed. */
+  staggerMs: 55,
+  /** One character's squash-and-pop. */
+  popMs: 420,
+} as const;
+
+/** The squash-and-pop keyframes (t 0..1 → scale x / y, a little lift in % of height): squash, stretch up, settle. */
+export const MUSICAL_POP_KEYS: ReadonlyArray<{ t: number; sx: number; sy: number; lift: number }> = [
+  { t: 0, sx: 1, sy: 1, lift: 0 },
+  { t: 0.22, sx: 1.16, sy: 0.82, lift: 0 },
+  { t: 0.5, sx: 0.9, sy: 1.14, lift: 9 },
+  { t: 0.74, sx: 1.05, sy: 0.96, lift: 0 },
+  { t: 1, sx: 1, sy: 1, lift: 0 },
+];
+
+/**
+ * The per-character start delays (ms, WORDOCIOUS order): a ripple out from the pressed one (|i − pressed| × stagger).
+ * Reduce Motion → every delay 0 (and the platforms swap instantly, no pop).
+ */
+export function musicalTransformDelays(pressedCastId: string, reduceMotion: boolean): number[] {
+  const from = Math.max(0, (MUSICAL_CAST_IDS as readonly string[]).indexOf(pressedCastId));
+  return MUSICAL_CAST_IDS.map((_, i) => (reduceMotion ? 0 : Math.abs(i - from) * MUSICAL_TIMING.staggerMs));
+}
+
+/** The whole transform's length (ms): the last delay + one pop; 0 under Reduce Motion. */
+export function musicalTransformDuration(pressedCastId: string, reduceMotion: boolean): number {
+  if (reduceMotion) return 0;
+  return Math.max(...musicalTransformDelays(pressedCastId, false)) + MUSICAL_TIMING.popMs;
+}
+
+// ── Melodies ──────────────────────────────────────────────────────────────────────────────────────────────
+
+export interface MusicalMelody {
+  id: string;
+  name: string;
+  /** The secret achievement it unlocks. */
+  achievement: string;
+  /** The tune as MIDI notes, in C (every note on the cast's keys). Matched by its intervals, so any key that fits counts. */
+  notes: readonly number[];
+}
+
+const C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, B4 = 71, C5 = 72, D5 = 74;
+
+/** Public-domain tunes (their best-known opening, every note on a cast key). */
+export const MUSICAL_MELODIES: readonly MusicalMelody[] = [
+  { id: 'mary', name: 'Mary Had a Little Lamb', achievement: 'tune_little_lamb', notes: [E4, D4, C4, D4, E4, E4, E4, D4, D4, D4, E4, G4, G4] },
+  { id: 'twinkle', name: 'Twinkle, Twinkle, Little Star', achievement: 'tune_little_star', notes: [C4, C4, G4, G4, A4, A4, G4, F4, F4, E4, E4, D4, D4, C4] },
+  { id: 'ode', name: 'Ode to Joy', achievement: 'tune_ode_to_joy', notes: [E4, E4, F4, G4, G4, F4, E4, D4, C4, C4, D4, E4, E4, D4, D4] },
+  { id: 'birthday', name: 'Happy Birthday', achievement: 'tune_happy_birthday', notes: [G4, G4, A4, G4, C5, B4, G4, G4, A4, G4, D5, C5] },
+  { id: 'buns', name: 'Hot Cross Buns', achievement: 'tune_hot_cross_buns', notes: [E4, D4, C4, E4, D4, C4, C4, C4, C4, C4, D4, D4, D4, D4, E4, D4, C4] },
+];
+
+/** The steps between consecutive notes (the shape of a tune, key-free). */
+export function melodyIntervals(notes: readonly number[]): number[] {
+  const out: number[] = [];
+  for (let i = 1; i < notes.length; i++) out.push(notes[i] - notes[i - 1]);
+  return out;
+}
+
+/**
+ * The tune the played notes END with, or null. A tune counts when its last N notes have the tune's exact shape (its
+ * intervals) — in C or any other key the cast can play. Ties → the longest tune.
+ */
+export function matchMelody(played: readonly number[], melodies: readonly MusicalMelody[] = MUSICAL_MELODIES): MusicalMelody | null {
+  let best: MusicalMelody | null = null;
+  for (const m of melodies) {
+    if (played.length < m.notes.length) continue;
+    const tail = played.slice(played.length - m.notes.length);
+    const a = melodyIntervals(tail);
+    const b = melodyIntervals(m.notes);
+    if (a.every((v, i) => v === b[i]) && (!best || m.notes.length > best.notes.length)) best = m;
+  }
+  return best;
+}
+
+/** A pause longer than this starts a fresh phrase; the buffer keeps at most this many notes. */
+export const MELODY_GAP_MS = 4000;
+export const MELODY_BUFFER = 32;
+
+export interface MelodyState { notes: number[]; lastAt: number | null }
+
+export const MELODY_START: MelodyState = { notes: [], lastAt: null };
+
+export interface MelodyTap {
+  state: MelodyState;
+  note: MusicalNote | null;
+  /** The tune just completed (the buffer then clears so it can't fire twice). */
+  matched: MusicalMelody | null;
+}
+
+/** One tap in musical mode at `atMs` (any clock in ms). Pure: returns the next state. */
+export function melodyTap(state: MelodyState, castId: string, atMs: number): MelodyTap {
+  const note = musicalNote(castId);
+  if (!note) return { state, note: null, matched: null };
+  const fresh = state.lastAt === null || atMs - state.lastAt > MELODY_GAP_MS || atMs < state.lastAt;
+  const notes = [...(fresh ? [] : state.notes), note.midi].slice(-MELODY_BUFFER);
+  const matched = matchMelody(notes);
+  return { state: { notes: matched ? [] : notes, lastAt: atMs }, note, matched };
+}
+
+/** The secret achievement keys (achievement-rules NEW_ACHIEVEMENTS, `secret`: shown only once unlocked). */
+export const MUSICAL_ACHIEVEMENT_KEYS: readonly string[] = MUSICAL_MELODIES.map((m) => m.achievement);

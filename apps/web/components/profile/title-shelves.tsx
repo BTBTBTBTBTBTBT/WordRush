@@ -98,7 +98,7 @@ export function TitleShelves({ username, mascot, initial, accent, unlockedDates,
           <div className="flex-1 min-w-0 flex flex-col gap-1">
             <div className="text-xl font-black truncate" style={{ color: accent }}>{username}</div>
             <TitleRibbon text={pickName ?? 'No title'} height={26} maxWidth={220} placeholder={!pickName} />
-            <div className="text-[11px] font-bold" style={{ color: '#7a6aa6' }}>{hint}</div>
+            <div className="text-[11px] font-bold" style={{ color: '#6b5a96' }}>{hint}</div>
           </div>
           {pick && <QuietButton size="sm" aria-label="Wear no title" onClick={() => { setPick(null); setHint('No title for now.'); }}>None</QuietButton>}
         </div>
@@ -108,11 +108,12 @@ export function TitleShelves({ username, mascot, initial, accent, unlockedDates,
         </div>
         {recent.length > 0 && shelf('Recently earned', null, recent)}
         {TITLE_SHELVES.map(([id, label]) => {
-          const all = ACHIEVEMENTS.filter((a) => a.category === id);
+          // a secret (the musical cast's tunes) shows only once earned
+          const all = ACHIEVEMENTS.filter((a) => a.category === id && (!a.secret || earned(a)));
           const list = [...all.filter(earned), ...all.filter((a) => !earned(a))].filter(matches);
           return list.length ? shelf(label, `${all.filter(earned).length} / ${all.length}`, list) : null;
         })}
-        {ACHIEVEMENTS.every((a) => !matches(a)) && (
+        {ACHIEVEMENTS.every((a) => !matches(a) || (a.secret && !earned(a))) && (
           <div className="flex flex-col items-center pt-6 gap-1">
             <StageArt name="art-pose-d-skeptic" height={70} />
             <div className="text-[13px] font-black" style={{ color: '#2a1650' }}>No title matches &ldquo;{query}&rdquo;</div>

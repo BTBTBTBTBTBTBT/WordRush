@@ -4,7 +4,7 @@ import { useMemo, type ReactNode } from 'react';
 import { GameArt } from '@/components/ui/game-art';
 import { useFlags } from '@/hooks/use-flags';
 import { pickerRows, type PickerTile } from '@/lib/game-picker';
-import { SOFT, alphaHex, cardBarStyle, softCard, softIconTile } from '@/lib/soft-surface';
+import { SOFT, alphaHex, cardBarStyle, liftedInk, softCard, softIconTile } from '@/lib/soft-surface';
 
 // The one game picker (docs/FINISH_SPEC.md C2, C2b, C3; mockup
 // docs/design/brand/mockups/leaderboard-polish.html `.picker`): a tinted card
@@ -52,7 +52,24 @@ interface GamePickerProps {
 const BADGE_BG: Record<GamePickerBadge['kind'], string> = { won: '#7c3aed', lost: '#6b7891', done: '#7c3aed' };
 const BADGE_TEXT: Record<GamePickerBadge['kind'], string> = { won: 'W', lost: 'L', done: '✓' };
 
-function Tile({ t, on, badge, onSelect, size, maxSize = 44 }: { t: PickerTile; on: boolean; badge?: GamePickerBadge; onSelect: (k: string) => void; size?: number; maxSize?: number }) {
+/** 2.8 item 8: the ONE W / L corner badge (the Sudocious finish screen's picker tile; Home's banner tiles use it too). */
+export function PickerResultBadge({ kind, size = 15 }: { kind: GamePickerBadge['kind']; size?: number }) {
+  return (
+    <span
+      aria-label={kind === 'won' ? 'Won today' : kind === 'lost' ? 'Lost today' : 'Done today'}
+      className="absolute flex items-center justify-center font-black text-white"
+      style={{ top: -4, right: -4, width: size, height: size, borderRadius: Math.round(size / 3), fontSize: Math.round(size * 0.6), background: BADGE_BG[kind], boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+    >
+      {BADGE_TEXT[kind]}
+    </span>
+  );
+}
+
+function Tile({ t, on, badge, onSelect, size, maxSize = 44, slots, gap = 5 }: { t: PickerTile; on: boolean; badge?: GamePickerBadge; onSelect: (k: string) => void; size?: number; maxSize?: number; slots?: number; gap?: number }) {
+  // 2.8 item 8: with `slots`, every row's tile is the same size — the width of one of `slots` equal cells.
+  const sized = size ? { flex: 'none', width: size, height: size }
+    : slots ? { flex: 'none', width: `min(${maxSize}px, calc((100% - ${gap * (slots - 1)}px) / ${slots}))`, aspectRatio: '1 / 1' }
+    : { flex: '1 1 0', aspectRatio: '1 / 1', maxWidth: maxSize };
   return (
     <button
       type="button"
@@ -60,18 +77,10 @@ function Tile({ t, on, badge, onSelect, size, maxSize = 44 }: { t: PickerTile; o
       aria-pressed={on}
       onClick={() => onSelect(t.key)}
       className="relative flex items-center justify-center min-w-0"
-      style={{ ...softIconTile(t.accent, { selected: on, radius: size ? 9 : 11 }), ...(size ? { flex: 'none', width: size, height: size } : { flex: '1 1 0', aspectRatio: '1 / 1', maxWidth: maxSize }), padding: 0 }}
+      style={{ ...softIconTile(t.accent, { selected: on, radius: size ? 9 : 11 }), ...sized, padding: 0 }}
     >
       <GameArt id={t.artId} size={64} style={{ width: '74%', height: '74%', marginTop: 2 }} />
-      {badge && (
-        <span
-          aria-label={badge.kind === 'won' ? 'Won today' : badge.kind === 'lost' ? 'Lost today' : 'Done today'}
-          className="absolute flex items-center justify-center font-black text-white"
-          style={{ top: -4, right: -4, width: 15, height: 15, borderRadius: 5, fontSize: 9, background: BADGE_BG[badge.kind], boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
-        >
-          {BADGE_TEXT[badge.kind]}
-        </span>
-      )}
+      {badge && <PickerResultBadge kind={badge.kind} />}
     </button>
   );
 }
@@ -82,14 +91,17 @@ export function GamePicker({
   const compact = density === 'compact';
   const { isOn } = useFlags();
   const rows = useMemo(() => pickerRows(isOn, { sweep }), [isOn, sweep]);
-  const labelInk = ink ?? alphaHex(accent, 1);
+  const labelInk = ink ?? liftedInk(alphaHex(accent, 1));
   const rowLabel = (text: string) => (
     <span className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-black picker-label`} style={{ letterSpacing: '0.12em', color: labelInk }}>{text}</span>
   );
+  // Both rows share ONE tile size and gap (sized for the longer row), centered — like Home's banner rows.
+  const slots = Math.max(rows.wordocious.length, rows.puzzles.length);
+  const gap = compact ? 5 : 6;
   const row = (tiles: PickerTile[]) => (
-    <div className={`flex ${compact ? 'justify-center' : ''}`} style={{ gap: compact ? 4 : 5 }} role="group">
+    <div className="flex justify-center" style={{ gap }} role="group">
       {tiles.map((t) => (
-        <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} maxSize={compact ? 32 : 44} />
+        <Tile key={t.key} t={t} on={selected === t.key} badge={badges?.[t.key]} onSelect={onSelect} maxSize={compact ? 34 : 44} slots={slots} gap={gap} />
       ))}
     </div>
   );

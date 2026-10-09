@@ -20,6 +20,7 @@
 // dated (legacy-pinned or curated-stable) and don't drift with curation.
 
 import fs from 'node:fs';
+import { AVATAR_LIVE_CONFIG, AVATAR_POSES, AVATAR_POSES_DATA, AVATAR_REACTION_POSE, avatarLiveFrame, avatarPoseMatrices, avatarPoseWithheld, type AvatarReaction } from '../src/avatar-pose';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initDictionary, initDictionaryForLength, getSolutionPoolForDate, _setTodayForTests } from '../src/dictionary';
@@ -38,12 +39,16 @@ import { bannerHeadline, bannerClockLine, groupStatus, groupTier, dayStreaks, da
 import { newFriendlyState, applyFriendlyMove, friendlyCardLine, friendlyHeadline, friendlyWinner, whoseTurn, tttLine, presenceLine, isOnline, friendStreak, friendsBannerHeadline, friendsBannerClockLine, type FriendlyState, type FriendsBannerInput } from '../src/friendly-games';
 import { leaderboardTitle } from '../src/leaderboard-title';
 import { headlineTokens, headlineLayout, headlineWidthEm, headlineFontSize, HEADLINE_SIZING_LINE } from '../src/headline-tokens';
+import { bubbleFit, bubbleWidthEm, bubbleGlyphName, homeHeadlineFit, BUBBLE_GLYPHS } from '../src/bubble-text';
 import { NEW_ACHIEVEMENTS, HIDDEN_ACHIEVEMENT_KEYS, puzzleCountAchievements, puzzleResultAchievements, pangramCount, puzzleDayAchievements, botAchievements, friendAchievements, wonFriendsRace, pocketAchievements, avatarAchievements, momentAchievements } from '../src/achievement-rules';
 import { AVATAR_BACKDROPS, AVATAR_COLORS, castPreset, defaultAvatar, enforceAvatarPro, isCustomPhotoUrl, nearestAvatarColor, resolveAvatar, validateAvatar } from '../src/avatar-config';
 import { podiumLayout, podiumOpenSpot } from '../src/podium-layout';
 import { AVATAR_MANIFEST, applyAvatarPick, avatarLayout, avatarPatternShapes, avatarPickConflict } from '../src/avatar-layout';
 import { PUSH_COPY, PUSH_TITLE, pushCopy, type PushKind } from '../src/push-copy';
 import { SEASON_WINDOWS, currentSeason, levelTier, levelTierLabel } from '../src/level-season';
+import { AVATAR_ACCESS_TABLE, avatarAccessKey, avatarEarnedKeys, avatarLockedCardLines, avatarPartAccess, avatarPartRule, avatarSaveCheck, enforceAvatarAccess, evaluateEarn, type AvatarAccessContext, type AvatarEarnCondition, type AvatarEarnStats } from '../src/avatar-access';
+import { MELODY_GAP_MS, MELODY_START, MUSICAL_CAST_IDS, MUSICAL_MELODIES, MUSICAL_POP_KEYS, MUSICAL_SCALE, MUSICAL_TIMING, matchMelody, melodyIntervals, melodyTap, midiNoteName, musicalNote, musicalTransformDelays, musicalTransformDuration, type MelodyState } from '../src/musical-cast';
+import { SECRET_ACHIEVEMENT_KEYS, achievementListed } from '../src/achievement-rules';
 import { avatarPartSeason, isPartAvailable, mascotSeason, seasonNudgeDue, seasonNudgeKey, seasonTag, seasonalShelf, wearsSeasonalPart } from '../src/avatar-season';
 import { SHARE_CAPTIONS, SHARE_TOASTS, captionHash, shareCaption, shareCaptionIndex, type ShareCaptionKind } from '../src/share-captions';
 import { BOT_CAST, botSolveLine, canonicalBotId, migrateLegacyLadderCleared, botOfTheDay } from '../src/bot-cast';
@@ -794,6 +799,8 @@ export function renderAvatarConfigFixtures() {
     // 10-05 seasonal parts (Halloween): valid ids all year (a saved look is never stripped)
     { head: 'pumpkinhat', neck: 'batwings', wrap: 'vampirecollar', held: 'candypail', pet: 'ghost' },
     { head: 'mummywrap', neck: 'cattail', pet: 'blackcat' },
+    // 10-06 poses: known ids kept (written only when not 'none'), unknown → none
+    { pose: 'wave' }, { pose: 'hug', body: 'star' }, { pose: 'moonwalk' }, { pose: 'none' }, { pose: 7 },
   ].map((raw) => ({ raw, result: validateAvatar(raw, fb) }));
   const pro = [true, false].flatMap((isPro) => [
     { isPro, input: { ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, result: enforceAvatarPro({ ...fb, head: 'crown', frame: 'diamond', neck: 'wings', bg: 'aurora' }, isPro) },
@@ -843,6 +850,47 @@ export function renderPodiumLayoutFixtures() {
 
 // Round 2 fit system: the layout every renderer draws (rects per layer), the conflict swaps and the
 // shared pattern shapes. Positions are rounded to 4 decimals; platforms compare within 1e-3.
+// 10-06 poses + the living mascot (avatar-pose.ts): the shared pose data, every pose's matrices on every rigged body,
+// live frames (breath, blink, wave, tap hop + laugh, reactions, Reduce Motion, ambient off, press), and posed
+// layouts (items riding hands / feet / the body, per-pose withholds).
+export function renderAvatarPoseFixtures() {
+  const bodies = Object.keys(AVATAR_POSES_DATA.rigs);
+  const matrices = bodies.flatMap((body) => AVATAR_POSES.slice(1).map((pose) => ({
+    body, pose, m: avatarPoseMatrices(AVATAR_POSES_DATA.rigs[body], AVATAR_POSES_DATA.poses[pose]),
+  })));
+  const frames = [
+    { pose: 'none', t: 0 }, { pose: 'none', t: 1.31 }, { pose: 'none', t: 1.36 }, { pose: 'wave', t: 0.4 }, { pose: 'wave', t: 2.2 },
+    { pose: 'cheer', t: 0.7 }, { pose: 'sit', t: 5 }, { pose: 'none', t: 3, tap: 0.05 }, { pose: 'none', t: 3, tap: 0.3 },
+    { pose: 'hips', t: 3, tap: 0.6 }, { pose: 'flex', t: 3, tap: 1.0 }, { pose: 'none', t: 3, tap: 0.3, still: true },
+    { pose: 'shrug', t: 8, ambient: false }, { pose: 'none', t: 2, press: 1 },
+    ...(['win', 'loss', 'streak', 'levelup'] as AvatarReaction[]).flatMap((kind) => [0.1, 0.5, 2.0].map((rt) => ({ pose: 'hug', t: 4, reaction: { kind, t: rt } }))),
+    { pose: 'jump', t: 4, reaction: { kind: 'win' as AvatarReaction, t: 0.5 }, still: true },
+  ].map((input) => ({ input, frame: avatarLiveFrame(input) }));
+  const base = castPreset('w');
+  const mk = (o: Record<string, string>) => validateAvatar({ ...base, ...o }, base);
+  const layouts = [
+    { body: 'classic', pose: 'wave', held: 'mug', feet: 'sneakers', pet: 'kitten', head: 'cowboy' },
+    { body: 'star', pose: 'cheer', held: 'balloon', neck: 'scarf' },
+    { body: 'bean', pose: 'hug', wrap: 'belt', brows: 'happy' },
+    { body: 'mini', pose: 'jump', feet: 'boots', head: 'crown' },
+    { body: 'tall', pose: 'sit', held: 'book', neck: 'backpack' },
+    { body: 'hex', pose: 'flex', head: 'party', face: 'roundglasses' },
+    { body: 'cloud', pose: 'shrug', neck: 'cape', held: 'umbrella' },
+    { body: 'chunky', pose: 'hips', wrap: 'apron', held: 'spatula' },
+  ].map((o) => {
+    const config = mk(o);
+    return {
+      config,
+      saved: avatarLayout(config, { pose: 'saved' }),
+      small: avatarLayout(config, { small: true, pose: 'saved' }),
+      live: avatarLayout(config, { pose: { id: config.pose ?? 'none', spec: avatarLiveFrame({ pose: config.pose ?? 'none', t: 1.7, tap: 0.3 }).spec } }),
+      none: avatarLayout(config, { pose: null }),
+    };
+  });
+  const withheld = AVATAR_POSES.slice(1).flatMap((pose) => bodies.map((body) => ({ pose, body, items: avatarPoseWithheld(pose, body) })));
+  return { flag: AVATAR_LIVE_CONFIG, poses: AVATAR_POSES, reactionPose: AVATAR_REACTION_POSE, data: AVATAR_POSES_DATA, matrices, frames, layouts, withheld };
+}
+
 export function renderAvatarLayoutFixtures() {
   const base = castPreset('w');
   const mk = (o: Record<string, string>) => validateAvatar({ ...base, ...o }, base);
@@ -864,6 +912,13 @@ export function renderAvatarLayoutFixtures() {
     { body: 'star', neck: 'guitar', held: 'mic', brows: 'sleepy' },
     { body: 'cloud', neck: 'cape', wrap: 'cape-drape', feet: 'skates', pet: 'puppy' },
     { body: 'mini', neck: 'supercape', held: 'umbrella', wrap: 'bandana', pet: 'snail', accColor: 'pink' },
+    // 10-06 rule-based re-ship: per-body overrides — the medal withheld (no room), the bow tie / medal under the
+    // letter, wraps withheld on the tight bodies (saved configs drop them silently), rule-fitted hats + wings
+    { body: 'wide', neck: 'medal', head: 'crown', wrap: 'lei' },
+    { body: 'classic', neck: 'bowtie', head: 'cowboy' },
+    { body: 'drop', neck: 'medal', head: 'headphones' },
+    { body: 'cloud', neck: 'scarf', wrap: 'bandana', head: 'beanie' },
+    { body: 'tall', neck: 'bowtie', wrap: 'apron' },
   ];
   const cases = configs.flatMap((o) => [false, true].map((small) => ({ config: mk(o), small, layout: avatarLayout(mk(o), { small }) })));
   const picks = [
@@ -975,6 +1030,111 @@ export function renderAvatarSeasonFixtures() {
   return { available, seasons, active, shelf, wears, nudge, keys };
 }
 
+export function renderAvatarAccessFixtures() {
+  // Item gating (avatar-access.ts): the rules, access + routes, the try-on / save check, enforcement, the earn evaluator.
+  const parts = [
+    ['head', 'party'], ['head', 'cowboy'], ['head', 'crown'], ['head', 'pumpkinhat'], ['head', 'none'], ['body', 'star'], ['body', 'classic'],
+    ['color', 'navy'], ['accColor', 'rainbow'], ['patternColor', 'purple'], ['pattern', 'galaxy'], ['pattern', 'solid'], ['frame', 'gold'],
+    ['frame', 'diamond'], ['bg', 'auto'], ['bg', 'aurora'], ['pet', 'kitten'], ['pet', 'ghost'], ['pose', 'jump'], ['brows', 'worried'], ['held', 'wand-star'],
+    ['eyes', 'stars'], ['neck', 'fairywings'], ['head', 'not-a-hat'],
+  ].map(([field, id]) => ({ field, id }));
+  const rules = parts.flatMap((p) => [true, false].map((gating) => ({ ...p, gating, key: avatarAccessKey(p.field, p.id), rule: avatarPartRule(p.field, p.id, { gating }) })));
+  const base = castPreset('w');
+  const mk = (o: Record<string, string>) => validateAvatar({ ...base, ...o }, base);
+  const contexts: Array<{ name: string; ctx: AvatarAccessContext }> = [
+    { name: 'free', ctx: { isPro: false, date: '2026-07-01', gating: true } },
+    { name: 'pro', ctx: { isPro: true, date: '2026-07-01', gating: true } },
+    { name: 'owned', ctx: { isPro: false, date: '2026-07-01', gating: true, owned: ['head:cowboy', 'pet:kitten', 'color:navy'] } },
+    { name: 'earner', ctx: { isPro: false, date: '2026-07-01', gating: true, stats: { level: 30, bestStreak: 31, bestLoginStreak: 12, achievements: ['boss_battle', 'night_owl'] } } },
+    { name: 'progress', ctx: { isPro: false, date: '2026-07-01', gating: true, stats: { level: 3, bestStreak: 12, bestLoginStreak: 49 } } },
+    { name: 'saved', ctx: { isPro: false, date: '2026-07-01', gating: true, saved: mk({ head: 'cowboy', color: 'navy', pet: 'ghost' }) } },
+    { name: 'halloween', ctx: { isPro: false, date: '2026-10-20', gating: true } },
+    { name: 'preview', ctx: { isPro: false, date: '2026-07-01', gating: true, previewSeason: 'halloween' } },
+    { name: 'off', ctx: { isPro: false, date: '2026-07-01', gating: false } },
+    { name: 'off-pro', ctx: { isPro: true, date: '2026-07-01', gating: false, stats: { level: 30 } } },
+  ];
+  const access = contexts.flatMap(({ name, ctx }) => parts.map((part) => {
+    const a = avatarPartAccess(part, ctx);
+    return { ctx: name, part, unlocked: a.unlocked, reason: a.reason, routes: a.routes, lines: avatarLockedCardLines(a) };
+  }));
+  const drafts = [
+    mk({ head: 'cowboy', pet: 'kitten', color: 'navy' }),
+    mk({ head: 'crown', neck: 'wings', color: 'gold', accColor: 'rainbow', frame: 'diamond', bg: 'galaxy' }),
+    mk({ body: 'star', pattern: 'galaxy', patternColor: 'navy', pose: 'jump', held: 'wand-star', brows: 'worried' }),
+    mk({ head: 'pumpkinhat', pet: 'ghost' }),
+    mk({ pattern: 'solid', patternColor: 'navy', frame: 'gold' }),
+    castPreset('s'),
+  ];
+  const saves = contexts.flatMap(({ name, ctx }) => drafts.map((draft) => {
+    const check = avatarSaveCheck(draft, ctx);
+    return { ctx: name, draft, ok: check.ok, locked: check.locked, enforced: enforceAvatarAccess(draft, ctx) };
+  }));
+  const conditions: AvatarEarnCondition[] = [
+    { label: 'Beat Webster', achievement: 'boss_battle' }, { label: '30-day streak', stat: 'bestStreak', min: 30 },
+    { label: 'Level 26', stat: 'level', min: 26 }, { label: 'Login 50', stat: 'bestLoginStreak', min: 50 }, { label: 'Current 7', stat: 'currentStreak', min: 7 },
+    { label: 'Nothing' },
+  ];
+  const statsCases: Array<AvatarEarnStats | null> = [null, {}, { level: 26, bestStreak: 12, currentStreak: 7, bestLoginStreak: 60, achievements: ['boss_battle'] }, { level: -3, bestStreak: 99.7 }];
+  const earn = conditions.flatMap((cond) => statsCases.map((stats) => ({ cond, stats, progress: evaluateEarn(cond, stats) })));
+  const earned = statsCases.map((stats) => ({ stats, keys: avatarEarnedKeys(stats) }));
+  return { contexts, rules, access, saves, earn, earned, tableSize: Object.keys(AVATAR_ACCESS_TABLE.parts).length };
+}
+
+export function renderMusicalCastFixtures() {
+  // The musical cast (musical-cast.ts): the note map, the transform timing, the melody matcher + tap reducer, secrets.
+  const notes = [...MUSICAL_CAST_IDS, 'zz'].map((id) => ({ id, note: musicalNote(id) }));
+  const names = [48, 59, 60, 61, 69, 76, 127].map((m) => ({ midi: m, name: midiNoteName(m) }));
+  const transform = [...MUSICAL_CAST_IDS, 'zz'].flatMap((id) => [false, true].map((reduce) => ({ id, reduce, delays: musicalTransformDelays(id, reduce), duration: musicalTransformDuration(id, reduce) })));
+  const idFor = (m: number) => MUSICAL_CAST_IDS[(MUSICAL_SCALE as readonly number[]).indexOf(m)];
+  const tune = (id: string) => MUSICAL_MELODIES.find((m) => m.id === id)!.notes;
+  const sequences: Array<{ name: string; taps: Array<{ id: string; at: number }> }> = [
+    ...MUSICAL_MELODIES.map((m) => ({ name: m.id, taps: m.notes.map((n, i) => ({ id: idFor(n), at: 1000 + i * 300 })) })),
+    { name: 'twinkle-in-g', taps: tune('twinkle').map((n, i) => ({ id: idFor(n + 7), at: i * 250 })) },
+    { name: 'noodle-then-ode', taps: [...['s', 'w', 'i'], ...tune('ode').map(idFor)].map((id, i) => ({ id, at: i * 400 })) },
+    { name: 'mary-with-a-pause', taps: tune('mary').map((n, i) => ({ id: idFor(n), at: i * 300 + (i >= 6 ? MELODY_GAP_MS + 1 : 0) })) },
+    { name: 'mary-wrong-note', taps: tune('mary').map((n, i) => ({ id: idFor(i === 5 ? 76 : n), at: i * 300 })) },
+    { name: 'buns-twice', taps: [...tune('buns'), ...tune('buns')].map((n, i) => ({ id: idFor(n), at: i * 200 })) },
+    { name: 'clock-backwards', taps: [{ id: 'w', at: 5000 }, { id: 'o1', at: 100 }, { id: 'zz', at: 200 }] },
+  ];
+  const taps = sequences.map(({ name, taps: list }) => {
+    let s: MelodyState = MELODY_START;
+    const steps = list.map(({ id, at }) => { const r = melodyTap(s, id, at); s = r.state; return { id, at, midi: r.note?.midi ?? null, matched: r.matched?.id ?? null, buffered: r.state.notes.length }; });
+    return { name, steps };
+  });
+  const matches = [[], [64, 62, 60], tune('mary').slice(1), tune('ode').map((n) => n + 2), [76, ...tune('birthday')]].map((played) => ({ played, matched: matchMelody(played)?.id ?? null }));
+  const listed = [
+    { a: { key: 'tune_ode_to_joy', secret: true }, unlocked: [] as string[] }, { a: { key: 'tune_ode_to_joy', secret: true }, unlocked: ['tune_ode_to_joy'] },
+    { a: { key: 'under_par', hidden: true }, unlocked: ['under_par'] }, { a: { key: 'first_win' }, unlocked: [] as string[] },
+  ].map(({ a, unlocked }) => ({ a, unlocked, listed: achievementListed(a, new Set(unlocked)) }));
+  return {
+    scale: MUSICAL_SCALE, timing: MUSICAL_TIMING, popKeys: MUSICAL_POP_KEYS, gapMs: MELODY_GAP_MS,
+    melodies: MUSICAL_MELODIES.map((m) => ({ ...m, intervals: melodyIntervals(m.notes) })), secrets: SECRET_ACHIEVEMENT_KEYS,
+    notes, names, transform, taps, matches, listed,
+  };
+}
+
+// 2.8 item 6: the bubble-lettering fit (widths, balanced wraps, scale-up, hard split, Home name stack).
+export function renderBubbleTextFixtures() {
+  const texts = [
+    'DAILIES', 'PUZZLES', 'W', 'DOUBLE SWEEP!', 'WARMING UP \u00b7 3 DOWN', 'ON A ROLL \u00b7 11 OF 18', 'HOME STRETCH \u00b7 12 LEFT',
+    'WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT', 'WORDOCIOUS SWEPT! 10 PUZZLES LEFT', 'PUZZLES FLAWLESS! 4 PUZZLES LEFT',
+    'GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!', 'SATURDAY SUPERSTARS', "FRIDAY\u2019S FINEST", 'DOUG & BMT \u00b7 9,999 \u2605',
+    'SUPERCALIFRAGILISTICEXPIALIDOCIOUS',
+  ];
+  const widths = texts.map((text) => ({ text, em: bubbleWidthEm(text) }));
+  const fits: Array<{ text: string; slot: number; maxSize: number; minSize: number; fit: ReturnType<typeof bubbleFit> }> = [];
+  for (const text of texts) for (const slot of [200, 285, 334, 520]) {
+    for (const [maxSize, minSize] of [[38, 26], [60, 30]] as const) fits.push({ text, slot, maxSize, minSize, fit: bubbleFit(text, slot, { maxSize, minSize }) });
+  }
+  const home: Array<{ text: string; name: string; slot: number; fit: ReturnType<typeof homeHeadlineFit> }> = [];
+  for (const [text, name] of [
+    ['GOOD AFTERNOON, BMT!', 'BMT'], ['GOOD EVENING, MAXIMILLIAN_THE_GREAT!', 'Maximillian_The_Great'],
+    ['WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT', 'BMT'], ['ON A ROLL \u00b7 11 OF 18', ''], ['UP LATE, BMT?', 'BMT'],
+  ] as const) for (const slot of [220, 285, 334, 520]) home.push({ text, name, slot, fit: homeHeadlineFit(text, name, slot) });
+  const glyphs = Array.from(BUBBLE_GLYPHS).map((ch) => ({ ch, name: bubbleGlyphName(ch) }));
+  return { widths, fits, home, glyphs };
+}
+
 const FILES: Array<[string, unknown]> = [
   ['seed-fixtures.json', renderSeedFixtures()],
   ['prefill-fixtures.json', renderPrefillFixtures()],
@@ -997,11 +1157,15 @@ const FILES: Array<[string, unknown]> = [
   ['push-copy-fixtures.json', renderPushCopyFixtures()],
   ['avatar-config-fixtures.json', renderAvatarConfigFixtures()],
   ['headline-tokens-fixtures.json', renderHeadlineTokenFixtures()],
+  ['bubble-text-fixtures.json', renderBubbleTextFixtures()],
   ['achievement-rules-fixtures.json', renderAchievementRuleFixtures()],
   ['avatar-resolve-fixtures.json', renderAvatarResolveFixtures()],
   ['podium-layout-fixtures.json', renderPodiumLayoutFixtures()],
   ['avatar-layout-fixtures.json', renderAvatarLayoutFixtures()],
   ['avatar-season-fixtures.json', renderAvatarSeasonFixtures()],
+  ['avatar-pose-fixtures.json', renderAvatarPoseFixtures()],
+  ['avatar-access-fixtures.json', renderAvatarAccessFixtures()],
+  ['musical-cast-fixtures.json', renderMusicalCastFixtures()],
 ];
 
 // Only write/check when executed directly — parity-fixtures.test.ts imports

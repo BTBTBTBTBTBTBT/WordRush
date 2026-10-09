@@ -675,7 +675,7 @@ function drawCardTitle(
     drawImageContain(ctx, art.title, width / 2, top, TITLE_MAX_W, boxH, nat);
     return;
   }
-  const px = fitFontPx(ctx, fallbackText, Math.min(76, Math.round(boxH * 0.8)), TITLE_MAX_W + 120);
+  const px = fitFontPx(ctx, fallbackText, Math.min(76, Math.round(boxH * 0.8)), TITLE_MAX_W);
   ctx.save();
   ctx.font = `900 ${px}px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
@@ -1862,61 +1862,55 @@ function drawLeaderboardCard(
 // Public entry point
 // ──────────────────────────────────────────────────────────────────────────
 
-export async function generateShareImage(input: ShareImageInput): Promise<Blob | null> {
-  resolveShareFontStack();
-  try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* draw anyway */ }
-  if (typeof document === 'undefined') return null;
-  const width = SHARE_W;
+/** The card's wallpaper, title art and the lettering drawn when that art doesn't load. */
+export interface ShareCardArt {
+  wall: string;
+  title: ArtName | null;
+  tint: readonly [string, string, string];
+  fallbackTitle: string;
+  fallbackColor: string | readonly [string, string];
+}
 
-  // FINISH_SPEC E1: every card wears a wallpaper and its title art.
-  const date = ('date' in input && input.date) || new Date(getTodayLocal() + 'T00:00:00');
-  const day = shareDayKey(date);
-  let wall: string;
-  let title: ArtName | null;
-  let tint: readonly [string, string, string];
-  let fallbackTitle: string;
-  let fallbackColor: string | readonly [string, string];
+/** FINISH_SPEC E1: every card wears a wallpaper and its title art (pure: no DOM). */
+export function shareCardArt(input: ShareImageInput): ShareCardArt {
   if (input.layout === 'leaderboard') {
     const lb = LEADERBOARD_SHARE_ART[input.variant];
-    wall = pageWall(lb.wall);
-    title = lb.title;
-    tint = PAGE_TINTS[lb.wall].light;
-    fallbackTitle = lb.label;
-    fallbackColor = LB_THEME[input.variant].label;
-  } else if (input.layout === 'daily-sweep') {
-    wall = pageWall('home');
-    title = input.flawless ? 'art-moment-flawless' : 'art-moment-sweep';
-    tint = PAGE_TINTS.home.light;
-    fallbackTitle = input.title ?? (input.flawless ? 'FLAWLESS VICTORY' : 'DAILY SWEEP');
-    fallbackColor = input.flawless ? SWEEP_GOLD : SWEEP_VIOLET;
-  } else if (input.layout === 'profile') {
-    wall = pageWall('stats');
-    title = 'art-titlecast-stats';
-    tint = PAGE_TINTS.stats.light;
-    fallbackTitle = 'STATS';
-    fallbackColor = input.accentHex;
-  } else {
-    const g = gameShareArt(input.mode);
-    wall = g.wall;
-    title = g.title;
-    const accent = MODE_ACCENT[input.mode];
-    const t: TintStops = accent ? gameTint(accent) : PAGE_TINTS.home;
-    tint = t.light;
-    fallbackTitle = MODE_DISPLAY[input.mode] ?? input.mode.toUpperCase();
-    fallbackColor = accent ?? '#7c3aed';
+    return { wall: pageWall(lb.wall), title: lb.title, tint: PAGE_TINTS[lb.wall].light, fallbackTitle: lb.label, fallbackColor: LB_THEME[input.variant].label };
   }
-  const [art, castImgs] = await Promise.all([
-    loadShareArt({
-      wall,
-      title,
-      icons: input.layout === 'daily-sweep' ? input.games.map((g) => g.mode) : undefined,
-    }),
-    loadCastImages(),
-  ]);
+  if (input.layout === 'daily-sweep') {
+    return {
+      wall: pageWall('home'),
+      title: input.flawless ? 'art-moment-flawless' : 'art-moment-sweep',
+      tint: PAGE_TINTS.home.light,
+      fallbackTitle: input.title ?? (input.flawless ? 'FLAWLESS VICTORY' : 'DAILY SWEEP'),
+      fallbackColor: input.flawless ? SWEEP_GOLD : SWEEP_VIOLET,
+    };
+  }
+  if (input.layout === 'profile') {
+    return { wall: pageWall('stats'), title: 'art-titlecast-stats', tint: PAGE_TINTS.stats.light, fallbackTitle: 'STATS', fallbackColor: input.accentHex };
+  }
+  const g = gameShareArt(input.mode);
+  const accent = MODE_ACCENT[input.mode];
+  const t: TintStops = accent ? gameTint(accent) : PAGE_TINTS.home;
+  return {
+    wall: g.wall,
+    title: g.title,
+    tint: t.light,
+    fallbackTitle: MODE_DISPLAY[input.mode] ?? input.mode.toUpperCase(),
+    fallbackColor: accent ?? '#7c3aed',
+  };
+}
 
-  // S2: size the canvas to its content — title, head (info line / chips),
-  // the board block, the foot (stat windows / hook), the cast wordmark.
-  const titleH = titleBoxHeight(titleNatural(art));
+/**
+ * S2: the card sized to its content — title, head (info line / chips), the
+ * board block, the foot (stat windows / hook), the cast wordmark. Pure, so
+ * share-fit.test.ts can check every game's title box sits inside its card.
+ */
+export function shareCardPlan(
+  input: ShareImageInput,
+  titleNat: readonly [number, number] | null,
+): { plan: SharePlan; titleH: number; hook: string } {
+  const titleH = titleBoxHeight(titleNat);
   const hook = input.layout === 'leaderboard' ? shareHookLine(input.footer) : '';
   let headH: number = SHARE_SPACE.info;
   let footH: number = SHARE_SPACE.stats;
@@ -1928,6 +1922,28 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
     footH = 0;
   }
   const plan = planShareCard({ titleH, headH, footH }, (maxH) => boardBlockHeight(input, BOARD_W, maxH));
+  return { plan, titleH, hook };
+}
+
+export async function generateShareImage(input: ShareImageInput): Promise<Blob | null> {
+  resolveShareFontStack();
+  try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* draw anyway */ }
+  if (typeof document === 'undefined') return null;
+  const width = SHARE_W;
+
+  const date = ('date' in input && input.date) || new Date(getTodayLocal() + 'T00:00:00');
+  const day = shareDayKey(date);
+  const { wall, title, tint, fallbackTitle, fallbackColor } = shareCardArt(input);
+  const [art, castImgs] = await Promise.all([
+    loadShareArt({
+      wall,
+      title,
+      icons: input.layout === 'daily-sweep' ? input.games.map((g) => g.mode) : undefined,
+    }),
+    loadCastImages(),
+  ]);
+
+  const { plan, titleH, hook } = shareCardPlan(input, titleNatural(art));
   const height = plan.height;
 
   const canvas = document.createElement('canvas');

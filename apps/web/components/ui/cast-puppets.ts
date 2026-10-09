@@ -231,14 +231,16 @@ export function useCastPuppets(rowRef: React.RefObject<HTMLDivElement | null>, e
     };
   }, [rowRef, enabled, bundle]);
 
-  /** Tap: hop + laugh (+ the character's signature move), a light haptic, the laugh-sound hook. */
-  const tap = useCallback((id: MascotId) => {
+  /**
+   * Tap: hop + laugh (+ the character's signature move), a light haptic, the laugh-sound hook.
+   * `silent` (the musical cast): just the hop — the caller plays the note and its own haptic.
+   */
+  const tap = useCallback((id: MascotId, opts: { silent?: boolean } = {}) => {
     const S = state.current;
     const now = performance.now();
     S.tap[id] = now;
-    if (S.gesture[id] === undefined && !prefersReducedMotion()) S.gesture[id] = now;
-    haptic('light');
-    castLaugh(id);
+    if (!opts.silent && S.gesture[id] === undefined && !prefersReducedMotion()) S.gesture[id] = now;
+    if (!opts.silent) { haptic('light'); castLaugh(id); }
     S.kick();
   }, []);
 

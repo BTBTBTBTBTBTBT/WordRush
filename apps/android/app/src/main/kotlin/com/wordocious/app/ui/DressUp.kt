@@ -197,7 +197,7 @@ fun StageCloseButton(onStage: Boolean = true, label: String = "Close", modifier:
             },
         ) else androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFF8B5CF6), androidx.compose.ui.graphics.BlendMode.Modulate)
     }
-    Box(modifier.size(44.dp).squishClickable(label = label, icon = true, onClick = onClick), contentAlignment = Alignment.Center) {
+    RoundIconButton(onClick, label, modifier) {   // 2.8 item 23: the family round icon tap
         if (img != null) {
             // a soft drop: the same X in deep violet, 2 dp down, under the face
             Image(img, null, contentScale = ContentScale.Fit,
@@ -364,11 +364,20 @@ fun DressStage(
     hopToken: Int = 0,
     curtains: Boolean = true,
     bulbs: Boolean = false,
+    /** Cloud prompt 07: tapping the photo opens Change Photo (null = not tappable). */
+    onPhotoTap: (() -> Unit)? = null,
+    /** 10-06 living mascot (flag on only): the mascot's eyes follow the finger over the stage (Edit Profile). */
+    followFinger: Boolean = false,
     overlay: @Composable BoxScope.() -> Unit = {},
 ) {
     val podiumW = minOf(StageMetrics.podiumWidth, mascotSize * 1.34f)
     val podiumH = podiumW * (241f / 555f)
-    Box(modifier.fillMaxWidth().height(height), contentAlignment = Alignment.BottomCenter) {
+    val living = com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT
+    val finger = remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
+    Box(
+        modifier.fillMaxWidth().height(height).then(if (living && followFinger) Modifier.trackMascotFinger(finger) else Modifier),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
         StageBackdrop(config.bg, avatarColorHex(config.color), Modifier.fillMaxSize())
         Box(Modifier.fillMaxSize().background(Brush.radialGradient(
             listOf(Color.White.copy(alpha = if (WTheme.isDark) 0.16f else 0.42f), Color.Transparent),
@@ -384,8 +393,19 @@ fun DressStage(
         Box(Modifier.padding(bottom = 10.dp), contentAlignment = Alignment.BottomCenter) {
             StageArt(R.drawable.art_dress_podium, podiumH, width = podiumW)
             Box(Modifier.padding(bottom = podiumH * 0.42f)) {
-                if (photoUrl != null) PhotoAvatar(photoUrl, mascotSize * 0.74f, Modifier.padding(bottom = mascotSize * 0.06f), contentDescription = "Your photo")
-                else LiveMascot(config, initial, mascotSize, hopToken = hopToken)
+                if (photoUrl != null) PhotoAvatar(
+                    photoUrl, mascotSize * 0.74f,
+                    Modifier.padding(bottom = mascotSize * 0.06f)
+                        .then(if (onPhotoTap != null) Modifier.squishClickable(label = "Change photo", onClick = onPhotoTap) else Modifier),
+                    contentDescription = if (onPhotoTap != null) null else "Your photo",
+                )
+                else if (living) {
+                    // 10-06 the living mascot (AvatarLiveConfig.LIVING_MASCOT): its saved pose, tap = hop + laugh,
+                    // press = squish, moments = reactions, the eyes follow the finger (Edit Profile)
+                    androidx.compose.runtime.CompositionLocalProvider(LocalMascotFinger provides if (followFinger) finger else null) {
+                        LivingMascot(config.copy(frame = "none"), initial, mascotSize, cutout = true, follow = followFinger, hopToken = hopToken)
+                    }
+                } else LiveMascot(config, initial, mascotSize, hopToken = hopToken)
             }
         }
         overlay()

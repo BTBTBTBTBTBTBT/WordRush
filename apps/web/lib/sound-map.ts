@@ -7,7 +7,7 @@ import type { HapticKind } from '@/lib/haptics';
 /**
  * The samples in public/sounds/<name>.m4a (docs/design/brand/sounds/make-sounds.py): the 16-sound
  * pack + the founder's Sound Lab picks (make-sounds.py PICKS) — `intro` = the cold-start jingle,
- * `levelup` = the player's level going up, `open` = a game opening, `laugh-<id>` = each header hero's giggle.
+ * `levelup` = the player's level going up, `open` = a game opening, `laugh-<id>` = each header hero's giggle, `note-<id>` = its musical-cast note.
  */
 export const SOUND_NAMES = [
   'tap', 'delete', 'flip', 'press', 'release', 'hop', 'invalid', 'win',
@@ -15,6 +15,8 @@ export const SOUND_NAMES = [
   'intro', 'levelup', 'open', 'pangram',
   'classic-invalid', 'classic-streak', 'classic-lose', 'classic-win',
   'laugh-w', 'laugh-o1', 'laugh-r', 'laugh-d', 'laugh-o2', 'laugh-c', 'laugh-i', 'laugh-o3', 'laugh-u', 'laugh-s',
+  // the musical cast (core musical-cast.ts): each hero's own voice on its scale note (make-notes.py), C4 … E5
+  'note-w', 'note-o1', 'note-r', 'note-d', 'note-o2', 'note-c', 'note-i', 'note-o3', 'note-u', 'note-s',
 ] as const;
 export type SoundName = (typeof SOUND_NAMES)[number];
 
@@ -41,6 +43,12 @@ export function scopedSound(name: SoundName, scope: 'classic' | null): SoundName
 /** A header hero's giggle (Sound.castLaugh), or null for an unknown id. */
 export function laughSound(id: string): SoundName | null {
   const name = `laugh-${id}`;
+  return (SOUND_NAMES as readonly string[]).includes(name) ? (name as SoundName) : null;
+}
+
+/** A hero's musical note (the musical cast easter egg), or null for an unknown id. */
+export function noteSound(id: string): SoundName | null {
+  const name = `note-${id}`;
   return (SOUND_NAMES as readonly string[]).includes(name) ? (name as SoundName) : null;
 }
 

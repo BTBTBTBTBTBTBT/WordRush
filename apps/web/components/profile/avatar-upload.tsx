@@ -1,8 +1,7 @@
 'use client';
 
-import { afterOwnAvatarSave } from '@/lib/avatar-directory';
 import { useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase-client';
+import { avatarPhotoProblem, uploadAvatarPhoto } from '@/lib/avatar-photo';
 import { useAuth } from '@/lib/auth-context';
 import { Camera } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -33,9 +32,11 @@ interface AvatarUploadProps {
   photoOnly?: boolean;
   /** Called after a new photo was stored. */
   onUploaded?: () => void;
+  /** 10-06: the player's own living mascot (behind the livingMascot flag; the Stats card). */
+  living?: boolean;
 }
 
-export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, accent, pro, castId, frame, level, userId, config, photoOnly = false, onUploaded }: AvatarUploadProps) {
+export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, accent, pro, castId, frame, level, userId, config, photoOnly = false, onUploaded, living = false }: AvatarUploadProps) {
   const { profile, refreshProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,62 +50,21 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
   const shownUrl = photoOnly ? displayUrl ?? null : look.url;
   const radius = avatarRadiusPx(size);
 
-  const resizeImage = (file: File, maxSize: number): Promise<Blob> =>
-    new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = maxSize;
-        canvas.height = maxSize;
-        const ctx = canvas.getContext('2d')!;
-        const min = Math.min(img.width, img.height);
-        const sx = (img.width - min) / 2;
-        const sy = (img.height - min) / 2;
-        ctx.drawImage(img, sx, sy, min, min, 0, 0, maxSize, maxSize);
-        canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error('Canvas toBlob failed'))),
-          'image/jpeg',
-          0.85,
-        );
-        URL.revokeObjectURL(img.src);
-      };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(file);
-    });
-
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !profile) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'Image must be under 5MB', variant: 'destructive' });
+    const problem = avatarPhotoProblem(file);
+    if (problem) {
+      toast({ title: problem, variant: 'destructive' });
       return;
     }
 
     setUploading(true);
     try {
-      const resized = await resizeImage(file, 256);
-      const path = `${profile.id}/avatar.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(path);
-
-      // Append cache buster to force browser refresh
-      const freshUrl = `${publicUrl}?t=${Date.now()}`;
-
-      await (supabase as any)
-        .from('profiles')
-        .update({ avatar_url: freshUrl })
-        .eq('id', profile.id);
-
-      afterOwnAvatarSave(profile.id);
+      // Same rules as Edit Profile's Change Photo menu and iOS / Android (lib/avatar-photo.ts).
+      await uploadAvatarPhoto(profile.id, file);
       await refreshProfile();
       onUploaded?.();
     } catch (err) {
@@ -130,6 +90,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username, 
         pro={look.pro}
         level={look.level}
         label={displayName}
+        living={living}
       />
 
       {editable && (

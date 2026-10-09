@@ -100,6 +100,19 @@ export function RoundIconButton({ icon, label, size = 28, className = '', style,
   );
 }
 
+/**
+ * 2.8 item 23: the ROUND icon tap for any bare glyph (header counters + icons, the game corner Home, back/close):
+ * `.hdr-glyph` gives the 44 px tap area, the global squish plays on press. Every header circle routes through here
+ * instead of hand-rolling a <button>.
+ */
+export function RoundIconSlot({ label, className = '', style, type = 'button', children, ...rest }: ButtonRest & { label: string; className?: string; style?: CSSProperties; children: ReactNode }) {
+  return (
+    <button type={type} {...rest} aria-label={label} className={`hdr-glyph ${className}`.trim()} style={style}>
+      {children}
+    </button>
+  );
+}
+
 /** The family 3D close X as a bare glyph, for a close that already owns its hit area (HeaderCircle, a popup corner). */
 export function FamCloseGlyph({ size = 22 }: { size?: number }) {
   return (

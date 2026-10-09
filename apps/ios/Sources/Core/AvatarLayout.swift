@@ -17,7 +17,13 @@ public struct AvatarManifest: Decodable {
     public struct XY: Decodable { public var x: Double; public var y: Double }
     public struct XYW: Decodable { public var x: Double; public var y: Double; public var w: Double }
     public struct Y: Decodable { public var y: Double }
-    public struct Override: Decodable { public var dx: Double?; public var dy: Double?; public var scale: Double? }
+    /// Per-body fit override: offset / scale of a one-art item, `layer` = draw it on that layer on this body (the medal +
+    /// bow tie go 'under' — before the letter and the face — where they would overlap it), `withheld` = no room on this
+    /// body: the part draws nothing here (a saved config that wears it shows the body without it).
+    public struct Override: Decodable {
+        public var dx: Double?; public var dy: Double?; public var scale: Double?
+        public var layer: String?; public var withheld: Bool?
+    }
     public struct Body: Decodable {
         public var faceCenter: [Double]
         public var eyeY: Double, mouthY: Double, cheekY: Double
@@ -78,6 +84,16 @@ public struct AvatarLayoutLayer: Equatable {
     public var art: String
     public var rect: AvatarRect
     public var tint: Bool
+    /// Posed layouts only: the layer's affine matrix in content fractions (draw the rect under it).
+    public var m: AvatarMatrix? = nil
+    /// Posed layouts only: what the layer moves with (root | armL | armR | handL | handR | feet | none).
+    public var ride: String? = nil
+}
+
+/// A posed layout's pose: its id, with every part's matrix (content fractions).
+public struct AvatarLayoutPoseInfo: Equatable {
+    public var id: String
+    public var parts: AvatarPoseParts
 }
 
 public struct AvatarLayout: Equatable {
@@ -88,6 +104,21 @@ public struct AvatarLayout: Equatable {
     public var bounds: AvatarRect
     /// The white initial is drawn just before layers[letterIndex] (== layers.count: after the last layer).
     public var letterIndex: Int = 1
+    /// Posed layouts only: the body's matrix (content fractions): the white initial moves with it.
+    public var letterM: AvatarMatrix? = nil
+    /// Posed layouts only: the pose drawn (its id), with every part's matrix (content fractions).
+    public var pose: AvatarLayoutPoseInfo? = nil
+}
+
+/// The pose to lay out (packages/core AvatarLayoutPose): a pose id (its shared data), `.saved` (the config's own
+/// pose), or a live frame (`.live`: the saved pose id for the per-pose withholds + the spec to draw). nil = the body
+/// as drawn. Default (`flagDefault`): the saved pose while AvatarLiveConfig.livingMascot is on, else nil.
+public enum AvatarLayoutPose: Equatable {
+    case saved
+    case id(String)
+    case live(id: String, spec: AvatarPoseSpec)
+
+    public static var flagDefault: AvatarLayoutPose? { AvatarLiveConfig.livingMascot ? .saved : nil }
 }
 
 public enum AvatarFit {
@@ -205,17 +236,39 @@ public enum AvatarFit {
         }
     }
 
-    /// Where every layer of `config` goes (content-square fractions).
-    public static func layout(_ config: AvatarConfig, small: Bool = false, manifest: AvatarManifest) -> AvatarLayout {
+    /// Where every layer of `config` goes (content-square fractions). `pose`: see AvatarLayoutPose (default: the saved
+    /// pose while AvatarLiveConfig.livingMascot is on, else none); `room`: more poses the fit leaves room for (the living
+    /// mascot). Small avatars never pose. With no pose (or no rig / pose data) this is the un-posed layout, unchanged.
+    public static func layout(_ config: AvatarConfig, small: Bool = false, pose: AvatarLayoutPose? = AvatarLayoutPose.flagDefault,
+                              room: [AvatarPoseSpec] = [], manifest: AvatarManifest,
+                              poses: AvatarPosesData? = AvatarPosesData.bundled) -> AvatarLayout {
         guard let b = manifest.bodies[config.body] ?? manifest.bodies["classic"] else {
             let unit = AvatarRect(x: 0.07, y: 0.07, w: 0.86, h: 0.86)
             return AvatarLayout(scale: 0.86, body: unit, letter: unit, layers: [], bounds: unit)
         }
+        // the pose (small avatars never pose: they draw only the body + face)
+        var poseId = "none"
+        var spec: AvatarPoseSpec? = nil
+        if let pose {
+            switch pose {
+            case .saved: poseId = config.pose
+            case .id(let s): poseId = s == "saved" ? config.pose : s
+            case .live(let id, let sp): poseId = id; spec = sp
+            }
+            if spec == nil, let poses { spec = AvatarPose.def(poseId, data: poses)?.spec }
+        }
+        var rig: AvatarBodyRig? = nil
+        if let poses { rig = AvatarPose.rig(config.body, data: poses) }
+        let posed = !small && spec != nil && rig != nil && manifest.bodies[config.body] != nil
+        let withheld: [String] = posed && poses != nil ? AvatarPose.withheld(poseId, body: config.body, data: poses!) : []
         struct P { var layer: String; var field: String; var id: String; var art: String; var rect: AvatarRect; var tint: Bool }
         var placed: [P] = []
         for (field, id) in wornParts(config, small: small, manifest: manifest) {
             let key = "\(fieldKind[field]!):\(id)"
             let m = manifest.items[key]!
+            let o = b.overrides?[key]
+            if o?.withheld ?? false { continue }   // no room on this body: drop it silently (saved configs keep working)
+            if withheld.contains(key) { continue }   // fails the guards in this pose: off while posed
             if let pieces = m.pieces {
                 // v3 integrated part: its per-body layers (nothing on a body without room for it)
                 for pc in pieces[config.body] ?? [] {
@@ -232,10 +285,9 @@ public enum AvatarFit {
                 continue
             }
             let p = slotPoint(b, m.slot)
-            let o = b.overrides?[key]
             let w = p.base * m.w * (o?.scale ?? 1)
             let h = w * m.aspect
-            placed.append(P(layer: m.layer, field: field, id: id, art: "art-av-\(fieldKind[field]!)-\(id)",
+            placed.append(P(layer: o?.layer ?? m.layer, field: field, id: id, art: "art-av-\(fieldKind[field]!)-\(id)",
                             rect: AvatarRect(x: p.x - m.anchor[0] * w + (o?.dx ?? 0), y: p.y - m.anchor[1] * h + (o?.dy ?? 0), w: w, h: h),
                             tint: (m.tint ?? false) && AvatarCatalog.tintable.contains(id)))
         }
@@ -259,10 +311,51 @@ public enum AvatarFit {
             let lift = min(0, eyes.rect.y + ink * eyes.rect.h - beadyTop)
             if lift < 0 { for i in placed.indices where placed[i].layer == "brows" { placed[i].rect.y += lift } }
         }
+        // posed: every layer rides a part (held items the hand they sit in, shoes the feet, pets stay on the floor)
+        var parts: AvatarPoseParts? = nil
+        if posed, let rg = rig, let sp = spec { parts = AvatarPose.matrices(rg, sp) }
+        func rideOf(_ field: String, _ r: AvatarRect) -> String {
+            if field == "pet" { return "none" }
+            if field == "feet" { return "feet" }
+            if field == "held" || field == "wrist", let rg = rig {
+                // held items ride the hand landmark (upright), wrist items the forearm (the whole arm)
+                let cx = r.x + r.w / 2, cy = r.y + r.h / 2
+                func d(_ h: [Double]) -> Double { (h[0] - cx) * (h[0] - cx) + (h[1] - cy) * (h[1] - cy) }
+                let left = d(rg.armL.hand) <= d(rg.armR.hand)
+                return field == "wrist" ? (left ? "armL" : "armR") : (left ? "handL" : "handR")
+            }
+            return "root"
+        }
         var x0 = b.bounds[0], y0 = b.bounds[1], x1 = b.bounds[2], y1 = b.bounds[3]
-        for p in placed {
-            x0 = min(x0, p.rect.x); y0 = min(y0, p.rect.y)
-            x1 = max(x1, p.rect.x + p.rect.w); y1 = max(y1, p.rect.y + p.rect.h)
+        if let PP = parts, let rg = rig {
+            // the union of the body art's content + every part, each through its matrix
+            x0 = Double.infinity; y0 = Double.infinity; x1 = -Double.infinity; y1 = -Double.infinity
+            func grow(_ r: AvatarRect, _ mm: AvatarMatrix) {
+                for (cx, cy) in [(r.x, r.y), (r.x + r.w, r.y), (r.x, r.y + r.h), (r.x + r.w, r.y + r.h)] {
+                    let (px, py) = AvatarPose.matApply(mm, cx, cy)
+                    x0 = min(x0, px); y0 = min(y0, py); x1 = max(x1, px); y1 = max(y1, py)
+                }
+            }
+            func box4(_ v: [Double]) -> AvatarRect { AvatarRect(x: v[0], y: v[1], w: v[2] - v[0], h: v[3] - v[1]) }
+            let bb = box4(b.bounds)
+            // `room`: more poses the fit leaves room for (the living mascot: its reactions + hop never leave the tile)
+            func growPose(_ Q: AvatarPoseParts) {
+                grow(bb, Q.root)
+                if let bx = rg.armL.box { grow(box4(bx), Q.armL) }
+                if let bx = rg.armR.box { grow(box4(bx), Q.armR) }
+                if let bx = rg.feet.box { grow(box4(bx), Q.feet) }
+                for p in placed {
+                    let ride = rideOf(p.field, p.rect)
+                    grow(p.rect, ride == "none" ? AvatarPose.identity : Q[ride])
+                }
+            }
+            growPose(PP)
+            for sp in room { growPose(AvatarPose.matrices(rg, sp)) }
+        } else {
+            for p in placed {
+                x0 = min(x0, p.rect.x); y0 = min(y0, p.rect.y)
+                x1 = max(x1, p.rect.x + p.rect.w); y1 = max(y1, p.rect.y + p.rect.h)
+            }
         }
         let avail = 1 - 2 * manifest.fit.pad
         let s = min(manifest.fit.maxBody, avail / (x1 - x0), avail / (y1 - y0))
@@ -271,19 +364,110 @@ public enum AvatarFit {
         func map(_ r: AvatarRect) -> AvatarRect {
             AvatarRect(x: r4(tx + r.x * s), y: r4(ty + r.y * s), w: r4(r.w * s), h: r4(r.h * s))
         }
-        let bodyRect = map(AvatarRect(x: 0, y: 0, w: 1, h: 1))
-        var all: [(Int, AvatarLayoutLayer)] = [(0, AvatarLayoutLayer(layer: "body", field: "body", id: config.body, art: "art-av-body-\(config.body)", rect: bodyRect, tint: false))]
-        for (i, p) in placed.enumerated() {
-            all.append((i + 1, AvatarLayoutLayer(layer: p.layer, field: p.field, id: p.id, art: p.art, rect: map(p.rect), tint: p.tint)))
+        // a body-unit matrix → content fractions (A · M · A⁻¹, A = scale s + translate t)
+        func toContent(_ mm: AvatarMatrix) -> AvatarMatrix {
+            AvatarPose.matMul(AvatarPose.matMul([s, 0, 0, s, tx, ty], mm), [1 / s, 0, 0, 1 / s, -tx / s, -ty / s]).map(AvatarPose.r5)
         }
+        let bodyRect = map(AvatarRect(x: 0, y: 0, w: 1, h: 1))
         let order = manifest.layerOrder
         func rank(_ l: String) -> Int { order.firstIndex(of: l) ?? -1 }
-        all.sort { (a, c) in rank(a.1.layer) != rank(c.1.layer) ? rank(a.1.layer) < rank(c.1.layer) : a.0 < c.0 }
+        let layers: [AvatarLayoutLayer]
+        if let PP = parts {
+            // the rig layers: feet behind the body, the base, the arms in front of the hats (a raised hand passes in front
+            // of a brim) and behind the neck pieces; what a hand holds draws just over that hand
+            let armRank = Double(order.contains("head") ? rank("head") : order.count) + 0.5
+            let bodyRank = Double(rank("body"))
+            let id = config.body
+            var all: [(k: Double, i: Int, l: AvatarLayoutLayer)] = [
+                (bodyRank - 0.5, 0, AvatarLayoutLayer(layer: "body", field: "body", id: id, art: "art-av-body-\(id)-feet", rect: bodyRect, tint: false,
+                                                      m: toContent(PP.feet), ride: "feet")),
+                (bodyRank, 1, AvatarLayoutLayer(layer: "body", field: "body", id: id, art: "art-av-body-\(id)-base", rect: bodyRect, tint: false,
+                                                m: toContent(PP.root), ride: "root")),
+                (armRank, 2, AvatarLayoutLayer(layer: "arms", field: "body", id: id, art: "art-av-body-\(id)-armL", rect: bodyRect, tint: false,
+                                               m: toContent(PP.armL), ride: "armL")),
+                (armRank, 3, AvatarLayoutLayer(layer: "arms", field: "body", id: id, art: "art-av-body-\(id)-armR", rect: bodyRect, tint: false,
+                                               m: toContent(PP.armR), ride: "armR")),
+            ]
+            for (j, p) in placed.enumerated() {
+                let ride = rideOf(p.field, p.rect)
+                let mm = ride == "none" ? AvatarPose.identity : PP[ride]
+                // what a hand holds draws over that hand; buddies (they stay on the floor) draw just behind a moving arm
+                let onArm = ride == "armL" || ride == "armR" || ride == "handL" || ride == "handR"
+                let r = Double(rank(p.layer))
+                let k = onArm ? armRank + 0.25 : ride == "none" && r > armRank ? armRank - 0.25 : r
+                all.append((k, 4 + j, AvatarLayoutLayer(layer: p.layer, field: p.field, id: p.id, art: p.art, rect: map(p.rect), tint: p.tint,
+                                                        m: toContent(mm), ride: ride)))
+            }
+            // a stable sort by rank (Array.prototype.sort is stable)
+            all.sort { (a, c) in a.k != c.k ? a.k < c.k : a.i < c.i }
+            layers = all.map { $0.l }
+        } else {
+            var all: [(Int, AvatarLayoutLayer)] = [(0, AvatarLayoutLayer(layer: "body", field: "body", id: config.body, art: "art-av-body-\(config.body)", rect: bodyRect, tint: false))]
+            for (i, p) in placed.enumerated() {
+                all.append((i + 1, AvatarLayoutLayer(layer: p.layer, field: p.field, id: p.id, art: p.art, rect: map(p.rect), tint: p.tint)))
+            }
+            all.sort { (a, c) in rank(a.1.layer) != rank(c.1.layer) ? rank(a.1.layer) < rank(c.1.layer) : a.0 < c.0 }
+            layers = all.map(\.1)
+        }
         let lb = b.letterBox
-        let layers = all.map(\.1)
         let after = layers.firstIndex { !layersUnderLetter.contains($0.layer) } ?? layers.count
-        return AvatarLayout(scale: r4(s), body: bodyRect, letter: map(AvatarRect(x: lb[0], y: lb[1], w: lb[2], h: lb[3])),
-                            layers: layers, bounds: map(AvatarRect(x: x0, y: y0, w: x1 - x0, h: y1 - y0)), letterIndex: after)
+        var out = AvatarLayout(scale: r4(s), body: bodyRect, letter: map(AvatarRect(x: lb[0], y: lb[1], w: lb[2], h: lb[3])),
+                               layers: layers, bounds: map(AvatarRect(x: x0, y: y0, w: x1 - x0, h: y1 - y0)), letterIndex: after)
+        if let PP = parts {
+            out.letterM = toContent(PP.root)
+            out.pose = AvatarLayoutPoseInfo(id: poseId, parts: PP.map(toContent))
+        }
+        return out
+    }
+
+    /// The living mascot's layout: rigged (feet / base / arms as their own layers, even in the "none" pose), in its saved
+    /// pose, with room in the fit for its reactions + hop (so it never rescales while it moves). Web avatarLiveLayout.
+    public static func liveLayout(_ config: AvatarConfig, small: Bool, manifest: AvatarManifest,
+                                  poses: AvatarPosesData? = AvatarPosesData.bundled) -> AvatarLayout {
+        let id = config.pose
+        var spec = AvatarPoseSpec()
+        var room: [AvatarPoseSpec] = []
+        if let poses {
+            spec = AvatarPose.def(id, data: poses)?.spec ?? AvatarPoseSpec()
+            room = AvatarPose.liveRoom(data: poses)
+        }
+        return layout(config, small: small, pose: .live(id: id, spec: spec), room: room, manifest: manifest, poses: poses)
+    }
+
+    /// The living mascot's per-frame matrices: a pose spec's part matrices (content fractions) at a posed layout's FIXED
+    /// fit (so the mascot never rescales while its arms move). Lay the mascot out once with `liveLayout`, then call this
+    /// every frame. nil when the body has no rig.
+    public static func layoutPoseParts(_ layout: AvatarLayout, body: String, spec: AvatarPoseSpec,
+                                       poses: AvatarPosesData? = AvatarPosesData.bundled) -> AvatarPoseParts? {
+        guard let poses, let rig = AvatarPose.rig(body, data: poses) else { return nil }
+        let s = layout.body.w, tx = layout.body.x, ty = layout.body.y
+        let PP = AvatarPose.matrices(rig, spec)
+        return PP.map { mm in
+            AvatarPose.matMul(AvatarPose.matMul([s, 0, 0, s, tx, ty], mm), [1 / s, 0, 0, 1 / s, -tx / s, -ty / s]).map(AvatarPose.r5)
+        }
+    }
+
+    /// One live frame's transforms (content fractions) for the mascot's groups (web avatarLiveTransforms): per ride
+    /// (root / armL / armR / handL / handR / feet / none) and the face — eyes: root + the blink squash about the eyes'
+    /// center, nudged toward a finger by `look` (−1…1); mouth: root + the laugh stretch from its top edge. Empty when
+    /// the body has no rig.
+    public static func liveTransforms(_ layout: AvatarLayout, body: String, frame: AvatarLiveFrame, look: (Double, Double) = (0, 0),
+                                      poses: AvatarPosesData? = AvatarPosesData.bundled) -> [String: AvatarMatrix] {
+        guard let P = layoutPoseParts(layout, body: body, spec: frame.spec, poses: poses) else { return [:] }
+        var out: [String: AvatarMatrix] = [:]
+        for k in ["root", "armL", "armR", "handL", "handR", "feet"] { out[k] = P[k] }
+        out["none"] = AvatarPose.identity
+        if let eyes = layout.layers.first(where: { $0.layer == "eyes" }) {
+            let cy = eyes.rect.y + eyes.rect.h / 2
+            let lx = max(-1, min(1, look.0)) * 0.012, ly = max(-1, min(1, look.1)) * 0.008
+            out["eyes"] = AvatarPose.matMul(P.root, [1, 0, 0, frame.eyes, lx, cy - frame.eyes * cy + ly])
+        }
+        if let mouth = layout.layers.first(where: { $0.layer == "mouth" }) {
+            let k = 1 + 0.25 * frame.laugh
+            let cx = mouth.rect.x + mouth.rect.w / 2, top = mouth.rect.y + mouth.rect.h * 0.3
+            out["mouth"] = AvatarPose.matMul(P.root, [k, 0, 0, k, cx - k * cx, top - k * top])
+        }
+        return out
     }
 
     // MARK: Patterns (shared shapes, body-square units)

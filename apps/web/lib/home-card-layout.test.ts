@@ -91,7 +91,10 @@ describe('Home game card (§21)', () => {
     // Rows spread edge to edge at one tile size; no outlined / dashed tiles.
     expect(s).toContain('flex justify-between w-full');
     expect(s).toContain('const TILE_SIZE =');
-    expect(s).not.toMatch(/softIconTile|dashed|strokeDasharray/);
+    // 2.8 item 8: played tiles use the shared picker-tile surface (softIconTile) + the W / L badge.
+    expect(s).toContain('softIconTile');
+    expect(s).toContain('PickerResultBadge');
+    expect(s).not.toMatch(/dashed|strokeDasharray/);
   });
 
   it('compresses the Home banner ~25% (FINISH_SPEC BH3): one-line headline, slim switch, tight rows', async () => {

@@ -5,7 +5,7 @@
 // its own gold line(s) when the greeting doesn't fit on one. Pure; the look lives in
 // components/home/home-banner.tsx.
 
-import { headlineFontSize, headlineLayout, type HeadlineLayout } from '@wordle-duel/core';
+import { homeHeadlineFit, type HeadlineLayout } from '@wordle-duel/core';
 
 /** A LiveHeadline line box in em: .lh line-height 1.12 + its 0.08 / 0.16 em padding (globals.css). */
 export const HEADLINE_LINE_EM = 1.36;
@@ -32,9 +32,10 @@ export function headlineTextWidth(slotWidth: number): number {
 /** One headline laid out for a slot `slotWidth` px wide (the size never shrinks for a long name). */
 export function homeHeadlineLayout(slotWidth: number, headline: string, name: string): HomeHeadlineLayout {
   const textWidth = headlineTextWidth(slotWidth);
-  const size = headlineFontSize(textWidth);
-  const layout = headlineLayout(headline, name, textWidth / size);
-  return { ...layout, size, lineHeight: Math.ceil(size * HEADLINE_LINE_EM), textWidth };
+  // 2.8 item 6: core's bubble-text fit — the name keeps its stacked gold lines; every other
+  // headline that is too long wraps in balanced lines (never a shrink-and-clip, never "…").
+  const fit = homeHeadlineFit(headline, name, textWidth);
+  return { lines: fit.lines, nameLines: fit.nameLines, size: fit.size, lineHeight: Math.ceil(fit.size * HEADLINE_LINE_EM), textWidth };
 }
 
 /**

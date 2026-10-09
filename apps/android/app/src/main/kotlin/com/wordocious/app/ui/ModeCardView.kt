@@ -149,7 +149,7 @@ private fun Modifier.gameCardSurface(bg: Color, glow: Color? = null): Modifier {
  * its glow, and an unplayed hero progress tile's hint of color. iOS SeasonDone, web SEASON_DONE.
  */
 internal object SeasonDone {
-    const val WASH = 0.38f
+    const val WASH = 0.355f
     const val IDLE = 0.05f
     const val GLOW = 0.55f
     const val IDLE_TILE = 0.10f
@@ -279,7 +279,10 @@ internal fun ModeCardView(
     val doneWon = completion?.completed ?: (vsWon == true)
     // Completed daily: a stronger wash in the mode's accent (web parity). Locked (free
     // user, played today): dimmed 60% with a gray trim and muted name (web / iOS parity).
-    val cardBg = gameCardBg(card.accent, isDone)
+    // 2.7.1 review: a locked card is never "finished" — under a dark season the finished glass
+    // (SeasonDone.WASH) made a free player's locked card read as played. iOS passes the lock gray
+    // with done && !locked; web returns its gray wash first.
+    val cardBg = gameCardBg(if (isLocked) Color(0xFFD1D5DB) else card.accent, isDone && !isLocked)
 
     // FINISH_SPEC BH (the compact card; web mode-card.tsx, iOS ModeCardView.swift): 74 dp,
     // radius 16, no stroke, the candy cap trim across the rounded top; under it one row

@@ -28,6 +28,8 @@ struct EditProfileView: View {
     /// (only then is avatar_config written).
     @State private var mascot: AvatarConfig = AvatarCatalog.defaultAvatar(userId: "")
     @State private var mascotTouched = false
+    /// Item gating (AvatarAccessConfig.itemGating, OFF): the SAVED mascot (its parts are never locked — grandfathered).
+    @State private var savedMascot: AvatarConfig?
     @State private var isPrivate = false
     @State private var unlocked: Set<String> = []
     @State private var unlockedDates: [String: String] = [:]
@@ -58,10 +60,17 @@ struct EditProfileView: View {
     private var dailyModes: [HomeMode] { homeModes.filter { $0.dbKey != nil && $0.dbKey != "VS" } }
     private var accentColor: Color { ProfileAccent.color(accent) }
     private var initial: String { AvatarCatalog.initial(username.isEmpty ? auth.profile?.username : username) }
-    private var showsPhoto: Bool { mascot.display == "photo" && hasPhoto }
+    private var showsPhoto: Bool { ChangePhoto.showsPhoto(display: mascot.display, hasPhoto: hasPhoto) }
+    /// Cloud prompt 07: the quiet Change photo button + a tappable photo, while the photo shows.
+    private var canChangePhoto: Bool { ChangePhoto.showsChangePhoto(display: mascot.display, hasPhoto: hasPhoto) }
     private var ink: Color { Theme.isDark ? Theme.textPrimary : FinishInk.title }
     private var labelInk: Color { Theme.isDark ? Theme.textSecondary : Color(hex: 0x7A6AA6) }
     private var featuredName: String? { featured.flatMap { k in catalog.all.first { $0.key == k }?.name } }
+    /// Item gating: the profile's stats + the unlocked achievements (loaded in .task; empty until then).
+    private var accessStats: AvatarEarnStats { MascotAccess.stats(auth.profile, achievements: unlocked) }
+    private var accessContext: AvatarAccessContext {
+        MascotAccess.context(isPro: auth.isProActive, stats: accessStats, saved: savedMascot)
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -97,6 +106,7 @@ struct EditProfileView: View {
                 // No saved mascot: a worn hero showed over the photo (AH); else the photo shows.
                 if MascotLooks.shared.ownConfig(p) == nil { m.display = (has && look.castId == nil) ? "photo" : "mascot" }
                 mascot = m
+                savedMascot = MascotLooks.shared.ownConfig(p)
             }
             openDoor()
             await catalog.load()
@@ -108,7 +118,7 @@ struct EditProfileView: View {
             // 2.7.1 gate: the Title Shelves' badges (50 pt, locked ones pre-grayed) decode off the main
             // thread while the Stage is up, so "Wear it" opens the shelves without a decode stall.
             let earned = unlocked
-            BadgeArt.prewarm(catalog.all.filter { !($0.hidden ?? false) }.map {
+            BadgeArt.prewarm(catalog.listed(unlocked: earned).map {
                 (name: BadgeArt.achievementAsset(key: $0.key, icon: $0.icon, category: $0.category), gray: !earned.contains($0.key))
             }, points: 50)
         }
@@ -170,7 +180,8 @@ struct EditProfileView: View {
     private var stage: some View {
         DressStage(config: mascot, initial: initial,
                    photo: showsPhoto ? (auth.profile?.avatarUrl, auth.profile?.username ?? username, auth.profile?.id) : nil,
-                   height: StageMetrics.height + 44, hopToken: hopToken) {
+                   height: StageMetrics.height + 44, hopToken: hopToken,
+                   onPhotoTap: canChangePhoto && !uploadingAvatar ? { showPhotoChoice = true } : nil, follow: true) {
             VStack {
                 // × and SAVE sit in equal side slots, so the heading centers and both stay inside the stage.
                 HStack(alignment: .center, spacing: 4) {
@@ -253,7 +264,8 @@ struct EditProfileView: View {
                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { hopToken += 1 }
                           },
                           startTab: roomTab,
-                          onClose: { showRoom = false })
+                          onClose: { showRoom = false },
+                          accessStats: accessStats, savedConfig: savedMascot)
     }
 
     // MARK: - Swatch rows (one tap)
@@ -275,7 +287,9 @@ struct EditProfileView: View {
         return HStack(spacing: 9) {
             ForEach(ids, id: \.self) { id in
                 let on = mascot.bg == id
-                let locked = AvatarCatalog.isProOnly(bg: id) && !auth.isProActive
+                // item gating on: a locked backdrop opens the room (try it on there; Save checks access)
+                let locked = MascotAccess.isOn ? MascotAccess.isLocked("bg", id, accessContext)
+                                               : AvatarCatalog.isProOnly(bg: id) && !auth.isProActive
                 Button {
                     if locked { openRoom(.backdrop); return }
                     Haptics.tap(); mascot.bg = id; mascotTouched = true
@@ -308,9 +322,13 @@ struct EditProfileView: View {
         return HStack(spacing: 8) {
             ForEach(ids, id: \.self) { id in
                 let on = mascot.frame == id
-                let tierLocked = AvatarFrameRules.tier(id) != nil && !AvatarFrameRules.isUnlocked(id, level: level)
-                let proLocked = AvatarCatalog.isProOnly(frame: id) && !auth.isProActive
+                let gated = MascotAccess.isOn
+                let tierLocked = !gated && AvatarFrameRules.tier(id) != nil && !AvatarFrameRules.isUnlocked(id, level: level)
+                let proLocked = !gated && AvatarCatalog.isProOnly(frame: id) && !auth.isProActive
+                // item gating on: a locked frame opens the room on Frame (try it on there; Save checks access)
+                let gatedLocked = gated && MascotAccess.isLocked("frame", id, accessContext)
                 Button {
+                    if gatedLocked { openRoom(.frame); return }
                     if tierLocked || proLocked { return }
                     Haptics.tap(); mascot.frame = id; mascotTouched = true
                 } label: {
@@ -320,11 +338,12 @@ struct EditProfileView: View {
                         .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(on ? Color.white : Color.white.opacity(Theme.isDark ? 0.08 : 0.5)))
                         .shadow(color: on ? Color(hex: 0xA78BFA).opacity(0.6) : .clear, radius: 4)
-                        .opacity(tierLocked || proLocked ? 0.4 : 1)
+                        .opacity(tierLocked || proLocked || gatedLocked ? 0.4 : 1)
                         .overlay { if tierLocked { StageArt("art-dress-lock", height: 15) } }
+                        .overlay(alignment: .bottomTrailing) { if gatedLocked { MascotLockTag(height: 12).offset(x: 3, y: 3) } }
                 }
                 .buttonStyle(.squish)
-                .accessibilityLabel(id == "none" ? "No frame" : "\(AvatarFrameRules.tier(id)?.label ?? id.capitalized) frame\(tierLocked ? ", locked" : "")")
+                .accessibilityLabel(id == "none" ? "No frame" : "\(AvatarFrameRules.tier(id)?.label ?? id.capitalized) frame\(tierLocked || gatedLocked ? ", locked" : "")")
                 .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
             }
         }
@@ -337,10 +356,26 @@ struct EditProfileView: View {
             row("SHOW") {
                 SoftSegmented(options: [(key: "mascot", label: "My mascot"), (key: "photo", label: "My photo")],
                               selection: Binding(get: { showsPhoto ? "photo" : "mascot" }, set: { v in
-                                  if v == "photo" && !hasPhoto { showPhotoChoice = true; return }
-                                  mascot.display = v; mascotTouched = true; hopToken += 1
+                                  // "My photo" with no photo yet opens Change Photo instead of switching.
+                                  let pick = ChangePhoto.pickShow(v, hasPhoto: hasPhoto)
+                                  if pick.openMenu { showPhotoChoice = true; return }
+                                  guard let d = pick.display else { return }
+                                  mascot.display = d; mascotTouched = true; hopToken += 1
                               }),
                               accent: G5Accent.purple, accessibilityLabel: "Which avatar shows")
+            }
+            // Change photo: a small quiet pill under SHOW while the photo shows; the cast wave while one uploads.
+            if uploadingAvatar {
+                CastRow(size: 16, motion: .wave)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 10)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Uploading photo")
+            } else if canChangePhoto {
+                Button { Haptics.tap(); showPhotoChoice = true } label: { CandyLabel(title: "Change photo", symbol: "camera.fill") }
+                    .buttonStyle(QuietButtonStyle(size: .small))
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 10)
             }
             divider
             row("USERNAME") {
@@ -527,7 +562,15 @@ struct EditProfileView: View {
             try c.encode(is_private, forKey: .is_private)
         }
     }
-    private struct AvatarUpdate: Encodable { let avatar_url: String? }
+    /// avatar_url, with nil SENT as null (synthesized Encodable skips a nil key, so Remove photo wrote nothing).
+    private struct AvatarUpdate: Encodable {
+        let avatar_url: String?
+        enum CodingKeys: String, CodingKey { case avatar_url }
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(avatar_url, forKey: .avatar_url)
+        }
+    }
     /// §AN3: profiles.avatar_config, written in its OWN best-effort update (the
     /// column may not exist yet).
     private struct MascotUpdate: Encodable {
@@ -583,6 +626,7 @@ struct EditProfileView: View {
             avatar_emoji: emoji.isEmpty ? nil : emoji,
             is_private: isPrivate)
         saving = true; error = nil
+        let ctx = accessContext
         Task {
             do {
                 try await auth.client.from("profiles").update(payload).eq("id", value: uid).execute()
@@ -594,8 +638,15 @@ struct EditProfileView: View {
                 var frameVal = AvatarFrameRules.effective(frame, level: auth.profile?.level ?? 1)
                 if mascotTouched {
                     let level = auth.profile?.level ?? 1
-                    var m = AvatarCatalog.enforcePro(mascot, isPro: auth.isProActive)
-                    if AvatarFrameRules.tier(m.frame) != nil, !AvatarFrameRules.isUnlocked(m.frame, level: level) { m.frame = "none" }
+                    var m: AvatarConfig
+                    if MascotAccess.isOn {
+                        // item gating: the locked parts come off (owned / earned / saved ones stay) — the room's Save
+                        // already showed the Locked card for them
+                        m = MascotAccess.enforce(mascot, ctx)
+                    } else {
+                        m = AvatarCatalog.enforcePro(mascot, isPro: auth.isProActive)
+                        if AvatarFrameRules.tier(m.frame) != nil, !AvatarFrameRules.isUnlocked(m.frame, level: level) { m.frame = "none" }
+                    }
                     if !hasPhoto { m.display = "mascot" }
                     var mascotAccepted = false
                     do {
@@ -661,22 +712,27 @@ struct EditProfileView: View {
         // §AH / §AN: a fresh photo means the player wants their photo — show it (saved
         // with Save). The mascot itself is kept; only `display` flips.
         castId = nil
-        mascot.display = "photo"
+        mascot.display = ChangePhoto.displayAfter(.uploaded)
         mascotTouched = true
         await auth.refreshProfile()
+        hopToken += 1
     }
     /// Change Photo's rows: Take Photo (when there's a camera), Choose from Library, Remove Photo (when one is set).
     private func photoMenuModel() -> FamilyActionMenuModel {
-        var rows: [FamilyMenuAction] = []
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            rows.append(FamilyMenuAction(id: "camera", title: "Take photo", icon: .symbol("camera.fill")) { showCamera = true })
-        }
-        rows.append(FamilyMenuAction(id: "library", title: "Choose from library", icon: .symbol("photo.on.rectangle"),
-                                     tint: FamilyMenuInk.teal) { showLibraryPicker = true })
-        if auth.profile?.avatarUrl != nil {
-            rows.append(FamilyMenuAction(id: "remove", title: "Remove photo", icon: .clay("xmark"), danger: true) {
-                Task { await removeAvatar() }
-            })
+        let rows: [FamilyMenuAction] = ChangePhoto.rows(hasCamera: UIImagePickerController.isSourceTypeAvailable(.camera),
+                                                        hasPhoto: hasPhoto).map { row in
+            switch row {
+            case .camera:
+                return FamilyMenuAction(id: "camera", title: "Take photo", icon: .symbol("camera.fill")) { showCamera = true }
+            case .library:
+                return FamilyMenuAction(id: "library", title: "Choose from library", icon: .symbol("photo.on.rectangle"),
+                                        tint: FamilyMenuInk.teal) { showLibraryPicker = true }
+            case .remove:
+                return FamilyMenuAction(id: "remove", title: "Remove photo", icon: .clay("xmark"), danger: true) {
+                    uploadingAvatar = true
+                    Task { await removeAvatar(); uploadingAvatar = false }
+                }
+            }
         }
         return FamilyActionMenuModel(title: "Change Photo", subtitle: "A new photo or one from your library",
                                      actions: rows)
@@ -684,8 +740,16 @@ struct EditProfileView: View {
 
     private func removeAvatar() async {
         guard let uid = auth.profile?.id else { return }
-        _ = try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: nil)).eq("id", value: uid).execute()
+        do {
+            _ = try await auth.client.from("profiles").update(AvatarUpdate(avatar_url: nil)).eq("id", value: uid).execute()
+        } catch {
+            self.error = "Could not remove your photo. Please try again."; return
+        }
         await auth.refreshProfile()
+        // No photo → SHOW falls back to My mascot (saved with Save).
+        mascot.display = ChangePhoto.displayAfter(.removed)
+        mascotTouched = true
+        hopToken += 1
     }
 }
 

@@ -80,7 +80,8 @@ fun TitleShelvesDialog(
     var query by remember { mutableStateOf("") }
     var hint by remember { mutableStateOf("Tap a badge to try it on.") }
     var hop by remember { mutableIntStateOf(0) }
-    val visible = catalog.filter { !it.hidden }
+    // A secret (the musical cast's tunes) shows only once earned.
+    val visible = com.wordocious.app.data.AchievementCatalog.listed(catalog) { unlockedDates.containsKey(it) }
     fun earned(d: AchievementDef) = unlockedDates.containsKey(d.key)
     fun matches(d: AchievementDef) = query.isBlank() || d.name.contains(query.trim(), ignoreCase = true)
     val ink = if (WTheme.isDark) WTheme.text else Color(0xFF2A1650)

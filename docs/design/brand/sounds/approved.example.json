@@ -1,0 +1,14 @@
+[
+  "classic/win/b",
+  "classic/streak/b",
+  "classic/key/now",
+  "hubbub/pangram/c",
+  "hubbub/tiers/a",
+  "quadword/board/a",
+  "app/tab/a",
+  "app/laugh/b",
+  "app/sweep/a",
+  "pocket/win/c",
+  { "id": "kindred/group/b", "status": "approved" },
+  { "id": "kindred/wrong/a", "status": "rejected" }
+]

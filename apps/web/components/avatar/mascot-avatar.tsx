@@ -12,6 +12,8 @@ import {
 import { darkenHex } from '@/lib/avatar-tile';
 import { frameArtName, isAvatarFrame } from '@/lib/avatar-cast';
 import { PRO_AVATAR, proAvatarDecor } from '@/lib/pro-identity';
+import { LIVING_MASCOT_ON } from '@/lib/living-mascot';
+import { useLivingMascot } from './use-living-mascot';
 
 /**
  * FINISH_SPEC AN1 / AN5 / AN6: the ONE web avatar renderer. A layered mascot
@@ -44,6 +46,12 @@ export interface MascotAvatarProps {
   cutout?: boolean;
   /** Outer box-shadow (a presence / white ring) — follows the rounded corners. */
   shadow?: string;
+  /**
+   * 10-06 the living mascot (behind AVATAR_LIVE_CONFIG.livingMascot; ignored while it is off): breathes, blinks,
+   * holds its saved pose, hops + laughs on a tap, reacts to moments. Only the player's OWN mascot on a few surfaces
+   * (Edit Profile Stage, Home host, Stats card) — never list rows. `follow`: the eyes follow the finger (the Stage).
+   */
+  living?: boolean | 'follow';
   className?: string;
   style?: React.CSSProperties;
 }
@@ -108,16 +116,16 @@ export function preloadMascotArt(): void {
  * settled). Until then the avatar draws NOTHING in its reserved box — no code-drawn stand-in
  * frame, no part-by-part pop-in; the composed avatar appears once, whole.
  */
-function useAvatarArt(config: AvatarConfig): { art: ReadonlySet<string>; ready: boolean } {
+function useAvatarArt(config: AvatarConfig, live = false): { art: ReadonlySet<string>; ready: boolean } {
   const pending = avatarArtPending();
   const ck = avatarConfigKey(config);
   const names = React.useMemo(() => {
     if (pending) return [] as string[];
-    const all = avatarArtNames(config);
+    const all = avatarArtNames(config, live);
     const shipped = AVATAR_PARTS.art;
     return shipped ? all.filter((n) => shipped.includes(n)) : all;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pending, ck]);
+  }, [pending, ck, live]);
   const key = names.join(',');
   const initial = React.useMemo(() => {
     const have = names.filter((n) => artLoaded.has(n));
@@ -249,7 +257,7 @@ function PhotoTile({ url, size, frame, onError }: { url: string; size: number; f
 
 // ── The avatar ──────────────────────────────────────────────────────────────
 
-function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, label, shadow, className = '', style, cutout = false }: MascotAvatarProps) {
+function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, label, shadow, className = '', style, cutout = false, living = false }: MascotAvatarProps) {
   const s = clampAvatarSize(size);
   const [photoFailed, setPhotoFailed] = React.useState(false);
   React.useEffect(() => { setPhotoFailed(false); }, [photoUrl]);
@@ -260,15 +268,18 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
     ? portraitFrame(frame ?? config.frame, { pro, level })
     : effectiveAvatarFrame(frame ?? config.frame, { pro, level });
   const crowned = !cutout && avatarCrowned(worn, pro);
-  const { art, ready } = useAvatarArt(config);
+  const live = LIVING_MASCOT_ON && !!living && !showPhoto;
+  const { art, ready } = useAvatarArt(config, live);
   const frameArt = useFrameArt(worn);
   const rawId = React.useId();
   const id = `m${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   const markup = React.useMemo(
-    () => (showPhoto || !ready ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc, cutout }), id)),
-    [showPhoto, ready, config, initial, s, worn, art, frameArt, id, cutout],
+    () => (showPhoto || !ready ? '' : withAvatarId(cachedMascotSvg({ config, initial, size: s, frame: worn, art, frameArt: !!frameArt, crownSrc: badgeSrc('pro-crown-sprite'), artSrc, cutout, live }), id)),
+    [showPhoto, ready, config, initial, s, worn, art, frameArt, id, cutout, live],
   );
+  const hostRef = React.useRef<HTMLSpanElement>(null);
+  useLivingMascot(hostRef, { config, size: s, frameWidth: worn === 'none' ? 0 : FRAME_WIDTH, enabled: live && !!markup, follow: living === 'follow', markup });
 
   return (
     <span
@@ -280,7 +291,7 @@ function MascotAvatarImpl({ config, initial, size, photoUrl, frame, pro, level, 
     >
       {showPhoto
         ? <PhotoTile url={photoUrl!} size={s} frame={worn} onError={() => setPhotoFailed(true)} />
-        : <span className="absolute inset-0 block" dangerouslySetInnerHTML={{ __html: markup }} />}
+        : <span ref={hostRef} className="absolute inset-0 block" style={live ? { touchAction: 'manipulation', cursor: 'pointer' } : undefined} dangerouslySetInnerHTML={{ __html: markup }} />}
       {frameArt && <FrameArt name={frameArt} size={s} />}
       {crowned && <ProCrown size={s} />}
     </span>

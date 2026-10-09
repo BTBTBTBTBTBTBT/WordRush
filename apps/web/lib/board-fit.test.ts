@@ -115,9 +115,9 @@ describe('crosswordCell', () => {
     expect(crosswordCell(0, 0, 10, 11, chrome)).toBe(CROSSWORD_FIT.minCell);
   });
 
-  it('scales the letter and the clue number (~27% of the cell, Doug 10-05) with the cell', () => {
-    expect(crosswordCellFonts(42)).toEqual({ letter: 19, number: 11 });
-    expect(crosswordCellFonts(22)).toEqual({ letter: 11, number: 6 });
+  it('scales the letter and the clue number (~20% of the cell, founder 10-06) with the cell', () => {
+    expect(crosswordCellFonts(42)).toEqual({ letter: 19, number: 8 });
+    expect(crosswordCellFonts(22)).toEqual({ letter: 11, number: 5 });
     const small = crosswordCellFonts(14);
     expect(small.letter).toBe(8);
     expect(small.number).toBe(5);

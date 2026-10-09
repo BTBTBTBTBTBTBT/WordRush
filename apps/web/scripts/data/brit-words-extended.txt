@@ -1,0 +1,203 @@
+# Proposed additions to BRIT_WORDS in apps/web/scripts/content-american.test.ts (NOT wired in).
+# Always-British vocabulary: the American reading of the word is different or doesn't exist.
+# Context words (LIFT, FLAT, BOOT, CHIPS, MATE, PINT, TROLLEY...) are deliberately left out: they stay with human review.
+# Format: WORD  US equivalent / note
+# Not listed (ordinary US usage): MUM ("mum's the word"), SWEETS (Diwali sweets), FIZZY, NOSH.
+
+# --- general British vocabulary ---
+ALLOTMENT       community-garden
+BANGER          sausage
+BAP             bun
+BARRISTER       lawyer
+BEETROOT        beet
+BIRO            pen
+BLUTACK         -
+BOBBY           cop
+BOFFIN          egghead
+BUTTY           sandwich
+CAFF            diner
+CARBOOT         -
+CARRIAGEWAY     -
+CHAV            -
+CHEERIO         goodbye
+CHINWAG         chat
+CHIPOLATA       sausage
+CLINGFILM       plastic-wrap
+CODSWALLOP      nonsense
+CONKER          buckeye
+CONKERS         buckeyes
+CONSTABLE       officer
+COSTERMONGER    vendor
+COTTONWOOL      cotton-balls
+CRECHE          daycare
+CRIKEY          gosh
+CUPPA           cup-of-tea
+DODGY           sketchy
+DOSH            cash
+DRAUGHTS        checkers
+DRAWINGPIN      thumbtack
+DRESSINGGOWN    bathrobe
+DRESSINGTABLE   vanity
+DUALCARRIAGEWAY divided-highway
+DUNGAREES       overalls
+DUSTCART        garbage-truck
+DUSTMAN         garbageman
+FARTHING        -
+FLATMATE        roommate
+FLYOVER         overpass
+FOOTIE          soccer
+FOOTY           soccer
+FRYUP           -
+GAFFER          boss
+GAMMON          ham
+GEARSTICK       stick-shift
+GILET           vest
+GINGERNUT       cookie
+GIT             jerk
+GOBSTOPPER      jawbreaker
+GOGGLEBOX       -
+GORMLESS        clueless
+GUMBOOTS        rain-boots
+GUVNOR          boss
+HAIRGRIP        bobby-pin
+HAPENNY         -
+HEADTEACHER     principal
+HOB             stovetop
+HOLDALL         duffel
+HOLIDAYING      vacationing
+HOLIDAYMAKER    vacationer
+HOOVER          vacuum
+HOOVERING       vacuuming
+ICELOLLY        popsicle
+INVIGILATOR     proctor
+JACKETPOTATO    baked-potato
+JAMMY           lucky
+JUMBLESALE      rummage-sale
+KIP             nap
+KNICKERS        underwear
+LAYBY           pull-off
+LETTERBOX       mailbox(slot)
+LIDO            public-pool
+LOLLY           popsicle/money
+MANGETOUT       snow-peas
+MANKY           gross
+MINGING         gross
+MOGGY           cat
+NAFF            tacky
+NIFFY           smelly
+NOUGHTS         zeros
+OFFIE           liquor-store
+OFFLICENCE      liquor-store
+PANTO           -
+PILLOCK         jerk
+PLIMSOLL        sneaker
+PLIMSOLLS       sneakers
+PLONK           cheap-wine
+POSTBOX         mailbox
+POSTIE          mail-carrier
+PUNCHUP         fistfight
+PUNNET          basket
+PUSHCHAIR       stroller
+QUAVER          eighth-note
+RAPESEED        canola
+RASHER          bacon-slice
+RUBBISH         trash/garbage
+RUCKSACK        backpack
+SATNAV          GPS
+SCARPER         flee
+SCRUMPY         cider
+SEMIDETACHED    duplex
+SHILLING        -
+SIXPENCE        -
+SKIRTING        baseboard
+SKIRTINGBOARD   baseboard
+SKIVE           ditch
+SKIVING         ditching
+SLAPHEAD        -
+SNOG            kiss
+SODDING         -
+SPOTTEDDICK     -
+SPROG           kid
+STROPPY         cranky
+SULTANA         raisin
+SULTANAS        raisins
+SWEDE           rutabaga
+SWEETSHOP       candy-store
+SWISSROLL       jelly-roll
+SWOT            nerd
+TAKEAWAY        takeout
+TALLBOY         dresser
+TAT             junk
+TEATIME         -
+TEATOWEL        dish-towel
+TERRACED        -
+TIPPLE          drink
+TOFF            snob
+TORCHLIGHT      flashlight
+TOWPATH         -
+TRAINERS        sneakers
+TREACLE         molasses
+TRUNCHEON       nightstick
+TWEE            cutesy
+UNI             college
+WALLY           dope
+WASHINGUP       dishes
+WELLY           rain-boot
+WHINGE          whine
+WHINGING        whining
+WINDSCREEN      windshield
+YOB             thug
+ZEBRACROSSING   crosswalk
+ZED             zee
+
+# --- surfaced by the 2026-10-06 content audit (REPORT-CONTENT-AUDIT.md) ---
+ADVERT          British for "ad".
+ANALOGUE        British spelling of "analog".
+BATSMAN         Cricket term; Americans say batter.
+BESPOKE         British term for custom-made/tailored.
+BLOODY          British expletive; also graphic.
+BLUEY           Australian/British slang (and a cartoon title).
+BULLOCK         British/farm term for a young castrated bull; better known as a surname.
+CARER           British term; Americans say "caregiver".
+CENTENARY       British; Americans say "centennial".
+CHEEKY          British slang for impudent/sassy.
+CLARET          British term for red Bordeaux wine; also an alcohol word.
+COCKLE          COCKLE is a British-menu shellfish most Americans don't know (and has an awkward
+COLLIER         British/archaic word for a coal miner; also a surname.
+COOKER          British for stove/range; Americans don't call a stove a cooker.
+COOKERY         British for cooking; rare in US speech.
+DAFT            British-leaning slang for silly.
+DREAMT          British-preferred past tense (American: DREAMED); LEARNT was swapped out in batc
+DUCHY           DUCHY is a British/European term rarely used in the US.
+ENQUIRE         British spelling; US uses INQUIRE (already in the pool).
+ENQUIRY         British spelling; US uses INQUIRY (already in the pool).
+EXPIRY          British usage; Americans say expiration (date).
+FANCIED         'Fancied' (liked/wanted) is British usage.
+GEARBOX         British for a car's transmission.
+GIRO            British banking term / Italian cycle race; unknown to Americans.
+HACKNEY         British term (hackney carriage, London borough); unknown to most Americans.
+HIPPY           HIPPY is the British spelling of HIPPIE.
+HOWLER          Blunder sense is British slang; otherwise an obscure -ER form.
+INWARDS         British-preferred form; Americans normally say INWARD.
+JOINER          British word for a carpenter; otherwise an odd -ER form.
+LIPPY           British slang (cheeky; lipstick).
+MAINS           British usage (mains power/water, main courses).
+NETBALL         British/Commonwealth sport most Americans have never heard of.
+NOUGHT          British word for zero (American: naught/zero).
+PENCE           British money (plural of penny).
+PONG            British slang for a bad smell (else the video-game name).
+PREFECT         British school/administrative title with little US usage.
+PRIORY          British/church term most Americans don't know.
+PUNTER          British slang for a customer/gambler; US sense is a niche football position.
+RANDY           British slang for sexually aroused; also a first name.
+SNOOKER         British cue sport; Americans play pool/billiards.
+SPOILT          British past-tense spelling (American: SPOILED).
+TONNE           British/metric spelling of ton.
+TORY            British political party (proper noun).
+TWADDLE         TWADDLE is British slang for nonsense.
+UNWELL          British-leaning euphemism for sick.
+WALKOVER        WALKOVER for 'easy task' is chiefly British; Americans say cakewalk/breeze.
+WASTAGE         Chiefly British; Americans say waste.
+WEIR            British-leaning term for a low dam; obscure in US.
+WHISKY          British/Scotch spelling (American: WHISKEY); also alcohol.
+WICKET          Cricket term; mostly British usage.

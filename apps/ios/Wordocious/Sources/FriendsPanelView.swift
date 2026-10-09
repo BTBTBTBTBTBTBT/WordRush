@@ -1249,6 +1249,8 @@ struct FriendsScreenView: View {
     @ObservedObject private var auth = AuthService.shared
     @State private var focusAdd: UUID?
     @State private var showAuth = false
+    /// 2.8 item 14: scroll-driven header fade + condense (the tab form only).
+    @StateObject private var headerScroll = HeaderScrollModel()
 
     /// The scroll's horizontal padding (the headline bleeds past it to the edges).
     private static let sidePadding: CGFloat = 16
@@ -1257,7 +1259,7 @@ struct FriendsScreenView: View {
         ScrollViewReader { proxy in
             if asTab {
                 VStack(spacing: 0) {
-                    AppHeaderView()
+                    AppHeaderView(scroll: headerScroll)
                     // §241: a returning player never sees the pitch during the launch restore.
                     if auth.isAuthenticated || (auth.isLoading && AuthService.hadPersistedSession) {
                         scroll(proxy)
@@ -1311,8 +1313,10 @@ struct FriendsScreenView: View {
             }
             .padding(.horizontal, Self.sidePadding).padding(.top, 6)
             .padding(.bottom, 16 + (padsForChrome ? chrome.bottomInset : 0))
+            .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
         }
         .reportsScrollMotion()   // §AQ2
+        .headerScrollFade(headerScroll)   // 2.8 item 14
     }
 
     /// What the old header add-friend circle did: scroll to Add by username and

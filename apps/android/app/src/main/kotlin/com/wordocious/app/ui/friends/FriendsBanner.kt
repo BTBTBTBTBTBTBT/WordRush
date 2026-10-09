@@ -125,11 +125,11 @@ fun FriendsBannerView(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         // AR: the live lettering (pink → orange, names in the accent, gold numbers).
-                        com.wordocious.app.ui.LiveHeadline(
+                        com.wordocious.app.ui.BubbleText(
                             headline, com.wordocious.app.ui.HeadlinePalette.FRIENDS,
-                            Modifier.fillMaxWidth().heightIn(min = 24.dp).padding(end = 68.dp),
+                            Modifier.heightIn(min = 24.dp).padding(end = 68.dp),
                             names = friends.map { it.username },
-                            maxSize = 20.sp, minSize = 13.sp, align = androidx.compose.ui.text.style.TextAlign.Start,
+                            maxSize = 20, minSize = 14, align = androidx.compose.ui.text.style.TextAlign.Start,
                         )
                         Text(
                             clockLine.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.06.em,

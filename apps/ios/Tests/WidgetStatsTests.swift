@@ -69,7 +69,8 @@ final class WidgetStatsTests: XCTestCase {
         XCTAssertGreaterThan(seen.count, 5)
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-30"), "art-halloween-w")
         XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-02"), "mascot-w")
-        XCTAssertEqual(WidgetCast.asset("w", day: "2026-11-01"), "art-halloween-w")
+        XCTAssertEqual(WidgetCast.asset("w", day: "2026-10-09"), "art-halloween-w")
+        XCTAssertEqual(WidgetCast.asset("w", day: "2026-11-01"), "mascot-w")
     }
 
     /// BI13b: the one peeking cast member — mood by state, pose by day (Kotlin WidgetCastTest twin).

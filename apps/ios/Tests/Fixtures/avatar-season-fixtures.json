@@ -8,7 +8,7 @@
       "date": "2026-10-16",
       "preview": null,
       "saved": null,
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -33,7 +33,7 @@
         "pet": "ghost",
         "neck": "batwings"
       },
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -323,7 +323,7 @@
       "date": "2026-11-01",
       "preview": null,
       "saved": null,
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -348,7 +348,7 @@
         "pet": "ghost",
         "neck": "batwings"
       },
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -1268,7 +1268,7 @@
       "date": "2026-10-16",
       "preview": null,
       "saved": null,
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -1280,7 +1280,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -1583,7 +1583,7 @@
       "date": "2026-11-01",
       "preview": null,
       "saved": null,
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -1595,7 +1595,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -1898,7 +1898,7 @@
       "date": "2026-10-16",
       "preview": null,
       "saved": null,
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -1910,7 +1910,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -1923,7 +1923,7 @@
         "pet": "ghost",
         "neck": "batwings"
       },
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -2213,7 +2213,7 @@
       "date": "2026-11-01",
       "preview": null,
       "saved": null,
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -2225,7 +2225,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -2238,7 +2238,7 @@
         "pet": "ghost",
         "neck": "batwings"
       },
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -2528,7 +2528,7 @@
       "date": "2026-10-16",
       "preview": null,
       "saved": null,
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -2540,7 +2540,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -2553,7 +2553,7 @@
         "pet": "ghost",
         "neck": "batwings"
       },
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -2843,7 +2843,7 @@
       "date": "2026-11-01",
       "preview": null,
       "saved": null,
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -2855,7 +2855,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -2868,7 +2868,7 @@
         "pet": "ghost",
         "neck": "batwings"
       },
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -3158,7 +3158,7 @@
       "date": "2026-10-16",
       "preview": null,
       "saved": null,
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -3170,7 +3170,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": false
+      "available": true
     },
     {
       "part": {
@@ -3473,7 +3473,7 @@
       "date": "2026-11-01",
       "preview": null,
       "saved": null,
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -3485,7 +3485,7 @@
       "saved": {
         "head": "pumpkinhat"
       },
-      "available": true
+      "available": false
     },
     {
       "part": {
@@ -5087,7 +5087,7 @@
     {
       "date": "2026-10-16",
       "preview": null,
-      "season": null
+      "season": "halloween"
     },
     {
       "date": "2026-10-16",
@@ -5132,7 +5132,7 @@
     {
       "date": "2026-11-01",
       "preview": null,
-      "season": "halloween"
+      "season": null
     },
     {
       "date": "2026-11-01",
@@ -5352,7 +5352,7 @@
         "head": "none"
       },
       "seen": [],
-      "due": null
+      "due": "halloween"
     },
     {
       "date": "2026-10-16",
@@ -5381,7 +5381,7 @@
       "seen": [
         "halloween-2025"
       ],
-      "due": null
+      "due": "halloween"
     },
     {
       "date": "2026-10-16",
@@ -5694,7 +5694,7 @@
         "head": "none"
       },
       "seen": [],
-      "due": "halloween"
+      "due": null
     },
     {
       "date": "2026-11-01",
@@ -5723,7 +5723,7 @@
       "seen": [
         "halloween-2025"
       ],
-      "due": "halloween"
+      "due": null
     },
     {
       "date": "2026-11-01",

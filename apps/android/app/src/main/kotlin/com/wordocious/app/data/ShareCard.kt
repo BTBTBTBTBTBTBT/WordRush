@@ -22,7 +22,8 @@ import kotlin.math.roundToInt
  * (game results, More Games, Gauntlet, VS, sweep / today, profile, leaderboard) is
  * laid out top to bottom with no dead space:
  *
- *   title art (~70% width) · one compact info line (date · guesses · time · W/L badge)
+ *   the WHOLE title art (card width inside [TITLE_MARGIN], ≤ [TITLE_MAX_H] tall, pinned at
+ *   the top — founder 10-06: the CLASSIC title was cut off) · one compact info line (date · guesses · time · W/L badge)
  *   · the body block (~88% width; tall bodies scale by height) · the E1 stat windows
  *   · the cast wordmark (S3: W·O·R·D·O·C·I·O·U·S standing together, ~90% width,
  *   soft ground shadow) · one tiny "wordocious.com" line.
@@ -40,8 +41,15 @@ internal object ShareCard {
 
     /** S2 the board block fills ~88% of the width. */
     const val BODY_FRAC = 0.88f
-    /** S2 the title art at ~70% width. */
-    const val TITLE_FRAC = 0.70f
+    /**
+     * Founder 10-06: the FULL title art, scaled to fit the card width inside these side
+     * margins and never taller than [TITLE_MAX_H] (web share-fit.ts, iOS ShareCardPlan).
+     */
+    const val TITLE_MARGIN = 90f
+    const val TITLE_MAX_W = W - 2 * TITLE_MARGIN
+    const val TITLE_MAX_H = 210f
+    /** The lettered title's band when the art doesn't decode. */
+    const val TITLE_FALLBACK_H = 96f
     /** S3 the cast row spans ~90% of the width. */
     const val CAST_FRAC = 0.90f
     /** S3 neighbors overlap by ~6% of a figure (the Home header row's tuck). */
@@ -80,7 +88,7 @@ internal object ShareCard {
         val body: Body,
         val stats: List<ShareFinish.Stat> = emptyList(),
         val statsH: Float = ShareFinish.STATS_H,
-        val titleMaxH: Float = 300f,
+        val titleMaxH: Float = TITLE_MAX_H,
     )
 
     /** The settled vertical layout (all in card pixels). */
@@ -144,9 +152,25 @@ internal object ShareCard {
         )
     }
 
-    /** The title art's drawn height at [TITLE_FRAC] of the width (capped at [maxH]); 0 aspect = undecodable. */
-    fun titleHeight(aspect: Float, maxH: Float): Float =
-        if (aspect <= 0f) 80f else min(W * TITLE_FRAC / aspect, maxH)
+    /** The title art's drawn height: the whole art fit in [TITLE_MAX_W] × [maxH]; 0 aspect = undecodable. */
+    fun titleHeight(aspect: Float, maxH: Float = TITLE_MAX_H): Float =
+        if (aspect <= 0f) TITLE_FALLBACK_H else min(TITLE_MAX_W / aspect, maxH)
+
+    /** A title box in card pixels (plain, so JVM unit tests can read it). */
+    data class Box(val left: Float, val top: Float, val right: Float, val bottom: Float)
+
+    /** Where the title art is drawn: the whole art centered on the card in its band at [Layout.titleTop]. */
+    fun titleRect(aspect: Float, l: Layout): Box {
+        val w = if (aspect > 0f) min(TITLE_MAX_W, l.titleH * aspect) else TITLE_MAX_W
+        val h = if (aspect > 0f) w / aspect else l.titleH
+        val top = l.titleTop + (l.titleH - h) / 2f
+        return Box(W / 2f - w / 2f, top, W / 2f + w / 2f, top + h)
+    }
+
+    /** True when [r] sits fully on the card, inside the title margins and above the info line. */
+    fun titleFits(r: Box, l: Layout): Boolean =
+        r.left >= TITLE_MARGIN - 0.5f && r.right <= W - TITLE_MARGIN + 0.5f &&
+            r.top >= 0f && r.bottom <= minOf(l.infoTop, l.height.toFloat()) + 0.5f
 
     /** width / height of a drawable (bounds only, no decode); 0 when unreadable. */
     fun artAspect(context: Context, @DrawableRes res: Int?): Float = res?.let {
@@ -167,11 +191,11 @@ internal object ShareCard {
         ShareFinish.drawWallpaper(context, c, spec.wallpaper ?: R.drawable.art_wall_home)
         val cx = W / 2f
 
-        // Title art (~70% width), or the fallback in soft type.
-        val drawn = if (aspect > 0f) spec.title?.let { ShareFinish.drawArtFit(context, c, it, cx, l.titleTop, W * TITLE_FRAC, l.titleH, alignTop = false) } else null
+        // The whole title art (card width inside the margins), or the fallback in soft type.
+        val drawn = if (aspect > 0f) spec.title?.let { ShareFinish.drawArtFit(context, c, it, cx, l.titleTop, TITLE_MAX_W, l.titleH, alignTop = false) } else null
         if (drawn == null) {
             val p = ShareFinish.softPaint(fonts, 64f)
-            ShareFinish.fitText(p, spec.titleFallback, W * TITLE_FRAC)
+            ShareFinish.fitText(p, spec.titleFallback, TITLE_MAX_W)
             c.drawText(spec.titleFallback, cx, l.titleTop + l.titleH / 2f - (p.ascent() + p.descent()) / 2f, p)
         }
 

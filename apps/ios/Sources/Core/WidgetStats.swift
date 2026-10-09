@@ -120,11 +120,10 @@ public enum WidgetCast {
         return era * 146097 + doe - 719468
     }
 
-    /// The image set for a cast id on `day`: the Halloween skin Oct 24 – Nov 1.
+    /// The image set for a cast id on `day`: the Halloween skin during the Halloween season window
+    /// (core SEASON_WINDOWS via Season.current — Oct 9 – Oct 31 since 2.8; it used to be its own Oct 24 – Nov 1).
     public static func asset(_ id: String, day: String) -> String {
-        let p = day.split(separator: "-").compactMap { Int($0) }
-        let halloween = p.count == 3 && ((p[1] == 10 && p[2] >= 24) || (p[1] == 11 && p[2] <= 1))
-        return halloween ? "art-halloween-\(id)" : "mascot-\(id)"
+        Season.current(day: day) == .halloween ? "art-halloween-\(id)" : "mascot-\(id)"
     }
 
     /// BI13b (founder 10-03: "sprinkle a mascot or two … just a little personality"): the

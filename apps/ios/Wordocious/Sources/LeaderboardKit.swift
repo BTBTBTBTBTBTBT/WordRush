@@ -197,7 +197,7 @@ struct LbResultCard<Delta: View, Footer: View>: View {
         let ink = dark ? Theme.textSecondary : LbStyle.goldInk
         return VStack(spacing: 0) {
             if let headline {
-                LiveHeadline(text: headline, palette: .leaderboard, size: 18, maxLines: 1, minimumScale: 0.6)
+                BubbleTextView(text: headline, palette: .leaderboard, maxSize: 18, minSize: 12)
                     .padding(.horizontal, 12).padding(.top, 8)
             }
             // BJ7: one top line — crown + rank, the "of" line and the points top-aligned;

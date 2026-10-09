@@ -115,6 +115,7 @@ object FeedbackToast {
     fun tone(text: String): Tone {
         val t = text.lowercase()
         return when {
+            "used for two" in t -> Tone.WARN
             listOf("solved", "nice", "great", "rank up").any { it in t } -> Tone.WIN
             listOf("copied", "saved", "sent").any { it in t } -> Tone.SUCCESS
             t.startsWith("not ") || listOf("already", "enough", "invalid", "must", "only", "too short", "or more", "missing").any { it in t } -> Tone.ERROR

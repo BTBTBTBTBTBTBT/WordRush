@@ -46,6 +46,8 @@ fun VictoryOverlay(
     LaunchedEffect(Unit) {
         if (won) com.wordocious.app.data.SoundManager.playSuccess()
         else com.wordocious.app.data.SoundManager.playGameOver()
+        // 10-06 the living mascot cheers / shrugs (a no-op while AvatarLiveConfig.LIVING_MASCOT is off)
+        com.wordocious.app.data.MascotMoments.emit(if (won) com.wordocious.core.AvatarReaction.WIN else com.wordocious.core.AvatarReaction.LOSS)
     }
 
     val answers = if (!multi) {

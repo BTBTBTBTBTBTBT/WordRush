@@ -20,6 +20,8 @@ struct AppHeaderView: View {
         var action: () -> Void
     }
     var share: Share? = nil
+    /// 2.8 item 14: the page's scroll model — the cast row slims as the page scrolls (nil = never condenses).
+    var scroll: HeaderScrollModel? = nil
 
     @ObservedObject private var auth = AuthService.shared
     @State private var showMenu = false
@@ -93,7 +95,11 @@ struct AppHeaderView: View {
             .padding(.horizontal, 8)
             .padding(.top, 2)
 
-            LivingCastHeader(pro: auth.isProActive)
+            if let scroll {
+                CondensingCast(model: scroll, pro: auth.isProActive)
+            } else {
+                LivingCastHeader(pro: auth.isProActive)
+            }
         }
         .padding(.bottom, 2)
         .streakBumpFeedback(auth.headerStreak)                      // §U: streak +1
@@ -227,6 +233,13 @@ struct PopCard<Body: View>: View {
 /// S dashes (keyframes in core `CastMoves`). Off with Reduce Motion (the OS
 /// setting or the in-app toggle). Pro: W wears the gold crown. Decorative; the row
 /// reads "Wordocious" as the header.
+///
+/// The musical cast easter egg (docs/cloud-prompts/10, core `MusicalCast`; behind `musicalOn` — DEBUG builds only
+/// until the founder approves): a long-press on any figure turns all ten "musical" with a squash-and-pop rippling out
+/// from it (a soft gold glow, a little note badge); then a tap plays that hero's scale note in its own voice (W O R D
+/// O C I O U S = C4 … E5) + a selection haptic + a small hop (no laugh) + a floating note (visual even with Sound
+/// off), and playing a known tune unlocks its secret achievement. Long-press again → back to the laughs. Reduce
+/// Motion = an instant swap (no pop, the notes fade in place). Halloween costumes keep their costume + the music touch.
 struct LivingCastHeader: View {
     var pro: Bool
 
@@ -248,6 +261,42 @@ struct LivingCastHeader: View {
     @State private var puppetTap: [MascotID: Date] = [:]
     /// The puppets' wall clock (breathing, blinks, idle sways).
     @State private var puppetClock = Date()
+
+    // The musical cast (see above).
+    /// The musicalCast flag: on in DEBUG, off in release (core MusicalCast.enabled).
+    static let musicalOn: Bool = {
+        #if DEBUG
+        return MusicalCast.enabled(isDebugBuild: true)
+        #else
+        return MusicalCast.enabled(isDebugBuild: false)
+        #endif
+    }()
+    @State private var musical = false
+    /// The last transform's start (nil once every pop has played) and the figure it rippled out from.
+    @State private var musicalAt: Date?
+    @State private var musicalFrom: MascotID = .w
+    /// When each musical figure's note hop started (transform-only: no laughing face).
+    @State private var noteTap: [MascotID: Date] = [:]
+    /// The floating notes in flight (at most `maxFloats`).
+    @State private var floats: [MusicalFloat] = []
+    @State private var floatSeq = 0
+    /// The melody matcher's phrase (core MusicalCast.tap; ms from the monotonic uptime clock).
+    @State private var melody = MelodyState.start
+    /// This touch's start and the last long-press: a touch that toggled the mode never also taps.
+    @State private var pressBegan: Date?
+    @State private var lastLongPress: Date?
+    static let maxFloats = 12
+    /// The ripple delays (ms, WORDOCIOUS order) from each pressed figure, worked out once (core transformDelays).
+    static let rippleDelays: [MascotID: [Int]] = Dictionary(uniqueKeysWithValues: Mascots.cast.map {
+        ($0, MusicalCast.transformDelays(pressed: $0.rawValue, reduceMotion: false))
+    })
+    /// The ripple delay (ms) of figure `i` when the transform starts at `from`.
+    static func rippleDelay(_ i: Int, from: MascotID) -> Int {
+        guard let d = rippleDelays[from], d.indices.contains(i) else { return 0 }
+        return d[i]
+    }
+    /// The note hop: a half-strength pop this long.
+    static let noteHopSeconds = 0.3
 
     private struct ActiveMove: Equatable {
         let id: MascotID
@@ -293,6 +342,7 @@ struct LivingCastHeader: View {
 
     /// A tap or a signature move is playing (full frame rate); else the puppets breathe at 15 fps.
     private func puppetBusy(_ now: Date) -> Bool {
+        if musicalBusy(now) { return true }
         let tapDur = CastPuppets.shared.bundle?.tap.dur ?? 1
         if puppetTap.values.contains(where: { now.timeIntervalSince($0) < tapDur }) { return true }
         return puppetGesture.contains { id, start in now.timeIntervalSince(start) < (CastPuppets.shared.rig(id)?.gestureSeconds ?? 0) }
@@ -373,6 +423,13 @@ struct LivingCastHeader: View {
         // Perf audit: the display-size bitmap (the 512 px hero was scaled every frame).
         // 2.7.1: the puppet (out of season), else the season skin's image with the tap hop.
         let tapPose = puppetsOn ? (hop: 0.0, sq: 0.0) : seasonTapPose(m, now: now)
+        // The musical cast: the transform's squash-and-pop (rippling from the pressed figure) and a note's hop.
+        let mpop = musicalPose(i, m, now: now)
+        let hopY: CGFloat = CGFloat(tapPose.hop) * 0.53 * s / 512 - CGFloat(mpop.lift) / 100 * s
+        // Each figure's glow + badge switch on (and off) partway through its own pop — the ripple.
+        let touchDelay: Double = still ? 0
+            : Double(Self.rippleDelay(i, from: musicalFrom) + MusicalTiming.popMs * 2 / 5) / 1000
+        let touchW: CGFloat = s * max(vis, 0.7)
         return figureArt(m, s: s, now: now)
             .frame(width: s, height: s)
             // §F2 fix step 2: the figure's square on screen, for the intro to land on.
@@ -380,9 +437,26 @@ struct LivingCastHeader: View {
                 Color.clear.preference(key: CastFramesKey.self, value: [m: g.frame(in: .global)])
             })
             .frame(width: s * vis)
+            .background {
+                if Self.musicalOn { MusicalGlow(on: musical, delay: touchDelay, still: still, width: s * vis * 1.16, height: s * 0.96).offset(y: s * 0.06) }
+            }
+            .overlay(alignment: .topTrailing) {
+                // TODO(art): art-cast-musical-<id> — the hero's ChatGPT musical costume art replaces this code-drawn badge.
+                if Self.musicalOn {
+                    MusicalBadge(on: musical, delay: touchDelay, still: still, width: touchW * 0.3)
+                        .padding(.top, s * 0.04).padding(.trailing, s * vis * 0.02)
+                }
+            }
             .allowsHitTesting(false)
             // 2.7.1: tap a character → hop + laugh (its signature move too), a light haptic.
-            .overlay { Color.clear.contentShape(Rectangle()).onTapGesture { tapPuppet(m) } }
+            // The musical cast: a long-press toggles musical mode; in it, the touch-down sings the note.
+            .overlay {
+                Color.clear.contentShape(Rectangle())
+                    .onTapGesture { tapPuppet(m) }
+                    .modifier(MusicalPress(enabled: Self.musicalOn,
+                                           onPressing: { musicalPressing(m, $0) },
+                                           onLong: { toggleMusical(from: m) }))
+            }
             .overlay(alignment: .top) {
                 if pro && m == .w {
                     // §AA1: W's crown (the gold sprite, tilted ~-8°, a twinkle every ~8 s),
@@ -393,11 +467,16 @@ struct LivingCastHeader: View {
                 }
             }
             .scaleEffect(x: CGFloat(1 - tapPose.sq * 0.6), y: CGFloat(1 + tapPose.sq), anchor: UnitPoint(x: 0.5, y: 0.94))
-            .offset(y: CGFloat(tapPose.hop) * 0.53 * s / 512)
+            .scaleEffect(x: CGFloat(mpop.sx), y: CGFloat(mpop.sy), anchor: UnitPoint(x: 0.5, y: 0.94))
+            .offset(y: hopY)
             .scaleEffect(x: CGFloat(pose.sx), y: CGFloat(pose.sy), anchor: anchor)
             .rotationEffect(.degrees(pose.rotation), anchor: anchor)
             .transformEffect(CGAffineTransform(a: 1, b: 0, c: skew, d: 1, tx: -skew * s * anchor.y, ty: 0))
             .offset(x: CGFloat(pose.tx) * s * vis, y: CGFloat(pose.ty) * s)
+            // The musical cast's floating notes (rise + fade; fade in place under Reduce Motion).
+            .overlay(alignment: .topLeading) {
+                if Self.musicalOn { floatsLayer(m, s: s, vis: vis, noteW: touchW * 0.32) }
+            }
             .padding(.bottom, i % 2 == 1 ? Self.stagger : 0)
             .zIndex(moving || puppetFront(m, now) ? 20 : Double(Mascots.cast.count - i))
     }
@@ -444,6 +523,15 @@ struct LivingCastHeader: View {
     }
 
     private func tapPuppet(_ m: MascotID) {
+        if Self.musicalOn {
+            // This touch long-pressed (the mode toggled): no tap after it.
+            if let long = lastLongPress, let began = pressBegan, long >= began { return }
+            if musical {
+                // The note sang on touch-down (musicalPressing); only if that never fired for this touch, sing now.
+                if pressBegan.map({ Date().timeIntervalSince($0) > 1.5 }) ?? true { playNote(m) }
+                return
+            }
+        }
         let now = Date()
         puppetTap[m] = now
         let rigOn = puppetsOn && !still && !Motion.lowPower
@@ -464,6 +552,99 @@ struct LivingCastHeader: View {
             try? await Task.sleep(nanoseconds: UInt64((secs + 0.05) * 1_000_000_000))
             if puppetGesture[m] == now { puppetGesture[m] = nil }
         }
+    }
+
+    // MARK: The musical cast (docs/cloud-prompts/10)
+
+    /// A transform pop or a note hop is playing (the row runs at full frame rate meanwhile).
+    private func musicalBusy(_ now: Date) -> Bool {
+        guard Self.musicalOn else { return false }
+        if let at = musicalAt,
+           now.timeIntervalSince(at) < Double(MusicalCast.transformDuration(pressed: musicalFrom.rawValue, reduceMotion: false)) / 1000 { return true }
+        return noteTap.values.contains { now.timeIntervalSince($0) < Self.noteHopSeconds }
+    }
+
+    /// Figure `i`'s musical pose: its transform pop (after its ripple delay) times its note hop (half strength).
+    private func musicalPose(_ i: Int, _ m: MascotID, now: Date) -> MusicalPopKey {
+        guard Self.musicalOn, !still else { return MusicalPopKey(t: 0, sx: 1, sy: 1, lift: 0) }
+        var sx = 1.0, sy = 1.0, lift = 0.0
+        if let at = musicalAt {
+            let delay = Double(Self.rippleDelay(i, from: musicalFrom))
+            let p = MusicalCast.popPose((now.timeIntervalSince(at) * 1000 - delay) / Double(MusicalTiming.popMs))
+            sx *= p.sx; sy *= p.sy; lift += p.lift
+        }
+        if let start = noteTap[m] {
+            let p = MusicalCast.popPose(now.timeIntervalSince(start) / Self.noteHopSeconds)
+            sx *= 1 + (p.sx - 1) / 2; sy *= 1 + (p.sy - 1) / 2; lift += p.lift / 2
+        }
+        return MusicalPopKey(t: 0, sx: sx, sy: sy, lift: lift)
+    }
+
+    /// Long-press: all ten change over, rippling out from the pressed figure (an instant swap under Reduce Motion).
+    private func toggleMusical(from m: MascotID) {
+        let now = Date()
+        lastLongPress = now
+        musicalFrom = m
+        melody = .start
+        musical.toggle()
+        Haptics.medium()
+        guard !still else { musicalAt = nil; return }
+        musicalAt = now
+        let secs = Double(MusicalCast.transformDuration(pressed: m.rawValue, reduceMotion: false)) / 1000
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64((secs + 0.05) * 1_000_000_000))
+            if musicalAt == now { musicalAt = nil }
+        }
+    }
+
+    /// Touch-down on a figure: in musical mode the note sings right away (a melody needs the beat on the press).
+    private func musicalPressing(_ m: MascotID, _ pressing: Bool) {
+        guard pressing else { return }
+        pressBegan = Date()
+        if musical { playNote(m) }
+    }
+
+    /// One note: the voice (silent with Sound off), a selection haptic, the hop (no laugh), a floating note, and the
+    /// melody matcher — a finished tune unlocks its secret achievement (signed-in players; guests nothing).
+    private func playNote(_ m: MascotID) {
+        SoundManager.shared.castNote(m.rawValue)
+        Haptics.selection()
+        let now = Date()
+        if !still {
+            noteTap[m] = now
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64((Self.noteHopSeconds + 0.05) * 1_000_000_000))
+                if noteTap[m] == now { noteTap[m] = nil }
+            }
+        }
+        if floats.count < Self.maxFloats {
+            floatSeq += 1
+            let f = MusicalFloat(id: floatSeq, cast: m, drift: CGFloat.random(in: -40...40),
+                                 color: MusicalFloat.colors[floatSeq % MusicalFloat.colors.count])
+            floats.append(f)
+            let life = still ? MusicalFloatView.stillLife : MusicalFloatView.life
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64((life + 0.05) * 1_000_000_000))
+                floats.removeAll { $0.id == f.id }
+            }
+        }
+        let r = MusicalCast.tap(melody, castId: m.rawValue, atMs: ProcessInfo.processInfo.systemUptime * 1000)
+        melody = r.state
+        if let tune = r.matched {
+            let key = tune.achievement
+            Task { await AchievementService.unlockTune(key) }
+        }
+    }
+
+    /// The floats rising off figure `m` (the web's .cm-float: 30% in, 10% down, 32% of the figure wide).
+    private func floatsLayer(_ m: MascotID, s: CGFloat, vis: CGFloat, noteW: CGFloat) -> some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(floats.filter { $0.cast == m }) { f in
+                MusicalFloatView(width: noteW, drift: f.drift, color: Color(hex: f.color), still: still)
+            }
+        }
+        .offset(x: s * vis * 0.3, y: s * 0.1)
+        .allowsHitTesting(false)
     }
 
     /// One move at a time: wait, pick a character (never the last one), play its
@@ -528,6 +709,157 @@ private struct ProCrownAccessibility: ViewModifier {
             content.accessibilityAction(named: "Show Pro membership", open)
         } else {
             content
+        }
+    }
+}
+
+// MARK: - The musical cast (docs/cloud-prompts/10)
+
+/// The long-press that toggles musical mode (MusicalTiming: 0.55 s, a 10-pt slop) beside the figure's existing tap;
+/// `onPressing(true)` is the touch-down (a musical tap sings then). Off (no gesture at all) when the flag is off.
+private struct MusicalPress: ViewModifier {
+    let enabled: Bool
+    let onPressing: (Bool) -> Void
+    let onLong: () -> Void
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.onLongPressGesture(minimumDuration: Double(MusicalTiming.longPressMs) / 1000,
+                                       maximumDistance: CGFloat(MusicalTiming.moveSlop),
+                                       perform: onLong,
+                                       onPressingChanged: onPressing)
+        } else {
+            content
+        }
+    }
+}
+
+/// One floating note in flight.
+struct MusicalFloat: Identifiable, Equatable {
+    let id: Int
+    let cast: MascotID
+    /// Sideways drift, % of the note's width (−40…40).
+    let drift: CGFloat
+    let color: UInt
+
+    /// The cast candy colors (web NOTE_COLORS), cycled per tap.
+    static let colors: [UInt] = [0x7C3AED, 0xEC4899, 0xF59E0B, 0x0EA5E9, 0x22C55E]
+}
+
+/// A floating note: pops in, rises and fades (opacity + transform only); under Reduce Motion it fades in place.
+struct MusicalFloatView: View {
+    let width: CGFloat
+    let drift: CGFloat
+    let color: Color
+    let still: Bool
+    /// 0 = just born, 1 = up and opaque, 2 = gone.
+    @State private var phase = 0
+
+    static let life: Double = 1.1
+    static let stillLife: Double = 0.6
+
+    var body: some View {
+        let h = width * 1.2
+        let x: CGFloat = still ? 0 : (phase == 0 ? 0 : phase == 1 ? drift / 300 * width : drift / 100 * width)
+        let y: CGFloat = still ? 0 : (phase == 0 ? 0 : phase == 1 ? -0.6 * h : -2.2 * h)
+        let scale: CGFloat = still ? 1 : (phase == 0 ? 0.5 : phase == 1 ? 1 : 0.9)
+        MusicNoteGlyph(color: color)
+            .frame(width: width, height: h)
+            .scaleEffect(scale)
+            .rotationEffect(.degrees(still || phase < 2 ? 0 : Double(drift / 3)))
+            .offset(x: x, y: y)
+            .opacity(phase == 1 ? 1 : 0)
+            .onAppear {
+                let rise = (still ? Self.stillLife : Self.life) * 0.25
+                withAnimation(.easeOut(duration: rise)) { phase = 1 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + rise) {
+                    withAnimation(.easeIn(duration: (still ? Self.stillLife : Self.life) - rise)) { phase = 2 }
+                }
+            }
+    }
+}
+
+/// The soft gold radial glow behind a musical figure (web .cm-glow), on after the figure's ripple delay.
+private struct MusicalGlow: View {
+    let on: Bool
+    let delay: Double
+    let still: Bool
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        Ellipse()
+            .fill(EllipticalGradient(stops: [
+                .init(color: Color(hex: 0xFDE047).opacity(0.55), location: 0),
+                .init(color: Color(hex: 0xFDE047).opacity(0), location: 0.72),
+            ], center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5))
+            .frame(width: width, height: height)
+            .opacity(on ? 1 : 0)
+            .animation(still ? nil : .easeOut(duration: 0.26).delay(delay), value: on)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// The little note badge on a musical figure's shoulder (web .cm-note), popping in after its ripple delay.
+/// TODO(art): art-cast-musical-<id> — the ChatGPT musical costume art slots in per hero here.
+private struct MusicalBadge: View {
+    let on: Bool
+    let delay: Double
+    let still: Bool
+    let width: CGFloat
+
+    var body: some View {
+        MusicNoteGlyph(color: Color(hex: 0x7C3AED))
+            .frame(width: width, height: width * 1.2)
+            .shadow(color: Color(hex: 0x3C1E6E).opacity(0.3), radius: 1, x: 0, y: 1)
+            .scaleEffect(on ? 1 : 0.3)
+            .opacity(on ? 1 : 0)
+            .animation(still ? nil : .spring(response: 0.32, dampingFraction: 0.55).delay(delay), value: on)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// A drawn eighth-note pair (web NOTE_SVG; never an emoji): two stems under a slanted beam, two tilted heads.
+/// Laid out in a 20 × 24 box.
+struct MusicNoteGlyph: View {
+    let color: Color
+
+    var body: some View {
+        GeometryReader { g in
+            let kx = g.size.width / 20
+            let ky = g.size.height / 24
+            ZStack(alignment: .topLeading) {
+                NoteStems().fill(color)
+                ForEach(0..<2, id: \.self) { k in
+                    let cx: CGFloat = k == 0 ? 13.9 : 7.3
+                    let cy: CGFloat = k == 0 ? 15.8 : 18.3
+                    Ellipse().fill(color)
+                        .frame(width: 7.2 * kx, height: 6 * ky)
+                        .rotationEffect(.degrees(-20))
+                        .position(x: cx * kx, y: cy * ky)
+                }
+            }
+        }
+    }
+
+    /// The beam and both stems (20 × 24 units).
+    private struct NoteStems: Shape {
+        func path(in r: CGRect) -> Path {
+            let kx = r.width / 20, ky = r.height / 24
+            func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: r.minX + x * kx, y: r.minY + y * ky) }
+            var path = Path()
+            path.move(to: p(8, 3))
+            path.addLine(to: p(17, 1))
+            path.addLine(to: p(17, 15.5))
+            path.addLine(to: p(14.6, 15.5))
+            path.addLine(to: p(14.6, 5.3))
+            path.addLine(to: p(10.4, 6.2))
+            path.addLine(to: p(10.4, 18))
+            path.addLine(to: p(8, 18))
+            path.closeSubpath()
+            return path
         }
     }
 }

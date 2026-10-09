@@ -25,7 +25,7 @@ export const LEGACY_ONBOARDED_KEY = 'onboarded-v1';
 export const RESUME_KEY = 'wordocious-onboarding-resume';
 /** window event that replays the tour from anywhere. */
 export const TOUR_EVENT = 'wordocious:tour';
-/** How to Play's "Take the tour" link: Home with ?tour=1. */
+/** Replay link: Home with ?tour=1. */
 export const TOUR_PARAM = 'tour';
 export const TOUR_HREF = `/?${TOUR_PARAM}=1`;
 
@@ -173,7 +173,7 @@ export function usernameSuggestions(base: string, seed: number, validate: (s: st
   return out;
 }
 
-/** Replay the tour, steps 1–2 only (How to Play's "Take the tour"). */
+/** Replay the tour, steps 1–2 only (Settings -> Help -> "Replay the app tour"). */
 export function startTour(): void {
   try { window.dispatchEvent(new Event(TOUR_EVENT)); } catch { /* old browsers */ }
 }

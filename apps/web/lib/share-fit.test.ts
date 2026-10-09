@@ -3,7 +3,14 @@ import {
   BOARD_W, CAST_ROW, MULTI_CHROME, MULTI_GAP, MULTI_TILE_GAP, SHARE_H_MAX, SHARE_H_MIN, SHARE_W, TITLE_FALLBACK_H, TITLE_MAX_H, TITLE_MAX_W,
   boardBlockHeight, castRowLayout, clampShareHeight, cryptoGeometry, gridGeometry, multiArrangements,
   multiGeometry, planShareCard, shareCastRow, shareFixedHeight, titleBoxHeight, vsBodyGeometry,
+  SHARE_SPACE, VS_AVATAR_BLOCK, titleFitsCard, titleRect,
 } from './share-fit';
+import { ART_SIZE } from './art';
+import { MODES } from './modes.generated';
+import { gameShareArt } from './share-look';
+import { shareCardArt, shareCardPlan } from './share-image';
+import { planVsShareCard } from './vs-share-image';
+import { SHARE_SAMPLES, VS_SHARE_SAMPLE } from './share-samples';
 import { CAST } from './mascots';
 import type { ShareImageInput, TileStateString } from './share-image';
 
@@ -22,9 +29,10 @@ describe('canvas clamp (S2: 4:5 … 9:16)', () => {
     expect(SHARE_H_MAX / SHARE_W).toBeCloseTo(16 / 9);
   });
 
-  it('title art fits ~70% of the width, never taller than its cap', () => {
-    expect(titleBoxHeight([900, 232])).toBe(Math.round(232 * (TITLE_MAX_W / 900)));
+  it('title art fits the card width inside 90 px margins, never taller than its cap', () => {
+    expect(titleBoxHeight([1200, 232])).toBe(Math.round(232 * (TITLE_MAX_W / 1200)));
     expect(titleBoxHeight([900, 312])).toBe(TITLE_MAX_H);
+    expect(TITLE_MAX_W).toBe(SHARE_W - 180);
     expect(titleBoxHeight(null)).toBe(TITLE_FALLBACK_H);
   });
 });
@@ -177,5 +185,63 @@ describe('VS head-to-head', () => {
     expect(g.h).toBeLessThanOrEqual(1000);
     expect(g.maxSide).toBeGreaterThan(0);
     expect(vsBodyGeometry(0, 6, 5, 1000, false).cardH).toBe(0);
+  });
+});
+
+describe('title art sits fully on the card (founder 10-06: CLASSIC was cut off at the top)', () => {
+  it('every game card keeps its whole title box inside the canvas, above the info line', () => {
+    for (const { id, input } of SHARE_SAMPLES) {
+      const art = shareCardArt(input);
+      const nats: Array<readonly [number, number] | null> = [art.title ? ART_SIZE[art.title as keyof typeof ART_SIZE] ?? null : null, null];
+      for (const nat of nats) {
+        const { plan, titleH } = shareCardPlan(input, nat);
+        const r = titleRect(nat, plan.titleTop, titleH);
+        expect(titleFitsCard(r, plan.height, plan.headTop), `${id} ${nat ? 'art' : 'fallback'}`).toBe(true);
+        expect(r.y, id).toBeGreaterThanOrEqual(SHARE_SPACE.top - 0.5);
+        expect(plan.height, id).toBeGreaterThanOrEqual(SHARE_H_MIN);
+        expect(plan.height, id).toBeLessThanOrEqual(SHARE_H_MAX);
+        // Nothing below the title runs off the card either.
+        expect(plan.urlY, id).toBeLessThan(plan.height);
+      }
+    }
+  });
+
+  it('every game title art is drawn whole: the full art scaled to fit, centered, never cropped', () => {
+    for (const { id, input } of SHARE_SAMPLES) {
+      const name = shareCardArt(input).title;
+      expect(name, id).toBeTruthy();
+      const nat = ART_SIZE[name as keyof typeof ART_SIZE];
+      expect(nat, id).toBeTruthy();
+      const r = titleRect(nat, 40);
+      // Same aspect as the art (no crop, no stretch) and centered between the margins.
+      expect(r.w / r.h, id).toBeCloseTo(nat[0] / nat[1], 3);
+      expect(r.x + r.w / 2, id).toBeCloseTo(SHARE_W / 2, 3);
+      expect(r.w <= TITLE_MAX_W + 0.5 && r.h <= TITLE_MAX_H + 0.5, id).toBe(true);
+      // Wide titles use the card width (with margins); tall ones the height cap.
+      expect(Math.max(r.w / TITLE_MAX_W, r.h / TITLE_MAX_H), id).toBeCloseTo(1, 2);
+    }
+  });
+
+  it('the VS card keeps its title inside too', () => {
+    const nat = ART_SIZE['art-title-vs'];
+    for (const n of [nat, null]) {
+      const { plan, titleH } = planVsShareCard(VS_SHARE_SAMPLE, n, null, VS_AVATAR_BLOCK);
+      expect(titleFitsCard(titleRect(n, plan.titleTop, titleH), plan.height, plan.headTop)).toBe(true);
+      expect(plan.urlY).toBeLessThan(plan.height);
+    }
+  });
+
+  it('every game in the catalog has a sample card', () => {
+    const covered = new Set(SHARE_SAMPLES.map((s) => s.input.mode));
+    for (const m of MODES.filter((x) => x.dbKey && x.title !== 'VS' && gameShareArt(x.title as never).title)) {
+      expect(covered.has(m.title as never), m.title).toBe(true);
+    }
+  });
+
+  it('a title outside the margins or above the card fails the check', () => {
+    expect(titleFitsCard({ x: 40, y: 40, w: 1000, h: 200 }, 1500)).toBe(false);
+    expect(titleFitsCard({ x: 100, y: -20, w: 800, h: 200 }, 1500)).toBe(false);
+    expect(titleFitsCard({ x: 100, y: 40, w: 800, h: 200 }, 1500, 200)).toBe(false);
+    expect(titleFitsCard({ x: 100, y: 40, w: 800, h: 200 }, 1500)).toBe(true);
   });
 });

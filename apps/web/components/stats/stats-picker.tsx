@@ -2,7 +2,7 @@
 
 import { GamePicker, type GamePickerBadge } from '@/components/ui/game-picker';
 import { ArtTitle } from '@/components/ui/art-title';
-import { LiveHeadline } from '@/components/ui/live-headline';
+import { BubbleText } from '@/components/ui/bubble-text';
 import { gameTitleArtForDbKey, gameTitleArtLabel } from '@/lib/art';
 import { MODE_BY_DBKEY } from '@/lib/modes.generated';
 import { pickerKeyForView, viewForPickerKey, type StatsState } from '@/lib/stats-view';
@@ -41,7 +41,7 @@ function SelectedTitle({ pickerKey }: { pickerKey: string | null }) {
       {art ? (
         <ArtTitle name={art} label={gameTitleArtLabel(art)} maxHeight={48} maxWidth={320} as="div" level={2} priority={false} motion="none" />
       ) : pickerKey && meta ? (
-        <LiveHeadline text={meta.title} accent={meta.accentHex ?? '#7c3aed'} size={26} level={2} />
+        <BubbleText text={meta.title} accent={meta.accentHex ?? '#7c3aed'} maxSize={26} minSize={19} level={2} />
       ) : (
         // BJ16: OVERVIEW / DAILY SWEEP lettering, not live text.
         <HeadingArt slug={pickerKey ? 'sweep' : 'overview'} height={40} maxWidth={280} pop={false} />

@@ -16,7 +16,7 @@ import { SoftNum } from '@/components/ui/soft-number';
 import { PopupBar, SoftSectionLabel, softRow } from '@/components/ui/soft-popup';
 import { ART_SIZE, artSrc, badgeSrc, onPageShadow } from '@/lib/art';
 import { GiftProCard } from '@/components/friends/invite-screens';
-import { softBackground, softBorder, softIconTile, softShadow } from '@/lib/soft-surface';
+import { softBackground, softBorder, softIconTile, softShadow, liftedInk } from '@/lib/soft-surface';
 import { PoseArt } from '@/components/ui/soft-popup';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { ManageSubscriptionRows, useStripePortal } from '@/components/pro/manage-subscription';
@@ -435,8 +435,8 @@ export default function ProPage() {
               on the web and your iPhone recognizes it the next time you sign in; the same is true in reverse.
               Your streaks, stats, medals, and leaderboard history sync the same way, so switching between a
               laptop at lunch and a phone on the couch is seamless. New to the game? Start with the{' '}
-              <a href="/how-to-play" className="font-bold" style={{ color: '#7c3aed' }}>how-to-play guide</a>,
-              browse the <a href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</a>{' '}
+              <a href="/how-to-play" className="font-bold" style={{ color: liftedInk('#7c3aed') }}>how-to-play guide</a>,
+              browse the <a href="/guides" className="font-bold" style={{ color: liftedInk('#7c3aed') }}>mode guides</a>{' '}
               to find your favorite, and try Pro once the daily slate stops being enough.
             </p>
           </div>

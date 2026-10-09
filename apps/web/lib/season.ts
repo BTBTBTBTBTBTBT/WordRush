@@ -8,7 +8,7 @@ import { SEASON_REGISTRY, seasonEntry } from './season-kit';
 import type { CastRowLayout, CastSlot } from './share-fit';
 
 // Seasonal cast skins (docs/FINISH_SPEC.md X). During the season (core
-// currentSeason on the player's LOCAL date — Halloween runs Oct 17 – Nov 1)
+// currentSeason on the player's LOCAL date — Halloween runs Oct 9 – Oct 31)
 // the ten art-halloween-<id> skins replace the hero cast in the living cast
 // header, the cold-start intro + landing flourish, the share-image cast
 // wordmark and the loading screen. Admin / QA preview on any page:

@@ -29,6 +29,7 @@ public enum FeedbackToast {
     /// The tone of a non-score game message.
     public static func tone(for message: String) -> FeedbackTone {
         let m = message.lowercased()
+        if m.contains("used for two") { return .warn }
         if m.contains("solved") || m.contains("nice") || m.contains("great") || m.contains("rank up") { return .win }
         if m.contains("copied") || m.contains("saved") || m.contains("sent") { return .success }
         if m.hasPrefix("not ") || m.contains("already") || m.contains("enough") || m.contains("invalid")

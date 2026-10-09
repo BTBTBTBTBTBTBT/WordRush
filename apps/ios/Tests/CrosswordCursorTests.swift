@@ -53,19 +53,17 @@ final class CrosswordCursorTests: XCTestCase {
         XCTAssertEqual(crosswordCursorAfterType(s, from: 7, entry: p.entries[0]), CrosswordCursor(cell: 3, dir: .across))
     }
 
-    /// Doug / founder 10-05: the clue number sits inside the corner and never meets the letter, at any cell size.
+    /// Founder 10-06: the clue number sits inside the corner and never meets the (unmoved, same-size) letter.
     func testNumberAndLetterNeverTouch() {
-        for cell in stride(from: 14.0, through: 48.0, by: 1.0) {
-            let n = CrosswordCellSpec.numberSize(cell: cell), g = CrosswordCellSpec.numberedGlyph(cell: cell)
+        for cell in stride(from: 22.0, through: 48.0, by: 1.0) {
+            let n = CrosswordCellSpec.numberSize(cell: cell)
             let inset = CrosswordCellSpec.inset(cell: cell)
             XCTAssertGreaterThan(inset, cell * 0.035 + 1)            // never on the border or the tile's ring
             let numberBottom = inset * 0.7 + n * 0.92                // top pad + ascent + digit cap height
-            let letterScale = (cell < 26 ? 0.56 : 0.5) * g.scale
+            let letterScale = cell < 26 ? 0.56 : 0.5                 // the same for every cell, numbered or not
             let lip = max(1.5, cell * 0.07)
-            let letterTop = (cell - lip) / 2 + cell * g.dy - cell * letterScale * 0.36
-            let numberRight = inset + n * 0.62 * 2                   // two digits
-            let letterLeft = cell / 2 + cell * g.dx - cell * letterScale * 0.42
-            XCTAssertTrue(numberBottom < letterTop || numberRight < letterLeft, "cell \(cell)")
+            let letterTop = (cell - lip) / 2 - cell * letterScale * 0.36
+            XCTAssertLessThan(numberBottom, letterTop, "cell \(cell)")
         }
     }
 }

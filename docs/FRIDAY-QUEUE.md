@@ -1,41 +1,48 @@
 # Queue for when usage resets (Fri 2026-10-09, 1:00 PM CT) — founder 10-06
 
-## FRIDAY GAME PLAN (final v2, 10-08; items 1–45; reordered: foundations → release-critical → living → pages → content)
+## FRIDAY GAME PLAN (final v3, 10-09 morning; items 1–49; foundations → release-critical → living → pages → content)
 Models: OPUS = me (kickoff, flags, specs, reviews, sensitive code, release); SONNET = builders + the free-ChatGPT art
-driver (all day); HAIKU = inventories, numbers, sweeps (shift, compression, screenshots). Max 3 agents (art driver +
-builders A/B), own worktrees, one feature ×3 each, ~45-min boxes → commit + report; serial native builds, one sim.
-Release-critical work runs early so anything that slips is cosmetic.
-0. Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, 38 off-switch framework, tests ×3,
-   thread specs. [Haiku] inventories (buttons, plain surfaces, headlines, all copy, art sizes, every share path) + 43 capacity numbers.
-   [Sonnet art driver] starts with what wave 1–2 need: alphabet, buttons, toasts/chips, age-check screen, Halloween
-   icon + widgets, push card/avatars, invite images.
+driver (all day); HAIKU = inventories, numbers, sweeps. NOT Fable for helpers (10-09 morning: Fable helpers still
+drew down the weekly limit). Max 3 agents (art driver + builders A/B), own worktrees, one feature ×3 each, ~45-min
+boxes → commit + report; serial native builds, one sim. Release-critical runs early so anything that slips is cosmetic.
+Already done this morning (prep branches, review + apply at kickoff, nothing merged yet):
+- prep/puzzle-difficulty ✓ — Spyglass harder generator + 14-day preview (scores 21–60 → 68–93) and Hubbub audit
+  (193 main + 355 bonus everyday adds; RECOLLECT/FUTON/RECYCLER/REELECT confirmed; AUNTY comes with cloud #46;
+  eyeball name-like false hits before applying).
+- prep/inventories-2-8 (partial) — buttons ×3 (item 23) + art sizes (item 44) reports; headlines / plain surfaces /
+  copy / share paths still to do → Haiku at kickoff.
+- prep/art-compression (partial) — compress-art.py written, dry run not finished → Haiku runs it in wave 1.
+0. Kickoff (Opus): merge #41–#50, move #46 cutover, Halloween window Oct 9–31, 38 off-switch framework, apply prep/
+   puzzle-difficulty to future dates (cutover/sha/parity/near + guard test incl. FUTON), tests ×3, thread specs.
+   [Haiku] finish inventories (headlines, plain surfaces, copy, share paths) + 43 capacity numbers.
+   [Sonnet art driver] alphabet, buttons, toasts/chips, age-check screen, Halloween icon + widgets, push visuals,
+   invite images, streak badges/tiers (48); new body shapes (50) start early so wave 5 can rig them.
 1. Wave 1 — foundations + must-fix
-   A: 6 lettering + no-clip guard, 14 scroll header, 8 shared tile, 23 every button + guard, 44 compression tool.
-   B: 1b Halloween readability, 10 crossword, 21 tour button, 31 toasts + Codebreaker, truncations, 37 shift harness.
+   A: 6 lettering + no-clip guard, 14 scroll header, 8 shared tile, 23 every button + guard, 44 compression (finish
+      the dry run, then apply with the quality guard).
+   B: 1b Halloween readability, 10 crossword, 21 tour button, 31 toasts + Codebreaker, truncations, 37 shift harness,
+      47 smoother final hop in the opening.
 2. Wave 2 — release-critical (Opus reviews closely)
-   A: 29 13+ age check, 34 push notifications, 28 widgets (large fix, wordmark, live countdown, FLAWLESS, trophy/
-      flame) + Halloween widgets, 26 Halloween icon.
+   A: 29 13+ age check, 34 push notifications, 28 widgets + 48 streak on widgets + Halloween widgets, 26 icon.
    B: 9f branded invites + 9b live play. Opus: 43 capacity decision.
 3. Wave 3 — alive
-   A: 13 big living mascots, 7 banners + flawless messages + celebratory centered Sweep/Flawless (seasonal kits),
-      19 speech bubbles, 19b voices + moods.
-   B: 9 Friends cleanup, 9e calmer Friends, 9c "?" help, 9d boards + every piece, 12 first-play tutorials,
-      22 waiting rooms, 32 Hubbub + all game control bars.
+   A: 52 celebration timing fix, 13 living mascots, 7 banners + 48 flawless streaks / "3-PEAT" headline + celebratory centered Sweep/Flawless
+      (seasonal kits), 19 speech bubbles, 19b voices + moods.
+   B: 9, 9e, 9c, 9d (boards + every piece), 12 first-play tutorials, 22 waiting rooms, 32 game control bars.
 4. Wave 4 — pages
-   A: 35 game order (Classic pinned, default Dailies order, designed reorder, easier-first Puzzles) → 11/11b
-      Leaderboard stage, 16 Stats, 17 profiles, 20 Go Pro.
-   B: 25 full themes + Settings redesign, 24 Seasonal theme row + costumed opening, 15 living wallpapers + 45 trims.
-5. Wave 5 — content + maker
-   A: 5/5b subculture + sports packs, Pro try-on popup, admin item grants.
-   B: 46 every share image redesigned (+ 3 share titles), 30 harder Spyglass, 33 Hubbub everyday words,
-      4/4b musical cast, 2 Sound Library.
+   A: 35 game order (Classic pinned; Classic, QuadWord, OctoWord, Succession, Six, Seven, Deliverance, Gauntlet) →
+      11/11b Leaderboard stage, 16 Stats, 17 profiles, 20 Go Pro.
+   B: 25 full themes + Settings, 24 Seasonal theme row + costumed opening, 15 living wallpapers + 45 trims.
+5. Wave 5 — content + maker + sound
+   A: 5/5b subculture + sports packs, 50 new body shapes (~30+, autofit via #41/#47), Pro try-on popup, admin
+      item grants.
+   B: 46 every share image (+ 3), 4/4b musical cast + 49 Halloween public-domain tunes + Halloween intro jingle,
+      2 Sound Library (founder listens to 49 there before ship).
 6. Wave 6 — finish
-   A: 36 content rewrite (How to Play, guides, FAQ, every info menu), 41 "What's new in 2.8", 18 polish picks.
-   B: 39 old-version compatibility tests (Opus reviews), 40 screen-reader sweep.
-   [Haiku] after EVERY wave: 37 shift sweep, 44 compression run, screenshot sweep → failures to the owning thread.
-7. Release (Opus): 42 Doug + Johnny get TestFlight / Android internal → readability + smoothness + final gates ×3 →
-   [Sonnet] store screenshots, Opus captions + store text (27) → founder feedback (phone / live sim) → fixes →
-   iOS 2.8 submit (auto release) + expedite request + Play production → web on store approval.
+   A: 36 content rewrite, 41 "What's new in 2.8", 18 polish picks.  B: 39 old-version compat (Opus reviews), 40 screen
+   readers. [Haiku] after EVERY wave: 37 shift sweep, 44 compression run, screenshot sweep → owning thread.
+7. Release (Opus): 42 Doug + Johnny builds → gates ×3 → store screenshots + captions + store text (27) → founder
+   feedback (phone / live sim) → fixes → iOS 2.8 submit (auto release) + expedite + Play production → web on approval.
 8. After submit: LevelPlay setup in Chrome (ads live in the ~Nov 1 2.8.x).
 Art approvals (founder 10-07): NO Art Library gating — I pick by judgment from what's been approved so far and
 wire it. The one hard rule: the 10 main characters stay true to their LOOK, SOUND and PERSONALITY whenever they're
@@ -842,6 +849,11 @@ second game on the puzzles list")
 - **38. Off-switches (Opus builds, server + ×3 clients):** remote feature flags read at launch/foreground (Supabase
   table, cached, safe defaults) for live play/realtime, voices, living wallpapers/ambient, speech bubbles, new push
   formats, age check, pocket games, Halloween season itself — flip in the admin portal, takes effect in minutes.
+  BUILT 10-09 (Opus): core feature-switches.ts (FEATURE_SWITCHES keys + fail-open isFeatureLive), iOS
+  FlagsService.isLive, Android FlagsService.isLive, web useFlags().isLive; 15 rows seeded in app_flags (all on),
+  flippable in admin > Ops > Feature flags. EVERY thread gates its feature with isLive("<key>") (keys in
+  feature-switches.ts; add a key + seed row for anything new). season_halloween must be honored by the season
+  resolvers ×3 (web resolveSeason, iOS season/CastSkin, Android SeasonSkins.seasonFor) — Builder B / wave 4 B.
 - **39. Old-version compatibility (Sonnet builds tests, Opus reviews):** 2.7.1 ↔ 2.8 players together — invites,
   VS, pocket games, realtime, new avatar items / voices / owned items, age flag; unknown ids are skipped (never
   crash), server routes accept both versions. Test matrix run on sim + emulator.
@@ -884,3 +896,79 @@ second game on the puzzles list")
   That's why it runs in wave 5, right after the page redesigns land.
 - Assign: [Sonnet] in wave 5 B (with the old item 3), ChatGPT frames from the art driver; Opus reviews a sheet of every
   share type × win/loss × season before release.
+
+## 47. Opening animation: smoother final hop onto the top bar (founder 10-09)
+- The cast's last little hop before they settle on the header bar is slightly abrupt. Make it one continuous,
+  eased arc + soft squash/settle (no snap on landing, no frame jump between the intro and the resting header), ×3;
+  verify frame-by-frame (sim recording) and in the smoothness gate; same for the Halloween costumed opening (24).
+
+## 48. Flawless STREAKS shine everywhere, not just "flawless" (founder 10-09)
+- The living headline (6/7) and the widgets (28) call out the streak itself, not only today's flawless:
+  "FLAWLESS ×3 IN A ROW!" with the number as the hero — a flame/trophy counter that grows with the streak (bigger
+  glow, extra sparkle tiers at 3 / 5 / 7 / 10 / 30), the digit ticking up with a pop the moment the streak extends,
+  your mascot reacting (bigger cheer as it grows), milestone lines + "NEW BEST!". Same idea for sweep streaks.
+- Widgets: FLAWLESS ring shows "×3 streak" with the trophy badge sized up by tier and a subtle shimmer frame swapped
+  on the timeline; small widget too (not just the word FLAWLESS). Halloween versions.
+- Designed in free ChatGPT (streak badges/tiers, counter art), creative and alive, never cluttered; readable, ×3.
+- Home headline example (founder 10-09 screenshot, trophy 3): instead of the cut-off "WORDOCIOUS FLAWLES…" it
+  celebrates the streak in fun names by length — "FLAWLESS 3-PEAT!" (3), "FOUR-MIDABLE!"-style playful lines at 4+,
+  "FLAWLESS WEEK!" (7), etc. — a curated, varied list (American spelling, never repeats flatly), sized to fit in
+  full (6's guard), with the streak number popping in and the mascot cheering.
+
+## 49. Halloween music: public-domain spooky tunes for the musical cast + a Halloween intro jingle (founder 10-09)
+- Musical cast (4/4b) in season gets Halloween tunes, played by the cast with OUR synth / note sequences (no
+  recordings → royalty-free; compositions are public domain): In the Hall of the Mountain King (Grieg), Danse
+  Macabre (Saint-Saëns), Toccata and Fugue in D minor opening (Bach), Funeral March (Chopin), Night on Bald Mountain
+  (Mussorgsky), Funeral March of a Marionette (Gounod), The Sorcerer's Apprentice (Dukas); each a hidden achievement.
+  Spooky voicings in season (organ, xylophone "bones", celesta, low strings), each cast member keeps its own voice.
+  NOT allowed (copyrighted): Monster Mash, Ghostbusters, Thriller, This Is Halloween, Addams Family, etc.
+- Intro jingle: a Halloween re-orchestration of the existing jingle (same melody, minor-key/spooky instruments, a
+  bell + organ swell), via a seasonal sound slot in the registry (future seasons get their own). Founder gives a quick
+  listen/OK in the Sound Library (2) before it ships; normal jingle returns Nov 1 with the season.
+
+## 50. Many more body shapes (founder 10-09) — 12 today → ~30+
+- Built on the cloud landmark fitting (#41) + body rigs (#47, one-command rig-body): drop new body art in → landmarks
+  extracted → every existing item refits by rule → audit guards (arms, face, letter, outline, floating) → contact
+  sheet of every item on every new body, looked at before shipping. Sizes (XS–XL, chunky, lanky) from the same art.
+- New shapes, family style (chubby, clear letter area, stubby arms/feet, on the cast's look), e.g. heart, moon, egg,
+  pear, bell, triangle, diamond, capsule, squircle, shield, star-burst, flower, gumdrop, can/cylinder, crescent,
+  cat-ear block, bunny-ear block, teardrop (drop exists), puffy hexagon variants, blob; seasonal shapes as data
+  (pumpkin, ghost for Halloween — free in season, then buy/Pro/earn like other seasonal items).
+- Art in free ChatGPT on the body template (same lighting/gloss as the 12), keyed + rigged; some free, many Pro
+  (try-on popup); mascot maker Body tab shows them in a tidy grid with the new shapes tagged NEW.
+- Any item that can't fit a new body by rule gets a per-body override or is hidden on that body (never ships
+  broken). Runs in wave 5 A right after the 5/5b packs (shared pipeline).
+
+## 51. Mascot maker gap-fill packs (founder 10-09: "anything major I've excluded?")
+- Checked avatar-parts.json: music is partial (guitars, mics, a few headphones — no drums, keys, brass/strings, DJ);
+  video games have NOTHING yet (no controller, headset, pixel items); also missing entirely: dogs (cats exist),
+  robots, dinosaurs, food items, careers beyond chef/astronaut.
+- Add, same autofit pipeline + gating as 5b (generic, no brands/logos):
+  - Music: drumsticks + mini drum, keytar, violin, trumpet/sax, DJ headphones + turntable buddy, boombox, conductor
+    baton, music-note aura, rock-star sunglasses, glitter mic.
+  - Gaming: controller (held), gaming headset, pixel shades, handheld console, 8-bit heart/coin buddies, joystick,
+    arcade token, VR goggles, pixel letter style (with gamer pack).
+  - Pets/buddies: dogs (several breeds), bunny, hamster, parrot, frog, turtle, axolotl, mini dragon, mini robot,
+    dinosaur.
+  - Careers/hobbies: scientist (goggles, lab coat), doctor/nurse scrubs + stethoscope, firefighter helmet, police
+    officer cap + badge (founder: firefighter AND police — friendly, no weapons), builder
+    hard hat, pilot cap + wings, artist beret + palette, gardener, photographer camera, bookworm reading glasses.
+  - Fantasy: wizard staff, unicorn horn, fairy wings, knight helmet + shield, dragon wings, crown variants.
+  - Food fun: donut float, ice-cream cone held, boba tea, pizza slice, taco buddy.
+- Menu placement (founder 10-09): every new item sorts next to its like items in its tab — new wings beside the
+  existing wings, new hats grouped with hat kinds (caps with caps, helmets with helmets), new buddies by animal type,
+  glasses with glasses — via a sort key per item (category → kind → order) in avatar-parts.json, never appended at
+  the end. Applies to 5b packs, 50 bodies and all future items; pack/collection views still show a pack's items
+  together.
+- Runs with 5b in wave 5 A (art in free ChatGPT from kickoff). Anything not done Friday rides in the ~Nov 1 2.8.x as
+  data (no code needed).
+
+## 52. Flawless / Sweep celebration fires at the right moment (founder 10-09)
+- Bug: the Dailies Flawless Victory banner didn't appear after the 8th daily; it showed up later, after he beat
+  ProperNoundle (a Puzzle). Reproduce first (sim + emulator + web): likely the celebration check only runs on certain
+  returns to Home / a later stats refresh, or waits on a server sync.
+- Rule ×3: the moment the LAST of the 8 dailies' finished screen is closed, the Flawless (or Sweep) celebration plays
+  — computed from local results immediately (server sync confirms in the background, never delays it); same for the
+  Puzzles sweep after the 10th; never fires late on an unrelated game; never twice. Works from Home, from NEXT on a
+  finished screen, from deep links/widgets, and after an app restart mid-day. Tests for each path. Goes in wave 3
+  with item 7.

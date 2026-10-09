@@ -23,6 +23,10 @@ import com.wordocious.core.AvatarConfig
 import com.wordocious.core.AvatarFit
 import com.wordocious.core.AvatarFitManifest
 import com.wordocious.core.AvatarLayout
+import com.wordocious.core.AvatarLayoutLayer
+import com.wordocious.core.AvatarMatrix
+import com.wordocious.core.AvatarPoses
+import com.wordocious.core.AvatarPosesData
 import com.wordocious.core.AvatarOptions
 import com.wordocious.core.AvatarRect
 import com.wordocious.core.AvatarSwatch
@@ -147,14 +151,27 @@ object MascotComposer {
         }
     }
 
-    /** The fit manifest (avatar-parts.json v2), or null when the asset is a v1 file. */
+    /** The fit manifest (avatar-parts.json v2), or null when the asset is a v1 file. Also installs the poses. */
     fun fitManifest(context: Context): AvatarFitManifest? {
         if (fitLoaded) return fit
         val text = runCatching { context.assets.open(AvatarManifests.ASSET).bufferedReader().use { it.readText() } }.getOrNull()
         fit = AvatarFitManifest.parse(text)?.takeIf { it.items.isNotEmpty() }
+        posesData(context)
         fitLoaded = true
         return fit
     }
+
+    /**
+     * 10-06 poses (avatar-poses.json → core AvatarPoses.data): the rigs + shared poses the posed layout and the
+     * living mascot draw from. Read once; null when the asset is missing (nothing ever poses then).
+     */
+    fun posesData(context: Context): AvatarPosesData? {
+        AvatarPoses.data?.let { return it }
+        val text = runCatching { context.assets.open(POSES_ASSET).bufferedReader().use { it.readText() } }.getOrNull()
+        return AvatarPosesData.parse(text)?.takeIf { it.rigs.isNotEmpty() }?.also { AvatarPoses.data = it }
+    }
+
+    const val POSES_ASSET = "avatar-poses.json"
 
     /**
      * Decode the parts the defaults + cast presets wear (and the classic body) into the
@@ -166,7 +183,7 @@ object MascotComposer {
         val configs = listOf(com.wordocious.core.defaultAvatar("warm")) + listOf("w", "o1", "r", "d").map { com.wordocious.core.castPreset(it) }
         val names = LinkedHashSet<String>()
         configs.forEach { c -> listOf(false, true).forEach { small -> AvatarFit.layout(c, small, fm).layers.forEach { names += it.art } } }
-        names.forEach { n -> drawableId(context, n.replace('-', '_')).takeIf { it != 0 }?.let { runCatching { partBitmap(context, it) } } }
+        names.forEach { n -> drawableId(context, n.replace('-', '_').lowercase()).takeIf { it != 0 }?.let { runCatching { partBitmap(context, it) } } }
     }
 
     private fun solidPaint(color: Int) = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color; style = Paint.Style.FILL }
@@ -198,6 +215,7 @@ object MascotComposer {
 
     private fun drawFromLayout(context: Context, c: Canvas, left: Float, top: Float, size: Float, key: MascotKey, fm: AvatarFitManifest, base: Int, small: Boolean) {
         val cfg = key.config
+        // the core default pose: the saved pose while AvatarLiveConfig.LIVING_MASCOT is on, else none (un-posed)
         val layout: AvatarLayout = AvatarFit.layout(cfg, small, fm)
         c.save()
         c.translate(left, top)
@@ -214,24 +232,114 @@ object MascotComposer {
         for ((i, l) in layout.layers.withIndex()) {
             // the white initial goes just before layers[letterIndex]: ON the 'under' garments (apron, belt),
             // under every part in front (v3 integrated parts, docs/design/brand/avatar/INTEGRATION.md)
-            if (i == layout.letterIndex) drawLetterBox(context, c, key.initial, box(layout.letter), base)
-            val r = box(l.rect)
-            val id = drawableId(context, l.art.replace('-', '_'))
-            val bmp = if (id != 0) partBitmap(context, id) else null
-            if (l.layer == "body") {
-                if (bmp != null) drawTinted(c, bmp, r, swatchPaint(AvatarOptions.swatch(cfg.color), r)) { cv ->
-                    if (!small && cfg.pattern != "solid") drawShapes(cv, AvatarFit.patternShapes(cfg.pattern), r, patInk, base)
-                }
-                continue
-            }
-            bmp ?: continue
-            if (l.tint && acc != null) drawTinted(c, bmp, r, swatchPaint(acc, r))
-            else c.drawBitmap(bmp, null, r, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+            if (i == layout.letterIndex) withMatrix(c, layout.letterM, cs, fw) { drawLetterBox(context, c, key.initial, box(layout.letter), base) }
+            // posed layouts: each layer under its part's matrix (content fractions → this canvas's px)
+            withMatrix(c, l.m, cs, fw) { drawLayer(context, c, l, box(l.rect), cfg, base, patInk, acc, small) }
         }
-        if (layout.letterIndex >= layout.layers.size) drawLetterBox(context, c, key.initial, box(layout.letter), base)
+        if (layout.letterIndex >= layout.layers.size) withMatrix(c, layout.letterM, cs, fw) { drawLetterBox(context, c, key.initial, box(layout.letter), base) }
         if (!key.cutout) drawFrame(c, cfg.frame, size, context)
         if (key.crown) drawCrown(context, c, size)
         c.restore()
+    }
+
+    /**
+     * One layout layer into [r] (px): the body (and, posed, its rig layers feet / base / armL / armR) is white art
+     * tinted by the body color — the pattern rides the base only; a tintable accessory takes the accessory color.
+     */
+    private fun drawLayer(context: Context, c: Canvas, l: AvatarLayoutLayer, r: RectF, cfg: AvatarConfig, base: Int, patInk: Int, acc: AvatarSwatch?, small: Boolean) {
+        val id = artId(context, l.art)
+        val bmp = if (id != 0) partBitmap(context, id) else null
+        if (l.layer == "body" || (l.m != null && l.field == "body")) {
+            if (bmp != null) drawTinted(c, bmp, r, swatchPaint(AvatarOptions.swatch(cfg.color), r)) { cv ->
+                if (!small && cfg.pattern != "solid" && l.layer == "body" && !l.art.endsWith("-feet")) drawShapes(cv, AvatarFit.patternShapes(cfg.pattern), r, patInk, base)
+            }
+            return
+        }
+        bmp ?: return
+        if (l.tint && acc != null) drawTinted(c, bmp, r, swatchPaint(acc, r))
+        else c.drawBitmap(bmp, null, r, Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG))
+    }
+
+    /** A layout art name (art-av-…) → its drawable (the rig arms ship as …_armL / …_armR; a lowercased name also works). */
+    private fun artId(context: Context, art: String): Int {
+        val name = art.replace('-', '_')
+        val id = drawableId(context, name)
+        return if (id != 0 || name == name.lowercase()) id else drawableId(context, name.lowercase())
+    }
+
+    /**
+     * A content-fraction matrix (core AvatarMatrix [a, b, c, d, e, f]) → an android Matrix in the avatar canvas's px:
+     * conjugated by the content square ([cs] px wide at [fw], the frame band).
+     */
+    fun pxMatrix(m: AvatarMatrix, cs: Float, fw: Float): android.graphics.Matrix {
+        val s = cs.toDouble(); val f = fw.toDouble()
+        val n = AvatarPoses.matMul(AvatarPoses.matMul(listOf(s, 0.0, 0.0, s, f, f), m), listOf(1 / s, 0.0, 0.0, 1 / s, -f / s, -f / s))
+        return android.graphics.Matrix().apply {
+            setValues(floatArrayOf(n[0].toFloat(), n[2].toFloat(), n[4].toFloat(), n[1].toFloat(), n[3].toFloat(), n[5].toFloat(), 0f, 0f, 1f))
+        }
+    }
+
+    /** Run [draw] under [m] (none = as is). */
+    private inline fun withMatrix(c: Canvas, m: AvatarMatrix?, cs: Float, fw: Float, draw: () -> Unit) {
+        if (m == null) { draw(); return }
+        val n = c.save()
+        c.concat(pxMatrix(m, cs, fw))
+        draw()
+        c.restoreToCount(n)
+    }
+
+    // ── The living mascot (behind AvatarLiveConfig.LIVING_MASCOT; LivingMascot.kt) ──
+
+    /**
+     * The living mascot's layers pre-drawn once (tinted, patterned) at [px] — one bitmap per layout layer (null =
+     * nothing to draw), so a frame only blits them under its matrices. Off main.
+     */
+    fun livePieces(context: Context, cfg: AvatarConfig, layout: AvatarLayout, px: Int, cutout: Boolean): List<Bitmap?> {
+        val base = colorOf(avatarColorHex(cfg.color), 0xFF7C3AED.toInt())
+        val fw = if (cfg.frame != "none" && !cutout) frameWidth(px.toFloat()) else 0f
+        val cs = px - fw * 2f
+        val acc = if (cfg.accColor == "default") null else AvatarOptions.swatch(cfg.accColor)
+        val patInk = if (cfg.patternColor == cfg.color) mix(base, AColor.WHITE, 0.5f) else colorOf(avatarColorHex(cfg.patternColor), base)
+        return layout.layers.map { l ->
+            val w = kotlin.math.ceil(l.rect.w * cs).toInt().coerceIn(1, 4096)
+            val h = kotlin.math.ceil(l.rect.h * cs).toInt().coerceIn(1, 4096)
+            if (artId(context, l.art) == 0) null
+            else runCatching {
+                Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { bmp ->
+                    drawLayer(context, Canvas(bmp), l, RectF(0f, 0f, w.toFloat(), h.toFloat()), cfg, base, patInk, acc, false)
+                }
+            }.getOrNull()
+        }
+    }
+
+    /**
+     * One living-mascot frame into [c] ([size] px square at the origin): the tile (not a cutout), the ground
+     * shadow, every pre-drawn layer under its live matrix ([tf], core AvatarFit.liveTransforms: the face keys
+     * "eyes" / "mouth" first, else the layer's ride), the white initial under the root, then the frame.
+     */
+    fun drawLive(
+        context: Context, c: Canvas, size: Float, cfg: AvatarConfig, initial: String, cutout: Boolean, dark: Boolean,
+        layout: AvatarLayout, pieces: List<Bitmap?>, tf: Map<String, AvatarMatrix>,
+    ) {
+        val base = colorOf(avatarColorHex(cfg.color), 0xFF7C3AED.toInt())
+        val fw = if (cfg.frame != "none" && !cutout) frameWidth(size) else 0f
+        val cs = size - fw * 2f
+        fun box(r: AvatarRect) = RectF(fw + (r.x * cs).toFloat(), fw + (r.y * cs).toFloat(), fw + ((r.x + r.w) * cs).toFloat(), fw + ((r.y + r.h) * cs).toFloat())
+        if (!cutout) drawTile(c, size, fw, base, cfg.bg, dark)
+        val b = box(layout.body)
+        if (!cutout) c.drawOval(RectF(b.centerX() - b.width() * 0.3f, b.top + b.height() * 0.95f, b.centerX() + b.width() * 0.3f, b.top + b.height() * 1.0f),
+            solidPaint(withAlpha(AColor.BLACK, 0.12f)))
+        val root = tf["root"] ?: layout.letterM
+        val p = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        for ((i, l) in layout.layers.withIndex()) {
+            if (i == layout.letterIndex) withMatrix(c, root, cs, fw) { drawLetterBox(context, c, initial, box(layout.letter), base) }
+            val bmp = pieces.getOrNull(i) ?: continue
+            val face = if ((l.layer == "eyes" || l.layer == "mouth") && tf.containsKey(l.layer)) l.layer else null
+            val m = tf[face ?: l.ride ?: "root"] ?: root ?: l.m
+            withMatrix(c, m, cs, fw) { c.drawBitmap(bmp, null, box(l.rect), p) }
+        }
+        if (layout.letterIndex >= layout.layers.size) withMatrix(c, root, cs, fw) { drawLetterBox(context, c, initial, box(layout.letter), base) }
+        if (!cutout) drawFrame(c, cfg.frame, size, context)
     }
 
     /** The shared pattern shapes (body-square units → [r]). */

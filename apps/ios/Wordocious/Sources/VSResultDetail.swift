@@ -89,48 +89,70 @@ struct VSShareCardView: View {
 
     private let mePurple = Color(hex: 0x7C3AED), oppPink = Color(hex: 0xEC4899)
 
-    var size: CGSize { CGSize(width: 1080, height: 1350) }
+    /// The column's measured natural height (`ShareService.naturalSize(card.column)`),
+    /// set before rendering so the canvas fits it (4:5 … 9:16); nil = 4:5.
+    var columnNatural: CGFloat? = nil
+
+    var size: CGSize {
+        let h = min(CGFloat(ShareCardPlan.maxHeight), max(CGFloat(ShareCardPlan.minHeight), columnNatural ?? 0))
+        return CGSize(width: 1080, height: h.rounded())
+    }
+
+    private var titleAspect: Double? {
+        guard ArtAsset.exists("art-title-vs"), let a = ArtAsset.aspect("art-title-vs"), a > 0 else { return nil }
+        return Double(a)
+    }
+
+    /// Founder 10-06: the WHOLE title, fit to the card width inside 90-px margins, at the top.
+    private var titleBox: CGSize {
+        let t = ShareCardPlan.titleSize(aspect: titleAspect)
+        return CGSize(width: t.width, height: t.height)
+    }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             ShareWall(tint: .vs)
-            VStack(spacing: 0) {
-                if ArtAsset.exists("art-title-vs"), let a = ArtAsset.aspect("art-title-vs"), a > 0 {
-                    // §S2: title art ~70% of the width.
-                    ShareArt.title("art-title-vs", height: min(200, 756 / a), maxWidth: 756).padding(.top, 44)
-                } else {
-                    Text(modeLabel)
-                        .font(Brand.fixedFont(72, .black)).foregroundStyle(accent)
-                        .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
-                        .lineLimit(1).minimumScaleFactor(0.5)
-                        .padding(.horizontal, 60).padding(.top, 44)
-                }
-                HStack(spacing: 18) {
-                    ShareDateLine(text: "\(modeLabel) · \(dateStr)", size: 28)
-                    resultPill
-                }
-                .padding(.top, 14)
-
-                Spacer(minLength: 10)
-                HStack(alignment: .center, spacing: 26) {
-                    sideColumn(me, accent: mePurple)
-                    VSLettering(size: 104)
-                    sideColumn(opponent, accent: oppPink)
-                }
-                .padding(.horizontal, 44)
-                Spacer(minLength: 10)
-
-                ShareStatRow(items: [
-                    (value: fmt(me.score), label: "YOUR SCORE", tone: .purple),
-                    (value: fmt(opponent.score), label: "THEIR SCORE", tone: .pink),
-                    (value: isDraw ? "DRAW" : (isWin ? "WIN" : "LOSS"), label: "RESULT", tone: .gold),
-                ], height: 100)
-                .padding(.horizontal, 60)
-                ShareCastWordmark(width: 972)
-                    .padding(.top, 40).padding(.bottom, 40)
-            }
+            columnView(spacer: true)
+                // Pinned to the top: an overflow runs off the bottom, never over the title.
+                .frame(width: size.width, height: size.height, alignment: .top)
         }
-        .frame(width: size.width, height: size.height)
+        .frame(width: size.width, height: size.height, alignment: .top)
+        .clipped()
+    }
+
+    /// The column at its natural height (what `columnNatural` measures).
+    var column: some View { columnView(spacer: false) }
+
+    private func columnView(spacer: Bool) -> some View {
+        VStack(spacing: 0) {
+            ShareTitleBand(asset: titleAspect != nil ? "art-title-vs" : nil, size: titleBox,
+                           text: modeLabel, color: accent)
+                .padding(.top, CGFloat(ShareCardPlan.topPad))
+            HStack(spacing: 18) {
+                ShareDateLine(text: "\(modeLabel) · \(dateStr)", size: 28)
+                resultPill
+            }
+            .padding(.top, 14)
+
+            if spacer { Spacer(minLength: 10) } else { Color.clear.frame(height: 10) }
+            HStack(alignment: .center, spacing: 26) {
+                sideColumn(me, accent: mePurple)
+                VSLettering(size: 104)
+                sideColumn(opponent, accent: oppPink)
+            }
+            .padding(.horizontal, 44)
+            if spacer { Spacer(minLength: 10) } else { Color.clear.frame(height: 10) }
+
+            ShareStatRow(items: [
+                (value: fmt(me.score), label: "YOUR SCORE", tone: .purple),
+                (value: fmt(opponent.score), label: "THEIR SCORE", tone: .pink),
+                (value: isDraw ? "DRAW" : (isWin ? "WIN" : "LOSS"), label: "RESULT", tone: .gold),
+            ], height: 100)
+            .padding(.horizontal, 60)
+            ShareCastWordmark(width: 972)
+                .padding(.top, 40).padding(.bottom, 40)
+        }
+        .frame(width: 1080)
     }
 
     /// Victory / Draw / Defeat as a tinted pill with the 3D W / L badge.
@@ -223,6 +245,9 @@ enum VSShareService {
     static func share(card: VSShareCardView, text: String) {
         #if canImport(UIKit)
         _ = text   // §S1: results share no text (kept for the call site).
+        // Founder 10-06: size the canvas to the column so nothing (the title least of all) is cut.
+        var card = card
+        card.columnNatural = ShareService.naturalSize(card.column).height
         guard let image = ShareService.renderCard(card, size: card.size) else { return }
         ShareService.presentImages([image], game: "VS")
         #endif

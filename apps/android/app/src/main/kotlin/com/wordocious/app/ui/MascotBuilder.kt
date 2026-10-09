@@ -109,12 +109,17 @@ fun MascotBuilder(
 ) {
     var tab by rememberSaveable { mutableStateOf(BuilderTab.PRESETS) }
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    remember { MascotBuilderLogic.fit = MascotComposer.fitManifest(ctx); true }
+    remember { MascotBuilderLogic.fit = MascotComposer.fitManifest(ctx); loadAvatarAccess(ctx); true }
     /** "Mask doesn't fit with Round glasses, so it came off" (the fit system swaps conflicting picks). */
     var note by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(note) { if (note != null) { kotlinx.coroutines.delay(2600); note = null } }
     var paywallFor by remember { mutableStateOf<BuilderOption?>(null) }
     val accent = swatchColor(config.color)
+    // Item gating (core AvatarAccess; null while AvatarAccessConfig.ITEM_GATING is off = today's builder, unchanged).
+    // Achievements aren't loaded on this screen (a brand-new player in onboarding): TODO pass them when a caller has them.
+    val access = remember(isPro) { ownAccessContext(isPro, achievements = null) }
+    var lockedCheck by remember { mutableStateOf<com.wordocious.core.AvatarSaveCheck?>(null) }
+    var cardPaywall by remember { mutableStateOf(false) }
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.builderAnchor("stage", anchor)) {
@@ -133,7 +138,12 @@ fun MascotBuilder(
             if (onSave != null) {
                 CandyButton(
                     when { saving -> "Saving…"; saved -> "Saved!"; else -> "Save" },
-                    onClick = { if (!saving) onSave() },
+                    onClick = {
+                        if (!saving) {
+                            val check = access?.let { MascotBuilderLogic.saveCheck(config, it) }
+                            if (check != null && !check.ok) lockedCheck = check else onSave()
+                        }
+                    },
                     color = CandyColor.PURPLE, size = CandySize.MEDIUM,
                     contentDescription = if (saved) "Mascot saved" else "Save mascot",
                     modifier = Modifier.builderAnchor("save", anchor),
@@ -156,9 +166,9 @@ fun MascotBuilder(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { o ->
                         OptionTile(
-                            tab, o, config, initial, isPro, level, accent, Modifier.weight(1f),
+                            tab, o, config, initial, isPro, level, accent, Modifier.weight(1f), access,
                             onTap = {
-                                if (MascotBuilderLogic.proLocked(o, isPro)) paywallFor = o
+                                if (access == null && MascotBuilderLogic.proLocked(o, isPro)) paywallFor = o
                                 else {
                                     note = MascotBuilderLogic.conflict(config, o)?.let { (slot, id) ->
                                         "${optionName(o)} doesn't fit with ${optionName(BuilderOption(slot, id))}, so it came off"
@@ -175,14 +185,14 @@ fun MascotBuilder(
         note?.let {
             Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BUILDER_PURPLE, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
         }
-        if (tab == BuilderTab.COLOR) SwatchGrid("color", config, isPro, onChange) { paywallFor = it }
+        if (tab == BuilderTab.COLOR) SwatchGrid("color", config, isPro, onChange, access) { paywallFor = it }
         if (tab == BuilderTab.PATTERN && config.pattern != "solid") {
             FinishLabel("PATTERN COLOR", Modifier.semantics { heading() })
-            SwatchGrid("patternColor", config, isPro, onChange) { paywallFor = it }
+            SwatchGrid("patternColor", config, isPro, onChange, access) { paywallFor = it }
         }
         if ((tab == BuilderTab.HATS || tab == BuilderTab.EXTRAS) && MascotBuilderLogic.tintableWorn(config)) {
             FinishLabel("ACCESSORY COLOR", Modifier.semantics { heading() })
-            SwatchGrid("accColor", config, isPro, onChange) { paywallFor = it }
+            SwatchGrid("accColor", config, isPro, onChange, access) { paywallFor = it }
         }
         if (tab == BuilderTab.FRAME) {
             Text(
@@ -201,6 +211,23 @@ fun MascotBuilder(
                 if (!MascotBuilderLogic.tierLocked(o, level)) onChange(MascotBuilderLogic.apply(config, o))
             },
         )
+    }
+
+    // Item gating: Save found locked parts — the Locked card for the first one (the stage keeps the try-on look).
+    val check = lockedCheck
+    val first = check?.locked?.firstOrNull()
+    val firstAccess = if (access != null && first != null) MascotBuilderLogic.partAccess(BuilderOption(first.field, first.id), access) else null
+    if (access != null && check != null && first != null && firstAccess != null && !cardPaywall) {
+        LockedItemCard(
+            part = first, access = firstAccess, look = config, initial = initial, moreLocked = check.locked.size - 1,
+            onGoPro = { cardPaywall = true },
+            // the caller's save reads the look it holds: hand it the look without the locked parts first
+            onSaveWithout = { lockedCheck = null; onChange(MascotBuilderLogic.saveWithout(config, access)); onSave?.invoke() },
+            onKeepTrying = { lockedCheck = null },
+        )
+    }
+    if (cardPaywall) {
+        ProPaywallDialog(onDismiss = { cardPaywall = false }, onPro = { cardPaywall = false; lockedCheck = null })
     }
 }
 
@@ -305,14 +332,18 @@ private fun OptionTile(
     level: Int,
     accent: Color,
     modifier: Modifier,
+    /** Item gating (null = off, today's PRO / level locks): a locked part is dimmed with the lock, still tappable. */
+    access: com.wordocious.core.AvatarAccessContext?,
     onTap: () -> Unit,
 ) {
     val preview = remember(config, o) { MascotBuilderLogic.apply(config, o) }
     val selected = MascotBuilderLogic.isSelected(config, o)
-    val proLock = MascotBuilderLogic.proLocked(o, isPro)
-    val tierLock = MascotBuilderLogic.tierLocked(o, level)
+    val itemLock = MascotBuilderLogic.itemLocked(o, access)
+    val proLock = access == null && MascotBuilderLogic.proLocked(o, isPro)
+    val tierLock = access == null && MascotBuilderLogic.tierLocked(o, level)
     val name = optionName(o)
-    val label = MascotBuilderLogic.a11yLabel(tab, o, name, selected, isPro, level)
+    val label = (if (access != null) MascotBuilderLogic.a11yLabel(tab, o, name, selected, true, Int.MAX_VALUE)
+        else MascotBuilderLogic.a11yLabel(tab, o, name, selected, isPro, level)) + if (itemLock) ", locked, tap to try it on" else ""
     val tileAccent = when (o.slot) {
         "color", "preset" -> swatchColor(preview.color)
         "bg" -> avatarBackdrop(o.id)?.colors?.firstOrNull()?.let { avatarColor(it) } ?: accent
@@ -323,14 +354,14 @@ private fun OptionTile(
             Modifier.fillMaxWidth()
                 .squishClickable(label = label, role = Role.RadioButton, enabled = !tierLock, onClick = onTap)
                 .miniGameCard(tileAccent, 14.dp, selected = selected)
-                .alpha(if (tierLock) 0.5f else 1f)
+                .alpha(if (tierLock || itemLock) 0.5f else 1f)
                 .padding(top = 9.dp, bottom = 6.dp, start = 2.dp, end = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
             Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
                 MascotAvatar(config = preview, initial = initial, size = 54.dp, pro = false)
-                if (tierLock) Icon3D(Icon3DName.LOCK, 18.dp, Modifier.align(Alignment.BottomEnd))
+                if (tierLock || itemLock) Icon3D(Icon3DName.LOCK, 18.dp, Modifier.align(Alignment.BottomEnd))
             }
             val tier = MascotBuilderLogic.frameTier(o)
             Text(
@@ -370,7 +401,12 @@ private val ROW_TITLES = mapOf("bright" to "BRIGHTS", "pastel" to "PASTELS", "de
 
 /** Glossy round swatches grouped by row (no tiles, no outlines): selected = a white check + a gentle scale. */
 @Composable
-private fun SwatchGrid(slot: String, config: AvatarConfig, isPro: Boolean, onChange: (AvatarConfig) -> Unit, onPaywall: (BuilderOption) -> Unit) {
+private fun SwatchGrid(
+    slot: String, config: AvatarConfig, isPro: Boolean, onChange: (AvatarConfig) -> Unit,
+    /** Item gating (null = off, today's PRO pills): a locked swatch shows the lock and still goes on (try-on). */
+    access: com.wordocious.core.AvatarAccessContext? = null,
+    onPaywall: (BuilderOption) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         val rows = (if (slot == "accColor") listOf("" to listOf("default")) else emptyList()) +
             AvatarOptions.COLOR_GROUPS.map { it to MascotBuilderLogic.swatchRow(it) }
@@ -381,7 +417,8 @@ private fun SwatchGrid(slot: String, config: AvatarConfig, isPro: Boolean, onCha
                     line.forEach { id ->
                         val o = BuilderOption(slot, id)
                         val sel = MascotBuilderLogic.isSelected(config, o)
-                        val locked = MascotBuilderLogic.proLocked(o, isPro)
+                        val locked = access == null && MascotBuilderLogic.proLocked(o, isPro)
+                        val itemLock = MascotBuilderLogic.itemLocked(o, access)
                         val sw = AvatarOptions.swatch(id)
                         val brush = when {
                             id == "default" -> Brush.verticalGradient(listOf(Color.White, Color.White))
@@ -393,13 +430,13 @@ private fun SwatchGrid(slot: String, config: AvatarConfig, isPro: Boolean, onCha
                         val scale by androidx.compose.animation.core.animateFloatAsState(if (sel) 1.14f else 1f, label = "swatch")
                         Box(
                             Modifier.size(40.dp)
-                                .squishClickable(label = "${optionName(BuilderOption("color", id))}" + (if (locked) ", Pro only" else "") + if (sel) ", selected" else "", role = Role.RadioButton) {
+                                .squishClickable(label = "${optionName(BuilderOption("color", id))}" + (if (locked) ", Pro only" else "") + (if (itemLock) ", locked, tap to try it on" else "") + if (sel) ", selected" else "", role = Role.RadioButton) {
                                     if (locked) onPaywall(o) else onChange(MascotBuilderLogic.apply(config, o))
                                 },
                             contentAlignment = Alignment.Center,
                         ) {
                             Box(
-                                Modifier.size(32.dp).graphicsLayer { scaleX = scale; scaleY = scale }
+                                Modifier.size(32.dp).graphicsLayer { scaleX = scale; scaleY = scale; alpha = if (itemLock) 0.5f else 1f }
                                     .shadow(3.dp, CircleShape, clip = false, spotColor = avatarColor(sw.hex).copy(alpha = 0.5f))
                                     .clip(CircleShape).background(brush)
                                     .drawWithContent {
@@ -417,6 +454,7 @@ private fun SwatchGrid(slot: String, config: AvatarConfig, isPro: Boolean, onCha
                                 } else if (id == "default") Text("AUTO", fontSize = 8.sp, fontWeight = FontWeight.Black, color = BUILDER_PURPLE)
                             }
                             if (locked) ProPill(Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-6).dp).graphicsLayer { scaleX = 0.7f; scaleY = 0.7f })
+                            if (itemLock) Icon3D(Icon3DName.LOCK, 14.dp, Modifier.align(Alignment.BottomEnd))
                         }
                     }
                 }
@@ -549,8 +587,10 @@ private fun Modifier.builderAnchor(key: String, anchor: ((String, androidx.compo
 
 /** 10-05 Dressing Room: the glossy swatch grid (color / pattern color / accessory color). */
 @Composable
-internal fun SwatchGridPublic(slot: String, config: AvatarConfig, isPro: Boolean, onChange: (AvatarConfig) -> Unit, onPaywall: (BuilderOption) -> Unit) =
-    SwatchGrid(slot, config, isPro, onChange, onPaywall)
+internal fun SwatchGridPublic(
+    slot: String, config: AvatarConfig, isPro: Boolean, onChange: (AvatarConfig) -> Unit,
+    access: com.wordocious.core.AvatarAccessContext? = null, onPaywall: (BuilderOption) -> Unit,
+) = SwatchGrid(slot, config, isPro, onChange, access, onPaywall)
 
 /** 10-05 Dressing Room: the drawn die (never an emoji) for the stage's Randomize. */
 @Composable

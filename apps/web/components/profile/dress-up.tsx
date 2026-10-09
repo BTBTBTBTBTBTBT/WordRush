@@ -11,6 +11,7 @@ import { avatarColorHex, avatarPickConflict, seasonNudgeDue, seasonNudgeKey, sea
 import { pickHomeOffer } from '@/lib/home-offer';
 
 import { MascotAvatar } from '@/components/avatar/mascot-avatar';
+import { LIVING_MASCOT_ON } from '@/lib/living-mascot';
 import { artSrc } from '@/lib/art';
 import { avatarBackdrop } from '@/lib/avatar-render';
 import { prefersReducedMotion } from '@/lib/motion';
@@ -170,6 +171,15 @@ export function LiveMascot({ config, initial, size = 176, hopToken = 0, tappable
     hop(false);
   }, [hopToken, hop]);
   const frames = React.useMemo(() => ({ rest: liveFrame(config, 'rest'), blink: liveFrame(config, 'blink'), cheer: liveFrame(config, 'cheer') }), [config]);
+  // 10-06: with the living mascot on, the rigged mascot itself breathes / blinks / poses / laughs (eyes follow
+  // the finger); the frame-swap stand-in below is the flag-off path, unchanged
+  if (LIVING_MASCOT_ON) {
+    return (
+      <span ref={hopRef} className="relative block" style={{ width: size, height: size, transformOrigin: '50% 100%' }}>
+        <MascotAvatar config={config} initial={initial} size={size} cutout living={tappable ? 'follow' : true} />
+      </span>
+    );
+  }
   const body = (
     <>
     <style>{BREATHE_CSS}</style>
@@ -344,7 +354,7 @@ export function PartyHatOffer() {
       <StageArt name="art-dress-partyhat" height={50} />
       <div className="flex-1 min-w-0">
         <div className="text-[15px] font-black truncate" style={{ color: '#6d28d9' }}>First win! Party hat?</div>
-        <div className="text-[11px] font-bold truncate" style={{ color: '#7a6aa6' }}>Your mascot wants to celebrate.</div>
+        <div className="text-[11px] font-bold truncate" style={{ color: '#6b5a96' }}>Your mascot wants to celebrate.</div>
       </div>
       <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'partyhat' }); }}><span className="candy-label">Yes!</span></button>
       <RoundIconButton icon="close" label="No thanks" size={22} onClick={done} className="-my-1" />
@@ -392,7 +402,7 @@ export function SeasonDressOffer() {
       <div className="flex-1 min-w-0">
         {/* 14 px so "Dress up for Halloween?" fits a 390 px phone beside Yes + × */}
         <div className="text-[14px] font-black truncate tracking-[-0.2px]" style={{ color: '#6d28d9' }}>Dress up for {title}?</div>
-        <div className="text-[11px] font-bold truncate" style={{ color: '#7a6aa6' }}>Free looks for the season.</div>
+        <div className="text-[11px] font-bold truncate" style={{ color: '#6b5a96' }}>Free looks for the season.</div>
       </div>
       <button type="button" className="candy candy-pink candy-sm" onClick={() => { done(); openDressUp({ kind: 'room', tab: 'season' }); }}><span className="candy-label">Yes!</span></button>
       <RoundIconButton icon="close" label="No thanks" size={22} onClick={done} className="-my-1" />

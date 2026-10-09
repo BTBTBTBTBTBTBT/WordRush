@@ -31,6 +31,17 @@ U = 640                 # body square px
 M = int(U * 0.5)        # margin around the body square
 CW = U + 2 * M
 FONT = '/System/Library/Fonts/Supplemental/Arial Black.ttf'
+# off macOS (cloud runs): the app's own letter font, Nunito at its Black weight
+NUNITO = os.path.join(REPO, 'apps', 'ios', 'Wordocious', 'Resources', 'Nunito.ttf')
+
+
+@lru_cache(None)
+def letter_font(size):
+    if os.path.exists(FONT):
+        return ImageFont.truetype(FONT, size)
+    f = ImageFont.truetype(NUNITO, size)
+    f.set_variation_by_name('Black')
+    return f
 COLORS = {'purple': '#7c3aed', 'teal': '#0d9488', 'amber': '#f5a524', 'pink': '#ec4899', 'sky': '#0ea5e9',
           'green': '#22c55e', 'orange': '#f97316', 'red': '#ef4444', 'slate': '#64748b', 'blue': '#2563eb',
           'mint': '#86efac', 'lilac': '#c4b5fd', 'navy': '#1e3a8a', 'yellow': '#eab308', 'white': '#f8fafc',
@@ -152,9 +163,27 @@ def face_letter_mask(body, eyes='beady', mouth='smile', letter='A', pad=0.012):
     return ndimage.binary_dilation(m, iterations=max(1, int(pad * U)))
 
 
+# 'rig': the integration pipeline's letter (h × 1.05, Arial Black on macOS) — what ship-integrated.py guarded.
+# 'app': the letter exactly as the apps draw it (apps/web/lib/avatar-render.ts: Nunito 900 at
+#        min(h / 0.74, w / 0.9) × 0.94, baseline at the box center + 0.36 em) — ~20% bigger; landmarks.py turns it on.
+LETTER_MODE = 'rig'
+
+
+@lru_cache(None)
+def app_font(size):
+    f = ImageFont.truetype(NUNITO, size)
+    f.set_variation_by_name('Black')
+    return f
+
+
 def draw_letter(c, b, letter, fill='white'):
     lx, ly, lw, lh = b['letterBox']
-    f = ImageFont.truetype(FONT, max(6, int(lh * U * 1.05)))
+    if LETTER_MODE == 'app':
+        fs = min(lh / 0.74, lw / 0.9) * 0.94
+        ImageDraw.Draw(c).text((P(lx + lw / 2), P(ly + lh / 2 + fs * 0.36)), letter, font=app_font(max(6, int(fs * U))),
+                               fill=fill, anchor='ms')
+        return
+    f = letter_font(max(6, int(lh * U * 1.05)))
     ImageDraw.Draw(c).text((P(lx + lw / 2), P(ly + lh / 2)), letter, font=f, fill=fill, anchor='mm')
 
 

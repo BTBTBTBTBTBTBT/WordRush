@@ -15,7 +15,7 @@
 //   node apps/web/scripts/hub/build-bank.mjs [--daily=400] [--extra=200]
 import fs from 'node:fs';
 import path from 'node:path';
-import { REPO, DATA, readJSON, rngFor, shuffle } from '../more-games/lib.mjs';
+import { REPO, DATA, readJSON, rngFor, shuffle, gateBank } from '../more-games/lib.mjs';
 
 const arg = (k, d) => Number((process.argv.find((a) => a.startsWith(`--${k}=`)) || '').split('=')[1] || d);
 const DAILY_COUNT = arg('daily', 400);
@@ -63,6 +63,8 @@ const extra = picked.slice(DAILY_COUNT).map(entry);
 
 const bank = { version: 1, epoch: EPOCH, daily, extra };
 const out = path.join(DATA, 'hub-puzzles.json');
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('hubbub', bank);
 fs.writeFileSync(out, JSON.stringify(bank) + '\n');
 const avg = (list, f) => (list.reduce((t, p) => t + f(p), 0) / list.length).toFixed(1);
 console.log(`daily ${daily.length}, extra ${extra.length}; avg words ${avg(daily, (p) => p.words.length)}, avg max ${avg(daily, (p) => p.max)}, avg bonus ${avg(daily, (p) => p.bonus.length)}`);

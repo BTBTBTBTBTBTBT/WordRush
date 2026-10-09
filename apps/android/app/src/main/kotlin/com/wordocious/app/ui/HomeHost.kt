@@ -206,7 +206,9 @@ internal fun HomeHost(
                 // A host, not a list tile: no frame ring around the mascot.
                 val drawn = remember(pick.config) { pick.config.copy(frame = "none") }
                 // BJ6 round 5: a full-body CUTOUT — no tile, backdrop, clip or frame (not a boxed sticker).
-                MascotAvatar(drawn, initial, size, motion, cutout = true)
+                // 10-06: the player's own host is the living mascot while AvatarLiveConfig.LIVING_MASCOT is on.
+                if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) LivingMascot(drawn, initial, size, motion, cutout = true, label = null)
+                else MascotAvatar(drawn, initial, size, motion, cutout = true)
             }
             HomeHostPick.W -> {
                 if (invite != null) {

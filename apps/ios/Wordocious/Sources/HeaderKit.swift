@@ -224,7 +224,7 @@ struct HeaderCircleButton: View {
 
     var body: some View {
         Button(action: action) { HeaderCircleLabel(glyph: glyph, size: size, tint: tint, iconSize: iconSize) }
-            .buttonStyle(.squishIcon)
+            .buttonStyle(RoundIconButtonStyle())   // 2.8 item 23: the family round icon
             .accessibilityLabel(label)
     }
 }

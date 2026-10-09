@@ -15,7 +15,7 @@
 //   node apps/web/scripts/cryptogram/build-bank.mjs [--daily=372]
 import fs from 'node:fs';
 import path from 'node:path';
-import { WEB, DATA, readJSON, simpleHash, rngFor, shuffle, wordset } from '../more-games/lib.mjs';
+import { WEB, DATA, readJSON, simpleHash, rngFor, shuffle, wordset, gateBank } from '../more-games/lib.mjs';
 
 const arg = (k, d) => Number((process.argv.find((a) => a.startsWith(`--${k}=`)) || '').split('=')[1] || d);
 const DAILY_COUNT = arg('daily', 372);
@@ -58,6 +58,8 @@ const daily = order.slice(0, DAILY_COUNT), extra = order.slice(DAILY_COUNT);
 for (const k of Object.keys(holiday)) holiday[k].sort((a, b) => a.id.localeCompare(b.id));
 const bank = { version: 1, epoch: EPOCH, daily, extra, holiday: Object.fromEntries(Object.keys(holiday).sort().map((k) => [k, holiday[k]])) };
 const out = path.join(DATA, 'cryptogram-puzzles.json');
+// Content gate (docs/CONTENT-SAFETY.md): refuses offensive / British-only / obscure words in unseen puzzles.
+await gateBank('codebreaker', bank);
 fs.writeFileSync(out, JSON.stringify(bank, null, 1) + '\n');
 console.log(`wrote ${out}: ${daily.length} daily (epoch ${EPOCH}), ${extra.length} extra, ${Object.keys(holiday).length} holidays / ${Object.values(holiday).flat().length} entries; ${rejects.length} rejected`);
 for (const [t, why] of rejects) console.log(`  REJECT ${JSON.stringify(t)} — ${why}`);

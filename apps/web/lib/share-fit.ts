@@ -24,9 +24,15 @@ export const SHARE_H_MAX = 1920;
 export const BOARD_W = Math.round(SHARE_W * 0.88);
 /** The gap between boards in a multi-board grid (~4% of the width). */
 export const MULTI_GAP = Math.round(SHARE_W * 0.04);
-/** Title art: ~70% of the width, never taller than this. */
-export const TITLE_MAX_W = Math.round(SHARE_W * 0.7);
-export const TITLE_MAX_H = 200;
+/**
+ * Title art (founder 10-06: the title was cut off at the top of the card): the
+ * FULL art, scaled to fit the card width inside these side margins and never
+ * taller than TITLE_MAX_H, pinned SHARE_SPACE.top below the card's top edge.
+ * Kept identical on iOS (ShareCardPlan.swift) and Android (ShareCard.kt).
+ */
+export const TITLE_MARGIN = 90;
+export const TITLE_MAX_W = SHARE_W - TITLE_MARGIN * 2;
+export const TITLE_MAX_H = 210;
 /** The lettered title's height when the art didn't load. */
 export const TITLE_FALLBACK_H = 96;
 
@@ -60,6 +66,29 @@ export function titleBoxHeight(natural: readonly [number, number] | null, maxW =
   if (!natural || !natural[0] || !natural[1]) return TITLE_FALLBACK_H;
   const [w, h] = natural;
   return Math.round(h * Math.min(maxW / w, maxH / h));
+}
+
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Where the title art is drawn: contain-fit in TITLE_MAX_W × `boxH`, centered on the card, at `top`. */
+export function titleRect(natural: readonly [number, number] | null, top: number, boxH = titleBoxHeight(natural)): Rect {
+  if (!natural || !natural[0] || !natural[1]) return { x: TITLE_MARGIN, y: top, w: TITLE_MAX_W, h: boxH };
+  const [nw, nh] = natural;
+  const k = Math.min(TITLE_MAX_W / nw, boxH / nh);
+  const w = nw * k;
+  const h = nh * k;
+  return { x: (SHARE_W - w) / 2, y: top + (boxH - h) / 2, w, h };
+}
+
+/** True when `r` sits fully on a SHARE_W × `height` card, inside the title margins, above `below`. */
+export function titleFitsCard(r: Rect, height: number, below = height): boolean {
+  return r.x >= TITLE_MARGIN - 0.5 && r.x + r.w <= SHARE_W - TITLE_MARGIN + 0.5
+    && r.y >= 0 && r.y + r.h <= Math.min(height, below) + 0.5;
 }
 
 // ── The cast wordmark (S3) ──────────────────────────────────────────────────

@@ -1,12 +1,22 @@
 package com.wordocious.app.ui
 
 import com.wordocious.app.data.AvatarCast
+import com.wordocious.core.AvatarAccess
+import com.wordocious.core.AvatarAccessConfig
+import com.wordocious.core.AvatarAccessContext
+import com.wordocious.core.AvatarAccessRoute
+import com.wordocious.core.AvatarAccessTable
 import com.wordocious.core.AvatarConfig
+import com.wordocious.core.AvatarEarnStats
 import com.wordocious.core.AvatarFit
 import com.wordocious.core.AvatarFitManifest
 import com.wordocious.core.AvatarOptions
+import com.wordocious.core.AvatarLiveConfig
+import com.wordocious.core.AvatarPoses
 import com.wordocious.core.AvatarPresets
 import com.wordocious.core.AvatarPart
+import com.wordocious.core.AvatarPartAccess
+import com.wordocious.core.AvatarSaveCheck
 import com.wordocious.core.AvatarSeason
 import com.wordocious.core.LevelTier
 import com.wordocious.core.enforceAvatarPro
@@ -44,8 +54,21 @@ enum class BuilderTab(val label: String) {
  */
 data class BuilderOption(val slot: String, val id: String)
 
+/**
+ * One row of the Locked card (docs/cloud-prompts/11): [kind] "earn" | "pro" | "buy" | "season", the core line
+ * ("Buy $2.99", "Included with Pro", "Earn: … (12 / 30)", "Free during Halloween") and, for an earn condition
+ * with a target above 1, its progress (0..1) for the bar.
+ */
+data class LockedCardRow(val kind: String, val text: String, val progress: Float? = null)
+
 object MascotBuilderLogic {
     const val NONE = "none"
+
+    /**
+     * Item gating (core AvatarAccess, behind AvatarAccessConfig.ITEM_GATING — OFF): the access table (set by the screen
+     * from the bundled avatar-access.json, only while the flag is on). Null = no gating anywhere in the maker.
+     */
+    @Volatile var accessTable: AvatarAccessTable? = null
 
     /** The fit manifest (set by the screen from the bundled avatar-parts.json): conflicting picks swap out. */
     @Volatile var fit: AvatarFitManifest? = null
@@ -66,6 +89,16 @@ object MascotBuilderLogic {
 
     /** The season's shelf (hats first). */
     fun shelf(): List<BuilderOption> = fit?.let { m -> AvatarSeason.shelf(season, m).map { BuilderOption(it.field, it.id) } } ?: emptyList()
+
+    /**
+     * 10-06 the Dressing Room's Pose tab (shown only while AvatarLiveConfig.LIVING_MASCOT is on; not a BuilderTab so
+     * the builder's tabs stay as they are with the flag off): every pose, "none" (the body as drawn) first.
+     */
+    fun poseOptions(): List<BuilderOption> = if (AvatarLiveConfig.LIVING_MASCOT) AvatarPoses.IDS.map { BuilderOption("pose", it) } else emptyList()
+
+    /** A pose's label ("Wave", "Hands on hips"; "No pose" for none). */
+    fun poseLabel(id: String): String =
+        if (id == NONE) "No pose" else AvatarPoses.data?.poses?.get(id)?.label ?: id.replaceFirstChar { it.uppercaseChar() }
 
     /** The swatch slots (glossy round grid, grouped by row). */
     val SWATCH_SLOTS = setOf("color", "patternColor", "accColor")
@@ -136,6 +169,7 @@ object MascotBuilderLogic {
             "extras" -> config.copy(face = NONE, neck = NONE, held = NONE, wrap = NONE, feet = NONE, pet = NONE, brows = NONE, extra = NONE)
             "bg" -> config.copy(bg = o.id)
             "frame" -> config.copy(frame = o.id)
+            "pose" -> config.copy(pose = if (o.id in AvatarPoses.IDS) o.id else NONE)
             else -> config
         }
         return if (o.slot == "frame") c else c.copy(display = AvatarOptions.DISPLAY_MASCOT)
@@ -167,6 +201,7 @@ object MascotBuilderLogic {
         "extras" -> config.face == NONE && config.neck == NONE && INTEGRATED_SLOTS.all { AvatarFit.value(config, it) == NONE }
         "bg" -> config.bg == o.id
         "frame" -> config.frame == o.id
+        "pose" -> config.pose == o.id
         else -> false
     }
 
@@ -205,6 +240,69 @@ object MascotBuilderLogic {
         var c = enforceAvatarPro(validateAvatar(config, config), isPro)
         if (tierLocked(BuilderOption("frame", c.frame), level)) c = c.copy(frame = NONE)
         return c
+    }
+
+    // ── Item gating (docs/cloud-prompts/11; core AvatarAccess). Every helper is a no-op while the flag is OFF. ──
+
+    /** True when the maker gates items: the flag is on and the table + fit manifest are loaded. */
+    fun gatingOn(): Boolean = AvatarAccessConfig.ITEM_GATING && accessTable != null && fit != null
+
+    /** The earn evaluator's stats from the profile (level, current_streak, best_streak, best_daily_login_streak) + achievements. */
+    fun earnStats(level: Int, currentStreak: Int, bestStreak: Int, bestLoginStreak: Int, achievements: Collection<String>?): AvatarEarnStats =
+        AvatarEarnStats(level.toDouble(), currentStreak.toDouble(), bestStreak.toDouble(), bestLoginStreak.toDouble(), achievements?.toList())
+
+    /**
+     * Who is saving: Pro, what they own (TODO: load my_owned_items, docs/sql/20261010-owned-items.sql — not applied
+     * yet, so nothing is owned), their stats, the SAVED look (grandfathered), today and the maker's season (the admin
+     * preview, else the calendar's — like [available]).
+     */
+    fun accessContext(
+        isPro: Boolean,
+        stats: AvatarEarnStats?,
+        saved: AvatarConfig?,
+        owned: List<String> = emptyList(),
+        date: String = AvatarSeason.today(),
+        gating: Boolean = AvatarAccessConfig.ITEM_GATING,
+    ): AvatarAccessContext = AvatarAccessContext(isPro, owned, stats, date, season ?: "none", saved, gating)
+
+    /** The access of the part a tile sets (null for presets / the Extras None, which aren't parts, or with no table). */
+    fun partAccess(o: BuilderOption, ctx: AvatarAccessContext): AvatarPartAccess? {
+        val table = accessTable ?: return null
+        val m = fit ?: return null
+        if (o.slot == "preset" || o.slot == "extras") return null
+        return AvatarAccess.partAccess(AvatarPart(o.slot, o.id), ctx, table, m)
+    }
+
+    /** A locked tile: dimmed with the lock tag, still tappable (try-on). Never while gating is off. */
+    fun itemLocked(o: BuilderOption, ctx: AvatarAccessContext?): Boolean =
+        ctx != null && ctx.gating && partAccess(o, ctx)?.unlocked == false
+
+    /** The save check on the look (try-on rule), or null when gating is off (nothing to check). */
+    fun saveCheck(look: AvatarConfig, ctx: AvatarAccessContext): AvatarSaveCheck? {
+        val table = accessTable ?: return null
+        val m = fit ?: return null
+        if (!ctx.gating) return null
+        return AvatarAccess.saveCheck(validateAvatar(look, look), ctx, table, m)
+    }
+
+    /** "Save without it": the look with every locked part reverted (core enforce: the saved value, else the free default). */
+    fun saveWithout(look: AvatarConfig, ctx: AvatarAccessContext): AvatarConfig {
+        val table = accessTable ?: return look
+        val m = fit ?: return look
+        return AvatarAccess.enforce(validateAvatar(look, look), ctx, table, m)
+    }
+
+    /**
+     * What Save writes. Gating off (today): [sanitize] (Pro items for Pro players, tier frames by level). Gating on:
+     * core enforce — an earned / owned / grandfathered part stays even without Pro.
+     */
+    fun saveLook(config: AvatarConfig, isPro: Boolean, level: Int, ctx: AvatarAccessContext?): AvatarConfig =
+        if (ctx != null && ctx.gating && accessTable != null && fit != null) saveWithout(config, ctx) else sanitize(config, isPro, level)
+
+    /** The Locked card's rows in core order (earn · pro · buy · season), with the earn progress bar's fraction. */
+    fun lockedRows(access: AvatarPartAccess): List<LockedCardRow> = AvatarAccess.sortedRoutes(access).map { r ->
+        val progress = (r as? AvatarAccessRoute.Earn)?.progress?.takeIf { it.target > 1 }?.let { it.current.toFloat() / it.target }
+        LockedCardRow(r.kind, AvatarAccess.routeLine(r), progress)
     }
 
     /**
@@ -262,11 +360,13 @@ object MascotBuilderLogic {
             "head" -> "No hat"
             "extras", "face", "neck" -> "No extras"
             "frame" -> "No frame"
+            "pose" -> "No pose"
             else -> "None"
         }
         return when (o.slot) {
             "preset" -> AvatarCast.name(o.id) ?: o.id.uppercase()
             "bg" -> if (o.id == "auto") "Auto" else o.id.replaceFirstChar { it.uppercaseChar() }
+            "pose" -> poseLabel(o.id)
             else -> o.id.replace('-', ' ').replaceFirstChar { it.uppercaseChar() }
         }
     }

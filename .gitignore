@@ -50,3 +50,4 @@ apps/web/scripts/propernoundle-validation.json
 
 # BJ3 perf tour reports (scripts/web-perf-tour.mjs)
 .perf/
+apps/web/e2e/.contrast-report.json
