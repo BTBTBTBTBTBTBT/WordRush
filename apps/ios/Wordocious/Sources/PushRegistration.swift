@@ -1,6 +1,7 @@
 import UIKit
 import SwiftUI
 import UserNotifications
+import WordociousCore
 
 /// APNs device-token capture (groundwork for remote push / lifecycle
 /// messaging). Registration + storage only: tokens land in the
@@ -14,6 +15,7 @@ final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNot
         // Route push taps (VS challenges carry `url: /vs/challenge/<code>`, the
         // "someone's looking" ping `url: /vs/live/<MODE>`).
         UNUserNotificationCenter.current().delegate = self
+        PushActions.register()   // item 34: the long-press card's Play / Later actions
         #if DEBUG
         PerfTour.bootIfRequested()   // FINISH_SPEC BJ3: `-perfTour` (docs/PERF_HARNESS.md)
         StoreDemo.bootIfRequested()  // `-storeDemo`: canned signed-in world for store screenshots
@@ -26,6 +28,11 @@ final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNot
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
+        // Item 34: "Later" on the long-press card just dismisses; Play and a plain tap open the exact game.
+        if response.actionIdentifier == PushRich.actionLater {
+            completionHandler()
+            return
+        }
         if let path = response.notification.request.content.userInfo["url"] as? String {
             Task { @MainActor in DeepLink.shared.handle(pushPath: path) }
         }
@@ -54,6 +61,22 @@ final class PushRegistrationDelegate: NSObject, UIApplicationDelegate, UNUserNot
     func application(_ application: UIApplication,
                      didFailToRegisterForRemoteNotificationsWithError error: Error) {
         // Simulators and denied-permission devices land here — non-fatal.
+    }
+}
+
+/// Item 34: the notification category the content extension (the long-press card) shows its Play / Later
+/// actions for. Registered at every launch (the category set replaces, never accumulates).
+enum PushActions {
+    static func register() {
+        let play = UNNotificationAction(identifier: PushRich.actionPlay, title: "Play", options: [.foreground])
+        let later = UNNotificationAction(identifier: PushRich.actionLater, title: "Later", options: [])
+        let rich = UNNotificationCategory(identifier: PushRich.category, actions: [play, later],
+                                          intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().getNotificationCategories { existing in
+            var all = existing.filter { $0.identifier != PushRich.category }
+            all.insert(rich)
+            UNUserNotificationCenter.current().setNotificationCategories(all)
+        }
     }
 }
 

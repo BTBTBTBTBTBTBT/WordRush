@@ -53,6 +53,12 @@ targets:
     dependencies:
       - target: WordociousWidget
         embed: true
+      # 2.8 item 34: rich push. Service extension = the sender's mascot as a Communication Notification avatar +
+      # the game-art thumbnail; content extension = the long-press card (art + both mascots + score).
+      - target: WordociousPushService
+        embed: true
+      - target: WordociousPushContent
+        embed: true
       - package: WordociousCore
         product: WordociousCore
       - package: Supabase
@@ -89,6 +95,9 @@ targets:
           - UIInterfaceOrientationPortrait
         UIAppFonts:
           - Nunito.ttf
+        # Communication Notifications (item 34): the app must declare the intent it donates.
+        NSUserActivityTypes:
+          - INSendMessageIntent
         CFBundleURLTypes:
           - CFBundleURLName: com.wordocious.app.auth
             CFBundleURLSchemes:
@@ -203,6 +212,81 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "Wordocious Widgets App Store LLC"
+
+  # ── 2.8 item 34: rich push ─────────────────────────────────────────────────────
+  WordociousPushService:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: WordociousPushService/Sources
+      - path: Sources/Core/PushRich.swift
+    info:
+      path: WordociousPushService/Info.plist
+      properties:
+        CFBundleDisplayName: Wordocious
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wordocious.app.pushservice
+        PRODUCT_NAME: WordociousPushService
+        DEVELOPMENT_TEAM: Q32F6GRDYG
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: WordociousPushService/WordociousPushService.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "2.7.1"
+        CURRENT_PROJECT_VERSION: "245"
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+      configs:
+        Release:  # needs an App Store profile created for com.wordocious.app.pushservice (see docs/PUSH_RICH_SETUP.md)
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "Wordocious PushService App Store"
+
+  WordociousPushContent:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: WordociousPushContent/Sources
+      - path: WordociousPushContent/Assets.xcassets
+      - path: Sources/Core/PushRich.swift
+    info:
+      path: WordociousPushContent/Info.plist
+      properties:
+        CFBundleDisplayName: Wordocious
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.content-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationViewController
+          NSExtensionAttributes:
+            UNNotificationExtensionCategory: WORDOCIOUS_GAME
+            UNNotificationExtensionInitialContentSizeRatio: 0.55
+            UNNotificationExtensionDefaultContentHidden: true
+            UNNotificationExtensionUserInteractionEnabled: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wordocious.app.pushcontent
+        PRODUCT_NAME: WordociousPushContent
+        DEVELOPMENT_TEAM: Q32F6GRDYG
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: WordociousPushContent/WordociousPushContent.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "2.7.1"
+        CURRENT_PROJECT_VERSION: "245"
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "Wordocious PushContent App Store"
 
 schemes:
   Wordocious:
