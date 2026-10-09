@@ -264,7 +264,6 @@
   73.333% { transform: translate3d(var(--me-x, 124vw), var(--me-y, 20vh), 0); opacity: 0.95; }
   73.36%, 100% { transform: translate3d(var(--me-x, 124vw), var(--me-y, 20vh), 0); opacity: 0; }
 }
-}
 .ambient[data-still="true"] .amb-item { animation: none; top: var(--y); }
 .ambient[data-still="true"] .amb-bat { animation: none; transform: translate3d(70vw, 0, 0); }
 .ambient[data-still="true"] .amb-witch { animation: none; opacity: 0; }
