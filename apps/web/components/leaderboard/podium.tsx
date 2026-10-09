@@ -1,3 +1,6 @@
+'use client';
+
+import * as React from 'react';
 import Link from 'next/link';
 import { openDressUp } from '@/components/profile/dress-up';
 import type { ReactNode } from 'react';
@@ -5,6 +8,8 @@ import { Icon3D } from '@/components/ui/icon3d';
 import { SoftNum } from '@/components/ui/soft-number';
 import { type BoardAvatarData } from '@/components/leaderboard/board-rows';
 import { PodiumFigure } from '@/components/leaderboard/podium-figure';
+import { PodiumStageCard } from '@/components/leaderboard/podium-stage-card';
+import { useLivingMascotOn } from '@/hooks/use-flags';
 import { LevelBadge } from '@/components/badges/badge-art';
 import { PODIUM_STEP_HEIGHT, PODIUM_TONE_PLACE, podiumColumn, podiumPedestalArt, podiumSlots, podiumTone, type PodiumTone } from '@/lib/leaderboard-podium';
 import { alphaHex } from '@/lib/soft-surface';
@@ -115,19 +120,12 @@ function Step({ tone, rank, dim = false }: { tone: PodiumTone; rank: number; dim
 function Column({ place, index }: { place: PodiumPlace; index: number }) {
   const tone = podiumTone(place.rank);
   const first = tone === 'gold';
-  return (
-    <div className="relative flex flex-col items-center min-w-0" style={{ gap: 4, gridColumn: podiumColumn(index), gridRow: 1 }}>
-      <span className="sr-only">Rank {place.rank}</span>
-      {place.isMe ? (
-        // Founder 10-05 (door 1): your own place opens your Stage.
-        <button type="button" onClick={() => openDressUp()} aria-label="Dress up your mascot" className="block border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
-          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} ring="#f59e0b" />
-        </button>
-      ) : (
-        <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
-          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} />
-        </Link>
-      )}
+  // 2.8 item 13 (behind the living mascot switch): the name + points ride on a soft plaque overlapping the step,
+  // the winner's spot opens with a confetti burst, and tapping another player's mascot opens their mini Stage card.
+  const livingOn = useLivingMascotOn();
+  const [stageOpen, setStageOpen] = React.useState(false);
+  const info = (
+    <>
       <Link
         href={`/profile/${place.userId}`}
         className="max-w-full truncate text-[13px] font-black leading-tight hover:opacity-80 transition-opacity"
@@ -143,7 +141,33 @@ function Column({ place, index }: { place: PodiumPlace; index: number }) {
       </div>
       {place.extra}
       {place.action}
+    </>
+  );
+  return (
+    <div className="relative flex flex-col items-center min-w-0" style={{ gap: 4, gridColumn: podiumColumn(index), gridRow: 1 }}>
+      <span className="sr-only">Rank {place.rank}</span>
+      {livingOn && first && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img aria-hidden="true" alt="" src="/art/celebrate-burst-party.webp" width={150} draggable={false}
+          className="podium-burst absolute pointer-events-none" style={{ left: '50%', top: 0, marginLeft: -75, zIndex: 0 }} />
+      )}
+      {place.isMe || livingOn ? (
+        // Founder 10-05 (door 1): your own place opens your Stage; with the living mascot on, anyone else's opens their mini Stage card.
+        <button type="button" onClick={() => (place.isMe ? openDressUp() : setStageOpen(true))}
+          aria-label={place.isMe ? 'Dress up your mascot' : `${place.username}: open their stage`}
+          className="block border-0 bg-transparent p-0 cursor-pointer" style={{ lineHeight: 0 }}>
+          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} ring={place.isMe ? '#f59e0b' : undefined} />
+        </button>
+      ) : (
+        <Link href={`/profile/${place.userId}`} tabIndex={-1} aria-hidden="true" className="block" style={{ lineHeight: 0 }}>
+          <PodiumFigure place={place} tone={PODIUM_TONE_PLACE[tone]} size={first ? 54 : 44} />
+        </Link>
+      )}
+      {livingOn ? (
+        <div className="podium-plaque relative flex flex-col items-center max-w-full" style={{ gap: 2, padding: '4px 10px', marginBottom: -12, zIndex: 2 }}>{info}</div>
+      ) : info}
       <Step tone={tone} rank={place.rank} />
+      {livingOn && !place.isMe && <PodiumStageCard place={place} tone={PODIUM_TONE_PLACE[tone]} open={stageOpen} onOpenChange={setStageOpen} />}
     </div>
   );
 }

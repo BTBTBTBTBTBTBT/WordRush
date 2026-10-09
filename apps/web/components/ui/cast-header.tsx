@@ -12,6 +12,7 @@ import { CROWN_DROP_EVENT } from '@/lib/pro-welcome';
 import { CAST_FLOURISH_ATTR, INTRO_RUNNING_ATTR } from '@/lib/intro';
 import { ProCrownSheet } from '@/components/pro/pro-crown-sheet';
 import { puppetBox, tapKeyframes, useCastPuppets } from '@/components/ui/cast-puppets';
+import { MASCOT_MOMENT_EVENT } from '@/lib/living-mascot';
 import { haptic } from '@/lib/haptics';
 import { castLaugh, castNote } from '@/lib/sounds';
 import { MELODY_START, MUSICAL_POP_KEYS, MUSICAL_TIMING, melodyTap, musicalTransformDelays, type MelodyState } from '@wordle-duel/core';
@@ -72,6 +73,27 @@ export function CastHeader({ crown = false, ground = false, className = '', styl
   const puppetsOn = puppets.ready && season === null;
   const puppetsOnRef = useRef(puppetsOn);
   puppetsOnRef.current = puppetsOn;
+  // 2.8 item 13: when your mascot celebrates a Sweep / Flawless the whole cast hops with it (the living mascot switch gates
+  // the event itself; Reduce Motion: nothing).
+  useEffect(() => {
+    const onMoment = (e: Event) => {
+      const kind = (e as CustomEvent<{ kind?: string }>).detail?.kind;
+      if (kind !== 'sweep' && kind !== 'flawless') return;
+      const row = rowRef.current;
+      if (!row || prefersReducedMotion() || document.visibilityState !== 'visible') return;
+      if (puppetsOnRef.current) { puppets.cheer(CAST); return; }
+      // out of season / no puppets: a light WAAPI hop on each figure (transform only), rippling out
+      if (!puppets.bundle) return;
+      const keys = tapKeyframes(puppets.bundle.tap, 12 * (puppets.bundle.tap.hop / 110));
+      CAST.forEach((id, i) => {
+        const el = row.querySelector<HTMLElement>(`[data-cast="${id}"]`);
+        if (el && typeof el.animate === 'function') el.animate(keys, { duration: puppets.bundle!.tap.dur * 1000, delay: i * 70, easing: 'linear' });
+      });
+    };
+    window.addEventListener(MASCOT_MOMENT_EVENT, onMoment);
+    return () => window.removeEventListener(MASCOT_MOMENT_EVENT, onMoment);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [puppets.cheer, puppets.bundle]);
   // The musical cast (see above).
   const [musical, setMusical] = useState(false);
   const [rippleFrom, setRippleFrom] = useState<string>('w');

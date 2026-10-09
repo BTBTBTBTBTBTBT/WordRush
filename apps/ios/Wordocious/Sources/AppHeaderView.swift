@@ -401,6 +401,25 @@ struct LivingCastHeader: View {
         .onAppear { onScreen = true }
         .onDisappear { onScreen = false }
         .task { await runMoves() }
+        // 2.8 item 13: when your mascot celebrates a Sweep / Flawless the whole cast hops with it (the living mascot switch gates
+        // the post itself; Reduce Motion / Low Power: nothing).
+        .onReceive(NotificationCenter.default.publisher(for: .mascotMoment)) { note in
+            if let kind = note.userInfo?["kind"] as? String { cheerCast(kind) }
+        }
+    }
+
+    /// A quick ripple of hops across the cast (every third also plays its signature move on the rig).
+    private func cheerCast(_ kind: String) {
+        guard kind == "sweep" || kind == "flawless", onScreen, !still, !Motion.lowPower else { return }
+        let dur = CastPuppets.shared.bundle?.tap.dur ?? 1
+        for (i, m) in Mascots.cast.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.07) {
+                let now = Date()
+                puppetTap[m] = now
+                if puppetsOn, i % 3 == 0, puppetGesture[m] == nil { startGesture(m, at: now) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + dur + 0.05) { if puppetTap[m] == now { puppetTap[m] = nil } }
+            }
+        }
     }
 
     private func row(_ s: CGFloat, now: Date) -> some View {

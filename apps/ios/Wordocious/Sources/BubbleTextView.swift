@@ -21,13 +21,15 @@ struct BubbleLineView: View {
     var names: [String] = []
     var animated: Bool = true
     var alignment: TextAlignment = .center
+    /// 2.8 item 13: tapping a letter bounces it and your host mascot reacts (Home's headline only).
+    var interactive: Bool = false
 
     var body: some View {
         // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
         if BubbleText.atlasCovers(text) && FlagsService.shared.isLive("bubble_atlas") {
             // The fit measured the line at `size * Dynamic Type`; draw the atlas at that same size.
             let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
-            BubbleAtlasLine(text: text, size: size * dyn, palette: palette, names: names, alignment: alignment)
+            BubbleAtlasLine(text: text, size: size * dyn, palette: palette, names: names, alignment: alignment, interactive: interactive)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(text)
                 .accessibilityAddTraits(.isHeader)
@@ -48,6 +50,7 @@ private struct BubbleAtlasLine: View {
     let palette: HeadlinePalette
     let names: [String]
     let alignment: TextAlignment
+    var interactive: Bool = false
     @Environment(\.accessibilityReduceMotion) private var envReduceMotion
 
     var body: some View {
@@ -61,7 +64,7 @@ private struct BubbleAtlasLine: View {
                 let tint: (Color, Color) = kind == .number ? (palette.numberTop, palette.numberBottom)
                     : (kind == .name ? (palette.nameTop, palette.nameBottom) : (palette.top, palette.bottom))
                 BubbleGlyphView(stem: g.stem, w: CGFloat(g.w) * cap, h: CGFloat(g.h) * cap,
-                                f0: g.y - (layout.asc - 1), f1: g.y + g.h - (layout.asc - 1), top: tint.0, bottom: tint.1)
+                                f0: g.y - (layout.asc - 1), f1: g.y + g.h - (layout.asc - 1), top: tint.0, bottom: tint.1, interactive: interactive)
                     .modifier(BubbleGlyphPop(index: i, still: still))
                     // Keyed by position + glyph: only a glyph that CHANGED remounts and pops.
                     .id("\(i)-\(g.stem)-\(g.ci)")
@@ -91,11 +94,28 @@ private struct BubbleGlyphView: View {
     let f1: Double
     let top: Color
     let bottom: Color
+    var interactive: Bool = false
+    @State private var hopped = false
+    @Environment(\.accessibilityReduceMotion) private var envReduceMotion
 
     var body: some View {
         if let ui = BubbleGlyphTint.glyph(stem: stem, width: w, height: h, f0: f0, f1: f1, top: top, bottom: bottom) {
             Image(uiImage: ui).resizable().interpolation(.high).frame(width: w, height: h)
                 .shadow(color: Color(hex: 0x1E0A46).opacity(0.2), radius: 1.5, x: 0, y: 1.5)
+                .scaleEffect(hopped ? 1.38 : 1, anchor: .bottom)
+                .contentShape(Rectangle())
+                .allowsHitTesting(interactive)
+                .onTapGesture {
+                    guard interactive else { return }
+                    Haptics.tap()
+                    // your host mascot answers the tap (a no-op while the living mascot is off)
+                    MascotMoment.post(.progress)
+                    guard !Motion.calm(envReduceMotion) else { return }
+                    withAnimation(.spring(response: 0.18, dampingFraction: 0.42)) { hopped = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.5)) { hopped = false }
+                    }
+                }
         } else {
             Color.clear.frame(width: w, height: h)
         }

@@ -126,6 +126,20 @@ fun HomeBannerView(
     val slots = bannerSlots(word.progress, puzzles.progress, word.streaks, puzzles.streaks, unlimited)
     val double = wTier == BannerTier.FLAWLESS && pTier == BannerTier.FLAWLESS
     val dailyDouble = dailyWTier == BannerTier.FLAWLESS && dailyPTier == BannerTier.FLAWLESS
+    // 2.8 item 13: when the day's counter grew while Home was away (7 -> 8 OF 18), the host mascot reacts as Home returns.
+    run {
+        val played = word.progress.played + puzzles.progress.played
+        val tabHidden = LocalTabHidden.current.value
+        var seen by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(-1) }
+        androidx.compose.runtime.LaunchedEffect(played, tabHidden) {
+            if (tabHidden) return@LaunchedEffect
+            if (seen in 0 until played) {
+                kotlinx.coroutines.delay(450)
+                com.wordocious.app.data.MascotMoments.emit(com.wordocious.core.AvatarReaction.PROGRESS)
+            }
+            seen = played
+        }
+    }
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
     // Both modes' words are laid out (one invisible) so their slots never resize on the toggle.
     // 2.8 items 7 + 48: a finished row speaks to its streak ("FLAWLESS 3-PEAT!"); the day's variant is picked by date.
@@ -750,6 +764,7 @@ private fun BannerHeadlineLayer(
                         // A gold name line is the name itself (no second accent inside it).
                         names = if (gold) emptyList() else nameList,
                         sound = active && i == 0,
+                        interactive = active,
                     )
                 }
                 if (i == 0) GoldSparkle(HOME_SPARKLE) else Spacer(Modifier.width(HOME_SPARKLE))

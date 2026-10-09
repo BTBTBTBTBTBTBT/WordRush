@@ -9,6 +9,7 @@ import {
   bubbleAtlasCovers, bubbleAtlasLayout, bubbleFit, headlineTokens,
 } from '@wordle-duel/core';
 import { tintedGlyph } from '@/lib/bubble-render';
+import { emitMascotMoment } from '@/lib/living-mascot';
 import { darken, softMix } from '@/lib/soft-surface';
 import { useFlags } from '@/hooks/use-flags';
 import { LiveHeadline, type LiveHeadlineProps } from '@/components/ui/live-headline';
@@ -45,6 +46,8 @@ export function useElementWidth(ref: React.RefObject<HTMLElement>): number {
 export interface BubbleLineProps extends Omit<LiveHeadlineProps, 'size'> {
   /** The lettering size in px (the fit's output). */
   size: number;
+  /** 2.8 item 13: tapping a letter bounces it and your host mascot reacts (Home's headline only). */
+  interactive?: boolean;
 }
 
 /**
@@ -67,7 +70,7 @@ export const BubbleLine = memo(function BubbleLine(props: BubbleLineProps) {
 type Tint = { top: string; bottom: string };
 
 /** The atlas line: one small tinted canvas per glyph, absolutely placed from core's layout (cap units). */
-function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, level = 2, className = '', style, align = 'center' }: BubbleLineProps) {
+function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, level = 2, className = '', style, align = 'center', interactive = false }: BubbleLineProps) {
   const base = spec ?? HEADLINE_PALETTES[palette];
   const p = accent ? { ...base, top: softMix(accent, 0.55), bottom: accent, deep: darken(accent, 0.45) } : base;
   const layout = useMemo(() => bubbleAtlasLayout(text), [text]);
@@ -106,16 +109,18 @@ function BubbleAtlasLine({ text, size, palette = 'home', spec, accent, names, le
           tint={tintFor(kinds[g.ci])}
           dpr={dpr}
           index={i}
+          interactive={interactive}
         />
       ))}
     </span>
   );
 }
 
-function BubbleGlyph({ stem, left, top, w, h, f0, f1, tint, dpr, index }: {
-  stem: string; left: number; top: number; w: number; h: number; f0: number; f1: number; tint: Tint; dpr: number; index: number;
+function BubbleGlyph({ stem, left, top, w, h, f0, f1, tint, dpr, index, interactive }: {
+  stem: string; left: number; top: number; w: number; h: number; f0: number; f1: number; tint: Tint; dpr: number; index: number; interactive: boolean;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const [hop, setHop] = useState(false);
   // Never render more pixels than the source art has (cap 140 px).
   const pxW = Math.max(1, Math.round(Math.min(w * dpr, BUBBLE_ATLAS_METRICS[stem][0] * BUBBLE_ATLAS_CAP_PX)));
   const pxH = Math.max(1, Math.round(Math.min(h * dpr, BUBBLE_ATLAS_METRICS[stem][1] * BUBBLE_ATLAS_CAP_PX)));
@@ -132,7 +137,21 @@ function BubbleGlyph({ stem, left, top, w, h, f0, f1, tint, dpr, index }: {
       .catch(() => {});
     return () => { dead = true; };
   }, [stem, pxW, pxH, f0, f1, tint.top, tint.bottom]);
-  return <canvas ref={ref} className="bt-glyph" aria-hidden="true" style={{ left, top, width: w, height: h, ['--i' as string]: index } as CSSProperties} />;
+  const onTap = () => {
+    if (!interactive) return;
+    emitMascotMoment('progress');   // your host mascot answers the tap (a no-op while the living mascot is off)
+    setHop(true);
+    setTimeout(() => setHop(false), 260);
+  };
+  return (
+    <canvas
+      ref={ref}
+      className={`bt-glyph${hop ? ' bt-hop' : ''}${interactive ? ' bt-tap' : ''}`}
+      aria-hidden="true"
+      onClick={interactive ? onTap : undefined}
+      style={{ left, top, width: w, height: h, ['--i' as string]: index } as CSSProperties}
+    />
+  );
 }
 
 export interface BubbleTextProps extends Omit<LiveHeadlineProps, 'size' | 'text'> {

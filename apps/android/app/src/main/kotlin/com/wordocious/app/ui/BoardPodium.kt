@@ -11,8 +11,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -216,6 +232,9 @@ fun BoardPodium(
 ) {
     val byPlace = spots.associateBy { it.place }
     val dark = WTheme.isDark
+    // 2.8 item 13: tapping another player's standing mascot opens their mini Stage card.
+    var stageSpot by remember { mutableStateOf<BoardPodiumSpot?>(null) }
+    stageSpot?.let { PodiumStageCard(it, it.place) { stageSpot = null } }
     Box(modifier.fillMaxWidth().podiumStage(accent, dark).padding(start = 10.dp, end = 10.dp, top = 8.dp)) {
     PodiumFloor(Modifier.align(Alignment.BottomCenter))
     Row(
@@ -227,10 +246,14 @@ fun BoardPodium(
             val s = byPlace[place]
             val a = if (place == 1) avatar * 1.22f else avatar
             val stepH = when (place) { 1 -> 74.dp; 2 -> 54.dp; else -> 40.dp }
+            val stands = s != null && podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
+            val opensCard = stands && s != null && !com.wordocious.app.data.PlayerAvatars.isOwn(s.userId, s.username ?: s.name)
             Column(
                 Modifier.weight(1f).then(
                     when {
-                        s?.onClick != null -> Modifier.squishClickable(label = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}${s.detail?.let { ", $it" } ?: ""}") { s.onClick.invoke() }
+                        s != null && (opensCard || s.onClick != null) -> Modifier.squishClickable(label = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}${s.detail?.let { ", $it" } ?: ""}${if (opensCard) ". Opens their stage" else ""}") {
+                            if (opensCard) stageSpot = s else s.onClick?.invoke()
+                        }
                         s != null -> Modifier.semantics(mergeDescendants = true) { contentDescription = "${podiumPlaceWord(place)} place, ${s.name}, ${s.points}${s.detail?.let { ", $it" } ?: ""}" }
                         place in open -> Modifier.semantics(mergeDescendants = true) {
                             contentDescription = "${podiumPlaceWord(place)} place, open spot"
@@ -243,9 +266,10 @@ fun BoardPodium(
             ) {
                 if (s != null) {
                     // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step (2x, no tile, posed by place).
-                    val stands = podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
                     if (stands) {
-                        Box(Modifier.padding(bottom = 0.dp).offset(y = PODIUM_FOOT_OVERLAP), contentAlignment = Alignment.TopCenter) {
+                        Box(Modifier.padding(bottom = 0.dp).offset(y = PODIUM_FOOT_OVERLAP).zIndex(1f), contentAlignment = Alignment.TopCenter) {
+                            // the winner's confetti burst opens once on load
+                            if (place == 1) PodiumBurst()
                             PlayerAvatar(
                                 s.username ?: s.name, a * PODIUM_FIGURE_SCALE, Modifier,
                                 userId = s.userId, avatarUrl = s.avatarUrl, config = s.config, castId = s.castId,
@@ -262,21 +286,33 @@ fun BoardPodium(
                         )
                         if (place == 1) Icon3D(Icon3DName.CROWN, 26.dp)
                     }
-                    Text(
-                        s.name, fontSize = 13.sp, fontWeight = FontWeight.Black,
-                        color = if (dark) WTheme.text else FinishInk.heading,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                    )
-                    // Points stay the headline (#1 a touch larger), then ONE muted detail line,
-                    // shrink-to-fit, never wrapping into the pedestal.
-                    SoftNumber(s.points, if (place == 1) 14.5.sp else 13.sp)
-                    s.detail?.takeIf { it.isNotEmpty() }?.let { d ->
-                        FitText(
-                            d, 10.sp, Modifier.fillMaxWidth().padding(top = 0.dp).offset(y = (-2).dp),
-                            color = (if (dark) WTheme.textMuted else LB_SUB_INK).copy(alpha = if (place == 1) 1f else 0.85f),
-                            fontWeight = if (place == 1) FontWeight.ExtraBold else FontWeight.Bold,
-                            textAlign = TextAlign.Center, minScale = 0.6f,
+                    // Name, points and detail ride on a soft plaque overlapping the step's top edge when the figure stands.
+                    Column(
+                        (if (stands) {
+                            Modifier.zIndex(2f)
+                                .layout { m, c -> val pl = m.measure(c); layout(pl.width, pl.height - 12.dp.roundToPx()) { pl.place(0, 0) } }
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (dark) WTheme.surface.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.72f))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        } else Modifier),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            s.name, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                            color = if (dark) WTheme.text else FinishInk.heading,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                         )
+                        // Points stay the headline (#1 a touch larger), then ONE muted detail line,
+                        // shrink-to-fit, never wrapping into the pedestal.
+                        SoftNumber(s.points, if (place == 1) 14.5.sp else 13.sp)
+                        s.detail?.takeIf { it.isNotEmpty() }?.let { d ->
+                            FitText(
+                                d, 10.sp, Modifier.fillMaxWidth().padding(top = 0.dp).offset(y = (-2).dp),
+                                color = (if (dark) WTheme.textMuted else LB_SUB_INK).copy(alpha = if (place == 1) 1f else 0.85f),
+                                fontWeight = if (place == 1) FontWeight.ExtraBold else FontWeight.Bold,
+                                textAlign = TextAlign.Center, minScale = 0.6f,
+                            )
+                        }
                     }
                     // Friends board: the taunt bell stays reachable for friends on the podium.
                     s.onTaunt?.let { taunt ->
@@ -311,3 +347,64 @@ fun BoardPodium(
 }
 
 private fun podiumPlaceWord(place: Int) = when (place) { 1 -> "First"; 2 -> "Second"; 3 -> "Third"; else -> "#$place" }
+
+
+/**
+ * 2.8 item 13: the winner's confetti burst, once, as the podium opens (the celebration kit's party burst, the season's swap
+ * when there is one). Scale + alpha only; nothing under Reduce Motion / Low Power.
+ */
+@Composable
+private fun PodiumBurst() {
+    val still = WTheme.calmMotion
+    val ctx = LocalContext.current
+    val res = remember {
+        val n = SeasonKit.extra(ctx, SeasonSkins.current(), "celebrate-burst-party") ?: return@remember 0
+        ctx.resources.getIdentifier(n.replace('-', '_'), "drawable", ctx.packageName)
+    }
+    if (still || res == 0) return
+    val t = remember { Animatable(0f) }
+    val fade = remember { Animatable(1f) }
+    LaunchedEffect(Unit) {
+        t.animateTo(1f, tween(550))
+        kotlinx.coroutines.delay(150)
+        fade.animateTo(0f, tween(500))
+    }
+    Image(
+        painterResource(res), contentDescription = null, contentScale = ContentScale.Fit,
+        modifier = Modifier.requiredSize(170.dp).graphicsLayer {
+            val k = 0.4f + 0.65f * t.value
+            scaleX = k; scaleY = k; alpha = t.value.coerceAtMost(1f) * fade.value
+        }.clearAndSetSemantics { },
+    )
+}
+
+/**
+ * 2.8 item 13: the mini Stage card a podium mascot opens: that player's mascot standing on the stage in their backdrop,
+ * posed for the place they hold, then their name, points and a quiet View profile pill. Nothing new is fetched.
+ */
+@Composable
+private fun PodiumStageCard(spot: BoardPodiumSpot, place: Int, onDismiss: () -> Unit) {
+    val dark = WTheme.isDark
+    val resolved = com.wordocious.app.data.PlayerAvatars.resolve(
+        com.wordocious.app.data.AvatarFields(spot.userId, spot.username ?: spot.name, spot.avatarUrl, spot.config, spot.castId, spot.frame, spot.accentHex),
+    )
+    val posed = remember(resolved.config, place) { resolved.config.copy(pose = com.wordocious.core.AvatarPoses.placePose(place)) }
+    val initial = remember(spot.username, spot.name) { com.wordocious.app.data.MascotConfigRules.initialOf(spot.username ?: spot.name) }
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(if (dark) WTheme.surface else Color.White),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            DressStage(posed, initial, photoUrl = resolved.photoUrl, height = 250.dp, mascotSize = 160.dp) {
+                StageCloseButton(label = "Close", modifier = Modifier.align(Alignment.TopEnd).padding(8.dp), onClick = onDismiss)
+            }
+            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(spot.name, fontSize = 20.sp, fontWeight = FontWeight.Black, color = if (dark) WTheme.text else FinishInk.heading, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                SoftNumber(spot.points, 15.sp)
+                spot.onClick?.let { go ->
+                    QuietButton("View profile", { onDismiss(); go() }, Modifier.padding(top = 6.dp), size = CandySize.SMALL)
+                }
+            }
+        }
+    }
+}

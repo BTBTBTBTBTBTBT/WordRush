@@ -181,6 +181,23 @@ fun LivingCastHeader(
         com.wordocious.app.data.SoundManager.castLaugh(id.key)
         wake++
     }
+    // 2.8 item 13: when your mascot celebrates a Sweep / Flawless the whole cast hops with it, in a quick ripple (every third
+    // also plays its signature move on the rig). The living mascot switch gates the emit itself; Reduce Motion: nothing.
+    LaunchedEffect(live, calm, hidden) {
+        if (!live || calm || hidden) return@LaunchedEffect
+        com.wordocious.app.data.MascotMoments.flow.collect { kind ->
+            if (kind != com.wordocious.core.AvatarReaction.SWEEP && kind != com.wordocious.core.AvatarReaction.FLAWLESS) return@collect
+            MascotId.entries.forEachIndexed { i, id ->
+                scope.launch {
+                    delay(i * 70L)
+                    val at = System.nanoTime() / 1_000_000
+                    taps[id] = at
+                    if (puppetsOn && i % 3 == 0 && gestures[id] == null) gestures[id] = at
+                    wake++
+                }
+            }
+        }
+    }
     /** Musical mode: a note in this hero's voice (silent with sound off) + a selection haptic + a hop (no laugh) + a floating note. */
     fun playNote(id: MascotId) {
         val now = System.nanoTime() / 1_000_000

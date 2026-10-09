@@ -114,6 +114,21 @@ internal fun HomeHostSwap(decision: HomeHostDecision, size: Dp = HOME_HOST_BOX, 
     ) { f -> HomeHost(f.pick, size, username = f.username, invite = f.invite) }
 }
 
+/**
+ * 2.8 items 7 + 13: the player's OWN mascot as a free-standing cutout of [size] — living (breathes, blinks, cheers on a
+ * moment) while the living mascot is on, else its static cutout; nothing for a player on the plain cast host / a photo.
+ * The Sweep / Flawless popup stands it beside the art.
+ */
+@Composable
+internal fun OwnMascotCutout(size: Dp, modifier: Modifier = Modifier) {
+    val decision = rememberHomeHost()
+    val pick = decision.pick as? HomeHostPick.Mascot ?: return
+    val initial = remember(decision.username) { MascotConfigRules.initialOf(decision.username) }
+    val drawn = remember(pick.config) { pick.config.copy(frame = "none") }
+    if (com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) LivingMascot(drawn, initial, size, modifier, cutout = true, tappable = false, label = null)
+    else MascotAvatar(drawn, initial, size, modifier, cutout = true)
+}
+
 /** BJ6: the header's share control shows only in Daily once a game is finished (absent otherwise). */
 internal fun homeShareVisible(unlimited: Boolean, playedToday: Int): Boolean = !unlimited && playedToday > 0
 
