@@ -83,11 +83,14 @@ struct DailySweepCardView: View {
 
     private var titleArt: String { isPuzzles ? "art-titlecast-puzzles" : "art-titlecast-dailies" }
 
-    /// Title art at ~70% of the width (height from its aspect, capped).
-    private var titleH: CGFloat {
-        guard ArtAsset.exists(titleArt), let a = ArtAsset.aspect(titleArt), a > 0 else { return 0 }
-        return min(200, 756 / a)
+    /// Founder 10-06: the WHOLE title art, fit to the card width inside 90-px margins
+    /// (Core ShareCardPlan); 0 tall when it doesn't ship (the headline letters it).
+    private var titleBox: CGSize {
+        guard ArtAsset.exists(titleArt), let a = ArtAsset.aspect(titleArt), a > 0 else { return .zero }
+        let t = ShareCardPlan.titleSize(aspect: Double(a))
+        return CGSize(width: t.width, height: t.height)
     }
+    private var titleH: CGFloat { titleBox.height }
 
     // §S2: the canvas is sized to its rows (4:5 … 9:16).
     private var rowGap: CGFloat { rows.count > 8 ? 10 : 12 }
@@ -103,11 +106,12 @@ struct DailySweepCardView: View {
     var size: CGSize { CGSize(width: 1080, height: min(1920, max(1350, fixedH + rowsH)).rounded()) }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             ShareWall(tint: .home)
             VStack(spacing: 0) {
                 if titleH > 0 {
-                    ShareArt.title(titleArt, height: titleH, maxWidth: 756).padding(.top, 40)
+                    ShareTitleBand(asset: titleArt, size: titleBox, text: title ?? "DAILY SWEEP")
+                        .padding(.top, CGFloat(ShareCardPlan.topPad))
                 }
                 Text(title ?? (flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP"))
                     .font(Brand.fixedFont(48, .black))
@@ -140,8 +144,11 @@ struct DailySweepCardView: View {
                     .padding(.top, 40)
                     .padding(.bottom, 40)
             }
+            // Pinned to the top: an overflow runs off the bottom, never over the title.
+            .frame(width: size.width, height: size.height, alignment: .top)
         }
-        .frame(width: size.width, height: size.height)
+        .frame(width: size.width, height: size.height, alignment: .top)
+        .clipped()
     }
 
     /// One game: a tinted row in its accent with the 3D game icon on a mini game
@@ -331,11 +338,13 @@ struct ProfileShareCardView: View {
     private let titleArt = "art-titlecast-stats"
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .top) {
             ShareWall(tint: .home)
             VStack(spacing: 0) {
                 if ArtAsset.exists(titleArt), let a = ArtAsset.aspect(titleArt), a > 0 {
-                    ShareArt.title(titleArt, height: min(200, 756 / a), maxWidth: 756).padding(.top, 40)
+                    let t = ShareCardPlan.titleSize(aspect: Double(a))
+                    ShareTitleBand(asset: titleArt, size: CGSize(width: t.width, height: t.height), text: "STATS")
+                        .padding(.top, CGFloat(ShareCardPlan.topPad))
                 }
                 // BJ5: the player's own avatar (the one resolver: photo / mascot / cast / frame)
                 // beside the name — it used to draw only a worn cast hero.
@@ -373,7 +382,9 @@ struct ProfileShareCardView: View {
                 ShareCastWordmark(width: 972)
                     .padding(.bottom, 40)
             }
+            .frame(width: size.width, height: size.height, alignment: .top)
         }
-        .frame(width: size.width, height: size.height)
+        .frame(width: size.width, height: size.height, alignment: .top)
+        .clipped()
     }
 }

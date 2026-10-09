@@ -319,6 +319,37 @@ struct ShareStatRow: View {
     }
 }
 
+// MARK: - The title band (founder 10-06)
+
+/// The card's title at the top: the WHOLE title art at exactly `size` (Core
+/// ShareCardPlan.titleSize — the card width inside 90-px margins, never cropped),
+/// or, when the art doesn't ship, `text` lettered in `color` in the same band.
+struct ShareTitleBand: View {
+    let asset: String?
+    let size: CGSize
+    let text: String
+    var color: Color = Color(hex: 0x7C3AED)
+
+    var body: some View {
+        Group {
+            if let asset, ArtAsset.exists(asset) {
+                Image(asset)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size.width, height: size.height)
+            } else {
+                Text(text)
+                    .font(Brand.fixedFont(min(84, size.height * 0.8), .black)).foregroundStyle(color)
+                    .shadow(color: .white.opacity(0.85), radius: 0, x: 0, y: 3)
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                    .frame(width: CGFloat(ShareCardPlan.titleMaxW), height: size.height)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 // MARK: - The date line (`.sc-date`)
 
 struct ShareDateLine: View {

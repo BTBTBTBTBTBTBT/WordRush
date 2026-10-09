@@ -115,6 +115,33 @@ function drawBoard(ctx: CanvasRenderingContext2D, grid: string[][], cx: number, 
   return cardH;
 }
 
+/**
+ * S2: the VS card sized to its content (pure — share-fit.test.ts checks the
+ * title box sits inside the card). Boards on BOTH sides share one grid size.
+ */
+export function planVsShareCard(
+  input: VsShareInput,
+  titleNat: readonly [number, number] | null,
+  momentNat: readonly [number, number] | null,
+  headExtra = 0,
+) {
+  const titleH = titleBoxHeight(titleNat);
+  const momentH = momentNat
+    ? Math.round(momentNat[1] * Math.min(MOMENT_MAX_W / momentNat[0], MOMENT_MAX_H / momentNat[1]))
+    : MOMENT_PILL_H;
+  const headH = SHARE_SPACE.info + 12 + momentH;
+  const allShown = [...input.me.grids.slice(0, 2), ...input.opponent.grids.slice(0, 2)];
+  const sharedRows = Math.max(1, ...allShown.map((g) => g.length));
+  const sharedCols = Math.max(1, ...allShown.map((g) => g[0]?.length ?? 5));
+  const shownN = Math.min(Math.max(input.me.grids.length, input.opponent.grids.length), 2);
+  const hasMore = input.me.grids.length > 2 || input.opponent.grids.length > 2;
+  const plan = planShareCard(
+    { titleH, headH, footH: 0 },
+    (maxH) => vsBodyGeometry(shownN, sharedRows, sharedCols, maxH, hasMore, headExtra).h,
+  );
+  return { plan, titleH, momentH, shownN, hasMore, sharedRows, sharedCols };
+}
+
 export async function generateVsShareImage(input: VsShareInput): Promise<Blob | null> {
   if (typeof document === 'undefined') return null;
   resolveCanvasFontStack();
@@ -141,25 +168,10 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   const titleNat: readonly [number, number] | null = title
     ? (title.naturalWidth && title.naturalHeight ? [title.naturalWidth, title.naturalHeight] : ART_SIZE['art-title-vs'])
     : null;
-  const titleH = titleBoxHeight(titleNat);
   const momentNat: readonly [number, number] | null = moment
     ? (moment.naturalWidth && moment.naturalHeight ? [moment.naturalWidth, moment.naturalHeight] : ART_SIZE[momentName])
     : null;
-  const momentH = momentNat
-    ? Math.round(momentNat[1] * Math.min(MOMENT_MAX_W / momentNat[0], MOMENT_MAX_H / momentNat[1]))
-    : MOMENT_PILL_H;
-  const headH = SHARE_SPACE.info + 12 + momentH;
-
-  // Head-to-head columns — boards on BOTH sides share one grid size.
-  const allShown = [...input.me.grids.slice(0, 2), ...input.opponent.grids.slice(0, 2)];
-  const sharedRows = Math.max(1, ...allShown.map((g) => g.length));
-  const sharedCols = Math.max(1, ...allShown.map((g) => g[0]?.length ?? 5));
-  const shownN = Math.min(Math.max(input.me.grids.length, input.opponent.grids.length), 2);
-  const hasMore = input.me.grids.length > 2 || input.opponent.grids.length > 2;
-  const plan = planShareCard(
-    { titleH, headH, footH: 0 },
-    (maxH) => vsBodyGeometry(shownN, sharedRows, sharedCols, maxH, hasMore, headExtra).h,
-  );
+  const { plan, titleH, momentH, shownN, hasMore, sharedRows, sharedCols } = planVsShareCard(input, titleNat, momentNat, headExtra);
   const H = plan.height;
   const body = vsBodyGeometry(shownN, sharedRows, sharedCols, plan.boardH, hasMore, headExtra);
   const maxSideB = body.maxSide;

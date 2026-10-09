@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, TrendingUp, Users, UserPlus, Shield, CalendarCheck, Gamepad2, Puzzle, SpellCheck, Swords,
   HeartHandshake, Trophy, Smile, CreditCard, DollarSign, Gift, Megaphone, BellRing, ToggleLeft, Library,
-  Ghost, MessageSquareText, Activity, Rocket, BookOpen, Palette, Clapperboard, type LucideIcon,
+  Ghost, MessageSquareText, Activity, Rocket, BookOpen, Palette, Clapperboard, AudioLines, type LucideIcon,
 } from 'lucide-react';
 
 export interface AdminNavItem {
@@ -35,6 +35,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     title: 'Design',
     items: [
       { href: '/admin/art', label: 'Art Library', icon: Palette, blurb: 'Review art with JP: side-by-side previews, approvals, feedback' },
+      { href: '/admin/sounds', label: 'Sound Library', icon: AudioLines, blurb: 'Every sound by game: what ships vs the options, picks with JP, feedback' },
     ],
   },
   {

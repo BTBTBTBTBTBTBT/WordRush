@@ -77,6 +77,49 @@ class ShareCardLayoutTest {
         assertEquals(10, Mascots.cast.size)
     }
 
+    /** Title art aspects (web lib/art.ts ART_SIZE — the same art ships ×3). */
+    private val titles = mapOf(
+        "classic" to 1200f / 305, "gauntlet" to 1200f / 273, "quadword" to 1200f / 275,
+        "octoword" to 1200f / 255, "succession" to 1200f / 290, "deliverance" to 1200f / 254,
+        "six" to 1200f / 268, "seven" to 1200f / 239, "propernoundle" to 1200f / 210,
+        "sudocious" to 1200f / 436, "muddle" to 1200f / 329, "hubbub" to 1200f / 325,
+        "crosswordocious" to 1200f / 302, "kindred" to 1200f / 321, "letterladder" to 1200f / 252,
+        "codebreaker" to 1200f / 237, "spyglass" to 1200f / 314, "starsweep" to 1200f / 271,
+        "vs" to 572f / 95, "dailies" to 894f / 260, "puzzles" to 909f / 251, "stats" to 740f / 273,
+        "undecodable" to 0f,
+    )
+
+    @Test
+    fun everyGameTitleSitsWholeOnItsCard() {
+        // Founder 10-06: the CLASSIC title was cut off at the top of the share card.
+        val bodies = listOf(body(544f, 211f), body(950f, 950f), body(950f, 4000f), body(720f, 560f, 0.66f), body(300f, 2600f))
+        for ((name, a) in titles) {
+            for (b in bodies) for (stats in listOf(true, false)) {
+                val l = ShareCard.layout(ShareCard.titleHeight(a), b, hasStats = stats)
+                val r = ShareCard.titleRect(a, l)
+                assertTrue("$name ${b.w}x${b.h}", ShareCard.titleFits(r, l))
+                assertTrue(name, r.top >= ShareCard.TOP - 0.5f)
+                assertOrdered(l, stats)
+                if (a > 0f) {
+                    // The whole art: its own aspect, centered, one side at its cap.
+                    assertEquals(name, a, (r.right - r.left) / (r.bottom - r.top), 0.01f)
+                    assertEquals(name, ShareCard.W / 2f, (r.left + r.right) / 2f, 0.01f)
+                    val k = maxOf((r.right - r.left) / ShareCard.TITLE_MAX_W, (r.bottom - r.top) / ShareCard.TITLE_MAX_H)
+                    assertEquals(name, 1f, k, 0.001f)
+                }
+            }
+        }
+        assertEquals(900f, ShareCard.TITLE_MAX_W, 0f)
+    }
+
+    @Test
+    fun aTitleOutsideTheMarginsFailsTheCheck() {
+        val l = ShareCard.layout(170f, body(950f, 900f), hasStats = true)
+        assertTrue(!ShareCard.titleFits(ShareCard.Box(40f, l.titleTop, 1040f, l.titleTop + 170f), l))
+        assertTrue(!ShareCard.titleFits(ShareCard.Box(100f, -10f, 980f, 160f), l))
+        assertTrue(ShareCard.titleFits(ShareCard.Box(100f, l.titleTop, 980f, l.titleTop + 170f), l))
+    }
+
     @Test
     fun chooserAndFileNames() {
         assertEquals("Share your QuadWord", ShareHelper.chooserTitle("QuadWord"))
