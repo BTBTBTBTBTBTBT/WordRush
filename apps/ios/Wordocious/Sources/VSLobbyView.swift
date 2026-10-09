@@ -89,6 +89,7 @@ struct VSLobbyView: View {
 
     private var isPro: Bool { auth.isProActive }
     private var free: Bool { !isPro }
+    private var branded: Bool { FlagsService.shared.isLive(BrandedInvite.switchKey) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -102,11 +103,28 @@ struct VSLobbyView: View {
                         guestPrompt
                     } else {
                         banner
-                        if !model.incoming.isEmpty { incomingSection }
+                        if branded {
+                            // 9f: ONE Invites row (live invites + race challenges, Accept / Decline) and ONE obvious
+                            // Have a code? button replace the incoming notices and the code field at the bottom.
+                            InvitesRow { item in
+                                switch item.variant {
+                                case .race: raceCode = item.code
+                                case .live:
+                                    if let m = GameMode(rawValue: item.gameMode) { pendingInvite = PendingInvite(mode: m, code: item.code) }
+                                }
+                            }
+                            HaveACodeButton { result in
+                                switch result {
+                                case .race(let code): raceCode = code
+                                case .live(let mode, let code): pendingInvite = PendingInvite(mode: mode, code: code)
+                                case .friend(let code): if let u = URL(string: "https://wordocious.com/join/\(code)") { UIApplication.shared.open(u) }
+                                }
+                            }
+                        } else if !model.incoming.isEmpty { incomingSection }
                         playSection
                         if isPro { rivalsSection } else { proCard }
                         yourChallenges
-                        codeSection
+                        if !branded { codeSection }
                     }
                 }
                 // Generous bottom inset so the code row clears the tab bar (the
