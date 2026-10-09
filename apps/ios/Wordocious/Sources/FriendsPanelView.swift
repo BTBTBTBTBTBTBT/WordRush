@@ -38,6 +38,8 @@ struct FriendsPanelView: View {
     @State private var profileTarget: String?
     /// The family action menu's friend (the row's long-press), open while non-nil.
     @State private var menuFriend: FriendsService.FriendProfile?
+    /// The ⋯ menu of a card for someone who is not in the friend list (id = their user id): View profile + Resign only.
+    @State private var menuStranger: FamilyMenuToken?
     // §234: double-tap guard for the weekly-race share card.
     @State private var sharingRace = false
     // §238: the "Last week" line unfolds into the settled-week history.
@@ -182,6 +184,7 @@ struct FriendsPanelView: View {
             NavigationStack { VSGameView(mode: m.mode, inviteCode: m.code) }
         }
         .familyActionMenu(item: $menuFriend) { f in friendMenuModel(f) }
+        .familyActionMenu(item: $menuStranger) { t in strangerMenuModel(t.id) }
         #if DEBUG
         .onReceive(NotificationCenter.default.publisher(for: FamilyActionMenuDemo.open)) { n in
             if (n.object as? String) == "friend" { menuFriend = FriendsService.friends.first }
@@ -547,7 +550,10 @@ struct FriendsPanelView: View {
             ForEach(layout.cards) { c in
                 let f = FriendsKit.friend(c.friendId)
                 let opp = active.first { $0.opponent.id.lowercased() == c.friendId }?.opponent
-                let menu: (() -> Void)? = f.map { fr in { menuFriend = fr } }
+                // Not in the friend list: still a ⋯ with View profile + Resign (so a game with a non-friend can be left).
+                let friendMenu: (() -> Void)? = f.map { fr in { menuFriend = fr } }
+                let strangerMenu: (() -> Void)? = (f == nil && opp != nil) ? { menuStranger = FamilyMenuToken(id: c.friendId) } : nil
+                let menu: (() -> Void)? = friendMenu ?? strangerMenu
                 FriendCardView(
                     card: c, friend: f, fallbackOpponent: opp, games: byId,
                     expanded: theirTurnOpen.contains(c.friendId),
@@ -763,6 +769,25 @@ struct FriendsPanelView: View {
             title: f.username, subtitle: f.presenceLine() ?? FriendsKit.todayLine(f),
             avatar: AnyView(AvatarView(url: f.avatar_url, username: f.username, size: 44, emoji: f.avatar_emoji,
                                        castId: f.avatar_cast_id, frame: f.avatar_frame, userId: f.id, stroke: false)),
+            actions: rows)
+    }
+
+    /// The ⋯ menu for a card whose person is not in the friend list: View profile and one Resign row per game going.
+    private func strangerMenuModel(_ id: String) -> FamilyActionMenuModel {
+        let games = FriendlyGamesService.active.filter { $0.opponent.id.caseInsensitiveCompare(id) == .orderedSame }
+        let opp = games.first?.opponent
+        let name = opp?.username ?? "Player"
+        var rows: [FamilyMenuAction] = [
+            FamilyMenuAction(id: "profile", title: "View profile", icon: .clay("eye")) { profileTarget = id },
+        ]
+        for g in games {
+            rows.append(FamilyMenuAction(id: "resign-\(g.id)", title: "Resign \(g.title)", icon: .clay("flag"), danger: true,
+                                         accessibility: "Resign \(g.title) against \(name)") { resignTarget = g })
+        }
+        return FamilyActionMenuModel(
+            title: name, subtitle: nil,
+            avatar: AnyView(AvatarView(url: opp?.avatarUrl, username: name, size: 44, emoji: opp?.avatarEmoji,
+                                       userId: opp?.id, stroke: false)),
             actions: rows)
     }
 

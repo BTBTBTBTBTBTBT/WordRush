@@ -35,6 +35,103 @@ enum PocketArt {
 
     /// The "YOUR TURN" flag shown over the board while it is your move.
     static var yourTurnFlag: String? { ArtAsset.exists("art-pocket-yourturn-flag") ? "art-pocket-yourturn-flag" : nil }
+
+    /// The gold down-arrow disc beside whose turn it is.
+    static var turnMarker: String? { ArtAsset.exists("art-pocket-turn-marker") ? "art-pocket-turn-marker" : nil }
+    /// The lilac disc under the Rock Paper Scissors reveal.
+    static var arenaPlate: String? { ArtAsset.exists("art-pocket-arena-plate") ? "art-pocket-arena-plate" : nil }
+    /// The ghost, the puzzle piece and the gold chain links: small markers for Ghost, Pass the Puzzle and Word Chain.
+    static var ghostMarker: String? { ArtAsset.exists("art-pocket-ghost-marker") ? "art-pocket-ghost-marker" : nil }
+    static var puzzlePiece: String? { ArtAsset.exists("art-pocket-puzzle-piece") ? "art-pocket-puzzle-piece" : nil }
+    static var chainLinks: String? { ArtAsset.exists("art-pocket-chain-links") ? "art-pocket-chain-links" : nil }
+
+    /// The shipped tile art (art-pocket-tile-white / -purple / -gold). OFF until reviewed on the model: art-pocket-tile-purple
+    /// is a pink-mauve face with a ragged top-left edge and tile-white has a smudged bottom edge, neither is the house purple
+    /// of the code-drawn GlossyTile. While off, PocketTile draws the house GlossyTile (same sizes, same pop-in). Flip to true
+    /// once the art is re-keyed, nothing else changes.
+    static let tileArtOnModel = false
+
+    /// The tile art for a face (purple = mine / right spot, gold = theirs / wrong spot, white = empty / typed); nil = draw the house tile.
+    static func tile(_ face: GlossyFace) -> String? {
+        guard tileArtOnModel else { return nil }
+        let name: String
+        switch face {
+        case .correct: name = "art-pocket-tile-purple"
+        case .present: name = "art-pocket-tile-gold"
+        case .empty, .typed: name = "art-pocket-tile-white"
+        default: return nil
+        }
+        return ArtAsset.exists(name) ? name : nil
+    }
+}
+
+/// One pocket-game letter tile (Ghost, Word Chain, Pass the Puzzle): the shipped tile art with the letter on top in the house
+/// font when `PocketArt.tileArtOnModel`, else the house GlossyTile, and in both cases a pop-in when it is first placed
+/// (<= 250 ms spring, nothing under Reduce Motion). `pop` = this tile is a placed letter (not an empty slot or the initial board).
+struct PocketTile: View {
+    let face: GlossyFace
+    var letter: String = ""
+    let width: CGFloat
+    var glow: Color = .clear
+    var glowAmount: CGFloat = 0
+    var pop: Bool = false
+    @State private var landed: Bool
+
+    init(face: GlossyFace, letter: String = "", width: CGFloat, glow: Color = .clear, glowAmount: CGFloat = 0, pop: Bool = false) {
+        self.face = face
+        self.letter = letter
+        self.width = width
+        self.glow = glow
+        self.glowAmount = glowAmount
+        self.pop = pop
+        _landed = State(initialValue: !pop || Theme.reduceMotion || letter.isEmpty)
+    }
+
+    var body: some View {
+        Group {
+            if let art = PocketArt.tile(face) {
+                ZStack {
+                    Image(art).resizable().interpolation(.high).scaledToFit()
+                    if !letter.isEmpty {
+                        let light = face == .empty || face == .typed
+                        Text(letter).font(Brand.font(width * 0.52, .black))
+                            .foregroundStyle(light ? Color(hex: 0x2A1650) : Color.white)
+                            .shadow(color: .black.opacity(light ? 0 : 0.25), radius: 1, y: 1)
+                    }
+                }
+                .frame(width: width, height: width)
+            } else {
+                GlossyTile(face: face, letter: letter, width: width, glow: glow, glowAmount: glowAmount)
+            }
+        }
+        .scaleEffect(landed ? 1 : 0.8)
+        .opacity(landed ? 1 : 0.4)
+        .onAppear {
+            guard !landed else { return }
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.62)) { landed = true }
+        }
+    }
+}
+
+/// A small pocket marker image (turn marker, ghost, puzzle piece, chain links) that pops in once. Decorative.
+struct PocketMarker: View {
+    let art: String?
+    let size: CGFloat
+    @State private var shown = Theme.reduceMotion
+
+    var body: some View {
+        if let art {
+            Image(art).resizable().interpolation(.high).scaledToFit()
+                .frame(width: size, height: size)
+                .scaleEffect(shown ? 1 : 0.7)
+                .opacity(shown ? 1 : 0)
+                .onAppear {
+                    guard !shown else { return }
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.65)) { shown = true }
+                }
+                .accessibilityHidden(true)
+        }
+    }
 }
 
 /// The Tic-Tac-Tile win strike: the strike art drawn through the three winning cells, drawn in

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -80,13 +81,18 @@ fun WaitingScene(kind: WaitingKind, name: String?, startedAtMs: Long, modifier: 
                     painterResource(R.drawable.art_lobby_stage), null, contentScale = ContentScale.Fit,
                     modifier = Modifier.size(150.dp, 136.dp).clearAndSetSemantics { },
                 )
-                // Your mascot, alive, standing on the podium.
+                // Your mascot standing full-body on the stage (the living cutout, the podium's figure) when the player has one;
+                // a photo player (or the living mascot off) keeps the framed tile. A guest gets the cast's waiting pose.
+                val p = profile
+                val stands = p != null && com.wordocious.app.ui.podiumStands(
+                    p.username, p.id, p.avatarUrl, p.avatarConfig, p.avatarCastId, p.avatarFrame, p.accentColor,
+                )
                 Box(Modifier.offset(y = (-34).dp)) {
-                    val p = profile
                     if (p != null) {
                         PlayerAvatar(
-                            p.username ?: "You", 84.dp, userId = p.id, avatarUrl = p.avatarUrl, config = p.avatarConfig,
+                            p.username ?: "You", if (stands) 112.dp else 84.dp, userId = p.id, avatarUrl = p.avatarUrl, config = p.avatarConfig,
                             castId = p.avatarCastId, frame = p.avatarFrame, accentHex = p.accentColor, contentDescription = null, live = true,
+                            standing = true,
                         )
                     } else VsCastPose(MascotId.I, "waiting", 84.dp)
                 }
@@ -126,7 +132,7 @@ fun WaitingScene(kind: WaitingKind, name: String?, startedAtMs: Long, modifier: 
  * only, nothing is saved). It exists only while the waiting screen does.
  */
 @Composable
-private fun KeepyUppy() {
+fun KeepyUppy() {
     val y = remember { Animatable(0f) }
     var count by remember { mutableIntStateOf(0) }
     var best by remember { mutableIntStateOf(0) }
@@ -155,5 +161,47 @@ private fun KeepyUppy() {
             WaitingRoom.keepyLine(count, best), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = VsTeal.sub,
             textAlign = TextAlign.Center, maxLines = 1,
         )
+    }
+}
+
+/**
+ * The pocket-game wait (item 22): when it is their turn, a quiet strip above the board (the board stays visible) with
+ * the "?" seat, ONE status line ("Waiting for Johnny…") in the bubble lettering, how long they have had it while that is
+ * still a live number (under an hour), their [avatar], and a small "Bounce a tile" button that opens the keepy-uppy tile
+ * (collapsed by default so the board keeps the room). [sinceMs] is when the move went to them (the game's last update).
+ */
+@Composable
+fun PocketWaitStrip(name: String, sinceMs: Long?, avatar: @Composable () -> Unit, modifier: Modifier = Modifier) {
+    val now by produceState(System.currentTimeMillis()) {
+        while (true) { delay(1_000); value = System.currentTimeMillis() }
+    }
+    var play by remember { mutableStateOf(false) }
+    val line = WaitingRoom.waitingStatusLine(WaitingKind.POCKET, name)
+    val waited = if (sinceMs != null) WaitingRoom.waitedSeconds(sinceMs, now) else 0.0
+    Column(
+        modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = line },
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painterResource(R.drawable.art_lobby_seat_medallion), null, contentScale = ContentScale.Fit,
+                modifier = Modifier.size(34.dp).graphicsLayer { alpha = 0.9f }.clearAndSetSemantics { },
+            )
+            Box(Modifier.weight(1f, fill = false).widthIn(max = 240.dp)) {
+                BubbleText(
+                    line.removeSuffix("…").uppercase(), HeadlinePalette.FRIENDS, Modifier.fillMaxWidth().clearAndSetSemantics { },
+                    names = listOf(name.trim().trimStart('@')).filter { it.isNotEmpty() }, maxSize = 22, minSize = 16,
+                )
+            }
+            avatar()
+        }
+        if (sinceMs != null && waited < 3600) {
+            Text(
+                WaitingRoom.waitClock(waited), fontSize = 12.sp, fontWeight = FontWeight.Black, color = VsTeal.label,
+                modifier = Modifier.clearAndSetSemantics { },
+            )
+        }
+        if (play) KeepyUppy()
+        else com.wordocious.app.ui.QuietButton("Bounce a tile while you wait", onClick = { play = true }, size = com.wordocious.app.ui.CandySize.SMALL)
     }
 }

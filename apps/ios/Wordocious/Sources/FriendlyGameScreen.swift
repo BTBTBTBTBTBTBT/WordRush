@@ -67,6 +67,8 @@ struct FriendlyGameScreen: View {
                             }
                             scoreWindow(g)
                             if g.isActive && g.yourTurn { PocketYourTurnFlag() }
+                            // Item 22: their turn = a slim lobby strip above the board (board stays visible).
+                            if g.isActive && !g.yourTurn { PocketWaitStrip(name: themName, since: g.updatedAt) }
                             board(g)
                                 .modifier(ShakeEffect(animatableData: shakeCount))
                                 .scaleEffect(arrived ? 1.014 : 1)
@@ -482,10 +484,15 @@ struct FriendlyGameScreen: View {
                         .background(Capsule().fill(status.tone))
                         .padding(.top, 2)
                 } else if toPlay {
-                    Text("TO PLAY").font(Brand.font(8.5, .black)).tracking(0.6).foregroundStyle(.white)
-                        .padding(.horizontal, 6).frame(height: 15)
-                        .background(Capsule().fill(leading ? FriendsKit.purple : FriendsKit.amber))
-                        .padding(.top, 2)
+                    HStack(spacing: 3) {
+                        // Wave 3 (9d): the turn marker beside whose move it is.
+                        if !leading { PocketMarker(art: PocketArt.turnMarker, size: 15) }
+                        Text("TO PLAY").font(Brand.font(8.5, .black)).tracking(0.6).foregroundStyle(.white)
+                            .padding(.horizontal, 6).frame(height: 15)
+                            .background(Capsule().fill(leading ? FriendsKit.purple : FriendsKit.amber))
+                        if leading { PocketMarker(art: PocketArt.turnMarker, size: 15) }
+                    }
+                    .padding(.top, 2)
                 }
                 if let score {
                     // §A2: the score as a soft number.
@@ -853,8 +860,11 @@ struct FriendlyGameScreen: View {
             Text("THE WORD WAS \(answer.uppercased())").font(Brand.font(13, .black)).tracking(0.8)
                 .foregroundStyle(FriendsInk.heading).padding(.top, 4)
         } else if g.isActive && !g.yourTurn {
-            Text("\(themName)'s guess — you'll see it land here.").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
-                .padding(.top, 2)
+            HStack(spacing: 6) {
+                PocketMarker(art: PocketArt.puzzlePiece, size: 22)
+                Text("\(themName)'s guess — you'll see it land here.").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+            }
+            .padding(.top, 2)
         }
     }
 
@@ -874,7 +884,7 @@ struct FriendlyGameScreen: View {
             letter = col < chars.count ? String(chars[col]) : ""
             face = letter.isEmpty ? .empty : .typed
         }
-        return GlossyTile(face: face, letter: letter, width: 44)
+        return PocketTile(face: face, letter: letter, width: 44, pop: row < p.guesses.count)
             .modifier(TypePop(letter: face == .typed ? letter : "", size: CGSize(width: 44, height: 44)))
     }
 
@@ -952,7 +962,10 @@ struct FriendlyGameScreen: View {
                 .gameTray(accent: FriendsKit.tileAccent(.ghost))
                 .animation(Theme.reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.75), value: s.fragment)
                 if !myLetter {
-                    Text("\(themName) is adding a letter…").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                    HStack(spacing: 6) {
+                        PocketMarker(art: PocketArt.ghostMarker, size: 22)
+                        Text("\(themName) is adding a letter…").font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
+                    }
                 }
                 Text("Spell a word and you lose the round. Leave a dead end and you lose it too.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FriendsInk.muted)
@@ -971,7 +984,7 @@ struct FriendlyGameScreen: View {
     private func ghostTile(_ letter: String, mine: Bool?) -> some View {
         let shape = RoundedRectangle(cornerRadius: 11, style: .continuous)
         let face: GlossyFace = mine.map { $0 ? .correct : .present } ?? (letter.isEmpty ? .empty : .typed)
-        return GlossyTile(face: face, letter: letter, width: 46)
+        return PocketTile(face: face, letter: letter, width: 46, pop: mine != nil)
             .overlay {
                 if mine == nil && letter.isEmpty {
                     shape.strokeBorder(FriendsKit.purple.opacity(0.45), style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
@@ -1057,6 +1070,11 @@ struct FriendlyGameScreen: View {
                     .padding(.vertical, 8)
             }
             ForEach(Array(c.words.enumerated()), id: \.offset) { i, w in
+                if i > 0, let links = PocketArt.chainLinks {
+                    // Wave 3 (9d): a small gold link joins each word to the one before it.
+                    Image(links).resizable().interpolation(.high).scaledToFit().frame(width: 18, height: 18)
+                        .padding(.vertical, -9).accessibilityHidden(true)
+                }
                 chainRow(w, me: me, newest: i == c.words.count - 1 && g.isActive)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -1083,8 +1101,8 @@ struct FriendlyGameScreen: View {
                 let glow = newest && i == letters.count - 1
                 // §B1 glossy tiles in the player's color (purple yours, gold theirs);
                 // the newest word's last letter glows green (the next word starts with it).
-                GlossyTile(face: mine ? .correct : .present, letter: letters[i], width: 30,
-                           glow: green, glowAmount: glow ? 1 : 0)
+                PocketTile(face: mine ? .correct : .present, letter: letters[i], width: 30,
+                           glow: green, glowAmount: glow ? 1 : 0, pop: newest)
                     .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .stroke(glow ? green : .clear, lineWidth: 2.5).padding(.bottom, 2))
                     .scaleEffect(glow ? 1.08 : 1)
@@ -1236,6 +1254,15 @@ private struct RpsReveal: View {
                 }
                 .frame(width: 40)
                 card(theirs, label: them.uppercased(), win: winner == 2, tint: FriendsKit.amber)
+            }
+            // Wave 3 (9d): the hands flip over onto the shared arena plate.
+            .background(alignment: .bottom) {
+                if let plate = PocketArt.arenaPlate {
+                    Image(plate).resizable().interpolation(.high).scaledToFit()
+                        .frame(width: 270).offset(y: 14)
+                        .opacity(flipped ? 0.9 : 0)
+                        .accessibilityHidden(true)
+                }
             }
         }
         .onAppear {

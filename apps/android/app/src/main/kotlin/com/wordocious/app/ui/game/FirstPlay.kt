@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.FirstPlayResults
 import com.wordocious.app.data.FlagsService
 import com.wordocious.app.data.TutorialsSeen
 import com.wordocious.core.PocketHelp
@@ -21,12 +22,27 @@ import com.wordocious.core.PocketHelp
  * `LaunchedEffect(firstPlay) { if (firstPlay) { showGuide = true; pause() } }`.
  */
 @Composable
-fun rememberFirstPlayAutoShow(key: String): Boolean {
+fun rememberFirstPlayAutoShow(key: String, hasResultsOverride: Boolean? = null): Boolean {
     val flags by FlagsService.flags.collectAsState()
     val seen by TutorialsSeen.seen.collectAsState()
     val profile by AuthService.profile.collectAsState()
-    LaunchedEffect(profile?.id) { TutorialsSeen.ensureLoaded() }
-    return PocketHelp.shouldAutoShowTutorial(FlagsService.isLive(PocketHelp.FIRST_PLAY_FLAG, flags), seen, key)
+    val played by FirstPlayResults.played.collectAsState()
+    LaunchedEffect(profile?.id) { TutorialsSeen.ensureLoaded(); FirstPlayResults.ensureLoaded() }
+    // Decided once when the screen opens: a save written by this very game must not retract the card.
+    val dbKey = androidx.compose.runtime.remember(key) { FirstPlayResults.dbKeyForSlug(key) }
+    val localSave = androidx.compose.runtime.remember(key) { dbKey?.let { FirstPlayResults.hasLocalSave(it) } ?: false }
+    val live = FlagsService.isLive(PocketHelp.FIRST_PLAY_FLAG, flags)
+    // Main games wait for the stats read (signed in) so an existing player never sees a flash of the card.
+    val waitingForStats = hasResultsOverride == null && dbKey != null && !localSave && played == null
+    val hasResults = when {
+        hasResultsOverride != null -> hasResultsOverride
+        dbKey == null -> false
+        localSave -> true
+        else -> played?.contains(dbKey) == true
+    }
+    val record = !waitingForStats && PocketHelp.tutorialShouldRecordSeen(live, seen, key, hasResults)
+    LaunchedEffect(record, key) { if (record) TutorialsSeen.mark(key) }
+    return !waitingForStats && PocketHelp.shouldAutoShowTutorial(live, seen, key, hasResults)
 }
 
 /** The card's button: "Let's play!" the first time, "Got it" after. */

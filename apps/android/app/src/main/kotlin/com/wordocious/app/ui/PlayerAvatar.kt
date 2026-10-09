@@ -43,6 +43,11 @@ fun PlayerAvatar(
      * their place (1st cheers, 2nd claps, 3rd waves); the caller sizes it with [podiumStands]. Photos keep the framed tile.
      */
     podiumPlace: Int? = null,
+    /**
+     * 2.8 item 22: stand the player's mascot full-body (living, no tile) in its idle pose, the waiting lobby's stage figure.
+     * Photos keep the framed tile, and with the living mascot off the tile is drawn.
+     */
+    standing: Boolean = false,
 ) {
     val row = remember(userId, username, avatarUrl, config, castId, frame, accentHex) {
         AvatarFields(userId, username, avatarUrl, config, castId, frame, accentHex)
@@ -69,6 +74,8 @@ fun PlayerAvatar(
         if (podiumPlace != null && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
             val posed = remember(resolved.config, podiumPlace) { resolved.config.copy(pose = com.wordocious.core.AvatarPoses.placePose(podiumPlace)) }
             LivingMascot(posed, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)
+        } else if (standing && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT) {
+            LivingMascot(resolved.config, initial, size, modifier, cutout = true, pro = pro, own = PlayerAvatars.isOwn(userId, username), tappable = false, label = null)
         } else if (live && com.wordocious.core.AvatarLiveConfig.LIVING_MASCOT && PlayerAvatars.isOwn(userId, username)) {
             LivingMascot(resolved.config, initial, size, modifier, pro = pro, label = null)
         } else MascotAvatar(resolved.config, initial, size, modifier, pro = pro)

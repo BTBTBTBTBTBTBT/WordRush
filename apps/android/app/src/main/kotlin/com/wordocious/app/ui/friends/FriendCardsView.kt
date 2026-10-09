@@ -114,10 +114,10 @@ private fun FriendCardView(
                     Text("Tap to pick a game", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FriendsPink.muted, maxLines = 1)
                 }
             }
-            if (friend != null) {
-                RoundIconButton(onClick = { onMenu(friend) }, contentDescription = "More for ${card.name}") {
-                    FamIconImage(FamIcon.MORE, FriendsPink.solid, 18.dp)
-                }
+            // A card for someone who is not on the friend list (a game left over, or an unfriended player) still gets
+            // the ⋯: its menu (hosted by the Friends screen) offers View profile + Resign for each game in play.
+            RoundIconButton(onClick = { onMenu(friend ?: FriendsService.FriendProfile(id = card.friendId, username = card.name)) }, contentDescription = "More for ${card.name}") {
+                FamIconImage(FamIcon.MORE, FriendsPink.solid, 18.dp)
             }
         }
 

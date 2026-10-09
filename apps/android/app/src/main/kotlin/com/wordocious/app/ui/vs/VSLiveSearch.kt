@@ -243,33 +243,3 @@ fun LiveSearchScreen(vm: VSMatchViewModel, queueSize: Int, message: String?, onC
         }
     }
 }
-
-/** Teal ring on #ccfbf1 counting up, with a soft pulse behind it. The arc
- *  reads [frameMs] inside the draw phase, so it sweeps continuously; the
- *  digits ([clockMs]) tick once a second. */
-@Composable
-private fun RingTimer(clockMs: Long, frameMs: () -> Long) {
-    Box(Modifier.size(132.dp), Alignment.Center) {
-        if (!WTheme.reducedMotion) {
-            val t = rememberInfiniteTransition(label = "ringPulse")
-            val s by t.animateFloat(0.85f, 1.15f, infiniteRepeatable(tween(1400), RepeatMode.Reverse), label = "s")
-            Box(Modifier.size(120.dp).scale(s).clip(CircleShape).background(vsWash(VS_ACCENT, 0.22f).copy(alpha = 0.7f)))
-        }
-        Canvas(Modifier.size(112.dp)) {
-            val w = 8.dp.toPx()
-            val inset = w / 2
-            val arc = Size(size.width - w, size.height - w)
-            drawArc(vsWash(VS_ACCENT, 0.24f), 0f, 360f, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w))
-            val frac = ((frameMs() % 60_000L).toFloat() / 60_000f)
-            drawArc(VS_ACCENT, -90f, 360f * frac, false, topLeft = Offset(inset, inset), size = arc, style = Stroke(w, cap = StrokeCap.Round))
-        }
-        // A1 the dial takes the teal wash; A2 the clock is a soft number.
-        Box(
-            Modifier.size(96.dp).clip(CircleShape).background(vsWash(VS_ACCENT, 0.10f)).border(1.5.dp, vsLine(VS_ACCENT), CircleShape)
-                .semantics { contentDescription = "Searching for " + vsClock(clockMs) },
-            Alignment.Center,
-        ) {
-            VsNumber(vsClock(clockMs), 26.sp, Modifier.clearAndSetSemantics { })
-        }
-    }
-}

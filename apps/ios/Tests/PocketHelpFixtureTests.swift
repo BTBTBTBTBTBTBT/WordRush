@@ -6,6 +6,7 @@ import XCTest
 /// Regenerate: packages/core/scripts/gen-parity-fixtures.ts
 final class PocketHelpFixtureTests: XCTestCase {
     private struct Decision: Decodable { let live: Bool; let seen: [String]?; let key: String; let show: Bool }
+    private struct WithResults: Decodable { let live: Bool; let seen: [String]?; let hasResults: Bool; let key: String; let show: Bool; let record: Bool }
     private struct Seen: Decodable { let seen: [String]; let key: String; let result: [String] }
     private struct Merge: Decodable { let a: [String]; let b: [String]; let result: [String] }
     private struct Fixtures: Decodable {
@@ -13,6 +14,7 @@ final class PocketHelpFixtureTests: XCTestCase {
         let help: [String: PocketHelpCard]
         let keys: [String]
         let decisions: [Decision]
+        let withResults: [WithResults]
         let seen: [Seen]
         let merged: [Merge]
     }
@@ -39,6 +41,16 @@ final class PocketHelpFixtureTests: XCTestCase {
         }
         // Still loading: never show on a guess.
         XCTAssertFalse(PocketHelp.shouldAutoShowTutorial(live: true, seen: nil, key: "hub"))
+    }
+
+    func testFirstPlayWithResultsMatchCore() throws {
+        let rows = try load().withResults
+        XCTAssertFalse(rows.isEmpty)
+        for d in rows {
+            let why = "\(d.key) live=\(d.live) seen=\(String(describing: d.seen)) hasResults=\(d.hasResults)"
+            XCTAssertEqual(PocketHelp.shouldAutoShowTutorial(live: d.live, seen: d.seen, key: d.key, hasResults: d.hasResults), d.show, why)
+            XCTAssertEqual(PocketHelp.tutorialShouldRecordSeen(live: d.live, seen: d.seen, key: d.key, hasResults: d.hasResults), d.record, why)
+        }
     }
 
     func testSeenListsMatchCore() throws {

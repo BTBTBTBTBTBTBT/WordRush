@@ -421,6 +421,7 @@ fun FriendsScreen(
         FriendMenuHost(
             f = f, nowMs = now, canGift = (myProfile?.streakShields ?: 0) > 0, challengingId = challenging,
             games = games.filter { it.opponent.id == f.id },
+            isFriend = friends.any { it.id == f.id },
             onDismiss = { menuFriend = null },
             onOpenProfile = onOpenProfile,
             onPlay = { quickPlay = QuickPlayRequest(it.id) },
@@ -941,6 +942,7 @@ private fun FriendMenuHost(
     canGift: Boolean,
     challengingId: String?,
     games: List<FriendlyGamesService.GameView>,
+    isFriend: Boolean,
     onDismiss: () -> Unit,
     onOpenProfile: (String) -> Unit,
     onPlay: (FriendsService.FriendProfile) -> Unit,
@@ -955,12 +957,20 @@ private fun FriendMenuHost(
     val played = f.playedToday ?: 0
     FamilyActionMenu(
         title = f.username,
-        subtitle = presenceLine(f.lastSeenMs, f.activity, nowMs)
+        subtitle = if (!isFriend) "In a game with you" else presenceLine(f.lastSeenMs, f.activity, nowMs)
             ?: if (played > 0) "$played/$sweepSize today" else "Hasn't played today",
         avatar = { FriendAvatar44(f) },
         onDismiss = onDismiss,
         actions = buildList {
             add(FamilyMenuAction("profile", "View profile", FamilyMenuIcon.Clay(FamIcon.EYE)) { onOpenProfile(f.id) })
+            // Someone not on the friend list (a game left over with them): only View profile and the Resign rows apply.
+            if (!isFriend) {
+                games.forEach { g ->
+                    add(FamilyMenuAction("resign-${g.id}", "Resign ${g.title}", FamilyMenuIcon.Clay(FamIcon.FLAG), danger = true,
+                        contentDescription = "Resign ${g.title} against ${f.username}") { onResign(g) })
+                }
+                return@buildList
+            }
             add(FamilyMenuAction("play", "Play a game", FamilyMenuIcon.Clay(FamIcon.PLAY), FamilyMenuInk.PINK) { onPlay(f) })
             add(FamilyMenuAction("taunt", "Taunt", FamilyMenuIcon.Art(Icon3DName.BELL.res), FamilyMenuInk.AMBER,
                 contentDescription = "Taunt ${f.username}") { onTaunt(f) })
