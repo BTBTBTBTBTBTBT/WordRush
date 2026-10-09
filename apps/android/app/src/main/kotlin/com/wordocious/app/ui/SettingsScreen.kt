@@ -295,7 +295,8 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 // older copy). Section opens with Help & Support, like iOS.
                 LinkRow("Help & Support") { onOpenInfo("support") }; Divider(SettingsAccent.about)
                 // Founder 10-07: the app tour is replayed only from here (not from per-game help / How to Play).
-                LinkRow("Replay the app tour") { Onboarding.replay(); onDone() }; Divider(SettingsAccent.about)
+                // 2.8 item 23: the family QUIET button (iOS / web parity).
+                QuietButton("Replay the app tour", onClick = { Onboarding.replay(); onDone() }, modifier = Modifier.padding(vertical = 6.dp), fill = true); Divider(SettingsAccent.about)
                 LinkRow("Privacy Policy") { onOpenInfo("privacy") }; Divider(SettingsAccent.about)
                 // Ad-consent withdrawal. GDPR requires a PERSISTENT entry
                 // point — a form shown once at first launch is not a
