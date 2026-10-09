@@ -48,10 +48,13 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
             if att.identifier == PushRich.attachmentSender { model.sender = img }
             else if att.identifier == PushRich.attachmentGame { model.gameArt = img }
         }
+        // The player's own look, pre-rendered by the app into the shared container (WidgetAvatarSnapshot); the
+        // payload's youAvatar is the fallback when the group is unavailable (or the player has no look saved yet).
+        model.you = Self.ownMascot()
         Task {
             async let sender: UIImage? = model.sender == nil ? Self.fetch(rich.senderAvatar) : nil
             async let art: UIImage? = model.gameArt == nil ? Self.fetch(rich.gameImage) : nil
-            async let you = Self.fetch(rich.youAvatar)   // the recipient's own mascot, from the payload
+            async let you: UIImage? = model.you == nil ? Self.fetch(rich.youAvatar) : nil
             let (s, a, y) = await (sender, art, you)
             await MainActor.run {
                 if let s { model.sender = s }
@@ -59,6 +62,15 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
                 if let y { model.you = y }
             }
         }
+    }
+
+    /// The shared container's mascot cutout / framed photo (nil when the app group is not available).
+    private static func ownMascot() -> UIImage? {
+        guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.wordocious.app") else { return nil }
+        for name in ["widget-avatar-mascot.png", "widget-avatar-photo.png"] {
+            if let img = UIImage(contentsOfFile: dir.appendingPathComponent(name).path) { return img }
+        }
+        return nil
     }
 
     private static func fetch(_ url: URL?) async -> UIImage? {

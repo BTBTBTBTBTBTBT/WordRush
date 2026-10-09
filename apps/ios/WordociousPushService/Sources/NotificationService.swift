@@ -1,11 +1,13 @@
 import UserNotifications
+import Intents
 
-/// Notification Service Extension (FRIDAY-QUEUE item 34). Gives a rich push its pictures without needing the
-/// Communication Notifications entitlement: the SENDER's mascot is the thumbnail attachment (the game's art
-/// when the sender has no avatar), the game art rides along as a second attachment for the long-press card,
-/// and the server's complete title and body are delivered untouched. The server sends `mutable-content: 1` +
-/// `rich` only when the `rich_push` off-switch is on; a plain push passes through. Anything that fails
-/// (offline, slow) still delivers the original alert.
+/// Notification Service Extension (FRIDAY-QUEUE item 34). A rich push becomes a COMMUNICATION notification: the
+/// SENDER's mascot is the avatar (iOS draws the app icon as the badge on it) and the server's complete title is the
+/// header, via an INSendMessageIntent (needs the Communication Notifications capability on the app + this
+/// extension's profile). The game art rides along as an attachment for the long-press card. Any failure along the way
+/// (no capability, no avatar, offline, slow) falls back to the attachments: the sender's mascot as the thumbnail, the
+/// game art second, the original title and body untouched. The server sends `mutable-content: 1` + `rich` only when
+/// the `rich_push` off-switch is on; a plain push passes through.
 final class NotificationService: UNNotificationServiceExtension {
     private var handler: ((UNNotificationContent) -> Void)?
     private var best: UNMutableNotificationContent?
@@ -27,12 +29,21 @@ final class NotificationService: UNNotificationServiceExtension {
             async let art = Self.download(rich.gameImage)
             let (avatarData, artData) = await (avatar, art)
 
-            // The first attachment is the collapsed thumbnail: the sender's mascot, else the game art.
-            // Both reach the content extension, which reads them by identifier.
-            var attachments: [UNNotificationAttachment] = []
-            if let avatarData, let a = Self.attachment(avatarData, id: PushRich.attachmentSender) { attachments.append(a) }
-            if let artData, let a = Self.attachment(artData, id: PushRich.attachmentGame) { attachments.append(a) }
-            if !attachments.isEmpty { best.attachments = attachments }
+            let sender = avatarData.flatMap { Self.attachment($0, id: PushRich.attachmentSender) }
+            let game = artData.flatMap { Self.attachment($0, id: PushRich.attachmentGame) }
+
+            // Communication Notification first (the sender's mascot as the avatar). `updating(from:)` throws without
+            // the capability: then we are on the attachment fallback below.
+            if let avatarData, let comm = Self.communication(best, rich: rich, avatar: avatarData),
+               let final = comm.mutableCopy() as? UNMutableNotificationContent {
+                // The avatar is already the notification's picture: the game art leads as the thumbnail, the sender's
+                // mascot stays attached for the long-press card.
+                final.attachments = [game, sender].compactMap { $0 }
+                deliver(final)
+                return
+            }
+            // Fallback: the sender's mascot is the thumbnail (the game art when there is no avatar), the game art second.
+            best.attachments = [sender, game].compactMap { $0 }
             deliver(best)
         }
     }
@@ -43,6 +54,23 @@ final class NotificationService: UNNotificationServiceExtension {
     }
 
     // MARK: - Pieces
+
+    /// The Communication Notification content, or nil when the system refuses (capability missing).
+    private static func communication(_ content: UNMutableNotificationContent, rich: PushRich, avatar: Data) -> UNNotificationContent? {
+        let handle = INPersonHandle(value: rich.senderId.isEmpty ? rich.senderName : rich.senderId, type: .unknown)
+        // The display name is the server's title ("Ava played Hubbub", <= 28 chars): it reads complete in the header.
+        let sender = INPerson(personHandle: handle, nameComponents: nil,
+                              displayName: content.title.isEmpty ? rich.senderName : content.title,
+                              image: INImage(imageData: avatar), contactIdentifier: nil, customIdentifier: rich.senderId)
+        let intent = INSendMessageIntent(recipients: nil, outgoingMessageType: .outgoingMessageText,
+                                         content: content.body, speakableGroupName: nil,
+                                         conversationIdentifier: rich.thread, serviceName: nil,
+                                         sender: sender, attachments: nil)
+        let interaction = INInteraction(intent: intent, response: nil)
+        interaction.direction = .incoming
+        interaction.donate(completion: nil)
+        return try? content.updating(from: intent)
+    }
 
     private static func attachment(_ data: Data, id: String) -> UNNotificationAttachment? {
         let dir = FileManager.default.temporaryDirectory
