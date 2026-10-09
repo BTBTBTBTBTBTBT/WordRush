@@ -24,10 +24,22 @@ struct FriendlyGameScreen: View {
     @State private var confirmClose = false
     @State private var rematching = false
 
+    // 9b live play (FlagsService live_play; off = today's 2 s poll, no optimistic moves, no presence).
+    @StateObject private var live = FriendlyLiveChannel()
+    /// The confirmed game plus my in-flight prediction (Core/FriendlyLive.swift); `game` is what it displays.
+    @State private var snap = FriendlyLive.Snapshot()
+    @State private var shakeCount: CGFloat = 0
+    @State private var arrived = false
+    @State private var turnPulse = 0
+    @State private var floaters: [LiveFloater] = []
+
     init(gameId: String, initial: FriendlyGameView? = nil) {
         _gameId = State(initialValue: gameId)
         _game = State(initialValue: initial)
+        _snap = State(initialValue: FriendlyLive.Snapshot(confirmed: initial))
     }
+
+    private var liveOn: Bool { FlagsService.shared.isLive(FriendlyLive.switchKey) }
 
     /// The bed under the pinned keyboards: the Friends wallpaper's top color (§A1 —
     /// no plain white).
@@ -53,6 +65,11 @@ struct FriendlyGameScreen: View {
                             }
                             scoreWindow(g)
                             board(g)
+                                .modifier(ShakeEffect(animatableData: shakeCount))
+                                .scaleEffect(arrived ? 1.014 : 1)
+                                .overlay { if turnPulse > 0 && !Theme.reduceMotion { LiveTurnRing(color: FriendsKit.tileAccent(g.kind)).id(turnPulse) } }
+                                .overlay(alignment: .bottom) { liveFloaters }
+                            if g.isActive && liveOn && live.socketUp { reactionBar }
                             if let moveError, !pinsInput(g) { errorText(moveError) }
                             if !g.isActive { overButtons(g) }
                         }
@@ -87,6 +104,7 @@ struct FriendlyGameScreen: View {
         .background(PageBackground(tint: .friends, lightOnly: true).ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .task(id: gameId) { await poll() }
+        .onDisappear { live.stop() }
         .confirmationDialog("Leave this game?", isPresented: $confirmClose, titleVisibility: .visible) {
             Button("Close — it waits for you") { dismiss() }
             Button("Resign", role: .destructive) { resign() }
@@ -99,12 +117,30 @@ struct FriendlyGameScreen: View {
     // MARK: Data
 
     private func poll() async {
+        live.stop()
         while !Task.isCancelled {
             await refresh()
+            startLiveIfNeeded()
             // Over: one last read is enough — the result won't change.
-            if let g = game, !g.isActive { return }
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            if let g = game, !g.isActive { live.stop(); return }
+            // Live play on + socket up: a slow keep-alive (it also stamps "watching" and repairs a
+            // missed broadcast); socket down: a 4 s fallback; switch off: today's 2 s.
+            var waited = 0
+            while waited < FriendlyLive.pollIntervalMs(liveOn: liveOn, socketUp: live.socketUp), !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                waited += 250
+            }
         }
+    }
+
+    /// Open the game's Realtime channel once the opponent is known (live_play on, game still going).
+    private func startLiveIfNeeded() {
+        guard liveOn, !live.isStarted, let g = game, g.isActive,
+              let uid = AuthService.shared.profile?.id else { return }
+        live.onView = { apply($0) }
+        live.onRefetch = { Task { await refresh() } }
+        live.onReaction = { key in addFloater(key) }
+        live.start(gameId: g.id, userId: uid, opponentId: g.opponent.id)
     }
 
     private func refresh() async {
@@ -116,11 +152,59 @@ struct FriendlyGameScreen: View {
     }
 
     /// Take a newer view (a slow poll never rolls a fresh move back).
-    private func apply(_ g: FriendlyGameView) {
+    /// `own` = the reply to MY move (it replaces my prediction); otherwise a poll / broadcast /
+    /// backup refetch, which only counts when it is a strictly newer save.
+    private func apply(_ g: FriendlyGameView, own: Bool = false) {
         guard g.id == gameId else { return }
-        if let cur = game, cur.updatedAt > g.updatedAt { return }
-        if game != g {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { game = g }
+        if own {
+            snap.confirmMove(g)
+        } else {
+            let r = snap.receive(g)
+            guard r.applied else { return }
+            // A change that lands while my own move is in flight is my move, not the friend's.
+            if liveOn && !sending {
+                if r.change.moved && g.isActive {
+                    Feedback.keyTap()
+                    arrivePulse()
+                }
+                if r.change.yourTurnStarted {
+                    turnPulse += 1
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) { Feedback.notify() }
+                }
+            }
+        }
+        showSnapshot()
+    }
+
+    private func showSnapshot() {
+        let d = snap.displayed
+        if game != d { withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { game = d } }
+    }
+
+    private func arrivePulse() {
+        guard !Theme.reduceMotion else { return }
+        withAnimation(.easeOut(duration: 0.13)) { arrived = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.13) { withAnimation(.easeIn(duration: 0.13)) { arrived = false } }
+    }
+
+    /// A rejected optimistic move: the prediction is dropped, the board gives a gentle shake.
+    private func rollBackMove() {
+        guard snap.rejectMove() else { return }
+        showSnapshot()
+        if !Theme.reduceMotion { withAnimation(.easeOut(duration: 0.35)) { shakeCount += 1 } }
+        Feedback.notAWord()
+    }
+
+    private func moveWithTimeout(_ id: String, _ m: FriendlyMove) async -> Result<FriendlyGameView, FriendlyGamesService.Failure> {
+        await withTaskGroup(of: Result<FriendlyGameView, FriendlyGamesService.Failure>.self) { group in
+            group.addTask { await FriendlyGamesService.move(id, m) }
+            group.addTask { () -> Result<FriendlyGameView, FriendlyGamesService.Failure> in
+                try? await Task.sleep(nanoseconds: UInt64(FriendlyLive.optimisticTimeoutMs) * 1_000_000)
+                return .failure(.network)
+            }
+            let first = await group.next() ?? .failure(.network)
+            group.cancelAll()
+            return first
         }
     }
 
@@ -128,19 +212,30 @@ struct FriendlyGameScreen: View {
         guard let g = game, g.isActive, !sending else { return }
         sending = true
         moveError = nil
+        // Optimistic: my piece / pick / word lands at once with its sound; the server can still say no.
+        var optimistic = false
+        if liveOn, snap.beginMove(m) {
+            optimistic = true
+            showSnapshot()
+            Feedback.keyTap()
+        }
+        let wasOptimistic = optimistic
         Task {
-            let r = await FriendlyGamesService.move(g.id, m)
+            let r = wasOptimistic ? await moveWithTimeout(g.id, m) : await FriendlyGamesService.move(g.id, m)
             sending = false
+            if wasOptimistic {
+                if case .success = r {} else { rollBackMove() }
+            }
             switch r {
             case .success(let ng):
-                apply(ng)
+                apply(ng, own: true)
                 switch m {
                 case .pass: passInput = ""
                 case .ghost: ghostPending = nil
                 case .chain: chainTyped = ""
                 default: break
                 }
-                if !ng.isActive { ng.result == "win" ? Haptics.success() : Haptics.tap() } else { Haptics.tap() }
+                if !ng.isActive { ng.result == "win" ? Haptics.success() : Haptics.tap() } else if !wasOptimistic { Haptics.tap() }
             case .failure(.retry):
                 moveError = "The game moved on — try again"
                 await refresh()
@@ -156,7 +251,7 @@ struct FriendlyGameScreen: View {
     private func resign() {
         guard let g = game else { return }
         Task {
-            if case .success(let ng) = await FriendlyGamesService.resign(g.id) { apply(ng) }
+            if case .success(let ng) = await FriendlyGamesService.resign(g.id) { apply(ng, own: true) }
         }
     }
 
@@ -174,6 +269,7 @@ struct FriendlyGameScreen: View {
                 ghostPending = nil
                 chainTyped = ""
                 gameId = ng.id
+                snap = FriendlyLive.Snapshot(confirmed: ng)
                 withAnimation { game = ng }
             case .failure(.message(let m)): moveError = m
             case .failure: moveError = "Could not start a rematch — try again"
@@ -231,7 +327,8 @@ struct FriendlyGameScreen: View {
                 half(label: "YOU", url: profile?.avatarUrl, name: profile?.username ?? "You", emoji: profile?.avatarEmoji,
                      score: score?[g.me], online: false, leading: true, toPlay: toPlay(g, g.me))
                 half(label: "@\(themName.uppercased())", url: g.opponent.avatarUrl, name: themName, emoji: g.opponent.avatarEmoji,
-                     score: score?[g.me.other], online: themOnline && g.isActive, leading: false, toPlay: toPlay(g, g.me.other))
+                     score: score?[g.me.other], online: livePresence(g) != nil ? live.peerPresent : (themOnline && g.isActive),
+                     leading: false, toPlay: toPlay(g, g.me.other), status: presenceChip(g))
             }
         }
         .background {
@@ -249,6 +346,65 @@ struct FriendlyGameScreen: View {
         .clipShape(shape)
         .overlay(shape.stroke(accent.wash(0.30), lineWidth: 1.5).allowsHitTesting(false))
         .shadow(color: won ? FriendsKit.purple.opacity(0.35) : FriendsKit.ink.opacity(0.08), radius: won ? 10 : 7, x: 0, y: 4)
+    }
+
+    // MARK: Live play (9b)
+
+    /// here / thinking / left once the socket is up on a live game; nil = the old online dot.
+    private func livePresence(_ g: FriendlyGameView) -> FriendlyLive.PresenceLabel? {
+        guard liveOn, live.socketUp, g.isActive else { return nil }
+        return FriendlyLive.presenceLabel(peerPresent: live.peerPresent, everSeen: live.peerEverSeen,
+                                          theirTurn: toPlay(g, g.me.other))
+    }
+
+    /// The friend side's chip: THINKING… on their turn while they are here; HERE NOW / LEFT THE GAME otherwise.
+    private func presenceChip(_ g: FriendlyGameView) -> (text: String, tone: Color)? {
+        guard let p = livePresence(g) else { return nil }
+        let theirTurn = toPlay(g, g.me.other)
+        switch p {
+        case .thinking: return (FriendlyLive.presenceCopy(.thinking), FriendsKit.amber)
+        case .here: return theirTurn ? nil : (FriendlyLive.presenceCopy(.here), FriendsKit.green)
+        case .left: return (FriendlyLive.presenceCopy(.left), Color(hex: 0x94A3B8))
+        case .away: return nil
+        }
+    }
+
+    private var reactionBar: some View {
+        HStack(spacing: 8) {
+            ForEach(FriendlyLive.reactions, id: \.self) { key in
+                Button {
+                    if live.sendReaction(key) { addFloater(key); Feedback.keyTap() }
+                } label: {
+                    ReactionGlyph(key: key, size: 30)
+                        .frame(minWidth: 38, minHeight: 38)
+                }
+                .buttonStyle(.squish)
+                .accessibilityLabel("Send \(Reaction.word(key))")
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    struct LiveFloater: Identifiable { let id = UUID(); let key: String; let x: CGFloat }
+
+    private func addFloater(_ key: String) {
+        let f = LiveFloater(key: key, x: CGFloat.random(in: -0.35...0.35))
+        floaters = Array(floaters.suffix(5)) + [f]
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(FriendlyLive.reactLifetimeMs)) {
+            floaters.removeAll { $0.id == f.id }
+        }
+    }
+
+    @ViewBuilder private var liveFloaters: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .bottom) {
+                ForEach(floaters) { f in
+                    LiveFloat(key: f.key).offset(x: f.x * geo.size.width)
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
+        }
+        .allowsHitTesting(false).accessibilityHidden(true)
     }
 
     /// The finished game's result for its host; nil when there is none (expired).
@@ -276,14 +432,21 @@ struct FriendlyGameScreen: View {
         return FriendlyGames.whoseTurn(g.state)?.rawValue == side.rawValue
     }
 
-    private func half(label: String, url: String?, name: String, emoji: String?, score: Int?, online: Bool, leading: Bool, toPlay: Bool) -> some View {
+    private func half(label: String, url: String?, name: String, emoji: String?, score: Int?, online: Bool, leading: Bool, toPlay: Bool,
+                      status: (text: String, tone: Color)? = nil) -> some View {
         HStack(spacing: 10) {
             if !leading { Spacer(minLength: 0) }
             if leading { FriendsPresenceAvatar(url: url, username: name, emoji: emoji, size: 40, online: online) }
             VStack(alignment: leading ? .leading : .trailing, spacing: 0) {
                 Text(label).font(Brand.font(10, .black)).tracking(0.8)
                     .foregroundStyle(leading ? FriendsKit.purple : Color(hex: 0xB45309)).lineLimit(1).minimumScaleFactor(0.7)
-                if toPlay {
+                if let status {
+                    // 9b presence: THINKING… / HERE NOW / LEFT THE GAME takes the TO PLAY chip's slot.
+                    Text(status.text).font(Brand.font(8.5, .black)).tracking(0.6).foregroundStyle(.white)
+                        .padding(.horizontal, 6).frame(height: 15)
+                        .background(Capsule().fill(status.tone))
+                        .padding(.top, 2)
+                } else if toPlay {
                     Text("TO PLAY").font(Brand.font(8.5, .black)).tracking(0.6).foregroundStyle(.white)
                         .padding(.horizontal, 6).frame(height: 15)
                         .background(Capsule().fill(leading ? FriendsKit.purple : FriendsKit.amber))
@@ -1063,5 +1226,39 @@ private struct SpinningCoin: View {
                 withAnimation(.easeOut(duration: 0.9)) { angle = 720 }
             }
             .accessibilityLabel(face == .heads ? "Coin, heads" : "Coin, tails")
+    }
+}
+
+
+// MARK: Live play helpers (9b)
+
+/// The your-turn pulse: a soft ring that breathes once around the board when the move comes back to you.
+private struct LiveTurnRing: View {
+    let color: Color
+    @State private var phase: Double = 0
+    var body: some View {
+        RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .stroke(color.opacity(0.55), lineWidth: 2.5)
+            .shadow(color: color.opacity(0.4), radius: 10)
+            .opacity(phase)
+            .scaleEffect(1 + 0.012 * phase)
+            .allowsHitTesting(false)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.45)) { phase = 1 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { withAnimation(.easeInOut(duration: 0.5)) { phase = 0 } }
+            }
+    }
+}
+
+/// One live reaction rising from the bottom of the board and fading.
+private struct LiveFloat: View {
+    let key: String
+    @State private var up = false
+    var body: some View {
+        ReactionGlyph(key: key, size: 34)
+            .scaleEffect(up ? 1 : 0.6)
+            .offset(y: up ? -130 : -4)
+            .opacity(up ? 0 : 1)
+            .onAppear { withAnimation(.easeOut(duration: Double(FriendlyLive.reactLifetimeMs) / 1000)) { up = true } }
     }
 }

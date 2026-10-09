@@ -364,7 +364,7 @@ private fun QueueScreen(position: Int, queueSize: Int, message: String?, inviteC
                     )
                     VsTealButton("SHARE INVITE", Modifier.fillMaxWidth(), fill = true, size = com.wordocious.app.ui.CandySize.LARGE, icon = com.wordocious.app.ui.CandyIcon.SHARE) {
                         com.wordocious.app.data.ShareEvents.log("link_invite", vm.mode.name.lowercase(), "vs_lobby")
-                        com.wordocious.app.data.ShareHelper.share(context, com.wordocious.app.data.ShareHelper.vsInviteText(vsModeName(vm.mode), "https://wordocious.com/vs/join/$inviteCode"), "Invite a friend")
+                        com.wordocious.app.data.ShareHelper.share(context, com.wordocious.app.data.ShareHelper.inviteShareText(false, vsModeName(vm.mode), com.wordocious.app.data.ShareHelper.liveInviteUrl(inviteCode)), "Invite a friend")
                     }
                   }
                 }

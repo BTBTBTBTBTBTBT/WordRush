@@ -91,6 +91,11 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
     implementation("io.github.jan-tennert.supabase:auth-kt")
     implementation("io.github.jan-tennert.supabase:storage-kt")
+    // 9b live pocket games: Realtime (broadcast + presence + postgres_changes). Ktor's Android engine has no
+    // WebSocket support, so the Realtime-only client (SupabaseConfig.realtimeClient) runs on OkHttp; the
+    // main client keeps the Android engine untouched.
+    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation("io.ktor:ktor-client-okhttp:3.0.2")
     implementation("io.ktor:ktor-client-android:3.0.2")  // HTTP engine for Supabase on Android
 
     // kotlinx-serialization for the :app data models

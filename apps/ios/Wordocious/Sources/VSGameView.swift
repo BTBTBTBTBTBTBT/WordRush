@@ -411,9 +411,14 @@ struct VSGameView: View {
             Text("Share this code — the match starts when your friend joins.")
                 .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            ShareLink(item: URL(string: "https://wordocious.com/vs/join/\(code)")!,
+            // 9f: with branded_invites live the link is wordocious.com/vs/<CODE> (its preview image carries
+            // the game + code) and the text is one short line; off = today's link + "Code X" line.
+            let branded = FlagsService.shared.isLive(BrandedInvite.switchKey)
+            ShareLink(item: URL(string: branded ? BrandedInvite.url(.vs, code) : "https://wordocious.com/vs/join/\(code)")!,
                       // FINISH_SPEC §S4: the shared invite copy (the link is its own item).
-                      message: Text("\(ShareCopy.vsInvite(game: vsModeLabel, url: "").trimmingCharacters(in: .whitespaces)) Code \(code)")) {
+                      message: Text(branded
+                        ? BrandedInvite.shareLine(.live, sender: AuthService.shared.profile?.username ?? "A friend", game: vsModeLabel)
+                        : "\(ShareCopy.vsInvite(game: vsModeLabel, url: "").trimmingCharacters(in: .whitespaces)) Code \(code)")) {
                 CandyLabel(title: "Share invite") { Icon3D(.share, size: 20) }
             }.buttonStyle(CandyButtonStyle(variant: .purple, size: .large))
             // Logs alongside the ShareLink's own tap (share-sheet open = the
