@@ -58,7 +58,7 @@ object StreakHeadline {
         pool[dayHash("$seed|$days") % pool.size].replace(N, days.toString())
 
     /** The streak headline for a group that just earned today's flawless / sweep, or null with no streak news. */
-    fun line(kind: Kind, days rawDays: Int, best rawBest: Int = 0, dateKey: String): String? {
+    fun line(kind: Kind, rawDays: Int, rawBest: Int = 0, dateKey: String): String? {
         val days = maxOf(0, rawDays)
         val flawless = kind == Kind.FLAWLESS
         val best = maxOf(0, rawBest)
