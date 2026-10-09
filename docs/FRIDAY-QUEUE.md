@@ -933,3 +933,21 @@ second game on the puzzles list")
   (try-on popup); mascot maker Body tab shows them in a tidy grid with the new shapes tagged NEW.
 - Any item that can't fit a new body by rule gets a per-body override or is hidden on that body (never ships
   broken). Runs in wave 5 A right after the 5/5b packs (shared pipeline).
+
+## 51. Mascot maker gap-fill packs (founder 10-09: "anything major I've excluded?")
+- Checked avatar-parts.json: music is partial (guitars, mics, a few headphones — no drums, keys, brass/strings, DJ);
+  video games have NOTHING yet (no controller, headset, pixel items); also missing entirely: dogs (cats exist),
+  robots, dinosaurs, food items, careers beyond chef/astronaut.
+- Add, same autofit pipeline + gating as 5b (generic, no brands/logos):
+  - Music: drumsticks + mini drum, keytar, violin, trumpet/sax, DJ headphones + turntable buddy, boombox, conductor
+    baton, music-note aura, rock-star sunglasses, glitter mic.
+  - Gaming: controller (held), gaming headset, pixel shades, handheld console, 8-bit heart/coin buddies, joystick,
+    arcade token, VR goggles, pixel letter style (with gamer pack).
+  - Pets/buddies: dogs (several breeds), bunny, hamster, parrot, frog, turtle, axolotl, mini dragon, mini robot,
+    dinosaur.
+  - Careers/hobbies: scientist (goggles, lab coat), doctor/nurse scrubs + stethoscope, firefighter helmet, builder
+    hard hat, pilot cap + wings, artist beret + palette, gardener, photographer camera, bookworm reading glasses.
+  - Fantasy: wizard staff, unicorn horn, fairy wings, knight helmet + shield, dragon wings, crown variants.
+  - Food fun: donut float, ice-cream cone held, boba tea, pizza slice, taco buddy.
+- Runs with 5b in wave 5 A (art in free ChatGPT from kickoff). Anything not done Friday rides in the ~Nov 1 2.8.x as
+  data (no code needed).
