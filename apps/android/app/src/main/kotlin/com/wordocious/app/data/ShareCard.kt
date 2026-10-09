@@ -10,6 +10,7 @@ import android.graphics.RectF
 import androidx.annotation.DrawableRes
 import com.wordocious.app.R
 import com.wordocious.app.data.ShareFinish.U
+import com.wordocious.core.ShareHero
 import com.wordocious.app.ui.CastCrops
 import com.wordocious.app.ui.Mascots
 import java.util.Locale
@@ -89,6 +90,11 @@ internal object ShareCard {
         val stats: List<ShareFinish.Stat> = emptyList(),
         val statsH: Float = ShareFinish.STATS_H,
         val titleMaxH: Float = TITLE_MAX_H,
+        /** Item 46: the sender's hero band under the title (posed by this result); null = none (a guest's card). */
+        val hero: ShareHero.Result? = null,
+        /** The hero's owner (resolved through the one avatar resolver); null = the signed-in player. */
+        val heroUserId: String? = null,
+        val heroUsername: String? = null,
     )
 
     /** The settled vertical layout (all in card pixels). */
@@ -96,6 +102,8 @@ internal object ShareCard {
         val height: Int,
         val titleTop: Float, val titleH: Float,
         val infoTop: Float,
+        /** Item 46: the hero band's top (the band is [ShareHero.HEIGHT] tall, a gap under it); unused when 0 band. */
+        val heroTop: Float = 0f,
         val bodyTop: Float, val bodyScale: Float, val bodyW: Float, val bodyH: Float,
         val statsTop: Float,
         /** The cast row's baseline (the feet). */
@@ -116,11 +124,11 @@ internal object ShareCard {
      * Pure S2 layout: sums the sections, scales a too-tall body by height so the card
      * stays inside 9:16, and spreads any shortfall under 4:5 across the gaps.
      */
-    fun layout(titleH: Float, body: Body, hasStats: Boolean, statsH: Float = ShareFinish.STATS_H): Layout {
+    fun layout(titleH: Float, body: Body, hasStats: Boolean, statsH: Float = ShareFinish.STATS_H, heroBand: Float = 0f): Layout {
         val figH = castFigureHeight(W * CAST_FRAC)
         val castH = castBlockH(figH)
         val statsBlock = if (hasStats) statsH + G_STATS else 0f
-        val fixed = TOP + titleH + G_TITLE + INFO_H + G_INFO + G_BODY + statsBlock + castH + G_URL + URL_H + BOTTOM
+        val fixed = TOP + titleH + G_TITLE + heroBand + INFO_H + G_INFO + G_BODY + statsBlock + castH + G_URL + URL_H + BOTTOM
         val s0 = W * body.widthFrac / body.w
         val budget = MAX_H - fixed
         val s = max(0.05f, min(s0, budget / body.h))
@@ -136,6 +144,8 @@ internal object ShareCard {
         var y = TOP + add(0)
         val titleTop = y
         y += titleH + G_TITLE + add(1)
+        val heroTop = y
+        y += heroBand
         val infoTop = y
         y += INFO_H + G_INFO + add(2)
         val bodyTop = y
@@ -147,7 +157,7 @@ internal object ShareCard {
         return Layout(
             height = height.roundToInt().coerceIn(MIN_H, MAX_H),
             titleTop = titleTop, titleH = titleH, infoTop = infoTop,
-            bodyTop = bodyTop, bodyScale = s, bodyW = bw, bodyH = bh,
+            heroTop = heroTop, bodyTop = bodyTop, bodyScale = s, bodyW = bw, bodyH = bh,
             statsTop = statsTop, castBaseline = baseline, castFigH = figH, urlTop = urlTop,
         )
     }
@@ -184,7 +194,8 @@ internal object ShareCard {
     /** Render the whole card. */
     fun render(context: Context, spec: Spec): Bitmap {
         val aspect = artAspect(context, spec.title)
-        val l = layout(titleHeight(aspect, spec.titleMaxH), spec.body, spec.stats.isNotEmpty(), spec.statsH)
+        val hero = spec.hero?.takeIf { ShareHeroArt.available(spec.heroUserId, spec.heroUsername) }
+        val l = layout(titleHeight(aspect, spec.titleMaxH), spec.body, spec.stats.isNotEmpty(), spec.statsH, ShareHero.band(hero != null))
         val bmp = Bitmap.createBitmap(W, l.height, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         val fonts = ShareFinish.Fonts(context)
@@ -198,6 +209,8 @@ internal object ShareCard {
             ShareFinish.fitText(p, spec.titleFallback, TITLE_MAX_W)
             c.drawText(spec.titleFallback, cx, l.titleTop + l.titleH / 2f - (p.ascent() + p.descent()) / 2f, p)
         }
+
+        if (hero != null) ShareHeroArt.draw(context, c, hero, l.heroTop, spec.heroUserId, spec.heroUsername)
 
         drawInfoLine(context, c, fonts, spec.info, spec.badge, l.infoTop)
 

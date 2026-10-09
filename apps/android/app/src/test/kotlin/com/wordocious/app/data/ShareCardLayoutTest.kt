@@ -121,6 +121,25 @@ class ShareCardLayoutTest {
     }
 
     @Test
+    fun theHeroBandSitsBetweenTheTitleAndTheInfoLineAndKeepsTheCardInsideTheFrame() {
+        val band = com.wordocious.core.ShareHero.band(true)
+        for (b in listOf(body(544f, 211f), body(950f, 900f), body(500f, 2400f))) {
+            val plain = ShareCard.layout(170f, b, hasStats = true)
+            val l = ShareCard.layout(170f, b, hasStats = true, heroBand = band)
+            assertTrue(l.height in ShareCard.MIN_H..ShareCard.MAX_H)
+            assertTrue("hero below the title", l.heroTop >= l.titleTop + 170f)
+            assertTrue("hero above the info line", l.heroTop + band <= l.infoTop + 0.5f)
+            // The band is paid for by the body / gaps, never by overflowing 9:16.
+            assertTrue(l.bodyH <= plain.bodyH + 0.5f)
+            assertTrue(l.urlTop + ShareCard.URL_H <= l.height + 1f)
+        }
+        // No band = exactly the long-standing layout.
+        val a = ShareCard.layout(170f, body(544f, 211f), hasStats = true)
+        val z = ShareCard.layout(170f, body(544f, 211f), hasStats = true, heroBand = 0f)
+        assertEquals(a, z)
+    }
+
+    @Test
     fun chooserAndFileNames() {
         assertEquals("Share your QuadWord", ShareHelper.chooserTitle("QuadWord"))
         assertEquals("Wordocious-QuadWord.png", ShareHelper.fileName("QuadWord"))
