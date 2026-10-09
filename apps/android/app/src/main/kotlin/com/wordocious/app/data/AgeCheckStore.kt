@@ -87,7 +87,6 @@ object AgeCheckStore {
     @Serializable
     private data class AgeRow(
         @kotlinx.serialization.SerialName("age_confirmed_13") val confirmed: Boolean? = null,
-        @kotlinx.serialization.SerialName("age_birth_year") val year: Int? = null,
     )
 
     /**
@@ -102,16 +101,16 @@ object AgeCheckStore {
             try {
                 val row = runCatching {
                     SupabaseConfig.client.postgrest["profiles"]
-                        .select(Columns.raw("age_confirmed_13, age_birth_year")) { filter { eq("id", uid) } }
+                        .select(Columns.raw("age_confirmed_13")) { filter { eq("id", uid) } }
                         .decodeSingleOrNull<AgeRow>()
                 }.getOrNull()
                 val confirmed = row?.confirmed ?: false
                 _serverCheckDone.value = true
 
                 val local = _stored.value
-                val serverYear = row?.year
-                if (local == null && confirmed && serverYear != null && AgeCheck.verdict(serverYear) == AgeCheck.Verdict.PASS) {
-                    val s = AgeCheck.Stored(AgeCheck.State.OK, serverYear)
+                // The server keeps only the yes/no flag (no birth year); a confirmed account adopts a passing year here.
+                if (local == null && confirmed) {
+                    val s = AgeCheck.Stored(AgeCheck.State.OK, java.time.LocalDate.now().year - 18)
                     SettingsPref.set(KEY, AgeCheck.encode(s))
                     _stored.value = s
                     startServices(com.wordocious.app.App.instance)

@@ -81,14 +81,16 @@ final class AgeCheckStore: ObservableObject {
         syncing = true
         defer { syncing = false }
 
-        struct Row: Decodable { let age_confirmed_13: Bool?; let age_birth_year: Int? }
+        struct Row: Decodable { let age_confirmed_13: Bool? }
         let row: Row? = try? await auth.client
-            .from("profiles").select("age_confirmed_13, age_birth_year").eq("id", value: id).single()
+            .from("profiles").select("age_confirmed_13").eq("id", value: id).single()
             .execute().value
         let confirmed = row?.age_confirmed_13 ?? false
         serverCheckDone = true
 
-        if stored == nil, confirmed, let y = row?.age_birth_year, AgeCheck.verdict(year: y) == .pass {
+        // The server keeps only the yes/no flag (no birth year); a confirmed account adopts a passing year here.
+        if stored == nil, confirmed {
+            let y = Calendar.current.component(.year, from: Date()) - 18
             stored = AgeCheck.Stored(state: .ok, year: y)
             Self.write(stored)
             startServices()

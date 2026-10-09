@@ -8,7 +8,7 @@ import { verifyUser } from '@/lib/api-auth';
  * year is re-validated here, and only this route (service role) can write the age_* columns
  * (protect_age_columns trigger). Stores the flag + the year only, never a full date.
  *
- *   pass  -> age_confirmed_13 = true, age_birth_year = year   (only if not already set)
+ *   pass  -> age_confirmed_13 = true   (only if not already set; the year itself is never stored server-side)
  *   under -> age_under13_at = now()  (the client signs the account out; /api/cron/purge-under13
  *            deletes it after 7 days)
  *
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (verdict === 'pass') {
     const { error } = await admin
       .from('profiles')
-      .update({ age_confirmed_13: true, age_birth_year: year as number, age_under13_at: null })
+      .update({ age_confirmed_13: true, age_under13_at: null })
       .eq('id', user.id)
       .eq('age_confirmed_13', false);
     if (error) return NextResponse.json({ error: 'Could not save' }, { status: 500 });
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
   // cannot undo a confirmation.
   const { error } = await admin
     .from('profiles')
-    .update({ age_under13_at: new Date().toISOString(), age_birth_year: year as number })
+    .update({ age_under13_at: new Date().toISOString() })
     .eq('id', user.id)
     .eq('age_confirmed_13', false);
   if (error) return NextResponse.json({ error: 'Could not save' }, { status: 500 });

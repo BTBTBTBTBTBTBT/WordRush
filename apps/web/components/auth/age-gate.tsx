@@ -60,8 +60,9 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
   // A confirmed account on a fresh device skips the question (the server already knows).
   const serverConfirmed = !!profile?.age_confirmed_13;
   useEffect(() => {
-    if (status === 'ask' && serverConfirmed && profile?.age_birth_year) answer(profile.age_birth_year);
-  }, [status, serverConfirmed, profile?.age_birth_year, answer]);
+    // The server keeps only the yes/no flag; a confirmed account adopts a passing year on this device.
+    if (status === 'ask' && serverConfirmed) answer(new Date().getFullYear() - 18);
+  }, [status, serverConfirmed, answer]);
 
   // Mirror the device answer to the server once the account is known.
   useEffect(() => {

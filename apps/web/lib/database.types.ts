@@ -35,7 +35,6 @@ export interface Database {
           role: string
           is_admin: boolean | null
           age_confirmed_13: boolean
-          age_birth_year: number | null
           age_under13_at: string | null
           is_banned: boolean
           ban_reason: string | null
@@ -69,7 +68,6 @@ export interface Database {
           role?: string
           is_admin?: boolean | null
           age_confirmed_13?: boolean
-          age_birth_year?: number | null
           age_under13_at?: string | null
           is_banned?: boolean
           ban_reason?: string | null
@@ -103,7 +101,6 @@ export interface Database {
           role?: string
           is_admin?: boolean | null
           age_confirmed_13?: boolean
-          age_birth_year?: number | null
           age_under13_at?: string | null
           is_banned?: boolean
           ban_reason?: string | null

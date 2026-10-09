@@ -5,7 +5,7 @@
 -- profiles gets:
 --   age_confirmed_13   boolean  — true once the player passed the age check (default false: every
 --                                 EXISTING account is asked once on its next launch)
---   age_birth_year     int      — the year they picked (never a full date)
+--   (no birth year is stored: profiles are readable by other players for leaderboards — Opus 10-09)
 --   age_under13_at     timestamptz — set when an existing account answered "under 13": the account is
 --                                 signed out and purged by /api/cron/purge-under13 after 7 days
 --
@@ -15,7 +15,6 @@
 
 alter table public.profiles
   add column if not exists age_confirmed_13 boolean not null default false,
-  add column if not exists age_birth_year   integer,
   add column if not exists age_under13_at   timestamptz;
 
 create or replace function public.protect_age_columns()
@@ -31,7 +30,6 @@ begin
     return new;
   end if;
   new.age_confirmed_13 := old.age_confirmed_13;
-  new.age_birth_year   := old.age_birth_year;
   new.age_under13_at   := old.age_under13_at;
   return new;
 end;
@@ -55,7 +53,6 @@ begin
     return new;
   end if;
   new.age_confirmed_13 := false;
-  new.age_birth_year   := null;
   new.age_under13_at   := null;
   return new;
 end;
