@@ -435,7 +435,7 @@ struct HomeBannerView: View {
         .softSheet(isPresented: m == .unlimited ? $showPro : .constant(false), onDismiss: {
             if unlimitedAfterPurchase && auth.isProActive { onModeChange(.unlimited) }
             unlimitedAfterPurchase = false
-        }) { ProView() }
+        }) { ProView(reason: "Unlimited play") }
         .onChange(of: auth.isProActive) { pro in if pro && showPro { showPro = false } }
     }
 

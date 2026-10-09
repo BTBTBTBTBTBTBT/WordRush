@@ -321,7 +321,7 @@ struct MascotBuilderView: View {
                            onClose: { showLocked = false })
             .presentationDetents([.medium, .large])
         }
-        .softSheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView(reason: "Pro mascot styles") }
     }
 
     // MARK: Item gating (AvatarAccessConfig.itemGating, OFF)

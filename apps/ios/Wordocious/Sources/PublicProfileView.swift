@@ -25,6 +25,16 @@ struct PublicProfileView: View {
     @State private var moderationToast: String?
     /// The family action menu (Report / Block), open while non-nil.
     @State private var moreMenu: FamilyMenuToken?
+    // 2.8 item 17: the action row's sheets — Challenge / Pocket game (the quick-play sheet), React (canned notes).
+    @State private var quickPlay: FriendsService.FriendProfile?
+    @State private var openGame: OpenProfileGame?
+    @State private var challengeMatch: ProfileChallengeMatch?
+    @State private var raceRunFriend: String?
+    @State private var showPro = false
+    @State private var reactMenu: FamilyMenuToken?
+    @State private var actionBusy = false
+    private struct OpenProfileGame: Identifiable { let id: String; let initial: FriendlyGameView? }
+    private struct ProfileChallengeMatch: Identifiable { let id = UUID(); let mode: GameMode; let code: String }
     /// Profile-social redesign data (presence ring, persona chips, H2H, trophy
     /// case, highlights, Lately). Loads separately from the core profile so
     /// the page renders even if every social fetch fails.
@@ -74,6 +84,24 @@ struct PublicProfileView: View {
             topWords = await PublicProfileService.topWords(userId: userId, mode: selectedMode, playType: tab)
         }
         .familyActionMenu(item: $moreMenu) { _ in moderationMenuModel() }
+        .familyActionMenu(item: $reactMenu) { _ in reactMenuModel() }
+        .softSheet(item: $quickPlay) { f in
+            FriendsQuickPlaySheet(
+                friend: f, kind: nil,
+                onStarted: { g in after { openGame = OpenProfileGame(id: g.id, initial: g) } },
+                onVSBattle: { fr in after { challenge(fr) } },
+                onRaceMyRun: { fr in after { if AuthService.shared.isProActive { raceRunFriend = fr.id } else { showPro = true } } })
+        }
+        .softSheet(isPresented: $showPro) { ProView() }
+        .gameCover(item: $openGame, onDismiss: { Task { await FriendlyGamesService.load() } }) { g in
+            FriendlyGameScreen(gameId: g.id, initial: g.initial)
+        }
+        .gameCover(item: $challengeMatch) { m in
+            NavigationStack { VSGameView(mode: m.mode, inviteCode: m.code) }
+        }
+        .softSheet(isPresented: Binding(get: { raceRunFriend != nil }, set: { if !$0 { raceRunFriend = nil } })) {
+            if let id = raceRunFriend { VSFriendPage(mode: VsLobbyKit.selectedMode, preselected: [id]) }
+        }
         #if DEBUG
         .onReceive(NotificationCenter.default.publisher(for: FamilyActionMenuDemo.open)) { n in
             if (n.object as? String) == "profile" { moreMenu = FamilyMenuToken(id: userId) }
@@ -219,10 +247,16 @@ struct PublicProfileView: View {
 
     /// The More menu's rows: Report, then Block / Unblock (all three keep their confirmation steps).
     private func moderationMenuModel() -> FamilyActionMenuModel {
-        var rows: [FamilyMenuAction] = [
-            FamilyMenuAction(id: "report", title: "Report user", icon: .clay("flag"), danger: true,
-                             accessibility: "Report this user") { showReportDialog = true },
-        ]
+        var rows: [FamilyMenuAction] = []
+        // 2.8 item 17: Unfriend / Block / Report all live in the ⋯ menu (Unfriend only for friends).
+        if FriendsService.isFriend(userId) {
+            rows.append(FamilyMenuAction(id: "unfriend", title: "Unfriend", icon: .clay("xmark"), danger: true,
+                                         accessibility: "Unfriend this player") {
+                Task { await FriendsService.remove(friendId: userId); await loadAll() }   // re-gate a private profile
+            })
+        }
+        rows.append(FamilyMenuAction(id: "report", title: "Report user", icon: .clay("flag"), danger: true,
+                                     accessibility: "Report this user") { showReportDialog = true })
         if ModerationService.isBlocked(userId) {
             rows.append(FamilyMenuAction(id: "unblock", title: "Unblock user", icon: .clay("check"), tint: FamilyMenuInk.teal) {
                 Task { await ModerationService.unblock(userId: userId); moderationToast = "User unblocked" }
@@ -253,6 +287,61 @@ struct PublicProfileView: View {
             Text(p.username).font(Brand.title(size))
                 .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
         }
+    }
+
+    // MARK: Item 17 action-row helpers
+
+    /// Run after a sheet finishes dismissing (presenting mid-dismissal drops it).
+    private func after(_ action: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: action)
+    }
+
+    /// Challenge = a private Classic VS Battle (the Friends tab's flow): a targeted invite + a push, then the lobby.
+    private func challenge(_ f: FriendsService.FriendProfile) {
+        guard !actionBusy else { return }
+        actionBusy = true
+        Task {
+            let result = await FriendsService.challenge(friendId: f.id, gameMode: "DUEL")
+            actionBusy = false
+            switch result {
+            case .success(let inv): challengeMatch = ProfileChallengeMatch(mode: GameMode(rawValue: inv.gameMode) ?? .duel, code: inv.code)
+            case .failure(let error): moderationToast = "Could not send: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private var viewerFriend: FriendsService.FriendProfile? { FriendsService.friends.first { $0.id == userId } }
+
+    private var friendState: StatsProfile.FriendshipState {
+        let _ = friendsVersion
+        let signedIn = AuthService.shared.profile != nil
+        return StatsProfile.friendshipState(isSelf: isOwnProfile, isFriend: signedIn && FriendsService.isFriend(userId),
+                                            incoming: signedIn && !isOwnProfile && FriendsService.hasIncomingFrom(userId),
+                                            requested: signedIn && !isOwnProfile && FriendsService.hasRequested(userId))
+    }
+
+    /// React: one tap sends a canned note (the Friends taunts), one per day per friend.
+    private func reactMenuModel() -> FamilyActionMenuModel {
+        let name = profile?.username ?? "Player"
+        let rows = FriendTaunts.all.map { t in
+            FamilyMenuAction(id: t.id, title: t.text, icon: .clay("heart"), tint: FamilyMenuInk.pink, accessibility: t.text) {
+                Task {
+                    let r = await FriendsService.taunt(friendId: userId, tauntId: t.id, day: LeaderboardService.todayLocal())
+                    switch r {
+                    case .sent: moderationToast = "Sent!"
+                    case .alreadySent: moderationToast = "You already reacted to \(name) today"
+                    case .failed: moderationToast = "Could not send. Try again."
+                    }
+                }
+            }
+        }
+        return FamilyActionMenuModel(title: "React", subtitle: "Send \(name) a quick note", actions: rows)
+    }
+
+    private func friendAct(_ work: @escaping () async -> Void) {
+        guard !actionBusy else { return }
+        actionBusy = true
+        Task { await work(); actionBusy = false }
     }
 
     // MARK: Private-profile teaser (spec §3)
@@ -385,19 +474,27 @@ struct PublicProfileView: View {
     // MARK: Header
 
     private func header(_ p: Profile) -> some View {
-        let progress = Double(p.xp % 1000) / 10.0
-        let toNext = 1000 - (p.xp % 1000)
-        return VStack(spacing: 8) {
+        let state = friendState
+        let isFriend = state == .friends
+        return VStack(spacing: 10) {
             HStack {
                 HeaderCircleButton(.symbol("chevron.left"), label: "Back") { dismiss() }
                 Spacer()
-                if !isOwnProfile { addFriendButton }
-                moderationMenu
             }
             if let toast = moderationToast { moderationToastView(toast) }
-            // Social redesign: avatar wrapped in the today-progress ring.
-            TodayRingAvatar(profile: p, completedToday: social.todayCount)
-            usernameText(p)
+            // Item 17: the mascot full-body on a mini Stage (alive while living_mascot is on) with the today pill.
+            ProfileStageHero(profile: p) {
+                VStack { Spacer()
+                    if social.todayCount > 0 {
+                        Text("\(social.todayCount)/\(MedalService.dailyModeCount) today")
+                            .font(Brand.font(10, .black)).foregroundStyle(.white)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Capsule().fill(Theme.primary))
+                            .padding(.bottom, 4)
+                    }
+                }
+            }
+            ProfileIdentityBlock(profile: p, isFriend: isFriend, friendsSince: viewerFriend?.since)
             // PRIVATE PROFILES: the owner (and admins) still see the full page
             // — this muted pill is the reminder that everyone else doesn't.
             if p.isPrivate == true {
@@ -410,20 +507,27 @@ struct PublicProfileView: View {
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .tintedPill(Color(hex: 0x8B5CF6))
             }
-            // Social redesign: presence line + level/archetype/percentile/opener
-            // chips (the level badge moved into the chip row).
+            // Presence line + the archetype / percentile / opener chips.
             if let seen = p.lastSeenAt {
                 PresenceLine(lastSeenAt: seen)
             }
             ProfilePersonalizationRow(profile: p)
             ProfileIdentityChips(profile: p, persona: social.persona)
-            VStack(spacing: 2) {
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: 0x7C3AED).opacity(Theme.isDark ? 0.25 : 0.14)).frame(width: 160, height: 6)
-                    Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: 160 * progress / 100, height: 6)
-                }
-                Text("\(toNext) XP to next level").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            ProfileRankStrip(level: p.level, xp: p.xp)
+            if !isOwnProfile && AuthService.shared.profile != nil {
+                ProfileActionRow(
+                    state: state, busy: actionBusy,
+                    onChallenge: { if let f = viewerFriend { challenge(f) } },
+                    onPocket: { quickPlay = viewerFriend },
+                    onReact: { reactMenu = FamilyMenuToken(id: userId) },
+                    onAddFriend: { friendAct {
+                        _ = await FriendsService.request(addresseeId: userId)
+                        if FriendsService.isFriend(userId) { await loadAll() }   // mutual auto-accept
+                    } },
+                    onCancelRequest: { friendAct { _ = await FriendsService.decline(requesterId: userId) } },
+                    onAccept: { friendAct { _ = await FriendsService.accept(requesterId: userId); await loadAll() } },
+                    onDecline: { friendAct { _ = await FriendsService.decline(requesterId: userId) } },
+                    onMenu: { moreMenu = FamilyMenuToken(id: userId) })
             }
             socialLinksRow()
         }
@@ -470,6 +574,9 @@ struct PublicProfileView: View {
     /// on its own data and simply doesn't render without it, so the existing
     /// page below is untouched when the fetches fail or return nothing.
     @ViewBuilder private func socialSections(_ p: Profile) -> some View {
+        if !isOwnProfile, let f = viewerFriend {
+            ProfileHeadToHeadStrip(friend: f, name: p.username)
+        }
         if let h2h = social.h2h, !h2h.shared.isEmpty,
            let viewerId = social.viewerId, viewerId != p.id {
             YouVsThemCard(target: p, h2h: h2h)
@@ -483,34 +590,12 @@ struct PublicProfileView: View {
     // MARK: Overall stat cards
 
     private func overallCards(_ p: Profile) -> some View {
-        let games = p.totalWins + p.totalLosses
-        // Web parity: one-decimal win rate (e.g. "66.7%"), not rounded to whole.
-        let winRate = games > 0 ? String(format: "%.1f", Double(p.totalWins) / Double(games) * 100) : "0.0"
-        return HStack(spacing: 8) {
-            card("trophy.fill", Color(hex: 0x7C3AED), "\(p.totalWins)", "Wins", "\(winRate)% win rate")
-            card("flame.fill", Color(hex: 0xEA580C), "\(p.currentStreak)", "Win Streak", "Best: \(p.bestStreak)")
-            card("bolt.fill", Theme.primary, "\(p.dailyLoginStreak)", "Daily", "Best: \(p.bestDailyLoginStreak)")
-            card("target", Color(hex: 0x2563EB), "\(games)", "Games", "\(p.totalLosses) losses")
-        }
-    }
-
-    /// §A1 / §A2: each stat in its own tinted tile (its color's top bar) with a soft number.
-    private func card(_ icon: String, _ color: Color, _ value: String, _ label: String, _ sub: String) -> some View {
-        VStack(spacing: 2) {
-            if let icon3d = Icon3DName.forSymbol(icon) {
-                Icon3D(icon3d, size: 20)
-            } else {
-                SymbolGlyph(icon, size: 16, color: color)
-            }
-            Text(value).softNumber(20).lineLimit(1).minimumScaleFactor(0.6)
-            Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.4)
-                .foregroundStyle(Theme.isDark ? Theme.textSecondary : Color.black.mixed(over: color, 0.3))
-                .lineLimit(1).minimumScaleFactor(0.7)
-            Text(sub).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary).lineLimit(1)
-            .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity).padding(.vertical, 8).padding(.horizontal, 2)
-        .tintedCard(accent: color, bar: [color], radius: 14, barHeight: 4, tint: 0.10, line: 0.28)
+        // The headline numbers, once (item 17): the four hero stats. The daily streak lives in LATELY; level + XP are the strip above.
+        let fastest = stats.filter { $0.playType == "solo" && $0.fastestTime > 0 }.map(\.fastestTime).min() ?? 0
+        return HeroStatsRow(wins: p.totalWins, losses: p.totalLosses, streak: p.currentStreak, bestStreak: p.bestStreak,
+                            fastestSeconds: Double(fastest), accent: Color(hex: 0x7C3AED))
+            .padding(16)
+            .statsCard(accent: Color(hex: 0x7C3AED))
     }
 
     // MARK: Mode section (Solo/VS toggle + picker + stats card)

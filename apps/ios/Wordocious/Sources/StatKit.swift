@@ -296,9 +296,8 @@ struct ProStatsInvite: View {
                 .padding(.vertical, 4)
             } else {
                 VStack(spacing: 8) {
-                    ArtThumbs.image(art, points: Self.fullPoints)
-                        .resizable().interpolation(.high).scaledToFit()
-                        .frame(width: Self.fullPoints, height: Self.fullPoints)
+                    // 2.8 item 20: the free player's own mascot on the pedestal with the Stats scene (the cast sign stays on the compact rows).
+                    ProScene(benefit: .stats, height: 128, caption: false)
                     lineText.multilineTextAlignment(.center).frame(maxWidth: 280)
                     button(.medium)
                 }
@@ -307,7 +306,7 @@ struct ProStatsInvite: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .softSheet(isPresented: $showPro) { ProView() }
+        .softSheet(isPresented: $showPro) { ProView(reason: "Extended stats") }
     }
 
     private var lineText: some View {
