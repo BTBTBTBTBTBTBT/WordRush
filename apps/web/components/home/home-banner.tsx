@@ -382,6 +382,7 @@ export function HomeBanner({ word, puzzles, todayDailies, playMode, isPro, onMod
                           palette={gold ? 'leaderboard' : double ? 'celebrate' : 'home'}
                           spec={double ? null : headSpec}
                           size={headLayout.size}
+                          interactive
                           level={2}
                           style={{ whiteSpace: 'nowrap', display: 'inline-block', width: 'auto' }}
                         />

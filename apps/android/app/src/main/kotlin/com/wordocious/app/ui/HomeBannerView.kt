@@ -764,6 +764,7 @@ private fun BannerHeadlineLayer(
                         // A gold name line is the name itself (no second accent inside it).
                         names = if (gold) emptyList() else nameList,
                         sound = active && i == 0,
+                        interactive = active,
                     )
                 }
                 if (i == 0) GoldSparkle(HOME_SPARKLE) else Spacer(Modifier.width(HOME_SPARKLE))

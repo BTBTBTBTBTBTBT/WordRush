@@ -346,7 +346,7 @@ struct HomeBannerView: View {
                 ForEach(Array(fit.layout.lines.enumerated()), id: \.offset) { i, line in
                     let hero = fit.layout.nameLines.contains(i)
                     BubbleLineView(text: line, palette: trophy ? .celebration : (look?.headlinePalette ?? (hero ? .leaderboard : .home)),
-                                   size: fit.size, names: hero ? [] : [name])
+                                   size: fit.size, names: hero ? [] : [name], interactive: true)
                 }
             }
             // The lettering's line box carries ~0.3 em above the caps and ~0.35 em under the

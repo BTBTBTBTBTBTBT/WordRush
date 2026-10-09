@@ -36,7 +36,9 @@ import com.wordocious.core.HeadlineTokens
 import com.wordocious.core.bubbleAtlasCovers
 import com.wordocious.core.bubbleAtlasLayout
 import com.wordocious.core.bubbleFit
+import androidx.compose.foundation.clickable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 // 2.8 item 6: the bubble-lettering renderer. ANY string is drawn from the glyph atlas (drawables
@@ -55,10 +57,12 @@ fun BubbleLine(
     names: List<String> = emptyList(),
     sound: Boolean = true,
     align: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Center,
+    /** 2.8 item 13: tapping a letter bounces it and your host mascot reacts (Home's headline only). */
+    interactive: Boolean = false,
 ) {
     // `bubble_atlas` off-switch (fail-open): off = the live headline font everywhere.
     if (bubbleAtlasCovers(text) && com.wordocious.app.data.FlagsService.isLive("bubble_atlas")) {
-        BubbleAtlasLine(text, palette, sizeDp, modifier, names, align)
+        BubbleAtlasLine(text, palette, sizeDp, modifier, names, align, interactive)
     } else {
         val sizeSp = with(LocalDensity.current) { sizeDp.dp.toSp() }
         // The fit is exact, so nothing shrinks; 0.6 is only a safety net, never an ellipsis.
@@ -78,8 +82,10 @@ private fun BubbleAtlasLine(
     modifier: Modifier,
     names: List<String>,
     align: androidx.compose.ui.text.style.TextAlign,
+    interactive: Boolean = false,
 ) {
     val context = LocalContext.current
+    val tapScope = androidx.compose.runtime.rememberCoroutineScope()
     val density = LocalDensity.current
     val layout = remember(text) { bubbleAtlasLayout(text) }
     val kinds = remember(text, names) {
@@ -134,8 +140,21 @@ private fun BubbleAtlasLine(
                             modifier = Modifier
                                 .offset((g.x * capDp).dp, (g.y * capDp).dp)
                                 .size((g.w * capDp).dp, (g.h * capDp).dp)
+                                .then(
+                                    if (interactive) Modifier.clickable(
+                                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }, indication = null,
+                                    ) {
+                                        // the letter hops; your host mascot answers (a no-op while the living mascot is off)
+                                        com.wordocious.app.data.MascotMoments.emit(com.wordocious.core.AvatarReaction.PROGRESS)
+                                        if (!still) tapScope.launch {
+                                            pop.animateTo(1.38f, spring(dampingRatio = 0.42f, stiffness = 700f))
+                                            pop.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 300f))
+                                        }
+                                    } else Modifier,
+                                )
                                 .graphicsLayer {
                                     scaleX = pop.value; scaleY = pop.value
+                                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
                                     alpha = ((pop.value - 0.6f) / 0.4f).coerceIn(0f, 1f)
                                 },
                         )
