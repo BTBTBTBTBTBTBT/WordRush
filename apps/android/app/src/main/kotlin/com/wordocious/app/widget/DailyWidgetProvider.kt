@@ -550,7 +550,7 @@ class DailyWidgetProvider : AppWidgetProvider() {
             views.setViewVisibility(R.id.w_motif, View.VISIBLE)
             // Light inks on the black back (the night palette values, orange for the accent).
             val ink = 0xFFE9DDFF.toInt(); val label = 0xBFCDB8FF.toInt(); val orange = 0xFFFB923C.toInt()
-            for (id in intArrayOf(R.id.w_streak_caps, R.id.w_left, R.id.w_left_suffix, R.id.w_f3_value, R.id.w_puzzles_caps,
+            for (id in intArrayOf(R.id.w_streak_caps, R.id.w_left, R.id.w_f3_value, R.id.w_puzzles_caps,
                 R.id.w_reset_t, R.id.w_ring_count)) views.setTextColor(id, ink)
             for (id in intArrayOf(R.id.w_reset, R.id.w_f1_label, R.id.w_f3_label, R.id.w_puzzles_count, R.id.w_ring_label)) views.setTextColor(id, label)
             views.setTextColor(R.id.w_f1_value, orange)
