@@ -179,10 +179,10 @@ fun PocketWaitStrip(name: String, sinceMs: Long?, avatar: @Composable () -> Unit
     val line = WaitingRoom.waitingStatusLine(WaitingKind.POCKET, name)
     val waited = if (sinceMs != null) WaitingRoom.waitedSeconds(sinceMs, now) else 0.0
     Column(
-        modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = line },
+        modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = line }, horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painterResource(R.drawable.art_lobby_seat_medallion), null, contentScale = ContentScale.Fit,
                 modifier = Modifier.size(34.dp).graphicsLayer { alpha = 0.9f }.clearAndSetSemantics { },

@@ -186,13 +186,25 @@ struct PuzCandyAction: View {
     /// §BI22: a used-count (hints, checks) — a gold coin on the top-right corner,
     /// never part of the label, so the pill never widens. 0 = no badge.
     var count: Int = 0
+    /// Item 32: the one primary control of a row (Enter, Check): the family helper in its solid tint.
+    var primary: Bool = false
+    /// Item 32: an explicit helper tint (the amber hint pair); nil = the game's color.
+    var tint: Color? = nil
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) { CandyLabel(title: title, symbol: symbol) }
-            .buttonStyle(CandyButtonStyle(variant: variant, size: size, fullWidth: fullWidth))
-            .hintCountBadge(count)
-            .accessibilityLabel(count > 0 ? "\(title) (\(count) used)" : title)
+        Group {
+            if primary || tint != nil {
+                // The family helper pill itself (solid / its own tint), full width when the row asks for it.
+                Button(action: action) { CandyLabel(title: title, symbol: symbol) }
+                    .buttonStyle(HelperButtonStyle(tint: tint, fullWidth: fullWidth, selected: primary))
+            } else {
+                Button(action: action) { CandyLabel(title: title, symbol: symbol) }
+                    .buttonStyle(CandyButtonStyle(variant: variant, size: size, fullWidth: fullWidth))
+            }
+        }
+        .hintCountBadge(count)
+        .accessibilityLabel(count > 0 ? "\(title) (\(count) used)" : title)
     }
 }
 
