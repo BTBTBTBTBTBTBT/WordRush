@@ -8,6 +8,12 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // 13+ age check (FRIDAY-QUEUE item 29): Sentry's manifest auto-init is OFF; a device that already
+        // passed starts it right here, everyone else only after passing (AgeCheckStore.startServices).
+        com.wordocious.app.data.AgeCheckStore.load()
+        if (com.wordocious.app.data.AgeCheckStore.stored.value?.state == com.wordocious.app.data.AgeCheck.State.OK) {
+            com.wordocious.app.data.AgeCheckStore.startSentry(this)
+        }
         // FINISH_SPEC U: preload the 16-sound pack once + track the resumed activity for haptics.
         com.wordocious.app.data.Haptics.install(this)
         // Perf (2026-10-02): the SoundPool build + 16 file opens ran on the main thread

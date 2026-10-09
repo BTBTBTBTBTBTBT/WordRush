@@ -62,6 +62,8 @@ enum PushRegistration {
     /// repeatedly; iOS coalesces and re-delivers the token when it changes.
     @MainActor
     static func register() {
+        // 13+ age check (item 29): no push registration before the check passes.
+        guard AgeCheckStore.shared.isCleared else { return }
         UIApplication.shared.registerForRemoteNotifications()
     }
 

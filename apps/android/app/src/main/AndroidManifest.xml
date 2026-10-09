@@ -92,9 +92,15 @@
         <!-- Sentry crash reporting (manifest auto-init, no gradle plugin).
              The DSN is release-only — see src/release/AndroidManifest.xml —
              so debug builds have no DSN and Sentry stays inert. -->
+        <!-- 13+ age check (FRIDAY-QUEUE item 29): auto-init is OFF; AgeCheckStore.startSentry() calls
+             SentryAndroid.init() only after the check passes (it still reads the release DSN above). -->
         <meta-data
             android:name="io.sentry.auto-init"
-            android:value="true" />
+            android:value="false" />
+        <!-- FCM token generation also waits for the age check (AgeCheckStore.startServices turns it on). -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
         <meta-data
             android:name="io.sentry.traces.sample-rate"
             android:value="0.0" />
