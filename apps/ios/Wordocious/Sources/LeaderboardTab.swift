@@ -10,6 +10,8 @@ struct LeaderboardTab: View {
     /// Owned by RootTabView so tab gestures can pop it to root.
     @Binding var path: [String]
     @State private var mode: GameMode = .duel
+    /// 2.8 item 14: scroll-driven header fade + condense.
+    @StateObject private var headerScroll = HeaderScrollModel()
     // Sweep chip (the banner's SWEEP pill, LeaderboardBannerView) — the cross-mode
     // "completed every sweep daily" board.
     @State private var isSweep = false
@@ -108,7 +110,7 @@ struct LeaderboardTab: View {
             ZStack {
                 PageBackground(tint: .leaderboard)
                 VStack(spacing: 0) {
-                    AppHeaderView()
+                    AppHeaderView(scroll: headerScroll)
                     if !auth.isAuthenticated { signedOut } else { content }
                 }
                 .frame(maxHeight: .infinity, alignment: .top)   // BI23: header pinned
@@ -322,6 +324,7 @@ struct LeaderboardTab: View {
                 }
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
             // Clear the banner+nav: every sibling tab hardcodes 72–80pt here,
             // but this tab never got ANY — invisible until Yesterday's Winners
             // made the page tall enough to cut off (founder screenshot). The
@@ -330,6 +333,7 @@ struct LeaderboardTab: View {
             .padding(.bottom, 16 + max(56, chrome.bottomInset))   // §AS3: + 16 pt breathing room
         }
         .reportsScrollMotion()   // §AQ2
+        .headerScrollFade(headerScroll)   // 2.8 item 14
         .softSheet(isPresented: $showRecords) { RecordsTab().presentationDetents([.large]) }
         // Before the first frame: the selected board from the cache with the player's own row
         // (load() repeats this, but only after the render).

@@ -20,6 +20,8 @@ struct AppHeaderView: View {
         var action: () -> Void
     }
     var share: Share? = nil
+    /// 2.8 item 14: the page's scroll model — the cast row slims as the page scrolls (nil = never condenses).
+    var scroll: HeaderScrollModel? = nil
 
     @ObservedObject private var auth = AuthService.shared
     @State private var showMenu = false
@@ -93,7 +95,11 @@ struct AppHeaderView: View {
             .padding(.horizontal, 8)
             .padding(.top, 2)
 
-            LivingCastHeader(pro: auth.isProActive)
+            if let scroll {
+                CondensingCast(model: scroll, pro: auth.isProActive)
+            } else {
+                LivingCastHeader(pro: auth.isProActive)
+            }
         }
         .padding(.bottom, 2)
         .streakBumpFeedback(auth.headerStreak)                      // §U: streak +1

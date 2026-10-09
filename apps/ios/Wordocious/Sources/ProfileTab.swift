@@ -21,6 +21,8 @@ struct ProfileTab: View {
     @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
     @State private var showPro = false
+    /// 2.8 item 14: scroll-driven header fade + condense.
+    @StateObject private var headerScroll = HeaderScrollModel()
     @State private var statRows: [UserStatRow] = []
     /// FINISH_SPEC BJ1: the picked GAME (nil = Overview). Core `StatsSelection.sections`
     /// resolves the two sections shown — Today first, All-time beneath.
@@ -233,7 +235,7 @@ struct ProfileTab: View {
             ZStack {
                 PageBackground(tint: .stats)
                 VStack(spacing: 0) {
-                    AppHeaderView()   // shared header (settings now lives here)
+                    AppHeaderView(scroll: headerScroll)   // shared header (settings now lives here)
                     // §241: during the launch-restore window a returning
                     // player must never see the signed-out pitch — the cached
                     // profile usually fills this gap; a brief spinner covers a
@@ -514,6 +516,7 @@ struct ProfileTab: View {
                 .opacity(pageFade)
             }
             .padding(.horizontal, 12).padding(.top, 8)
+            .background(alignment: .top) { HeaderScrollProbe() }   // 2.8 item 14
             // §AS3: the last section always ends clear of the docked footer (its
             // measured height + 16 pt) and stays tappable.
             .tabScrollTail()
@@ -532,6 +535,7 @@ struct ProfileTab: View {
             )
         }
         .reportsScrollMotion()   // §AQ2: idle loops pause while scrolling
+        .headerScrollFade(headerScroll)   // 2.8 item 14
         // select(.vs) swapped to Overview un-animated; once it is laid out, glide down to
         // its VS section (web: scrollIntoView smooth, block start).
         .onChange(of: vsScrollToken) { _ in
