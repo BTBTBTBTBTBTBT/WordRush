@@ -1,0 +1,2208 @@
+{
+  "widths": [
+    {
+      "text": "DAILIES",
+      "em": 4.333
+    },
+    {
+      "text": "PUZZLES",
+      "em": 4.834
+    },
+    {
+      "text": "W",
+      "em": 1.378
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "em": 8.853
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "em": 12.647
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "em": 11.225
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "em": 13.322
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "em": 22.548
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "em": 21.285
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "em": 19.602
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "em": 24.693
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "em": 13.232
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "em": 8.945
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "em": 11.812
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "em": 21.381
+    }
+  ],
+  "fits": [
+    {
+      "text": "DAILIES",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DAILIES",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 46,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DAILIES",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DAILIES",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DAILIES",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DAILIES",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DAILIES",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DAILIES",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DAILIES"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 41,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 58,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "W",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "W"
+        ],
+        "size": 60,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUBLE",
+          "SWEEP!"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUBLE",
+          "SWEEP!"
+        ],
+        "size": 44,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUBLE SWEEP!"
+        ],
+        "size": 32,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUBLE SWEEP!"
+        ],
+        "size": 32,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUBLE SWEEP!"
+        ],
+        "size": 37,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUBLE SWEEP!"
+        ],
+        "size": 37,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUBLE SWEEP!"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUBLE SWEEP!",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUBLE SWEEP!"
+        ],
+        "size": 58,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WARMING",
+          "UP · 3 DOWN"
+        ],
+        "size": 28,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WARMING",
+          "UP · 3",
+          "DOWN"
+        ],
+        "size": 35,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WARMING",
+          "UP · 3 DOWN"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WARMING",
+          "UP · 3 DOWN"
+        ],
+        "size": 40,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WARMING UP · 3 DOWN"
+        ],
+        "size": 26,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WARMING",
+          "UP · 3 DOWN"
+        ],
+        "size": 47,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WARMING UP · 3 DOWN"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "WARMING UP · 3 DOWN",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WARMING UP · 3 DOWN"
+        ],
+        "size": 41,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "ON A ROLL",
+          "· 11 OF 18"
+        ],
+        "size": 33,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "ON A ROLL",
+          "· 11 OF 18"
+        ],
+        "size": 33,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "ON A ROLL",
+          "· 11 OF 18"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "ON A ROLL",
+          "· 11 OF 18"
+        ],
+        "size": 48,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "ON A ROLL · 11 OF 18"
+        ],
+        "size": 29,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "ON A ROLL",
+          "· 11 OF 18"
+        ],
+        "size": 56,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "ON A ROLL · 11 OF 18"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "ON A ROLL · 11 OF 18"
+        ],
+        "size": 46,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "HOME",
+          "STRETCH",
+          "· 12 LEFT"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "HOME",
+          "STRETCH",
+          "· 12 LEFT"
+        ],
+        "size": 39,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "HOME STRETCH",
+          "· 12 LEFT"
+        ],
+        "size": 33,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "HOME STRETCH",
+          "· 12 LEFT"
+        ],
+        "size": 33,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "HOME STRETCH",
+          "· 12 LEFT"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "HOME STRETCH",
+          "· 12 LEFT"
+        ],
+        "size": 39,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "HOME STRETCH · 12 LEFT"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "HOME STRETCH · 12 LEFT",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "HOME STRETCH · 12 LEFT"
+        ],
+        "size": 39,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOU",
+          "S FLAWLESS!",
+          "3 PUZZLES",
+          "LEFT"
+        ],
+        "size": 28,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIO",
+          "US",
+          "FLAWLESS!",
+          "3 PUZZLES",
+          "LEFT"
+        ],
+        "size": 31,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS",
+          "FLAWLESS! 3",
+          "PUZZLES LEFT"
+        ],
+        "size": 36,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS",
+          "FLAWLESS! 3",
+          "PUZZLES LEFT"
+        ],
+        "size": 36,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS",
+          "FLAWLESS! 3",
+          "PUZZLES LEFT"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS",
+          "FLAWLESS! 3",
+          "PUZZLES LEFT"
+        ],
+        "size": 42,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS FLAWLESS!",
+          "3 PUZZLES LEFT"
+        ],
+        "size": 37,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS FLAWLESS!",
+          "3 PUZZLES LEFT"
+        ],
+        "size": 37,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOU",
+          "S SWEPT! 10",
+          "PUZZLES LEFT"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIO",
+          "US SWEPT!",
+          "10 PUZZLES",
+          "LEFT"
+        ],
+        "size": 31,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS",
+          "SWEPT! 10",
+          "PUZZLES LEFT"
+        ],
+        "size": 36,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS",
+          "SWEPT! 10",
+          "PUZZLES LEFT"
+        ],
+        "size": 36,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS SWEPT!",
+          "10 PUZZLES LEFT"
+        ],
+        "size": 27,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS",
+          "SWEPT! 10",
+          "PUZZLES LEFT"
+        ],
+        "size": 42,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS SWEPT!",
+          "10 PUZZLES LEFT"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "WORDOCIOUS SWEPT! 10 PUZZLES LEFT",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS SWEPT!",
+          "10 PUZZLES LEFT"
+        ],
+        "size": 42,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES",
+          "FLAWLESS! 4",
+          "PUZZLES LEFT"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES",
+          "FLAWLESS! 4",
+          "PUZZLES LEFT"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES",
+          "FLAWLESS! 4",
+          "PUZZLES LEFT"
+        ],
+        "size": 37,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES",
+          "FLAWLESS! 4",
+          "PUZZLES LEFT"
+        ],
+        "size": 37,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES FLAWLESS!",
+          "4 PUZZLES LEFT"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES FLAWLESS!",
+          "4 PUZZLES LEFT"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "PUZZLES FLAWLESS! 4 PUZZLES LEFT"
+        ],
+        "size": 26,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "PUZZLES FLAWLESS! 4 PUZZLES LEFT",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "PUZZLES FLAWLESS!",
+          "4 PUZZLES LEFT"
+        ],
+        "size": 47,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "MAXIMILLIAN",
+          "_THE_GREAT!"
+        ],
+        "size": 27,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "GOOD",
+          "AFTERNOO",
+          "N,",
+          "MAXIMILLIA",
+          "N_THE_GRE",
+          "AT!"
+        ],
+        "size": 31,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "MAXIMILLIAN_THE_",
+          "GREAT!"
+        ],
+        "size": 27,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "GOOD",
+          "AFTERNOON,",
+          "MAXIMILLIAN_TH",
+          "E_GREAT!"
+        ],
+        "size": 31,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "MAXIMILLIAN_THE_GRE",
+          "AT!"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "MAXIMILLIAN_THE_G",
+          "REAT!"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "MAXIMILLIAN_THE_GREAT!"
+        ],
+        "size": 36,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, MAXIMILLIAN_THE_GREAT!",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "MAXIMILLIAN_THE_GREAT!"
+        ],
+        "size": 36,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SATURDAY",
+          "SUPERSTARS"
+        ],
+        "size": 27,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SATURDAY",
+          "SUPERSTAR",
+          "S"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SATURDAY",
+          "SUPERSTARS"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SATURDAY",
+          "SUPERSTARS"
+        ],
+        "size": 39,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SATURDAY",
+          "SUPERSTARS"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SATURDAY",
+          "SUPERSTARS"
+        ],
+        "size": 46,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SATURDAY SUPERSTARS"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "SATURDAY SUPERSTARS",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SATURDAY SUPERSTARS"
+        ],
+        "size": 39,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "FRIDAY’S",
+          "FINEST"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "FRIDAY’S",
+          "FINEST"
+        ],
+        "size": 39,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "FRIDAY’S FINEST"
+        ],
+        "size": 31,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "FRIDAY’S FINEST"
+        ],
+        "size": 31,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "FRIDAY’S FINEST"
+        ],
+        "size": 37,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "FRIDAY’S FINEST"
+        ],
+        "size": 37,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "FRIDAY’S FINEST"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "FRIDAY’S FINEST",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "FRIDAY’S FINEST"
+        ],
+        "size": 58,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUG & BMT",
+          "· 9,999 ★"
+        ],
+        "size": 28,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUG",
+          "& BMT ·",
+          "9,999 ★"
+        ],
+        "size": 47,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUG & BMT",
+          "· 9,999 ★"
+        ],
+        "size": 38,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUG & BMT",
+          "· 9,999 ★"
+        ],
+        "size": 40,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUG & BMT · 9,999 ★"
+        ],
+        "size": 28,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUG & BMT",
+          "· 9,999 ★"
+        ],
+        "size": 47,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "DOUG & BMT · 9,999 ★"
+        ],
+        "size": 38,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "DOUG & BMT · 9,999 ★",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "DOUG & BMT · 9,999 ★"
+        ],
+        "size": 44,
+        "wrapped": false
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 200,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SUPERCALIFR",
+          "AGILISTICEXPI",
+          "ALIDOCIOUS"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 200,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SUPERCALIF",
+          "RAGILISTIC",
+          "EXPIALIDOC",
+          "IOUS"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 285,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SUPERCALIFRAGILIS",
+          "TICEXPIALIDOCIOUS"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 285,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SUPERCALIFRAGI",
+          "LISTICEXPIALIDO",
+          "CIOUS"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 334,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SUPERCALIFRAGILISTIC",
+          "EXPIALIDOCIOUS"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 334,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SUPERCALIFRAGILIS",
+          "TICEXPIALIDOCIOUS"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 520,
+      "maxSize": 38,
+      "minSize": 26,
+      "fit": {
+        "lines": [
+          "SUPERCALIFRAGILISTICEXPIALIDOCIO",
+          "US"
+        ],
+        "size": 26,
+        "wrapped": true
+      }
+    },
+    {
+      "text": "SUPERCALIFRAGILISTICEXPIALIDOCIOUS",
+      "slot": 520,
+      "maxSize": 60,
+      "minSize": 30,
+      "fit": {
+        "lines": [
+          "SUPERCALIFRAGILISTICEXPIALID",
+          "OCIOUS"
+        ],
+        "size": 30,
+        "wrapped": true
+      }
+    }
+  ],
+  "home": [
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "slot": 220,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "BMT!"
+        ],
+        "size": 20,
+        "wrapped": true,
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "slot": 285,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "BMT!"
+        ],
+        "size": 27,
+        "wrapped": true,
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "slot": 334,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON,",
+          "BMT!"
+        ],
+        "size": 31,
+        "wrapped": true,
+        "nameLines": [
+          1
+        ]
+      }
+    },
+    {
+      "text": "GOOD AFTERNOON, BMT!",
+      "name": "BMT",
+      "slot": 520,
+      "fit": {
+        "lines": [
+          "GOOD AFTERNOON, BMT!"
+        ],
+        "size": 38,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "GOOD EVENING, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "slot": 220,
+      "fit": {
+        "lines": [
+          "GOOD EVENING,",
+          "MAXIMILLIAN_THE_",
+          "GREAT!"
+        ],
+        "size": 20,
+        "wrapped": true,
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD EVENING, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "slot": 285,
+      "fit": {
+        "lines": [
+          "GOOD EVENING,",
+          "MAXIMILLIAN_THE_",
+          "GREAT!"
+        ],
+        "size": 27,
+        "wrapped": true,
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD EVENING, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "slot": 334,
+      "fit": {
+        "lines": [
+          "GOOD EVENING,",
+          "MAXIMILLIAN_THE_",
+          "GREAT!"
+        ],
+        "size": 31,
+        "wrapped": true,
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "GOOD EVENING, MAXIMILLIAN_THE_GREAT!",
+      "name": "Maximillian_The_Great",
+      "slot": 520,
+      "fit": {
+        "lines": [
+          "GOOD EVENING,",
+          "MAXIMILLIAN_THE_",
+          "GREAT!"
+        ],
+        "size": 38,
+        "wrapped": true,
+        "nameLines": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "name": "BMT",
+      "slot": 220,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS FLAWLESS!",
+          "3 PUZZLES LEFT"
+        ],
+        "size": 15,
+        "wrapped": true,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "name": "BMT",
+      "slot": 285,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS FLAWLESS!",
+          "3 PUZZLES LEFT"
+        ],
+        "size": 20,
+        "wrapped": true,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "name": "BMT",
+      "slot": 334,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS FLAWLESS!",
+          "3 PUZZLES LEFT"
+        ],
+        "size": 23,
+        "wrapped": true,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "WORDOCIOUS FLAWLESS! 3 PUZZLES LEFT",
+      "name": "BMT",
+      "slot": 520,
+      "fit": {
+        "lines": [
+          "WORDOCIOUS FLAWLESS!",
+          "3 PUZZLES LEFT"
+        ],
+        "size": 37,
+        "wrapped": true,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "name": "",
+      "slot": 220,
+      "fit": {
+        "lines": [
+          "ON A ROLL · 11 OF 18"
+        ],
+        "size": 19,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "name": "",
+      "slot": 285,
+      "fit": {
+        "lines": [
+          "ON A ROLL · 11 OF 18"
+        ],
+        "size": 25,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "name": "",
+      "slot": 334,
+      "fit": {
+        "lines": [
+          "ON A ROLL · 11 OF 18"
+        ],
+        "size": 29,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "ON A ROLL · 11 OF 18",
+      "name": "",
+      "slot": 520,
+      "fit": {
+        "lines": [
+          "ON A ROLL · 11 OF 18"
+        ],
+        "size": 38,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "slot": 220,
+      "fit": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "size": 20,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "slot": 285,
+      "fit": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "size": 27,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "slot": 334,
+      "fit": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "size": 31,
+        "wrapped": false,
+        "nameLines": []
+      }
+    },
+    {
+      "text": "UP LATE, BMT?",
+      "name": "BMT",
+      "slot": 520,
+      "fit": {
+        "lines": [
+          "UP LATE, BMT?"
+        ],
+        "size": 38,
+        "wrapped": false,
+        "nameLines": []
+      }
+    }
+  ],
+  "glyphs": [
+    {
+      "ch": "A",
+      "name": "a"
+    },
+    {
+      "ch": "B",
+      "name": "b"
+    },
+    {
+      "ch": "C",
+      "name": "c"
+    },
+    {
+      "ch": "D",
+      "name": "d"
+    },
+    {
+      "ch": "E",
+      "name": "e"
+    },
+    {
+      "ch": "F",
+      "name": "f"
+    },
+    {
+      "ch": "G",
+      "name": "g"
+    },
+    {
+      "ch": "H",
+      "name": "h"
+    },
+    {
+      "ch": "I",
+      "name": "i"
+    },
+    {
+      "ch": "J",
+      "name": "j"
+    },
+    {
+      "ch": "K",
+      "name": "k"
+    },
+    {
+      "ch": "L",
+      "name": "l"
+    },
+    {
+      "ch": "M",
+      "name": "m"
+    },
+    {
+      "ch": "N",
+      "name": "n"
+    },
+    {
+      "ch": "O",
+      "name": "o"
+    },
+    {
+      "ch": "P",
+      "name": "p"
+    },
+    {
+      "ch": "Q",
+      "name": "q"
+    },
+    {
+      "ch": "R",
+      "name": "r"
+    },
+    {
+      "ch": "S",
+      "name": "s"
+    },
+    {
+      "ch": "T",
+      "name": "t"
+    },
+    {
+      "ch": "U",
+      "name": "u"
+    },
+    {
+      "ch": "V",
+      "name": "v"
+    },
+    {
+      "ch": "W",
+      "name": "w"
+    },
+    {
+      "ch": "X",
+      "name": "x"
+    },
+    {
+      "ch": "Y",
+      "name": "y"
+    },
+    {
+      "ch": "Z",
+      "name": "z"
+    },
+    {
+      "ch": "0",
+      "name": "0"
+    },
+    {
+      "ch": "1",
+      "name": "1"
+    },
+    {
+      "ch": "2",
+      "name": "2"
+    },
+    {
+      "ch": "3",
+      "name": "3"
+    },
+    {
+      "ch": "4",
+      "name": "4"
+    },
+    {
+      "ch": "5",
+      "name": "5"
+    },
+    {
+      "ch": "6",
+      "name": "6"
+    },
+    {
+      "ch": "7",
+      "name": "7"
+    },
+    {
+      "ch": "8",
+      "name": "8"
+    },
+    {
+      "ch": "9",
+      "name": "9"
+    },
+    {
+      "ch": "★",
+      "name": "star"
+    },
+    {
+      "ch": "!",
+      "name": "bang"
+    },
+    {
+      "ch": "?",
+      "name": "ask"
+    },
+    {
+      "ch": ",",
+      "name": "comma"
+    },
+    {
+      "ch": "'",
+      "name": "apos"
+    },
+    {
+      "ch": "·",
+      "name": "dot"
+    },
+    {
+      "ch": "-",
+      "name": "dash"
+    },
+    {
+      "ch": "&",
+      "name": "amp"
+    }
+  ]
+}
