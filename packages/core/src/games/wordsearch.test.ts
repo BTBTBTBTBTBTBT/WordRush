@@ -5,8 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   wordsearchPuzzleForDay, wordsearchPuzzleForSeed, wordsearchDailyNumber, wordsearchCells, wordsearchLine,
   createWordsearchState, wordsearchReduce, wordsearchMatchRow, reconstructWordsearch, wordsearchGuessCount, wordsearchNextUnfound,
-  WORDSEARCH_DIRS, WORDSEARCH_N, wordsearchNearWord, type WordsearchBank, type WordsearchPuzzle,
-} from './wordsearch';
+  WORDSEARCH_DIRS, WORDSEARCH_N, wordsearchNearWord, type WordsearchBank, type WordsearchPuzzle, } from './wordsearch';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const bankPath = join(repo, 'apps', 'web', 'data', 'wordsearch-puzzles.json');
@@ -104,7 +103,7 @@ describe.skipIf(!bank)('Spyglass bank', () => {
       expect(q.grid.length, q.id).toBe(100);
       expect(q.words.length, q.id).toBe(10);
       for (const w of q.words) {
-        expect(['E', 'S', 'SE', 'NE'], `${q.id} ${w.w} dir`).toContain(w.d);
+        expect(Object.keys(WORDSEARCH_DIRS), `${q.id} ${w.w} dir`).toContain(w.d); // 2.8: all 8 directions (founder 10-08)
         const letters = wordsearchCells(10, w).map((i) => q.grid[i]).join('');
         expect(letters, `${q.id} ${w.w}`).toBe(w.w);
       }

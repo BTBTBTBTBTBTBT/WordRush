@@ -52,7 +52,7 @@ describe('spyglass harder generator', () => {
     expect(a.grid).not.toBe(c.grid);
   });
 
-  it('scores the harder grids well above the shipped forward-only grids', () => {
+  it('scores the harder grids well (the bank now ships them from Oct 13)', () => {
     let before = 0, after = 0;
     for (const p of bank.daily.slice(17, 31)) {
       const words = p.words.map((w: { w: string }) => w.w);
@@ -60,7 +60,7 @@ describe('spyglass harder generator', () => {
       after += generateHardest({ words, pool: pools[p.theme] ?? [], level: 4, seed: `score-${p.id}` }).score.total;
     }
     expect(after / 14).toBeGreaterThanOrEqual(70);
-    expect(after).toBeGreaterThan(before + 14 * 25);
+    expect(before).toBeGreaterThan(0);
   });
 
   it('rejects filler that spells a theme word or a ≥4-letter chunk off the word', () => {
