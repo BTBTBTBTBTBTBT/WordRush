@@ -28,6 +28,12 @@ export const AVATAR_LIVE_CONFIG = {
 /** The pose ids (stored in the avatar config's `pose`; 'none' = the body as drawn). */
 export const AVATAR_POSES = ['none', 'wave', 'cheer', 'hips', 'shrug', 'flex', 'hug', 'sit', 'jump'] as const;
 export type AvatarPose = (typeof AVATAR_POSES)[number];
+/**
+ * Founder 10-09 ("trim for now to the ones that work best"): the poses the Pose tab offers and a saved config keeps.
+ * The others stay defined (the podium / reactions may still use them) but a player can't pick them, and a saved
+ * hips / shrug / hug / sit reads as 'none' (the body as drawn) until their art is redone.
+ */
+export const AVATAR_PICKER_POSES = ['none', 'wave', 'cheer', 'flex', 'jump'] as const;
 
 /** [a, b, c, d, e, f]: x' = a·x + c·y + e, y' = b·x + d·y + f (the canvas / SVG / CGAffineTransform order). */
 export type AvatarMatrix = [number, number, number, number, number, number];

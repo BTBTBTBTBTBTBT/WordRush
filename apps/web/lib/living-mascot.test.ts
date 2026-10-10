@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AVATAR_LIVE_CONFIG, AVATAR_POSES, avatarLiveFrame, defaultAvatar, type AvatarConfig } from '@wordle-duel/core';
+import { AVATAR_LIVE_CONFIG, AVATAR_PICKER_POSES, AVATAR_POSES, avatarLiveFrame, defaultAvatar, type AvatarConfig } from '@wordle-duel/core';
 import { avatarArtNames, avatarLiveLayout, avatarLiveTransforms, avatarOptionIds, avatarOptionLabel, cachedMascotSvg, mascotSvg } from './avatar-render';
 import { livingMascotOn, claimLivingSlot, emitMascotMoment, livingSlotsInUse } from './living-mascot';
 
@@ -54,8 +54,8 @@ describe('posed + live svg', () => {
 });
 
 describe('the Pose tab options', () => {
-  it('offers every pose, labeled', () => {
-    expect(avatarOptionIds('pose')).toEqual(AVATAR_POSES);
+  it('offers the picker poses (founder 10-09 trim), labeled', () => {
+    expect(avatarOptionIds('pose')).toEqual(AVATAR_PICKER_POSES);
     expect(avatarOptionLabel('pose', 'none')).toBe('Standing');
     expect(avatarOptionLabel('pose', 'hips')).toBe('Hands on hips');
   });

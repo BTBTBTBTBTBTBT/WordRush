@@ -260,6 +260,8 @@ public struct AvatarLiveFrame: Equatable {
 public enum AvatarPose {
     /// The pose ids (stored in the avatar config's `pose`; "none" = the body as drawn).
     public static let ids = ["none", "wave", "cheer", "hips", "shrug", "flex", "hug", "sit", "jump"]
+    /// Founder 10-09: the poses the Pose tab offers and a saved config keeps (core AVATAR_PICKER_POSES); the rest read as "none".
+    public static let pickerIds = ["none", "wave", "cheer", "flex", "jump"]
     /// The four rig layers, back → front. Art: art-av-body-<body>-<part>.
     public static let rigParts = ["feet", "base", "armL", "armR"]
     /// A held item tilts with its hand at most this much (degrees).

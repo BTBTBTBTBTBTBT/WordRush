@@ -656,7 +656,7 @@ struct MascotBuilderView: View {
             }
         case .pose:
             VStack(alignment: .leading, spacing: 8) {
-                grid(AvatarPose.ids.map { Option(slot: "pose", value: $0) })
+                grid(AvatarPose.pickerIds.map { Option(slot: "pose", value: $0) })
                 Text("Your mascot holds this pose and comes alive on your Stage and Home.")
                     .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
             }

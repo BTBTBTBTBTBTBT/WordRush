@@ -203,6 +203,8 @@ data class AvatarLiveFrame(
 object AvatarPoses {
     /** The pose ids (stored in the avatar config's `pose`; "none" = the body as drawn). */
     val IDS: List<String> = listOf("none", "wave", "cheer", "hips", "shrug", "flex", "hug", "sit", "jump")
+    /** Founder 10-09: the poses the Pose tab offers and a saved config keeps (core AVATAR_PICKER_POSES); the rest read as "none". */
+    val PICKER_IDS = listOf("none", "wave", "cheer", "flex", "jump")
     val IDENTITY: AvatarMatrix = listOf(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
     /** The four rig layers, back → front: feet, base, armL, armR. Art: art-av-body-<body>-<part>. */
     val RIG_PARTS: List<String> = listOf("feet", "base", "armL", "armR")

@@ -24,7 +24,7 @@ import {
   type AvatarBody, type AvatarColor, type AvatarConfig, type AvatarFrame, type AvatarHead, type AvatarPatternShape, type AvatarRect,
 } from '@wordle-duel/core';
 import {
-  AVATAR_LIVE_ROOM, AVATAR_POSES, AVATAR_POSES_DATA, avatarLayoutPoseParts, avatarPoseDef, matMul, type AvatarLayout, type AvatarLayoutPose, type AvatarLiveFrame, type AvatarMatrix,
+  AVATAR_LIVE_ROOM, AVATAR_PICKER_POSES, AVATAR_POSES_DATA, avatarLayoutPoseParts, avatarPoseDef, matMul, type AvatarLayout, type AvatarLayoutPose, type AvatarLiveFrame, type AvatarMatrix,
 } from '@wordle-duel/core';
 import partsJson from '../../../packages/core/src/avatar-parts.json';
 import { darkenHex, hexAlpha, lightenHex } from './avatar-tile';
@@ -1286,7 +1286,7 @@ export function avatarOptionIds(field: BuilderField): readonly string[] {
     case 'bg': return AVATAR_BACKDROP_IDS;
     case 'frame': return AVATAR_FRAMES;
     case 'held': case 'wrap': case 'feet': case 'pet': case 'brows': case 'extra': return AVATAR_INTEGRATED_OPTIONS[field];
-    case 'pose': return AVATAR_POSES;
+    case 'pose': return AVATAR_PICKER_POSES;
   }
 }
 

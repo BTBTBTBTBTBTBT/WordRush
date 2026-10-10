@@ -90,7 +90,8 @@ public struct AvatarConfig: Codable, Equatable, Hashable {
         pet = (try? c.decodeIfPresent(String.self, forKey: .pet)) ?? "none"
         brows = (try? c.decodeIfPresent(String.self, forKey: .brows)) ?? "none"
         extra = (try? c.decodeIfPresent(String.self, forKey: .extra)) ?? "none"
-        pose = (try? c.decodeIfPresent(String.self, forKey: .pose)) ?? "none"
+        let savedPose = (try? c.decodeIfPresent(String.self, forKey: .pose)) ?? "none"
+        pose = AvatarPose.pickerIds.contains(savedPose) ? savedPose : "none"
         accColor = (try? c.decodeIfPresent(String.self, forKey: .accColor)) ?? "default"
         frame = try c.decode(String.self, forKey: .frame)
         bg = (try? c.decodeIfPresent(String.self, forKey: .bg)) ?? "auto"

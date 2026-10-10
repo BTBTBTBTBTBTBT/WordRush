@@ -96,7 +96,7 @@ object MascotBuilderLogic {
      * 10-06 the Dressing Room's Pose tab (shown only while AvatarLiveConfig.LIVING_MASCOT is on; not a BuilderTab so
      * the builder's tabs stay as they are with the flag off): every pose, "none" (the body as drawn) first.
      */
-    fun poseOptions(): List<BuilderOption> = if (AvatarLiveConfig.LIVING_MASCOT) AvatarPoses.IDS.map { BuilderOption("pose", it) } else emptyList()
+    fun poseOptions(): List<BuilderOption> = if (AvatarLiveConfig.LIVING_MASCOT) AvatarPoses.PICKER_IDS.map { BuilderOption("pose", it) } else emptyList()
 
     /** A pose's label ("Wave", "Hands on hips"; "No pose" for none). */
     fun poseLabel(id: String): String =
@@ -170,7 +170,7 @@ object MascotBuilderLogic {
             "extras" -> config.copy(face = NONE, neck = NONE, held = NONE, wrap = NONE, feet = NONE, pet = NONE, brows = NONE, extra = NONE)
             "bg" -> config.copy(bg = o.id)
             "frame" -> config.copy(frame = o.id)
-            "pose" -> config.copy(pose = if (o.id in AvatarPoses.IDS) o.id else NONE)
+            "pose" -> config.copy(pose = if (o.id in AvatarPoses.PICKER_IDS) o.id else NONE)
             else -> config
         }
         return if (o.slot == "frame") c else c.copy(display = AvatarOptions.DISPLAY_MASCOT)

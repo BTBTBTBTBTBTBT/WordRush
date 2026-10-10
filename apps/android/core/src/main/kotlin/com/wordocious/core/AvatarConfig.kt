@@ -309,7 +309,7 @@ fun validateAvatar(raw: JsonElement?, fallback: AvatarConfig = defaultAvatar("")
         brows = pick(r.string("brows"), AvatarOptions.BROWS, fallback.brows),
         extra = pick(r.string("extra"), AvatarOptions.EXTRAS, fallback.extra),
         // the saved pose: a known pose id (else the fallback's); written only when not "none"
-        pose = pick(r.string("pose"), AvatarPoses.IDS, fallback.pose),
+        pose = pick(r.string("pose"), AvatarPoses.PICKER_IDS, if (fallback.pose in AvatarPoses.PICKER_IDS) fallback.pose else "none"),
         accColor = r.string("accColor")?.takeIf { it == "default" || it in colorIds } ?: fallback.accColor,
         frame = pick(r.string("frame"), AvatarOptions.FRAMES, fallback.frame),
         bg = r.string("bg")?.takeIf { it in AvatarOptions.BACKDROP_IDS } ?: fallback.bg,
