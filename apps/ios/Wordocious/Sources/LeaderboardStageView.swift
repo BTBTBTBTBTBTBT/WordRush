@@ -202,6 +202,20 @@ extension StageTitleRow {
     }
 }
 
+/// Founder 10-10: the board's controls (Everyone | Friends, share, View board / Play) wear the selected game's color. The
+/// candy art is purple (hue ~262°); this is the hue turn that takes it to `accent` (none for a grey accent).
+enum GameHue {
+    static func shift(to accent: Color) -> Angle {
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(accent).getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        guard s > 0.18 else { return .zero }
+        var d = Double(h) * 360 - 262
+        if d > 180 { d -= 360 }
+        if d < -180 { d += 360 }
+        return .degrees(d)
+    }
+}
+
 /// The compact "Your board" pill (`art-lb-btn-yourboard`, label drawn live) = today's VIEW BOARD.
 struct YourBoardPill: View {
     var label = "View board"
@@ -242,7 +256,8 @@ struct YourBoardPill: View {
             .shadow(color: Color(hex: 0x4C1D95).opacity(0.45), radius: 0, x: 0, y: 1)
             .padding(.horizontal, 13)
             .frame(height: 26)
-            .background(CandyPill(sprite: .thumbOn))
+            .background(CandyPill(sprite: .thumbOn).hueRotation(GameHue.shift(to: accent)))
+            .animation(.easeInOut(duration: 0.3), value: accent.description)
             .contentShape(Capsule())
         }
         .buttonStyle(.squish)

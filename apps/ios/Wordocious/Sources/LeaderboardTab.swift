@@ -243,6 +243,7 @@ struct LeaderboardTab: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
                 Spacer(minLength: 4)
+                // Founder 10-10: the switch and share wear the selected game's color (the hue follows the game picker).
                 HStack(spacing: 4) {
                     if auth.isAuthenticated {
                         SoftSegmented(options: [(key: false, label: "Everyone"), (key: true, label: "Friends")],
@@ -251,6 +252,8 @@ struct LeaderboardTab: View {
                     }
                     modeShareButton
                 }
+                .hueRotation(GameHue.shift(to: stageAccent))
+                .animation(.easeInOut(duration: 0.3), value: stageAccent.description)
                 .layoutPriority(2)
             }
             HStack(spacing: 6) {
