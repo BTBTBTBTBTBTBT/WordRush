@@ -80,6 +80,8 @@ struct ProfileTab: View {
     @StateObject private var achievementCatalog = AchievementCatalog.shared
     @State private var medals: [MedalRow] = []
     @State private var showAllMedals = false
+    /// Founder 10-10: the achievements grid folds away (collapsed by default; remembered) so Stats isn't a long scroll.
+    @AppStorage("stats.achievementsOpen") private var achievementsOpen = false
     @State private var gamesThisWeek = 0
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
@@ -259,11 +261,11 @@ struct ProfileTab: View {
             }
             .onAppear {
                 if StatsJump.consumeVS() { select(StatsRailKey.vs) }
-                if StatsJump.consumeAchievements() { apply(.initial) }
+                if StatsJump.consumeAchievements() { achievementsOpen = true; apply(.initial) }
             }
             // BF2 "See all" from an unlock popup: Overview's All-time holds the achievements grid.
             .onReceive(NotificationCenter.default.publisher(for: StatsJump.openAchievements)) { _ in
-                if StatsJump.consumeAchievements() { apply(.initial) }
+                if StatsJump.consumeAchievements() { achievementsOpen = true; apply(.initial) }
             }
             .gameCover(item: $badgeGame) { g in
                 NavigationStack {
@@ -1284,15 +1286,34 @@ struct ProfileTab: View {
         let progress = achievementProgressMap()
         // A secret (the musical cast's tunes) shows — and counts — only once unlocked.
         let listed = achievementCatalog.listed(unlocked: unlockedAchievements)
-        HStack {
+        // The header is the fold: the title, the count and a candy Show / Hide pill.
+        HStack(spacing: 8) {
             // Under the shared "PROGRESSION" banner (web parity): a plain
             // card-style title rather than an all-caps section header.
             FinishLabel("Achievements")
-            Spacer()
             Text("\(unlockedAchievements.count) / \(listed.count)").softNumber(14)
+            Spacer(minLength: 4)
+            Button {
+                Haptics.light()
+                withAnimation(Theme.reduceMotion ? nil : .easeInOut(duration: 0.25)) { achievementsOpen.toggle() }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: achievementsOpen ? "chevron.up" : "chevron.down").font(.system(size: 10, weight: .black))
+                    Text(achievementsOpen ? "HIDE" : "SHOW ALL").font(Brand.font(11, .black)).tracking(0.3)
+                }
+                .foregroundStyle(CandyToggleInk.on)
+                .shadow(color: Color(hex: 0x4C1D95).opacity(0.45), radius: 0, x: 0, y: 1)
+                .padding(.horizontal, 13)
+                .frame(height: 26)
+                .background(CandyPill(sprite: .thumbOn))
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.squish)
+            .accessibilityLabel(achievementsOpen ? "Hide achievements" : "Show all achievements")
         }
         // FINISH_SPEC BE: any category the catalog adds beyond the five known ones
         // still shows (its own group, purple) — new achievements never vanish.
+        if achievementsOpen {
         ForEach(achCategories + extraAchCategories, id: \.key) { cat in
             let items = listed.filter { $0.category == cat.key }
             if !items.isEmpty {
@@ -1315,6 +1336,7 @@ struct ProfileTab: View {
                     }
                 }
             }
+        }
         }
     }
 
