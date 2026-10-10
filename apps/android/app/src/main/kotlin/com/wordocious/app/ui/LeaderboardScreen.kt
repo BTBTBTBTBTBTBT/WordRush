@@ -592,13 +592,16 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     // Founder 10-09: Everyone | Friends + share fold into the game strip as one right-hand cluster (no row of their own
                     // above the podium); the share keeps its space at 0 opacity while there is nothing to share, so nothing shifts.
                     val stageTrailing: @Composable () -> Unit = {
-                        if (!isSweep && userId != null) FriendsSegment(friendsOnly) { selectFriendsOnly(it) }
+                        // Founder 10-10: the switch and share wear the selected game's color (hue turn from the purple candy art).
+                        val hue = rememberGameHueFilter(stageAccent)
+                        if (!isSweep && userId != null) FriendsSegment(friendsOnly, hue) { selectFriendsOnly(it) }
                         val canShare = if (isSweep) !loading && sweepEntries.isNotEmpty() else !boardLoading && entries.isNotEmpty()
                         Box(Modifier.alpha(if (canShare) 1f else 0f)) {
                             SoftControl(
                                 Icon3DName.SHARE,
                                 contentDescription = if (isSweep) "Share sweep board" else "Share leaderboard",
                                 alpha = if (sharingLb) 0.4f else 1f,
+                                colorFilter = hue,
                                 onClick = {
                                     if (canShare && !sharingLb) {
                                         sharingLb = true
@@ -988,8 +991,8 @@ internal fun LbSectionLabel(text: String, modifier: Modifier = Modifier) = LbBoa
 
 /** Everyone | Friends (§207 toggle) as the tinted segmented control. */
 @Composable
-private fun FriendsSegment(friendsOnly: Boolean, onChange: (Boolean) -> Unit) =
-    SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, small = true, onChange = onChange)
+private fun FriendsSegment(friendsOnly: Boolean, colorFilter: androidx.compose.ui.graphics.ColorFilter? = null, onChange: (Boolean) -> Unit) =
+    SoftSegment(listOf(false to "Everyone", true to "Friends"), friendsOnly, small = true, colorFilter = colorFilter, onChange = onChange)
 
 /**
  * The play row (FINISH_SPEC C2, compressed by AS4): ONE compact tinted row in the game's

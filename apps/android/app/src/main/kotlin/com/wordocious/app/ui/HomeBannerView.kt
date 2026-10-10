@@ -302,11 +302,20 @@ fun HomeBannerView(
             // Season preview: no celebration today → the season's Home banner art (registry `banner`)
             // under the headline strip, fit, at most 104 dp tall (iOS / web parity), never cropped.
             if (bandTier == BannerTier.NONE) HalloweenBannerSlot { res ->
-                androidx.compose.foundation.Image(
-                    androidx.compose.ui.res.painterResource(res), contentDescription = null,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 4.dp, bottom = 6.dp, start = 10.dp, end = 10.dp).clearAndSetSemantics { },
-                )
+                // Founder 10-10: the idle Halloween scene is alive too: the costumed O, W, R sway slow and spooky (no sparkles,
+                // a slower 0.7 s tempo, +-3 degrees); a season without the trio art animates the still banner with the idle hop.
+                val trio = listOf(com.wordocious.app.R.drawable.art_halloween_o1, com.wordocious.app.R.drawable.art_halloween_w, com.wordocious.app.R.drawable.art_halloween_r)
+                Box(Modifier.fillMaxWidth().height(110.dp).padding(top = 4.dp, bottom = 6.dp, start = 10.dp, end = 10.dp).clearAndSetSemantics { }) {
+                    if (res == com.wordocious.app.R.drawable.art_scene_banner_halloween) {
+                        CelebrationTrio(100.dp, Modifier.fillMaxSize(), images = trio, bunting = false, sparkles = false, tempo = 0.7f, swayDegrees = 3f)
+                    } else {
+                        androidx.compose.foundation.Image(
+                            androidx.compose.ui.res.painterResource(res), contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize().idleLife(),
+                        )
+                    }
+                }
             }
             // BI21: one tile size for both rows (sized so 10 fit), each row spread edge to edge.
             // BJ6 round 3: the two progress rows sit in one subtle lavender tint band (two zones).
@@ -353,8 +362,6 @@ fun HomeBannerView(
  */
 @Composable
 private fun BannerSceneSlot(tier: BannerTier, accent: Color, unlimitedFade: Float) {
-    val res = if (tier == BannerTier.FLAWLESS) com.wordocious.app.R.drawable.art_scene_banner_flawless
-              else com.wordocious.app.R.drawable.art_scene_banner_sweep
     val peach = com.wordocious.app.ui.game.UNLIMITED_PEACH
     BoxWithConstraints(Modifier.fillMaxWidth().clearAndSetSemantics { }) {
         // The art is ~1.6:1; at most 140 dp tall so the tile rows stay in view (BannerSlotSpec).
@@ -382,14 +389,16 @@ private fun BannerSceneSlot(tier: BannerTier, accent: Color, unlimitedFade: Floa
                     contentAlignment = Alignment.Center,
                 ) {
                     if (tier == BannerTier.FLAWLESS) {
-                        // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (each bounces, sways and squashes on its own
-                        // beat under a swaying bunting, sparkles twinkling) instead of one flat picture. Still under calm motion.
+                        // Founder 10-09: on a Flawless day the celebrating trio is ALIVE (each bounces, sways and squashes on its
+                        // own beat under a swaying bunting, sparkles twinkling) instead of one flat picture. Still under calm motion.
                         CelebrationTrio(h, Modifier.fillMaxWidth().height(h))
-                    } else androidx.compose.foundation.Image(
-                        androidx.compose.ui.res.painterResource(res), contentDescription = null,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                        modifier = Modifier.fillMaxWidth().height(h),
-                    )
+                    } else {
+                        // Founder 10-10: a swept day is alive the same way: O cheering, S flexing, W waving (no bunting).
+                        CelebrationTrio(
+                            h, Modifier.fillMaxWidth().height(h), bunting = false,
+                            images = listOf(com.wordocious.app.R.drawable.art_pose_o1_cheer, com.wordocious.app.R.drawable.art_pose_s_flex, com.wordocious.app.R.drawable.art_pose_w_wave),
+                        )
+                    }
                 }
             }
         }
@@ -402,7 +411,7 @@ private fun BannerSceneSlot(tier: BannerTier, accent: Color, unlimitedFade: Floa
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(Modifier.fillMaxWidth().height(h), contentAlignment = Alignment.Center) {
-                        com.wordocious.app.ui.game.UnlimitedLoopArt(h * (900f / 759f) * 0.92f)
+                        com.wordocious.app.ui.game.UnlimitedLoopArt(h * (900f / 759f) * 0.92f, Modifier.idleLife(hop = 4f, sway = 2.5f, period = 1.8f))
                     }
                 }
             }

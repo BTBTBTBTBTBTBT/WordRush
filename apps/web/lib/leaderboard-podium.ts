@@ -67,7 +67,7 @@ export function podiumTone(rank: number): PodiumTone {
 }
 
 /** A step's height (px) by metal (mockup `.s1` 74, `.s2` 54, `.s3` 40). */
-export const PODIUM_STEP_HEIGHT: Record<PodiumTone, number> = { gold: 74, silver: 54, bronze: 40 };
+export const PODIUM_STEP_HEIGHT: Record<PodiumTone, number> = { gold: 64, silver: 47, bronze: 35 };
 
 /** The compact podium's step heights (Yesterday's small copy, founder 10-09; iOS PodiumView compact 62 / 46 / 34). */
 export const PODIUM_STEP_HEIGHT_COMPACT: Record<PodiumTone, number> = { gold: 62, silver: 46, bronze: 34 };

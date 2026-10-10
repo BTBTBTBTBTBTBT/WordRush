@@ -180,7 +180,7 @@ export function BadgeCelebrationPopup({ item, remaining, onClose }: {
             )}
             {!isTier && (
               <>
-                <CandyButton size="md" color="peach" onClick={() => { onClose(); router.push(viewUrl(VIEW_ALL)); }}>See all</CandyButton>
+                <CandyButton size="md" color="peach" onClick={() => { onClose(); router.push(`${viewUrl(VIEW_ALL)}#achievements`); }}>See all</CandyButton>
                 <HeaderGlyph
                   icon="share"
                   label="Share this achievement"

@@ -3,6 +3,7 @@ package com.wordocious.app.ui.friends
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -645,32 +646,13 @@ private fun RpsBoard(s: RpsState, me: Side, them: String, enabled: Boolean, onPi
             Text("${them.uppercase()} HASN'T PICKED", fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = FriendsPink.label)
         }
 
-        // The last round, revealed: both picks with the winner glowing.
+        // The last round, revealed: ROCK... PAPER... SCISSORS... SHOOT! (both fists pump), then both cards turn over together to
+        // the picks, and only then the winner glows (founder 10-10, iOS RpsReveal).
         s.rounds.lastOrNull()?.let { r ->
-            val pop = remember(s.rounds.size) { Animatable(0.7f) }
-            LaunchedEffect(s.rounds.size) { pop.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
-            Column(
-                Modifier.fillMaxWidth().friendsCard().padding(10.dp).scale(pop.value),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                FriendsLabel("ROUND ${s.rounds.size}")
-                // 9d: the shipped arena plate sits under the two hands (a soft stage, quiet behind the pieces).
-                Box(contentAlignment = Alignment.BottomCenter) {
-                    Image(
-                        painterResource(R.drawable.art_pocket_arena_plate), null, contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(width = 252.dp, height = 82.dp).offset(y = 6.dp).alpha(0.9f).clearAndSetSemantics { },
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        RevealArt("YOU", if (me == Side.A) r.a else r.b, glow = r.winner == me)
-                        // 9d: the clash burst between the two hands.
-                        Image(
-                            painterResource(R.drawable.art_pocket_clash_burst), null, contentScale = ContentScale.Fit,
-                            modifier = Modifier.size(40.dp).clearAndSetSemantics { },
-                        )
-                        RevealArt(them.uppercase(), if (me == Side.A) r.b else r.a, glow = r.winner == me.other)
-                    }
-                }
-            }
+            RpsRevealCard(
+                round = s.rounds.size, mine = if (me == Side.A) r.a else r.b, theirs = if (me == Side.A) r.b else r.a,
+                winner = r.winner, me = me, them = them,
+            )
         }
 
         FriendsLabel("YOUR PICK", modifier = Modifier.fillMaxWidth())
@@ -706,9 +688,93 @@ private fun rpsPiece(pick: RpsPick): Int = when (pick) {
     RpsPick.HIDDEN -> R.drawable.art_pocket_rps_hidden
 }
 
+/** The words of the suspense beat (index 3 = SHOOT!). */
+private val RPS_WORDS = listOf("ROCK...", "PAPER...", "SCISSORS...", "SHOOT!")
+
+/**
+ * Founder 10-10 (iOS RpsReveal): the last round, revealed with suspense. Both fists pump three times (0.4 s each, a light tick on
+ * each) as ROCK... PAPER... SCISSORS... pop in the middle slot, SHOOT! (gold, bigger) lands, then both cards turn over together
+ * around the vertical axis (only the art turns; labels never mirror), a heavy thump, a success buzz if you won, and only then
+ * the winner's glow. Reduce Motion: the cards simply show the result.
+ */
 @Composable
-private fun RevealArt(label: String, pick: RpsPick, glow: Boolean) {
+private fun RpsRevealCard(round: Int, mine: RpsPick, theirs: RpsPick, winner: Side?, me: Side, them: String) {
+    val still = WTheme.reducedMotion
+    var beat by remember(round) { mutableIntStateOf(-1) }
+    var flipped by remember(round) { mutableStateOf(still) }
+    val bob = remember(round) { Animatable(0f) }
+    val turn = remember(round) { Animatable(if (still) 0f else 180f) }
+    val pop = remember(round) { Animatable(if (still) 1f else 0.85f) }
+    LaunchedEffect(round) {
+        if (still) return@LaunchedEffect
+        launch { pop.animateTo(1f, tween(260, easing = FastOutSlowInEasing)) }
+        for (i in 0..2) {
+            beat = i
+            bob.animateTo(-18f, tween(150, easing = FastOutSlowInEasing))
+            bob.animateTo(0f, tween(130, easing = androidx.compose.animation.core.FastOutLinearInEasing))
+            com.wordocious.app.data.Haptics.light()
+            delay(120)
+        }
+        beat = 3
+        com.wordocious.app.data.Haptics.medium()
+        delay(220)
+        kotlinx.coroutines.coroutineScope {
+            launch { turn.animateTo(0f, androidx.compose.animation.core.spring(dampingRatio = 0.72f, stiffness = 160f)) }
+            delay(180)
+            flipped = true
+            com.wordocious.app.data.Haptics.heavy()
+            if (winner == me) { delay(200); com.wordocious.app.data.Haptics.success() }
+        }
+    }
+    Column(
+        Modifier.fillMaxWidth().friendsCard().padding(10.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value },
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        FriendsLabel("ROUND $round")
+        // 9d: the shipped arena plate sits under the two hands (a soft stage, quiet behind the pieces).
+        Box(contentAlignment = Alignment.BottomCenter) {
+            Image(
+                painterResource(R.drawable.art_pocket_arena_plate), null, contentScale = ContentScale.Fit,
+                modifier = Modifier.size(width = 252.dp, height = 82.dp).offset(y = 6.dp).alpha(0.9f).clearAndSetSemantics { },
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                RevealArt("YOU", mine, glow = flipped && winner == me, angle = turn.value, bob = if (flipped) 0f else bob.value, revealed = flipped)
+                // The middle slot: the countdown words, then (9d) the clash burst between the two hands once they turn over.
+                Box(Modifier.width(64.dp).height(40.dp), contentAlignment = Alignment.Center) {
+                    Image(
+                        painterResource(R.drawable.art_pocket_clash_burst), null, contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(40.dp).alpha(if (flipped) 1f else 0f).clearAndSetSemantics { },
+                    )
+                    if (!flipped && beat >= 0) {
+                        androidx.compose.animation.AnimatedContent(
+                            targetState = beat,
+                            transitionSpec = {
+                                (androidx.compose.animation.scaleIn(androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 500f), initialScale = 0.5f) +
+                                    androidx.compose.animation.fadeIn(tween(90))) togetherWith androidx.compose.animation.fadeOut(tween(70))
+                            },
+                            label = "rpsWord",
+                        ) { b ->
+                            com.wordocious.app.ui.BubbleOneLine(
+                                RPS_WORDS[b.coerceIn(0, 3)],
+                                if (b == 3) com.wordocious.app.ui.HeadlinePalette.LEADERBOARD else com.wordocious.app.ui.HeadlinePalette.FRIENDS,
+                                if (b == 3) 17f else 13f, minScale = 0.5f,
+                            )
+                        }
+                    }
+                }
+                RevealArt(them.uppercase(), theirs, glow = flipped && winner == me.other, angle = turn.value, bob = if (flipped) 0f else bob.value, revealed = flipped)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RevealArt(label: String, pick: RpsPick, glow: Boolean, angle: Float = 0f, bob: Float = 0f, revealed: Boolean = true) {
     val shape = RoundedCornerShape(14.dp)
+    // The pick turns over from the pumping fist: the fist until the turn passes 90 degrees, then the pick; it narrows to its edge
+    // mid-turn. Never mirrored (a scale magnitude, not a flip), and only the art turns.
+    val c = kotlin.math.cos(Math.toRadians(angle.toDouble())).toFloat()
+    val shown = if (c >= 0f) pick else RpsPick.ROCK
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(
             Modifier.size(72.dp)
@@ -717,7 +783,15 @@ private fun RevealArt(label: String, pick: RpsPick, glow: Boolean) {
                     else Modifier.clip(shape).background(friendsWash(FriendsTiles.purple, 0.10f)),
                 ),
             Alignment.Center,
-        ) { Image(painterResource(rpsPiece(pick)), pick.raw, contentScale = ContentScale.Fit, modifier = Modifier.size(56.dp)) }
+        ) {
+            Image(
+                painterResource(rpsPiece(shown)), if (revealed) pick.raw else "Hidden pick", contentScale = ContentScale.Fit,
+                modifier = Modifier.size(56.dp).graphicsLayer {
+                    scaleX = maxOf(0.06f, kotlin.math.abs(c))
+                    translationY = bob * density
+                },
+            )
+        }
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (glow) FriendsTiles.purple else FriendsPink.label, maxLines = 1)
     }
 }
@@ -872,35 +946,88 @@ private fun LegendDot(color: Color, text: String) {
 private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTurn: Boolean, onCall: (CoinFace) -> Unit) {
     val last = s.rounds.lastOrNull()
     val face = last?.flip ?: CoinFace.HEADS
-    // Spin briefly on each NEW reveal (not on first open), then land on the server's face.
+    // Founder 10-10 (iOS SpinningCoin, "smoother and a bit more suspenseful"): on each NEW flip the coin crouches, launches, turns
+    // end over end five times in real 3D (the face is picked per frame from the turn angle; the art squashes to its edge), slowing
+    // as it falls (~1.55 s), lands with a squash, a small bounce and a teeter, THEN the gold glow and only then the result line.
+    // Haptic ticks slow down with the spin. Reduce Motion: the face, no flip. Everything is a transform read in graphicsLayer.
+    val still = WTheme.reducedMotion
     var seen by remember(gameId) { mutableIntStateOf(s.rounds.size) }
-    val spin = remember(gameId) { Animatable(1f) }
+    var landedFace by remember(gameId) { mutableStateOf(face) }
+    var settled by remember(gameId) { mutableStateOf(true) }
+    val angle = remember(gameId) { Animatable(0f) }
+    val hop = remember(gameId) { Animatable(0f) }
+    val squashA = remember(gameId) { Animatable(1f) }
+    val teeter = remember(gameId) { Animatable(0f) }
+    val glow = remember(gameId) { Animatable(0f) }
     LaunchedEffect(s.rounds.size) {
         if (s.rounds.size > seen) {
             seen = s.rounds.size
-            if (!WTheme.reducedMotion) {
-                spin.snapTo(0f)
-                spin.animateTo(1f, tween(1100, easing = FastOutSlowInEasing))
+            if (still) { landedFace = face; settled = true; return@LaunchedEffect }
+            // Start from the face showing now; end on the result after five whole turns (+ a half if it changes).
+            val before = landedFace
+            settled = false
+            glow.snapTo(0f)
+            landedFace = face
+            angle.snapTo(if (before == face) 0f else 180f)
+            squashA.animateTo(0.86f, tween(140, easing = FastOutSlowInEasing))
+            com.wordocious.app.data.Haptics.medium()
+            val spin = 1550
+            val rise = (spin * 0.46f).toInt()
+            val fall = spin - rise
+            kotlinx.coroutines.coroutineScope {
+                launch { angle.animateTo(1800f, tween(spin, easing = androidx.compose.animation.core.CubicBezierEasing(0.12f, 0.55f, 0.2f, 1f))) }
+                launch { squashA.animateTo(1.06f, tween(120, easing = FastOutSlowInEasing)) }
+                launch { hop.animateTo(-110f, tween(rise, easing = androidx.compose.animation.core.LinearOutSlowInEasing)) }
+                // ticks that slow with the spin
+                launch { for (gap in longArrayOf(120, 130, 150, 180, 220, 270, 340)) { delay(gap); com.wordocious.app.data.Haptics.selection() } }
+                delay(rise.toLong())
+                launch { hop.animateTo(0f, tween(fall, easing = androidx.compose.animation.core.FastOutLinearInEasing)) }
+                launch { squashA.animateTo(1f, tween(fall, easing = androidx.compose.animation.core.FastOutLinearInEasing)) }
+                delay(fall.toLong())
             }
-        } else seen = s.rounds.size
+            // land: a squash + a small bounce, then a teeter before it settles
+            com.wordocious.app.data.Haptics.heavy()
+            squashA.animateTo(0.88f, tween(80, easing = FastOutSlowInEasing))
+            kotlinx.coroutines.coroutineScope {
+                launch { squashA.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.5f, stiffness = 500f)) }
+                launch { hop.animateTo(-12f, androidx.compose.animation.core.spring(dampingRatio = 0.5f, stiffness = 500f)) }
+                delay(140)
+                launch { hop.animateTo(0f, tween(140, easing = androidx.compose.animation.core.FastOutLinearInEasing)) }
+                teeter.animateTo(7f, tween(160, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+                teeter.animateTo(-5f, tween(160, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+                launch { teeter.animateTo(0f, androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 400f)) }
+                delay(120)
+            }
+            // the reveal: the glow, the success buzz, and only now the result line
+            com.wordocious.app.data.Haptics.success()
+            settled = true
+            glow.animateTo(1f, tween(300))
+            delay(900)
+            glow.animateTo(0f, tween(500))
+        } else {
+            seen = s.rounds.size
+            if (settled) landedFace = face
+        }
     }
-    // 9d: three flips as frames: face -> tilt -> edge -> tilt -> face, hopping over a shrinking shadow, landing
-    // on the server's face. Transforms + frame swaps only; Reduce Motion = no spin (t stays 1).
-    val t = spin.value
-    val turn = cos(Math.toRadians((t * 1080.0)))
-    val squash = abs(turn).toFloat()
-    val other = if (face == CoinFace.HEADS) CoinFace.TAILS else CoinFace.HEADS
-    val frame = when {
-        squash > 0.55f -> coinArt2(if (turn >= 0) face else other)
-        squash > 0.2f -> R.drawable.art_pocket_coin_tilt
-        else -> R.drawable.art_pocket_coin_edge
-    }
-    val hop = sin(Math.PI * t).toFloat()
+    val c = kotlin.math.cos(Math.toRadians(angle.value.toDouble())).toFloat()
+    val other = if (landedFace == CoinFace.HEADS) CoinFace.TAILS else CoinFace.HEADS
+    val frame = coinArt2(if (c >= 0f) landedFace else other)
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
         Box(Modifier.size(width = 170.dp, height = 170.dp), contentAlignment = Alignment.Center) {
+            // the reveal glow, warm gold behind the coin
+            Box(
+                Modifier.size(220.dp).graphicsLayer { alpha = glow.value; val k = 0.6f + 0.4f * glow.value; scaleX = k; scaleY = k }
+                    .drawBehind {
+                        drawCircle(
+                            androidx.compose.ui.graphics.Brush.radialGradient(
+                                listOf(Color(0xB3FDE68A), Color(0x00FDE68A)), center = center, radius = size.minDimension / 2f,
+                            ),
+                        )
+                    }.clearAndSetSemantics { },
+            )
             // 9d: a won call wears the shipped sparkle ring once the coin has landed (a fade, no spin; static under Reduce Motion).
             val ringAlpha by androidx.compose.animation.core.animateFloatAsState(
-                if (last?.winner == me && t >= 0.999f) 1f else 0f, tween(if (WTheme.reducedMotion) 0 else 320), label = "coinRing",
+                if (last?.winner == me && settled) 1f else 0f, tween(if (still) 0 else 320), label = "coinRing",
             )
             if (ringAlpha > 0f) {
                 Image(
@@ -908,24 +1035,43 @@ private fun CoinBoard(gameId: String, s: CoinState, me: Side, them: String, myTu
                     modifier = Modifier.size(170.dp).alpha(ringAlpha).clearAndSetSemantics { },
                 )
             }
+            // the contact shadow shrinks and fades as the coin rises
             Image(
                 painterResource(R.drawable.art_pocket_coin_shadow), null, contentScale = ContentScale.Fit,
                 modifier = Modifier.align(Alignment.BottomCenter).size(130.dp, 40.dp)
-                    .graphicsLayer { val k = 1f - 0.3f * hop; scaleX = k; scaleY = k; alpha = 0.85f - 0.4f * hop }.clearAndSetSemantics { },
+                    .graphicsLayer { val up = (-hop.value / 110f).coerceIn(0f, 1f); val k = 1f - 0.3f * up; scaleX = k; scaleY = k; alpha = 0.9f - 0.45f * up }
+                    .clearAndSetSemantics { },
             )
-            Image(
-                painterResource(frame), face.raw, contentScale = ContentScale.Fit,
-                modifier = Modifier.size(140.dp)
+            // squash / teeter / hop about the feet (outer), the end-over-end turn about the middle (inner)
+            Box(
+                Modifier.size(140.dp)
                     .graphicsLayer {
-                        translationY = -hop * 34f * density
-                        if (squash > 0.55f) scaleX = squash
+                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+                        scaleX = 2f - squashA.value
+                        scaleY = squashA.value
+                        rotationZ = teeter.value
+                        translationY = hop.value * density
                     },
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                val edge = 1f - kotlin.math.abs(c)
+                Image(
+                    painterResource(frame), if (settled) landedFace.raw else "Coin flipping", contentScale = ContentScale.Fit,
+                    // it darkens a touch on the far side of the turn
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                        androidx.compose.ui.graphics.ColorMatrix().apply { setToScale(1f - 0.18f * edge, 1f - 0.18f * edge, 1f - 0.18f * edge, 1f) },
+                    ),
+                    modifier = Modifier.fillMaxSize().graphicsLayer { scaleY = maxOf(0.07f, kotlin.math.abs(c)) },
+                )
+            }
         }
         last?.let { r ->
+            // The result line appears only once the coin has landed (no spoiler mid-flip); its space is held.
+            val lineAlpha by androidx.compose.animation.core.animateFloatAsState(if (settled) 1f else 0f, tween(if (still) 0 else 250), label = "coinLine")
             Text(
                 "${r.flip.raw.uppercase()} · ${if (r.winner == me) "YOU TAKE ROUND ${s.rounds.size}" else "${them.uppercase()} TAKES ROUND ${s.rounds.size}"}",
                 fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = DEEP,
+                modifier = Modifier.alpha(lineAlpha),
             )
         }
         if (myTurn) {

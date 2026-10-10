@@ -56,7 +56,7 @@ enum class Sfx(val file: String) {
 }
 
 /** The haptic vocabulary (spec U): iOS UIImpactFeedbackGenerator / UINotificationFeedbackGenerator names. */
-enum class Haptic { LIGHT, SELECTION, WARNING, SOFT, SUCCESS, SUCCESS_HEAVY, MEDIUM }
+enum class Haptic { LIGHT, SELECTION, WARNING, SOFT, SUCCESS, SUCCESS_HEAVY, MEDIUM, HEAVY }
 
 /** Spec U event map: each event = an optional sound and an optional haptic. */
 enum class FeedbackEvent(val sound: Sfx?, val haptic: Haptic?) {

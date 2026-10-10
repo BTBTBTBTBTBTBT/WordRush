@@ -3,6 +3,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { CandyButton } from '@/components/ui/candy-button';
+import { gameHueShift } from '@/lib/cast-accent';
 import { Users } from 'lucide-react';
 import { Icon3D, WinLossBadge } from '@/components/ui/icon3d';
 import { HeaderGlyph } from '@/components/ui/header-glyph';
@@ -796,7 +797,8 @@ export default function DailyPage() {
                   {isSweep ? ' swept' : ' today'}
                 </div>
                 <div className="flex-1" />
-                <div className="flex items-center gap-1 shrink-0">
+                {/* Founder 10-10: the switch and share wear the selected game's color (hue turn from the purple candy art, animated). */}
+                <div className="flex items-center gap-1 shrink-0" style={{ filter: `hue-rotate(${gameHueShift(color)}deg)`, transition: 'filter 300ms ease-in-out' }}>
                   {!isSweep && user && (
                     <SegmentedPill
                       label="Everyone or Friends"
@@ -856,7 +858,7 @@ export default function DailyPage() {
                     pill (= the old VIEW BOARD); before: PLAY. */}
                 {!isSweep && (playedSelected
                   ? <YourBoardButton onClick={handlePlayDaily} accent={color} />
-                  : <CandyButton size="sm" color="purple" icon="play" onClick={handlePlayDaily} className="shrink-0">Play</CandyButton>)}
+                  : <YourBoardButton onClick={handlePlayDaily} accent={color} label="Play" glyph="play" />)}
               </div>
             </div>
 

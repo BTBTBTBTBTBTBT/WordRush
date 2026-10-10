@@ -116,6 +116,8 @@ object GameMotion {
         val src = key?.let { sources[it] }
         if (frame != null && src != null) { color = src.color; radius = src.radius }
         else { color = WTheme.bg; radius = 28f * density }
+        // Founder 10-10: in a dark season the shell under the page is the season's night card (never a pale slab).
+        WTheme.season?.takeIf { it.dark }?.card?.let { color = it }
         run(Phase.OPENING, from = 0f, to = MotionSpec.openDurationMs(kind).toFloat())
     }
 

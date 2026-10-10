@@ -1729,6 +1729,9 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
+/** The fold's local memory (founder 10-10; iOS @AppStorage stats.achievementsOpen). */
+private const val ACH_OPEN_KEY = "stats.achievementsOpen"
+
 /**
  * FINISH_SPEC V1 the achievements grid: each achievement's 3D badge (ui/BadgeKit.kt) in a
  * tile tinted by its category — unlocked = full color, soft glow, name + date; locked =
@@ -1757,19 +1760,39 @@ private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.a
         bestWinStreak = profile?.bestStreak ?: 0,
     )
     var detail by remember { mutableStateOf<com.wordocious.app.data.AchievementService.AchievementDef?>(null) }
+    // Founder 10-10: the grid folds away behind a candy SHOW ALL / HIDE pill (collapsed by default, remembered on this device);
+    // the unlock popup's "See all" opens it.
+    var open by remember { mutableStateOf(com.wordocious.app.data.SettingsPref.get(ACH_OPEN_KEY, false)) }
+    val seeAll = BadgeMoments.seeAllRequests
+    androidx.compose.runtime.LaunchedEffect(seeAll) {
+        if (seeAll > BadgeMoments.seeAllConsumed) {
+            BadgeMoments.seeAllConsumed = seeAll
+            open = true
+            com.wordocious.app.data.SettingsPref.set(ACH_OPEN_KEY, true)
+        }
+    }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionLabel("ACHIEVEMENTS")
-            Spacer(Modifier.weight(1f))
             val purple = Color(0xFF7C3AED)
             Row(
                 Modifier.tintedPill(purple).padding(start = 9.dp, end = 9.dp, top = 3.dp, bottom = 1.dp)
                     .semantics(mergeDescendants = true) { contentDescription = "${unlocked.size} of ${all.size} unlocked" },
                 verticalAlignment = Alignment.CenterVertically,
             ) { SoftNumber("${unlocked.size}/${all.size}", 12.sp) }
+            Spacer(Modifier.weight(1f))
+            CandyThumbPill(
+                label = if (open) "Hide" else "Show all", chevronUp = open,
+                contentDescription = if (open) "Hide achievements" else "Show all achievements",
+                onClick = {
+                    com.wordocious.app.data.Haptics.light()
+                    open = !open
+                    com.wordocious.app.data.SettingsPref.set(ACH_OPEN_KEY, open)
+                },
+            )
         }
-        AchievementInk.CATEGORIES.forEach { cat ->
+        if (open) AchievementInk.CATEGORIES.forEach { cat ->
             val items = all.filter { it.category == cat.key }
             if (items.isNotEmpty()) {
                 val n = items.count { unlocked.contains(it.key) }

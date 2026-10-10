@@ -44,7 +44,16 @@ import kotlin.math.min
  * first layout. Reduce Motion / Battery Saver: the same scene, still.
  */
 @Composable
-internal fun CelebrationTrio(height: Dp, modifier: Modifier = Modifier) {
+internal fun CelebrationTrio(
+    height: Dp, modifier: Modifier = Modifier,
+    /** The three figures, left to right (default: the Flawless D, O, I cheering). */
+    images: List<Int> = listOf(R.drawable.art_pose_d_cheer, R.drawable.art_pose_o2_cheer, R.drawable.art_pose_i_cheer),
+    bunting: Boolean = true,
+    sparkles: Boolean = true,
+    /** Seconds per hop (the Halloween idle trio moves slower and spookier). */
+    tempo: Float = 0.42f,
+    swayDegrees: Float = 4f,
+) {
     val still = WTheme.reducedMotion || WTheme.calmMotion
     // Start the loops a beat AFTER the first layout, so the figures hop in place instead of swimming while the size settles.
     var started by remember { mutableStateOf(false) }
@@ -57,12 +66,11 @@ internal fun CelebrationTrio(height: Dp, modifier: Modifier = Modifier) {
         val w = maxWidth
         val h = height
         val fig = min(h.value * 0.66f, w.value / 3.6f).dp
-        val bunting = min(w.value * 0.36f, 136f).dp
-        val casts = listOf(R.drawable.art_pose_d_cheer, R.drawable.art_pose_o2_cheer, R.drawable.art_pose_i_cheer)
+        val buntingW = min(w.value * 0.36f, 136f).dp
         // the bunting hangs still (only the cast celebrates), centered at 9% of the height
-        Image(
-            artPainter(R.drawable.age_bunting, bunting), contentDescription = null, contentScale = ContentScale.Fit,
-            modifier = Modifier.offset(x = (w - bunting) / 2, y = h * 0.09f - h * 0.10f).width(bunting).height(h * 0.20f),
+        if (bunting) Image(
+            artPainter(R.drawable.age_bunting, buntingW), contentDescription = null, contentScale = ContentScale.Fit,
+            modifier = Modifier.offset(x = (w - buntingW) / 2, y = h * 0.09f - h * 0.10f).width(buntingW).height(h * 0.20f),
         )
         // one shared floor shadow
         androidx.compose.foundation.layout.Box(
@@ -76,17 +84,16 @@ internal fun CelebrationTrio(height: Dp, modifier: Modifier = Modifier) {
                 )
             },
         )
-        val casts3 = casts
-        casts3.forEachIndexed { i, res ->
+        images.forEachIndexed { i, res ->
             val delayMs = i * 180
             // hop: 0 = on the ground (stretched wide and low), 1 = at the top; 0.42 s each way
             val hop by inf.animateFloat(
-                0f, 1f, infiniteRepeatable(tween(420, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs)),
+                0f, 1f, infiniteRepeatable(tween((tempo * 1000f).toInt(), easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs)),
                 label = "hop$i",
             )
             // sway: -4 to 4 degrees over 0.95 s each way, starting twice as late as the hop
             val sway by inf.animateFloat(
-                -4f, 4f, infiniteRepeatable(tween(950, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs * 2)),
+                -swayDegrees, swayDegrees, infiniteRepeatable(tween((tempo * 2260f).toInt(), easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(delayMs * 2)),
                 label = "sway$i",
             )
             val cx = (w - fig) / 2 + fig * 0.95f * (i - 1)
@@ -100,14 +107,14 @@ internal fun CelebrationTrio(height: Dp, modifier: Modifier = Modifier) {
                         translationY = -hop * fig.toPx() * 0.09f
                         rotationZ = sway
                     } else {
-                        scaleX = 1.04f; scaleY = 0.95f; rotationZ = -4f
+                        scaleX = 1.04f; scaleY = 0.95f; rotationZ = -swayDegrees
                     }
                 },
             )
         }
         val xs = floatArrayOf(0.22f, 0.78f, 0.35f, 0.66f)
         val ys = floatArrayOf(0.30f, 0.26f, 0.12f, 0.10f)
-        for (k in 0 until 4) {
+        for (k in 0 until (if (sparkles) 4 else 0)) {
             val twinkle by inf.animateFloat(
                 0f, 1f, infiniteRepeatable(tween(800 + k * 170, easing = FastOutSlowInEasing), RepeatMode.Reverse, initialStartOffset = StartOffset(k * 250)),
                 label = "spark$k",

@@ -134,16 +134,18 @@ export function StageTitle({ today }: { today: string | null }) {
         <div className="flex items-end justify-between" style={{ gap: 2, minHeight: 70, marginTop: -25 }}>
           {/* your mascot leans toward the title; tap it and the letters bounce */}
           <OwnMascot size={70} wizardHat={hat} lean={MASCOT_LEAN_DEGREES} onTap={() => setTaps((n) => n + 1)} hopKey={taps} />
-          <span className="flex-1 min-w-0" key={`b${taps}`} style={{ paddingBottom: 14 }} aria-hidden="true">
-            <BubbleOneLine text={line2 || ' '} palette="leaderboard" size={42} />
+          {/* Founder 10-09: the date + reset clock sit right under the second line, centered between the mascots (warm ink on the cloud) */}
+          <span className="flex-1 min-w-0 flex flex-col items-center" style={{ paddingBottom: 6, gap: 2 }}>
+            <span key={`b${taps}`} className="block w-full" aria-hidden="true">
+              <BubbleOneLine text={line2 || ' '} palette="leaderboard" size={42} />
+            </span>
+            <span className="lb-date-ink text-center font-extrabold whitespace-nowrap" style={{ fontSize: 10.5, letterSpacing: 0.6 }}>
+              <ResetLine lead={date} />
+            </span>
           </span>
-          {host ? <Host castId={host.castId} pose={host.pose} size={72} /> : <span style={{ width: 72 }} />}
+          {host ? <Host castId={host.castId} pose={host.pose} size={72} idle /> : <span style={{ width: 72 }} />}
         </div>
       </h1>
-      {/* the cloud fades out above this line, so on a dark theme it takes a warm light ink (globals.css .lb-date-ink) */}
-      <div className="lb-date-ink text-center font-extrabold" style={{ fontSize: 10.5, letterSpacing: 0.6, marginTop: 1 }}>
-        <ResetLine lead={date} />
-      </div>
     </div>
   );
 }

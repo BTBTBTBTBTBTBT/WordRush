@@ -15,6 +15,8 @@ import {
   Bot,
   Lock,
   Pencil,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { GameArt } from '@/components/ui/game-art';
 import { Icon3D, Flame3D, type IconLike } from '@/components/ui/icon3d';
@@ -45,6 +47,7 @@ import { SolveTimeChart } from '@/components/profile/solve-time-chart';
 import { DailyCalendar } from '@/components/profile/daily-calendar';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS, listedAchievements } from '@/lib/achievement-service';
+import { CandyThumbPill } from '@/components/ui/candy-thumb-pill';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard, TintTile } from '@/components/profile/stat-kit';
 import { STAT_LABELS } from '@/lib/stat-labels';
@@ -179,6 +182,22 @@ export default function StatsPage() {
   // Solo/VS toggle on a game page — scopes user_stats AND every per-game
   // chart (restat B1). The VS page pins it to 'vs' (or 'vs_cpu' for practice).
   const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
+  // Founder 10-10: the achievements grid folds away (collapsed by default, remembered on this device); #achievements opens it.
+  const [achOpen, setAchOpen] = useState(false);
+  const setAchievementsOpen = useCallback((open: boolean) => {
+    setAchOpen(open);
+    try { localStorage.setItem('stats.achievementsOpen', open ? '1' : '0'); } catch { /* storage blocked: the fold just isn't remembered */ }
+  }, []);
+  useEffect(() => {
+    let open = false;
+    try { open = localStorage.getItem('stats.achievementsOpen') === '1'; } catch { open = false; }
+    if (window.location.hash === '#achievements') {
+      open = true;
+      try { localStorage.setItem('stats.achievementsOpen', '1'); } catch { /* ignore */ }
+      window.setTimeout(() => document.getElementById('achievements')?.scrollIntoView({ block: 'start' }), 350);
+    }
+    setAchOpen(open);
+  }, []);
   // FINISH_SPEC BJ1: the GAME (null = Overview, the Sweep, or one game) — every view is
   // ONE scroll, its TODAY section then its ALL-TIME section (lib/stats-view.ts). Starts on
   // Overview on both server and client (a lazy window read would mismatch hydration); the
@@ -1064,11 +1083,21 @@ export default function StatsPage() {
               </KitCard>
 
               {/* Achievements (grouped by category, under the Progression banner) */}
-              <div className="flex items-center justify-between mb-2">
+              {/* Founder 10-10: the grid folds away behind a candy Show all / Hide pill (collapsed by default, remembered on this
+                  device); a jump to #achievements (the unlock popup's See all) opens it. */}
+              <div id="achievements" className="flex items-center gap-2 mb-2" style={{ scrollMarginTop: 12 }}>
                 <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Achievements</span>
                 <span className="px-2 py-0.5" style={softPill('#7c3aed', { bar: false })}><SoftNum size={12} className="soft-num-auto">{userAchievements.size} / {listedAchievements(userAchievements).length}</SoftNum></span>
+                <span className="flex-1" />
+                <CandyThumbPill
+                  label={achOpen ? 'Hide' : 'Show all'}
+                  ariaLabel={achOpen ? 'Hide achievements' : 'Show all achievements'}
+                  ariaExpanded={achOpen}
+                  onClick={() => setAchievementsOpen(!achOpen)}
+                  icon={achOpen ? <ChevronUp width={11} height={11} strokeWidth={3.5} /> : <ChevronDown width={11} height={11} strokeWidth={3.5} />}
+                />
               </div>
-              <AchievementGrid
+              {achOpen && <AchievementGrid
                 unlocked={achievementDates}
                 progress={(a) => achievementProgress(a.key, {
                   dailyStreak: profile.daily_login_streak,
@@ -1080,7 +1109,7 @@ export default function StatsPage() {
                   silver: (profile as any).silver_medals,
                   bronze: (profile as any).bronze_medals,
                 })}
-              />
+              />}
               </div>
 
               <div className="stats-cv space-y-4">

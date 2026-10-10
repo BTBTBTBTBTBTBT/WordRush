@@ -29,7 +29,7 @@ export function HtpSectionHead({ n, title, accent }: { n: number; title: string;
       >
         {n}
       </span>
-      <BubbleText text={title.toUpperCase()} accent={accent} maxSize={24} minSize={16} align="left" level={2} className="min-w-0 flex-1" />
+      <BubbleText text={title.toUpperCase()} accent={accent} maxSize={24} minSize={16} align="left" level={2} calm className="min-w-0 flex-1" />
     </div>
   );
 }

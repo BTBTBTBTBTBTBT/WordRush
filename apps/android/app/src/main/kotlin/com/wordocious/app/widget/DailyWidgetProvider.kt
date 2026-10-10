@@ -308,6 +308,8 @@ class DailyWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.w_streak, "${snap.streak}")
             views.setInt(R.id.w_flame, "setImageAlpha", if (snap.streak == 0) 150 else 255)
             views.setContentDescription(R.id.w_flame_box, WidgetStats.streakPhrase(snap.streak))
+            // Founder 10-10 (iOS StreakLabel): beside the flame + trophy pair the label stacks DAY / STREAK on two lines (never truncated).
+            views.setTextViewText(R.id.w_streak_caps, if (snap.flawlessRun >= 2) "DAY\nSTREAK" else "DAY STREAK")
             // Item 28: the flawless trophy beside the flame (same size / baseline / number style); gone (no gap)
             // until a flawless run of 2+. Tier art by run: 3 / 5 / 7 / 10 / 30 (art/streaks).
             val run = snap.flawlessRun

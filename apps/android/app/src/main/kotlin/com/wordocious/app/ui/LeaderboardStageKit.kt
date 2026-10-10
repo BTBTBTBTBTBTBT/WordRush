@@ -1,6 +1,7 @@
 package com.wordocious.app.ui
 
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -256,22 +257,23 @@ internal fun StageTitleRow() {
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClickLabel = "Your mascot") { taps += 1 },
                     contentAlignment = Alignment.BottomCenter,
                 ) { StageOwnMascot(70.dp, wizardHat = hat) }
-                androidx.compose.runtime.key(taps) {
-                    Box(Modifier.weight(1f).padding(bottom = 14.dp), contentAlignment = Alignment.Center) {
+                // Founder 10-09: the date + reset clock sit right under the second line, centered between the mascots.
+                Column(Modifier.weight(1f).padding(bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    androidx.compose.runtime.key(taps) {
                         BubbleOneLine(line2, HeadlinePalette.LEADERBOARD, 42f)
                     }
+                    ResetLine()
                 }
                 if (hostRes != 0) {
                     Image(
                         painterResource(hostRes), null,
-                        // Never mirrored: a mirrored cast member wears its letter backwards (founder 10-10).
-                        Modifier.size(72.dp),
+                        // Never mirrored: a mirrored cast member wears its letter backwards (founder 10-10). The day's host is alive.
+                        Modifier.size(72.dp).idleLife(hop = 4f, sway = 3f, period = 1.6f, delay = 0.3f),
                         contentScale = ContentScale.Fit,
                     )
                 } else Box(Modifier.size(72.dp))
             }
         }
-        ResetLine()
     }
 }
 
@@ -285,23 +287,52 @@ private fun ResetLine() {
     }
     Text(
         "$lead · RESETS IN ${formatCountdown(secs)}", fontSize = 10.5.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
-        // Founder 10-09: the cloud fades out above this line, so on a dark theme it takes a warm light ink.
-        color = if (WTheme.isDark) Color(0xFFFDE68A).copy(alpha = 0.92f) else LB_LABEL, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        // Founder 10-09: the line sits directly on the cloud now, so it takes the warm dark ink on every theme.
+        color = Color(0xFF8A4A12), maxLines = 1, overflow = TextOverflow.Ellipsis,
     )
 }
 
 /**
- * The compact "Your board" button = today's VIEW BOARD: the family cast button, small, in the board's game color
- * (founder 10-09: the art pill read as ugly; the button wears the game's own color). [accent] null = gold.
+ * The compact "Your board" button = today's VIEW BOARD, and PLAY before the daily (founder 10-09/10): the SAME glossy candy
+ * thumb as the selected half of the Everyone | Friends switch above it (26 dp, white Nunito Black 11 caps, a small glyph
+ * leading: the ranked list / the play triangle), hue-turned to the board's game color [accent] (animated as the game changes).
  */
 @Composable
-internal fun YourBoardPill(onClick: () -> Unit, label: String = "View board", accent: Color? = null) {
-    // Founder 10-09: reads "View board" and sits smaller (the small cast pill at 80%, like iOS / web).
-    Box(Modifier.size(width = 84.dp, height = 26.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.requiredWidth(104.dp).graphicsLayer { scaleX = 0.8f; scaleY = 0.8f }) {
-            CastButton(text = label, onClick = onClick, color = accent?.let { castColorForAccent(it.red, it.green, it.blue) } ?: CastColor.GOLD,
-                size = CastSize.S, modifier = Modifier.fillMaxWidth())
+internal fun YourBoardPill(onClick: () -> Unit, label: String = "View board", accent: Color? = null, play: Boolean = false) {
+    val hue = rememberGameHueFilter(accent)
+    val thumb = candyBitmap(CandySprite.THUMB_ON)
+    Row(
+        Modifier.height(26.dp)
+            .squishClickable(label, onClick = onClick)
+            .candyPill(thumb, hue)
+            .padding(horizontal = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Canvas(Modifier.size(10.dp)) {
+            val w = size.width; val h = size.height
+            val ink = Color.White
+            if (play) {
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(w * 0.18f, 0f); lineTo(w, h / 2f); lineTo(w * 0.18f, h); close()
+                }
+                drawPath(path, ink)
+            } else {
+                // the ranked list: three numbered rows (a dot and a bar each)
+                val bar = h * 0.2f
+                for (k in 0 until 3) {
+                    val y = h * (0.1f + 0.4f * k)
+                    drawCircle(ink, radius = bar * 0.55f, center = Offset(w * 0.1f, y + bar / 2f))
+                    drawRoundRect(ink, topLeft = Offset(w * 0.3f, y), size = androidx.compose.ui.geometry.Size(w * 0.7f, bar),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(bar / 2f))
+                }
+            }
         }
+        Text(
+            label.uppercase(java.util.Locale.US), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.3.sp,
+            color = CandyInk.ON, maxLines = 1, softWrap = false,
+            style = androidx.compose.ui.text.TextStyle(shadow = androidx.compose.ui.graphics.Shadow(Color(0x734C1D95), Offset(0f, 1f), 0f)),
+        )
     }
 }
 
@@ -453,11 +484,8 @@ internal fun ModeStageStrip(
                 if (played) {
                     YourBoardPill(onClick = { GameMotion.arm("lb:play"); onPlay(gm) }, accent = accent)
                 } else {
-                    CandyButton(
-                        text = "PLAY", onClick = { GameMotion.arm("lb:play"); onPlay(gm) },
-                        color = CandyColor.PURPLE, size = CandySize.SMALL, icon = CandyIcon.PLAY,
-                        contentDescription = "Play ${card.title}",
-                    )
+                    // Founder 10-09: Play is the same glossy candy pill as View board and the switch above.
+                    YourBoardPill(onClick = { GameMotion.arm("lb:play"); onPlay(gm) }, label = "Play", accent = accent, play = true)
                 }
             }
         }

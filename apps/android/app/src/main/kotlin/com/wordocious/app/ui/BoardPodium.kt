@@ -233,7 +233,7 @@ fun BoardPodium(
     open: List<Int>,
     accent: Color,
     modifier: Modifier = Modifier,
-    avatar: Dp = 44.dp,
+    avatar: Dp = 51.dp,
     /** 11b: on the Leaderboard stage the shared backdrop already draws the light + glow — no stage of its own. */
     bare: Boolean = false,
     /** Founder 10-09: the smaller copy (Yesterday): shorter steps, a smaller figure and type; same glows, points and detail lines. */
@@ -256,11 +256,11 @@ fun BoardPodium(
         listOf(2, 1, 3).forEach { place ->
             val s = byPlace[place]
             val base = if (compact) 40.dp else avatar
-            val a = if (place == 1) base * 1.22f else base
+            val a = if (place == 1) (if (compact) base * 1.22f else base * (60f / 51f)) else base
             val stepH = when (place) {
-                1 -> if (compact) 62.dp else 74.dp
-                2 -> if (compact) 46.dp else 54.dp
-                else -> if (compact) 34.dp else 40.dp
+                1 -> if (compact) 62.dp else 64.dp
+                2 -> if (compact) 46.dp else 47.dp
+                else -> if (compact) 34.dp else 35.dp
             }
             val stands = s != null && podiumStands(s.username ?: s.name, s.userId, s.avatarUrl, s.config, s.castId, s.frame, s.accentHex)
             val opensCard = stands && s != null && com.wordocious.app.data.FlagsService.isLive("podium_stage_card") && !com.wordocious.app.data.PlayerAvatars.isOwn(s.userId, s.username ?: s.name)
@@ -286,7 +286,7 @@ fun BoardPodium(
                     // (the winner only 4 dp so it stays above the crown), a photo tile 2 dp.
                     PodiumNameAbove(
                         s.name, s.userId, s.username ?: s.name, size = if (compact) 14f else (if (place == 1) 19f else 16f),
-                        pull = if (stands) (if (place == 1) 4.dp else 18.dp) else 2.dp,
+                        pull = if (stands) (if (place == 1) 10.dp else 18.dp) else 2.dp,
                         avatarUrl = s.avatarUrl, config = s.config, castId = s.castId, frame = s.frame, accentHex = s.accentHex,
                     )
                     // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step (2x, no tile, posed by place).
