@@ -483,8 +483,8 @@ struct ProperNoundleView: View {
 
     private var header: some View {
         VStack(spacing: 4) {
-            Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.propernoundle)
+            BubbleLabel("PROPERNOUNDLE", color: pnAccent, size: 27, minScale: 0.5, alignment: .center)
+                .soloGameTitle(.propernoundle)
             HStack(spacing: 8) {
                 if let p = vm.puzzle {
                     Text(categoryLabel(p.themeCategory))
@@ -535,8 +535,7 @@ struct ProperNoundleView: View {
                     GameTitleArtView(asset: art.asset, label: art.label,
                                      maxHeight: UIScreen.main.bounds.height < 700 ? 52 : 68, minHeight: 36)
                 } else {
-                    Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
-                        .lineLimit(1).minimumScaleFactor(0.6)
+                    BubbleLabel("PROPERNOUNDLE", color: pnAccent, size: 27, minScale: 0.5, alignment: .center)
                 }
             }
             .padding(.horizontal, 54)
@@ -996,8 +995,7 @@ struct ProperNoundleVSBoard<Strip: View>: View {
     private var header: some View {
         VStack(spacing: 4) {
             HStack(spacing: 8) {
-                Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
-                    .lineLimit(1).minimumScaleFactor(0.6)
+                BubbleLabel("PROPERNOUNDLE", color: pnAccent, size: 27, minScale: 0.5, alignment: .center)
                     .gameTitleArt(.propernoundle)
                 VSTagPill()
             }

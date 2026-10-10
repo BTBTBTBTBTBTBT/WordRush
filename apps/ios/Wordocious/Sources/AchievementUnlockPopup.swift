@@ -507,8 +507,7 @@ struct AchievementUnlockPopup: View {
                     if case .levelUp(let level) = moment {
                         LevelBadge(level: level, size: 26, showTier: true)
                     } else {
-                        Text(title).font(Brand.font(22, .black)).foregroundStyle(FinishInk.heading)
-                            .multilineTextAlignment(.center)
+                        BubbleTextView(text: title.uppercased(), palette: .accent(FinishInk.purple), maxSize: 24, minSize: 14, animated: false)
                     }
                     if !detail.isEmpty {
                         Text(detail).font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)

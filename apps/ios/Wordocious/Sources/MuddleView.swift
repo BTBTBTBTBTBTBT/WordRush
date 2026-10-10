@@ -538,8 +538,7 @@ struct MuddleView: View {
                 if let art = GameTitleArt.forMode(.scramble) {
                     GameTitleArtView(asset: art.asset, label: art.label, maxHeight: MdSize.titleCap - 4, minHeight: 0)
                 } else {
-                    Text("MUDDLE").font(Brand.font(20, .black)).foregroundStyle(muddleAccent)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                    BubbleLabel("MUDDLE", color: muddleAccent, size: 23, minScale: 0.5, alignment: .center)
                 }
             }
             .frame(height: GameCornerButton.rowHeight - GameCornerButton.topInset)

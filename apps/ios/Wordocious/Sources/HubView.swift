@@ -359,8 +359,8 @@ struct HubView: View {
     /// `counts: false` on results, where the result line carries the word count.
     private func header(counts: Bool = true) -> some View {
         VStack(spacing: 4) {
-            Text("HUBBUB").font(Brand.font(24, .black)).foregroundStyle(hubAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.hub)
+            BubbleLabel("HUBBUB", color: hubAccent, size: 27, minScale: 0.5, alignment: .center)
+                .soloGameTitle(.hub)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 // The one "N/M words · pts" line (hubWordsLabel); results say it in the result line instead.

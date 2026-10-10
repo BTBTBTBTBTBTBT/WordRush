@@ -773,8 +773,7 @@ struct HomeView: View {
             // host is W).
             PoseImage(.o1, "jump", height: 58)
             VStack(alignment: .leading, spacing: 2) {
-                Text("New here? Start with Classic")
-                    .font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading)
+                BubbleLabel("New here? Start with Classic", color: accent, size: 15)
                 Text("The original 5-letter challenge — a fresh puzzle every day.")
                     .font(Brand.font(10, .bold)).foregroundStyle(FinishInk.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -906,9 +905,9 @@ struct HomeView: View {
                 HStack(spacing: 10) {
                     LetterTileAvatar(username: name, size: 38)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("@\(name) invited you to \(ModeStyle.title(mode).capitalized)")
-                            .font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading).lineLimit(2)
-                            .minimumScaleFactor(0.7)
+                        BubbleTextView(text: "@\(name) invited you to \(ModeStyle.title(mode))".uppercased(),
+                                       palette: .accent(Color(hex: 0xBE185D)), maxSize: 15, minSize: 11, animated: false,
+                                       alignment: .leading)
                         if pendingInvites.count > 1 {
                             Text("+\(pendingInvites.count - 1) more pending").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xA21CAF))
                         }
@@ -1126,8 +1125,8 @@ struct ModeLimitModal: View {
                 }
                 // BJ16: the PLAYED TODAY lettering; the game's name rides under it.
                 HeadingArtView(.playedtoday, label: "\(mode.title) — Played Today")
-                Text(mode.title.uppercased()).font(Brand.font(12, .black)).tracking(0.6).foregroundStyle(FinishInk.secondary)
-                    .multilineTextAlignment(.center).padding(.bottom, 4)
+                BubbleLabel(mode.title, color: Color(hex: 0x7C3AED), size: 15, alignment: .center)
+                    .padding(.bottom, 4)
                     .accessibilityHidden(true)
                 Text(AdCopy.adsServing ? "You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across every mode." : "You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays across every mode.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
@@ -1139,7 +1138,7 @@ struct ModeLimitModal: View {
                 // §A2: the countdown is a soft number on a tinted pill.
                 TimelineView(.periodic(from: .now, by: 1)) { _ in
                     HStack(spacing: 6) {
-                        Text("Play again in").font(Brand.font(12, .heavy)).foregroundStyle(FinishInk.secondary)
+                        BubbleLabel("Play again in", color: Color(hex: 0x7C3AED), size: 13)
                         Text(countdown()).softNumber(16)
                     }
                     .accessibilityElement(children: .ignore)

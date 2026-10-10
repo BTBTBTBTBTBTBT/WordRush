@@ -290,9 +290,9 @@ struct SpyglassView: View {
 
     private var header: some View {
         VStack(spacing: 3) {
-            Text("SPYGLASS").font(Brand.font(24, .black)).foregroundStyle(spyglassAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.wordsearch)
-            Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+            BubbleLabel("SPYGLASS", color: spyglassAccent, size: 27, minScale: 0.5, alignment: .center)
+                .soloGameTitle(.wordsearch)
+            BubbleOneLine(text: vm.state.title.uppercased(), palette: .accent(spyglassAccent), size: 15, minScale: 0.5)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("\(vm.state.found.count)/\(vm.state.words.count) found").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

@@ -136,7 +136,7 @@ struct ProView: View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
                 Icon3D(.crown, size: 26)
-                Text("ACTIVE PRO").font(Brand.font(15, .black)).tracking(1.2).foregroundStyle(Self.ink)
+                BubbleLabel("Active Pro", color: Self.ink, size: 18)
             }
             Text("You're enjoying all Pro benefits!").font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
             Text(info.dateLine.map { "\(info.plan) · \($0)" } ?? info.plan)
@@ -163,7 +163,7 @@ struct ProView: View {
             HStack(spacing: 12) {
                 PoseImage(.w, "wave", height: 64)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Welcome back").font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                    BubbleLabel("Welcome back", color: Self.ink, size: 17)
                     Text(line).font(Brand.font(12, .heavy)).foregroundStyle(Self.ink)
                     Text(SubscriptionCopy.lapsedBody).font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
                         .fixedSize(horizontal: false, vertical: true)

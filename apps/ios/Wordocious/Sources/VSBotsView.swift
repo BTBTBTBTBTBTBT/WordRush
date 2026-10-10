@@ -73,9 +73,8 @@ struct VSBotsView: View {
                 PoseImage(p.mascot, "ready", height: 84)
                     .frame(width: 76)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("BOT OF THE DAY").font(Brand.font(10.5, .black)).tracking(1.1).foregroundStyle(color)
-                    Text(p.name).font(Brand.font(21, .black)).foregroundStyle(VsLobbyKit.titleInk)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                    BubbleLabel("Bot of the day", color: color, size: 13)
+                    BubbleLabel(p.name, color: color, size: 24, minScale: 0.5)
                     Text(p.tierLine).font(Brand.font(12, .heavy)).foregroundStyle(VsLobbyKit.mutedInk)
                         .lineLimit(1).minimumScaleFactor(0.8)
                     Text("Same bot, same puzzle for everyone").font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
@@ -189,7 +188,7 @@ struct VSBotsView: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
-                    Text(p.name).font(Brand.font(15, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                    BubbleLabel(p.name, color: VsLobbyKit.ink, size: 16, minScale: 0.5)
                     if boss { Text("BOSS").font(Brand.font(9, .black)).tracking(0.6).foregroundStyle(Color(hex: 0x92400E))
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(VsLobbyKit.gold.vsWash(0.3))) }
@@ -252,7 +251,7 @@ struct VSBotsView: View {
                     HStack(alignment: .top, spacing: 10) {
                         VSGhostTile(size: 40)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Your Ghost").font(Brand.font(14, .black)).foregroundStyle(VsLobbyKit.titleInk)
+                            BubbleLabel("Your Ghost", color: VsLobbyKit.ink, size: 16)
                             Text(ghost.map { "Your best \(VsLobbyKit.modeName(mode)): \($0.guesses) guesses · \(VsLobby.vsClock(Int($0.timeMs)))" }
                                  ?? "Race a ghost of your best \(VsLobbyKit.modeName(mode)) run.")
                                 .font(Brand.font(11, .bold)).foregroundStyle(VsLobbyKit.mutedInk).lineLimit(1).minimumScaleFactor(0.8)

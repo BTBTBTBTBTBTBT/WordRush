@@ -218,3 +218,40 @@ struct BubbleOneLine: View {
         .accessibilityLabel(text)
     }
 }
+
+/// A short label, name or number in bubble lettering that HUGS its text like a `Text` does (so it sits in an HStack, beside a
+/// Spacer, or under `.fixedSize()` without grabbing the row), and shrinks (down to `minScale`) only when the row is narrower
+/// than its natural width. Uppercased. Never wraps, never clips. Use this where a plain label used to be.
+struct BubbleLabel: View {
+    let text: String
+    var palette: HeadlinePalette = .home
+    var size: CGFloat = 13
+    var minScale: CGFloat = 0.35
+    var alignment: Alignment = .leading
+
+    init(_ text: String, palette: HeadlinePalette = .home, size: CGFloat = 13, minScale: CGFloat = 0.35, alignment: Alignment = .leading) {
+        self.text = text
+        self.palette = palette
+        self.size = size
+        self.minScale = minScale
+        self.alignment = alignment
+    }
+
+    /// The same, tinted by one accent color (the common case).
+    init(_ text: String, color: Color, size: CGFloat = 13, minScale: CGFloat = 0.35, alignment: Alignment = .leading) {
+        self.init(text, palette: .accent(color), size: size, minScale: minScale, alignment: alignment)
+    }
+
+    var body: some View {
+        let t = text.uppercased()
+        let dyn = min(UIFontMetrics.default.scaledValue(for: 100) / 100, Brand.maxScale)
+        let natural = CGFloat(BubbleText.widthEm(t)) * size * dyn
+        BubbleOneLine(text: t, palette: palette, size: size, minScale: minScale, alignment: alignment)
+            .frame(minWidth: 0, idealWidth: natural, maxWidth: natural, alignment: alignment)
+    }
+}
+
+extension Color {
+    /// A label ink for bubble lettering: itself on light surfaces, lifted toward white on the dark theme so the lettering never sinks.
+    var bubbleInk: Color { Theme.isDark ? Color.white.mixed(over: self, 0.4) : self }
+}

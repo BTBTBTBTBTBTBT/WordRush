@@ -308,8 +308,8 @@ struct LadderView: View {
 
     private var header: some View {
         VStack(spacing: 4) {
-            Text("LETTER LADDER").font(Brand.font(24, .black)).foregroundStyle(ladderAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.ladder)
+            BubbleLabel("LETTER LADDER", color: ladderAccent, size: 27, minScale: 0.5, alignment: .center)
+                .soloGameTitle(.ladder)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 Text("Par \(vm.state.par)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)

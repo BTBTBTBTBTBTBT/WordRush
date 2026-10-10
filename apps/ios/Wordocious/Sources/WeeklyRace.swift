@@ -79,7 +79,7 @@ struct WeeklyFinishesCard: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
                         Icon3D(.trophy, size: 22)
-                        Text("Weekly Race Finishes").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                        BubbleLabel("Weekly Race Finishes", color: FinishInk.purple.bubbleInk, size: 15, minScale: 0.5)
                         Spacer()
                         Text("\(rows.count) \(rows.count == 1 ? "week" : "weeks")")
                             .font(Brand.font(10, .heavy)).foregroundStyle(FinishInk.secondary)

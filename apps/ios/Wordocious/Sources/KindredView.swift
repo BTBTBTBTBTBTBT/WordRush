@@ -401,8 +401,8 @@ struct KindredView: View {
 
     private var header: some View {
         VStack(spacing: 4) {
-            Text("KINDRED").font(Brand.font(24, .black)).foregroundStyle(kindredAccent)
-                .lineLimit(1).minimumScaleFactor(0.7).soloGameTitle(.groups)
+            BubbleLabel("KINDRED", color: kindredAccent, size: 27, minScale: 0.5, alignment: .center)
+                .soloGameTitle(.groups)
             HStack(spacing: 8) {
                 if vm.isDaily { Text("#\(vm.dailyNumber)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted) }
                 if let holiday = vm.holidayTitle { Text(holiday).font(Brand.caption(12)).foregroundStyle(kindredAccent) }

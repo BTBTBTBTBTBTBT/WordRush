@@ -283,12 +283,13 @@ struct PublicProfileView: View {
 
     /// Accent-colored (or wordmark-gradient) username — same on both branches.
     @ViewBuilder private func usernameText(_ p: Profile, size: CGFloat = 30) -> some View {
-        if ProfileAccent.isCustom(p.accentColor) {
-            Text(p.username).font(Brand.title(size)).foregroundStyle(ProfileAccent.color(p.accentColor))
-        } else {
-            Text(p.username).font(Brand.title(size))
-                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
-        }
+        // Founder rule 10-10: the name is bubble lettering in the player's own color (their backdrop, else their custom accent).
+        let cfg = PlayerTint.config(userId: p.id, username: p.username)
+        let palette: HeadlinePalette = AvatarCatalog.backdrop(cfg.bg) != nil || !ProfileAccent.isCustom(p.accentColor)
+            ? .accent(PlayerTint.nameColor(userId: p.id, username: p.username))
+            : .accent(ProfileAccent.color(p.accentColor))
+        BubbleTextView(text: p.username.uppercased(), palette: palette, maxSize: size + 8, minSize: 18, animated: false)
+            .frame(maxWidth: 320)
     }
 
     // MARK: Item 17 action-row helpers
@@ -386,8 +387,7 @@ struct PublicProfileView: View {
                     // Lock badge — the notation the founder asked for.
                     HStack(spacing: 5) {
                         Image(systemName: "lock.fill").font(.system(size: 10, weight: .bold))
-                        Text("This profile is private")
-                            .font(Brand.font(11, .black)).tracking(0.5).textCase(.uppercase)
+                        BubbleLabel("This profile is private", color: FinishInk.secondary, size: 13)
                     }
                     .foregroundStyle(FinishInk.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
@@ -502,8 +502,7 @@ struct PublicProfileView: View {
             if p.isPrivate == true {
                 HStack(spacing: 4) {
                     Image(systemName: "lock.fill").font(.system(size: 9, weight: .bold))
-                    Text(isOwnProfile ? "Your profile is private" : "Private profile")
-                        .font(Brand.font(10, .black)).tracking(0.4).textCase(.uppercase)
+                    BubbleLabel(isOwnProfile ? "Your profile is private" : "Private profile", color: FinishInk.secondary, size: 12)
                 }
                 .foregroundStyle(FinishInk.secondary)
                 .padding(.horizontal, 10).padding(.vertical, 5)
@@ -633,7 +632,7 @@ struct PublicProfileView: View {
         return VStack(spacing: 0) {
             HStack(spacing: 10) {
                 ModeIconView(icon: homeModes.first { $0.mode == selectedMode }?.icon ?? .roman("?"), accent: accent, box: 28)
-                Text(ModeStyle.title(selectedMode)).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                BubbleLabel(ModeStyle.title(selectedMode), color: accent.bubbleInk, size: 16)
                 Spacer()
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
@@ -671,7 +670,7 @@ struct PublicProfileView: View {
             VStack(spacing: 0) {
                 ForEach(Array(topWords.enumerated()), id: \.element.id) { i, w in
                     HStack {
-                        Text(w.word).font(Brand.font(13, .black)).foregroundStyle(FinishInk.heading).tracking(1)
+                        BubbleLabel(w.word, color: FinishInk.purple.bubbleInk, size: 15)
                         Spacer()
                         Text("\(w.count)").softNumber(14)
                         Text("×").font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
@@ -692,7 +691,7 @@ struct PublicProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "clock").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: 0x2563EB))
-                Text("Recent Matches").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                BubbleLabel("Recent Matches", color: FinishInk.purple.bubbleInk, size: 15)
             }
             if matches.isEmpty {
                 // BI24: R asleep + brand headline, not a plain grey line.
@@ -756,9 +755,7 @@ struct RecentMatchRow: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(mode?.title ?? match.game_mode)
-                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    BubbleLabel(mode?.title ?? match.game_mode, color: FinishInk.purple.bubbleInk, size: 14, minScale: 0.5)
                     Text(match.isSolo ? "Solo" : "VS")
                         .font(Brand.font(9, .heavy))
                         .padding(.horizontal, 6).padding(.vertical, 2)

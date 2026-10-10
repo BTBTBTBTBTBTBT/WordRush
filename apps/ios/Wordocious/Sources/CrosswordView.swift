@@ -464,9 +464,9 @@ struct CrosswordView: View {
 
     private var header: some View {
         VStack(spacing: 3) {
-            Text("CROSSWORDOCIOUS").font(Brand.font(24, .black)).foregroundStyle(crosswordAccent)
-                .lineLimit(1).minimumScaleFactor(0.6).soloGameTitle(.crossword, fallbackInset: 48)
-            Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+            BubbleLabel("CROSSWORDOCIOUS", color: crosswordAccent, size: 27, minScale: 0.5, alignment: .center)
+                .soloGameTitle(.crossword, fallbackInset: 48)
+            BubbleOneLine(text: vm.state.title.uppercased(), palette: .accent(crosswordAccent), size: 15, minScale: 0.5)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 48)
             metaLine
         }
@@ -480,13 +480,12 @@ struct CrosswordView: View {
                 if let art = GameTitleArt.forMode(.crossword) {
                     GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 44, minHeight: 0)
                 } else {
-                    Text("CROSSWORDOCIOUS").font(Brand.font(20, .black)).foregroundStyle(crosswordAccent)
-                        .lineLimit(1).minimumScaleFactor(0.6)
+                    BubbleLabel("CROSSWORDOCIOUS", color: crosswordAccent, size: 23, minScale: 0.5, alignment: .center)
                 }
             }
             .frame(height: GameCornerButton.rowHeight - GameCornerButton.topInset)
             .padding(.horizontal, 44 + GameCornerButton.sideInset + 4)
-            Text(vm.state.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+            BubbleOneLine(text: vm.state.title.uppercased(), palette: .accent(crosswordAccent), size: 15, minScale: 0.5)
                 .lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 12)
             metaLine
         }

@@ -978,7 +978,7 @@ struct ProStatsCard: View {
             Group {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
-                        Text("Win Rate by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                        BubbleLabel("Win Rate by Mode", color: FinishInk.purple.bubbleInk, size: 14)
                         Spacer()
                         // Web-parity tooltip line: tap a bar → mode + exact value.
                         if let sel = selectedWin, let b = bars.first(where: { $0.label == sel }) {
@@ -1006,7 +1006,7 @@ struct ProStatsCard: View {
                     .chartTapSelection(bars: bars.map(\.label), selection: $selectedWin)
 
                     HStack {
-                        Text("Avg Solve Time by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                        BubbleLabel("Avg Solve Time by Mode", color: FinishInk.purple.bubbleInk, size: 14)
                         Spacer()
                         if let sel = selectedTime, let b = bars.first(where: { $0.label == sel }) {
                             Text("\(fullName(sel)) · \(fmt(b.avgTime))")

@@ -274,7 +274,7 @@ struct ProMemberSheet: View {
                     .shadow(color: ProGold.accent.opacity(0.45), radius: 10, x: 0, y: 4)
                 HeadingArtView(.yourepro, height: 44)   // BJ16
                 VStack(spacing: 4) {
-                    Text(info.plan).font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
+                    BubbleLabel(info.plan, color: Color(hex: 0xB45309), size: 18, minScale: 0.5, alignment: .center)
                     if let line = info.dateLine {
                         Text(line).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                     }

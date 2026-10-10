@@ -99,9 +99,7 @@ struct StatsTile<Icon: View>: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 icon().frame(width: 22, height: 22)
-                Text(label.uppercased()).font(Brand.font(10, .black)).tracking(1.0)
-                    .foregroundStyle(Theme.isDark ? Theme.textSecondary : ink)
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                BubbleLabel(label, color: ink.bubbleInk, size: 12, minScale: 0.5)
             }
             Group {
                 if let n = countUp {
@@ -182,8 +180,7 @@ struct StatCell: View {
                 Text(value).softNumber(18)
                     .lineLimit(1).minimumScaleFactor(0.6)
             }
-            Text(label.uppercased()).font(Brand.font(9, .black)).tracking(0.6)
-                .foregroundStyle(FinishInk.secondary)
+            BubbleOneLine(text: label.uppercased(), palette: .accent(FinishInk.deepPurple.bubbleInk), size: 10, minScale: 0.5)
             // Always reserve the sub line so grids of cells stay equal-height.
             Text(sub ?? " ").font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)
         }
@@ -226,7 +223,7 @@ struct ChartCard<Content: View>: View {
         KitCard(accent: accent) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(title).font(Brand.font(12, .black)).foregroundStyle(FinishInk.heading)
+                    BubbleLabel(title, color: (accent ?? FinishInk.purple).bubbleInk, size: 14, minScale: 0.5)
                     Spacer()
                     if let hint {
                         Text(hint).font(Brand.font(9, .bold)).foregroundStyle(FinishInk.secondary)

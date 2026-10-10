@@ -145,7 +145,7 @@ struct SettingsView: View {
                                 Icon3D(.crown, size: 40)
                                     .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Wordocious Pro").font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                                    BubbleLabel("Wordocious Pro", color: G5Accent.gold.bubbleInk, size: 15)
                                     Text(SubscriptionCopy.handoff(.apple).line)
                                         .font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                                         .fixedSize(horizontal: false, vertical: true)
@@ -344,7 +344,7 @@ struct SettingsView: View {
     private func toggleRow(_ title: String, _ sub: String, _ binding: Binding<Bool>, accent: Color) -> some View {
         Toggle(isOn: binding) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+                BubbleLabel(title, color: accent.bubbleInk, size: 15)
                 Text(sub).font(Brand.font(11, .bold)).foregroundStyle(FinishInk.secondary)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
@@ -355,7 +355,7 @@ struct SettingsView: View {
 
     private func linkRow(_ title: String, accent: Color = G5Accent.purple) -> some View {
         HStack {
-            Text(title).font(Brand.font(14, .black)).foregroundStyle(FinishInk.heading)
+            BubbleLabel(title, color: accent.bubbleInk, size: 15)
             Spacer()
             Image(systemName: "chevron.right").font(.system(size: 12, weight: .heavy))
                 .foregroundStyle(accent.opacity(0.7)).accessibilityHidden(true)
@@ -386,8 +386,7 @@ struct SettingsOptionTile<Preview: View>: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(label).font(Brand.font(14, .black))
-                        .foregroundStyle(active ? Color.white : FinishInk.heading)
+                    BubbleLabel(label, color: active ? Color.white : accent.bubbleInk, size: 15)
                     Text(desc).font(Brand.font(10, .bold))
                         .foregroundStyle(active ? Color.white.opacity(0.88) : FinishInk.secondary)
                         .lineLimit(1).minimumScaleFactor(0.75)

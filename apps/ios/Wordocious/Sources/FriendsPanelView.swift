@@ -269,8 +269,7 @@ struct FriendsPanelView: View {
     private var playWithFriendsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             FriendsSectionHeader(title: "PLAY WITH FRIENDS") {
-                Text("TAP A GAME, PICK A FRIEND").font(Brand.font(9.5, .black)).tracking(0.8)
-                    .foregroundStyle(FriendsInk.section).lineLimit(1).minimumScaleFactor(0.7)
+                BubbleLabel("Tap a game, pick a friend", color: FriendsInk.section, size: 11, minScale: 0.5, alignment: .trailing)
             }
             // §9: six games, 3 across × 2 rows. §C4: each a small card tinted in its
             // OWN color with its own top bar (mockup `.gt`).
@@ -283,8 +282,7 @@ struct FriendsPanelView: View {
                         // every card in the grid stays the same height.
                         VStack(alignment: .leading, spacing: 3) {
                             pocketIcon(k, size: 32)
-                            Text(k.title).font(Brand.font(12, .black)).foregroundStyle(FriendsInk.heading)
-                                .lineLimit(1).minimumScaleFactor(0.7)
+                            BubbleOneLine(text: k.title.uppercased(), palette: .accent(accent), size: 13, minScale: 0.5, alignment: .leading)
                             Text(FriendsKit.sub(k)).font(Brand.font(10, .bold)).foregroundStyle(FriendsInk.muted)
                                 .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.8).multilineTextAlignment(.leading)
                         }
@@ -324,9 +322,7 @@ struct FriendsPanelView: View {
                 Spacer(minLength: 6)
                 // §218: name the window and when it closes; §226 live clock.
                 TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                    Text(FriendsPanelView.weekEndsLabel(at: ctx.date).uppercased())
-                        .font(Brand.font(9.5, .black)).tracking(0.6).foregroundStyle(weekInk)
-                        .monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+                    BubbleLabel(FriendsPanelView.weekEndsLabel(at: ctx.date), color: weekInk, size: 11, minScale: 0.5, alignment: .trailing)
                 }
                 // §234: share the race once someone has actually scored this week.
                 if raceStarted {
@@ -409,12 +405,10 @@ struct FriendsPanelView: View {
                     ForEach(Array(standings.dropFirst(3).prefix(showAllWeek ? standings.count : 2).enumerated()), id: \.element.id) { i, e in
                         OwnOrProfileLink(id: e.id, own: e.isMe) {
                             HStack(spacing: 8) {
-                                Text(FriendsPanelView.ordinal(i + 4))
-                                    .font(Brand.font(11, .black)).foregroundStyle(weekInk)
+                                BubbleOneLine(text: FriendsPanelView.ordinal(i + 4).uppercased(), palette: .accent(weekInk), size: 12, minScale: 0.5, alignment: .trailing)
                                     .frame(width: 30, alignment: .trailing)
-                                Text(e.username)
-                                    .font(Brand.font(12, .black)).lineLimit(1)
-                                    .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsInk.heading)
+                                BubbleLabel(e.username, color: e.isMe ? FriendsKit.solid : PlayerTint.nameColor(userId: e.id, username: e.username, onLight: !FriendsInk.dark),
+                                            size: 13, minScale: 0.45)
                                 Spacer(minLength: 4)
                                 Text(e.pts.formatted()).softNumber(13, color: VsLobbyKit.numberInk)
                                     .fixedSize()
@@ -490,13 +484,11 @@ struct FriendsPanelView: View {
                     ForEach(Array(rows.dropFirst(3).prefix(showAllToday ? rows.count : 2).enumerated()), id: \.element.id) { i, e in
                         OwnOrProfileLink(id: e.id, own: e.isMe) {
                             HStack(spacing: 8) {
-                                Text(FriendsPanelView.ordinal(i + 4))
-                                    .font(Brand.font(11, .black)).foregroundStyle(ink)
+                                BubbleOneLine(text: FriendsPanelView.ordinal(i + 4).uppercased(), palette: .accent(ink), size: 12, minScale: 0.5, alignment: .trailing)
                                     .frame(width: 30, alignment: .trailing)
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(e.username)
-                                        .font(Brand.font(12, .black)).lineLimit(1)
-                                        .foregroundStyle(e.isMe ? FriendsKit.solid : FriendsInk.heading)
+                                    BubbleLabel(e.username, color: e.isMe ? FriendsKit.solid : PlayerTint.nameColor(userId: e.id, username: e.username, onLight: !FriendsInk.dark),
+                                                size: 13, minScale: 0.45)
                                     // Both parts (FLAWLESS / 89-DAY STREAK) stack on two lines instead of one shrunken line.
                                     ForEach(Array(FriendCards.raceBadgeLines(e.badge).enumerated()), id: \.offset) { _, line in
                                         Text(line).font(Brand.font(8.5, .black)).tracking(0.4)
@@ -788,8 +780,8 @@ struct FriendsPanelView: View {
                     .frame(width: 38, height: 38)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 5) {
-                        Text("@\(f.username)").font(Brand.font(14, .black))
-                            .foregroundStyle(FriendsInk.heading).lineLimit(1).minimumScaleFactor(0.8)
+                        BubbleLabel(f.username, color: PlayerTint.nameColor(userId: f.id, username: f.username, onLight: !FriendsInk.dark),
+                                    size: 15, minScale: 0.45)
                         // §V3: the tier badge + level beside the name.
                         if f.level > 0 { LevelBadge(level: f.level, size: 16) }
                         // §216: the week's leader wears the crown.
@@ -983,8 +975,8 @@ struct FriendsPanelView: View {
                             } label: {
                                 HStack(spacing: 10) {
                                     AvatarView(url: u.avatar_url, username: u.username, size: 30, emoji: u.avatar_emoji)
-                                    Text(u.username).font(Brand.font(13, .black))
-                                        .foregroundStyle(FriendsInk.heading).lineLimit(1)
+                                    BubbleLabel(u.username, color: PlayerTint.nameColor(userId: u.id, username: u.username, onLight: !FriendsInk.dark),
+                                                size: 14, minScale: 0.45)
                                     Spacer()
                                     LevelBadge(level: u.level, size: 18) // §V3
                                     Icon3D(.addFriend, size: 18) // ART_SPEC §5
@@ -1052,8 +1044,8 @@ struct FriendsPanelView: View {
                                 // §M: each waiting request wears the small candy badge.
                                 .overlay(alignment: .topTrailing) { CandyCountBadge(count: 1, size: 16).offset(x: 6, y: -6) }
                             NavigationLink(value: r.id) {
-                                Text("@\(r.username)").font(Brand.font(14, .black))
-                                    .foregroundStyle(FriendsInk.heading).lineLimit(1)
+                                BubbleLabel(r.username, color: PlayerTint.nameColor(userId: r.id, username: r.username, onLight: !FriendsInk.dark),
+                                            size: 15, minScale: 0.45)
                             }.buttonStyle(.squish)
                             Spacer()
                             // §T2: Accept is the green (teal) candy; §T3 a yes shows NEW FRIENDS!.
@@ -1088,9 +1080,12 @@ struct FriendsPanelView: View {
                             AvatarView(url: r.avatar_url, username: r.username, size: 36, emoji: r.avatar_emoji)
                             NavigationLink(value: r.id) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    (Text("@\(r.username)").font(Brand.font(14, .black)).foregroundColor(FriendsInk.heading)
-                                        + Text("  · \(agoShort(r.requestedAt))").font(Brand.font(10, .bold)).foregroundColor(FriendsInk.rowSub))
-                                        .lineLimit(1).minimumScaleFactor(0.8)
+                                    HStack(spacing: 6) {
+                                        BubbleLabel(r.username, color: PlayerTint.nameColor(userId: r.id, username: r.username, onLight: !FriendsInk.dark),
+                                                    size: 15, minScale: 0.45)
+                                        Text(agoShort(r.requestedAt)).font(Brand.font(10, .bold)).foregroundColor(FriendsInk.rowSub)
+                                            .lineLimit(1).fixedSize()
+                                    }
                                     // §T1: a request-pending row wears a small glossy "Pending" pill.
                                     FriendsGlossyPill(text: "Pending", accent: FriendsInk.amber, size: 9)
                                 }
@@ -1578,17 +1573,14 @@ struct FriendsRowLink: View {
             HStack(spacing: 10) {
                 Image(systemName: "person.2.fill").font(.system(size: 16, weight: .bold))
                     .foregroundStyle(Color(hex: 0x7C3AED))
-                Text("FRIENDS")
-                    .font(Brand.font(16, .black)).tracking(0.3)
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                BubbleLabel("Friends", palette: .friends, size: 18)
                 if count > 0 {
                     Text("\(count)").softNumber(15)
                 }
                 if pending > 0 {
                     // Spelled out (web/Android parity) — a bare number here
                     // could read as the friend count sitting beside it.
-                    Text(pending == 1 ? "1 request" : "\(pending) requests")
-                        .font(Brand.font(10, .black)).foregroundStyle(.white)
+                    BubbleLabel(pending == 1 ? "1 request" : "\(pending) requests", color: .white, size: 11, minScale: 0.6, alignment: .center)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(Capsule().fill(Color(hex: 0xDC2626)))
                 }

@@ -193,9 +193,7 @@ struct PopCard<Body: View>: View {
                             .accessibilityLabel(title)
                             .accessibilityAddTraits(.isHeader)
                     } else {
-                    Text(title).font(Brand.font(21, .black)).foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.12), radius: 0, x: 0, y: 2)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+                    BubbleLabel(title, color: .white, size: 23, minScale: 0.5)
                         .accessibilityAddTraits(.isHeader)
                     }
                     Text(subtitle).font(Brand.font(12, .heavy)).foregroundStyle(.white.opacity(0.9))

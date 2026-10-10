@@ -69,9 +69,9 @@ struct ModeCardView: View {
     /// reserved, so solved and unsolved names line up). §Y: VoiceOver still hears "Unlimited".
     private var titleRow: some View {
         HStack(alignment: .top, spacing: 4) {
-            Text(mode.title).font(Brand.font(nameSize, .black))   // BJ18: the grid's ONE name size
-                .foregroundStyle(locked ? Theme.textMuted : mode.accent.onSeasonCard)
-                .lineLimit(1).minimumScaleFactor(0.6)
+            // BJ18: the grid's ONE name size; founder rule 10-10: the name wears bubble lettering (shrinks, never wraps).
+            BubbleOneLine(text: mode.title.uppercased(), palette: .accent(locked ? Theme.textMuted : mode.accent.onSeasonCard),
+                          size: nameSize + 1, minScale: 0.5, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityLabel(unlimited && !locked ? "\(mode.title), Unlimited" : mode.title)
             Group {

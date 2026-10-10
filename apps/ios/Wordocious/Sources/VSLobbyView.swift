@@ -309,7 +309,7 @@ struct VSLobbyView: View {
                 Spacer(minLength: 0)
                 if locked { VSLockBadge() }
             }
-            Text(title).font(Brand.font(12, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+            BubbleLabel(title, color: VsLobbyKit.ink, size: 14, minScale: 0.5)
             Text(sub).font(Brand.font(10.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -412,7 +412,7 @@ struct VSLobbyView: View {
         HStack(alignment: .top, spacing: 10) {
             VSInitialAvatar(name: r.username, size: 36)
             VStack(alignment: .leading, spacing: 4) {
-                Text("@\(r.username)").font(Brand.font(13, .black)).foregroundStyle(VsLobbyKit.titleInk).lineLimit(1)
+                BubbleLabel(r.username, color: VsLobbyKit.ink, size: 15, minScale: 0.45)
                 Text(VsLobbyKit.rivalLine(wins: r.wins, losses: r.losses, lastMode: r.lastMode))
                     .font(Brand.font(11, .heavy))
                     .foregroundStyle(r.wins == r.losses ? VsLobbyKit.mutedInk : VsLobbyKit.ink)
@@ -433,7 +433,7 @@ struct VSLobbyView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
                     Icon3D(.crown, size: 20)
-                    Text("GO PRO FOR ALL OF VS").font(Brand.font(14, .black)).tracking(0.4).foregroundStyle(VsLobbyKit.titleInk)
+                    BubbleLabel("Go Pro for all of VS", color: VsLobbyKit.purple, size: 16, minScale: 0.5)
                 }
                 Text("All 9 modes, live matches any time, challenge any friend, the bot ladder, rematches and your rivals.")
                     .font(Brand.font(11.5, .bold)).foregroundStyle(VsLobbyKit.mutedInk)

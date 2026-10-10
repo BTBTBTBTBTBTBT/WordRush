@@ -295,8 +295,7 @@ struct StrategyIndexBody: View {
                 GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 40, alignment: .center)
                     .frame(maxWidth: .infinity)
             }
-            Text(a.title).font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            BubbleTextView(text: a.title.uppercased(), palette: .accent(GuideFamily.brand), maxSize: 20, minSize: 13, animated: false)
             Text(a.dek).font(Brand.font(13, .bold)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center).lineLimit(2)
             GuideChip(text: "\(a.minutes) min read", accent: g.accent)
@@ -383,9 +382,7 @@ struct StrategyReaderBody: View {
                 GameTitleArtView(asset: art.asset, label: art.label, maxHeight: 60, alignment: .center)
                     .frame(maxWidth: .infinity)
             }
-            Text(article.title).font(Brand.font(22, .black)).foregroundStyle(FinishInk.heading)
-                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                .accessibilityAddTraits(.isHeader)
+            BubbleTextView(text: article.title.uppercased(), palette: .accent(GuideFamily.brand), maxSize: 26, minSize: 15, animated: false)
             Text(article.dek).font(Brand.font(14, .bold)).foregroundStyle(FinishInk.secondary)
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 4)

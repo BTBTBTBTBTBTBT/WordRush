@@ -119,9 +119,9 @@ struct LbRankBadge: View {
                                                          startPoint: .top, endPoint: .bottom)))
                 .shadow(color: c.opacity(0.35), radius: 2, x: 0, y: 1)
         } else {
-            Text("\(rank)").font(Brand.font(15, .black)).monospacedDigit()
-                .foregroundStyle(Theme.isDark ? Theme.textMuted : Color(hex: 0x8A78AD))
-                .lineLimit(1).minimumScaleFactor(0.5).frame(width: 28)
+            // Founder rule 10-10: the standalone number is bubble lettering (purple numerals on the light board).
+            BubbleOneLine(text: "\(rank)", palette: .leaderboard, size: 15, minScale: 0.5, alignment: .center)
+                .frame(width: 28)
         }
     }
 }
@@ -393,10 +393,17 @@ extension LbBoardRow where Trailing == EmptyView {
 struct LbRowName: View {
     let name: String
     var isMe: Bool = false
+    /// Tints the name in the player's own color (their backdrop); nil falls back to the name-derived color.
+    var userId: String? = nil
     var body: some View {
-        (Text(name) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-            .font(Brand.font(15, .black)).foregroundStyle(FinishInk.heading)
-            .lineLimit(1).minimumScaleFactor(0.7)
+        // Founder rule 10-10: a person's name is bubble lettering in their own color; "YOU" rides after it in amber.
+        HStack(spacing: 5) {
+            BubbleLabel(name, color: PlayerTint.nameColor(userId: userId, username: name, onLight: !Theme.isDark), size: 15, minScale: 0.45)
+            if isMe { BubbleLabel("you", color: Color(hex: 0xD97706), size: 11, minScale: 0.7).layoutPriority(1) }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(isMe ? "\(name) (you)" : name)
     }
 }
 
@@ -449,8 +456,7 @@ struct LbGameHeaderCard<Right: View, Extra: View>: View {
                     if let titleArt {
                         GameTitleArtView(asset: titleArt.asset, label: titleArt.label, maxHeight: 44, alignment: .leading)
                     } else {
-                        Text(title).font(Brand.font(17, .black)).foregroundStyle(FinishInk.heading)
-                            .lineLimit(1).minimumScaleFactor(0.7)
+                        BubbleOneLine(text: title.uppercased(), palette: .accent(accent), size: 19, minScale: 0.5, alignment: .leading)
                             .accessibilityAddTraits(.isHeader)
                     }
                     if let sub {

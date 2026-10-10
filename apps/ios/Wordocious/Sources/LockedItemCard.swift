@@ -162,7 +162,7 @@ struct LockedItemCard: View {
                 .overlay(Image(systemName: "lock.fill").font(.system(size: 26, weight: .black)).foregroundStyle(Color(hex: 0x7C3AED)))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Locked").font(Brand.font(20, .black)).foregroundStyle(Theme.isDark ? Theme.textPrimary : Color(hex: 0x4C1D95))
+                BubbleLabel("Locked", color: Color(hex: 0x7C3AED).bubbleInk, size: 23)
                     .accessibilityAddTraits(.isHeader)
                 Text("You can try \(them ? "these" : "it") on. Unlock to save.")
                     .font(Brand.font(12, .bold)).foregroundStyle(FinishInk.secondary)
@@ -184,7 +184,7 @@ struct LockedItemCard: View {
     private func partCard(_ part: AvatarPart) -> some View {
         let routes = MascotAccess.access(part, ctx).map(AvatarAccess.lockedCardRoutes) ?? []
         return VStack(alignment: .leading, spacing: 8) {
-            Text(MascotAccess.partName(part)).font(Brand.font(14, .black)).foregroundStyle(Theme.isDark ? Theme.textPrimary : Color(hex: 0x4C1D95))
+            BubbleLabel(MascotAccess.partName(part), color: Color(hex: 0x7C3AED).bubbleInk, size: 16)
             if routes.isEmpty {
                 HStack(spacing: 8) {
                     Image("art-badge-calendar").resizable().interpolation(.high).scaledToFit()

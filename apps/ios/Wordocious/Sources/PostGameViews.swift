@@ -73,9 +73,7 @@ struct FinishedStatsHeader: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Text(ModeStyle.title(mode)).font(Brand.font(28, .black))
-                .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
-                .lineLimit(1).minimumScaleFactor(0.7)
+            BubbleLabel(ModeStyle.title(mode), color: ModeStyle.accent(mode), size: 30, minScale: 0.5, alignment: .center)
                 .soloGameTitle(mode, fallbackInset: 52, isHeader: false)
 
             // FINISH_SPEC §B6: the result line is tinted pills (purple guesses, blue
@@ -209,9 +207,7 @@ struct FinishedCompactHeader: View {
                     GameTitleArtView(asset: art.asset, label: art.label,
                                      maxHeight: UIScreen.main.bounds.height < 700 ? 52 : 68, minHeight: 36)
                 } else {
-                    Text(ModeStyle.title(mode)).font(Brand.font(24, .black))
-                        .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
-                        .lineLimit(1).minimumScaleFactor(0.6)
+                    BubbleLabel(ModeStyle.title(mode), color: ModeStyle.accent(mode), size: 26, minScale: 0.5, alignment: .center)
                         .gameHost(mode, size: 26)
                 }
             }
