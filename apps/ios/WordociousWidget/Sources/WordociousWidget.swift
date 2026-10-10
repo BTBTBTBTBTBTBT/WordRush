@@ -427,6 +427,8 @@ private struct ChipGrid: View {
     let dark: Bool
     var linked = true
     var maxChip: CGFloat = 64
+    /// Founder 10-10: spread the columns edge to edge (the first and last columns touch the sides), so stacked grids line up.
+    var spread = false
     /// BI13b: a cast member peeking up from behind the first-row chip at `index`.
     var peek: (art: PeekArt, index: Int)? = nil
 
@@ -439,7 +441,7 @@ private struct ChipGrid: View {
                                    (g.size.width - minGap * CGFloat(cols - 1)) / CGFloat(cols),
                                    (g.size.height - minGap * CGFloat(rows - 1)) / CGFloat(rows)))
             let spreadX = cols > 1 ? (g.size.width - side * CGFloat(cols)) / CGFloat(cols - 1) : 0
-            let hGap = min(spreadX, max(minGap, side * 0.3))
+            let hGap = spread ? max(minGap * 0.5, spreadX) : min(spreadX, max(minGap, side * 0.3))
             let spreadY = rows > 1 ? (g.size.height - side * CGFloat(rows)) / CGFloat(rows - 1) : 0
             let vGap = max(minGap * 0.5, min(hGap, spreadY))
             let gridW = side * CGFloat(cols) + hGap * CGFloat(cols - 1)
@@ -495,6 +497,8 @@ private struct DailyRing: View {
     /// Item 28 / 48: all word dailies won → the gold FLAWLESS ring with the run as the hero ("×3").
     var flawless = false
     var flawlessRun = 0
+    /// The word inside the ring under the count (founder 10-10: DAILIES / PUZZLES), shown at every ring size.
+    var label = "DAILIES"
 
     var body: some View {
         GeometryReader { g in
@@ -563,7 +567,13 @@ private struct DailyRing: View {
                         .lineLimit(1).minimumScaleFactor(0.4)
                     // The caps label only where the ring has room for both lines.
                     if d >= 84 {
-                        Caps(text: swept ? "ALL \(modes.count)" : "DAILIES", color: WInk.label(dark).opacity(0.8))
+                        Caps(text: swept ? "ALL \(modes.count)" : label, color: WInk.label(dark).opacity(0.8))
+                    } else {
+                        // Small rings too: the word sized to the ring (never dropped, never truncated).
+                        Text(swept ? "ALL \(modes.count)" : label)
+                            .font(WType.black(max(6.5, d * 0.12))).tracking(0.3)
+                            .foregroundStyle(WInk.label(dark).opacity(0.8))
+                            .lineLimit(1).minimumScaleFactor(0.5)
                     }
                     }
                 }
@@ -878,41 +888,66 @@ struct MediumView: View {
     var body: some View {
         let hall = halloweenOn(snap, date)
         let dark = hall || (snap.theme?.dark ?? (scheme == .dark))
-        // Founder 10-10: three bands. Top: WORDOCIOUS over a bigger ring (left) beside the 8 dailies, which span from the
-        // lettering's top to the ring's bottom. Middle: all 10 Puzzles in one row. Bottom: the streak pair in line with
-        // next / countdown / points.
+        // Founder 10-10: Top: WORDOCIOUS over two rings (DAILIES 0/8 · PUZZLES 0/10) on the left; the DAILIES title and
+        // the 8 dailies on the right, running to the right edge (its last column lines up with the last Puzzle).
+        // Middle: the PUZZLES title + all 10 Puzzles in one row. Bottom: the streak pair in line with next / countdown / points.
         GeometryReader { g in
             let hasPuzzles = !snap.puzzleModes.isEmpty
-            let gap: CGFloat = 6
-            let bottomH: CGFloat = 22
+            let gap: CGFloat = 4
+            let title: CGFloat = 10
+            let bottomH: CGFloat = 20
             let puzzleN = CGFloat(max(snap.puzzleModes.count, 1))
-            let puzzleChip = hasPuzzles ? min(34, (g.size.width - 5 * (puzzleN - 1)) / puzzleN) : 0
-            let topH = max(40, g.size.height - bottomH - (hasPuzzles ? puzzleChip + gap : 0) - gap)
-            let mark: CGFloat = 13
-            let ring = max(30, min(topH - mark - 4, g.size.width * 0.32))
+            let puzzleChip = hasPuzzles ? min(30, (g.size.width - 5 * (puzzleN - 1)) / puzzleN) : 0
+            let topH = max(40, g.size.height - bottomH - (hasPuzzles ? puzzleChip + title + gap * 2 : 0) - gap)
+            let mark: CGFloat = 12
+            // The 8 dailies sit exactly over the last four Puzzles columns: same chip size, same column gap.
+            let pGap = hasPuzzles && puzzleN > 1 ? (g.size.width - puzzleChip * puzzleN) / (puzzleN - 1) : 8
+            let dChip = hasPuzzles ? min(puzzleChip * 1.1, (topH - title - 4) / 2) : min(40, (topH - title - 4) / 2)
+            let dailyW = hasPuzzles ? puzzleChip * 4 + pGap * 3 : dChip * 4 + 8 * 3
+            let leftW = g.size.width - dailyW - 10
+            let ring = max(26, min(topH - mark - 5, (leftW - 8) / (hasPuzzles ? 2 : 1)))
             VStack(alignment: .leading, spacing: gap) {
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top, spacing: 10) {
                     Link(destination: homeURL) {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 5) {
                             WordmarkImage(size: .medium, halloween: hall, dark: dark, height: mark)
-                            DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
-                                .frame(width: ring, height: ring)
-                                .frame(maxWidth: .infinity)
+                            HStack(spacing: 6) {
+                                DailyRing(modes: snap.modes, dark: dark, flawless: snap.isFlawless, flawlessRun: snap.flawlessRun)
+                                    .frame(width: ring, height: ring)
+                                if hasPuzzles {
+                                    DailyRing(modes: snap.puzzleModes, dark: dark, label: "PUZZLES")
+                                        .frame(width: ring, height: ring)
+                                }
+                            }
                         }
                     }
-                    .frame(width: max(ring, min(g.size.width * 0.36, 120)))
-                    ChipGrid(modes: snap.modes, columns: 4, dark: dark)
-                        .frame(height: topH)
+                    .frame(width: leftW, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Caps(text: "DAILIES", color: WInk.number(dark))
+                            Spacer()
+                            Caps(text: "\(snap.word.played)/\(snap.word.total)", color: WInk.label(dark).opacity(0.75))
+                        }
+                        .frame(height: title)
+                        ChipGrid(modes: snap.modes, columns: 4, dark: dark, maxChip: dChip, spread: true)
+                    }
+                    .frame(width: dailyW, height: topH)
                 }
                 .frame(height: topH)
                 if hasPuzzles {
+                    HStack {
+                        Caps(text: "PUZZLES", color: WInk.number(dark))
+                        Spacer()
+                        Caps(text: "\(snap.puzzleProgress.played)/\(snap.puzzleProgress.total)", color: WInk.label(dark).opacity(0.75))
+                    }
+                    .frame(height: title)
                     // Every Puzzles chip links to its own daily (ChipGrid is linked by default).
                     ChipGrid(modes: snap.puzzleModes, columns: snap.puzzleModes.count, dark: dark, maxChip: puzzleChip)
                         .frame(height: puzzleChip)
                 }
                 Link(destination: homeURL) {
                     HStack(spacing: 8) {
-                        StreakPair(snap: snap, size: 21)
+                        StreakPair(snap: snap, size: 20)
                         StatLine(items: statTexts(snap, date, dark, nextFirst: true), dark: dark)
                     }
                     .frame(height: bottomH)
@@ -966,6 +1001,15 @@ struct LargeView: View {
                 }
             }
             Spacer(minLength: 8)
+            // Founder 10-10: a small DAILIES title over the ring + chips, like PUZZLES below.
+            Link(destination: homeURL) {
+                HStack {
+                    Caps(text: "DAILIES", color: WInk.number(dark))
+                    Spacer()
+                    Caps(text: "\(snap.word.played)/\(snap.word.total)", color: muted)
+                }
+            }
+            Spacer(minLength: 6).frame(maxHeight: 8)
             GeometryReader { g in
                 HStack(spacing: 16) {
                     Link(destination: homeURL) {
@@ -987,7 +1031,7 @@ struct LargeView: View {
                 }
                 Spacer(minLength: 6).frame(maxHeight: 8)
                 // Every Puzzles chip links to its own daily (ChipGrid is linked by default).
-                ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, peek: (.asset(snap.peekAsset(at: date)), 2))
+                ChipGrid(modes: snap.puzzleModes, columns: 5, dark: dark, spread: true, peek: (.asset(snap.peekAsset(at: date)), 2))
                     .frame(minHeight: 90, maxHeight: 116)
             }
             Spacer(minLength: 8)
