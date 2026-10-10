@@ -59,7 +59,13 @@ public func applySolutionSwaps(_ pool: [String]) -> [String] {
 /// this table before it arrives. Replacements: common, clean, guessable words
 /// absent from the current AND legacy pools, not in any blocklist, and not a
 /// batch-1 replacement. The old words stay valid GUESSES.
-public let SOLUTION_SWAP_2_CUTOVER_DATE = "2026-11-16"
+/// MOVED 2026-10-10 (founder, 2.8.1): the cutover was 2026-11-16; it is now the
+/// Halloween start, so the strong profanity leaves unlimited and VS before the
+/// Play content-rating questionnaire is retaken. Every build since 2026-09-23
+/// carries this table, so only the date changed. Dated dailies are unaffected
+/// (no batch-2 word is dealt as a Six/Seven daily before 2026-11-16, and the
+/// duels use only the first word); live VS gets its word from the server.
+public let SOLUTION_SWAP_2_CUTOVER_DATE = "2026-10-17"
 
 public let SOLUTION_SWAPS_2: [String: String] = [
     "FUCKER": "CASHEW",
@@ -475,8 +481,8 @@ public func applySolutionSwaps4(_ pool: [String]) -> [String] {
 /// Which swap batches are live on `date`, as a BITMASK: bit k-1 set = batch k has
 /// reached its own cutover (batch 1 = 1, batch 2 = 2, batch 3 = 4, batch 4 = 8).
 /// Batch 4 starts before batches 2–3, so the live set is not a prefix any more:
-/// 0 before 2026-10-05, 1 (batch 1), 9 (batches 1 + 4) from 2026-10-13, 15 from
-/// 2026-11-16. Callers pass the value straight to applySolutionSwapBatches and may
+/// 0 before 2026-10-05, 1 (batch 1), 9 (batches 1 + 4) from 2026-10-13, 11 (+ batch 2)
+/// from 2026-10-17, 15 from 2026-11-16. Callers pass the value straight to applySolutionSwapBatches and may
 /// use it as a cache key.
 public func solutionSwapBatchesFor(_ date: String) -> Int {
     var mask = 0

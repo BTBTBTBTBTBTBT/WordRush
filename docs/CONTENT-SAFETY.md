@@ -103,7 +103,7 @@ Already-served content never changes. Players compare results, and finished game
   | Batch | Cutover | Contents |
   |---|---|---|
   | 1 | 2026-10-05 | 23 proper-noun answers |
-  | 2 | 2026-11-16 | 13 profanity answers |
+  | 2 | 2026-10-17 | 13 profanity answers (moved up from 2026-11-16 on 2026-10-10; ships in 2.8.1) |
   | 3 | 2026-11-16 | 46 more (its own table, because builds with batches 1–2 had already shipped) |
   | 4 | 2026-10-13 | 283 from the 2026-10-06 content audit (offensive, British, obscure, proper-noun; offensive keys base64) |
 

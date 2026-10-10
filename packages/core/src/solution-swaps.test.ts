@@ -96,7 +96,7 @@ describe('solution swaps batch 2 (profanity, own later cutover, real lists)', ()
   const pools: Record<number, string[]> = { 5: J('solutions.json'), 6: J('solutions-6.json'), 7: J('solutions-7.json') };
   const legacy: Record<number, string[]> = { 5: J('solutions-legacy.json'), 6: J('solutions-6-legacy.json'), 7: J('solutions-7-legacy.json') };
   const allowed: Record<number, string[]> = { 5: J('allowed.json'), 6: J('allowed-6.json'), 7: J('allowed-7.json') };
-  const DAY_BEFORE_2 = '2026-11-15';
+  const DAY_BEFORE_2 = '2026-10-16';
   const poolFor = (len: number, date: string | null) => (len === 5 ? getSolutionPoolForDate(date) : getSolutionPoolForLengthAndDate(len, date));
 
   beforeAll(() => {
@@ -108,7 +108,7 @@ describe('solution swaps batch 2 (profanity, own later cutover, real lists)', ()
   afterAll(() => { _setTodayForTests(null); });
 
   it('the second cutover is the day after DAY_BEFORE_2 and later than the first', () => {
-    expect(SOLUTION_SWAP_2_CUTOVER_DATE).toBe('2026-11-16');
+    expect(SOLUTION_SWAP_2_CUTOVER_DATE).toBe('2026-10-17');
     expect(SOLUTION_SWAP_2_CUTOVER_DATE > SOLUTION_SWAP_CUTOVER_DATE).toBe(true);
   });
 
@@ -171,10 +171,10 @@ describe('solution swaps batch 2 (profanity, own later cutover, real lists)', ()
   });
 
   it('pinned deals around the second cutover (the natives assert the same three)', () => {
-    // Between the cutovers: the batch-2 original still deals (V******); LUNATIC's slot
-    // already holds batch 4's DIEHARD (batch 4 starts 2026-10-13).
+    // 2026-10-28 is past the (moved, 2026-10-17) batch-2 cutover: V******'s slot now deals
+    // COPILOT, and LUNATIC's slot holds batch 4's DIEHARD (batch 4 starts 2026-10-13).
     expect(generateSolutionsFromSeedForLength('daily-2026-10-28-DUEL_7', 8, 7))
-      .toEqual(['PRESSED', 'DENOTED', 'PALETTE', 'FAILING', 'DIEHARD', 'BREEDER', 'WAITING', atob('VkFHSU5BTA==')]);
+      .toEqual(['PRESSED', 'DENOTED', 'PALETTE', 'FAILING', 'DIEHARD', 'BREEDER', 'WAITING', 'COPILOT']);
     // From the second cutover on: the replacement deals at the same slot.
     expect(generateSolutionsFromSeedForLength('daily-2026-11-27-DUEL_6', 8, 6))
       .toEqual(['JAGGED', 'OPENER', 'FESTER', 'QUARTZ', 'MARVEL', 'SALUTE', 'FONDUE', 'ONWARD']);
@@ -211,7 +211,7 @@ describe('solution swaps batch 3 (British answers, applied after batch 2, real l
     expect(Object.keys(SOLUTION_SWAPS_2)).toHaveLength(13);
     expect(solutionSwapBatchesFor('2026-10-04')).toBe(0);
     expect(solutionSwapBatchesFor('2026-10-05')).toBe(1);
-    expect(solutionSwapBatchesFor(DAY_BEFORE_3)).toBe(1 | 8);
+    expect(solutionSwapBatchesFor(DAY_BEFORE_3)).toBe(1 | 2 | 8);
     expect(solutionSwapBatchesFor(SOLUTION_SWAP_3_CUTOVER_DATE)).toBe(ALL_SOLUTION_SWAP_BATCHES);
   });
 

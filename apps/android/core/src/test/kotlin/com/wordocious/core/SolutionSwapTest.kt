@@ -62,7 +62,7 @@ class SolutionSwapTest {
     }
 
     @Test fun batch2TableShape() {
-        assertEquals("2026-11-16", SOLUTION_SWAP_2_CUTOVER_DATE)
+        assertEquals("2026-10-17", SOLUTION_SWAP_2_CUTOVER_DATE)
         assertTrue(SOLUTION_SWAP_2_CUTOVER_DATE > SOLUTION_SWAP_CUTOVER_DATE)
         assertEquals("batch 1 must not grow", 23, SOLUTION_SWAPS.size)
         assertEquals(13, SOLUTION_SWAPS_2.size)
@@ -98,8 +98,8 @@ class SolutionSwapTest {
         val bothOld = SOLUTION_SWAPS.keys + SOLUTION_SWAPS_2.keys + SOLUTION_SWAPS_4.keys
         for (len in listOf(5, 6, 7)) {
             val raw = if (len == 5) GameDictionary.solutionPool("2026-10-04") else GameDictionary.solutionPoolForLength(len, "2026-10-04")
-            val between = if (len == 5) GameDictionary.solutionPool("2026-11-15") else GameDictionary.solutionPoolForLength(len, "2026-11-15")
-            val after = if (len == 5) GameDictionary.solutionPool("2026-11-16") else GameDictionary.solutionPoolForLength(len, "2026-11-16")
+            val between = if (len == 5) GameDictionary.solutionPool("2026-10-16") else GameDictionary.solutionPoolForLength(len, "2026-10-16")
+            val after = if (len == 5) GameDictionary.solutionPool("2026-10-17") else GameDictionary.solutionPoolForLength(len, "2026-10-17")
             assertEquals(applySolutionSwapBatches(raw, 1 or 8), between)
             // Batch 3 shares this date while SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE.
             val sameDay3 = SOLUTION_SWAP_3_CUTOVER_DATE == SOLUTION_SWAP_2_CUTOVER_DATE
@@ -110,14 +110,14 @@ class SolutionSwapTest {
             val expected = (bothOld + if (sameDay3) SOLUTION_SWAPS_3.keys else emptySet()).filter { it.length == len && raw.contains(it) }
             assertEquals(expected.sorted(), moved)
         }
-        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-11-15").contains("FUCKER"))
-        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-11-16").contains("CASHEW"))
+        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-10-16").contains("FUCKER"))
+        assertTrue(GameDictionary.solutionPoolForLength(6, "2026-10-17").contains("CASHEW"))
     }
 
     @Test fun batch2UndatedSeedsGateOnWallClock() {
-        GameDictionary.todayOverrideForTests = "2026-11-15"
+        GameDictionary.todayOverrideForTests = "2026-10-16"
         assertTrue(GameDictionary.solutionPoolForLength(6, null).contains("FUCKER"))
-        GameDictionary.todayOverrideForTests = "2026-11-16"
+        GameDictionary.todayOverrideForTests = "2026-10-17"
         assertFalse(GameDictionary.solutionPoolForLength(6, null).contains("FUCKER"))
         assertTrue(GameDictionary.solutionPoolForLength(6, null).contains("CASHEW"))
         assertTrue(GameDictionary.solutionPoolForLength(7, null).contains("APRICOT"))
@@ -128,9 +128,9 @@ class SolutionSwapTest {
     }
 
     @Test fun batch2PinnedDeals() {
-        // Between the cutovers the batch-2 original still deals (V******; LUNATIC's slot already holds
-        // batch 4's DIEHARD); from the second cutover the replacement takes the slot.
-        assertEquals(listOf("PRESSED", "DENOTED", "PALETTE", "FAILING", "DIEHARD", "BREEDER", "WAITING", String(java.util.Base64.getDecoder().decode("VkFHSU5BTA=="))),
+        // 2026-10-28 is past the (moved, 2026-10-17) batch-2 cutover: V******'s slot now deals COPILOT,
+        // and LUNATIC's slot holds batch 4's DIEHARD (batch 4 starts 2026-10-13).
+        assertEquals(listOf("PRESSED", "DENOTED", "PALETTE", "FAILING", "DIEHARD", "BREEDER", "WAITING", "COPILOT"),
             generateSolutionsFromSeedForLength("daily-2026-10-28-DUEL_7", 8, 7))
         assertEquals(listOf("JAGGED", "OPENER", "FESTER", "QUARTZ", "MARVEL", "SALUTE", "FONDUE", "ONWARD"),
             generateSolutionsFromSeedForLength("daily-2026-11-27-DUEL_6", 8, 6))
@@ -150,7 +150,7 @@ class SolutionSwapTest {
         assertEquals("SORBET", SOLUTION_SWAPS_3["COLOUR"])
         assertEquals("WALLABY", SOLUTION_SWAPS_3["CRUMPET"])
         assertEquals(0, solutionSwapBatchesFor("2026-10-04"))
-        assertEquals(1 or 8, solutionSwapBatchesFor("2026-11-15"))
+        assertEquals(1 or 2 or 8, solutionSwapBatchesFor("2026-11-15"))
         assertEquals(ALL_SOLUTION_SWAP_BATCHES, solutionSwapBatchesFor("2026-11-16"))
         val earlier = SOLUTION_SWAPS.values.toSet() + SOLUTION_SWAPS_2.values.toSet()
         SOLUTION_SWAPS_3.forEach { (o, n) ->
