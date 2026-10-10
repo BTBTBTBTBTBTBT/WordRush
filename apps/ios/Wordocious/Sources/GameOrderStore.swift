@@ -197,10 +197,21 @@ struct GameOrderTitleAccessory: View {
 
     var body: some View {
         if store.canEdit, editing != section {
+            // Founder 10-09 ("brown … an eyesore"): a quiet frosted coin with the soft clay shuffle mark, not the season helper
+            // pill — present, but it never competes with the section art.
             Button { Haptics.light(); withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { editing = section } } label: {
-                CandyLabel(title: "", symbol: "pencil")
+                let dark = Theme.isDark
+                ZStack {
+                    Circle().fill(dark ? Color.white.opacity(0.10) : Color(hex: 0x7C3AED).opacity(0.08))
+                    Circle().strokeBorder(dark ? Color.white.opacity(0.16) : Color(hex: 0x7C3AED).opacity(0.14), lineWidth: 1)
+                    FamClayIcon(name: "shuffle", size: 15, ink: dark ? Color(hex: 0xC4B5FD) : Color(hex: 0x7C3AED))
+                }
+                .frame(width: 30, height: 30)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+                .opacity(0.8)
             }
-            .buttonStyle(HelperButtonStyle(fallback: Color(hex: 0x7C3AED), circle: true))
+            .buttonStyle(.squishCard)
             .accessibilityLabel(section == .dailies ? "Reorder Dailies" : "Reorder Puzzles")
         }
     }

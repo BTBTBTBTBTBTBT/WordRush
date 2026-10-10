@@ -53,7 +53,8 @@ struct LeaderboardTab: View {
     private var ySweepScoreLabels: [Double: String] { tieAwareScoreLabels(yesterdaySweep.map(\.totalScore)) }
     @State private var playerCount = 0
     @State private var loading = false
-    @State private var showYesterday = false
+    /// Founder 10-09: Yesterday opens with its podium showing; minimizing it folds the whole thing to its header.
+    @State private var showYesterday = true
     @State private var showAuth = false
     // LEADERBOARD SHARE — single-tap, spoiler-free by construction (names/
     // scores/stats only), so no variant chooser. The Sweep board shares too
@@ -536,27 +537,20 @@ struct LeaderboardTab: View {
         Binding(get: { friendsOnly }, set: { f in instantly { friendsOnly = f; paintCachedBoard() } })
     }
 
-    /// The completed-daily dropdown (your solved board + score breakdown). .id(mode) →
-    /// a fresh card per mode so switching away from one mode can't render the previous
-    /// mode's board data (which trapped when a board mode rendered stale ProperNoundle
-    /// data mid-transition).
-    @ViewBuilder private var completedCard: some View {
-        if mode.isCustomEngine { CustomCompletedDailyCard(mode: mode).id(mode) } else { CompletedDailyCard(mode: mode).id(mode) }
-    }
-
     /// Per-mode stage: the strip, the Everyone/Friends + share line, the podium (or its empty state), and
-    /// Yesterday's ledge as the base. Ranks 4+, the completed-daily card and the daily-only note sit below it.
+    /// Yesterday's ledge as the base. Ranks 4+ sit below it.
     @ViewBuilder private var modeStageBody: some View {
         modeStrip
 
         // The podium's header line: Everyone | Friends (§207) on the left, share on the right.
+        // Founder 10-09: a smaller switch, sitting quietly on the right beside share.
         HStack(alignment: .center, spacing: 8) {
+            Spacer(minLength: 4)
             if auth.isAuthenticated {
                 SoftSegmented(options: [(key: false, label: "Everyone"), (key: true, label: "Friends")],
                               selection: friendsBinding, accent: LbStyle.gold,
-                              accessibilityLabel: "Everyone or Friends")
+                              accessibilityLabel: "Everyone or Friends", small: true)
             }
-            Spacer(minLength: 4)
             if !loading && !entries.isEmpty {
                 shareIcon(busy: sharingLb, label: "Share leaderboard") {
                     guard !sharingLb else { return }
@@ -655,14 +649,8 @@ struct LeaderboardTab: View {
                 }
             }
         }
-        // Founder-approved clarity: this board ranks DAILY games only — Unlimited runs never appear here.
-        Text("Daily games only").font(Brand.font(10, .heavy))
-            .foregroundStyle(FinishInk.secondary)
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.top, -6).padding(.trailing, 4)
-
-        // Your finished board (the completed-daily dropdown): your rank + points now live on the strip.
-        completedCard
+        // Founder 10-09: the "Daily games only" note and the Completed Today dropdown are gone (the strip already shows
+        // your rank + points and View board opens your finished board).
     }
 
     /// One podium place from a board row (tie-aware points). BJ5: the row's photo + look —

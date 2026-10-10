@@ -156,12 +156,15 @@ struct SoftSegmented<Key: Hashable>: View {
     var accent: Color = Color(hex: 0x7C3AED)
     var accessibilityLabel: String = ""
     var onChange: ((Key) -> Void)? = nil
+    /// Founder 10-09: a smaller switch that sits quietly beside another control (Leaderboard's Everyone | Friends).
+    var small: Bool = false
 
     /// Button family (10-05, README §4): every two-way switch is the candy segmented (frosted track +
     /// glossy purple thumb), compact here (32 pt, hugging its labels).
     var body: some View {
         CandySegmented(options: options, selection: selection, accent: accent,
-                       accessibilityLabel: accessibilityLabel, height: 32) { k in
+                       accessibilityLabel: accessibilityLabel, height: small ? 26 : 32,
+                       fontSize: small ? 11 : 13, labelPad: small ? 10 : 14) { k in
             selection = k
             onChange?(k)
         }
@@ -180,6 +183,8 @@ struct CandySegmented<Key: Hashable>: View {
     var accent: Color = Color(hex: 0x2563EB)
     var accessibilityLabel: String = ""
     var height: CGFloat = 38
+    var fontSize: CGFloat = 13
+    var labelPad: CGFloat = 14
     let onSelect: (Key) -> Void
     @Namespace private var ns
 
@@ -194,11 +199,11 @@ struct CandySegmented<Key: Hashable>: View {
                     withAnimation(Theme.animation(Motion.spring)) { onSelect(opt.key) }
                 } label: {
                     Text(opt.label)
-                        .font(Brand.font(13, .black)).tracking(0.3)
+                        .font(Brand.font(fontSize, .black)).tracking(0.3)
                         .foregroundStyle(on ? CandyToggleInk.on : CandyToggleInk.off)
                         .shadow(color: on ? Color(hex: 0x4C1D95).opacity(0.45) : .clear, radius: 0, x: 0, y: 1)
                         .lineLimit(1).minimumScaleFactor(0.8)
-                        .padding(.horizontal, 14)
+                        .padding(.horizontal, labelPad)
                         .frame(maxWidth: .infinity, minHeight: height - pad * 2)
                         .background {
                             if on { CandyPill(sprite: .thumbOn).matchedGeometryEffect(id: "thumb", in: ns) }
@@ -545,7 +550,19 @@ struct PodiumView: View {
                 if place == 1 && !stands {
                     Icon3D(.crown, size: compact ? 24 : 26).padding(.bottom, -8).zIndex(1)
                 }
-                nameAbove.padding(.horizontal, -10).zIndex(2)
+                // Founder 10-09: a soft glow in the player's secondary (pattern) color behind the name so it pops.
+                nameAbove
+                    .background {
+                        let glow = PlayerTint.secondaryColor(userId: e.id, username: e.username)
+                        ZStack {
+                            Capsule().fill(glow.opacity(0.55)).padding(.horizontal, -2).padding(.vertical, -6).blur(radius: 12)
+                            Capsule().fill(glow.opacity(0.9)).padding(.horizontal, 10).padding(.vertical, 1).blur(radius: 6)
+                        }
+                    }
+                    .padding(.horizontal, -10)
+                    // Founder 10-09: closer to the top of the head (the standing figure's box carries headroom).
+                    .padding(.bottom, stands ? (place == 1 ? -4 : -18) : -2)
+                    .zIndex(2)
                 // 2.8 item 13: with the living mascot on, a mascot player STANDS on the step full-body (no tile), 2x the old size,
                 // posed by place (1st cheers, 2nd claps, 3rd waves); photo players keep the framed tile.
                 PodiumFigure(entry: e, place: place, tone: tone, size: avatar, compact: compact)
@@ -1121,6 +1138,12 @@ enum PlayerTint {
     }
 
     /// A vivid version of the player's backdrop color, for their name in the bubble lettering (lemon → a sunny gold).
+    /// The player's secondary color (their pattern color in the mascot maker).
+    static func secondaryColor(userId: String?, username: String) -> Color {
+        let c = config(userId: userId, username: username)
+        return Color(hexString: AvatarCatalog.color(c.patternColor).hex) ?? Color(hex: 0x8B5CF6)
+    }
+
     /// The bubble lettering on a plate: purple letters + numbers on a pale plate, white letters + gold numbers on a dark one.
     static func platePalette(lightInk: Bool) -> HeadlinePalette {
         lightInk

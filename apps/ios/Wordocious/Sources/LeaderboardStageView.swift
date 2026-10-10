@@ -242,7 +242,7 @@ struct StageYesterdayLedge<Expanded: View, Share: View>: View {
                 Spacer(minLength: 4)
                 if open && !empty { share() }
             }
-            if !empty {
+            if open && !empty {
                 // Founder 10-09: yesterday is a SMALLER copy of the main podium (gold / silver / bronze steps, the top
                 // three's points + how they got them, the same glows) — no white ledge art. Fixed height so the page
                 // never jumps while it loads.
@@ -254,13 +254,10 @@ struct StageYesterdayLedge<Expanded: View, Share: View>: View {
                                    open: Array(stride(from: min(minis.count, 3) + 1, through: 3, by: 1)))
                     }
                 }
-                .frame(height: 210)
+                .frame(height: 230)
                 .frame(maxWidth: 360)
                 .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
-                .onTapGesture { Haptics.light(); withAnimation(.easeInOut(duration: 0.22)) { open.toggle() } }
-                .accessibilityAddTraits(.isButton)
-                .accessibilityLabel(open ? "Hide yesterday's full list" : "Show yesterday's full list")
+                .transition(.opacity)
             }
             if open && !empty { expanded().transition(.opacity) }
         }
